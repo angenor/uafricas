@@ -61,7 +61,7 @@ uafricas_old_version_vuejs/src/
 
 ## Tech Stack
 
-**New Frontend:** Nuxt 4.2, Vue 3, TypeScript, Tailwind CSS, pnpm
+**New Frontend:** Nuxt 4.2, Vue 3, TypeScript, Tailwind CSS, pnpm, GSAP, AOS, FontAwesome
 **Old Frontend:** Vue 3, Vite, Vue Router 4, Pinia, Tailwind CSS 3, npm
 
 ## Old Frontend - Key Dependencies
@@ -100,3 +100,4 @@ Two Pinia stores:
 - Always use `BreadcrumbNav.vue` for new pages
 - Reference `@bank/modele/modele_firebase.md` before creating Firestore collections
 - Follow existing authentication patterns with Firebase Auth
+
