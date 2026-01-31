@@ -26,6 +26,8 @@ import {
   faPause,
   faVolumeUp,
   faVolumeMute,
+  faMasksTheater,
+  faLeaf,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faFacebook,
@@ -66,6 +68,8 @@ library.add(
   faPause,
   faVolumeUp,
   faVolumeMute,
+  faMasksTheater,
+  faLeaf,
   faFacebook,
   faTwitter,
   faLinkedin,
