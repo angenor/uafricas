@@ -1,0 +1,14 @@
+/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_backend/target/debug/deps/serde-02040be0a9c705b0.d: /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_backend/target/debug/build/serde-3420c22ce357126d/out/private.rs
+
+/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_backend/target/debug/deps/libserde-02040be0a9c705b0.rlib: /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_backend/target/debug/build/serde-3420c22ce357126d/out/private.rs
+
+/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_backend/target/debug/deps/libserde-02040be0a9c705b0.rmeta: /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_backend/target/debug/build/serde-3420c22ce357126d/out/private.rs
+
+/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_backend/target/debug/build/serde-3420c22ce357126d/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_backend/target/debug/build/serde-3420c22ce357126d/out

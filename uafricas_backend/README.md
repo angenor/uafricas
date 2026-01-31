@@ -1,30 +1,36 @@
 # UAfricas Backend
 
-## Installation
+Backend API built with Actix Web (Rust).
 
-Ce projet utilise un environnement virtuel Python avec FastAPI.
+## Requirements
 
-### Packages installés
+- Rust 1.93+
 
-- fastapi 0.128.0
-- uvicorn 0.40.0
-- pydantic 2.12.5
-- starlette 0.50.0
-- httpx 0.28.1
-- jinja2 3.1.6
-- python-multipart 0.0.21
-- email-validator 2.3.0
-- pydantic-settings 2.12.0
-- python-dotenv 1.2.1
-
-### Activation de l'environnement virtuel
+## Getting Started
 
 ```bash
-source venv/bin/activate
+# Build the project
+cargo build
+
+# Run in development mode
+RUST_LOG=info cargo run
+
+# Run in release mode
+cargo build --release
+./target/release/uafricas_backend
 ```
 
-### Lancer le serveur
+## Environment Variables
 
-```bash
-uvicorn main:app --reload
-```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| HOST | 127.0.0.1 | Server host |
+| PORT | 8080 | Server port |
+| RUST_LOG | - | Log level (info, debug, error) |
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/ | API root |
+| GET | /api/health | Health check |
