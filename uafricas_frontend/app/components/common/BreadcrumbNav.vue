@@ -101,7 +101,8 @@ const routeLabels: Record<string, string> = {
   'radio': 'Radio',
   'africans': 'Africans',
   'nationales': 'Nationales',
-  'tele': 'Télévision'
+  'tele': 'Télévision',
+  'africa-culture': 'AfricaCulture'
 }
 
 const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
