@@ -104,7 +104,19 @@ const routeLabels: Record<string, string> = {
   'tele': 'Télévision',
   'africa-culture': 'AfricaCulture',
   'echanges-sabbatiques': 'Échanges Sabbatiques',
-  'opportunite-afrique': 'Opportunités en Afrique'
+  'opportunite-afrique': 'Opportunités en Afrique',
+  'africain-afro-americain': 'Centres Culturels Afrocult',
+  'site': 'Centre Culturel',
+  'programmation': 'Programmation',
+  'experts': 'Experts',
+  'marche-africain': 'Marché Africain',
+  'financer-projet': 'Financer un Projet',
+  'soumettre-projet': 'Soumettre un Projet',
+  'evenements': 'Événements',
+  'forums': 'Forums',
+  'codi-moi': 'Codi-Moi',
+  'liste': 'Liste',
+  'promotion-valeur': 'Promotion des Valeurs'
 }
 
 const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
