@@ -1,0 +1,493 @@
+<template>
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <!-- Mobile Sidebar Overlay -->
+    <div
+      v-if="sidebarOpen"
+      class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+      @click="sidebarOpen = false"
+    />
+
+    <!-- Mobile Sidebar for Filters -->
+    <ExpertsExpertFiltersMobile
+      :is-open="sidebarOpen"
+      :selected-profile="selectedProfile"
+      :total-experts="experts.length"
+      :filtered-count="filteredExperts.length"
+      @close="sidebarOpen = false"
+      @filter-profile="filterByProfile"
+      @reset="resetFilters"
+    />
+
+    <!-- Main Content Area -->
+    <div class="w-full">
+      <!-- Mobile Sidebar Toggle -->
+      <div class="lg:hidden flex items-center p-4 bg-white shadow-sm">
+        <button
+          class="p-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+          @click="sidebarOpen = !sidebarOpen"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+        <h1 class="ml-3 text-lg font-semibold text-gray-900">Experts</h1>
+      </div>
+
+      <!-- Hero Section -->
+      <ExpertsExpertHero
+        v-model:search-term="searchTerm"
+        v-model:category-selected="categorySelected"
+        :total-experts="experts.length"
+        :categories="categories"
+        @search="handleSearch"
+      />
+
+      <!-- Main Content Section -->
+      <div class="max-w-7xl mx-auto px-4 -mt-10 relative z-10">
+        <!-- Structure avec sidebar a gauche et contenu principal -->
+        <div class="flex gap-8">
+          <!-- Left Sidebar - Profile Filters (Desktop uniquement) -->
+          <div class="hidden lg:block w-80 flex-shrink-0">
+            <ExpertsExpertFilters
+              :selected-profile="selectedProfile"
+              :total-experts="experts.length"
+              :filtered-count="filteredExperts.length"
+              @filter-profile="filterByProfile"
+              @reset="resetFilters"
+            />
+          </div>
+
+          <!-- Main Content Area -->
+          <div class="flex-1 min-w-0">
+            <!-- Bouton Expert sur mesure moderne -->
+            <div class="flex justify-center mb-10">
+              <NuxtLink
+                to="/filtre-expert"
+                class="inline-flex items-center gap-3 bg-white px-8 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all group"
+              >
+                <div
+                  class="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform"
+                >
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                    />
+                  </svg>
+                </div>
+                <span class="font-semibold text-gray-900">Trouver un expert sur mesure</span>
+                <svg
+                  class="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </NuxtLink>
+            </div>
+
+            <!-- Filtres modernises -->
+            <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
+              <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <!-- Filtres par tags -->
+                <div class="flex-1">
+                  <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+                    Domaines d'expertise
+                  </h3>
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      :class="{
+                        'bg-gradient-to-r from-emerald-500 to-teal-500 text-white':
+                          categorySelected === 'Tout',
+                        'bg-gray-100 text-gray-700 hover:bg-gray-200':
+                          categorySelected !== 'Tout',
+                      }"
+                      class="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                      @click="filterByCategory('Tout')"
+                    >
+                      Tout
+                    </button>
+                    <button
+                      v-for="category in categories.filter((cat) => cat !== 'Tout').slice(0, 4)"
+                      :key="category"
+                      :class="{
+                        'bg-gradient-to-r from-emerald-500 to-teal-500 text-white':
+                          categorySelected === category,
+                        'bg-gray-100 text-gray-700 hover:bg-gray-200':
+                          categorySelected !== category,
+                      }"
+                      class="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                      @click="filterByCategory(category)"
+                    >
+                      {{ category }}
+                    </button>
+                    <div v-if="categories.length > 5" class="relative">
+                      <button
+                        class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all flex items-center gap-1"
+                        @click="showMoreCategories = !showMoreCategories"
+                      >
+                        Plus
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      <!-- Dropdown pour plus de categories -->
+                      <div
+                        v-if="showMoreCategories"
+                        class="absolute top-full mt-2 bg-white rounded-xl shadow-xl p-2 z-20 min-w-[200px]"
+                      >
+                        <button
+                          v-for="category in categories.filter((cat) => cat !== 'Tout').slice(4)"
+                          :key="category"
+                          class="block w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-sm"
+                          @click="filterByCategory(category); showMoreCategories = false"
+                        >
+                          {{ category }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Controles de tri et filtre pays -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                  <!-- Filtre pays -->
+                  <select
+                    v-model="selectedCountry"
+                    class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  >
+                    <option v-for="country in countries" :key="country.value" :value="country.value">
+                      {{ country.label }}
+                    </option>
+                  </select>
+
+                  <!-- Boutons de tri -->
+                  <div class="flex gap-2">
+                    <button
+                      v-for="sortOption in sortOptions"
+                      :key="sortOption.id"
+                      :class="{
+                        'bg-emerald-500 text-white': sortOrder === sortOption.id,
+                        'bg-gray-50 text-gray-700 hover:bg-gray-100': sortOrder !== sortOption.id,
+                      }"
+                      :title="sortOption.label"
+                      class="p-2 rounded-xl transition-all group relative"
+                      @click="sortExperts(sortOption.id)"
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          :d="sortOption.icon"
+                        />
+                      </svg>
+                      <span
+                        class="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
+                      >
+                        {{ sortOption.label }}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Expert Cards Grid avec design moderne -->
+            <div
+              v-if="filteredExperts.length > 0"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12"
+            >
+              <ExpertsExpertCard
+                v-for="expert in paginatedExperts"
+                :key="expert.id"
+                :expert="expert"
+                class="transform hover:scale-[1.02] transition-all"
+                @contact="contactExpert"
+              />
+            </div>
+
+            <!-- Empty State moderne -->
+            <div v-else class="bg-white rounded-2xl shadow-xl p-12 text-center">
+              <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                  />
+                </svg>
+              </div>
+              <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun expert trouve</h3>
+              <p class="text-gray-500 max-w-md mx-auto">
+                Essayez de modifier vos criteres de recherche ou explorez d'autres domaines
+                d'expertise.
+              </p>
+              <button
+                class="mt-6 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-medium hover:shadow-lg transition-all"
+                @click="resetFilters"
+              >
+                Reinitialiser les filtres
+              </button>
+            </div>
+
+            <!-- Pagination moderne -->
+            <div v-if="filteredExperts.length > 0" class="flex justify-center mb-12">
+              <nav class="flex items-center gap-2">
+                <button
+                  :disabled="currentPage === 1"
+                  class="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="currentPage--"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+
+                <div class="flex gap-1">
+                  <button
+                    v-for="page in visiblePages"
+                    :key="page"
+                    :class="{
+                      'bg-gradient-to-r from-emerald-500 to-teal-500 text-white': page === currentPage,
+                      'bg-white text-gray-700 hover:bg-gray-50': page !== currentPage,
+                    }"
+                    class="w-10 h-10 rounded-xl font-medium transition-all"
+                    @click="currentPage = page"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+
+                <button
+                  :disabled="currentPage === totalPages"
+                  class="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="currentPage++"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { expertsMock, categories, countries, type Expert } from '~/mocks/experts'
+
+useHead({
+  title: 'Experts - UAfricas',
+  meta: [
+    {
+      name: 'description',
+      content: 'Trouvez les meilleurs experts africains et afro-descendants dans tous les domaines',
+    },
+  ],
+})
+
+// State
+const experts = ref<Expert[]>([])
+const searchTerm = ref('')
+const categorySelected = ref('Tout')
+const selectedCountry = ref('')
+const selectedProfile = ref('')
+const sortOrder = ref<'recent' | 'experience' | 'rating'>('recent')
+const showMoreCategories = ref(false)
+const sidebarOpen = ref(false)
+const currentPage = ref(1)
+const itemsPerPage = 12
+
+// Sort options
+const sortOptions = [
+  {
+    id: 'recent' as const,
+    icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    label: 'Recent',
+  },
+  {
+    id: 'experience' as const,
+    icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z',
+    label: 'Experience',
+  },
+  {
+    id: 'rating' as const,
+    icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z',
+    label: 'Note',
+  },
+]
+
+// Computed - Filtered experts
+const filteredExperts = computed(() => {
+  let result = [...experts.value]
+
+  // Filter by category
+  if (categorySelected.value !== 'Tout') {
+    result = result.filter((expert) => {
+      const domaine = expert.expertiseInfo?.domaine
+      return domaine === categorySelected.value
+    })
+  }
+
+  // Filter by country
+  if (selectedCountry.value) {
+    result = result.filter((expert) => expert.pays === selectedCountry.value)
+  }
+
+  // Filter by professional profile
+  if (selectedProfile.value && selectedProfile.value !== 'tous') {
+    result = result.filter((expert) => {
+      const situationProfessionnelle = expert.situationProfessionnelle || []
+      return situationProfessionnelle.includes(selectedProfile.value)
+    })
+  }
+
+  // Filter by search term
+  if (searchTerm.value) {
+    const term = searchTerm.value.toLowerCase()
+    result = result.filter((expert) => {
+      const nom = expert.nom?.toLowerCase() || ''
+      const prenom = expert.prenom?.toLowerCase() || ''
+      const biographie = expert.expertiseInfo?.biographie?.toLowerCase() || ''
+      const domaine = expert.expertiseInfo?.domaine?.toLowerCase() || ''
+
+      return (
+        nom.includes(term) ||
+        prenom.includes(term) ||
+        biographie.includes(term) ||
+        domaine.includes(term)
+      )
+    })
+  }
+
+  // Sort experts
+  if (sortOrder.value === 'recent') {
+    result.sort((a, b) => {
+      const dateA = a.dateDerniereMiseAJour?.getTime() || a.dateInscription?.getTime() || 0
+      const dateB = b.dateDerniereMiseAJour?.getTime() || b.dateInscription?.getTime() || 0
+      return dateB - dateA
+    })
+  } else if (sortOrder.value === 'rating') {
+    result.sort((a, b) => {
+      const ratingA = a.expertiseInfo?.rating || 0
+      const ratingB = b.expertiseInfo?.rating || 0
+      return ratingB - ratingA
+    })
+  } else if (sortOrder.value === 'experience') {
+    result.sort((a, b) => {
+      const expA = a.expertiseInfo?.nbAnneesExperience || 0
+      const expB = b.expertiseInfo?.nbAnneesExperience || 0
+      return expB - expA
+    })
+  }
+
+  return result
+})
+
+// Pagination
+const totalPages = computed(() => Math.ceil(filteredExperts.value.length / itemsPerPage))
+
+const paginatedExperts = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredExperts.value.slice(start, end)
+})
+
+const visiblePages = computed(() => {
+  const pages: number[] = []
+  const total = totalPages.value
+  const current = currentPage.value
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i)
+    }
+  } else {
+    if (current <= 3) {
+      pages.push(1, 2, 3, 4, 5)
+    } else if (current >= total - 2) {
+      pages.push(total - 4, total - 3, total - 2, total - 1, total)
+    } else {
+      pages.push(current - 2, current - 1, current, current + 1, current + 2)
+    }
+  }
+
+  return pages.filter((p) => p >= 1 && p <= total)
+})
+
+// Methods
+const filterByCategory = (category: string) => {
+  categorySelected.value = category
+  currentPage.value = 1
+}
+
+const filterByProfile = (profileId: string) => {
+  selectedProfile.value = profileId
+  currentPage.value = 1
+}
+
+const sortExperts = (order: 'recent' | 'experience' | 'rating') => {
+  sortOrder.value = order
+}
+
+const resetFilters = () => {
+  categorySelected.value = 'Tout'
+  selectedCountry.value = ''
+  selectedProfile.value = ''
+  searchTerm.value = ''
+  currentPage.value = 1
+}
+
+const handleSearch = () => {
+  currentPage.value = 1
+}
+
+const contactExpert = (expert: Expert) => {
+  if (expert.email) {
+    window.location.href = `mailto:${expert.email}`
+  }
+}
+
+// Reset page when filters change
+watch([categorySelected, selectedCountry, selectedProfile, searchTerm], () => {
+  currentPage.value = 1
+})
+
+// Lifecycle
+onMounted(() => {
+  experts.value = expertsMock
+})
+</script>

@@ -101,3 +101,50 @@ Two Pinia stores:
 - Reference `@bank/modele/modele_firebase.md` before creating Firestore collections
 - Follow existing authentication patterns with Firebase Auth
 
+---
+
+## Plan de Migration - Page Experts
+
+### Structure des Fichiers à Créer
+
+```
+uafricas_frontend/app/
+├── pages/
+│   └── experts/
+│       └── index.vue                    # Page principale experts
+├── components/
+│   └── experts/
+│       ├── ExpertCard.vue              # Carte d'un expert
+│       ├── ExpertFilters.vue           # Sidebar filtres (desktop)
+│       ├── ExpertFiltersMobile.vue     # Drawer filtres (mobile)
+│       ├── ExpertHero.vue              # Hero section avec recherche
+│       └── ShareOpportunityModal.vue   # Modal partage opportunité
+└── mocks/
+    └── experts.ts                      # Données mock + interfaces
+```
+
+### Étapes d'Implémentation
+
+1. **Fichiers Mock** - Créer `mocks/experts.ts` avec interfaces TypeScript
+2. **Composant ExpertCard** - Carte affichant un expert
+3. **Composants Filtres** - Desktop et Mobile
+4. **Composant Hero** - Section hero avec recherche
+5. **Page Principale** - Assemblage final
+
+### Fonctionnalités à Migrer
+
+- Hero section avec recherche et stats
+- Sidebar de filtres (desktop sticky + mobile drawer)
+- Grille d'experts responsive (1-4 colonnes)
+- Filtrage: catégorie, pays, profil, recherche textuelle
+- Tri: récent, expérience, rating
+- Modal partage opportunité
+
+### Patterns à Suivre
+
+- `<script setup lang="ts">` avec TypeScript
+- `useHead()` pour SEO
+- `NuxtLink` au lieu de `RouterLink`
+- Import depuis `~/mocks/` avec alias
+- Auto-imports Nuxt (ref, computed, etc.)
+
