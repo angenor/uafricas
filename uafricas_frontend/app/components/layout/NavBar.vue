@@ -86,12 +86,12 @@
           ]"
           class="top-7 absolute transition-all duration-500 -left-9 z-50 w-52 whitespace-nowrap text-custom-chocolat ml-2 bg-white bg-opacity-0 overflow-hidden"
         >
-          <NuxtLink to="/gouvernance">
+          <NuxtLink to="/universite/gouvernance">
             <div class="px-2 bg-white bg-opacity-80 py-2 overflow-x-hidden cursor-pointer hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green transition-all duration-300">
               Gouvernance
             </div>
           </NuxtLink>
-          <NuxtLink to="/INUDA">
+          <NuxtLink to="/universite/inuda">
             <div
               :class="[
                 pointer === 'universite' ? 'top-0 duration-100' : '-top-44 duration-300',
