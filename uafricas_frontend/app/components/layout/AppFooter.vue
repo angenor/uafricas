@@ -1,6 +1,6 @@
 <template>
   <footer>
-    <div class="flex justify-center space-x-14 py-8 bg-white rounded-3xl">
+    <div class="flex justify-center space-x-14 py-8 bg-white text-gray-800 rounded-3xl">
       <NuxtLink to="/">
         <img class="h-32 mx-auto my-1" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
       </NuxtLink>
