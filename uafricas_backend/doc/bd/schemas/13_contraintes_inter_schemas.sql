@@ -125,6 +125,10 @@ ALTER TABLE afrolang.salle
     ADD CONSTRAINT fk_afrolang_salle_cree_par
     FOREIGN KEY (cree_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
 
+ALTER TABLE afrolang.salle
+    ADD CONSTRAINT fk_afrolang_salle_moderateur
+    FOREIGN KEY (moderateur_id) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
+
 ALTER TABLE afrolang.salle_privee
     ADD CONSTRAINT fk_afrolang_privee_cree_par
     FOREIGN KEY (cree_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
@@ -132,6 +136,10 @@ ALTER TABLE afrolang.salle_privee
 ALTER TABLE afrolang.session
     ADD CONSTRAINT fk_afrolang_session_cree_par
     FOREIGN KEY (cree_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
+
+ALTER TABLE afrolang.session
+    ADD CONSTRAINT fk_afrolang_session_moderateur
+    FOREIGN KEY (moderateur_id) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
 
 ALTER TABLE afrolang.session_participant
     ADD CONSTRAINT fk_afrolang_participant_user

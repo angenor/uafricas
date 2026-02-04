@@ -8,8 +8,17 @@
 -- base de données avec son propre service de signaling.
 --
 -- IMPORTANT : Seules les métadonnées sont stockées ici.
--- Le signaling temps réel (SDP, ICE candidates, état des tracks) transite
--- par WebSocket et n'est PAS persisté en base.
+-- Le signaling temps réel (SDP, ICE candidates, état des tracks) et les
+-- opérations du tableau blanc transitent par WebSocket et ne sont PAS
+-- persistés en base (seul le snapshot final est sauvegardé).
+--
+-- MODÉRATION
+-- ──────────
+-- • Salle publique : le modérateur est désigné par l'administrateur.
+-- • Salle privée   : le modérateur est TOUJOURS le créateur (cree_par).
+-- • Démarrage session privée : seul le modérateur peut démarrer.
+-- • Démarrage session publique : si le modérateur désigné est absent,
+--   le système attribue le rôle au premier participant arrivé.
 -- ════════════════════════════════════════════════════════════════════════════
 
 
@@ -23,8 +32,9 @@ CREATE TYPE afrolang.etat_session AS ENUM (
 );
 
 
--- ── Salle (canal par langue africaine) ────────────────────────────────────
--- Anciennement culture.afrolang_salle_publique — créée par un admin.
+-- ── Salle publique (canal par langue africaine) ──────────────────────────
+-- Créée par un admin. Le modérateur est désigné par l'admin ; s'il est
+-- absent lors d'une session, le système promeut le premier arrivé.
 
 CREATE TABLE afrolang.salle (
     id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -33,6 +43,7 @@ CREATE TABLE afrolang.salle (
     description          TEXT,
     image_couverture_url VARCHAR(500),
     langue_cible         VARCHAR(100),               -- langue africaine enseignée
+    moderateur_id        UUID,                       -- [xref] iam.utilisateur (désigné par admin)
     actif                BOOLEAN      NOT NULL DEFAULT TRUE,
     cree_par             UUID         NOT NULL,      -- [xref] iam.utilisateur (admin)
     created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -41,7 +52,8 @@ CREATE TABLE afrolang.salle (
 
 
 -- ── Salle privée (sous-salle créée par un utilisateur) ────────────────────
--- Anciennement culture.afrolang_salle_privee.
+-- Le modérateur est TOUJOURS le créateur (cree_par). Lui seul peut
+-- démarrer une session dans cette salle.
 
 CREATE TABLE afrolang.salle_privee (
     id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -64,12 +76,20 @@ CREATE INDEX idx_afrolang_privee_salle ON afrolang.salle_privee(salle_id);
 -- Chaque session représente UNE conférence WebRTC dans une salle privée.
 -- C'est cette table que le load-balancer / orchestrateur interroge pour
 -- router les participants vers le bon VPS.
+--
+-- Modérateur effectif :
+--   • Salle privée → toujours salle_privee.cree_par
+--   • Salle publique → salle.moderateur_id s'il est présent,
+--     sinon le premier participant (l'app met à jour moderateur_id)
 
 CREATE TABLE afrolang.session (
     id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     salle_privee_id         UUID                   NOT NULL REFERENCES afrolang.salle_privee(id) ON DELETE CASCADE,
     titre                   VARCHAR(350),
     etat                    afrolang.etat_session   NOT NULL DEFAULT 'planifiee',
+
+    -- Modérateur effectif de cette session
+    moderateur_id           UUID,                   -- [xref] iam.utilisateur
 
     -- Planification
     date_debut_prevue       TIMESTAMPTZ,            -- si session programmée à l'avance
@@ -82,6 +102,9 @@ CREATE TABLE afrolang.session (
     -- Capacité & usage
     max_participants        INT          DEFAULT 50,
     nombre_participants_pic INT          DEFAULT 0, -- pic de participants simultanés
+
+    -- Tableau blanc collaboratif activé ?
+    tableau_blanc_actif     BOOLEAN      NOT NULL DEFAULT TRUE,
 
     -- Identification du serveur média (pour routage multi-VPS)
     noeud_id                VARCHAR(120),           -- identifiant du VPS / pod gérant la session
@@ -106,7 +129,7 @@ CREATE TABLE afrolang.session_participant (
     session_id      UUID        NOT NULL REFERENCES afrolang.session(id) ON DELETE CASCADE,
     utilisateur_id  UUID        NOT NULL,           -- [xref] iam.utilisateur
     role_session    VARCHAR(30) NOT NULL DEFAULT 'participant'
-                    CHECK (role_session IN ('animateur', 'participant', 'observateur')),
+                    CHECK (role_session IN ('moderateur', 'participant', 'observateur')),
     rejoint_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     quitte_at       TIMESTAMPTZ,
     duree_secondes  INT,                            -- calculé au départ
@@ -115,3 +138,20 @@ CREATE TABLE afrolang.session_participant (
 
 CREATE INDEX idx_afrolang_participant_session ON afrolang.session_participant(session_id);
 CREATE INDEX idx_afrolang_participant_user    ON afrolang.session_participant(utilisateur_id);
+
+
+-- ── Tableau blanc collaboratif ────────────────────────────────────────────
+-- Un tableau blanc par session. Les opérations temps réel (traits, formes,
+-- texte) transitent par WebSocket ; seul le snapshot est persisté en base
+-- (sauvegarde périodique + snapshot final à la fermeture de la session).
+-- Tous les participants peuvent dessiner ; le modérateur peut effacer.
+
+CREATE TABLE afrolang.tableau_blanc (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_id  UUID  NOT NULL REFERENCES afrolang.session(id) ON DELETE CASCADE,
+    donnees     JSONB NOT NULL DEFAULT '{}',  -- snapshot : strokes, formes, texte…
+    version     INT   NOT NULL DEFAULT 1,     -- incrémenté à chaque sauvegarde
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (session_id)                       -- 1 tableau blanc par session
+);
