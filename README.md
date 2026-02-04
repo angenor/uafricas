@@ -13,3 +13,6 @@ Ligne de commande (psql dans le conteneur) :
 
 
 docker compose exec postgres psql -U uafricas -d africans_db
+
+
+au regard de mon modele de donnnee, propose moi un plan d'implementation de mon api backend dans plusiers fichiers de @uafricas_backend/doc/plans/ ces fichier devront mentionner le ficher .sql qui rentre en ligne de compte.
