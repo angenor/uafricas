@@ -81,19 +81,19 @@
             backgroundPosition: 'center'
           }"
         >
-          <div class="absolute inset-0 bg-black bg-opacity-60"></div>
+          <div class="absolute inset-0 bg-black/60"></div>
         </div>
 
         <div class="relative z-10" :class="post.imageArrierePlan ? 'text-white' : ''">
           <h4
-            class="font-semibold bg-white bg-opacity-40 px-2 rounded-t-md inline-flex underline"
+            class="font-semibold bg-white/40 px-2 rounded-t-md inline-flex underline"
             :class="post.imageArrierePlan ? 'text-white' : 'text-gray-800'"
           >
             Explication :
           </h4>
           <p
             :class="post.imageArrierePlan ? 'text-gray-100' : 'text-gray-700'"
-            class="bg-white bg-opacity-40 px-2 rounded-b-md rounded-tr-md"
+            class="bg-white/40 px-2 rounded-b-md rounded-tr-md"
           >
             {{ post.explication }}
           </p>

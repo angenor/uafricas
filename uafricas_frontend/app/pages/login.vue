@@ -3,7 +3,7 @@
     class="min-h-screen w-screen bg-font-login bg-cover bg-center relative flex items-center justify-center lg:justify-end"
   >
     <!-- Overlay sombre pour améliorer la lisibilité -->
-    <div class="absolute inset-0 bg-black bg-opacity-30"></div>
+    <div class="absolute inset-0 bg-black/30"></div>
 
     <!-- Container principal -->
     <div
@@ -143,7 +143,7 @@
             <!-- Bouton de connexion -->
             <button
               type="submit"
-              class="w-full bg-gradient-to-r from-custom-chocolat to-custom-green text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none focus:outline-none focus:ring-2 focus:ring-custom-green focus:ring-offset-2"
+              class="w-full bg-gradient-to-r from-custom-chocolat to-custom-green text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none focus:outline-hidden focus:ring-2 focus:ring-custom-green focus:ring-offset-2"
               :disabled="loading"
             >
               <div class="flex items-center justify-center">
@@ -182,7 +182,7 @@
           <!-- Bouton Google -->
           <button
             @click="handleGoogleLogin"
-            class="w-full bg-white border border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-xl hover:bg-gray-50 hover:shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-300"
+            class="w-full bg-white border border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-xl hover:bg-gray-50 hover:shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-hidden focus:ring-2 focus:ring-gray-300"
             :disabled="loading"
           >
             <div class="flex items-center justify-center">
@@ -219,7 +219,7 @@
 
       <!-- Info utilisateurs de test -->
       <div
-        class="mt-4 backdrop-blur-sm bg-white/80 rounded-xl p-4 text-sm text-gray-600"
+        class="mt-4 backdrop-blur-xs bg-white/80 rounded-xl p-4 text-sm text-gray-600"
         data-aos="fade-up"
         data-aos-delay="300"
       >

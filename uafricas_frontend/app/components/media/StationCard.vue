@@ -28,10 +28,10 @@ const emit = defineEmits<{
         :alt="station.name"
         class="w-full h-full object-cover"
       />
-      <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
         <div
           v-if="isActive && isPlaying"
-          class="w-12 h-12 rounded-full bg-yellow-400 bg-opacity-70 flex items-center justify-center animate-pulse"
+          class="w-12 h-12 rounded-full bg-yellow-400/70 flex items-center justify-center animate-pulse"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -42,7 +42,7 @@ const emit = defineEmits<{
             <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
           </svg>
         </div>
-        <button v-else class="w-12 h-12 rounded-full bg-yellow-400 bg-opacity-70 flex items-center justify-center">
+        <button v-else class="w-12 h-12 rounded-full bg-yellow-400/70 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="h-6 w-6 text-black"

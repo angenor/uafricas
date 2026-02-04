@@ -70,7 +70,7 @@
       ></div>
 
       <div
-        class="absolute text-3xl text-center font-bold my-auto w-96 right-10 top-20 text-white drop-shadow-[0_1.9px_1.9px_rgba(0,0,0,0.9)] p-3 bg-gray-600 bg-opacity-30 border border-opacity-80 rounded-2xl"
+        class="absolute text-3xl text-center font-bold my-auto w-96 right-10 top-20 text-white drop-shadow-[0_1.9px_1.9px_rgba(0,0,0,0.9)] p-3 bg-gray-600/30 border border-current/80 rounded-2xl"
         data-aos-duration="1300"
         data-aos="fade-up"
       >

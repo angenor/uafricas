@@ -55,7 +55,7 @@ const handleSubmit = () => {
   <Teleport to="body">
     <div
       v-if="isOpen"
-      class="z-50 bg-opacity-40 min-h-screen backdrop-blur-sm w-screen bg-black fixed inset-0 flex items-start justify-center pt-14 overflow-y-auto"
+      class="z-50 min-h-screen backdrop-blur-xs w-screen bg-black/40 fixed inset-0 flex items-start justify-center pt-14 overflow-y-auto"
       @click.self="emit('close')"
     >
       <div
@@ -73,7 +73,7 @@ const handleSubmit = () => {
               v-model="form.titre"
               type="text"
               required
-              class="w-full px-3 py-2 border-2 rounded-md border-custom-green border-opacity-70 focus:border-opacity-100 focus:outline-none"
+              class="w-full px-3 py-2 border-2 rounded-md border-custom-green/70 focus:border-custom-green focus:outline-hidden"
               placeholder="Titre de la programmation *"
             />
           </div>
@@ -83,19 +83,19 @@ const handleSubmit = () => {
               v-model="form.adress"
               type="text"
               required
-              class="w-full px-3 py-2 border-2 rounded-md border-custom-green border-opacity-70 focus:border-opacity-100 focus:outline-none"
+              class="w-full px-3 py-2 border-2 rounded-md border-custom-green/70 focus:border-custom-green focus:outline-hidden"
               placeholder="Adresse *"
             />
           </div>
 
-          <div class="p-3 bg-custom-green rounded-md bg-opacity-20 border border-custom-green">
+          <div class="p-3 bg-custom-green/20 rounded-md border border-custom-green">
             <div class="text-custom-green italic text-sm mb-2">
               URL de l'image de couverture (optionnel)
             </div>
             <input
               v-model="form.couvertureUrl"
               type="url"
-              class="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-custom-green"
+              class="w-full px-3 py-2 border rounded-md focus:outline-hidden focus:border-custom-green"
               placeholder="https://example.com/image.jpg"
             />
           </div>
@@ -119,7 +119,7 @@ const handleSubmit = () => {
               v-model="form.dateDebut"
               type="datetime-local"
               required
-              class="w-full px-3 py-2 border-2 rounded-md border-custom-green border-opacity-70 focus:border-opacity-100 focus:outline-none"
+              class="w-full px-3 py-2 border-2 rounded-md border-custom-green/70 focus:border-custom-green focus:outline-hidden"
             />
           </div>
 
@@ -129,7 +129,7 @@ const handleSubmit = () => {
               v-model="form.dateFin"
               type="datetime-local"
               required
-              class="w-full px-3 py-2 border-2 rounded-md border-custom-green border-opacity-70 focus:border-opacity-100 focus:outline-none"
+              class="w-full px-3 py-2 border-2 rounded-md border-custom-green/70 focus:border-custom-green focus:outline-hidden"
             />
           </div>
 
@@ -137,7 +137,7 @@ const handleSubmit = () => {
             <textarea
               v-model="form.description"
               rows="3"
-              class="w-full px-3 py-2 border-2 rounded-md border-custom-chocolat focus:outline-none"
+              class="w-full px-3 py-2 border-2 rounded-md border-custom-chocolat focus:outline-hidden"
               placeholder="Description"
             ></textarea>
           </div>

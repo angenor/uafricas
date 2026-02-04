@@ -3,7 +3,7 @@
     <!-- Mobile Sidebar Overlay -->
     <div
       v-if="sidebarOpen"
-      class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+      class="lg:hidden fixed inset-0 bg-black/50 z-40"
       @click="sidebarOpen = false"
     />
 
@@ -21,7 +21,7 @@
     <!-- Main Content Area -->
     <div class="w-full">
       <!-- Mobile Sidebar Toggle -->
-      <div class="lg:hidden flex items-center p-4 bg-white shadow-sm">
+      <div class="lg:hidden flex items-center p-4 bg-white shadow-xs">
         <button
           class="p-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
           @click="sidebarOpen = !sidebarOpen"
@@ -172,7 +172,7 @@
                   <!-- Filtre pays -->
                   <select
                     v-model="selectedCountry"
-                    class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                    class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                   >
                     <option v-for="country in countries" :key="country.value" :value="country.value">
                       {{ country.label }}

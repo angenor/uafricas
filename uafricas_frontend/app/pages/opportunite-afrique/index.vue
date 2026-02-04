@@ -20,7 +20,7 @@
     <!-- Contenu principal -->
     <div class="max-w-6xl mx-auto px-4 relative -top-10">
       <!-- Header avec breadcrumb -->
-      <div class="bg-white shadow-sm rounded-t-lg">
+      <div class="bg-white shadow-xs rounded-t-lg">
         <div class="px-4 py-6">
           <CommonBreadcrumbNav class="mb-4" />
 
@@ -51,18 +51,18 @@
                        @input="onSearchInput"
                        type="text"
                        placeholder="Rechercher un pays..."
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-custom-green focus:border-custom-green">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-3 focus:ring-custom-green focus:border-custom-green">
               </div>
 
               <!-- Regions -->
               <h4 class="text-sm font-medium text-gray-700 mb-2">Region</h4>
               <div class="space-y-2">
                 <label class="flex items-center">
-                  <input type="radio" v-model="selectedRegion" value="" class="mr-2 text-custom-green focus:ring-custom-green">
+                  <input type="radio" v-model="selectedRegion" value="" class="mr-2 text-custom-green focus:ring-3 focus:ring-custom-green">
                   <span>Toutes les regions</span>
                 </label>
                 <label v-for="region in regions" :key="region" class="flex items-center">
-                  <input type="radio" v-model="selectedRegion" :value="region" class="mr-2 text-custom-green focus:ring-custom-green">
+                  <input type="radio" v-model="selectedRegion" :value="region" class="mr-2 text-custom-green focus:ring-3 focus:ring-custom-green">
                   <span class="text-sm">{{ region }}</span>
                 </label>
               </div>

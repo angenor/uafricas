@@ -4,7 +4,7 @@
     <EvenementsEvenementHero titre="Forum" />
 
     <!-- Breadcrumb -->
-    <div class="backdrop-blur-sm">
+    <div class="backdrop-blur-xs">
       <div class="mx-auto px-4 py-3">
         <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
       </div>
@@ -34,7 +34,7 @@
             src="https://www.agoraafricaine.info/wp-content/uploads/2022/05/valeurs-africaines.jpg"
             alt="Codification"
           />
-          <div class="absolute inset-0 bg-black bg-opacity-30 flex items-end p-3">
+          <div class="absolute inset-0 bg-black/30 flex items-end p-3">
             <NuxtLink to="/evenements/codi-moi">
               <button class="text-white text-sm whitespace-nowrap rounded-full bg-custom-green px-3 py-1 hover:scale-105 transition-all">
                 Découvrir
@@ -59,7 +59,7 @@
             src="https://www.fratmat.info/media/k2/items/cache/c9e4f768b9037f2637ff258302bd739d_XL.jpg"
             alt="Afrolang"
           />
-          <div class="absolute inset-0 bg-black bg-opacity-30 flex items-end p-3">
+          <div class="absolute inset-0 bg-black/30 flex items-end p-3">
             <NuxtLink to="/afrolang">
               <button class="text-white text-sm whitespace-nowrap rounded-full bg-custom-green px-3 py-1 hover:scale-105 transition-all">
                 Découvrir
@@ -84,7 +84,7 @@
             src="https://www.learnthings.fr/wp-content/uploads/2024/06/atelier-en-formation-768x578.jpg.webp"
             alt="Événements"
           />
-          <div class="absolute inset-0 bg-black bg-opacity-30 flex items-end p-3">
+          <div class="absolute inset-0 bg-black/30 flex items-end p-3">
             <NuxtLink to="/evenements/liste">
               <button class="text-white text-sm whitespace-nowrap rounded-full bg-custom-green px-3 py-1 hover:scale-105 transition-all">
                 Découvrir

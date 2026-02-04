@@ -51,7 +51,7 @@
         v-model="localFiltres.recherche"
         type="text"
         placeholder="Rechercher..."
-        class="pl-10 pr-4 py-2 rounded-xl border border-gray-300 focus:border-custom-green focus:outline-none"
+        class="pl-10 pr-4 py-2 rounded-xl border border-gray-300 focus:border-custom-green focus:outline-hidden"
         @input="emitUpdate"
       />
       <font-awesome-icon

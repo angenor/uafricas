@@ -73,7 +73,7 @@
             >
               <input
                 type="checkbox"
-                class="w-4 h-4 text-custom-green bg-gray-100 border-gray-300 rounded focus:ring-custom-green"
+                class="w-4 h-4 text-custom-green bg-gray-100 border-gray-300 rounded focus:ring-3 focus:ring-custom-green"
                 :checked="filters[filter.key as keyof typeof filters]"
                 @change="emit('update:filters', { ...filters, [filter.key]: ($event.target as HTMLInputElement).checked })"
               />
@@ -100,7 +100,7 @@
               <select
                 :value="filterCountry"
                 @change="emit('update:filterCountry', ($event.target as HTMLSelectElement).value)"
-                class="w-full rounded-lg p-3 border border-gray-300 focus:border-custom-green focus:ring-2 focus:ring-custom-green focus:ring-opacity-20 transition-all bg-white"
+                class="w-full rounded-lg p-3 border border-gray-300 focus:border-custom-green focus:ring-2 focus:ring-custom-green/20 transition-all bg-white"
               >
                 <option value="">Choisir un territoire</option>
                 <option v-for="pays in PAYS" :key="pays" :value="pays">{{ pays }}</option>
@@ -113,7 +113,7 @@
               <select
                 :value="filterEthnie"
                 @change="emit('update:filterEthnie', ($event.target as HTMLSelectElement).value)"
-                class="w-full rounded-lg p-3 border border-gray-300 focus:border-custom-green focus:ring-2 focus:ring-custom-green focus:ring-opacity-20 transition-all bg-white"
+                class="w-full rounded-lg p-3 border border-gray-300 focus:border-custom-green focus:ring-2 focus:ring-custom-green/20 transition-all bg-white"
               >
                 <option value="">Choisir une ethnie</option>
                 <option v-for="ethnie in ETHNIES" :key="ethnie" :value="ethnie">{{ ethnie }}</option>
@@ -126,7 +126,7 @@
               <select
                 :value="filterCategory"
                 @change="emit('update:filterCategory', ($event.target as HTMLSelectElement).value)"
-                class="w-full rounded-lg p-3 border border-gray-300 focus:border-custom-green focus:ring-2 focus:ring-custom-green focus:ring-opacity-20 transition-all bg-white"
+                class="w-full rounded-lg p-3 border border-gray-300 focus:border-custom-green focus:ring-2 focus:ring-custom-green/20 transition-all bg-white"
               >
                 <option v-for="type in TYPES_FORUM" :key="type.value" :value="type.value">{{ type.label }}</option>
               </select>
@@ -150,7 +150,7 @@
 <script setup lang="ts">
 import { TYPES_FORUM, PAYS, ETHNIES } from '~/mocks/forums'
 
-defineProps<{
+const props = defineProps<{
   userName: string
   userEmail: string
   userPhoto: string | null
@@ -172,22 +172,6 @@ const emit = defineEmits<{
   'update:filterEthnie': [value: string]
   'update:filterCategory': [value: string]
   applyFilters: []
-}>()
-
-const props = defineProps<{
-  userName: string
-  userEmail: string
-  userPhoto: string | null
-  filters: {
-    mesPublications: boolean
-    bonnesPratiques: boolean
-    citations: boolean
-    proverbesAdages: boolean
-    histoire: boolean
-  }
-  filterCountry: string
-  filterEthnie: string
-  filterCategory: string
 }>()
 
 const showFilters = ref(true)

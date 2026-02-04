@@ -26,7 +26,7 @@
                 <input
                   v-model="localSearchTerm"
                   type="search"
-                  class="w-full px-6 py-4 bg-white rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-white/20 transition-all"
+                  class="w-full px-6 py-4 bg-white rounded-xl text-gray-900 placeholder-gray-500 focus:outline-hidden focus:ring-4 focus:ring-white/20 transition-all"
                   placeholder="Rechercher un expert, une competence..."
                 />
                 <svg
@@ -45,7 +45,7 @@
               </div>
               <select
                 v-model="localCategorySelected"
-                class="px-6 py-4 bg-white rounded-xl text-gray-900 focus:outline-none focus:ring-4 focus:ring-white/20 transition-all cursor-pointer"
+                class="px-6 py-4 bg-white rounded-xl text-gray-900 focus:outline-hidden focus:ring-4 focus:ring-white/20 transition-all cursor-pointer"
               >
                 <option v-for="category in categories" :key="category" :value="category">
                   {{ category }}

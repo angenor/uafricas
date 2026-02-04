@@ -4,7 +4,7 @@
     <div class="relative h-80 w-full overflow-hidden z-0">
       <div class="absolute inset-0 bg-font-centre-culturel bg-cover bg-center">
         <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
-        <div class="absolute inset-0 backdrop-blur-sm bg-black/20"></div>
+        <div class="absolute inset-0 backdrop-blur-xs bg-black/20"></div>
       </div>
       <div class="relative z-10 flex items-center justify-center h-full">
         <div class="text-center text-white px-4 bg-white/10 rounded-2xl">
@@ -16,7 +16,7 @@
     </div>
 
     <!-- Breadcrumb Navigation -->
-    <div class="backdrop-blur-sm">
+    <div class="backdrop-blur-xs">
       <div class="mx-auto px-4 py-3">
         <BreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
       </div>
@@ -97,6 +97,8 @@ const breadcrumbs = [
 </script>
 
 <style scoped>
+@reference "~/assets/css/main.css";
+
 .container {
   @apply max-w-7xl;
 }

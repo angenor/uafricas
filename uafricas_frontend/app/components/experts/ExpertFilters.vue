@@ -33,7 +33,7 @@
           <span class="flex-1 text-left">{{ profile.label }}</span>
           <span
             v-if="selectedProfile === profile.id || (profile.id === 'tous' && !selectedProfile)"
-            class="w-3 h-3 bg-white rounded-full shadow-sm"
+            class="w-3 h-3 bg-white rounded-full shadow-xs"
           />
         </button>
       </div>

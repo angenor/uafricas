@@ -20,7 +20,7 @@ const handleSubmit = () => {
   <Teleport to="body">
     <div
       v-if="isOpen"
-      class="z-50 bg-opacity-40 min-h-screen backdrop-blur-sm w-screen bg-black fixed inset-0 flex items-start justify-center pt-14"
+      class="z-50 min-h-screen backdrop-blur-xs w-screen bg-black/40 fixed inset-0 flex items-start justify-center pt-14"
       @click.self="emit('close')"
     >
       <div

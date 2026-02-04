@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Breadcrumb -->
-    <div class="backdrop-blur-sm py-3 px-4 md:px-8 bg-white shadow-sm">
+    <div class="backdrop-blur-xs py-3 px-4 md:px-8 bg-white shadow-xs">
       <div class="max-w-4xl mx-auto">
         <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
       </div>
@@ -87,7 +87,7 @@
                 backgroundPosition: 'center'
               }"
             >
-              <div class="absolute inset-0 bg-black bg-opacity-60"></div>
+              <div class="absolute inset-0 bg-black/60"></div>
             </div>
 
             <div class="relative z-10" :class="post.imageArrierePlan ? 'text-white' : ''">
@@ -176,7 +176,7 @@
             <textarea
               v-model="newComment"
               placeholder="Partagez votre réflexion..."
-              class="w-full p-4 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-custom-green"
+              class="w-full p-4 border border-gray-200 rounded-xl resize-none focus:outline-hidden focus:ring-2 focus:ring-custom-green"
               rows="3"
             ></textarea>
             <div class="flex justify-end mt-3">

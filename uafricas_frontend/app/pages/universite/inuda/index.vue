@@ -154,7 +154,7 @@
     </div>
 
     <!-- Modal À propos -->
-    <div v-if="afficherAPropos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div v-if="afficherAPropos" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-8">
           <div class="flex justify-between items-start mb-6">

@@ -7,7 +7,7 @@
     />
 
     <!-- Breadcrumb -->
-    <div class="backdrop-blur-sm mx-auto px-4 py-3 bg-gray-50 border-b border-gray-200">
+    <div class="backdrop-blur-xs mx-auto px-4 py-3 bg-gray-50 border-b border-gray-200">
       <div class="max-w-7xl mx-auto">
         <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
       </div>

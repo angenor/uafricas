@@ -26,14 +26,14 @@
       <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
         <div class="flex items-start space-x-3">
           <img
-            class="h-10 w-10 rounded-full border-2 border-custom-green object-cover shadow-sm"
+            class="h-10 w-10 rounded-full border-2 border-custom-green object-cover shadow-xs"
             src="https://www.pngall.com/wp-content/uploads/5/Profile-PNG-Clipart.png"
           />
           <div class="flex-1">
             <textarea
               v-model="newComment"
               placeholder="Partagez votre réflexion..."
-              class="w-full p-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent bg-white shadow-sm"
+              class="w-full p-3 border border-gray-200 rounded-lg resize-none focus:outline-hidden focus:ring-2 focus:ring-custom-green focus:border-transparent bg-white shadow-xs"
               rows="3"
             ></textarea>
             <div class="flex justify-between items-center mt-3">
@@ -41,7 +41,7 @@
               <button
                 @click="handleAddComment"
                 :disabled="!newComment.trim()"
-                class="px-6 py-2 bg-custom-green text-white rounded-lg text-sm font-medium hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 shadow-sm"
+                class="px-6 py-2 bg-custom-green text-white rounded-lg text-sm font-medium hover:bg-custom-green/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 shadow-xs"
               >
                 <font-awesome-icon icon="fa-solid fa-paper-plane" class="mr-2" />
                 Publier
@@ -97,7 +97,7 @@
 <script setup lang="ts">
 import type { ForumComment } from '~/mocks/forums'
 
-defineProps<{
+const props = defineProps<{
   forumId: string
   comments: ForumComment[]
 }>()
@@ -132,9 +132,4 @@ const handleAddComment = () => {
     newComment.value = ''
   }
 }
-
-const props = defineProps<{
-  forumId: string
-  comments: ForumComment[]
-}>()
 </script>

@@ -67,7 +67,7 @@
           <!-- État vide -->
           <div
             v-if="annoncesFiltrees.length === 0"
-            class="text-center py-16 bg-white rounded-2xl shadow-sm"
+            class="text-center py-16 bg-white rounded-2xl shadow-xs"
           >
             <font-awesome-icon
               :icon="['fas', 'box-open']"

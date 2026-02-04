@@ -91,7 +91,7 @@ onMounted(() => {
         <button
           v-if="!isMobile"
           @click="toggleMute"
-          class="absolute top-32 left-5 rounded-full bg-opacity-90 p-3 bg-custom-chocolat hover:bg-custom-green transition-all shadow-md"
+          class="absolute top-32 left-5 rounded-full p-3 bg-custom-chocolat/90 hover:bg-custom-green transition-all shadow-md"
         >
           <div class="relative z-0 m-1">
             <svg class="h-10 w-10" fill="#255033" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48.824 48.824">
@@ -119,7 +119,7 @@ onMounted(() => {
             v-if="currentProgram"
             target="_blank"
             :href="currentProgram.lien"
-            class="rounded-full ml-5 mb-2 text-base inline-flex bg-opacity-10 px-4 border border-yellow-400 bg-yellow-400 text-yellow-400"
+            class="rounded-full ml-5 mb-2 text-base inline-flex px-4 border border-yellow-400 bg-yellow-400/10 text-yellow-400"
           >
             <div>Voir cette initiative</div>
             <div class="pl-2">
@@ -136,7 +136,7 @@ onMounted(() => {
               v-for="program in telePrograms"
               :key="program.id"
               @click="selectProgram(program)"
-              :class="currentProgramIndex === telePrograms.findIndex(p => p.id === program.id) ? 'bg-yellow-400 bg-opacity-30 border border-yellow-400' : ''"
+              :class="currentProgramIndex === telePrograms.findIndex(p => p.id === program.id) ? 'bg-yellow-400/30 border border-yellow-400' : ''"
               class="relative cursor-pointer ml-2 p-1 rounded-md"
             >
               <img
@@ -191,7 +191,7 @@ onMounted(() => {
                 :alt="channel.name"
                 class="w-full h-full object-cover"
               />
-              <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+              <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
                 <div class="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
                   <span class="text-white text-xs font-bold">LIVE</span>
                 </div>

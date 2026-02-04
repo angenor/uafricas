@@ -42,12 +42,12 @@
               <input
                 v-model="searchQuery"
                 type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green transition-all"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all"
                 placeholder="Rechercher une bibliothèque humaine..."
               />
             </div>
             <button
-              class="bg-gradient-to-r from-custom-green to-green-600 hover:from-green-600 hover:to-custom-green text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-custom-green flex items-center justify-center"
+              class="bg-gradient-to-r from-custom-green to-green-600 hover:from-green-600 hover:to-custom-green text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-custom-green flex items-center justify-center"
             >
               <font-awesome-icon icon="fa-solid fa-search" class="mr-2" />
               Recherche
@@ -163,7 +163,7 @@
 
               <!-- Bouton Voir plus -->
               <div class="mt-4 opacity-0 group-hover:opacity-100 transition-all duration-500">
-                <div class="bg-white/20 text-white text-center py-1 rounded-md backdrop-blur-sm hover:bg-white/30 transition-all cursor-pointer">
+                <div class="bg-white/20 text-white text-center py-1 rounded-md backdrop-blur-xs hover:bg-white/30 transition-all cursor-pointer">
                   Voir le profil
                 </div>
               </div>
@@ -196,7 +196,7 @@
   <!-- Popup Inscription (simplifié pour mock) -->
   <Transition name="modal-fade">
     <div v-if="showRegisterPopup" class="z-50 fixed inset-0 flex items-center justify-center">
-      <div @click="showRegisterPopup = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+      <div @click="showRegisterPopup = false" class="absolute inset-0 bg-black/60 backdrop-blur-xs"></div>
       <div class="relative w-full max-w-md mx-4 bg-white rounded-xl shadow-2xl p-6">
         <div class="flex justify-center mb-4">
           <img

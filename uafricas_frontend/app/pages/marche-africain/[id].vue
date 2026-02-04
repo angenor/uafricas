@@ -174,7 +174,7 @@
               </p>
               <NuxtLink
                 to="/login"
-                class="inline-flex items-center gap-2 px-6 py-3 bg-custom-chocolat text-white font-medium rounded-xl hover:bg-opacity-90 transition-colors"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-custom-chocolat text-white font-medium rounded-xl hover:bg-custom-chocolat/90 transition-colors"
               >
                 <font-awesome-icon :icon="['fas', 'right-to-bracket']" class="w-4 h-4" />
                 Se connecter

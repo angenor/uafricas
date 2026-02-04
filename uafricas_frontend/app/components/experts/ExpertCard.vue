@@ -18,7 +18,7 @@
       <!-- Badge de statut -->
       <div class="absolute top-4 right-4">
         <div
-          class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-emerald-600 flex items-center gap-1"
+          class="bg-white/90 backdrop-blur-xs px-3 py-1 rounded-full text-xs font-medium text-emerald-600 flex items-center gap-1"
         >
           <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
           Disponible
@@ -119,11 +119,11 @@
     >
       <div
         v-if="cardHover"
-        class="absolute inset-0 bg-gradient-to-br from-emerald-600/95 to-teal-600/95 backdrop-blur-sm p-6 flex flex-col justify-center items-center text-white"
+        class="absolute inset-0 bg-gradient-to-br from-emerald-600/95 to-teal-600/95 backdrop-blur-xs p-6 flex flex-col justify-center items-center text-white"
       >
         <div class="text-center space-y-4">
           <div
-            class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-sm"
+            class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-xs"
           >
             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path

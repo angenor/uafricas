@@ -93,7 +93,7 @@
         <div class="px-7 pt-6">
           <div v-if="isAuthenticated" class="bg-gray-50 p-4 rounded-lg">
             <button
-              class="w-full lg:w-auto bg-custom-green text-white px-6 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-all flex items-center justify-center gap-2"
+              class="w-full lg:w-auto bg-custom-green text-white px-6 py-3 rounded-lg font-medium hover:bg-custom-green/90 transition-all flex items-center justify-center gap-2"
               @click="envoyerInteret"
             >
               <font-awesome-icon :icon="['fas', 'heart']" />
@@ -109,7 +109,7 @@
             </p>
             <NuxtLink
               to="/login"
-              class="inline-flex items-center gap-2 bg-custom-chocolat text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-all"
+              class="inline-flex items-center gap-2 bg-custom-chocolat text-white px-4 py-2 rounded-lg hover:bg-custom-chocolat/90 transition-all"
             >
               <font-awesome-icon :icon="['fas', 'sign-in-alt']" />
               Se connecter

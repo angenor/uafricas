@@ -82,7 +82,7 @@ onMounted(() => {
       <p class="text-gray-500 mt-2">Le centre culturel demandé n'existe pas.</p>
       <NuxtLink
         to="/africain-afro-americain"
-        class="mt-4 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-opacity-90 transition-colors"
+        class="mt-4 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
       >
         Retour à la liste
       </NuxtLink>
@@ -184,7 +184,7 @@ onMounted(() => {
       <button
         v-if="isAdmin"
         @click="showCreateProg = true"
-        class="bg-custom-chocolat text-white rounded-md mb-4 px-4 py-2 hover:bg-opacity-90 transition-colors"
+        class="bg-custom-chocolat text-white rounded-md mb-4 px-4 py-2 hover:bg-custom-chocolat/90 transition-colors"
       >
         <font-awesome-icon :icon="['fas', 'plus']" class="mr-2" />
         Ajouter une programmation

@@ -20,7 +20,7 @@
               :value="type.value"
               :checked="isTypeSelected(type.value)"
               @change="toggleType(type.value)"
-              class="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+              class="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-3 focus:ring-emerald-500"
             />
             <span class="text-gray-600 group-hover:text-gray-900">{{ type.label }}</span>
           </div>

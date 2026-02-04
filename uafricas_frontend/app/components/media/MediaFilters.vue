@@ -27,10 +27,10 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
       <button
         @click="activeFilter = 'type'"
         :class="[
-          'px-6 py-3 text-sm font-medium rounded-t-xl transition-all duration-200 focus:outline-none',
+          'px-6 py-3 text-sm font-medium rounded-t-xl transition-all duration-200 focus:outline-hidden',
           activeFilter === 'type'
-            ? 'bg-black bg-opacity-60 text-yellow-400 border-t-2 border-yellow-400'
-            : 'bg-gray-900 bg-opacity-60 text-gray-400 hover:text-white'
+            ? 'bg-black/60 text-yellow-400 border-t-2 border-yellow-400'
+            : 'bg-gray-900/60 text-gray-400 hover:text-white'
         ]"
       >
         <div class="flex items-center">
@@ -43,10 +43,10 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
       <button
         @click="activeFilter = 'country'"
         :class="[
-          'px-6 py-3 text-sm font-medium rounded-t-xl transition-all duration-200 focus:outline-none',
+          'px-6 py-3 text-sm font-medium rounded-t-xl transition-all duration-200 focus:outline-hidden',
           activeFilter === 'country'
-            ? 'bg-black bg-opacity-60 text-yellow-400 border-t-2 border-yellow-400'
-            : 'bg-gray-900 bg-opacity-60 text-gray-400 hover:text-white'
+            ? 'bg-black/60 text-yellow-400 border-t-2 border-yellow-400'
+            : 'bg-gray-900/60 text-gray-400 hover:text-white'
         ]"
       >
         <div class="flex items-center">
@@ -59,10 +59,10 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
       <button
         @click="activeFilter = 'genre'"
         :class="[
-          'px-6 py-3 text-sm font-medium rounded-t-xl transition-all duration-200 focus:outline-none',
+          'px-6 py-3 text-sm font-medium rounded-t-xl transition-all duration-200 focus:outline-hidden',
           activeFilter === 'genre'
-            ? 'bg-black bg-opacity-60 text-yellow-400 border-t-2 border-yellow-400'
-            : 'bg-gray-900 bg-opacity-60 text-gray-400 hover:text-white'
+            ? 'bg-black/60 text-yellow-400 border-t-2 border-yellow-400'
+            : 'bg-gray-900/60 text-gray-400 hover:text-white'
         ]"
       >
         <div class="flex items-center">
@@ -75,7 +75,7 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
     </div>
 
     <!-- Contenu des filtres -->
-    <div class="bg-black bg-opacity-60 backdrop-blur-md rounded-b-xl rounded-tr-xl p-4 shadow-lg border border-gray-800">
+    <div class="bg-black/60 backdrop-blur-md rounded-b-xl rounded-tr-xl p-4 shadow-lg border border-gray-800">
       <!-- Filtre par type de programme -->
       <div v-if="activeFilter === 'type'">
         <h2 class="text-xl font-bold text-yellow-400 mb-4 flex items-center">

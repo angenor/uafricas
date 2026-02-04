@@ -2,7 +2,7 @@
   <div class="min-h-screen">
     <div class="w-full h-full">
       <!-- Breadcrumb -->
-      <div class="backdrop-blur-sm py-3 px-4 md:px-72 mb-4">
+      <div class="backdrop-blur-xs py-3 px-4 md:px-72 mb-4">
         <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
       </div>
 
@@ -69,7 +69,7 @@
         </div>
         <div
           v-else
-          class="border p-3 text-red-600 bg-red-600 border-red-600 bg-opacity-10 rounded-md mb-4"
+          class="border p-3 text-red-600 bg-red-600/10 border-red-600 rounded-md mb-4"
         >
           <div class="mb-2">Connectez-vous pour pouvoir vous inscrire</div>
           <NuxtLink

@@ -13,7 +13,7 @@
 
       <!-- Badge type d'échange -->
       <span
-        class="absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm"
+        class="absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-semibold shadow-xs"
         :class="getTypeColor(annonce.type_echange)"
       >
         {{ annonce.type_echange }}

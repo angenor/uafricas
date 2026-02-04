@@ -20,7 +20,7 @@
     <!-- Contenu principal -->
     <div class="max-w-6xl mx-auto px-4 relative -top-10">
       <!-- Header avec breadcrumb -->
-      <div class="bg-white shadow-sm rounded-t-lg">
+      <div class="bg-white shadow-xs rounded-t-lg">
         <div class="px-4 py-6">
           <CommonBreadcrumbNav class="mb-4" />
 
@@ -49,7 +49,7 @@
                 <input v-model="recherche"
                        type="text"
                        placeholder="Rechercher une formation..."
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-3 focus:ring-blue-500 focus:border-blue-500">
               </div>
 
               <!-- Composant de filtres -->
@@ -179,7 +179,7 @@
     </div>
 
     <!-- Modal d'inscription -->
-    <div v-if="formationSelectionnee" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div v-if="formationSelectionnee" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6">
           <div class="flex justify-between items-start mb-4">

@@ -33,7 +33,7 @@
               <input v-model="recherche"
                      type="text"
                      placeholder="Rechercher..."
-                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500">
+                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-3 focus:ring-yellow-500 focus:border-yellow-500">
             </div>
 
             <div class="mb-4">

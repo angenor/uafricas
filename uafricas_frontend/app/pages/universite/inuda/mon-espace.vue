@@ -66,7 +66,7 @@
             <input v-model="recherche"
                    type="text"
                    placeholder="Rechercher une formation..."
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500">
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-3 focus:ring-purple-500 focus:border-purple-500">
           </div>
           <select v-model="filtreStatut" class="px-3 py-2 border border-gray-300 rounded-md">
             <option value="">Tous les statuts</option>

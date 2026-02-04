@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Breadcrumb -->
-    <div class="backdrop-blur-sm py-3 px-4 md:px-72 bg-white shadow-sm">
+    <div class="backdrop-blur-xs py-3 px-4 md:px-72 bg-white shadow-xs">
       <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
     </div>
 

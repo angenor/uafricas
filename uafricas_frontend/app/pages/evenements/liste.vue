@@ -4,7 +4,7 @@
     <EvenementsEvenementHero titre="Événements & Ateliers" />
 
     <!-- Breadcrumb -->
-    <div class="backdrop-blur-sm">
+    <div class="backdrop-blur-xs">
       <div class="mx-auto px-4 py-3">
         <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
       </div>

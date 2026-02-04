@@ -37,7 +37,7 @@
 
       <!-- Date et heure -->
       <div class="absolute bottom-2 left-0">
-        <div class="inline-flex px-2 font-bold bg-opacity-14 text-sm text-custom-chocolat bg-gray-100 rounded-r-full items-center">
+        <div class="inline-flex px-2 font-bold text-sm text-custom-chocolat bg-gray-100/14 rounded-r-full items-center">
           <font-awesome-icon
             class="h-4 w-4 mr-2 text-gray-400"
             :icon="['fas', 'calendar-days']"

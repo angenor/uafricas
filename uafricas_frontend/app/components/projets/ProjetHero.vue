@@ -8,7 +8,7 @@
     <div class="relative max-w-7xl mx-auto px-4 py-16 md:py-24">
       <div class="text-center text-white" data-aos="fade-up">
         <!-- Badge -->
-        <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium mb-6">
+        <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-xs px-4 py-2 rounded-full text-sm font-medium mb-6">
           <font-awesome-icon :icon="['fas', 'seedling']" class="w-4 h-4" />
           Investissez dans l'avenir de l'Afrique
         </div>
@@ -23,19 +23,19 @@
 
         <!-- Statistiques -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto" data-aos="fade-up" data-aos-delay="200">
-          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 md:p-6">
+          <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-4 md:p-6">
             <div class="text-3xl md:text-4xl font-bold mb-1">{{ statistics.total }}</div>
             <div class="text-white/80 text-sm">Projets au total</div>
           </div>
-          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 md:p-6">
+          <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-4 md:p-6">
             <div class="text-3xl md:text-4xl font-bold mb-1 text-emerald-300">{{ statistics.valides }}</div>
             <div class="text-white/80 text-sm">Projets validés</div>
           </div>
-          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 md:p-6">
+          <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-4 md:p-6">
             <div class="text-3xl md:text-4xl font-bold mb-1 text-blue-300">{{ statistics.enCours }}</div>
             <div class="text-white/80 text-sm">En cours</div>
           </div>
-          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 md:p-6">
+          <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-4 md:p-6">
             <div class="text-3xl md:text-4xl font-bold mb-1 text-yellow-300">{{ statistics.termines }}</div>
             <div class="text-white/80 text-sm">Terminés</div>
           </div>

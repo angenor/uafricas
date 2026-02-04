@@ -58,7 +58,7 @@ onMounted(() => {
       <p class="text-gray-500 mt-2">La programmation demandée n'existe pas.</p>
       <NuxtLink
         :to="`/site/${siteId}`"
-        class="mt-4 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-opacity-90 transition-colors"
+        class="mt-4 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
       >
         Retour au centre
       </NuxtLink>
@@ -134,7 +134,7 @@ onMounted(() => {
         >
           <button
             @click="handleInterest"
-            class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-opacity-90 transition-all hover:scale-105"
+            class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-all hover:scale-105"
           >
             <font-awesome-icon :icon="['fas', 'star']" class="mr-2" />
             Je suis intéressé(e)
@@ -142,14 +142,14 @@ onMounted(() => {
         </div>
         <div
           v-else
-          class="mb-4 border p-3 text-red-600 bg-red-600 border-red-600 bg-opacity-10 rounded-md"
+          class="mb-4 border p-3 text-red-600 bg-red-600/10 border-red-600 rounded-md"
           data-aos="fade-up"
           data-aos-duration="600"
         >
           <p class="mb-2">Connectez-vous pour pouvoir vous inscrire à cette session</p>
           <NuxtLink
             to="/login"
-            class="inline-block px-4 py-1 bg-custom-green text-white rounded-md hover:bg-opacity-90 transition-colors"
+            class="inline-block px-4 py-1 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
           >
             Connexion
           </NuxtLink>

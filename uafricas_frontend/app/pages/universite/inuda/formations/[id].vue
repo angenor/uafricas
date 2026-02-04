@@ -27,7 +27,7 @@
           <div class="max-w-6xl mx-auto w-full">
             <CommonBreadcrumbNav class="mb-4 text-white" />
             <div class="flex items-center gap-3 mb-3">
-              <span class="px-3 py-1 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-medium">
+              <span class="px-3 py-1 bg-white/20 backdrop-blur-xs text-white rounded-full text-sm font-medium">
                 {{ getTypeLabel(formation.type) }}
               </span>
               <span :class="getStatutBadgeClass(formation.statut)">

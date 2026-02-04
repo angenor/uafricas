@@ -23,7 +23,7 @@
 
       <!-- Badge pays -->
       <div class="absolute top-4 left-4">
-        <span class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-gray-700">
+        <span class="bg-white/90 backdrop-blur-xs px-3 py-1 rounded-full text-xs font-medium text-gray-700">
           {{ paysLabel }}
         </span>
       </div>

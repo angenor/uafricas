@@ -29,7 +29,7 @@
   </div>
 
   <!-- Options d'affichage -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+  <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-4 mb-6">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center space-x-3">
         <div class="bg-custom-green p-2 rounded-lg">
@@ -89,7 +89,7 @@
           >
             <input
               type="checkbox"
-              class="w-3 h-3 text-custom-green bg-gray-100 border-gray-300 rounded focus:ring-custom-green"
+              class="w-3 h-3 text-custom-green bg-gray-100 border-gray-300 rounded focus:ring-3 focus:ring-custom-green"
               :checked="filters[filter.key as keyof typeof filters]"
               @change="updateFilter(filter.key, ($event.target as HTMLInputElement).checked)"
             />
@@ -109,7 +109,7 @@
               type="text"
               :value="searchKeywords"
               @input="emit('update:searchKeywords', ($event.target as HTMLInputElement).value)"
-              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-custom-green focus:border-custom-green"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-3 focus:ring-custom-green focus:border-custom-green"
               placeholder="Mots-clés..."
             />
           </div>
@@ -117,7 +117,7 @@
             <select
               :value="searchPays"
               @change="emit('update:searchPays', ($event.target as HTMLSelectElement).value)"
-              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-custom-green focus:border-custom-green"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-3 focus:ring-custom-green focus:border-custom-green"
             >
               <option value="">Tous les pays</option>
               <option v-for="pays in PAYS_AFRICAINS" :key="pays" :value="pays">{{ pays }}</option>

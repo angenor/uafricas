@@ -44,14 +44,14 @@
               ? 'h-24 border-t-4 border-custom-chocolat top-7'
               : 'h-0 top-5',
           ]"
-          class="absolute transition-all duration-500 -left-14 z-50 w-52 whitespace-nowrap text-custom-chocolat ml-2 bg-white bg-opacity-0 overflow-hidden"
+          class="absolute transition-all duration-500 -left-14 z-50 w-52 whitespace-nowrap text-custom-chocolat ml-2 bg-white/0 overflow-hidden"
         >
           <NuxtLink to="/bibliotheque/numerique">
             <div
               :class="[
                 pointer === 'biblio' ? 'top-0 duration-700' : '-top-44 duration-500',
               ]"
-              class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green hover:duration-100"
+              class="px-2 relative bg-white/80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-white/70 hover:text-custom-green hover:duration-100"
             >
               Biblio Numérique
             </div>
@@ -61,7 +61,7 @@
               :class="[
                 pointer === 'biblio' ? 'top-0 duration-500' : '-top-40 duration-700',
               ]"
-              class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green hover:duration-100"
+              class="px-2 relative bg-white/80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-white/70 hover:text-custom-green hover:duration-100"
             >
               Biblio Humaine
             </div>
@@ -84,10 +84,10 @@
               ? 'h-44 border-t-4 border-custom-chocolat'
               : 'h-0',
           ]"
-          class="top-7 absolute transition-all duration-500 -left-9 z-50 w-52 whitespace-nowrap text-custom-chocolat ml-2 bg-white bg-opacity-0 overflow-hidden"
+          class="top-7 absolute transition-all duration-500 -left-9 z-50 w-52 whitespace-nowrap text-custom-chocolat ml-2 bg-white/0 overflow-hidden"
         >
           <NuxtLink to="/universite/gouvernance">
-            <div class="px-2 bg-white bg-opacity-80 py-2 overflow-x-hidden cursor-pointer hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green transition-all duration-300">
+            <div class="px-2 bg-white/80 py-2 overflow-x-hidden cursor-pointer hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-white/70 hover:text-custom-green transition-all duration-300">
               Gouvernance
             </div>
           </NuxtLink>
@@ -96,7 +96,7 @@
               :class="[
                 pointer === 'universite' ? 'top-0 duration-100' : '-top-44 duration-300',
               ]"
-              class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
+              class="px-2 relative bg-white/80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-white/70 hover:text-custom-green"
             >
               INUDA
             </div>
@@ -120,14 +120,14 @@
               ? 'h-32 border-t-4 border-custom-chocolat top-7'
               : 'h-0 top-5',
           ]"
-          class="absolute transition-all duration-500 -left-10 z-50 w-32 whitespace-nowrap text-custom-chocolat ml-2 bg-white bg-opacity-0 overflow-hidden"
+          class="absolute transition-all duration-500 -left-10 z-50 w-32 whitespace-nowrap text-custom-chocolat ml-2 bg-white/0 overflow-hidden"
         >
           <NuxtLink to="/tele">
             <div
               :class="[
                 pointer === 'media' ? 'top-0 duration-700' : '-top-44 duration-500',
               ]"
-              class="px-2 relative text-center bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green hover:duration-100"
+              class="px-2 relative text-center bg-white/80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-white/70 hover:text-custom-green hover:duration-100"
             >
               Télé
             </div>
@@ -137,7 +137,7 @@
               :class="[
                 pointer === 'media' ? 'top-0 duration-500' : '-top-40 duration-700',
               ]"
-              class="px-2 relative text-center bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green hover:duration-100"
+              class="px-2 relative text-center bg-white/80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-white/70 hover:text-custom-green hover:duration-100"
             >
               Radio
             </div>
@@ -147,7 +147,7 @@
               :class="[
                 pointer === 'media' ? 'top-0 duration-500' : '-top-40 duration-700',
               ]"
-              class="px-2 relative text-center bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green hover:duration-100"
+              class="px-2 relative text-center bg-white/80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-white/70 hover:text-custom-green hover:duration-100"
             >
               Africantives
             </div>
@@ -158,7 +158,7 @@
       <!-- Bouton Se connecter (mock - pas d'auth pour l'instant) -->
       <NuxtLink
         to="/login"
-        class="bg-custom-chocolat text-white px-2 mb-1 whitespace-nowrap rounded-sm"
+        class="bg-custom-chocolat text-white px-2 mb-1 whitespace-nowrap rounded-xs"
       >
         Se connecter
       </NuxtLink>

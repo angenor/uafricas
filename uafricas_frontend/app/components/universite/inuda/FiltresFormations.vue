@@ -10,7 +10,7 @@
           <input type="checkbox"
                  v-model="filtres.types"
                  :value="type.value"
-                 class="mr-2 rounded text-blue-600 focus:ring-blue-500">
+                 class="mr-2 rounded text-blue-600 focus:ring-3 focus:ring-blue-500">
           <span class="text-sm">{{ type.label }}</span>
         </label>
       </div>
@@ -24,7 +24,7 @@
           <input type="checkbox"
                  v-model="filtres.statuts"
                  :value="statut.value"
-                 class="mr-2 rounded text-blue-600 focus:ring-blue-500">
+                 class="mr-2 rounded text-blue-600 focus:ring-3 focus:ring-blue-500">
           <span class="text-sm">{{ statut.label }}</span>
         </label>
       </div>
@@ -38,21 +38,21 @@
           <input type="radio"
                  v-model="filtres.gratuit"
                  :value="null"
-                 class="mr-2 text-blue-600 focus:ring-blue-500">
+                 class="mr-2 text-blue-600 focus:ring-3 focus:ring-blue-500">
           <span class="text-sm">Tous</span>
         </label>
         <label class="flex items-center">
           <input type="radio"
                  v-model="filtres.gratuit"
                  :value="true"
-                 class="mr-2 text-blue-600 focus:ring-blue-500">
+                 class="mr-2 text-blue-600 focus:ring-3 focus:ring-blue-500">
           <span class="text-sm">Gratuit uniquement</span>
         </label>
         <label class="flex items-center">
           <input type="radio"
                  v-model="filtres.gratuit"
                  :value="false"
-                 class="mr-2 text-blue-600 focus:ring-blue-500">
+                 class="mr-2 text-blue-600 focus:ring-3 focus:ring-blue-500">
           <span class="text-sm">Payant uniquement</span>
         </label>
       </div>

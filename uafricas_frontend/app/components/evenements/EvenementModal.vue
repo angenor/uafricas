@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div
       v-if="show"
-      class="z-50 bg-opacity-40 h-full w-screen bg-black backdrop-blur-sm fixed top-0 left-0 flex items-center justify-center p-4"
+      class="z-50 h-full w-screen bg-black/40 backdrop-blur-xs fixed top-0 left-0 flex items-center justify-center p-4"
       @click.self="emit('close')"
     >
       <div class="bg-white w-full max-w-md overflow-hidden rounded-md border-t-8 border-custom-green pt-5 max-h-[90vh] overflow-y-auto">
@@ -21,7 +21,7 @@
                 id="titre"
                 v-model="form.titre"
                 type="text"
-                class="w-full border-2 rounded-md p-2 border-custom-green border-opacity-70 focus:outline-none focus:border-opacity-100"
+                class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
                 placeholder="Titre de l'événement"
               />
             </div>
@@ -34,7 +34,7 @@
               <textarea
                 id="description"
                 v-model="form.description"
-                class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat focus:outline-none"
+                class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat focus:outline-hidden"
                 rows="3"
                 placeholder="Description de l'événement"
               ></textarea>
@@ -49,7 +49,7 @@
                 <select
                   id="type"
                   v-model="form.type"
-                  class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-none"
+                  class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden"
                 >
                   <option value="" disabled>Choisir type</option>
                   <option value="En ligne">En ligne</option>
@@ -65,7 +65,7 @@
                 <select
                   id="pays"
                   v-model="form.pays"
-                  class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-none"
+                  class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden"
                 >
                   <option value="" disabled>Choisir pays</option>
                   <option v-for="pays in PAYS_AFRICAINS" :key="pays" :value="pays">
@@ -84,7 +84,7 @@
                 id="ville"
                 v-model="form.ville"
                 type="text"
-                class="w-full border-2 rounded-md p-2 border-custom-green border-opacity-70 focus:outline-none"
+                class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden"
                 placeholder="Ville"
               />
             </div>
@@ -98,7 +98,7 @@
                 id="dated"
                 v-model="form.date_heure_debut"
                 type="datetime-local"
-                class="w-full border-2 rounded-md p-2 border-custom-green border-opacity-70 focus:outline-none"
+                class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden"
               />
             </div>
 
@@ -111,12 +111,12 @@
                 id="datef"
                 v-model="form.date_heure_fin"
                 type="datetime-local"
-                class="w-full border-2 rounded-md p-2 border-custom-green border-opacity-70 focus:outline-none"
+                class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden"
               />
             </div>
 
             <!-- Image de couverture -->
-            <div class="p-3 bg-custom-green bg-opacity-20 border border-custom-green rounded-md">
+            <div class="p-3 bg-custom-green/20 border border-custom-green rounded-md">
               <label for="couverture" class="block text-sm font-medium text-custom-green mb-1">
                 Image de couverture *
               </label>

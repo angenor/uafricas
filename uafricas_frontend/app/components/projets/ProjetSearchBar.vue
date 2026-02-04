@@ -9,7 +9,7 @@
         v-model="searchQuery"
         type="text"
         placeholder="Rechercher un projet..."
-        class="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all shadow-sm"
+        class="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all shadow-xs"
         @input="onInput"
       />
       <button

@@ -33,7 +33,7 @@ const handleVolumeChange = (event: Event) => {
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto bg-black bg-opacity-60 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-gray-800">
+  <div class="max-w-4xl mx-auto bg-black/60 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-gray-800">
     <!-- Station en cours -->
     <div class="flex flex-col md:flex-row items-center mb-8">
       <div class="w-full md:w-1/3 relative mb-6 md:mb-0">
@@ -110,7 +110,7 @@ const handleVolumeChange = (event: Event) => {
           </div>
 
           <div class="play-controls flex items-center justify-center space-x-4">
-            <button @click="emit('previous')" class="transform transition hover:scale-110 focus:outline-none">
+            <button @click="emit('previous')" class="transform transition hover:scale-110 focus:outline-hidden">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
               </svg>
@@ -118,7 +118,7 @@ const handleVolumeChange = (event: Event) => {
 
             <button
               @click="emit('togglePlay')"
-              class="w-16 h-16 rounded-full flex items-center justify-center bg-yellow-400 transform transition hover:scale-110 focus:outline-none"
+              class="w-16 h-16 rounded-full flex items-center justify-center bg-yellow-400 transform transition hover:scale-110 focus:outline-hidden"
             >
               <svg v-if="!isPlaying" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-black" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
@@ -128,7 +128,7 @@ const handleVolumeChange = (event: Event) => {
               </svg>
             </button>
 
-            <button @click="emit('next')" class="transform transition hover:scale-110 focus:outline-none">
+            <button @click="emit('next')" class="transform transition hover:scale-110 focus:outline-hidden">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798L4.555 5.168z" />
               </svg>

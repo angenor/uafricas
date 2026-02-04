@@ -104,11 +104,11 @@ watch(() => props.isOpen, (isOpen) => {
   <Transition name="modal-fade">
     <div
       v-if="isOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
       @click.self="emit('close')"
     >
       <div
-        class="relative w-full max-w-2xl bg-white shadow-2xl bg-opacity-95 backdrop-blur-md rounded-2xl border border-white border-opacity-20 transform transition-all duration-300 max-h-[90vh] overflow-hidden"
+        class="relative w-full max-w-2xl bg-white/95 shadow-2xl backdrop-blur-md rounded-2xl border border-white/20 transform transition-all duration-300 max-h-[90vh] overflow-hidden"
         @click.stop
       >
         <!-- En-tête du modal -->
@@ -127,7 +127,7 @@ watch(() => props.isOpen, (isOpen) => {
         </div>
 
         <!-- Formulaire -->
-        <form @submit.prevent="handleSubmit" class="p-6 space-y-6 bg-white bg-opacity-90 backdrop-blur-sm max-h-[70vh] overflow-y-auto">
+        <form @submit.prevent="handleSubmit" class="p-6 space-y-6 bg-white/90 backdrop-blur-xs max-h-[70vh] overflow-y-auto">
           <!-- Messages de succès/erreur -->
           <Transition name="fade-slide">
             <div v-if="programForm.submitted" class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
@@ -203,15 +203,15 @@ watch(() => props.isOpen, (isOpen) => {
               <label class="block text-sm font-medium text-gray-700 mb-2">Type de média *</label>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <label class="flex items-center space-x-3 cursor-pointer">
-                  <input v-model="programForm.typeMedia" type="radio" value="Radio" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-yellow-500" />
+                  <input v-model="programForm.typeMedia" type="radio" value="Radio" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-3 focus:ring-yellow-500" />
                   <span class="text-gray-700">Radio (Audio)</span>
                 </label>
                 <label class="flex items-center space-x-3 cursor-pointer">
-                  <input v-model="programForm.typeMedia" type="radio" value="Télévision" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-yellow-500" />
+                  <input v-model="programForm.typeMedia" type="radio" value="Télévision" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-3 focus:ring-yellow-500" />
                   <span class="text-gray-700">Télévision (Vidéo)</span>
                 </label>
                 <label class="flex items-center space-x-3 cursor-pointer">
-                  <input v-model="programForm.typeMedia" type="radio" value="Mixte" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-yellow-500" />
+                  <input v-model="programForm.typeMedia" type="radio" value="Mixte" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-3 focus:ring-yellow-500" />
                   <span class="text-gray-700">Mixte (Audio + Vidéo)</span>
                 </label>
               </div>
@@ -244,19 +244,19 @@ watch(() => props.isOpen, (isOpen) => {
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Langue de diffusion *</h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
               <label class="flex items-center space-x-3 cursor-pointer">
-                <input v-model="programForm.langue" type="radio" value="Français" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-yellow-500" />
+                <input v-model="programForm.langue" type="radio" value="Français" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-3 focus:ring-yellow-500" />
                 <span class="text-gray-700">Français</span>
               </label>
               <label class="flex items-center space-x-3 cursor-pointer">
-                <input v-model="programForm.langue" type="radio" value="Anglais" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-yellow-500" />
+                <input v-model="programForm.langue" type="radio" value="Anglais" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-3 focus:ring-yellow-500" />
                 <span class="text-gray-700">Anglais</span>
               </label>
               <label class="flex items-center space-x-3 cursor-pointer">
-                <input v-model="programForm.langue" type="radio" value="Arabe" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-yellow-500" />
+                <input v-model="programForm.langue" type="radio" value="Arabe" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-3 focus:ring-yellow-500" />
                 <span class="text-gray-700">Arabe</span>
               </label>
               <label class="flex items-center space-x-3 cursor-pointer">
-                <input v-model="programForm.langue" type="radio" value="Langue locale" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-yellow-500" />
+                <input v-model="programForm.langue" type="radio" value="Langue locale" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-3 focus:ring-yellow-500" />
                 <span class="text-gray-700">Langue locale</span>
               </label>
             </div>
@@ -272,15 +272,15 @@ watch(() => props.isOpen, (isOpen) => {
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Type de programme *</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <label class="flex items-center space-x-3 cursor-pointer">
-                <input v-model="programForm.programType" type="radio" value="Local" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-yellow-500" />
+                <input v-model="programForm.programType" type="radio" value="Local" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-3 focus:ring-yellow-500" />
                 <span class="text-gray-700">Local</span>
               </label>
               <label class="flex items-center space-x-3 cursor-pointer">
-                <input v-model="programForm.programType" type="radio" value="Nationales" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-yellow-500" />
+                <input v-model="programForm.programType" type="radio" value="Nationales" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-3 focus:ring-yellow-500" />
                 <span class="text-gray-700">Nationales</span>
               </label>
               <label class="flex items-center space-x-3 cursor-pointer">
-                <input v-model="programForm.programType" type="radio" value="International" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-yellow-500" />
+                <input v-model="programForm.programType" type="radio" value="International" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-3 focus:ring-yellow-500" />
                 <span class="text-gray-700">International</span>
               </label>
             </div>
@@ -293,7 +293,7 @@ watch(() => props.isOpen, (isOpen) => {
 
             <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-48 overflow-y-auto">
               <label v-for="genre in availableGenres" :key="genre" class="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
-                <input v-model="programForm.genres" type="checkbox" :value="genre" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 rounded focus:ring-yellow-500" />
+                <input v-model="programForm.genres" type="checkbox" :value="genre" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 rounded focus:ring-3 focus:ring-yellow-500" />
                 <span class="text-sm text-gray-700">{{ genre }}</span>
               </label>
             </div>

@@ -16,17 +16,17 @@
           Contribuez à l'amélioration de notre société
         </p>
         <div class="flex items-center space-x-6 my-6 text-white animate-fadeInUp animation-delay-400">
-          <div class="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+          <div class="flex items-center bg-white/20 backdrop-blur-xs px-4 py-2 rounded-full">
             <font-awesome-icon :icon="['fas', 'eye']" class="mr-2" />
             <span class="font-semibold">{{ stats.factcheck }}</span>
             <span class="ml-1 text-sm">FactCheck</span>
           </div>
-          <div class="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+          <div class="flex items-center bg-white/20 backdrop-blur-xs px-4 py-2 rounded-full">
             <font-awesome-icon :icon="['fas', 'lightbulb']" class="mr-2" />
             <span class="font-semibold">{{ stats.ideaforces }}</span>
             <span class="ml-1 text-sm">IdeaForces</span>
           </div>
-          <div class="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+          <div class="flex items-center bg-white/20 backdrop-blur-xs px-4 py-2 rounded-full">
             <font-awesome-icon :icon="['fas', 'exclamation-triangle']" class="mr-2" />
             <span class="font-semibold">{{ stats.badhabits }}</span>
             <span class="ml-1 text-sm">BadHabits</span>

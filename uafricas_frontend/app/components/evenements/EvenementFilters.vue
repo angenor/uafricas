@@ -20,7 +20,7 @@
       <select
         :value="filtreType"
         @change="emit('update:filtreType', ($event.target as HTMLSelectElement).value)"
-        class="rounded-md border border-custom-chocolat bg-white px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-custom-chocolat"
+        class="rounded-md border border-custom-chocolat bg-white px-3 py-1 text-sm focus:outline-hidden focus:ring-2 focus:ring-custom-chocolat"
       >
         <option v-for="type in TYPES_EVENEMENT" :key="type.value" :value="type.value">
           {{ type.label }}
@@ -30,7 +30,7 @@
       <select
         :value="filtrePays"
         @change="emit('update:filtrePays', ($event.target as HTMLSelectElement).value)"
-        class="rounded-md border border-custom-chocolat bg-white px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-custom-chocolat"
+        class="rounded-md border border-custom-chocolat bg-white px-3 py-1 text-sm focus:outline-hidden focus:ring-2 focus:ring-custom-chocolat"
       >
         <option value="">Tous les pays</option>
         <option v-for="pays in PAYS_AFRICAINS" :key="pays" :value="pays">

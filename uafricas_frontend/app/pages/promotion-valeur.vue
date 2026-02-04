@@ -11,7 +11,7 @@
     </div>
 
     <!-- Breadcrumb Navigation -->
-    <div class="backdrop-blur-sm">
+    <div class="backdrop-blur-xs">
       <div class="mx-auto px-4 py-3">
         <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
       </div>
@@ -83,6 +83,8 @@ const breadcrumbs = [
 </script>
 
 <style scoped>
+@reference "~/assets/css/main.css";
+
 .container {
   @apply max-w-7xl;
 }

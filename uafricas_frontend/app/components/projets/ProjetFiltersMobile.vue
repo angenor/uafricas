@@ -52,7 +52,7 @@
           </label>
           <select
             v-model="localFiltres.pays"
-            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
+            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green focus:border-transparent"
             @change="emitChange"
           >
             <option v-for="pays in paysAfricains" :key="pays.value" :value="pays.value">
@@ -69,7 +69,7 @@
           </label>
           <select
             v-model="localFiltres.budgetMax"
-            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
+            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green focus:border-transparent"
             @change="emitChange"
           >
             <option v-for="budget in budgets" :key="budget.value" :value="budget.value">
@@ -86,7 +86,7 @@
           </label>
           <select
             v-model="localFiltres.duree"
-            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
+            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green focus:border-transparent"
             @change="emitChange"
           >
             <option v-for="duree in durees" :key="duree.value" :value="duree.value">
@@ -103,7 +103,7 @@
           </label>
           <select
             v-model="localFiltres.sortBy"
-            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
+            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green focus:border-transparent"
             @change="emitChange"
           >
             <option v-for="option in sortOptions" :key="option.value" :value="option.value">

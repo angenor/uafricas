@@ -34,12 +34,12 @@
             <input
               v-model="searchQuery"
               type="text"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green transition-all"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all"
               placeholder="Rechercher un document..."
             />
           </div>
           <button
-            class="bg-gradient-to-r from-custom-green to-green-600 hover:from-green-600 hover:to-custom-green text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-custom-green flex items-center justify-center"
+            class="bg-gradient-to-r from-custom-green to-green-600 hover:from-green-600 hover:to-custom-green text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-custom-green flex items-center justify-center"
           >
             <font-awesome-icon icon="fa-solid fa-search" class="mr-2" />
             Recherche
@@ -156,7 +156,7 @@
   <!-- Popup Ajouter un document - Formulaire complet -->
   <Transition name="modal-fade">
     <div v-if="showAddPopup" class="z-50 fixed inset-0 flex items-center justify-center">
-      <div @click="showAddPopup = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+      <div @click="showAddPopup = false" class="absolute inset-0 bg-black/60 backdrop-blur-xs"></div>
 
       <div class="relative w-full max-w-2xl mx-4 md:mx-auto animate-slideIn">
         <form
@@ -179,7 +179,7 @@
                 required
                 v-model="documentForm.titre"
                 type="text"
-                class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                class="w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
                 placeholder="Saisissez le titre du document"
               />
             </div>
@@ -190,7 +190,7 @@
               <textarea
                 required
                 v-model="documentForm.description"
-                class="w-full px-3 py-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                class="w-full px-3 py-2 border rounded-lg resize-none focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
                 rows="3"
                 placeholder="Décrivez le contenu du document"
               ></textarea>
@@ -252,7 +252,7 @@
                 <select
                   required
                   v-model="documentForm.type"
-                  class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                  class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
                 >
                   <option value="">Sélectionnez un type</option>
                   <option value="Roman">Roman</option>
@@ -269,7 +269,7 @@
                 <select
                   required
                   v-model="documentForm.acces"
-                  class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                  class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
                 >
                   <option value="">Sélectionnez un type d'accès</option>
                   <option value="Lecture">Lecture seule</option>
@@ -284,7 +284,7 @@
               <textarea
                 required
                 v-model="documentForm.auteurBiblio"
-                class="w-full px-3 py-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                class="w-full px-3 py-2 border rounded-lg resize-none focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
                 rows="3"
                 placeholder="Biographie et informations sur l'auteur"
               ></textarea>
@@ -298,7 +298,7 @@
                   v-model="documentForm.datePublication"
                   required
                   type="date"
-                  class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                  class="w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
                 />
               </div>
 
@@ -306,7 +306,7 @@
                 <label class="block text-gray-700 text-sm font-bold mb-2">Votre rapport avec le document</label>
                 <select
                   v-model="documentForm.rapport"
-                  class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                  class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
                 >
                   <option value="">Sélectionnez votre rapport</option>
                   <option value="Auteur">Auteur</option>
@@ -320,7 +320,7 @@
             <div class="mb-6">
               <label class="flex items-center cursor-pointer">
                 <input
-                  class="w-5 h-5 text-custom-green border-2 focus:ring-green-500 rounded transition-colors duration-200"
+                  class="w-5 h-5 text-custom-green border-2 focus:ring-3 focus:ring-green-500 rounded transition-colors duration-200"
                   type="checkbox"
                   v-model="documentForm.consent"
                   required
@@ -347,14 +347,14 @@
               <button
                 @click="showAddPopup = false"
                 type="button"
-                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200 focus:outline-hidden focus:ring-2 focus:ring-gray-400"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 :disabled="isSubmitting"
-                class="px-4 py-2 bg-gradient-to-r from-custom-green to-green-600 text-white rounded-lg hover:from-custom-green hover:to-green-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-4 py-2 bg-gradient-to-r from-custom-green to-green-600 text-white rounded-lg hover:from-custom-green hover:to-green-700 transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-green-500 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ isSubmitting ? 'Envoi en cours...' : 'Soumettre' }}
               </button>

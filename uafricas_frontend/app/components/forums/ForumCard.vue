@@ -7,7 +7,7 @@
         :class="forum.couleurSelected"
       >
         <!-- Info auteur -->
-        <div class="absolute font-normal top-1 left-1 rounded-full flex items-center text-sm bg-white bg-opacity-30 px-2">
+        <div class="absolute font-normal top-1 left-1 rounded-full flex items-center text-sm bg-white/30 px-2">
           <div class="mr-2">
             Publié par
             <span class="underline">{{ forum.user.prenom }} {{ forum.user.nom }}</span>
@@ -22,18 +22,18 @@
         {{ forum.type === 'Proverbe' ? forum.proverbe.libellet : forum.citation.libellet }}
 
         <!-- Likes -->
-        <div class="absolute text-xl bottom-2 left-2 px-3 bg-white bg-opacity-50 border border-white rounded-full text-custom-green">
+        <div class="absolute text-xl bottom-2 left-2 px-3 bg-white/50 border border-white rounded-full text-custom-green">
           <font-awesome-icon icon="fa-solid fa-heart" class="mr-2 hover:scale-125 active:scale-95 transition-all cursor-pointer" />
           {{ forum.likes }}
         </div>
 
         <!-- Vues -->
-        <div class="absolute text-sm font-normal bottom-1 right-1 px-2 bg-white bg-opacity-50 border border-white rounded-full text-custom-green">
+        <div class="absolute text-sm font-normal bottom-1 right-1 px-2 bg-white/50 border border-white rounded-full text-custom-green">
           <font-awesome-icon icon="fa-solid fa-eye" class="mr-1" />{{ forum.vues }}
         </div>
 
         <!-- Date -->
-        <div class="text-white bg-white bg-opacity-25 px-2 rounded-l-full absolute top-2 right-0 text-sm font-normal">
+        <div class="text-white bg-white/25 px-2 rounded-l-full absolute top-2 right-0 text-sm font-normal">
           {{ formatDate(forum.created_at) }}
         </div>
       </div>
@@ -47,15 +47,15 @@
             :src="forum.proverbe.photo_url"
             alt=""
           />
-          <div class="relative z-10 font-bold justify-center px-2 rounded-t-md bg-white bg-opacity-70 inline-flex mt-2 ml-2">
+          <div class="relative z-10 font-bold justify-center px-2 rounded-t-md bg-white/70 inline-flex mt-2 ml-2">
             Explication du {{ forum.type.toLowerCase() }}
           </div>
-          <div class="relative z-10 bg-white bg-opacity-70 p-2 rounded-b-md rounded-tr-md ml-2">
+          <div class="relative z-10 bg-white/70 p-2 rounded-b-md rounded-tr-md ml-2">
             {{ forum.type === 'Proverbe' ? forum.proverbe.explication : forum.citation.explication }}
           </div>
 
           <div class="flex relative flex-wrap space-x-2 mb-4 z-20">
-            <div class="text-sm px-2 bg-white m-2 bg-opacity-80 border border-custom-green rounded-full text-green-800 font-bold">
+            <div class="text-sm px-2 bg-white/80 m-2 border border-custom-green rounded-full text-green-800 font-bold">
               <font-awesome-icon icon="fa-solid fa-flag" class="mr-1" />
               {{ forum.type === 'Proverbe' ? forum.proverbe.pays : forum.citation.pays }}
             </div>
@@ -82,7 +82,7 @@
         />
 
         <!-- Info auteur -->
-        <div class="font-bold absolute left-2 top-2 rounded-full flex items-center text-sm bg-custom-green text-white bg-opacity-30 px-2">
+        <div class="font-bold absolute left-2 top-2 rounded-full flex items-center text-sm bg-custom-green/30 text-white px-2">
           <div class="mr-2">
             Publié par
             <span class="underline">{{ forum.user.prenom }} {{ forum.user.nom }}</span>
@@ -94,18 +94,18 @@
         </div>
 
         <!-- Date -->
-        <div class="text-white font-bold bg-custom-green bg-opacity-25 px-2 rounded-l-full absolute top-2 right-0 text-sm">
+        <div class="text-white font-bold bg-custom-green/25 px-2 rounded-l-full absolute top-2 right-0 text-sm">
           {{ formatDate(forum.created_at) }}
         </div>
 
         <!-- Likes -->
-        <div class="absolute text-xl bottom-2 left-2 px-3 bg-white bg-opacity-50 border border-white rounded-full text-custom-green">
+        <div class="absolute text-xl bottom-2 left-2 px-3 bg-white/50 border border-white rounded-full text-custom-green">
           <font-awesome-icon icon="fa-solid fa-heart" class="mr-2 hover:scale-125 active:scale-95 transition-all cursor-pointer" />
           {{ forum.likes }}
         </div>
 
         <!-- Vues -->
-        <div class="absolute text-sm font-normal bottom-1 right-1 px-2 bg-white bg-opacity-50 border border-white rounded-full text-custom-green">
+        <div class="absolute text-sm font-normal bottom-1 right-1 px-2 bg-white/50 border border-white rounded-full text-custom-green">
           <font-awesome-icon icon="fa-solid fa-eye" class="mr-1" />{{ forum.vues }}
         </div>
       </div>
@@ -118,7 +118,7 @@
           {{ forum.bonne_pratique.description || forum.histoire.description }}
         </div>
         <div class="flex flex-wrap space-x-2 mt-3">
-          <div class="text-sm font-normal px-2 bg-custom-green bg-opacity-10 border border-custom-green rounded-full text-custom-green">
+          <div class="text-sm font-normal px-2 bg-custom-green/10 border border-custom-green rounded-full text-custom-green">
             <font-awesome-icon icon="fa-solid fa-flag" class="mr-1" />
             {{ forum.bonne_pratique.pays || forum.histoire.pays }}
           </div>
