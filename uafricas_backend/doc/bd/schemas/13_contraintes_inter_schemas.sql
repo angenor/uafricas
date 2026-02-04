@@ -120,15 +120,20 @@ ALTER TABLE culture.programmation_centre
     ADD CONSTRAINT fk_prog_centre_cree_par
     FOREIGN KEY (cree_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
 
-ALTER TABLE culture.afrolang_salle_publique
-    ADD CONSTRAINT fk_afrolang_pub_cree_par
+-- ── afrolang → iam ─────────────────────────────────────────────────────
+ALTER TABLE afrolang.salle
+    ADD CONSTRAINT fk_afrolang_salle_cree_par
     FOREIGN KEY (cree_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
 
-ALTER TABLE culture.afrolang_salle_privee
-    ADD CONSTRAINT fk_afrolang_priv_cree_par
+ALTER TABLE afrolang.salle_privee
+    ADD CONSTRAINT fk_afrolang_privee_cree_par
     FOREIGN KEY (cree_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
 
-ALTER TABLE culture.afrolang_participant
+ALTER TABLE afrolang.session
+    ADD CONSTRAINT fk_afrolang_session_cree_par
+    FOREIGN KEY (cree_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
+
+ALTER TABLE afrolang.session_participant
     ADD CONSTRAINT fk_afrolang_participant_user
     FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
 

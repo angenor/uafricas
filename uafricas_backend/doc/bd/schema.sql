@@ -19,7 +19,8 @@
 --   marketplace     → Marché Africain (annonces)
 --   exchange        → Programmes d'échange
 --   innovation      → Innovations, projets, africantives
---   culture         → Centres culturels, Afrolang, Codi-Moi
+--   culture         → Centres culturels, Codi-Moi
+--   afrolang        → Visioconférence WebRTC (apprentissage langues africaines)
 --   media_content   → Radio/Télé, livres, événements, MOOC
 --   governance      → Gouvernance citoyenne (FactCheck, BadHabits, IdeaForces)
 --   country_profile → Fiches pays
@@ -45,7 +46,8 @@
 --   ├── 05_marketplace.sql                 Marché Africain
 --   ├── 06_exchange.sql                    Programmes d'échange
 --   ├── 07_innovation.sql                  Innovations & Projets
---   ├── 08_culture.sql                     Culture, Afrolang, Codi-Moi
+--   ├── 08_culture.sql                     Culture, Codi-Moi
+--   ├── 08b_afrolang.sql                   Afrolang — Visioconférence WebRTC
 --   ├── 09_media_content.sql               Radio/Télé, Livres, Events, MOOC
 --   ├── 10_governance.sql                  Gouvernance Citoyenne
 --   ├── 11_country_profile.sql             Fiches pays
@@ -75,6 +77,7 @@
 \ir schemas/06_exchange.sql
 \ir schemas/07_innovation.sql
 \ir schemas/08_culture.sql
+\ir schemas/08b_afrolang.sql
 \ir schemas/09_media_content.sql
 \ir schemas/10_governance.sql
 \ir schemas/11_country_profile.sql

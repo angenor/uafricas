@@ -11,7 +11,7 @@ BEGIN
         FROM pg_tables
         WHERE schemaname IN (
             'shared','iam','marketplace','exchange',
-            'innovation','culture','media_content',
+            'innovation','culture','afrolang','media_content',
             'governance','country_profile'
         )
         AND tablename NOT IN ('audit_log')

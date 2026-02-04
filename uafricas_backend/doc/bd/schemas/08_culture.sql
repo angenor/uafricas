@@ -1,5 +1,8 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- AFRICANS-WORLD — Schema : culture — Centres culturels, Afrolang, Codi-Moi
+-- AFRICANS-WORLD — Schema : culture — Centres culturels, Codi-Moi
+-- ════════════════════════════════════════════════════════════════════════════
+-- NOTE : Afrolang a été extrait dans son propre schema (08b_afrolang.sql)
+-- pour être scalé indépendamment (WebRTC multi-VPS).
 -- ════════════════════════════════════════════════════════════════════════════
 
 
@@ -52,55 +55,6 @@ CREATE TABLE culture.programmation_centre (
 
 CREATE INDEX idx_prog_centre_centre ON culture.programmation_centre(centre_culturel_id);
 CREATE INDEX idx_prog_centre_date   ON culture.programmation_centre(date_heure_debut);
-
-
--- ── Afrolang — Salle publique (admin) ───────────────────────────────────
-
-CREATE TABLE culture.afrolang_salle_publique (
-    id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    titre                VARCHAR(350) NOT NULL,
-    slug                 VARCHAR(400) UNIQUE,
-    description          TEXT,
-    image_couverture_url VARCHAR(500),
-    langue_cible         VARCHAR(100),               -- langue africaine enseignée
-    actif                BOOLEAN      NOT NULL DEFAULT TRUE,
-    cree_par             UUID         NOT NULL,      -- [xref] iam.utilisateur (admin)
-    created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW()
-);
-
-
--- ── Afrolang — Salle privée (tout utilisateur) ─────────────────────────
-
-CREATE TABLE culture.afrolang_salle_privee (
-    id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    salle_publique_id    UUID NOT NULL REFERENCES culture.afrolang_salle_publique(id) ON DELETE CASCADE,
-    titre                VARCHAR(350) NOT NULL,
-    description          TEXT,
-    code_acces           VARCHAR(100),
-    image_couverture_url VARCHAR(500),
-    max_participants     INT          DEFAULT 50,
-    actif                BOOLEAN      NOT NULL DEFAULT TRUE,
-    cree_par             UUID         NOT NULL,      -- [xref] iam.utilisateur
-    created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX idx_afrolang_privee_publique ON culture.afrolang_salle_privee(salle_publique_id);
-
-
--- ── Afrolang — Participants ─────────────────────────────────────────────
-
-CREATE TABLE culture.afrolang_participant (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    salle_privee_id UUID        NOT NULL REFERENCES culture.afrolang_salle_privee(id) ON DELETE CASCADE,
-    utilisateur_id  UUID        NOT NULL,            -- [xref] iam.utilisateur
-    role_salle      VARCHAR(30) NOT NULL DEFAULT 'participant'
-                    CHECK (role_salle IN ('animateur', 'participant', 'observateur')),
-    rejoint_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    quitte_at       TIMESTAMPTZ,
-    UNIQUE (salle_privee_id, utilisateur_id)
-);
 
 
 -- ── Codi-Moi (publication sociale — tous types unifiés) ─────────────────

@@ -8,7 +8,8 @@
 --   marketplace     → Marché Africain (annonces)
 --   exchange        → Programmes d'échange
 --   innovation      → Innovations, projets, africantives
---   culture         → Centres culturels, Afrolang, Codi-Moi
+--   culture         → Centres culturels, Codi-Moi
+--   afrolang        → Visioconférence WebRTC (apprentissage langues africaines)
 --   media_content   → Radio/Télé, livres, événements, MOOC
 --   governance      → Gouvernance citoyenne (FactCheck, BadHabits, IdeaForces)
 --   country_profile → Fiches pays
@@ -20,6 +21,7 @@ CREATE SCHEMA IF NOT EXISTS marketplace;
 CREATE SCHEMA IF NOT EXISTS exchange;
 CREATE SCHEMA IF NOT EXISTS innovation;
 CREATE SCHEMA IF NOT EXISTS culture;
+CREATE SCHEMA IF NOT EXISTS afrolang;
 CREATE SCHEMA IF NOT EXISTS media_content;
 CREATE SCHEMA IF NOT EXISTS governance;
 CREATE SCHEMA IF NOT EXISTS country_profile;
