@@ -1,0 +1,378 @@
+# ============================================================
+# UAfricas — Structure du sidebar admin
+# Basé sur les 10 schemas PostgreSQL du modèle de données
+# ============================================================
+# Légende :
+#   icon    → icône FontAwesome (solid)
+#   route   → route Nuxt (sous /admin)
+#   pages   → sous-pages (liste, création, édition, détail)
+#   enfants → entités enfants gérées dans la page d'édition parente
+#             (pas de page dédiée, onglet ou section dans le formulaire)
+# ============================================================
+
+sidebar:
+  - section: Dashboard
+    icon: faChartLine
+    route: /admin
+    pages:
+      - index                         # Vue d'ensemble, KPIs, stats
+
+  # ──────────────────────────────────────────────────────────
+  # IAM — Identité & Accès (iam.*)
+  # ──────────────────────────────────────────────────────────
+  - section: Utilisateurs & Accès
+    icon: faUsers
+    children:
+
+      - label: Utilisateurs
+        icon: faUser
+        route: /admin/utilisateurs
+        pages:
+          - index                     # Liste avec filtres, recherche
+          - create                    # Création
+          - "[id]"                    # Détail / édition
+        enfants:
+          - utilisateur_role          # Onglet rôles dans l'édition
+          - utilisateur_specialite    # Onglet spécialités biblio humaine
+          - permission_specifique     # Onglet permissions spécifiques
+
+      - label: Organisations
+        icon: faBuilding
+        route: /admin/organisations
+        pages:
+          - index
+          - create
+          - "[id]"
+
+      - label: Partenariats
+        icon: faHandshake
+        route: /admin/partenariats
+        pages:
+          - index
+          - create
+          - "[id]"
+
+      - label: Rôles & Permissions
+        icon: faShieldAlt
+        route: /admin/roles
+        pages:
+          - index                     # Liste des rôles avec permissions inline
+          - create
+          - "[id]"                    # Édition rôle + assignation permissions
+        enfants:
+          - role_permission           # Gestion des permissions dans l'édition rôle
+
+  # ──────────────────────────────────────────────────────────
+  # SHARED — Données de référence (shared.*)
+  # ──────────────────────────────────────────────────────────
+  - section: Référentiels
+    icon: faDatabase
+    children:
+
+      - label: Pays
+        icon: faGlobe
+        route: /admin/pays
+        pages:
+          - index
+          - create
+          - "[id]"
+
+      - label: Domaines & Secteurs
+        icon: faLayerGroup
+        route: /admin/domaines
+        pages:
+          - index
+          - create
+          - "[id]"
+
+      - label: Catégories
+        icon: faFolderTree
+        route: /admin/categories
+        pages:
+          - index                     # Arborescence hiérarchique (parent/enfant)
+          - create
+          - "[id]"
+
+      - label: Tags
+        icon: faTags
+        route: /admin/tags
+        pages:
+          - index
+          - create
+          - "[id]"
+
+      - label: Médiathèque
+        icon: faPhotoFilm
+        route: /admin/medias
+        pages:
+          - index                     # Galerie avec filtres par type MIME
+          - create                    # Upload
+
+      - label: Spécialités Biblio Humaine
+        icon: faBookOpen
+        route: /admin/specialites
+        pages:
+          - index
+          - create
+          - "[id]"
+
+  # ──────────────────────────────────────────────────────────
+  # MARKETPLACE — Marché Africain (marketplace.*)
+  # ──────────────────────────────────────────────────────────
+  - section: Marché Africain
+    icon: faStore
+    children:
+
+      - label: Annonces
+        icon: faBullhorn
+        route: /admin/annonces
+        pages:
+          - index                     # Liste avec filtres (état, type, catégorie, pays)
+          - create
+          - "[id]"                    # Édition + modération (changer état)
+        enfants:
+          - annonce_pays              # Onglet pays ciblés
+          - annonce_media             # Onglet médias (images/vidéos)
+
+      - label: Favoris
+        icon: faHeart
+        route: /admin/annonces-favoris
+        pages:
+          - index                     # Vue lecture seule, stats popularité
+
+  # ──────────────────────────────────────────────────────────
+  # EXCHANGE — Programmes d'échange (exchange.*)
+  # ──────────────────────────────────────────────────────────
+  - section: Programmes d'échange
+    icon: faPlane
+    children:
+
+      - label: Programmes
+        icon: faCalendarCheck
+        route: /admin/programmes
+        pages:
+          - index                     # Liste avec filtres (état, domaine, durée)
+          - create
+          - "[id]"                    # Édition + validation
+
+      - label: Candidatures
+        icon: faFileLines
+        route: /admin/candidatures
+        pages:
+          - index                     # Liste avec filtres (état, programme)
+          - "[id]"                    # Revue + acceptation/refus
+
+  # ──────────────────────────────────────────────────────────
+  # INNOVATION — Innovations, Projets, Africantives (innovation.*)
+  # ──────────────────────────────────────────────────────────
+  - section: Innovation
+    icon: faLightbulb
+    children:
+
+      - label: Innovations
+        icon: faRocket
+        route: /admin/innovations
+        pages:
+          - index
+          - create
+          - "[id]"
+        enfants:
+          - innovation_media          # Onglet médias
+
+      - label: Projets
+        icon: faDiagramProject
+        route: /admin/projets
+        pages:
+          - index                     # Liste avec filtres (état, domaine, organisation)
+          - create
+          - "[id]"                    # Édition + approbation
+        enfants:
+          - projet_document           # Onglet documents supplémentaires
+
+      - label: Africantives
+        icon: faLeaf
+        route: /admin/africantives
+        pages:
+          - index
+          - create
+          - "[id]"
+
+  # ──────────────────────────────────────────────────────────
+  # CULTURE — Centres culturels & Codi-Moi (culture.*)
+  # ──────────────────────────────────────────────────────────
+  - section: Culture
+    icon: faMasksTheater
+    children:
+
+      - label: Centres culturels
+        icon: faLandmark
+        route: /admin/centres-culturels
+        pages:
+          - index
+          - create
+          - "[id]"
+
+      - label: Programmations
+        icon: faCalendarDays
+        route: /admin/programmations
+        pages:
+          - index                     # Liste avec filtre par centre
+          - create
+          - "[id]"
+
+      - label: Codi-Moi
+        icon: faQuoteLeft
+        route: /admin/codimoi
+        pages:
+          - index                     # Liste avec filtres (type, pays, ethnie)
+          - create
+          - "[id]"                    # Édition + modération commentaires
+        enfants:
+          - codimoi_tag               # Onglet tags
+          - codimoi_commentaire       # Onglet commentaires (modération)
+          - codimoi_reaction          # Stats réactions (lecture seule)
+
+  # ──────────────────────────────────────────────────────────
+  # AFROLANG — Visioconférence linguistique (afrolang.*)
+  # ──────────────────────────────────────────────────────────
+  - section: AfroLang
+    icon: faVideo
+    children:
+
+      - label: Salles publiques
+        icon: faDoorOpen
+        route: /admin/salles
+        pages:
+          - index
+          - create
+          - "[id]"
+
+      - label: Salles privées
+        icon: faLock
+        route: /admin/salles-privees
+        pages:
+          - index                     # Supervision (lecture seule)
+          - "[id]"
+
+      - label: Sessions
+        icon: faDisplay
+        route: /admin/sessions
+        pages:
+          - index                     # Historique avec filtres (état, salle, date)
+          - "[id]"                    # Détail + participants + tableau blanc
+        enfants:
+          - session_participant       # Onglet participants
+          - tableau_blanc             # Onglet tableau blanc (snapshot JSONB)
+
+  # ──────────────────────────────────────────────────────────
+  # MEDIA_CONTENT — Radio/TV, Événements, MOOC, Livres (media_content.*)
+  # ──────────────────────────────────────────────────────────
+  - section: Médias & Contenus
+    icon: faTv
+    children:
+
+      - label: Radio & TV
+        icon: faBroadcastTower
+        route: /admin/radio-tele
+        pages:
+          - index                     # Liste avec filtres (type radio/télé, catégorie)
+          - create
+          - "[id]"
+
+      - label: Événements
+        icon: faCalendar
+        route: /admin/evenements
+        pages:
+          - index                     # Liste avec filtres (format, statut, date)
+          - create
+          - "[id]"
+        enfants:
+          - evenement_inscription     # Onglet inscriptions (liste + stats)
+
+      - label: MOOC
+        icon: faGraduationCap
+        route: /admin/mooc
+        pages:
+          - index
+          - create
+          - "[id]"
+        enfants:
+          - mooc_inscription          # Onglet inscriptions (progression)
+
+      - label: Bibliothèque
+        icon: faBook
+        route: /admin/livres
+        pages:
+          - index                     # Liste avec filtres (type doc, catégorie, accès)
+          - create
+          - "[id]"
+        enfants:
+          - livre_tag                 # Onglet tags
+
+  # ──────────────────────────────────────────────────────────
+  # GOVERNANCE — Gouvernance citoyenne (governance.*)
+  # ──────────────────────────────────────────────────────────
+  - section: Gouvernance
+    icon: faScaleBalanced
+    children:
+
+      - label: FactCheck
+        icon: faCircleCheck
+        route: /admin/factcheck
+        pages:
+          - index                     # Liste avec filtres (verdict, pays)
+          - create
+          - "[id]"                    # Édition + verdict + modération commentaires
+        enfants:
+          - factcheck_commentaire     # Onglet commentaires (modération)
+          - factcheck_reaction        # Stats réactions (lecture seule)
+
+      - label: Mauvaises pratiques
+        icon: faTriangleExclamation
+        route: /admin/bad-habits
+        pages:
+          - index                     # Liste avec filtres (catégorie, gravité, pays)
+          - create
+          - "[id]"
+        enfants:
+          - bad_habit_media           # Onglet preuves (photos/vidéos)
+
+      - label: Idées forces
+        icon: faStar
+        route: /admin/idea-forces
+        pages:
+          - index                     # Liste avec filtres (catégorie, pays)
+          - create
+          - "[id]"
+        enfants:
+          - idea_force_media          # Onglet médias
+
+  # ──────────────────────────────────────────────────────────
+  # COUNTRY_PROFILE — Profils pays (country_profile.*)
+  # ──────────────────────────────────────────────────────────
+  - section: Profils pays
+    icon: faEarthAfrica
+    route: /admin/profils-pays
+    pages:
+      - index                         # Liste des fiches pays
+      - create
+      - "[id]"                        # Édition avec onglets pour chaque sous-entité
+    enfants:
+      - region                        # Onglet régions
+      - groupe_ethnique               # Onglet groupes ethniques
+      - alliance_interethnique        # Onglet alliances interethniques
+      - conte_histoire                # Onglet contes & histoires
+      - site_touristique              # Onglet sites touristiques
+      - secteur_developpement         # Onglet secteurs de développement
+      - saison                        # Onglet saisons
+      - lien_interethnique            # Onglet liens interethniques transfrontaliers
+
+  # ──────────────────────────────────────────────────────────
+  # AUDIT — Journal d'audit (shared.audit_log)
+  # ──────────────────────────────────────────────────────────
+  - section: Audit & Logs
+    icon: faClockRotateLeft
+    route: /admin/audit
+    pages:
+      - index                         # Journal avec filtres (action, utilisateur, table, date)
+      - "[id]"                        # Détail d'un événement (before/after JSONB)
