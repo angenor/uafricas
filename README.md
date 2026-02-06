@@ -18,3 +18,6 @@ docker compose exec postgres psql -U uafricas -d africans_db
 au regard de mon modele de donnnee, propose moi un plan d'implementation de mon api backend dans plusiers fichiers de @uafricas_backend/doc/plans/ ces fichier devront mentionner le ficher .sql qui rentre en ligne de compte.
 
 indique brievement a @claude que lorsque lorsqu'on lui demande de d'implémenter le backend d'une page 
+
+
+developpe le backend de ma page @uafricas_frontend/app/pages/bibliotheque/numerique.vue et interconnecte le front office. tu utiliseras Plan lorsque tu sera pret a planifier  
