@@ -1,5 +1,0 @@
-/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_backend/target/debug/build/serde-e411f10b538ecfa9/build_script_build-e411f10b538ecfa9.d: /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/build.rs
-
-/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_backend/target/debug/build/serde-e411f10b538ecfa9/build_script_build-e411f10b538ecfa9: /Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/build.rs
-
-/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/build.rs:
