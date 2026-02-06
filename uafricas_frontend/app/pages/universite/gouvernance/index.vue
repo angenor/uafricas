@@ -118,22 +118,32 @@
 </template>
 
 <script setup lang="ts">
-import { getStatsGouvernance, getContributionsPubliees, type ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
 
 useHead({
   title: 'Gouvernance Citoyenne - Université'
 })
 
-const stats = ref(getStatsGouvernance())
+const { getStats, getContributions } = useGouvernance()
+
+const stats = ref({ total: 0, factcheck: 0, badhabits: 0, ideaforces: 0, totalLikes: 0 })
 const dernieresContributions = ref<ContributionCitoyenne[]>([])
 
 const voirContribution = (contribution: ContributionCitoyenne) => {
   navigateTo(`/universite/gouvernance/${contribution.id}`)
 }
 
-onMounted(() => {
-  // Charger les dernières contributions (max 6)
-  dernieresContributions.value = getContributionsPubliees().slice(0, 6)
+onMounted(async () => {
+  try {
+    const [statsData, contributionsData] = await Promise.all([
+      getStats(),
+      getContributions({ parPage: 6 }),
+    ])
+    stats.value = statsData
+    dernieresContributions.value = contributionsData.contributions
+  } catch (err) {
+    console.error('Erreur chargement gouvernance:', err)
+  }
 })
 </script>
 

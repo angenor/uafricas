@@ -120,6 +120,10 @@ ALTER TABLE culture.programmation_centre
     ADD CONSTRAINT fk_prog_centre_cree_par
     FOREIGN KEY (cree_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
 
+ALTER TABLE culture.membre_centre
+    ADD CONSTRAINT fk_membre_centre_utilisateur
+    FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
+
 -- ── afrolang → iam ─────────────────────────────────────────────────────
 ALTER TABLE afrolang.salle
     ADD CONSTRAINT fk_afrolang_salle_cree_par

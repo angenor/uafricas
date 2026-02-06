@@ -57,6 +57,25 @@ CREATE INDEX idx_prog_centre_centre ON culture.programmation_centre(centre_cultu
 CREATE INDEX idx_prog_centre_date   ON culture.programmation_centre(date_heure_debut);
 
 
+-- ── Membres d'un Centre Culturel (équipe dirigeante) ─────────────────
+
+CREATE TYPE culture.role_membre_centre AS ENUM (
+    'president', 'vice_president', 'resp_communication', 'membre'
+);
+
+CREATE TABLE culture.membre_centre (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    centre_culturel_id  UUID NOT NULL REFERENCES culture.centre_culturel(id) ON DELETE CASCADE,
+    utilisateur_id      UUID NOT NULL,       -- [xref] iam.utilisateur
+    role                culture.role_membre_centre NOT NULL DEFAULT 'membre',
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (centre_culturel_id, utilisateur_id)
+);
+
+CREATE INDEX idx_membre_centre_centre ON culture.membre_centre(centre_culturel_id);
+CREATE INDEX idx_membre_centre_user   ON culture.membre_centre(utilisateur_id);
+
+
 -- ── Codi-Moi (publication sociale — tous types unifiés) ─────────────────
 
 CREATE TABLE culture.codimoi (

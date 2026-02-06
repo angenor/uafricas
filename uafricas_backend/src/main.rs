@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 mod config;
 mod errors;
 mod handlers;
+mod jwt;
 mod models;
 mod routes;
 
@@ -85,6 +86,7 @@ async fn main() -> std::io::Result<()> {
 
     let upload_dir = app_config.upload_dir.clone();
     let frontend_url = app_config.frontend_url.clone();
+    let jwt_config = app_config.jwt_config();
 
     log::info!(
         "Serveur en ecoute sur http://{}:{}",
@@ -107,6 +109,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(upload_dir.clone()))
+            .app_data(web::Data::new(jwt_config.clone()))
             .app_data(web::PayloadConfig::new(50 * 1024 * 1024))
             .configure(routes::configurer_routes)
             // Servir les fichiers uploades avec Content-Disposition: inline

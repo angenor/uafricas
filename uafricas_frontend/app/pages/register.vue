@@ -2,16 +2,16 @@
   <div
     class="min-h-screen w-screen bg-font-login bg-cover bg-center relative flex items-center justify-center lg:justify-end"
   >
-    <!-- Overlay sombre pour améliorer la lisibilité -->
+    <!-- Overlay sombre pour ameliorer la lisibilite -->
     <div class="absolute inset-0 bg-black/30"></div>
 
     <!-- Container principal -->
     <div
-      class="relative z-10 w-full max-w-md mx-4 lg:mr-24 lg:mx-0 mt-20"
+      class="relative z-10 w-full max-w-md mx-4 lg:mr-24 lg:mx-0 mt-10"
       data-aos="fade-left"
       data-aos-duration="1200"
     >
-      <!-- Carte de connexion avec effet glassmorphisme -->
+      <!-- Carte d'inscription avec effet glassmorphisme -->
       <div
         class="backdrop-blur-lg bg-white/95 rounded-2xl shadow-2xl border border-white/20 overflow-hidden"
       >
@@ -19,7 +19,7 @@
         <div
           class="bg-gradient-to-br from-gray-800 via-gray-900 to-black p-6 text-center relative overflow-hidden"
         >
-          <!-- Motif décoratif en arrière-plan -->
+          <!-- Motif decoratif en arriere-plan -->
           <div
             class="absolute inset-0 bg-gradient-to-r from-custom-green/10 to-custom-chocolat/10"
           ></div>
@@ -42,17 +42,84 @@
               />
             </NuxtLink>
             <h1 class="text-white text-xl font-bold mt-3 tracking-wide">
-              Bienvenue
+              Creer un compte
             </h1>
             <p class="text-gray-300 text-sm mt-1">
-              Connectez-vous à votre compte
+              Rejoignez la communaute UAfricas
             </p>
           </div>
         </div>
 
         <!-- Formulaire -->
         <div class="p-8">
-          <form @submit.prevent="handleLogin" class="space-y-6">
+          <form @submit.prevent="handleRegister" class="space-y-5">
+            <!-- Prenom et Nom sur la meme ligne -->
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Champ Prenom -->
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-gray-700 block">Prenom</label>
+                <div class="relative">
+                  <div
+                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  >
+                    <svg
+                      class="h-5 w-5 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    required
+                    v-model="form.prenom"
+                    type="text"
+                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    placeholder="Votre prenom"
+                    :disabled="loading"
+                  />
+                </div>
+              </div>
+
+              <!-- Champ Nom -->
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-gray-700 block">Nom</label>
+                <div class="relative">
+                  <div
+                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  >
+                    <svg
+                      class="h-5 w-5 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    required
+                    v-model="form.nom"
+                    type="text"
+                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    placeholder="Votre nom"
+                    :disabled="loading"
+                  />
+                </div>
+              </div>
+            </div>
+
             <!-- Champ Email -->
             <div class="space-y-2">
               <label class="text-sm font-medium text-gray-700 block">Email</label>
@@ -76,7 +143,7 @@
                 </div>
                 <input
                   required
-                  v-model="loginForm.email"
+                  v-model="form.email"
                   type="email"
                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="votre@email.com"
@@ -108,10 +175,44 @@
                 </div>
                 <input
                   required
-                  v-model="loginForm.password"
+                  v-model="form.mot_de_passe"
                   type="password"
+                  minlength="6"
                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  placeholder="••••••••"
+                  placeholder="Minimum 6 caracteres"
+                  :disabled="loading"
+                />
+              </div>
+            </div>
+
+            <!-- Champ Confirmation mot de passe -->
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700 block">Confirmer le mot de passe</label>
+              <div class="relative">
+                <div
+                  class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                >
+                  <svg
+                    class="h-5 w-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
+                <input
+                  required
+                  v-model="form.confirmation_mot_de_passe"
+                  type="password"
+                  minlength="6"
+                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="Retapez votre mot de passe"
                   :disabled="loading"
                 />
               </div>
@@ -119,12 +220,12 @@
 
             <!-- Message d'erreur -->
             <div
-              v-if="error"
+              v-if="displayError"
               class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm"
             >
               <div class="flex items-center">
                 <svg
-                  class="h-4 w-4 mr-2"
+                  class="h-4 w-4 mr-2 shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -136,11 +237,11 @@
                     d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                {{ error }}
+                {{ displayError }}
               </div>
             </div>
 
-            <!-- Bouton de connexion -->
+            <!-- Bouton d'inscription -->
             <button
               type="submit"
               class="w-full bg-gradient-to-r from-custom-chocolat to-custom-green text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none focus:outline-hidden focus:ring-2 focus:ring-custom-green focus:ring-offset-2"
@@ -161,61 +262,26 @@
                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                   />
                 </svg>
-                <span v-if="loading">Connexion en cours...</span>
-                <span v-else>Se connecter</span>
+                <span v-if="loading">Inscription en cours...</span>
+                <span v-else>Creer mon compte</span>
               </div>
             </button>
           </form>
 
-          <!-- Divider -->
-          <div class="mt-6 mb-6">
-            <div class="relative">
-              <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-gray-300"></div>
-              </div>
-              <div class="relative flex justify-center text-sm">
-                <span class="px-2 bg-white text-gray-500">Ou continuer avec</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bouton Google (bientot disponible) -->
-          <button
-            type="button"
-            class="w-full bg-white border border-gray-300 text-gray-400 font-medium py-3 px-6 rounded-xl cursor-not-allowed opacity-60"
-            disabled
-          >
-            <div class="flex items-center justify-center">
-              <img
-                class="h-5 w-5 mr-3 grayscale"
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"
-                alt="Google"
-              />
-              <span>Google — Bientot disponible</span>
-            </div>
-          </button>
-
-          <!-- Liens -->
-          <div class="mt-6 text-center space-y-3">
-            <NuxtLink
-              to="/"
-              class="block text-sm text-custom-green hover:text-custom-chocolat transition-colors duration-300 hover:underline"
-            >
-              Mot de passe oublié ?
-            </NuxtLink>
+          <!-- Lien vers connexion -->
+          <div class="mt-6 text-center">
             <div class="text-sm text-gray-600">
-              Pas encore de compte ?
+              Deja un compte ?
               <NuxtLink
-                to="/register"
+                to="/login"
                 class="text-custom-green hover:text-custom-chocolat font-semibold transition-colors duration-300 hover:underline ml-1"
               >
-                Créer un compte
+                Se connecter
               </NuxtLink>
             </div>
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -226,29 +292,47 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Connexion - UAfricas',
+  title: 'Inscription - UAfricas',
 })
 
 // Initialiser AOS
 useAOS()
 
 const router = useRouter()
-const { login, loading, error } = useAuth()
+const { register, loading, error } = useAuth()
 
-const loginForm = reactive({
+const form = reactive({
+  nom: '',
+  prenom: '',
   email: '',
-  password: '',
+  mot_de_passe: '',
+  confirmation_mot_de_passe: '',
 })
 
-const handleLogin = async () => {
+const validationError = ref<string | null>(null)
+
+const displayError = computed(() => validationError.value || error.value)
+
+const handleRegister = async () => {
+  validationError.value = null
+
+  if (form.mot_de_passe.length < 6) {
+    validationError.value = 'Le mot de passe doit contenir au moins 6 caracteres'
+    return
+  }
+
+  if (form.mot_de_passe !== form.confirmation_mot_de_passe) {
+    validationError.value = 'Les mots de passe ne correspondent pas'
+    return
+  }
+
   try {
-    await login(loginForm.email, loginForm.password)
+    await register(form)
     router.push('/')
   } catch (err) {
-    console.error('Erreur de connexion:', err)
+    console.error('Erreur inscription:', err)
   }
 }
-
 </script>
 
 <style scoped>
@@ -267,13 +351,13 @@ button:not(:disabled):hover {
   transform: translateY(-1px);
 }
 
-/* Effet glassmorphisme renforcé */
+/* Effet glassmorphisme renforce */
 .backdrop-blur-lg {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* Responsive design amélioré */
+/* Responsive design ameliore */
 @media (max-width: 768px) {
   .bg-font-login {
     background-attachment: scroll;

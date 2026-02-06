@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { centresCulturelsMock, CAROUSEL_IMAGES } from '~/mocks/centres-culturels'
-import type { CentreCulturel } from '~/mocks/centres-culturels'
+import { CAROUSEL_IMAGES } from '~/mocks/centres-culturels'
+import type { CentreCulturelAPI } from '~/composables/useCentresCulturels'
+
+const { listerCentres, chargement, erreur } = useCentresCulturels()
 
 useHead({
   title: 'Centres Culturels Africain et Afro-Descendant - UAfricas',
@@ -12,11 +14,14 @@ useHead({
   ]
 })
 
-const centres = ref<CentreCulturel[]>([])
+const centres = ref<CentreCulturelAPI[]>([])
 const carouselImages = ref<string[]>(CAROUSEL_IMAGES)
 
-onMounted(() => {
-  centres.value = centresCulturelsMock
+onMounted(async () => {
+  const resultat = await listerCentres()
+  if (resultat) {
+    centres.value = resultat
+  }
 })
 </script>
 
@@ -29,8 +34,24 @@ onMounted(() => {
       <!-- Hero section -->
       <CentresCulturelsCentreCulturelHero :total="centres.length" />
 
+      <!-- Chargement -->
+      <div v-if="chargement" class="flex justify-center items-center py-16">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-green"></div>
+      </div>
+
+      <!-- Erreur -->
+      <div v-else-if="erreur" class="bg-red-50 border border-red-200 rounded-xl p-6 mt-4 text-center">
+        <p class="text-red-600">{{ erreur }}</p>
+        <button
+          class="mt-3 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
+          @click="listerCentres().then(r => { if (r) centres = r })"
+        >
+          Réessayer
+        </button>
+      </div>
+
       <!-- Liste des centres -->
-      <div class="mt-4">
+      <div v-else class="mt-4">
         <NuxtLink
           v-for="centre in centres"
           :key="centre.id"
@@ -38,6 +59,11 @@ onMounted(() => {
         >
           <CentresCulturelsCentreCulturelCard :centre="centre" />
         </NuxtLink>
+
+        <!-- Aucun centre -->
+        <div v-if="centres.length === 0" class="text-center py-16">
+          <p class="text-gray-500 text-lg">Aucun centre culturel pour le moment</p>
+        </div>
       </div>
     </div>
   </div>

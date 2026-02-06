@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { getProgrammationById, formatDateCourteFrancais, formatHeureFrancais, getTypeLabel } from '~/mocks/centres-culturels'
-import type { CentreCulturel, Programmation } from '~/mocks/centres-culturels'
+import type { ProgrammationAPI } from '~/composables/useCentresCulturels'
+import { formatDateCourteFrancais, formatHeureFrancais, getModeLabel } from '~/composables/useCentresCulturels'
 import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const userStore = useUserStore()
+const { obtenirProgrammation, chargement, erreur } = useCentresCulturels()
 
 const siteId = computed(() => route.params.siteId as string)
 const programmationId = computed(() => route.params.programmationId as string)
 
-const centre = ref<CentreCulturel | null>(null)
-const programmation = ref<Programmation | null>(null)
-const loading = ref(true)
+const centreNom = ref<string>('')
+const programmation = ref<ProgrammationAPI | null>(null)
 
 const isAuthenticated = computed(() => userStore.isAuthenticated)
 
@@ -31,31 +31,30 @@ const handleInterest = () => {
   alert('Votre intérêt a été enregistré! (Mode mock)')
 }
 
-onMounted(() => {
-  const result = getProgrammationById(siteId.value, programmationId.value)
-  if (result) {
-    centre.value = result.centre
-    programmation.value = result.programmation
+onMounted(async () => {
+  const resultat = await obtenirProgrammation(siteId.value, programmationId.value)
+  if (resultat) {
+    centreNom.value = resultat.centre.nom
+    programmation.value = resultat.programmation
   }
-  loading.value = false
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-100">
     <!-- Loading state -->
-    <div v-if="loading" class="flex justify-center items-center min-h-screen">
+    <div v-if="chargement" class="flex justify-center items-center min-h-screen">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-green"></div>
     </div>
 
     <!-- Not found state -->
     <div
-      v-else-if="!programmation || !centre"
+      v-else-if="erreur && !programmation"
       class="flex flex-col justify-center items-center min-h-screen"
     >
       <font-awesome-icon :icon="['fas', 'exclamation-triangle']" class="text-6xl text-yellow-500 mb-4" />
       <h1 class="text-2xl font-bold text-gray-700">Programmation non trouvée</h1>
-      <p class="text-gray-500 mt-2">La programmation demandée n'existe pas.</p>
+      <p class="text-gray-500 mt-2">{{ erreur }}</p>
       <NuxtLink
         :to="`/site/${siteId}`"
         class="mt-4 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
@@ -65,7 +64,7 @@ onMounted(() => {
     </div>
 
     <!-- Content -->
-    <div v-else class="w-full h-full">
+    <div v-else-if="programmation" class="w-full h-full">
       <div
         class="bg-white mx-4 md:mx-16 lg:mx-72 pt-32 px-4 md:px-7 pb-20 rounded-b-md shadow-md"
       >
@@ -82,28 +81,47 @@ onMounted(() => {
               :to="`/site/${siteId}`"
               class="font-bold underline hover:text-custom-green transition-colors"
             >
-              {{ centre.nom }}
+              {{ centreNom }}
             </NuxtLink>
             <span class="hidden md:inline">|</span>
             <div class="text-custom-green">
-              {{ formatDateCourteFrancais(programmation.dateDebut) }}
-              <span class="underline">au</span>
-              {{ formatDateCourteFrancais(programmation.dateFin) }}
+              {{ formatDateCourteFrancais(programmation.date_heure_debut) }}
+              <template v-if="programmation.date_heure_fin">
+                <span class="underline">au</span>
+                {{ formatDateCourteFrancais(programmation.date_heure_fin) }}
+              </template>
             </div>
           </div>
           <div class="mt-2 flex items-center text-gray-700">
             <font-awesome-icon :icon="['fas', 'location-dot']" />
-            <span class="ml-2">{{ programmation.adress }}</span>
+            <span class="ml-2">{{ programmation.lieu || 'Lieu non précisé' }}</span>
           </div>
           <div class="mt-2 flex items-center">
             <font-awesome-icon class="text-gray-700" :icon="['far', 'clock']" />
             <span class="ml-2 font-bold text-xl md:text-2xl text-custom-chocolat">
-              {{ formatHeureFrancais(programmation.dateDebut) }} - {{ formatHeureFrancais(programmation.dateFin) }}
+              {{ formatHeureFrancais(programmation.date_heure_debut) }}
+              <template v-if="programmation.date_heure_fin">
+                - {{ formatHeureFrancais(programmation.date_heure_fin) }}
+              </template>
             </span>
           </div>
           <div class="mt-2 text-sm">
             <span class="text-gray-500">Type:</span>
-            <span class="ml-1 font-medium">{{ getTypeLabel(programmation.type) }}</span>
+            <span class="ml-1 font-medium">{{ getModeLabel(programmation.mode) }}</span>
+          </div>
+          <div v-if="programmation.lien_en_ligne && (programmation.mode === 'en-ligne' || programmation.mode === 'hybride')" class="mt-2">
+            <a
+              :href="programmation.lien_en_ligne"
+              target="_blank"
+              class="text-custom-green hover:underline text-sm"
+            >
+              <font-awesome-icon :icon="['fas', 'video']" class="mr-1" />
+              Rejoindre en ligne
+            </a>
+          </div>
+          <div v-if="programmation.nombre_places" class="mt-2 text-sm text-gray-600">
+            <font-awesome-icon :icon="['fas', 'users']" class="mr-1" />
+            {{ programmation.nombre_places }} places disponibles
           </div>
         </div>
 
@@ -115,15 +133,6 @@ onMounted(() => {
         >
           {{ programmation.titre }}
         </h1>
-
-        <!-- Image couverture -->
-        <img
-          class="w-full mb-4 h-64 md:h-96 object-cover rounded-xl shadow-lg"
-          :src="programmation.couvertureUrl"
-          :alt="programmation.titre"
-          data-aos="zoom-in"
-          data-aos-duration="800"
-        />
 
         <!-- Bouton intérêt -->
         <div
@@ -157,6 +166,7 @@ onMounted(() => {
 
         <!-- Description -->
         <div
+          v-if="programmation.description"
           class="mt-4 bg-slate-100 rounded-r-md shadow-md border border-l-4 border-l-custom-green p-4"
           data-aos="fade-up"
           data-aos-duration="800"

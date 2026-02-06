@@ -21,6 +21,10 @@ pub enum ApiErreur {
     Validation(String),
     /// Erreur d'upload de fichier (400)
     Upload(String),
+    /// Non autorise - identifiants invalides ou token invalide (401)
+    NonAutorise(String),
+    /// Conflit - par exemple email deja utilise (409)
+    Conflit(String),
 }
 
 impl fmt::Display for ApiErreur {
@@ -30,6 +34,8 @@ impl fmt::Display for ApiErreur {
             ApiErreur::BaseDeDonnees(msg) => write!(f, "Erreur base de donnees: {}", msg),
             ApiErreur::Validation(msg) => write!(f, "Validation: {}", msg),
             ApiErreur::Upload(msg) => write!(f, "Upload: {}", msg),
+            ApiErreur::NonAutorise(msg) => write!(f, "Non autorise: {}", msg),
+            ApiErreur::Conflit(msg) => write!(f, "Conflit: {}", msg),
         }
     }
 }
@@ -50,6 +56,8 @@ impl ResponseError for ApiErreur {
             ApiErreur::BaseDeDonnees(_) => {
                 HttpResponse::InternalServerError().json(reponse)
             }
+            ApiErreur::NonAutorise(_) => HttpResponse::Unauthorized().json(reponse),
+            ApiErreur::Conflit(_) => HttpResponse::Conflict().json(reponse),
         }
     }
 }

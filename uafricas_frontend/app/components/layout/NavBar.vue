@@ -155,8 +155,18 @@
         </div>
       </div>
 
-      <!-- Bouton Se connecter (mock - pas d'auth pour l'instant) -->
+      <!-- Authentification : conditionnel -->
+      <div v-if="isAuthenticated" class="flex items-center gap-2">
+        <span class="text-sm text-gray-700 whitespace-nowrap">{{ displayName }}</span>
+        <button
+          @click="handleLogout"
+          class="bg-red-500 text-white px-2 mb-1 whitespace-nowrap rounded-xs text-xs hover:bg-red-600 transition-colors duration-300"
+        >
+          Deconnexion
+        </button>
+      </div>
       <NuxtLink
+        v-else
         to="/login"
         class="bg-custom-chocolat text-white px-2 mb-1 whitespace-nowrap rounded-xs"
       >
@@ -168,6 +178,14 @@
 
 <script setup lang="ts">
 const pointer = ref<string | null>(null)
+
+const { isAuthenticated, displayName, logout } = useAuth()
+const router = useRouter()
+
+const handleLogout = async () => {
+  await logout()
+  router.push('/login')
+}
 </script>
 
 <style scoped>

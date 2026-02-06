@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Programmation } from '~/mocks/centres-culturels'
-import { formatDateFrancais, formatHeureFrancais, getTypeLabel } from '~/mocks/centres-culturels'
+import type { ProgrammationAPI } from '~/composables/useCentresCulturels'
+import { formatDateFrancais, formatHeureFrancais, getModeLabel } from '~/composables/useCentresCulturels'
 
 defineProps<{
-  programmation: Programmation
+  programmation: ProgrammationAPI
   siteId: string
 }>()
 
@@ -26,14 +26,12 @@ const getRandomColor = (id: string) => {
       data-aos-duration="600"
     >
       <div class="p-2">
-        <img
-          class="rounded-xl h-40 object-cover w-full"
-          :src="programmation.couvertureUrl"
-          :alt="programmation.titre"
-        />
+        <div class="rounded-xl h-40 bg-gray-200/50 w-full flex items-center justify-center">
+          <font-awesome-icon class="text-gray-500 text-4xl" :icon="['fas', 'calendar-days']" />
+        </div>
       </div>
       <div class="rounded-r-full text-white bg-black inline-flex px-4 py-0.5 text-sm">
-        {{ formatDateFrancais(programmation.dateDebut) }}
+        {{ formatDateFrancais(programmation.date_heure_debut) }}
       </div>
       <div class="m-3">
         <div class="font-bold text-2xl truncate">
@@ -41,17 +39,17 @@ const getRandomColor = (id: string) => {
         </div>
         <div class="flex items-center mt-2">
           <font-awesome-icon class="text-gray-700" :icon="['fas', 'location-dot']" />
-          <div class="ml-2 truncate text-gray-700">{{ programmation.adress }}</div>
+          <div class="ml-2 truncate text-gray-700">{{ programmation.lieu || 'Lieu non précisé' }}</div>
         </div>
         <div class="flex items-center mt-1">
           <font-awesome-icon class="text-gray-700" :icon="['far', 'clock']" />
           <div class="ml-2 font-bold text-xl text-red-600">
-            {{ formatHeureFrancais(programmation.dateDebut) }}
+            {{ formatHeureFrancais(programmation.date_heure_debut) }}
           </div>
         </div>
         <div class="italic text-sm mt-1">
           <span class="text-gray-600">Type:</span>
-          {{ getTypeLabel(programmation.type) }}
+          {{ getModeLabel(programmation.mode) }}
         </div>
       </div>
     </div>

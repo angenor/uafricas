@@ -1,19 +1,23 @@
 <script setup lang="ts">
-import { getCentreById } from '~/mocks/centres-culturels'
-import type { CentreCulturel } from '~/mocks/centres-culturels'
+import type { CentreCulturelDetailAPI } from '~/composables/useCentresCulturels'
 import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const userStore = useUserStore()
+const { obtenirCentre, chargement, erreur, genererLienGoogleMaps } = useCentresCulturels()
 
 const id = computed(() => route.params.id as string)
 
-const centre = ref<CentreCulturel | null>(null)
-const loading = ref(true)
+const centre = ref<CentreCulturelDetailAPI | null>(null)
 const showInscription = ref(false)
 const showCreateProg = ref(false)
 
 const isAdmin = computed(() => userStore.user?.roles?.includes('admin'))
+
+const googleMapsUrl = computed(() => {
+  if (!centre.value) return null
+  return genererLienGoogleMaps(centre.value.latitude, centre.value.longitude)
+})
 
 useHead(() => ({
   title: centre.value
@@ -41,12 +45,11 @@ const handleCreateProgrammation = (programmation: any) => {
   showCreateProg.value = false
 }
 
-onMounted(() => {
-  const foundCentre = getCentreById(id.value)
-  if (foundCentre) {
-    centre.value = foundCentre
+onMounted(async () => {
+  const resultat = await obtenirCentre(id.value)
+  if (resultat) {
+    centre.value = resultat
   }
-  loading.value = false
 })
 </script>
 
@@ -68,18 +71,18 @@ onMounted(() => {
     />
 
     <!-- Loading state -->
-    <div v-if="loading" class="flex justify-center items-center min-h-screen">
+    <div v-if="chargement" class="flex justify-center items-center min-h-screen">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-green"></div>
     </div>
 
-    <!-- Not found state -->
+    <!-- Error state -->
     <div
-      v-else-if="!centre"
+      v-else-if="erreur && !centre"
       class="flex flex-col justify-center items-center min-h-screen"
     >
       <font-awesome-icon :icon="['fas', 'exclamation-triangle']" class="text-6xl text-yellow-500 mb-4" />
       <h1 class="text-2xl font-bold text-gray-700">Centre non trouvé</h1>
-      <p class="text-gray-500 mt-2">Le centre culturel demandé n'existe pas.</p>
+      <p class="text-gray-500 mt-2">{{ erreur }}</p>
       <NuxtLink
         to="/africain-afro-americain"
         class="mt-4 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
@@ -89,17 +92,24 @@ onMounted(() => {
     </div>
 
     <!-- Content -->
-    <div v-else class="h-full mx-4 md:mx-16 lg:mx-56">
+    <div v-else-if="centre" class="h-full mx-4 md:mx-16 lg:mx-56">
       <!-- Header avec bannière -->
       <div class="bg-white pt-32 px-4 md:px-7 pb-5 rounded-b-xl shadow-md">
         <CommonBreadcrumbNav />
 
         <div class="relative mt-3">
           <img
+            v-if="centre.image_couverture_url"
             class="w-full rounded-xl h-48 md:h-72 object-cover"
-            :src="centre.urlBanniere"
+            :src="centre.image_couverture_url"
             :alt="centre.nom"
           />
+          <div
+            v-else
+            class="w-full rounded-xl h-48 md:h-72 bg-gray-300 flex items-center justify-center"
+          >
+            <font-awesome-icon class="text-gray-400 text-6xl" :icon="['fas', 'building']" />
+          </div>
           <div
             class="bg-gradient-to-t from-black to-transparent absolute h-24 md:h-36 w-full bottom-0 rounded-xl"
           >
@@ -126,29 +136,26 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Équipe et Localisation -->
+      <!-- Localisation -->
       <div class="flex flex-col md:flex-row gap-2 mt-3">
-        <CentresCulturelsEquipeSection
-          :president="centre.president"
-          :vice-president="centre.vicePresident"
-          :resp-communication="centre.respCommunication"
-        />
-
-        <div class="rounded-xl bg-white w-full md:w-1/2 p-4">
+        <div class="rounded-xl bg-white w-full p-4">
           <div class="flex items-center text-gray-600 border-b-2 pb-2">
             <font-awesome-icon :icon="['fas', 'location-dot']" />
             <div class="text-xl font-extrabold ml-3">Localisation</div>
           </div>
-          <a
-            v-if="centre.urlGoogleMap"
-            class="mt-3 block text-gray-700 hover:text-custom-chocolat transition-colors"
-            target="_blank"
-            :href="centre.urlGoogleMap"
-          >
-            <font-awesome-icon :icon="['fas', 'external-link-alt']" class="mr-2" />
-            {{ centre.adress }}
-          </a>
-          <p v-else class="mt-3 text-gray-700">{{ centre.adress }}</p>
+          <div class="mt-3">
+            <a
+              v-if="googleMapsUrl"
+              class="block text-gray-700 hover:text-custom-chocolat transition-colors"
+              target="_blank"
+              :href="googleMapsUrl"
+            >
+              <font-awesome-icon :icon="['fas', 'external-link-alt']" class="mr-2" />
+              {{ centre.adresse || centre.ville || 'Voir sur la carte' }}
+            </a>
+            <p v-else class="text-gray-700">{{ centre.adresse || centre.ville || 'Adresse non renseignée' }}</p>
+          </div>
+          <p v-if="centre.description" class="mt-3 text-gray-600 text-sm">{{ centre.description }}</p>
         </div>
       </div>
 

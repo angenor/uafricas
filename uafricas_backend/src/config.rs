@@ -9,6 +9,17 @@ pub struct AppConfig {
     pub database_url: String,
     pub upload_dir: String,
     pub frontend_url: String,
+    pub jwt_secret: String,
+    pub jwt_expiration_minutes: i64,
+    pub refresh_expiration_days: i64,
+}
+
+/// Configuration JWT partagee via web::Data
+#[derive(Clone)]
+pub struct JwtConfig {
+    pub secret: String,
+    pub expiration_minutes: i64,
+    pub refresh_expiration_days: i64,
 }
 
 impl AppConfig {
@@ -26,6 +37,25 @@ impl AppConfig {
                 .unwrap_or_else(|_| "./uploads".to_string()),
             frontend_url: env::var("FRONTEND_URL")
                 .unwrap_or_else(|_| "http://localhost:3000".to_string()),
+            jwt_secret: env::var("JWT_SECRET")
+                .expect("JWT_SECRET doit etre definie dans .env"),
+            jwt_expiration_minutes: env::var("JWT_EXPIRATION_MINUTES")
+                .unwrap_or_else(|_| "15".to_string())
+                .parse::<i64>()
+                .expect("JWT_EXPIRATION_MINUTES doit etre un nombre"),
+            refresh_expiration_days: env::var("REFRESH_EXPIRATION_DAYS")
+                .unwrap_or_else(|_| "7".to_string())
+                .parse::<i64>()
+                .expect("REFRESH_EXPIRATION_DAYS doit etre un nombre"),
+        }
+    }
+
+    /// Creer la configuration JWT a partir de AppConfig
+    pub fn jwt_config(&self) -> JwtConfig {
+        JwtConfig {
+            secret: self.jwt_secret.clone(),
+            expiration_minutes: self.jwt_expiration_minutes,
+            refresh_expiration_days: self.refresh_expiration_days,
         }
     }
 }
