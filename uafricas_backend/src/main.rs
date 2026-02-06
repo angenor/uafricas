@@ -1,5 +1,13 @@
+use actix_cors::Cors;
+use actix_files::Files;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
+
+mod config;
+mod errors;
+mod handlers;
+mod models;
+mod routes;
 
 #[derive(Serialize)]
 struct HealthResponse {
@@ -8,20 +16,20 @@ struct HealthResponse {
 }
 
 #[derive(Serialize, Deserialize)]
-struct ApiResponse<T> {
+pub struct ApiResponse<T> {
     success: bool,
     data: Option<T>,
     error: Option<String>,
 }
 
-async fn health_check() -> impl Responder {
+pub async fn health_check() -> impl Responder {
     HttpResponse::Ok().json(HealthResponse {
         status: "ok",
         message: "UAfricas Backend is running",
     })
 }
 
-async fn index() -> impl Responder {
+pub async fn index() -> impl Responder {
     HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -29,32 +37,56 @@ async fn index() -> impl Responder {
     })
 }
 
-fn configure_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("/api")
-            .route("/health", web::get().to(health_check))
-            .route("/", web::get().to(index)),
-    );
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenvy::dotenv().ok();
     env_logger::init();
-    log::info!("Starting UAfricas Backend server...");
 
-    let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-    let port = std::env::var("PORT")
-        .unwrap_or_else(|_| "8080".to_string())
-        .parse::<u16>()
-        .expect("PORT must be a valid number");
+    log::info!("Demarrage du serveur UAfricas Backend...");
 
-    log::info!("Server running at http://{}:{}", host, port);
+    let app_config = config::AppConfig::from_env();
 
-    HttpServer::new(|| {
+    // Initialiser le pool de connexions PostgreSQL
+    let pool = config::init_db_pool(&app_config.database_url).await;
+    log::info!("Connexion a la base de donnees etablie");
+
+    // Creer les repertoires d'upload si necessaire
+    std::fs::create_dir_all(format!("{}/couvertures", &app_config.upload_dir))
+        .expect("Impossible de creer le repertoire uploads/couvertures");
+    std::fs::create_dir_all(format!("{}/documents", &app_config.upload_dir))
+        .expect("Impossible de creer le repertoire uploads/documents");
+    log::info!("Repertoires d'upload prets: {}", &app_config.upload_dir);
+
+    let upload_dir = app_config.upload_dir.clone();
+    let frontend_url = app_config.frontend_url.clone();
+    let upload_dir_static = app_config.upload_dir.clone();
+
+    log::info!(
+        "Serveur en ecoute sur http://{}:{}",
+        app_config.host,
+        app_config.port
+    );
+
+    HttpServer::new(move || {
+        let cors = Cors::default()
+            .allowed_origin(&frontend_url)
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+            .allowed_headers(vec![
+                actix_web::http::header::CONTENT_TYPE,
+                actix_web::http::header::AUTHORIZATION,
+                actix_web::http::header::ACCEPT,
+            ])
+            .max_age(3600);
+
         App::new()
-            .configure(configure_routes)
+            .wrap(cors)
+            .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(upload_dir.clone()))
+            .app_data(web::PayloadConfig::new(50 * 1024 * 1024))
+            .configure(routes::configurer_routes)
+            .service(Files::new("/uploads", &upload_dir_static))
     })
-    .bind((host.as_str(), port))?
+    .bind((app_config.host.as_str(), app_config.port))?
     .run()
     .await
 }

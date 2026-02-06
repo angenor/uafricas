@@ -29,7 +29,7 @@ RUST_LOG=info cargo run        # Run with logging (http://127.0.0.1:8080)
 cargo build --release          # Release build
 ```
 
-Backend env vars: `HOST` (default: 127.0.0.1), `PORT` (default: 8080), `RUST_LOG` (info/debug/error).
+Backend env vars: `DATABASE_URL` (required), `HOST` (default: 127.0.0.1), `PORT` (default: 8080), `UPLOAD_DIR` (default: ./uploads), `FRONTEND_URL` (default: http://localhost:3000), `RUST_LOG` (info/debug/error).
 
 ### Database (Docker)
 
@@ -60,6 +60,7 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 - `useAuth` — wraps mock login/logout/Google auth, exposes loading/error state and role checking
 - `useAudioPlayer` — HTML5 audio controls for radio streaming (play/pause/volume/station switching)
 - `useAOS` — initializes Animate On Scroll (1000ms duration, once, ease-out-cubic)
+- `useBibliotheque` — API client pour la bibliothèque numérique (CRUD livres via $fetch, upload multipart, mapping accès DB↔frontend)
 
 **Mock data layer** (`app/mocks/`, 22 files): Fichiers TypeScript de données fictives avec interfaces, tableaux et fonctions async simulant la latence réseau. Lors de l'intégration backend, remplacer les imports mock par des appels API.
 
@@ -69,7 +70,20 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 
 ### Backend
 
-Minimal Actix-Web server with two endpoints: `GET /api/health` and `GET /api/`. Uses a generic `ApiResponse<T>` wrapper for JSON responses. Routes are configured in `configure_routes()`.
+Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/`, `handlers/`, `routes.rs`). Uses a generic `ApiResponse<T>` wrapper for JSON responses. Routes configured in `routes::configurer_routes()`.
+
+**Endpoints API implémentés** :
+- `GET /api/health` — Health check
+- `GET /api/livres?recherche=&type_document=&page=&par_page=` — Liste paginée des livres
+- `GET /api/livres/{id}` — Détail d'un livre (incrémente vues)
+- `POST /api/livres` — Création multipart (image couverture + PDF + métadonnées)
+- `DELETE /api/livres/{id}` — Suppression douce
+
+**Dépendances backend** : actix-web 4, actix-cors, actix-multipart, actix-files, sqlx (PostgreSQL), uuid, chrono, dotenvy, serde, sanitize-filename.
+
+**Upload fichiers** : Stockage local dans `./uploads/couvertures/` et `./uploads/documents/`, servis statiquement via actix-files sur `/uploads/`.
+
+**Configuration** : Variables d'environnement dans `.env` : `DATABASE_URL`, `UPLOAD_DIR`, `FRONTEND_URL`, `HOST`, `PORT`, `RUST_LOG`.
 
 **Database** : PostgreSQL 16 via Docker (`docker-compose.yml` à la racine). Le schéma SQL complet est dans `uafricas_backend/doc/bd/` avec un fichier orchestrateur `schema.sql` qui inclut 15 fichiers via `\ir` (dans `schemas/`). Le script `docker-init.sh` lance l'init automatiquement au premier `docker compose up`.
 
@@ -107,3 +121,4 @@ Use multiple sub-agents in parallel for efficiency:
 - Ajout de CI/CD, linting, ou testing
 
 Après chaque modification significative du projet, vérifier si CLAUDE.md reflète toujours l'état actuel et le mettre à jour si nécessaire.
+

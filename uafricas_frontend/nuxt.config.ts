@@ -15,6 +15,14 @@ export default defineNuxtConfig({
       tailwindcss(),
     ],
   },
+
+  // Configuration d'execution pour l'URL de l'API backend
+  runtimeConfig: {
+    public: {
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8080',
+    },
+  },
+
   app: {
     head: {
       title: 'UAfricas - United Africa for Sustainable Development',

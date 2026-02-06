@@ -89,8 +89,21 @@
       </button>
     </div>
 
+    <!-- Etat de chargement -->
+    <div v-if="chargement" class="flex justify-center py-16">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-green"></div>
+    </div>
+
+    <!-- Erreur -->
+    <div v-if="erreur" class="max-w-7xl mx-auto px-4 mb-4">
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex justify-between items-center">
+        <p>{{ erreur }}</p>
+        <button @click="chargerLivres" class="text-sm underline hover:text-red-900">Reessayer</button>
+      </div>
+    </div>
+
     <!-- Grille de documents -->
-    <div class="max-w-7xl mx-auto px-4">
+    <div v-if="!chargement" class="max-w-7xl mx-auto px-4">
       <TransitionGroup
         name="document-list"
         tag="div"
@@ -103,12 +116,12 @@
         >
           <!-- Image avec effet hover -->
           <div
-            @click="pdfSelected = { url: document.doc_url, acces: document.acces }"
+            @click="pdfSelected = { url: document.document_pdf_url, acces: document.acces }"
             class="relative h-72 overflow-hidden cursor-pointer group"
           >
             <img
               class="h-full w-full object-cover transform transition-transform duration-500 group-hover:scale-110"
-              :src="document.couverture_url"
+              :src="document.image_couverture_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'"
               :alt="document.titre"
             />
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4">
@@ -124,7 +137,7 @@
 
             <div class="flex items-center text-sm text-gray-600 mb-2">
               <font-awesome-icon icon="fa-solid fa-calendar" class="mr-1" />
-              <span>{{ formatDate(document.date_heure_publication) }}</span>
+              <span>{{ formatDate(document.date_publication) }}</span>
             </div>
 
             <div class="flex items-center mb-2">
@@ -143,12 +156,12 @@
         </div>
       </TransitionGroup>
 
-      <!-- État vide -->
-      <div v-if="filteredDocuments.length === 0" class="text-center py-16">
+      <!-- Etat vide -->
+      <div v-if="filteredDocuments.length === 0 && !chargement" class="text-center py-16">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <p class="text-gray-500 text-lg">Aucun document trouvé</p>
+        <p class="text-gray-500 text-lg">Aucun document trouve</p>
       </div>
     </div>
   </div>
@@ -326,20 +339,14 @@
                   required
                 />
                 <span class="ml-2 text-sm text-gray-700">
-                  Moi <span class="font-bold">{{ mockUser.prenom }} {{ mockUser.nom }}</span>, accepte la diffusion de cette publication
+                  Moi <span class="font-bold">{{ utilisateurNom }}</span>, accepte la diffusion de cette publication
                 </span>
               </label>
             </div>
 
-            <!-- Barre de progression -->
-            <div v-if="progress > 0" class="mb-4">
-              <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  class="bg-custom-green h-2.5 rounded-full transition-all duration-300 ease-in-out"
-                  :style="{ width: progress + '%' }"
-                ></div>
-              </div>
-              <p class="text-sm text-center mt-1">{{ Math.round(progress) }}% terminé</p>
+            <!-- Message d'erreur soumission -->
+            <div v-if="erreurSoumission" class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-lg text-sm">
+              {{ erreurSoumission }}
             </div>
 
             <!-- Boutons -->
@@ -367,40 +374,43 @@
 </template>
 
 <script setup lang="ts">
-import { documentsNumeriques as initialDocuments, documentTypes, mockCurrentUser, type DocumentNumerique } from '~/mocks/bibliotheques'
+import { documentTypes as typesBase } from '~/mocks/bibliotheques'
+
+const documentTypes = ['Tous', ...typesBase]
+import type { LivreAPI } from '~/composables/useBibliotheque'
 
 useHead({
-  title: 'Bibliothèque Numérique - UAfricas',
+  title: 'Bibliotheque Numerique - UAfricas',
   meta: [
-    { name: 'description', content: 'Accédez à des milliers de livres et documents africains' },
+    { name: 'description', content: 'Accedez a des milliers de livres et documents africains' },
   ],
 })
 
 useAOS()
 
-// Search and filter state
-const searchQuery = ref('')
-const selectedType = ref('Livre')
+// Composable API bibliotheque
+const { chargement, erreur, listerLivres, creerLivre } = useBibliotheque()
 
-// Documents array (reactive to allow adding new documents)
-const documents = ref<DocumentNumerique[]>([...initialDocuments])
+// Etat de recherche et filtrage
+const searchQuery = ref('')
+const selectedType = ref('Tous')
+
+// Liste des livres charges depuis l'API
+const livres = ref<LivreAPI[]>([])
 
 // PDF viewer state
 const pdfSelected = ref<{ url: string | null; acces: string | null }>({ url: null, acces: null })
 
-// Add popup state
+// Popup et formulaire
 const showAddPopup = ref(false)
-const progress = ref(0)
 const isSubmitting = ref(false)
-
-// File refs
+const erreurSoumission = ref<string | null>(null)
 const docImage = ref<File | null>(null)
 const docFichier = ref<File | null>(null)
 
-// Mock user for consent display
-const mockUser = mockCurrentUser
+// Nom utilisateur pour le consentement
+const utilisateurNom = ref('Utilisateur')
 
-// Document form state
 const documentForm = ref({
   titre: '',
   description: '',
@@ -409,26 +419,39 @@ const documentForm = ref({
   auteurBiblio: '',
   datePublication: '',
   rapport: '',
-  consent: false
+  consent: false,
 })
 
-// Computed filtered documents
-const filteredDocuments = computed(() => {
-  let docs = documents.value
+// Documents affiches (directement depuis l'API, le filtrage est cote serveur)
+const filteredDocuments = computed(() => livres.value)
 
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    docs = docs.filter(d =>
-      d.titre.toLowerCase().includes(query) ||
-      d.description.toLowerCase().includes(query)
-    )
+// Charger les livres depuis l'API
+async function chargerLivres() {
+  const filtres: Record<string, any> = {
+    par_page: 20,
   }
 
-  if (selectedType.value && selectedType.value !== 'Autre') {
-    docs = docs.filter(d => d.type === selectedType.value)
+  if (searchQuery.value.trim()) {
+    filtres.recherche = searchQuery.value.trim()
   }
 
-  return docs
+  if (selectedType.value && selectedType.value !== 'Tous' && selectedType.value !== 'Autre') {
+    filtres.type_document = selectedType.value
+  }
+
+  const resultat = await listerLivres(filtres)
+  if (resultat) {
+    livres.value = resultat.livres
+  }
+}
+
+// Surveiller les changements de recherche et de type pour recharger
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+watch([searchQuery, selectedType], () => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    chargerLivres()
+  }, 300)
 })
 
 // File upload handlers
@@ -446,49 +469,35 @@ function handleDocUpload(event: Event) {
   }
 }
 
-// Submit handler with simulated progress
+// Soumission reelle du formulaire via l'API
 async function submitDoc() {
   if (!documentForm.value.consent) {
     alert('Veuillez accepter les conditions')
     return
   }
+  if (!docFichier.value) {
+    alert('Veuillez selectionner un document PDF')
+    return
+  }
 
   isSubmitting.value = true
-  progress.value = 0
+  erreurSoumission.value = null
 
-  // Simulate upload progress
-  const interval = setInterval(() => {
-    progress.value += 10
-    if (progress.value >= 100) {
-      clearInterval(interval)
+  const nouveauLivre = await creerLivre(
+    documentForm.value,
+    docImage.value,
+    docFichier.value,
+  )
 
-      // Create new document with local file URLs or fallbacks
-      const newDoc: DocumentNumerique = {
-        id: String(Date.now()),
-        titre: documentForm.value.titre,
-        description: documentForm.value.description,
-        couverture_url: docImage.value
-          ? URL.createObjectURL(docImage.value)
-          : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400',
-        doc_url: docFichier.value
-          ? URL.createObjectURL(docFichier.value)
-          : '/documents/sample.pdf',
-        acces: documentForm.value.acces as 'Lecture' | 'Téléchargeable',
-        date_heure_publication: documentForm.value.datePublication,
-        type: documentForm.value.type,
-        auteur: { biblio: documentForm.value.auteurBiblio },
-        user: { nom: mockUser.nom, prenom: mockUser.prenom }
-      }
+  if (nouveauLivre) {
+    livres.value.unshift(nouveauLivre)
+    resetForm()
+    showAddPopup.value = false
+  } else {
+    erreurSoumission.value = erreur.value || 'Erreur lors de la creation du document'
+  }
 
-      // Add to beginning of array
-      documents.value.unshift(newDoc)
-
-      // Reset form and close popup
-      resetForm()
-      showAddPopup.value = false
-      isSubmitting.value = false
-    }
-  }, 200) // 2 seconds total
+  isSubmitting.value = false
 }
 
 function resetForm() {
@@ -500,17 +509,23 @@ function resetForm() {
     auteurBiblio: '',
     datePublication: '',
     rapport: '',
-    consent: false
+    consent: false,
   }
   docImage.value = null
   docFichier.value = null
-  progress.value = 0
+  erreurSoumission.value = null
 }
 
-function formatDate(dateString: string) {
+function formatDate(dateString: string | null) {
+  if (!dateString) return ''
   const date = new Date(dateString)
   return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 }
+
+// Chargement initial
+onMounted(() => {
+  chargerLivres()
+})
 </script>
 
 <style scoped>
