@@ -61,7 +61,9 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 - `useAudioPlayer` — HTML5 audio controls for radio streaming (play/pause/volume/station switching)
 - `useAOS` — initializes Animate On Scroll (1000ms duration, once, ease-out-cubic)
 
-**Mock data layer** (`app/mocks/`, 22 files): The frontend is **not connected to any backend**. All data comes from TypeScript mock files that export interfaces, data arrays, and async utility functions with simulated network delays. When integrating with the real backend, replace mock imports with API calls — the interfaces serve as the data contract.
+**Mock data layer** (`app/mocks/`, 22 files): Fichiers TypeScript de données fictives avec interfaces, tableaux et fonctions async simulant la latence réseau. Lors de l'intégration backend, remplacer les imports mock par des appels API.
+
+> **⚠️ Source de vérité** : Le schéma SQL (`uafricas_backend/doc/bd/schema.sql` et `schemas/*.sql`) prime sur les données mock. Adapter les interfaces frontend au schéma SQL, pas l'inverse.
 
 **Icons**: FontAwesome registered globally via `app/plugins/fontawesome.ts`. To add a new icon, import it and add it to the `library.add()` call.
 
