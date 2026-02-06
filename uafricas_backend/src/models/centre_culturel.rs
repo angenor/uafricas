@@ -75,7 +75,7 @@ pub struct CentreCulturelResponse {
     pub updated_at: DateTime<Utc>,
 }
 
-/// DTO pour le detail d'un centre avec ses programmations
+/// DTO pour le detail d'un centre avec ses programmations et membres
 #[derive(Debug, Serialize)]
 pub struct CentreCulturelDetailResponse {
     pub id: Uuid,
@@ -87,6 +87,7 @@ pub struct CentreCulturelDetailResponse {
     pub adresse: Option<String>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
+    pub membres: Vec<MembreCentreResponse>,
     pub programmations: Vec<ProgrammationResponse>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -122,6 +123,28 @@ pub struct CentreCulturelInfoResponse {
     pub id: Uuid,
     pub nom: String,
     pub slug: Option<String>,
+}
+
+/// Representation d'un membre de centre (JOIN avec iam.utilisateur)
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct MembreCentre {
+    pub id: Uuid,
+    pub role: String,
+    pub nom: String,
+    pub prenom: Option<String>,
+    pub email: String,
+    pub telephone: Option<String>,
+}
+
+/// DTO pour un membre de centre dans la reponse API
+#[derive(Debug, Serialize)]
+pub struct MembreCentreResponse {
+    pub nom: String,
+    pub prenom: Option<String>,
+    pub email: String,
+    pub telephone: Option<String>,
+    pub role: String,
+    pub role_label: String,
 }
 
 /// Parametres de requete pour le listing des centres
@@ -177,8 +200,36 @@ impl ProgrammationCentre {
     }
 }
 
+impl MembreCentre {
+    /// Mapper le role DB vers un label lisible en francais
+    fn role_label(role: &str) -> String {
+        match role {
+            "president" => "Président".to_string(),
+            "vice_president" => "Vice-président".to_string(),
+            "resp_communication" => "Responsable Communication".to_string(),
+            "membre" => "Membre".to_string(),
+            autre => autre.to_string(),
+        }
+    }
+
+    pub fn to_response(&self) -> MembreCentreResponse {
+        MembreCentreResponse {
+            nom: self.nom.clone(),
+            prenom: self.prenom.clone(),
+            email: self.email.clone(),
+            telephone: self.telephone.clone(),
+            role: self.role.clone(),
+            role_label: Self::role_label(&self.role),
+        }
+    }
+}
+
 impl CentreCulturel {
-    pub fn to_detail_response(&self, programmations: Vec<ProgrammationResponse>) -> CentreCulturelDetailResponse {
+    pub fn to_detail_response(
+        &self,
+        membres: Vec<MembreCentreResponse>,
+        programmations: Vec<ProgrammationResponse>,
+    ) -> CentreCulturelDetailResponse {
         CentreCulturelDetailResponse {
             id: self.id,
             nom: self.nom.clone(),
@@ -189,6 +240,7 @@ impl CentreCulturel {
             adresse: self.adresse.clone(),
             latitude: self.latitude,
             longitude: self.longitude,
+            membres,
             programmations,
             created_at: self.created_at,
             updated_at: self.updated_at,

@@ -1,253 +1,653 @@
 <template>
-  <div class="min-h-screen z-0">
-    <!-- Hero -->
-    <CodiMoiCodiMoiHero
-      titre="Codi-Moi"
-      sous-titre="Codification des valeurs africaines et afro-descendantes"
+  <div class="min-h-screen pb-10 bg-gray-50">
+    <!-- Hero Section -->
+    <div
+      class="relative h-80 bg-cover bg-center"
+      style="background-image: url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
+    >
+      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
+
+      <div class="absolute inset-0 flex flex-col items-center justify-center mt-5">
+        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title text-center px-4">
+          Codi-Moi
+        </h1>
+        <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
+        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle max-w-4xl text-center px-4">
+          Codification des valeurs africaines et afro-descendantes
+        </p>
+      </div>
+    </div>
+
+    <!-- Barre de recherche flottante -->
+    <CodiMoiFilters
+      v-model:active-category="activeCategory"
+      v-model:search-keywords="searchKeywords"
+      v-model:search-pays="searchPays"
     />
 
     <!-- Breadcrumb -->
-    <div class="backdrop-blur-xs mx-auto px-4 py-3 bg-gray-50 border-b border-gray-200">
-      <div class="max-w-7xl mx-auto">
-        <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
+    <div class="max-w-7xl mx-auto px-4 mt-6">
+      <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
+    </div>
+
+    <!-- Titre et bouton ajouter -->
+    <div class="max-w-7xl mx-auto px-4 mt-6 mb-4 flex justify-between items-center">
+      <h2 class="text-2xl font-bold text-gray-800">
+        Publications
+        <span v-if="hasActiveFilters" class="text-base font-normal text-gray-500 ml-2">
+          ({{ totalPosts }} résultat{{ totalPosts > 1 ? 's' : '' }})
+        </span>
+      </h2>
+      <div class="flex items-center gap-3">
+        <button
+          v-if="hasActiveFilters"
+          @click="resetFilters"
+          class="flex items-center gap-2 px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm"
+        >
+          <font-awesome-icon icon="fa-solid fa-xmark" />
+          <span class="hidden sm:inline">Effacer les filtres</span>
+        </button>
+        <button
+          @click="showCreateModal = true"
+          class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-custom-chocolat to-amber-700 text-white rounded-lg transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+        >
+          <font-awesome-icon icon="fa-solid fa-plus" />
+          <span>Nouveau post</span>
+        </button>
       </div>
     </div>
 
-    <!-- Container principal -->
-    <div class="max-w-7xl mx-auto bg-white min-h-screen rounded-lg shadow-xl relative -mt-6">
-      <div class="px-4 py-6">
-        <div class="flex flex-col lg:flex-row gap-8">
-          <!-- Sidebar -->
-          <CodiMoiCodiMoiSidebar
-            :amis="amis"
-            :stats="stats"
-            :popular-posts="popularPosts"
-            @go-to-post="goToPost"
-            class="order-2 lg:order-1"
-          />
+    <!-- État de chargement -->
+    <div v-if="loading && posts.length === 0" class="flex justify-center py-16">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-green"></div>
+    </div>
 
-          <!-- Colonne principale -->
-          <div class="flex-1 order-1 lg:order-2">
-            <!-- Filtres -->
-            <CodiMoiCodiMoiFilters
-              v-model:active-category="activeCategory"
-              :user-name="user.prenom"
-              :user-photo="user.photo_url"
-              v-model:filters="filters"
-              v-model:search-keywords="searchKeywords"
-              v-model:search-pays="searchPays"
-              @create-post="showCreateModal = true"
-              @apply-search="applySearch"
+    <!-- État d'erreur -->
+    <div v-else-if="pageErreur && posts.length === 0" class="max-w-7xl mx-auto px-4 py-16 text-center">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-50 mb-4">
+        <font-awesome-icon icon="fa-solid fa-triangle-exclamation" class="text-3xl text-red-400" />
+      </div>
+      <h3 class="text-lg font-semibold text-gray-600">Erreur de chargement</h3>
+      <p class="text-gray-400 mt-1 text-sm">{{ pageErreur }}</p>
+      <button
+        @click="chargerPosts()"
+        class="mt-4 px-5 py-2.5 bg-gradient-to-r from-custom-green to-green-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 text-sm font-medium"
+      >
+        <font-awesome-icon icon="fa-solid fa-rotate-right" class="mr-2" />
+        Réessayer
+      </button>
+    </div>
+
+    <!-- Contenu principal -->
+    <div v-else class="max-w-7xl mx-auto px-4">
+      <div class="flex flex-col lg:flex-row gap-6">
+        <!-- Colonne principale -->
+        <div class="flex-1 min-w-0">
+          <!-- Liste des posts animée -->
+          <TransitionGroup
+            name="post-list"
+            tag="div"
+            class="space-y-5"
+          >
+            <CodiMoiCard
+              v-for="post in filteredPosts"
+              :key="post.id"
+              :post="post"
+              @click="navigateToPost(post.id)"
+              @like="handleLike(post.id)"
+              @dislike="handleDislike(post.id)"
+              @comment="navigateToPost(post.id)"
+              @share="handleShare(post.id)"
             />
+          </TransitionGroup>
 
-            <!-- Liste des posts -->
-            <div class="space-y-6">
-              <CodiMoiCodiMoiCard
-                v-for="post in filteredPosts"
-                :key="post.id"
-                :post="post"
-                @click="openPostDetail(post)"
-                @like="handleLike(post)"
-                @dislike="handleDislike(post)"
-                @comment="openPostDetail(post)"
-                @share="handleShare(post)"
-              />
+          <!-- État vide -->
+          <div v-if="filteredPosts.length === 0" class="text-center py-16">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white shadow-md mb-4">
+              <font-awesome-icon icon="fa-solid fa-file-circle-xmark" class="text-3xl text-gray-300" />
             </div>
+            <h3 class="text-lg font-semibold text-gray-600">Aucune publication trouvée</h3>
+            <p class="text-gray-400 mt-1 text-sm">Modifiez vos filtres ou partagez une nouvelle valeur</p>
+            <button
+              @click="showCreateModal = true"
+              class="mt-4 px-5 py-2.5 bg-gradient-to-r from-custom-green to-green-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 text-sm font-medium"
+            >
+              <font-awesome-icon icon="fa-solid fa-plus" class="mr-2" />
+              Créer un post
+            </button>
+          </div>
 
-            <!-- État vide -->
-            <div v-if="filteredPosts.length === 0" class="text-center py-16">
-              <div class="text-5xl text-gray-300 mb-4">
-                <font-awesome-icon icon="fa-solid fa-file-circle-xmark" />
-              </div>
-              <h3 class="text-xl font-semibold text-gray-500">
-                Aucun post trouvé
-              </h3>
-              <p class="text-gray-400 mt-2">
-                Modifiez vos filtres ou créez un nouveau post
-              </p>
-              <button
-                @click="showCreateModal = true"
-                class="mt-4 text-white bg-custom-green rounded-md py-2 px-4 hover:bg-custom-green/90 transition-colors"
-              >
-                Créer un post
-              </button>
-            </div>
-
-            <!-- Pagination -->
-            <div v-if="hasMorePosts" class="mt-8 text-center">
-              <button
-                @click="loadMore"
-                :disabled="loading"
-                class="px-6 py-3 bg-custom-green text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
-              >
-                <font-awesome-icon v-if="loading" icon="fa-solid fa-spinner" class="animate-spin mr-2" />
-                {{ loading ? 'Chargement...' : 'Charger plus' }}
-              </button>
-            </div>
+          <!-- Pagination -->
+          <div v-if="hasMorePosts" class="mt-8 text-center">
+            <button
+              @click="loadMore"
+              :disabled="loadingMore"
+              class="px-6 py-2.5 bg-white text-custom-green border border-custom-green rounded-lg hover:bg-custom-green hover:text-white transition-all duration-300 text-sm font-medium disabled:opacity-50 transform hover:scale-105"
+            >
+              <font-awesome-icon v-if="loadingMore" icon="fa-solid fa-spinner" class="animate-spin mr-2" />
+              {{ loadingMore ? 'Chargement...' : 'Voir plus de publications' }}
+            </button>
           </div>
         </div>
+
+        <!-- Sidebar -->
+        <CodiMoiSidebar
+          :amis="amis"
+          :stats="stats"
+          :popular-posts="popularPosts"
+          @go-to-post="(post: CodiMoiPost) => navigateToPost(post.id)"
+        />
       </div>
     </div>
+
+    <!-- Notification toast -->
+    <Transition name="toast">
+      <div
+        v-if="showToast"
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-800 text-white px-5 py-3 rounded-lg shadow-lg text-sm flex items-center gap-2"
+      >
+        <font-awesome-icon icon="fa-solid fa-check-circle" class="text-custom-green" />
+        {{ toastMessage }}
+      </div>
+    </Transition>
+
+    <!-- Modale création de post -->
+    <Transition name="modal-fade">
+      <div v-if="showCreateModal" class="z-50 fixed inset-0 flex items-center justify-center">
+        <div @click="showCreateModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-xs"></div>
+
+        <div class="relative w-full max-w-2xl mx-4 md:mx-auto animate-slideIn">
+          <form
+            @submit.prevent="submitPost"
+            class="bg-white rounded-xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+          >
+            <!-- En-tête -->
+            <div class="bg-gradient-to-r from-custom-green to-emerald-700 py-4 sticky top-0 z-10">
+              <h2 class="text-white text-center text-xl font-bold">
+                Partager une valeur africaine
+              </h2>
+            </div>
+
+            <div class="p-6">
+              <!-- Catégorie -->
+              <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Catégorie</label>
+                <select
+                  v-model="postForm.categorie"
+                  required
+                  class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                >
+                  <option value="">Sélectionnez une catégorie</option>
+                  <option
+                    v-for="cat in categoriesForm"
+                    :key="cat.value"
+                    :value="cat.value"
+                  >
+                    {{ cat.label }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Contenu -->
+              <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                  {{ isQuoteCategory ? 'Proverbe / Citation' : 'Titre du contenu' }}
+                </label>
+                <textarea
+                  v-model="postForm.contenu"
+                  required
+                  class="w-full px-3 py-2 border rounded-lg resize-none focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                  :rows="isQuoteCategory ? 3 : 2"
+                  :placeholder="isQuoteCategory ? 'Saisissez le proverbe ou la citation...' : 'Titre de votre publication...'"
+                ></textarea>
+              </div>
+
+              <!-- Auteur (citations uniquement) -->
+              <div v-if="postForm.categorie === 'citation'" class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Auteur de la citation</label>
+                <input
+                  v-model="postForm.nomAuteur"
+                  type="text"
+                  class="w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                  placeholder="Ex : Nelson Mandela"
+                />
+              </div>
+
+              <!-- Couleur de fond (proverbes/citations) -->
+              <div v-if="isQuoteCategory" class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Couleur de fond</label>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="couleur in COULEURS_FOND"
+                    :key="couleur"
+                    type="button"
+                    @click="postForm.couleurFond = couleur"
+                    class="w-9 h-9 rounded-full border-2 transition-all duration-200"
+                    :class="postForm.couleurFond === couleur ? 'border-gray-800 scale-110 ring-2 ring-gray-300' : 'border-transparent hover:scale-105'"
+                    :style="{ backgroundColor: couleur }"
+                  ></button>
+                </div>
+              </div>
+
+              <!-- Explication -->
+              <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Explication / Contexte</label>
+                <textarea
+                  v-model="postForm.explication"
+                  required
+                  class="w-full px-3 py-2 border rounded-lg resize-none focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                  rows="3"
+                  placeholder="Expliquez le sens ou le contexte de cette valeur..."
+                ></textarea>
+              </div>
+
+              <!-- Pays et Groupe ethnique -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="block text-gray-700 text-sm font-bold mb-2">Pays d'origine</label>
+                  <select
+                    v-model="postForm.pays"
+                    required
+                    class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                  >
+                    <option value="">Sélectionnez un pays</option>
+                    <option v-for="pays in PAYS_AFRICAINS" :key="pays" :value="pays">{{ pays }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-gray-700 text-sm font-bold mb-2">Groupe ethnique (optionnel)</label>
+                  <select
+                    v-model="postForm.groupeEthnique"
+                    class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                  >
+                    <option value="">Aucun</option>
+                    <option v-for="groupe in GROUPES_ETHNIQUES" :key="groupe" :value="groupe">{{ groupe }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Hashtags -->
+              <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Hashtags (séparés par des virgules)</label>
+                <input
+                  v-model="postForm.hashtagsRaw"
+                  type="text"
+                  class="w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
+                  placeholder="sagesse, proverbe, afrique"
+                />
+              </div>
+
+              <!-- Boutons -->
+              <div class="flex justify-end space-x-3">
+                <button
+                  @click="showCreateModal = false"
+                  type="button"
+                  class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  :disabled="isSubmitting"
+                  class="px-4 py-2 bg-gradient-to-r from-custom-green to-green-600 text-white rounded-lg hover:from-custom-green hover:to-green-700 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {{ isSubmitting ? 'Publication...' : 'Publier' }}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
 import {
-  codiMoiPostsMock,
-  getStats,
-  getPopularPosts,
-  filterPosts,
-  searchPosts,
+  CATEGORIES_POST,
+  COULEURS_FOND,
+  PAYS_AFRICAINS,
+  GROUPES_ETHNIQUES,
   type CodiMoiPost,
   type CategoriePost,
   type UserInfo
 } from '~/mocks/codi-moi'
+import type { CodiMoiPostAPI } from '~/composables/useCodiMoi'
 
 useHead({
   title: 'Codi-Moi - Codification des valeurs | UAfricas'
 })
 
 const router = useRouter()
+const { chargement: apiLoading, erreur: apiErreur, listerPosts, creerPost } = useCodiMoi()
 
 const breadcrumbs = [
   { label: 'Centre Culturel', to: '/africa-culture' },
-  { label: 'Promotion des Valeurs', to: '/promotion-valeur' },
   { label: 'Événements', to: '/evenements' },
-  { label: 'Codi-Moi', to: null }
+  { label: 'Codi-Moi', to: undefined }
 ]
 
-// Mock user
-const user = {
-  uid: 'user-current',
-  prenom: 'Utilisateur',
-  nom: 'Test',
-  email: 'test@example.com',
-  photo_url: null
-}
-
-const posts = ref<CodiMoiPost[]>([])
-const amis = ref<UserInfo[]>([])
-const stats = ref(getStats())
-const popularPosts = ref<CodiMoiPost[]>([])
-
-const showCreateModal = ref(false)
-const activeCategory = ref('')
-const loading = ref(false)
-const hasMorePosts = ref(true)
-
-const filters = ref({
-  mesPublications: false,
-  bonnesPratiques: false,
-  citations: false,
-  proverbesAdages: false,
-  ressourcesHistoriques: false
+// Mapper un post API vers le format attendu par CodiMoiCard
+const mapApiToPost = (api: CodiMoiPostAPI): CodiMoiPost => ({
+  id: api.id,
+  categorie: api.type as CategoriePost,
+  contenu: api.contenu,
+  nomAuteur: api.nom_auteur_originel,
+  explication: api.explication,
+  couleurFond: api.couleur_fond,
+  imageArrierePlan: api.image_arriere_plan_url,
+  imageCouverture: api.image_couverture_url,
+  pays: api.pays || 'Non spécifié',
+  groupeEthnique: api.groupe_ethnique,
+  hashtags: api.hashtags,
+  userId: api.auteur.id,
+  userInfo: {
+    uid: api.auteur.id,
+    email: '',
+    nom: api.auteur.nom,
+    prenom: api.auteur.prenom || '',
+    photoURL: null
+  },
+  dateCreation: new Date(api.created_at),
+  dateModification: new Date(api.created_at),
+  stats: { likes: api.nombre_likes, dislikes: api.nombre_dislikes, commentaires: 0, partages: 0, vues: 0 },
+  userReaction: null
 })
 
+// Données
+const posts = ref<CodiMoiPost[]>([])
+const totalPosts = ref(0)
+
+// Amis mock (sera remplace par une API amis plus tard)
+const amis = ref<UserInfo[]>([
+  { uid: 'user-002', email: 'fatou@example.com', nom: 'Ndiaye', prenom: 'Fatou', photoURL: 'https://randomuser.me/api/portraits/women/2.jpg' },
+  { uid: 'user-003', email: 'kouame@example.com', nom: 'Yao', prenom: 'Kouamé', photoURL: 'https://randomuser.me/api/portraits/men/3.jpg' },
+  { uid: 'user-005', email: 'marie@example.com', nom: 'Tabi', prenom: 'Marie', photoURL: 'https://randomuser.me/api/portraits/women/5.jpg' },
+  { uid: 'user-007', email: 'sipho@example.com', nom: 'Ndlovu', prenom: 'Sipho', photoURL: 'https://randomuser.me/api/portraits/men/7.jpg' }
+])
+
+// Stats calculees depuis les posts charges
+const stats = computed(() => {
+  const p = posts.value
+  return {
+    totalPosts: totalPosts.value,
+    proverbesAdages: p.filter(x => x.categorie === 'proverbe_adage').length,
+    citations: p.filter(x => x.categorie === 'citation').length,
+    ressourcesHistoriques: p.filter(x => x.categorie === 'ressource_historique').length,
+    bonnesPratiques: p.filter(x => x.categorie === 'bonne_pratique').length,
+    totalLikes: p.reduce((sum, x) => sum + x.stats.likes, 0),
+    totalVues: p.reduce((sum, x) => sum + x.stats.vues, 0),
+  }
+})
+
+// Posts populaires tries par likes
+const popularPosts = computed(() => {
+  return [...posts.value].sort((a, b) => b.stats.likes - a.stats.likes).slice(0, 5)
+})
+
+// UI state
+const showCreateModal = ref(false)
+const loading = ref(false)
+const loadingMore = ref(false)
+const currentPage = ref(1)
+const parPage = 10
+const pageErreur = ref<string | null>(null)
+
+// Filtres
+const activeCategory = ref('')
 const searchKeywords = ref('')
 const searchPays = ref('')
 
-const filteredPosts = computed(() => {
-  let result = [...posts.value]
+// Toast
+const showToast = ref(false)
+const toastMessage = ref('')
 
-  // Filtre par catégorie
-  if (activeCategory.value) {
-    result = result.filter(p => p.categorie === activeCategory.value)
-  }
-
-  // Filtres rapides
-  if (filters.value.proverbesAdages) {
-    result = result.filter(p => p.categorie === 'proverbe_adage')
-  }
-  if (filters.value.citations) {
-    result = result.filter(p => p.categorie === 'citation')
-  }
-  if (filters.value.bonnesPratiques) {
-    result = result.filter(p => p.categorie === 'bonne_pratique')
-  }
-  if (filters.value.ressourcesHistoriques) {
-    result = result.filter(p => p.categorie === 'ressource_historique')
-  }
-
-  // Recherche par mots-clés
-  if (searchKeywords.value) {
-    const kw = searchKeywords.value.toLowerCase()
-    result = result.filter(p =>
-      p.contenu.toLowerCase().includes(kw) ||
-      p.explication?.toLowerCase().includes(kw) ||
-      p.hashtags.some(h => h.toLowerCase().includes(kw))
-    )
-  }
-
-  // Filtre par pays
-  if (searchPays.value) {
-    result = result.filter(p => p.pays === searchPays.value)
-  }
-
-  return result
+const hasActiveFilters = computed(() => {
+  return !!(activeCategory.value || searchKeywords.value || searchPays.value)
 })
 
-const openPostDetail = (post: CodiMoiPost) => {
-  router.push(`/evenements/codi-moi/${post.id}`)
-}
+// Les posts sont deja filtres cote serveur, pas de filtre local
+const filteredPosts = computed(() => posts.value)
 
-const goToPost = (post: CodiMoiPost) => {
-  router.push(`/evenements/codi-moi/${post.id}`)
-}
+const hasMorePosts = computed(() => {
+  return posts.value.length < totalPosts.value
+})
 
-const handleLike = (post: CodiMoiPost) => {
-  const index = posts.value.findIndex(p => p.id === post.id)
-  if (index !== -1) {
-    if (posts.value[index].userReaction === 'like') {
-      posts.value[index].userReaction = null
-      posts.value[index].stats.likes--
+// Charger les posts depuis l'API
+async function chargerPosts(append = false) {
+  if (!append) loading.value = true
+  pageErreur.value = null
+
+  const resultat = await listerPosts({
+    type: activeCategory.value || undefined,
+    recherche: searchKeywords.value || undefined,
+    pays: searchPays.value || undefined,
+    page: currentPage.value,
+    par_page: parPage,
+  })
+
+  if (resultat) {
+    if (append) {
+      posts.value.push(...resultat.posts.map(mapApiToPost))
     } else {
-      if (posts.value[index].userReaction === 'dislike') {
-        posts.value[index].stats.dislikes--
-      }
-      posts.value[index].userReaction = 'like'
-      posts.value[index].stats.likes++
+      posts.value = resultat.posts.map(mapApiToPost)
     }
+    totalPosts.value = resultat.total
+  } else if (apiErreur.value) {
+    pageErreur.value = apiErreur.value
+  }
+
+  loading.value = false
+}
+
+// Actions
+const navigateToPost = (postId: string) => {
+  router.push(`/evenements/codi-moi/${postId}`)
+}
+
+const findPost = (postId: string): CodiMoiPost | undefined => {
+  return posts.value.find(p => p.id === postId)
+}
+
+const handleLike = (postId: string) => {
+  const post = findPost(postId)
+  if (!post) return
+
+  if (post.userReaction === 'like') {
+    post.userReaction = null
+    post.stats.likes--
+  } else {
+    if (post.userReaction === 'dislike') post.stats.dislikes--
+    post.userReaction = 'like'
+    post.stats.likes++
   }
 }
 
-const handleDislike = (post: CodiMoiPost) => {
-  const index = posts.value.findIndex(p => p.id === post.id)
-  if (index !== -1) {
-    if (posts.value[index].userReaction === 'dislike') {
-      posts.value[index].userReaction = null
-      posts.value[index].stats.dislikes--
-    } else {
-      if (posts.value[index].userReaction === 'like') {
-        posts.value[index].stats.likes--
-      }
-      posts.value[index].userReaction = 'dislike'
-      posts.value[index].stats.dislikes++
-    }
+const handleDislike = (postId: string) => {
+  const post = findPost(postId)
+  if (!post) return
+
+  if (post.userReaction === 'dislike') {
+    post.userReaction = null
+    post.stats.dislikes--
+  } else {
+    if (post.userReaction === 'like') post.stats.likes--
+    post.userReaction = 'dislike'
+    post.stats.dislikes++
   }
 }
 
-const handleShare = (post: CodiMoiPost) => {
-  const index = posts.value.findIndex(p => p.id === post.id)
-  if (index !== -1) {
-    posts.value[index].stats.partages++
+const handleShare = (postId: string) => {
+  const post = findPost(postId)
+  if (post) post.stats.partages++
+  showNotification('Lien copié dans le presse-papiers !')
+}
+
+const showNotification = (message: string) => {
+  toastMessage.value = message
+  showToast.value = true
+  setTimeout(() => { showToast.value = false }, 2500)
+}
+
+// Formulaire de création
+const categoriesForm = CATEGORIES_POST.filter(c => c.value !== '')
+const isSubmitting = ref(false)
+
+const postForm = ref({
+  categorie: '' as CategoriePost | '',
+  contenu: '',
+  nomAuteur: '',
+  explication: '',
+  pays: '',
+  groupeEthnique: '',
+  couleurFond: COULEURS_FOND[0],
+  hashtagsRaw: ''
+})
+
+const isQuoteCategory = computed(() => {
+  return postForm.value.categorie === 'proverbe_adage' || postForm.value.categorie === 'citation'
+})
+
+const submitPost = async () => {
+  if (!postForm.value.categorie || !postForm.value.contenu || !postForm.value.pays) return
+
+  isSubmitting.value = true
+
+  const hashtags = postForm.value.hashtagsRaw
+    .split(',')
+    .map(h => h.trim())
+    .filter(Boolean)
+
+  const nouveauPost = await creerPost({
+    type: postForm.value.categorie,
+    contenu: postForm.value.contenu,
+    explication: postForm.value.explication || undefined,
+    nom_auteur_originel: postForm.value.nomAuteur || undefined,
+    pays: postForm.value.pays || undefined,
+    groupe_ethnique: postForm.value.groupeEthnique || undefined,
+    couleur_fond: isQuoteCategory.value ? (postForm.value.couleurFond ?? '#2D5A27') : undefined,
+    hashtags: hashtags.length > 0 ? hashtags : undefined,
+  })
+
+  showCreateModal.value = false
+  isSubmitting.value = false
+  resetForm()
+
+  if (nouveauPost) {
+    showNotification('Publication créée avec succès !')
+  } else {
+    showNotification(apiErreur.value || 'Erreur lors de la création')
   }
-  alert('Lien copié ! (Mode démo)')
+
+  // Recharger la liste depuis l'API pour refléter l'état réel de la BDD
+  await chargerPosts()
 }
 
-const applySearch = () => {
-  // La recherche est réactive via computed
+const resetForm = () => {
+  postForm.value = {
+    categorie: '',
+    contenu: '',
+    nomAuteur: '',
+    explication: '',
+    pays: '',
+    groupeEthnique: '',
+    couleurFond: COULEURS_FOND[0],
+    hashtagsRaw: ''
+  }
 }
 
-const loadMore = () => {
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-    hasMorePosts.value = false
-  }, 1000)
+const resetFilters = () => {
+  activeCategory.value = ''
+  searchKeywords.value = ''
+  searchPays.value = ''
+  currentPage.value = 1
+  chargerPosts()
 }
+
+const loadMore = async () => {
+  loadingMore.value = true
+  currentPage.value++
+  await chargerPosts(true)
+  loadingMore.value = false
+}
+
+// Recharger quand les filtres changent (avec debounce)
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+watch([activeCategory, searchKeywords, searchPays], () => {
+  currentPage.value = 1
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => chargerPosts(), 300)
+})
 
 onMounted(() => {
-  posts.value = [...codiMoiPostsMock]
-  popularPosts.value = getPopularPosts(5)
+  chargerPosts()
 })
 </script>
+
+<style scoped>
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes expandLine {
+  from { width: 0; }
+  to { width: 6rem; }
+}
+
+.animate-title {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.animate-subtitle {
+  animation: fadeIn 1s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+.animate-line {
+  animation: expandLine 1.2s ease-out 0.1s forwards;
+  width: 0;
+}
+
+.post-list-enter-active,
+.post-list-leave-active {
+  transition: all 0.5s ease;
+}
+
+.post-list-enter-from,
+.post-list-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.toast-enter-active {
+  transition: all 0.3s ease-out;
+}
+.toast-leave-active {
+  transition: all 0.2s ease-in;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 20px);
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+</style>

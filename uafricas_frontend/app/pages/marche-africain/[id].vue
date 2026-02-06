@@ -38,7 +38,7 @@
       <!-- Hero image -->
       <div class="relative h-64 md:h-80 lg:h-96 bg-gray-900">
         <img
-          :src="annonce.photo_url"
+          :src="annonce.photo_url || '/images/placeholder.jpg'"
           :alt="annonce.titre"
           class="w-full h-full object-cover opacity-90"
         />
@@ -65,7 +65,7 @@
             <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
               <div class="flex items-center gap-1.5">
                 <font-awesome-icon :icon="['fas', 'location-dot']" class="w-4 h-4 text-custom-green" />
-                <span>{{ annonce.pays }}</span>
+                <span>{{ paysAffiche }}</span>
                 <span v-if="annonce.ville"> - {{ annonce.ville }}</span>
               </div>
               <div class="flex items-center gap-1.5">
@@ -93,11 +93,11 @@
 
             <!-- Quantité minimum -->
             <div
-              v-if="annonce.minQty && annonce.minQty > 1"
+              v-if="annonce.quantite && annonce.quantite > 1"
               class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm"
             >
               <font-awesome-icon :icon="['fas', 'boxes-stacked']" class="w-4 h-4" />
-              Quantité minimum : {{ annonce.minQty }} unités
+              Quantité minimum : {{ annonce.quantite }} unités
             </div>
           </div>
 
@@ -152,11 +152,12 @@
               </button>
 
               <a
-                :href="`tel:${annonce.tel}`"
+                v-if="annonce.contact_info"
+                :href="`tel:${annonce.contact_info}`"
                 class="w-full py-4 bg-white border-2 border-emerald-500 text-emerald-600 font-semibold rounded-xl hover:bg-emerald-50 transition-colors flex items-center justify-center gap-3"
               >
                 <font-awesome-icon :icon="['fas', 'phone']" class="w-5 h-5" />
-                Appeler : {{ annonce.tel }}
+                Appeler : {{ annonce.contact_info }}
               </a>
             </div>
 
@@ -201,15 +202,22 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getAnnonceById, formatPrix, formatDate, type Annonce, type TypeEchange } from '~/mocks/marche-africain'
+import {
+  useMarcheAfricain,
+  formatPrix,
+  formatDate,
+  type AnnonceDetailAPI,
+  type TypeEchange,
+} from '~/composables/useMarcheAfricain'
 import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const userStore = useUserStore()
+const { obtenirAnnonce } = useMarcheAfricain()
 
 // State
 const loading = ref(true)
-const annonce = ref<Annonce | null>(null)
+const annonce = ref<AnnonceDetailAPI | null>(null)
 const interetEnvoye = ref(false)
 
 // Computed
@@ -225,9 +233,17 @@ const dateFormatee = computed(() => {
   return formatDate(annonce.value.created_at)
 })
 
+const paysAffiche = computed(() => {
+  if (!annonce.value) return ''
+  if (annonce.value.pays.length > 0) {
+    return annonce.value.pays.join(', ')
+  }
+  return 'Non spécifié'
+})
+
 // Methods
-const getTypeColor = (type: TypeEchange): string => {
-  switch (type) {
+const getTypeColor = (type: string): string => {
+  switch (type as TypeEchange) {
     case 'Vente':
       return 'bg-white text-gray-700'
     case 'Troc':
@@ -240,15 +256,15 @@ const getTypeColor = (type: TypeEchange): string => {
 }
 
 const envoyerInteret = () => {
-  // Simulation d'envoi d'intérêt
   interetEnvoye.value = true
   alert('Votre intérêt a été enregistré ! Le vendeur sera notifié.')
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   const id = route.params.id as string
-  annonce.value = getAnnonceById(id) || null
+  const resultat = await obtenirAnnonce(id)
+  annonce.value = resultat
 
   if (annonce.value) {
     useHead({
@@ -256,9 +272,9 @@ onMounted(() => {
       meta: [
         {
           name: 'description',
-          content: annonce.value.description.substring(0, 160)
-        }
-      ]
+          content: annonce.value.description.substring(0, 160),
+        },
+      ],
     })
   }
 

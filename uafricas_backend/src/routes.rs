@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{auth, centres_culturels, gouvernance, livres};
+use crate::handlers::{annonces, auth, centres_culturels, codimoi, gouvernance, livres};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -37,6 +37,19 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/gouvernance")
                     .route("/stats", web::get().to(gouvernance::obtenir_stats))
                     .route("/contributions", web::get().to(gouvernance::lister_contributions)),
+            )
+            // Routes Codi-Moi
+            .service(
+                web::scope("/codimoi")
+                    .route("", web::get().to(codimoi::lister_posts))
+                    .route("", web::post().to(codimoi::creer_post))
+                    .route("/{id}", web::get().to(codimoi::obtenir_post)),
+            )
+            // Routes des annonces (Marche Africain)
+            .service(
+                web::scope("/annonces")
+                    .route("", web::get().to(annonces::lister_annonces))
+                    .route("/{id}", web::get().to(annonces::obtenir_annonce)),
             ),
     );
 }

@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { CATEGORIES, type Categorie } from '~/mocks/marche-africain'
+import { CATEGORIES, type Categorie } from '~/composables/useMarcheAfricain'
 
 defineProps<{
   activeFilter: Categorie | 'Tout'

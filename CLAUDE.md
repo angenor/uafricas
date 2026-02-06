@@ -44,8 +44,8 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 ```
 
 - **PostgreSQL** : `localhost:5432` (user: `uafricas`, db: `africans_db`)
-- **pgAdmin** : `http://localhost:5050` (email: `admin@uafricas.dev`, mot de passe: `admin`)
-- Config dans `.env` (gitignored). Le schéma SQL (`uafricas_backend/doc/bd/schema.sql`) s'initialise automatiquement au premier lancement.
+- **Adminer** : `http://localhost:8088` (système: PostgreSQL, serveur: `postgres`, utilisateur: `uafricas`, base: `africans_db`)
+- Config dans `.env` (gitignored, contient les credentials PostgreSQL). Le schéma SQL (`uafricas_backend/doc/bd/schema.sql`) s'initialise automatiquement au premier lancement.
 
 ### No linting, testing, or CI/CD configured yet.
 
@@ -65,7 +65,9 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 - `useAOS` — initializes Animate On Scroll (1000ms duration, once, ease-out-cubic)
 - `useBibliotheque` — API client pour la bibliothèque numérique (CRUD livres via $fetch, upload multipart, mapping accès DB↔frontend)
 - `useCentresCulturels` — API client pour les centres culturels (listerCentres, obtenirCentre, obtenirProgrammation). Inclut utilitaires de formatage dates/heures en français et mapping mode DB↔frontend
+- `useCodiMoi` — API client pour Codi-Moi (listerPosts avec filtres/pagination, obtenirPost, creerPost). Mapping CodiMoiPostAPI↔CodiMoiPost frontend
 - `useGouvernance` — API client pour la gouvernance citoyenne (getStats, getContributions). Requête UNION ALL sur factcheck + bad_habit + idea_force avec mapping vers ContributionCitoyenne
+- `useMarcheAfricain` — API client pour le marché africain (listerAnnonces avec filtres/pagination/tri, obtenirAnnonce). Inclut constantes (CATEGORIES, TYPES_ECHANGE, DEVISES), utilitaires de formatage (prix, dates) et mapping type_operation DB↔frontend
 
 **Mock data layer** (`app/mocks/`, 22 files): Fichiers TypeScript de données fictives avec interfaces, tableaux et fonctions async simulant la latence réseau. Lors de l'intégration backend, remplacer les imports mock par des appels API.
 
@@ -91,8 +93,13 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `GET /api/centres-culturels?recherche=` — Liste des centres culturels actifs (recherche optionnelle par nom/ville)
 - `GET /api/centres-culturels/{id}` — Détail d'un centre avec ses programmations
 - `GET /api/centres-culturels/{centre_id}/programmations/{id}` — Détail d'une programmation avec info centre
+- `GET /api/codimoi?type=&recherche=&pays=&page=&par_page=` — Liste paginée des posts Codi-Moi (filtres par type, recherche, pays)
+- `GET /api/codimoi/{id}` — Détail d'un post Codi-Moi avec hashtags et auteur
+- `POST /api/codimoi` — Création d'un post (type, contenu, explication, pays, hashtags, couleur_fond)
 - `GET /api/gouvernance/stats` — Statistiques gouvernance (count factcheck, badhabits, ideaforces, total_likes)
 - `GET /api/gouvernance/contributions?type=&page=&par_page=` — Liste paginée des contributions (UNION factcheck + bad_habit + idea_force avec auteur et pays)
+- `GET /api/annonces?recherche=&type_operation=&categorie=&prix_min=&prix_max=&tri=&page=&par_page=` — Liste paginée des annonces (filtres multiples, tri, recherche textuelle, JOINs catégorie/auteur/média/pays)
+- `GET /api/annonces/{id}` — Détail d'une annonce (incrémente vues, médias, pays multiples, info auteur)
 
 **Authentification** : JWT (HS256) access token (15 min) + refresh token (7 jours, SHA-256 hashé en BDD dans `iam.refresh_token`). Mot de passe hashé avec bcrypt (cost 12). Module `jwt.rs` pour génération/validation tokens.
 
@@ -115,9 +122,17 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 
 ## Infrastructure
 
-- **Docker** : `docker-compose.yml` à la racine avec 2 services (postgres, pgadmin) et 2 volumes (pgdata, pgadmin_data)
+- **Docker** : `docker-compose.yml` à la racine avec 2 services (postgres, adminer) et 1 volume (pgdata)
 - **Variables d'env** : `.env` à la racine (gitignored), contient les credentials PostgreSQL et pgAdmin
 - **Init BDD** : `uafricas_backend/doc/bd/docker-init.sh` exécute `schema.sql` au premier lancement du conteneur
+
+## LSP & Diagnostics
+
+**LSP installés** :
+- **rust-analyzer** (via `rustup component`) — Diagnostics Rust en temps réel (types, imports, lifetime, erreurs de compilation)
+- **Volar** (extension VS Code) — Diagnostics Vue 3 / TypeScript / Tailwind CSS
+
+**Utilisation par Claude Code** : Après chaque création ou modification de fichier, utiliser `getDiagnostics` pour vérifier les erreurs avant de passer à l'étape suivante. Cela évite le cycle écrire → compiler → corriger → recompiler et détecte les problèmes de typage, imports manquants et incompatibilités d'interfaces immédiatement.
 
 ## Parallel Sub-agents Strategy
 

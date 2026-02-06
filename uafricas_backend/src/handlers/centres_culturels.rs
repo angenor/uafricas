@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::errors::ApiErreur;
 use crate::models::centre_culturel::{
     CentreCulturel, CentreCulturelQueryParams, CentreCulturelResponse,
-    ProgrammationCentre, ProgrammationDetailResponse,
+    MembreCentre, ProgrammationCentre, ProgrammationDetailResponse,
     CENTRE_CULTUREL_COLONNES, PROGRAMMATION_COLONNES,
 };
 
@@ -106,6 +106,20 @@ pub async fn obtenir_centre(
         .await?
         .ok_or_else(|| ApiErreur::NonTrouve(format!("Centre culturel avec id {} non trouve", id)))?;
 
+    // Recuperer les membres du centre
+    let membres = sqlx::query_as::<_, MembreCentre>(
+        "SELECT mc.id, mc.role::text AS role, u.nom, u.prenom, u.email, u.telephone
+         FROM culture.membre_centre mc
+         JOIN iam.utilisateur u ON u.id = mc.utilisateur_id
+         WHERE mc.centre_culturel_id = $1
+         ORDER BY mc.role ASC",
+    )
+    .bind(id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let membre_responses: Vec<_> = membres.iter().map(|m| m.to_response()).collect();
+
     // Recuperer les programmations du centre
     let query_prog = format!(
         "SELECT {} FROM culture.programmation_centre
@@ -120,7 +134,7 @@ pub async fn obtenir_centre(
         .await?;
 
     let prog_responses: Vec<_> = programmations.iter().map(|p| p.to_response()).collect();
-    let reponse = centre.to_detail_response(prog_responses);
+    let reponse = centre.to_detail_response(membre_responses, prog_responses);
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,

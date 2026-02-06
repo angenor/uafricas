@@ -16,6 +16,16 @@ export interface CentreCulturelAPI {
   updated_at: string
 }
 
+/** Interface correspondant au DTO MembreCentreResponse du backend */
+export interface MembreCentreAPI {
+  nom: string
+  prenom: string | null
+  email: string
+  telephone: string | null
+  role: string
+  role_label: string
+}
+
 /** Interface correspondant au DTO ProgrammationResponse du backend */
 export interface ProgrammationAPI {
   id: string
@@ -43,6 +53,7 @@ export interface CentreCulturelDetailAPI {
   adresse: string | null
   latitude: number | null
   longitude: number | null
+  membres: MembreCentreAPI[]
   programmations: ProgrammationAPI[]
   created_at: string
   updated_at: string

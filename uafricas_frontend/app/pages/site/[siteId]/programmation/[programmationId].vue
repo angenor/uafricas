@@ -1,19 +1,43 @@
 <script setup lang="ts">
-import type { ProgrammationAPI } from '~/composables/useCentresCulturels'
+import type { ProgrammationDetailAPI } from '~/composables/useCentresCulturels'
 import { formatDateCourteFrancais, formatHeureFrancais, getModeLabel } from '~/composables/useCentresCulturels'
 import { useUserStore } from '~/stores/user'
 
+useAOS()
+
 const route = useRoute()
 const userStore = useUserStore()
-const { obtenirProgrammation, chargement, erreur } = useCentresCulturels()
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBaseUrl as string
+
+interface ApiResponse<T> {
+  success: boolean
+  data: T | null
+  error: string | null
+}
 
 const siteId = computed(() => route.params.siteId as string)
 const programmationId = computed(() => route.params.programmationId as string)
 
-const centreNom = ref<string>('')
-const programmation = ref<ProgrammationAPI | null>(null)
-
 const isAuthenticated = computed(() => userStore.isAuthenticated)
+
+const { data: detail, status, error: fetchError } = await useAsyncData(
+  `programmation-${siteId.value}-${programmationId.value}`,
+  async () => {
+    const reponse = await $fetch<ApiResponse<ProgrammationDetailAPI>>(
+      `${apiBase}/api/centres-culturels/${siteId.value}/programmations/${programmationId.value}`,
+    )
+    if (!reponse.success || !reponse.data) {
+      throw createError({ message: reponse.error || 'Programmation non trouvée' })
+    }
+    return reponse.data
+  },
+)
+
+const chargement = computed(() => status.value === 'pending')
+const erreur = computed(() => fetchError.value?.message ?? null)
+const programmation = computed(() => detail.value?.programmation ?? null)
+const centreNom = computed(() => detail.value?.centre.nom ?? '')
 
 useHead(() => ({
   title: programmation.value
@@ -30,14 +54,6 @@ useHead(() => ({
 const handleInterest = () => {
   alert('Votre intérêt a été enregistré! (Mode mock)')
 }
-
-onMounted(async () => {
-  const resultat = await obtenirProgrammation(siteId.value, programmationId.value)
-  if (resultat) {
-    centreNom.value = resultat.centre.nom
-    programmation.value = resultat.programmation
-  }
-})
 </script>
 
 <template>

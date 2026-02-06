@@ -91,11 +91,17 @@
 </template>
 
 <script setup lang="ts">
-import { TYPES_ECHANGE, getCountByType, type FiltresAnnonce, type TypeEchange, type Annonce } from '~/mocks/marche-africain'
+import {
+  TYPES_ECHANGE,
+  getCountByType,
+  type FiltresAnnonce,
+  type TypeEchange,
+  type AnnonceAPI,
+} from '~/composables/useMarcheAfricain'
 
 const props = defineProps<{
   modelValue: FiltresAnnonce
-  annonces: Annonce[]
+  annonces: AnnonceAPI[]
 }>()
 
 const emit = defineEmits<{
@@ -120,7 +126,7 @@ const toggleType = (type: TypeEchange) => {
 
   emit('update:modelValue', {
     ...props.modelValue,
-    typesEchange: newTypes
+    typesEchange: newTypes,
   })
 }
 
@@ -128,7 +134,7 @@ const updatePrixMin = (event: Event) => {
   const value = (event.target as HTMLInputElement).value
   emit('update:modelValue', {
     ...props.modelValue,
-    prixMin: value ? Number(value) : null
+    prixMin: value ? Number(value) : null,
   })
 }
 
@@ -136,7 +142,7 @@ const updatePrixMax = (event: Event) => {
   const value = (event.target as HTMLInputElement).value
   emit('update:modelValue', {
     ...props.modelValue,
-    prixMax: value ? Number(value) : null
+    prixMax: value ? Number(value) : null,
   })
 }
 
@@ -144,7 +150,7 @@ const updateTri = (event: Event) => {
   const value = (event.target as HTMLSelectElement).value as FiltresAnnonce['tri']
   emit('update:modelValue', {
     ...props.modelValue,
-    tri: value
+    tri: value,
   })
 }
 </script>

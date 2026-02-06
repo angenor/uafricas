@@ -94,20 +94,8 @@
       <!-- Stats -->
       <div class="mt-10 flex flex-wrap justify-center gap-8 text-center">
         <div class="text-white">
-          <div class="text-3xl font-bold">{{ stats.total }}</div>
+          <div class="text-3xl font-bold">{{ totalAnnonces }}</div>
           <div class="text-emerald-200 text-sm">Annonces</div>
-        </div>
-        <div class="text-white">
-          <div class="text-3xl font-bold">{{ stats.ventes }}</div>
-          <div class="text-emerald-200 text-sm">En vente</div>
-        </div>
-        <div class="text-white">
-          <div class="text-3xl font-bold">{{ stats.trocs }}</div>
-          <div class="text-emerald-200 text-sm">À troquer</div>
-        </div>
-        <div class="text-white">
-          <div class="text-3xl font-bold">{{ stats.dons }}</div>
-          <div class="text-emerald-200 text-sm">Dons</div>
         </div>
       </div>
     </div>
@@ -116,11 +104,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { CATEGORIES, getStatsAnnonces, type Categorie } from '~/mocks/marche-africain'
+import { CATEGORIES, type Categorie } from '~/composables/useMarcheAfricain'
 
 const props = defineProps<{
   modelCategorie: Categorie | 'Tout'
   modelRecherche: string
+  totalAnnonces: number
 }>()
 
 const emit = defineEmits<{
@@ -132,7 +121,6 @@ const emit = defineEmits<{
 
 const showCategories = ref(false)
 const categories = CATEGORIES
-const stats = getStatsAnnonces()
 
 const selectedCategoryLabel = computed(() => {
   const cat = categories.find(c => c.key === props.modelCategorie)

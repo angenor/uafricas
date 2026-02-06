@@ -81,6 +81,10 @@ import {
   faBell,
 } from '@fortawesome/free-solid-svg-icons'
 import {
+  faCalendar as farCalendar,
+  faClock as farClock,
+} from '@fortawesome/free-regular-svg-icons'
+import {
   faFacebook,
   faTwitter,
   faLinkedin,
@@ -172,6 +176,8 @@ library.add(
   faRightFromBracket,
   faGear,
   faBell,
+  farCalendar,
+  farClock,
   faFacebook,
   faTwitter,
   faLinkedin,

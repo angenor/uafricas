@@ -6,7 +6,7 @@
     <!-- Image container -->
     <div class="relative aspect-[16/10] overflow-hidden">
       <img
-        :src="annonce.photo_url"
+        :src="annonce.photo_url || '/images/placeholder.jpg'"
         :alt="annonce.titre"
         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
       />
@@ -21,10 +21,10 @@
 
       <!-- Badge quantité minimum -->
       <span
-        v-if="annonce.minQty && annonce.minQty > 1"
+        v-if="annonce.quantite && annonce.quantite > 1"
         class="absolute top-3 right-3 px-2 py-1 bg-amber-100/90 text-amber-700 rounded-full text-xs font-medium"
       >
-        Min. {{ annonce.minQty }} unités
+        Min. {{ annonce.quantite }} unités
       </span>
 
       <!-- Overlay gradient -->
@@ -70,11 +70,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Annonce, TypeEchange } from '~/mocks/marche-africain'
-import { formatPrix, formatDateCourte, getTypeEchangeColor } from '~/mocks/marche-africain'
+import { formatPrix, formatDateCourte, type AnnonceAPI, type TypeEchange } from '~/composables/useMarcheAfricain'
 
 const props = defineProps<{
-  annonce: Annonce
+  annonce: AnnonceAPI
 }>()
 
 const prixFormate = computed(() => {
@@ -85,8 +84,8 @@ const dateFormatee = computed(() => {
   return formatDateCourte(props.annonce.created_at)
 })
 
-const getTypeColor = (type: TypeEchange): string => {
-  switch (type) {
+const getTypeColor = (type: string): string => {
+  switch (type as TypeEchange) {
     case 'Vente':
       return 'bg-white/95 text-gray-700 border border-gray-200'
     case 'Troc':

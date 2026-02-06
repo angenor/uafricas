@@ -4,6 +4,7 @@
     <MarcheMarcheHero
       v-model:model-categorie="filtres.categorie"
       v-model:model-recherche="filtres.recherche"
+      :total-annonces="totalAnnonces"
       @search="handleSearch"
       @publish="handlePublish"
     />
@@ -24,7 +25,7 @@
         <aside class="hidden lg:block w-72 flex-shrink-0">
           <MarcheMarcheFilters
             v-model="filtres"
-            :annonces="allAnnonces"
+            :annonces="annonces"
             @reset="resetFilters"
           />
         </aside>
@@ -49,8 +50,8 @@
           <!-- Barre de résultats -->
           <div class="flex items-center justify-between mb-6">
             <p class="text-gray-600">
-              <span class="font-semibold text-gray-900">{{ annoncesFiltrees.length }}</span>
-              {{ annoncesFiltrees.length > 1 ? 'annonces trouvées' : 'annonce trouvée' }}
+              <span class="font-semibold text-gray-900">{{ totalAnnonces }}</span>
+              {{ totalAnnonces > 1 ? 'annonces trouvées' : 'annonce trouvée' }}
             </p>
 
             <!-- Tri mobile -->
@@ -64,9 +65,37 @@
             </select>
           </div>
 
+          <!-- Chargement -->
+          <div
+            v-if="chargement"
+            class="text-center py-16"
+          >
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mx-auto mb-4"></div>
+            <p class="text-gray-500">Chargement des annonces...</p>
+          </div>
+
+          <!-- Erreur -->
+          <div
+            v-else-if="erreur"
+            class="text-center py-16 bg-white rounded-2xl shadow-xs"
+          >
+            <font-awesome-icon
+              :icon="['fas', 'circle-exclamation']"
+              class="w-16 h-16 text-red-300 mx-auto mb-4"
+            />
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Erreur de chargement</h3>
+            <p class="text-gray-500 mb-4">{{ erreur }}</p>
+            <button
+              @click="chargerAnnonces"
+              class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+            >
+              Réessayer
+            </button>
+          </div>
+
           <!-- État vide -->
           <div
-            v-if="annoncesFiltrees.length === 0"
+            v-else-if="annonces.length === 0"
             class="text-center py-16 bg-white rounded-2xl shadow-xs"
           >
             <font-awesome-icon
@@ -90,7 +119,7 @@
             data-aos="fade-up"
           >
             <MarcheAnnonceCard
-              v-for="annonce in annoncesPaginees"
+              v-for="annonce in annonces"
               :key="annonce.id"
               :annonce="annonce"
               data-aos="fade-up"
@@ -180,7 +209,7 @@
             <div class="p-4 overflow-y-auto h-[calc(100%-130px)]">
               <MarcheMarcheFilters
                 v-model="filtres"
-                :annonces="allAnnonces"
+                :annonces="annonces"
                 @reset="resetFilters"
               />
             </div>
@@ -190,7 +219,7 @@
                 @click="showMobileFilters = false"
                 class="w-full py-3 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors"
               >
-                Voir {{ annoncesFiltrees.length }} résultats
+                Voir {{ totalAnnonces }} résultats
               </button>
             </div>
           </div>
@@ -246,27 +275,32 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import AOS from 'aos'
 import {
-  annoncesMock,
-  rechercherAnnonces,
-  type Annonce,
+  useMarcheAfricain,
+  mapperTypesVersDb,
+  type AnnonceAPI,
+  type AnnonceFiltres,
   type FiltresAnnonce,
-  type Categorie
-} from '~/mocks/marche-africain'
+  type Categorie,
+} from '~/composables/useMarcheAfricain'
 
 useHead({
   title: 'Marché Africain - UAfricas',
   meta: [
     {
       name: 'description',
-      content: 'Découvrez le Marché Africain UAfricas : annonces de vente, troc et dons à travers toute l\'Afrique. Agriculture, informatique, immobilier et plus.'
-    }
-  ]
+      content: 'Découvrez le Marché Africain UAfricas : annonces de vente, troc et dons à travers toute l\'Afrique. Agriculture, informatique, immobilier et plus.',
+    },
+  ],
 })
 
 const ITEMS_PER_PAGE = 12
 
+const { chargement, erreur, listerAnnonces } = useMarcheAfricain()
+
 // State
-const allAnnonces = ref<Annonce[]>([])
+const annonces = ref<AnnonceAPI[]>([])
+const totalAnnonces = ref(0)
+const totalPages = ref(1)
 const currentPage = ref(1)
 const showMobileFilters = ref(false)
 const showPublishModal = ref(false)
@@ -277,23 +311,40 @@ const filtres = ref<FiltresAnnonce>({
   prixMin: null,
   prixMax: null,
   recherche: '',
-  tri: 'recent'
+  tri: 'recent',
 })
+
+// Debounce timer pour la recherche
+let rechercheTimer: ReturnType<typeof setTimeout> | null = null
+
+// Construire les filtres API a partir des filtres UI
+const buildApiFiltres = (): AnnonceFiltres => {
+  const f: AnnonceFiltres = {
+    page: currentPage.value,
+    par_page: ITEMS_PER_PAGE,
+    tri: filtres.value.tri,
+  }
+  if (filtres.value.recherche.trim()) f.recherche = filtres.value.recherche.trim()
+  if (filtres.value.categorie !== 'Tout') f.categorie = filtres.value.categorie
+  if (filtres.value.typesEchange.length > 0) {
+    f.type_operation = mapperTypesVersDb(filtres.value.typesEchange)
+  }
+  if (filtres.value.prixMin != null) f.prix_min = filtres.value.prixMin
+  if (filtres.value.prixMax != null) f.prix_max = filtres.value.prixMax
+  return f
+}
+
+// Charger les annonces depuis l'API
+const chargerAnnonces = async () => {
+  const resultat = await listerAnnonces(buildApiFiltres())
+  if (resultat) {
+    annonces.value = resultat.annonces
+    totalAnnonces.value = resultat.total
+    totalPages.value = resultat.total_pages
+  }
+}
 
 // Computed
-const annoncesFiltrees = computed(() => {
-  return rechercherAnnonces(filtres.value)
-})
-
-const totalPages = computed(() => {
-  return Math.ceil(annoncesFiltrees.value.length / ITEMS_PER_PAGE)
-})
-
-const annoncesPaginees = computed(() => {
-  const start = (currentPage.value - 1) * ITEMS_PER_PAGE
-  return annoncesFiltrees.value.slice(start, start + ITEMS_PER_PAGE)
-})
-
 const visiblePages = computed(() => {
   const pages: (number | string)[] = []
   const total = totalPages.value
@@ -303,16 +354,11 @@ const visiblePages = computed(() => {
     for (let i = 1; i <= total; i++) pages.push(i)
   } else {
     pages.push(1)
-
     if (current > 3) pages.push('...')
-
     const start = Math.max(2, current - 1)
     const end = Math.min(total - 1, current + 1)
-
     for (let i = start; i <= end; i++) pages.push(i)
-
     if (current < total - 2) pages.push('...')
-
     pages.push(total)
   }
 
@@ -330,9 +376,33 @@ const activeFiltersCount = computed(() => {
 })
 
 // Watchers
-watch(filtres, () => {
-  currentPage.value = 1
-}, { deep: true })
+// Quand les filtres changent (sauf recherche qui est debounced), recharger
+watch(
+  () => ({
+    categorie: filtres.value.categorie,
+    typesEchange: [...filtres.value.typesEchange],
+    prixMin: filtres.value.prixMin,
+    prixMax: filtres.value.prixMax,
+    tri: filtres.value.tri,
+  }),
+  () => {
+    currentPage.value = 1
+    chargerAnnonces()
+  },
+  { deep: true },
+)
+
+// Debounce la recherche textuelle (300ms)
+watch(
+  () => filtres.value.recherche,
+  () => {
+    if (rechercheTimer) clearTimeout(rechercheTimer)
+    rechercheTimer = setTimeout(() => {
+      currentPage.value = 1
+      chargerAnnonces()
+    }, 300)
+  },
+)
 
 // Methods
 const selectCategory = (category: Categorie | 'Tout') => {
@@ -340,7 +410,9 @@ const selectCategory = (category: Categorie | 'Tout') => {
 }
 
 const handleSearch = () => {
+  if (rechercheTimer) clearTimeout(rechercheTimer)
   currentPage.value = 1
+  chargerAnnonces()
 }
 
 const handlePublish = () => {
@@ -354,7 +426,7 @@ const resetFilters = () => {
     prixMin: null,
     prixMax: null,
     recherche: '',
-    tri: 'recent'
+    tri: 'recent',
   }
   currentPage.value = 1
 }
@@ -362,16 +434,17 @@ const resetFilters = () => {
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
+    chargerAnnonces()
     window.scrollTo({ top: 400, behavior: 'smooth' })
   }
 }
 
 // Lifecycle
-onMounted(() => {
-  allAnnonces.value = annoncesMock
+onMounted(async () => {
+  await chargerAnnonces()
   AOS.init({
     duration: 800,
-    once: true
+    once: true,
   })
 })
 </script>

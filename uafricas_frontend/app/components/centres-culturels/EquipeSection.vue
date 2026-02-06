@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import type { MembreEquipe } from '~/mocks/centres-culturels'
+import type { MembreCentreAPI } from '~/composables/useCentresCulturels'
 
 defineProps<{
-  president: MembreEquipe
-  vicePresident: MembreEquipe
-  respCommunication: MembreEquipe
+  membres: MembreCentreAPI[]
 }>()
+
+function formatNomComplet(membre: MembreCentreAPI): string {
+  return membre.prenom ? `${membre.prenom} ${membre.nom}` : membre.nom
+}
+
+function formatContact(membre: MembreCentreAPI): string {
+  const parts = [membre.email]
+  if (membre.telephone) parts.push(membre.telephone)
+  return parts.join(' | ')
+}
 </script>
 
 <template>
@@ -16,30 +24,16 @@ defineProps<{
     </div>
 
     <div class="mt-3 space-y-2">
-      <div class="flex items-start text-sm text-black hover:text-gray-600 transition-colors">
+      <div
+        v-for="membre in membres"
+        :key="membre.email"
+        class="flex items-start text-sm text-black hover:text-gray-600 transition-colors"
+      >
         <span class="w-2.5 h-2.5 bg-black rounded-full mr-2 mt-1.5 flex-shrink-0"></span>
         <div>
-          <span class="font-bold">Président: </span>
-          <span>{{ president.nom }}</span>
-          <span class="text-gray-500 ml-1">({{ president.email }} | {{ president.tel }})</span>
-        </div>
-      </div>
-
-      <div class="flex items-start text-sm text-black hover:text-gray-600 transition-colors">
-        <span class="w-2.5 h-2.5 bg-black rounded-full mr-2 mt-1.5 flex-shrink-0"></span>
-        <div>
-          <span class="font-bold">Vice président: </span>
-          <span>{{ vicePresident.nom }}</span>
-          <span class="text-gray-500 ml-1">({{ vicePresident.email }} | {{ vicePresident.tel }})</span>
-        </div>
-      </div>
-
-      <div class="flex items-start text-sm text-black hover:text-gray-600 transition-colors">
-        <span class="w-2.5 h-2.5 bg-black rounded-full mr-2 mt-1.5 flex-shrink-0"></span>
-        <div>
-          <span class="font-bold">Communication: </span>
-          <span>{{ respCommunication.nom }}</span>
-          <span class="text-gray-500 ml-1">({{ respCommunication.email }} | {{ respCommunication.tel }})</span>
+          <span class="font-bold">{{ membre.role_label }}: </span>
+          <span>{{ formatNomComplet(membre) }}</span>
+          <span class="text-gray-500 ml-1">({{ formatContact(membre) }})</span>
         </div>
       </div>
     </div>

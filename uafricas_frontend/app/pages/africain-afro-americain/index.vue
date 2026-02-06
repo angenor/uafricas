@@ -2,7 +2,16 @@
 import { CAROUSEL_IMAGES } from '~/mocks/centres-culturels'
 import type { CentreCulturelAPI } from '~/composables/useCentresCulturels'
 
-const { listerCentres, chargement, erreur } = useCentresCulturels()
+useAOS()
+
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBaseUrl as string
+
+interface ApiResponse<T> {
+  success: boolean
+  data: T | null
+  error: string | null
+}
 
 useHead({
   title: 'Centres Culturels Africain et Afro-Descendant - UAfricas',
@@ -14,15 +23,29 @@ useHead({
   ]
 })
 
-const centres = ref<CentreCulturelAPI[]>([])
-const carouselImages = ref<string[]>(CAROUSEL_IMAGES)
+const carouselImages = CAROUSEL_IMAGES
 
-onMounted(async () => {
-  const resultat = await listerCentres()
-  if (resultat) {
-    centres.value = resultat
-  }
-})
+const { data: centresData, status, error: fetchError, refresh } = await useAsyncData(
+  'centres-culturels',
+  async () => {
+    const reponse = await $fetch<ApiResponse<CentreCulturelAPI[]>>(
+      `${apiBase}/api/centres-culturels`,
+    )
+    if (!reponse.success || !reponse.data) {
+      throw createError({ message: reponse.error || 'Erreur lors du chargement des centres culturels' })
+    }
+    return reponse.data.map(c => ({
+      ...c,
+      image_couverture_url: c.image_couverture_url
+        ? `${apiBase}${c.image_couverture_url}`
+        : null,
+    }))
+  },
+)
+
+const centres = computed(() => centresData.value ?? [])
+const chargement = computed(() => status.value === 'pending')
+const erreur = computed(() => fetchError.value?.message ?? null)
 </script>
 
 <template>
@@ -44,7 +67,7 @@ onMounted(async () => {
         <p class="text-red-600">{{ erreur }}</p>
         <button
           class="mt-3 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
-          @click="listerCentres().then(r => { if (r) centres = r })"
+          @click="refresh()"
         >
           Réessayer
         </button>

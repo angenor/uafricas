@@ -5,11 +5,12 @@ Le schéma complet (10 schemas, seed data, triggers) s'initialise automatiquemen
 @CLAUDE.md doit savoir ce service qu'on a créé et aussi se mettre a jour automatiquement lorsqu'on effectu un changement important 
 
 
-pgAdmin (interface web) : http://localhost:5050
-
-Email : admin@uafricas.dev / Mot de passe : admin
-Puis ajoute un serveur : host postgres, port 5432, user uafricas, password uafricas_dev_2024, db africans_db
-Ligne de commande (psql dans le conteneur) :
+Accès Adminer : http://localhost:8088                                   
+  - Système : PostgreSQL
+  - Serveur : postgres
+  - Utilisateur : uafricas
+  - Mot de passe : celui dans votre .env
+  - Base de données : africans_db
 
 
 docker compose exec postgres psql -U uafricas -d africans_db

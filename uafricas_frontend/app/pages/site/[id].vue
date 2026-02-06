@@ -2,17 +2,47 @@
 import type { CentreCulturelDetailAPI } from '~/composables/useCentresCulturels'
 import { useUserStore } from '~/stores/user'
 
+useAOS()
+
 const route = useRoute()
 const userStore = useUserStore()
-const { obtenirCentre, chargement, erreur, genererLienGoogleMaps } = useCentresCulturels()
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBaseUrl as string
+const { genererLienGoogleMaps } = useCentresCulturels()
+
+interface ApiResponse<T> {
+  success: boolean
+  data: T | null
+  error: string | null
+}
 
 const id = computed(() => route.params.id as string)
 
-const centre = ref<CentreCulturelDetailAPI | null>(null)
 const showInscription = ref(false)
 const showCreateProg = ref(false)
 
 const isAdmin = computed(() => userStore.user?.roles?.includes('admin'))
+
+const { data: centre, status, error: fetchError } = await useAsyncData(
+  `centre-${id.value}`,
+  async () => {
+    const reponse = await $fetch<ApiResponse<CentreCulturelDetailAPI>>(
+      `${apiBase}/api/centres-culturels/${id.value}`,
+    )
+    if (!reponse.success || !reponse.data) {
+      throw createError({ message: reponse.error || 'Centre culturel non trouvé' })
+    }
+    return {
+      ...reponse.data,
+      image_couverture_url: reponse.data.image_couverture_url
+        ? `${apiBase}${reponse.data.image_couverture_url}`
+        : null,
+    }
+  },
+)
+
+const chargement = computed(() => status.value === 'pending')
+const erreur = computed(() => fetchError.value?.message ?? null)
 
 const googleMapsUrl = computed(() => {
   if (!centre.value) return null
@@ -44,13 +74,6 @@ const handleCreateProgrammation = (programmation: any) => {
   alert('Programmation créée avec succès! (Mode mock - non persisté)')
   showCreateProg.value = false
 }
-
-onMounted(async () => {
-  const resultat = await obtenirCentre(id.value)
-  if (resultat) {
-    centre.value = resultat
-  }
-})
 </script>
 
 <template>
@@ -136,9 +159,12 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Localisation -->
+      <!-- Localisation + Équipe -->
       <div class="flex flex-col md:flex-row gap-2 mt-3">
-        <div class="rounded-xl bg-white w-full p-4">
+        <div
+          class="rounded-xl bg-white p-4"
+          :class="centre.membres.length > 0 ? 'w-full md:w-1/2' : 'w-full'"
+        >
           <div class="flex items-center text-gray-600 border-b-2 pb-2">
             <font-awesome-icon :icon="['fas', 'location-dot']" />
             <div class="text-xl font-extrabold ml-3">Localisation</div>
@@ -157,6 +183,11 @@ onMounted(async () => {
           </div>
           <p v-if="centre.description" class="mt-3 text-gray-600 text-sm">{{ centre.description }}</p>
         </div>
+
+        <CentresCulturelsEquipeSection
+          v-if="centre.membres.length > 0"
+          :membres="centre.membres"
+        />
       </div>
 
       <!-- Section Programmation -->
