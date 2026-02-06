@@ -94,6 +94,7 @@ Use multiple sub-agents in parallel for efficiency:
 - Search frontend + backend simultaneously
 - Explore multiple files/folders at the same time
 - Run tests + verifications in parallel after modifications
+- **Avant de créer un nouveau composant** : Toujours lancer un sous-agent pour vérifier si un composant similaire existe déjà dans `app/components/` (rechercher par nom et par fonctionnalité). Évite les redondances et favorise la réutilisation.
 
 ## Auto-maintenance de ce fichier
 
