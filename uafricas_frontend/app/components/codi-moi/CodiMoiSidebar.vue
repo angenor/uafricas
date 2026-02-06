@@ -11,15 +11,14 @@
       <div v-if="amis.length" class="grid grid-cols-2 gap-3">
         <div
           v-for="ami in amis"
-          :key="ami.uid"
+          :key="ami.id"
           class="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:border-custom-green hover:bg-green-50 transition-all cursor-pointer"
         >
-          <img
-            :src="ami.photoURL || 'https://www.pngall.com/wp-content/uploads/5/Profile-PNG-Clipart.png'"
-            class="w-12 h-12 rounded-full object-cover mb-2"
-          />
+          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-custom-green to-emerald-600 flex items-center justify-center text-white font-bold text-lg mb-2">
+            {{ (ami.prenom || ami.nom).charAt(0) }}
+          </div>
           <span class="text-sm text-center font-medium text-gray-700">
-            {{ ami.prenom }}
+            {{ ami.prenom || ami.nom }}
           </span>
         </div>
       </div>
@@ -79,10 +78,10 @@
             {{ post.contenu }}
           </p>
           <div class="flex items-center justify-between text-xs text-gray-500">
-            <span>{{ post.userInfo.prenom }}</span>
+            <span>{{ post.auteur.prenom || post.auteur.nom }}</span>
             <span class="flex items-center">
               <font-awesome-icon icon="fa-solid fa-heart" class="text-red-500 mr-1" />
-              {{ post.stats.likes }}
+              {{ post.nombre_likes }}
             </span>
           </div>
         </div>
@@ -95,7 +94,13 @@
 </template>
 
 <script setup lang="ts">
-import type { CodiMoiPost, UserInfo } from '~/mocks/codi-moi'
+import type { CodiMoiPostAPI, CodiMoiAuteur } from '~/composables/useCodiMoi'
+
+interface AmiInfo {
+  id: string
+  nom: string
+  prenom: string | null
+}
 
 interface Stats {
   totalPosts: number
@@ -108,12 +113,12 @@ interface Stats {
 }
 
 defineProps<{
-  amis: UserInfo[]
+  amis: AmiInfo[]
   stats: Stats
-  popularPosts: CodiMoiPost[]
+  popularPosts: CodiMoiPostAPI[]
 }>()
 
 const emit = defineEmits<{
-  goToPost: [post: CodiMoiPost]
+  goToPost: [post: CodiMoiPostAPI]
 }>()
 </script>

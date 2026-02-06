@@ -90,19 +90,19 @@
             class="space-y-5"
           >
             <CodiMoiCard
-              v-for="post in filteredPosts"
+              v-for="post in posts"
               :key="post.id"
               :post="post"
               @click="navigateToPost(post.id)"
-              @like="handleLike(post.id)"
-              @dislike="handleDislike(post.id)"
+              @like="handleReaction(post.id, 'like')"
+              @dislike="handleReaction(post.id, 'dislike')"
               @comment="navigateToPost(post.id)"
-              @share="handleShare(post.id)"
+              @share="handleShare(post)"
             />
           </TransitionGroup>
 
           <!-- État vide -->
-          <div v-if="filteredPosts.length === 0" class="text-center py-16">
+          <div v-if="posts.length === 0" class="text-center py-16">
             <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white shadow-md mb-4">
               <font-awesome-icon icon="fa-solid fa-file-circle-xmark" class="text-3xl text-gray-300" />
             </div>
@@ -135,7 +135,7 @@
           :amis="amis"
           :stats="stats"
           :popular-posts="popularPosts"
-          @go-to-post="(post: CodiMoiPost) => navigateToPost(post.id)"
+          @go-to-post="(post: CodiMoiPostAPI) => navigateToPost(post.id)"
         />
       </div>
     </div>
@@ -308,18 +308,16 @@ import {
   COULEURS_FOND,
   PAYS_AFRICAINS,
   GROUPES_ETHNIQUES,
-  type CodiMoiPost,
+  type CodiMoiPostAPI,
   type CategoriePost,
-  type UserInfo
-} from '~/mocks/codi-moi'
-import type { CodiMoiPostAPI } from '~/composables/useCodiMoi'
+} from '~/composables/useCodiMoi'
 
 useHead({
   title: 'Codi-Moi - Codification des valeurs | UAfricas'
 })
 
 const router = useRouter()
-const { chargement: apiLoading, erreur: apiErreur, listerPosts, creerPost } = useCodiMoi()
+const { erreur: apiErreur, listerPosts, creerPost, reagir } = useCodiMoi()
 
 const breadcrumbs = [
   { label: 'Centre Culturel', to: '/africa-culture' },
@@ -327,62 +325,35 @@ const breadcrumbs = [
   { label: 'Codi-Moi', to: undefined }
 ]
 
-// Mapper un post API vers le format attendu par CodiMoiCard
-const mapApiToPost = (api: CodiMoiPostAPI): CodiMoiPost => ({
-  id: api.id,
-  categorie: api.type as CategoriePost,
-  contenu: api.contenu,
-  nomAuteur: api.nom_auteur_originel,
-  explication: api.explication,
-  couleurFond: api.couleur_fond,
-  imageArrierePlan: api.image_arriere_plan_url,
-  imageCouverture: api.image_couverture_url,
-  pays: api.pays || 'Non spécifié',
-  groupeEthnique: api.groupe_ethnique,
-  hashtags: api.hashtags,
-  userId: api.auteur.id,
-  userInfo: {
-    uid: api.auteur.id,
-    email: '',
-    nom: api.auteur.nom,
-    prenom: api.auteur.prenom || '',
-    photoURL: null
-  },
-  dateCreation: new Date(api.created_at),
-  dateModification: new Date(api.created_at),
-  stats: { likes: api.nombre_likes, dislikes: api.nombre_dislikes, commentaires: 0, partages: 0, vues: 0 },
-  userReaction: null
-})
-
-// Données
-const posts = ref<CodiMoiPost[]>([])
+// Données — on utilise directement CodiMoiPostAPI (pas de mapping)
+const posts = ref<CodiMoiPostAPI[]>([])
 const totalPosts = ref(0)
 
-// Amis mock (sera remplace par une API amis plus tard)
-const amis = ref<UserInfo[]>([
-  { uid: 'user-002', email: 'fatou@example.com', nom: 'Ndiaye', prenom: 'Fatou', photoURL: 'https://randomuser.me/api/portraits/women/2.jpg' },
-  { uid: 'user-003', email: 'kouame@example.com', nom: 'Yao', prenom: 'Kouamé', photoURL: 'https://randomuser.me/api/portraits/men/3.jpg' },
-  { uid: 'user-005', email: 'marie@example.com', nom: 'Tabi', prenom: 'Marie', photoURL: 'https://randomuser.me/api/portraits/women/5.jpg' },
-  { uid: 'user-007', email: 'sipho@example.com', nom: 'Ndlovu', prenom: 'Sipho', photoURL: 'https://randomuser.me/api/portraits/men/7.jpg' }
+// Amis (sera remplacé par une API amis plus tard)
+const amis = ref([
+  { id: '23c32fc1-8cee-45f0-9ccd-b74629cdbf99', nom: 'Traoré', prenom: 'Fatou' },
+  { id: '37a5049d-4ece-43a1-bfd9-2b2478993a3d', nom: 'Koné', prenom: 'Ibrahim' },
+  { id: '5e5370f5-dcfb-4f6d-aa6c-752a9eb1299b', nom: 'Ndong', prenom: 'Marie' },
+  { id: 'e52995bb-06ca-4155-a638-cd4262a5ac4d', nom: 'Ouédraogo', prenom: 'Seydou' },
 ])
 
-// Stats calculees depuis les posts charges
+// Stats calculées depuis les posts chargés
 const stats = computed(() => {
   const p = posts.value
   return {
     totalPosts: totalPosts.value,
-    proverbesAdages: p.filter(x => x.categorie === 'proverbe_adage').length,
-    citations: p.filter(x => x.categorie === 'citation').length,
-    ressourcesHistoriques: p.filter(x => x.categorie === 'ressource_historique').length,
-    bonnesPratiques: p.filter(x => x.categorie === 'bonne_pratique').length,
-    totalLikes: p.reduce((sum, x) => sum + x.stats.likes, 0),
-    totalVues: p.reduce((sum, x) => sum + x.stats.vues, 0),
+    proverbesAdages: p.filter(x => x.type === 'proverbe_adage').length,
+    citations: p.filter(x => x.type === 'citation').length,
+    ressourcesHistoriques: p.filter(x => x.type === 'ressource_historique').length,
+    bonnesPratiques: p.filter(x => x.type === 'bonne_pratique').length,
+    totalLikes: p.reduce((sum, x) => sum + x.nombre_likes, 0),
+    totalVues: p.reduce((sum, x) => sum + x.nombre_vues, 0),
   }
 })
 
-// Posts populaires tries par likes
+// Posts populaires triés par likes
 const popularPosts = computed(() => {
-  return [...posts.value].sort((a, b) => b.stats.likes - a.stats.likes).slice(0, 5)
+  return [...posts.value].sort((a, b) => b.nombre_likes - a.nombre_likes).slice(0, 5)
 })
 
 // UI state
@@ -406,9 +377,6 @@ const hasActiveFilters = computed(() => {
   return !!(activeCategory.value || searchKeywords.value || searchPays.value)
 })
 
-// Les posts sont deja filtres cote serveur, pas de filtre local
-const filteredPosts = computed(() => posts.value)
-
 const hasMorePosts = computed(() => {
   return posts.value.length < totalPosts.value
 })
@@ -428,9 +396,9 @@ async function chargerPosts(append = false) {
 
   if (resultat) {
     if (append) {
-      posts.value.push(...resultat.posts.map(mapApiToPost))
+      posts.value.push(...resultat.posts)
     } else {
-      posts.value = resultat.posts.map(mapApiToPost)
+      posts.value = resultat.posts
     }
     totalPosts.value = resultat.total
   } else if (apiErreur.value) {
@@ -445,41 +413,21 @@ const navigateToPost = (postId: string) => {
   router.push(`/evenements/codi-moi/${postId}`)
 }
 
-const findPost = (postId: string): CodiMoiPost | undefined => {
-  return posts.value.find(p => p.id === postId)
-}
-
-const handleLike = (postId: string) => {
-  const post = findPost(postId)
-  if (!post) return
-
-  if (post.userReaction === 'like') {
-    post.userReaction = null
-    post.stats.likes--
-  } else {
-    if (post.userReaction === 'dislike') post.stats.dislikes--
-    post.userReaction = 'like'
-    post.stats.likes++
+const handleReaction = async (postId: string, type: 'like' | 'dislike') => {
+  const updatedPost = await reagir(postId, type)
+  if (updatedPost) {
+    // Mettre à jour le post dans la liste avec les nouvelles valeurs du serveur
+    const index = posts.value.findIndex(p => p.id === postId)
+    if (index !== -1) {
+      posts.value[index] = updatedPost
+    }
   }
 }
 
-const handleDislike = (postId: string) => {
-  const post = findPost(postId)
-  if (!post) return
-
-  if (post.userReaction === 'dislike') {
-    post.userReaction = null
-    post.stats.dislikes--
-  } else {
-    if (post.userReaction === 'like') post.stats.likes--
-    post.userReaction = 'dislike'
-    post.stats.dislikes++
+const handleShare = (post: CodiMoiPostAPI) => {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(`${window.location.origin}/evenements/codi-moi/${post.id}`)
   }
-}
-
-const handleShare = (postId: string) => {
-  const post = findPost(postId)
-  if (post) post.stats.partages++
   showNotification('Lien copié dans le presse-papiers !')
 }
 
@@ -539,7 +487,7 @@ const submitPost = async () => {
     showNotification(apiErreur.value || 'Erreur lors de la création')
   }
 
-  // Recharger la liste depuis l'API pour refléter l'état réel de la BDD
+  // Recharger la liste depuis l'API
   await chargerPosts()
 }
 

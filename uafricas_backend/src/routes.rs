@@ -43,7 +43,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/codimoi")
                     .route("", web::get().to(codimoi::lister_posts))
                     .route("", web::post().to(codimoi::creer_post))
-                    .route("/{id}", web::get().to(codimoi::obtenir_post)),
+                    .route("/{id}", web::get().to(codimoi::obtenir_post))
+                    .route("/{id}/reaction", web::post().to(codimoi::reagir))
+                    .route("/{id}/commentaires", web::get().to(codimoi::lister_commentaires))
+                    .route("/{id}/commentaires", web::post().to(codimoi::creer_commentaire)),
             )
             // Routes des annonces (Marche Africain)
             .service(

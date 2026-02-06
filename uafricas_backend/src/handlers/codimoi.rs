@@ -1,12 +1,14 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
+use crate::jwt;
 use crate::models::codimoi::{
     AuteurInfo, CodiMoi, CodiMoiAuteurResponse, CodiMoiListeResponse,
-    CodiMoiQueryParams, CodiMoiResponse, CreerCodiMoiRequest, TagInfo,
-    CODIMOI_COLONNES,
+    CodiMoiQueryParams, CodiMoiResponse, CommentaireListeResponse,
+    CommentaireResponse, CommentaireRow, CreerCodiMoiRequest,
+    CreerCommentaireRequest, ReactionRequest, TagInfo, CODIMOI_COLONNES,
 };
 
 /// Reponse API generique
@@ -15,6 +17,15 @@ struct ApiResponse<T: serde::Serialize> {
     success: bool,
     data: Option<T>,
     error: Option<String>,
+}
+
+/// Extraire l'utilisateur connecte depuis le header Authorization
+fn extraire_utilisateur_id(req: &HttpRequest) -> Option<Uuid> {
+    let header = req.headers().get("Authorization")?.to_str().ok()?;
+    let token = header.strip_prefix("Bearer ")?;
+    let secret = std::env::var("JWT_SECRET").ok()?;
+    let claims = jwt::valider_token(token, &secret).ok()?;
+    Uuid::parse_str(&claims.sub).ok()
 }
 
 /// Recuperer les hashtags d'un post
@@ -61,6 +72,14 @@ async fn construire_response(
         None
     };
 
+    // Compter les commentaires
+    let nombre_commentaires: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM culture.codimoi_commentaire WHERE codimoi_id = $1 AND deleted_at IS NULL",
+    )
+    .bind(post.id)
+    .fetch_one(pool)
+    .await?;
+
     Ok(CodiMoiResponse {
         id: post.id,
         type_post: post.type_post.clone(),
@@ -74,6 +93,8 @@ async fn construire_response(
         image_arriere_plan_url: post.image_arriere_plan_url.clone(),
         nombre_likes: post.nombre_likes,
         nombre_dislikes: post.nombre_dislikes,
+        nombre_vues: post.nombre_vues,
+        nombre_commentaires,
         hashtags,
         auteur: CodiMoiAuteurResponse {
             id: auteur.id,
@@ -179,6 +200,12 @@ pub async fn obtenir_post(
 ) -> Result<HttpResponse, ApiErreur> {
     let id = chemin.into_inner();
 
+    // Incrementer les vues
+    sqlx::query("UPDATE culture.codimoi SET nombre_vues = nombre_vues + 1 WHERE id = $1")
+        .bind(id)
+        .execute(pool.get_ref())
+        .await?;
+
     let query = format!(
         "SELECT {} FROM culture.codimoi c WHERE c.id = $1 AND c.etat = 'publie' AND c.deleted_at IS NULL",
         CODIMOI_COLONNES
@@ -204,6 +231,7 @@ pub async fn obtenir_post(
 // ──────────────────────────────────────────────────────────────
 pub async fn creer_post(
     pool: web::Data<PgPool>,
+    req: HttpRequest,
     body: web::Json<CreerCodiMoiRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
     // Validation du type
@@ -229,14 +257,17 @@ pub async fn creer_post(
         None
     };
 
-    // TODO: Recuperer l'utilisateur connecte via JWT
-    // Pour l'instant on utilise un utilisateur fictif
-    let utilisateur_id = sqlx::query_scalar::<_, Uuid>(
-        "SELECT id FROM iam.utilisateur ORDER BY created_at ASC LIMIT 1",
-    )
-    .fetch_optional(pool.get_ref())
-    .await?
-    .ok_or_else(|| ApiErreur::Validation("Aucun utilisateur trouve en base".to_string()))?;
+    // Utiliser l'utilisateur connecte via JWT, sinon le premier en BDD
+    let utilisateur_id = if let Some(uid) = extraire_utilisateur_id(&req) {
+        uid
+    } else {
+        sqlx::query_scalar::<_, Uuid>(
+            "SELECT id FROM iam.utilisateur ORDER BY created_at ASC LIMIT 1",
+        )
+        .fetch_optional(pool.get_ref())
+        .await?
+        .ok_or_else(|| ApiErreur::Validation("Aucun utilisateur trouve en base".to_string()))?
+    };
 
     // Inserer le post
     let post_id = sqlx::query_scalar::<_, Uuid>(
@@ -302,6 +333,282 @@ pub async fn creer_post(
         .await?;
 
     let reponse = construire_response(pool.get_ref(), &post).await?;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(reponse),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// POST /api/codimoi/{id}/reaction — Ajouter/toggler une reaction
+// ──────────────────────────────────────────────────────────────
+pub async fn reagir(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<ReactionRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let codimoi_id = chemin.into_inner();
+
+    // Valider le type de reaction
+    if body.type_reaction != "like" && body.type_reaction != "dislike" {
+        return Err(ApiErreur::Validation(
+            "type_reaction doit etre 'like' ou 'dislike'".to_string(),
+        ));
+    }
+
+    // Utilisateur connecte ou premier en BDD
+    let utilisateur_id = if let Some(uid) = extraire_utilisateur_id(&req) {
+        uid
+    } else {
+        sqlx::query_scalar::<_, Uuid>(
+            "SELECT id FROM iam.utilisateur ORDER BY created_at ASC LIMIT 1",
+        )
+        .fetch_optional(pool.get_ref())
+        .await?
+        .ok_or_else(|| ApiErreur::Validation("Aucun utilisateur trouve".to_string()))?
+    };
+
+    // Verifier que le post existe
+    let post_existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM culture.codimoi WHERE id = $1 AND etat = 'publie' AND deleted_at IS NULL)",
+    )
+    .bind(codimoi_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    if !post_existe {
+        return Err(ApiErreur::NonTrouve("Post non trouve".to_string()));
+    }
+
+    // Verifier s'il y a deja une reaction
+    let reaction_existante: Option<String> = sqlx::query_scalar(
+        "SELECT type_reaction FROM culture.codimoi_reaction WHERE codimoi_id = $1 AND utilisateur_id = $2",
+    )
+    .bind(codimoi_id)
+    .bind(utilisateur_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    match reaction_existante {
+        Some(ref ancienne) if ancienne == &body.type_reaction => {
+            // Meme reaction = toggle off (supprimer)
+            sqlx::query(
+                "DELETE FROM culture.codimoi_reaction WHERE codimoi_id = $1 AND utilisateur_id = $2",
+            )
+            .bind(codimoi_id)
+            .bind(utilisateur_id)
+            .execute(pool.get_ref())
+            .await?;
+
+            // Decrementer le compteur
+            let col = if body.type_reaction == "like" {
+                "nombre_likes"
+            } else {
+                "nombre_dislikes"
+            };
+            sqlx::query(&format!(
+                "UPDATE culture.codimoi SET {} = GREATEST({} - 1, 0) WHERE id = $1",
+                col, col
+            ))
+            .bind(codimoi_id)
+            .execute(pool.get_ref())
+            .await?;
+        }
+        Some(ref ancienne) => {
+            // Reaction differente = changer
+            sqlx::query(
+                "UPDATE culture.codimoi_reaction SET type_reaction = $1, created_at = NOW() WHERE codimoi_id = $2 AND utilisateur_id = $3",
+            )
+            .bind(&body.type_reaction)
+            .bind(codimoi_id)
+            .bind(utilisateur_id)
+            .execute(pool.get_ref())
+            .await?;
+
+            // Ajuster les deux compteurs
+            let (inc_col, dec_col) = if body.type_reaction == "like" {
+                ("nombre_likes", "nombre_dislikes")
+            } else {
+                ("nombre_dislikes", "nombre_likes")
+            };
+            sqlx::query(&format!(
+                "UPDATE culture.codimoi SET {} = {} + 1, {} = GREATEST({} - 1, 0) WHERE id = $1",
+                inc_col, inc_col, dec_col, dec_col
+            ))
+            .bind(codimoi_id)
+            .execute(pool.get_ref())
+            .await?;
+
+            let _ = ancienne;
+        }
+        None => {
+            // Nouvelle reaction
+            sqlx::query(
+                "INSERT INTO culture.codimoi_reaction (codimoi_id, utilisateur_id, type_reaction)
+                 VALUES ($1, $2, $3)",
+            )
+            .bind(codimoi_id)
+            .bind(utilisateur_id)
+            .bind(&body.type_reaction)
+            .execute(pool.get_ref())
+            .await?;
+
+            // Incrementer le compteur
+            let col = if body.type_reaction == "like" {
+                "nombre_likes"
+            } else {
+                "nombre_dislikes"
+            };
+            sqlx::query(&format!(
+                "UPDATE culture.codimoi SET {} = {} + 1 WHERE id = $1",
+                col, col
+            ))
+            .bind(codimoi_id)
+            .execute(pool.get_ref())
+            .await?;
+        }
+    }
+
+    // Retourner le post mis a jour
+    let query = format!(
+        "SELECT {} FROM culture.codimoi c WHERE c.id = $1",
+        CODIMOI_COLONNES
+    );
+    let post = sqlx::query_as::<_, CodiMoi>(&query)
+        .bind(codimoi_id)
+        .fetch_one(pool.get_ref())
+        .await?;
+
+    let reponse = construire_response(pool.get_ref(), &post).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(reponse),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// GET /api/codimoi/{id}/commentaires — Lister les commentaires
+// ──────────────────────────────────────────────────────────────
+pub async fn lister_commentaires(
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let codimoi_id = chemin.into_inner();
+
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM culture.codimoi_commentaire WHERE codimoi_id = $1 AND deleted_at IS NULL",
+    )
+    .bind(codimoi_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let rows = sqlx::query_as::<_, CommentaireRow>(
+        "SELECT id, codimoi_id, parent_id, contenu, cree_par, nombre_likes, created_at
+         FROM culture.codimoi_commentaire
+         WHERE codimoi_id = $1 AND deleted_at IS NULL
+         ORDER BY created_at ASC",
+    )
+    .bind(codimoi_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let mut commentaires = Vec::with_capacity(rows.len());
+    for row in &rows {
+        let auteur = charger_auteur(pool.get_ref(), row.cree_par).await?;
+        commentaires.push(CommentaireResponse {
+            id: row.id,
+            contenu: row.contenu.clone(),
+            parent_id: row.parent_id,
+            nombre_likes: row.nombre_likes,
+            auteur: CodiMoiAuteurResponse {
+                id: auteur.id,
+                nom: auteur.nom,
+                prenom: auteur.prenom,
+            },
+            created_at: row.created_at,
+        });
+    }
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(CommentaireListeResponse {
+            commentaires,
+            total,
+        }),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// POST /api/codimoi/{id}/commentaires — Creer un commentaire
+// ──────────────────────────────────────────────────────────────
+pub async fn creer_commentaire(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<CreerCommentaireRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let codimoi_id = chemin.into_inner();
+
+    if body.contenu.trim().is_empty() {
+        return Err(ApiErreur::Validation("Le contenu est obligatoire".to_string()));
+    }
+
+    // Utilisateur connecte ou premier en BDD
+    let utilisateur_id = if let Some(uid) = extraire_utilisateur_id(&req) {
+        uid
+    } else {
+        sqlx::query_scalar::<_, Uuid>(
+            "SELECT id FROM iam.utilisateur ORDER BY created_at ASC LIMIT 1",
+        )
+        .fetch_optional(pool.get_ref())
+        .await?
+        .ok_or_else(|| ApiErreur::Validation("Aucun utilisateur trouve".to_string()))?
+    };
+
+    // Verifier que le post existe
+    let post_existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM culture.codimoi WHERE id = $1 AND etat = 'publie' AND deleted_at IS NULL)",
+    )
+    .bind(codimoi_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    if !post_existe {
+        return Err(ApiErreur::NonTrouve("Post non trouve".to_string()));
+    }
+
+    let row = sqlx::query_as::<_, CommentaireRow>(
+        "INSERT INTO culture.codimoi_commentaire (codimoi_id, parent_id, contenu, cree_par)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, codimoi_id, parent_id, contenu, cree_par, nombre_likes, created_at",
+    )
+    .bind(codimoi_id)
+    .bind(body.parent_id)
+    .bind(body.contenu.trim())
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let auteur = charger_auteur(pool.get_ref(), utilisateur_id).await?;
+
+    let reponse = CommentaireResponse {
+        id: row.id,
+        contenu: row.contenu,
+        parent_id: row.parent_id,
+        nombre_likes: row.nombre_likes,
+        auteur: CodiMoiAuteurResponse {
+            id: auteur.id,
+            nom: auteur.nom,
+            prenom: auteur.prenom,
+        },
+        created_at: row.created_at,
+    };
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,

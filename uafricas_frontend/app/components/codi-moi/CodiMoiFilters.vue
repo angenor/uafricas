@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { CATEGORIES_POST, PAYS_AFRICAINS } from '~/mocks/codi-moi'
+import { CATEGORIES_POST, PAYS_AFRICAINS } from '~/composables/useCodiMoi'
 
 defineProps<{
   activeCategory: string
