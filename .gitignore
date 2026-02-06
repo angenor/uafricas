@@ -5,3 +5,32 @@
 
 # OS
 .DS_Store
+Thumbs.db
+
+# Rust / Cargo
+**/target/
+
+# Node / pnpm
+**/node_modules/
+.pnpm-store/
+
+# Nuxt
+.nuxt/
+.output/
+dist/
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker volumes (local data)
+pgdata/
+pgadmin_data/
+
+# Uploads (fichiers uploadés localement)
+uploads/

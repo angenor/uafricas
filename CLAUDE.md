@@ -24,10 +24,13 @@ pnpm preview          # Preview production build
 ### Backend (`uafricas_backend/`)
 
 ```bash
-cargo build                    # Debug build
-RUST_LOG=info cargo run        # Run with logging (http://127.0.0.1:8080)
-cargo build --release          # Release build
+cargo build                                        # Debug build
+RUST_LOG=info cargo run                            # Run with logging (http://127.0.0.1:8080)
+cargo build --release                              # Release build
+kill $(lsof -i :8080 -t) 2>/dev/null; RUST_LOG=info cargo run  # Redémarrer proprement (kill ancien + relance)
 ```
+
+> **Important** : `cargo run` recompile automatiquement si le code a changé. Pas besoin de `cargo build` avant. Pour redémarrer après modification, toujours **tuer l'ancien processus** avant de relancer, sinon le port 8080 reste occupé par l'ancienne version.
 
 Backend env vars: `DATABASE_URL` (required), `HOST` (default: 127.0.0.1), `PORT` (default: 8080), `UPLOAD_DIR` (default: ./uploads), `FRONTEND_URL` (default: http://localhost:3000), `RUST_LOG` (info/debug/error).
 

@@ -1,6 +1,7 @@
 use actix_cors::Cors;
-use actix_files::Files;
-use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use actix_files::NamedFile;
+use actix_web::http::header::{ContentDisposition, DispositionType, DispositionParam};
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 
 mod config;
@@ -37,6 +38,31 @@ pub async fn index() -> impl Responder {
     })
 }
 
+/// Handler qui sert les fichiers uploades avec Content-Disposition: inline
+/// Permet l'affichage des PDF dans un iframe au lieu du telechargement
+async fn servir_fichier_inline(
+    req: HttpRequest,
+    upload_dir: web::Data<String>,
+) -> actix_web::Result<NamedFile> {
+    // match_info decode automatiquement les caracteres percent-encoded
+    let chemin_relatif = req.match_info().query("chemin");
+    let chemin_complet = format!("{}/{}", upload_dir.get_ref(), chemin_relatif);
+
+    let nom_fichier = chemin_relatif
+        .rsplit('/')
+        .next()
+        .unwrap_or("fichier")
+        .to_string();
+
+    let fichier = NamedFile::open(&chemin_complet)?
+        .set_content_disposition(ContentDisposition {
+            disposition: DispositionType::Inline,
+            parameters: vec![DispositionParam::Filename(nom_fichier)],
+        });
+
+    Ok(fichier)
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenvy::dotenv().ok();
@@ -59,7 +85,6 @@ async fn main() -> std::io::Result<()> {
 
     let upload_dir = app_config.upload_dir.clone();
     let frontend_url = app_config.frontend_url.clone();
-    let upload_dir_static = app_config.upload_dir.clone();
 
     log::info!(
         "Serveur en ecoute sur http://{}:{}",
@@ -84,7 +109,8 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(upload_dir.clone()))
             .app_data(web::PayloadConfig::new(50 * 1024 * 1024))
             .configure(routes::configurer_routes)
-            .service(Files::new("/uploads", &upload_dir_static))
+            // Servir les fichiers uploades avec Content-Disposition: inline
+            .route("/uploads/{chemin:.*}", web::get().to(servir_fichier_inline))
     })
     .bind((app_config.host.as_str(), app_config.port))?
     .run()
