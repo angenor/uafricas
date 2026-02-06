@@ -1,4 +1,5 @@
 // Composable pour les appels API Codi-Moi
+import { useUserStore } from '~/stores/user'
 
 // ──────────────────────────────────────────────────────────────
 // Types et interfaces
@@ -163,9 +164,18 @@ export const getCategoryLabel = (categorie: CategoriePost): string => {
 export const useCodiMoi = () => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBaseUrl as string
+  const userStore = useUserStore()
 
   const chargement = ref(false)
   const erreur = ref<string | null>(null)
+
+  /** Headers d'authentification si l'utilisateur est connecté */
+  const authHeaders = (): Record<string, string> => {
+    if (userStore.accessToken) {
+      return { Authorization: `Bearer ${userStore.accessToken}` }
+    }
+    return {}
+  }
 
   /**
    * Lister les posts avec filtres et pagination
@@ -245,6 +255,7 @@ export const useCodiMoi = () => {
         `${apiBase}/api/codimoi`,
         {
           method: 'POST',
+          headers: authHeaders(),
           body: payload,
         },
       )
@@ -277,6 +288,7 @@ export const useCodiMoi = () => {
         `${apiBase}/api/codimoi/${postId}/reaction`,
         {
           method: 'POST',
+          headers: authHeaders(),
           body: { type_reaction: typeReaction },
         },
       )
@@ -331,6 +343,7 @@ export const useCodiMoi = () => {
         `${apiBase}/api/codimoi/${postId}/commentaires`,
         {
           method: 'POST',
+          headers: authHeaders(),
           body: { contenu, parent_id: parentId || null },
         },
       )
