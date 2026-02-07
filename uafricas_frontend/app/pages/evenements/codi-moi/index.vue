@@ -527,7 +527,10 @@ watch([activeCategory, searchKeywords, searchPays], () => {
   debounceTimer = setTimeout(() => chargerPosts(), 300)
 })
 
-onMounted(() => {
+onMounted(async () => {
+  // Attendre que l'auth soit initialisee pour envoyer le token et recuperer user_reaction
+  const { initAuth } = useAuth()
+  await initAuth()
   chargerPosts()
 })
 </script>
