@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
     <!-- Hero avec recherche -->
-    <MarcheMarcheHero
+    <MarcheHero
       v-model:model-categorie="filtres.categorie"
       v-model:model-recherche="filtres.recherche"
       :total-annonces="totalAnnonces"
@@ -14,7 +14,7 @@
       <CommonBreadcrumbNav class="mb-8" />
 
       <!-- Boutons catégories -->
-      <MarcheMarcheCategoryButtons
+      <MarcheCategoryButtons
         :active-filter="filtres.categorie"
         @select="selectCategory"
       />
@@ -23,7 +23,7 @@
       <div class="flex flex-col lg:flex-row gap-8">
         <!-- Filtres latéraux (desktop) -->
         <aside class="hidden lg:block w-72 flex-shrink-0">
-          <MarcheMarcheFilters
+          <MarcheFilters
             v-model="filtres"
             :annonces="annonces"
             @reset="resetFilters"
@@ -207,7 +207,7 @@
             </div>
 
             <div class="p-4 overflow-y-auto h-[calc(100%-130px)]">
-              <MarcheMarcheFilters
+              <MarcheFilters
                 v-model="filtres"
                 :annonces="annonces"
                 @reset="resetFilters"

@@ -85,6 +85,7 @@ pub struct CodiMoiResponse {
     pub nombre_commentaires: i64,
     pub hashtags: Vec<String>,
     pub auteur: CodiMoiAuteurResponse,
+    pub user_reaction: Option<String>,
     pub created_at: DateTime<Utc>,
 }
 

@@ -119,14 +119,16 @@
         <div class="flex items-center space-x-6">
           <button
             @click.stop="emit('like')"
-            class="flex items-center space-x-2 text-gray-600 hover:text-red-500 transition-colors"
+            class="flex items-center space-x-2 transition-colors"
+            :class="post.user_reaction === 'like' ? 'text-red-500' : 'text-gray-600 hover:text-red-500'"
           >
-            <font-awesome-icon icon="fa-solid fa-heart" />
+            <font-awesome-icon :icon="post.user_reaction === 'like' ? 'fa-solid fa-heart' : 'fa-regular fa-heart'" />
             <span class="text-sm">{{ post.nombre_likes }}</span>
           </button>
           <button
             @click.stop="emit('dislike')"
-            class="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+            class="flex items-center space-x-2 transition-colors"
+            :class="post.user_reaction === 'dislike' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-800'"
           >
             <font-awesome-icon icon="fa-solid fa-thumbs-down" />
             <span class="text-sm">{{ post.nombre_dislikes }}</span>

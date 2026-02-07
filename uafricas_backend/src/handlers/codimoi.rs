@@ -58,6 +58,7 @@ async fn charger_auteur(pool: &PgPool, utilisateur_id: Uuid) -> Result<AuteurInf
 async fn construire_response(
     pool: &PgPool,
     post: &CodiMoi,
+    utilisateur_id: Option<Uuid>,
 ) -> Result<CodiMoiResponse, ApiErreur> {
     let hashtags = charger_hashtags(pool, post.id).await?;
     let auteur = charger_auteur(pool, post.cree_par).await?;
@@ -80,6 +81,19 @@ async fn construire_response(
     .fetch_one(pool)
     .await?;
 
+    // Reaction de l'utilisateur connecte
+    let user_reaction: Option<String> = if let Some(uid) = utilisateur_id {
+        sqlx::query_scalar(
+            "SELECT type_reaction FROM culture.codimoi_reaction WHERE codimoi_id = $1 AND utilisateur_id = $2",
+        )
+        .bind(post.id)
+        .bind(uid)
+        .fetch_optional(pool)
+        .await?
+    } else {
+        None
+    };
+
     Ok(CodiMoiResponse {
         id: post.id,
         type_post: post.type_post.clone(),
@@ -101,6 +115,7 @@ async fn construire_response(
             nom: auteur.nom,
             prenom: auteur.prenom,
         },
+        user_reaction,
         created_at: post.created_at,
     })
 }
@@ -110,8 +125,10 @@ async fn construire_response(
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_posts(
     pool: web::Data<PgPool>,
+    req: HttpRequest,
     params: web::Query<CodiMoiQueryParams>,
 ) -> Result<HttpResponse, ApiErreur> {
+    let current_user = extraire_utilisateur_id(&req);
     let page = params.page.unwrap_or(1).max(1);
     let par_page = params.par_page.unwrap_or(10).clamp(1, 50);
     let offset = (page - 1) * par_page;
@@ -176,7 +193,7 @@ pub async fn lister_posts(
     // Construire les reponses avec hashtags et auteurs
     let mut post_responses = Vec::with_capacity(posts.len());
     for post in &posts {
-        post_responses.push(construire_response(pool.get_ref(), post).await?);
+        post_responses.push(construire_response(pool.get_ref(), post, current_user).await?);
     }
 
     Ok(HttpResponse::Ok().json(ApiResponse {
@@ -196,8 +213,10 @@ pub async fn lister_posts(
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_post(
     pool: web::Data<PgPool>,
+    req: HttpRequest,
     chemin: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
+    let current_user = extraire_utilisateur_id(&req);
     let id = chemin.into_inner();
 
     // Incrementer les vues
@@ -217,7 +236,7 @@ pub async fn obtenir_post(
         .await?
         .ok_or_else(|| ApiErreur::NonTrouve(format!("Post codimoi avec id {} non trouve", id)))?;
 
-    let reponse = construire_response(pool.get_ref(), &post).await?;
+    let reponse = construire_response(pool.get_ref(), &post, current_user).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -332,7 +351,7 @@ pub async fn creer_post(
         .fetch_one(pool.get_ref())
         .await?;
 
-    let reponse = construire_response(pool.get_ref(), &post).await?;
+    let reponse = construire_response(pool.get_ref(), &post, Some(utilisateur_id)).await?;
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
@@ -482,7 +501,7 @@ pub async fn reagir(
         .fetch_one(pool.get_ref())
         .await?;
 
-    let reponse = construire_response(pool.get_ref(), &post).await?;
+    let reponse = construire_response(pool.get_ref(), &post, Some(utilisateur_id)).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,

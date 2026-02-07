@@ -32,6 +32,7 @@ export interface CodiMoiPostAPI {
   nombre_commentaires: number
   hashtags: string[]
   auteur: CodiMoiAuteur
+  user_reaction: UserReaction
   created_at: string
 }
 
@@ -195,7 +196,9 @@ export const useCodiMoi = () => {
       const queryString = params.toString()
       const url = `${apiBase}/api/codimoi${queryString ? `?${queryString}` : ''}`
 
-      const reponse = await $fetch<ApiResponse<CodiMoiListeAPI>>(url)
+      const reponse = await $fetch<ApiResponse<CodiMoiListeAPI>>(url, {
+        headers: authHeaders(),
+      })
 
       if (!reponse.success || !reponse.data) {
         throw new Error(reponse.error || 'Erreur lors du chargement des posts')
@@ -224,6 +227,7 @@ export const useCodiMoi = () => {
     try {
       const reponse = await $fetch<ApiResponse<CodiMoiPostAPI>>(
         `${apiBase}/api/codimoi/${id}`,
+        { headers: authHeaders() },
       )
 
       if (!reponse.success || !reponse.data) {
