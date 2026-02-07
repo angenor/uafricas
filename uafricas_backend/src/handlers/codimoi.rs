@@ -107,7 +107,6 @@ async fn construire_response(
         image_arriere_plan_url: post.image_arriere_plan_url.clone(),
         nombre_likes: post.nombre_likes,
         nombre_dislikes: post.nombre_dislikes,
-        nombre_vues: post.nombre_vues,
         nombre_commentaires,
         hashtags,
         auteur: CodiMoiAuteurResponse {
@@ -218,12 +217,6 @@ pub async fn obtenir_post(
 ) -> Result<HttpResponse, ApiErreur> {
     let current_user = extraire_utilisateur_id(&req);
     let id = chemin.into_inner();
-
-    // Incrementer les vues
-    sqlx::query("UPDATE culture.codimoi SET nombre_vues = nombre_vues + 1 WHERE id = $1")
-        .bind(id)
-        .execute(pool.get_ref())
-        .await?;
 
     let query = format!(
         "SELECT {} FROM culture.codimoi c WHERE c.id = $1 AND c.etat = 'publie' AND c.deleted_at IS NULL",

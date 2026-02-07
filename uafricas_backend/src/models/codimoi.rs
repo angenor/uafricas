@@ -8,7 +8,7 @@ use uuid::Uuid;
 pub const CODIMOI_COLONNES: &str =
     "id, type::text AS type, contenu, explication, nom_auteur_originel,
      pays_id, groupe_ethnique, couleur_fond, image_couverture_url,
-     image_arriere_plan_url, etat, nombre_likes, nombre_dislikes, nombre_vues,
+     image_arriere_plan_url, etat, nombre_likes, nombre_dislikes,
      cree_par, created_at, updated_at";
 
 /// Representation d'un post codimoi en base de donnees
@@ -28,7 +28,6 @@ pub struct CodiMoi {
     pub etat: String,
     pub nombre_likes: i32,
     pub nombre_dislikes: i32,
-    pub nombre_vues: i32,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -81,7 +80,6 @@ pub struct CodiMoiResponse {
     pub image_arriere_plan_url: Option<String>,
     pub nombre_likes: i32,
     pub nombre_dislikes: i32,
-    pub nombre_vues: i32,
     pub nombre_commentaires: i64,
     pub hashtags: Vec<String>,
     pub auteur: CodiMoiAuteurResponse,
