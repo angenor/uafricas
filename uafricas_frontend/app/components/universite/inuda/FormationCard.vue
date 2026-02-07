@@ -1,23 +1,17 @@
 <template>
   <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer"
        @click="$emit('click', formation)">
-    <!-- Header avec type et tarif -->
+    <!-- Header avec type -->
     <div class="px-6 py-4 border-b border-gray-100">
       <div class="flex items-center justify-between">
         <span class="px-3 py-1 rounded-full text-sm font-medium"
               :class="getTypeClasses(formation.type)">
           {{ getTypeLabel(formation.type) }}
         </span>
-        <div class="text-right">
-          <span v-if="formation.tarification.gratuit" class="text-green-600 font-bold">
-            Gratuit
-          </span>
-          <span v-else class="text-gray-700 font-bold">
-            {{ formation.tarification.prix.toLocaleString() }} FCFA
-          </span>
-          <div v-if="formation.tarification.prixReduit?.length" class="text-xs text-gray-500">
-            Réductions disponibles
-          </div>
+        <div class="flex items-center">
+          <span class="w-2 h-2 rounded-full mr-2"
+                :class="getStatutColor(formation.statut)"></span>
+          <span class="text-gray-600 text-sm">{{ getStatutLabel(formation.statut) }}</span>
         </div>
       </div>
     </div>
@@ -25,13 +19,13 @@
     <!-- Contenu principal -->
     <div class="p-6">
       <h3 class="text-xl font-bold text-gray-900 mb-2">{{ formation.titre }}</h3>
-      <p class="text-gray-600 mb-4 line-clamp-2">{{ formation.resume || formation.description }}</p>
+      <p class="text-gray-600 mb-4 line-clamp-2">{{ formation.description }}</p>
 
       <!-- Formateur -->
       <div class="flex items-center mb-4">
-        <img v-if="formation.formateurPhotoURL"
-             :src="formation.formateurPhotoURL"
-             :alt="`${formation.formateurPrenom} ${formation.formateurNom}`"
+        <img v-if="formation.formateur.photo_url"
+             :src="formation.formateur.photo_url"
+             :alt="`${formation.formateur.prenom} ${formation.formateur.nom}`"
              class="w-10 h-10 rounded-full mr-3 object-cover">
         <div v-else class="w-10 h-10 rounded-full mr-3 bg-gray-300 flex items-center justify-center">
           <svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
@@ -39,55 +33,27 @@
           </svg>
         </div>
         <div>
-          <p class="font-medium text-sm">{{ formation.formateurPrenom }} {{ formation.formateurNom }}</p>
+          <p class="font-medium text-sm">{{ formation.formateur.prenom }} {{ formation.formateur.nom }}</p>
           <p class="text-xs text-gray-500">Formateur</p>
         </div>
       </div>
 
-      <!-- Informations clés -->
+      <!-- Informations cles -->
       <div class="grid grid-cols-2 gap-4 mb-4">
-        <!-- Dates -->
         <div>
           <p class="text-xs text-gray-500 mb-1">Début</p>
-          <p class="text-sm font-medium">{{ formatDate(formation.dateDebut) }}</p>
+          <p class="text-sm font-medium">{{ formatDateCourt(formation.date_heure_debut) }}</p>
         </div>
-
-        <!-- Durée -->
         <div>
-          <p class="text-xs text-gray-500 mb-1">Durée</p>
-          <p class="text-sm font-medium">
-            {{ formation.dureeEstimee.heures }}h
-            <span v-if="formation.dureeEstimee.semaines">
-              ({{ formation.dureeEstimee.semaines }} sem.)
-            </span>
-          </p>
+          <p class="text-xs text-gray-500 mb-1">Langue</p>
+          <p class="text-sm font-medium">{{ formation.langue }}</p>
         </div>
       </div>
 
-      <!-- Tags -->
-      <div class="flex flex-wrap gap-2 mb-4">
-        <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-          {{ formation.modalites.langue.toUpperCase() }}
-        </span>
-        <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-          {{ getNiveauLabel(formation.modalites.niveauRequis) }}
-        </span>
-        <span v-if="formation.modalites.certificationDisponible"
-              class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
-          Certification
-        </span>
-      </div>
-
-      <!-- Statut et capacité -->
-      <div class="flex items-center justify-between text-sm">
-        <div class="flex items-center">
-          <span class="w-2 h-2 rounded-full mr-2"
-                :class="getStatutColor(formation.statut)"></span>
-          <span class="text-gray-600">{{ getStatutLabel(formation.statut) }}</span>
-        </div>
-        <div v-if="formation.capacite.maximum" class="text-gray-500">
-          {{ formation.capacite.inscritsActuels }}/{{ formation.capacite.maximum }} inscrits
-        </div>
+      <!-- Capacite -->
+      <div v-if="formation.nombre_places" class="flex items-center justify-between text-sm mb-4">
+        <span class="text-gray-500">Places</span>
+        <span class="text-gray-600">{{ formation.nombre_inscrits }}/{{ formation.nombre_places }} inscrits</span>
       </div>
     </div>
 
@@ -106,94 +72,25 @@
 </template>
 
 <script setup lang="ts">
-import type { Formation } from '~/mocks/inuda/formations'
+import {
+  type FormationAPI,
+  getTypeLabel,
+  getTypeClasses,
+  getStatutLabel,
+  getStatutColor,
+  getActionLabel,
+  peutSInscrire,
+  formatDateCourt,
+} from '~/composables/useFormations'
 
 defineProps<{
-  formation: Formation
+  formation: FormationAPI
 }>()
 
 defineEmits<{
-  (e: 'click', formation: Formation): void
-  (e: 'inscrire', formation: Formation): void
+  (e: 'click', formation: FormationAPI): void
+  (e: 'inscrire', formation: FormationAPI): void
 }>()
-
-const getTypeLabel = (type: string) => {
-  const labels: Record<string, string> = {
-    mooc: 'MOOC',
-    clom: 'CLOM',
-    atelier: 'Atelier',
-    concertation: 'Concertation'
-  }
-  return labels[type] || type.toUpperCase()
-}
-
-const getTypeClasses = (type: string) => {
-  const classes: Record<string, string> = {
-    mooc: 'bg-blue-100 text-blue-800',
-    clom: 'bg-purple-100 text-purple-800',
-    atelier: 'bg-green-100 text-green-800',
-    concertation: 'bg-orange-100 text-orange-800'
-  }
-  return classes[type] || 'bg-gray-100 text-gray-800'
-}
-
-const getNiveauLabel = (niveau: string) => {
-  const labels: Record<string, string> = {
-    debutant: 'Débutant',
-    intermediaire: 'Intermédiaire',
-    avance: 'Avancé',
-    tous_niveaux: 'Tous niveaux'
-  }
-  return labels[niveau] || niveau
-}
-
-const getStatutLabel = (statut: string) => {
-  const labels: Record<string, string> = {
-    brouillon: 'Brouillon',
-    programme: 'Programmé',
-    inscriptions_ouvertes: 'Inscriptions ouvertes',
-    complet: 'Complet',
-    en_cours: 'En cours',
-    termine: 'Terminé',
-    annule: 'Annulé',
-    archive: 'Archivé'
-  }
-  return labels[statut] || statut
-}
-
-const getStatutColor = (statut: string) => {
-  const colors: Record<string, string> = {
-    programme: 'bg-yellow-500',
-    inscriptions_ouvertes: 'bg-green-500',
-    complet: 'bg-red-500',
-    en_cours: 'bg-blue-500',
-    termine: 'bg-gray-500',
-    annule: 'bg-red-500',
-    archive: 'bg-gray-500'
-  }
-  return colors[statut] || 'bg-gray-500'
-}
-
-const peutSInscrire = (formation: Formation) => {
-  return formation.statut === 'inscriptions_ouvertes' &&
-         (!formation.capacite.maximum || formation.capacite.inscritsActuels < formation.capacite.maximum)
-}
-
-const getActionLabel = (formation: Formation) => {
-  if (formation.statut === 'complet') return 'Complet'
-  if (formation.statut === 'termine') return 'Terminé'
-  if (formation.statut === 'en_cours') return 'En cours'
-  if (formation.statut === 'inscriptions_ouvertes') return "S'inscrire"
-  return 'Prochainement'
-}
-
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  }).format(new Date(date))
-}
 </script>
 
 <style scoped>

@@ -7,7 +7,7 @@
     <div class="overflow-hidden relative">
       <img
         class="w-full h-40 object-cover rounded-t-md transition-all duration-1000"
-        :src="programme.couvertureUrl"
+        :src="programme.couverture_url || '/images/carte-afrique.jpg'"
         :alt="programme.titre"
       />
       <!-- Badge type -->
@@ -35,19 +35,17 @@
         {{ programme.titre }}
       </div>
 
-      <!-- Date et heure -->
+      <!-- Date -->
       <div class="absolute bottom-2 left-0">
         <div class="inline-flex px-2 font-bold text-sm text-custom-chocolat bg-gray-100/14 rounded-r-full items-center">
           <font-awesome-icon
             class="h-4 w-4 mr-2 text-gray-400"
             :icon="['fas', 'calendar-days']"
           />
-          <span>{{ formatDate(programme.dateHeureDebut) }}</span>
-          <font-awesome-icon
-            class="h-4 ml-3 mr-1 text-gray-400"
-            :icon="['far', 'clock']"
-          />
-          <span>{{ formatHeure(programme.dateHeureDebut) }}</span>
+          <span>{{ formatDate(programme.date_debut) }}</span>
+          <span class="ml-2 text-xs font-normal text-gray-400">
+            {{ programme.duree_label }}
+          </span>
         </div>
       </div>
     </div>
@@ -55,29 +53,23 @@
 </template>
 
 <script setup lang="ts">
-import type { ProgrammeSabbatique } from '~/mocks/sabbatiques'
+import type { SabbatiqueAPI } from '~/composables/useSabbatiques'
 
 defineProps<{
-  programme: ProgrammeSabbatique
+  programme: SabbatiqueAPI
 }>()
 
 defineEmits<{
-  (e: 'click', programme: ProgrammeSabbatique): void
+  (e: 'click', programme: SabbatiqueAPI): void
 }>()
 
-const formatDate = (date: Date) => {
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr + 'T00:00:00')
   return new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
     month: 'short',
     year: 'numeric'
-  }).format(new Date(date))
-}
-
-const formatHeure = (date: Date) => {
-  return new Intl.DateTimeFormat('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(date))
+  }).format(date)
 }
 </script>
 

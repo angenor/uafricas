@@ -18,9 +18,21 @@
       <!-- Filtres -->
       <SabbatiqueFilters v-model="filtres" />
 
+      <!-- Chargement -->
+      <div
+        v-if="chargement"
+        class="text-center py-16"
+      >
+        <font-awesome-icon
+          :icon="['fas', 'spinner']"
+          class="h-8 text-custom-green animate-spin"
+        />
+        <p class="mt-4 text-gray-500">Chargement des programmes...</p>
+      </div>
+
       <!-- Grille des programmes -->
       <div
-        v-if="programmesFiltres.length > 0"
+        v-else-if="programmesFiltres.length > 0"
         class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center"
       >
         <SabbatiqueCard
@@ -55,16 +67,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import AOS from 'aos'
 import {
-  rechercherSabbatiques,
-  type FiltresSabbatique,
+  useSabbatiques,
+  type SabbatiqueAPI,
+  type SabbatiqueFiltres,
   type TypeProgramme,
-  type ProgrammeSabbatique
-} from '~/mocks/sabbatiques'
+} from '~/composables/useSabbatiques'
 
 const route = useRoute()
+const { listerProgrammes, chargement } = useSabbatiques()
 
 const typesValides: Array<'tous' | TypeProgramme> = ['tous', 'interafricain', 'hors_afrique']
 const typeParam = route.query.type as string | undefined
@@ -80,18 +93,23 @@ useHead({
   ]
 })
 
-const filtres = ref<FiltresSabbatique>({
+const filtres = ref<SabbatiqueFiltres>({
   type: typeInitial,
   pays: '',
   domaine: '',
   recherche: ''
 })
 
-const programmesFiltres = computed(() => {
-  return rechercherSabbatiques(filtres.value)
-})
+const programmesFiltres = ref<SabbatiqueAPI[]>([])
 
-const voirDetail = (programme: ProgrammeSabbatique) => {
+const chargerProgrammes = async () => {
+  const result = await listerProgrammes(filtres.value)
+  if (result) {
+    programmesFiltres.value = result.programmes
+  }
+}
+
+const voirDetail = (programme: SabbatiqueAPI) => {
   navigateTo(`/echanges-sabbatiques/${programme.id}`)
 }
 
@@ -104,11 +122,16 @@ const reinitialiserFiltres = () => {
   }
 }
 
-onMounted(() => {
+watch(filtres, () => {
+  chargerProgrammes()
+}, { deep: true })
+
+onMounted(async () => {
   AOS.init({
     duration: 800,
     easing: 'ease-out-cubic',
     once: true
   })
+  await chargerProgrammes()
 })
 </script>

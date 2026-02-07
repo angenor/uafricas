@@ -73,3 +73,6 @@ bun run preview
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+
+Generer un slug URL-safe a partir du titre

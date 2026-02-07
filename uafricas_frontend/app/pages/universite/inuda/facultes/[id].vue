@@ -196,18 +196,22 @@
 import { getFaculteById, type Faculte } from '~/mocks/inuda/facultes'
 
 const route = useRoute()
-const loading = ref(true)
+const { loading, obtenirFaculte } = useFacultes()
 const faculte = ref<Faculte | null>(null)
 
 const manifesterInteret = () => {
   alert('Cette fonctionnalité sera disponible prochainement.')
 }
 
-onMounted(() => {
-  loading.value = true
+onMounted(async () => {
   const id = route.params.id as string
-  faculte.value = getFaculteById(id) || null
-  loading.value = false
+  try {
+    faculte.value = await obtenirFaculte(id)
+  } catch {
+    // Fallback sur les mocks si le backend n'est pas disponible
+    console.warn('Fallback sur les données mock')
+    faculte.value = getFaculteById(id) || null
+  }
 
   if (faculte.value) {
     useHead({

@@ -64,17 +64,22 @@
 
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
-import { TYPES_PROGRAMME, PAYS_AFRICAINS, DOMAINES, type FiltresSabbatique } from '~/mocks/sabbatiques'
+import {
+  TYPES_PROGRAMME,
+  PAYS_AFRICAINS,
+  DOMAINES,
+  type SabbatiqueFiltres,
+} from '~/composables/useSabbatiques'
 
 const props = defineProps<{
-  modelValue: FiltresSabbatique
+  modelValue: SabbatiqueFiltres
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', filtres: FiltresSabbatique): void
+  (e: 'update:modelValue', filtres: SabbatiqueFiltres): void
 }>()
 
-const localFiltres = reactive<FiltresSabbatique>({
+const localFiltres = reactive<SabbatiqueFiltres>({
   type: props.modelValue.type,
   pays: props.modelValue.pays,
   domaine: props.modelValue.domaine,

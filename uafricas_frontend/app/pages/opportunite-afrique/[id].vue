@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center h-screen">
+    <div v-if="chargement" class="flex items-center justify-center h-screen">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-custom-green"></div>
     </div>
 
@@ -21,7 +21,7 @@
     <template v-else>
       <!-- Hero Section avec image de couverture -->
       <div class="relative h-72 md:h-96 bg-cover bg-center"
-           :style="{ backgroundImage: `url(${pays.imageCouverture})` }">
+           :style="{ backgroundImage: `url(${pays.image_couverture})` }">
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
 
         <!-- Contenu du hero -->
@@ -31,7 +31,7 @@
 
             <div class="flex items-center gap-4">
               <!-- Drapeau -->
-              <img :src="pays.drapeauURL"
+              <img :src="pays.drapeau_url || ''"
                    :alt="'Drapeau ' + pays.nom"
                    class="h-16 md:h-20 w-auto rounded shadow-lg">
 
@@ -168,7 +168,7 @@
 
                 <!-- Drapeau -->
                 <div class="bg-gray-50 rounded-lg p-4 flex items-center space-x-4">
-                  <img :src="pays.drapeauURL"
+                  <img :src="pays.drapeau_url || ''"
                        :alt="'Drapeau ' + pays.nom"
                        class="h-12 w-auto rounded shadow">
                   <div>
@@ -192,22 +192,11 @@
                 </div>
                 <div class="flex items-center justify-between py-2 border-b border-gray-100">
                   <span class="text-gray-600">Contributions</span>
-                  <span class="font-medium">{{ pays.nombreContributions }}</span>
+                  <span class="font-medium">{{ pays.nombre_contributions }}</span>
                 </div>
                 <div class="flex items-center justify-between py-2">
-                  <span class="text-gray-600">Derniere validation</span>
-                  <span class="font-medium text-sm">{{ formatDate(pays.derniereValidation) }}</span>
-                </div>
-              </div>
-
-              <!-- Contributeurs -->
-              <div v-if="pays.contributeursPrincipaux.length > 0" class="mt-6 pt-4 border-t border-gray-200">
-                <p class="text-sm text-gray-500 mb-2">Contributeurs principaux</p>
-                <div class="flex flex-wrap gap-2">
-                  <span v-for="contributeur in pays.contributeursPrincipaux" :key="contributeur"
-                        class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                    {{ contributeur }}
-                  </span>
+                  <span class="text-gray-600">Derniere mise a jour</span>
+                  <span class="font-medium text-sm">{{ formatDate(pays.updated_at) }}</span>
                 </div>
               </div>
             </div>
@@ -249,11 +238,15 @@
 </template>
 
 <script setup lang="ts">
-import { getPaysById, formatDate, type FichePays } from '~/mocks/opportunite-afrique'
+import {
+  useOpportuniteAfrique,
+  formatDate,
+  type FichePaysDetailAPI,
+} from '~/composables/useOpportuniteAfrique'
 
 const route = useRoute()
-const loading = ref(true)
-const pays = ref<FichePays | null>(null)
+const { chargement, obtenirFiche } = useOpportuniteAfrique()
+const pays = ref<FichePaysDetailAPI | null>(null)
 
 const proposerModification = () => {
   alert('Cette fonctionnalite sera disponible prochainement. Vous pourrez proposer des modifications aux fiches pays.')
@@ -263,11 +256,9 @@ const signalerProbleme = () => {
   alert('Cette fonctionnalite sera disponible prochainement. Vous pourrez signaler des erreurs ou des problemes.')
 }
 
-onMounted(() => {
-  loading.value = true
+onMounted(async () => {
   const id = route.params.id as string
-  pays.value = getPaysById(id) || null
-  loading.value = false
+  pays.value = await obtenirFiche(id)
 
   if (pays.value) {
     useHead({

@@ -115,12 +115,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import AOS from 'aos'
-import {
-  getSabbatiquesInterafricains,
-  getSabbatiquesHorsAfrique,
-} from '~/mocks/sabbatiques'
+import { useSabbatiques } from '~/composables/useSabbatiques'
+
+const { listerProgrammes } = useSabbatiques()
 
 useHead({
   title: 'Échanges Sabbatiques - UAfricas',
@@ -132,14 +131,22 @@ useHead({
   ]
 })
 
-const nbInterafricain = computed(() => getSabbatiquesInterafricains().length)
-const nbHorsAfrique = computed(() => getSabbatiquesHorsAfrique().length)
+const nbInterafricain = ref(0)
+const nbHorsAfrique = ref(0)
 
-onMounted(() => {
+onMounted(async () => {
   AOS.init({
     duration: 800,
     easing: 'ease-out-cubic',
     once: true
   })
+
+  // Charger les compteurs depuis l'API
+  const [interafricains, horsAfrique] = await Promise.all([
+    listerProgrammes({ type: 'interafricain', par_page: 1 }),
+    listerProgrammes({ type: 'hors_afrique', par_page: 1 }),
+  ])
+  if (interafricains) nbInterafricain.value = interafricains.total
+  if (horsAfrique) nbHorsAfrique.value = horsAfrique.total
 })
 </script>

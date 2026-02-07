@@ -79,3 +79,67 @@ CREATE TABLE exchange.candidature (
 CREATE INDEX idx_candidature_candidat   ON exchange.candidature(candidat_id);
 CREATE INDEX idx_candidature_programme  ON exchange.candidature(programme_id);
 CREATE INDEX idx_candidature_statut     ON exchange.candidature(statut);
+
+
+-- ── Écoles partenaires (INUDA) ────────────────────────────────────────────
+
+CREATE TABLE exchange.ecole_partenaire (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nom                 VARCHAR(300) NOT NULL,
+    ville               VARCHAR(200) NOT NULL,
+    pays_id             UUID         NOT NULL,       -- [xref] shared.pays
+    type                VARCHAR(20)  NOT NULL CHECK (type IN ('publique', 'privee')),
+    site_web            VARCHAR(500),
+    email_contact       VARCHAR(250) NOT NULL,
+    telephone_contact   VARCHAR(50),
+    whatsapp_contact    VARCHAR(50),
+    actif               BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_ecole_partenaire_pays ON exchange.ecole_partenaire(pays_id) WHERE actif = TRUE;
+
+
+-- ── Facultés INUDA ───────────────────────────────────────────────────────
+
+CREATE TABLE exchange.faculte (
+    id                          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    titre                       VARCHAR(350) NOT NULL,
+    acronyme                    VARCHAR(50)  NOT NULL,
+    slug                        VARCHAR(400) UNIQUE,
+    description                 TEXT         NOT NULL,
+    image_couverture_url        VARCHAR(500),
+    logo_url                    VARCHAR(500),
+    ecole_partenaire_id         UUID         NOT NULL REFERENCES exchange.ecole_partenaire(id),
+    -- Domaines et programmes (tableaux PostgreSQL)
+    domaines_etudes             TEXT[]       NOT NULL DEFAULT '{}',
+    programmes_licence          TEXT[]       NOT NULL DEFAULT '{}',
+    programmes_master           TEXT[]       NOT NULL DEFAULT '{}',
+    programmes_doctorat         TEXT[]       NOT NULL DEFAULT '{}',
+    programmes_certificats      TEXT[]       NOT NULL DEFAULT '{}',
+    -- Conditions d'admission
+    diplome_minimum             VARCHAR(200),
+    langues_enseignement        TEXT[]       NOT NULL DEFAULT '{}',
+    frais_scolarite_min         INTEGER,
+    frais_scolarite_max         INTEGER,
+    bourses_possibles           BOOLEAN      NOT NULL DEFAULT FALSE,
+    periodes_inscription        VARCHAR(200),
+    -- Points forts
+    points_forts                TEXT[]       NOT NULL DEFAULT '{}',
+    -- Statut & inscriptions
+    accepte_nouveaux_inscrits   BOOLEAN      NOT NULL DEFAULT TRUE,
+    statut                      VARCHAR(20)  NOT NULL DEFAULT 'active' CHECK (statut IN ('active', 'inactive')),
+    referent_id                 UUID,                -- [xref] iam.utilisateur
+    nombre_inscrits_total       INTEGER      NOT NULL DEFAULT 0,
+    nombre_inscrits_annee       INTEGER      NOT NULL DEFAULT 0,
+    -- Audit
+    created_at                  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    deleted_at                  TIMESTAMPTZ
+);
+
+CREATE INDEX idx_faculte_ecole       ON exchange.faculte(ecole_partenaire_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_faculte_statut      ON exchange.faculte(statut)              WHERE deleted_at IS NULL;
+CREATE INDEX idx_faculte_domaines    ON exchange.faculte USING GIN(domaines_etudes) WHERE deleted_at IS NULL;
+CREATE INDEX idx_faculte_referent    ON exchange.faculte(referent_id)          WHERE deleted_at IS NULL;

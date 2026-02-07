@@ -62,7 +62,7 @@
             <!-- Résumé des résultats -->
             <div class="flex items-center justify-between mb-6">
               <p class="text-gray-600">
-                {{ formationsFiltrees.length }} formation{{ formationsFiltrees.length > 1 ? 's' : '' }} trouvée{{ formationsFiltrees.length > 1 ? 's' : '' }}
+                {{ formations.length }} formation{{ formations.length > 1 ? 's' : '' }} trouvée{{ formations.length > 1 ? 's' : '' }}
               </p>
               <div class="flex items-center gap-4">
                 <!-- Tri -->
@@ -70,8 +70,6 @@
                         class="px-3 py-2 border border-gray-300 rounded-md text-sm">
                   <option value="date">Trier par date</option>
                   <option value="titre">Trier par titre</option>
-                  <option value="popularite">Trier par popularité</option>
-                  <option value="prix">Trier par prix</option>
                 </select>
 
                 <!-- Vue -->
@@ -94,12 +92,18 @@
               </div>
             </div>
 
-            <div v-if="loading" class="text-center py-12">
+            <!-- Erreur -->
+            <div v-if="erreur" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p class="text-red-700">{{ erreur }}</p>
+              <button @click="chargerFormations" class="mt-2 text-red-600 underline text-sm">Réessayer</button>
+            </div>
+
+            <div v-if="chargement" class="text-center py-12">
               <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               <p class="mt-4 text-gray-600">Chargement des formations...</p>
             </div>
 
-            <div v-else-if="formationsFiltrees.length === 0" class="text-center py-12">
+            <div v-else-if="formationsTriees.length === 0" class="text-center py-12">
               <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
@@ -114,7 +118,7 @@
             <div v-else-if="vueMode === 'grid'"
                  class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               <UniversiteInudaFormationCard
-                v-for="formation in formationsFiltrees"
+                v-for="formation in formationsTriees"
                 :key="formation.id"
                 :formation="formation"
                 @click="voirDetail"
@@ -123,7 +127,7 @@
 
             <!-- Vue liste -->
             <div v-else class="space-y-4">
-              <div v-for="formation in formationsFiltrees"
+              <div v-for="formation in formationsTriees"
                    :key="formation.id"
                    class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
                    @click="voirDetail(formation)">
@@ -134,23 +138,19 @@
                             :class="getTypeClasses(formation.type)">
                         {{ getTypeLabel(formation.type) }}
                       </span>
-                      <span v-if="formation.tarification.gratuit" class="text-green-600 font-bold text-sm">
-                        Gratuit
-                      </span>
-                      <span v-else class="text-gray-700 font-bold text-sm">
-                        {{ formation.tarification.prix.toLocaleString() }} FCFA
-                      </span>
+                      <span :class="getStatutColor(formation.statut)"
+                            class="w-2 h-2 rounded-full inline-block"></span>
+                      <span class="text-gray-500 text-sm">{{ getStatutLabel(formation.statut) }}</span>
                     </div>
 
                     <h3 class="text-xl font-bold text-gray-900 mb-2">{{ formation.titre }}</h3>
-                    <p class="text-gray-600 mb-3 line-clamp-2">{{ formation.resume || formation.description }}</p>
+                    <p class="text-gray-600 mb-3 line-clamp-2">{{ formation.description }}</p>
 
                     <div class="flex items-center text-sm text-gray-500 gap-4 mb-4">
-                      <span>{{ formation.formateurPrenom }} {{ formation.formateurNom }}</span>
-                      <span>{{ formatDate(formation.dateDebut) }}</span>
-                      <span>{{ formation.dureeEstimee.heures }}h</span>
+                      <span>{{ formation.formateur.prenom }} {{ formation.formateur.nom }}</span>
+                      <span>{{ formatDateCourt(formation.date_heure_debut) }}</span>
                       <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded">
-                        {{ formation.modalites.langue.toUpperCase() }}
+                        {{ formation.langue }}
                       </span>
                     </div>
 
@@ -173,6 +173,16 @@
                 </div>
               </div>
             </div>
+
+            <!-- Pagination -->
+            <div v-if="totalPages > 1" class="flex justify-center mt-8 gap-2">
+              <button v-for="p in totalPages" :key="p"
+                      @click="allerPage(p)"
+                      :class="p === pageActuelle ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'"
+                      class="px-4 py-2 border border-gray-300 rounded-md text-sm">
+                {{ p }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -193,13 +203,20 @@
           <p class="text-gray-600 mb-4">
             Vous souhaitez vous inscrire à : <strong>{{ formationSelectionnee.titre }}</strong>
           </p>
-          <p class="text-sm text-gray-500 mb-4">
-            Cette fonctionnalité sera disponible prochainement. Vous pourrez vous inscrire directement depuis la plateforme.
+          <div class="flex gap-3">
+            <button @click="confirmerInscription"
+                    :disabled="inscriptionEnCours"
+                    class="flex-1 py-2 bg-custom-green text-white rounded-md hover:bg-green-700 transition disabled:opacity-50">
+              {{ inscriptionEnCours ? 'Inscription...' : 'Confirmer' }}
+            </button>
+            <button @click="formationSelectionnee = null"
+                    class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">
+              Annuler
+            </button>
+          </div>
+          <p v-if="messageInscription" class="mt-3 text-sm" :class="inscriptionReussie ? 'text-green-600' : 'text-red-600'">
+            {{ messageInscription }}
           </p>
-          <button @click="formationSelectionnee = null"
-                  class="w-full py-2 bg-custom-chocolat text-white rounded-md hover:bg-custom-chocolat/90 transition">
-            Fermer
-          </button>
         </div>
       </div>
     </div>
@@ -207,117 +224,133 @@
 </template>
 
 <script setup lang="ts">
-import { rechercherFormations, type Formation } from '~/mocks/inuda/formations'
+import {
+  useFormations,
+  type FormationAPI,
+  type FormationFiltres,
+  getTypeLabel,
+  getTypeClasses,
+  getStatutLabel,
+  getStatutColor,
+  getActionLabel,
+  peutSInscrire,
+  formatDateCourt,
+} from '~/composables/useFormations'
 
 useHead({
   title: 'Formations - INUDA'
 })
 
-const loading = ref(true)
-const formations = ref<Formation[]>([])
+const { chargement, erreur, listerFormations, inscrireFormation } = useFormations()
+
+const formations = ref<FormationAPI[]>([])
 const recherche = ref('')
-const filtres = ref<{ types?: string[]; statuts?: string[]; gratuit?: boolean | null }>({})
+const filtresActifs = ref<{ types?: string[]; statuts?: string[] }>({})
 const triSelectionne = ref('date')
 const vueMode = ref('grid')
-const formationSelectionnee = ref<Formation | null>(null)
+const formationSelectionnee = ref<FormationAPI | null>(null)
+const pageActuelle = ref(1)
+const totalPages = ref(1)
+const inscriptionEnCours = ref(false)
+const inscriptionReussie = ref(false)
+const messageInscription = ref('')
 
-// Formations filtrées et triées
-const formationsFiltrees = computed(() => {
+// Formations triees cote client
+const formationsTriees = computed(() => {
   let resultats = [...formations.value]
+
+  // Filtrer par type (cote client si plusieurs types selectionnes)
+  if (filtresActifs.value.types?.length) {
+    resultats = resultats.filter(f => f.type && filtresActifs.value.types!.includes(f.type))
+  }
+
+  // Filtrer par statut
+  if (filtresActifs.value.statuts?.length) {
+    resultats = resultats.filter(f => filtresActifs.value.statuts!.includes(f.statut))
+  }
 
   // Appliquer le tri
   switch (triSelectionne.value) {
     case 'titre':
       resultats.sort((a, b) => a.titre.localeCompare(b.titre))
       break
-    case 'popularite':
-      resultats.sort((a, b) => (b.stats?.inscriptions || 0) - (a.stats?.inscriptions || 0))
-      break
-    case 'prix':
-      resultats.sort((a, b) => {
-        const prixA = a.tarification.gratuit ? 0 : a.tarification.prix
-        const prixB = b.tarification.gratuit ? 0 : b.tarification.prix
-        return prixA - prixB
-      })
-      break
     case 'date':
     default:
-      resultats.sort((a, b) => new Date(a.dateDebut).getTime() - new Date(b.dateDebut).getTime())
+      resultats.sort((a, b) => new Date(a.date_heure_debut).getTime() - new Date(b.date_heure_debut).getTime())
   }
 
   return resultats
 })
 
-const voirDetail = (formation: Formation) => {
+const voirDetail = (formation: FormationAPI) => {
   navigateTo(`/universite/inuda/formations/${formation.id}`)
 }
 
-const ouvrirInscription = (formation: Formation) => {
+const ouvrirInscription = (formation: FormationAPI) => {
   formationSelectionnee.value = formation
+  messageInscription.value = ''
+  inscriptionReussie.value = false
 }
 
-const appliquerFiltres = (nouveauxFiltres: typeof filtres.value) => {
-  filtres.value = nouveauxFiltres
-  chargerFormations()
+const confirmerInscription = async () => {
+  if (!formationSelectionnee.value) return
+  inscriptionEnCours.value = true
+  messageInscription.value = ''
+
+  const succes = await inscrireFormation(formationSelectionnee.value.id)
+
+  if (succes) {
+    inscriptionReussie.value = true
+    messageInscription.value = 'Inscription réussie !'
+    // Recharger pour mettre a jour le compteur
+    await chargerFormations()
+  } else {
+    messageInscription.value = 'Erreur lors de l\'inscription. Vérifiez que vous êtes connecté.'
+  }
+
+  inscriptionEnCours.value = false
+}
+
+const appliquerFiltres = (nouveauxFiltres: { types: string[]; statuts: string[]; gratuit: boolean | null }) => {
+  filtresActifs.value = {
+    types: nouveauxFiltres.types,
+    statuts: nouveauxFiltres.statuts,
+  }
 }
 
 const reinitialiserFiltres = () => {
   recherche.value = ''
-  filtres.value = {}
+  filtresActifs.value = {}
   chargerFormations()
 }
 
-const chargerFormations = () => {
-  loading.value = true
-  try {
-    formations.value = rechercherFormations(recherche.value, filtres.value)
-  } catch (error) {
-    console.error('Erreur lors du chargement des formations:', error)
-  } finally {
-    loading.value = false
+const allerPage = (page: number) => {
+  pageActuelle.value = page
+  chargerFormations()
+}
+
+const chargerFormations = async () => {
+  const filtres: FormationFiltres = {
+    page: pageActuelle.value,
+    par_page: 50,
+  }
+  if (recherche.value) filtres.recherche = recherche.value
+
+  const data = await listerFormations(filtres)
+  if (data) {
+    formations.value = data.formations
+    totalPages.value = data.total_pages
   }
 }
 
-// Fonctions utilitaires
-const getTypeLabel = (type: string) => {
-  const labels: Record<string, string> = { mooc: 'MOOC', clom: 'CLOM', atelier: 'Atelier', concertation: 'Concertation' }
-  return labels[type] || type.toUpperCase()
-}
-
-const getTypeClasses = (type: string) => {
-  const classes: Record<string, string> = {
-    mooc: 'bg-blue-100 text-blue-800',
-    clom: 'bg-purple-100 text-purple-800',
-    atelier: 'bg-green-100 text-green-800',
-    concertation: 'bg-orange-100 text-orange-800'
-  }
-  return classes[type] || 'bg-gray-100 text-gray-800'
-}
-
-const peutSInscrire = (formation: Formation) => {
-  return formation.statut === 'inscriptions_ouvertes' &&
-         (!formation.capacite.maximum || formation.capacite.inscritsActuels < formation.capacite.maximum)
-}
-
-const getActionLabel = (formation: Formation) => {
-  if (formation.statut === 'complet') return 'Complet'
-  if (formation.statut === 'termine') return 'Terminé'
-  if (formation.statut === 'en_cours') return 'En cours'
-  if (formation.statut === 'inscriptions_ouvertes') return "S'inscrire"
-  return 'Prochainement'
-}
-
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  }).format(new Date(date))
-}
-
-// Recherche réactive
+// Recherche reactive avec debounce
+let debounceTimer: ReturnType<typeof setTimeout>
 watch(recherche, () => {
-  chargerFormations()
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    pageActuelle.value = 1
+    chargerFormations()
+  }, 300)
 })
 
 onMounted(() => {

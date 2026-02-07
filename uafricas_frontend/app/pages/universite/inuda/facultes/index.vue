@@ -220,46 +220,23 @@ useHead({
   title: 'Facultés partenaires - INUDA'
 })
 
-const loading = ref(true)
+const { loading, erreur, listerFacultes } = useFacultes()
+
 const facultes = ref<Faculte[]>([])
+const domaines = ref<string[]>([])
 const recherche = ref('')
 const domaineSelectionne = ref('')
 const typesEcole = ref(['publique', 'privee'])
 const seulementOuvertes = ref(false)
 const faculteSelectionnee = ref<Faculte | null>(null)
 
-// Extraire les domaines uniques
-const domaines = computed(() => getDomainesUniques())
-
-// Filtrer les facultés
+// Filtrer les facultes (le filtrage type_ecole se fait cote client
+// car le backend filtre deja par domaine/recherche/ouvertes)
 const facultesFiltrees = computed(() => {
   return facultes.value.filter(faculte => {
-    // Filtre par recherche
-    if (recherche.value) {
-      const searchLower = recherche.value.toLowerCase()
-      if (!faculte.titre?.toLowerCase().includes(searchLower) &&
-          !faculte.acronyme?.toLowerCase().includes(searchLower) &&
-          !faculte.description?.toLowerCase().includes(searchLower)) {
-        return false
-      }
-    }
-
-    // Filtre par domaine
-    if (domaineSelectionne.value &&
-        !faculte.domainesEtudes?.includes(domaineSelectionne.value)) {
-      return false
-    }
-
-    // Filtre par type d'école
     if (faculte.ecolePartenaire?.type && !typesEcole.value.includes(faculte.ecolePartenaire.type)) {
       return false
     }
-
-    // Filtre inscriptions ouvertes
-    if (seulementOuvertes.value && !faculte.accepteNouveauxInscrits) {
-      return false
-    }
-
     return true
   })
 })
@@ -272,16 +249,37 @@ const ouvrirFormulaireInteret = (faculte: Faculte) => {
   faculteSelectionnee.value = faculte
 }
 
-const chargerFacultes = () => {
-  loading.value = true
+// Debounce pour la recherche
+let rechercheTimer: ReturnType<typeof setTimeout> | null = null
+
+const chargerFacultes = async () => {
   try {
+    const result = await listerFacultes({
+      recherche: recherche.value || undefined,
+      domaine: domaineSelectionne.value || undefined,
+      ouvertes: seulementOuvertes.value || undefined,
+    })
+    facultes.value = result.facultes
+    domaines.value = result.domaines
+  } catch (e) {
+    // Fallback sur les mocks si le backend n'est pas disponible
+    console.warn('Fallback sur les données mock:', e)
     facultes.value = getFacultesActives()
-  } catch (error) {
-    console.error('Erreur lors du chargement des facultés:', error)
-  } finally {
-    loading.value = false
+    domaines.value = getDomainesUniques()
   }
 }
+
+// Recharger quand les filtres changent
+watch([domaineSelectionne, seulementOuvertes], () => {
+  chargerFacultes()
+})
+
+watch(recherche, () => {
+  if (rechercheTimer) clearTimeout(rechercheTimer)
+  rechercheTimer = setTimeout(() => {
+    chargerFacultes()
+  }, 400)
+})
 
 onMounted(() => {
   chargerFacultes()

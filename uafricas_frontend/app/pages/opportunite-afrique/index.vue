@@ -70,7 +70,7 @@
               <!-- Stats -->
               <div class="mt-6 pt-6 border-t border-gray-200">
                 <div class="text-center">
-                  <span class="text-2xl font-bold text-custom-green">{{ filteredPays.length }}</span>
+                  <span class="text-2xl font-bold text-custom-green">{{ totalPays }}</span>
                   <span class="text-gray-600 ml-1">pays</span>
                 </div>
               </div>
@@ -80,7 +80,7 @@
           <!-- Liste des pays -->
           <div class="lg:col-span-3">
             <!-- Loading state -->
-            <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div v-if="chargement" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <div v-for="i in 6" :key="i" class="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
                 <div class="h-40 bg-gray-200"></div>
                 <div class="p-4">
@@ -92,7 +92,7 @@
             </div>
 
             <!-- Empty state -->
-            <div v-else-if="filteredPays.length === 0" class="text-center py-12">
+            <div v-else-if="paysList.length === 0" class="text-center py-12">
               <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
@@ -104,12 +104,12 @@
 
             <!-- Grid des pays -->
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div v-for="pays in filteredPays" :key="pays.id"
+              <div v-for="pays in paysList" :key="pays.id"
                    @click="navigateToDetail(pays.id)"
                    class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer group">
                 <!-- Image de couverture -->
                 <div class="relative h-40 overflow-hidden">
-                  <img :src="pays.imageCouverture"
+                  <img :src="pays.image_couverture || ''"
                        :alt="pays.nom"
                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                   <div class="absolute top-2 right-2">
@@ -119,7 +119,7 @@
                   </div>
                   <!-- Drapeau -->
                   <div class="absolute bottom-2 left-2">
-                    <img :src="pays.drapeauURL"
+                    <img :src="pays.drapeau_url || ''"
                          :alt="'Drapeau ' + pays.nom"
                          class="h-8 w-auto rounded shadow-md">
                   </div>
@@ -152,8 +152,8 @@
 
                   <!-- Footer de la carte -->
                   <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                    <span>{{ pays.nombreContributions }} contributions</span>
-                    <span>{{ formatDateShort(pays.derniereValidation) }}</span>
+                    <span>{{ pays.nombre_contributions }} contributions</span>
+                    <span>{{ formatDateShort(pays.updated_at) }}</span>
                   </div>
                 </div>
               </div>
@@ -167,13 +167,10 @@
 
 <script setup lang="ts">
 import {
-  getAllPays,
-  getRegionsUniques,
-  searchPays,
+  useOpportuniteAfrique,
   formatDateShort,
-  type FichePays,
-  type Region
-} from '~/mocks/opportunite-afrique'
+  type FichePaysAPI,
+} from '~/composables/useOpportuniteAfrique'
 
 useHead({
   title: 'Opportunites en Afrique - UAfricas',
@@ -182,46 +179,40 @@ useHead({
   ]
 })
 
-const loading = ref(true)
-const paysList = ref<FichePays[]>([])
+const { chargement, listerFiches, listerRegions } = useOpportuniteAfrique()
+
+const paysList = ref<FichePaysAPI[]>([])
 const searchTerm = ref('')
-const selectedRegion = ref<Region | ''>('')
-const regions = ref<Region[]>([])
+const selectedRegion = ref('')
+const regions = ref<string[]>([])
+const totalPays = ref(0)
 
 // Debounce search
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 const onSearchInput = () => {
   if (searchTimeout) clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
-    applyFilters()
+    chargerFiches()
   }, 500)
 }
 
-// Computed pour les pays filtres
-const filteredPays = computed(() => {
-  let result = paysList.value
+// Charger les fiches depuis l'API
+const chargerFiches = async () => {
+  const result = await listerFiches({
+    recherche: searchTerm.value || undefined,
+    region: selectedRegion.value || undefined,
+    par_page: 54,
+  })
 
-  // Filtre par recherche
-  if (searchTerm.value.trim()) {
-    result = searchPays(searchTerm.value)
+  if (result) {
+    paysList.value = result.fiches
+    totalPays.value = result.total
   }
-
-  // Filtre par region
-  if (selectedRegion.value) {
-    result = result.filter(p => p.region === selectedRegion.value)
-  }
-
-  return result
-})
-
-// Appliquer les filtres
-const applyFilters = () => {
-  // Les filtres sont deja appliques via computed
 }
 
 // Watch sur la region selectionnee
 watch(selectedRegion, () => {
-  applyFilters()
+  chargerFiches()
 })
 
 // Navigation vers le detail
@@ -233,20 +224,16 @@ const navigateToDetail = (id: string) => {
 const resetFilters = () => {
   searchTerm.value = ''
   selectedRegion.value = ''
-  paysList.value = getAllPays()
+  chargerFiches()
 }
 
 // Charger les donnees au montage
-onMounted(() => {
-  loading.value = true
-  try {
-    regions.value = getRegionsUniques()
-    paysList.value = getAllPays()
-  } catch (error) {
-    console.error('Erreur lors du chargement des pays:', error)
-  } finally {
-    loading.value = false
+onMounted(async () => {
+  const regionsResult = await listerRegions()
+  if (regionsResult) {
+    regions.value = regionsResult
   }
+  await chargerFiches()
 })
 </script>
 

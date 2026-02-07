@@ -44,7 +44,7 @@
 --   ├── 03_shared.sql                      Référentiels partagés
 --   ├── 04_iam.sql                         Identité & Accès
 --   ├── 05_marketplace.sql                 Marché Africain
---   ├── 06_exchange.sql                    Programmes d'échange
+--   ├── 06_exchange.sql                    Programmes d'échange, Écoles partenaires, Facultés INUDA
 --   ├── 07_innovation.sql                  Innovations & Projets
 --   ├── 08_culture.sql                     Culture, Codi-Moi
 --   ├── 08b_afrolang.sql                   Afrolang — Visioconférence WebRTC
@@ -108,6 +108,10 @@
 \ir schemas/15_seed.sql
 \ir schemas/16_seed_centres_culturels.sql
 \ir schemas/17_seed_evenements.sql
+\ir schemas/18_seed_sabbatiques.sql
+\ir schemas/19_seed_moocs.sql
+\ir schemas/20_seed_fiches_pays.sql
+\ir schemas/21_seed_facultes.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

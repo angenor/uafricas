@@ -69,6 +69,7 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 - `useEvenements` — API client pour les événements (listerEvenements avec filtres/pagination/année, obtenirEvenement, creerEvenement multipart, inscrireEvenement). Mapping format DB↔frontend, calcul statut temporel, constantes TYPES_EVENEMENT/ANNEES/PAYS_AFRICAINS
 - `useGouvernance` — API client pour la gouvernance citoyenne (getStats, getContributions). Requête UNION ALL sur factcheck + bad_habit + idea_force avec mapping vers ContributionCitoyenne
 - `useMarcheAfricain` — API client pour le marché africain (listerAnnonces avec filtres/pagination/tri, obtenirAnnonce). Inclut constantes (CATEGORIES, TYPES_ECHANGE, DEVISES), utilitaires de formatage (prix, dates) et mapping type_operation DB↔frontend
+- `useOpportuniteAfrique` — API client pour les fiches pays (listerFiches avec filtres/pagination/region, obtenirFiche par UUID/code ISO, listerRegions). Formatage dates en français, interfaces FichePaysAPI/FichePaysDetailAPI
 
 **Mock data layer** (`app/mocks/`, 22 files): Fichiers TypeScript de données fictives avec interfaces, tableaux et fonctions async simulant la latence réseau. Lors de l'intégration backend, remplacer les imports mock par des appels API.
 
@@ -105,6 +106,9 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `GET /api/evenements/{id}` — Détail d'un événement (organisateur, nombre inscrits, est_inscrit pour user connecté)
 - `POST /api/evenements` — Création multipart (image couverture + métadonnées, résolution pays_id, slug auto)
 - `POST /api/evenements/{id}/inscription` — Inscription à un événement (JWT requis, ON CONFLICT upsert)
+- `GET /api/fiches-pays?recherche=&region=&page=&par_page=` — Liste paginée des fiches pays (filtres recherche/region, JOIN shared.pays)
+- `GET /api/fiches-pays/regions` — Liste des régions disponibles (calculées depuis les codes ISO)
+- `GET /api/fiches-pays/{id}` — Détail d'une fiche pays (par UUID, code ISO ou nom, avec langues et ethnies)
 
 **Authentification** : JWT (HS256) access token (15 min) + refresh token (7 jours, SHA-256 hashé en BDD dans `iam.refresh_token`). Mot de passe hashé avec bcrypt (cost 12). Module `jwt.rs` pour génération/validation tokens.
 

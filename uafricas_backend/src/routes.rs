@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{annonces, auth, centres_culturels, codimoi, evenements, gouvernance, livres};
+use crate::handlers::{annonces, auth, centres_culturels, codimoi, evenements, facultes, fiches_pays, gouvernance, livres, moocs, sabbatiques};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -61,6 +61,33 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("", web::post().to(evenements::creer_evenement))
                     .route("/{id}", web::get().to(evenements::obtenir_evenement))
                     .route("/{id}/inscription", web::post().to(evenements::inscrire_evenement)),
+            )
+            // Routes des formations (MOOC/CLOM)
+            .service(
+                web::scope("/moocs")
+                    .route("", web::get().to(moocs::lister_moocs))
+                    .route("/{id}", web::get().to(moocs::obtenir_mooc))
+                    .route("/{id}/inscription", web::post().to(moocs::inscrire_mooc)),
+            )
+            // Routes des programmes sabbatiques
+            .service(
+                web::scope("/sabbatiques")
+                    .route("", web::get().to(sabbatiques::lister_programmes))
+                    .route("", web::post().to(sabbatiques::creer_programme))
+                    .route("/{id}", web::get().to(sabbatiques::obtenir_programme)),
+            )
+            // Routes des facultes INUDA
+            .service(
+                web::scope("/facultes")
+                    .route("", web::get().to(facultes::lister_facultes))
+                    .route("/{id}", web::get().to(facultes::obtenir_faculte)),
+            )
+            // Routes des fiches pays (Opportunites en Afrique)
+            .service(
+                web::scope("/fiches-pays")
+                    .route("", web::get().to(fiches_pays::lister_fiches))
+                    .route("/regions", web::get().to(fiches_pays::lister_regions))
+                    .route("/{id}", web::get().to(fiches_pays::obtenir_fiche)),
             ),
     );
 }

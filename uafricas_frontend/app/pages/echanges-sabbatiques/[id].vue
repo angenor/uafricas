@@ -1,8 +1,11 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Loading state -->
-    <div v-if="loading" class="flex items-center justify-center min-h-screen">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-custom-green"></div>
+    <div v-if="chargement" class="flex items-center justify-center min-h-screen">
+      <font-awesome-icon
+        :icon="['fas', 'spinner']"
+        class="h-12 text-custom-green animate-spin"
+      />
     </div>
 
     <!-- Not found -->
@@ -26,7 +29,7 @@
       <!-- Hero avec image -->
       <div class="relative h-64 lg:h-80 w-full overflow-hidden">
         <img
-          :src="programme.couvertureUrl"
+          :src="programme.couverture_url || '/images/carte-afrique.jpg'"
           :alt="programme.titre"
           class="w-full h-full object-cover"
         />
@@ -57,11 +60,11 @@
           </span>
           <span class="border-l border-gray-300 pl-4 flex items-center gap-1">
             <font-awesome-icon :icon="['fas', 'calendar-days']" class="text-custom-green" />
-            {{ formatDateSabbatique(programme.dateHeureDebut) }}
+            {{ formatDateSabbatique(programme.date_debut) }}
           </span>
           <span class="border-l border-gray-300 pl-4 flex items-center gap-1">
             <font-awesome-icon :icon="['fas', 'clock']" class="text-custom-green" />
-            {{ getDureeLabel(programme.dureeProgramme) }}
+            {{ programme.duree_label }}
           </span>
         </div>
 
@@ -83,7 +86,7 @@
         <!-- Image principale -->
         <div class="px-7 pt-6">
           <img
-            :src="programme.couvertureUrl"
+            :src="programme.couverture_url || '/images/carte-afrique.jpg'"
             :alt="programme.titre"
             class="w-full h-64 lg:h-100 object-cover rounded-lg shadow-md"
           />
@@ -139,21 +142,23 @@
             <!-- Domaine -->
             <div class="bg-gray-50 p-4 rounded-lg">
               <p class="text-sm text-gray-500 mb-1">Domaine d'intervention</p>
-              <p class="font-medium text-gray-900">{{ getDomaineLabel(programme.domaine) }}</p>
+              <p class="font-medium text-gray-900">{{ programme.domaine || 'Non précisé' }}</p>
             </div>
 
             <!-- Durée -->
             <div class="bg-gray-50 p-4 rounded-lg">
               <p class="text-sm text-gray-500 mb-1">Durée du programme</p>
-              <p class="font-medium text-gray-900">{{ getDureeLabel(programme.dureeProgramme) }}</p>
+              <p class="font-medium text-gray-900">{{ programme.duree_label }}</p>
             </div>
 
             <!-- Dates -->
             <div class="bg-gray-50 p-4 rounded-lg">
               <p class="text-sm text-gray-500 mb-1">Période</p>
               <p class="font-medium text-gray-900">
-                Du {{ formatDateCourteSabbatique(programme.dateHeureDebut) }}
-                au {{ formatDateCourteSabbatique(programme.dateHeureFin) }}
+                Du {{ formatDateCourte(programme.date_debut) }}
+                <template v-if="programme.date_fin">
+                  au {{ formatDateCourte(programme.date_fin) }}
+                </template>
               </p>
             </div>
 
@@ -166,27 +171,52 @@
             </div>
 
             <!-- Prise en charge -->
-            <div class="bg-gray-50 p-4 rounded-lg md:col-span-2">
+            <div v-if="programme.prise_en_charge.length > 0" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
               <p class="text-sm text-gray-500 mb-2">Prise en charge par l'organisation</p>
               <div class="flex flex-wrap gap-2">
                 <span
-                  v-for="prise in getPriseEnChargeLabels(programme.priseEnCharge)"
+                  v-for="prise in programme.prise_en_charge"
                   :key="prise"
                   class="px-3 py-1 bg-custom-green/10 text-custom-green rounded-full text-sm font-medium"
                 >
                   <font-awesome-icon :icon="['fas', 'check']" class="mr-1" />
-                  {{ prise }}
+                  {{ getPriseLabel(prise) }}
                 </span>
               </div>
             </div>
 
+            <!-- Prérequis -->
+            <div v-if="programme.prerequis" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
+              <p class="text-sm text-gray-500 mb-1">Prérequis</p>
+              <p class="font-medium text-gray-900 whitespace-pre-line">{{ programme.prerequis }}</p>
+            </div>
+
+            <!-- Langues requises -->
+            <div v-if="programme.langues_requises" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
+              <p class="text-sm text-gray-500 mb-1">Langues requises</p>
+              <p class="font-medium text-gray-900">{{ programme.langues_requises }}</p>
+            </div>
+
             <!-- Organisateur -->
-            <div v-if="programme.organisateurNom" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
+            <div v-if="programme.user" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
               <p class="text-sm text-gray-500 mb-1">Organisateur</p>
-              <p class="font-medium text-gray-900">{{ programme.organisateurNom }}</p>
-              <p v-if="programme.organisateurEmail" class="text-sm text-gray-600">
-                {{ programme.organisateurEmail }}
+              <p class="font-medium text-gray-900">
+                {{ programme.user.prenom ? `${programme.user.prenom} ` : '' }}{{ programme.user.nom }}
               </p>
+              <p class="text-sm text-gray-600">{{ programme.user.email }}</p>
+            </div>
+
+            <!-- Document -->
+            <div v-if="programme.document_url" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
+              <p class="text-sm text-gray-500 mb-1">Document associé</p>
+              <a
+                :href="programme.document_url"
+                target="_blank"
+                class="inline-flex items-center gap-2 text-custom-green hover:underline font-medium"
+              >
+                <font-awesome-icon :icon="['fas', 'file-pdf']" />
+                Télécharger le document
+              </a>
             </div>
           </div>
         </section>
@@ -209,21 +239,19 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import {
-  getSabbatiqueById,
+  useSabbatiques,
   formatDateSabbatique,
-  formatDateCourteSabbatique,
-  getDureeLabel,
-  getDomaineLabel,
-  getPriseEnChargeLabels,
-  type ProgrammeSabbatique
-} from '~/mocks/sabbatiques'
+  formatDateCourte,
+  PRISES_EN_CHARGE,
+  type SabbatiqueDetailAPI,
+} from '~/composables/useSabbatiques'
 import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const userStore = useUserStore()
+const { obtenirProgramme, chargement } = useSabbatiques()
 
-const loading = ref(true)
-const programme = ref<ProgrammeSabbatique | null>(null)
+const programme = ref<SabbatiqueDetailAPI | null>(null)
 
 const isAuthenticated = computed(() => userStore.isAuthenticated)
 
@@ -247,13 +275,19 @@ const getStatutClasses = (statut: string) => {
   return classes[statut] || 'bg-gray-100 text-gray-800'
 }
 
+const getPriseLabel = (value: string) => {
+  const found = PRISES_EN_CHARGE.find(p => p.value === value)
+  return found ? found.label : value
+}
+
 const envoyerInteret = () => {
   alert('Votre intérêt a été enregistré ! L\'organisateur vous contactera prochainement.')
 }
 
-onMounted(() => {
+onMounted(async () => {
   const id = route.params.id as string
-  programme.value = getSabbatiqueById(id) || null
+  const result = await obtenirProgramme(id)
+  programme.value = result
 
   if (programme.value) {
     useHead({
@@ -266,7 +300,5 @@ onMounted(() => {
       ]
     })
   }
-
-  loading.value = false
 })
 </script>

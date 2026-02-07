@@ -317,18 +317,17 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import AOS from 'aos'
 import {
+  useSabbatiques,
   DOMAINES,
   DUREES,
   PAYS_AFRICAINS,
   PRISES_EN_CHARGE,
   type TypeProgramme,
-  type Domaine,
-  type DureeProgramme,
-  type PriseEnCharge
-} from '~/mocks/sabbatiques'
+} from '~/composables/useSabbatiques'
 import { editorJsToHtml, type EditorJsData } from '~/composables/useEditorJs'
 
 const route = useRoute()
+const { creerProgramme } = useSabbatiques()
 
 const typesValides: TypeProgramme[] = ['interafricain', 'hors_afrique']
 const typeParam = route.query.type as string | undefined
@@ -365,7 +364,7 @@ const form = reactive({
   duree: '' as string,
   dateDebut: '',
   dateFin: '',
-  prisesEnCharge: [] as PriseEnCharge[],
+  prisesEnCharge: [] as string[],
   couvertureFile: null as File | null,
   documentFile: null as File | null,
   organisateurNom: '',
@@ -443,32 +442,32 @@ const handleSubmit = async () => {
       descriptionHtml = editorJsToHtml(form.descriptionData)
     }
 
-    // TODO: Remplacer par l'appel API backend quand disponible
-    console.log('Soumission du projet:', {
-      type: form.type,
-      titre: form.titre,
-      description: descriptionHtml,
-      domaine: form.domaine,
-      pays: form.pays,
-      ville: form.ville,
-      duree: form.duree,
-      dateDebut: form.dateDebut,
-      dateFin: form.dateFin,
-      prisesEnCharge: form.prisesEnCharge,
-      couvertureFile: form.couvertureFile,
-      documentFile: form.documentFile,
-      organisateurNom: form.organisateurNom,
-      organisateurEmail: form.organisateurEmail
-    })
+    const result = await creerProgramme(
+      {
+        type: form.type,
+        titre: form.titre,
+        description: descriptionHtml,
+        domaine: form.domaine,
+        pays: form.pays,
+        ville: form.ville || undefined,
+        duree: form.duree,
+        dateDebut: form.dateDebut,
+        dateFin: form.dateFin,
+        prisesEnCharge: form.prisesEnCharge,
+        organisateurNom: form.organisateurNom || undefined,
+        organisateurEmail: form.organisateurEmail || undefined,
+      },
+      form.couvertureFile,
+      form.documentFile,
+    )
 
-    // Simuler un délai réseau
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    succes.value = true
-    await resetForm()
-
-    // Scroll vers le haut pour voir le message de succès
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (result) {
+      succes.value = true
+      await resetForm()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      erreur.value = 'Une erreur est survenue lors de la soumission'
+    }
   } catch (e: any) {
     erreur.value = e?.message || 'Une erreur est survenue lors de la soumission'
   } finally {
