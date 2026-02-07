@@ -159,9 +159,7 @@
               <font-awesome-icon icon="fa-solid fa-align-left" class="text-custom-green text-base" />
               Description
             </h2>
-            <div class="text-gray-600 leading-relaxed whitespace-pre-line">
-              {{ evenement.description }}
-            </div>
+            <div class="text-gray-600 leading-relaxed prose prose-sm max-w-none" v-html="evenement.description" />
           </div>
 
           <!-- Organisateur -->

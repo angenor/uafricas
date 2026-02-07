@@ -31,7 +31,7 @@
               Proposer un projet d'échange
               <font-awesome-icon icon="fa-solid fa-arrow-right" />
             </button>
-            <a href="#sabbatique">
+            <NuxtLink to="/echanges-sabbatiques/programmes">
               <button
                 class="text-custom-chocolat whitespace-nowrap shadow-md hover:shadow-none h-10 rounded-full border border-custom-chocolat px-4 hover:scale-105 transition-all flex items-center gap-2"
               >
@@ -40,7 +40,7 @@
                   {{ nbInterafricain }}
                 </span>
               </button>
-            </a>
+            </NuxtLink>
           </div>
           <div class="text-center mt-10 lg:mt-20">
             <a href="#hors-afrique">
@@ -85,7 +85,7 @@
               Proposer un projet d'échange
               <font-awesome-icon icon="fa-solid fa-arrow-right" />
             </button>
-            <a href="#sabbatique">
+            <NuxtLink to="/echanges-sabbatiques/programmes">
               <button
                 class="text-custom-chocolat whitespace-nowrap shadow-md hover:shadow-none h-10 rounded-full border border-custom-chocolat px-4 hover:scale-105 transition-all flex items-center gap-2"
               >
@@ -94,7 +94,7 @@
                   {{ nbHorsAfrique }}
                 </span>
               </button>
-            </a>
+            </NuxtLink>
           </div>
         </div>
         <div class="flex-shrink-0 mt-8 lg:mt-0 lg:ml-8">
@@ -107,64 +107,15 @@
       </div>
     </section>
 
-    <!-- Liste des programmes -->
-    <section id="sabbatique" class="px-4 md:px-16 lg:px-64 py-12">
-      <h2
-        class="text-center text-2xl lg:text-3xl font-extrabold uppercase mb-8"
-        data-aos="fade-up"
-      >
-        Tous les programmes d'échanges d'expériences (sabbatique)
-      </h2>
-
-      <!-- Filtres -->
-      <SabbatiqueFilters v-model="filtres" />
-
-      <!-- Grille des programmes -->
-      <div
-        v-if="programmesFiltres.length > 0"
-        class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center"
-      >
-        <SabbatiqueCard
-          v-for="programme in programmesFiltres"
-          :key="programme.id"
-          :programme="programme"
-          data-aos="fade-up"
-          data-aos-duration="400"
-          @click="voirDetail"
-        />
-      </div>
-
-      <!-- État vide -->
-      <div
-        v-else
-        class="text-center py-16 text-gray-500"
-      >
-        <font-awesome-icon
-          :icon="['fas', 'search']"
-          class="h-12 mb-4 text-gray-300"
-        />
-        <p class="text-lg">Aucun programme ne correspond à vos critères de recherche.</p>
-        <button
-          class="mt-4 text-custom-green underline hover:no-underline"
-          @click="reinitialiserFiltres"
-        >
-          Réinitialiser les filtres
-        </button>
-      </div>
-    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import AOS from 'aos'
 import {
-  sabbatiquesMock,
-  rechercherSabbatiques,
   getSabbatiquesInterafricains,
   getSabbatiquesHorsAfrique,
-  type FiltresSabbatique,
-  type ProgrammeSabbatique
 } from '~/mocks/sabbatiques'
 
 useHead({
@@ -177,34 +128,8 @@ useHead({
   ]
 })
 
-const filtres = ref<FiltresSabbatique>({
-  type: 'tous',
-  pays: '',
-  domaine: '',
-  recherche: ''
-})
-
-const programmes = ref(sabbatiquesMock)
-
-const programmesFiltres = computed(() => {
-  return rechercherSabbatiques(filtres.value)
-})
-
 const nbInterafricain = computed(() => getSabbatiquesInterafricains().length)
 const nbHorsAfrique = computed(() => getSabbatiquesHorsAfrique().length)
-
-const voirDetail = (programme: ProgrammeSabbatique) => {
-  navigateTo(`/echanges-sabbatiques/${programme.id}`)
-}
-
-const reinitialiserFiltres = () => {
-  filtres.value = {
-    type: 'tous',
-    pays: '',
-    domaine: '',
-    recherche: ''
-  }
-}
 
 onMounted(() => {
   AOS.init({

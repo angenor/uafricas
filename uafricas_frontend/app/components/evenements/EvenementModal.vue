@@ -5,7 +5,7 @@
       class="z-50 h-full w-screen bg-black/40 backdrop-blur-xs fixed top-0 left-0 flex items-center justify-center p-4"
       @click.self="emit('close')"
     >
-      <div class="bg-white w-full max-w-md overflow-hidden rounded-md border-t-8 border-custom-green pt-5 max-h-[90vh] overflow-y-auto">
+      <div class="bg-white w-full max-w-2xl overflow-hidden rounded-md border-t-8 border-custom-green pt-5 max-h-[90vh] overflow-y-auto">
         <div class="px-6">
           <h2 class="text-2xl font-bold text-custom-chocolat mb-4">
             Proposer un événement
@@ -26,18 +26,20 @@
               />
             </div>
 
-            <!-- Description -->
+            <!-- Description (EditorJs) -->
             <div>
-              <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
+              <label class="block text-sm font-medium text-gray-700 mb-1">
                 Description *
               </label>
-              <textarea
-                id="description"
-                v-model="form.description"
-                class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat focus:outline-hidden"
-                rows="3"
-                placeholder="Description de l'événement"
-              ></textarea>
+              <CommonEditorJs
+                v-if="show"
+                ref="editorRef"
+                id="evenement-description-editor"
+                v-model="form.descriptionData"
+                placeholder="Décrivez votre événement..."
+                :tools="['header', 'list', 'paragraph', 'quote', 'delimiter', 'marker', 'underline']"
+                min-height="200px"
+              />
             </div>
 
             <!-- Type et Pays -->
@@ -154,6 +156,7 @@
 
 <script setup lang="ts">
 import { PAYS_AFRICAINS } from '~/composables/useEvenements'
+import { editorJsToHtml, type EditorJsData } from '~/composables/useEditorJs'
 
 defineProps<{
   show: boolean
@@ -161,12 +164,14 @@ defineProps<{
 
 const emit = defineEmits<{
   close: []
-  submit: [data: typeof form]
+  submit: [data: { titre: string; description: string; type: string; pays: string; ville: string; date_heure_debut: string; date_heure_fin: string; couverture_file: File | null }]
 }>()
+
+const editorRef = ref<{ save: () => Promise<EditorJsData | null>; clear: () => Promise<void> } | null>(null)
 
 const form = reactive({
   titre: '',
-  description: '',
+  descriptionData: undefined as EditorJsData | undefined,
   type: '',
   pays: '',
   ville: '',
@@ -175,9 +180,13 @@ const form = reactive({
   couverture_file: null as File | null
 })
 
+const hasDescription = computed(() => {
+  return form.descriptionData && form.descriptionData.blocks && form.descriptionData.blocks.length > 0
+})
+
 const isFormValid = computed(() => {
   return form.titre &&
-    form.description &&
+    hasDescription.value &&
     form.type &&
     form.pays &&
     form.ville &&
@@ -192,18 +201,42 @@ const handleFileChange = (event: Event) => {
   }
 }
 
-const handleSubmit = () => {
-  if (isFormValid.value) {
-    emit('submit', { ...form })
-    // Reset form
-    form.titre = ''
-    form.description = ''
-    form.type = ''
-    form.pays = ''
-    form.ville = ''
-    form.date_heure_debut = ''
-    form.date_heure_fin = ''
-    form.couverture_file = null
+const handleSubmit = async () => {
+  if (!isFormValid.value) return
+
+  // Sauvegarder l'éditeur pour obtenir les données finales
+  let descriptionHtml = ''
+  if (editorRef.value) {
+    const savedData = await editorRef.value.save()
+    if (savedData) {
+      descriptionHtml = editorJsToHtml(savedData)
+    }
+  } else if (form.descriptionData) {
+    descriptionHtml = editorJsToHtml(form.descriptionData)
+  }
+
+  emit('submit', {
+    titre: form.titre,
+    description: descriptionHtml,
+    type: form.type,
+    pays: form.pays,
+    ville: form.ville,
+    date_heure_debut: form.date_heure_debut,
+    date_heure_fin: form.date_heure_fin,
+    couverture_file: form.couverture_file
+  })
+
+  // Reset form
+  form.titre = ''
+  form.descriptionData = undefined
+  form.type = ''
+  form.pays = ''
+  form.ville = ''
+  form.date_heure_debut = ''
+  form.date_heure_fin = ''
+  form.couverture_file = null
+  if (editorRef.value) {
+    await editorRef.value.clear()
   }
 }
 </script>
