@@ -97,6 +97,7 @@ import {
   faArrowUpRightFromSquare,
   faUserPlus,
   faUserTie,
+  faPlaneArrival,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -213,6 +214,7 @@ library.add(
   faArrowUpRightFromSquare,
   faUserPlus,
   faUserTie,
+  faPlaneArrival,
   farCalendar,
   farClock,
   farHeart,

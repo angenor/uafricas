@@ -25,13 +25,15 @@
             3 et 12 mois.
           </p>
           <div class="flex flex-wrap gap-4 mt-4">
-            <button
-              class="text-white whitespace-nowrap shadow-md hover:shadow-none h-10 rounded-full bg-custom-green px-4 hover:scale-105 transition-all"
-            >
-              Proposer un projet d'échange
-              <font-awesome-icon icon="fa-solid fa-arrow-right" />
-            </button>
-            <NuxtLink to="/echanges-sabbatiques/programmes">
+            <NuxtLink to="/echanges-sabbatiques/proposer?type=interafricain">
+              <button
+                class="text-white whitespace-nowrap shadow-md hover:shadow-none h-10 rounded-full bg-custom-green px-4 hover:scale-105 transition-all"
+              >
+                Proposer un projet d'échange
+                <font-awesome-icon icon="fa-solid fa-arrow-right" />
+              </button>
+            </NuxtLink>
+            <NuxtLink to="/echanges-sabbatiques/programmes?type=interafricain">
               <button
                 class="text-custom-chocolat whitespace-nowrap shadow-md hover:shadow-none h-10 rounded-full border border-custom-chocolat px-4 hover:scale-105 transition-all flex items-center gap-2"
               >
@@ -79,13 +81,15 @@
             en vivant une expérience culturelle enrichissante.
           </p>
           <div class="flex flex-wrap gap-4 mt-4">
-            <button
-              class="text-white whitespace-nowrap shadow-md hover:shadow-none h-10 rounded-full bg-custom-green px-4 hover:scale-105 transition-all"
-            >
-              Proposer un projet d'échange
-              <font-awesome-icon icon="fa-solid fa-arrow-right" />
-            </button>
-            <NuxtLink to="/echanges-sabbatiques/programmes">
+            <NuxtLink to="/echanges-sabbatiques/proposer?type=hors_afrique">
+              <button
+                class="text-white whitespace-nowrap shadow-md hover:shadow-none h-10 rounded-full bg-custom-green px-4 hover:scale-105 transition-all"
+              >
+                Proposer un projet d'échange
+                <font-awesome-icon icon="fa-solid fa-arrow-right" />
+              </button>
+            </NuxtLink>
+            <NuxtLink to="/echanges-sabbatiques/programmes?type=hors_afrique">
               <button
                 class="text-custom-chocolat whitespace-nowrap shadow-md hover:shadow-none h-10 rounded-full border border-custom-chocolat px-4 hover:scale-105 transition-all flex items-center gap-2"
               >

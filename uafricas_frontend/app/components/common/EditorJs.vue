@@ -138,6 +138,8 @@ defineExpose({
 </template>
 
 <style scoped>
+@reference "~/assets/css/main.css";
+
 .editor-js-wrapper {
   @apply w-full;
 }

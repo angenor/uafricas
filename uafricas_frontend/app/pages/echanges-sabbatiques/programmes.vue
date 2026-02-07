@@ -60,8 +60,15 @@ import AOS from 'aos'
 import {
   rechercherSabbatiques,
   type FiltresSabbatique,
+  type TypeProgramme,
   type ProgrammeSabbatique
 } from '~/mocks/sabbatiques'
+
+const route = useRoute()
+
+const typesValides: Array<'tous' | TypeProgramme> = ['tous', 'interafricain', 'hors_afrique']
+const typeParam = route.query.type as string | undefined
+const typeInitial = typesValides.includes(typeParam as any) ? (typeParam as 'tous' | TypeProgramme) : 'tous'
 
 useHead({
   title: 'Tous les programmes d\'échanges - UAfricas',
@@ -74,7 +81,7 @@ useHead({
 })
 
 const filtres = ref<FiltresSabbatique>({
-  type: 'tous',
+  type: typeInitial,
   pays: '',
   domaine: '',
   recherche: ''
