@@ -107,6 +107,7 @@
 \ir schemas/14_triggers.sql
 \ir schemas/15_seed.sql
 \ir schemas/16_seed_centres_culturels.sql
+\ir schemas/17_seed_evenements.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

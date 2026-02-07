@@ -116,14 +116,11 @@
           <div
             v-else
             class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
-            data-aos="fade-up"
           >
             <MarcheAnnonceCard
               v-for="annonce in annonces"
               :key="annonce.id"
               :annonce="annonce"
-              data-aos="fade-up"
-              data-aos-delay="100"
             />
           </div>
 
@@ -273,7 +270,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import AOS from 'aos'
 import {
   useMarcheAfricain,
   mapperTypesVersDb,
@@ -442,9 +438,5 @@ const goToPage = (page: number) => {
 // Lifecycle
 onMounted(async () => {
   await chargerAnnonces()
-  AOS.init({
-    duration: 800,
-    once: true,
-  })
 })
 </script>

@@ -101,7 +101,7 @@ const breadcrumbs = [
 const { listerEvenements, creerEvenement, chargement, erreur } = useEvenements()
 
 const showModal = ref(false)
-const anneeSelected = ref('2025')
+const anneeSelected = ref(new Date().getFullYear().toString())
 const filtreType = ref('')
 const filtrePays = ref('')
 const evenements = ref<EvenementAPI[]>([])

@@ -80,7 +80,7 @@ export const TYPES_EVENEMENT: { value: string; label: string }[] = [
   { value: 'hybride', label: 'Hybride' },
 ]
 
-export const ANNEES = ['2025', '2026', '2027', '2028']
+export const ANNEES = ['2026', '2027', '2028', '2029']
 
 export const PAYS_AFRICAINS = [
   'Afrique du Sud',
