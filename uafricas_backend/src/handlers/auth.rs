@@ -107,7 +107,7 @@ pub async fn inscription(
 
     // Verifier unicite email
     let existe = sqlx::query_scalar::<_, bool>(
-        "SELECT EXISTS(SELECT 1 FROM iam.utilisateur WHERE email = $1 AND deleted_at IS NULL)",
+        "SELECT EXISTS(SELECT 1 FROM iam.utilisateur WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL)",
     )
     .bind(&req.email)
     .fetch_one(pool.get_ref())
@@ -180,7 +180,7 @@ pub async fn connexion(
 
     // Chercher l'utilisateur par email
     let utilisateur = sqlx::query_as::<_, Utilisateur>(&format!(
-        "SELECT {} FROM iam.utilisateur WHERE email = $1 AND deleted_at IS NULL",
+        "SELECT {} FROM iam.utilisateur WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL",
         UTILISATEUR_COLONNES
     ))
     .bind(&req.email)
