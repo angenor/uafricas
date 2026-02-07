@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { ANNEES, TYPES_EVENEMENT, PAYS_AFRICAINS } from '~/mocks/evenements'
+import { ANNEES, TYPES_EVENEMENT, PAYS_AFRICAINS } from '~/composables/useEvenements'
 
 defineProps<{
   anneeSelected: string

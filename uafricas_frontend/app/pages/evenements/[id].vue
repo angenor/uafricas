@@ -6,8 +6,16 @@
         <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
       </div>
 
+      <!-- Chargement -->
+      <div v-if="chargement" class="text-center py-16">
+        <div class="text-4xl text-gray-300 mb-4 animate-spin inline-block">
+          <font-awesome-icon icon="fa-solid fa-spinner" />
+        </div>
+        <p class="text-gray-500">Chargement de l'événement...</p>
+      </div>
+
       <!-- Contenu -->
-      <div v-if="evenement" class="bg-white mx-4 md:mx-72 pt-6 px-7 pb-20 rounded-b-md shadow-md">
+      <div v-else-if="evenement" class="bg-white mx-4 md:mx-72 pt-6 px-7 pb-20 rounded-b-md shadow-md">
         <!-- Info lieu et date -->
         <div class="p-3 bg-slate-100 rounded-r-md shadow-md border border-l-4 border-l-custom-green">
           <div class="flex flex-wrap text-custom-chocolat gap-2">
@@ -30,7 +38,7 @@
         <!-- Image de couverture -->
         <img
           class="w-full mb-3 h-64 md:h-96 object-cover rounded-xl"
-          :src="evenement.couverture_url"
+          :src="evenement.couverture_url || 'https://via.placeholder.com/800x400?text=Image+non+disponible'"
           :alt="evenement.titre"
         />
 
@@ -122,17 +130,25 @@
 </template>
 
 <script setup lang="ts">
-import { getEvenementById, formatDate, formatDateShort, getHeure, type Evenement } from '~/mocks/evenements'
+import { useEvenements, formatDate, formatDateShort, getHeure, type EvenementDetailAPI } from '~/composables/useEvenements'
+import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const evenementId = route.params.id as string
+const userStore = useUserStore()
 
-const evenement = ref<Evenement | undefined>(undefined)
+const { obtenirEvenement, inscrireEvenement, chargement, erreur } = useEvenements()
+
+const evenement = ref<EvenementDetailAPI | null>(null)
 const isInscrit = ref(false)
-const isAuthenticated = ref(false) // En mode mock, l'utilisateur n'est pas connecté
+const isAuthenticated = computed(() => !!userStore.accessToken)
 
-onMounted(() => {
-  evenement.value = getEvenementById(evenementId)
+onMounted(async () => {
+  const data = await obtenirEvenement(evenementId)
+  if (data) {
+    evenement.value = data
+    isInscrit.value = data.est_inscrit
+  }
 })
 
 const breadcrumbs = computed(() => [
@@ -140,15 +156,17 @@ const breadcrumbs = computed(() => [
   { label: 'Promotion des Valeurs', to: '/promotion-valeur' },
   { label: 'Événements', to: '/evenements' },
   { label: 'Liste', to: '/evenements/liste' },
-  { label: evenement.value?.titre || 'Détail', to: null }
+  { label: evenement.value?.titre || 'Détail', to: undefined }
 ])
 
 useHead({
   title: computed(() => evenement.value ? `${evenement.value.titre} | UAfricas` : 'Événement | UAfricas')
 })
 
-const handleInscription = () => {
-  isInscrit.value = true
-  alert('Inscription envoyée avec succès ! (Mode démo)')
+const handleInscription = async () => {
+  const success = await inscrireEvenement(evenementId)
+  if (success) {
+    isInscrit.value = true
+  }
 }
 </script>

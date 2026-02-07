@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{annonces, auth, centres_culturels, codimoi, gouvernance, livres};
+use crate::handlers::{annonces, auth, centres_culturels, codimoi, evenements, gouvernance, livres};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -53,6 +53,14 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/annonces")
                     .route("", web::get().to(annonces::lister_annonces))
                     .route("/{id}", web::get().to(annonces::obtenir_annonce)),
+            )
+            // Routes des evenements
+            .service(
+                web::scope("/evenements")
+                    .route("", web::get().to(evenements::lister_evenements))
+                    .route("", web::post().to(evenements::creer_evenement))
+                    .route("/{id}", web::get().to(evenements::obtenir_evenement))
+                    .route("/{id}/inscription", web::post().to(evenements::inscrire_evenement)),
             ),
     );
 }

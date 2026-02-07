@@ -66,6 +66,7 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 - `useBibliotheque` — API client pour la bibliothèque numérique (CRUD livres via $fetch, upload multipart, mapping accès DB↔frontend)
 - `useCentresCulturels` — API client pour les centres culturels (listerCentres, obtenirCentre, obtenirProgrammation). Inclut utilitaires de formatage dates/heures en français et mapping mode DB↔frontend
 - `useCodiMoi` — API client pour Codi-Moi (listerPosts avec filtres/pagination, obtenirPost, creerPost). Mapping CodiMoiPostAPI↔CodiMoiPost frontend
+- `useEvenements` — API client pour les événements (listerEvenements avec filtres/pagination/année, obtenirEvenement, creerEvenement multipart, inscrireEvenement). Mapping format DB↔frontend, calcul statut temporel, constantes TYPES_EVENEMENT/ANNEES/PAYS_AFRICAINS
 - `useGouvernance` — API client pour la gouvernance citoyenne (getStats, getContributions). Requête UNION ALL sur factcheck + bad_habit + idea_force avec mapping vers ContributionCitoyenne
 - `useMarcheAfricain` — API client pour le marché africain (listerAnnonces avec filtres/pagination/tri, obtenirAnnonce). Inclut constantes (CATEGORIES, TYPES_ECHANGE, DEVISES), utilitaires de formatage (prix, dates) et mapping type_operation DB↔frontend
 
@@ -100,6 +101,10 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `GET /api/gouvernance/contributions?type=&page=&par_page=` — Liste paginée des contributions (UNION factcheck + bad_habit + idea_force avec auteur et pays)
 - `GET /api/annonces?recherche=&type_operation=&categorie=&prix_min=&prix_max=&tri=&page=&par_page=` — Liste paginée des annonces (filtres multiples, tri, recherche textuelle, JOINs catégorie/auteur/média/pays)
 - `GET /api/annonces/{id}` — Détail d'une annonce (incrémente vues, médias, pays multiples, info auteur)
+- `GET /api/evenements?recherche=&format=&pays=&annee=&page=&par_page=` — Liste paginée des événements (filtres format/pays/année/recherche, statut calculé depuis etat+dates)
+- `GET /api/evenements/{id}` — Détail d'un événement (organisateur, nombre inscrits, est_inscrit pour user connecté)
+- `POST /api/evenements` — Création multipart (image couverture + métadonnées, résolution pays_id, slug auto)
+- `POST /api/evenements/{id}/inscription` — Inscription à un événement (JWT requis, ON CONFLICT upsert)
 
 **Authentification** : JWT (HS256) access token (15 min) + refresh token (7 jours, SHA-256 hashé en BDD dans `iam.refresh_token`). Mot de passe hashé avec bcrypt (cost 12). Module `jwt.rs` pour génération/validation tokens.
 

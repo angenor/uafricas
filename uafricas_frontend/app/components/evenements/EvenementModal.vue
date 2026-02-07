@@ -153,7 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import { PAYS_AFRICAINS } from '~/mocks/evenements'
+import { PAYS_AFRICAINS } from '~/composables/useEvenements'
 
 defineProps<{
   show: boolean

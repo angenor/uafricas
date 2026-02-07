@@ -63,10 +63,10 @@
 </template>
 
 <script setup lang="ts">
-import { formatDateShort, getHeure, type Evenement } from '~/mocks/evenements'
+import { formatDateShort, getHeure, type EvenementAPI } from '~/composables/useEvenements'
 
 defineProps<{
-  evenement: Evenement
+  evenement: EvenementAPI
 }>()
 </script>
 
