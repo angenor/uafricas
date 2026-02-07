@@ -17,7 +17,6 @@ const volume = ref(0.7)
 const isMuted = ref(false)
 const currentStationIndex = ref(0)
 const isLoading = ref(false)
-const showAddProgramModal = ref(false)
 
 // Données chargées depuis l'API
 const radioStations = ref<RadioStation[]>([])
@@ -183,25 +182,6 @@ onMounted(async () => {
         Radios <span class="text-yellow-400">Africans</span>
       </h1>
 
-      <!-- Bouton Ajouter un programme -->
-      <div class="text-center mb-8">
-        <button
-          @click="showAddProgramModal = true"
-          class="bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 px-6 rounded-full transform transition-all duration-200 hover:scale-105 shadow-lg"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 inline-block" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-          </svg>
-          Ajouter un programme
-        </button>
-      </div>
-
-      <!-- Modal Ajouter un programme -->
-      <MediaAddProgramModal
-        :is-open="showAddProgramModal"
-        @close="showAddProgramModal = false"
-        @submit="showAddProgramModal = false"
-      />
 
       <!-- Indicateur de chargement -->
       <div v-if="chargement && radioStations.length === 0" class="text-center py-20">
