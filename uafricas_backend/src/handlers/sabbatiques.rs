@@ -156,7 +156,7 @@ pub async fn lister_programmes(
     if let Some(ref type_prog) = params.type_programme {
         if type_prog != "tous" {
             let est_interafricain = type_prog == "interafricain";
-            conditions.push(format!("p.interafricain = ${}", bind_index));
+            conditions.push(format!("p.interafricain = ${}::BOOLEAN", bind_index));
             bind_values.push(est_interafricain.to_string());
             bind_index += 1;
         }

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { radioStations, getUniqueCountriesFromStations, getUniqueGenresFromStations, filterRadios } from '~/mocks/radios'
+import type { RadioStation } from '~/composables/useStationsRadio'
+
+const { listerStations, listerPays, listerGenres, chargement } = useStationsRadio()
 
 useHead({
   title: 'Radios Nationales | UAfricas',
@@ -17,22 +19,54 @@ const currentStationIndex = ref(0)
 const isLoading = ref(false)
 const showAddProgramModal = ref(false)
 
+// Données chargées depuis l'API
+const radioStations = ref<RadioStation[]>([])
+const filteredStations = ref<RadioStation[]>([])
+const availableCountries = ref<string[]>([])
+const availableGenres = ref<string[]>([])
+
 // Filtres - Prédéfini sur les nationales
 const selectedProgramType = ref('Nationales')
 const selectedCountry = ref('Tous les pays')
 const selectedGenre = ref('Tous les genres')
 
 // Computed
-const availableCountries = computed(() => getUniqueCountriesFromStations())
-const availableGenres = computed(() => getUniqueGenresFromStations())
-
-const filteredStations = computed(() => {
-  return filterRadios(selectedProgramType.value, selectedCountry.value, selectedGenre.value)
-})
-
-const currentStation = computed(() => radioStations[currentStationIndex.value])
+const currentStation = computed(() => radioStations.value[currentStationIndex.value])
 
 const programTypes = ['Tous les types', 'Nationales', 'Local', 'International']
+
+// Chargement des données
+const chargerStations = async () => {
+  const resultat = await listerStations({
+    type_station: selectedProgramType.value,
+    pays: selectedCountry.value,
+    genre: selectedGenre.value,
+    par_page: 100,
+  })
+  if (resultat) {
+    filteredStations.value = resultat.stations
+  }
+}
+
+const chargerToutesStations = async () => {
+  const resultat = await listerStations({ par_page: 100 })
+  if (resultat) {
+    radioStations.value = resultat.stations
+  }
+  // Charger aussi les stations filtrées (nationales par défaut)
+  await chargerStations()
+}
+
+const chargerFiltres = async () => {
+  const [pays, genres] = await Promise.all([listerPays(), listerGenres()])
+  if (pays) availableCountries.value = pays
+  if (genres) availableGenres.value = genres
+}
+
+// Watcher sur les filtres pour recharger les stations filtrées
+watch([selectedProgramType, selectedCountry, selectedGenre], () => {
+  chargerStations()
+})
 
 // Methods
 const updateSource = () => {
@@ -64,17 +98,19 @@ const togglePlay = () => {
 }
 
 const nextStation = () => {
-  currentStationIndex.value = (currentStationIndex.value + 1) % radioStations.length
+  if (radioStations.value.length === 0) return
+  currentStationIndex.value = (currentStationIndex.value + 1) % radioStations.value.length
   updateSource()
 }
 
 const previousStation = () => {
-  currentStationIndex.value = (currentStationIndex.value - 1 + radioStations.length) % radioStations.length
+  if (radioStations.value.length === 0) return
+  currentStationIndex.value = (currentStationIndex.value - 1 + radioStations.value.length) % radioStations.value.length
   updateSource()
 }
 
 const selectStation = (index: number) => {
-  const originalIndex = radioStations.findIndex(s => s.id === filteredStations.value[index]?.id)
+  const originalIndex = radioStations.value.findIndex(s => s.id === filteredStations.value[index]?.id)
   if (originalIndex !== -1) {
     currentStationIndex.value = originalIndex
     updateSource()
@@ -84,8 +120,8 @@ const selectStation = (index: number) => {
   }
 }
 
-const getOriginalIndex = (station: typeof radioStations[0]) => {
-  return radioStations.findIndex(s => s.id === station.id)
+const getOriginalIndex = (station: RadioStation) => {
+  return radioStations.value.findIndex(s => s.id === station.id)
 }
 
 const toggleMute = () => {
@@ -117,7 +153,8 @@ const handleAudioEnded = () => {
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
+  await Promise.all([chargerToutesStations(), chargerFiltres()])
   if (audioPlayerRef.value) {
     audioPlayerRef.value.volume = volume.value
     updateSource()
@@ -167,71 +204,79 @@ onMounted(() => {
         @submit="showAddProgramModal = false"
       />
 
-      <!-- Lecteur principal -->
-      <MediaAudioPlayer
-        v-if="currentStation"
-        :station="currentStation"
-        :is-playing="isPlaying"
-        :volume="volume"
-        :is-muted="isMuted"
-        @toggle-play="togglePlay"
-        @next="nextStation"
-        @previous="previousStation"
-        @toggle-mute="toggleMute"
-        @volume-change="handleVolumeChange"
-      />
-
-      <!-- Filtres -->
-      <MediaMediaFilters
-        :types="programTypes"
-        :countries="availableCountries"
-        :genres="availableGenres"
-        :selected-type="selectedProgramType"
-        :selected-country="selectedCountry"
-        :selected-genre="selectedGenre"
-        @select-type="selectedProgramType = $event"
-        @select-country="selectedCountry = $event"
-        @select-genre="selectedGenre = $event"
-        @reset="resetFilters"
-      />
-
-      <!-- Liste des stations -->
-      <div class="max-w-6xl mx-auto mt-6">
-        <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-          </svg>
-          {{ filteredStations.length }} Stations
-          <span v-if="selectedProgramType !== 'Tous les types'">&nbsp;{{ selectedProgramType.toLowerCase() }}s</span>
-          <span v-if="selectedCountry !== 'Tous les pays'">&nbsp;en {{ selectedCountry }}</span>
-          <span v-if="selectedGenre !== 'Tous les genres'">&nbsp;genre {{ selectedGenre }}</span>
-        </h2>
-
-        <div v-if="filteredStations.length === 0" class="text-center py-12">
-          <div class="text-yellow-500 text-5xl mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <p class="text-gray-300 text-xl">Aucune station ne correspond à ces critères</p>
-          <div class="flex gap-3 justify-center mt-4">
-            <button @click="resetFilters" class="bg-yellow-500 hover:bg-yellow-600 text-black font-medium px-6 py-2 rounded-full transition-all">
-              Réinitialiser les filtres
-            </button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <MediaStationCard
-            v-for="(station, index) in filteredStations"
-            :key="station.id"
-            :station="station"
-            :is-active="currentStationIndex === getOriginalIndex(station)"
-            :is-playing="isPlaying && currentStationIndex === getOriginalIndex(station)"
-            @select="selectStation(index)"
-          />
-        </div>
+      <!-- Indicateur de chargement -->
+      <div v-if="chargement && radioStations.length === 0" class="text-center py-20">
+        <span class="loading loading-spinner loading-lg text-yellow-400"></span>
+        <p class="text-gray-300 mt-4">Chargement des stations...</p>
       </div>
+
+      <template v-else>
+        <!-- Lecteur principal -->
+        <MediaAudioPlayer
+          v-if="currentStation"
+          :station="currentStation"
+          :is-playing="isPlaying"
+          :volume="volume"
+          :is-muted="isMuted"
+          @toggle-play="togglePlay"
+          @next="nextStation"
+          @previous="previousStation"
+          @toggle-mute="toggleMute"
+          @volume-change="handleVolumeChange"
+        />
+
+        <!-- Filtres -->
+        <MediaMediaFilters
+          :types="programTypes"
+          :countries="availableCountries"
+          :genres="availableGenres"
+          :selected-type="selectedProgramType"
+          :selected-country="selectedCountry"
+          :selected-genre="selectedGenre"
+          @select-type="selectedProgramType = $event"
+          @select-country="selectedCountry = $event"
+          @select-genre="selectedGenre = $event"
+          @reset="resetFilters"
+        />
+
+        <!-- Liste des stations -->
+        <div class="max-w-6xl mx-auto mt-6">
+          <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+            </svg>
+            {{ filteredStations.length }} Stations
+            <span v-if="selectedProgramType !== 'Tous les types'">&nbsp;{{ selectedProgramType.toLowerCase() }}s</span>
+            <span v-if="selectedCountry !== 'Tous les pays'">&nbsp;en {{ selectedCountry }}</span>
+            <span v-if="selectedGenre !== 'Tous les genres'">&nbsp;genre {{ selectedGenre }}</span>
+          </h2>
+
+          <div v-if="filteredStations.length === 0 && !chargement" class="text-center py-12">
+            <div class="text-yellow-500 text-5xl mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p class="text-gray-300 text-xl">Aucune station ne correspond à ces critères</p>
+            <div class="flex gap-3 justify-center mt-4">
+              <button @click="resetFilters" class="bg-yellow-500 hover:bg-yellow-600 text-black font-medium px-6 py-2 rounded-full transition-all">
+                Réinitialiser les filtres
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <MediaStationCard
+              v-for="(station, index) in filteredStations"
+              :key="station.id"
+              :station="station"
+              :is-active="currentStationIndex === getOriginalIndex(station)"
+              :is-playing="isPlaying && currentStationIndex === getOriginalIndex(station)"
+              @select="selectStation(index)"
+            />
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Audio element -->

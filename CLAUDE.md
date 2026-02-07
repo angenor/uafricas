@@ -70,6 +70,7 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 - `useExperts` — API client pour les experts (listerExperts avec filtres/pagination/tri, obtenirExpert, creerCandidature). Constantes CATEGORIES_EXPERTISE/PROFILS_PROFESSIONNELS/PAYS_EXPERTS, interfaces ExpertAPI/ExpertiseInfoAPI
 - `useGouvernance` — API client pour la gouvernance citoyenne (getStats, getContributions). Requête UNION ALL sur factcheck + bad_habit + idea_force avec mapping vers ContributionCitoyenne
 - `useMarcheAfricain` — API client pour le marché africain (listerAnnonces avec filtres/pagination/tri, obtenirAnnonce). Inclut constantes (CATEGORIES, TYPES_ECHANGE, DEVISES), utilitaires de formatage (prix, dates) et mapping type_operation DB↔frontend
+- `useStationsRadio` — API client pour les stations radio (listerStations avec filtres/pagination, obtenirStation, listerPays, listerGenres, creerStation). Mapping StationRadioAPI↔RadioStation frontend
 - `useOpportuniteAfrique` — API client pour les fiches pays (listerFiches avec filtres/pagination/region, obtenirFiche par UUID/code ISO, listerRegions). Formatage dates en français, interfaces FichePaysAPI/FichePaysDetailAPI
 
 **Mock data layer** (`app/mocks/`, 22 files): Fichiers TypeScript de données fictives avec interfaces, tableaux et fonctions async simulant la latence réseau. Lors de l'intégration backend, remplacer les imports mock par des appels API.
@@ -113,6 +114,11 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `GET /api/fiches-pays?recherche=&region=&page=&par_page=` — Liste paginée des fiches pays (filtres recherche/region, JOIN shared.pays)
 - `GET /api/fiches-pays/regions` — Liste des régions disponibles (calculées depuis les codes ISO)
 - `GET /api/fiches-pays/{id}` — Détail d'une fiche pays (par UUID, code ISO ou nom, avec langues et ethnies)
+- `GET /api/stations-radio?recherche=&type_station=&pays=&genre=&page=&par_page=` — Liste paginée des stations radio (filtres type/pays/genre/recherche)
+- `GET /api/stations-radio/{id}` — Détail d'une station radio
+- `GET /api/stations-radio/pays` — Liste des pays ayant des stations
+- `GET /api/stations-radio/genres` — Liste des genres musicaux disponibles
+- `POST /api/stations-radio` — Création d'une station (JWT requis, résolution pays_id par nom)
 
 **Authentification** : JWT (HS256) access token (15 min) + refresh token (7 jours, SHA-256 hashé en BDD dans `iam.refresh_token`). Mot de passe hashé avec bcrypt (cost 12). Module `jwt.rs` pour génération/validation tokens.
 

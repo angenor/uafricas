@@ -40,7 +40,7 @@ pub async fn obtenir_stats(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiE
     .await?;
 
     let (total_likes,): (i64,) = sqlx::query_as(
-        "SELECT COALESCE(SUM(nombre_likes::BIGINT), 0)
+        "SELECT COALESCE(SUM(nombre_likes), 0)::BIGINT
          FROM governance.factcheck
          WHERE deleted_at IS NULL AND etat = 'publie'",
     )

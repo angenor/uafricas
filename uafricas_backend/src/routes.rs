@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{annonces, auth, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, sabbatiques};
+use crate::handlers::{annonces, auth, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, sabbatiques, stations_radio};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -88,6 +88,15 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/facultes")
                     .route("", web::get().to(facultes::lister_facultes))
                     .route("/{id}", web::get().to(facultes::obtenir_faculte)),
+            )
+            // Routes des stations radio
+            .service(
+                web::scope("/stations-radio")
+                    .route("", web::get().to(stations_radio::lister_stations))
+                    .route("", web::post().to(stations_radio::creer_station))
+                    .route("/pays", web::get().to(stations_radio::lister_pays_stations))
+                    .route("/genres", web::get().to(stations_radio::lister_genres_stations))
+                    .route("/{id}", web::get().to(stations_radio::obtenir_station)),
             )
             // Routes des fiches pays (Opportunites en Afrique)
             .service(

@@ -9,4 +9,5 @@ pub mod gouvernance;
 pub mod livre;
 pub mod mooc;
 pub mod sabbatique;
+pub mod station_radio;
 pub mod utilisateur;
