@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { profiles } from '~/mocks/experts'
+import { PROFILS_PROFESSIONNELS as profiles } from '~/composables/useExperts'
 
 defineProps<{
   isOpen: boolean

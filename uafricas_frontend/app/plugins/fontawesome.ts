@@ -98,6 +98,10 @@ import {
   faUserPlus,
   faUserTie,
   faPlaneArrival,
+  faAward,
+  faUserTag,
+  faLink,
+  faUserSlash,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -215,6 +219,10 @@ library.add(
   faUserPlus,
   faUserTie,
   faPlaneArrival,
+  faAward,
+  faUserTag,
+  faLink,
+  faUserSlash,
   farCalendar,
   farClock,
   farHeart,

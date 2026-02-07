@@ -11,8 +11,8 @@
     <ExpertsExpertFiltersMobile
       :is-open="sidebarOpen"
       :selected-profile="selectedProfile"
-      :total-experts="experts.length"
-      :filtered-count="filteredExperts.length"
+      :total-experts="totalExperts"
+      :filtered-count="totalExperts"
       @close="sidebarOpen = false"
       @filter-profile="filterByProfile"
       @reset="resetFilters"
@@ -42,7 +42,7 @@
       <ExpertsExpertHero
         v-model:search-term="searchTerm"
         v-model:category-selected="categorySelected"
-        :total-experts="experts.length"
+        :total-experts="totalExperts"
         :categories="categories"
         @search="handleSearch"
       />
@@ -55,8 +55,8 @@
           <div class="hidden lg:block w-80 flex-shrink-0">
             <ExpertsExpertFilters
               :selected-profile="selectedProfile"
-              :total-experts="experts.length"
-              :filtered-count="filteredExperts.length"
+              :total-experts="totalExperts"
+              :filtered-count="totalExperts"
               @filter-profile="filterByProfile"
               @reset="resetFilters"
             />
@@ -211,13 +211,18 @@
               </div>
             </div>
 
+            <!-- Indicateur de chargement -->
+            <div v-if="chargement" class="flex justify-center py-12">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
+            </div>
+
             <!-- Expert Cards Grid avec design moderne -->
             <div
-              v-if="filteredExperts.length > 0"
+              v-else-if="experts.length > 0"
               class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12"
             >
               <ExpertsExpertCard
-                v-for="expert in paginatedExperts"
+                v-for="expert in experts"
                 :key="expert.id"
                 :expert="expert"
                 class="transform hover:scale-[1.02] transition-all"
@@ -251,7 +256,7 @@
             </div>
 
             <!-- Pagination moderne -->
-            <div v-if="filteredExperts.length > 0" class="flex justify-center mb-12">
+            <div v-if="experts.length > 0 && totalPages > 1" class="flex justify-center mb-12">
               <nav class="flex items-center gap-2">
                 <button
                   :disabled="currentPage === 1"
@@ -307,7 +312,12 @@
 </template>
 
 <script setup lang="ts">
-import { expertsMock, categories, countries, type Expert } from '~/mocks/experts'
+import {
+  useExperts,
+  CATEGORIES_EXPERTISE as categories,
+  PAYS_EXPERTS as countries,
+  type ExpertAPI,
+} from '~/composables/useExperts'
 
 useHead({
   title: 'Experts - UAfricas',
@@ -319,8 +329,13 @@ useHead({
   ],
 })
 
+// Composable API
+const { listerExperts, chargement } = useExperts()
+
 // State
-const experts = ref<Expert[]>([])
+const experts = ref<ExpertAPI[]>([])
+const totalExperts = ref(0)
+const totalPages = ref(1)
 const searchTerm = ref('')
 const categorySelected = ref('Tout')
 const selectedCountry = ref('')
@@ -329,7 +344,7 @@ const sortOrder = ref<'recent' | 'experience' | 'rating'>('recent')
 const showMoreCategories = ref(false)
 const sidebarOpen = ref(false)
 const currentPage = ref(1)
-const itemsPerPage = 12
+const parPage = 12
 
 // Sort options
 const sortOptions = [
@@ -350,82 +365,28 @@ const sortOptions = [
   },
 ]
 
-// Computed - Filtered experts
-const filteredExperts = computed(() => {
-  let result = [...experts.value]
+// Charger les experts depuis l'API (pagination server-side)
+const chargerExperts = async () => {
+  const result = await listerExperts({
+    recherche: searchTerm.value || undefined,
+    domaine: categorySelected.value !== 'Tout' ? categorySelected.value : undefined,
+    pays: selectedCountry.value || undefined,
+    situation: selectedProfile.value && selectedProfile.value !== 'tous'
+      ? selectedProfile.value
+      : undefined,
+    tri: sortOrder.value,
+    page: currentPage.value,
+    par_page: parPage,
+  })
 
-  // Filter by category
-  if (categorySelected.value !== 'Tout') {
-    result = result.filter((expert) => {
-      const domaine = expert.expertiseInfo?.domaine
-      return domaine === categorySelected.value
-    })
+  if (result) {
+    experts.value = result.experts
+    totalExperts.value = result.total
+    totalPages.value = result.total_pages
   }
+}
 
-  // Filter by country
-  if (selectedCountry.value) {
-    result = result.filter((expert) => expert.pays === selectedCountry.value)
-  }
-
-  // Filter by professional profile
-  if (selectedProfile.value && selectedProfile.value !== 'tous') {
-    result = result.filter((expert) => {
-      const situationProfessionnelle = expert.situationProfessionnelle || []
-      return situationProfessionnelle.includes(selectedProfile.value)
-    })
-  }
-
-  // Filter by search term
-  if (searchTerm.value) {
-    const term = searchTerm.value.toLowerCase()
-    result = result.filter((expert) => {
-      const nom = expert.nom?.toLowerCase() || ''
-      const prenom = expert.prenom?.toLowerCase() || ''
-      const biographie = expert.expertiseInfo?.biographie?.toLowerCase() || ''
-      const domaine = expert.expertiseInfo?.domaine?.toLowerCase() || ''
-
-      return (
-        nom.includes(term) ||
-        prenom.includes(term) ||
-        biographie.includes(term) ||
-        domaine.includes(term)
-      )
-    })
-  }
-
-  // Sort experts
-  if (sortOrder.value === 'recent') {
-    result.sort((a, b) => {
-      const dateA = a.dateDerniereMiseAJour?.getTime() || a.dateInscription?.getTime() || 0
-      const dateB = b.dateDerniereMiseAJour?.getTime() || b.dateInscription?.getTime() || 0
-      return dateB - dateA
-    })
-  } else if (sortOrder.value === 'rating') {
-    result.sort((a, b) => {
-      const ratingA = a.expertiseInfo?.rating || 0
-      const ratingB = b.expertiseInfo?.rating || 0
-      return ratingB - ratingA
-    })
-  } else if (sortOrder.value === 'experience') {
-    result.sort((a, b) => {
-      const expA = a.expertiseInfo?.nbAnneesExperience || 0
-      const expB = b.expertiseInfo?.nbAnneesExperience || 0
-      return expB - expA
-    })
-  }
-
-  return result
-})
-
-// Pagination
-const totalPages = computed(() => Math.ceil(filteredExperts.value.length / itemsPerPage))
-
-const paginatedExperts = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredExperts.value.slice(start, end)
-})
-
+// Pagination (pages visibles)
 const visiblePages = computed(() => {
   const pages: number[] = []
   const total = totalPages.value
@@ -451,12 +412,10 @@ const visiblePages = computed(() => {
 // Methods
 const filterByCategory = (category: string) => {
   categorySelected.value = category
-  currentPage.value = 1
 }
 
 const filterByProfile = (profileId: string) => {
   selectedProfile.value = profileId
-  currentPage.value = 1
 }
 
 const sortExperts = (order: 'recent' | 'experience' | 'rating') => {
@@ -473,21 +432,28 @@ const resetFilters = () => {
 
 const handleSearch = () => {
   currentPage.value = 1
+  chargerExperts()
 }
 
-const contactExpert = (expert: Expert) => {
+const contactExpert = (expert: ExpertAPI) => {
   if (expert.email) {
     window.location.href = `mailto:${expert.email}`
   }
 }
 
-// Reset page when filters change
-watch([categorySelected, selectedCountry, selectedProfile, searchTerm], () => {
+// Recharger quand les filtres changent (reset page + appel API)
+watch([categorySelected, selectedCountry, selectedProfile, sortOrder], () => {
   currentPage.value = 1
+  chargerExperts()
 })
 
-// Lifecycle
+// Recharger quand la page change
+watch(currentPage, () => {
+  chargerExperts()
+})
+
+// Chargement initial
 onMounted(() => {
-  experts.value = expertsMock
+  chargerExperts()
 })
 </script>

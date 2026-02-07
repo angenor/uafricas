@@ -67,6 +67,7 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 - `useCentresCulturels` — API client pour les centres culturels (listerCentres, obtenirCentre, obtenirProgrammation). Inclut utilitaires de formatage dates/heures en français et mapping mode DB↔frontend
 - `useCodiMoi` — API client pour Codi-Moi (listerPosts avec filtres/pagination, obtenirPost, creerPost). Mapping CodiMoiPostAPI↔CodiMoiPost frontend
 - `useEvenements` — API client pour les événements (listerEvenements avec filtres/pagination/année, obtenirEvenement, creerEvenement multipart, inscrireEvenement). Mapping format DB↔frontend, calcul statut temporel, constantes TYPES_EVENEMENT/ANNEES/PAYS_AFRICAINS
+- `useExperts` — API client pour les experts (listerExperts avec filtres/pagination/tri, obtenirExpert, creerCandidature). Constantes CATEGORIES_EXPERTISE/PROFILS_PROFESSIONNELS/PAYS_EXPERTS, interfaces ExpertAPI/ExpertiseInfoAPI
 - `useGouvernance` — API client pour la gouvernance citoyenne (getStats, getContributions). Requête UNION ALL sur factcheck + bad_habit + idea_force avec mapping vers ContributionCitoyenne
 - `useMarcheAfricain` — API client pour le marché africain (listerAnnonces avec filtres/pagination/tri, obtenirAnnonce). Inclut constantes (CATEGORIES, TYPES_ECHANGE, DEVISES), utilitaires de formatage (prix, dates) et mapping type_operation DB↔frontend
 - `useOpportuniteAfrique` — API client pour les fiches pays (listerFiches avec filtres/pagination/region, obtenirFiche par UUID/code ISO, listerRegions). Formatage dates en français, interfaces FichePaysAPI/FichePaysDetailAPI
@@ -106,6 +107,9 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `GET /api/evenements/{id}` — Détail d'un événement (organisateur, nombre inscrits, est_inscrit pour user connecté)
 - `POST /api/evenements` — Création multipart (image couverture + métadonnées, résolution pays_id, slug auto)
 - `POST /api/evenements/{id}/inscription` — Inscription à un événement (JWT requis, ON CONFLICT upsert)
+- `GET /api/experts?recherche=&domaine=&pays=&situation=&tri=&page=&par_page=` — Liste paginée des experts validés (filtres multiples, tri, recherche textuelle, JOIN utilisateur/pays)
+- `GET /api/experts/{id}` — Détail d'un expert (par utilisateur_id, JOIN utilisateur/pays)
+- `POST /api/experts/candidature` — Candidature expert (JWT requis, domaine, biographie, expérience, situations)
 - `GET /api/fiches-pays?recherche=&region=&page=&par_page=` — Liste paginée des fiches pays (filtres recherche/region, JOIN shared.pays)
 - `GET /api/fiches-pays/regions` — Liste des régions disponibles (calculées depuis les codes ISO)
 - `GET /api/fiches-pays/{id}` — Détail d'une fiche pays (par UUID, code ISO ou nom, avec langues et ethnies)

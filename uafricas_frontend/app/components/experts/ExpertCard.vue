@@ -81,7 +81,7 @@
       <!-- Actions -->
       <div class="flex gap-3">
         <NuxtLink
-          :to="`/profil/${expert.id}`"
+          :to="`/experts/${expert.id}`"
           class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-center py-3 rounded-xl font-medium hover:shadow-lg transform hover:scale-[1.02] transition-all"
         >
           Voir le profil
@@ -138,7 +138,7 @@
           <p class="text-white/90 text-sm">{{ expertDomain }}</p>
           <div class="flex gap-2 justify-center">
             <NuxtLink
-              :to="`/profil/${expert.id}`"
+              :to="`/experts/${expert.id}`"
               class="px-6 py-2 bg-white text-emerald-600 rounded-full font-medium hover:bg-white/90 transition-all"
             >
               Voir le profil
@@ -151,15 +151,14 @@
 </template>
 
 <script setup lang="ts">
-import type { Expert } from '~/mocks/experts'
-import { getCountryLabel } from '~/mocks/experts'
+import type { ExpertAPI } from '~/composables/useExperts'
 
 const props = defineProps<{
-  expert: Expert
+  expert: ExpertAPI
 }>()
 
 defineEmits<{
-  contact: [expert: Expert]
+  contact: [expert: ExpertAPI]
 }>()
 
 const cardHover = ref(false)
@@ -188,9 +187,9 @@ const expertRating = computed(() => {
   return `⭐ ${rating.toFixed(1)}`
 })
 
-// Computed pour le label du pays
+// Computed pour le label du pays (le backend retourne directement le nom)
 const countryLabel = computed(() => {
-  return getCountryLabel(props.expert.pays) || props.expert.pays || 'Non specifie'
+  return props.expert.pays || 'Non specifie'
 })
 </script>
 

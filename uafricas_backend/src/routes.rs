@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{annonces, auth, centres_culturels, codimoi, evenements, facultes, fiches_pays, gouvernance, livres, moocs, sabbatiques};
+use crate::handlers::{annonces, auth, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, sabbatiques};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -61,6 +61,13 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("", web::post().to(evenements::creer_evenement))
                     .route("/{id}", web::get().to(evenements::obtenir_evenement))
                     .route("/{id}/inscription", web::post().to(evenements::inscrire_evenement)),
+            )
+            // Routes des experts
+            .service(
+                web::scope("/experts")
+                    .route("", web::get().to(experts::lister_experts))
+                    .route("/candidature", web::post().to(experts::creer_candidature))
+                    .route("/{id}", web::get().to(experts::obtenir_expert)),
             )
             // Routes des formations (MOOC/CLOM)
             .service(

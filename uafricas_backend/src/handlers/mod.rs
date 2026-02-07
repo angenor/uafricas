@@ -3,6 +3,7 @@ pub mod auth;
 pub mod centres_culturels;
 pub mod codimoi;
 pub mod evenements;
+pub mod experts;
 pub mod facultes;
 pub mod fiches_pays;
 pub mod gouvernance;

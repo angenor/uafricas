@@ -73,6 +73,7 @@
 
 \ir schemas/03_shared.sql
 \ir schemas/04_iam.sql
+\ir schemas/04b_iam_expertise.sql
 \ir schemas/05_marketplace.sql
 \ir schemas/06_exchange.sql
 \ir schemas/07_innovation.sql
@@ -112,6 +113,7 @@
 \ir schemas/19_seed_moocs.sql
 \ir schemas/20_seed_fiches_pays.sql
 \ir schemas/21_seed_facultes.sql
+\ir schemas/22_seed_experts.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════
