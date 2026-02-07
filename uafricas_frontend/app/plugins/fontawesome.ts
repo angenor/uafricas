@@ -92,6 +92,11 @@ import {
   faAlignLeft,
   faHandPointUp,
   faArrowLeft,
+  faShuffle,
+  faMapPin,
+  faArrowUpRightFromSquare,
+  faUserPlus,
+  faUserTie,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -203,6 +208,11 @@ library.add(
   faChevronRight,
   faRightToBracket,
   faArrowLeft,
+  faShuffle,
+  faMapPin,
+  faArrowUpRightFromSquare,
+  faUserPlus,
+  faUserTie,
   farCalendar,
   farClock,
   farHeart,

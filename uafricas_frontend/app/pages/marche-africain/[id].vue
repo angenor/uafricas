@@ -101,6 +101,17 @@
             </div>
           </div>
 
+          <!-- Image produit -->
+          <div class="p-6 md:p-8 border-b border-gray-100">
+            <div class="rounded-2xl overflow-hidden border border-gray-200">
+              <img
+                :src="annonce.photo_url || '/images/placeholder.jpg'"
+                :alt="annonce.titre"
+                class="w-full max-h-[500px] object-cover bg-gray-50"
+              />
+            </div>
+          </div>
+
           <!-- Description -->
           <div class="p-6 md:p-8 border-b border-gray-100">
             <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
