@@ -242,7 +242,7 @@
         <h2 class="text-xl font-bold text-center mb-4">Devenir une Bibliothèque Humaine</h2>
 
         <!-- Si non connecte -->
-        <template v-if="!userStore.utilisateur">
+        <template v-if="!userStore.user">
           <p class="text-gray-600 text-center mb-6">
             Vous devez être connecté pour vous inscrire comme Bibliothèque Humaine.
           </p>
@@ -257,24 +257,70 @@
         <!-- Si connecte -->
         <template v-else>
           <p class="text-gray-600 text-center mb-4">
-            Sélectionnez vos spécialités pour partager vos connaissances.
+            Remplissez votre profil et sélectionnez vos spécialités.
           </p>
 
-          <!-- Liste des specialites -->
-          <div class="space-y-2 mb-6">
-            <label
-              v-for="spec in specialitesDisponibles"
-              :key="spec.id"
-              class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-            >
-              <input
-                type="checkbox"
-                :value="spec.nom"
-                v-model="selectedSpecialites"
-                class="checkbox checkbox-sm checkbox-success"
-              />
-              <span class="text-sm text-gray-700">{{ spec.nom }}</span>
+          <!-- Champ Fonction -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Fonction / Métier <span class="text-red-500">*</span>
             </label>
+            <input
+              v-model="formInscription.fonction"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green text-sm"
+              placeholder="Ex: Griot et conteur, Anthropologue, Professeur..."
+            />
+          </div>
+
+          <!-- Champ Pays -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Pays d'origine
+            </label>
+            <select
+              v-model="formInscription.pays"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green text-sm"
+            >
+              <option value="">-- Sélectionner un pays --</option>
+              <option v-for="p in paysOptions" :key="p" :value="p">{{ p }}</option>
+            </select>
+          </div>
+
+          <!-- Champ Biographie -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Biographie <span class="text-red-500">*</span>
+            </label>
+            <textarea
+              v-model="formInscription.biographie"
+              rows="4"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green text-sm resize-none"
+              placeholder="Décrivez votre parcours, vos connaissances et ce que vous souhaitez partager... (min. 20 caractères)"
+            ></textarea>
+            <p class="text-xs text-gray-400 mt-1">{{ formInscription.biographie.length }} / 20 caractères minimum</p>
+          </div>
+
+          <!-- Spécialités -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Spécialités <span class="text-red-500">*</span>
+            </label>
+            <div class="max-h-48 overflow-y-auto space-y-1 border border-gray-200 rounded-lg p-2">
+              <label
+                v-for="spec in specialitesDisponibles"
+                :key="spec.id"
+                class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  :value="spec.nom"
+                  v-model="formInscription.specialites"
+                  class="checkbox checkbox-sm checkbox-success"
+                />
+                <span class="text-sm text-gray-700">{{ spec.nom }}</span>
+              </label>
+            </div>
           </div>
 
           <!-- Erreur d'inscription -->
@@ -284,7 +330,7 @@
 
           <button
             @click="soumettrInscription"
-            :disabled="selectedSpecialites.length === 0 || inscriptionEnCours"
+            :disabled="!formulaireValide || inscriptionEnCours"
             class="w-full py-2 bg-custom-green text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <span v-if="inscriptionEnCours" class="loading loading-spinner loading-sm"></span>
@@ -325,11 +371,36 @@ const showRegisterPopup = ref(false)
 const biblios = ref<BiblioHumaineAPI[]>([])
 const filterTypes = ref<string[]>(['Tous'])
 const specialitesDisponibles = ref<SpecialiteAPI[]>([])
-const selectedSpecialites = ref<string[]>([])
 const inscriptionErreur = ref<string | null>(null)
 const inscriptionEnCours = ref(false)
 const currentPage = ref(1)
 const totalPages = ref(1)
+
+// Formulaire d'inscription
+const formInscription = reactive({
+  fonction: '',
+  pays: '',
+  biographie: '',
+  specialites: [] as string[],
+})
+
+const paysOptions = [
+  'Algérie', 'Angola', 'Bénin', 'Botswana', 'Burkina Faso', 'Burundi',
+  'Cameroun', 'Cap-Vert', 'Centrafrique', 'Comores', 'Congo', 'Côte d\'Ivoire',
+  'Djibouti', 'Égypte', 'Érythrée', 'Éthiopie', 'Gabon', 'Gambie', 'Ghana',
+  'Guinée', 'Guinée-Bissau', 'Guinée Équatoriale', 'Kenya', 'Lesotho',
+  'Liberia', 'Libye', 'Madagascar', 'Malawi', 'Mali', 'Maroc', 'Maurice',
+  'Mauritanie', 'Mozambique', 'Namibie', 'Niger', 'Nigeria', 'Ouganda',
+  'RD Congo', 'Rwanda', 'São Tomé-et-Príncipe', 'Sénégal', 'Seychelles',
+  'Sierra Leone', 'Somalie', 'Soudan', 'Soudan du Sud', 'Eswatini',
+  'Tanzanie', 'Tchad', 'Togo', 'Tunisie', 'Zambie', 'Zimbabwe', 'Afrique du Sud',
+]
+
+const formulaireValide = computed(() => {
+  return formInscription.fonction.trim().length > 0
+    && formInscription.biographie.trim().length >= 20
+    && formInscription.specialites.length > 0
+})
 
 // Debounce pour la recherche
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
@@ -381,20 +452,26 @@ watch(selectedFilter, () => {
 })
 
 const soumettrInscription = async () => {
-  if (selectedSpecialites.value.length === 0) return
+  if (!formulaireValide.value) return
 
   inscriptionEnCours.value = true
   inscriptionErreur.value = null
 
   const resultat = await inscrireBiblioHumaine({
-    specialites: selectedSpecialites.value,
+    specialites: formInscription.specialites,
+    biographie: formInscription.biographie.trim(),
+    fonction: formInscription.fonction.trim(),
+    pays: formInscription.pays || undefined,
   })
 
   inscriptionEnCours.value = false
 
   if (resultat) {
     showRegisterPopup.value = false
-    selectedSpecialites.value = []
+    formInscription.fonction = ''
+    formInscription.pays = ''
+    formInscription.biographie = ''
+    formInscription.specialites = []
     chargerDonnees()
   } else {
     inscriptionErreur.value = erreur.value || 'Erreur lors de l\'inscription'

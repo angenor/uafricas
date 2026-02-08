@@ -23,8 +23,8 @@
       "
       class="text-white mt-5 cursor-pointer hover:scale-110 transition-transform"
     >
-      <div><font-awesome-icon icon="table-cells-large" class="w-10 h-10 ml-6" /></div>
-      <div class="text-sm ml-4 z-20">APPLIS</div>
+      <div class="flex justify-center"><font-awesome-icon icon="table-cells-large" class="text-4xl" /></div>
+      <div class="text-sm text-center z-20">APPLIS</div>
     </div>
 
     <!-- JE M'ENGAGE -->

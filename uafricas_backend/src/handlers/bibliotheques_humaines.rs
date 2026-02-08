@@ -218,11 +218,68 @@ pub async fn inscrire_biblio(
         ));
     }
 
-    // Activer le flag bibliotheque_humain
-    sqlx::query("UPDATE iam.utilisateur SET bibliotheque_humain = TRUE, updated_at = NOW() WHERE id = $1")
-        .bind(utilisateur_id)
-        .execute(pool.get_ref())
+    // Valider la biographie (obligatoire)
+    let biographie = body.biographie.as_deref().unwrap_or("").trim().to_string();
+    if biographie.is_empty() {
+        return Err(ApiErreur::Validation(
+            "La biographie est obligatoire".to_string(),
+        ));
+    }
+    if biographie.len() < 20 {
+        return Err(ApiErreur::Validation(
+            "La biographie doit contenir au moins 20 caracteres".to_string(),
+        ));
+    }
+
+    // Valider la fonction (obligatoire)
+    let fonction = body.fonction.as_deref().unwrap_or("").trim().to_string();
+    if fonction.is_empty() {
+        return Err(ApiErreur::Validation(
+            "La fonction est obligatoire".to_string(),
+        ));
+    }
+
+    // Construire la mise a jour dynamique du profil
+    let mut set_clauses = vec![
+        "bibliotheque_humain = TRUE".to_string(),
+        "biographie = $2".to_string(),
+        "fonction = $3".to_string(),
+        "updated_at = NOW()".to_string(),
+    ];
+    let bind_index = 4u32;
+
+    // Resoudre le pays si fourni
+    let pays_nom = body.pays.as_deref().unwrap_or("").trim().to_string();
+    let pays_id: Option<Uuid> = if !pays_nom.is_empty() {
+        let id = sqlx::query_scalar::<_, Uuid>(
+            "SELECT id FROM shared.pays WHERE LOWER(nom) = LOWER($1)",
+        )
+        .bind(&pays_nom)
+        .fetch_optional(pool.get_ref())
         .await?;
+        if id.is_some() {
+            set_clauses.push(format!("pays_origine_id = ${}", bind_index));
+        }
+        id
+    } else {
+        None
+    };
+
+    let update_query = format!(
+        "UPDATE iam.utilisateur SET {} WHERE id = $1",
+        set_clauses.join(", ")
+    );
+
+    let mut query = sqlx::query(&update_query)
+        .bind(utilisateur_id)
+        .bind(&biographie)
+        .bind(&fonction);
+
+    if let Some(pid) = pays_id {
+        query = query.bind(pid);
+    }
+
+    query.execute(pool.get_ref()).await?;
 
     // Inserer les specialites
     for nom_specialite in &body.specialites {

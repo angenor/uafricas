@@ -217,6 +217,14 @@
     </Teleport>
 
     <!-- Modal publication -->
+    <AfricantivesPublierInitiativeModal
+      :is-open="showPublishModal"
+      ref="publishModalRef"
+      @close="showPublishModal = false"
+      @submit="handleSubmitInitiative"
+    />
+
+    <!-- Modal connexion requise -->
     <Teleport to="body">
       <Transition
         enter-active-class="transition ease-out duration-300"
@@ -227,32 +235,40 @@
         leave-to-class="opacity-0"
       >
         <div
-          v-if="showPublishModal"
+          v-if="showLoginModal"
           class="fixed inset-0 z-50 flex items-center justify-center p-4"
         >
           <div
             class="absolute inset-0 bg-black/50"
-            @click="showPublishModal = false"
+            @click="showLoginModal = false"
           ></div>
 
           <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-center">
             <font-awesome-icon
-              :icon="['fas', 'rocket']"
-              class="w-16 h-16 text-orange-500 mx-auto mb-4"
+              :icon="['fas', 'lock']"
+              class="w-16 h-16 text-amber-500 mx-auto mb-4"
             />
             <h2 class="text-xl font-bold text-gray-800 mb-2">
-              Fonctionnalité bientôt disponible
+              Connexion requise
             </h2>
             <p class="text-gray-600 mb-6">
-              La publication d'initiatives sera disponible dans une prochaine mise à jour.
-              Restez connecté !
+              Vous devez être connecté pour publier une initiative.
             </p>
-            <button
-              @click="showPublishModal = false"
-              class="px-6 py-2.5 bg-orange-500 text-white font-medium rounded-xl hover:bg-orange-600 transition-colors"
-            >
-              Compris
-            </button>
+            <div class="flex gap-3 justify-center">
+              <button
+                @click="showLoginModal = false"
+                class="px-5 py-2.5 bg-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-300 transition-colors"
+              >
+                Annuler
+              </button>
+              <NuxtLink
+                to="/login"
+                class="px-5 py-2.5 bg-custom-chocolat text-white font-medium rounded-xl hover:bg-custom-chocolat/90 transition-colors inline-flex items-center gap-2"
+              >
+                <font-awesome-icon :icon="['fas', 'right-to-bracket']" class="w-4 h-4" />
+                Se connecter
+              </NuxtLink>
+            </div>
           </div>
         </div>
       </Transition>
@@ -267,6 +283,7 @@ import {
   type AfricantiveAPI,
   type AfricantiveFiltres,
 } from '~/composables/useAfricantives'
+import { useUserStore } from '~/stores/user'
 
 useHead({
   title: 'Africantives - Initiatives Africaines - UAfricas',
@@ -280,7 +297,8 @@ useHead({
 
 const ITEMS_PER_PAGE = 12
 
-const { chargement, erreur, listerAfricantives } = useAfricantives()
+const userStore = useUserStore()
+const { chargement, erreur, listerAfricantives, creerAfricantive } = useAfricantives()
 
 // State
 const africantives = ref<AfricantiveAPI[]>([])
@@ -289,6 +307,8 @@ const totalPages = ref(1)
 const currentPage = ref(1)
 const showMobileFilters = ref(false)
 const showPublishModal = ref(false)
+const showLoginModal = ref(false)
+const publishModalRef = ref<{ setLoading: (v: boolean) => void; setError: (msg: string) => void; setSuccess: () => void } | null>(null)
 
 const filtres = ref({
   domaine: '',
@@ -386,7 +406,41 @@ const handleSearch = () => {
 }
 
 const handlePublish = () => {
+  if (!userStore.isAuthenticated) {
+    showLoginModal.value = true
+    return
+  }
   showPublishModal.value = true
+}
+
+const handleSubmitInitiative = async (data: {
+  titre: string
+  description: string
+  domaine: string
+  pays: string
+  ville: string
+  couvertureFile: File | null
+}) => {
+  publishModalRef.value?.setLoading(true)
+
+  const resultat = await creerAfricantive(
+    {
+      titre: data.titre,
+      description: data.description,
+      domaine: data.domaine || undefined,
+      pays: data.pays || undefined,
+      ville: data.ville || undefined,
+    },
+    data.couvertureFile,
+  )
+
+  if (resultat) {
+    publishModalRef.value?.setSuccess()
+    // Recharger la liste pour afficher la nouvelle initiative
+    await chargerAfricantives()
+  } else {
+    publishModalRef.value?.setError(erreur.value || 'Une erreur est survenue lors de la publication.')
+  }
 }
 
 const resetFilters = () => {

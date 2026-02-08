@@ -56,6 +56,10 @@ export interface BiblioHumaineFiltres {
 /** Body pour l'inscription */
 export interface InscriptionBiblioBody {
   specialites: string[]
+  biographie: string
+  fonction: string
+  pays?: string
+  organisation?: string
 }
 
 // ──────────────────────────────────────────────────────────────

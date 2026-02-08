@@ -117,6 +117,10 @@ pub struct BiblioHumaineQueryParams {
 #[derive(Debug, Deserialize)]
 pub struct InscriptionBiblioBody {
     pub specialites: Vec<String>,
+    pub biographie: Option<String>,
+    pub fonction: Option<String>,
+    pub pays: Option<String>,
+    pub organisation: Option<String>,
 }
 
 // ────────────────────────────────────────────────────────────────

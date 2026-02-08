@@ -172,6 +172,13 @@ export const useAfricantives = () => {
     return {}
   }
 
+  /** Prefixer les URLs relatives d'images avec l'URL du backend */
+  const resoudreUrl = (url: string | null): string | null => {
+    if (!url) return null
+    if (url.startsWith('http')) return url
+    return `${apiBase}${url}`
+  }
+
   /**
    * Lister les africantives avec filtres et pagination
    */
@@ -196,6 +203,12 @@ export const useAfricantives = () => {
       if (!reponse.success || !reponse.data) {
         throw new Error(reponse.error || 'Erreur lors du chargement des initiatives')
       }
+
+      // Resoudre les URLs d'images
+      reponse.data.africantives = reponse.data.africantives.map(a => ({
+        ...a,
+        image_couverture_url: resoudreUrl(a.image_couverture_url),
+      }))
 
       return reponse.data
     }
@@ -224,6 +237,12 @@ export const useAfricantives = () => {
 
       if (!reponse.success || !reponse.data) {
         throw new Error(reponse.error || 'Initiative non trouvée')
+      }
+
+      // Resoudre les URLs d'images
+      reponse.data.image_couverture_url = resoudreUrl(reponse.data.image_couverture_url)
+      if (reponse.data.user.photo_url) {
+        reponse.data.user.photo_url = resoudreUrl(reponse.data.user.photo_url)
       }
 
       return reponse.data
@@ -275,6 +294,12 @@ export const useAfricantives = () => {
 
       if (!reponse.success || !reponse.data) {
         throw new Error(reponse.error || 'Erreur lors de la création de l\'initiative')
+      }
+
+      // Resoudre les URLs d'images
+      reponse.data.image_couverture_url = resoudreUrl(reponse.data.image_couverture_url)
+      if (reponse.data.user.photo_url) {
+        reponse.data.user.photo_url = resoudreUrl(reponse.data.user.photo_url)
       }
 
       return reponse.data
