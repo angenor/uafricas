@@ -1,4 +1,6 @@
+pub mod africantive;
 pub mod annonce;
+pub mod bibliotheque_humaine;
 pub mod centre_culturel;
 pub mod codimoi;
 pub mod evenement;

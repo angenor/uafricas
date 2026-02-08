@@ -103,6 +103,9 @@ import {
   faUserTag,
   faLink,
   faUserSlash,
+  faMinus,
+  faAngleLeft,
+  faTableCellsLarge,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -225,6 +228,9 @@ library.add(
   faUserTag,
   faLink,
   faUserSlash,
+  faMinus,
+  faAngleLeft,
+  faTableCellsLarge,
   farCalendar,
   farClock,
   farHeart,

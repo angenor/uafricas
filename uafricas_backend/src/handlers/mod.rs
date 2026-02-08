@@ -1,5 +1,7 @@
+pub mod africantives;
 pub mod annonces;
 pub mod auth;
+pub mod bibliotheques_humaines;
 pub mod centres_culturels;
 pub mod codimoi;
 pub mod evenements;

@@ -1,5 +1,6 @@
 <template>
   <div class="min-h-screen flex flex-col">
+    <LayoutBoutonLateralGauche />
     <LayoutNavBar />
     <main class="flex-grow">
       <slot />

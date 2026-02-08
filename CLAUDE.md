@@ -60,10 +60,12 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 **State management** uses a single Pinia store (`app/stores/user.ts`) for user authentication state (Utilisateur interface with id, nom, prenom, email, roles, etat). Stores accessToken (in-memory) and refreshToken (localStorage). Getters: fullName, displayName, isAdmin, isValidated.
 
 **Composables** (`app/composables/`):
+- `useAfricantives` — API client pour les initiatives africaines (listerAfricantives avec filtres/pagination/tri, obtenirAfricantive, creerAfricantive multipart, listerDomaines, listerPays). Constantes DOMAINES_AFRICANTIVES/PAYS_AFRICAINS
 - `useAuth` — API client for authentication (register, login, logout, refreshAccessToken, initAuth, hasRole). Connects to backend `/api/auth/*` endpoints via $fetch. Exposes loading/error state and user getters.
 - `useAudioPlayer` — HTML5 audio controls for radio streaming (play/pause/volume/station switching)
 - `useAOS` — initializes Animate On Scroll (1000ms duration, once, ease-out-cubic)
 - `useBibliotheque` — API client pour la bibliothèque numérique (CRUD livres via $fetch, upload multipart, mapping accès DB↔frontend)
+- `useBibliothequeHumaine` — API client pour les bibliothèques humaines (listerBiblios avec filtres/pagination, obtenirBiblio, inscrireBiblioHumaine, listerSpecialites). Mapping BiblioHumaineAPI frontend
 - `useCentresCulturels` — API client pour les centres culturels (listerCentres, obtenirCentre, obtenirProgrammation). Inclut utilitaires de formatage dates/heures en français et mapping mode DB↔frontend
 - `useCodiMoi` — API client pour Codi-Moi (listerPosts avec filtres/pagination, obtenirPost, creerPost). Mapping CodiMoiPostAPI↔CodiMoiPost frontend
 - `useEvenements` — API client pour les événements (listerEvenements avec filtres/pagination/année, obtenirEvenement, creerEvenement multipart, inscrireEvenement). Mapping format DB↔frontend, calcul statut temporel, constantes TYPES_EVENEMENT/ANNEES/PAYS_AFRICAINS
@@ -95,6 +97,10 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `GET /api/livres/{id}` — Détail d'un livre (incrémente vues)
 - `POST /api/livres` — Création multipart (image couverture + PDF + métadonnées)
 - `DELETE /api/livres/{id}` — Suppression douce
+- `GET /api/bibliotheques-humaines?recherche=&specialite=&pays=&page=&par_page=` — Liste paginée des bibliothèques humaines (filtres spécialité/pays/recherche)
+- `GET /api/bibliotheques-humaines/{id}` — Détail d'une bibliothèque humaine
+- `POST /api/bibliotheques-humaines/inscription` — Inscription comme bibliothèque humaine (JWT requis, liste de spécialités)
+- `GET /api/bibliotheques-humaines/specialites` — Liste des spécialités disponibles
 - `GET /api/centres-culturels?recherche=` — Liste des centres culturels actifs (recherche optionnelle par nom/ville)
 - `GET /api/centres-culturels/{id}` — Détail d'un centre avec ses programmations
 - `GET /api/centres-culturels/{centre_id}/programmations/{id}` — Détail d'une programmation avec info centre
@@ -129,6 +135,11 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `GET /api/television/pays` — Liste des pays avec contenu TV (UNION chaînes + programmes)
 - `GET /api/television/categories` — Liste des catégories de chaînes TV disponibles
 - `GET /api/television/stats` — Statistiques TV (nombre chaînes, pays, programmes, en direct)
+- `GET /api/africantives?recherche=&domaine=&pays=&tri=&page=&par_page=` — Liste paginée des initiatives africaines (filtres domaine/pays/recherche/tri)
+- `GET /api/africantives/{id}` — Détail d'une initiative africaine
+- `POST /api/africantives` — Création multipart (image couverture + métadonnées, résolution domaine_id/pays_id, slug auto, JWT requis)
+- `GET /api/africantives/domaines` — Liste des domaines disponibles (avec africantives publiées)
+- `GET /api/africantives/pays` — Liste des pays avec des africantives publiées
 
 **Authentification** : JWT (HS256) access token (15 min) + refresh token (7 jours, SHA-256 hashé en BDD dans `iam.refresh_token`). Mot de passe hashé avec bcrypt (cost 12). Module `jwt.rs` pour génération/validation tokens.
 

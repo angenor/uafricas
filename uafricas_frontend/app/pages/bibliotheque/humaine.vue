@@ -97,8 +97,25 @@
         </p>
       </div>
 
+      <!-- Indicateur de chargement -->
+      <div v-if="chargement" class="flex justify-center py-16">
+        <span class="loading loading-spinner loading-lg text-custom-green"></span>
+      </div>
+
+      <!-- Message d'erreur -->
+      <div v-else-if="erreur" class="flex flex-col items-center justify-center py-16 text-center px-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+        </svg>
+        <p class="text-gray-600 text-lg mb-2">Impossible de charger les données</p>
+        <p class="text-gray-500 text-sm mb-4">{{ erreur }}</p>
+        <button @click="chargerDonnees" class="px-6 py-2 bg-custom-green text-white rounded-lg hover:bg-green-700 transition-colors">
+          Réessayer
+        </button>
+      </div>
+
       <!-- Grille des bibliothèques humaines -->
-      <div class="px-6 sm:px-10 pb-10">
+      <div v-else class="px-6 sm:px-10 pb-10">
         <TransitionGroup
           name="list"
           tag="div"
@@ -107,7 +124,7 @@
           <NuxtLink
             v-for="(biblio, index) in filteredBiblios"
             :key="biblio.id"
-            :to="'/profil/' + biblio.user_id"
+            :to="'/profil/' + biblio.userId"
             class="group relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2"
           >
             <!-- Background image -->
@@ -124,7 +141,7 @@
             <div class="absolute top-4 left-4 z-30">
               <img
                 class="w-24 h-24 rounded-full shadow-md border-4 border-white object-cover group-hover:scale-110 transition-all duration-500"
-                :src="biblio.photo_url"
+                :src="biblio.photoUrl || 'https://ui-avatars.com/api/?name=' + biblio.prenom + '+' + biblio.nom + '&background=228B22&color=fff&size=200'"
                 :alt="biblio.prenom + ' ' + biblio.nom"
               />
             </div>
@@ -189,15 +206,32 @@
             S'inscrire maintenant
           </button>
         </div>
+
+        <!-- Pagination -->
+        <div v-if="totalPages > 1" class="flex justify-center mt-8 gap-2">
+          <button
+            v-for="p in totalPages"
+            :key="p"
+            @click="changerPage(p)"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+            :class="[
+              currentPage === p
+                ? 'bg-custom-chocolat text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+            ]"
+          >
+            {{ p }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Popup Inscription (simplifié pour mock) -->
+  <!-- Popup Inscription -->
   <Transition name="modal-fade">
     <div v-if="showRegisterPopup" class="z-50 fixed inset-0 flex items-center justify-center">
       <div @click="showRegisterPopup = false" class="absolute inset-0 bg-black/60 backdrop-blur-xs"></div>
-      <div class="relative w-full max-w-md mx-4 bg-white rounded-xl shadow-2xl p-6">
+      <div class="relative w-full max-w-md mx-4 bg-white rounded-xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
         <div class="flex justify-center mb-4">
           <img
             class="h-16 w-16 object-contain"
@@ -206,15 +240,63 @@
           />
         </div>
         <h2 class="text-xl font-bold text-center mb-4">Devenir une Bibliothèque Humaine</h2>
-        <p class="text-gray-600 text-center mb-6">
-          Cette fonctionnalité nécessite une connexion au backend.
-          Pour l'instant, vous pouvez explorer les profils de démonstration.
-        </p>
+
+        <!-- Si non connecte -->
+        <template v-if="!userStore.utilisateur">
+          <p class="text-gray-600 text-center mb-6">
+            Vous devez être connecté pour vous inscrire comme Bibliothèque Humaine.
+          </p>
+          <NuxtLink
+            to="/login"
+            class="block w-full py-2 bg-custom-green text-white text-center rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Se connecter
+          </NuxtLink>
+        </template>
+
+        <!-- Si connecte -->
+        <template v-else>
+          <p class="text-gray-600 text-center mb-4">
+            Sélectionnez vos spécialités pour partager vos connaissances.
+          </p>
+
+          <!-- Liste des specialites -->
+          <div class="space-y-2 mb-6">
+            <label
+              v-for="spec in specialitesDisponibles"
+              :key="spec.id"
+              class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+            >
+              <input
+                type="checkbox"
+                :value="spec.nom"
+                v-model="selectedSpecialites"
+                class="checkbox checkbox-sm checkbox-success"
+              />
+              <span class="text-sm text-gray-700">{{ spec.nom }}</span>
+            </label>
+          </div>
+
+          <!-- Erreur d'inscription -->
+          <p v-if="inscriptionErreur" class="text-red-500 text-sm text-center mb-3">
+            {{ inscriptionErreur }}
+          </p>
+
+          <button
+            @click="soumettrInscription"
+            :disabled="selectedSpecialites.length === 0 || inscriptionEnCours"
+            class="w-full py-2 bg-custom-green text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <span v-if="inscriptionEnCours" class="loading loading-spinner loading-sm"></span>
+            {{ inscriptionEnCours ? 'Inscription en cours...' : 'Valider mon inscription' }}
+          </button>
+        </template>
+
         <button
           @click="showRegisterPopup = false"
-          class="w-full py-2 bg-custom-green text-white rounded-lg hover:bg-green-700 transition-colors"
+          class="w-full py-2 mt-2 text-gray-500 hover:text-gray-700 transition-colors text-sm"
         >
-          Compris
+          Fermer
         </button>
       </div>
     </div>
@@ -222,7 +304,8 @@
 </template>
 
 <script setup lang="ts">
-import { biblioHumaines, filterTypes } from '~/mocks/bibliotheques'
+import { useUserStore } from '~/stores/user'
+import type { BiblioHumaineAPI, SpecialiteAPI } from '~/composables/useBibliothequeHumaine'
 
 useHead({
   title: 'Bibliothèques Humaines - UAfricas',
@@ -233,28 +316,94 @@ useHead({
 
 useAOS()
 
+const userStore = useUserStore()
+const { chargement, erreur, listerBiblios, inscrireBiblioHumaine, listerSpecialites } = useBibliothequeHumaine()
+
 const searchQuery = ref('')
 const selectedFilter = ref('Tous')
 const showRegisterPopup = ref(false)
+const biblios = ref<BiblioHumaineAPI[]>([])
+const filterTypes = ref<string[]>(['Tous'])
+const specialitesDisponibles = ref<SpecialiteAPI[]>([])
+const selectedSpecialites = ref<string[]>([])
+const inscriptionErreur = ref<string | null>(null)
+const inscriptionEnCours = ref(false)
+const currentPage = ref(1)
+const totalPages = ref(1)
+
+// Debounce pour la recherche
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+const chargerDonnees = async () => {
+  const resultat = await listerBiblios({
+    recherche: searchQuery.value || undefined,
+    specialite: selectedFilter.value !== 'Tous' ? selectedFilter.value : undefined,
+    page: currentPage.value,
+    par_page: 12,
+  })
+
+  if (resultat) {
+    biblios.value = resultat.bibliotheques
+    totalPages.value = resultat.total_pages
+  }
+}
+
+const chargerSpecialites = async () => {
+  const specs = await listerSpecialites()
+  if (specs) {
+    specialitesDisponibles.value = specs
+    filterTypes.value = ['Tous', ...specs.map(s => s.nom)]
+  }
+}
 
 const filteredBiblios = computed(() => {
-  let biblios = biblioHumaines
+  return biblios.value
+})
 
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    biblios = biblios.filter(b =>
-      b.prenom.toLowerCase().includes(query) ||
-      b.nom.toLowerCase().includes(query) ||
-      b.specialite?.toLowerCase().includes(query) ||
-      b.fonction?.toLowerCase().includes(query)
-    )
+const changerPage = (page: number) => {
+  currentPage.value = page
+  chargerDonnees()
+}
+
+// Recherche avec debounce
+watch(searchQuery, () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    chargerDonnees()
+  }, 400)
+})
+
+// Changement de filtre
+watch(selectedFilter, () => {
+  currentPage.value = 1
+  chargerDonnees()
+})
+
+const soumettrInscription = async () => {
+  if (selectedSpecialites.value.length === 0) return
+
+  inscriptionEnCours.value = true
+  inscriptionErreur.value = null
+
+  const resultat = await inscrireBiblioHumaine({
+    specialites: selectedSpecialites.value,
+  })
+
+  inscriptionEnCours.value = false
+
+  if (resultat) {
+    showRegisterPopup.value = false
+    selectedSpecialites.value = []
+    chargerDonnees()
+  } else {
+    inscriptionErreur.value = erreur.value || 'Erreur lors de l\'inscription'
   }
+}
 
-  if (selectedFilter.value && selectedFilter.value !== 'Tous') {
-    biblios = biblios.filter(b => b.specialite === selectedFilter.value)
-  }
-
-  return biblios
+// Chargement initial
+onMounted(async () => {
+  await Promise.all([chargerDonnees(), chargerSpecialites()])
 })
 </script>
 

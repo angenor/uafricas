@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{annonces, auth, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, sabbatiques, stations_radio, television};
+use crate::handlers::{africantives, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, sabbatiques, stations_radio, television};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -24,6 +24,14 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("", web::post().to(livres::creer_livre))
                     .route("/{id}", web::get().to(livres::obtenir_livre))
                     .route("/{id}", web::delete().to(livres::supprimer_livre)),
+            )
+            // Routes des bibliotheques humaines
+            .service(
+                web::scope("/bibliotheques-humaines")
+                    .route("", web::get().to(bibliotheques_humaines::lister_biblios))
+                    .route("/specialites", web::get().to(bibliotheques_humaines::lister_specialites))
+                    .route("/inscription", web::post().to(bibliotheques_humaines::inscrire_biblio))
+                    .route("/{id}", web::get().to(bibliotheques_humaines::obtenir_biblio)),
             )
             // Routes des centres culturels
             .service(
@@ -104,6 +112,15 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("", web::get().to(fiches_pays::lister_fiches))
                     .route("/regions", web::get().to(fiches_pays::lister_regions))
                     .route("/{id}", web::get().to(fiches_pays::obtenir_fiche)),
+            )
+            // Routes des africantives (initiatives africaines)
+            .service(
+                web::scope("/africantives")
+                    .route("", web::get().to(africantives::lister_africantives))
+                    .route("", web::post().to(africantives::creer_africantive))
+                    .route("/domaines", web::get().to(africantives::lister_domaines))
+                    .route("/pays", web::get().to(africantives::lister_pays))
+                    .route("/{id}", web::get().to(africantives::obtenir_africantive)),
             )
             // Routes de la télévision
             .service(
