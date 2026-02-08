@@ -23,4 +23,7 @@ indique brievement a @claude que lorsque lorsqu'on lui demande de d'implémenter
 
 developpe le backend de ma page @uafricas_frontend/app/pages/bibliotheque/numerique.vue et interconnecte le front office. tu utiliseras Plan lorsque tu sera pret a planifier  
 
-  agent-browser --headed
+agent-browser --headed
+
+tuer `agent-browser --headed`
+pkill -f "chromium|chrome" 2>/dev/null; pkill -f "playwright" 2>/dev/null; echo "Processus navigateur terminés"
