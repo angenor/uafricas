@@ -72,6 +72,7 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 - `useMarcheAfricain` — API client pour le marché africain (listerAnnonces avec filtres/pagination/tri, obtenirAnnonce). Inclut constantes (CATEGORIES, TYPES_ECHANGE, DEVISES), utilitaires de formatage (prix, dates) et mapping type_operation DB↔frontend
 - `useStationsRadio` — API client pour les stations radio (listerStations avec filtres/pagination, obtenirStation, listerPays, listerGenres, creerStation). Mapping StationRadioAPI↔RadioStation frontend
 - `useOpportuniteAfrique` — API client pour les fiches pays (listerFiches avec filtres/pagination/region, obtenirFiche par UUID/code ISO, listerRegions). Formatage dates en français, interfaces FichePaysAPI/FichePaysDetailAPI
+- `useTelevision` — API client pour la télévision (listerChaines avec filtres/pagination, obtenirChaine, listerProgrammesVedettes, obtenirProgrammeVedette, listerPays, listerCategories, obtenirStats, creerChaine, creerProgrammeVedette). Mapping ChaineTvAPI↔TvChannel et ProgrammeTeleAPI↔TvProgram frontend
 
 **Mock data layer** (`app/mocks/`, 22 files): Fichiers TypeScript de données fictives avec interfaces, tableaux et fonctions async simulant la latence réseau. Lors de l'intégration backend, remplacer les imports mock par des appels API.
 
@@ -119,6 +120,15 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `GET /api/stations-radio/pays` — Liste des pays ayant des stations
 - `GET /api/stations-radio/genres` — Liste des genres musicaux disponibles
 - `POST /api/stations-radio` — Création d'une station (JWT requis, résolution pays_id par nom)
+- `GET /api/television/chaines?recherche=&categorie=&pays=&page=&par_page=` — Liste paginée des chaînes TV (filtres catégorie/pays/recherche)
+- `GET /api/television/chaines/{id}` — Détail d'une chaîne TV
+- `POST /api/television/chaines` — Création d'une chaîne TV (JWT requis, résolution pays_id par nom)
+- `GET /api/television/programmes-vedettes?recherche=&pays=&page=&par_page=` — Liste paginée des programmes TV à la une (table programme_radio_tele WHERE type='tele')
+- `GET /api/television/programmes-vedettes/{id}` — Détail d'un programme TV vedette
+- `POST /api/television/programmes-vedettes` — Création d'un programme TV (JWT requis)
+- `GET /api/television/pays` — Liste des pays avec contenu TV (UNION chaînes + programmes)
+- `GET /api/television/categories` — Liste des catégories de chaînes TV disponibles
+- `GET /api/television/stats` — Statistiques TV (nombre chaînes, pays, programmes, en direct)
 
 **Authentification** : JWT (HS256) access token (15 min) + refresh token (7 jours, SHA-256 hashé en BDD dans `iam.refresh_token`). Mot de passe hashé avec bcrypt (cost 12). Module `jwt.rs` pour génération/validation tokens.
 

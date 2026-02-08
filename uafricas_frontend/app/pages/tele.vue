@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { telePrograms, teleStats, tvChannels, defaultCoverVideoUrl, getUniqueTvCountries } from '~/mocks/tele'
+import type { TvChannel, TvProgram, TvStat } from '~/composables/useTelevision'
+import { defaultCoverVideoUrl } from '~/mocks/tele'
+
+const { listerChaines, listerProgrammesVedettes, obtenirStats, listerPays, listerCategories, chargement } = useTelevision()
 
 useHead({
   title: 'Télévision Africaine | UAfricas',
@@ -12,57 +15,87 @@ useHead({
 const videoRef = ref<HTMLVideoElement | null>(null)
 const audioMuted = ref(true)
 const currentProgramIndex = ref(0)
-const currentTime = ref(0)
 const isMobile = ref(false)
 
+// Données chargées depuis l'API
+const chaines = ref<TvChannel[]>([])
+const programmesVedettes = ref<TvProgram[]>([])
+const stats = ref<TvStat[]>([])
+const paysDisponibles = ref<string[]>([])
+const categoriesDisponibles = ref<string[]>([])
+
+// Filtres
+const filtrePays = ref('Tous les pays')
+const filtreCategorie = ref('Toutes les catégories')
+const rechercheTexte = ref('')
+
 // Computed
-const currentProgram = computed(() => telePrograms[currentProgramIndex.value])
-const availableCountries = computed(() => getUniqueTvCountries())
+const currentProgram = computed(() => programmesVedettes.value[currentProgramIndex.value])
+const heroVideoUrl = computed(() => {
+  if (currentProgram.value?.videoUrl) return currentProgram.value.videoUrl
+  return defaultCoverVideoUrl
+})
+
+const chainesFiltrees = computed(() => {
+  let result = chaines.value
+
+  if (filtrePays.value && filtrePays.value !== 'Tous les pays') {
+    result = result.filter(c => c.country === filtrePays.value)
+  }
+  if (filtreCategorie.value && filtreCategorie.value !== 'Toutes les catégories') {
+    result = result.filter(c => c.category === filtreCategorie.value)
+  }
+  if (rechercheTexte.value.trim()) {
+    const terme = rechercheTexte.value.toLowerCase().trim()
+    result = result.filter(c =>
+      c.name.toLowerCase().includes(terme) ||
+      c.description.toLowerCase().includes(terme)
+    )
+  }
+
+  return result
+})
 
 // Methods
 const toggleMute = () => {
   if (videoRef.value) {
     videoRef.value.muted = !videoRef.value.muted
     audioMuted.value = videoRef.value.muted
-
-    if (!currentProgram.value) {
-      videoRef.value.currentTime = 0
-      currentProgramIndex.value = 0
-    }
   }
 }
 
-const updateTime = () => {
-  if (videoRef.value) {
-    currentTime.value = videoRef.value.currentTime
-
-    // Déterminer le programme actuel basé sur le temps
-    if (currentTime.value < 20) {
-      currentProgramIndex.value = 0
-    } else if (currentTime.value >= 20 && currentTime.value < 38) {
-      currentProgramIndex.value = 1
-    } else if (currentTime.value >= 38 && currentTime.value < 53) {
-      currentProgramIndex.value = 2
-    } else {
-      currentProgramIndex.value = 3
-    }
-  }
-}
-
-const selectProgram = (program: typeof telePrograms[0]) => {
-  if (videoRef.value) {
-    currentProgramIndex.value = telePrograms.findIndex(p => p.id === program.id)
-    videoRef.value.currentTime = program.temp - program.duree
+const selectProgram = (index: number) => {
+  currentProgramIndex.value = index
+  if (videoRef.value && programmesVedettes.value[index]?.videoUrl) {
+    videoRef.value.src = programmesVedettes.value[index].videoUrl
+    videoRef.value.play()
     if (videoRef.value.muted) {
       toggleMute()
     }
   }
 }
 
+const chargerDonnees = async () => {
+  const [chainesResult, programmesResult, statsResult, paysResult, categoriesResult] = await Promise.all([
+    listerChaines({ par_page: 100 }),
+    listerProgrammesVedettes({ par_page: 10 }),
+    obtenirStats(),
+    listerPays(),
+    listerCategories(),
+  ])
+
+  if (chainesResult) chaines.value = chainesResult.chaines
+  if (programmesResult) programmesVedettes.value = programmesResult.programmes
+  if (statsResult) stats.value = statsResult
+  if (paysResult) paysDisponibles.value = paysResult
+  if (categoriesResult) categoriesDisponibles.value = categoriesResult
+}
+
 // Lifecycle
 onMounted(() => {
   isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   currentProgramIndex.value = 0
+  chargerDonnees()
 })
 </script>
 
@@ -79,9 +112,8 @@ onMounted(() => {
             loop
             muted
             preload="none"
-            @timeupdate="updateTime"
           >
-            <source :src="defaultCoverVideoUrl" type="video/mp4" />
+            <source :src="heroVideoUrl" type="video/mp4" />
           </video>
         </div>
       </div>
@@ -114,14 +146,14 @@ onMounted(() => {
         </button>
 
         <!-- Contenu inférieur -->
-        <div v-if="!isMobile" class="absolute bottom-14 left-10 w-120 text-white">
+        <div v-if="!isMobile && programmesVedettes.length > 0" class="absolute bottom-14 left-10 w-120 text-white">
           <a
-            v-if="currentProgram"
+            v-if="currentProgram?.videoUrl"
             target="_blank"
-            :href="currentProgram.lien"
+            :href="currentProgram.videoUrl"
             class="rounded-full ml-5 mb-2 text-base inline-flex px-4 border border-yellow-400 bg-yellow-400/10 text-yellow-400"
           >
-            <div>Voir cette initiative</div>
+            <div>Voir ce programme</div>
             <div class="pl-2">
               <svg class="h-7 w-7" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -130,22 +162,22 @@ onMounted(() => {
             </div>
           </a>
 
-          <!-- Timeline des programmes -->
+          <!-- Timeline des programmes vedettes -->
           <div class="flex p-3 uppercase">
             <div
-              v-for="program in telePrograms"
-              :key="program.id"
-              @click="selectProgram(program)"
-              :class="currentProgramIndex === telePrograms.findIndex(p => p.id === program.id) ? 'bg-yellow-400/30 border border-yellow-400' : ''"
+              v-for="(programme, index) in programmesVedettes"
+              :key="programme.id"
+              @click="selectProgram(index)"
+              :class="currentProgramIndex === index ? 'bg-yellow-400/30 border border-yellow-400' : ''"
               class="relative cursor-pointer ml-2 p-1 rounded-md"
             >
               <img
                 class="object-cover h-16 w-24 z-0 rounded-md shadow-md overflow-hidden"
-                :src="program.banniere"
-                :alt="program.titre"
+                :src="programme.banner"
+                :alt="programme.title"
               />
               <button
-                v-if="currentProgramIndex === telePrograms.findIndex(p => p.id === program.id)"
+                v-if="currentProgramIndex === index"
                 class="rounded-full h-7 w-7 flex absolute top-7 left-11 z-10"
               >
                 <div class="w-1 h-4 bg-yellow-400 rounded-md"></div>
@@ -155,13 +187,13 @@ onMounted(() => {
           </div>
 
           <div class="sm:text-2xl sm:w-full w-1/2 text-xl uppercase">
-            {{ currentProgram?.titre }}
+            {{ currentProgram?.title }}
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Section Chaînes TV (pour mobile ou en dessous de la vidéo) -->
+    <!-- Section Chaînes TV -->
     <div class="bg-gray-900 px-4 py-12">
       <div class="max-w-6xl mx-auto">
         <h2 class="text-3xl font-bold text-white mb-8 text-center">
@@ -169,19 +201,48 @@ onMounted(() => {
         </h2>
 
         <!-- Statistiques -->
-        <div class="bg-gradient-to-r from-custom-green to-custom-chocolat rounded-2xl p-8 text-white mb-12">
+        <div v-if="stats.length > 0" class="bg-gradient-to-r from-custom-green to-custom-chocolat rounded-2xl p-8 text-white mb-12">
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div v-for="stat in teleStats" :key="stat.label" class="p-4">
+            <div v-for="stat in stats" :key="stat.label" class="p-4">
               <div class="text-4xl font-bold mb-2">{{ stat.value }}</div>
               <div class="text-sm opacity-80">{{ stat.label }}</div>
             </div>
           </div>
         </div>
 
+        <!-- Filtres -->
+        <div class="flex flex-wrap gap-4 mb-8">
+          <input
+            v-model="rechercheTexte"
+            type="text"
+            placeholder="Rechercher une chaîne..."
+            class="bg-gray-800 text-white rounded-lg px-4 py-2 flex-1 min-w-48 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          />
+          <select
+            v-model="filtrePays"
+            class="bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          >
+            <option>Tous les pays</option>
+            <option v-for="pays in paysDisponibles" :key="pays" :value="pays">{{ pays }}</option>
+          </select>
+          <select
+            v-model="filtreCategorie"
+            class="bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          >
+            <option>Toutes les catégories</option>
+            <option v-for="cat in categoriesDisponibles" :key="cat" :value="cat">{{ cat }}</option>
+          </select>
+        </div>
+
+        <!-- Loading -->
+        <div v-if="chargement" class="flex justify-center py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400"></div>
+        </div>
+
         <!-- Grille des chaînes -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div v-else-if="chainesFiltrees.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div
-            v-for="channel in tvChannels"
+            v-for="channel in chainesFiltrees"
             :key="channel.id"
             class="bg-gray-800 rounded-xl overflow-hidden transform transition-all hover:scale-105 cursor-pointer"
           >
@@ -192,7 +253,7 @@ onMounted(() => {
                 class="w-full h-full object-cover"
               />
               <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <div class="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
+                <div v-if="channel.isLive" class="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
                   <span class="text-white text-xs font-bold">LIVE</span>
                 </div>
               </div>
@@ -206,6 +267,12 @@ onMounted(() => {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Aucun résultat -->
+        <div v-else-if="!chargement" class="text-center py-12">
+          <p class="text-gray-400 text-lg">Aucune chaîne trouvée</p>
+          <p class="text-gray-500 text-sm mt-2">Essayez de modifier vos filtres de recherche</p>
         </div>
 
         <!-- Message pour mobile -->

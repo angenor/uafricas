@@ -259,3 +259,12 @@ ALTER TABLE country_profile.fiche_pays
 ALTER TABLE country_profile.lien_interethnique
     ADD CONSTRAINT fk_lien_interethno_pays_lie
     FOREIGN KEY (pays_lie_id) REFERENCES shared.pays(id) ON DELETE SET NULL;
+
+-- ── chaine_tv → shared & iam ──────────────────────────────────────────
+ALTER TABLE media_content.chaine_tv
+    ADD CONSTRAINT fk_chaine_tv_pays
+    FOREIGN KEY (pays_id) REFERENCES shared.pays(id) ON DELETE SET NULL;
+
+ALTER TABLE media_content.chaine_tv
+    ADD CONSTRAINT fk_chaine_tv_cree_par
+    FOREIGN KEY (cree_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;

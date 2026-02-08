@@ -11,3 +11,4 @@ pub mod livres;
 pub mod moocs;
 pub mod sabbatiques;
 pub mod stations_radio;
+pub mod television;

@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{annonces, auth, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, sabbatiques, stations_radio};
+use crate::handlers::{annonces, auth, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, sabbatiques, stations_radio, television};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -104,6 +104,19 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("", web::get().to(fiches_pays::lister_fiches))
                     .route("/regions", web::get().to(fiches_pays::lister_regions))
                     .route("/{id}", web::get().to(fiches_pays::obtenir_fiche)),
+            )
+            // Routes de la télévision
+            .service(
+                web::scope("/television")
+                    .route("/chaines", web::get().to(television::lister_chaines))
+                    .route("/chaines", web::post().to(television::creer_chaine))
+                    .route("/chaines/{id}", web::get().to(television::obtenir_chaine))
+                    .route("/programmes-vedettes", web::get().to(television::lister_programmes_vedettes))
+                    .route("/programmes-vedettes", web::post().to(television::creer_programme_vedette))
+                    .route("/programmes-vedettes/{id}", web::get().to(television::obtenir_programme_vedette))
+                    .route("/pays", web::get().to(television::lister_pays_television))
+                    .route("/categories", web::get().to(television::lister_categories_television))
+                    .route("/stats", web::get().to(television::obtenir_stats_television)),
             ),
     );
 }
