@@ -5,16 +5,14 @@
   >
     <div
       @click="state.show = !state.show"
-      class="rounded-full hover:text-indigo-800 relative h-6 bg-gray-500 bg-opacity-40 -mt-4 cursor-pointer pt-1 transition-all duration-300 bottom-2"
+      class="rounded-full hover:text-indigo-800 bg-gray-500 bg-opacity-40 -mt-4 cursor-pointer transition-all duration-300 flex items-center justify-center"
       :class="[
-        state.show ? 'ml-6 w-6 rotate-0 p-6' : 'ml-20 w-10 rotate-180 p-10',
+        state.show ? 'ml-6 w-12 h-12' : 'ml-20 w-14 h-14 rotate-180',
       ]">
-      <div v-if="state.show">
-        <font-awesome-icon icon="minus" class="relative -left-1 text-white" />
-      </div>
-      <div v-else class="relative right-8">
-        <font-awesome-icon icon="angle-left" class="text-white h-10 w-10" />
-      </div>
+      <font-awesome-icon
+        :icon="state.show ? 'minus' : 'angle-left'"
+        class="text-white text-xl"
+      />
     </div>
     <!-- ATTOUT -->
     <div
