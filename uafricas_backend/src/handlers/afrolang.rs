@@ -1424,6 +1424,136 @@ pub async fn generer_token_session(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// Phase 4 — Tableau blanc collaboratif
+// ══════════════════════════════════════════════════════════════════════════
+
+/// GET /api/afrolang/sessions/{id}/tableau-blanc — Obtenir le snapshot du tableau blanc
+pub async fn obtenir_tableau_blanc(
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let session_id = chemin.into_inner();
+
+    // Verifier que la session existe
+    let existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM afrolang.session WHERE id = $1)",
+    )
+    .bind(session_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    if !existe {
+        return Err(ApiErreur::NonTrouve(format!("Session {} non trouvee", session_id)));
+    }
+
+    let row = sqlx::query_as::<_, (serde_json::Value, i32)>(
+        "SELECT donnees, version FROM afrolang.tableau_blanc WHERE session_id = $1",
+    )
+    .bind(session_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    match row {
+        Some((donnees, version)) => Ok(HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            data: Some(serde_json::json!({ "donnees": donnees, "version": version })),
+            error: None,
+        })),
+        None => Ok(HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            data: Some(serde_json::json!({ "donnees": {}, "version": 0 })),
+            error: None,
+        })),
+    }
+}
+
+/// PUT /api/afrolang/sessions/{id}/tableau-blanc — Sauvegarder le snapshot
+pub async fn sauvegarder_tableau_blanc(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<serde_json::Value>,
+) -> Result<HttpResponse, ApiErreur> {
+    let session_id = chemin.into_inner();
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Token invalide ou manquant".into()))?;
+
+    // Verifier que la session existe et que l'utilisateur est moderateur
+    let session = sqlx::query_as::<_, SessionRow>(&format!(
+        "SELECT {} FROM afrolang.session ses WHERE ses.id = $1",
+        SESSION_COLONNES
+    ))
+    .bind(session_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve(format!("Session {} non trouvee", session_id)))?;
+
+    if session.moderateur_id != Some(utilisateur_id) {
+        return Err(ApiErreur::NonAutorise(
+            "Seul le moderateur peut sauvegarder le tableau blanc".into(),
+        ));
+    }
+
+    // UPSERT dans afrolang.tableau_blanc
+    sqlx::query(
+        "INSERT INTO afrolang.tableau_blanc (session_id, donnees, version)
+         VALUES ($1, $2, 1)
+         ON CONFLICT (session_id)
+         DO UPDATE SET donnees = $2, version = afrolang.tableau_blanc.version + 1, updated_at = NOW()",
+    )
+    .bind(session_id)
+    .bind(&body.0)
+    .execute(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some("ok"),
+        error: None,
+    }))
+}
+
+/// DELETE /api/afrolang/sessions/{id}/tableau-blanc — Effacer le tableau blanc
+pub async fn effacer_tableau_blanc(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let session_id = chemin.into_inner();
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Token invalide ou manquant".into()))?;
+
+    // Verifier que la session existe et que l'utilisateur est moderateur
+    let session = sqlx::query_as::<_, SessionRow>(&format!(
+        "SELECT {} FROM afrolang.session ses WHERE ses.id = $1",
+        SESSION_COLONNES
+    ))
+    .bind(session_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve(format!("Session {} non trouvee", session_id)))?;
+
+    if session.moderateur_id != Some(utilisateur_id) {
+        return Err(ApiErreur::NonAutorise(
+            "Seul le moderateur peut effacer le tableau blanc".into(),
+        ));
+    }
+
+    sqlx::query(
+        "UPDATE afrolang.tableau_blanc SET donnees = '{}', version = version + 1, updated_at = NOW() WHERE session_id = $1",
+    )
+    .bind(session_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some("ok"),
+        error: None,
+    }))
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // 1.8 — Handlers utilitaires
 // ══════════════════════════════════════════════════════════════════════════
 

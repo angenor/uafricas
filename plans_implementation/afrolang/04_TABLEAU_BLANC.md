@@ -1,8 +1,8 @@
 # Phase 4 — Tableau blanc interactif
 
-> **Statut** : `BLOQUE par Phase 3`
-> **Progression** : 0/9 taches
-> **Bloque par** : [Phase 3 — WebRTC Signaling](./03_WEBRTC_SIGNALING.md) (visioconference fonctionnelle requise)
+> **Statut** : `TERMINE`
+> **Progression** : 9/9 taches
+> **Bloque par** : ~~Phase 3~~ (terminee)
 > **Debloque** : Rien (derniere phase)
 
 ---
@@ -12,10 +12,10 @@
 ```
 ✅ = termine    🔄 = en cours    ⬜ = a faire    🔒 = bloque
 
-[⬜] Phase 1 — Backend REST         (doit etre terminee)
-[⬜] Phase 2 — Frontend UI          (doit etre terminee)
-[⬜] Phase 3 — WebRTC Signaling     (doit etre terminee)
-[🔒] Phase 4 — Tableau blanc        ◄── VOUS ETES ICI
+[✅] Phase 1 — Backend REST         (terminee)
+[✅] Phase 2 — Frontend UI          (terminee)
+[✅] Phase 3 — WebRTC Signaling     (terminee)
+[✅] Phase 4 — Tableau blanc        ◄── TERMINE
 ```
 
 **Ce que les Phases precedentes fournissent :**
@@ -39,15 +39,15 @@
 
 ## Progression
 
-- [ ] **4.1** Creer la mini-app tldraw (package `whiteboard/`)
-- [ ] **4.2** Builder et servir la mini-app en static
-- [ ] **4.3** Creer handler `obtenir_tableau_blanc` dans `handlers/afrolang.rs` (enrichit Phase 1)
-- [ ] **4.4** Creer handler `sauvegarder_tableau_blanc` dans `handlers/afrolang.rs`
-- [ ] **4.5** Creer handler `effacer_tableau_blanc` dans `handlers/afrolang.rs`
-- [ ] **4.6** Ajouter routes tableau blanc dans `routes.rs` (enrichit Phase 1)
-- [ ] **4.7** Creer `app/components/afrolang/AfrolangWhiteboard.vue`
-- [ ] **4.8** Modifier `AfrolangRoom.vue` + `AfrolangControls.vue` + `AfrolangSidebar.vue` (enrichit Phase 3)
-- [ ] **4.9** Enrichir `useAfrolang.ts` avec fonctions tableau blanc (enrichit Phase 2)
+- [x] **4.1** Creer la mini-app tldraw (package `whiteboard/`)
+- [x] **4.2** Builder et servir la mini-app en static
+- [x] **4.3** Creer handler `obtenir_tableau_blanc` dans `handlers/afrolang.rs` (enrichit Phase 1)
+- [x] **4.4** Creer handler `sauvegarder_tableau_blanc` dans `handlers/afrolang.rs`
+- [x] **4.5** Creer handler `effacer_tableau_blanc` dans `handlers/afrolang.rs`
+- [x] **4.6** Ajouter routes tableau blanc dans `routes.rs` (enrichit Phase 1)
+- [x] **4.7** Creer `app/components/afrolang/AfrolangWhiteboard.vue`
+- [x] **4.8** Modifier `AfrolangRoom.vue` + `AfrolangControls.vue` + `AfrolangSidebar.vue` (enrichit Phase 3)
+- [x] **4.9** Enrichir `useAfrolang.ts` avec fonctions tableau blanc (enrichit Phase 2)
 
 ---
 

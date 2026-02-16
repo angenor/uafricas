@@ -46,11 +46,14 @@
         <font-awesome-icon :icon="['fas', 'display']" class="w-5 h-5" />
       </button>
 
-      <!-- Tableau blanc (desactive en Phase 3, sera active en Phase 4) -->
+      <!-- Tableau blanc -->
       <button
-        class="w-12 h-12 rounded-full flex items-center justify-center bg-gray-700 text-gray-500 cursor-not-allowed opacity-50"
-        disabled
-        title="Tableau blanc (bientôt disponible)"
+        class="w-12 h-12 rounded-full flex items-center justify-center transition-all"
+        :class="tableauBlancOuvert
+          ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+          : 'bg-gray-700 hover:bg-gray-600 text-white'"
+        :disabled="!connected"
+        title="Tableau blanc"
         @click="$emit('toggleTableauBlanc')"
       >
         <font-awesome-icon :icon="['fas', 'chalkboard-user']" class="w-5 h-5" />
@@ -87,6 +90,7 @@ defineProps<{
   microActif: boolean
   cameraActive: boolean
   ecranPartage: boolean
+  tableauBlancOuvert: boolean
   estModerateur: boolean
   connected: boolean
 }>()

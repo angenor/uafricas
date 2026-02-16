@@ -104,6 +104,12 @@ export interface TokenResponse {
   is_moderator: boolean
 }
 
+/** Donnees du tableau blanc (Phase 4) */
+export interface TableauBlancData {
+  donnees: Record<string, any>
+  version: number
+}
+
 /** Stats globales Afrolang */
 export interface AfrolangStats {
   total_salles: number
@@ -694,6 +700,51 @@ export const useAfrolang = () => {
     }
   }
 
+  // ── Phase 4 : Tableau blanc ──
+
+  /** Obtenir le snapshot du tableau blanc d'une session */
+  const obtenirTableauBlanc = async (sessionId: string): Promise<TableauBlancData> => {
+    try {
+      const reponse = await $fetch<ApiResponse<TableauBlancData>>(
+        `${apiBase}/api/afrolang/sessions/${sessionId}/tableau-blanc`,
+        { headers: { Authorization: `Bearer ${userStore.accessToken}` } },
+      )
+      if (!reponse.success || !reponse.data) return { donnees: {}, version: 0 }
+      return reponse.data
+    }
+    catch (e: any) {
+      console.error('Erreur obtenirTableauBlanc:', e)
+      return { donnees: {}, version: 0 }
+    }
+  }
+
+  /** Sauvegarder le snapshot du tableau blanc */
+  const sauvegarderTableauBlanc = async (sessionId: string, donnees: any): Promise<void> => {
+    try {
+      await $fetch(`${apiBase}/api/afrolang/sessions/${sessionId}/tableau-blanc`, {
+        method: 'PUT',
+        body: donnees,
+        headers: { Authorization: `Bearer ${userStore.accessToken}` },
+      })
+    }
+    catch (e: any) {
+      console.error('Erreur sauvegarderTableauBlanc:', e)
+    }
+  }
+
+  /** Effacer le tableau blanc */
+  const effacerTableauBlanc = async (sessionId: string): Promise<void> => {
+    try {
+      await $fetch(`${apiBase}/api/afrolang/sessions/${sessionId}/tableau-blanc`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${userStore.accessToken}` },
+      })
+    }
+    catch (e: any) {
+      console.error('Erreur effacerTableauBlanc:', e)
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -709,6 +760,9 @@ export const useAfrolang = () => {
     rejoindreSession,
     quitterSession,
     genererTokenSession,
+    obtenirTableauBlanc,
+    sauvegarderTableauBlanc,
+    effacerTableauBlanc,
     obtenirStats,
     listerLangues,
   }

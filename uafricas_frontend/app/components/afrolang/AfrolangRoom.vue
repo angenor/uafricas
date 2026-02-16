@@ -47,24 +47,38 @@
         </button>
       </div>
 
-      <!-- Grille video -->
-      <AfrolangVideoGrid
-        :participants="allParticipants"
-        :dominant-speaker="dominantSpeaker"
-        class="flex-1"
-      />
+      <!-- Zone principale : video + tableau blanc en split-screen -->
+      <div class="flex-1 flex min-h-0">
+        <!-- Grille video -->
+        <AfrolangVideoGrid
+          :participants="allParticipants"
+          :dominant-speaker="dominantSpeaker"
+          class="flex-1"
+        />
+
+        <!-- Tableau blanc (split-screen droite) -->
+        <AfrolangWhiteboard
+          v-if="tableauBlancOuvert && session.tableau_blanc_actif"
+          :session-id="session.id"
+          :est-moderateur="estModerateur"
+          :room="room"
+          class="w-1/2 border-l border-gray-700"
+          @fermer="tableauBlancOuvert = false"
+        />
+      </div>
 
       <!-- Controles -->
       <AfrolangControls
         :micro-actif="microActif"
         :camera-active="cameraActive"
         :ecran-partage="ecranPartage"
+        :tableau-blanc-ouvert="tableauBlancOuvert"
         :est-moderateur="estModerateur"
         :connected="connectionState === 'connected'"
         @toggle-micro="toggleMicro"
         @toggle-camera="toggleCamera"
         @toggle-ecran="toggleEcranPartage"
-        @toggle-tableau-blanc="() => {}"
+        @toggle-tableau-blanc="toggleTableauBlanc"
         @quitter="handleQuitter"
         @terminer="handleTerminer"
       />
@@ -125,6 +139,7 @@ const room = shallowRef<Room | null>(null)
 const connectionState = ref<string>('connecting')
 const wasConnected = ref(false)
 const sidebarOuverte = ref(false)
+const tableauBlancOuvert = ref(false)
 const microActif = ref(true)
 const cameraActive = ref(true)
 const ecranPartage = ref(false)
@@ -246,6 +261,10 @@ const toggleEcranPartage = async () => {
     console.error('Erreur partage ecran:', e)
     ecranPartage.value = false
   }
+}
+
+const toggleTableauBlanc = () => {
+  tableauBlancOuvert.value = !tableauBlancOuvert.value
 }
 
 const handleQuitter = () => {

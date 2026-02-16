@@ -76,7 +76,7 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 - `useOpportuniteAfrique` — API client pour les fiches pays (listerFiches avec filtres/pagination/region, obtenirFiche par UUID/code ISO, listerRegions). Formatage dates en français, interfaces FichePaysAPI/FichePaysDetailAPI
 - `useProjets` — API client pour les projets de développement (listerProjets avec filtres/pagination/tri, obtenirProjet, creerProjet multipart, obtenirStatistiques). Constantes PAYS_PROJETS/BUDGETS/DUREES/OPTIONS_TRI/STATUTS_LABELS, utilitaires formatCurrency/formatDate/getStatutInfo/getInitiales, mapping etat DB→statut frontend
 - `useTelevision` — API client pour la télévision (listerChaines avec filtres/pagination, obtenirChaine, listerProgrammesVedettes, obtenirProgrammeVedette, listerPays, listerCategories, obtenirStats, creerChaine, creerProgrammeVedette). Mapping ChaineTvAPI↔TvChannel et ProgrammeTeleAPI↔TvProgram frontend
-- `useAfrolang` — API client pour les salles Afrolang (listerSalles avec filtres/pagination/langue, obtenirSalle, listerSallesPrivees, obtenirSallePrivee, creerSallePrivee, obtenirSession, creerSession, demarrerSession, terminerSession, rejoindreSession, quitterSession, obtenirStats, listerLangues). Interfaces SalleAPI/SallePriveeAPI/SessionAPI/ParticipantAPI, utilitaires getEtatInfo/formatDuree/formatDate/getInitiales
+- `useAfrolang` — API client pour les salles Afrolang (listerSalles avec filtres/pagination/langue, obtenirSalle, listerSallesPrivees, obtenirSallePrivee, creerSallePrivee, obtenirSession, creerSession, demarrerSession, terminerSession, rejoindreSession, quitterSession, genererTokenSession, obtenirTableauBlanc, sauvegarderTableauBlanc, effacerTableauBlanc, obtenirStats, listerLangues). Interfaces SalleAPI/SallePriveeAPI/SessionAPI/ParticipantAPI/TableauBlancData/TokenResponse, utilitaires getEtatInfo/formatDuree/formatDate/getInitiales
 
 **Mock data layer** (`app/mocks/`, 22 files): Fichiers TypeScript de données fictives avec interfaces, tableaux et fonctions async simulant la latence réseau. Lors de l'intégration backend, remplacer les imports mock par des appels API.
 
@@ -164,6 +164,9 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `POST /api/afrolang/sessions/{id}/rejoindre` — Rejoindre session (JWT, vérifie code_acces + max_participants, ON CONFLICT reconnexion)
 - `POST /api/afrolang/sessions/{id}/quitter` — Quitter session (JWT, calcul durée_secondes participant)
 - `POST /api/afrolang/sessions/{id}/token` — Générer token LiveKit (JWT requis, vérifie code_acces + max_participants, enregistre participant, retourne token/room_name/livekit_url/is_moderator)
+- `GET /api/afrolang/sessions/{id}/tableau-blanc` — Obtenir le snapshot du tableau blanc (donnees JSONB + version)
+- `PUT /api/afrolang/sessions/{id}/tableau-blanc` — Sauvegarder le snapshot (JWT modérateur, UPSERT avec incrémentation version)
+- `DELETE /api/afrolang/sessions/{id}/tableau-blanc` — Effacer le tableau blanc (JWT modérateur, reset donnees à {})
 - `GET /api/afrolang/stats` — Statistiques globales Afrolang (salles, privées, sessions en cours/terminées, participants uniques)
 - `GET /api/afrolang/langues` — Liste des langues disponibles (DISTINCT depuis salles actives)
 

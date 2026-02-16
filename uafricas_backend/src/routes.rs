@@ -156,6 +156,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/sessions/{id}/quitter", web::post().to(afrolang::quitter_session))
                     // Phase 3 : Token LiveKit
                     .route("/sessions/{id}/token", web::post().to(afrolang::generer_token_session))
+                    // Phase 4 : Tableau blanc
+                    .route("/sessions/{id}/tableau-blanc", web::get().to(afrolang::obtenir_tableau_blanc))
+                    .route("/sessions/{id}/tableau-blanc", web::put().to(afrolang::sauvegarder_tableau_blanc))
+                    .route("/sessions/{id}/tableau-blanc", web::delete().to(afrolang::effacer_tableau_blanc))
                     // Utilitaires
                     .route("/stats", web::get().to(afrolang::obtenir_stats))
                     .route("/langues", web::get().to(afrolang::lister_langues)),
