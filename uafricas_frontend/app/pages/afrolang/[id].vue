@@ -167,6 +167,8 @@ import {
 } from '~/composables/useAfrolang'
 import { useUserStore } from '~/stores/user'
 
+useAOS()
+
 const route = useRoute()
 const userStore = useUserStore()
 const { chargement, obtenirSalle, creerSallePrivee } = useAfrolang()

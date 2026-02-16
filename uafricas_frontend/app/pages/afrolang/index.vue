@@ -22,7 +22,7 @@
     </div>
 
     <!-- Hero Section -->
-    <AfrolangAfrolangHero :stats="stats" />
+    <AfrolangHero :stats="stats" />
 
     <!-- Breadcrumb -->
     <div class="bg-gray-50">
@@ -162,6 +162,8 @@ import {
   type SalleFiltres,
   type AfrolangStats,
 } from '~/composables/useAfrolang'
+
+useAOS()
 
 useHead({
   title: 'Salles Afrolang - UAfricas',
