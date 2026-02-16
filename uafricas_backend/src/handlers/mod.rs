@@ -11,6 +11,7 @@ pub mod fiches_pays;
 pub mod gouvernance;
 pub mod livres;
 pub mod moocs;
+pub mod projets;
 pub mod sabbatiques;
 pub mod stations_radio;
 pub mod television;

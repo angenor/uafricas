@@ -147,22 +147,27 @@
 </template>
 
 <script setup lang="ts">
-import { paysAfricains, budgets, durees, sortOptions, type FiltresProjet } from '~/mocks/projets'
+import { PAYS_PROJETS, BUDGETS, DUREES, OPTIONS_TRI, type FiltresProjetPage } from '~/composables/useProjets'
+
+const paysAfricains = PAYS_PROJETS
+const budgets = BUDGETS
+const durees = DUREES
+const sortOptions = OPTIONS_TRI
 
 const props = defineProps<{
   isOpen: boolean
   totalProjets: number
   filteredCount: number
-  modelValue: FiltresProjet
+  modelValue: FiltresProjetPage
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [filtres: FiltresProjet]
+  'update:modelValue': [filtres: FiltresProjetPage]
   close: []
   reset: []
 }>()
 
-const localFiltres = ref<FiltresProjet>({ ...props.modelValue })
+const localFiltres = ref<FiltresProjetPage>({ ...props.modelValue })
 
 watch(
   () => props.modelValue,

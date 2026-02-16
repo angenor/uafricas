@@ -4,8 +4,8 @@
     <ProjetsProjetFiltersMobile
       v-model="filtres"
       :is-open="sidebarOpen"
-      :total-projets="projets.length"
-      :filtered-count="filteredProjets.length"
+      :total-projets="statistics.total"
+      :filtered-count="total"
       @close="sidebarOpen = false"
       @reset="resetFilters"
     />
@@ -43,8 +43,8 @@
         <div class="hidden lg:block w-80 flex-shrink-0">
           <ProjetsProjetFilters
             v-model="filtres"
-            :total-projets="projets.length"
-            :filtered-count="filteredProjets.length"
+            :total-projets="statistics.total"
+            :filtered-count="total"
             @reset="resetFilters"
           />
         </div>
@@ -54,7 +54,7 @@
           <!-- Results count -->
           <div class="flex items-center justify-between mb-6">
             <p class="text-gray-600">
-              <span class="font-semibold text-gray-900">{{ filteredProjets.length }}</span> projet(s) trouvé(s)
+              <span class="font-semibold text-gray-900">{{ total }}</span> projet(s) trouvé(s)
             </p>
           </div>
 
@@ -77,11 +77,11 @@
 
           <!-- Projects Grid -->
           <div
-            v-else-if="paginatedProjets.length > 0"
+            v-else-if="projets.length > 0"
             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
           >
             <ProjetsProjetCard
-              v-for="projet in paginatedProjets"
+              v-for="projet in projets"
               :key="projet.id"
               :projet="projet"
               class="transform hover:scale-[1.02] transition-all"
@@ -165,13 +165,12 @@
 <script setup lang="ts">
 import AOS from 'aos'
 import {
-  projetsMock,
-  getStatistiques,
-  rechercherProjets,
-  type Projet,
-  type FiltresProjet,
-  type StatistiquesProjet,
-} from '~/mocks/projets'
+  useProjets,
+  convertirFiltresPageVersAPI,
+  type ProjetAPI,
+  type ProjetStatistiquesAPI,
+  type FiltresProjetPage,
+} from '~/composables/useProjets'
 
 useHead({
   title: 'Financer un Projet - UAfricas',
@@ -183,14 +182,18 @@ useHead({
   ],
 })
 
+const { listerProjets, obtenirStatistiques, chargement } = useProjets()
+
 // State
-const projets = ref<Projet[]>([])
-const loading = ref(true)
+const projets = ref<ProjetAPI[]>([])
+const loading = computed(() => chargement.value)
+const total = ref(0)
+const totalPages = ref(1)
 const sidebarOpen = ref(false)
 const currentPage = ref(1)
 const itemsPerPage = 12
 
-const filtres = ref<FiltresProjet>({
+const filtres = ref<FiltresProjetPage>({
   pays: '',
   budgetMax: '',
   duree: '',
@@ -199,48 +202,49 @@ const filtres = ref<FiltresProjet>({
 })
 
 // Statistiques
-const statistics = ref<StatistiquesProjet>({
+const statistics = ref<ProjetStatistiquesAPI>({
   total: 0,
   valides: 0,
-  enCours: 0,
+  en_cours: 0,
   termines: 0,
 })
 
-// Computed - Filtered projects
-const filteredProjets = computed(() => {
-  return rechercherProjets(filtres.value)
-})
-
-// Pagination
-const totalPages = computed(() => Math.ceil(filteredProjets.value.length / itemsPerPage))
-
-const paginatedProjets = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredProjets.value.slice(start, end)
-})
-
+// Visible pages pour la pagination
 const visiblePages = computed(() => {
   const pages: number[] = []
-  const total = totalPages.value
+  const tp = totalPages.value
   const current = currentPage.value
 
-  if (total <= 5) {
-    for (let i = 1; i <= total; i++) {
+  if (tp <= 5) {
+    for (let i = 1; i <= tp; i++) {
       pages.push(i)
     }
   } else {
     if (current <= 3) {
       pages.push(1, 2, 3, 4, 5)
-    } else if (current >= total - 2) {
-      pages.push(total - 4, total - 3, total - 2, total - 1, total)
+    } else if (current >= tp - 2) {
+      pages.push(tp - 4, tp - 3, tp - 2, tp - 1, tp)
     } else {
       pages.push(current - 2, current - 1, current, current + 1, current + 2)
     }
   }
 
-  return pages.filter((p) => p >= 1 && p <= total)
+  return pages.filter((p) => p >= 1 && p <= tp)
 })
+
+// Charger les projets depuis l'API
+const chargerProjets = async () => {
+  const apiParams = convertirFiltresPageVersAPI(filtres.value)
+  apiParams.page = currentPage.value
+  apiParams.par_page = itemsPerPage
+
+  const result = await listerProjets(apiParams)
+  if (result) {
+    projets.value = result.projets
+    total.value = result.total
+    totalPages.value = result.total_pages
+  }
+}
 
 // Methods
 const resetFilters = () => {
@@ -256,19 +260,30 @@ const resetFilters = () => {
 
 const handleSearch = () => {
   currentPage.value = 1
+  chargerProjets()
 }
 
-// Watch filters to reset page
+// Watch filters to reload
 watch(filtres, () => {
   currentPage.value = 1
+  chargerProjets()
 }, { deep: true })
 
+// Watch page changes
+watch(currentPage, () => {
+  chargerProjets()
+})
+
 // Lifecycle
-onMounted(() => {
-  // Load data
-  projets.value = projetsMock
-  statistics.value = getStatistiques()
-  loading.value = false
+onMounted(async () => {
+  // Load data in parallel
+  const [_, stats] = await Promise.all([
+    chargerProjets(),
+    obtenirStatistiques(),
+  ])
+  if (stats) {
+    statistics.value = stats
+  }
 
   // Initialize AOS
   AOS.init({

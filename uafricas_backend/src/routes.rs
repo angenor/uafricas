@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{africantives, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, sabbatiques, stations_radio, television};
+use crate::handlers::{africantives, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, sabbatiques, stations_radio, television};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -69,6 +69,14 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("", web::post().to(evenements::creer_evenement))
                     .route("/{id}", web::get().to(evenements::obtenir_evenement))
                     .route("/{id}/inscription", web::post().to(evenements::inscrire_evenement)),
+            )
+            // Routes des projets (financer un projet)
+            .service(
+                web::scope("/projets")
+                    .route("", web::get().to(projets::lister_projets))
+                    .route("", web::post().to(projets::creer_projet))
+                    .route("/statistiques", web::get().to(projets::obtenir_statistiques))
+                    .route("/{id}", web::get().to(projets::obtenir_projet)),
             )
             // Routes des experts
             .service(

@@ -74,6 +74,7 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 - `useMarcheAfricain` — API client pour le marché africain (listerAnnonces avec filtres/pagination/tri, obtenirAnnonce). Inclut constantes (CATEGORIES, TYPES_ECHANGE, DEVISES), utilitaires de formatage (prix, dates) et mapping type_operation DB↔frontend
 - `useStationsRadio` — API client pour les stations radio (listerStations avec filtres/pagination, obtenirStation, listerPays, listerGenres, creerStation). Mapping StationRadioAPI↔RadioStation frontend
 - `useOpportuniteAfrique` — API client pour les fiches pays (listerFiches avec filtres/pagination/region, obtenirFiche par UUID/code ISO, listerRegions). Formatage dates en français, interfaces FichePaysAPI/FichePaysDetailAPI
+- `useProjets` — API client pour les projets de développement (listerProjets avec filtres/pagination/tri, obtenirProjet, creerProjet multipart, obtenirStatistiques). Constantes PAYS_PROJETS/BUDGETS/DUREES/OPTIONS_TRI/STATUTS_LABELS, utilitaires formatCurrency/formatDate/getStatutInfo/getInitiales, mapping etat DB→statut frontend
 - `useTelevision` — API client pour la télévision (listerChaines avec filtres/pagination, obtenirChaine, listerProgrammesVedettes, obtenirProgrammeVedette, listerPays, listerCategories, obtenirStats, creerChaine, creerProgrammeVedette). Mapping ChaineTvAPI↔TvChannel et ProgrammeTeleAPI↔TvProgram frontend
 
 **Mock data layer** (`app/mocks/`, 22 files): Fichiers TypeScript de données fictives avec interfaces, tableaux et fonctions async simulant la latence réseau. Lors de l'intégration backend, remplacer les imports mock par des appels API.
@@ -115,6 +116,10 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `GET /api/evenements/{id}` — Détail d'un événement (organisateur, nombre inscrits, est_inscrit pour user connecté)
 - `POST /api/evenements` — Création multipart (image couverture + métadonnées, résolution pays_id, slug auto)
 - `POST /api/evenements/{id}/inscription` — Inscription à un événement (JWT requis, ON CONFLICT upsert)
+- `GET /api/projets?recherche=&pays=&budget_max=&duree=&tri=&page=&par_page=` — Liste paginée des projets publics (filtres pays/budget/durée/recherche/tri, JOIN pays/utilisateur, sous-requête image couverture)
+- `GET /api/projets/{id}` — Détail d'un projet (documents associés, objectifs parsés, JOIN pays/utilisateur)
+- `POST /api/projets` — Création multipart (image couverture + métadonnées, résolution pays_id, slug auto, JWT requis, etat='soumis')
+- `GET /api/projets/statistiques` — Statistiques des projets (total, validés, en cours, terminés via COUNT FILTER)
 - `GET /api/experts?recherche=&domaine=&pays=&situation=&tri=&page=&par_page=` — Liste paginée des experts validés (filtres multiples, tri, recherche textuelle, JOIN utilisateur/pays)
 - `GET /api/experts/{id}` — Détail d'un expert (par utilisateur_id, JOIN utilisateur/pays)
 - `POST /api/experts/candidature` — Candidature expert (JWT requis, domaine, biographie, expérience, situations)

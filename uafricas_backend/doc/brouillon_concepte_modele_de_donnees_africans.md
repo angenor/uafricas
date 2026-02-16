@@ -372,7 +372,8 @@ Il s'agit d'un ensemble d'informations dans le but de mettre en valeur un pays a
 
 ### Définition
 
-Ce sont des sortes de webinaires créés avec WebRTC. Une session de vidéo conférence sera appelée "salle". Elle peut être publique ou privée. Une salle publique est créée uniquement par les admins. Une salle privée peut être créée par n'importe qui et est liée à une salle publique.
+Ce sont des sortes de webinaires créés avec WebRTC. Une session de vidéo conférence sera appelée "salle". Elle peut être publique ou privée. Une salle publique est créée uniquement par les admins. Une salle privée peut être créée par n'importe qui et est liée à une salle publique mais pour ce dernier, il faut le mot de passe du créateur pour y acceder.
+Pour chaque session on peu utiliser des tableau blanc interractif en plus de la videoconferance
 
 ### Propriétés
 

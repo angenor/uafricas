@@ -5,7 +5,7 @@
       <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;0.4&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');" />
     </div>
 
-    <div class="relative max-w-7xl mx-auto px-4 py-16 md:py-24">
+    <div class="relative max-w-7xl mx-auto px-4 pt-24 pb-16 md:pt-32 md:pb-24">
       <div class="text-center text-white" data-aos="fade-up">
         <!-- Badge -->
         <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-xs px-4 py-2 rounded-full text-sm font-medium mb-6">
@@ -32,7 +32,7 @@
             <div class="text-white/80 text-sm">Projets validés</div>
           </div>
           <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-4 md:p-6">
-            <div class="text-3xl md:text-4xl font-bold mb-1 text-blue-300">{{ statistics.enCours }}</div>
+            <div class="text-3xl md:text-4xl font-bold mb-1 text-blue-300">{{ statistics.en_cours }}</div>
             <div class="text-white/80 text-sm">En cours</div>
           </div>
           <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-4 md:p-6">
@@ -53,9 +53,9 @@
 </template>
 
 <script setup lang="ts">
-import type { StatistiquesProjet } from '~/mocks/projets'
+import type { ProjetStatistiquesAPI } from '~/composables/useProjets'
 
 defineProps<{
-  statistics: StatistiquesProjet
+  statistics: ProjetStatistiquesAPI
 }>()
 </script>

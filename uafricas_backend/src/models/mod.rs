@@ -10,6 +10,7 @@ pub mod fiche_pays;
 pub mod gouvernance;
 pub mod livre;
 pub mod mooc;
+pub mod projet;
 pub mod sabbatique;
 pub mod station_radio;
 pub mod television;

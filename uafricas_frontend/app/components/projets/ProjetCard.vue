@@ -7,7 +7,7 @@
     <div class="relative h-48 overflow-hidden">
       <img
         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-        :src="projet.imageCouverture || '/images/investissement-afrique.jpg'"
+        :src="projet.image_couverture || '/images/investissement-afrique.jpg'"
         :alt="projet.titre"
       />
 
@@ -22,9 +22,9 @@
       </div>
 
       <!-- Badge pays -->
-      <div class="absolute top-4 left-4">
+      <div v-if="projet.pays" class="absolute top-4 left-4">
         <span class="bg-white/90 backdrop-blur-xs px-3 py-1 rounded-full text-xs font-medium text-gray-700">
-          {{ paysLabel }}
+          {{ projet.pays }}
         </span>
       </div>
 
@@ -39,7 +39,7 @@
     <div class="p-5">
       <!-- Description courte -->
       <p class="text-gray-600 text-sm line-clamp-2 mb-4">
-        {{ projet.resume || projet.description }}
+        {{ projet.description }}
       </p>
 
       <!-- Informations principales -->
@@ -52,28 +52,9 @@
           <font-awesome-icon :icon="['fas', 'clock']" class="w-4 h-4 text-gray-400" />
           <span>{{ projet.duree }}</span>
         </div>
-        <div v-if="projet.dateDebutSouhaitee" class="flex items-center gap-2 text-sm text-gray-600">
+        <div v-if="projet.date_debut_souhaitee" class="flex items-center gap-2 text-sm text-gray-600">
           <font-awesome-icon :icon="['fas', 'calendar']" class="w-4 h-4 text-gray-400" />
           <span>Début: {{ dateDebutFormatee }}</span>
-        </div>
-      </div>
-
-      <!-- Objectifs (2 premiers) -->
-      <div v-if="projet.objectifs && projet.objectifs.length > 0" class="mb-4">
-        <div class="flex flex-wrap gap-1">
-          <span
-            v-for="(objectif, index) in projet.objectifs.slice(0, 2)"
-            :key="index"
-            class="px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-xs"
-          >
-            {{ truncateObjectif(objectif) }}
-          </span>
-          <span
-            v-if="projet.objectifs.length > 2"
-            class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs"
-          >
-            +{{ projet.objectifs.length - 2 }}
-          </span>
         </div>
       </div>
 
@@ -81,12 +62,12 @@
       <div class="flex items-center justify-between pt-4 border-t border-gray-100">
         <div class="flex items-center gap-2">
           <div
-            v-if="projet.userInfo?.photoURL"
+            v-if="projet.user?.photo_url"
             class="w-8 h-8 rounded-full overflow-hidden"
           >
             <img
-              :src="projet.userInfo.photoURL"
-              :alt="projet.userInfo.prenom"
+              :src="projet.user.photo_url"
+              :alt="projet.user.prenom"
               class="w-full h-full object-cover"
             />
           </div>
@@ -97,7 +78,7 @@
             {{ initiales }}
           </div>
           <span class="text-xs text-gray-500">
-            {{ projet.userInfo?.prenom }} {{ projet.userInfo?.nom }}
+            {{ projet.user?.prenom }} {{ projet.user?.nom }}
           </span>
         </div>
         <NuxtLink
@@ -113,15 +94,14 @@
 </template>
 
 <script setup lang="ts">
-import type { Projet } from '~/mocks/projets'
-import { getStatutInfo, getPaysLabel, formatCurrency, formatDate, getInitiales } from '~/mocks/projets'
+import { getStatutInfo, formatCurrency, formatDate, getInitiales, type ProjetAPI } from '~/composables/useProjets'
 
 const props = defineProps<{
-  projet: Projet
+  projet: ProjetAPI
 }>()
 
 defineEmits<{
-  click: [projet: Projet]
+  click: [projet: ProjetAPI]
 }>()
 
 // Computed pour le statut
@@ -129,32 +109,21 @@ const statutInfo = computed(() => {
   return getStatutInfo(props.projet.statut)
 })
 
-// Computed pour le pays
-const paysLabel = computed(() => {
-  return getPaysLabel(props.projet.pays)
-})
-
-// Computed pour le coût formaté
+// Computed pour le cout formate
 const coutFormate = computed(() => {
-  return formatCurrency(props.projet.coutTotal, props.projet.devise)
+  return formatCurrency(props.projet.cout_total, props.projet.devise)
 })
 
-// Computed pour la date de début formatée
+// Computed pour la date de debut formatee
 const dateDebutFormatee = computed(() => {
-  if (!props.projet.dateDebutSouhaitee) return ''
-  return formatDate(props.projet.dateDebutSouhaitee)
+  if (!props.projet.date_debut_souhaitee) return ''
+  return formatDate(props.projet.date_debut_souhaitee)
 })
 
 // Computed pour les initiales
 const initiales = computed(() => {
-  return getInitiales(props.projet.userInfo?.nom, props.projet.userInfo?.prenom)
+  return getInitiales(props.projet.user?.nom, props.projet.user?.prenom)
 })
-
-// Fonction pour tronquer les objectifs
-const truncateObjectif = (objectif: string, maxLength = 25): string => {
-  if (objectif.length <= maxLength) return objectif
-  return objectif.substring(0, maxLength) + '...'
-}
 </script>
 
 <style scoped>
