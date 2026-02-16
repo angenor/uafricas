@@ -9,12 +9,12 @@
 
 | Phase | Fichier | Statut | Progression |
 |-------|---------|--------|-------------|
-| **Phase 1** | [01_BACKEND_REST.md](./01_BACKEND_REST.md) | `A FAIRE` | 0/12 |
-| **Phase 2** | [02_FRONTEND_UI.md](./02_FRONTEND_UI.md) | `BLOQUE par Phase 1` | 0/14 |
-| **Phase 3** | [03_WEBRTC_SIGNALING.md](./03_WEBRTC_SIGNALING.md) | `BLOQUE par Phase 2` | 0/11 |
-| **Phase 4** | [04_TABLEAU_BLANC.md](./04_TABLEAU_BLANC.md) | `BLOQUE par Phase 3` | 0/9 |
+| **Phase 1** | [01_BACKEND_REST.md](./01_BACKEND_REST.md) | `TERMINE` | 12/12 |
+| **Phase 2** | [02_FRONTEND_UI.md](./02_FRONTEND_UI.md) | `TERMINE` | 14/14 |
+| **Phase 3** | [03_WEBRTC_SIGNALING.md](./03_WEBRTC_SIGNALING.md) | `TERMINE` | 11/11 |
+| **Phase 4** | [04_TABLEAU_BLANC.md](./04_TABLEAU_BLANC.md) | `A FAIRE` | 0/9 |
 
-**Progression totale : 0/46 taches**
+**Progression totale : 37/46 taches**
 
 ---
 

@@ -76,6 +76,7 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 - `useOpportuniteAfrique` — API client pour les fiches pays (listerFiches avec filtres/pagination/region, obtenirFiche par UUID/code ISO, listerRegions). Formatage dates en français, interfaces FichePaysAPI/FichePaysDetailAPI
 - `useProjets` — API client pour les projets de développement (listerProjets avec filtres/pagination/tri, obtenirProjet, creerProjet multipart, obtenirStatistiques). Constantes PAYS_PROJETS/BUDGETS/DUREES/OPTIONS_TRI/STATUTS_LABELS, utilitaires formatCurrency/formatDate/getStatutInfo/getInitiales, mapping etat DB→statut frontend
 - `useTelevision` — API client pour la télévision (listerChaines avec filtres/pagination, obtenirChaine, listerProgrammesVedettes, obtenirProgrammeVedette, listerPays, listerCategories, obtenirStats, creerChaine, creerProgrammeVedette). Mapping ChaineTvAPI↔TvChannel et ProgrammeTeleAPI↔TvProgram frontend
+- `useAfrolang` — API client pour les salles Afrolang (listerSalles avec filtres/pagination/langue, obtenirSalle, listerSallesPrivees, obtenirSallePrivee, creerSallePrivee, obtenirSession, creerSession, demarrerSession, terminerSession, rejoindreSession, quitterSession, obtenirStats, listerLangues). Interfaces SalleAPI/SallePriveeAPI/SessionAPI/ParticipantAPI, utilitaires getEtatInfo/formatDuree/formatDate/getInitiales
 
 **Mock data layer** (`app/mocks/`, 22 files): Fichiers TypeScript de données fictives avec interfaces, tableaux et fonctions async simulant la latence réseau. Lors de l'intégration backend, remplacer les imports mock par des appels API.
 
@@ -145,14 +146,34 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `POST /api/africantives` — Création multipart (image couverture + métadonnées, résolution domaine_id/pays_id, slug auto, JWT requis)
 - `GET /api/africantives/domaines` — Liste des domaines disponibles (avec africantives publiées)
 - `GET /api/africantives/pays` — Liste des pays avec des africantives publiées
+- `GET /api/afrolang/salles?recherche=&langue=&page=&par_page=` — Liste paginée des salles publiques actives (filtres langue/recherche, sous-requêtes COUNT salles privées/sessions en cours)
+- `GET /api/afrolang/salles/{id}` — Détail d'une salle avec modérateur et salles privées associées
+- `POST /api/afrolang/salles` — Création multipart salle publique (JWT + Admin, image couverture + métadonnées, slug auto)
+- `PUT /api/afrolang/salles/{id}` — Modification salle publique (JWT + Admin, titre/description/langue/modérateur)
+- `DELETE /api/afrolang/salles/{id}` — Soft delete salle publique (JWT + Admin, actif=false)
+- `GET /api/afrolang/salles/{salle_id}/privees?recherche=&page=&par_page=` — Salles privées d'une salle publique (JOIN créateur/salle, sous-requête session en cours)
+- `GET /api/afrolang/salles-privees/{id}` — Détail salle privée avec sessions associées (est_protegee, pas de code_acces en clair)
+- `POST /api/afrolang/salles/{salle_id}/privees` — Création salle privée (JWT requis, titre/description/code_acces/max_participants)
+- `PUT /api/afrolang/salles-privees/{id}` — Modification salle privée (JWT créateur uniquement)
+- `DELETE /api/afrolang/salles-privees/{id}` — Soft delete salle privée (JWT créateur uniquement)
+- `GET /api/afrolang/salles-privees/{sp_id}/sessions?etat=&page=&par_page=` — Sessions d'une salle privée (filtre par état)
+- `GET /api/afrolang/sessions/{id}` — Détail session avec participants et modérateur (JOIN utilisateur)
+- `POST /api/afrolang/salles-privees/{sp_id}/sessions` — Planifier session (JWT modérateur, date/max_participants/tableau_blanc)
+- `PUT /api/afrolang/sessions/{id}/demarrer` — Démarrer session (JWT modérateur, vérifie état planifiée, ajoute participant modérateur)
+- `PUT /api/afrolang/sessions/{id}/terminer` — Terminer session (JWT modérateur, calcul durée, ferme participants actifs)
+- `POST /api/afrolang/sessions/{id}/rejoindre` — Rejoindre session (JWT, vérifie code_acces + max_participants, ON CONFLICT reconnexion)
+- `POST /api/afrolang/sessions/{id}/quitter` — Quitter session (JWT, calcul durée_secondes participant)
+- `POST /api/afrolang/sessions/{id}/token` — Générer token LiveKit (JWT requis, vérifie code_acces + max_participants, enregistre participant, retourne token/room_name/livekit_url/is_moderator)
+- `GET /api/afrolang/stats` — Statistiques globales Afrolang (salles, privées, sessions en cours/terminées, participants uniques)
+- `GET /api/afrolang/langues` — Liste des langues disponibles (DISTINCT depuis salles actives)
 
 **Authentification** : JWT (HS256) access token (15 min) + refresh token (7 jours, SHA-256 hashé en BDD dans `iam.refresh_token`). Mot de passe hashé avec bcrypt (cost 12). Module `jwt.rs` pour génération/validation tokens.
 
-**Dépendances backend** : actix-web 4, actix-cors, actix-multipart, actix-files, sqlx (PostgreSQL), uuid, chrono, dotenvy, serde, sanitize-filename, bcrypt, jsonwebtoken, sha2, rand.
+**Dépendances backend** : actix-web 4, actix-cors, actix-multipart, actix-files, sqlx (PostgreSQL), uuid, chrono, dotenvy, serde, sanitize-filename, bcrypt, jsonwebtoken, sha2, rand, livekit-api.
 
 **Upload fichiers** : Stockage local dans `./uploads/couvertures/` et `./uploads/documents/`, servis statiquement via actix-files sur `/uploads/`.
 
-**Configuration** : Variables d'environnement dans `.env` : `DATABASE_URL`, `UPLOAD_DIR`, `FRONTEND_URL`, `HOST`, `PORT`, `RUST_LOG`, `JWT_SECRET`, `JWT_EXPIRATION_MINUTES`, `REFRESH_EXPIRATION_DAYS`.
+**Configuration** : Variables d'environnement dans `.env` : `DATABASE_URL`, `UPLOAD_DIR`, `FRONTEND_URL`, `HOST`, `PORT`, `RUST_LOG`, `JWT_SECRET`, `JWT_EXPIRATION_MINUTES`, `REFRESH_EXPIRATION_DAYS`, `LIVEKIT_URL` (default: ws://localhost:7880), `LIVEKIT_API_KEY` (default: devkey), `LIVEKIT_API_SECRET` (default: secret).
 
 **Database** : PostgreSQL 16 via Docker (`docker-compose.yml` à la racine). Le schéma SQL complet est dans `uafricas_backend/doc/bd/` avec un fichier orchestrateur `schema.sql` qui inclut 15 fichiers via `\ir` (dans `schemas/`). Le script `docker-init.sh` lance l'init automatiquement au premier `docker compose up`.
 
@@ -167,7 +188,7 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 
 ## Infrastructure
 
-- **Docker** : `docker-compose.yml` à la racine avec 2 services (postgres, adminer) et 1 volume (pgdata)
+- **Docker** : `docker-compose.yml` à la racine avec 3 services (postgres, adminer, livekit) et 1 volume (pgdata). LiveKit SFU sur ports 7880 (WebSocket), 7881 (HTTP API), 7882 (WebRTC TCP), 50000-50100/udp (WebRTC UDP). Config dans `livekit.yaml` à la racine.
 - **Variables d'env** : `.env` à la racine (gitignored), contient les credentials PostgreSQL et pgAdmin
 - **Init BDD** : `uafricas_backend/doc/bd/docker-init.sh` exécute `schema.sql` au premier lancement du conteneur
 

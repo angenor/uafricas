@@ -1,4 +1,5 @@
 pub mod africantives;
+pub mod afrolang;
 pub mod annonces;
 pub mod auth;
 pub mod bibliotheques_humaines;

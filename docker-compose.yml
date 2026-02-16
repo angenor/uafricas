@@ -29,5 +29,20 @@ services:
       postgres:
         condition: service_healthy
 
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: uafricas_livekit
+    restart: unless-stopped
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882"
+      - "50000-50100:50000-50100/udp"
+    environment:
+      - LIVEKIT_KEYS=devkey: secret
+    volumes:
+      - ./livekit.yaml:/livekit.yaml
+    command: --config /livekit.yaml --dev
+
 volumes:
   pgdata:

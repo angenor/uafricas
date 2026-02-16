@@ -1,8 +1,8 @@
 # Phase 3 — WebRTC Signaling & Visioconference
 
-> **Statut** : `BLOQUE par Phase 2`
-> **Progression** : 0/11 taches
-> **Bloque par** : [Phase 2 — Frontend UI](./02_FRONTEND_UI.md) (toutes les pages et composants doivent etre crees)
+> **Statut** : `TERMINE`
+> **Progression** : 11/11 taches
+> **Bloque par** : [Phase 2 — Frontend UI](./02_FRONTEND_UI.md) ✅
 > **Debloque** : [Phase 4 — Tableau blanc](./04_TABLEAU_BLANC.md)
 
 ---
@@ -12,10 +12,10 @@
 ```
 ✅ = termine    🔄 = en cours    ⬜ = a faire    🔒 = bloque
 
-[⬜] Phase 1 — Backend REST         (doit etre terminee)
-[⬜] Phase 2 — Frontend UI          (doit etre terminee)
-[🔒] Phase 3 — WebRTC Signaling     ◄── VOUS ETES ICI
-[🔒] Phase 4 — Tableau blanc        (attend Phase 3 complete)
+[✅] Phase 1 — Backend REST         (terminee)
+[✅] Phase 2 — Frontend UI          (terminee)
+[✅] Phase 3 — WebRTC Signaling     ◄── TERMINE
+[⬜] Phase 4 — Tableau blanc        (debloquee)
 ```
 
 **Ce que les Phases precedentes fournissent :**
@@ -40,17 +40,17 @@
 
 ## Progression
 
-- [ ] **3.1** Deployer LiveKit en dev (Docker Compose + config)
-- [ ] **3.2** Ajouter `livekit-api` a `Cargo.toml`
-- [ ] **3.3** Ajouter variables env LiveKit a `config.rs`
-- [ ] **3.4** Creer handler `generer_token_session` dans `handlers/afrolang.rs` (enrichit Phase 1)
-- [ ] **3.5** Ajouter route `/sessions/{id}/token` dans `routes.rs` (enrichit Phase 1)
-- [ ] **3.6** Installer `livekit-client` + `@livekit/components-vue` (pnpm)
-- [ ] **3.7** Creer `app/components/afrolang/AfrolangRoom.vue`
-- [ ] **3.8** Creer `app/components/afrolang/AfrolangVideoGrid.vue` + `AfrolangParticipantTile.vue`
-- [ ] **3.9** Creer `app/components/afrolang/AfrolangControls.vue`
-- [ ] **3.10** Creer `app/components/afrolang/AfrolangSidebar.vue`
-- [ ] **3.11** Transformer `app/pages/afrolang/session/[id].vue` (remplacer placeholder Phase 2 par AfrolangRoom)
+- [x] **3.1** Deployer LiveKit en dev (Docker Compose + config)
+- [x] **3.2** Ajouter `livekit-api` a `Cargo.toml`
+- [x] **3.3** Ajouter variables env LiveKit a `config.rs`
+- [x] **3.4** Creer handler `generer_token_session` dans `handlers/afrolang.rs` (enrichit Phase 1)
+- [x] **3.5** Ajouter route `/sessions/{id}/token` dans `routes.rs` (enrichit Phase 1)
+- [x] **3.6** Installer `livekit-client` (pnpm) — Note: `@livekit/components-vue` n'existe pas officiellement, composants Vue custom crees
+- [x] **3.7** Creer `app/components/afrolang/AfrolangRoom.vue`
+- [x] **3.8** Creer `app/components/afrolang/AfrolangVideoGrid.vue` + `AfrolangParticipantTile.vue`
+- [x] **3.9** Creer `app/components/afrolang/AfrolangControls.vue`
+- [x] **3.10** Creer `app/components/afrolang/AfrolangSidebar.vue`
+- [x] **3.11** Transformer `app/pages/afrolang/session/[id].vue` (remplacer placeholder Phase 2 par AfrolangRoom)
 
 ---
 

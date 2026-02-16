@@ -111,6 +111,9 @@ import {
   faClipboardList,
   faAddressBook,
   faImage,
+  faLanguage,
+  faCircle,
+  faChalkboardUser,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -241,6 +244,9 @@ library.add(
   faClipboardList,
   faAddressBook,
   faImage,
+  faLanguage,
+  faCircle,
+  faChalkboardUser,
   farCalendar,
   farClock,
   farHeart,

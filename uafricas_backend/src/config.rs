@@ -12,6 +12,9 @@ pub struct AppConfig {
     pub jwt_secret: String,
     pub jwt_expiration_minutes: i64,
     pub refresh_expiration_days: i64,
+    pub livekit_url: String,
+    pub livekit_api_key: String,
+    pub livekit_api_secret: String,
 }
 
 /// Configuration JWT partagee via web::Data
@@ -20,6 +23,14 @@ pub struct JwtConfig {
     pub secret: String,
     pub expiration_minutes: i64,
     pub refresh_expiration_days: i64,
+}
+
+/// Configuration LiveKit partagee via web::Data
+#[derive(Clone)]
+pub struct LivekitConfig {
+    pub url: String,
+    pub api_key: String,
+    pub api_secret: String,
 }
 
 impl AppConfig {
@@ -47,6 +58,12 @@ impl AppConfig {
                 .unwrap_or_else(|_| "7".to_string())
                 .parse::<i64>()
                 .expect("REFRESH_EXPIRATION_DAYS doit etre un nombre"),
+            livekit_url: env::var("LIVEKIT_URL")
+                .unwrap_or_else(|_| "ws://localhost:7880".to_string()),
+            livekit_api_key: env::var("LIVEKIT_API_KEY")
+                .unwrap_or_else(|_| "devkey".to_string()),
+            livekit_api_secret: env::var("LIVEKIT_API_SECRET")
+                .unwrap_or_else(|_| "secret".to_string()),
         }
     }
 
@@ -56,6 +73,15 @@ impl AppConfig {
             secret: self.jwt_secret.clone(),
             expiration_minutes: self.jwt_expiration_minutes,
             refresh_expiration_days: self.refresh_expiration_days,
+        }
+    }
+
+    /// Creer la configuration LiveKit a partir de AppConfig
+    pub fn livekit_config(&self) -> LivekitConfig {
+        LivekitConfig {
+            url: self.livekit_url.clone(),
+            api_key: self.livekit_api_key.clone(),
+            api_secret: self.livekit_api_secret.clone(),
         }
     }
 }

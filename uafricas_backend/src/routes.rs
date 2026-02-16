@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{africantives, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, sabbatiques, stations_radio, television};
+use crate::handlers::{africantives, afrolang, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, sabbatiques, stations_radio, television};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -129,6 +129,36 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/domaines", web::get().to(africantives::lister_domaines))
                     .route("/pays", web::get().to(africantives::lister_pays))
                     .route("/{id}", web::get().to(africantives::obtenir_africantive)),
+            )
+            // Routes Afrolang (visioconference WebRTC)
+            .service(
+                web::scope("/afrolang")
+                    // Salles publiques
+                    .route("/salles", web::get().to(afrolang::lister_salles))
+                    .route("/salles", web::post().to(afrolang::creer_salle))
+                    .route("/salles/{id}", web::get().to(afrolang::obtenir_salle))
+                    .route("/salles/{id}", web::put().to(afrolang::modifier_salle))
+                    .route("/salles/{id}", web::delete().to(afrolang::supprimer_salle))
+                    // Salles privees (sous une salle publique)
+                    .route("/salles/{salle_id}/privees", web::get().to(afrolang::lister_salles_privees))
+                    .route("/salles/{salle_id}/privees", web::post().to(afrolang::creer_salle_privee))
+                    // Salles privees (CRUD direct)
+                    .route("/salles-privees/{id}", web::get().to(afrolang::obtenir_salle_privee))
+                    .route("/salles-privees/{id}", web::put().to(afrolang::modifier_salle_privee))
+                    .route("/salles-privees/{id}", web::delete().to(afrolang::supprimer_salle_privee))
+                    // Sessions
+                    .route("/salles-privees/{sp_id}/sessions", web::get().to(afrolang::lister_sessions))
+                    .route("/salles-privees/{sp_id}/sessions", web::post().to(afrolang::creer_session))
+                    .route("/sessions/{id}", web::get().to(afrolang::obtenir_session))
+                    .route("/sessions/{id}/demarrer", web::put().to(afrolang::demarrer_session))
+                    .route("/sessions/{id}/terminer", web::put().to(afrolang::terminer_session))
+                    .route("/sessions/{id}/rejoindre", web::post().to(afrolang::rejoindre_session))
+                    .route("/sessions/{id}/quitter", web::post().to(afrolang::quitter_session))
+                    // Phase 3 : Token LiveKit
+                    .route("/sessions/{id}/token", web::post().to(afrolang::generer_token_session))
+                    // Utilitaires
+                    .route("/stats", web::get().to(afrolang::obtenir_stats))
+                    .route("/langues", web::get().to(afrolang::lister_langues)),
             )
             // Routes de la télévision
             .service(

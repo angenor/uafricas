@@ -1,7 +1,7 @@
 # Phase 1 — Backend REST API
 
-> **Statut** : `A FAIRE`
-> **Progression** : 0/12 taches
+> **Statut** : `TERMINE`
+> **Progression** : 12/12 taches
 > **Bloque par** : Rien (premiere phase)
 > **Debloque** : [Phase 2 — Frontend UI](./02_FRONTEND_UI.md)
 
@@ -27,18 +27,18 @@
 
 ## Progression
 
-- [ ] **1.1** Creer `src/models/afrolang.rs` — Constantes SQL
-- [ ] **1.2** Creer `src/models/afrolang.rs` — Structs FromRow
-- [ ] **1.3** Creer `src/models/afrolang.rs` — DTOs Response (Serialize)
-- [ ] **1.4** Creer `src/models/afrolang.rs` — Structs de requete (Deserialize)
-- [ ] **1.5** Creer `src/handlers/afrolang.rs` — Handlers salles publiques (5 endpoints)
-- [ ] **1.6** Creer `src/handlers/afrolang.rs` — Handlers salles privees (5 endpoints)
-- [ ] **1.7** Creer `src/handlers/afrolang.rs` — Handlers sessions (7 endpoints)
-- [ ] **1.8** Creer `src/handlers/afrolang.rs` — Handlers utilitaires (stats + langues)
-- [ ] **1.9** Modifier `src/handlers/mod.rs` — Ajouter `pub mod afrolang;`
-- [ ] **1.10** Modifier `src/models/mod.rs` — Ajouter `pub mod afrolang;`
-- [ ] **1.11** Modifier `src/routes.rs` — Ajouter le scope `/afrolang`
-- [ ] **1.12** Tests manuels curl — Valider tous les endpoints
+- [x] **1.1** Creer `src/models/afrolang.rs` — Constantes SQL
+- [x] **1.2** Creer `src/models/afrolang.rs` — Structs FromRow
+- [x] **1.3** Creer `src/models/afrolang.rs` — DTOs Response (Serialize)
+- [x] **1.4** Creer `src/models/afrolang.rs` — Structs de requete (Deserialize)
+- [x] **1.5** Creer `src/handlers/afrolang.rs` — Handlers salles publiques (5 endpoints)
+- [x] **1.6** Creer `src/handlers/afrolang.rs` — Handlers salles privees (5 endpoints)
+- [x] **1.7** Creer `src/handlers/afrolang.rs` — Handlers sessions (7 endpoints)
+- [x] **1.8** Creer `src/handlers/afrolang.rs` — Handlers utilitaires (stats + langues)
+- [x] **1.9** Modifier `src/handlers/mod.rs` — Ajouter `pub mod afrolang;`
+- [x] **1.10** Modifier `src/models/mod.rs` — Ajouter `pub mod afrolang;`
+- [x] **1.11** Modifier `src/routes.rs` — Ajouter le scope `/afrolang`
+- [x] **1.12** Tests manuels curl — Valider tous les endpoints
 
 ---
 

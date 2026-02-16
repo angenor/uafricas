@@ -1,7 +1,7 @@
 # Phase 2 — Frontend UI
 
-> **Statut** : `BLOQUE par Phase 1`
-> **Progression** : 0/14 taches
+> **Statut** : `TERMINE`
+> **Progression** : 14/14 taches
 > **Bloque par** : [Phase 1 — Backend REST](./01_BACKEND_REST.md) (tous les endpoints doivent etre operationnels)
 > **Debloque** : [Phase 3 — WebRTC Signaling](./03_WEBRTC_SIGNALING.md)
 
@@ -12,9 +12,9 @@
 ```
 ✅ = termine    🔄 = en cours    ⬜ = a faire    🔒 = bloque
 
-[⬜] Phase 1 — Backend REST         (doit etre terminee avant)
-[🔒] Phase 2 — Frontend UI          ◄── VOUS ETES ICI
-[🔒] Phase 3 — WebRTC Signaling     (attend Phase 2 complete)
+[✅] Phase 1 — Backend REST         (terminee)
+[✅] Phase 2 — Frontend UI          ◄── TERMINE
+[⬜] Phase 3 — WebRTC Signaling     (debloquee)
 [🔒] Phase 4 — Tableau blanc        (attend Phase 3 complete)
 ```
 
@@ -32,20 +32,20 @@
 
 ## Progression
 
-- [ ] **2.1** Creer `app/composables/useAfrolang.ts` — Interfaces TypeScript
-- [ ] **2.2** Creer `app/composables/useAfrolang.ts` — Fonctions API + constantes
-- [ ] **2.3** Creer `app/components/afrolang/AfrolangHero.vue`
-- [ ] **2.4** Creer `app/components/afrolang/AfrolangStats.vue`
-- [ ] **2.5** Creer `app/components/afrolang/SalleCard.vue`
-- [ ] **2.6** Creer `app/components/afrolang/SalleFilters.vue` + `SalleFiltersMobile.vue`
-- [ ] **2.7** Creer `app/components/afrolang/SallePriveeCard.vue`
-- [ ] **2.8** Creer `app/components/afrolang/SallePriveeCreateModal.vue`
-- [ ] **2.9** Creer `app/components/afrolang/SallePriveeJoinModal.vue`
-- [ ] **2.10** Creer `app/components/afrolang/SessionCard.vue` + `SessionTimeline.vue` + `ParticipantBadge.vue`
-- [ ] **2.11** Creer `app/pages/afrolang/index.vue` — Liste salles publiques
-- [ ] **2.12** Creer `app/pages/afrolang/[id].vue` — Detail salle publique
-- [ ] **2.13** Creer `app/pages/afrolang/salle-privee/[id].vue` — Detail salle privee
-- [ ] **2.14** Creer `app/pages/afrolang/session/[id].vue` — Page session (placeholder pour Phase 3)
+- [x] **2.1** Creer `app/composables/useAfrolang.ts` — Interfaces TypeScript
+- [x] **2.2** Creer `app/composables/useAfrolang.ts` — Fonctions API + constantes
+- [x] **2.3** Creer `app/components/afrolang/AfrolangHero.vue`
+- [x] **2.4** Creer `app/components/afrolang/AfrolangStats.vue`
+- [x] **2.5** Creer `app/components/afrolang/SalleCard.vue`
+- [x] **2.6** Creer `app/components/afrolang/SalleFilters.vue` + `SalleFiltersMobile.vue`
+- [x] **2.7** Creer `app/components/afrolang/SallePriveeCard.vue`
+- [x] **2.8** Creer `app/components/afrolang/SallePriveeCreateModal.vue`
+- [x] **2.9** Creer `app/components/afrolang/SallePriveeJoinModal.vue`
+- [x] **2.10** Creer `app/components/afrolang/SessionCard.vue` + `SessionTimeline.vue` + `ParticipantBadge.vue`
+- [x] **2.11** Creer `app/pages/afrolang/index.vue` — Liste salles publiques
+- [x] **2.12** Creer `app/pages/afrolang/[id].vue` — Detail salle publique
+- [x] **2.13** Creer `app/pages/afrolang/salle-privee/[id].vue` — Detail salle privee
+- [x] **2.14** Creer `app/pages/afrolang/session/[id].vue` — Page session (placeholder pour Phase 3)
 
 ---
 
