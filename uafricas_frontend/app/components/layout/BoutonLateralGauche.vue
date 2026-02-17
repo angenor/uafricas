@@ -79,14 +79,14 @@
     ]"
     class="fixed top-44 h-20 whitespace-nowrap text-custom-chocolat ml-2 bg-white border-t-4 border-custom-chocolat bg-opacity-0"
   >
-    <NuxtLink to="/afrolangue/salles-publiques">
+    <NuxtLink to="/afrolang">
       <div
         class="px-2 bg-white bg-opacity-80 py-2 overflow-x-hidden cursor-pointer hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green transition-all duration-300"
       >
         Afrolang
       </div>
     </NuxtLink>
-    <NuxtLink to="/africa-culture/codi-moi">
+    <NuxtLink to="/evenements/codi-moi">
       <div
         :class="[
           state.pointer == 'attout'
@@ -110,7 +110,7 @@
         Afroculture
       </div>
     </NuxtLink>
-    <NuxtLink to="/experts/index">
+    <NuxtLink to="/experts">
       <div
         :class="[
           state.pointer == 'attout'
@@ -134,7 +134,7 @@
         Afromarket
       </div>
     </NuxtLink>
-    <NuxtLink to="/bibliotheque-numerique">
+    <NuxtLink to="/bibliotheque/numerique">
       <div
         :class="[
           state.pointer == 'attout'
@@ -183,7 +183,7 @@
     ]"
     class="fixed top-[13.5rem] h-20 whitespace-nowrap text-custom-chocolat ml-2 bg-white border-t-4 border-custom-chocolat bg-opacity-0"
   >
-    <NuxtLink to="/apporter-expertise">
+    <NuxtLink to="/experts">
       <div
         class="px-2 bg-white bg-opacity-80 py-2 overflow-x-hidden cursor-pointer hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green transition-all duration-300"
       >
