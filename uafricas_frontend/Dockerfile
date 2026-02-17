@@ -17,8 +17,9 @@ RUN pnpm install --frozen-lockfile
 # Copier le code source et build
 COPY . .
 
-# L'URL de l'API sera /api car Nginx fait le reverse proxy
-ENV NUXT_PUBLIC_API_BASE_URL=/api
+# Les composables incluent deja /api/ dans leurs chemins
+# On met une valeur vide pour eviter le doublement /api/api/
+ENV NUXT_PUBLIC_API_BASE_URL=
 
 RUN pnpm build
 
