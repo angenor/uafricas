@@ -116,7 +116,8 @@ const routeLabels: Record<string, string> = {
   'forums': 'Forums',
   'codi-moi': 'Codi-Moi',
   'liste': 'Liste',
-  'promotion-valeur': 'Promotion des Valeurs'
+  'promotion-valeur': 'Promotion des Valeurs',
+  'devenir-partenaire': 'Devenir Partenaire'
 }
 
 const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
