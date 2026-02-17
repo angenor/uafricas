@@ -123,7 +123,7 @@ REFRESH_EXPIRATION_DAYS=7
 RUST_LOG=info
 
 # Frontend
-FRONTEND_URL=http://161.97.92.63
+FRONTEND_URL=https://www.africans-world.org
 NUXT_PUBLIC_API_BASE_URL=/api
 
 # LiveKit (visioconference WebRTC)
@@ -208,7 +208,7 @@ ENDSSH
 
     echo ""
     echo -e "${GREEN}=== Deploiement termine ! ===${NC}"
-    echo -e "Site accessible sur: ${BLUE}http://${REMOTE_HOST}${NC}"
+    echo -e "Site accessible sur: ${BLUE}https://www.africans-world.org${NC}"
 }
 
 # ========================================
@@ -228,7 +228,7 @@ update() {
         docker compose -f docker-compose.prod.yml ps
 ENDSSH
     echo -e "${GREEN}Mise a jour terminee !${NC}"
-    echo -e "Site: ${BLUE}http://${REMOTE_HOST}${NC}"
+    echo -e "Site: ${BLUE}https://www.africans-world.org${NC}"
 }
 
 # ========================================
@@ -299,21 +299,17 @@ ENDSSH
 # SSL - Configurer Let's Encrypt
 # ========================================
 ssl() {
-    DOMAIN="${2:-}"
-    if [ -z "$DOMAIN" ]; then
-        echo -e "${RED}Usage: ./deploy.sh ssl votre-domaine.com${NC}"
-        exit 1
-    fi
+    DOMAIN="${2:-africans-world.org}"
 
-    echo -e "${GREEN}Configuration SSL pour ${DOMAIN}...${NC}"
+    echo -e "${GREEN}Configuration SSL pour ${DOMAIN} et www.${DOMAIN}...${NC}"
     ssh_heredoc << ENDSSH
         apt-get update
         apt-get install -y certbot
 
-        # Arreter Nginx temporairement
+        # Arreter Nginx temporairement pour liberer le port 80
         docker stop uafricas_nginx || true
 
-        # Obtenir le certificat
+        # Obtenir le certificat pour le domaine nu et www
         certbot certonly --standalone -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --agree-tos --email admin@${DOMAIN}
 
         # Copier les certificats
@@ -324,12 +320,12 @@ ssl() {
         # Redemarrer Nginx
         docker start uafricas_nginx
 
-        # Configurer le renouvellement automatique
-        (crontab -l 2>/dev/null; echo "0 3 * * * certbot renew --quiet --post-hook 'docker restart uafricas_nginx'") | crontab -
+        # Configurer le renouvellement automatique avec copie des certificats
+        (crontab -l 2>/dev/null; echo "0 3 * * * certbot renew --quiet --pre-hook 'docker stop uafricas_nginx' --post-hook 'cp /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ${REMOTE_DIR}/nginx/ssl/ && cp /etc/letsencrypt/live/${DOMAIN}/privkey.pem ${REMOTE_DIR}/nginx/ssl/ && docker start uafricas_nginx'") | crontab -
 
         echo ""
-        echo "Certificat SSL installe pour ${DOMAIN} !"
-        echo "Modifiez nginx.conf pour activer HTTPS puis: ./deploy.sh restart nginx"
+        echo "Certificat SSL installe pour ${DOMAIN} et www.${DOMAIN} !"
+        echo "Redemarrez avec: ./deploy.sh restart nginx"
 ENDSSH
 }
 
@@ -435,7 +431,7 @@ case "$1" in
         echo "  stop               Arreter tous les services"
         echo ""
         echo -e "${BLUE}Autres:${NC}"
-        echo "  ssl <domaine>      Configurer SSL Let's Encrypt"
+        echo "  ssl                Configurer SSL pour africans-world.org"
         echo "  backup             Sauvegarder la base de donnees"
         echo "  connect            SSH direct vers le serveur"
         echo ""
@@ -444,7 +440,7 @@ case "$1" in
         echo "  $0 deploy                    # Deployer / mettre a jour"
         echo "  $0 logs backend              # Voir les logs du backend"
         echo "  $0 restart frontend          # Redemarrer le frontend"
-        echo "  $0 ssl uafricas.org          # Configurer SSL"
+        echo "  $0 ssl                        # Configurer SSL pour africans-world.org"
         exit 1
         ;;
 esac

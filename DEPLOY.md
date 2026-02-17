@@ -113,7 +113,7 @@ Apres cette etape, vous pouvez retirer `VPS_PASSWORD` de `.deploy.env`.
 ./deploy.sh deploy
 ```
 
-Le site sera accessible sur `http://161.97.92.63`.
+Le site sera accessible sur `http://161.97.92.63` (ou `https://www.africans-world.org` apres configuration DNS et SSL).
 
 ---
 
@@ -157,39 +157,51 @@ Le site sera accessible sur `http://161.97.92.63`.
 | `./deploy.sh restart` | Redemarrer tous les services |
 | `./deploy.sh restart backend` | Redemarrer le backend |
 | `./deploy.sh stop` | Arreter tous les services |
-| `./deploy.sh ssl <domaine>` | Configurer SSL Let's Encrypt |
+| `./deploy.sh ssl` | Configurer SSL Let's Encrypt pour africans-world.org |
 | `./deploy.sh backup` | Sauvegarder la base de donnees |
 | `./deploy.sh connect` | SSH direct vers le serveur |
 
 ---
 
-## Configuration SSL (HTTPS)
+## Configuration du domaine www.africans-world.org
 
-### Pre-requis
+### Etape 1 : Configurer les DNS
 
-- Un nom de domaine pointant vers le VPS (DNS configure)
-- Les ports 80 et 443 ouverts
+Chez votre registrar de domaine, ajoutez ces enregistrements DNS :
 
-### Installation du certificat
+| Type | Nom | Valeur |
+|------|-----|--------|
+| A | `@` (africans-world.org) | `161.97.92.63` |
+| A | `www` | `161.97.92.63` |
+
+Attendez la propagation DNS (quelques minutes a 48h). Verifiez avec :
 
 ```bash
-./deploy.sh ssl votre-domaine.com
+dig africans-world.org +short
+dig www.africans-world.org +short
+# Doit retourner 161.97.92.63
 ```
 
-### Activer HTTPS dans Nginx
+### Etape 2 : Installer le certificat SSL
 
-1. Editer la configuration :
-   ```bash
-   ./deploy.sh connect
-   nano /opt/uafricas/nginx/nginx.conf
-   ```
+```bash
+./deploy.sh ssl
+```
 
-2. Decommenter la section HTTPS et la redirection HTTP → HTTPS
+Le script va :
+1. Installer certbot sur le VPS
+2. Obtenir un certificat Let's Encrypt pour `africans-world.org` et `www.africans-world.org`
+3. Copier les certificats dans le dossier nginx/ssl
+4. Configurer le renouvellement automatique (cron tous les jours a 3h)
 
-3. Redemarrer :
-   ```bash
-   ./deploy.sh restart nginx
-   ```
+### Etape 3 : Redemarrer les services
+
+```bash
+./deploy.sh restart
+```
+
+Le site sera accessible sur `https://www.africans-world.org`.
+Les requetes HTTP et `africans-world.org` (sans www) sont automatiquement redirigees vers `https://www.africans-world.org`.
 
 ---
 
