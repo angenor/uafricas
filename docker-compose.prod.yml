@@ -1,0 +1,127 @@
+# =============================================
+# UAfricas - Docker Compose Production
+# =============================================
+
+services:
+  # --- Base de donnees ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: uafricas_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-africans_db}
+      POSTGRES_USER: ${POSTGRES_USER:-uafricas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./uafricas_backend/doc/bd:/docker-entrypoint-initdb.d/bd:ro
+      - ./uafricas_backend/doc/bd/docker-init.sh:/docker-entrypoint-initdb.d/01-init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-uafricas} -d ${POSTGRES_DB:-africans_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - uafricas_net
+
+  # --- Backend Rust / Actix-Web ---
+  backend:
+    build:
+      context: ./uafricas_backend
+      dockerfile: Dockerfile
+    container_name: uafricas_backend
+    restart: unless-stopped
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8080"
+      DATABASE_URL: postgres://${POSTGRES_USER:-uafricas}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-africans_db}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-15}
+      REFRESH_EXPIRATION_DAYS: ${REFRESH_EXPIRATION_DAYS:-7}
+      UPLOAD_DIR: /app/uploads
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      RUST_LOG: ${RUST_LOG:-info}
+      LIVEKIT_URL: ${LIVEKIT_URL:-ws://livekit:7880}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-secret}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - uafricas_net
+
+  # --- Frontend Nuxt 4 (SSR) ---
+  frontend:
+    build:
+      context: ./uafricas_frontend
+      dockerfile: Dockerfile
+    container_name: uafricas_frontend
+    restart: unless-stopped
+    environment:
+      NUXT_PUBLIC_API_BASE_URL: ${NUXT_PUBLIC_API_BASE_URL:-/api}
+    depends_on:
+      - backend
+    networks:
+      - uafricas_net
+
+  # --- Nginx Reverse Proxy ---
+  nginx:
+    image: nginx:alpine
+    container_name: uafricas_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - uploads_data:/app/uploads:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - uafricas_net
+
+  # --- LiveKit (WebRTC / Visioconference) ---
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: uafricas_livekit
+    restart: unless-stopped
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882"
+      - "3478:3478/udp"
+      - "50000-50100:50000-50100/udp"
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY:-devkey}: ${LIVEKIT_API_SECRET:-secret}"
+    volumes:
+      - ./livekit.yaml:/livekit.yaml
+    command: --config /livekit.yaml
+    networks:
+      - uafricas_net
+
+  # --- Adminer (acces BDD, optionnel) ---
+  adminer:
+    image: adminer:latest
+    container_name: uafricas_adminer
+    restart: unless-stopped
+    ports:
+      - "8088:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+    networks:
+      - uafricas_net
+
+volumes:
+  pgdata:
+  uploads_data:
+
+networks:
+  uafricas_net:
+    driver: bridge

@@ -27,3 +27,6 @@ agent-browser --headed
 
 tuer `agent-browser --headed`
 pkill -f "chromium|chrome" 2>/dev/null; pkill -f "playwright" 2>/dev/null; echo "Processus navigateur terminés"
+
+
+ssh-copy-id root@161.97.92.63

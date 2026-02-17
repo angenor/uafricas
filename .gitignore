@@ -34,3 +34,8 @@ pgadmin_data/
 
 # Uploads (fichiers uploadés localement)
 uploads/
+
+# Deploiement
+.deploy.env
+backups/
+nginx/ssl/
