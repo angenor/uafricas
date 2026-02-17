@@ -47,6 +47,17 @@
         </div>
       </div>
 
+      <!-- Erreur entrer dans la salle -->
+      <div v-if="erreurEntrer" class="max-w-2xl mx-auto mb-6">
+        <div class="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2">
+          <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="w-4 h-4" />
+          {{ erreurEntrer }}
+          <button class="ml-auto text-red-400 hover:text-red-600" @click="erreurEntrer = null">
+            <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
       <!-- Content with Sidebar -->
       <div class="flex gap-8">
         <!-- Desktop Sidebar -->
@@ -70,7 +81,7 @@
           </div>
 
           <!-- Loading State -->
-          <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-if="initialLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div
               v-for="n in 6"
               :key="n"
@@ -86,18 +97,127 @@
             </div>
           </div>
 
-          <!-- Salles Grid -->
-          <div
-            v-else-if="salles.length > 0"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
-          >
-            <AfrolangSalleCard
-              v-for="salle in salles"
-              :key="salle.id"
-              :salle="salle"
-              class="transform hover:scale-[1.02] transition-all"
-              data-aos="fade-up"
-            />
+          <!-- Salles List -->
+          <div v-else-if="salles.length > 0" class="space-y-6 mb-8">
+            <div v-for="salle in salles" :key="salle.id">
+              <!-- Carte salle -->
+              <AfrolangSalleCard
+                :salle="salle"
+                :expanded="expandedSalleId === salle.id"
+                :chargement="salleEnCoursEntree === salle.id"
+                class="transform hover:scale-[1.02] transition-all"
+                data-aos="fade-up"
+                @entrer="entrerDansSalle"
+                @toggle-privees="togglePrivees"
+              />
+
+              <!-- Section dépliable : salles privées -->
+              <Transition name="expand">
+                <div
+                  v-if="expandedSalleId === salle.id"
+                  class="mt-3 bg-blue-50/50 border border-blue-100 rounded-2xl p-4 md:p-6"
+                >
+                  <!-- Loading privees -->
+                  <div v-if="loadingPrivees" class="flex items-center justify-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-3 border-blue-500 border-t-transparent" />
+                    <span class="ml-3 text-gray-500 text-sm">Chargement des cours privés...</span>
+                  </div>
+
+                  <!-- Liste des salles privées -->
+                  <template v-else-if="sallesPriveesCache[salle.id]?.length">
+                    <div class="flex items-center justify-between mb-4">
+                      <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4 text-blue-500" />
+                        {{ sallesPriveesCache[salle.id].length }} cours privé{{ sallesPriveesCache[salle.id].length > 1 ? 's' : '' }}
+                      </h4>
+                      <NuxtLink
+                        :to="`/afrolang/${salle.id}`"
+                        class="text-xs text-blue-500 hover:text-blue-700 transition-colors"
+                      >
+                        Voir tout
+                      </NuxtLink>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div
+                        v-for="sp in sallesPriveesCache[salle.id]"
+                        :key="sp.id"
+                        class="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md transition-all"
+                      >
+                        <div class="flex items-start justify-between gap-3">
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                              <h5 class="font-medium text-gray-800 text-sm truncate">{{ sp.titre }}</h5>
+                              <span
+                                v-if="sp.est_protegee"
+                                class="flex-shrink-0 text-amber-500"
+                                title="Protégée par un code d'accès"
+                              >
+                                <font-awesome-icon :icon="['fas', 'lock']" class="w-3 h-3" />
+                              </span>
+                            </div>
+                            <p v-if="sp.description" class="text-xs text-gray-500 line-clamp-1 mb-2">
+                              {{ sp.description }}
+                            </p>
+                            <div class="flex items-center gap-3 text-xs text-gray-400">
+                              <span class="flex items-center gap-1">
+                                <font-awesome-icon :icon="['fas', 'user']" class="w-3 h-3" />
+                                {{ sp.createur.prenom }} {{ sp.createur.nom }}
+                              </span>
+                              <span v-if="sp.max_participants" class="flex items-center gap-1">
+                                <font-awesome-icon :icon="['fas', 'users']" class="w-3 h-3" />
+                                Max {{ sp.max_participants }}
+                              </span>
+                            </div>
+                          </div>
+
+                          <!-- Bouton action -->
+                          <div class="flex-shrink-0">
+                            <NuxtLink
+                              v-if="sp.session_en_cours"
+                              :to="`/afrolang/salle-privee/${sp.id}`"
+                              class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs rounded-lg font-medium hover:bg-emerald-600 transition-colors whitespace-nowrap"
+                            >
+                              <font-awesome-icon :icon="['fas', 'video']" class="w-3 h-3" />
+                              Rejoindre
+                            </NuxtLink>
+                            <NuxtLink
+                              v-else
+                              :to="`/afrolang/salle-privee/${sp.id}`"
+                              class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-600 text-xs rounded-lg font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
+                            >
+                              <font-awesome-icon :icon="['fas', 'arrow-right']" class="w-3 h-3" />
+                              Entrer
+                            </NuxtLink>
+                          </div>
+                        </div>
+
+                        <!-- Badge en direct -->
+                        <div v-if="sp.session_en_cours" class="mt-2 pt-2 border-t border-gray-50">
+                          <span class="inline-flex items-center gap-1.5 text-xs text-red-500 font-medium">
+                            <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                            Session en direct
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Aucun cours privé -->
+                  <div v-else class="text-center py-6">
+                    <font-awesome-icon :icon="['fas', 'door-open']" class="w-8 h-8 text-gray-300 mb-3" />
+                    <p class="text-gray-500 text-sm">Aucun cours privé dans cette salle</p>
+                    <NuxtLink
+                      :to="`/afrolang/${salle.id}`"
+                      class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-blue-500 text-white text-sm rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                    >
+                      <font-awesome-icon :icon="['fas', 'plus']" class="w-3 h-3" />
+                      Créer un cours privé
+                    </NuxtLink>
+                  </div>
+                </div>
+              </Transition>
+            </div>
           </div>
 
           <!-- Empty State -->
@@ -159,9 +279,11 @@
 import {
   useAfrolang,
   type SalleAPI,
+  type SallePriveeAPI,
   type SalleFiltres,
   type AfrolangStats,
 } from '~/composables/useAfrolang'
+import { useUserStore } from '~/stores/user'
 
 useAOS()
 
@@ -176,8 +298,19 @@ useHead({
 })
 
 const ITEMS_PER_PAGE = 12
+const router = useRouter()
+const userStore = useUserStore()
 
-const { chargement, listerSalles, obtenirStats, listerLangues } = useAfrolang()
+const {
+  listerSalles,
+  obtenirSalle,
+  obtenirSallePrivee,
+  creerSallePrivee,
+  creerSession,
+  demarrerSession,
+  obtenirStats,
+  listerLangues,
+} = useAfrolang()
 
 // State
 const salles = ref<SalleAPI[]>([])
@@ -187,7 +320,16 @@ const totalPages = ref(1)
 const currentPage = ref(1)
 const sidebarOpen = ref(false)
 const languesDisponibles = ref<string[]>([])
-const loading = computed(() => chargement.value)
+const initialLoading = ref(true)
+
+// Expansion des salles privées
+const expandedSalleId = ref<string | null>(null)
+const loadingPrivees = ref(false)
+const sallesPriveesCache = ref<Record<string, SallePriveeAPI[]>>({})
+
+// Entrer dans la salle (visioconférence)
+const salleEnCoursEntree = ref<string | null>(null)
+const erreurEntrer = ref<string | null>(null)
 
 const stats = ref<AfrolangStats>({
   total_salles: 0,
@@ -223,6 +365,95 @@ const chargerSalles = async () => {
     salles.value = resultat.salles
     total.value = resultat.total
     totalPages.value = resultat.total_pages
+  }
+}
+
+// ── Entrer dans la salle : trouver/créer session + naviguer vers visio ──
+
+const entrerDansSalle = async (salleId: string) => {
+  erreurEntrer.value = null
+
+  // Vérifier authentification
+  if (!userStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+
+  salleEnCoursEntree.value = salleId
+
+  try {
+    // 1. Charger le détail de la salle avec ses salles privées
+    const salleDetail = await obtenirSalle(salleId)
+    if (!salleDetail) throw new Error('Impossible de charger la salle')
+
+    // 2. Chercher une salle privée avec session en cours
+    const spAvecSession = salleDetail.salles_privees.find(sp => sp.session_en_cours)
+
+    if (spAvecSession) {
+      // 3a. Trouver la session active dans cette salle privée
+      const spDetail = await obtenirSallePrivee(spAvecSession.id)
+      if (spDetail) {
+        const sessionActive = spDetail.sessions.find(s => s.etat === 'en_cours')
+        if (sessionActive) {
+          router.push(`/afrolang/session/${sessionActive.id}?rejoindre=1`)
+          return
+        }
+      }
+    }
+
+    // 3b. Pas de session active → créer une nouvelle salle privée (l'utilisateur en sera le créateur
+    //     et pourra donc y planifier/démarrer des sessions)
+    const nouvelleSP = await creerSallePrivee(salleId, {
+      titre: `Session ${salleDetail.titre}`,
+      description: `Session ouverte - ${salleDetail.titre}`,
+      code_acces: '',
+      max_participants: null,
+    })
+    if (!nouvelleSP) throw new Error('Impossible de créer la salle de cours')
+    const sallePriveeId = nouvelleSP.id
+
+    // 4. Créer une session
+    const nouvelleSession = await creerSession(sallePriveeId, {
+      titre: `Session du ${new Date().toLocaleDateString('fr-FR')}`,
+      date_debut_prevue: new Date().toISOString(),
+      max_participants: null,
+      tableau_blanc_actif: true,
+    })
+    if (!nouvelleSession) throw new Error('Impossible de créer la session')
+
+    // 5. Démarrer la session
+    const demarree = await demarrerSession(nouvelleSession.id)
+    if (!demarree) throw new Error('Impossible de démarrer la session')
+
+    // 6. Naviguer vers la visioconférence
+    router.push(`/afrolang/session/${nouvelleSession.id}?rejoindre=1`)
+  } catch (e: any) {
+    console.error('Erreur entrerDansSalle:', e)
+    erreurEntrer.value = e?.message || 'Une erreur est survenue lors de la connexion à la salle'
+  } finally {
+    salleEnCoursEntree.value = null
+  }
+}
+
+// Toggle expansion des salles privées
+const togglePrivees = async (salleId: string) => {
+  if (expandedSalleId.value === salleId) {
+    expandedSalleId.value = null
+    return
+  }
+
+  expandedSalleId.value = salleId
+
+  // Charger les salles privées si pas en cache
+  if (!sallesPriveesCache.value[salleId]) {
+    loadingPrivees.value = true
+    const detail = await obtenirSalle(salleId)
+    if (detail) {
+      sallesPriveesCache.value[salleId] = detail.salles_privees
+    } else {
+      sallesPriveesCache.value[salleId] = []
+    }
+    loadingPrivees.value = false
   }
 }
 
@@ -303,5 +534,32 @@ onMounted(async () => {
   languesDisponibles.value = languesResult
 
   await chargerSalles()
+  initialLoading.value = false
 })
 </script>
+
+<style scoped>
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+  transform: translateY(-8px);
+}
+.expand-enter-to,
+.expand-leave-from {
+  opacity: 1;
+  max-height: 800px;
+  transform: translateY(0);
+}
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

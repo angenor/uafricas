@@ -39,7 +39,7 @@ services:
       - "7882:7882"
       - "50000-50100:50000-50100/udp"
     environment:
-      - LIVEKIT_KEYS=devkey: secret
+      LIVEKIT_KEYS: "devkey: secret"
     volumes:
       - ./livekit.yaml:/livekit.yaml
     command: --config /livekit.yaml --dev

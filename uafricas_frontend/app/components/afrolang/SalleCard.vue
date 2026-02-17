@@ -1,8 +1,5 @@
 <template>
-  <NuxtLink
-    :to="`/afrolang/${salle.id}`"
-    class="relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 group block"
-  >
+  <div class="relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 group">
     <!-- Image avec overlay -->
     <div class="relative h-48 overflow-hidden">
       <img
@@ -55,25 +52,63 @@
         </div>
       </div>
 
-      <!-- Footer -->
-      <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-        <span class="text-xs text-gray-400">{{ dateFormatee }}</span>
-        <span class="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm rounded-lg font-medium group-hover:shadow-lg transform group-hover:scale-[1.02] transition-all">
-          Explorer
-        </span>
+      <!-- Boutons d'action -->
+      <div class="flex flex-col gap-2 pt-4 border-t border-gray-100">
+        <!-- Bouton principal : démarrer / rejoindre la visioconférence -->
+        <button
+          class="w-full px-4 py-3 text-white text-sm rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-wait"
+          :class="salle.sessions_en_cours > 0
+            ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+            : 'bg-gradient-to-r from-blue-500 to-cyan-500'"
+          :disabled="chargement"
+          @click="$emit('entrer', salle.id)"
+        >
+          <font-awesome-icon
+            :icon="['fas', chargement ? 'spinner' : (salle.sessions_en_cours > 0 ? 'video' : 'right-to-bracket')]"
+            class="w-4 h-4"
+            :class="{ 'animate-spin': chargement }"
+          />
+          <template v-if="chargement">
+            Connexion en cours...
+          </template>
+          <template v-else>
+            {{ salle.sessions_en_cours > 0 ? 'Rejoindre la visioconférence' : 'Démarrer la visioconférence' }}
+          </template>
+        </button>
+
+        <!-- Bouton voir cours privés (toggle) -->
+        <button
+          class="w-full px-4 py-2.5 text-sm rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+          :class="expanded
+            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+            : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'"
+          @click="$emit('toggle-privees', salle.id)"
+        >
+          <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4" />
+          Cours privés ({{ salle.nombre_salles_privees }})
+          <font-awesome-icon
+            :icon="['fas', expanded ? 'chevron-up' : 'chevron-down']"
+            class="w-3 h-3 ml-auto"
+          />
+        </button>
       </div>
     </div>
-  </NuxtLink>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { formatDate, type SalleAPI } from '~/composables/useAfrolang'
+import type { SalleAPI } from '~/composables/useAfrolang'
 
-const props = defineProps<{
+defineProps<{
   salle: SalleAPI
+  expanded: boolean
+  chargement: boolean
 }>()
 
-const dateFormatee = computed(() => formatDate(props.salle.created_at))
+defineEmits<{
+  'entrer': [salleId: string]
+  'toggle-privees': [salleId: string]
+}>()
 </script>
 
 <style scoped>

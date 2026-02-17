@@ -1387,7 +1387,7 @@ pub async fn generer_token_session(
     let role = if is_moderator { "moderateur" } else { "participant" };
     sqlx::query(
         "INSERT INTO afrolang.session_participant (session_id, utilisateur_id, role_session)
-         VALUES ($1, $2, $3::afrolang.role_session)
+         VALUES ($1, $2, $3)
          ON CONFLICT (session_id, utilisateur_id)
          DO UPDATE SET quitte_at = NULL, rejoint_at = NOW()",
     )

@@ -343,5 +343,10 @@ onMounted(async () => {
   }
 
   loading.value = false
+
+  // Auto-rejoindre la visio si ?rejoindre=1 dans l'URL
+  if (route.query.rejoindre === '1' && session.value?.etat === 'en_cours' && isAuthenticated.value) {
+    await handleRejoindre()
+  }
 })
 </script>
