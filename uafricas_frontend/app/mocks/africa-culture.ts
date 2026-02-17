@@ -38,7 +38,7 @@ export const africaCulturePageData: AfricaCulturePageData = {
       title: 'Expertise de la Diaspora',
       description: 'Mise en valeur des compétences et talents de la diaspora africaine',
       image: '/images/diaspora1.jpg',
-      link: '/experts/index',
+      link: '/experts',
       borderColor: 'chocolat',
     },
     {

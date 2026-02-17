@@ -1,8 +1,14 @@
 port: 7880
 rtc:
+  node_ip: 127.0.0.1
   tcp_port: 7882
   port_range_start: 50000
   port_range_end: 50100
   use_external_ip: false
+turn:
+  enabled: true
+  domain: localhost
+  tls_port: 0
+  udp_port: 3478
 keys:
   devkey: secret

@@ -99,7 +99,7 @@
             <div class="flex items-center justify-between">
               <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <font-awesome-icon :icon="['fas', 'lock']" class="w-4 h-4 text-blue-500" />
-                Cours privés ({{ salle.salles_privees.length }})
+                Canal privé ({{ salle.salles_privees.length }})
               </h2>
               <button
                 v-if="isAuthenticated"
