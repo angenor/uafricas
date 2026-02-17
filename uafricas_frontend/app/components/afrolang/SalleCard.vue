@@ -85,7 +85,7 @@
           @click="$emit('toggle-privees', salle.id)"
         >
           <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4" />
-          Cours privés ({{ salle.nombre_salles_privees }})
+          Canal privé ({{ salle.nombre_salles_privees }})
           <font-awesome-icon
             :icon="['fas', expanded ? 'chevron-up' : 'chevron-down']"
             class="w-3 h-3 ml-auto"

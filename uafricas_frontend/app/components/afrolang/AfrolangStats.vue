@@ -8,7 +8,7 @@
     <div class="bg-white rounded-xl shadow-md p-4 text-center">
       <font-awesome-icon :icon="['fas', 'lock']" class="w-6 h-6 text-cyan-500 mb-2" />
       <div class="text-2xl font-bold text-gray-900">{{ stats.total_salles_privees }}</div>
-      <div class="text-xs text-gray-500">Cours privés</div>
+      <div class="text-xs text-gray-500">Canal privé</div>
     </div>
     <div class="bg-white rounded-xl shadow-md p-4 text-center">
       <font-awesome-icon :icon="['fas', 'video']" class="w-6 h-6 text-emerald-500 mb-2" />

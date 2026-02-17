@@ -29,7 +29,7 @@
           </div>
           <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-4 md:p-6">
             <div class="text-3xl md:text-4xl font-bold mb-1 text-cyan-300">{{ stats.total_salles_privees }}</div>
-            <div class="text-white/80 text-sm">Cours privés</div>
+            <div class="text-white/80 text-sm">Canal privé</div>
           </div>
           <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-4 md:p-6">
             <div class="text-3xl md:text-4xl font-bold mb-1 text-emerald-300">{{ stats.sessions_en_cours }}</div>
