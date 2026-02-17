@@ -245,7 +245,7 @@
         Retrouver un profil
       </div>
     </NuxtLink>
-    <NuxtLink to="#moboliser_expertise">
+    <NuxtLink to="/experts">
       <div
         :class="[
           state.pointer == 'reseautage'
