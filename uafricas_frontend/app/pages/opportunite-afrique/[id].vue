@@ -56,6 +56,13 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <!-- Colonne principale -->
           <div class="lg:col-span-2 space-y-6">
+            <!-- Image de couverture -->
+            <div class="rounded-lg overflow-hidden shadow-md">
+              <img :src="pays.image_couverture"
+                   :alt="pays.nom"
+                   class="w-full h-64 md:h-80 object-cover" />
+            </div>
+
             <!-- Informations generales -->
             <div class="bg-white rounded-lg shadow-md p-6">
               <h2 class="text-2xl font-bold mb-6 flex items-center">
