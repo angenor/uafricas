@@ -109,14 +109,28 @@ ENDSSH
             LIVEKIT_KEY=$(openssl rand -hex 8)
             LIVEKIT_SECRET=$(openssl rand -hex 16)
 
-            # Creer le .env depuis le template
-            cp .env.production.example .env
+            # Creer le .env directement
+            cat > .env << ENVEOF
+# PostgreSQL
+POSTGRES_DB=africans_db
+POSTGRES_USER=uafricas
+POSTGRES_PASSWORD=${POSTGRES_PWD}
 
-            # Remplacer les placeholders
-            sed -i "s/CHANGE_ME_STRONG_PASSWORD/$POSTGRES_PWD/" .env
-            sed -i "s/CHANGE_ME_GENERATE_RANDOM_SECRET/$JWT_SECRET/" .env
-            sed -i "s/CHANGE_ME_LIVEKIT_KEY/$LIVEKIT_KEY/" .env
-            sed -i "s/CHANGE_ME_LIVEKIT_SECRET/$LIVEKIT_SECRET/" .env
+# Backend
+JWT_SECRET=${JWT_SECRET}
+JWT_EXPIRATION_MINUTES=15
+REFRESH_EXPIRATION_DAYS=7
+RUST_LOG=info
+
+# Frontend
+FRONTEND_URL=http://161.97.92.63
+NUXT_PUBLIC_API_BASE_URL=/api
+
+# LiveKit (visioconference WebRTC)
+LIVEKIT_URL=ws://livekit:7880
+LIVEKIT_API_KEY=${LIVEKIT_KEY}
+LIVEKIT_API_SECRET=${LIVEKIT_SECRET}
+ENVEOF
 
             echo ""
             echo "Secrets generes et sauvegardes dans .env"
