@@ -1,7 +1,7 @@
 <template>
-  <div class="relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 group">
+  <div class="relative bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 group">
     <!-- Image avec overlay -->
-    <div class="relative h-48 overflow-hidden">
+    <div class="relative h-32 overflow-hidden">
       <img
         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         :src="salle.image_couverture_url || '/images/investissement-afrique.jpg'"
@@ -12,51 +12,51 @@
       <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
       <!-- Badge langue -->
-      <div v-if="salle.langue_cible" class="absolute top-4 left-4">
-        <span class="bg-white/90 backdrop-blur-xs px-3 py-1 rounded-full text-xs font-medium text-gray-700 flex items-center gap-1.5">
+      <div v-if="salle.langue_cible" class="absolute top-3 left-3">
+        <span class="bg-white/90 backdrop-blur-xs px-2 py-0.5 rounded-full text-[11px] font-medium text-gray-700 flex items-center gap-1">
           <font-awesome-icon :icon="['fas', 'language']" class="w-3 h-3 text-blue-500" />
           {{ salle.langue_cible }}
         </span>
       </div>
 
       <!-- Indicateur en direct -->
-      <div v-if="salle.sessions_en_cours > 0" class="absolute top-4 right-4">
-        <span class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 animate-pulse">
-          <font-awesome-icon :icon="['fas', 'circle']" class="w-2 h-2" />
+      <div v-if="salle.sessions_en_cours > 0" class="absolute top-3 right-3">
+        <span class="bg-red-500 text-white px-2 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 animate-pulse">
+          <font-awesome-icon :icon="['fas', 'circle']" class="w-1.5 h-1.5" />
           {{ salle.sessions_en_cours }} en direct
         </span>
       </div>
 
       <!-- Titre en bas de l'image -->
-      <div class="absolute bottom-0 left-0 right-0 p-4 text-white">
-        <h3 class="text-lg font-bold line-clamp-2">{{ salle.titre }}</h3>
+      <div class="absolute bottom-0 left-0 right-0 px-3 pb-2 text-white">
+        <h3 class="text-sm font-bold line-clamp-2 leading-tight">{{ salle.titre }}</h3>
       </div>
     </div>
 
     <!-- Contenu de la carte -->
-    <div class="p-5">
+    <div class="p-3">
       <!-- Description courte -->
-      <p class="text-gray-600 text-sm line-clamp-2 mb-4">
+      <p class="text-gray-600 text-xs line-clamp-2 mb-3">
         {{ salle.description || 'Salle de visioconférence pour l\'apprentissage linguistique' }}
       </p>
 
       <!-- Informations principales -->
-      <div class="space-y-2 mb-4">
-        <div class="flex items-center gap-2 text-sm text-gray-700">
-          <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4 text-blue-500" />
-          <span>{{ salle.nombre_salles_privees }} cours privé{{ salle.nombre_salles_privees > 1 ? 's' : '' }}</span>
-        </div>
-        <div class="flex items-center gap-2 text-sm text-gray-600">
-          <font-awesome-icon :icon="['fas', 'video']" class="w-4 h-4 text-gray-400" />
-          <span>{{ salle.sessions_en_cours }} session{{ salle.sessions_en_cours > 1 ? 's' : '' }} active{{ salle.sessions_en_cours > 1 ? 's' : '' }}</span>
-        </div>
+      <div class="flex items-center gap-4 text-xs text-gray-500 mb-3">
+        <span class="flex items-center gap-1">
+          <font-awesome-icon :icon="['fas', 'door-open']" class="w-3 h-3 text-blue-500" />
+          {{ salle.nombre_salles_privees }} cours
+        </span>
+        <span class="flex items-center gap-1">
+          <font-awesome-icon :icon="['fas', 'video']" class="w-3 h-3 text-gray-400" />
+          {{ salle.sessions_en_cours }} active{{ salle.sessions_en_cours > 1 ? 's' : '' }}
+        </span>
       </div>
 
       <!-- Boutons d'action -->
-      <div class="flex flex-col gap-2 pt-4 border-t border-gray-100">
+      <div class="flex flex-col gap-1.5 pt-3 border-t border-gray-100">
         <!-- Bouton principal : démarrer / rejoindre la visioconférence -->
         <button
-          class="w-full px-4 py-3 text-white text-sm rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-wait"
+          class="w-full px-3 py-2 text-white text-xs rounded-lg font-semibold hover:shadow-md transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-wait"
           :class="salle.sessions_en_cours > 0
             ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
             : 'bg-gradient-to-r from-blue-500 to-cyan-500'"
@@ -65,30 +65,30 @@
         >
           <font-awesome-icon
             :icon="['fas', chargement ? 'spinner' : (salle.sessions_en_cours > 0 ? 'video' : 'right-to-bracket')]"
-            class="w-4 h-4"
+            class="w-3.5 h-3.5"
             :class="{ 'animate-spin': chargement }"
           />
           <template v-if="chargement">
-            Connexion en cours...
+            Connexion...
           </template>
           <template v-else>
-            {{ salle.sessions_en_cours > 0 ? 'Rejoindre la visioconférence' : 'Démarrer la visioconférence' }}
+            {{ salle.sessions_en_cours > 0 ? 'Rejoindre' : 'Démarrer' }}
           </template>
         </button>
 
         <!-- Bouton voir cours privés (toggle) -->
         <button
-          class="w-full px-4 py-2.5 text-sm rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+          class="w-full px-3 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center justify-center gap-1.5"
           :class="expanded
             ? 'bg-blue-50 text-blue-700 border border-blue-200'
             : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'"
           @click="$emit('toggle-privees', salle.id)"
         >
-          <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4" />
+          <font-awesome-icon :icon="['fas', 'door-open']" class="w-3 h-3" />
           Canal privé ({{ salle.nombre_salles_privees }})
           <font-awesome-icon
             :icon="['fas', expanded ? 'chevron-up' : 'chevron-down']"
-            class="w-3 h-3 ml-auto"
+            class="w-2.5 h-2.5 ml-auto"
           />
         </button>
       </div>

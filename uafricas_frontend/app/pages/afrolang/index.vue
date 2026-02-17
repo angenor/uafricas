@@ -81,144 +81,145 @@
           </div>
 
           <!-- Loading State -->
-          <div v-if="initialLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-if="initialLoading" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <div
               v-for="n in 6"
               :key="n"
-              class="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse"
+              class="bg-white rounded-xl shadow-md overflow-hidden animate-pulse"
             >
-              <div class="h-48 bg-gray-200" />
-              <div class="p-5 space-y-4">
-                <div class="h-4 bg-gray-200 rounded w-3/4" />
+              <div class="h-32 bg-gray-200" />
+              <div class="p-3 space-y-3">
+                <div class="h-3 bg-gray-200 rounded w-3/4" />
                 <div class="h-3 bg-gray-200 rounded w-1/2" />
-                <div class="h-3 bg-gray-200 rounded" />
-                <div class="h-3 bg-gray-200 rounded w-2/3" />
+                <div class="h-8 bg-gray-200 rounded" />
               </div>
             </div>
           </div>
 
           <!-- Salles List -->
-          <div v-else-if="salles.length > 0" class="space-y-6 mb-8">
-            <div v-for="salle in salles" :key="salle.id">
-              <!-- Carte salle -->
+          <template v-else-if="salles.length > 0">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
               <AfrolangSalleCard
+                v-for="salle in salles"
+                :key="salle.id"
                 :salle="salle"
                 :expanded="expandedSalleId === salle.id"
                 :chargement="salleEnCoursEntree === salle.id"
-                class="transform hover:scale-[1.02] transition-all"
                 data-aos="fade-up"
                 @entrer="entrerDansSalle"
                 @toggle-privees="togglePrivees"
               />
+            </div>
 
-              <!-- Section dépliable : salles privées -->
-              <Transition name="expand">
-                <div
-                  v-if="expandedSalleId === salle.id"
-                  class="mt-3 bg-blue-50/50 border border-blue-100 rounded-2xl p-4 md:p-6"
-                >
-                  <!-- Loading privees -->
-                  <div v-if="loadingPrivees" class="flex items-center justify-center py-8">
-                    <div class="animate-spin rounded-full h-8 w-8 border-3 border-blue-500 border-t-transparent" />
-                    <span class="ml-3 text-gray-500 text-sm">Chargement des cours privés...</span>
-                  </div>
+            <!-- Section dépliable : salles privées (hors grille) -->
+            <Transition name="expand">
+              <div
+                v-if="expandedSalle"
+                :key="expandedSalleId!"
+                class="mb-8 bg-blue-50/50 border border-blue-100 rounded-2xl p-4 md:p-6"
+              >
+                <!-- Loading privees -->
+                <div v-if="loadingPrivees" class="flex items-center justify-center py-8">
+                  <div class="animate-spin rounded-full h-8 w-8 border-3 border-blue-500 border-t-transparent" />
+                  <span class="ml-3 text-gray-500 text-sm">Chargement des cours privés...</span>
+                </div>
 
-                  <!-- Liste des salles privées -->
-                  <template v-else-if="sallesPriveesCache[salle.id]?.length">
-                    <div class="flex items-center justify-between mb-4">
-                      <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                        <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4 text-blue-500" />
-                        {{ sallesPriveesCache[salle.id].length }} cours privé{{ sallesPriveesCache[salle.id].length > 1 ? 's' : '' }}
-                      </h4>
-                      <NuxtLink
-                        :to="`/afrolang/${salle.id}`"
-                        class="text-xs text-blue-500 hover:text-blue-700 transition-colors"
-                      >
-                        Voir tout
-                      </NuxtLink>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div
-                        v-for="sp in sallesPriveesCache[salle.id]"
-                        :key="sp.id"
-                        class="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md transition-all"
-                      >
-                        <div class="flex items-start justify-between gap-3">
-                          <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                              <h5 class="font-medium text-gray-800 text-sm truncate">{{ sp.titre }}</h5>
-                              <span
-                                v-if="sp.est_protegee"
-                                class="flex-shrink-0 text-amber-500"
-                                title="Protégée par un code d'accès"
-                              >
-                                <font-awesome-icon :icon="['fas', 'lock']" class="w-3 h-3" />
-                              </span>
-                            </div>
-                            <p v-if="sp.description" class="text-xs text-gray-500 line-clamp-1 mb-2">
-                              {{ sp.description }}
-                            </p>
-                            <div class="flex items-center gap-3 text-xs text-gray-400">
-                              <span class="flex items-center gap-1">
-                                <font-awesome-icon :icon="['fas', 'user']" class="w-3 h-3" />
-                                {{ sp.createur.prenom }} {{ sp.createur.nom }}
-                              </span>
-                              <span v-if="sp.max_participants" class="flex items-center gap-1">
-                                <font-awesome-icon :icon="['fas', 'users']" class="w-3 h-3" />
-                                Max {{ sp.max_participants }}
-                              </span>
-                            </div>
-                          </div>
-
-                          <!-- Bouton action -->
-                          <div class="flex-shrink-0">
-                            <NuxtLink
-                              v-if="sp.session_en_cours"
-                              :to="`/afrolang/salle-privee/${sp.id}`"
-                              class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs rounded-lg font-medium hover:bg-emerald-600 transition-colors whitespace-nowrap"
-                            >
-                              <font-awesome-icon :icon="['fas', 'video']" class="w-3 h-3" />
-                              Rejoindre
-                            </NuxtLink>
-                            <NuxtLink
-                              v-else
-                              :to="`/afrolang/salle-privee/${sp.id}`"
-                              class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-600 text-xs rounded-lg font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
-                            >
-                              <font-awesome-icon :icon="['fas', 'arrow-right']" class="w-3 h-3" />
-                              Entrer
-                            </NuxtLink>
-                          </div>
-                        </div>
-
-                        <!-- Badge en direct -->
-                        <div v-if="sp.session_en_cours" class="mt-2 pt-2 border-t border-gray-50">
-                          <span class="inline-flex items-center gap-1.5 text-xs text-red-500 font-medium">
-                            <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                            Session en direct
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </template>
-
-                  <!-- Aucun cours privé -->
-                  <div v-else class="text-center py-6">
-                    <font-awesome-icon :icon="['fas', 'door-open']" class="w-8 h-8 text-gray-300 mb-3" />
-                    <p class="text-gray-500 text-sm">Aucun cours privé dans cette salle</p>
+                <!-- Liste des salles privées -->
+                <template v-else-if="sallesPriveesCache[expandedSalleId!]?.length">
+                  <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4 text-blue-500" />
+                      {{ sallesPriveesCache[expandedSalleId!].length }} cours privé{{ sallesPriveesCache[expandedSalleId!].length > 1 ? 's' : '' }}
+                      — {{ expandedSalle.titre }}
+                    </h4>
                     <NuxtLink
-                      :to="`/afrolang/${salle.id}`"
-                      class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-blue-500 text-white text-sm rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                      :to="`/afrolang/${expandedSalleId}`"
+                      class="text-xs text-blue-500 hover:text-blue-700 transition-colors"
                     >
-                      <font-awesome-icon :icon="['fas', 'plus']" class="w-3 h-3" />
-                      Créer un cours privé
+                      Voir tout
                     </NuxtLink>
                   </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div
+                      v-for="sp in sallesPriveesCache[expandedSalleId!]"
+                      :key="sp.id"
+                      class="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md transition-all"
+                    >
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center gap-2 mb-1">
+                            <h5 class="font-medium text-gray-800 text-sm truncate">{{ sp.titre }}</h5>
+                            <span
+                              v-if="sp.est_protegee"
+                              class="flex-shrink-0 text-amber-500"
+                              title="Protégée par un code d'accès"
+                            >
+                              <font-awesome-icon :icon="['fas', 'lock']" class="w-3 h-3" />
+                            </span>
+                          </div>
+                          <p v-if="sp.description" class="text-xs text-gray-500 line-clamp-1 mb-2">
+                            {{ sp.description }}
+                          </p>
+                          <div class="flex items-center gap-3 text-xs text-gray-400">
+                            <span class="flex items-center gap-1">
+                              <font-awesome-icon :icon="['fas', 'user']" class="w-3 h-3" />
+                              {{ sp.createur.prenom }} {{ sp.createur.nom }}
+                            </span>
+                            <span v-if="sp.max_participants" class="flex items-center gap-1">
+                              <font-awesome-icon :icon="['fas', 'users']" class="w-3 h-3" />
+                              Max {{ sp.max_participants }}
+                            </span>
+                          </div>
+                        </div>
+
+                        <!-- Bouton action -->
+                        <div class="flex-shrink-0">
+                          <NuxtLink
+                            v-if="sp.session_en_cours"
+                            :to="`/afrolang/salle-privee/${sp.id}`"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs rounded-lg font-medium hover:bg-emerald-600 transition-colors whitespace-nowrap"
+                          >
+                            <font-awesome-icon :icon="['fas', 'video']" class="w-3 h-3" />
+                            Rejoindre
+                          </NuxtLink>
+                          <NuxtLink
+                            v-else
+                            :to="`/afrolang/salle-privee/${sp.id}`"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-600 text-xs rounded-lg font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
+                          >
+                            <font-awesome-icon :icon="['fas', 'arrow-right']" class="w-3 h-3" />
+                            Entrer
+                          </NuxtLink>
+                        </div>
+                      </div>
+
+                      <!-- Badge en direct -->
+                      <div v-if="sp.session_en_cours" class="mt-2 pt-2 border-t border-gray-50">
+                        <span class="inline-flex items-center gap-1.5 text-xs text-red-500 font-medium">
+                          <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                          Session en direct
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Aucun cours privé -->
+                <div v-else class="text-center py-6">
+                  <font-awesome-icon :icon="['fas', 'door-open']" class="w-8 h-8 text-gray-300 mb-3" />
+                  <p class="text-gray-500 text-sm">Aucun cours privé dans cette salle</p>
+                  <NuxtLink
+                    :to="`/afrolang/${expandedSalleId}`"
+                    class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-blue-500 text-white text-sm rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                  >
+                    <font-awesome-icon :icon="['fas', 'plus']" class="w-3 h-3" />
+                    Créer un cours privé
+                  </NuxtLink>
                 </div>
-              </Transition>
-            </div>
-          </div>
+              </div>
+            </Transition>
+          </template>
 
           <!-- Empty State -->
           <div v-else class="bg-white rounded-2xl shadow-xl p-12 text-center">
@@ -343,6 +344,11 @@ const filtres = ref<SalleFiltres>({
   recherche: '',
   langue: '',
 })
+
+// Salle actuellement dépliée (pour la section privées hors grille)
+const expandedSalle = computed(() =>
+  salles.value.find(s => s.id === expandedSalleId.value) ?? null,
+)
 
 // Debounce timer pour la recherche
 let rechercheTimer: ReturnType<typeof setTimeout> | null = null
