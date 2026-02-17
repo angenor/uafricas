@@ -130,6 +130,15 @@ NUXT_PUBLIC_API_BASE_URL=/api
 LIVEKIT_URL=ws://livekit:7880
 LIVEKIT_API_KEY=${LIVEKIT_KEY}
 LIVEKIT_API_SECRET=${LIVEKIT_SECRET}
+
+# SMTP (envoi d'emails)
+SMTP_HOST=mail.africans-world.org
+SMTP_PORT=587
+SMTP_USERNAME=contact@africans-world.org
+SMTP_PASSWORD=CHANGEZ_MOI
+SMTP_FROM_EMAIL=contact@africans-world.org
+SMTP_FROM_NAME=UAfricas
+EMAIL_VERIFICATION_EXPIRATION_HOURS=24
 ENVEOF
 
             echo ""

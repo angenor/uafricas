@@ -15,7 +15,9 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/connexion", web::post().to(auth::connexion))
                     .route("/deconnexion", web::post().to(auth::deconnexion))
                     .route("/moi", web::get().to(auth::moi))
-                    .route("/rafraichir", web::post().to(auth::rafraichir_token)),
+                    .route("/rafraichir", web::post().to(auth::rafraichir_token))
+                    .route("/verifier-email", web::post().to(auth::verifier_email))
+                    .route("/renvoyer-verification", web::post().to(auth::renvoyer_verification)),
             )
             // Routes des livres
             .service(

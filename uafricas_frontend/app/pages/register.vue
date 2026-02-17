@@ -327,8 +327,8 @@ const handleRegister = async () => {
   }
 
   try {
-    await register(form)
-    router.push('/')
+    const email = await register(form)
+    router.push({ path: '/verification-email-envoyee', query: { email } })
   } catch (err) {
     console.error('Erreur inscription:', err)
   }

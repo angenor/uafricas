@@ -32,7 +32,7 @@ kill $(lsof -i :8080 -t) 2>/dev/null; RUST_LOG=info cargo run  # Redémarrer pro
 
 > **Important** : `cargo run` recompile automatiquement si le code a changé. Pas besoin de `cargo build` avant. Pour redémarrer après modification, toujours **tuer l'ancien processus** avant de relancer, sinon le port 8080 reste occupé par l'ancienne version.
 
-Backend env vars: `DATABASE_URL` (required), `JWT_SECRET` (required), `HOST` (default: 127.0.0.1), `PORT` (default: 8080), `UPLOAD_DIR` (default: ./uploads), `FRONTEND_URL` (default: http://localhost:3000), `JWT_EXPIRATION_MINUTES` (default: 15), `REFRESH_EXPIRATION_DAYS` (default: 7), `RUST_LOG` (info/debug/error).
+Backend env vars: `DATABASE_URL` (required), `JWT_SECRET` (required), `HOST` (default: 127.0.0.1), `PORT` (default: 8080), `UPLOAD_DIR` (default: ./uploads), `FRONTEND_URL` (default: http://localhost:3000), `JWT_EXPIRATION_MINUTES` (default: 15), `REFRESH_EXPIRATION_DAYS` (default: 7), `RUST_LOG` (info/debug/error), `SMTP_HOST` (required), `SMTP_PORT` (default: 587), `SMTP_USERNAME` (required), `SMTP_PASSWORD` (required), `SMTP_FROM_EMAIL` (default: SMTP_USERNAME), `SMTP_FROM_NAME` (default: UAfricas), `EMAIL_VERIFICATION_EXPIRATION_HOURS` (default: 24).
 
 ### Database (Docker)
 
@@ -61,7 +61,7 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 
 **Composables** (`app/composables/`):
 - `useAfricantives` — API client pour les initiatives africaines (listerAfricantives avec filtres/pagination/tri, obtenirAfricantive, creerAfricantive multipart, listerDomaines, listerPays). Constantes DOMAINES_AFRICANTIVES/PAYS_AFRICAINS
-- `useAuth` — API client for authentication (register, login, logout, refreshAccessToken, initAuth, hasRole). Connects to backend `/api/auth/*` endpoints via $fetch. Exposes loading/error state and user getters.
+- `useAuth` — API client for authentication (register, verifierEmail, renvoyerVerification, login, logout, refreshAccessToken, initAuth, hasRole). Connects to backend `/api/auth/*` endpoints via $fetch. Exposes loading/error state and user getters. Register retourne l'email (pas de tokens, compte en_attente). verifierEmail active le compte et connecte l'utilisateur.
 - `useAudioPlayer` — HTML5 audio controls for radio streaming (play/pause/volume/station switching)
 - `useAOS` — initializes Animate On Scroll (1000ms duration, once, ease-out-cubic)
 - `useBibliotheque` — API client pour la bibliothèque numérique (CRUD livres via $fetch, upload multipart, mapping accès DB↔frontend)
@@ -91,11 +91,13 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 
 **Endpoints API implémentés** :
 - `GET /api/health` — Health check
-- `POST /api/auth/inscription` — Inscription (nom, prenom, email, mot_de_passe, confirmation) → AuthResponse (utilisateur + access_token + refresh_token)
+- `POST /api/auth/inscription` — Inscription (nom, prenom, email, mot_de_passe, confirmation) → InscriptionResponse (message + email). Compte créé en état `en_attente`, email de vérification envoyé via SMTP
 - `POST /api/auth/connexion` — Connexion (email, mot_de_passe) → AuthResponse
 - `POST /api/auth/deconnexion` — Déconnexion (révoque refresh token)
 - `GET /api/auth/moi` — Profil utilisateur connecté (Bearer token requis)
 - `POST /api/auth/rafraichir` — Rafraîchir les tokens (rotation refresh token)
+- `POST /api/auth/verifier-email` — Vérifier l'email avec token (active le compte, retourne AuthResponse avec tokens)
+- `POST /api/auth/renvoyer-verification` — Renvoyer l'email de vérification (réponse générique anti-énumération)
 - `GET /api/livres?recherche=&type_document=&page=&par_page=` — Liste paginée des livres
 - `GET /api/livres/{id}` — Détail d'un livre (incrémente vues)
 - `POST /api/livres` — Création multipart (image couverture + PDF + métadonnées)
@@ -171,13 +173,13 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 - `GET /api/afrolang/stats` — Statistiques globales Afrolang (salles, privées, sessions en cours/terminées, participants uniques)
 - `GET /api/afrolang/langues` — Liste des langues disponibles (DISTINCT depuis salles actives)
 
-**Authentification** : JWT (HS256) access token (15 min) + refresh token (7 jours, SHA-256 hashé en BDD dans `iam.refresh_token`). Mot de passe hashé avec bcrypt (cost 12). Module `jwt.rs` pour génération/validation tokens.
+**Authentification** : JWT (HS256) access token (15 min) + refresh token (7 jours, SHA-256 hashé en BDD dans `iam.refresh_token`). Mot de passe hashé avec bcrypt (cost 12). Module `jwt.rs` pour génération/validation tokens. **Vérification email** : À l'inscription, compte créé en `etat='en_attente'`. Token de vérification SHA-256 hashé en BDD (`iam.token_verification_email`, expire 24h). Email envoyé via SMTP (lettre, STARTTLS port 587). Clic sur le lien → compte activé (`etat='actif'`, `email_verifie=true`) + auto-login. Module `email.rs` pour envoi SMTP asynchrone.
 
-**Dépendances backend** : actix-web 4, actix-cors, actix-multipart, actix-files, sqlx (PostgreSQL), uuid, chrono, dotenvy, serde, sanitize-filename, bcrypt, jsonwebtoken, sha2, rand, livekit-api.
+**Dépendances backend** : actix-web 4, actix-cors, actix-multipart, actix-files, sqlx (PostgreSQL), uuid, chrono, dotenvy, serde, sanitize-filename, bcrypt, jsonwebtoken, sha2, rand, livekit-api, lettre (SMTP email).
 
 **Upload fichiers** : Stockage local dans `./uploads/couvertures/` et `./uploads/documents/`, servis statiquement via actix-files sur `/uploads/`.
 
-**Configuration** : Variables d'environnement dans `.env` : `DATABASE_URL`, `UPLOAD_DIR`, `FRONTEND_URL`, `HOST`, `PORT`, `RUST_LOG`, `JWT_SECRET`, `JWT_EXPIRATION_MINUTES`, `REFRESH_EXPIRATION_DAYS`, `LIVEKIT_URL` (default: ws://localhost:7880), `LIVEKIT_API_KEY` (default: devkey), `LIVEKIT_API_SECRET` (default: secret).
+**Configuration** : Variables d'environnement dans `.env` : `DATABASE_URL`, `UPLOAD_DIR`, `FRONTEND_URL`, `HOST`, `PORT`, `RUST_LOG`, `JWT_SECRET`, `JWT_EXPIRATION_MINUTES`, `REFRESH_EXPIRATION_DAYS`, `LIVEKIT_URL` (default: ws://localhost:7880), `LIVEKIT_API_KEY` (default: devkey), `LIVEKIT_API_SECRET` (default: secret), `SMTP_HOST` (required), `SMTP_PORT` (default: 587), `SMTP_USERNAME` (required), `SMTP_PASSWORD` (required), `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME` (default: UAfricas), `EMAIL_VERIFICATION_EXPIRATION_HOURS` (default: 24).
 
 **Database** : PostgreSQL 16 via Docker (`docker-compose.yml` à la racine). Le schéma SQL complet est dans `uafricas_backend/doc/bd/` avec un fichier orchestrateur `schema.sql` qui inclut 15 fichiers via `\ir` (dans `schemas/`). Le script `docker-init.sh` lance l'init automatiquement au premier `docker compose up`.
 

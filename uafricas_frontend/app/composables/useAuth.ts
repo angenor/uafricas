@@ -16,6 +16,12 @@ interface AuthApiResponse {
   refresh_token: string
 }
 
+/** Reponse d'inscription (sans tokens) */
+interface InscriptionApiResponse {
+  message: string
+  email: string
+}
+
 /** Donnees du formulaire d'inscription */
 export interface InscriptionForm {
   nom: string
@@ -33,12 +39,12 @@ export const useAuth = () => {
   const error = ref<string | null>(null)
 
   // ── Inscription ────────────────────────────────────
-  const register = async (form: InscriptionForm) => {
+  const register = async (form: InscriptionForm): Promise<string> => {
     loading.value = true
     error.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<AuthApiResponse>>(
+      const reponse = await $fetch<ApiResponse<InscriptionApiResponse>>(
         `${apiBase}/api/auth/inscription`,
         {
           method: 'POST',
@@ -50,9 +56,70 @@ export const useAuth = () => {
         throw new Error(reponse.error || 'Erreur lors de l\'inscription')
       }
 
+      // Retourner l'email pour la page de confirmation
+      return reponse.data.email
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      error.value = message
+      throw e
+    }
+    finally {
+      loading.value = false
+    }
+  }
+
+  // ── Verification email ───────────────────────────────
+  const verifierEmail = async (token: string) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<AuthApiResponse>>(
+        `${apiBase}/api/auth/verifier-email`,
+        {
+          method: 'POST',
+          body: { token },
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de la verification')
+      }
+
       const { utilisateur, access_token, refresh_token } = reponse.data
       userStore.setAuth(utilisateur, access_token, refresh_token)
       return utilisateur
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Token invalide ou expire'
+      error.value = message
+      throw e
+    }
+    finally {
+      loading.value = false
+    }
+  }
+
+  // ── Renvoyer email de verification ───────────────────
+  const renvoyerVerification = async (email: string): Promise<string> => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<{ message: string }>>(
+        `${apiBase}/api/auth/renvoyer-verification`,
+        {
+          method: 'POST',
+          body: { email },
+        },
+      )
+
+      if (!reponse.success) {
+        throw new Error(reponse.error || 'Erreur lors du renvoi')
+      }
+
+      return reponse.data?.message || 'Email envoye'
     }
     catch (e: any) {
       const message = e?.data?.error || e?.message || 'Erreur reseau'
@@ -178,6 +245,8 @@ export const useAuth = () => {
 
     // Actions
     register,
+    verifierEmail,
+    renvoyerVerification,
     login,
     loginWithGoogle,
     logout,

@@ -44,6 +44,13 @@ services:
       LIVEKIT_URL: ${LIVEKIT_URL:-ws://livekit:7880}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-secret}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-contact@africans-world.org}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-UAfricas}
+      EMAIL_VERIFICATION_EXPIRATION_HOURS: ${EMAIL_VERIFICATION_EXPIRATION_HOURS:-24}
     volumes:
       - uploads_data:/app/uploads
     depends_on:

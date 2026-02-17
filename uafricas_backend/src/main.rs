@@ -5,6 +5,7 @@ use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 
 mod config;
+mod email;
 mod errors;
 mod handlers;
 mod jwt;
@@ -88,6 +89,7 @@ async fn main() -> std::io::Result<()> {
     let frontend_url = app_config.frontend_url.clone();
     let jwt_config = app_config.jwt_config();
     let livekit_config = app_config.livekit_config();
+    let smtp_config = app_config.smtp_config();
 
     log::info!(
         "Serveur en ecoute sur http://{}:{}",
@@ -112,6 +114,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(upload_dir.clone()))
             .app_data(web::Data::new(jwt_config.clone()))
             .app_data(web::Data::new(livekit_config.clone()))
+            .app_data(web::Data::new(smtp_config.clone()))
             .app_data(web::PayloadConfig::new(50 * 1024 * 1024))
             .configure(routes::configurer_routes)
             // Servir les fichiers uploades avec Content-Disposition: inline

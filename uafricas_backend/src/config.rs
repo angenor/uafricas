@@ -15,6 +15,13 @@ pub struct AppConfig {
     pub livekit_url: String,
     pub livekit_api_key: String,
     pub livekit_api_secret: String,
+    pub smtp_host: String,
+    pub smtp_port: u16,
+    pub smtp_username: String,
+    pub smtp_password: String,
+    pub smtp_from_email: String,
+    pub smtp_from_name: String,
+    pub email_verification_expiration_hours: i64,
 }
 
 /// Configuration JWT partagee via web::Data
@@ -31,6 +38,19 @@ pub struct LivekitConfig {
     pub url: String,
     pub api_key: String,
     pub api_secret: String,
+}
+
+/// Configuration SMTP partagee via web::Data
+#[derive(Clone)]
+pub struct SmtpConfig {
+    pub host: String,
+    pub port: u16,
+    pub username: String,
+    pub password: String,
+    pub from_email: String,
+    pub from_name: String,
+    pub frontend_url: String,
+    pub verification_expiration_hours: i64,
 }
 
 impl AppConfig {
@@ -64,6 +84,24 @@ impl AppConfig {
                 .unwrap_or_else(|_| "devkey".to_string()),
             livekit_api_secret: env::var("LIVEKIT_API_SECRET")
                 .unwrap_or_else(|_| "secret".to_string()),
+            smtp_host: env::var("SMTP_HOST")
+                .expect("SMTP_HOST doit etre definie dans .env"),
+            smtp_port: env::var("SMTP_PORT")
+                .unwrap_or_else(|_| "587".to_string())
+                .parse::<u16>()
+                .expect("SMTP_PORT doit etre un nombre"),
+            smtp_username: env::var("SMTP_USERNAME")
+                .expect("SMTP_USERNAME doit etre definie dans .env"),
+            smtp_password: env::var("SMTP_PASSWORD")
+                .expect("SMTP_PASSWORD doit etre definie dans .env"),
+            smtp_from_email: env::var("SMTP_FROM_EMAIL")
+                .unwrap_or_else(|_| env::var("SMTP_USERNAME").unwrap_or_default()),
+            smtp_from_name: env::var("SMTP_FROM_NAME")
+                .unwrap_or_else(|_| "UAfricas".to_string()),
+            email_verification_expiration_hours: env::var("EMAIL_VERIFICATION_EXPIRATION_HOURS")
+                .unwrap_or_else(|_| "24".to_string())
+                .parse::<i64>()
+                .expect("EMAIL_VERIFICATION_EXPIRATION_HOURS doit etre un nombre"),
         }
     }
 
@@ -82,6 +120,20 @@ impl AppConfig {
             url: self.livekit_url.clone(),
             api_key: self.livekit_api_key.clone(),
             api_secret: self.livekit_api_secret.clone(),
+        }
+    }
+
+    /// Creer la configuration SMTP a partir de AppConfig
+    pub fn smtp_config(&self) -> SmtpConfig {
+        SmtpConfig {
+            host: self.smtp_host.clone(),
+            port: self.smtp_port,
+            username: self.smtp_username.clone(),
+            password: self.smtp_password.clone(),
+            from_email: self.smtp_from_email.clone(),
+            from_name: self.smtp_from_name.clone(),
+            frontend_url: self.frontend_url.clone(),
+            verification_expiration_hours: self.email_verification_expiration_hours,
         }
     }
 }

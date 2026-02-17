@@ -124,7 +124,7 @@
             >
               <div class="flex items-center">
                 <svg
-                  class="h-4 w-4 mr-2"
+                  class="h-4 w-4 mr-2 shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -136,7 +136,16 @@
                     d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                {{ error }}
+                <span>{{ error }}</span>
+              </div>
+              <!-- Lien pour renvoyer la verification si compte non verifie -->
+              <div v-if="estErreurVerification" class="mt-2 text-center">
+                <NuxtLink
+                  :to="{ path: '/verification-email-envoyee', query: { email: loginForm.email } }"
+                  class="text-custom-green hover:text-custom-chocolat font-semibold transition-colors duration-300 hover:underline text-sm"
+                >
+                  Renvoyer l'email de verification
+                </NuxtLink>
               </div>
             </div>
 
@@ -238,6 +247,10 @@ const { login, loading, error } = useAuth()
 const loginForm = reactive({
   email: '',
   password: '',
+})
+
+const estErreurVerification = computed(() => {
+  return error.value?.includes('verifier votre adresse email') || false
 })
 
 const handleLogin = async () => {
