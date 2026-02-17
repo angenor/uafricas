@@ -82,6 +82,7 @@
 \ir schemas/09_media_content.sql
 \ir schemas/10_governance.sql
 \ir schemas/11_country_profile.sql
+\ir schemas/11b_country_profile_contributions.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

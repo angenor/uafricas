@@ -1,5 +1,7 @@
 // Composable pour les appels API Fiches Pays (Opportunites en Afrique)
 
+import { useUserStore } from '~/stores/user'
+
 // ──────────────────────────────────────────────────────────────
 // Types et interfaces
 // ──────────────────────────────────────────────────────────────
@@ -66,6 +68,81 @@ export interface FichePaysFiltres {
   par_page?: number
 }
 
+// ── Contributions ──────────────────────────────────────────────
+
+/** Auteur d'une contribution */
+export interface ContributionAuteurAPI {
+  id: string
+  nom: string
+  prenom: string
+  photo_url: string | null
+}
+
+/** DTO d'une contribution */
+export interface ContributionFicheAPI {
+  id: string
+  fiche_pays_id: string
+  section: string
+  type_contribution: string
+  ancienne_valeur: string | null
+  nouvelle_valeur: string
+  justification: string | null
+  etat: string
+  auteur: ContributionAuteurAPI
+  traite_par: string | null
+  note_moderation: string | null
+  traite_at: string | null
+  created_at: string
+}
+
+/** Reponse paginee des contributions */
+export interface ContributionListeAPI {
+  contributions: ContributionFicheAPI[]
+  total: number
+  page: number
+  par_page: number
+  total_pages: number
+}
+
+/** DTO d'un contributeur */
+export interface ContributeurAPI {
+  utilisateur_id: string
+  nom: string
+  prenom: string
+  photo_url: string | null
+  nombre_contributions: number
+}
+
+/** Filtres pour lister les contributions */
+export interface ContributionFiltres {
+  etat?: string
+  section?: string
+  page?: number
+  par_page?: number
+}
+
+// ──────────────────────────────────────────────────────────────
+// Constantes
+// ──────────────────────────────────────────────────────────────
+
+/** Sections modifiables d'une fiche pays */
+export const SECTIONS_FICHE_PAYS = [
+  { value: 'population', label: 'Population' },
+  { value: 'superficie_km2', label: 'Superficie' },
+  { value: 'biographie', label: 'Biographie' },
+  { value: 'contexte', label: 'Contexte general' },
+  { value: 'contexte_historique', label: 'Contexte historique' },
+  { value: 'slogan', label: 'Slogan' },
+  { value: 'hymne_national', label: 'Hymne national' },
+  { value: 'langue_officielle', label: 'Langue officielle' },
+  { value: 'langues_populaires', label: 'Langues populaires' },
+  { value: 'monnaie', label: 'Monnaie' },
+  { value: 'fuseau_horaire', label: 'Fuseau horaire' },
+  { value: 'groupe_ethnique', label: 'Groupe ethnique' },
+  { value: 'site_touristique', label: 'Site touristique' },
+  { value: 'secteur_developpement', label: 'Secteur de developpement' },
+] as const
+
 // ──────────────────────────────────────────────────────────────
 // Fonctions utilitaires
 // ──────────────────────────────────────────────────────────────
@@ -97,9 +174,17 @@ export const formatDateShort = (dateStr: string): string => {
 export const useOpportuniteAfrique = () => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBaseUrl as string
+  const userStore = useUserStore()
 
   const chargement = ref(false)
   const erreur = ref<string | null>(null)
+
+  const authHeaders = (): Record<string, string> => {
+    if (userStore.accessToken) {
+      return { Authorization: `Bearer ${userStore.accessToken}` }
+    }
+    return {}
+  }
 
   /**
    * Lister les fiches pays avec filtres et pagination
@@ -187,11 +272,145 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
+  // ── Methodes Contributions ─────────────────────────────────
+
+  /** Soumettre une contribution pour une fiche pays */
+  const soumettreContribution = async (
+    ficheId: string,
+    body: {
+      section: string
+      type_contribution?: string
+      nouvelle_valeur: string
+      justification?: string
+    },
+  ): Promise<ContributionFicheAPI | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<ContributionFicheAPI>>(
+        `${apiBase}/api/fiches-pays/${ficheId}/contributions`,
+        {
+          method: 'POST',
+          headers: authHeaders(),
+          body,
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de la soumission')
+      }
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur soumettreContribution:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Lister les contributions d'une fiche */
+  const listerContributions = async (
+    ficheId: string,
+    filtres: ContributionFiltres = {},
+  ): Promise<ContributionListeAPI | null> => {
+    try {
+      const params = new URLSearchParams()
+      if (filtres.etat) params.set('etat', filtres.etat)
+      if (filtres.section) params.set('section', filtres.section)
+      if (filtres.page) params.set('page', String(filtres.page))
+      if (filtres.par_page) params.set('par_page', String(filtres.par_page))
+
+      const queryString = params.toString()
+      const url = `${apiBase}/api/fiches-pays/${ficheId}/contributions${queryString ? `?${queryString}` : ''}`
+
+      const reponse = await $fetch<ApiResponse<ContributionListeAPI>>(url, {
+        headers: authHeaders(),
+      })
+
+      if (!reponse.success || !reponse.data) return null
+      return reponse.data
+    }
+    catch (e: any) {
+      console.error('Erreur listerContributions:', e)
+      return null
+    }
+  }
+
+  /** Lister les contributeurs valides d'une fiche */
+  const listerContributeurs = async (ficheId: string): Promise<ContributeurAPI[]> => {
+    try {
+      const reponse = await $fetch<ApiResponse<ContributeurAPI[]>>(
+        `${apiBase}/api/fiches-pays/${ficheId}/contributeurs`,
+      )
+      return reponse.success && reponse.data ? reponse.data : []
+    }
+    catch {
+      return []
+    }
+  }
+
+  /** Valider une contribution (admin) */
+  const validerContribution = async (
+    contributionId: string,
+    note?: string,
+  ): Promise<ContributionFicheAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<ContributionFicheAPI>>(
+        `${apiBase}/api/fiches-pays/contributions/${contributionId}/valider`,
+        {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: { note_moderation: note },
+        },
+      )
+      if (!reponse.success || !reponse.data) return null
+      return reponse.data
+    }
+    catch (e: any) {
+      console.error('Erreur validerContribution:', e)
+      return null
+    }
+  }
+
+  /** Rejeter une contribution (admin) */
+  const rejeterContribution = async (
+    contributionId: string,
+    note?: string,
+  ): Promise<ContributionFicheAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<ContributionFicheAPI>>(
+        `${apiBase}/api/fiches-pays/contributions/${contributionId}/rejeter`,
+        {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: { note_moderation: note },
+        },
+      )
+      if (!reponse.success || !reponse.data) return null
+      return reponse.data
+    }
+    catch (e: any) {
+      console.error('Erreur rejeterContribution:', e)
+      return null
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
     listerFiches,
     obtenirFiche,
     listerRegions,
+    // Contributions
+    soumettreContribution,
+    listerContributions,
+    listerContributeurs,
+    validerContribution,
+    rejeterContribution,
   }
 }

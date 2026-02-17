@@ -16,10 +16,11 @@ struct ApiResponse<T: serde::Serialize> {
     error: Option<String>,
 }
 
-/// Compte le nombre de groupes ethniques (contributions) pour une fiche
+/// Compte le nombre de contributions approuvees pour une fiche
 async fn compter_contributions(pool: &PgPool, fiche_id: Uuid) -> Result<i64, ApiErreur> {
     let count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM country_profile.groupe_ethnique WHERE fiche_pays_id = $1"
+        "SELECT COUNT(*) FROM country_profile.contribution_fiche
+         WHERE fiche_pays_id = $1 AND etat = 'approuvee' AND deleted_at IS NULL"
     )
     .bind(fiche_id)
     .fetch_one(pool)

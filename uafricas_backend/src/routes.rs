@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{africantives, afrolang, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, sabbatiques, stations_radio, television};
+use crate::handlers::{africantives, afrolang, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, sabbatiques, stations_radio, television};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -119,7 +119,14 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/fiches-pays")
                     .route("", web::get().to(fiches_pays::lister_fiches))
                     .route("/regions", web::get().to(fiches_pays::lister_regions))
-                    .route("/{id}", web::get().to(fiches_pays::obtenir_fiche)),
+                    // Contributions (routes statiques avant parametrees)
+                    .route("/contributions/{id}/valider", web::put().to(contributions_fiche::valider_contribution))
+                    .route("/contributions/{id}/rejeter", web::put().to(contributions_fiche::rejeter_contribution))
+                    // Routes parametrees
+                    .route("/{id}", web::get().to(fiches_pays::obtenir_fiche))
+                    .route("/{id}/contributions", web::get().to(contributions_fiche::lister_contributions))
+                    .route("/{id}/contributions", web::post().to(contributions_fiche::soumettre_contribution))
+                    .route("/{id}/contributeurs", web::get().to(contributions_fiche::lister_contributeurs)),
             )
             // Routes des africantives (initiatives africaines)
             .service(

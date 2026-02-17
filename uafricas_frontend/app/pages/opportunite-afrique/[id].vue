@@ -208,6 +208,9 @@
               </div>
             </div>
 
+            <!-- Contributeurs -->
+            <OpportuniteAfriqueContributeursSection :contributeurs="contributeurs" />
+
             <!-- Actions -->
             <div class="bg-white rounded-lg shadow-md p-6">
               <h3 class="text-lg font-bold mb-4">Actions</h3>
@@ -241,6 +244,16 @@
         </div>
       </div>
     </template>
+
+    <!-- Modal contribution -->
+    <OpportuniteAfriqueContributionModal
+      ref="contributionModalRef"
+      :is-open="showContributionModal"
+      :fiche-id="pays?.id || ''"
+      :pays-nom="pays?.nom || ''"
+      @close="showContributionModal = false"
+      @submit="handleContributionSubmit"
+    />
   </div>
 </template>
 
@@ -249,18 +262,54 @@ import {
   useOpportuniteAfrique,
   formatDate,
   type FichePaysDetailAPI,
+  type ContributeurAPI,
 } from '~/composables/useOpportuniteAfrique'
+import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
-const { chargement, obtenirFiche } = useOpportuniteAfrique()
+const userStore = useUserStore()
+const { chargement, obtenirFiche, soumettreContribution, listerContributeurs } = useOpportuniteAfrique()
+
 const pays = ref<FichePaysDetailAPI | null>(null)
+const contributeurs = ref<ContributeurAPI[]>([])
+const showContributionModal = ref(false)
+const contributionModalRef = ref<{ setLoading: (val: boolean) => void; setError: (msg: string) => void; setSuccess: () => void } | null>(null)
 
 const proposerModification = () => {
-  alert('Cette fonctionnalite sera disponible prochainement. Vous pourrez proposer des modifications aux fiches pays.')
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  showContributionModal.value = true
 }
 
 const signalerProbleme = () => {
   alert('Cette fonctionnalite sera disponible prochainement. Vous pourrez signaler des erreurs ou des problemes.')
+}
+
+const handleContributionSubmit = async (data: {
+  section: string
+  type_contribution: string
+  nouvelle_valeur: string
+  justification: string
+}) => {
+  if (!pays.value) return
+  contributionModalRef.value?.setLoading(true)
+
+  const result = await soumettreContribution(pays.value.id, {
+    section: data.section,
+    type_contribution: data.type_contribution,
+    nouvelle_valeur: data.nouvelle_valeur,
+    justification: data.justification || undefined,
+  })
+
+  if (result) {
+    contributionModalRef.value?.setSuccess()
+    // Rafraichir la liste des contributeurs
+    contributeurs.value = await listerContributeurs(pays.value.id)
+  } else {
+    contributionModalRef.value?.setError('Erreur lors de la soumission de votre contribution. Veuillez reessayer.')
+  }
 }
 
 onMounted(async () => {
@@ -268,6 +317,9 @@ onMounted(async () => {
   pays.value = await obtenirFiche(id)
 
   if (pays.value) {
+    // Charger les contributeurs
+    contributeurs.value = await listerContributeurs(pays.value.id)
+
     useHead({
       title: `${pays.value.nom} - Opportunites en Afrique - UAfricas`,
       meta: [
