@@ -59,25 +59,7 @@ docker compose logs postgres      # Voir les logs PostgreSQL
 
 **State management** uses a single Pinia store (`app/stores/user.ts`) for user authentication state (Utilisateur interface with id, nom, prenom, email, roles, etat). Stores accessToken (in-memory) and refreshToken (localStorage). Getters: fullName, displayName, isAdmin, isValidated.
 
-**Composables** (`app/composables/`):
-- `useAfricantives` — API client pour les initiatives africaines (listerAfricantives avec filtres/pagination/tri, obtenirAfricantive, creerAfricantive multipart, listerDomaines, listerPays). Constantes DOMAINES_AFRICANTIVES/PAYS_AFRICAINS
-- `useAuth` — API client for authentication (register, verifierEmail, renvoyerVerification, login, logout, refreshAccessToken, initAuth, hasRole). Connects to backend `/api/auth/*` endpoints via $fetch. Exposes loading/error state and user getters. Register retourne l'email (pas de tokens, compte en_attente). verifierEmail active le compte et connecte l'utilisateur.
-- `useAudioPlayer` — HTML5 audio controls for radio streaming (play/pause/volume/station switching)
-- `useAOS` — initializes Animate On Scroll (1000ms duration, once, ease-out-cubic)
-- `useBibliotheque` — API client pour la bibliothèque numérique (CRUD livres via $fetch, upload multipart, mapping accès DB↔frontend)
-- `useBibliothequeHumaine` — API client pour les bibliothèques humaines (listerBiblios avec filtres/pagination, obtenirBiblio, inscrireBiblioHumaine, listerSpecialites). Mapping BiblioHumaineAPI frontend
-- `useCentresCulturels` — API client pour les centres culturels (listerCentres, obtenirCentre, obtenirProgrammation). Inclut utilitaires de formatage dates/heures en français et mapping mode DB↔frontend
-- `useCodiMoi` — API client pour Codi-Moi (listerPosts avec filtres/pagination, obtenirPost, creerPost). Mapping CodiMoiPostAPI↔CodiMoiPost frontend
-- `useEvenements` — API client pour les événements (listerEvenements avec filtres/pagination/année, obtenirEvenement, creerEvenement multipart, inscrireEvenement). Mapping format DB↔frontend, calcul statut temporel, constantes TYPES_EVENEMENT/ANNEES/PAYS_AFRICAINS
-- `useExperts` — API client pour les experts (listerExperts avec filtres/pagination/tri, obtenirExpert, creerCandidature). Constantes CATEGORIES_EXPERTISE/PROFILS_PROFESSIONNELS/PAYS_EXPERTS, interfaces ExpertAPI/ExpertiseInfoAPI
-- `useGouvernance` — API client pour la gouvernance citoyenne (getStats, getContributions). Requête UNION ALL sur factcheck + bad_habit + idea_force avec mapping vers ContributionCitoyenne
-- `useMarcheAfricain` — API client pour le marché africain (listerAnnonces avec filtres/pagination/tri, obtenirAnnonce). Inclut constantes (CATEGORIES, TYPES_ECHANGE, DEVISES), utilitaires de formatage (prix, dates) et mapping type_operation DB↔frontend
-- `useStationsRadio` — API client pour les stations radio (listerStations avec filtres/pagination, obtenirStation, listerPays, listerGenres, creerStation). Mapping StationRadioAPI↔RadioStation frontend
-- `useOpportuniteAfrique` — API client pour les fiches pays (listerFiches avec filtres/pagination/region, obtenirFiche par UUID/code ISO, listerRegions). Formatage dates en français, interfaces FichePaysAPI/FichePaysDetailAPI
-- `useProjets` — API client pour les projets de développement (listerProjets avec filtres/pagination/tri, obtenirProjet, creerProjet multipart, obtenirStatistiques). Constantes PAYS_PROJETS/BUDGETS/DUREES/OPTIONS_TRI/STATUTS_LABELS, utilitaires formatCurrency/formatDate/getStatutInfo/getInitiales, mapping etat DB→statut frontend
-- `useTelevision` — API client pour la télévision (listerChaines avec filtres/pagination, obtenirChaine, listerProgrammesVedettes, obtenirProgrammeVedette, listerPays, listerCategories, obtenirStats, creerChaine, creerProgrammeVedette). Mapping ChaineTvAPI↔TvChannel et ProgrammeTeleAPI↔TvProgram frontend
-- `useAfrolang` — API client pour les salles Afrolang (listerSalles avec filtres/pagination/langue, obtenirSalle, listerSallesPrivees, obtenirSallePrivee, creerSallePrivee, obtenirSession, creerSession, demarrerSession, terminerSession, rejoindreSession, quitterSession, genererTokenSession, obtenirTableauBlanc, sauvegarderTableauBlanc, effacerTableauBlanc, obtenirStats, listerLangues). Interfaces SalleAPI/SallePriveeAPI/SessionAPI/ParticipantAPI/TableauBlancData/TokenResponse, utilitaires getEtatInfo/formatDuree/formatDate/getInitiales
-- `usePartenariat` — API client pour les demandes de partenariat (soumettreDemande multipart avec logo + document légal). Constantes TYPES_PARTENARIAT/TYPES_ORGANISATION/PAYS_PARTENARIAT. Interfaces PartenariatAPI/DemandePartenariatBody
+**Composables** : `app/composables/` — Un composable par domaine métier (useAuth, useBibliotheque, useEvenements, useMarcheAfricain, etc.). Pattern commun : API client via $fetch, filtres/pagination, mapping DB↔frontend.
 
 **Mock data layer** (`app/mocks/`, 22 files): Fichiers TypeScript de données fictives avec interfaces, tableaux et fonctions async simulant la latence réseau. Lors de l'intégration backend, remplacer les imports mock par des appels API.
 
