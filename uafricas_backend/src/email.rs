@@ -36,6 +36,7 @@ pub async fn envoyer_email_verification(
     // TLS : accepter le certificat LWS (*.lwspanel.com) pour mail.africans-world.org
     let tls_params = TlsParameters::builder(config.host.clone())
         .dangerous_accept_invalid_certs(true)
+        .dangerous_accept_invalid_hostnames(true)
         .build()
         .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur config TLS: {}", e)))?;
 
