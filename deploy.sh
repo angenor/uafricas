@@ -132,7 +132,7 @@ LIVEKIT_API_KEY=${LIVEKIT_KEY}
 LIVEKIT_API_SECRET=${LIVEKIT_SECRET}
 
 # SMTP (envoi d'emails)
-SMTP_HOST=mail.africans-world.org
+SMTP_HOST=mail77.lwspanel.com
 SMTP_PORT=587
 SMTP_USERNAME=contact@africans-world.org
 SMTP_PASSWORD=CHANGEZ_MOI

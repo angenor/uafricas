@@ -1,6 +1,5 @@
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
-use lettre::transport::smtp::client::{Tls, TlsParameters};
 use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 
 use crate::config::SmtpConfig;
@@ -33,18 +32,11 @@ pub async fn envoyer_email_verification(
 
     let creds = Credentials::new(config.username.clone(), config.password.clone());
 
-    // TLS : accepter le certificat LWS (*.lwspanel.com) pour mail.africans-world.org
-    let tls_params = TlsParameters::builder(config.host.clone())
-        .dangerous_accept_invalid_certs(true)
-        .dangerous_accept_invalid_hostnames(true)
-        .build()
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur config TLS: {}", e)))?;
-
-    // Port 587 = STARTTLS
-    let transport = AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&config.host)
+    // Port 587 = STARTTLS (hostname reel LWS : mail77.lwspanel.com)
+    let transport = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&config.host)
+        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur connexion SMTP: {}", e)))?
         .credentials(creds)
         .port(config.port)
-        .tls(Tls::Required(tls_params))
         .build();
 
     transport.send(email).await.map_err(|e| {
