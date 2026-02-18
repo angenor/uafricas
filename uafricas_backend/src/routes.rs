@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{africantives, afrolang, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, sabbatiques, stations_radio, television};
+use crate::handlers::{admin, africantives, afrolang, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, sabbatiques, stations_radio, television};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -18,6 +18,11 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/rafraichir", web::post().to(auth::rafraichir_token))
                     .route("/verifier-email", web::post().to(auth::verifier_email))
                     .route("/renvoyer-verification", web::post().to(auth::renvoyer_verification)),
+            )
+            // Routes d'administration
+            .service(
+                web::scope("/admin")
+                    .route("/me", web::get().to(admin::admin_me)),
             )
             // Routes des livres
             .service(

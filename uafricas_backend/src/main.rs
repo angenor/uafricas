@@ -9,6 +9,7 @@ mod email;
 mod errors;
 mod handlers;
 mod jwt;
+mod middleware;
 mod models;
 mod routes;
 

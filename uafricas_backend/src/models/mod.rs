@@ -16,4 +16,5 @@ pub mod projet;
 pub mod sabbatique;
 pub mod station_radio;
 pub mod television;
+pub mod pagination;
 pub mod utilisateur;

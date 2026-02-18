@@ -1,3 +1,4 @@
+pub mod admin;
 pub mod africantives;
 pub mod afrolang;
 pub mod annonces;
