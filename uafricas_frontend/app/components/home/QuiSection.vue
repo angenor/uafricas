@@ -1,5 +1,5 @@
 <template>
-  <div id="qui" class="py-10 w-[80] flex space-x-10 px-32 bg-red-50">
+  <div id="qui" class="py-10 w-full flex space-x-10 px-32 bg-red-50">
     <div data-aos="fade-right" data-aos-duration="1000" class="w-8/12">
       <div class="text-custom-green text-5xl text-center">
         <span class="font-bold">Q</span>ui Somme Nous ?

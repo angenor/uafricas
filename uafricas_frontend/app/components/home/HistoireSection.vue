@@ -1,5 +1,5 @@
 <template>
-  <div id="qui" class="py-32 w-[80] flex space-x-10 px-32 bg-red-50 relative">
+  <div id="qui" class="py-32 w-full flex space-x-10 px-32 bg-red-50 relative">
     <div data-aos="fade-right" data-aos-duration="1000" class="text-center w-8/12">
       <div class="text-custom-green text-5xl">
         <span class="font-bold">C</span>onnaissez-vous l'histoire de l'afrique ?
