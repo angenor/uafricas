@@ -135,6 +135,31 @@ Ce module est le plus complexe : une fiche pays contient **8 sous-entités** gé
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### Navigation onglets
+- [ ] **T10.1** — Page `[id].vue` : vérifier la navigation entre les 9 onglets, chaque onglet charge ses données
+- [ ] **T10.2** — Vérifier que le changement d'onglet ne perd pas les données non sauvegardées (ou affiche un avertissement)
+
+### CRUD inline sous-entités
+- [ ] **T10.3** — Onglet Régions : ajouter une région (formulaire inline dans la table), modifier, supprimer
+- [ ] **T10.4** — Onglet Groupes ethniques : ajouter (langues, population, objets culturels), vérifier rendu table
+- [ ] **T10.5** — Onglet Alliances interethniques : CRUD inline
+- [ ] **T10.6** — Onglet Contes : ajouter un conte + vérifier filtre par type (conte/histoire_drôle/légende/mythe)
+- [ ] **T10.7** — Onglet Sites touristiques : ajouter un site avec coordonnées, vérifier rendu (carte si implémentée)
+- [ ] **T10.8** — Onglet Saisons : ajouter une saison avec plage de mois
+- [ ] **T10.9** — Onglet Liens interethniques : ajouter un lien (type + sélecteur pays lié)
+
+### Contributions
+- [ ] **T10.10** — Liste contributions : vérifier filtres (état, fiche, contributeur)
+- [ ] **T10.11** — Diff visuel : ouvrir une contribution → vérifier l'affichage côte à côte ancien/nouveau (highlighting des changements)
+- [ ] **T10.12** — Workflow : approuver une contribution → modal → vérifier changement état ; rejeter → pareil
+
+---
+
 ## Notes
 - Module le plus complexe en nombre de sous-entités. L'approche par onglets dans `[id].vue` évite la multiplication des pages.
 - Les handlers `fiches_pays.rs` et `contributions_fiche.rs` existent. L'admin étend avec les sous-entités CRUD et la modération.

@@ -113,6 +113,29 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### Centres culturels
+- [ ] **T6.1** — Liste centres culturels : vérifier DataTable + filtres pays
+- [ ] **T6.2** — Onglet Membres : ajouter un membre (sélecteur utilisateur + rôle), changer rôle, retirer → vérifier la table
+- [ ] **T6.3** — Onglet Programmations : vérifier la liste des programmations du centre (lien vers édition)
+
+### Programmations
+- [ ] **T6.4** — Formulaire programmation : vérifier le sélecteur de centre culturel, champs dates, mode (présentiel/en_ligne/hybride)
+- [ ] **T6.5** — Filtre par centre : changer de centre → vérifier que la liste filtre correctement
+
+### Codi-Moi
+- [ ] **T6.6** — Liste Codi-Moi : vérifier filtres (type: proverbe/citation/ressource/bonne_pratique, pays, ethnie)
+- [ ] **T6.7** — Onglet Tags : ajouter un tag via autocomplete (tape les premières lettres → suggestions), retirer un tag
+- [ ] **T6.8** — Onglet Commentaires : vérifier le rendu arborescent (commentaires parents → réponses indentées)
+- [ ] **T6.9** — Modération commentaire : cliquer supprimer sur un commentaire → modal confirmation → vérifier disparition
+- [ ] **T6.10** — Onglet Réactions : vérifier l'affichage stats (like/dislike counts, éventuellement graphique)
+
+---
+
 ## Notes
 - Les handlers `centres_culturels.rs` et `codimoi.rs` existent pour l'usage public. L'admin ajoute la gestion d'équipe (membres) et la modération des commentaires.
 - Les commentaires Codi-Moi sont hiérarchiques (parent_id) → la vue admin doit les afficher en arborescence.

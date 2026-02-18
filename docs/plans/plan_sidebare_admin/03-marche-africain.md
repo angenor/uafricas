@@ -85,6 +85,25 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### Annonces
+- [ ] **T3.1** — Liste annonces : vérifier DataTable + badges d'état colorés (publiée=vert, en_attente=orange, suspendue=rouge)
+- [ ] **T3.2** — Filtres combinés : tester filtre état + type_operation + catégorie + pays simultanément, puis reset
+- [ ] **T3.3** — Formulaire multi-étapes : naviguer étape 1 → 2 → 3, vérifier la persistance des données entre étapes
+- [ ] **T3.4** — Modération état : sur la page d'édition, changer l'état d'une annonce (publier/suspendre) → vérifier modal de confirmation + mise à jour du badge
+- [ ] **T3.5** — Onglet Pays ciblés : ajouter/retirer des pays via multi-sélection, vérifier la liste
+- [ ] **T3.6** — Onglet Médias : upload image + vidéo, vérifier preview, tester le drag & drop pour réordonnement
+- [ ] **T3.7** — Suppression annonce : vérifier modal de confirmation + disparition de la liste
+
+### Favoris
+- [ ] **T3.8** — Vue favoris : vérifier l'affichage lecture seule, stats de popularité (top annonces)
+
+---
+
 ## Notes
 - Le handler public `annonces.rs` existant gère le listing côté visiteur. Les endpoints admin ajoutent la modération et le CRUD complet.
 - Les enums `etat_annonce` et `type_operation` doivent être exposés au frontend pour les filtres et les formulaires.

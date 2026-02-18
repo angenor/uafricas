@@ -110,6 +110,29 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### FactCheck
+- [ ] **T9.1** — Liste factcheck : vérifier les badges verdict colorés (vrai=vert, faux=rouge, partiellement_vrai=orange, trompeur=jaune, non_vérifié=gris)
+- [ ] **T9.2** — Formulaire factcheck : vérifier le sélecteur de verdict, champs source et analyse
+- [ ] **T9.3** — Onglet Commentaires : vérifier distinction visuelle soutien (vert) vs contradiction (rouge)
+- [ ] **T9.4** — Modération commentaire : supprimer un commentaire → modal confirmation → vérifier disparition
+- [ ] **T9.5** — Onglet Réactions : vérifier stats likes/dislikes en lecture seule
+
+### Mauvaises pratiques
+- [ ] **T9.6** — Badges gravité : vérifier couleurs distinctives (faible=vert, élevée=orange, critique=rouge)
+- [ ] **T9.7** — Onglet Preuves : upload photos/vidéos comme preuves, vérifier previews, supprimer
+- [ ] **T9.8** — Formulaire : vérifier champ géolocalisation optionnel + toggle anonyme
+
+### Idées forces
+- [ ] **T9.9** — CRUD complet idées forces : créer, lister, éditer, supprimer
+- [ ] **T9.10** — Onglet Médias : upload + galerie + suppression
+
+---
+
 ## Notes
 - Le handler `gouvernance.rs` existant gère les stats et contributions publiques. L'admin ajoute le CRUD complet + la modération.
 - Les verdicts FactCheck (vrai/faux/partiellement_vrai/trompeur/non_vérifié) sont un élément central de l'interface — utiliser des badges colorés distinctifs.

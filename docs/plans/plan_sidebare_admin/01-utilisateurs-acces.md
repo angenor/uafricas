@@ -123,6 +123,30 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### Utilisateurs
+- [ ] **T1.1** — Liste utilisateurs : vérifier l'affichage DataTable (avatar, nom, email, état, rôles, date), pagination, skeleton loading
+- [ ] **T1.2** — Filtres utilisateurs : tester recherche texte, filtre état, filtre rôle, filtre pays, puis reset
+- [ ] **T1.3** — Création utilisateur : remplir le formulaire, soumettre, vérifier message succès + redirection vers liste
+- [ ] **T1.4** — Édition utilisateur : ouvrir un utilisateur, modifier un champ, sauvegarder, vérifier mise à jour
+- [ ] **T1.5** — Onglets utilisateur : naviguer entre Profil / Rôles / Spécialités / Permissions, vérifier chargement de chaque onglet
+- [ ] **T1.6** — Assignation rôle : dans l'onglet Rôles, cocher un rôle, vérifier qu'il s'ajoute à la table
+- [ ] **T1.7** — Changement état : cliquer sur suspendre/bloquer → vérifier modal de confirmation → vérifier changement de badge
+
+### Organisations & Partenariats
+- [ ] **T1.8** — CRUD organisations : créer, lister, éditer, supprimer (soft delete avec confirmation)
+- [ ] **T1.9** — CRUD partenariats : même parcours, vérifier le sélecteur d'organisation
+
+### Rôles & Permissions
+- [ ] **T1.10** — Matrice de permissions : dans l'édition d'un rôle, vérifier l'affichage de la checkbox matrix (groupée par ressource)
+- [ ] **T1.11** — Assignation permissions : cocher/décocher des permissions, sauvegarder, recharger et vérifier persistance
+
+---
+
 ## Notes
 - Les handlers backend `auth.rs` existants gèrent l'inscription/connexion côté public. Les endpoints admin sont séparés et requièrent le rôle admin.
 - Le store `user.ts` existant a déjà le getter `isAdmin`. Les composables admin l'utilisent pour la vérification côté client.

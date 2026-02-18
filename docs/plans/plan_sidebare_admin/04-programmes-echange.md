@@ -85,6 +85,25 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### Programmes
+- [ ] **T4.1** — Liste programmes : vérifier DataTable + badges état (publié=vert, suspendu=orange, annulé=rouge)
+- [ ] **T4.2** — Formulaire programme : remplir tous les champs (titre, dates, durée, couverture, prérequis), soumettre
+- [ ] **T4.3** — Validation état : changer l'état d'un programme (publier/suspendre/annuler) → modal confirmation → vérifier badge
+
+### Candidatures
+- [ ] **T4.4** — Liste candidatures : vérifier filtres par état et par programme
+- [ ] **T4.5** — Revue candidature : ouvrir une candidature → vérifier affichage profil candidat, lettre de motivation, lien CV
+- [ ] **T4.6** — Téléchargement CV : cliquer sur le lien CV → vérifier que le fichier se télécharge
+- [ ] **T4.7** — Workflow accepter/refuser : cliquer accepter → remplir commentaire → confirmer → vérifier changement état
+- [ ] **T4.8** — Lien profil candidat : cliquer sur le nom du candidat → vérifier navigation vers `/admin/utilisateurs/[id]`
+
+---
+
 ## Notes
 - Le handler `sabbatiques.rs` existant couvre une partie des programmes publics. L'admin ajoute la gestion complète + le workflow de candidatures.
 - Les écoles partenaires et facultés (`ecole_partenaire`, `faculte`) sont dans le même schema mais gérées dans une rubrique INUDA dédiée (hors sidebar admin actuel, possiblement ajoutée plus tard).

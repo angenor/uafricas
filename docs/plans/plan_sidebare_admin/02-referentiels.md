@@ -149,6 +149,31 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### Pays
+- [ ] **T2.1** — Liste pays : vérifier l'affichage des drapeaux dans la DataTable, recherche par nom
+- [ ] **T2.2** — Formulaire pays : vérifier les champs (code ISO, coordonnées, capitale), soumission
+
+### Catégories
+- [ ] **T2.3** — Arborescence catégories : vérifier le rendu tree view (expand/collapse niveaux parent/enfant)
+- [ ] **T2.4** — Création catégorie : vérifier le sélecteur de parent (dropdown hiérarchique)
+- [ ] **T2.5** — Filtre par contexte : changer le contexte (annonce, livre, radio...) et vérifier le filtrage de l'arbre
+
+### Médiathèque
+- [ ] **T2.6** — Galerie médias : vérifier le rendu en grille et en liste, les previews d'images
+- [ ] **T2.7** — Upload drag & drop : glisser un fichier sur la zone d'upload, vérifier preview + barre de progression
+- [ ] **T2.8** — Filtres type MIME : filtrer par image/vidéo/document, vérifier le résultat
+- [ ] **T2.9** — Suppression média : cliquer supprimer → modal confirmation → vérifier disparition de la galerie
+
+### CRUD standard (Domaines, Tags, Spécialités)
+- [ ] **T2.10** — Parcours CRUD complet pour chaque sous-rubrique : créer, lister, éditer, supprimer
+
+---
+
 ## Notes
 - Les référentiels sont les données de base utilisées par toutes les rubriques métier. Ils doivent être implémentés tôt.
 - La table `categorie` est multi-contexte (annonce, livre, radio, etc.) → le filtre par contexte est essentiel.

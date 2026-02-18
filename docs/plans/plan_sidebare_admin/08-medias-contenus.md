@@ -142,6 +142,34 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### Radio & TV
+- [ ] **T8.1** — Vue combinée onglets : vérifier la navigation entre Stations Radio / Chaînes TV / Programmes
+- [ ] **T8.2** — CRUD station radio : créer (URL stream, genre), éditer, supprimer
+- [ ] **T8.3** — CRUD chaîne TV : créer (catégorie, stream), éditer, supprimer
+
+### Événements
+- [ ] **T8.4** — Liste événements : vérifier filtres (format présentiel/en_ligne/hybride, statut, date range)
+- [ ] **T8.5** — Formulaire événement : vérifier tous les champs (dates, capacité, lieu, format)
+- [ ] **T8.6** — Onglet Inscriptions : vérifier la liste des inscrits avec badges statut (inscrit/confirmé/annulé/présent/absent)
+- [ ] **T8.7** — Changement statut inscription : sélectionner un inscrit → changer statut → vérifier mise à jour badge
+- [ ] **T8.8** — Stats inscriptions : vérifier les compteurs (inscrits, confirmés, présents)
+
+### MOOC
+- [ ] **T8.9** — Onglet Inscriptions MOOC : vérifier l'affichage des barres de progression (%)
+- [ ] **T8.10** — Stats MOOC : vérifier compteurs (inscrits, en_cours, complétés, abandonnés)
+
+### Bibliothèque
+- [ ] **T8.11** — Upload livre : upload couverture (preview image) + fichier document, vérifier
+- [ ] **T8.12** — Onglet Tags : ajouter/retirer tags via autocomplete
+- [ ] **T8.13** — Filtres livres : type document + catégorie + accès (lecture_seule/lecture_telechargement)
+
+---
+
 ## Notes
 - C'est la rubrique la plus volumineuse (4 sous-rubriques, 9 tables). Peut être découpée en sous-phases si nécessaire.
 - Les handlers publics existent déjà pour livres, événements, moocs, stations radio, et TV. L'admin ajoute la gestion des inscriptions et les opérations avancées.

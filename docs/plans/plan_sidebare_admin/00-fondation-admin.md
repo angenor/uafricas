@@ -83,5 +83,23 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+- [ ] **T0.1** — Middleware admin : accéder à `/admin` sans être connecté → vérifier redirection vers `/login`
+- [ ] **T0.2** — Middleware admin : accéder à `/admin` avec un compte non-admin → vérifier redirection vers `/`
+- [ ] **T0.3** — Middleware admin : accéder à `/admin` avec un compte admin → accès autorisé
+- [ ] **T0.4** — Layout admin : vérifier le rendu du drawer sidebar (ouvert/fermé), navbar, breadcrumbs
+- [ ] **T0.5** — AdminDataTable : vérifier le rendu avec données de test (tri colonnes, pagination, skeleton loading)
+- [ ] **T0.6** — AdminFilters : vérifier le rendu des filtres (texte, select, date range), reset
+- [ ] **T0.7** — AdminFormModal : vérifier ouverture/fermeture modale, soumission formulaire
+- [ ] **T0.8** — AdminDeleteConfirm : vérifier dialogue de confirmation, annulation, validation
+- [ ] **T0.9** — AdminStatusBadge : vérifier les couleurs par état (actif=vert, suspendu=orange, bloqué=rouge)
+- [ ] **T0.10** — Navigation : cliquer sur chaque lien du sidebar → vérifier que la page se charge sans erreur
+
+---
+
 ## Notes
 Cette fondation est le socle technique. Elle ne crée aucune page métier mais fournit tous les outils réutilisables pour les 12 rubriques suivantes.

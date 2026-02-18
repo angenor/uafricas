@@ -111,6 +111,27 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### Innovations
+- [ ] **T5.1** — Liste innovations : vérifier DataTable + filtres (état, domaine, pays, organisation)
+- [ ] **T5.2** — Onglet Médias : upload images/vidéos, vérifier previews dans la galerie
+- [ ] **T5.3** — Modération : changer l'état (publier/suspendre) → vérifier mise à jour badge
+
+### Projets
+- [ ] **T5.4** — Formulaire projet : remplir tous les champs (budget, durée, calendrier, risques), soumettre
+- [ ] **T5.5** — Workflow approbation : vérifier les boutons approuver/rejeter/suspendre → modal → changement état
+- [ ] **T5.6** — Onglet Documents : upload document PDF/Word → vérifier dans la liste → télécharger → supprimer
+- [ ] **T5.7** — Lien organisation : cliquer sur l'organisation porteuse → vérifier navigation vers `/admin/organisations/[id]`
+
+### Africantives
+- [ ] **T5.8** — CRUD complet africantives : créer, lister, éditer, supprimer
+
+---
+
 ## Notes
 - Les handlers publics `projets.rs` et `africantives.rs` existent déjà. Les endpoints admin ajoutent la modération et les opérations avancées.
 - `etat_contenu` (innovations, africantives) et `etat_projet` (projets) sont des enums différents avec des workflows distincts.

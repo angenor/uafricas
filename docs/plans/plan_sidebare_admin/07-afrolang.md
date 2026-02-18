@@ -90,6 +90,26 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### Salles publiques
+- [ ] **T7.1** — CRUD salles : créer une salle (nom, langue, sélecteur modérateur), éditer, supprimer
+- [ ] **T7.2** — Sélecteur modérateur : vérifier l'autocomplete utilisateur dans le formulaire de salle
+
+### Salles privées
+- [ ] **T7.3** — Supervision lecture seule : vérifier que les boutons d'édition/suppression sont absents
+- [ ] **T7.4** — Détail salle privée : vérifier l'affichage créateur, participants max, historique sessions
+
+### Sessions
+- [ ] **T7.5** — Historique sessions : vérifier filtres (état, salle, date range), DataTable chronologique
+- [ ] **T7.6** — Onglet Participants : vérifier la liste (rôle, durée de participation formatée)
+- [ ] **T7.7** — Onglet Tableau blanc : vérifier le rendu visuel du snapshot JSONB (canvas ou SVG) — pas d'interaction, juste l'affichage
+
+---
+
 ## Notes
 - Le handler `afrolang.rs` existant est déjà très complet (21 endpoints). L'admin ajoute une vue de supervision globale plutôt que de dupliquer la logique.
 - Le tableau blanc utilise du JSONB (strokes, shapes, text) → le rendu admin est en lecture seule (pas d'édition temps réel).

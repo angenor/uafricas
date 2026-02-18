@@ -126,6 +126,32 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### KPIs
+- [ ] **T12.1** — Cartes KPI : vérifier que chaque carte affiche une valeur numérique cohérente (pas de NaN, pas de 0 si des données existent)
+- [ ] **T12.2** — Icônes et couleurs : vérifier que chaque KPI a l'icône et la couleur attendues
+
+### Graphiques
+- [ ] **T12.3** — Courbe inscriptions : vérifier le rendu du graphique (Chart.js), changer période (7j/30j/90j), vérifier mise à jour
+- [ ] **T12.4** — Barres annonces par état : vérifier les couleurs par état, survol pour tooltip avec valeur
+- [ ] **T12.5** — Camembert factchecks : vérifier les segments par verdict, légende visible
+- [ ] **T12.6** — Barres mauvaises pratiques : vérifier les couleurs par gravité (vert/orange/rouge)
+
+### Timeline & Actions rapides
+- [ ] **T12.7** — Timeline activité récente : vérifier les icônes par type d'action, liens cliquables vers les entités
+- [ ] **T12.8** — Actions rapides : cliquer sur "Candidatures en attente" → vérifier navigation vers `/admin/candidatures` filtré par état=en_attente
+- [ ] **T12.9** — Actions rapides : cliquer sur "Contributions en attente" → navigation vers contributions pays
+- [ ] **T12.10** — Actions rapides : cliquer sur "Annonces en attente" → navigation vers `/admin/annonces` filtré par état=en_attente
+
+### Performance
+- [ ] **T12.11** — Temps de chargement : vérifier que le dashboard se charge en moins de 3 secondes (pas de spinner prolongé)
+
+---
+
 ## Notes
 - Le dashboard est la dernière pièce car il agrège les données de tous les modules. Il peut cependant être développé de façon incrémentale : ajouter les KPIs de chaque module au fur et à mesure de leur implémentation.
 - La page `admin/index.vue` existe déjà en placeholder. Elle sera complètement réécrite.

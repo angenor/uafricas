@@ -33,3 +33,6 @@ ssh-copy-id root@161.97.92.63
 
 
 Ordre d'exécution recommandé
+
+
+il peut arriver que `agent-browser --headed` soit lancé par un autre programme et utilise un certain

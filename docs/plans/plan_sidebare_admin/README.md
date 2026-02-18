@@ -131,11 +131,46 @@ Pour marquer une tâche comme terminée, remplacer `[ ]` par `[x]`.
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+Chaque plan contient une section **"Tests manuels"** avec des vérifications visuelles à effectuer dans le navigateur.
+
+**Commande** : `agent-browser --headed`
+
+**Quand tester** : Après l'implémentation du frontend de chaque rubrique.
+
+**Convention** :
+- Les tests sont numérotés `T{plan}.{numéro}` (ex: `T3.5` = test 5 du plan 03)
+- Chaque test a une checkbox `[ ]` à cocher quand validé
+- Les tests couvrent : rendu visuel, interactions UI, workflows, navigation, uploads
+
+**Récapitulatif tests par plan** :
+
+| Plan | Nb tests | Focus principal |
+|------|----------|-----------------|
+| 00   | 10       | Middleware, composants génériques, layout |
+| 01   | 11       | CRUD utilisateurs, rôles, matrice permissions |
+| 02   | 10       | Tree view catégories, upload drag & drop, galerie médias |
+| 03   | 8        | Formulaire multi-étapes, modération, drag & drop médias |
+| 04   | 8        | Workflow candidatures, téléchargement CV |
+| 05   | 8        | Workflow approbation projets, upload documents |
+| 06   | 10       | Gestion membres, commentaires arborescents, autocomplete tags |
+| 07   | 7        | Rendu tableau blanc JSONB, supervision lecture seule |
+| 08   | 13       | Onglets Radio/TV, inscriptions, barres progression |
+| 09   | 10       | Badges verdict/gravité colorés, upload preuves |
+| 10   | 12       | 9 onglets, CRUD inline, diff visuel contributions |
+| 11   | 9        | Diff JSON before/after, enregistrement automatique |
+| 12   | 11       | Graphiques Chart.js, timeline, actions rapides |
+| **Total** | **127** | |
+
+---
+
 ## Comment utiliser ces plans
 
 1. **Commencer par `00-fondation-admin.md`** — c'est le prérequis absolu
 2. **Puis `01` et `02` en parallèle** — données fondamentales
 3. **Pour chaque plan**, suivre l'ordre : Backend d'abord → Frontend ensuite
 4. **Cocher les tâches** au fur et à mesure dans chaque fichier
-5. **Mettre à jour le statut** dans le tableau ci-dessus
-6. **Consulter les dépendances** de chaque plan avant de le commencer
+5. **Après chaque frontend**, lancer les tests manuels : `agent-browser --headed`
+6. **Mettre à jour le statut** dans le tableau ci-dessus
+7. **Consulter les dépendances** de chaque plan avant de le commencer

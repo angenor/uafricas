@@ -86,6 +86,28 @@
 
 ---
 
+## Tests manuels (`agent-browser --headed`)
+
+> Les tests suivants nécessitent une vérification visuelle dans le navigateur.
+> Commande : `agent-browser --headed`
+
+### Journal d'audit
+- [ ] **T11.1** — Timeline : vérifier l'ordre chronologique (plus récent en premier), codes couleur par action (CREATE=vert, UPDATE=bleu, DELETE=rouge, LOGIN=gris)
+- [ ] **T11.2** — Filtres : tester filtre action, autocomplete utilisateur, sélection table, date range, combinaisons
+- [ ] **T11.3** — Pagination : naviguer entre les pages, vérifier la continuité des résultats
+
+### Détail événement
+- [ ] **T11.4** — Diff JSON visuel : vérifier l'affichage côte à côte before/after avec highlighting des lignes modifiées
+- [ ] **T11.5** — Lien entité : cliquer sur le lien vers l'entité concernée → vérifier navigation correcte
+- [ ] **T11.6** — Infos contextuelles : vérifier l'affichage IP, User Agent, timestamp précis
+
+### Enregistrement automatique
+- [ ] **T11.7** — Créer une entité dans un autre module admin → vérifier qu'une entrée CREATE apparaît dans le journal d'audit
+- [ ] **T11.8** — Modifier une entité → vérifier qu'une entrée UPDATE apparaît avec before/after corrects
+- [ ] **T11.9** — Supprimer une entité → vérifier qu'une entrée DELETE apparaît
+
+---
+
 ## Notes
 - L'audit est transversal : il dépend de tous les autres modules (pour avoir des actions à enregistrer) mais il peut être implémenté dès que quelques modules CRUD sont en place.
 - Le composant `AdminJsonDiff` est spécifique à cette rubrique mais pourrait être réutilisé dans les contributions de profils pays (plan 10).
