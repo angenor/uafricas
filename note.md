@@ -30,3 +30,6 @@ pkill -f "chromium|chrome" 2>/dev/null; pkill -f "playwright" 2>/dev/null; echo 
 
 
 ssh-copy-id root@161.97.92.63
+
+
+Ordre d'exécution recommandé

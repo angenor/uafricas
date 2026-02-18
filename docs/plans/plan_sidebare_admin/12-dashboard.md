@@ -1,0 +1,133 @@
+# 12 — Dashboard (Vue d'ensemble & KPIs)
+
+> **Phase** : 5 — Finalisation
+> **Section sidebar** : Dashboard
+> **Icône** : faChartLine
+> **Statut global** : [ ] Non démarré
+
+---
+
+## Dépendances
+
+### Fichiers SQL requis
+- **Tous les schemas** — Le dashboard agrège des statistiques de l'ensemble des modules :
+  - `schemas/04_iam.sql` → count utilisateurs, organisations, rôles
+  - `schemas/05_marketplace.sql` → count annonces par état, favoris
+  - `schemas/06_exchange.sql` → count programmes, candidatures
+  - `schemas/07_innovation.sql` → count innovations, projets, africantives
+  - `schemas/08_culture.sql` → count centres culturels, posts codimoi
+  - `schemas/08b_afrolang.sql` → count sessions, participants
+  - `schemas/09_media_content.sql` → count événements, moocs, livres, stations radio, chaînes TV
+  - `schemas/10_governance.sql` → count factchecks, bad habits, idées forces
+  - `schemas/11_country_profile.sql` → count fiches pays, contributions en attente
+  - `schemas/12_audit.sql` → activité récente
+
+### Plans précédents (prérequis)
+- **`00-fondation-admin.md`** — AdminStatsCard, middleware, useAdmin
+- **Tous les plans 01 à 11** — Le dashboard consomme les données de chaque module. Il peut être développé progressivement au fur et à mesure que les modules sont implémentés, mais la version complète nécessite que tous les modules soient en place.
+
+### Plans qui dépendent de celui-ci
+- Aucun — c'est le dernier plan
+
+### Backend existant
+- [x] `app/pages/admin/index.vue` — placeholder avec cartes KPI vides — **À remplacer**
+
+---
+
+## Backend
+
+### B12.1 — Endpoint de statistiques globales
+- [ ] `GET /api/admin/dashboard/stats` — retourne un objet agrégé :
+  ```
+  {
+    utilisateurs: { total, actifs, en_attente, suspendus },
+    organisations: { total },
+    annonces: { total, publiees, en_attente, expirees },
+    programmes: { total, actifs, candidatures_en_attente },
+    innovations: { total, publiees },
+    projets: { total, approuves, en_revue, soumis },
+    africantives: { total },
+    centres_culturels: { total },
+    codimoi: { total, par_type },
+    sessions_afrolang: { total, en_cours },
+    evenements: { total, a_venir, inscrits_total },
+    moocs: { total, inscrits_total, en_cours },
+    livres: { total },
+    radio_tv: { stations_radio, chaines_tv },
+    factchecks: { total, par_verdict },
+    bad_habits: { total, par_gravite },
+    idea_forces: { total },
+    fiches_pays: { total, contributions_en_attente },
+    audit: { actions_aujourd_hui, actions_cette_semaine }
+  }
+  ```
+- **Fichiers** : `src/handlers/admin/dashboard.rs`
+
+### B12.2 — Endpoint d'activité récente
+- [ ] `GET /api/admin/dashboard/activite-recente` — dernières 20 actions d'audit (timeline)
+- **Fichiers** : `src/handlers/admin/dashboard.rs`
+
+### B12.3 — Endpoint de tendances
+- [ ] `GET /api/admin/dashboard/tendances?periode=7j|30j|90j` — données pour graphiques :
+  - Inscriptions utilisateurs par jour
+  - Annonces publiées par jour
+  - Événements par mois
+  - Contributions fiches pays par semaine
+- **Fichiers** : `src/handlers/admin/dashboard.rs`
+
+---
+
+## Frontend
+
+### Page principale
+- [ ] `app/pages/admin/index.vue` — refonte complète :
+
+  **Section 1 : KPIs principaux** (grille de AdminStatsCard)
+  - [ ] Utilisateurs actifs
+  - [ ] Annonces publiées
+  - [ ] Événements à venir
+  - [ ] Projets en revue
+  - [ ] Candidatures en attente
+  - [ ] Contributions pays en attente
+  - [ ] Sessions AfroLang en cours
+  - [ ] MOOC en cours
+
+  **Section 2 : Graphiques de tendances**
+  - [ ] Courbe inscriptions utilisateurs (7j/30j/90j)
+  - [ ] Barres annonces par état
+  - [ ] Camembert factchecks par verdict
+  - [ ] Barres mauvaises pratiques par gravité
+
+  **Section 3 : Activité récente** (timeline)
+  - [ ] Fil chronologique des dernières actions (audit_log simplifié)
+  - [ ] Icônes par type d'action, liens vers les entités
+
+  **Section 4 : Alertes & Actions rapides**
+  - [ ] Candidatures en attente de revue (lien direct)
+  - [ ] Contributions pays en attente de modération (lien direct)
+  - [ ] Annonces en attente de publication (lien direct)
+
+### Composables
+- [ ] `app/composables/useAdminDashboard.ts` — API client dashboard (stats, activité, tendances)
+
+### Composants spécifiques
+- [ ] `app/components/admin/AdminChart.vue` — wrapper pour librairie de graphiques (Chart.js ou similaire)
+- [ ] `app/components/admin/AdminActivityTimeline.vue` — timeline d'activité récente
+- [ ] `app/components/admin/AdminQuickActions.vue` — section alertes/actions rapides
+
+---
+
+## Critères de validation
+- [ ] KPIs affichent des données réelles de chaque module
+- [ ] Graphiques de tendances fonctionnels avec sélection de période
+- [ ] Timeline d'activité récente avec liens vers les entités
+- [ ] Actions rapides mènent aux pages de modération correspondantes
+- [ ] Le dashboard se charge rapidement (requêtes SQL optimisées avec indexes)
+
+---
+
+## Notes
+- Le dashboard est la dernière pièce car il agrège les données de tous les modules. Il peut cependant être développé de façon incrémentale : ajouter les KPIs de chaque module au fur et à mesure de leur implémentation.
+- La page `admin/index.vue` existe déjà en placeholder. Elle sera complètement réécrite.
+- Les graphiques nécessitent une librairie frontend (Chart.js recommandé, léger et compatible Vue 3).
+- Les requêtes SQL du dashboard doivent être optimisées (COUNT avec conditions, pas de SELECT * sur toutes les tables). Considérer des vues matérialisées si les performances sont insuffisantes.
