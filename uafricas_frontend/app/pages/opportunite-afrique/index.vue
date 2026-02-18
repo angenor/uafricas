@@ -30,10 +30,35 @@
                 Explorez les pays africains et leurs richesses
               </p>
             </div>
-            <NuxtLink to="/africa-culture"
-                      class="text-custom-chocolat hover:text-custom-green font-medium">
-              &#8592; AfricaCulture
-            </NuxtLink>
+            <div class="flex items-center gap-3">
+              <!-- Toggle grille / carte -->
+              <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                <button
+                  @click="viewMode = 'grille'"
+                  class="p-2 rounded-md transition-colors"
+                  :class="viewMode === 'grille' ? 'bg-custom-green text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                  title="Vue grille"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                </button>
+                <button
+                  @click="viewMode = 'carte'"
+                  class="p-2 rounded-md transition-colors"
+                  :class="viewMode === 'carte' ? 'bg-custom-green text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                  title="Vue carte"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </div>
+              <NuxtLink to="/africa-culture"
+                        class="text-custom-chocolat hover:text-custom-green font-medium hidden sm:inline">
+                &#8592; AfricaCulture
+              </NuxtLink>
+            </div>
           </div>
         </div>
       </div>
@@ -67,6 +92,25 @@
                 </label>
               </div>
 
+              <!-- Legende carte -->
+              <div v-if="viewMode === 'carte'" class="mt-6 pt-6 border-t border-gray-200">
+                <h4 class="text-sm font-medium text-gray-700 mb-3">Legende</h4>
+                <div class="space-y-2">
+                  <div v-for="(color, region) in REGION_COLORS" :key="region" class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full shrink-0" :style="{ backgroundColor: color }"></span>
+                    <span class="text-xs text-gray-600">{{ region }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full shrink-0 bg-amber-400"></span>
+                    <span class="text-xs text-gray-600">Selectionne</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full shrink-0 bg-gray-200"></span>
+                    <span class="text-xs text-gray-600">Fiche non disponible</span>
+                  </div>
+                </div>
+              </div>
+
               <!-- Stats -->
               <div class="mt-6 pt-6 border-t border-gray-200">
                 <div class="text-center">
@@ -77,7 +121,7 @@
             </div>
           </div>
 
-          <!-- Liste des pays -->
+          <!-- Liste des pays / Carte -->
           <div class="lg:col-span-3">
             <!-- Loading state -->
             <div v-if="chargement" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -91,8 +135,8 @@
               </div>
             </div>
 
-            <!-- Empty state -->
-            <div v-else-if="paysList.length === 0" class="text-center py-12">
+            <!-- Empty state (mode grille uniquement) -->
+            <div v-else-if="viewMode === 'grille' && paysList.length === 0" class="text-center py-12">
               <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
@@ -103,7 +147,7 @@
             </div>
 
             <!-- Grid des pays -->
-            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div v-else-if="viewMode === 'grille'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <div v-for="pays in paysList" :key="pays.id"
                    @click="navigateToDetail(pays.id)"
                    class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer group">
@@ -158,6 +202,118 @@
                 </div>
               </div>
             </div>
+
+            <!-- Mode carte -->
+            <div v-else class="flex flex-col gap-6">
+              <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Carte SVG d'Afrique -->
+                <div class="flex-1 bg-white rounded-lg shadow-md overflow-hidden">
+                  <div class="map-container relative p-2 sm:p-4" @mousemove="handleMapMouseMove">
+                    <svg
+                      :viewBox="AFRICA_VIEWBOX"
+                      class="africa-map w-full h-auto"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        v-for="location in africaLocations"
+                        :key="location.id"
+                        :d="location.path"
+                        :fill="getMapColor(location.id)"
+                        stroke="#fff"
+                        stroke-width="0.5"
+                        class="map-path"
+                        :class="{ 'cursor-pointer': getFicheByCode(location.id) }"
+                        @mouseenter="hoveredCountry = location"
+                        @mouseleave="hoveredCountry = null"
+                        @click="handleMapClick(location)"
+                      />
+                    </svg>
+
+                    <!-- Tooltip -->
+                    <Transition name="map-fade">
+                      <div
+                        v-if="hoveredCountry"
+                        class="map-tooltip"
+                        :class="{ 'map-tooltip-clickable': getFicheByCode(hoveredCountry.id) }"
+                        :style="{ left: mousePos.x + 15 + 'px', top: mousePos.y - 10 + 'px' }"
+                      >
+                        <template v-if="getFicheByCode(hoveredCountry.id)">
+                          <span class="font-semibold">{{ nomsPaysFr[hoveredCountry.id] || hoveredCountry.name }}</span>
+                          <span class="text-xs opacity-70">Cliquer pour voir</span>
+                        </template>
+                        <template v-else>
+                          {{ nomsPaysFr[hoveredCountry.id] || hoveredCountry.name }}
+                        </template>
+                      </div>
+                    </Transition>
+                  </div>
+                </div>
+
+                <!-- Fiche pays selectionne -->
+                <Transition name="slide-in" mode="out-in">
+                  <div v-if="selectedMapPays" :key="selectedMapPays.id" class="lg:w-80 shrink-0">
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                      <!-- Image -->
+                      <div class="relative h-44 overflow-hidden">
+                        <img
+                          :src="selectedMapPays.image_couverture || ''"
+                          :alt="selectedMapPays.nom"
+                          class="w-full h-full object-cover"
+                        >
+                        <div class="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent"></div>
+                        <div class="absolute top-2 right-2">
+                          <span class="px-2 py-1 text-white text-xs font-medium rounded-full"
+                                :style="{ backgroundColor: REGION_COLORS[selectedMapPays.region] || '#228B22' }">
+                            {{ selectedMapPays.region }}
+                          </span>
+                        </div>
+                        <div class="absolute bottom-2 left-2">
+                          <img
+                            :src="selectedMapPays.drapeau_url || ''"
+                            :alt="'Drapeau ' + selectedMapPays.nom"
+                            class="h-8 w-auto rounded shadow-md"
+                          >
+                        </div>
+                      </div>
+
+                      <!-- Contenu -->
+                      <div class="p-4">
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">{{ selectedMapPays.nom }}</h3>
+                        <p v-if="selectedMapPays.slogan" class="text-sm text-gray-500 italic mb-3">
+                          {{ selectedMapPays.slogan }}
+                        </p>
+
+                        <div class="space-y-2 text-sm text-gray-600 mb-4">
+                          <div v-if="selectedMapPays.capitale" class="flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span>{{ selectedMapPays.capitale }}</span>
+                          </div>
+                          <div v-if="selectedMapPays.population" class="flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <span>{{ selectedMapPays.population }}</span>
+                          </div>
+                        </div>
+
+                        <div class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500 mb-4">
+                          {{ selectedMapPays.nombre_contributions }} contributions
+                        </div>
+
+                        <button
+                          @click="navigateFromMap"
+                          class="w-full px-4 py-2.5 bg-custom-green text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                          Voir la fiche pays
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </Transition>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -171,6 +327,7 @@ import {
   formatDateShort,
   type FichePaysAPI,
 } from '~/composables/useOpportuniteAfrique'
+import World from '@svg-maps/world'
 
 useHead({
   title: 'Opportunites en Afrique - UAfricas',
@@ -186,6 +343,7 @@ const searchTerm = ref('')
 const selectedRegion = ref('')
 const regions = ref<string[]>([])
 const totalPays = ref(0)
+const viewMode = ref<'grille' | 'carte'>('grille')
 
 // Debounce search
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
@@ -227,6 +385,114 @@ const resetFilters = () => {
   chargerFiches()
 }
 
+// === MODE CARTE ===
+
+// Codes ISO des pays africains (minuscules)
+const PAYS_AFRICAINS = new Set([
+  'dz', 'ao', 'bj', 'bw', 'bf', 'bi', 'cv', 'cm', 'cf', 'td', 'km', 'cg', 'cd',
+  'ci', 'dj', 'eg', 'gq', 'er', 'sz', 'et', 'ga', 'gm', 'gh', 'gn', 'gw', 'ke',
+  'ls', 'lr', 'ly', 'mg', 'mw', 'ml', 'mr', 'mu', 'ma', 'mz', 'na', 'ne', 'ng',
+  'rw', 'st', 'sn', 'sc', 'sl', 'so', 'za', 'ss', 'sd', 'tz', 'tg', 'tn', 'ug',
+  'zm', 'zw', 'eh',
+])
+
+// Noms francais des pays africains
+const nomsPaysFr: Record<string, string> = {
+  dz: 'Algerie', ao: 'Angola', bj: 'Benin', bw: 'Botswana', bf: 'Burkina Faso',
+  bi: 'Burundi', cv: 'Cap-Vert', cm: 'Cameroun', cf: 'Centrafrique',
+  td: 'Tchad', km: 'Comores', cg: 'Congo', cd: 'RD Congo', ci: "Cote d'Ivoire",
+  dj: 'Djibouti', eg: 'Egypte', gq: 'Guinee equatoriale', er: 'Erythree',
+  sz: 'Eswatini', et: 'Ethiopie', ga: 'Gabon', gm: 'Gambie', gh: 'Ghana',
+  gn: 'Guinee', gw: 'Guinee-Bissau', ke: 'Kenya', ls: 'Lesotho', lr: 'Liberia',
+  ly: 'Libye', mg: 'Madagascar', mw: 'Malawi', ml: 'Mali', mr: 'Mauritanie',
+  mu: 'Maurice', ma: 'Maroc', mz: 'Mozambique', na: 'Namibie', ne: 'Niger',
+  ng: 'Nigeria', rw: 'Rwanda', st: 'Sao Tome-et-Principe', sn: 'Senegal',
+  sc: 'Seychelles', sl: 'Sierra Leone', so: 'Somalie', za: 'Afrique du Sud',
+  ss: 'Soudan du Sud', sd: 'Soudan', tz: 'Tanzanie', tg: 'Togo', tn: 'Tunisie',
+  ug: 'Ouganda', zm: 'Zambie', zw: 'Zimbabwe', eh: 'Sahara occidental',
+}
+
+// ViewBox pour afficher uniquement l'Afrique
+const AFRICA_VIEWBOX = '375 290 275 325'
+
+// Couleurs par region
+const REGION_COLORS: Record<string, string> = {
+  "Afrique de l'Ouest": '#228B22',
+  'Afrique Centrale': '#0E7C4A',
+  "Afrique de l'Est": '#1565C0',
+  'Afrique du Nord': '#E65100',
+  'Afrique Australe': '#7B1FA2',
+}
+
+// Locations africaines filtrees depuis la carte du monde
+const africaLocations = computed(() => {
+  return World.locations.filter(loc => PAYS_AFRICAINS.has(loc.id.toLowerCase()))
+})
+
+// Etat du survol
+const hoveredCountry = ref<{ id: string; name: string } | null>(null)
+const mousePos = ref({ x: 0, y: 0 })
+
+// Pays selectionne sur la carte
+const selectedMapPays = ref<FichePaysAPI | null>(null)
+
+// Trouver la fiche d'un pays par code ISO
+const getFicheByCode = (isoCode: string): FichePaysAPI | undefined => {
+  return paysList.value.find(p => p.code?.toLowerCase() === isoCode.toLowerCase())
+}
+
+// Ajuster la luminosite d'une couleur hex
+const adjustBrightness = (hex: string, percent: number): string => {
+  const num = parseInt(hex.replace('#', ''), 16)
+  const amt = Math.round(2.55 * percent)
+  const R = Math.min(255, Math.max(0, (num >> 16) + amt))
+  const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + amt))
+  const B = Math.min(255, Math.max(0, (num & 0x0000ff) + amt))
+  return `#${((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1)}`
+}
+
+// Couleur d'un pays sur la carte
+const getMapColor = (id: string): string => {
+  const isHovered = hoveredCountry.value?.id === id
+  const isSelected = selectedMapPays.value?.code?.toLowerCase() === id
+  const fiche = getFicheByCode(id)
+
+  if (fiche) {
+    const regionColor = REGION_COLORS[fiche.region] || '#228B22'
+    if (isSelected) return '#FFD700'
+    if (isHovered) return adjustBrightness(regionColor, -15)
+    return regionColor
+  }
+
+  if (isHovered) return '#bdbdbd'
+  return '#e5e7eb'
+}
+
+// Gestion du survol de la carte
+const handleMapMouseMove = (event: MouseEvent) => {
+  const container = event.currentTarget as HTMLElement
+  const rect = container.getBoundingClientRect()
+  mousePos.value = {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+  }
+}
+
+// Clic sur un pays de la carte
+const handleMapClick = (location: { id: string }) => {
+  const fiche = getFicheByCode(location.id)
+  if (fiche) {
+    selectedMapPays.value = fiche
+  }
+}
+
+// Naviguer vers le detail depuis la carte
+const navigateFromMap = () => {
+  if (selectedMapPays.value) {
+    navigateToDetail(selectedMapPays.value.id)
+  }
+}
+
 // Charger les donnees au montage
 onMounted(async () => {
   const regionsResult = await listerRegions()
@@ -263,4 +529,83 @@ onMounted(async () => {
 .animate-title { animation: fadeInUp 1s ease-out 0.3s both; }
 .animate-line { animation: expandWidth 1s ease-out 1s both; }
 .animate-subtitle { animation: fadeInDelay 1.5s ease-out 0.8s both; }
+
+/* Carte SVG */
+.map-container {
+  position: relative;
+  width: 100%;
+}
+
+.africa-map {
+  width: 100%;
+  height: auto;
+  max-height: 600px;
+}
+
+.map-path {
+  transition: fill 0.2s ease, opacity 0.2s ease;
+}
+
+.map-path:hover {
+  opacity: 0.85;
+}
+
+/* Tooltip carte */
+.map-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 50;
+  white-space: nowrap;
+  transform: translateY(-50%);
+}
+
+.map-tooltip-clickable {
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 16px;
+  transition: all 0.2s ease;
+}
+
+.map-tooltip-clickable:hover {
+  background: rgba(34, 139, 34, 0.95);
+  transform: translateY(-50%) scale(1.05);
+}
+
+/* Transitions */
+.map-fade-enter-active,
+.map-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.map-fade-enter-from,
+.map-fade-leave-to {
+  opacity: 0;
+}
+
+.slide-in-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-in-leave-active {
+  transition: all 0.2s ease-in;
+}
+
+.slide-in-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.slide-in-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
 </style>
