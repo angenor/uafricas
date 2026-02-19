@@ -17,14 +17,14 @@
           </h3>
           <p class="mt-2 text-sm sm:text-base leading-relaxed">
             Africans est un réseau international visant la promotion des meilleures
-            valeurs africaines et afro-américaines aux niveaux culturel,
+            valeurs africaines et Afro-descendantes aux niveaux culturel,
             socio-économique et scientifique. Elle regroupe un bureau de
             coordination technique, des antennes nationales et des groupes de
             réflexion ad hoc. Africans poursuit un but non lucratif et met l'accent
             sur le volontariat des membres.
           </p>
           <ul class="list-disc ml-5 mt-2 text-sm space-y-1">
-            <li>Promouvoir les valeurs culturelles africaines et afro-américaines pertinentes</li>
+            <li>Promouvoir les valeurs culturelles africaines et Afro-descendantes pertinentes</li>
             <li>Renforcer l'union des populations d'origine africaine</li>
             <li>Favoriser le retour de la diaspora africaine et leur contribution au développement</li>
             <li>Soutenir le développement d'un marché africain et promouvoir la ZLECAF</li>

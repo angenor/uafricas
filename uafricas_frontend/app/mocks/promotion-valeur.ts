@@ -44,7 +44,7 @@ export const promotionValeurPageData: PromotionValeurPageData = {
       title: 'Afrocult',
       description: 'Explorez la richesse de la culture africaine et afro-descendante à travers nos programmes culturels.',
       image: 'https://media.istockphoto.com/id/1294238081/fr/vectoriel/verticale-des-jeunes-coiffures-afro-am%C3%A9ricaines-vecteur.jpg?s=612x612&w=0&k=20&c=3xMoHrtWkbpBLYZVDavlj0fZS6vVLMIqWdkurO__q4A=',
-      altText: 'Culture afro-américaine',
+      altText: 'Culture Afro-descendante',
       link: '/africain-afro-americain',
       gradient: 'from-purple-500 to-pink-500',
       buttonText: 'Découvrir',

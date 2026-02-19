@@ -27,7 +27,7 @@
           </p>
           <p>
             Le Bureau international met en place des Centres culturels africains et
-            afro-américains dans tous les pays en vue de valoriser les valeurs
+            Afro-descendants dans tous les pays en vue de valoriser les valeurs
             culturelles, socio-économiques et scientifiques de l'Afrique. Le Bureau
             s'appuie sur les Comités nationaux relais pour développer une
             programmation et faciliter la réalisation des activités liées au (i)

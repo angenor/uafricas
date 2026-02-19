@@ -77,7 +77,7 @@ Il s'agit des publications d'articles de la part d'un user pour vente, troc, don
 
 ### Définition
 
-Permet aux Africain(e)s sur le continent africain ou de la diaspora ainsi que les afro-américains de mettre leur expertise à contribution en faveur du développement local grâce à des projets de mobilité entre 3 et 12 mois.
+Permet aux Africain(e)s sur le continent africain ou de la diaspora ainsi que les Afro-descendants de mettre leur expertise à contribution en faveur du développement local grâce à des projets de mobilité entre 3 et 12 mois.
 
 ### Règles
 

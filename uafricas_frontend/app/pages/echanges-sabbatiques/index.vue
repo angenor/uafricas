@@ -32,7 +32,7 @@
           </h2>
           <p class="py-5 text-gray-700">
             Les Africain(e)s sur le continent ou de la diaspora ainsi que les
-            afro-américains peuvent ici mettre leur expertise à contribution en
+            Afro-descendants peuvent ici mettre leur expertise à contribution en
             faveur du développement local grâce à des projets de mobilité entre
             3 et 12 mois.
           </p>
