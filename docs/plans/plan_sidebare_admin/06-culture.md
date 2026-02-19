@@ -3,7 +3,7 @@
 > **Phase** : 2 — Modules métier
 > **Section sidebar** : Culture
 > **Icône** : faMasksTheater
-> **Statut global** : [ ] Non démarré
+> **Statut global** : [x] Terminé
 
 ---
 
@@ -27,7 +27,7 @@
 ### Backend existant
 - [x] `src/handlers/centres_culturels.rs` — lecture publique centres — **À étendre pour admin**
 - [x] `src/handlers/codimoi.rs` — CRUD public posts + commentaires — **À étendre pour admin**
-- [ ] Endpoints admin programmations — **À CRÉER**
+- [x] Endpoints admin programmations — **CRÉÉ**
 
 ---
 
@@ -36,80 +36,80 @@
 ### 1. Centres culturels (`/admin/centres-culturels`)
 
 #### Backend
-- [ ] `GET /api/admin/centres-culturels` — liste paginée + filtres (pays, recherche)
-- [ ] `GET /api/admin/centres-culturels/:id` — détail (avec membres + programmations count)
-- [ ] `POST /api/admin/centres-culturels` — création
-- [ ] `PUT /api/admin/centres-culturels/:id` — modification
-- [ ] `DELETE /api/admin/centres-culturels/:id` — soft delete
-- [ ] `GET /api/admin/centres-culturels/:id/membres` — liste membres
-- [ ] `POST /api/admin/centres-culturels/:id/membres` — ajouter membre (utilisateur + rôle)
-- [ ] `PUT /api/admin/centres-culturels/:id/membres/:membre_id` — changer rôle membre
-- [ ] `DELETE /api/admin/centres-culturels/:id/membres/:membre_id` — retirer membre
+- [x] `GET /api/admin/centres-culturels` — liste paginée + filtres (pays, recherche)
+- [x] `GET /api/admin/centres-culturels/:id` — détail (avec membres + programmations count)
+- [x] `POST /api/admin/centres-culturels` — création
+- [x] `PUT /api/admin/centres-culturels/:id` — modification
+- [x] `DELETE /api/admin/centres-culturels/:id` — soft delete
+- [x] `GET /api/admin/centres-culturels/:id/membres` — liste membres
+- [x] `POST /api/admin/centres-culturels/:id/membres` — ajouter membre (utilisateur + rôle)
+- [x] `PUT /api/admin/centres-culturels/:id/membres/:membre_id` — changer rôle membre
+- [x] `DELETE /api/admin/centres-culturels/:id/membres/:membre_id` — retirer membre
 - **Fichiers** : `src/handlers/admin/centres_culturels.rs`
 
 #### Frontend
-- [ ] `app/pages/admin/centres-culturels/index.vue` — liste + filtres
-- [ ] `app/pages/admin/centres-culturels/create.vue` — formulaire (nom, description, adresse, pays, contact)
-- [ ] `app/pages/admin/centres-culturels/[id].vue` — édition avec onglets :
-  - [ ] Onglet Infos — données du centre
-  - [ ] Onglet Membres — gestion équipe (président, VP, communication, membre)
-  - [ ] Onglet Programmations — liste des événements du centre
-- [ ] `app/composables/useAdminCentresCulturels.ts`
+- [x] `app/pages/admin/centres-culturels/index.vue` — liste + filtres
+- [x] `app/pages/admin/centres-culturels/create.vue` — formulaire (nom, description, adresse, pays, contact)
+- [x] `app/pages/admin/centres-culturels/[id].vue` — édition avec onglets :
+  - [x] Onglet Infos — données du centre
+  - [x] Onglet Membres — gestion équipe (président, VP, communication, membre)
+  - [x] Onglet Programmations — liste des événements du centre
+- [x] `app/composables/useAdminCentresCulturels.ts`
 
 ---
 
 ### 2. Programmations (`/admin/programmations`)
 
 #### Backend
-- [ ] `GET /api/admin/programmations` — liste paginée + filtres (centre, mode, dates)
-- [ ] `GET /api/admin/programmations/:id` — détail
-- [ ] `POST /api/admin/programmations` — création (lié à un centre)
-- [ ] `PUT /api/admin/programmations/:id` — modification
-- [ ] `DELETE /api/admin/programmations/:id` — soft delete
+- [x] `GET /api/admin/programmations` — liste paginée + filtres (centre, mode, dates)
+- [x] `GET /api/admin/programmations/:id` — détail
+- [x] `POST /api/admin/programmations` — création (lié à un centre)
+- [x] `PUT /api/admin/programmations/:id` — modification
+- [x] `DELETE /api/admin/programmations/:id` — soft delete
 - **Fichiers** : `src/handlers/admin/programmations.rs`
 
 #### Frontend
-- [ ] `app/pages/admin/programmations/index.vue` — liste + filtre par centre culturel
-- [ ] `app/pages/admin/programmations/create.vue` — formulaire (centre, titre, description, dates, mode: présentiel/en_ligne/hybride)
-- [ ] `app/pages/admin/programmations/[id].vue` — édition
-- [ ] `app/composables/useAdminProgrammations.ts`
+- [x] `app/pages/admin/programmations/index.vue` — liste + filtre par centre culturel
+- [x] `app/pages/admin/programmations/create.vue` — formulaire (centre, titre, description, dates, mode: présentiel/en_ligne/hybride)
+- [x] `app/pages/admin/programmations/[id].vue` — édition
+- [x] `app/composables/useAdminProgrammations.ts`
 
 ---
 
 ### 3. Codi-Moi (`/admin/codimoi`)
 
 #### Backend
-- [ ] `GET /api/admin/codimoi` — liste paginée + filtres (type_codimoi, pays, ethnie, recherche full-text)
-- [ ] `GET /api/admin/codimoi/:id` — détail (avec tags + commentaires + réactions count)
-- [ ] `POST /api/admin/codimoi` — création
-- [ ] `PUT /api/admin/codimoi/:id` — modification
-- [ ] `DELETE /api/admin/codimoi/:id` — soft delete
-- [ ] `POST /api/admin/codimoi/:id/tags` — ajouter tag
-- [ ] `DELETE /api/admin/codimoi/:id/tags/:tag_id` — retirer tag
-- [ ] `GET /api/admin/codimoi/:id/commentaires` — liste commentaires (arborescente)
-- [ ] `DELETE /api/admin/codimoi/:id/commentaires/:commentaire_id` — supprimer commentaire (modération)
-- [ ] `GET /api/admin/codimoi/:id/reactions` — stats réactions (like/dislike count)
+- [x] `GET /api/admin/codimoi` — liste paginée + filtres (type_codimoi, pays, ethnie, recherche full-text)
+- [x] `GET /api/admin/codimoi/:id` — détail (avec tags + commentaires + réactions count)
+- [x] `POST /api/admin/codimoi` — création
+- [x] `PUT /api/admin/codimoi/:id` — modification
+- [x] `DELETE /api/admin/codimoi/:id` — soft delete
+- [x] `POST /api/admin/codimoi/:id/tags` — ajouter tag
+- [x] `DELETE /api/admin/codimoi/:id/tags/:tag_id` — retirer tag
+- [x] `GET /api/admin/codimoi/:id/commentaires` — liste commentaires (arborescente)
+- [x] `DELETE /api/admin/codimoi/:id/commentaires/:commentaire_id` — supprimer commentaire (modération)
+- [x] `GET /api/admin/codimoi/:id/reactions` — stats réactions (like/dislike count)
 - **Fichiers** : `src/handlers/admin/codimoi.rs`
 
 #### Frontend
-- [ ] `app/pages/admin/codimoi/index.vue` — liste + filtres (type, pays, ethnie)
-- [ ] `app/pages/admin/codimoi/create.vue` — formulaire (type, contenu, source, pays, ethnie)
-- [ ] `app/pages/admin/codimoi/[id].vue` — édition avec onglets :
-  - [ ] Onglet Contenu — données principales
-  - [ ] Onglet Tags — gestion tags (autocomplete depuis référentiel)
-  - [ ] Onglet Commentaires — modération (suppression, vue arborescente)
-  - [ ] Onglet Réactions — stats lecture seule (likes/dislikes, graphique)
-- [ ] `app/composables/useAdminCodimoi.ts`
+- [x] `app/pages/admin/codimoi/index.vue` — liste + filtres (type, pays, ethnie)
+- [x] `app/pages/admin/codimoi/create.vue` — formulaire (type, contenu, source, pays, ethnie)
+- [x] `app/pages/admin/codimoi/[id].vue` — édition avec onglets :
+  - [x] Onglet Contenu — données principales
+  - [x] Onglet Tags — gestion tags (autocomplete depuis référentiel)
+  - [x] Onglet Commentaires — modération (suppression, vue arborescente)
+  - [x] Onglet Réactions — stats lecture seule (likes/dislikes, graphique)
+- [x] `app/composables/useAdminCodimoi.ts`
 
 ---
 
 ## Critères de validation
-- [ ] CRUD complet centres culturels avec gestion membres
-- [ ] CRUD complet programmations avec filtre par centre
-- [ ] CRUD complet Codi-Moi avec tags, commentaires, réactions
-- [ ] Modération commentaires (suppression)
-- [ ] Vue arborescente commentaires (threaded)
-- [ ] Stats réactions en lecture seule
+- [x] CRUD complet centres culturels avec gestion membres
+- [x] CRUD complet programmations avec filtre par centre
+- [x] CRUD complet Codi-Moi avec tags, commentaires, réactions
+- [x] Modération commentaires (suppression)
+- [x] Vue arborescente commentaires (threaded)
+- [x] Stats réactions en lecture seule
 
 ---
 

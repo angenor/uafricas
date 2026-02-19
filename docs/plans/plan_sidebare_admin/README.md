@@ -115,7 +115,7 @@ Pour marquer une tâche comme terminée, remplacer `[ ]` par `[x]`.
 
 | #  | Plan                     | Phase | Statut         |
 |----|--------------------------|-------|----------------|
-| 00 | Fondation Admin          | 0     | [ ] Non démarré |
+| 00 | Fondation Admin          | 0     | [x] Terminé (19/02/2026) |
 | 01 | Utilisateurs & Accès     | 1     | [ ] Non démarré |
 | 02 | Référentiels             | 1     | [ ] Non démarré |
 | 03 | Marché Africain          | 2     | [ ] Non démarré |

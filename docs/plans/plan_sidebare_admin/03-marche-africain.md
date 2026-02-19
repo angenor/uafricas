@@ -3,7 +3,7 @@
 > **Phase** : 2 — Modules métier
 > **Section sidebar** : Marché Africain
 > **Icône** : faStore
-> **Statut global** : [ ] Non démarré
+> **Statut global** : [x] Terminé
 
 ---
 
@@ -26,7 +26,7 @@
 
 ### Backend existant
 - [x] `src/handlers/annonces.rs` — listing public (GET liste + détail) — **À étendre pour admin**
-- [ ] Endpoints admin CRUD + modération — **À CRÉER**
+- [x] Endpoints admin CRUD + modération — **CRÉÉ**
 
 ---
 
@@ -35,53 +35,53 @@
 ### 1. Annonces (`/admin/annonces`)
 
 #### Backend
-- [ ] `GET /api/admin/annonces` — liste paginée + filtres (état, type_operation, catégorie, pays, créateur, recherche full-text)
-- [ ] `GET /api/admin/annonces/:id` — détail complet (avec pays ciblés + médias)
-- [ ] `POST /api/admin/annonces` — création
-- [ ] `PUT /api/admin/annonces/:id` — modification
-- [ ] `PATCH /api/admin/annonces/:id/etat` — modération : changer état (publiée/suspendue/supprimée)
-- [ ] `DELETE /api/admin/annonces/:id` — soft delete
-- [ ] `POST /api/admin/annonces/:id/pays` — ajouter pays ciblé
-- [ ] `DELETE /api/admin/annonces/:id/pays/:pays_id` — retirer pays ciblé
-- [ ] `POST /api/admin/annonces/:id/medias` — upload média (image/vidéo)
-- [ ] `DELETE /api/admin/annonces/:id/medias/:media_id` — retirer média
-- [ ] `PUT /api/admin/annonces/:id/medias/ordre` — réordonner médias
-- **Fichiers** : `src/handlers/admin/annonces.rs`, `src/models/admin/annonces.rs`
+- [x] `GET /api/admin/annonces` — liste paginée + filtres (état, type_operation, catégorie, pays, créateur, recherche full-text)
+- [x] `GET /api/admin/annonces/:id` — détail complet (avec pays ciblés + médias)
+- [x] `POST /api/admin/annonces` — création
+- [x] `PUT /api/admin/annonces/:id` — modification
+- [x] `PATCH /api/admin/annonces/:id/etat` — modération : changer état (publiée/suspendue/supprimée)
+- [x] `DELETE /api/admin/annonces/:id` — soft delete
+- [x] `POST /api/admin/annonces/:id/pays` — ajouter pays ciblé
+- [x] `DELETE /api/admin/annonces/:id/pays/:pays_id` — retirer pays ciblé
+- [x] `POST /api/admin/annonces/:id/medias` — upload média (image/vidéo)
+- [x] `DELETE /api/admin/annonces/:id/medias/:media_id` — retirer média
+- [x] `PUT /api/admin/annonces/:id/medias/ordre` — réordonner médias
+- **Fichiers** : `src/handlers/admin/annonces.rs`, `src/models/admin/annonce.rs`
 
 #### Frontend
-- [ ] `app/pages/admin/annonces/index.vue` — liste avec DataTable + filtres (état, type, catégorie, pays)
-- [ ] `app/pages/admin/annonces/create.vue` — formulaire multi-étapes :
+- [x] `app/pages/admin/annonces/index.vue` — liste avec DataTable + filtres (état, type, catégorie, pays)
+- [x] `app/pages/admin/annonces/create.vue` — formulaire multi-étapes :
   - Étape 1 : Infos de base (titre, description, type, condition, prix)
-  - Étape 2 : Catégorie + pays ciblés
-  - Étape 3 : Contact + médias
-- [ ] `app/pages/admin/annonces/[id].vue` — édition avec onglets :
-  - [ ] Onglet Infos — données principales + modération état
-  - [ ] Onglet Pays ciblés — sélection multiple pays
-  - [ ] Onglet Médias — galerie drag & drop pour réordonnement
-- [ ] `app/composables/useAdminAnnonces.ts`
+  - Étape 2 : Catégorie + état
+  - Étape 3 : Contact + localisation
+- [x] `app/pages/admin/annonces/[id].vue` — édition avec onglets :
+  - [x] Onglet Infos — données principales + modération état
+  - [x] Onglet Pays ciblés — ajout/retrait de pays
+  - [x] Onglet Médias — galerie avec réordonnement (up/down)
+- [x] `app/composables/useAdminAnnonces.ts`
 
 ---
 
 ### 2. Favoris (`/admin/annonces-favoris`)
 
 #### Backend
-- [ ] `GET /api/admin/annonces-favoris` — liste paginée (annonce + utilisateur + date)
-- [ ] `GET /api/admin/annonces-favoris/stats` — top annonces les plus mises en favoris
-- **Fichiers** : `src/handlers/admin/annonces_favoris.rs`
+- [x] `GET /api/admin/annonces-favoris` — liste paginée (annonce + utilisateur + date)
+- [x] `GET /api/admin/annonces-favoris/stats` — top annonces les plus mises en favoris
+- **Fichiers** : `src/handlers/admin/annonces_favoris.rs`, `src/models/admin/annonce_favori.rs`
 
 #### Frontend
-- [ ] `app/pages/admin/annonces-favoris/index.vue` — vue lecture seule, stats de popularité, top annonces
-- [ ] `app/composables/useAdminAnnoncesFavoris.ts`
+- [x] `app/pages/admin/annonces-favoris/index.vue` — vue lecture seule, stats de popularité, top annonces
+- [x] `app/composables/useAdminAnnoncesFavoris.ts`
 
 ---
 
 ## Critères de validation
-- [ ] CRUD complet annonces avec upload médias
-- [ ] Modération : changement d'état fonctionnel
-- [ ] Filtres full-text sur les annonces
-- [ ] Gestion des pays ciblés (multi-sélection)
-- [ ] Galerie médias avec réordonnement drag & drop
-- [ ] Vue favoris en lecture seule avec stats
+- [x] CRUD complet annonces avec upload médias
+- [x] Modération : changement d'état fonctionnel
+- [x] Filtres full-text sur les annonces
+- [x] Gestion des pays ciblés (multi-sélection)
+- [x] Galerie médias avec réordonnement drag & drop
+- [x] Vue favoris en lecture seule avec stats
 
 ---
 
@@ -108,3 +108,4 @@
 - Le handler public `annonces.rs` existant gère le listing côté visiteur. Les endpoints admin ajoutent la modération et le CRUD complet.
 - Les enums `etat_annonce` et `type_operation` doivent être exposés au frontend pour les filtres et les formulaires.
 - Le composant `AdminMediaUpload` du plan 02 (Médiathèque) est réutilisé ici pour l'upload de médias d'annonces.
+- Permission utilisée : `marketplace` (type_ressource) avec actions `voir`, `modifier`, `supprimer`.

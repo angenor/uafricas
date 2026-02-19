@@ -20,15 +20,19 @@ const valeurs = computed({
 })
 
 const mettreAJour = (key: string, value: string) => {
-  emit('update:modelValue', { ...valeurs.value, [key]: value })
+  // Muter directement le modelValue (reactive) pour compatibilite v-model
+  if (props.modelValue && typeof props.modelValue === 'object') {
+    (props.modelValue as Record<string, string>)[key] = value
+  }
 }
 
 const reinitialiser = () => {
-  const vide: Record<string, string> = {}
-  for (const filtre of props.filtres) {
-    vide[filtre.key] = filtre.defaultValue || ''
+  // Muter directement le modelValue (reactive)
+  if (props.modelValue && typeof props.modelValue === 'object') {
+    for (const filtre of props.filtres) {
+      (props.modelValue as Record<string, string>)[filtre.key] = filtre.defaultValue || ''
+    }
   }
-  emit('update:modelValue', vide)
   emit('reinitialiser')
 }
 </script>

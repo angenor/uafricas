@@ -121,6 +121,9 @@ import {
   faArrowUp,
   faInbox,
   faGaugeHigh,
+  faArrowsRotate,
+  faHourglassHalf,
+  faDownload,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -261,6 +264,9 @@ library.add(
   faArrowUp,
   faInbox,
   faGaugeHigh,
+  faArrowsRotate,
+  faHourglassHalf,
+  faDownload,
   farCalendar,
   farClock,
   farHeart,

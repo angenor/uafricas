@@ -1,3 +1,24 @@
+pub mod utilisateurs;
+pub mod organisations;
+pub mod partenariats;
+pub mod roles;
+pub mod pays;
+pub mod domaines;
+pub mod categories;
+pub mod tags;
+pub mod medias;
+pub mod specialites;
+pub mod programmes;
+pub mod candidatures;
+pub mod annonces;
+pub mod annonces_favoris;
+pub mod innovations;
+pub mod projets_admin;
+pub mod africantives_admin;
+pub mod centres_culturels;
+pub mod programmations;
+pub mod codimoi_admin;
+
 use actix_web::HttpResponse;
 use serde::Serialize;
 

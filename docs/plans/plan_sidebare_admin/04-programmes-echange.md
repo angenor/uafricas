@@ -3,7 +3,7 @@
 > **Phase** : 2 — Modules métier
 > **Section sidebar** : Programmes d'échange
 > **Icône** : faPlane
-> **Statut global** : [ ] Non démarré
+> **Statut global** : [x] Implémenté
 
 ---
 
@@ -26,7 +26,7 @@
 
 ### Backend existant
 - [x] `src/handlers/sabbatiques.rs` — programmes sabbatiques publics — **Potentiellement à refactorer pour admin**
-- [ ] Endpoints admin CRUD programmes + candidatures — **À CRÉER**
+- [x] Endpoints admin CRUD programmes + candidatures — **CRÉÉ**
 
 ---
 
@@ -35,53 +35,53 @@
 ### 1. Programmes (`/admin/programmes`)
 
 #### Backend
-- [ ] `GET /api/admin/programmes` — liste paginée + filtres (état, domaine, durée, pays, dates)
-- [ ] `GET /api/admin/programmes/:id` — détail complet (avec candidatures count)
-- [ ] `POST /api/admin/programmes` — création
-- [ ] `PUT /api/admin/programmes/:id` — modification
-- [ ] `PATCH /api/admin/programmes/:id/etat` — validation : changer état (publié/suspendu/annulé)
-- [ ] `DELETE /api/admin/programmes/:id` — soft delete
-- [ ] `GET /api/admin/programmes/:id/candidatures` — liste candidatures du programme
-- **Fichiers** : `src/handlers/admin/programmes.rs`, `src/models/admin/programmes.rs`
+- [x] `GET /api/admin/programmes` — liste paginée + filtres (état, domaine, durée, pays, dates)
+- [x] `GET /api/admin/programmes/:id` — détail complet (avec candidatures count)
+- [x] `POST /api/admin/programmes` — création
+- [x] `PUT /api/admin/programmes/:id` — modification
+- [x] `PATCH /api/admin/programmes/:id/etat` — validation : changer état (publié/suspendu/annulé)
+- [x] `DELETE /api/admin/programmes/:id` — soft delete
+- [x] `GET /api/admin/programmes/:id/candidatures` — liste candidatures du programme
+- **Fichiers** : `src/handlers/admin/programmes.rs`, `src/models/admin/programme.rs`
 
 #### Frontend
-- [ ] `app/pages/admin/programmes/index.vue` — liste avec DataTable + filtres (état, domaine, durée)
-- [ ] `app/pages/admin/programmes/create.vue` — formulaire :
+- [x] `app/pages/admin/programmes/index.vue` — liste avec DataTable + filtres (état, domaine, durée)
+- [x] `app/pages/admin/programmes/create.vue` — formulaire :
   - Infos de base (titre, description, objectifs)
   - Domaine, pays origine/destination
   - Dates, durée, capacité
   - Couverture (billets, hébergement, subsistance)
   - Prérequis
-- [ ] `app/pages/admin/programmes/[id].vue` — édition + onglet candidatures
-- [ ] `app/composables/useAdminProgrammes.ts`
+- [x] `app/pages/admin/programmes/[id].vue` — édition + onglet candidatures
+- [x] `app/composables/useAdminProgrammes.ts`
 
 ---
 
 ### 2. Candidatures (`/admin/candidatures`)
 
 #### Backend
-- [ ] `GET /api/admin/candidatures` — liste paginée + filtres (état, programme, candidat, date)
-- [ ] `GET /api/admin/candidatures/:id` — détail (motivation, CV, profil candidat)
-- [ ] `PATCH /api/admin/candidatures/:id/etat` — revue : accepter/refuser (avec commentaire)
-- **Fichiers** : `src/handlers/admin/candidatures.rs`
+- [x] `GET /api/admin/candidatures` — liste paginée + filtres (état, programme, candidat, date)
+- [x] `GET /api/admin/candidatures/:id` — détail (motivation, CV, profil candidat)
+- [x] `PATCH /api/admin/candidatures/:id/etat` — revue : accepter/refuser (avec commentaire)
+- **Fichiers** : `src/handlers/admin/candidatures.rs`, `src/models/admin/candidature.rs`
 
 #### Frontend
-- [ ] `app/pages/admin/candidatures/index.vue` — liste avec DataTable + filtres (état, programme)
-- [ ] `app/pages/admin/candidatures/[id].vue` — revue détaillée :
+- [x] `app/pages/admin/candidatures/index.vue` — liste avec DataTable + filtres (état, programme)
+- [x] `app/pages/admin/candidatures/[id].vue` — revue détaillée :
   - Profil candidat (lien vers utilisateur)
   - Lettre de motivation
   - CV (téléchargement)
   - Boutons accepter / refuser avec champ commentaire
-- [ ] `app/composables/useAdminCandidatures.ts`
+- [x] `app/composables/useAdminCandidatures.ts`
 
 ---
 
 ## Critères de validation
-- [ ] CRUD complet programmes avec validation d'état
-- [ ] Workflow candidature : soumise → en_revue → acceptée/refusée
-- [ ] Filtres par état, domaine, durée fonctionnels
-- [ ] Lien candidature → profil utilisateur fonctionnel
-- [ ] Téléchargement CV depuis la page de revue
+- [x] CRUD complet programmes avec validation d'état
+- [x] Workflow candidature : soumise → en_revue → acceptée/refusée
+- [x] Filtres par état, domaine, durée fonctionnels
+- [x] Lien candidature → profil utilisateur fonctionnel
+- [x] Téléchargement CV depuis la page de revue
 
 ---
 
@@ -91,16 +91,16 @@
 > Commande : `agent-browser --headed`
 
 ### Programmes
-- [ ] **T4.1** — Liste programmes : vérifier DataTable + badges état (publié=vert, suspendu=orange, annulé=rouge)
-- [ ] **T4.2** — Formulaire programme : remplir tous les champs (titre, dates, durée, couverture, prérequis), soumettre
-- [ ] **T4.3** — Validation état : changer l'état d'un programme (publier/suspendre/annuler) → modal confirmation → vérifier badge
+- [x] **T4.1** — Liste programmes : vérifier DataTable + badges état (publié=vert, suspendu=orange, annulé=rouge)
+- [x] **T4.2** — Formulaire programme : remplir tous les champs (titre, dates, durée, couverture, prérequis), soumettre
+- [x] **T4.3** — Validation état : changer l'état d'un programme (publier/suspendre/annuler) → modal confirmation → vérifier badge
 
 ### Candidatures
-- [ ] **T4.4** — Liste candidatures : vérifier filtres par état et par programme
-- [ ] **T4.5** — Revue candidature : ouvrir une candidature → vérifier affichage profil candidat, lettre de motivation, lien CV
-- [ ] **T4.6** — Téléchargement CV : cliquer sur le lien CV → vérifier que le fichier se télécharge
-- [ ] **T4.7** — Workflow accepter/refuser : cliquer accepter → remplir commentaire → confirmer → vérifier changement état
-- [ ] **T4.8** — Lien profil candidat : cliquer sur le nom du candidat → vérifier navigation vers `/admin/utilisateurs/[id]`
+- [x] **T4.4** — Liste candidatures : vérifier filtres par état et par programme
+- [x] **T4.5** — Revue candidature : ouvrir une candidature → vérifier affichage profil candidat, lettre de motivation, lien CV
+- [x] **T4.6** — Téléchargement CV : cliquer sur le lien CV → vérifier que le fichier se télécharge
+- [x] **T4.7** — Workflow accepter/refuser : cliquer accepter → remplir commentaire → confirmer → vérifier changement état
+- [x] **T4.8** — Lien profil candidat : cliquer sur le nom du candidat → vérifier navigation vers `/admin/utilisateurs/[id]`
 
 ---
 
