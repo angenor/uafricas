@@ -4,11 +4,13 @@ import type {
 } from '~/types/admin'
 
 export const useAdminDashboard = () => {
-  const { adminFetch, loading, error } = useAdmin()
+  const { adminFetch } = useAdmin()
 
   const stats = ref<DashboardStats | null>(null)
   const activiteRecente = ref<DashboardActiviteItem[]>([])
   const tendances = ref<DashboardTendances | null>(null)
+  const loading = ref(false)
+  const error = ref<string | null>(null)
 
   const chargerStats = async () => {
     loading.value = true

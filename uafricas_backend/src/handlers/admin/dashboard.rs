@@ -61,7 +61,7 @@ WITH
   ),
   cc_stats AS (
     SELECT COUNT(*) as total
-    FROM culture.centre_culturel WHERE deleted_at IS NULL
+    FROM culture.centre_culturel
   ),
   codi_stats AS (
     SELECT
@@ -81,7 +81,7 @@ WITH
   evt_stats AS (
     SELECT
       COUNT(*) as total,
-      COUNT(*) FILTER (WHERE etat::text = 'publie' AND date_debut > NOW()) as a_venir
+      COUNT(*) FILTER (WHERE etat::text = 'publie' AND date_heure_debut > NOW()) as a_venir
     FROM media_content.evenement WHERE deleted_at IS NULL
   ),
   evt_insc AS (
