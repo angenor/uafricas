@@ -16,74 +16,165 @@
       </button>
     </div>
 
-    <!-- Ligne 2 : Navigation desktop + bouton auth alignés -->
-    <nav class="hidden lg:flex justify-center items-center gap-6 xl:gap-10 h-8 text-custom-chocolat font-semibold text-sm xl:text-base">
-      <NuxtLink to="/actions" class="hover:text-custom-green transition-colors">
-        Actions
-      </NuxtLink>
+    <!-- Ligne 2 : Navigation desktop + bouton auth à droite -->
+    <nav class="hidden lg:flex items-center h-8 px-4 lg:px-6 text-custom-chocolat font-semibold text-sm xl:text-base">
+      <!-- Spacer gauche pour équilibrer -->
+      <div class="flex-1" />
 
-      <NuxtLink to="/africa-culture" class="hover:text-custom-green transition-colors">
-        AfricaCulture
-      </NuxtLink>
+      <!-- Liens de navigation centraux -->
+      <div class="flex items-center gap-6 xl:gap-10">
+        <NuxtLink to="/actions" class="hover:text-custom-green transition-colors">
+          Actions
+        </NuxtLink>
 
-      <!-- Lib. d'Afrique -->
-      <div
-        @mouseenter="pointer = 'biblio'"
-        @mouseleave="pointer = null"
-        class="relative"
-      >
+        <NuxtLink to="/africa-culture" class="hover:text-custom-green transition-colors">
+          AfricaCulture
+        </NuxtLink>
+
+        <!-- Lib. d'Afrique -->
+        <div
+          @mouseenter="pointer = 'biblio'"
+          @mouseleave="pointer = null"
+          class="relative"
+        >
+          <NuxtLink
+            to="/bibliotheques"
+            :class="pointer === 'biblio' ? 'text-custom-green' : ''"
+            class="cursor-pointer whitespace-nowrap transition-colors"
+          >
+            Lib. d'Afrique
+          </NuxtLink>
+          <LayoutNavDropdown :open="pointer === 'biblio'" :items="biblioItems" />
+        </div>
+
+        <!-- Africa Univers -->
+        <div
+          @mouseenter="pointer = 'universite'"
+          @mouseleave="pointer = null"
+          class="relative"
+        >
+          <NuxtLink to="/universite" class="cursor-pointer whitespace-nowrap transition-colors">
+            Africa Univers
+          </NuxtLink>
+          <LayoutNavDropdown :open="pointer === 'universite'" :items="universiteItems" />
+        </div>
+
+        <!-- Africamood -->
+        <div
+          @mouseenter="pointer = 'media'"
+          @mouseleave="pointer = null"
+          class="relative"
+        >
+          <NuxtLink to="/medias" class="flex items-center cursor-pointer gap-1">
+            <span class="text-custom-green">Africamood</span>
+            <font-awesome-icon icon="fa-solid fa-tv" class="text-gray-600 text-xs" />
+          </NuxtLink>
+          <LayoutNavDropdown :open="pointer === 'media'" :items="mediaItems" />
+        </div>
+      </div>
+
+      <!-- Auth desktop - extrême droite -->
+      <div class="flex-1 flex justify-end">
+        <!-- Utilisateur connecté : avatar + dropdown -->
+        <div
+          v-if="isAuthenticated"
+          @mouseenter="pointer = 'profil'"
+          @mouseleave="pointer = null"
+          class="relative"
+        >
+          <div class="flex items-center gap-2 cursor-pointer">
+            <img
+              v-if="user?.photo_url"
+              :src="user.photo_url"
+              :alt="fullName"
+              class="w-8 h-8 rounded-full object-cover border-2 border-custom-chocolat"
+            />
+            <div
+              v-else
+              class="w-8 h-8 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-xs font-bold"
+            >
+              {{ user?.prenom?.charAt(0)?.toUpperCase() }}{{ user?.nom?.charAt(0)?.toUpperCase() }}
+            </div>
+            <span class="text-sm text-gray-700 whitespace-nowrap font-medium">{{ fullName }}</span>
+            <font-awesome-icon icon="fa-solid fa-chevron-down" class="text-xs text-gray-500 transition-transform" :class="{ 'rotate-180': pointer === 'profil' }" />
+          </div>
+
+          <!-- Dropdown profil -->
+          <Transition
+            enter-active-class="transition-all duration-200 ease-out"
+            enter-from-class="opacity-0 -translate-y-1"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition-all duration-150 ease-in"
+            leave-from-class="opacity-100 translate-y-0"
+            leave-to-class="opacity-0 -translate-y-1"
+          >
+            <div
+              v-if="pointer === 'profil'"
+              class="absolute right-0 top-full mt-2 w-60 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50"
+            >
+              <!-- En-tête profil -->
+              <div class="p-4 bg-gray-50 border-b border-gray-100 flex flex-col items-center gap-2">
+                <img
+                  v-if="user?.photo_url"
+                  :src="user.photo_url"
+                  :alt="fullName"
+                  class="w-14 h-14 rounded-full object-cover border-2 border-custom-chocolat"
+                />
+                <div
+                  v-else
+                  class="w-14 h-14 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-lg font-bold"
+                >
+                  {{ user?.prenom?.charAt(0)?.toUpperCase() }}{{ user?.nom?.charAt(0)?.toUpperCase() }}
+                </div>
+                <div class="text-center">
+                  <p class="font-semibold text-gray-800 text-sm">{{ fullName }}</p>
+                  <p class="text-xs text-gray-500">{{ user?.email }}</p>
+                </div>
+              </div>
+
+              <!-- Liens -->
+              <div class="py-1">
+                <NuxtLink
+                  to="/profil"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
+                >
+                  <font-awesome-icon icon="fa-solid fa-user" class="w-4 text-gray-400" />
+                  Mon profil
+                </NuxtLink>
+
+                <NuxtLink
+                  v-if="isAdmin"
+                  to="/admin"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
+                >
+                  <font-awesome-icon icon="fa-solid fa-shield-halved" class="w-4 text-gray-400" />
+                  Administration
+                </NuxtLink>
+              </div>
+
+              <!-- Déconnexion -->
+              <div class="border-t border-gray-100">
+                <button
+                  @click="handleLogout"
+                  class="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <font-awesome-icon icon="fa-solid fa-right-from-bracket" class="w-4" />
+                  Déconnexion
+                </button>
+              </div>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- Non connecté : bouton Se connecter -->
         <NuxtLink
-          to="/bibliotheques"
-          :class="pointer === 'biblio' ? 'text-custom-green' : ''"
-          class="cursor-pointer whitespace-nowrap transition-colors"
+          v-else
+          to="/login"
+          class="bg-custom-chocolat text-white px-4 py-1 rounded-full text-sm hover:opacity-90 transition-opacity whitespace-nowrap"
         >
-          Lib. d'Afrique
+          Se connecter
         </NuxtLink>
-        <LayoutNavDropdown :open="pointer === 'biblio'" :items="biblioItems" />
       </div>
-
-      <!-- Africa Univers -->
-      <div
-        @mouseenter="pointer = 'universite'"
-        @mouseleave="pointer = null"
-        class="relative"
-      >
-        <NuxtLink to="/universite" class="cursor-pointer whitespace-nowrap transition-colors">
-          Africa Univers
-        </NuxtLink>
-        <LayoutNavDropdown :open="pointer === 'universite'" :items="universiteItems" />
-      </div>
-
-      <!-- Africamood -->
-      <div
-        @mouseenter="pointer = 'media'"
-        @mouseleave="pointer = null"
-        class="relative"
-      >
-        <NuxtLink to="/medias" class="flex items-center cursor-pointer gap-1">
-          <span class="text-custom-green">Africamood</span>
-          <font-awesome-icon icon="fa-solid fa-tv" class="text-gray-600 text-xs" />
-        </NuxtLink>
-        <LayoutNavDropdown :open="pointer === 'media'" :items="mediaItems" />
-      </div>
-
-      <!-- Auth desktop - dans la même ligne -->
-      <template v-if="isAuthenticated">
-        <span class="text-sm text-gray-700 whitespace-nowrap">{{ displayName }}</span>
-        <button
-          @click="handleLogout"
-          class="bg-red-500 text-white px-3 py-0.5 rounded text-xs hover:bg-red-600 transition-colors"
-        >
-          Déconnexion
-        </button>
-      </template>
-      <NuxtLink
-        v-else
-        to="/login"
-        class="bg-custom-chocolat text-white px-3 py-0.5 rounded text-sm hover:opacity-90 transition-opacity whitespace-nowrap"
-      >
-        Se connecter
-      </NuxtLink>
     </nav>
 
     <!-- Menu mobile -->
@@ -139,18 +230,57 @@
           <!-- Auth mobile -->
           <div class="border-t border-gray-200 mt-2 pt-2 px-4 pb-2">
             <template v-if="isAuthenticated">
-              <span class="text-sm text-gray-700">{{ displayName }}</span>
+              <!-- Profil utilisateur mobile -->
+              <div class="flex items-center gap-3 mb-3">
+                <img
+                  v-if="user?.photo_url"
+                  :src="user.photo_url"
+                  :alt="fullName"
+                  class="w-10 h-10 rounded-full object-cover border-2 border-custom-chocolat"
+                />
+                <div
+                  v-else
+                  class="w-10 h-10 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-sm font-bold"
+                >
+                  {{ user?.prenom?.charAt(0)?.toUpperCase() }}{{ user?.nom?.charAt(0)?.toUpperCase() }}
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-800 text-sm">{{ fullName }}</p>
+                  <p class="text-xs text-gray-500">{{ user?.email }}</p>
+                </div>
+              </div>
+
+              <NuxtLink
+                to="/profil"
+                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-custom-green transition-colors"
+                @click="mobileOpen = false"
+              >
+                <font-awesome-icon icon="fa-solid fa-user" class="w-4 text-gray-400" />
+                Mon profil
+              </NuxtLink>
+
+              <NuxtLink
+                v-if="isAdmin"
+                to="/admin"
+                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-custom-green transition-colors"
+                @click="mobileOpen = false"
+              >
+                <font-awesome-icon icon="fa-solid fa-shield-halved" class="w-4 text-gray-400" />
+                Administration
+              </NuxtLink>
+
               <button
                 @click="handleLogout"
-                class="mt-2 w-full bg-red-500 text-white py-2 rounded text-sm hover:bg-red-600 transition-colors"
+                class="flex items-center gap-3 w-full mt-2 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
               >
+                <font-awesome-icon icon="fa-solid fa-right-from-bracket" class="w-4" />
                 Déconnexion
               </button>
             </template>
             <NuxtLink
               v-else
               to="/login"
-              class="block text-center bg-custom-chocolat text-white py-2 rounded text-sm hover:opacity-90 transition-opacity"
+              class="block text-center bg-custom-chocolat text-white py-2 rounded-full text-sm hover:opacity-90 transition-opacity"
               @click="mobileOpen = false"
             >
               Se connecter
@@ -167,7 +297,7 @@ const pointer = ref<string | null>(null)
 const mobileOpen = ref(false)
 const mobileSection = ref<string | null>(null)
 
-const { isAuthenticated, displayName, logout } = useAuth()
+const { isAuthenticated, user, fullName, isAdmin, logout } = useAuth()
 const router = useRouter()
 const route = useRoute()
 

@@ -1,7 +1,19 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
-    <SabbatiqueHero />
+    <div class="relative h-80 bg-font-baniere-ethnie bg-cover bg-center">
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
+
+      <div class="absolute inset-0 flex flex-col items-center justify-center mt-5">
+        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
+          Échanges Sabbatiques
+        </h1>
+        <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
+        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
+          Programmes d'échanges d'expériences
+        </p>
+      </div>
+    </div>
 
     <!-- Breadcrumb -->
     <CommonBreadcrumbNav class="mx-4 md:mx-16 lg:mx-64 pt-6" />
@@ -150,3 +162,31 @@ onMounted(async () => {
   if (horsAfrique) nbHorsAfrique.value = horsAfrique.total
 })
 </script>
+
+<style scoped>
+@reference "~/assets/css/main.css";
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes expandLine {
+  from { width: 0; }
+  to { width: 6rem; }
+}
+
+.animate-title {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.animate-subtitle {
+  animation: fadeIn 1s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+.animate-line {
+  animation: expandLine 1.2s ease-out 0.1s forwards;
+  width: 0;
+}
+</style>

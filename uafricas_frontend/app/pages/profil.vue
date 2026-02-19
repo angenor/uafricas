@@ -1,0 +1,733 @@
+<template>
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 pt-28 pb-16">
+    <div class="max-w-4xl mx-auto px-4">
+
+      <!-- Chargement -->
+      <div v-if="chargement" class="flex items-center justify-center py-32">
+        <font-awesome-icon icon="fa-solid fa-spinner" class="text-4xl text-custom-chocolat animate-spin" />
+      </div>
+
+      <template v-else-if="profil">
+        <!-- ═══ Header Profil ═══ -->
+        <div
+          class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6"
+          data-aos="fade-up"
+        >
+          <!-- Banniere -->
+          <div class="h-32 bg-gradient-to-r from-custom-chocolat via-amber-700 to-custom-green relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-custom-green/10 to-custom-chocolat/10"></div>
+          </div>
+
+          <!-- Avatar + Infos -->
+          <div class="px-6 pb-6 -mt-16 relative">
+            <div class="flex flex-col sm:flex-row items-center sm:items-end gap-4">
+              <!-- Avatar -->
+              <div class="relative group">
+                <img
+                  v-if="profil.photo_url"
+                  :src="photoComplete"
+                  :alt="nomComplet"
+                  class="w-28 h-28 rounded-full object-cover border-4 border-white shadow-lg"
+                />
+                <div
+                  v-else
+                  class="w-28 h-28 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-3xl font-bold border-4 border-white shadow-lg"
+                >
+                  {{ initiaux }}
+                </div>
+                <!-- Bouton changer photo -->
+                <label
+                  class="absolute bottom-1 right-1 w-8 h-8 bg-custom-green text-white rounded-full flex items-center justify-center cursor-pointer shadow-md hover:bg-emerald-600 transition-colors opacity-0 group-hover:opacity-100"
+                >
+                  <font-awesome-icon icon="fa-solid fa-image" class="text-xs" />
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    class="hidden"
+                    @change="onPhotoChange"
+                  />
+                </label>
+              </div>
+
+              <!-- Nom et infos -->
+              <div class="text-center sm:text-left flex-1">
+                <h1 class="text-2xl font-bold text-gray-800 font-display">{{ nomComplet }}</h1>
+                <p class="text-gray-500 text-sm">{{ profil.email }}</p>
+                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
+                  <!-- Badge etat -->
+                  <span
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium"
+                    :class="badgeEtatClasses"
+                  >
+                    <span class="w-2 h-2 rounded-full" :class="pointEtatClasses"></span>
+                    {{ etatLabel }}
+                  </span>
+                  <!-- Roles -->
+                  <span
+                    v-for="role in profil.roles"
+                    :key="role"
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700"
+                  >
+                    <font-awesome-icon icon="fa-solid fa-user-tag" class="text-[10px]" />
+                    {{ role }}
+                  </span>
+                  <!-- Date inscription -->
+                  <span class="text-xs text-gray-400">
+                    <font-awesome-icon icon="fa-solid fa-calendar" class="mr-1" />
+                    Membre depuis {{ dateInscription }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Messages succes/erreur ═══ -->
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="opacity-0 -translate-y-2"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="opacity-100 translate-y-0"
+          leave-to-class="opacity-0 -translate-y-2"
+        >
+          <div
+            v-if="profilComposable.success.value"
+            class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2"
+          >
+            <font-awesome-icon icon="fa-solid fa-circle-check" />
+            {{ profilComposable.success.value }}
+          </div>
+        </Transition>
+
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="opacity-0 -translate-y-2"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="opacity-100 translate-y-0"
+          leave-to-class="opacity-0 -translate-y-2"
+        >
+          <div
+            v-if="profilComposable.error.value"
+            class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-center gap-2"
+          >
+            <font-awesome-icon icon="fa-solid fa-circle-exclamation" />
+            {{ profilComposable.error.value }}
+          </div>
+        </Transition>
+
+        <!-- ═══ Onglets ═══ -->
+        <div
+          class="bg-white rounded-2xl shadow-lg overflow-hidden"
+          data-aos="fade-up"
+          data-aos-delay="100"
+        >
+          <!-- Tab Headers -->
+          <div class="flex border-b border-gray-200">
+            <button
+              v-for="tab in onglets"
+              :key="tab.id"
+              class="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-all duration-200 relative"
+              :class="ongletActif === tab.id
+                ? 'text-custom-chocolat'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+              @click="ongletActif = tab.id"
+            >
+              <font-awesome-icon :icon="tab.icon" />
+              <span class="hidden sm:inline">{{ tab.label }}</span>
+              <!-- Indicateur actif -->
+              <div
+                v-if="ongletActif === tab.id"
+                class="absolute bottom-0 left-0 right-0 h-0.5 bg-custom-chocolat"
+              ></div>
+            </button>
+          </div>
+
+          <!-- Tab Content -->
+          <div class="p-6">
+
+            <!-- ─── Onglet Informations ─── -->
+            <div v-if="ongletActif === 'informations'" class="space-y-6">
+              <div class="flex items-center justify-between mb-2">
+                <h2 class="text-lg font-semibold text-gray-800">Informations personnelles</h2>
+                <button
+                  v-if="!modeEdition"
+                  class="flex items-center gap-2 px-4 py-2 text-sm text-custom-chocolat hover:bg-orange-50 rounded-lg transition-colors"
+                  @click="activerEdition"
+                >
+                  <font-awesome-icon icon="fa-solid fa-pen-to-square" />
+                  Modifier
+                </button>
+              </div>
+
+              <!-- Mode Lecture -->
+              <div v-if="!modeEdition" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ProfilChampLecture label="Prenom" :valeur="profil.prenom" icon="fa-solid fa-user" />
+                <ProfilChampLecture label="Nom" :valeur="profil.nom" icon="fa-solid fa-user" />
+                <ProfilChampLecture label="Email" :valeur="profil.email" icon="fa-solid fa-envelope" />
+                <ProfilChampLecture label="Telephone" :valeur="profil.telephone" icon="fa-solid fa-phone" />
+                <ProfilChampLecture label="Genre" :valeur="genreLabel" icon="fa-solid fa-user" />
+                <ProfilChampLecture label="Date de naissance" :valeur="dateNaissanceFormatee" icon="fa-solid fa-calendar" />
+                <ProfilChampLecture label="Fonction" :valeur="profil.fonction" icon="fa-solid fa-briefcase" />
+                <div class="md:col-span-2">
+                  <ProfilChampLecture label="Biographie" :valeur="profil.biographie" icon="fa-solid fa-align-left" />
+                </div>
+              </div>
+
+              <!-- Mode Edition -->
+              <form v-else @submit.prevent="sauvegarderProfil" class="space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700 block">Prenom</label>
+                    <input
+                      v-model="formulaire.prenom"
+                      type="text"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700 block">Nom</label>
+                    <input
+                      v-model="formulaire.nom"
+                      type="text"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700 block">Telephone</label>
+                    <input
+                      v-model="formulaire.telephone"
+                      type="tel"
+                      placeholder="+225 00 00 00 00"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700 block">Genre</label>
+                    <select
+                      v-model="formulaire.genre"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                    >
+                      <option value="non_precise">Non precise</option>
+                      <option value="homme">Homme</option>
+                      <option value="femme">Femme</option>
+                    </select>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700 block">Date de naissance</label>
+                    <input
+                      v-model="formulaire.date_naissance"
+                      type="date"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700 block">Fonction</label>
+                    <input
+                      v-model="formulaire.fonction"
+                      type="text"
+                      placeholder="Ex: Developpeur, Enseignant..."
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                    />
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-gray-700 block">Biographie</label>
+                  <textarea
+                    v-model="formulaire.biographie"
+                    rows="4"
+                    placeholder="Parlez de vous..."
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white resize-none"
+                  ></textarea>
+                </div>
+
+                <!-- Boutons actions -->
+                <div class="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    class="px-5 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                    @click="annulerEdition"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    class="flex items-center gap-2 px-5 py-2.5 text-sm bg-gradient-to-r from-custom-chocolat to-custom-green text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                    :disabled="profilComposable.loading.value"
+                  >
+                    <font-awesome-icon
+                      :icon="profilComposable.loading.value ? 'fa-solid fa-spinner' : 'fa-solid fa-floppy-disk'"
+                      :class="{ 'animate-spin': profilComposable.loading.value }"
+                    />
+                    Enregistrer
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- ─── Onglet Localisation ─── -->
+            <div v-if="ongletActif === 'localisation'" class="space-y-6">
+              <div class="flex items-center justify-between mb-2">
+                <h2 class="text-lg font-semibold text-gray-800">Localisation et preferences</h2>
+                <button
+                  v-if="!modeEditionLocalisation"
+                  class="flex items-center gap-2 px-4 py-2 text-sm text-custom-chocolat hover:bg-orange-50 rounded-lg transition-colors"
+                  @click="activerEditionLocalisation"
+                >
+                  <font-awesome-icon icon="fa-solid fa-pen-to-square" />
+                  Modifier
+                </button>
+              </div>
+
+              <!-- Mode Lecture -->
+              <div v-if="!modeEditionLocalisation" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ProfilChampLecture label="Ville" :valeur="profil.ville" icon="fa-solid fa-location-dot" />
+                <ProfilChampLecture label="Localite / Quartier" :valeur="profil.localite" icon="fa-solid fa-map-pin" />
+                <ProfilChampLecture label="Langue preferee" :valeur="langueLabel" icon="fa-solid fa-language" />
+              </div>
+
+              <!-- Mode Edition -->
+              <form v-else @submit.prevent="sauvegarderLocalisation" class="space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700 block">Ville</label>
+                    <input
+                      v-model="formulaireLocalisation.ville"
+                      type="text"
+                      placeholder="Ex: Abidjan, Dakar..."
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700 block">Localite / Quartier</label>
+                    <input
+                      v-model="formulaireLocalisation.localite"
+                      type="text"
+                      placeholder="Ex: Cocody, Plateau..."
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700 block">Langue preferee</label>
+                    <select
+                      v-model="formulaireLocalisation.langue_preferee"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                    >
+                      <option value="fr">Francais</option>
+                      <option value="en">Anglais</option>
+                      <option value="pt">Portugais</option>
+                      <option value="ar">Arabe</option>
+                      <option value="sw">Swahili</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    class="px-5 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                    @click="modeEditionLocalisation = false"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    class="flex items-center gap-2 px-5 py-2.5 text-sm bg-gradient-to-r from-custom-chocolat to-custom-green text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                    :disabled="profilComposable.loading.value"
+                  >
+                    <font-awesome-icon
+                      :icon="profilComposable.loading.value ? 'fa-solid fa-spinner' : 'fa-solid fa-floppy-disk'"
+                      :class="{ 'animate-spin': profilComposable.loading.value }"
+                    />
+                    Enregistrer
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- ─── Onglet Securite ─── -->
+            <div v-if="ongletActif === 'securite'" class="space-y-6">
+              <h2 class="text-lg font-semibold text-gray-800 mb-2">Securite du compte</h2>
+
+              <!-- Infos compte -->
+              <div class="bg-gray-50 rounded-xl p-5 space-y-4">
+                <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Informations du compte</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                      <font-awesome-icon icon="fa-solid fa-envelope" class="text-sm" />
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-500">Email verifie</p>
+                      <p class="text-sm font-medium" :class="profil.email_verifie ? 'text-emerald-600' : 'text-red-500'">
+                        {{ profil.email_verifie ? 'Oui' : 'Non' }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                      <font-awesome-icon icon="fa-solid fa-calendar" class="text-sm" />
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-500">Date d'inscription</p>
+                      <p class="text-sm font-medium text-gray-700">{{ dateInscriptionComplete }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                      <font-awesome-icon icon="fa-solid fa-clock-rotate-left" class="text-sm" />
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-500">Derniere connexion</p>
+                      <p class="text-sm font-medium text-gray-700">{{ derniereConnexionFormatee }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg flex items-center justify-center"
+                      :class="profil.etat === 'actif' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'"
+                    >
+                      <font-awesome-icon icon="fa-solid fa-circle-check" class="text-sm" />
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-500">Etat du compte</p>
+                      <p class="text-sm font-medium" :class="profil.etat === 'actif' ? 'text-emerald-600' : 'text-orange-600'">
+                        {{ etatLabel }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Changer mot de passe -->
+              <div class="border border-gray-200 rounded-xl p-5">
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
+                    <font-awesome-icon icon="fa-solid fa-lock" class="text-sm" />
+                  </div>
+                  <h3 class="text-sm font-semibold text-gray-800">Changer le mot de passe</h3>
+                </div>
+
+                <form @submit.prevent="handleChangerMotDePasse" class="space-y-4">
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700 block">Mot de passe actuel</label>
+                    <input
+                      v-model="formulaireMdp.ancien_mot_de_passe"
+                      type="password"
+                      required
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                    />
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <label class="text-sm font-medium text-gray-700 block">Nouveau mot de passe</label>
+                      <input
+                        v-model="formulaireMdp.nouveau_mot_de_passe"
+                        type="password"
+                        required
+                        minlength="6"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-sm font-medium text-gray-700 block">Confirmer le mot de passe</label>
+                      <input
+                        v-model="formulaireMdp.confirmation_mot_de_passe"
+                        type="password"
+                        required
+                        minlength="6"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex justify-end">
+                    <button
+                      type="submit"
+                      class="flex items-center gap-2 px-5 py-2.5 text-sm bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
+                      :disabled="profilComposable.loading.value"
+                    >
+                      <font-awesome-icon
+                        :icon="profilComposable.loading.value ? 'fa-solid fa-spinner' : 'fa-solid fa-lock'"
+                        :class="{ 'animate-spin': profilComposable.loading.value }"
+                      />
+                      Changer le mot de passe
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </template>
+
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import type { Profil, ModifierProfilForm } from '~/composables/useProfil'
+
+useHead({
+  title: 'Mon profil - UAfricas',
+})
+
+useAOS()
+
+const router = useRouter()
+const { isAuthenticated } = useAuth()
+const profilComposable = useProfil()
+
+const profil = ref<Profil | null>(null)
+const chargement = ref(true)
+const ongletActif = ref('informations')
+const modeEdition = ref(false)
+const modeEditionLocalisation = ref(false)
+
+// ── Onglets ──
+const onglets = [
+  { id: 'informations', label: 'Informations', icon: 'fa-solid fa-user' },
+  { id: 'localisation', label: 'Localisation', icon: 'fa-solid fa-location-dot' },
+  { id: 'securite', label: 'Securite', icon: 'fa-solid fa-lock' },
+]
+
+// ── Formulaires ──
+const formulaire = reactive<ModifierProfilForm>({
+  prenom: '',
+  nom: '',
+  telephone: '',
+  genre: 'non_precise',
+  date_naissance: null,
+  fonction: '',
+  biographie: '',
+})
+
+const formulaireLocalisation = reactive({
+  ville: '',
+  localite: '',
+  langue_preferee: 'fr',
+})
+
+const formulaireMdp = reactive({
+  ancien_mot_de_passe: '',
+  nouveau_mot_de_passe: '',
+  confirmation_mot_de_passe: '',
+})
+
+// ── Computed ──
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBaseUrl as string
+
+const nomComplet = computed(() => {
+  if (!profil.value) return ''
+  return `${profil.value.prenom} ${profil.value.nom}`
+})
+
+const initiaux = computed(() => {
+  if (!profil.value) return ''
+  return `${profil.value.prenom?.charAt(0)?.toUpperCase() || ''}${profil.value.nom?.charAt(0)?.toUpperCase() || ''}`
+})
+
+const photoComplete = computed(() => {
+  if (!profil.value?.photo_url) return ''
+  if (profil.value.photo_url.startsWith('http')) return profil.value.photo_url
+  return `${apiBase}${profil.value.photo_url}`
+})
+
+const etatLabel = computed(() => {
+  const etats: Record<string, string> = {
+    actif: 'Actif',
+    en_attente: 'En attente',
+    bloque: 'Bloque',
+    suspendu: 'Suspendu',
+  }
+  return etats[profil.value?.etat || ''] || profil.value?.etat || ''
+})
+
+const badgeEtatClasses = computed(() => {
+  switch (profil.value?.etat) {
+    case 'actif': return 'bg-emerald-50 text-emerald-700'
+    case 'en_attente': return 'bg-orange-50 text-orange-700'
+    case 'bloque': return 'bg-red-50 text-red-700'
+    default: return 'bg-gray-50 text-gray-700'
+  }
+})
+
+const pointEtatClasses = computed(() => {
+  switch (profil.value?.etat) {
+    case 'actif': return 'bg-emerald-500'
+    case 'en_attente': return 'bg-orange-500 animate-pulse'
+    case 'bloque': return 'bg-red-500'
+    default: return 'bg-gray-500'
+  }
+})
+
+const genreLabel = computed(() => {
+  const genres: Record<string, string> = {
+    homme: 'Homme',
+    femme: 'Femme',
+    non_precise: 'Non precise',
+  }
+  return genres[profil.value?.genre || ''] || profil.value?.genre || 'Non precise'
+})
+
+const langueLabel = computed(() => {
+  const langues: Record<string, string> = {
+    fr: 'Francais',
+    en: 'Anglais',
+    pt: 'Portugais',
+    ar: 'Arabe',
+    sw: 'Swahili',
+  }
+  return langues[profil.value?.langue_preferee || ''] || profil.value?.langue_preferee || 'Francais'
+})
+
+const dateInscription = computed(() => {
+  if (!profil.value?.created_at) return ''
+  const date = new Date(profil.value.created_at)
+  return date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })
+})
+
+const dateInscriptionComplete = computed(() => {
+  if (!profil.value?.created_at) return ''
+  return new Date(profil.value.created_at).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+})
+
+const dateNaissanceFormatee = computed(() => {
+  if (!profil.value?.date_naissance) return null
+  return new Date(profil.value.date_naissance).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+})
+
+const derniereConnexionFormatee = computed(() => {
+  if (!profil.value?.derniere_connexion) return 'Jamais'
+  return new Date(profil.value.derniere_connexion).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+})
+
+// ── Methodes ──
+const activerEdition = () => {
+  if (!profil.value) return
+  profilComposable.effacerMessages()
+  formulaire.prenom = profil.value.prenom
+  formulaire.nom = profil.value.nom
+  formulaire.telephone = profil.value.telephone || ''
+  formulaire.genre = profil.value.genre
+  formulaire.date_naissance = profil.value.date_naissance || null
+  formulaire.fonction = profil.value.fonction || ''
+  formulaire.biographie = profil.value.biographie || ''
+  modeEdition.value = true
+}
+
+const annulerEdition = () => {
+  profilComposable.effacerMessages()
+  modeEdition.value = false
+}
+
+const activerEditionLocalisation = () => {
+  if (!profil.value) return
+  profilComposable.effacerMessages()
+  formulaireLocalisation.ville = profil.value.ville || ''
+  formulaireLocalisation.localite = profil.value.localite || ''
+  formulaireLocalisation.langue_preferee = profil.value.langue_preferee || 'fr'
+  modeEditionLocalisation.value = true
+}
+
+const sauvegarderProfil = async () => {
+  try {
+    const resultat = await profilComposable.modifierProfil(formulaire)
+    profil.value = resultat
+    modeEdition.value = false
+  }
+  catch {
+    // erreur geree par le composable
+  }
+}
+
+const sauvegarderLocalisation = async () => {
+  try {
+    const resultat = await profilComposable.modifierProfil(formulaireLocalisation)
+    profil.value = resultat
+    modeEditionLocalisation.value = false
+  }
+  catch {
+    // erreur geree par le composable
+  }
+}
+
+const onPhotoChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const fichier = input.files?.[0]
+  if (!fichier) return
+
+  try {
+    await profilComposable.changerPhoto(fichier)
+    // Recharger le profil pour avoir la nouvelle URL
+    const p = await profilComposable.chargerProfil()
+    profil.value = p
+  }
+  catch {
+    // erreur geree par le composable
+  }
+
+  // Reset input
+  input.value = ''
+}
+
+const handleChangerMotDePasse = async () => {
+  try {
+    await profilComposable.changerMotDePasse({
+      ancien_mot_de_passe: formulaireMdp.ancien_mot_de_passe,
+      nouveau_mot_de_passe: formulaireMdp.nouveau_mot_de_passe,
+      confirmation_mot_de_passe: formulaireMdp.confirmation_mot_de_passe,
+    })
+    // Reset formulaire
+    formulaireMdp.ancien_mot_de_passe = ''
+    formulaireMdp.nouveau_mot_de_passe = ''
+    formulaireMdp.confirmation_mot_de_passe = ''
+  }
+  catch {
+    // erreur geree par le composable
+  }
+}
+
+// ── Init ──
+onMounted(async () => {
+  if (!isAuthenticated.value) {
+    router.push('/login')
+    return
+  }
+
+  try {
+    profil.value = await profilComposable.chargerProfil()
+  }
+  catch {
+    // erreur affichee via le composable
+  }
+  finally {
+    chargement.value = false
+  }
+})
+</script>
+
+<style scoped>
+@reference "~/assets/css/main.css";
+
+input:focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 3px rgba(34, 139, 34, 0.1);
+}
+</style>

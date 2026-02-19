@@ -17,7 +17,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/moi", web::get().to(auth::moi))
                     .route("/rafraichir", web::post().to(auth::rafraichir_token))
                     .route("/verifier-email", web::post().to(auth::verifier_email))
-                    .route("/renvoyer-verification", web::post().to(auth::renvoyer_verification)),
+                    .route("/renvoyer-verification", web::post().to(auth::renvoyer_verification))
+                    .route("/profil", web::put().to(auth::modifier_profil))
+                    .route("/profil/photo", web::post().to(auth::uploader_photo_profil))
+                    .route("/changer-mot-de-passe", web::post().to(auth::changer_mot_de_passe)),
             )
             // Routes d'administration
             .service(

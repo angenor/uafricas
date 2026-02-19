@@ -22,7 +22,22 @@
     </div>
 
     <!-- Hero Section -->
-    <AfrolangHero :stats="stats" />
+    <div
+      class="relative h-80 bg-cover bg-center"
+      style="background-image: url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
+    >
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
+
+      <div class="absolute inset-0 flex flex-col items-center justify-center mt-5">
+        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
+          Afrolang
+        </h1>
+        <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
+        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
+          Apprentissage des langues africaines
+        </p>
+      </div>
+    </div>
 
     <!-- Breadcrumb -->
     <div class="bg-gray-50">
@@ -567,5 +582,29 @@ onMounted(async () => {
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes expandLine {
+  from { width: 0; }
+  to { width: 6rem; }
+}
+
+.animate-title {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.animate-subtitle {
+  animation: fadeIn 1s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+.animate-line {
+  animation: expandLine 1.2s ease-out 0.1s forwards;
+  width: 0;
 }
 </style>

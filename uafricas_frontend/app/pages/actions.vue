@@ -1,19 +1,19 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section avec animation parallaxe -->
+    <!-- Hero Section -->
     <div
-      class="relative flex items-center justify-center overflow-hidden h-[60vh] min-h-[400px] text-white"
+      class="relative h-80 bg-cover bg-center"
+      style="background-image: url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
     >
-      <div class="parallax-bg absolute inset-0 z-10"></div>
-      <div
-        class="absolute inset-0 bg-gradient-to-b from-black/50 to-black/70 z-20"
-      ></div>
-      <div ref="heroContent" class="relative z-30 text-center px-4 max-w-3xl">
-        <h1 class="text-shimmer text-5xl md:text-6xl font-extrabold mb-4">
-          Actions à mener
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
+
+      <div class="absolute inset-0 flex flex-col items-center justify-center mt-5">
+        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
+          Actions
         </h1>
-        <p class="text-xl md:text-2xl opacity-90 max-w-xl mx-auto">
-          Découvrez nos initiatives pour l'Afrique
+        <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
+        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
+          Initiatives pour l'Afrique
         </p>
       </div>
     </div>
@@ -42,7 +42,7 @@
               }"
             >
               <div
-                class="absolute inset-0 bg-gradient-to-b from-black/10 to-black/80 z-20"
+                class="absolute inset-0 bg-linear-to-b from-black/10 to-black/80 z-20"
               ></div>
               <img
                 :src="card.image"
@@ -115,20 +115,9 @@ useHead({
 })
 
 const sectionHover = ref(0)
-const heroContent = ref<HTMLElement | null>(null)
 const cardRefs = ref<HTMLElement[]>([])
 
 onMounted(() => {
-  // Animation de la bannière au chargement
-  if (heroContent.value) {
-    gsap.from(heroContent.value, {
-      opacity: 0,
-      y: 50,
-      duration: 1.2,
-      ease: 'power3.out',
-    })
-  }
-
   // Animation des cartes
   gsap.to('.card-wrapper', {
     opacity: 1,
@@ -142,24 +131,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Animations qui ne peuvent pas être faites avec Tailwind */
-.parallax-bg {
-  background-image: url('/images/africa-banner.jpg');
-  background-size: cover;
-  background-position: center;
-  will-change: transform;
-  animation: parallax-effect 15s ease-in-out infinite alternate;
-}
-
-.text-shimmer {
-  background: linear-gradient(45deg, #fff, #ffd700);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: text-shimmer 3s infinite;
-  background-size: 200% auto;
-}
-
 .card-title::after {
   content: '';
   position: absolute;
@@ -173,24 +144,6 @@ onMounted(() => {
 
 div:hover .card-title::after {
   width: 80px;
-}
-
-@keyframes parallax-effect {
-  0% {
-    transform: scale(1.1) translateY(0);
-  }
-  100% {
-    transform: scale(1.1) translateY(-20px);
-  }
-}
-
-@keyframes text-shimmer {
-  0% {
-    background-position: -100% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
 }
 
 /* Transitions pour les cartes */
@@ -208,5 +161,30 @@ div:hover .card-title::after {
 /* Duration for image scale transition */
 .duration-1500 {
   transition-duration: 1500ms;
+}
+
+/* Hero animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes expandLine {
+  from { width: 0; }
+  to { width: 6rem; }
+}
+
+.animate-title {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.animate-subtitle {
+  animation: fadeIn 1s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+.animate-line {
+  animation: expandLine 1.2s ease-out 0.1s forwards;
+  width: 0;
 }
 </style>

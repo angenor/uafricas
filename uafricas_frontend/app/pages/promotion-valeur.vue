@@ -1,12 +1,17 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
-    <div class="relative h-[40vh] bg-font-centre-culturel bg-cover bg-center flex items-center justify-center">
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/70 to-amber-700/70"></div>
-      <div class="relative z-10 text-center text-white px-4">
-        <h1 class="text-4xl md:text-5xl font-bold mb-4" data-aos="fade-up">
-          {{ promotionValeurPageData.hero.title }}
+    <div class="relative h-80 bg-font-centre-culturel bg-cover bg-center">
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
+
+      <div class="absolute inset-0 flex flex-col items-center justify-center mt-5">
+        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
+          Promotion des Valeurs
         </h1>
+        <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
+        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
+          Valeurs africaines et afro-descendantes
+        </p>
       </div>
     </div>
 
@@ -30,7 +35,7 @@
         >
           <!-- Image avec gradient -->
           <div
-            class="h-48 relative overflow-hidden flex items-center justify-center bg-gradient-to-br"
+            class="h-48 relative overflow-hidden flex items-center justify-center bg-linear-to-br"
             :class="card.gradient"
           >
             <img
@@ -40,7 +45,7 @@
               :src="card.image"
               :alt="card.altText"
             />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+            <div class="absolute inset-0 bg-linear-to-t from-black/30 to-transparent"></div>
           </div>
 
           <!-- Contenu -->
@@ -94,5 +99,30 @@ const breadcrumbs = [
   .grid {
     @apply gap-6;
   }
+}
+
+/* Hero animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes expandLine {
+  from { width: 0; }
+  to { width: 6rem; }
+}
+
+.animate-title {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.animate-subtitle {
+  animation: fadeIn 1s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+.animate-line {
+  animation: expandLine 1.2s ease-out 0.1s forwards;
+  width: 0;
 }
 </style>

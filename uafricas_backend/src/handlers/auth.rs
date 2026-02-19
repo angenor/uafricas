@@ -1,13 +1,17 @@
+use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{Duration, Utc};
+use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
+use std::io::Write;
 use uuid::Uuid;
 
 use crate::config::{JwtConfig, SmtpConfig};
 use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::utilisateur::*;
+use crate::services::audit;
 
 /// Reponse API generique
 #[derive(Serialize)]
@@ -360,14 +364,8 @@ pub async fn deconnexion(
     }))
 }
 
-/// GET /api/auth/moi
-/// Recuperer le profil de l'utilisateur connecte
-pub async fn moi(
-    pool: web::Data<PgPool>,
-    jwt_config: web::Data<JwtConfig>,
-    req: HttpRequest,
-) -> Result<HttpResponse, ApiErreur> {
-    // Extraire le token du header Authorization
+/// Extraire l'utilisateur_id depuis le JWT dans le header Authorization
+fn extraire_utilisateur_id(req: &HttpRequest, jwt_config: &JwtConfig) -> Result<Uuid, ApiErreur> {
     let header = req
         .headers()
         .get("Authorization")
@@ -377,24 +375,33 @@ pub async fn moi(
     let token = jwt::extraire_token_du_header(header)?;
     let claims = jwt::valider_token(token, &jwt_config.secret)?;
 
-    let utilisateur_id = Uuid::parse_str(&claims.sub)
-        .map_err(|_| ApiErreur::NonAutorise("Token invalide: sub n'est pas un UUID".into()))?;
+    Uuid::parse_str(&claims.sub)
+        .map_err(|_| ApiErreur::NonAutorise("Token invalide: sub n'est pas un UUID".into()))
+}
 
-    // Recuperer l'utilisateur
-    let utilisateur = sqlx::query_as::<_, Utilisateur>(&format!(
+/// GET /api/auth/moi
+/// Recuperer le profil complet de l'utilisateur connecte
+pub async fn moi(
+    pool: web::Data<PgPool>,
+    jwt_config: web::Data<JwtConfig>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req, jwt_config.get_ref())?;
+
+    let profil = sqlx::query_as::<_, ProfilUtilisateur>(&format!(
         "SELECT {} FROM iam.utilisateur WHERE id = $1 AND deleted_at IS NULL",
-        UTILISATEUR_COLONNES
+        PROFIL_COLONNES
     ))
     .bind(utilisateur_id)
     .fetch_optional(pool.get_ref())
     .await?
     .ok_or_else(|| ApiErreur::NonAutorise("Utilisateur non trouve".into()))?;
 
-    let roles = recuperer_roles(pool.get_ref(), utilisateur.id).await?;
+    let roles = recuperer_roles(pool.get_ref(), profil.id).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(utilisateur.to_response(roles)),
+        data: Some(profil.to_profil_response(roles)),
         error: None,
     }))
 }
@@ -607,6 +614,390 @@ pub async fn renvoyer_verification(
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "message": message_generique })),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// PUT /api/auth/profil — Modifier son propre profil
+// ──────────────────────────────────────────────────────────────
+pub async fn modifier_profil(
+    pool: web::Data<PgPool>,
+    jwt_config: web::Data<JwtConfig>,
+    req: HttpRequest,
+    body: web::Json<ModifierProfilRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req, jwt_config.get_ref())?;
+
+    // Valider le genre si fourni
+    if let Some(ref genre) = body.genre {
+        let genres_valides = ["homme", "femme", "non_precise"];
+        if !genres_valides.contains(&genre.as_str()) {
+            return Err(ApiErreur::Validation(format!(
+                "Genre invalide. Valeurs acceptees: {}",
+                genres_valides.join(", ")
+            )));
+        }
+    }
+
+    // Valider la langue si fournie
+    if let Some(ref langue) = body.langue_preferee {
+        let langues_valides = ["fr", "en", "pt", "ar", "sw"];
+        if !langues_valides.contains(&langue.as_str()) {
+            return Err(ApiErreur::Validation(format!(
+                "Langue invalide. Valeurs acceptees: {}",
+                langues_valides.join(", ")
+            )));
+        }
+    }
+
+    // Construire la requete UPDATE dynamiquement
+    let mut sets: Vec<String> = Vec::new();
+    let mut param_idx = 2u32; // $1 est utilisateur_id
+
+    if let Some(ref nom) = body.nom {
+        let nom = nom.trim();
+        if nom.is_empty() {
+            return Err(ApiErreur::Validation("Le nom ne peut pas etre vide".into()));
+        }
+        sets.push(format!("nom = ${}", param_idx));
+        param_idx += 1;
+    }
+    if let Some(ref prenom) = body.prenom {
+        let prenom = prenom.trim();
+        if prenom.is_empty() {
+            return Err(ApiErreur::Validation("Le prenom ne peut pas etre vide".into()));
+        }
+        sets.push(format!("prenom = ${}", param_idx));
+        param_idx += 1;
+    }
+    if body.telephone.is_some() {
+        sets.push(format!("telephone = ${}", param_idx));
+        param_idx += 1;
+    }
+    if body.genre.is_some() {
+        sets.push(format!("genre = ${}::iam.genre", param_idx));
+        param_idx += 1;
+    }
+    if body.date_naissance.is_some() {
+        sets.push(format!("date_naissance = ${}", param_idx));
+        param_idx += 1;
+    }
+    if body.fonction.is_some() {
+        sets.push(format!("fonction = ${}", param_idx));
+        param_idx += 1;
+    }
+    if body.localite.is_some() {
+        sets.push(format!("localite = ${}", param_idx));
+        param_idx += 1;
+    }
+    if body.ville.is_some() {
+        sets.push(format!("ville = ${}", param_idx));
+        param_idx += 1;
+    }
+    if body.biographie.is_some() {
+        sets.push(format!("biographie = ${}", param_idx));
+        param_idx += 1;
+    }
+    if body.langue_preferee.is_some() {
+        sets.push(format!("langue_preferee = ${}", param_idx));
+        // param_idx += 1; -- dernier champ
+    }
+
+    if sets.is_empty() {
+        return Err(ApiErreur::Validation("Aucun champ a modifier".into()));
+    }
+
+    sets.push("updated_at = NOW()".to_string());
+
+    let sql = format!(
+        "UPDATE iam.utilisateur SET {} WHERE id = $1 AND deleted_at IS NULL",
+        sets.join(", ")
+    );
+
+    let mut query = sqlx::query(&sql).bind(utilisateur_id);
+
+    if let Some(ref nom) = body.nom {
+        query = query.bind(nom.trim());
+    }
+    if let Some(ref prenom) = body.prenom {
+        query = query.bind(prenom.trim());
+    }
+    if let Some(ref telephone) = body.telephone {
+        query = query.bind(telephone.trim());
+    }
+    if let Some(ref genre) = body.genre {
+        query = query.bind(genre.as_str());
+    }
+    if let Some(ref date) = body.date_naissance {
+        query = query.bind(date);
+    }
+    if let Some(ref fonction) = body.fonction {
+        query = query.bind(fonction.trim());
+    }
+    if let Some(ref localite) = body.localite {
+        query = query.bind(localite.trim());
+    }
+    if let Some(ref ville) = body.ville {
+        query = query.bind(ville.trim());
+    }
+    if let Some(ref biographie) = body.biographie {
+        query = query.bind(biographie.trim());
+    }
+    if let Some(ref langue) = body.langue_preferee {
+        query = query.bind(langue.as_str());
+    }
+
+    query.execute(pool.get_ref()).await?;
+
+    // Audit
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    let pool_clone = pool.get_ref().clone();
+    tokio::spawn(async move {
+        audit::log_action(
+            &pool_clone,
+            Some(utilisateur_id),
+            "modifier_profil",
+            "iam",
+            "utilisateur",
+            Some(utilisateur_id),
+            None,
+            None,
+            ip.as_deref(),
+            ua.as_deref(),
+        )
+        .await;
+    });
+
+    // Retourner le profil mis a jour
+    let profil = sqlx::query_as::<_, ProfilUtilisateur>(&format!(
+        "SELECT {} FROM iam.utilisateur WHERE id = $1 AND deleted_at IS NULL",
+        PROFIL_COLONNES
+    ))
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let roles = recuperer_roles(pool.get_ref(), profil.id).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(profil.to_profil_response(roles)),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// POST /api/auth/profil/photo — Uploader une photo de profil
+// ──────────────────────────────────────────────────────────────
+pub async fn uploader_photo_profil(
+    pool: web::Data<PgPool>,
+    jwt_config: web::Data<JwtConfig>,
+    upload_dir: web::Data<String>,
+    req: HttpRequest,
+    mut payload: Multipart,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req, jwt_config.get_ref())?;
+
+    // Recuperer l'ancienne photo pour la supprimer apres
+    let ancienne_photo: Option<String> = sqlx::query_scalar(
+        "SELECT photo_url FROM iam.utilisateur WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(utilisateur_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .flatten();
+
+    let mut nouvelle_photo_url: Option<String> = None;
+
+    while let Some(item) = payload.next().await {
+        let mut field = item.map_err(|e| {
+            ApiErreur::Upload(format!("Erreur lecture multipart: {}", e))
+        })?;
+
+        let content_disposition = field.content_disposition().cloned();
+        let nom_champ = content_disposition
+            .as_ref()
+            .and_then(|cd| cd.get_name().map(|s| s.to_string()))
+            .unwrap_or_default();
+
+        if nom_champ == "photo" || nom_champ == "fichier" || nom_champ == "file" {
+            let nom_original = content_disposition
+                .as_ref()
+                .and_then(|cd| cd.get_filename().map(|f| sanitize_filename::sanitize(f)))
+                .unwrap_or_else(|| format!("{}.jpg", Uuid::new_v4()));
+
+            // Verifier l'extension
+            let extension = nom_original
+                .rsplit('.')
+                .next()
+                .unwrap_or("jpg")
+                .to_lowercase();
+            if !["jpg", "jpeg", "png", "webp"].contains(&extension.as_str()) {
+                return Err(ApiErreur::Validation(
+                    "Format de fichier non supporte. Utilisez JPG, PNG ou WebP".into(),
+                ));
+            }
+
+            let nom_fichier = format!("{}.{}", Uuid::new_v4(), extension);
+            let dossier = format!("{}/photos-profil", upload_dir.get_ref());
+            std::fs::create_dir_all(&dossier)
+                .map_err(|e| ApiErreur::Upload(format!("Impossible de creer le repertoire: {}", e)))?;
+
+            let chemin_complet = format!("{}/{}", dossier, nom_fichier);
+            let mut fichier = std::fs::File::create(&chemin_complet)
+                .map_err(|e| ApiErreur::Upload(format!("Impossible de creer le fichier: {}", e)))?;
+
+            let mut taille_totale: usize = 0;
+            while let Some(chunk) = field.next().await {
+                let data = chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture: {}", e)))?;
+                taille_totale += data.len();
+                if taille_totale > 5 * 1024 * 1024 {
+                    // Supprimer le fichier partiel
+                    let _ = std::fs::remove_file(&chemin_complet);
+                    return Err(ApiErreur::Validation("La photo ne doit pas depasser 5 Mo".into()));
+                }
+                fichier
+                    .write_all(&data)
+                    .map_err(|e| ApiErreur::Upload(format!("Erreur ecriture: {}", e)))?;
+            }
+
+            nouvelle_photo_url = Some(format!("/uploads/photos-profil/{}", nom_fichier));
+        }
+    }
+
+    let photo_url = nouvelle_photo_url
+        .ok_or_else(|| ApiErreur::Validation("Aucun fichier photo recu".into()))?;
+
+    // Mettre a jour en BDD
+    sqlx::query(
+        "UPDATE iam.utilisateur SET photo_url = $1, updated_at = NOW() WHERE id = $2 AND deleted_at IS NULL",
+    )
+    .bind(&photo_url)
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Supprimer l'ancienne photo si elle existait
+    if let Some(ref ancienne) = ancienne_photo {
+        if ancienne.starts_with("/uploads/photos-profil/") {
+            let chemin = format!("{}{}", upload_dir.get_ref(), ancienne.strip_prefix("/uploads").unwrap_or(ancienne));
+            let _ = std::fs::remove_file(chemin);
+        }
+    }
+
+    // Audit
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    let pool_clone = pool.get_ref().clone();
+    tokio::spawn(async move {
+        audit::log_action(
+            &pool_clone,
+            Some(utilisateur_id),
+            "modifier_photo_profil",
+            "iam",
+            "utilisateur",
+            Some(utilisateur_id),
+            None,
+            None,
+            ip.as_deref(),
+            ua.as_deref(),
+        )
+        .await;
+    });
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "photo_url": photo_url })),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// POST /api/auth/changer-mot-de-passe — Changer son mot de passe
+// ──────────────────────────────────────────────────────────────
+pub async fn changer_mot_de_passe(
+    pool: web::Data<PgPool>,
+    jwt_config: web::Data<JwtConfig>,
+    req: HttpRequest,
+    body: web::Json<ChangerMotDePasseRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req, jwt_config.get_ref())?;
+
+    // Valider la confirmation
+    if body.nouveau_mot_de_passe != body.confirmation_mot_de_passe {
+        return Err(ApiErreur::Validation(
+            "Le nouveau mot de passe et la confirmation ne correspondent pas".into(),
+        ));
+    }
+
+    if body.nouveau_mot_de_passe.len() < 6 {
+        return Err(ApiErreur::Validation(
+            "Le nouveau mot de passe doit contenir au moins 6 caracteres".into(),
+        ));
+    }
+
+    // Recuperer le hash actuel
+    let hash_actuel: String = sqlx::query_scalar(
+        "SELECT mot_de_passe_hash FROM iam.utilisateur WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    // Verifier l'ancien mot de passe
+    let ancien_valide = bcrypt::verify(&body.ancien_mot_de_passe, &hash_actuel)
+        .map_err(|_| ApiErreur::BaseDeDonnees("Erreur verification mot de passe".into()))?;
+
+    if !ancien_valide {
+        return Err(ApiErreur::Validation("L'ancien mot de passe est incorrect".into()));
+    }
+
+    // Hasher le nouveau mot de passe
+    let nouveau_hash = bcrypt::hash(&body.nouveau_mot_de_passe, 12)
+        .map_err(|_| ApiErreur::BaseDeDonnees("Erreur hashage mot de passe".into()))?;
+
+    // Mettre a jour
+    sqlx::query(
+        "UPDATE iam.utilisateur SET mot_de_passe_hash = $1, updated_at = NOW() WHERE id = $2 AND deleted_at IS NULL",
+    )
+    .bind(&nouveau_hash)
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Revoquer tous les refresh tokens (securite)
+    sqlx::query("UPDATE iam.refresh_token SET revoque = TRUE WHERE utilisateur_id = $1")
+        .bind(utilisateur_id)
+        .execute(pool.get_ref())
+        .await?;
+
+    // Audit
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    let pool_clone = pool.get_ref().clone();
+    tokio::spawn(async move {
+        audit::log_action(
+            &pool_clone,
+            Some(utilisateur_id),
+            "changer_mot_de_passe",
+            "iam",
+            "utilisateur",
+            Some(utilisateur_id),
+            None,
+            None,
+            ip.as_deref(),
+            ua.as_deref(),
+        )
+        .await;
+    });
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({
+            "message": "Mot de passe modifie avec succes. Veuillez vous reconnecter."
+        })),
         error: None,
     }))
 }
