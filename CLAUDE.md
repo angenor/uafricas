@@ -83,6 +83,7 @@ Conventions BDD: UUID v4 PKs, soft deletion (`deleted_at`), TIMESTAMPTZ, snake_c
 ## Conventions
 - **Langue** : code, commentaires, variables, UI en **français**
 - **Tailwind v4 + daisyUI v5** : CSS-first via `@theme` dans `app/assets/css/main.css` (pas de tailwind.config.ts). Plugin Vite `@tailwindcss/vite`. daisyUI via `@plugin "daisyui"`. Couleurs: `custom-chocolat` (#A54A1C), `custom-green` (#228B22), `custom-gray`. Fonts: Oswald (titres), Open Sans (body). Spacing jusqu'à `164` (64rem).
+- **Migration Tailwind v3 → v4** : Ce projet a été migré de Tailwind CSS v3 vers v4. Des résidus v3 non migrés peuvent subsister (ex: classes dépréciées, anciennes syntaxes `@apply`, directives `@screen`, `theme()` au lieu de variables CSS, etc.). Si des résidus v3 sont détectés lors du travail sur un fichier, les migrer vers la syntaxe v4 avec un sous-agent dédié.
 - **Mock pattern** : interfaces TS + tableau + helpers (getById, filter, formulaire vide) + async delay().
 
 ## Infrastructure

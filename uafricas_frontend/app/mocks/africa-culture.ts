@@ -60,12 +60,3 @@ export const africaCulturePageData: AfricaCulturePageData = {
   ],
 }
 
-// Helper pour obtenir la classe de bordure Tailwind
-export const getBorderColorClass = (color: 'green' | 'chocolat'): string => {
-  return color === 'green' ? 'border-custom-green' : 'border-custom-chocolat'
-}
-
-// Helper pour obtenir la classe de hover text
-export const getHoverTextClass = (color: 'green' | 'chocolat'): string => {
-  return color === 'green' ? 'group-hover:text-custom-green' : 'group-hover:text-custom-chocolat'
-}
