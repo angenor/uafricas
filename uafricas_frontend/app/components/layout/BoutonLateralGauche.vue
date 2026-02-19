@@ -1,290 +1,173 @@
 <template>
-  <div
-    :class="[state.show ? 'left-5' : '-left-24']"
-    class="top-40 overflow-show transition-all duration-300 rounded-full border-white border bg-custom-chocolat bg-opacity-80 h-100 w-24 fixed whitespace-nowrap leading-none z-40"
-  >
+  <div>
+    <!-- Barre latérale -->
     <div
-      @click="state.show = !state.show"
-      class="rounded-full hover:text-indigo-800 bg-gray-500 bg-opacity-40 -mt-4 cursor-pointer transition-all duration-300 flex items-center justify-center"
-      :class="[
-        state.show ? 'ml-6 w-12 h-12' : 'ml-20 w-14 h-14 rotate-180',
-      ]">
-      <font-awesome-icon
-        :icon="state.show ? 'minus' : 'angle-left'"
-        class="text-white text-xl"
+      :class="state.show ? 'left-5' : '-left-24'"
+      class="fixed top-40 z-40 transition-all duration-300 rounded-full border border-white bg-custom-chocolat/80 h-100 w-24 whitespace-nowrap leading-none"
+    >
+      <!-- Bouton toggle -->
+      <button
+        @click="toggleSidebar"
+        :class="state.show ? 'ml-6 w-12 h-12' : 'ml-20 w-14 h-14 rotate-180'"
+        class="rounded-full hover:text-indigo-800 bg-gray-500/40 -mt-4 cursor-pointer transition-all duration-300 flex items-center justify-center"
+        :aria-label="state.show ? 'Fermer le menu latéral' : 'Ouvrir le menu latéral'"
+      >
+        <font-awesome-icon
+          :icon="state.show ? 'fa-solid fa-minus' : 'fa-solid fa-angle-left'"
+          class="text-white text-xl"
+        />
+      </button>
+
+      <!-- Menu items -->
+      <LayoutSidebarItem
+        v-for="item in menuItems"
+        :key="item.id"
+        :item="item"
+        :active="state.pointer === item.id"
+        @toggle="togglePointer(item.id)"
       />
-    </div>
-    <!-- ATTOUT -->
-    <div
-      @click="
-        state.pointer == 'attout'
-          ? (state.pointer = null)
-          : (state.pointer = 'attout')
-      "
-      class="text-white mt-5 cursor-pointer hover:scale-110 transition-transform"
-    >
-      <div class="flex justify-center"><font-awesome-icon icon="table-cells-large" class="text-4xl" /></div>
-      <div class="text-sm text-center z-20">APPLIS</div>
-    </div>
 
-    <!-- JE M'ENGAGE -->
-    <div
-      @click="
-        state.pointer == 'engager'
-          ? (state.pointer = null)
-          : (state.pointer = 'engager')
-      "
-      class="text-white mt-5 cursor-pointer hover:scale-110 transition-transform"
-    >
-      <div><img class="w-10 h-10 ml-6" src="/icons/engage.png" alt="" /></div>
-      <div class="text-sm ml-1 z-20">JE M'ENGAGE</div>
-    </div>
-
-    <!-- RESEAUTAGE -->
-    <div
-      @click="
-        state.pointer == 'reseautage'
-          ? (state.pointer = null)
-          : (state.pointer = 'reseautage')
-      "
-      class="text-white mt-6 cursor-pointer hover:scale-110 transition-transform"
-    >
-      <div>
-        <img class="w-10 h-10 ml-6" src="/icons/innovation.png" alt="" />
-      </div>
-      <div class="text-sm ml-[0.35rem]">RESEAUTAGE</div>
-    </div>
-
-    <!-- SOUMETTRE UN PROJET -->
-    <NuxtLink to="/soumettre-projet">
-      <div
-        @click="state.pointer = null"
-        class="text-white mt-6 whitespace-normal cursor-pointer hover:scale-110 transition-transform"
-      >
-        <div>
-          <img class="w-10 h-10 ml-6" src="/icons/soumettre.png" alt="" />
+      <!-- Soumettre un projet (lien direct) -->
+      <NuxtLink to="/soumettre-projet" @click="state.pointer = null">
+        <div class="text-white mt-6 whitespace-normal cursor-pointer hover:scale-110 transition-transform text-center">
+          <img class="w-10 h-10 mx-auto" src="/icons/soumettre.png" alt="Soumettre un projet" />
+          <div class="text-xs mt-1 px-1 leading-tight">SOUMETTRE UN PROJET</div>
         </div>
-        <div class="text-sm ml-1 text-center">SOUMETTRE UN PROJET</div>
-      </div>
-    </NuxtLink>
-  </div>
+      </NuxtLink>
+    </div>
 
-  <!-- Attout Pop Up -->
-  <div
-    v-if="state.show"
-    :class="[
-      state.pointer == 'attout'
-        ? 'top-0 left-28 z-50 w-52 transition-all duration-75'
-        : 'left-10 z-0 w-0 transition-all duration-500',
-    ]"
-    class="fixed top-44 h-20 whitespace-nowrap text-custom-chocolat ml-2 bg-white border-t-4 border-custom-chocolat bg-opacity-0"
-  >
-    <NuxtLink to="/afrolang">
+    <!-- Popups (masqués sur mobile) -->
+    <Transition
+      v-for="item in menuItems"
+      :key="'popup-' + item.id"
+      enter-active-class="transition-all duration-200 ease-out"
+      enter-from-class="opacity-0 -translate-x-2"
+      enter-to-class="opacity-100 translate-x-0"
+      leave-active-class="transition-all duration-150 ease-in"
+      leave-from-class="opacity-100 translate-x-0"
+      leave-to-class="opacity-0 -translate-x-2"
+    >
       <div
-        class="px-2 bg-white bg-opacity-80 py-2 overflow-x-hidden cursor-pointer hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green transition-all duration-300"
+        v-if="state.show && state.pointer === item.id"
+        class="fixed left-30 z-50 w-52 whitespace-nowrap text-custom-chocolat border-t-4 border-custom-chocolat"
+        :style="{ top: item.popupTop }"
       >
-        Afrolang
+        <NuxtLink
+          v-for="(link, i) in item.links"
+          :key="link.to"
+          :to="link.to"
+          @click="state.pointer = null"
+        >
+          <div
+            class="px-3 py-2 bg-white/80 cursor-pointer transition-all duration-300 hover:border-l-4 hover:border-custom-green hover:pl-4 hover:text-custom-green hover:bg-white/70"
+            :style="{ transitionDelay: `${i * 50}ms` }"
+          >
+            {{ link.label }}
+          </div>
+        </NuxtLink>
       </div>
-    </NuxtLink>
-    <NuxtLink to="/evenements/codi-moi">
-      <div
-        :class="[
-          state.pointer == 'attout'
-            ? 'left-0 duration-100'
-            : '-left-44 duration-300',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Codimoi
-      </div>
-    </NuxtLink>
-    <NuxtLink to="/africain-afro-americain">
-      <div
-        :class="[
-          state.pointer == 'attout'
-            ? 'left-0 duration-200'
-            : '-left-44 duration-200',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Afroculture
-      </div>
-    </NuxtLink>
-    <NuxtLink to="/experts">
-      <div
-        :class="[
-          state.pointer == 'attout'
-            ? 'left-0 duration-300'
-            : '-left-44 duration-100',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Diapertise
-      </div>
-    </NuxtLink>
-    <NuxtLink to="/marche-africain">
-      <div
-        :class="[
-          state.pointer == 'attout'
-            ? 'left-0 duration-400'
-            : '-left-44 duration-75',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Afromarket
-      </div>
-    </NuxtLink>
-    <NuxtLink to="/bibliotheque/numerique">
-      <div
-        :class="[
-          state.pointer == 'attout'
-            ? 'left-0 duration-500'
-            : '-left-44 duration-50',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Librafrica
-      </div>
-    </NuxtLink>
-    <NuxtLink to="/echanges-sabbatiques">
-      <div
-        :class="[
-          state.pointer == 'attout'
-            ? 'left-0 duration-500'
-            : '-left-44 duration-50',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Sabbafrica
-      </div>
-    </NuxtLink>
-
-    <NuxtLink to="/africantives">
-      <div
-        :class="[
-          state.pointer == 'attout'
-            ? 'left-0 duration-500'
-            : '-left-44 duration-50',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Africantives
-      </div>
-    </NuxtLink>
-  </div>
-
-  <!-- S'engager Pup Up -->
-  <div
-    v-if="state.show"
-    :class="[
-      state.pointer == 'engager'
-        ? 'top-0 left-28 z-50 w-52 transition-all duration-75'
-        : 'left-10 z-0 w-0 transition-all duration-500',
-    ]"
-    class="fixed top-[13.5rem] h-20 whitespace-nowrap text-custom-chocolat ml-2 bg-white border-t-4 border-custom-chocolat bg-opacity-0"
-  >
-    <NuxtLink to="/experts">
-      <div
-        class="px-2 bg-white bg-opacity-80 py-2 overflow-x-hidden cursor-pointer hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green transition-all duration-300"
-      >
-        J'apporte mon expertise
-      </div>
-    </NuxtLink>
-    <NuxtLink to="/financer-projet">
-      <div
-        :class="[
-          state.pointer == 'engager'
-            ? 'left-0 duration-100'
-            : '-left-44 duration-300',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Je finance un projet
-      </div>
-    </NuxtLink>
-    <NuxtLink to="/partager-innovation">
-      <div
-        :class="[
-          state.pointer == 'engager'
-            ? 'left-0 duration-300'
-            : '-left-44 duration-100',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Je partage une innovation
-      </div>
-    </NuxtLink>
-    <NuxtLink to="/devenir-partenaire">
-      <div
-        :class="[
-          state.pointer == 'engager'
-            ? 'left-0 duration-500'
-            : '-left-44 duration-75',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Je deviens partenaire
-      </div>
-    </NuxtLink>
-  </div>
-
-  <!-- Reseautage Pup Up -->
-  <div
-    v-if="state.show"
-    :class="[
-      state.pointer == 'reseautage'
-        ? 'top-0 left-28 z-50 w-46 duration-100'
-        : 'left-10 z-0 w-0 duration-500',
-    ]"
-    class="fixed top-[20.5rem] h-20 whitespace-nowrap text-custom-chocolat ml-2 bg-white border-t-4 border-custom-chocolat bg-opacity-0 transition-all"
-  >
-    <NuxtLink to="/retrouver-profil">
-      <div
-        class="px-2 bg-white bg-opacity-80 py-2 overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Retrouver un profil
-      </div>
-    </NuxtLink>
-    <NuxtLink to="/experts">
-      <div
-        :class="[
-          state.pointer == 'reseautage'
-            ? 'left-0 duration-300'
-            : '-left-44 duration-100',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Mobiliser une expertise
-      </div>
-    </NuxtLink>
-    <NuxtLink to="/marche-africain">
-      <div
-        :class="[
-          state.pointer == 'reseautage'
-            ? 'left-0 duration-500'
-            : '-left-44 duration-100',
-        ]"
-        class="px-2 relative bg-white bg-opacity-80 py-2 mt-px overflow-x-hidden cursor-pointer transition-all hover:border-l-4 hover:border-custom-green hover:ml-1 hover:bg-opacity-70 hover:text-custom-green"
-      >
-        Opportunités
-      </div>
-    </NuxtLink>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
 const route = useRoute()
+const isMobile = ref(false)
 
 const isHomeRoute = computed(() =>
   route.name === 'index' || route.path === '/' || route.path === '/home'
 )
 
 const state = reactive({
-  show: isHomeRoute.value,
+  show: false,
   pointer: null as string | null,
 })
 
-watch(isHomeRoute, (newValue) => {
-  state.show = newValue
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+  // Sur desktop + page d'accueil : ouvrir automatiquement
+  state.show = isHomeRoute.value && !isMobile.value
 })
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
+
+watch(isHomeRoute, (val) => {
+  state.show = val && !isMobile.value
+})
+
+watch(isMobile, (mobile) => {
+  if (mobile) {
+    state.show = false
+    state.pointer = null
+  } else if (isHomeRoute.value) {
+    state.show = true
+  }
+})
+
+const toggleSidebar = () => {
+  state.show = !state.show
+  if (!state.show) state.pointer = null
+}
+
+const togglePointer = (id: string) => {
+  state.pointer = state.pointer === id ? null : id
+}
+
+interface MenuItem {
+  id: string
+  icon?: string
+  iconImg?: string
+  label: string
+  popupTop: string
+  links: Array<{ label: string; to: string }>
+}
+
+const menuItems: MenuItem[] = [
+  {
+    id: 'attout',
+    icon: 'fa-solid fa-table-cells-large',
+    label: 'APPLIS',
+    popupTop: '11rem',
+    links: [
+      { label: 'Afrolang', to: '/afrolang' },
+      { label: 'Codimoi', to: '/evenements/codi-moi' },
+      { label: 'Afroculture', to: '/africain-afro-americain' },
+      { label: 'Diapertise', to: '/experts' },
+      { label: 'Afromarket', to: '/marche-africain' },
+      { label: 'Librafrica', to: '/bibliotheque/numerique' },
+      { label: 'Sabbafrica', to: '/echanges-sabbatiques' },
+      { label: 'Africantives', to: '/africantives' },
+    ],
+  },
+  {
+    id: 'engager',
+    iconImg: '/icons/engage.png',
+    label: "JE M'ENGAGE",
+    popupTop: '15.5rem',
+    links: [
+      { label: "J'apporte mon expertise", to: '/experts' },
+      { label: 'Je finance un projet', to: '/financer-projet' },
+      { label: 'Je partage une innovation', to: '/partager-innovation' },
+      { label: 'Je deviens partenaire', to: '/devenir-partenaire' },
+    ],
+  },
+  {
+    id: 'reseautage',
+    iconImg: '/icons/innovation.png',
+    label: 'RÉSEAUTAGE',
+    popupTop: '21rem',
+    links: [
+      { label: 'Retrouver un profil', to: '/retrouver-profil' },
+      { label: 'Mobiliser une expertise', to: '/experts' },
+      { label: 'Opportunités', to: '/marche-africain' },
+    ],
+  },
+]
 </script>

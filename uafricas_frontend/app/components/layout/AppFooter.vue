@@ -1,84 +1,74 @@
 <template>
-  <footer>
-    <div class="flex justify-center space-x-14 py-8 bg-white text-gray-800 rounded-3xl">
-      <NuxtLink to="/">
-        <img class="h-32 mx-auto my-1" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
-      </NuxtLink>
+  <footer class="bg-white text-gray-800">
+    <div class="container mx-auto px-6 md:px-12 py-8">
+      <div class="flex flex-col md:flex-row gap-8 md:gap-12">
 
-      <div class="w-100">
-        <div class="text-xl text-custom-chocolat text-justify">
-          A propos de AfricanS
+        <!-- Logo -->
+        <div class="flex-shrink-0 flex justify-center md:justify-start">
+          <NuxtLink to="/">
+            <img class="h-24 sm:h-28 lg:h-32" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
+          </NuxtLink>
         </div>
-        <div>
-          Africans est un réseau international visant la promotion des meilleures
-          valeurs africaines et afro-américaines aux niveaux culturel,
-          socio-économique et scientifique. Elle regroupe un bureau de
-          coordination technique, des antennes nationales et des groupes de
-          réflexion ad hoc. Africans poursuit un but non lucratif et met l'accent
-          sur le volontariat des membres. Africans poursuit les objectifs
-          spécifiques suivants :
-        </div>
-        <ul class="list-disc ml-10">
-          <li>
-            Promouvoir les valeurs culturelles africaines et afro-américaines
-            pertinentes
-          </li>
-          <li>Renforcer l'union des populations d'origine africaine</li>
-          <li>
-            Favoriser le retour de la diaspora africaine et leur contribution au
-            développement
-          </li>
-          <li>
-            Soutenir le développement d'un marché africain et promouvoir la ZLECAF
-          </li>
-          <li>
-            Appuyer des projets de développement local grâce à des approches
-            participatives et ingénieuses
-          </li>
-          <li>Promouvoir l'expertise africaine à tous les niveaux</li>
-          <li>
-            Restaurer l'histoire de l'Afrique et ouvrir la voie à la définition de
-            trajectoires de développements originaux à tous les niveaux.
-          </li>
-        </ul>
 
-        <div class="mt-5">
-          <font-awesome-icon icon="fa-solid fa-envelope" class="text-custom-chocolat mr-1" />
-          uafricas@gmail.com
-        </div>
-        <div>
-          <font-awesome-icon icon="fa-solid fa-phone" class="text-custom-chocolat mr-1" />
-          00 00 00 00 00
-        </div>
-      </div>
+        <!-- A propos -->
+        <div class="flex-1 min-w-0">
+          <h3 class="text-lg sm:text-xl text-custom-chocolat font-semibold">
+            À propos de AfricanS
+          </h3>
+          <p class="mt-2 text-sm sm:text-base leading-relaxed">
+            Africans est un réseau international visant la promotion des meilleures
+            valeurs africaines et afro-américaines aux niveaux culturel,
+            socio-économique et scientifique. Elle regroupe un bureau de
+            coordination technique, des antennes nationales et des groupes de
+            réflexion ad hoc. Africans poursuit un but non lucratif et met l'accent
+            sur le volontariat des membres.
+          </p>
+          <ul class="list-disc ml-5 mt-2 text-sm space-y-1">
+            <li>Promouvoir les valeurs culturelles africaines et afro-américaines pertinentes</li>
+            <li>Renforcer l'union des populations d'origine africaine</li>
+            <li>Favoriser le retour de la diaspora africaine et leur contribution au développement</li>
+            <li>Soutenir le développement d'un marché africain et promouvoir la ZLECAF</li>
+            <li>Promouvoir l'expertise africaine à tous les niveaux</li>
+            <li>Restaurer l'histoire de l'Afrique et ouvrir la voie à des trajectoires de développement originaux</li>
+          </ul>
 
-      <div>
-        <div class="text-custom-chocolat">Contactez-nous</div>
-        <textarea
-          class="my-2 border-2 border-custom-chocolat"
-          cols="30"
-          rows="3"
-          placeholder="Ecrire un commentaire"
-        ></textarea>
-        <br />
-        <button class="px-2 bg-custom-chocolat text-white">ENVOYER</button>
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-6 mt-4 text-sm">
+            <a href="mailto:uafricas@gmail.com" class="flex items-center gap-1.5 hover:text-custom-green transition-colors">
+              <font-awesome-icon icon="fa-solid fa-envelope" class="text-custom-chocolat" />
+              uafricas@gmail.com
+            </a>
+            <span class="flex items-center gap-1.5">
+              <font-awesome-icon icon="fa-solid fa-phone" class="text-custom-chocolat" />
+              00 00 00 00 00
+            </span>
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="w-full md:w-64 flex-shrink-0">
+          <h3 class="text-lg text-custom-chocolat font-semibold">Contactez-nous</h3>
+          <textarea
+            class="mt-2 w-full border-2 border-custom-chocolat rounded p-2 text-sm resize-none"
+            rows="3"
+            placeholder="Écrire un commentaire"
+          ></textarea>
+          <button class="mt-2 w-full sm:w-auto px-4 py-1.5 bg-custom-chocolat text-white rounded text-sm hover:opacity-90 transition-opacity">
+            ENVOYER
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="flex justify-end mr-5 text-custom-chocolat text-lg font-semibold bg-white">
-      <div class="text-custom-green">
-        <NuxtLink class="uppercase" to="/">Innovation</NuxtLink>
-        <span class="text-custom-chocolat mx-2">|</span>
-        <NuxtLink class="uppercase" to="/">Médiathèque</NuxtLink>
-      </div>
+    <!-- Liens -->
+    <div class="flex flex-wrap justify-center sm:justify-end gap-2 px-6 pb-2 text-sm sm:text-base font-semibold">
+      <NuxtLink to="/" class="uppercase text-custom-green hover:underline">Innovation</NuxtLink>
+      <span class="text-custom-chocolat">|</span>
+      <NuxtLink to="/" class="uppercase text-custom-green hover:underline">Médiathèque</NuxtLink>
     </div>
 
-    <div class="text-center text-white bg-custom-chocolat py-1">
-      &copy;Copyright 2025
+    <!-- Copyright -->
+    <div class="text-center text-white bg-custom-chocolat py-2 text-sm">
+      &copy; Copyright 2025
     </div>
   </footer>
 </template>
-
-<script setup lang="ts">
-// Footer component - pas de logique nécessaire
-</script>
