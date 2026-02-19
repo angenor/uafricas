@@ -6,14 +6,23 @@
         <img class="h-10 sm:h-12" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
       </NuxtLink>
 
-      <!-- Hamburger mobile -->
-      <button
-        class="lg:hidden p-2 text-custom-chocolat"
-        aria-label="Ouvrir le menu"
-        @click="mobileOpen = !mobileOpen"
-      >
+      <!-- Recherche + Hamburger mobile -->
+      <div class="flex items-center gap-1 lg:hidden">
+        <button
+          class="p-2 text-custom-chocolat"
+          aria-label="Rechercher"
+          @click="rechercheOuverte = true"
+        >
+          <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="text-xl" />
+        </button>
+        <button
+          class="p-2 text-custom-chocolat"
+          aria-label="Ouvrir le menu"
+          @click="mobileOpen = !mobileOpen"
+        >
         <font-awesome-icon :icon="mobileOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'" class="text-2xl" />
       </button>
+      </div>
     </div>
 
     <!-- Ligne 2 : Navigation desktop + bouton auth à droite -->
@@ -74,7 +83,16 @@
       </div>
 
       <!-- Auth desktop - extrême droite -->
-      <div class="flex-1 flex justify-end">
+      <div class="flex-1 flex justify-end items-center">
+        <!-- Bouton recherche desktop -->
+        <button
+          @click="rechercheOuverte = true"
+          class="p-2 mr-3 text-custom-chocolat/70 hover:text-custom-green transition-colors"
+          aria-label="Rechercher"
+        >
+          <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="text-lg" />
+        </button>
+
         <!-- Utilisateur connecté : avatar + dropdown -->
         <div
           v-if="isAuthenticated"
@@ -289,6 +307,9 @@
         </div>
       </nav>
     </Transition>
+
+    <!-- Popup de recherche globale -->
+    <LayoutRecherchePopup :ouvert="rechercheOuverte" @fermer="rechercheOuverte = false" />
   </header>
 </template>
 
@@ -296,6 +317,7 @@
 const pointer = ref<string | null>(null)
 const mobileOpen = ref(false)
 const mobileSection = ref<string | null>(null)
+const rechercheOuverte = ref(false)
 
 const { isAuthenticated, user, fullName, isAdmin, logout } = useAuth()
 const router = useRouter()
@@ -304,6 +326,22 @@ const route = useRoute()
 watch(() => route.path, () => {
   mobileOpen.value = false
   mobileSection.value = null
+})
+
+// Raccourci clavier Ctrl+K / Cmd+K
+const handleRaccourciRecherche = (e: KeyboardEvent) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault()
+    rechercheOuverte.value = true
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleRaccourciRecherche)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleRaccourciRecherche)
 })
 
 const handleLogout = async () => {
