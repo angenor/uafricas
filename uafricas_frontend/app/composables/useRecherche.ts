@@ -1,16 +1,4 @@
-// Composable pour la recherche globale sur toutes les donnees de la plateforme
-
-import { evenementsMock } from '~/mocks/evenements'
-import { annoncesMock } from '~/mocks/marche-africain'
-import { documentsNumeriques } from '~/mocks/bibliotheques'
-import { expertsMock } from '~/mocks/experts'
-import { projetsMock } from '~/mocks/projets'
-import { forumsMock } from '~/mocks/forums'
-import { centresCulturelsMock } from '~/mocks/centres-culturels'
-import { radioStations } from '~/mocks/radios'
-import { tvChannels } from '~/mocks/tele'
-import { sabbatiquesMock } from '~/mocks/sabbatiques'
-import { paysAfricainsMock } from '~/mocks/opportunite-afrique'
+// Composable pour la recherche globale via les endpoints API reels
 
 // ── Interfaces ──────────────────────────────────────────────────
 
@@ -21,215 +9,224 @@ export interface ResultatRecherche {
   categorie: string
   icone: string
   lien: string
-  score: number
 }
 
 export interface GroupeResultats {
   categorie: string
   icone: string
   resultats: ResultatRecherche[]
+  total: number
+}
+
+interface ApiResponse<T> {
+  success: boolean
+  data: T | null
+  error: string | null
 }
 
 // ── Constantes ──────────────────────────────────────────────────
 
 const CLE_RECHERCHES_RECENTES = 'uafricas_recherches_recentes'
 const MAX_RECHERCHES_RECENTES = 5
+const PAR_PAGE_RECHERCHE = 5
 
-// ── Normalisation (insensible aux accents) ──────────────────────
+// ── Definition des sources de recherche ─────────────────────────
 
-const normaliser = (texte: string): string => {
-  return texte
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
+interface SourceRecherche {
+  endpoint: string
+  categorie: string
+  icone: string
+  extraireResultats: (data: any) => ResultatRecherche[]
 }
 
-// ── Score de pertinence ─────────────────────────────────────────
-
-const calculerScore = (texte: string, terme: string): number => {
-  const texteNorm = normaliser(texte)
-  const termeNorm = normaliser(terme)
-
-  if (texteNorm === termeNorm) return 100
-  if (texteNorm.startsWith(termeNorm)) return 80
-  if (texteNorm.includes(termeNorm)) return 60
-
-  const mots = termeNorm.split(/\s+/)
-  const motsCorrespondants = mots.filter(m => texteNorm.includes(m))
-  if (motsCorrespondants.length > 0) {
-    return 40 * (motsCorrespondants.length / mots.length)
-  }
-
-  return 0
-}
-
-// ── Construction de l'index ─────────────────────────────────────
-
-const construireIndex = (): ResultatRecherche[] => {
-  const index: ResultatRecherche[] = []
-
-  // Evenements
-  for (const e of evenementsMock) {
-    index.push({
-      id: `evt-${e.id}`,
-      titre: e.titre,
-      sousTexte: `${e.type} · ${e.pays}${e.ville ? ', ' + e.ville : ''}`,
-      categorie: 'Événements',
-      icone: 'fa-solid fa-calendar',
-      lien: `/evenements/${e.id}`,
-      score: 0,
-    })
-  }
-
-  // Annonces (Marche Africain)
-  for (const a of annoncesMock) {
-    index.push({
-      id: `ann-${a.id}`,
-      titre: a.titre,
-      sousTexte: `${a.categorie} · ${a.type_echange} · ${a.pays}`,
-      categorie: 'Marché Africain',
-      icone: 'fa-solid fa-store',
-      lien: `/marche-africain/${a.id}`,
-      score: 0,
-    })
-  }
-
-  // Bibliotheque
-  for (const d of documentsNumeriques) {
-    index.push({
-      id: `bib-${d.id}`,
-      titre: d.titre,
-      sousTexte: `${d.type} · ${d.user.prenom} ${d.user.nom}`,
-      categorie: 'Bibliothèque',
-      icone: 'fa-solid fa-book',
-      lien: '/bibliotheque/numerique',
-      score: 0,
-    })
-  }
-
-  // Experts
-  for (const exp of expertsMock) {
-    index.push({
-      id: `exp-${exp.id}`,
-      titre: `${exp.prenom} ${exp.nom}`,
-      sousTexte: `${exp.expertiseInfo.domaine} · ${exp.pays}`,
-      categorie: 'Experts',
-      icone: 'fa-solid fa-user-tie',
-      lien: `/experts/${exp.id}`,
-      score: 0,
-    })
-  }
-
-  // Projets
-  for (const p of projetsMock) {
-    index.push({
-      id: `prj-${p.id}`,
-      titre: p.titre,
-      sousTexte: `${p.organisation} · ${p.pays}`,
-      categorie: 'Projets',
-      icone: 'fa-solid fa-rocket',
-      lien: '/financer-projet',
-      score: 0,
-    })
-  }
-
-  // Forums
-  for (const f of forumsMock) {
-    const contenu = f.type === 'Proverbe' ? f.proverbe.libellet
-      : f.type === 'Citation' ? f.citation.libellet
-        : f.type === 'Bonne pratique' ? f.bonne_pratique.description
-          : f.histoire.description
-    if (!contenu) continue
-    index.push({
-      id: `for-${f.id}`,
-      titre: contenu.length > 80 ? contenu.substring(0, 80) + '...' : contenu,
-      sousTexte: `${f.type} · ${f.user.prenom} ${f.user.nom}`,
-      categorie: 'Forums',
-      icone: 'fa-solid fa-comments',
-      lien: '/promotion-valeur',
-      score: 0,
-    })
-  }
-
-  // Centres culturels
-  for (const cc of centresCulturelsMock) {
-    index.push({
-      id: `cc-${cc.id}`,
-      titre: cc.nom,
-      sousTexte: cc.adress,
-      categorie: 'Centres Culturels',
-      icone: 'fa-solid fa-masks-theater',
-      lien: '/africa-culture',
-      score: 0,
-    })
-  }
-
-  // Radios
-  for (const r of radioStations) {
-    index.push({
-      id: `rad-${r.id}`,
-      titre: r.name,
-      sousTexte: `${r.genre} · ${r.country}`,
-      categorie: 'Radios',
-      icone: 'fa-solid fa-radio',
-      lien: '/radios',
-      score: 0,
-    })
-  }
-
-  // Chaines TV
-  for (const tv of tvChannels) {
-    index.push({
-      id: `tv-${tv.id}`,
-      titre: tv.name,
-      sousTexte: `${tv.category} · ${tv.country}`,
-      categorie: 'Télévision',
-      icone: 'fa-solid fa-tv',
-      lien: '/tele',
-      score: 0,
-    })
-  }
-
-  // Programmes sabbatiques
-  for (const s of sabbatiquesMock) {
-    index.push({
-      id: `sab-${s.id}`,
-      titre: s.titre,
-      sousTexte: `${s.pays}${s.ville ? ', ' + s.ville : ''}`,
-      categorie: 'Échanges Sabbatiques',
-      icone: 'fa-solid fa-plane',
-      lien: '/echanges-sabbatiques',
-      score: 0,
-    })
-  }
-
-  // Fiches pays
-  for (const pays of paysAfricainsMock) {
-    index.push({
-      id: `pays-${pays.id}`,
-      titre: pays.nom,
-      sousTexte: `${pays.region} · Capitale : ${pays.capitale}`,
-      categorie: 'Opportunités Afrique',
-      icone: 'fa-solid fa-earth-africa',
-      lien: `/opportunite-afrique/${pays.id}`,
-      score: 0,
-    })
-  }
-
-  return index
-}
+const definirSources = (): SourceRecherche[] => [
+  {
+    endpoint: '/api/evenements',
+    categorie: 'Événements',
+    icone: 'fa-solid fa-calendar',
+    extraireResultats: (data: any) =>
+      (data.evenements || []).map((e: any) => ({
+        id: e.id,
+        titre: e.titre,
+        sousTexte: `${e.type || ''} · ${e.pays || ''}${e.ville ? ', ' + e.ville : ''}`,
+        categorie: 'Événements',
+        icone: 'fa-solid fa-calendar',
+        lien: `/evenements/${e.id}`,
+      })),
+  },
+  {
+    endpoint: '/api/annonces',
+    categorie: 'Marché Africain',
+    icone: 'fa-solid fa-store',
+    extraireResultats: (data: any) =>
+      (data.annonces || []).map((a: any) => ({
+        id: a.id,
+        titre: a.titre,
+        sousTexte: `${a.categorie || ''} · ${a.type_echange || ''} · ${a.pays || ''}`,
+        categorie: 'Marché Africain',
+        icone: 'fa-solid fa-store',
+        lien: `/marche-africain/${a.id}`,
+      })),
+  },
+  {
+    endpoint: '/api/livres',
+    categorie: 'Bibliothèque',
+    icone: 'fa-solid fa-book',
+    extraireResultats: (data: any) =>
+      (data.livres || []).map((l: any) => ({
+        id: l.id,
+        titre: l.titre,
+        sousTexte: `${l.type_document || ''} · ${l.info_auteur || ''}`,
+        categorie: 'Bibliothèque',
+        icone: 'fa-solid fa-book',
+        lien: `/bibliotheque/numerique`,
+      })),
+  },
+  {
+    endpoint: '/api/experts',
+    categorie: 'Experts',
+    icone: 'fa-solid fa-user-tie',
+    extraireResultats: (data: any) =>
+      (data.experts || []).map((exp: any) => ({
+        id: exp.id,
+        titre: `${exp.prenom || ''} ${exp.nom || ''}`.trim(),
+        sousTexte: `${exp.expertiseInfo?.domaine || ''} · ${exp.pays || ''}`,
+        categorie: 'Experts',
+        icone: 'fa-solid fa-user-tie',
+        lien: `/experts/${exp.id}`,
+      })),
+  },
+  {
+    endpoint: '/api/projets',
+    categorie: 'Projets',
+    icone: 'fa-solid fa-rocket',
+    extraireResultats: (data: any) =>
+      (data.projets || []).map((p: any) => ({
+        id: p.id,
+        titre: p.titre,
+        sousTexte: `${p.organisation || ''} · ${p.pays || ''}`,
+        categorie: 'Projets',
+        icone: 'fa-solid fa-rocket',
+        lien: `/financer-projet`,
+      })),
+  },
+  {
+    endpoint: '/api/television/chaines',
+    categorie: 'Télévision',
+    icone: 'fa-solid fa-tv',
+    extraireResultats: (data: any) =>
+      (data.chaines || []).map((c: any) => ({
+        id: c.id,
+        titre: c.nom,
+        sousTexte: `${c.categorie || ''} · ${c.pays || ''}`,
+        categorie: 'Télévision',
+        icone: 'fa-solid fa-tv',
+        lien: '/tele',
+      })),
+  },
+  {
+    endpoint: '/api/stations-radio',
+    categorie: 'Radios',
+    icone: 'fa-solid fa-radio',
+    extraireResultats: (data: any) =>
+      (data.stations || []).map((r: any) => ({
+        id: r.id,
+        titre: r.nom,
+        sousTexte: `${r.genre || ''} · ${r.pays || ''}`,
+        categorie: 'Radios',
+        icone: 'fa-solid fa-radio',
+        lien: '/radios',
+      })),
+  },
+  {
+    endpoint: '/api/centres-culturels',
+    categorie: 'Centres Culturels',
+    icone: 'fa-solid fa-masks-theater',
+    extraireResultats: (data: any) => {
+      // L'endpoint peut retourner un tableau ou un objet pagine
+      const centres = Array.isArray(data) ? data : (data.centres || [])
+      return centres.map((c: any) => ({
+        id: c.id,
+        titre: c.nom,
+        sousTexte: c.adresse || c.adress || '',
+        categorie: 'Centres Culturels',
+        icone: 'fa-solid fa-masks-theater',
+        lien: '/africa-culture',
+      }))
+    },
+  },
+  {
+    endpoint: '/api/moocs',
+    categorie: 'Formations',
+    icone: 'fa-solid fa-graduation-cap',
+    extraireResultats: (data: any) =>
+      (data.moocs || []).map((m: any) => ({
+        id: m.id,
+        titre: m.titre,
+        sousTexte: m.description ? m.description.substring(0, 60) + '...' : '',
+        categorie: 'Formations',
+        icone: 'fa-solid fa-graduation-cap',
+        lien: `/universite/inuda/formations`,
+      })),
+  },
+  {
+    endpoint: '/api/sabbatiques',
+    categorie: 'Échanges Sabbatiques',
+    icone: 'fa-solid fa-plane',
+    extraireResultats: (data: any) =>
+      (data.programmes || []).map((s: any) => ({
+        id: s.id,
+        titre: s.titre,
+        sousTexte: `${s.pays || ''}${s.ville ? ', ' + s.ville : ''}`,
+        categorie: 'Échanges Sabbatiques',
+        icone: 'fa-solid fa-plane',
+        lien: '/echanges-sabbatiques',
+      })),
+  },
+  {
+    endpoint: '/api/fiches-pays',
+    categorie: 'Opportunités Afrique',
+    icone: 'fa-solid fa-earth-africa',
+    extraireResultats: (data: any) => {
+      const fiches = Array.isArray(data) ? data : (data.fiches || data.pays || [])
+      return fiches.map((p: any) => ({
+        id: p.id,
+        titre: p.nom,
+        sousTexte: `${p.region || ''} · Capitale : ${p.capitale || ''}`,
+        categorie: 'Opportunités Afrique',
+        icone: 'fa-solid fa-earth-africa',
+        lien: `/opportunite-afrique/${p.id}`,
+      }))
+    },
+  },
+  {
+    endpoint: '/api/africantives',
+    categorie: 'Africantives',
+    icone: 'fa-solid fa-lightbulb',
+    extraireResultats: (data: any) =>
+      (data.africantives || []).map((a: any) => ({
+        id: a.id,
+        titre: a.titre || a.nom,
+        sousTexte: `${a.domaine || ''} · ${a.pays || ''}`,
+        categorie: 'Africantives',
+        icone: 'fa-solid fa-lightbulb',
+        lien: `/africantives/${a.id}`,
+      })),
+  },
+]
 
 // ── Composable principal ────────────────────────────────────────
 
 export const useRecherche = () => {
+  const config = useRuntimeConfig()
+  const apiBase = config.public.apiBaseUrl as string
+
   const termeRecherche = ref('')
   const resultatsGroupes = ref<GroupeResultats[]>([])
   const enChargement = ref(false)
   const nombreTotalResultats = ref(0)
 
-  // Index construit une seule fois
-  const indexRecherche = construireIndex()
+  const sources = definirSources()
 
   // Recherches recentes (localStorage)
   const recherchesRecentes = ref<string[]>([])
@@ -274,8 +271,8 @@ export const useRecherche = () => {
     nombreTotalResultats.value = 0
   }
 
-  // Recherche
-  const effectuerRecherche = (terme: string) => {
+  // Recherche parallele sur tous les endpoints
+  const effectuerRecherche = async (terme: string) => {
     if (!terme.trim() || terme.trim().length < 2) {
       resultatsGroupes.value = []
       nombreTotalResultats.value = 0
@@ -283,42 +280,59 @@ export const useRecherche = () => {
       return
     }
 
-    const resultats: ResultatRecherche[] = []
+    const params = new URLSearchParams({
+      recherche: terme.trim(),
+      par_page: String(PAR_PAGE_RECHERCHE),
+      page: '1',
+    })
 
-    for (const item of indexRecherche) {
-      const scoreTitre = calculerScore(item.titre, terme)
-      const scoreSousTexte = item.sousTexte ? calculerScore(item.sousTexte, terme) * 0.5 : 0
-      const scoreTotal = Math.max(scoreTitre, scoreSousTexte)
+    // Appeler tous les endpoints en parallele
+    const promesses = sources.map(async (source): Promise<GroupeResultats | null> => {
+      try {
+        const url = `${apiBase}${source.endpoint}?${params.toString()}`
+        const reponse = await $fetch<ApiResponse<any>>(url, { timeout: 5000 })
 
-      if (scoreTotal > 0) {
-        resultats.push({ ...item, score: scoreTotal })
+        if (!reponse.success || !reponse.data) return null
+
+        const resultats = source.extraireResultats(reponse.data)
+        if (resultats.length === 0) return null
+
+        const total = reponse.data.total || resultats.length
+
+        return {
+          categorie: source.categorie,
+          icone: source.icone,
+          resultats,
+          total,
+        }
+      }
+      catch {
+        // Endpoint indisponible ou erreur, on ignore silencieusement
+        return null
+      }
+    })
+
+    const resultats = await Promise.allSettled(promesses)
+
+    const groupes: GroupeResultats[] = []
+    let totalResultats = 0
+
+    for (const resultat of resultats) {
+      if (resultat.status === 'fulfilled' && resultat.value) {
+        groupes.push(resultat.value)
+        totalResultats += resultat.value.total
       }
     }
 
-    resultats.sort((a, b) => b.score - a.score)
+    // Trier les groupes par nombre de resultats
+    groupes.sort((a, b) => b.total - a.total)
 
-    // Grouper par categorie
-    const groupes = new Map<string, ResultatRecherche[]>()
-    for (const r of resultats) {
-      if (!groupes.has(r.categorie)) {
-        groupes.set(r.categorie, [])
-      }
-      groupes.get(r.categorie)!.push(r)
-    }
-
-    resultatsGroupes.value = Array.from(groupes.entries())
-      .map(([categorie, res]) => ({
-        categorie,
-        icone: res[0]?.icone || 'fa-solid fa-magnifying-glass',
-        resultats: res,
-      }))
-      .sort((a, b) => (b.resultats[0]?.score || 0) - (a.resultats[0]?.score || 0))
-
-    nombreTotalResultats.value = resultats.length
+    resultatsGroupes.value = groupes
+    nombreTotalResultats.value = totalResultats
     enChargement.value = false
   }
 
-  // Debounce 250ms
+  // Debounce 350ms (un peu plus que 250ms pour les appels reseau)
   let timeoutId: ReturnType<typeof setTimeout> | null = null
 
   watch(termeRecherche, (nouveau) => {
@@ -334,7 +348,7 @@ export const useRecherche = () => {
     enChargement.value = true
     timeoutId = setTimeout(() => {
       effectuerRecherche(nouveau)
-    }, 250)
+    }, 350)
   })
 
   return {

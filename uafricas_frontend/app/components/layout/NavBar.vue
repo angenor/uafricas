@@ -84,13 +84,15 @@
 
       <!-- Auth desktop - extrême droite -->
       <div class="flex-1 flex justify-end items-center">
-        <!-- Bouton recherche desktop -->
+        <!-- Bouton recherche desktop (faux input) -->
         <button
           @click="rechercheOuverte = true"
-          class="p-2 mr-3 text-custom-chocolat/70 hover:text-custom-green transition-colors"
+          class="flex items-center gap-2 mr-4 px-3 py-1 bg-gray-100/60 hover:bg-gray-100 border border-gray-200/80 rounded-lg text-sm text-gray-400 hover:text-gray-500 transition-all cursor-pointer"
           aria-label="Rechercher"
         >
-          <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="text-lg" />
+          <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="text-xs" />
+          <span class="hidden xl:inline">Rechercher...</span>
+          <kbd class="hidden xl:inline-flex ml-2 px-1.5 py-0.5 text-[10px] bg-white/70 border border-gray-200/80 rounded text-gray-400 font-sans">⌘K</kbd>
         </button>
 
         <!-- Utilisateur connecté : avatar + dropdown -->

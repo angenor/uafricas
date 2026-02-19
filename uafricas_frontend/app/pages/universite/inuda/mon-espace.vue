@@ -19,7 +19,7 @@
             <p class="text-gray-600">Gérez vos formations et suivez votre progression</p>
           </div>
           <NuxtLink to="/universite/inuda" class="text-purple-600 hover:text-purple-800">
-            ← Retour à INUDA
+            ← Retour à l'INUDA
           </NuxtLink>
         </div>
       </div>

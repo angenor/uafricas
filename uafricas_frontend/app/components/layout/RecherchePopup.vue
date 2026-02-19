@@ -127,7 +127,7 @@
                 >
                   <h3 class="px-5 py-2 text-xs font-semibold text-custom-chocolat/70 uppercase tracking-wide">
                     {{ groupe.categorie }}
-                    <span class="text-gray-400 font-normal">({{ groupe.resultats.length }})</span>
+                    <span class="text-gray-400 font-normal">({{ groupe.total || groupe.resultats.length }})</span>
                   </h3>
                   <div
                     v-for="(resultat, rIndex) in groupe.resultats.slice(0, 3)"

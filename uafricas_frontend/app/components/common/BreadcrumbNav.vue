@@ -105,7 +105,7 @@ const routeLabels: Record<string, string> = {
   'africa-culture': 'AfricaCulture',
   'echanges-sabbatiques': 'Échanges Sabbatiques',
   'opportunite-afrique': 'Opportunités en Afrique',
-  'africain-afro-americain': 'Centres Culturels Afrocult',
+  'africain-afro-americain': 'Afrocult',
   'site': 'Centre Culturel',
   'programmation': 'Programmation',
   'experts': 'Experts',
