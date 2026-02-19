@@ -1,13 +1,79 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-    <!-- Hero avec recherche -->
-    <AfricantivesHero
-      v-model:model-domaine="filtres.domaine"
-      v-model:model-recherche="filtres.recherche"
-      :total-africantives="totalAfricantives"
-      @search="handleSearch"
-      @publish="handlePublish"
-    />
+  <div class="min-h-screen bg-gray-50">
+    <!-- Hero Section -->
+    <div
+      class="relative h-80 bg-cover bg-center"
+      style="background-image: url('https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
+    >
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
+
+      <div class="absolute inset-0 flex flex-col items-center justify-center mt-5">
+        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
+          Africantives
+        </h1>
+        <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
+        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
+          Initiatives Africaines
+        </p>
+      </div>
+    </div>
+
+    <!-- Barre de recherche -->
+    <div class="max-w-4xl mx-auto -mt-8 relative z-10 px-4">
+      <div class="bg-white rounded-xl shadow-xl p-5 transform transition-all hover:shadow-2xl">
+        <div class="flex flex-col md:flex-row gap-3">
+          <div class="flex-1">
+            <input
+              v-model="filtres.recherche"
+              type="text"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all"
+              placeholder="Rechercher une initiative..."
+              @keyup.enter="handleSearch"
+            />
+          </div>
+          <button
+            @click="handleSearch"
+            class="bg-linear-to-r from-custom-green to-green-600 hover:from-green-600 hover:to-custom-green text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-custom-green flex items-center justify-center"
+          >
+            <font-awesome-icon icon="fa-solid fa-search" class="mr-2" />
+            Recherche
+          </button>
+          <button
+            @click="handlePublish"
+            class="bg-linear-to-r from-custom-chocolat to-amber-700 hover:from-amber-700 hover:to-custom-chocolat text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-custom-chocolat flex items-center justify-center"
+          >
+            <font-awesome-icon :icon="['fas', 'plus']" class="mr-2" />
+            Publier
+          </button>
+        </div>
+
+        <!-- Filtres domaines -->
+        <div class="flex flex-wrap mt-3 gap-2">
+          <label
+            v-for="dom in domainesFiltre"
+            :key="dom.value"
+          >
+            <input
+              type="radio"
+              name="domaine-filter"
+              v-model="filtres.domaine"
+              :value="dom.value"
+              class="hidden"
+            />
+            <div
+              class="px-4 py-2 rounded-full text-sm cursor-pointer transition-all duration-200"
+              :class="[
+                filtres.domaine === dom.value
+                  ? 'bg-custom-chocolat text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+              ]"
+            >
+              {{ dom.label }}
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <!-- Breadcrumb -->
@@ -280,6 +346,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import {
   useAfricantives,
+  DOMAINES_AFRICANTIVES,
   type AfricantiveAPI,
   type AfricantiveFiltres,
 } from '~/composables/useAfricantives'
@@ -316,6 +383,9 @@ const filtres = ref({
   recherche: '',
   tri: 'recent',
 })
+
+// Domaines pour les filtres chips
+const domainesFiltre = DOMAINES_AFRICANTIVES
 
 // Debounce timer pour la recherche
 let rechercheTimer: ReturnType<typeof setTimeout> | null = null
@@ -466,3 +536,29 @@ onMounted(async () => {
   await chargerAfricantives()
 })
 </script>
+
+<style scoped>
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes expandLine {
+  from { width: 0; }
+  to { width: 6rem; }
+}
+
+.animate-title {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.animate-subtitle {
+  animation: fadeIn 1s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+.animate-line {
+  animation: expandLine 1.2s ease-out 0.1s forwards;
+  width: 0;
+}
+</style>
