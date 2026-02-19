@@ -94,9 +94,31 @@ Actix-Web 4 server with modular architecture (`config.rs`, `errors.rs`, `models/
 
 ## Infrastructure
 
+### Docker Dev (local)
+
 - **Docker** : `docker-compose.yml` à la racine avec 3 services (postgres, adminer, livekit) et 1 volume (pgdata). LiveKit SFU sur ports 7880 (WebSocket), 7881 (HTTP API), 7882 (WebRTC TCP), 50000-50100/udp (WebRTC UDP). Config dans `livekit.yaml` à la racine.
 - **Variables d'env** : `.env` à la racine (gitignored), contient les credentials PostgreSQL et pgAdmin
 - **Init BDD** : `uafricas_backend/doc/bd/docker-init.sh` exécute `schema.sql` au premier lancement du conteneur
+
+### Docker Prod & Déploiement
+
+- **Docker Compose Prod** : `docker-compose.prod.yml` — 6 services : `postgres` (16-alpine), `backend` (Rust/Actix-Web, Dockerfile dans `uafricas_backend/`), `frontend` (Nuxt SSR, Dockerfile dans `uafricas_frontend/`), `nginx` (reverse proxy, ports 80/443), `livekit` (WebRTC), `adminer` (profil `tools`, optionnel). 2 volumes : `pgdata`, `uploads_data`.
+- **Nginx** : Config dans `nginx/nginx.conf`. Reverse proxy HTTPS (Let's Encrypt) vers frontend (port 3000) et backend (port 8080). Rate limiting API (30r/s) et auth (5r/s). Gzip, HSTS, fichiers uploadés servis directement. Domaine : `www.africans-world.org`.
+- **Script de déploiement** : `deploy.sh` — Déploiement sur VPS (`root@161.97.92.63:/opt/uafricas`) via SSH + Docker. Commandes disponibles :
+
+```bash
+./deploy.sh setup       # Installation initiale (Docker, Git, clone repo, génération .env avec secrets)
+./deploy.sh deploy      # Déploiement complet (git pull + build + restart containers)
+./deploy.sh update      # Mise à jour rapide (git pull + rebuild)
+./deploy.sh rebuild     # Rebuild sans cache (en cas de problème)
+./deploy.sh status      # État des containers, Git, disque, mémoire, health checks
+./deploy.sh logs [svc]  # Logs (backend, frontend, postgres, nginx, livekit)
+./deploy.sh restart [svc] # Redémarrer un ou tous les services
+./deploy.sh stop        # Arrêter tous les services
+./deploy.sh ssl         # Configurer Let's Encrypt pour africans-world.org
+./deploy.sh backup      # Sauvegarder la BDD PostgreSQL (dump local dans backups/)
+./deploy.sh connect     # SSH direct vers le serveur
+```
 
 ## LSP & Diagnostics
 
