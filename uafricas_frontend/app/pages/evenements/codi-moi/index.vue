@@ -309,6 +309,7 @@ import {
   PAYS_AFRICAINS,
   GROUPES_ETHNIQUES,
   type CodiMoiPostAPI,
+  type CommentaireAPI,
   type CategoriePost,
 } from '~/composables/useCodiMoi'
 
@@ -316,8 +317,7 @@ useHead({
   title: 'Codi-Moi - Codification des valeurs | UAfricas'
 })
 
-const router = useRouter()
-const { erreur: apiErreur, listerPosts, creerPost, reagir } = useCodiMoi()
+const { erreur: apiErreur, listerPosts, creerPost, reagir, listerCommentaires, creerCommentaire } = useCodiMoi()
 
 const breadcrumbs = [
   { label: 'Centre Culturel', to: '/africa-culture' },
@@ -329,13 +329,8 @@ const breadcrumbs = [
 const posts = ref<CodiMoiPostAPI[]>([])
 const totalPosts = ref(0)
 
-// Amis (sera remplacé par une API amis plus tard)
-const amis = ref([
-  { id: '23c32fc1-8cee-45f0-9ccd-b74629cdbf99', nom: 'Traoré', prenom: 'Fatou' },
-  { id: '37a5049d-4ece-43a1-bfd9-2b2478993a3d', nom: 'Koné', prenom: 'Ibrahim' },
-  { id: '5e5370f5-dcfb-4f6d-aa6c-752a9eb1299b', nom: 'Ndong', prenom: 'Marie' },
-  { id: 'e52995bb-06ca-4155-a638-cd4262a5ac4d', nom: 'Ouédraogo', prenom: 'Seydou' },
-])
+// Amis (pas d'API backend pour le moment)
+const amis = ref<{ id: string; nom: string; prenom: string }[]>([])
 
 // Stats calculées depuis les posts chargés
 const stats = computed(() => {
@@ -355,6 +350,11 @@ const stats = computed(() => {
 const popularPosts = computed(() => {
   return [...posts.value].sort((a, b) => b.nombre_likes - a.nombre_likes).slice(0, 5)
 })
+
+// Modale détail de post
+const selectedPost = ref<CodiMoiPostAPI | null>(null)
+const selectedPostCommentaires = ref<CommentaireAPI[]>([])
+const chargementCommentaires = ref(false)
 
 // UI state
 const showCreateModal = ref(false)
@@ -408,15 +408,65 @@ async function chargerPosts(append = false) {
   loading.value = false
 }
 
-// Actions
-const navigateToPost = (postId: string) => {
-  router.push(`/evenements/codi-moi/${postId}`)
+// Actions — Modale détail
+const openPostDetail = async (postId: string) => {
+  const post = posts.value.find(p => p.id === postId)
+  if (!post) return
+  selectedPost.value = post
+  chargementCommentaires.value = true
+  selectedPostCommentaires.value = []
+
+  const resultat = await listerCommentaires(postId)
+  if (resultat) {
+    selectedPostCommentaires.value = resultat.commentaires
+  }
+  chargementCommentaires.value = false
 }
 
+const closePostDetail = () => {
+  selectedPost.value = null
+  selectedPostCommentaires.value = []
+}
+
+const handleModalReaction = async (type: 'like' | 'dislike') => {
+  if (!selectedPost.value) return
+  const postId = selectedPost.value.id
+  const updatedPost = await reagir(postId, type)
+  if (updatedPost) {
+    selectedPost.value = updatedPost
+    const index = posts.value.findIndex(p => p.id === postId)
+    if (index !== -1) {
+      posts.value[index] = updatedPost
+    }
+  }
+}
+
+const handleModalComment = async (contenu: string) => {
+  if (!selectedPost.value) return
+  const commentaire = await creerCommentaire(selectedPost.value.id, contenu)
+  if (commentaire) {
+    selectedPostCommentaires.value.unshift(commentaire)
+    // Mettre à jour le compteur dans la liste et la modale
+    const found = posts.value.find(p => p.id === selectedPost.value?.id)
+    if (found) found.nombre_commentaires++
+    if (selectedPost.value) selectedPost.value.nombre_commentaires++
+  } else {
+    showNotification(apiErreur.value || 'Erreur lors de la publication du commentaire')
+  }
+}
+
+const handleModalShare = () => {
+  if (!selectedPost.value) return
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(`${window.location.origin}/evenements/codi-moi/${selectedPost.value.id}`)
+  }
+  showNotification('Lien copié dans le presse-papiers !')
+}
+
+// Actions — Carte (liste)
 const handleReaction = async (postId: string, type: 'like' | 'dislike') => {
   const updatedPost = await reagir(postId, type)
   if (updatedPost) {
-    // Mettre à jour le post dans la liste avec les nouvelles valeurs du serveur
     const index = posts.value.findIndex(p => p.id === postId)
     if (index !== -1) {
       posts.value[index] = updatedPost
