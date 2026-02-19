@@ -1,10 +1,11 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::DateTime;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
+use crate::services::audit;
 use crate::models::admin::annonce::{
     AdminAnnonceDetailResponse, AdminAnnonceListeResponse, AdminAnnonceMedia,
     AdminAnnoncePays, AdminAnnonceQueryParams, AjouterMediaAnnonceRequest,
@@ -235,6 +236,7 @@ pub async fn obtenir_annonce(
 /// POST /api/admin/annonces
 pub async fn creer_annonce(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerAnnonceRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -319,6 +321,21 @@ pub async fn creer_annonce(
 
     log::info!("Admin {} a cree l'annonce {} ({})", admin.id, titre, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "marketplace",
+        "annonce",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -329,6 +346,7 @@ pub async fn creer_annonce(
 /// PUT /api/admin/annonces/:id
 pub async fn modifier_annonce(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModifierAnnonceRequest>,
@@ -465,6 +483,21 @@ pub async fn modifier_annonce(
 
     log::info!("Admin {} a modifie l'annonce {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "marketplace",
+        "annonce",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -475,6 +508,7 @@ pub async fn modifier_annonce(
 /// PATCH /api/admin/annonces/:id/etat
 pub async fn changer_etat_annonce(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ChangerEtatAnnonceRequest>,
@@ -510,6 +544,21 @@ pub async fn changer_etat_annonce(
         etat
     );
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "marketplace",
+        "annonce",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id, "etat": etat })),
@@ -520,6 +569,7 @@ pub async fn changer_etat_annonce(
 /// DELETE /api/admin/annonces/:id
 pub async fn supprimer_annonce(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -540,6 +590,21 @@ pub async fn supprimer_annonce(
 
     log::info!("Admin {} a supprime l'annonce {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "marketplace",
+        "annonce",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -550,6 +615,7 @@ pub async fn supprimer_annonce(
 /// POST /api/admin/annonces/:id/pays
 pub async fn ajouter_pays_annonce(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<AjouterPaysAnnonceRequest>,
@@ -595,6 +661,21 @@ pub async fn ajouter_pays_annonce(
         annonce_id
     );
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "marketplace",
+        "annonce_pays",
+        Some(annonce_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "annonce_id": annonce_id, "pays_id": body.pays_id })),
@@ -605,6 +686,7 @@ pub async fn ajouter_pays_annonce(
 /// DELETE /api/admin/annonces/:id/pays/:pays_id
 pub async fn retirer_pays_annonce(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -630,6 +712,21 @@ pub async fn retirer_pays_annonce(
         annonce_id
     );
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "marketplace",
+        "annonce_pays",
+        Some(annonce_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -640,6 +737,7 @@ pub async fn retirer_pays_annonce(
 /// POST /api/admin/annonces/:id/medias
 pub async fn ajouter_media_annonce(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<AjouterMediaAnnonceRequest>,
@@ -684,6 +782,21 @@ pub async fn ajouter_media_annonce(
         annonce_id
     );
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "marketplace",
+        "annonce_media",
+        Some(media_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": media_id })),
@@ -694,6 +807,7 @@ pub async fn ajouter_media_annonce(
 /// DELETE /api/admin/annonces/:id/medias/:media_id
 pub async fn retirer_media_annonce(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -719,6 +833,21 @@ pub async fn retirer_media_annonce(
         annonce_id
     );
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "marketplace",
+        "annonce_media",
+        Some(media_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -729,6 +858,7 @@ pub async fn retirer_media_annonce(
 /// PUT /api/admin/annonces/:id/medias/ordre
 pub async fn reordonner_medias_annonce(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ReordonnerMediasRequest>,
@@ -752,6 +882,21 @@ pub async fn reordonner_medias_annonce(
         admin.id,
         annonce_id
     );
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "marketplace",
+        "annonce_media",
+        Some(annonce_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

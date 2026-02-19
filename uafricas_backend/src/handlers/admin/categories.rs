@@ -1,9 +1,10 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
+use crate::services::audit;
 use crate::models::admin::categorie::{
     AdminCategorieDetailResponse, AdminCategorieEnfant, AdminCategorieListeResponse,
     AdminCategorieQueryParams, CreerCategorieRequest, ModifierCategorieRequest,
@@ -139,6 +140,7 @@ pub async fn obtenir_categorie(
 /// POST /api/admin/categories
 pub async fn creer_categorie(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerCategorieRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -169,6 +171,21 @@ pub async fn creer_categorie(
 
     log::info!("Admin {} a cree la categorie {} ({})", admin.id, nom, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "shared",
+        "categorie",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -179,6 +196,7 @@ pub async fn creer_categorie(
 /// PUT /api/admin/categories/:id
 pub async fn modifier_categorie(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModifierCategorieRequest>,
@@ -254,6 +272,21 @@ pub async fn modifier_categorie(
 
     log::info!("Admin {} a modifie la categorie {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "shared",
+        "categorie",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -264,6 +297,7 @@ pub async fn modifier_categorie(
 /// DELETE /api/admin/categories/:id
 pub async fn supprimer_categorie(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -296,6 +330,21 @@ pub async fn supprimer_categorie(
     }
 
     log::info!("Admin {} a supprime la categorie {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "shared",
+        "categorie",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

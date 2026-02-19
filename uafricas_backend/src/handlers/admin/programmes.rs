@@ -1,9 +1,10 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
+use crate::services::audit;
 use crate::models::admin::programme::{
     AdminProgrammeDetailRow, AdminProgrammeListeResponse, AdminProgrammeQueryParams,
     ChangerEtatProgrammeRequest, CreerProgrammeRequest, ModifierProgrammeRequest,
@@ -191,6 +192,7 @@ pub async fn obtenir_programme(
 /// POST /api/admin/programmes
 pub async fn creer_programme(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerProgrammeRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -252,6 +254,21 @@ pub async fn creer_programme(
 
     log::info!("Admin {} a cree le programme {} ({})", admin.id, titre, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "exchange",
+        "programme",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -262,6 +279,7 @@ pub async fn creer_programme(
 /// PUT /api/admin/programmes/{id}
 pub async fn modifier_programme(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModifierProgrammeRequest>,
@@ -370,6 +388,21 @@ pub async fn modifier_programme(
 
     log::info!("Admin {} a modifie le programme {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "exchange",
+        "programme",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -380,6 +413,7 @@ pub async fn modifier_programme(
 /// PATCH /api/admin/programmes/{id}/etat
 pub async fn changer_etat_programme(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ChangerEtatProgrammeRequest>,
@@ -420,6 +454,21 @@ pub async fn changer_etat_programme(
 
     log::info!("Admin {} a change l'etat du programme {} vers {}", admin.id, id, etat);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "exchange",
+        "programme",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id, "etat": etat })),
@@ -430,6 +479,7 @@ pub async fn changer_etat_programme(
 /// DELETE /api/admin/programmes/{id}
 pub async fn supprimer_programme(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -449,6 +499,21 @@ pub async fn supprimer_programme(
     }
 
     log::info!("Admin {} a supprime le programme {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "exchange",
+        "programme",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

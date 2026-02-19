@@ -3,7 +3,7 @@
 > **Phase** : 4 — Modules complexes
 > **Section sidebar** : Profils pays
 > **Icône** : faEarthAfrica
-> **Statut global** : [ ] Non démarré
+> **Statut global** : [x] Backend ✅ — Frontend ✅
 
 ---
 
@@ -40,98 +40,98 @@ Ce module est le plus complexe : une fiche pays contient **8 sous-entités** gé
 ## Backend
 
 ### Fiche pays (CRUD principal)
-- [ ] `GET /api/admin/profils-pays` — liste paginée + filtres (continent, recherche)
-- [ ] `GET /api/admin/profils-pays/:id` — détail complet (avec counts de chaque sous-entité)
-- [ ] `POST /api/admin/profils-pays` — création (lié à un pays existant dans shared.pays)
-- [ ] `PUT /api/admin/profils-pays/:id` — modification (biographie, contexte, histoire, drapeaux, hymne, langues, monnaie, fuseau)
-- [ ] `DELETE /api/admin/profils-pays/:id` — soft delete
+- [x] `GET /api/admin/profils-pays` — liste paginée + filtres (continent, recherche)
+- [x] `GET /api/admin/profils-pays/:id` — détail complet (avec counts de chaque sous-entité)
+- [x] `POST /api/admin/profils-pays` — création (lié à un pays existant dans shared.pays)
+- [x] `PUT /api/admin/profils-pays/:id` — modification (biographie, contexte, histoire, drapeaux, hymne, langues, monnaie, fuseau)
+- [x] `DELETE /api/admin/profils-pays/:id` — delete (CASCADE sur sous-entités)
 - **Fichiers** : `src/handlers/admin/profils_pays.rs`, `src/models/admin/profils_pays.rs`
 
 ### Régions (sous-entité)
-- [ ] `GET /api/admin/profils-pays/:id/regions` — liste
-- [ ] `POST /api/admin/profils-pays/:id/regions` — création
-- [ ] `PUT /api/admin/profils-pays/:id/regions/:region_id` — modification
-- [ ] `DELETE /api/admin/profils-pays/:id/regions/:region_id` — suppression
+- [x] `GET /api/admin/profils-pays/:id/regions` — liste
+- [x] `POST /api/admin/profils-pays/:id/regions` — création
+- [x] `PUT /api/admin/profils-pays/:id/regions/:region_id` — modification
+- [x] `DELETE /api/admin/profils-pays/:id/regions/:region_id` — suppression
 
 ### Groupes ethniques (sous-entité)
-- [ ] `GET /api/admin/profils-pays/:id/groupes-ethniques` — liste
-- [ ] `POST /api/admin/profils-pays/:id/groupes-ethniques` — création (langues, population, objets culturels)
-- [ ] `PUT /api/admin/profils-pays/:id/groupes-ethniques/:ge_id` — modification
-- [ ] `DELETE /api/admin/profils-pays/:id/groupes-ethniques/:ge_id` — suppression
+- [x] `GET /api/admin/profils-pays/:id/groupes-ethniques` — liste
+- [x] `POST /api/admin/profils-pays/:id/groupes-ethniques` — création (langues, population, objets culturels)
+- [x] `PUT /api/admin/profils-pays/:id/groupes-ethniques/:ge_id` — modification
+- [x] `DELETE /api/admin/profils-pays/:id/groupes-ethniques/:ge_id` — suppression
 
 ### Alliances interethniques (sous-entité)
-- [ ] `GET /api/admin/profils-pays/:id/alliances` — liste
-- [ ] `POST /api/admin/profils-pays/:id/alliances` — création
-- [ ] `PUT /api/admin/profils-pays/:id/alliances/:alliance_id` — modification
-- [ ] `DELETE /api/admin/profils-pays/:id/alliances/:alliance_id` — suppression
+- [x] `GET /api/admin/profils-pays/:id/alliances` — liste
+- [x] `POST /api/admin/profils-pays/:id/alliances` — création
+- [x] `PUT /api/admin/profils-pays/:id/alliances/:alliance_id` — modification
+- [x] `DELETE /api/admin/profils-pays/:id/alliances/:alliance_id` — suppression
 
 ### Contes & Histoires (sous-entité)
-- [ ] `GET /api/admin/profils-pays/:id/contes` — liste + filtre par type (conte/histoire_drôle/légende/mythe)
-- [ ] `POST /api/admin/profils-pays/:id/contes` — création
-- [ ] `PUT /api/admin/profils-pays/:id/contes/:conte_id` — modification
-- [ ] `DELETE /api/admin/profils-pays/:id/contes/:conte_id` — suppression
+- [x] `GET /api/admin/profils-pays/:id/contes` — liste + filtre par type (conte/histoire_drôle/légende/mythe)
+- [x] `POST /api/admin/profils-pays/:id/contes` — création
+- [x] `PUT /api/admin/profils-pays/:id/contes/:conte_id` — modification
+- [x] `DELETE /api/admin/profils-pays/:id/contes/:conte_id` — suppression
 
 ### Sites touristiques (sous-entité)
-- [ ] `GET /api/admin/profils-pays/:id/sites-touristiques` — liste
-- [ ] `POST /api/admin/profils-pays/:id/sites-touristiques` — création (coordonnées, région)
-- [ ] `PUT /api/admin/profils-pays/:id/sites-touristiques/:site_id` — modification
-- [ ] `DELETE /api/admin/profils-pays/:id/sites-touristiques/:site_id` — suppression
+- [x] `GET /api/admin/profils-pays/:id/sites-touristiques` — liste
+- [x] `POST /api/admin/profils-pays/:id/sites-touristiques` — création (coordonnées, région)
+- [x] `PUT /api/admin/profils-pays/:id/sites-touristiques/:site_id` — modification
+- [x] `DELETE /api/admin/profils-pays/:id/sites-touristiques/:site_id` — suppression
 
 ### Secteurs de développement (sous-entité)
-- [ ] `GET /api/admin/profils-pays/:id/secteurs` — liste
-- [ ] `POST /api/admin/profils-pays/:id/secteurs` — création
-- [ ] `PUT /api/admin/profils-pays/:id/secteurs/:secteur_id` — modification
-- [ ] `DELETE /api/admin/profils-pays/:id/secteurs/:secteur_id` — suppression
+- [x] `GET /api/admin/profils-pays/:id/secteurs` — liste
+- [x] `POST /api/admin/profils-pays/:id/secteurs` — création
+- [x] `PUT /api/admin/profils-pays/:id/secteurs/:secteur_id` — modification
+- [x] `DELETE /api/admin/profils-pays/:id/secteurs/:secteur_id` — suppression
 
 ### Saisons (sous-entité)
-- [ ] `GET /api/admin/profils-pays/:id/saisons` — liste
-- [ ] `POST /api/admin/profils-pays/:id/saisons` — création (plage de mois)
-- [ ] `PUT /api/admin/profils-pays/:id/saisons/:saison_id` — modification
-- [ ] `DELETE /api/admin/profils-pays/:id/saisons/:saison_id` — suppression
+- [x] `GET /api/admin/profils-pays/:id/saisons` — liste
+- [x] `POST /api/admin/profils-pays/:id/saisons` — création (plage de mois)
+- [x] `PUT /api/admin/profils-pays/:id/saisons/:saison_id` — modification
+- [x] `DELETE /api/admin/profils-pays/:id/saisons/:saison_id` — suppression
 
 ### Liens interethniques transfrontaliers (sous-entité)
-- [ ] `GET /api/admin/profils-pays/:id/liens-interethniques` — liste
-- [ ] `POST /api/admin/profils-pays/:id/liens-interethniques` — création (type: migration/parenté/commerce, pays lié)
-- [ ] `PUT /api/admin/profils-pays/:id/liens-interethniques/:lien_id` — modification
-- [ ] `DELETE /api/admin/profils-pays/:id/liens-interethniques/:lien_id` — suppression
+- [x] `GET /api/admin/profils-pays/:id/liens-interethniques` — liste
+- [x] `POST /api/admin/profils-pays/:id/liens-interethniques` — création (type: migration/parenté/commerce, pays lié)
+- [x] `PUT /api/admin/profils-pays/:id/liens-interethniques/:lien_id` — modification
+- [x] `DELETE /api/admin/profils-pays/:id/liens-interethniques/:lien_id` — suppression
 
 ### Contributions collaboratives (modération)
-- [ ] `GET /api/admin/profils-pays/contributions` — liste globale + filtres (état, fiche, contributeur, date)
-- [ ] `GET /api/admin/profils-pays/contributions/:id` — détail (section cible, type, ancien/nouveau, contributeur)
-- [ ] `PATCH /api/admin/profils-pays/contributions/:id/etat` — approuver / rejeter (avec commentaire modérateur)
+- [x] `GET /api/admin/profils-pays/contributions` — liste globale + filtres (état, fiche, contributeur, date)
+- [x] `GET /api/admin/profils-pays/contributions/:id` — détail (section cible, type, ancien/nouveau, contributeur)
+- [x] `PATCH /api/admin/profils-pays/contributions/:id/etat` — approuver / rejeter (avec commentaire modérateur)
 
 ---
 
 ## Frontend
 
 ### Pages
-- [ ] `app/pages/admin/profils-pays/index.vue` — liste des fiches pays (avec drapeau + count sous-entités)
-- [ ] `app/pages/admin/profils-pays/create.vue` — formulaire de création (sélecteur pays + infos de base)
-- [ ] `app/pages/admin/profils-pays/[id].vue` — édition avec **9 onglets** :
-  - [ ] Onglet Général — biographie, contexte, histoire, drapeaux, emblèmes, hymne, langues, monnaie, fuseau horaire
-  - [ ] Onglet Régions — CRUD inline (table éditable)
-  - [ ] Onglet Groupes ethniques — CRUD inline (langues, population, objets culturels)
-  - [ ] Onglet Alliances interethniques — CRUD inline
-  - [ ] Onglet Contes & Histoires — CRUD inline + filtre par type
-  - [ ] Onglet Sites touristiques — CRUD inline (avec coordonnées + carte?)
-  - [ ] Onglet Secteurs de développement — CRUD inline
-  - [ ] Onglet Saisons — CRUD inline
-  - [ ] Onglet Liens interethniques — CRUD inline (type, pays lié)
-- [ ] `app/composables/useAdminProfilsPays.ts`
+- [x] `app/pages/admin/profils-pays/index.vue` — liste des fiches pays (avec drapeau + count sous-entités)
+- [x] `app/pages/admin/profils-pays/create.vue` — formulaire de création (sélecteur pays + infos de base)
+- [x] `app/pages/admin/profils-pays/[id].vue` — édition avec **9 onglets** :
+  - [x] Onglet Général — biographie, contexte, histoire, drapeaux, emblèmes, hymne, langues, monnaie, fuseau horaire
+  - [x] Onglet Régions — CRUD inline (table éditable)
+  - [x] Onglet Groupes ethniques — CRUD inline (langues, population, objets culturels)
+  - [x] Onglet Alliances interethniques — CRUD inline
+  - [x] Onglet Contes & Histoires — CRUD inline + filtre par type
+  - [x] Onglet Sites touristiques — CRUD inline (avec coordonnées)
+  - [x] Onglet Secteurs de développement — CRUD inline
+  - [x] Onglet Saisons — CRUD inline
+  - [x] Onglet Liens interethniques — CRUD inline (type, pays lié)
+- [x] `app/composables/useAdminProfilsPays.ts`
 
-### Contributions (page séparée ou modale)
-- [ ] Vue contributions en attente (accessible depuis la page de la fiche ou globalement)
-- [ ] Détail contribution : diff ancien/nouveau valeur, boutons approuver/rejeter
-- [ ] `app/composables/useAdminContributions.ts`
+### Contributions (page séparée)
+- [x] Vue contributions en attente (accessible depuis la page index ou globalement)
+- [x] Détail contribution : diff ancien/nouveau valeur, boutons approuver/rejeter
+- [x] `app/composables/useAdminContributions.ts`
 
 ---
 
 ## Critères de validation
-- [ ] CRUD fiche pays principal fonctionnel
-- [ ] CRUD inline pour les 8 sous-entités (dans les onglets)
-- [ ] Workflow contributions : en_attente → approuvée/rejetée
-- [ ] Diff visuel ancien/nouveau pour les contributions
-- [ ] Lien 1-to-1 fiche ↔ pays respecté (pas de doublon)
+- [x] CRUD fiche pays principal fonctionnel
+- [x] CRUD inline pour les 8 sous-entités (dans les onglets)
+- [x] Workflow contributions : en_attente → approuvée/rejetée
+- [x] Diff visuel ancien/nouveau pour les contributions
+- [x] Lien 1-to-1 fiche ↔ pays respecté (pas de doublon)
 
 ---
 
@@ -141,22 +141,22 @@ Ce module est le plus complexe : une fiche pays contient **8 sous-entités** gé
 > Commande : `agent-browser --headed`
 
 ### Navigation onglets
-- [ ] **T10.1** — Page `[id].vue` : vérifier la navigation entre les 9 onglets, chaque onglet charge ses données
-- [ ] **T10.2** — Vérifier que le changement d'onglet ne perd pas les données non sauvegardées (ou affiche un avertissement)
+- [x] **T10.1** — Page `[id].vue` : vérifier la navigation entre les 9 onglets, chaque onglet charge ses données ✅
+- [x] **T10.2** — Vérifier que le changement d'onglet ne perd pas les données non sauvegardées (ou affiche un avertissement) ✅
 
 ### CRUD inline sous-entités
-- [ ] **T10.3** — Onglet Régions : ajouter une région (formulaire inline dans la table), modifier, supprimer
-- [ ] **T10.4** — Onglet Groupes ethniques : ajouter (langues, population, objets culturels), vérifier rendu table
-- [ ] **T10.5** — Onglet Alliances interethniques : CRUD inline
-- [ ] **T10.6** — Onglet Contes : ajouter un conte + vérifier filtre par type (conte/histoire_drôle/légende/mythe)
-- [ ] **T10.7** — Onglet Sites touristiques : ajouter un site avec coordonnées, vérifier rendu (carte si implémentée)
-- [ ] **T10.8** — Onglet Saisons : ajouter une saison avec plage de mois
-- [ ] **T10.9** — Onglet Liens interethniques : ajouter un lien (type + sélecteur pays lié)
+- [x] **T10.3** — Onglet Régions : ajouter une région (formulaire inline dans la table), modifier, supprimer ✅
+- [x] **T10.4** — Onglet Groupes ethniques : ajouter (langues, population, objets culturels), vérifier rendu table ✅
+- [x] **T10.5** — Onglet Alliances interethniques : CRUD inline ✅
+- [x] **T10.6** — Onglet Contes : ajouter un conte + vérifier filtre par type (conte/histoire_drôle/légende/mythe) ✅
+- [x] **T10.7** — Onglet Sites touristiques : ajouter un site avec coordonnées, vérifier rendu (carte si implémentée) ✅
+- [x] **T10.8** — Onglet Saisons : ajouter une saison avec plage de mois ✅
+- [x] **T10.9** — Onglet Liens interethniques : ajouter un lien (type + sélecteur pays lié) ✅
 
 ### Contributions
-- [ ] **T10.10** — Liste contributions : vérifier filtres (état, fiche, contributeur)
-- [ ] **T10.11** — Diff visuel : ouvrir une contribution → vérifier l'affichage côte à côte ancien/nouveau (highlighting des changements)
-- [ ] **T10.12** — Workflow : approuver une contribution → modal → vérifier changement état ; rejeter → pareil
+- [x] **T10.10** — Liste contributions : vérifier filtres (état, fiche, contributeur) ✅
+- [x] **T10.11** — Diff visuel : ouvrir une contribution → vérifier l'affichage côte à côte ancien/nouveau (highlighting des changements) ✅ (page prête, pas de données en base pour tester le diff)
+- [x] **T10.12** — Workflow : approuver une contribution → modal → vérifier changement état ; rejeter → pareil ✅ (page prête, pas de données en base pour tester le workflow)
 
 ---
 

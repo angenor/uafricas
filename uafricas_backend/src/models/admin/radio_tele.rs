@@ -1,0 +1,437 @@
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
+use uuid::Uuid;
+
+// ── Colonnes SQL — Stations Radio ────────────────────────────
+
+pub const ADMIN_STATION_RADIO_LISTE_COLONNES: &str =
+    "s.id, s.nom, s.type_station::TEXT as type_station, s.genre, s.etat,
+     pays.nom AS pays_nom, s.ville, s.created_at";
+
+pub const ADMIN_STATION_RADIO_DETAIL_COLONNES: &str =
+    "s.id, s.nom, s.slug, s.description, s.stream_url, s.image_couverture_url,
+     s.genre, s.genres_liste, s.pays_id, pays.nom AS pays_nom, s.ville,
+     s.type_station::TEXT as type_station,
+     s.etat, s.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
+     s.created_at, s.updated_at";
+
+pub const STATION_RADIO_TRI_COLONNES: &[&str] = &[
+    "created_at", "nom", "type_station", "etat",
+];
+
+// ── Colonnes SQL — Chaînes TV ────────────────────────────────
+
+pub const ADMIN_CHAINE_TV_LISTE_COLONNES: &str =
+    "c.id, c.nom, c.categorie::TEXT as categorie, c.etat, c.est_en_direct,
+     pays.nom AS pays_nom, c.langue, c.created_at";
+
+pub const ADMIN_CHAINE_TV_DETAIL_COLONNES: &str =
+    "c.id, c.nom, c.slug, c.description, c.stream_url, c.image_couverture_url,
+     c.categorie::TEXT as categorie, c.pays_id, pays.nom AS pays_nom,
+     c.langue, c.est_en_direct,
+     c.etat, c.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
+     c.created_at, c.updated_at";
+
+pub const CHAINE_TV_TRI_COLONNES: &[&str] = &[
+    "created_at", "nom", "categorie", "etat",
+];
+
+// ── Colonnes SQL — Programmes Radio/Télé ─────────────────────
+
+pub const ADMIN_PROGRAMME_MEDIA_LISTE_COLONNES: &str =
+    "p.id, p.nom_emission, p.type::TEXT as type_programme, p.etat,
+     p.categorie_radio::TEXT as categorie_radio, p.langue,
+     pays.nom AS pays_nom, p.created_at";
+
+pub const ADMIN_PROGRAMME_MEDIA_DETAIL_COLONNES: &str =
+    "p.id, p.nom_emission, p.slug, p.type::TEXT as type_programme,
+     p.description, p.image_couverture_url, p.video_url,
+     p.info_animateur, p.info_producteur,
+     p.pays_id, pays.nom AS pays_nom, p.est_international, p.langue,
+     p.categorie_radio::TEXT as categorie_radio,
+     p.etat, p.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
+     p.created_at, p.updated_at";
+
+pub const PROGRAMME_MEDIA_TRI_COLONNES: &[&str] = &[
+    "created_at", "nom_emission", "type", "etat",
+];
+
+// ── Row & Response — Station Radio ───────────────────────────
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct AdminStationRadioListeResponse {
+    pub id: Uuid,
+    pub nom: String,
+    pub type_station: String,
+    pub genre: Option<String>,
+    pub etat: String,
+    pub pays_nom: Option<String>,
+    pub ville: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, FromRow)]
+pub struct AdminStationRadioDetailRow {
+    pub id: Uuid,
+    pub nom: String,
+    pub slug: Option<String>,
+    pub description: Option<String>,
+    pub stream_url: String,
+    pub image_couverture_url: Option<String>,
+    pub genre: Option<String>,
+    pub genres_liste: Vec<String>,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+    pub ville: Option<String>,
+    pub type_station: String,
+    pub etat: String,
+    pub cree_par: Uuid,
+    pub cree_par_nom: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdminStationRadioDetailResponse {
+    pub id: Uuid,
+    pub nom: String,
+    pub slug: Option<String>,
+    pub description: Option<String>,
+    pub stream_url: String,
+    pub image_couverture_url: Option<String>,
+    pub genre: Option<String>,
+    pub genres_liste: Vec<String>,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+    pub ville: Option<String>,
+    pub type_station: String,
+    pub etat: String,
+    pub cree_par: Uuid,
+    pub cree_par_nom: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl AdminStationRadioDetailRow {
+    pub fn to_response(&self) -> AdminStationRadioDetailResponse {
+        AdminStationRadioDetailResponse {
+            id: self.id,
+            nom: self.nom.clone(),
+            slug: self.slug.clone(),
+            description: self.description.clone(),
+            stream_url: self.stream_url.clone(),
+            image_couverture_url: self.image_couverture_url.clone(),
+            genre: self.genre.clone(),
+            genres_liste: self.genres_liste.clone(),
+            pays_id: self.pays_id,
+            pays_nom: self.pays_nom.clone(),
+            ville: self.ville.clone(),
+            type_station: self.type_station.clone(),
+            etat: self.etat.clone(),
+            cree_par: self.cree_par,
+            cree_par_nom: self.cree_par_nom.clone(),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+}
+
+// ── Row & Response — Chaîne TV ───────────────────────────────
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct AdminChaineTvListeResponse {
+    pub id: Uuid,
+    pub nom: String,
+    pub categorie: String,
+    pub etat: String,
+    pub est_en_direct: bool,
+    pub pays_nom: Option<String>,
+    pub langue: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, FromRow)]
+pub struct AdminChaineTvDetailRow {
+    pub id: Uuid,
+    pub nom: String,
+    pub slug: Option<String>,
+    pub description: Option<String>,
+    pub stream_url: String,
+    pub image_couverture_url: Option<String>,
+    pub categorie: String,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+    pub langue: String,
+    pub est_en_direct: bool,
+    pub etat: String,
+    pub cree_par: Uuid,
+    pub cree_par_nom: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdminChaineTvDetailResponse {
+    pub id: Uuid,
+    pub nom: String,
+    pub slug: Option<String>,
+    pub description: Option<String>,
+    pub stream_url: String,
+    pub image_couverture_url: Option<String>,
+    pub categorie: String,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+    pub langue: String,
+    pub est_en_direct: bool,
+    pub etat: String,
+    pub cree_par: Uuid,
+    pub cree_par_nom: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl AdminChaineTvDetailRow {
+    pub fn to_response(&self) -> AdminChaineTvDetailResponse {
+        AdminChaineTvDetailResponse {
+            id: self.id,
+            nom: self.nom.clone(),
+            slug: self.slug.clone(),
+            description: self.description.clone(),
+            stream_url: self.stream_url.clone(),
+            image_couverture_url: self.image_couverture_url.clone(),
+            categorie: self.categorie.clone(),
+            pays_id: self.pays_id,
+            pays_nom: self.pays_nom.clone(),
+            langue: self.langue.clone(),
+            est_en_direct: self.est_en_direct,
+            etat: self.etat.clone(),
+            cree_par: self.cree_par,
+            cree_par_nom: self.cree_par_nom.clone(),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+}
+
+// ── Row & Response — Programme Radio/Télé ────────────────────
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct AdminProgrammeMediaListeResponse {
+    pub id: Uuid,
+    pub nom_emission: String,
+    pub type_programme: String,
+    pub etat: String,
+    pub categorie_radio: Option<String>,
+    pub langue: String,
+    pub pays_nom: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, FromRow)]
+pub struct AdminProgrammeMediaDetailRow {
+    pub id: Uuid,
+    pub nom_emission: String,
+    pub slug: Option<String>,
+    pub type_programme: String,
+    pub description: String,
+    pub image_couverture_url: Option<String>,
+    pub video_url: Option<String>,
+    pub info_animateur: Option<String>,
+    pub info_producteur: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+    pub est_international: bool,
+    pub langue: String,
+    pub categorie_radio: Option<String>,
+    pub etat: String,
+    pub cree_par: Uuid,
+    pub cree_par_nom: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdminProgrammeMediaDetailResponse {
+    pub id: Uuid,
+    pub nom_emission: String,
+    pub slug: Option<String>,
+    pub type_programme: String,
+    pub description: String,
+    pub image_couverture_url: Option<String>,
+    pub video_url: Option<String>,
+    pub info_animateur: Option<String>,
+    pub info_producteur: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+    pub est_international: bool,
+    pub langue: String,
+    pub categorie_radio: Option<String>,
+    pub etat: String,
+    pub cree_par: Uuid,
+    pub cree_par_nom: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl AdminProgrammeMediaDetailRow {
+    pub fn to_response(&self) -> AdminProgrammeMediaDetailResponse {
+        AdminProgrammeMediaDetailResponse {
+            id: self.id,
+            nom_emission: self.nom_emission.clone(),
+            slug: self.slug.clone(),
+            type_programme: self.type_programme.clone(),
+            description: self.description.clone(),
+            image_couverture_url: self.image_couverture_url.clone(),
+            video_url: self.video_url.clone(),
+            info_animateur: self.info_animateur.clone(),
+            info_producteur: self.info_producteur.clone(),
+            pays_id: self.pays_id,
+            pays_nom: self.pays_nom.clone(),
+            est_international: self.est_international,
+            langue: self.langue.clone(),
+            categorie_radio: self.categorie_radio.clone(),
+            etat: self.etat.clone(),
+            cree_par: self.cree_par,
+            cree_par_nom: self.cree_par_nom.clone(),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+}
+
+// ── Requests DTO ─────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct CreerStationRadioRequest {
+    pub nom: String,
+    pub description: Option<String>,
+    pub stream_url: String,
+    pub image_couverture_url: Option<String>,
+    pub genre: Option<String>,
+    pub genres_liste: Option<Vec<String>>,
+    pub pays_id: Option<Uuid>,
+    pub ville: Option<String>,
+    pub type_station: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ModifierStationRadioRequest {
+    pub nom: Option<String>,
+    pub description: Option<String>,
+    pub stream_url: Option<String>,
+    pub image_couverture_url: Option<String>,
+    pub genre: Option<String>,
+    pub genres_liste: Option<Vec<String>>,
+    pub pays_id: Option<Uuid>,
+    pub ville: Option<String>,
+    pub type_station: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreerChaineTvRequest {
+    pub nom: String,
+    pub description: Option<String>,
+    pub stream_url: String,
+    pub image_couverture_url: Option<String>,
+    pub categorie: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub langue: Option<String>,
+    pub est_en_direct: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ModifierChaineTvRequest {
+    pub nom: Option<String>,
+    pub description: Option<String>,
+    pub stream_url: Option<String>,
+    pub image_couverture_url: Option<String>,
+    pub categorie: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub langue: Option<String>,
+    pub est_en_direct: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreerProgrammeMediaRequest {
+    pub nom_emission: String,
+    pub type_programme: String,
+    pub description: String,
+    pub image_couverture_url: Option<String>,
+    pub video_url: Option<String>,
+    pub info_animateur: Option<String>,
+    pub info_producteur: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub est_international: Option<bool>,
+    pub langue: Option<String>,
+    pub categorie_radio: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ModifierProgrammeMediaRequest {
+    pub nom_emission: Option<String>,
+    pub type_programme: Option<String>,
+    pub description: Option<String>,
+    pub image_couverture_url: Option<String>,
+    pub video_url: Option<String>,
+    pub info_animateur: Option<String>,
+    pub info_producteur: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub est_international: Option<bool>,
+    pub langue: Option<String>,
+    pub categorie_radio: Option<String>,
+}
+
+// ── Query Params ─────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct AdminStationRadioQueryParams {
+    pub page: Option<i64>,
+    pub par_page: Option<i64>,
+    pub tri_par: Option<String>,
+    pub tri_dir: Option<String>,
+    pub recherche: Option<String>,
+    pub type_station: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub etat: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminChaineTvQueryParams {
+    pub page: Option<i64>,
+    pub par_page: Option<i64>,
+    pub tri_par: Option<String>,
+    pub tri_dir: Option<String>,
+    pub recherche: Option<String>,
+    pub categorie: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub etat: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminProgrammeMediaQueryParams {
+    pub page: Option<i64>,
+    pub par_page: Option<i64>,
+    pub tri_par: Option<String>,
+    pub tri_dir: Option<String>,
+    pub recherche: Option<String>,
+    pub type_programme: Option<String>,
+    pub categorie_radio: Option<String>,
+    pub etat: Option<String>,
+}
+
+// ── Utilitaires ──────────────────────────────────────────────
+
+pub fn generer_slug(nom: &str) -> String {
+    nom.to_lowercase()
+        .replace(['é', 'è', 'ê', 'ë'], "e")
+        .replace(['à', 'â', 'ä'], "a")
+        .replace(['ù', 'û', 'ü'], "u")
+        .replace(['î', 'ï'], "i")
+        .replace(['ô', 'ö'], "o")
+        .replace('ç', "c")
+        .replace(|c: char| !c.is_alphanumeric() && c != ' ', "")
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join("-")
+}

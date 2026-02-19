@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::DateTime;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -11,6 +11,7 @@ use crate::models::admin::programmation::{
     ADMIN_PROG_DETAIL_COLONNES, ADMIN_PROG_LISTE_COLONNES, PROG_TRI_COLONNES,
 };
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
+use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -130,6 +131,7 @@ pub async fn obtenir_programmation(
 /// POST /api/admin/programmations
 pub async fn creer_programmation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerProgRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -182,6 +184,21 @@ pub async fn creer_programmation(
 
     log::info!("Admin {} a cree la programmation {} ({})", admin.id, titre, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "culture",
+        "programmation",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -192,6 +209,7 @@ pub async fn creer_programmation(
 /// PUT /api/admin/programmations/:id
 pub async fn modifier_programmation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModifierProgRequest>,
@@ -281,6 +299,21 @@ pub async fn modifier_programmation(
 
     log::info!("Admin {} a modifie la programmation {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "culture",
+        "programmation",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -291,6 +324,7 @@ pub async fn modifier_programmation(
 /// DELETE /api/admin/programmations/:id
 pub async fn supprimer_programmation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -309,6 +343,21 @@ pub async fn supprimer_programmation(
     }
 
     log::info!("Admin {} a supprime la programmation {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "culture",
+        "programmation",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

@@ -124,6 +124,11 @@ import {
   faArrowsRotate,
   faHourglassHalf,
   faDownload,
+  faPen,
+  faImages,
+  faFile,
+  faUserSecret,
+  faThumbsUp,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -267,6 +272,11 @@ library.add(
   faArrowsRotate,
   faHourglassHalf,
   faDownload,
+  faPen,
+  faImages,
+  faFile,
+  faUserSecret,
+  faThumbsUp,
   farCalendar,
   farClock,
   farHeart,

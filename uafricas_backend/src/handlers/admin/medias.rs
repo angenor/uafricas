@@ -1,9 +1,10 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
+use crate::services::audit;
 use crate::models::admin::media::{
     AdminMediaDetailRow, AdminMediaDetailResponse, AdminMediaListeResponse, AdminMediaQueryParams,
     ADMIN_MEDIA_DETAIL_COLONNES, ADMIN_MEDIA_LISTE_COLONNES, MEDIA_TRI_COLONNES,
@@ -130,6 +131,7 @@ pub async fn obtenir_media(
 /// DELETE /api/admin/medias/:id
 pub async fn supprimer_media(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -157,6 +159,21 @@ pub async fn supprimer_media(
     }
 
     log::info!("Admin {} a supprime le media {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "shared",
+        "media",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

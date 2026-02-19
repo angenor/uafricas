@@ -10,20 +10,20 @@ Phase 1 ─ Données fondamentales                              [x] TERMINÉ
   ├── 01 Utilisateurs & Accès (IAM)      ✅ TERMINÉ
   └── 02 Référentiels (shared)           ✅ TERMINÉ
 
-Phase 2 ─ Modules métier (parallélisable)                    [~] EN COURS
-  ├── 03 Marché Africain       ┐ en cours (parallèle)
-  ├── 04 Programmes d'échange  │ en cours (parallèle)
-  ├── 05 Innovation            │ en cours (parallèle)
-  └── 06 Culture               ┘ ✅ TERMINÉ
+Phase 2 ─ Modules métier (parallélisable)                    [x] TERMINÉ
+  ├── 03 Marché Africain       ✅ TERMINÉ
+  ├── 04 Programmes d'échange  ✅ TERMINÉ
+  ├── 05 Innovation            ✅ TERMINÉ
+  └── 06 Culture               ✅ TERMINÉ
 
-Phase 3 ─ Fonctionnalités avancées (parallélisable)          [ ] NON DÉMARRÉ
-  ├── 07 AfroLang              ┐
-  ├── 08 Médias & Contenus     │ indépendants entre eux
-  └── 09 Gouvernance           ┘
+Phase 3 ─ Fonctionnalités avancées (parallélisable)          [x] TERMINÉ
+  ├── 07 AfroLang              ✅ TERMINÉ
+  ├── 08 Médias & Contenus     ✅ TERMINÉ
+  └── 09 Gouvernance           ✅ TERMINÉ
 
-Phase 4 ─ Modules complexes                                  [ ] NON DÉMARRÉ
-  ├── 10 Profils pays          ← le plus volumineux (31 tâches backend)
-  └── 11 Audit & Logs          ← dépend de tous les modules (02–10)
+Phase 4 ─ Modules complexes                                  [x] TERMINÉ
+  ├── 10 Profils pays          ✅ TERMINÉ (40 endpoints, 9 onglets, contributions)
+  └── 11 Audit & Logs          ✅ TERMINÉ
 
 Phase 5 ─ Finalisation                                       [ ] NON DÉMARRÉ
   └── 12 Dashboard             ← agrège les données de tous les modules

@@ -1,9 +1,10 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
+use crate::services::audit;
 use crate::models::admin::tag::{
     AdminTagDetailResponse, AdminTagListeResponse, AdminTagQueryParams,
     CreerTagRequest, ModifierTagRequest, ADMIN_TAG_LISTE_COLONNES, TAG_TRI_COLONNES,
@@ -103,6 +104,7 @@ pub async fn obtenir_tag(
 /// POST /api/admin/tags
 pub async fn creer_tag(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerTagRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -125,6 +127,21 @@ pub async fn creer_tag(
 
     log::info!("Admin {} a cree le tag {} ({})", admin.id, nom, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "shared",
+        "tag",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -135,6 +152,7 @@ pub async fn creer_tag(
 /// PUT /api/admin/tags/:id
 pub async fn modifier_tag(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModifierTagRequest>,
@@ -168,6 +186,21 @@ pub async fn modifier_tag(
 
     log::info!("Admin {} a modifie le tag {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "shared",
+        "tag",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -178,6 +211,7 @@ pub async fn modifier_tag(
 /// DELETE /api/admin/tags/:id
 pub async fn supprimer_tag(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -194,6 +228,21 @@ pub async fn supprimer_tag(
     }
 
     log::info!("Admin {} a supprime le tag {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "shared",
+        "tag",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

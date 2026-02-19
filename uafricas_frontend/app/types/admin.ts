@@ -1122,3 +1122,783 @@ export interface CreerCodimoiForm {
   image_arriere_plan_url: string
   etat: string
 }
+
+// ── Gouvernance — Factcheck ──────────────────────────────────
+
+export interface AdminFactcheck {
+  id: string
+  contenu: string
+  verdict: string | null
+  etat: string
+  nombre_likes: number
+  nombre_dislikes: number
+  pays_nom: string | null
+  auteur_nom: string
+  auteur_prenom: string
+  created_at: string
+}
+
+export interface AdminFactcheckCommentaire {
+  id: string
+  parent_id: string | null
+  contenu: string
+  type_commentaire: string
+  cree_par: string
+  auteur_nom: string
+  nombre_likes: number
+  created_at: string
+  supprime: boolean
+  enfants: AdminFactcheckCommentaire[]
+}
+
+export interface AdminFactcheckDetail {
+  id: string
+  contenu: string
+  source_originale: string | null
+  verdict: string | null
+  image_couverture_url: string | null
+  couleur_fond: string | null
+  etat: string
+  nombre_likes: number
+  nombre_dislikes: number
+  pays_id: string | null
+  cree_par: string
+  cree_par_nom: string
+  created_at: string
+  updated_at: string
+  pays_nom: string | null
+  nombre_commentaires: number
+}
+
+export interface CreerFactcheckForm {
+  contenu: string
+  source_originale: string
+  verdict: string
+  image_couverture_url: string
+  couleur_fond: string
+  pays_id: string
+  etat: string
+}
+
+export interface AdminFactcheckReactions {
+  nombre_likes: number
+  nombre_dislikes: number
+}
+
+// ── Gouvernance — Bad Habits (Mauvaises pratiques) ───────────
+
+export interface AdminBadHabit {
+  id: string
+  titre: string
+  slug: string | null
+  categorie_probleme: string
+  gravite: string
+  etat: string
+  nombre_soutiens: number
+  publication_anonyme: boolean
+  pays_nom: string | null
+  auteur_nom: string
+  auteur_prenom: string
+  created_at: string
+}
+
+export interface AdminBadHabitMedia {
+  id: string
+  media_url: string
+  type_mime: string | null
+  ordre: number | null
+  created_at: string
+}
+
+export interface AdminBadHabitDetail {
+  id: string
+  titre: string
+  slug: string | null
+  description_generale: string
+  details_problematique: string
+  categorie_probleme: string
+  categorie_probleme_detail: string | null
+  gravite: string
+  preuves_temoignages: string | null
+  solutions_proposees: string | null
+  publication_anonyme: boolean
+  geolocalisation_autorisee: boolean
+  longitude: number | null
+  latitude: number | null
+  region: string | null
+  ville_quartier_zone: string | null
+  etat: string
+  nombre_soutiens: number
+  pays_id: string | null
+  cree_par: string
+  created_at: string
+  updated_at: string
+  pays_nom: string | null
+  auteur_nom: string
+  auteur_prenom: string
+}
+
+export interface CreerBadHabitForm {
+  titre: string
+  categorie_probleme: string
+  categorie_probleme_detail: string
+  gravite: string
+  description_generale: string
+  details_problematique: string
+  preuves_temoignages: string
+  solutions_proposees: string
+  publication_anonyme: boolean
+  geolocalisation_autorisee: boolean
+  longitude: number | null
+  latitude: number | null
+  pays_id: string
+  region: string
+  ville_quartier_zone: string
+  etat: string
+}
+
+// ── Gouvernance — Idea Forces ─────────────────────────────────
+
+export interface AdminIdeaForce {
+  id: string
+  titre: string
+  slug: string | null
+  categorie_proposition: string
+  urgence: string
+  etat: string
+  nombre_soutiens: number
+  pays_nom: string | null
+  auteur_nom: string
+  auteur_prenom: string
+  created_at: string
+}
+
+export interface AdminIdeaForceMedia {
+  id: string
+  media_url: string
+  type_mime: string | null
+  ordre: number | null
+  created_at: string
+}
+
+export interface AdminIdeaForceDetail {
+  id: string
+  titre: string
+  slug: string | null
+  description_generale: string
+  details_proposition: string
+  categorie_proposition: string
+  categorie_proposition_detail: string | null
+  urgence: string
+  plan_implementation: string | null
+  ressources_necessaires: string | null
+  impact_attendu: string | null
+  etat: string
+  nombre_soutiens: number
+  region: string | null
+  ville_quartier_zone: string | null
+  pays_id: string | null
+  cree_par: string
+  created_at: string
+  updated_at: string
+  pays_nom: string | null
+  auteur_nom: string
+  auteur_prenom: string
+}
+
+export interface CreerIdeaForceForm {
+  titre: string
+  description_generale: string
+  details_proposition: string
+  categorie_proposition: string
+  categorie_proposition_detail: string
+  urgence: string
+  plan_implementation: string
+  ressources_necessaires: string
+  impact_attendu: string
+  pays_id: string
+  region: string
+  ville_quartier_zone: string
+  etat: string
+}
+
+// ── Médias & Contenus — Radio & TV ───────────────────────────
+
+export interface AdminStationRadio {
+  id: string
+  nom: string
+  type_station: string
+  genre: string | null
+  etat: string
+  pays_nom: string | null
+  ville: string | null
+  created_at: string
+}
+
+export interface AdminStationRadioDetail {
+  id: string
+  nom: string
+  slug: string | null
+  description: string | null
+  stream_url: string
+  image_couverture_url: string | null
+  genre: string | null
+  genres_liste: string[]
+  pays_id: string | null
+  pays_nom: string | null
+  ville: string | null
+  type_station: string
+  etat: string
+  cree_par: string
+  cree_par_nom: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreerStationRadioForm {
+  nom: string
+  description: string
+  stream_url: string
+  image_couverture_url: string
+  genre: string
+  genres_liste: string[]
+  pays_id: string
+  ville: string
+  type_station: string
+}
+
+export interface AdminChaineTv {
+  id: string
+  nom: string
+  categorie: string
+  etat: string
+  est_en_direct: boolean
+  pays_nom: string | null
+  langue: string
+  created_at: string
+}
+
+export interface AdminChaineTvDetail {
+  id: string
+  nom: string
+  slug: string | null
+  description: string | null
+  stream_url: string
+  image_couverture_url: string | null
+  categorie: string
+  pays_id: string | null
+  pays_nom: string | null
+  langue: string
+  est_en_direct: boolean
+  etat: string
+  cree_par: string
+  cree_par_nom: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreerChaineTvForm {
+  nom: string
+  description: string
+  stream_url: string
+  image_couverture_url: string
+  categorie: string
+  pays_id: string
+  langue: string
+  est_en_direct: boolean
+}
+
+export interface AdminProgrammeMedia {
+  id: string
+  nom_emission: string
+  type_programme: string
+  etat: string
+  categorie_radio: string | null
+  langue: string
+  pays_nom: string | null
+  created_at: string
+}
+
+export interface AdminProgrammeMediaDetail {
+  id: string
+  nom_emission: string
+  slug: string | null
+  type_programme: string
+  description: string
+  image_couverture_url: string | null
+  video_url: string | null
+  info_animateur: string | null
+  info_producteur: string | null
+  pays_id: string | null
+  pays_nom: string | null
+  est_international: boolean
+  langue: string
+  categorie_radio: string | null
+  etat: string
+  cree_par: string
+  cree_par_nom: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreerProgrammeMediaForm {
+  nom_emission: string
+  type_programme: string
+  description: string
+  image_couverture_url: string
+  video_url: string
+  info_animateur: string
+  info_producteur: string
+  pays_id: string
+  est_international: boolean
+  langue: string
+  categorie_radio: string
+}
+
+// ── Médias & Contenus — Événements ───────────────────────────
+
+export interface AdminEvenement {
+  id: string
+  titre: string
+  format: string
+  etat: string
+  date_heure_debut: string
+  date_heure_fin: string | null
+  nombre_places: number | null
+  pays_nom: string | null
+  ville: string | null
+  cree_par_nom: string | null
+  created_at: string
+}
+
+export interface AdminEvenementDetail {
+  id: string
+  titre: string
+  slug: string | null
+  description: string
+  type_evenement: string | null
+  pays_id: string | null
+  pays_nom: string | null
+  ville: string | null
+  adresse: string | null
+  date_heure_debut: string
+  date_heure_fin: string | null
+  image_couverture_url: string | null
+  format: string
+  lien_en_ligne: string | null
+  langue: string
+  nombre_places: number | null
+  etat: string
+  cree_par: string
+  cree_par_nom: string | null
+  nombre_inscriptions: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CreerEvenementAdminForm {
+  titre: string
+  description: string
+  type_evenement: string
+  pays_id: string
+  ville: string
+  adresse: string
+  date_heure_debut: string
+  date_heure_fin: string
+  image_couverture_url: string
+  format: string
+  lien_en_ligne: string
+  langue: string
+  nombre_places: number | null
+}
+
+export interface AdminEvenementInscription {
+  id: string
+  utilisateur_id: string
+  nom: string
+  prenom: string
+  email: string
+  statut: string
+  created_at: string
+}
+
+export interface AdminEvenementInscriptionStats {
+  total: number
+  inscrits: number
+  confirmes: number
+  annules: number
+  presents: number
+  absents: number
+}
+
+// ── Médias & Contenus — MOOC ─────────────────────────────────
+
+export interface AdminMooc {
+  id: string
+  titre: string
+  format: string
+  etat: string
+  date_heure_debut: string
+  date_heure_fin: string | null
+  nombre_places: number | null
+  pays_nom: string | null
+  cree_par_nom: string | null
+  created_at: string
+}
+
+export interface AdminMoocDetail {
+  id: string
+  titre: string
+  slug: string | null
+  description: string
+  type_formation: string | null
+  pays_id: string | null
+  pays_nom: string | null
+  ville: string | null
+  date_heure_debut: string
+  date_heure_fin: string | null
+  image_couverture_url: string | null
+  format: string
+  lien_en_ligne: string | null
+  langue: string
+  nombre_places: number | null
+  prerequis: string | null
+  etat: string
+  cree_par: string
+  cree_par_nom: string | null
+  nombre_inscriptions: number
+  progression_moyenne: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CreerMoocForm {
+  titre: string
+  description: string
+  type_formation: string
+  pays_id: string
+  ville: string
+  date_heure_debut: string
+  date_heure_fin: string
+  image_couverture_url: string
+  format: string
+  lien_en_ligne: string
+  langue: string
+  nombre_places: number | null
+  prerequis: string
+}
+
+export interface AdminMoocInscription {
+  id: string
+  utilisateur_id: string
+  nom: string
+  prenom: string
+  email: string
+  statut: string
+  progression: number
+  created_at: string
+}
+
+export interface AdminMoocInscriptionStats {
+  total: number
+  inscrits: number
+  en_cours: number
+  completes: number
+  abandonnes: number
+  progression_moyenne: number
+}
+
+// ── Médias & Contenus — Bibliothèque (Livres) ───────────────
+
+export interface AdminLivre {
+  id: string
+  titre: string
+  type_document: string
+  acces: string
+  etat: string
+  info_auteur: string
+  nombre_vues: number
+  nombre_telechargements: number
+  categorie_nom: string | null
+  cree_par_nom: string | null
+  created_at: string
+}
+
+export interface AdminLivreDetail {
+  id: string
+  titre: string
+  slug: string | null
+  description: string
+  image_couverture_url: string | null
+  document_pdf_url: string
+  type_document: string
+  categorie_id: string | null
+  categorie_nom: string | null
+  acces: string
+  info_auteur: string
+  date_publication: string | null
+  rapport_auteur: string | null
+  condition_diffusion: string | null
+  acceptation_diffusion: boolean
+  langue: string | null
+  nombre_pages: number | null
+  isbn: string | null
+  nombre_telechargements: number
+  nombre_vues: number
+  etat: string
+  cree_par: string
+  cree_par_nom: string | null
+  tags: AdminLivreTag[]
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminLivreTag {
+  tag_id: string
+  tag_nom: string
+}
+
+export interface CreerLivreAdminForm {
+  titre: string
+  description: string
+  image_couverture_url: string
+  document_pdf_url: string
+  type_document: string
+  categorie_id: string
+  acces: string
+  info_auteur: string
+  date_publication: string
+  rapport_auteur: string
+  condition_diffusion: string
+  acceptation_diffusion: boolean
+  langue: string
+  nombre_pages: number | null
+  isbn: string
+}
+
+// ── Profils Pays (Country Profile) ──────────────────────────
+
+export interface AdminFichePay {
+  id: string
+  pays_id: string
+  pays_nom: string
+  pays_code: string | null
+  image_drapeau_url: string | null
+  slogan: string | null
+  population: number | null
+  superficie_km2: number | null
+  cree_par_nom: string | null
+  created_at: string
+}
+
+export interface AdminFichePayDetail {
+  id: string
+  pays_id: string
+  pays_nom: string
+  pays_code: string | null
+  image_couverture_url: string | null
+  slogan: string | null
+  superficie_km2: number | null
+  population: number | null
+  biographie: string | null
+  contexte: string | null
+  contexte_historique: string | null
+  image_drapeau_url: string | null
+  image_embleme_url: string | null
+  image_devise_url: string | null
+  hymne_national: string | null
+  langue_officielle: string | null
+  langues_populaires: string | null
+  monnaie: string | null
+  fuseau_horaire: string | null
+  cree_par: string
+  cree_par_nom: string | null
+  nb_regions: number
+  nb_groupes_ethniques: number
+  nb_alliances: number
+  nb_contes: number
+  nb_sites_touristiques: number
+  nb_secteurs: number
+  nb_saisons: number
+  nb_liens_interethniques: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CreerFichePayForm {
+  pays_id: string
+  slogan: string
+  superficie_km2: number | null
+  population: number | null
+  biographie: string
+  contexte: string
+  contexte_historique: string
+  image_couverture_url: string
+  image_drapeau_url: string
+  image_embleme_url: string
+  image_devise_url: string
+  hymne_national: string
+  langue_officielle: string
+  langues_populaires: string
+  monnaie: string
+  fuseau_horaire: string
+}
+
+// ── Profils Pays — Sous-entites ─────────────────────────────
+
+export interface AdminRegion {
+  id: string
+  fiche_pays_id: string
+  nom: string
+  chef_lieu: string | null
+  description: string | null
+  population: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminGroupeEthnique {
+  id: string
+  fiche_pays_id: string
+  nom: string
+  description: string | null
+  objets_culturels_distinctifs: string | null
+  population_estimee: string | null
+  langues: string | null
+  region_id: string | null
+  region_nom: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminAlliance {
+  id: string
+  fiche_pays_id: string
+  nom: string
+  description: string | null
+  groupes_impliques: string | null
+  signification: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminConte {
+  id: string
+  fiche_pays_id: string
+  titre: string
+  contenu: string | null
+  type_conte: string | null
+  groupe_ethnique_id: string | null
+  groupe_ethnique_nom: string | null
+  image_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminSiteTouristique {
+  id: string
+  fiche_pays_id: string
+  nom: string
+  description: string | null
+  image_url: string | null
+  longitude: number | null
+  latitude: number | null
+  region_id: string | null
+  region_nom: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminSecteur {
+  id: string
+  fiche_pays_id: string
+  nom: string
+  description: string | null
+  created_at: string
+}
+
+export interface AdminSaison {
+  id: string
+  fiche_pays_id: string
+  nom: string
+  description: string | null
+  mois_debut: number | null
+  mois_fin: number | null
+  created_at: string
+}
+
+export interface AdminLienInterethnique {
+  id: string
+  fiche_pays_id: string
+  pays_lie_id: string | null
+  pays_lie_nom: string | null
+  description: string | null
+  type_lien: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ── Profils Pays — Contributions ────────────────────────────
+
+export interface AdminContribution {
+  id: string
+  fiche_pays_id: string
+  pays_nom: string
+  section: string
+  type_contribution: string
+  etat: string
+  contributeur_nom: string | null
+  traite_par_nom: string | null
+  created_at: string
+  traite_at: string | null
+}
+
+export interface AdminContributionDetail {
+  id: string
+  fiche_pays_id: string
+  pays_nom: string
+  section: string
+  type_contribution: string
+  ancienne_valeur: string | null
+  nouvelle_valeur: string | null
+  justification: string | null
+  etat: string
+  cree_par: string
+  contributeur_nom: string | null
+  traite_par: string | null
+  traite_par_nom: string | null
+  note_moderation: string | null
+  traite_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ── Audit & Logs ────────────────────────────────────────────
+
+export interface AdminAudit {
+  id: string
+  action: string
+  schema_name: string
+  table_name: string
+  record_id: string | null
+  ip_address: string | null
+  created_at: string
+  utilisateur_nom: string | null
+  utilisateur_id: string | null
+}
+
+export interface AdminAuditDetail {
+  id: string
+  action: string
+  schema_name: string
+  table_name: string
+  record_id: string | null
+  ancien_etat: Record<string, any> | null
+  nouvel_etat: Record<string, any> | null
+  ip_address: string | null
+  user_agent: string | null
+  created_at: string
+  utilisateur_id: string | null
+  utilisateur_nom: string | null
+  utilisateur_email: string | null
+}

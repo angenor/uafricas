@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -11,6 +11,7 @@ use crate::models::admin::centre_culturel::{
     ADMIN_CENTRE_DETAIL_COLONNES, ADMIN_CENTRE_LISTE_COLONNES, CENTRE_TRI_COLONNES,
 };
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
+use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -134,6 +135,7 @@ pub async fn obtenir_centre(
 /// POST /api/admin/centres-culturels
 pub async fn creer_centre(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerCentreRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -168,6 +170,21 @@ pub async fn creer_centre(
 
     log::info!("Admin {} a cree le centre culturel {} ({})", admin.id, nom, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "culture",
+        "centre_culturel",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -178,6 +195,7 @@ pub async fn creer_centre(
 /// PUT /api/admin/centres-culturels/:id
 pub async fn modifier_centre(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModifierCentreRequest>,
@@ -255,6 +273,21 @@ pub async fn modifier_centre(
 
     log::info!("Admin {} a modifie le centre culturel {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "culture",
+        "centre_culturel",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -265,6 +298,7 @@ pub async fn modifier_centre(
 /// DELETE /api/admin/centres-culturels/:id (soft delete via actif=false)
 pub async fn supprimer_centre(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -283,6 +317,21 @@ pub async fn supprimer_centre(
     }
 
     log::info!("Admin {} a supprime le centre culturel {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "culture",
+        "centre_culturel",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
@@ -323,6 +372,7 @@ pub async fn lister_membres(
 /// POST /api/admin/centres-culturels/:id/membres
 pub async fn ajouter_membre(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<AjouterMembreRequest>,
@@ -360,6 +410,21 @@ pub async fn ajouter_membre(
 
     log::info!("Admin {} a ajoute le membre {} au centre {}", admin.id, body.utilisateur_id, centre_id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "culture",
+        "membre_centre_culturel",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -370,6 +435,7 @@ pub async fn ajouter_membre(
 /// PUT /api/admin/centres-culturels/:centre_id/membres/:membre_id
 pub async fn modifier_membre(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
     body: web::Json<ModifierMembreRequest>,
@@ -401,6 +467,21 @@ pub async fn modifier_membre(
 
     log::info!("Admin {} a modifie le role du membre {} dans le centre {}", admin.id, membre_id, centre_id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "culture",
+        "membre_centre_culturel",
+        Some(membre_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": membre_id })),
@@ -411,6 +492,7 @@ pub async fn modifier_membre(
 /// DELETE /api/admin/centres-culturels/:centre_id/membres/:membre_id
 pub async fn retirer_membre(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -430,6 +512,21 @@ pub async fn retirer_membre(
     }
 
     log::info!("Admin {} a retire le membre {} du centre {}", admin.id, membre_id, centre_id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "culture",
+        "membre_centre_culturel",
+        Some(membre_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

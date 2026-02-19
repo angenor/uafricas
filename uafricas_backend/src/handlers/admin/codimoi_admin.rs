@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -12,6 +12,7 @@ use crate::models::admin::codimoi_admin::{
     ADMIN_CODIMOI_DETAIL_COLONNES, ADMIN_CODIMOI_LISTE_COLONNES, CODIMOI_TRI_COLONNES,
 };
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
+use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -171,6 +172,7 @@ pub async fn obtenir_codimoi(
 /// POST /api/admin/codimoi
 pub async fn creer_codimoi(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerCodimoiRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -225,6 +227,21 @@ pub async fn creer_codimoi(
 
     log::info!("Admin {} a cree le post Codi-Moi {} ({})", admin.id, body.type_codimoi, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "culture",
+        "codimoi",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -235,6 +252,7 @@ pub async fn creer_codimoi(
 /// PUT /api/admin/codimoi/:id
 pub async fn modifier_codimoi(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModifierCodimoiRequest>,
@@ -320,6 +338,21 @@ pub async fn modifier_codimoi(
 
     log::info!("Admin {} a modifie le post Codi-Moi {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "culture",
+        "codimoi",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -330,6 +363,7 @@ pub async fn modifier_codimoi(
 /// DELETE /api/admin/codimoi/:id (soft delete)
 pub async fn supprimer_codimoi(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -350,6 +384,21 @@ pub async fn supprimer_codimoi(
 
     log::info!("Admin {} a supprime le post Codi-Moi {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "culture",
+        "codimoi",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -360,6 +409,7 @@ pub async fn supprimer_codimoi(
 /// POST /api/admin/codimoi/:id/tags
 pub async fn ajouter_tag(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<AjouterTagRequest>,
@@ -384,6 +434,21 @@ pub async fn ajouter_tag(
 
     log::info!("Admin {} a ajoute le tag {} au post {}", admin.id, body.tag_id, codimoi_id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "culture",
+        "codimoi_tag",
+        Some(codimoi_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -394,6 +459,7 @@ pub async fn ajouter_tag(
 /// DELETE /api/admin/codimoi/:codimoi_id/tags/:tag_id
 pub async fn retirer_tag(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -413,6 +479,21 @@ pub async fn retirer_tag(
     }
 
     log::info!("Admin {} a retire le tag {} du post {}", admin.id, tag_id, codimoi_id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "culture",
+        "codimoi_tag",
+        Some(codimoi_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
@@ -456,6 +537,7 @@ pub async fn lister_commentaires(
 /// DELETE /api/admin/codimoi/:codimoi_id/commentaires/:commentaire_id
 pub async fn supprimer_commentaire(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -476,6 +558,21 @@ pub async fn supprimer_commentaire(
     }
 
     log::info!("Admin {} a supprime le commentaire {} du post {}", admin.id, commentaire_id, codimoi_id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "culture",
+        "codimoi_commentaire",
+        Some(commentaire_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

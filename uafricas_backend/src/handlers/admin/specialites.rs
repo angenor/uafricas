@@ -1,9 +1,10 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
+use crate::services::audit;
 use crate::models::admin::specialite::{
     AdminSpecialiteDetailResponse, AdminSpecialiteListeResponse, AdminSpecialiteQueryParams,
     CreerSpecialiteRequest, ModifierSpecialiteRequest, ADMIN_SPECIALITE_LISTE_COLONNES,
@@ -108,6 +109,7 @@ pub async fn obtenir_specialite(
 /// POST /api/admin/specialites
 pub async fn creer_specialite(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerSpecialiteRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -130,6 +132,21 @@ pub async fn creer_specialite(
 
     log::info!("Admin {} a cree la specialite {} ({})", admin.id, nom, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "shared",
+        "specialite_bibliotheque",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -140,6 +157,7 @@ pub async fn creer_specialite(
 /// PUT /api/admin/specialites/:id
 pub async fn modifier_specialite(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModifierSpecialiteRequest>,
@@ -173,6 +191,21 @@ pub async fn modifier_specialite(
 
     log::info!("Admin {} a modifie la specialite {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "shared",
+        "specialite_bibliotheque",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -183,6 +216,7 @@ pub async fn modifier_specialite(
 /// DELETE /api/admin/specialites/:id
 pub async fn supprimer_specialite(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -199,6 +233,21 @@ pub async fn supprimer_specialite(
     }
 
     log::info!("Admin {} a supprime la specialite {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "shared",
+        "specialite_bibliotheque",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -6,6 +6,7 @@ use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
 use crate::models::admin::partenariat::*;
 use crate::models::pagination::PaginationParams;
+use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -172,6 +173,7 @@ pub async fn obtenir_partenariat(
 
 pub async fn creer_partenariat(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerPartenariatRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -205,6 +207,21 @@ pub async fn creer_partenariat(
 
     log::info!("Admin {} a cree le partenariat {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "iam",
+        "partenariat",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -218,6 +235,7 @@ pub async fn creer_partenariat(
 
 pub async fn modifier_partenariat(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
     body: web::Json<ModifierPartenariatRequest>,
@@ -282,6 +300,21 @@ pub async fn modifier_partenariat(
 
     log::info!("Admin {} a modifie le partenariat {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "iam",
+        "partenariat",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -295,6 +328,7 @@ pub async fn modifier_partenariat(
 
 pub async fn supprimer_partenariat(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -312,6 +346,21 @@ pub async fn supprimer_partenariat(
     }
 
     log::info!("Admin {} a supprime le partenariat {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "iam",
+        "partenariat",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

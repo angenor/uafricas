@@ -1,9 +1,10 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
+use crate::services::audit;
 use crate::models::admin::candidature::{
     AdminCandidatureDetailRow, AdminCandidatureListeResponse, AdminCandidatureQueryParams,
     ChangerStatutCandidatureRequest, ADMIN_CANDIDATURE_DETAIL_COLONNES,
@@ -157,6 +158,7 @@ pub async fn obtenir_candidature(
 /// PATCH /api/admin/candidatures/{id}/etat
 pub async fn changer_statut_candidature(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ChangerStatutCandidatureRequest>,
@@ -191,6 +193,21 @@ pub async fn changer_statut_candidature(
     }
 
     log::info!("Admin {} a change le statut de la candidature {} vers {}", admin.id, id, statut);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "exchange",
+        "candidature",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,

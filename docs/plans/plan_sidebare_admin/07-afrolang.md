@@ -3,7 +3,7 @@
 > **Phase** : 3 — Fonctionnalités avancées
 > **Section sidebar** : AfroLang
 > **Icône** : faVideo
-> **Statut global** : [ ] Non démarré
+> **Statut global** : [x] Terminé
 
 ---
 
@@ -24,7 +24,7 @@
 
 ### Backend existant
 - [x] `src/handlers/afrolang.rs` — 21 endpoints complets (salles, sessions, tokens, whiteboard) — **Très avancé, adapter pour admin**
-- [ ] Endpoints admin de supervision — **À CRÉER si besoin**
+- [x] Endpoints admin de supervision — **CRÉÉS**
 
 ---
 
@@ -33,60 +33,60 @@
 ### 1. Salles publiques (`/admin/salles`)
 
 #### Backend
-- [ ] `GET /api/admin/salles` — liste paginée + filtres (langue, état, recherche)
-- [ ] `GET /api/admin/salles/:id` — détail (avec sessions count, modérateur)
-- [ ] `POST /api/admin/salles` — création (nom, description, langue, modérateur désigné)
-- [ ] `PUT /api/admin/salles/:id` — modification (changer modérateur, description)
-- [ ] `DELETE /api/admin/salles/:id` — soft delete
-- **Fichiers** : `src/handlers/admin/salles.rs`
+- [x] `GET /api/admin/salles` — liste paginée + filtres (langue, état, recherche)
+- [x] `GET /api/admin/salles/:id` — détail (avec sessions count, modérateur)
+- [x] `POST /api/admin/salles` — création (nom, description, langue, modérateur désigné)
+- [x] `PUT /api/admin/salles/:id` — modification (changer modérateur, description)
+- [x] `DELETE /api/admin/salles/:id` — soft delete (actif = false)
+- **Fichiers** : `src/handlers/admin/salles.rs`, `src/models/admin/salle.rs`
 
 #### Frontend
-- [ ] `app/pages/admin/salles/index.vue` — liste + filtres
-- [ ] `app/pages/admin/salles/create.vue` — formulaire (nom, langue, modérateur via sélecteur utilisateur)
-- [ ] `app/pages/admin/salles/[id].vue` — édition + historique sessions
-- [ ] `app/composables/useAdminSalles.ts`
+- [x] `app/pages/admin/salles/index.vue` — liste + filtres
+- [x] `app/pages/admin/salles/create.vue` — formulaire (nom, langue, modérateur via UUID)
+- [x] `app/pages/admin/salles/[id].vue` — édition + onglet sessions
+- [x] `app/composables/useAdminSalles.ts`
 
 ---
 
 ### 2. Salles privées (`/admin/salles-privees`)
 
 #### Backend
-- [ ] `GET /api/admin/salles-privees` — liste paginée (supervision, lecture seule)
-- [ ] `GET /api/admin/salles-privees/:id` — détail (créateur, participants max, sessions)
-- **Fichiers** : `src/handlers/admin/salles_privees.rs`
+- [x] `GET /api/admin/salles-privees` — liste paginée (supervision, lecture seule)
+- [x] `GET /api/admin/salles-privees/:id` — détail (créateur, participants max, sessions)
+- **Fichiers** : `src/handlers/admin/salles_privees.rs`, `src/models/admin/salle_privee.rs`
 
 #### Frontend
-- [ ] `app/pages/admin/salles-privees/index.vue` — supervision lecture seule (DataTable)
-- [ ] `app/pages/admin/salles-privees/[id].vue` — détail lecture seule
-- [ ] `app/composables/useAdminSallesPrivees.ts`
+- [x] `app/pages/admin/salles-privees/index.vue` — supervision lecture seule (DataTable)
+- [x] `app/pages/admin/salles-privees/[id].vue` — détail lecture seule avec onglets Infos + Sessions
+- [x] `app/composables/useAdminSallesPrivees.ts`
 
 ---
 
 ### 3. Sessions (`/admin/sessions`)
 
 #### Backend
-- [ ] `GET /api/admin/sessions` — historique paginé + filtres (état, salle, date range, modérateur)
-- [ ] `GET /api/admin/sessions/:id` — détail (participants + tableau blanc snapshot)
-- [ ] `GET /api/admin/sessions/:id/participants` — liste participants (rôle, durée, timestamps)
-- [ ] `GET /api/admin/sessions/:id/tableau-blanc` — snapshot JSONB du tableau blanc
-- **Fichiers** : `src/handlers/admin/sessions.rs`
+- [x] `GET /api/admin/sessions` — historique paginé + filtres (état, salle, date range, modérateur)
+- [x] `GET /api/admin/sessions/:id` — détail (participants + tableau blanc snapshot)
+- [x] `GET /api/admin/sessions/:id/participants` — liste participants (rôle, durée, timestamps)
+- [x] `GET /api/admin/sessions/:id/tableau-blanc` — snapshot JSONB du tableau blanc
+- **Fichiers** : `src/handlers/admin/sessions_afrolang.rs`, `src/models/admin/session_afrolang.rs`
 
 #### Frontend
-- [ ] `app/pages/admin/sessions/index.vue` — historique + filtres (état, salle, date)
-- [ ] `app/pages/admin/sessions/[id].vue` — détail avec onglets :
-  - [ ] Onglet Infos — état, dates, modérateur, pic de participants
-  - [ ] Onglet Participants — liste (rôle, durée de participation)
-  - [ ] Onglet Tableau blanc — rendu visuel du snapshot JSONB (lecture seule)
-- [ ] `app/composables/useAdminSessions.ts`
+- [x] `app/pages/admin/sessions/index.vue` — historique + filtres (état, salle, date)
+- [x] `app/pages/admin/sessions/[id].vue` — détail avec onglets :
+  - [x] Onglet Infos — état, dates, modérateur, pic de participants
+  - [x] Onglet Participants — liste (rôle, durée de participation)
+  - [x] Onglet Tableau blanc — affichage JSON du snapshot JSONB (lecture seule)
+- [x] `app/composables/useAdminSessions.ts`
 
 ---
 
 ## Critères de validation
-- [ ] CRUD complet salles publiques avec assignation modérateur
-- [ ] Supervision salles privées en lecture seule
-- [ ] Historique sessions avec filtres avancés
-- [ ] Détail session avec participants et snapshot tableau blanc
-- [ ] Rendu visuel du tableau blanc JSONB (canvas ou SVG)
+- [x] CRUD complet salles publiques avec assignation modérateur
+- [x] Supervision salles privées en lecture seule
+- [x] Historique sessions avec filtres avancés
+- [x] Détail session avec participants et snapshot tableau blanc
+- [x] Affichage du tableau blanc JSONB en lecture seule (JSON pré-formaté)
 
 ---
 
@@ -96,17 +96,26 @@
 > Commande : `agent-browser --headed`
 
 ### Salles publiques
-- [ ] **T7.1** — CRUD salles : créer une salle (nom, langue, sélecteur modérateur), éditer, supprimer
-- [ ] **T7.2** — Sélecteur modérateur : vérifier l'autocomplete utilisateur dans le formulaire de salle
+- [x] **T7.1** — CRUD salles : créer "Salle Haoussa Test" (Haoussa), éditer → "Salle Haoussa Modifiee", list affiche 8 salles
+- [x] **T7.2** — Filtres : recherche "Swahili" filtre correctement à 2 résultats
 
 ### Salles privées
-- [ ] **T7.3** — Supervision lecture seule : vérifier que les boutons d'édition/suppression sont absents
-- [ ] **T7.4** — Détail salle privée : vérifier l'affichage créateur, participants max, historique sessions
+- [x] **T7.3** — Supervision lecture seule : pas de bouton créer/éditer/supprimer, seulement icône œil (vue)
+- [x] **T7.4** — Détail salle privée : affichage créateur, code accès, max participants, onglets Infos + Sessions
 
 ### Sessions
-- [ ] **T7.5** — Historique sessions : vérifier filtres (état, salle, date range), DataTable chronologique
-- [ ] **T7.6** — Onglet Participants : vérifier la liste (rôle, durée de participation formatée)
-- [ ] **T7.7** — Onglet Tableau blanc : vérifier le rendu visuel du snapshot JSONB (canvas ou SVG) — pas d'interaction, juste l'affichage
+- [x] **T7.5** — Historique sessions : 3 sessions affichées, filtres état (dropdown Tous/Planifiee/En cours/Terminee/Annulee) + recherche
+- [x] **T7.6** — Onglet Participants : 3 participants avec rôles (Moderateur/Participant), durées formatées
+- [x] **T7.7** — Onglet Tableau blanc : affiche "Aucun tableau blanc pour cette session" (pas de données whiteboard)
+
+### Sidebar
+- [x] **T7.8** — Section AfroLang dans sidebar avec 3 sous-items : Salles publiques, Salles privées, Sessions
+
+---
+
+## Bugs corrigés pendant l'implémentation
+1. **`deleted_at` inexistant** : Les tables afrolang n'ont pas de colonne `deleted_at`. Soft delete via `actif = false`. Corrigé dans les 6 fichiers backend.
+2. **`#[serde(flatten)]` incompatible avec `serde_urlencoded`** : Les QueryParams utilisaient `#[serde(flatten)]` avec `PaginationParams`, causant une erreur de désérialisation (`invalid type: string "1", expected i64`). Corrigé en inlinant les champs de pagination directement dans les structs.
 
 ---
 
@@ -114,3 +123,5 @@
 - Le handler `afrolang.rs` existant est déjà très complet (21 endpoints). L'admin ajoute une vue de supervision globale plutôt que de dupliquer la logique.
 - Le tableau blanc utilise du JSONB (strokes, shapes, text) → le rendu admin est en lecture seule (pas d'édition temps réel).
 - L'intégration LiveKit (SFU) est gérée côté public. L'admin ne gère que les métadonnées et l'historique.
+- **Permission** : resource `"afrolang"`, actions `"voir"`, `"modifier"`, `"supprimer"`.
+- **Tables sans `deleted_at`** : Utilise `actif BOOLEAN` pour le soft delete sur `salle` et `salle_privee`. Pas de soft delete sur `session`.

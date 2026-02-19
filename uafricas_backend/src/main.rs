@@ -12,6 +12,7 @@ mod jwt;
 mod middleware;
 mod models;
 mod routes;
+pub mod services;
 
 #[derive(Serialize)]
 struct HealthResponse {

@@ -1,9 +1,10 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
+use crate::services::audit;
 use crate::models::admin::domaine::{
     AdminDomaineDetailResponse, AdminDomaineListeResponse, AdminDomaineQueryParams,
     CreerDomaineRequest, ModifierDomaineRequest, ADMIN_DOMAINE_DETAIL_COLONNES,
@@ -98,6 +99,7 @@ pub async fn obtenir_domaine(
 /// POST /api/admin/domaines
 pub async fn creer_domaine(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerDomaineRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -124,6 +126,21 @@ pub async fn creer_domaine(
 
     log::info!("Admin {} a cree le domaine {} ({})", admin.id, nom, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "shared",
+        "domaine",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -134,6 +151,7 @@ pub async fn creer_domaine(
 /// PUT /api/admin/domaines/:id
 pub async fn modifier_domaine(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModifierDomaineRequest>,
@@ -197,6 +215,21 @@ pub async fn modifier_domaine(
 
     log::info!("Admin {} a modifie le domaine {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "shared",
+        "domaine",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -207,6 +240,7 @@ pub async fn modifier_domaine(
 /// DELETE /api/admin/domaines/:id
 pub async fn supprimer_domaine(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -226,6 +260,21 @@ pub async fn supprimer_domaine(
     }
 
     log::info!("Admin {} a supprime le domaine {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "shared",
+        "domaine",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -6,6 +6,7 @@ use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
 use crate::models::admin::utilisateur::*;
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
+use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -274,6 +275,7 @@ pub async fn obtenir_utilisateur(
 
 pub async fn creer_utilisateur(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerUtilisateurRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -348,6 +350,21 @@ pub async fn creer_utilisateur(
 
     log::info!("Admin {} a cree l'utilisateur {}", admin.id, utilisateur_id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "iam",
+        "utilisateur",
+        Some(utilisateur_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": utilisateur_id })),
@@ -361,6 +378,7 @@ pub async fn creer_utilisateur(
 
 pub async fn modifier_utilisateur(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
     body: web::Json<ModifierUtilisateurRequest>,
@@ -472,6 +490,21 @@ pub async fn modifier_utilisateur(
 
     log::info!("Admin {} a modifie l'utilisateur {}", admin.id, utilisateur_id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "iam",
+        "utilisateur",
+        Some(utilisateur_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": utilisateur_id })),
@@ -485,6 +518,7 @@ pub async fn modifier_utilisateur(
 
 pub async fn changer_etat_utilisateur(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
     body: web::Json<ChangerEtatRequest>,
@@ -517,6 +551,21 @@ pub async fn changer_etat_utilisateur(
 
     log::info!("Admin {} a change l'etat de {} a {}", admin.id, utilisateur_id, etat);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "iam",
+        "utilisateur",
+        Some(utilisateur_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": utilisateur_id, "etat": etat })),
@@ -530,6 +579,7 @@ pub async fn changer_etat_utilisateur(
 
 pub async fn supprimer_utilisateur(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -551,6 +601,21 @@ pub async fn supprimer_utilisateur(
 
     log::info!("Admin {} a supprime l'utilisateur {}", admin.id, utilisateur_id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "iam",
+        "utilisateur",
+        Some(utilisateur_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -564,6 +629,7 @@ pub async fn supprimer_utilisateur(
 
 pub async fn assigner_role(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
     body: web::Json<AssignerRoleRequest>,
@@ -609,6 +675,21 @@ pub async fn assigner_role(
 
     log::info!("Admin {} a assigne le role {} a {}", admin.id, body.role_id, utilisateur_id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "iam",
+        "utilisateur_role",
+        Some(utilisateur_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({
@@ -625,6 +706,7 @@ pub async fn assigner_role(
 
 pub async fn retirer_role(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -646,6 +728,21 @@ pub async fn retirer_role(
 
     log::info!("Admin {} a retire le role {} de {}", admin.id, role_id, utilisateur_id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "iam",
+        "utilisateur_role",
+        Some(utilisateur_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -659,6 +756,7 @@ pub async fn retirer_role(
 
 pub async fn assigner_specialite(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
     body: web::Json<AssignerSpecialiteRequest>,
@@ -679,6 +777,21 @@ pub async fn assigner_specialite(
 
     log::info!("Admin {} a assigne la specialite {} a {}", admin.id, body.specialite_id, utilisateur_id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "iam",
+        "utilisateur_specialite",
+        Some(utilisateur_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({
@@ -695,6 +808,7 @@ pub async fn assigner_specialite(
 
 pub async fn retirer_specialite(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -714,6 +828,21 @@ pub async fn retirer_specialite(
         return Err(ApiErreur::NonTrouve("Specialite non assignee a cet utilisateur".into()));
     }
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "iam",
+        "utilisateur_specialite",
+        Some(utilisateur_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -727,6 +856,7 @@ pub async fn retirer_specialite(
 
 pub async fn ajouter_permission_specifique(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
     body: web::Json<AjouterPermissionRequest>,
@@ -752,6 +882,21 @@ pub async fn ajouter_permission_specifique(
     .await?
     .ok_or_else(|| ApiErreur::Conflit("Cette permission specifique existe deja".into()))?;
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "iam",
+        "permission_specifique",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -765,6 +910,7 @@ pub async fn ajouter_permission_specifique(
 
 pub async fn retirer_permission_specifique(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -783,6 +929,21 @@ pub async fn retirer_permission_specifique(
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Permission specifique non trouvee".into()));
     }
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "iam",
+        "permission_specifique",
+        Some(perm_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

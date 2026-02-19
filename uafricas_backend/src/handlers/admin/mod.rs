@@ -18,6 +18,16 @@ pub mod africantives_admin;
 pub mod centres_culturels;
 pub mod programmations;
 pub mod codimoi_admin;
+pub mod salles;
+pub mod salles_privees;
+pub mod sessions_afrolang;
+pub mod gouvernance;
+pub mod radio_tele;
+pub mod evenements;
+pub mod mooc;
+pub mod livres;
+pub mod audit;
+pub mod profils_pays;
 
 use actix_web::HttpResponse;
 use serde::Serialize;

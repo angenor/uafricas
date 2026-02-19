@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -11,6 +11,7 @@ use crate::models::admin::projet::{
     ADMIN_PROJET_LISTE_COLONNES, PROJET_JOINS, PROJET_TRI_COLONNES,
 };
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
+use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -190,6 +191,7 @@ pub async fn obtenir_projet(
 /// POST /api/admin/projets
 pub async fn creer_projet(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerProjetRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -267,6 +269,21 @@ pub async fn creer_projet(
 
     log::info!("Admin {} a cree le projet {} ({})", admin.id, titre, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "innovation",
+        "projet",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -277,6 +294,7 @@ pub async fn creer_projet(
 /// PUT /api/admin/projets/:id
 pub async fn modifier_projet(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModifierProjetRequest>,
@@ -384,6 +402,21 @@ pub async fn modifier_projet(
 
     log::info!("Admin {} a modifie le projet {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "innovation",
+        "projet",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -394,6 +427,7 @@ pub async fn modifier_projet(
 /// PATCH /api/admin/projets/:id/etat
 pub async fn changer_etat_projet(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ChangerEtatProjetRequest>,
@@ -430,6 +464,21 @@ pub async fn changer_etat_projet(
         etat
     );
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "innovation",
+        "projet",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id, "etat": etat })),
@@ -440,6 +489,7 @@ pub async fn changer_etat_projet(
 /// DELETE /api/admin/projets/:id
 pub async fn supprimer_projet(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -460,6 +510,21 @@ pub async fn supprimer_projet(
 
     log::info!("Admin {} a supprime le projet {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "innovation",
+        "projet",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -470,6 +535,7 @@ pub async fn supprimer_projet(
 /// POST /api/admin/projets/:id/documents
 pub async fn ajouter_document_projet(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<AjouterDocumentProjetRequest>,
@@ -517,6 +583,21 @@ pub async fn ajouter_document_projet(
         projet_id
     );
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "innovation",
+        "projet_document",
+        Some(doc_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": doc_id })),
@@ -527,6 +608,7 @@ pub async fn ajouter_document_projet(
 /// DELETE /api/admin/projets/:id/documents/:doc_id
 pub async fn retirer_document_projet(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -551,6 +633,21 @@ pub async fn retirer_document_projet(
         doc_id,
         projet_id
     );
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "innovation",
+        "projet_document",
+        Some(doc_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

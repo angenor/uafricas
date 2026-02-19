@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -6,6 +6,7 @@ use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
 use crate::models::admin::role::*;
 use crate::models::pagination::PaginationParams;
+use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -159,6 +160,7 @@ pub async fn obtenir_role(
 
 pub async fn creer_role(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerRoleRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -197,6 +199,21 @@ pub async fn creer_role(
 
     log::info!("Admin {} a cree le role {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "iam",
+        "role",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id, "slug": slug })),
@@ -210,6 +227,7 @@ pub async fn creer_role(
 
 pub async fn modifier_role(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
     body: web::Json<ModifierRoleRequest>,
@@ -268,6 +286,21 @@ pub async fn modifier_role(
 
     log::info!("Admin {} a modifie le role {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "iam",
+        "role",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -281,6 +314,7 @@ pub async fn modifier_role(
 
 pub async fn supprimer_role(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -322,6 +356,21 @@ pub async fn supprimer_role(
 
     log::info!("Admin {} a supprime le role {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "iam",
+        "role",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -335,6 +384,7 @@ pub async fn supprimer_role(
 
 pub async fn assigner_permissions(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
     body: web::Json<AssignerPermissionsRequest>,
@@ -380,6 +430,21 @@ pub async fn assigner_permissions(
         role_id
     );
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "iam",
+        "role_permission",
+        Some(role_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({
@@ -396,6 +461,7 @@ pub async fn assigner_permissions(
 
 pub async fn retirer_permission(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -414,6 +480,21 @@ pub async fn retirer_permission(
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Assignation non trouvee".into()));
     }
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "iam",
+        "role_permission",
+        Some(role_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

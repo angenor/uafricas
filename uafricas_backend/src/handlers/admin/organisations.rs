@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -6,6 +6,7 @@ use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
 use crate::models::admin::organisation::*;
 use crate::models::pagination::PaginationParams;
+use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -215,6 +216,7 @@ pub async fn obtenir_organisation(
 
 pub async fn creer_organisation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerOrganisationRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -250,6 +252,21 @@ pub async fn creer_organisation(
 
     log::info!("Admin {} a cree l'organisation {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "iam",
+        "organisation",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -263,6 +280,7 @@ pub async fn creer_organisation(
 
 pub async fn modifier_organisation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
     body: web::Json<ModifierOrganisationRequest>,
@@ -334,6 +352,21 @@ pub async fn modifier_organisation(
 
     log::info!("Admin {} a modifie l'organisation {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "iam",
+        "organisation",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -347,6 +380,7 @@ pub async fn modifier_organisation(
 
 pub async fn supprimer_organisation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -367,6 +401,21 @@ pub async fn supprimer_organisation(
     }
 
     log::info!("Admin {} a supprime l'organisation {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "iam",
+        "organisation",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,

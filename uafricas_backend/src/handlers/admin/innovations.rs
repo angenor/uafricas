@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -11,6 +11,7 @@ use crate::models::admin::innovation::{
     ADMIN_INNOVATION_LISTE_COLONNES, INNOVATION_JOINS, INNOVATION_TRI_COLONNES,
 };
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
+use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -189,6 +190,7 @@ pub async fn obtenir_innovation(
 /// POST /api/admin/innovations
 pub async fn creer_innovation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     body: web::Json<CreerInnovationRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -234,6 +236,21 @@ pub async fn creer_innovation(
 
     log::info!("Admin {} a cree l'innovation {} ({})", admin.id, titre, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "innovation",
+        "innovation",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -244,6 +261,7 @@ pub async fn creer_innovation(
 /// PUT /api/admin/innovations/:id
 pub async fn modifier_innovation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModifierInnovationRequest>,
@@ -333,6 +351,21 @@ pub async fn modifier_innovation(
 
     log::info!("Admin {} a modifie l'innovation {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "innovation",
+        "innovation",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id })),
@@ -343,6 +376,7 @@ pub async fn modifier_innovation(
 /// PATCH /api/admin/innovations/:id/etat
 pub async fn changer_etat_innovation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ChangerEtatInnovationRequest>,
@@ -378,6 +412,21 @@ pub async fn changer_etat_innovation(
         etat
     );
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "innovation",
+        "innovation",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id, "etat": etat })),
@@ -388,6 +437,7 @@ pub async fn changer_etat_innovation(
 /// DELETE /api/admin/innovations/:id
 pub async fn supprimer_innovation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -408,6 +458,21 @@ pub async fn supprimer_innovation(
 
     log::info!("Admin {} a supprime l'innovation {}", admin.id, id);
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "innovation",
+        "innovation",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
@@ -418,6 +483,7 @@ pub async fn supprimer_innovation(
 /// POST /api/admin/innovations/:id/medias
 pub async fn ajouter_media_innovation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<AjouterMediaInnovationRequest>,
@@ -461,6 +527,21 @@ pub async fn ajouter_media_innovation(
         innovation_id
     );
 
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "innovation",
+        "innovation_media",
+        Some(media_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": media_id })),
@@ -471,6 +552,7 @@ pub async fn ajouter_media_innovation(
 /// DELETE /api/admin/innovations/:id/medias/:media_id
 pub async fn retirer_media_innovation(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -495,6 +577,21 @@ pub async fn retirer_media_innovation(
         media_id,
         innovation_id
     );
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "innovation",
+        "innovation_media",
+        Some(media_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
