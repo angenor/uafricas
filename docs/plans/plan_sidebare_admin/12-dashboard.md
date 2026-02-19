@@ -3,7 +3,7 @@
 > **Phase** : 5 — Finalisation
 > **Section sidebar** : Dashboard
 > **Icône** : faChartLine
-> **Statut global** : [ ] Non démarré
+> **Statut global** : [x] Backend + Frontend terminés
 
 ---
 
@@ -37,7 +37,7 @@
 ## Backend
 
 ### B12.1 — Endpoint de statistiques globales
-- [ ] `GET /api/admin/dashboard/stats` — retourne un objet agrégé :
+- [x] `GET /api/admin/dashboard/stats` — retourne un objet agrégé :
   ```
   {
     utilisateurs: { total, actifs, en_attente, suspendus },
@@ -64,11 +64,11 @@
 - **Fichiers** : `src/handlers/admin/dashboard.rs`
 
 ### B12.2 — Endpoint d'activité récente
-- [ ] `GET /api/admin/dashboard/activite-recente` — dernières 20 actions d'audit (timeline)
+- [x] `GET /api/admin/dashboard/activite-recente` — dernières 20 actions d'audit (timeline)
 - **Fichiers** : `src/handlers/admin/dashboard.rs`
 
 ### B12.3 — Endpoint de tendances
-- [ ] `GET /api/admin/dashboard/tendances?periode=7j|30j|90j` — données pour graphiques :
+- [x] `GET /api/admin/dashboard/tendances?periode=7j|30j|90j` — données pour graphiques :
   - Inscriptions utilisateurs par jour
   - Annonces publiées par jour
   - Événements par mois
@@ -80,40 +80,40 @@
 ## Frontend
 
 ### Page principale
-- [ ] `app/pages/admin/index.vue` — refonte complète :
+- [x] `app/pages/admin/index.vue` — refonte complète :
 
   **Section 1 : KPIs principaux** (grille de AdminStatsCard)
-  - [ ] Utilisateurs actifs
-  - [ ] Annonces publiées
-  - [ ] Événements à venir
-  - [ ] Projets en revue
-  - [ ] Candidatures en attente
-  - [ ] Contributions pays en attente
-  - [ ] Sessions AfroLang en cours
-  - [ ] MOOC en cours
+  - [x] Utilisateurs actifs
+  - [x] Annonces publiées
+  - [x] Événements à venir
+  - [x] Projets en revue
+  - [x] Candidatures en attente
+  - [x] Contributions pays en attente
+  - [x] Sessions AfroLang en cours
+  - [x] MOOC en cours
 
   **Section 2 : Graphiques de tendances**
-  - [ ] Courbe inscriptions utilisateurs (7j/30j/90j)
-  - [ ] Barres annonces par état
-  - [ ] Camembert factchecks par verdict
-  - [ ] Barres mauvaises pratiques par gravité
+  - [x] Courbe inscriptions utilisateurs (7j/30j/90j)
+  - [x] Barres annonces par état
+  - [x] Camembert factchecks par verdict
+  - [x] Barres mauvaises pratiques par gravité
 
   **Section 3 : Activité récente** (timeline)
-  - [ ] Fil chronologique des dernières actions (audit_log simplifié)
-  - [ ] Icônes par type d'action, liens vers les entités
+  - [x] Fil chronologique des dernières actions (audit_log simplifié)
+  - [x] Icônes par type d'action, liens vers les entités
 
   **Section 4 : Alertes & Actions rapides**
-  - [ ] Candidatures en attente de revue (lien direct)
-  - [ ] Contributions pays en attente de modération (lien direct)
-  - [ ] Annonces en attente de publication (lien direct)
+  - [x] Candidatures en attente de revue (lien direct)
+  - [x] Contributions pays en attente de modération (lien direct)
+  - [x] Annonces en attente de publication (lien direct)
 
 ### Composables
-- [ ] `app/composables/useAdminDashboard.ts` — API client dashboard (stats, activité, tendances)
+- [x] `app/composables/useAdminDashboard.ts` — API client dashboard (stats, activité, tendances)
 
 ### Composants spécifiques
-- [ ] `app/components/admin/AdminChart.vue` — wrapper pour librairie de graphiques (Chart.js ou similaire)
-- [ ] `app/components/admin/AdminActivityTimeline.vue` — timeline d'activité récente
-- [ ] `app/components/admin/AdminQuickActions.vue` — section alertes/actions rapides
+- [x] `app/components/admin/AdminChart.vue` — graphiques CSS/SVG natifs (barres horizontales + donut SVG, sans dépendance externe)
+- [x] `app/components/admin/AdminActivityTimeline.vue` — timeline d'activité récente
+- [x] `app/components/admin/AdminQuickActions.vue` — section alertes/actions rapides
 
 ---
 

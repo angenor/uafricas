@@ -28,6 +28,7 @@ pub mod mooc;
 pub mod livres;
 pub mod audit;
 pub mod profils_pays;
+pub mod dashboard;
 
 use actix_web::HttpResponse;
 use serde::Serialize;

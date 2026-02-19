@@ -129,6 +129,10 @@ import {
   faFile,
   faUserSecret,
   faThumbsUp,
+  faBolt,
+  faUserClock,
+  faChartPie,
+  faRadio,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -277,6 +281,10 @@ library.add(
   faFile,
   faUserSecret,
   faThumbsUp,
+  faBolt,
+  faUserClock,
+  faChartPie,
+  faRadio,
   farCalendar,
   farClock,
   farHeart,

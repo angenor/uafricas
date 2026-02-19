@@ -257,6 +257,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/livres/{id}/etat", web::patch().to(admin::livres::changer_etat_livre))
                     .route("/livres/{id}/tags", web::post().to(admin::livres::ajouter_tag))
                     .route("/livres/{id}/tags/{tag_id}", web::delete().to(admin::livres::retirer_tag))
+                    // Dashboard
+                    .route("/dashboard/stats", web::get().to(admin::dashboard::obtenir_stats))
+                    .route("/dashboard/activite-recente", web::get().to(admin::dashboard::lister_activite_recente))
+                    .route("/dashboard/tendances", web::get().to(admin::dashboard::obtenir_tendances))
                     // Audit & Logs
                     .route("/audit", web::get().to(admin::audit::lister_audit))
                     .route("/audit/{id}", web::get().to(admin::audit::obtenir_audit))

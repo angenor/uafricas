@@ -1902,3 +1902,149 @@ export interface AdminAuditDetail {
   utilisateur_nom: string | null
   utilisateur_email: string | null
 }
+
+// ── Dashboard ────────────────────────────────────────────────
+
+export interface DashboardStatsSimple {
+  total: number
+}
+
+export interface DashboardStatsUtilisateurs {
+  total: number
+  actifs: number
+  en_attente: number
+  suspendus: number
+}
+
+export interface DashboardStatsAnnonces {
+  total: number
+  publiees: number
+  en_attente: number
+  expirees: number
+}
+
+export interface DashboardStatsProgrammes {
+  total: number
+  actifs: number
+  candidatures_en_attente: number
+}
+
+export interface DashboardStatsInnovations {
+  total: number
+  publiees: number
+}
+
+export interface DashboardStatsProjets {
+  total: number
+  approuves: number
+  en_revue: number
+  soumis: number
+}
+
+export interface DashboardStatsCodimoi {
+  total: number
+  par_type: {
+    proverbe_adage: number
+    citation: number
+    ressource_historique: number
+    bonne_pratique: number
+  }
+}
+
+export interface DashboardStatsSessionsAfrolang {
+  total: number
+  en_cours: number
+}
+
+export interface DashboardStatsEvenements {
+  total: number
+  a_venir: number
+  inscrits_total: number
+}
+
+export interface DashboardStatsMoocs {
+  total: number
+  inscrits_total: number
+  en_cours: number
+}
+
+export interface DashboardStatsRadioTv {
+  stations_radio: number
+  chaines_tv: number
+}
+
+export interface DashboardStatsFactchecks {
+  total: number
+  par_verdict: {
+    vrai: number
+    faux: number
+    partiellement_vrai: number
+    trompeur: number
+    non_verifie: number
+  }
+}
+
+export interface DashboardStatsBadHabits {
+  total: number
+  par_gravite: {
+    faible: number
+    elevee: number
+    critique: number
+  }
+}
+
+export interface DashboardStatsFichesPays {
+  total: number
+  contributions_en_attente: number
+}
+
+export interface DashboardStatsAudit {
+  actions_aujourd_hui: number
+  actions_cette_semaine: number
+}
+
+export interface DashboardStats {
+  utilisateurs: DashboardStatsUtilisateurs
+  organisations: DashboardStatsSimple
+  annonces: DashboardStatsAnnonces
+  programmes: DashboardStatsProgrammes
+  innovations: DashboardStatsInnovations
+  projets: DashboardStatsProjets
+  africantives: DashboardStatsSimple
+  centres_culturels: DashboardStatsSimple
+  codimoi: DashboardStatsCodimoi
+  sessions_afrolang: DashboardStatsSessionsAfrolang
+  evenements: DashboardStatsEvenements
+  moocs: DashboardStatsMoocs
+  livres: DashboardStatsSimple
+  radio_tv: DashboardStatsRadioTv
+  factchecks: DashboardStatsFactchecks
+  bad_habits: DashboardStatsBadHabits
+  idea_forces: DashboardStatsSimple
+  fiches_pays: DashboardStatsFichesPays
+  audit: DashboardStatsAudit
+}
+
+export interface DashboardActiviteItem {
+  id: string
+  action: string
+  schema_name: string
+  table_name: string
+  record_id: string | null
+  created_at: string
+  utilisateur_nom: string | null
+  utilisateur_id: string | null
+}
+
+export interface DashboardTendancePoint {
+  jour: string
+  total: number
+}
+
+export interface DashboardTendances {
+  periode: string
+  inscriptions_utilisateurs: DashboardTendancePoint[]
+  annonces_publiees: DashboardTendancePoint[]
+  evenements: DashboardTendancePoint[]
+  contributions_pays: DashboardTendancePoint[]
+}
