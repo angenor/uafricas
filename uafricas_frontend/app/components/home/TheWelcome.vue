@@ -8,7 +8,7 @@
         AfricanS
       </div>
       <div data-aos="zoom-in-up" data-aos-delay="1400" class="font-semibold text-lg">
-        United Africa for Sustainable développment
+        Afrique, une Nation pour le développement durable
       </div>
     </div>
 
