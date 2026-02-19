@@ -128,22 +128,19 @@
                @click="voirFormation(formation.id)">
             <div class="flex items-center justify-between mb-4">
               <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                {{ formation.type.toUpperCase() }}
+                {{ getTypeLabel(formation.type) }}
               </span>
-              <span v-if="formation.tarification.gratuit" class="text-green-600 font-semibold">
-                Gratuit
-              </span>
-              <span v-else class="text-gray-600 font-semibold">
-                {{ formation.tarification.prix.toLocaleString() }} FCFA
+              <span class="text-sm text-gray-500">
+                {{ formation.nombre_inscrits }} inscrit{{ formation.nombre_inscrits > 1 ? 's' : '' }}
               </span>
             </div>
             <h3 class="text-xl font-bold mb-2">{{ formation.titre }}</h3>
-            <p class="text-gray-600 mb-4 line-clamp-2">{{ formation.resume }}</p>
+            <p class="text-gray-600 mb-4 line-clamp-2">{{ formation.description }}</p>
             <div class="flex items-center text-sm text-gray-500">
               <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
               </svg>
-              {{ formatDate(formation.dateDebut) }}
+              {{ formatDateFormation(formation.date_heure_debut) }}
             </div>
           </div>
         </div>
@@ -214,19 +211,25 @@
 </template>
 
 <script setup lang="ts">
-import { getStatsInuda } from '~/mocks/inuda/facultes'
-import { getFormationsOuvertes, type Formation } from '~/mocks/inuda/formations'
+import { type FormationAPI, getTypeLabel, formatDateFormation } from '~/composables/useFormations'
 
 useHead({
   title: 'INUDA - Institut universitaire pour le développement de l\'Afrique'
 })
 
-const router = useRouter()
+const { listerFacultes } = useFacultes()
+const { listerFormations } = useFormations()
+
 const loading = ref(true)
 const afficherAPropos = ref(false)
 
-const stats = ref(getStatsInuda())
-const formationsRecentes = ref<Formation[]>([])
+const stats = ref({
+  nombreFacultes: 0,
+  nombreFormationsOuvertes: 0,
+  nombreInscritsTotal: 0,
+  nombrePays: 0,
+})
+const formationsRecentes = ref<FormationAPI[]>([])
 
 const naviguerVers = (route: string) => {
   navigateTo(`/universite/inuda/${route}`)
@@ -236,20 +239,27 @@ const voirFormation = (formationId: string) => {
   navigateTo(`/universite/inuda/formations/${formationId}`)
 }
 
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  }).format(new Date(date))
-}
-
-const chargerDonnees = () => {
+const chargerDonnees = async () => {
   loading.value = true
   try {
-    // Charger les formations récentes (max 3)
-    const formations = getFormationsOuvertes()
-    formationsRecentes.value = formations.slice(0, 3)
+    // Charger facultés et formations en parallèle
+    const [resFacultes, resFormations] = await Promise.all([
+      listerFacultes({ parPage: 50 }),
+      listerFormations({ par_page: 3 }),
+    ])
+
+    // Stats depuis les données réelles
+    if (resFacultes) {
+      const paysUniques = new Set(resFacultes.facultes.map(f => f.ecolePartenaire.pays))
+      stats.value.nombreFacultes = resFacultes.total
+      stats.value.nombreInscritsTotal = resFacultes.facultes.reduce((sum, f) => sum + f.stats.nombreInscritsTotal, 0)
+      stats.value.nombrePays = paysUniques.size
+    }
+
+    if (resFormations) {
+      stats.value.nombreFormationsOuvertes = resFormations.total
+      formationsRecentes.value = resFormations.formations
+    }
   } catch (error) {
     console.error('Erreur lors du chargement des données:', error)
   } finally {

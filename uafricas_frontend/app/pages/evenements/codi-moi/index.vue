@@ -93,10 +93,10 @@
               v-for="post in posts"
               :key="post.id"
               :post="post"
-              @click="navigateToPost(post.id)"
+              @click="openPostDetail(post.id)"
               @like="handleReaction(post.id, 'like')"
               @dislike="handleReaction(post.id, 'dislike')"
-              @comment="navigateToPost(post.id)"
+              @comment="openPostDetail(post.id)"
               @share="handleShare(post)"
             />
           </TransitionGroup>
@@ -135,7 +135,7 @@
           :amis="amis"
           :stats="stats"
           :popular-posts="popularPosts"
-          @go-to-post="(post: CodiMoiPostAPI) => navigateToPost(post.id)"
+          @go-to-post="(post: CodiMoiPostAPI) => openPostDetail(post.id)"
         />
       </div>
     </div>
@@ -150,6 +150,18 @@
         {{ toastMessage }}
       </div>
     </Transition>
+
+    <!-- Modale détail de post -->
+    <CodiMoiPostModal
+      :post="selectedPost"
+      :commentaires="selectedPostCommentaires"
+      :chargement-commentaires="chargementCommentaires"
+      @close="closePostDetail"
+      @like="handleModalReaction('like')"
+      @dislike="handleModalReaction('dislike')"
+      @share="handleModalShare"
+      @commenter="handleModalComment"
+    />
 
     <!-- Modale création de post -->
     <Transition name="modal-fade">
