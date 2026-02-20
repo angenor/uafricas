@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
-    <div class="relative h-80 bg-font-baniere-ethnie bg-cover bg-center">
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
+    <div class="relative h-80">
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat to-black/90"></div>
 
       <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
