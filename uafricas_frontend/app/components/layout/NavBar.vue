@@ -353,7 +353,6 @@ const mobileSection = ref<string | null>(null)
 const rechercheOuverte = ref(false)
 
 const { isAuthenticated, user, fullName, isAdmin, logout } = useAuth()
-const router = useRouter()
 const route = useRoute()
 
 watch(() => route.path, () => {
@@ -380,7 +379,6 @@ onUnmounted(() => {
 const handleLogout = async () => {
   await logout()
   mobileOpen.value = false
-  router.push('/login')
 }
 
 const africariseItems = [
