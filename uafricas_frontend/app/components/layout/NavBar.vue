@@ -32,40 +32,40 @@
 
       <!-- Liens de navigation centraux -->
       <div class="flex items-center gap-6 xl:gap-10">
-        <NuxtLink to="/actions" class="hover:text-custom-green transition-colors">
-          Actions
-        </NuxtLink>
-
-        <NuxtLink to="/africa-culture" class="hover:text-custom-green transition-colors">
-          AfricaCulture
-        </NuxtLink>
-
-        <!-- Lib. d'Afrique -->
+        <!-- Africarise -->
         <div
-          @mouseenter="pointer = 'biblio'"
+          @mouseenter="pointer = 'africarise'"
           @mouseleave="pointer = null"
           class="relative"
         >
-          <NuxtLink
-            to="/bibliotheques"
-            :class="pointer === 'biblio' ? 'text-custom-green' : ''"
-            class="cursor-pointer whitespace-nowrap transition-colors"
-          >
-            Lib. d'Afrique
+          <NuxtLink to="/africa-culture" class="cursor-pointer whitespace-nowrap transition-colors">
+            Africarise
           </NuxtLink>
-          <LayoutNavDropdown :open="pointer === 'biblio'" :items="biblioItems" />
+          <LayoutNavDropdown :open="pointer === 'africarise'" :items="africariseItems" />
         </div>
 
-        <!-- Africa Univers -->
+        <!-- Mindshiftlab -->
         <div
-          @mouseenter="pointer = 'universite'"
+          @mouseenter="pointer = 'mindshiftlab'"
           @mouseleave="pointer = null"
           class="relative"
         >
           <NuxtLink to="/universite" class="cursor-pointer whitespace-nowrap transition-colors">
-            Africa Univers
+            Mindshiftlab
           </NuxtLink>
-          <LayoutNavDropdown :open="pointer === 'universite'" :items="universiteItems" />
+          <LayoutNavDropdown :open="pointer === 'mindshiftlab'" :items="mindshiftlabItems" />
+        </div>
+
+        <!-- Novagouv -->
+        <div
+          @mouseenter="pointer = 'novagouv'"
+          @mouseleave="pointer = null"
+          class="relative"
+        >
+          <NuxtLink to="/universite/gouvernance" class="cursor-pointer whitespace-nowrap transition-colors">
+            Novagouv
+          </NuxtLink>
+          <LayoutNavDropdown :open="pointer === 'novagouv'" :items="novagouvItems" />
         </div>
 
         <!-- Africamood -->
@@ -78,7 +78,19 @@
             <span class="text-custom-green">Africamood</span>
             <font-awesome-icon icon="fa-solid fa-tv" class="text-gray-600 text-xs" />
           </NuxtLink>
-          <LayoutNavDropdown :open="pointer === 'media'" :items="mediaItems" />
+          <LayoutNavDropdown :open="pointer === 'media'" :items="africamoodItems" />
+        </div>
+
+        <!-- Opafrica -->
+        <div
+          @mouseenter="pointer = 'opafrica'"
+          @mouseleave="pointer = null"
+          class="relative"
+        >
+          <NuxtLink to="/actions" class="cursor-pointer whitespace-nowrap transition-colors">
+            Opafrica
+          </NuxtLink>
+          <LayoutNavDropdown :open="pointer === 'opafrica'" :items="opafricaItems" />
         </div>
       </div>
 
@@ -211,27 +223,35 @@
         class="lg:hidden bg-white border-t border-gray-200 shadow-lg max-h-[80vh] overflow-y-auto"
       >
         <div class="flex flex-col py-2">
-          <NuxtLink to="/actions" class="mobile-link" @click="mobileOpen = false">Actions</NuxtLink>
-          <NuxtLink to="/africa-culture" class="mobile-link" @click="mobileOpen = false">AfricaCulture</NuxtLink>
-
-          <!-- Lib. d'Afrique -->
-          <button class="mobile-link flex items-center justify-between" @click="mobileSection = mobileSection === 'biblio' ? null : 'biblio'">
-            Lib. d'Afrique
-            <font-awesome-icon :icon="mobileSection === 'biblio' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
+          <!-- Africarise -->
+          <button class="mobile-link flex items-center justify-between" @click="mobileSection = mobileSection === 'africarise' ? null : 'africarise'">
+            Africarise
+            <font-awesome-icon :icon="mobileSection === 'africarise' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
           </button>
-          <div v-if="mobileSection === 'biblio'" class="bg-gray-50">
-            <NuxtLink v-for="item in biblioItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
+          <div v-if="mobileSection === 'africarise'" class="bg-gray-50">
+            <NuxtLink v-for="item in africariseItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
               {{ item.label }}
             </NuxtLink>
           </div>
 
-          <!-- Africa Univers -->
-          <button class="mobile-link flex items-center justify-between" @click="mobileSection = mobileSection === 'universite' ? null : 'universite'">
-            Africa Univers
-            <font-awesome-icon :icon="mobileSection === 'universite' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
+          <!-- Mindshiftlab -->
+          <button class="mobile-link flex items-center justify-between" @click="mobileSection = mobileSection === 'mindshiftlab' ? null : 'mindshiftlab'">
+            Mindshiftlab
+            <font-awesome-icon :icon="mobileSection === 'mindshiftlab' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
           </button>
-          <div v-if="mobileSection === 'universite'" class="bg-gray-50">
-            <NuxtLink v-for="item in universiteItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
+          <div v-if="mobileSection === 'mindshiftlab'" class="bg-gray-50">
+            <NuxtLink v-for="item in mindshiftlabItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
+              {{ item.label }}
+            </NuxtLink>
+          </div>
+
+          <!-- Novagouv -->
+          <button class="mobile-link flex items-center justify-between" @click="mobileSection = mobileSection === 'novagouv' ? null : 'novagouv'">
+            Novagouv
+            <font-awesome-icon :icon="mobileSection === 'novagouv' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
+          </button>
+          <div v-if="mobileSection === 'novagouv'" class="bg-gray-50">
+            <NuxtLink v-for="item in novagouvItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
               {{ item.label }}
             </NuxtLink>
           </div>
@@ -242,7 +262,18 @@
             <font-awesome-icon :icon="mobileSection === 'media' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
           </button>
           <div v-if="mobileSection === 'media'" class="bg-gray-50">
-            <NuxtLink v-for="item in mediaItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
+            <NuxtLink v-for="item in africamoodItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
+              {{ item.label }}
+            </NuxtLink>
+          </div>
+
+          <!-- Opafrica -->
+          <button class="mobile-link flex items-center justify-between" @click="mobileSection = mobileSection === 'opafrica' ? null : 'opafrica'">
+            Opafrica
+            <font-awesome-icon :icon="mobileSection === 'opafrica' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
+          </button>
+          <div v-if="mobileSection === 'opafrica'" class="bg-gray-50">
+            <NuxtLink v-for="item in opafricaItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
               {{ item.label }}
             </NuxtLink>
           </div>
@@ -352,19 +383,36 @@ const handleLogout = async () => {
   router.push('/login')
 }
 
-const biblioItems = [
-  { label: 'Biblio Numérique', to: '/bibliotheque/numerique' },
-  { label: 'Biblio Humaine', to: '/bibliotheque/humaine' },
+const africariseItems = [
+  { label: 'Afrolang', to: '/afrolang' },
+  { label: 'Codimoi', to: '/evenements/codi-moi' },
+  { label: 'Afroculture', to: '/africain-afro-americain' },
+  { label: 'Africalive', to: '/evenements/liste' },
 ]
 
-const universiteItems = [
-  { label: 'Gouvernance', to: '/universite/gouvernance' },
+const mindshiftlabItems = [
   { label: 'INUDA', to: '/universite/inuda' },
+  { label: 'Numetech', to: '/bibliotheque/numerique' },
+  { label: 'Humantech', to: '/bibliotheque/humaine' },
 ]
 
-const mediaItems = [
+const novagouvItems = [
+  { label: 'Factcheck', to: '/universite/gouvernance/factcheck' },
+  { label: 'Ideaforces', to: '/universite/gouvernance/ideaforces' },
+  { label: 'Badhabits', to: '/universite/gouvernance/badhabits' },
+]
+
+const africamoodItems = [
   { label: 'Télé', to: '/tele' },
   { label: 'Radio', to: '/radios' },
+  { label: 'Africalive', to: '/evenements/liste' },
+]
+
+const opafricaItems = [
+  { label: 'Afripulse', to: '/opportunite-afrique' },
+  { label: 'Diapertise', to: '/experts' },
+  { label: 'Sabbafrica', to: '/echanges-sabbatiques' },
+  { label: 'Afromarket', to: '/marche-africain' },
   { label: 'Africantives', to: '/africantives' },
 ]
 </script>
