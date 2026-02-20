@@ -8,7 +8,7 @@
       <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
 
       <!-- Texte avec animation d'entrée -->
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-5">
+      <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
           Médias
         </h1>

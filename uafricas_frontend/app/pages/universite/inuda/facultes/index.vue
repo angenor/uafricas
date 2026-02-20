@@ -6,7 +6,7 @@
       style="background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80');">
       <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-5">
+      <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
           Nos Facultés Partenaires
         </h1>

@@ -6,7 +6,7 @@
       style="background-image: url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80');">
       <div class="absolute inset-0 bg-gradient-to-r from-custom-green/90 to-yellow-600/70"></div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-5">
+      <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title text-center px-4">
           Opportunites en Afrique
         </h1>

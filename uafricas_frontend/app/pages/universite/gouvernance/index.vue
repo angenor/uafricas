@@ -7,7 +7,7 @@
       <div class="absolute inset-0 bg-gradient-to-r from-custom-green/90 to-black/70"></div>
 
       <!-- Texte avec animation d'entrée -->
-      <div class="absolute inset-0 flex flex-col items-center justify-center pt-20">
+      <div class="absolute inset-0 flex flex-col items-center justify-center pt-28">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-fadeInUp">
           Gouvernance Citoyenne
         </h1>
