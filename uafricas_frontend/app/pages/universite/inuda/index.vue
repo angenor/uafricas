@@ -15,6 +15,9 @@
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
           Institut universitaire pour le développement de l'Afrique
         </p>
+        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
+          Vulgariser des formations de masse sur des enjeux d'intérêt pour le développement et le renforcement de gouvernance en Afrique.
+        </p>
       </div>
     </div>
 

@@ -15,6 +15,9 @@
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle max-w-3xl text-center px-4">
           Découvrez les expériences et connaissances précieuses de nos bibliothèques humaines
         </p>
+        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
+          Rendre accessible aux citoyens africains des ressources issues des thèses africaines et toute autre ressource pertinente libre d'accès au développement de l'Afrique.
+        </p>
       </div>
     </div>
 

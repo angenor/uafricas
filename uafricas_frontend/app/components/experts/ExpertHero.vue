@@ -17,6 +17,9 @@
         <p class="text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto font-light">
           Connectez-vous avec les meilleurs experts africains et afro-descendants
         </p>
+        <p class="text-white/70 text-sm md:text-base mt-3 max-w-3xl mx-auto text-center px-4">
+          Valoriser en un seul endroit l'expertise africaine et afro-descendante et encourager les entreprises en Afrique à recourir aux ressources pertinentes sur le continent et au-delà.
+        </p>
 
         <!-- Search Bar integree dans le hero -->
         <div class="max-w-4xl mx-auto mt-10">

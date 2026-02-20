@@ -14,6 +14,9 @@
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle text-center px-4">
           Decouvrez les fiches pays et leurs opportunites
         </p>
+        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
+          Rendre visible pour chaque territoire africain les opportunités touristiques, d'investissement et toute autre opportunité pertinente.
+        </p>
       </div>
     </div>
 

@@ -32,6 +32,9 @@
             <span class="ml-1 text-sm">BadHabits</span>
           </div>
         </div>
+        <p class="text-white/80 text-sm md:text-base mt-2 max-w-3xl text-center px-4 animate-fadeInUp animation-delay-400">
+          Engager les citoyens africains et afro-descendants ainsi que la diaspora dans l'amélioration de gouvernance politique, sociale et économique de l'Afrique.
+        </p>
       </div>
     </div>
 

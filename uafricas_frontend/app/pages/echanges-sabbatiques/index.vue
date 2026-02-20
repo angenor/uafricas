@@ -12,6 +12,9 @@
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
           Programmes d'échanges d'expériences
         </p>
+        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
+          Offrir des canaux aux entreprises et organisations en Afrique de bénéficier de l'expérience pointue de la diaspora dans des domaines clés de développement.
+        </p>
       </div>
     </div>
 

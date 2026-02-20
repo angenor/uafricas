@@ -15,6 +15,9 @@
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
           Annonces et échanges
         </p>
+        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
+          Offrir un marché virtuel aux africains, aux afro-descendants et à la diaspora africaine.
+        </p>
       </div>
     </div>
 
