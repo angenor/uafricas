@@ -2,6 +2,7 @@
   <main class="relative block">
     <HomeTheWelcome />
     <HomeHistoireSection />
+    <HomeApplisSection />
     <HomeMobiliserExpert />
     <HomeDecouvrirSection />
   </main>

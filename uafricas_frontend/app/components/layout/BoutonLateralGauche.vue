@@ -36,35 +36,57 @@
       </NuxtLink>
     </div>
 
-    <!-- Popups (masqués sur mobile) -->
+    <!-- Popups -->
     <Transition
       v-for="item in menuItems"
       :key="'popup-' + item.id"
       enter-active-class="transition-all duration-200 ease-out"
-      enter-from-class="opacity-0 -translate-x-2"
-      enter-to-class="opacity-100 translate-x-0"
+      enter-from-class="opacity-0 -translate-x-2 scale-95"
+      enter-to-class="opacity-100 translate-x-0 scale-100"
       leave-active-class="transition-all duration-150 ease-in"
-      leave-from-class="opacity-100 translate-x-0"
-      leave-to-class="opacity-0 -translate-x-2"
+      leave-from-class="opacity-100 translate-x-0 scale-100"
+      leave-to-class="opacity-0 -translate-x-2 scale-95"
     >
       <div
         v-if="state.show && state.pointer === item.id"
-        class="fixed left-30 z-50 w-52 whitespace-nowrap text-custom-chocolat border-t-4 border-custom-chocolat"
+        class="fixed left-30 z-50 w-72 rounded-xl shadow-xl border border-gray-100 overflow-hidden bg-white"
         :style="{ top: item.popupTop }"
       >
-        <NuxtLink
-          v-for="(link, i) in item.links"
-          :key="link.to"
-          :to="link.to"
-          @click="state.pointer = null"
-        >
-          <div
-            class="px-3 py-2 bg-white/80 cursor-pointer transition-all duration-300 hover:border-l-4 hover:border-custom-green hover:pl-4 hover:text-custom-green hover:bg-white/70"
-            :style="{ transitionDelay: `${i * 50}ms` }"
-          >
-            {{ link.label }}
+        <!-- En-tête avec gradient -->
+        <div class="relative overflow-hidden" :class="item.gradient">
+          <img
+            v-if="item.image"
+            :src="item.image"
+            :alt="item.label"
+            class="absolute inset-0 w-full h-full object-cover opacity-30"
+          />
+          <div class="absolute inset-0 bg-black/10" />
+          <div class="relative p-3.5 z-10">
+            <p class="text-white font-bold text-sm drop-shadow-sm">{{ item.label }}</p>
+            <p class="text-white/80 text-[11px] mt-0.5 leading-snug">{{ item.description }}</p>
           </div>
-        </NuxtLink>
+        </div>
+
+        <!-- Liens -->
+        <div class="p-1.5 max-h-72 overflow-y-auto">
+          <NuxtLink
+            v-for="link in item.links"
+            :key="link.to"
+            :to="link.to"
+            class="group flex items-start gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all duration-150"
+            @click="state.pointer = null"
+          >
+            <div class="shrink-0 w-7 h-7 rounded-md bg-orange-50 text-custom-chocolat flex items-center justify-center mt-0.5 group-hover:bg-green-50 group-hover:text-custom-green transition-colors duration-150">
+              <font-awesome-icon :icon="link.icon" class="text-xs" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-gray-800 group-hover:text-custom-green transition-colors duration-150">
+                {{ link.label }}
+              </p>
+              <p class="text-[11px] text-gray-400 mt-0.5 leading-snug">{{ link.description }}</p>
+            </div>
+          </NuxtLink>
+        </div>
       </div>
     </Transition>
   </div>
@@ -120,13 +142,23 @@ const togglePointer = (id: string) => {
   state.pointer = state.pointer === id ? null : id
 }
 
+interface MenuLink {
+  label: string
+  to: string
+  description: string
+  icon: string
+}
+
 interface MenuItem {
   id: string
   icon?: string
   iconImg?: string
   label: string
+  description: string
   popupTop: string
-  links: Array<{ label: string; to: string }>
+  gradient: string
+  image?: string
+  links: MenuLink[]
 }
 
 const menuItems: MenuItem[] = [
@@ -134,44 +166,53 @@ const menuItems: MenuItem[] = [
     id: 'attout',
     icon: 'fa-solid fa-table-cells-large',
     label: 'APPLIS',
+    description: 'Toutes les applications de la plateforme UAfricas',
     popupTop: '11rem',
+    gradient: 'bg-linear-to-br from-amber-700 to-orange-900',
+    image: '/images/danse-afrique.jpg',
     links: [
-      { label: 'Codimoi', to: '/evenements/codi-moi' },
-      { label: 'Afrolang', to: '/afrolang' },
-      { label: 'Africalive', to: '/evenements/liste' },
-      { label: 'Afroculture', to: '/africain-afro-americain' },
-      { label: 'Afromarket', to: '/marche-africain' },
-      { label: 'Diapertise', to: '/experts' },
-      { label: 'Afripulse', to: '/opportunite-afrique' },
-      { label: 'Sabbafrica', to: '/echanges-sabbatiques' },
-      { label: 'Librafrica', to: '/bibliotheque/numerique' },
-      { label: 'Mindshiftlab', to: '/universite/inuda' },
-      { label: 'Novagouv', to: '/universite/gouvernance' },
-      { label: 'Africamood', to: '/medias' },
-      { label: 'Africantives', to: '/africantives' },
+      { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
+      { label: 'Afrolang', to: '/afrolang', description: 'Apprenez les langues du continent', icon: 'fa-solid fa-language' },
+      { label: 'Africalive', to: '/evenements/liste', description: 'Événements et rencontres en direct', icon: 'fa-solid fa-calendar-days' },
+      { label: 'Afroculture', to: '/africain-afro-americain', description: 'Échanges culturels Afrique-diaspora', icon: 'fa-solid fa-earth-africa' },
+      { label: 'Afromarket', to: '/marche-africain', description: 'Place de marché panafricaine', icon: 'fa-solid fa-store' },
+      { label: 'Diapertise', to: '/experts', description: 'Experts et consultants de la diaspora', icon: 'fa-solid fa-user-tie' },
+      { label: 'Afripulse', to: '/opportunite-afrique', description: 'Offres d\'emploi et opportunités', icon: 'fa-solid fa-briefcase' },
+      { label: 'Sabbafrica', to: '/echanges-sabbatiques', description: 'Programmes d\'échanges sabbatiques', icon: 'fa-solid fa-plane' },
+      { label: 'Librafrica', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
+      { label: 'Mindshiftlab', to: '/universite/inuda', description: 'Institut numérique universitaire', icon: 'fa-solid fa-graduation-cap' },
+      { label: 'Novagouv', to: '/universite/gouvernance', description: 'Gouvernance transparente et responsable', icon: 'fa-solid fa-scale-balanced' },
+      { label: 'Africamood', to: '/medias', description: 'Médias et actualités du continent', icon: 'fa-solid fa-tv' },
+      { label: 'Africantives', to: '/africantives', description: 'Innovations et startups africaines', icon: 'fa-solid fa-rocket' },
     ],
   },
   {
     id: 'engager',
     iconImg: '/icons/engage.png',
     label: "JE M'ENGAGE",
+    description: 'Agissez concrètement pour le développement du continent',
     popupTop: '15.5rem',
+    gradient: 'bg-linear-to-br from-teal-600 to-cyan-800',
+    image: '/images/fiche-opportunite.jpg',
     links: [
-      { label: "J'apporte mon expertise", to: '/experts' },
-      { label: 'Je finance un projet', to: '/financer-projet' },
-      { label: 'Je partage une innovation', to: '/partager-innovation' },
-      { label: 'Je deviens partenaire', to: '/devenir-partenaire' },
+      { label: 'Apporter mon expertise', to: '/experts', description: 'Partagez vos compétences avec le continent', icon: 'fa-solid fa-hand-holding-heart' },
+      { label: 'Financer un projet', to: '/financer-projet', description: 'Soutenez des initiatives prometteuses', icon: 'fa-solid fa-coins' },
+      { label: 'Partager une innovation', to: '/partager-innovation', description: 'Faites connaître vos idées novatrices', icon: 'fa-solid fa-lightbulb' },
+      { label: 'Devenir partenaire', to: '/devenir-partenaire', description: 'Rejoignez notre réseau de partenaires', icon: 'fa-solid fa-handshake' },
     ],
   },
   {
     id: 'reseautage',
     iconImg: '/icons/innovation.png',
     label: 'RÉSEAUTAGE',
+    description: 'Connectez-vous avec des talents et opportunités',
     popupTop: '21rem',
+    gradient: 'bg-linear-to-br from-violet-700 to-purple-900',
+    image: '/images/education.png',
     links: [
-      { label: 'Retrouver un profil', to: '/retrouver-profil' },
-      { label: 'Mobiliser une expertise', to: '/experts' },
-      { label: 'Opportunités', to: '/marche-africain' },
+      { label: 'Retrouver un profil', to: '/retrouver-profil', description: 'Recherchez parmi les membres', icon: 'fa-solid fa-magnifying-glass' },
+      { label: 'Mobiliser une expertise', to: '/experts', description: 'Trouvez l\'expert qu\'il vous faut', icon: 'fa-solid fa-users' },
+      { label: 'Opportunités', to: '/marche-africain', description: 'Découvrez les offres disponibles', icon: 'fa-solid fa-briefcase' },
     ],
   },
 ]
