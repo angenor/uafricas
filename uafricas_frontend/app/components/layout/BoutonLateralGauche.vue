@@ -3,7 +3,7 @@
     <!-- Barre latérale -->
     <div
       :class="state.show ? 'left-5' : '-left-24'"
-      class="fixed top-40 z-40 transition-all duration-300 rounded-full border border-white bg-custom-chocolat/80 h-100 w-24 whitespace-nowrap leading-none"
+      class="fixed top-40 z-60 transition-all duration-300 rounded-full border border-white bg-custom-chocolat/80 h-100 w-24 whitespace-nowrap leading-none"
     >
       <!-- Bouton toggle -->
       <button
@@ -49,7 +49,8 @@
     >
       <div
         v-if="state.show && state.pointer === item.id"
-        class="fixed left-30 z-50 w-72 rounded-xl shadow-xl border border-gray-100 overflow-hidden bg-white"
+        :ref="(el) => { if (el) ajusterPopup(el as HTMLElement) }"
+        class="fixed left-30 z-70 w-72 rounded-xl shadow-xl border border-gray-100 overflow-hidden bg-white"
         :style="{ top: item.popupTop }"
       >
         <!-- En-tête avec gradient -->
@@ -140,6 +141,18 @@ const toggleSidebar = () => {
 
 const togglePointer = (id: string) => {
   state.pointer = state.pointer === id ? null : id
+}
+
+const MARGE_BAS = 16
+
+const ajusterPopup = (el: HTMLElement) => {
+  nextTick(() => {
+    const rect = el.getBoundingClientRect()
+    const depassement = rect.bottom - window.innerHeight + MARGE_BAS
+    if (depassement > 0) {
+      el.style.top = `${Math.max(MARGE_BAS, rect.top - depassement)}px`
+    }
+  })
 }
 
 interface MenuLink {
