@@ -8,9 +8,9 @@
     leave-to-class="opacity-0 translate-y-1"
   >
     <div v-if="open" class="absolute top-full left-1/2 -translate-x-1/2 z-50 pt-2">
-      <div class="w-120 flex bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+      <div class="w-96 flex bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
         <!-- Zone image à gauche -->
-        <div class="relative w-36 shrink-0 overflow-hidden" :class="gradient">
+        <div class="relative w-28 shrink-0 overflow-hidden" :class="gradient">
           <img
             v-if="image"
             :src="image"
