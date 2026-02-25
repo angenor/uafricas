@@ -69,7 +69,7 @@
         </div>
 
         <!-- Liens -->
-        <div class="p-1.5">
+        <div data-liens class="p-1.5">
           <NuxtLink
             v-for="link in item.links"
             :key="link.to"
@@ -153,14 +153,31 @@ const recalculerPosition = () => {
   const item = menuItems.find(m => m.id === state.pointer)
   if (!item) return
 
-  // Remettre la position initiale avant de mesurer
+  // Reset styles avant mesure
   el.style.top = item.popupTop
+  const liensDiv = el.querySelector('[data-liens]') as HTMLElement | null
+  if (liensDiv) {
+    liensDiv.style.maxHeight = ''
+    liensDiv.style.overflowY = ''
+  }
 
   requestAnimationFrame(() => {
     const rect = el.getBoundingClientRect()
-    const depassement = rect.bottom - window.innerHeight + MARGE
-    if (depassement > 0) {
-      el.style.top = `${Math.max(MARGE, rect.top - depassement)}px`
+    const hauteurDispo = window.innerHeight - 2 * MARGE
+
+    if (rect.height > hauteurDispo) {
+      // Mesurer la hauteur de l'en-tête avant de repositionner
+      const headerHeight = liensDiv ? liensDiv.getBoundingClientRect().top - rect.top : 0
+      el.style.top = `${MARGE}px`
+      if (liensDiv) {
+        liensDiv.style.maxHeight = `${hauteurDispo - headerHeight}px`
+        liensDiv.style.overflowY = 'auto'
+      }
+    } else {
+      const depassement = rect.bottom - window.innerHeight + MARGE
+      if (depassement > 0) {
+        el.style.top = `${Math.max(MARGE, rect.top - depassement)}px`
+      }
     }
   })
 }
