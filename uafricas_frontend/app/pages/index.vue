@@ -3,8 +3,7 @@
     <HomeTheWelcome />
     <HomeHistoireSection />
     <HomeMobiliserExpert />
-    <HomeQuiSection />
-    <HomeNosPartenaires />
+    <HomeDecouvrirSection />
   </main>
 </template>
 

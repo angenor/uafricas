@@ -15,7 +15,7 @@
     </div>
 
     <a
-      href="#qui"
+      href="#histoire"
       aria-label="Défiler vers le bas"
       class="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white/70 rounded-full animate-bounce p-2 border border-gray-400"
     >

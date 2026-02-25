@@ -1,5 +1,5 @@
 <template>
-  <section class="py-16 md:py-24 lg:py-32 w-full bg-red-50 relative overflow-hidden">
+  <section id="histoire" class="py-16 md:py-24 lg:py-32 w-full bg-red-50 relative overflow-hidden">
     <div class="container mx-auto px-6 md:px-12 lg:px-20 flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
       <!-- Contenu texte -->
       <div data-aos="fade-right" data-aos-duration="1000" class="text-center w-full lg:w-8/12">

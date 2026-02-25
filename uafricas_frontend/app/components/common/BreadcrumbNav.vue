@@ -117,7 +117,12 @@ const routeLabels: Record<string, string> = {
   'codi-moi': 'Codi-Moi',
   'liste': 'Liste',
   'promotion-valeur': 'Promotion des Valeurs',
-  'devenir-partenaire': 'Devenir Partenaire'
+  'devenir-partenaire': 'Devenir Partenaire',
+  'a-propos': 'À propos',
+  'mission': 'Notre Mission',
+  'partenaires': 'Nos Partenaires',
+  'faq': 'FAQ',
+  'contact': 'Contact'
 }
 
 const breadcrumbItems = computed<BreadcrumbItem[]>(() => {

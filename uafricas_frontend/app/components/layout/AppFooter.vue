@@ -1,69 +1,63 @@
 <template>
   <footer class="bg-white text-gray-800">
-    <div class="container mx-auto px-6 md:px-12 py-8">
-      <div class="flex flex-col md:flex-row gap-8 md:gap-12">
+    <div class="container mx-auto px-6 md:px-12 py-10">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
 
         <!-- Logo -->
-        <div class="flex-shrink-0 flex justify-center md:justify-start">
+        <div class="flex flex-col items-center md:items-start">
           <NuxtLink to="/">
             <img class="h-24 sm:h-28 lg:h-32" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
           </NuxtLink>
+          <p class="mt-3 text-sm text-gray-500 text-center md:text-left max-w-xs">
+            Afrique, une Nation pour le développement durable.
+          </p>
         </div>
 
-        <!-- A propos -->
-        <div class="flex-1 min-w-0">
-          <h3 class="text-lg sm:text-xl text-custom-chocolat font-semibold">
-            À propos de AfricanS
-          </h3>
-          <p class="mt-2 text-sm sm:text-base leading-relaxed">
-            Africans est un réseau international visant la promotion des meilleures
-            valeurs africaines et Afro-descendantes aux niveaux culturel,
-            socio-économique et scientifique. Elle regroupe un bureau de
-            coordination technique, des antennes nationales et des groupes de
-            réflexion ad hoc. Africans poursuit un but non lucratif et met l'accent
-            sur le volontariat des membres.
-          </p>
-          <ul class="list-disc ml-5 mt-2 text-sm space-y-1">
-            <li>Promouvoir les valeurs culturelles africaines et Afro-descendantes pertinentes</li>
-            <li>Renforcer l'union des populations d'origine africaine</li>
-            <li>Favoriser le retour de la diaspora africaine et leur contribution au développement</li>
-            <li>Soutenir le développement d'un marché africain et promouvoir la ZLECAF</li>
-            <li>Promouvoir l'expertise africaine à tous les niveaux</li>
-            <li>Restaurer l'histoire de l'Afrique et ouvrir la voie à des trajectoires de développement originaux</li>
+        <!-- Liens rapides -->
+        <div>
+          <h3 class="text-custom-chocolat font-semibold text-lg mb-4 font-display">Liens rapides</h3>
+          <ul class="space-y-2.5">
+            <li v-for="lien in liensRapides" :key="lien.to">
+              <NuxtLink
+                :to="lien.to"
+                class="text-sm text-gray-600 hover:text-custom-green transition-colors flex items-center gap-2"
+              >
+                <font-awesome-icon :icon="lien.icone" class="w-3.5 h-3.5 text-custom-chocolat/60" />
+                {{ lien.label }}
+              </NuxtLink>
+            </li>
           </ul>
-
-          <div class="flex flex-col sm:flex-row gap-2 sm:gap-6 mt-4 text-sm">
-            <a href="mailto:uafricas@gmail.com" class="flex items-center gap-1.5 hover:text-custom-green transition-colors">
-              <font-awesome-icon icon="fa-solid fa-envelope" class="text-custom-chocolat" />
-              uafricas@gmail.com
-            </a>
-            <span class="flex items-center gap-1.5">
-              <font-awesome-icon icon="fa-solid fa-phone" class="text-custom-chocolat" />
-              00 00 00 00 00
-            </span>
-          </div>
         </div>
 
         <!-- Contact -->
-        <div class="w-full md:w-64 flex-shrink-0">
-          <h3 class="text-lg text-custom-chocolat font-semibold">Contactez-nous</h3>
-          <textarea
-            class="mt-2 w-full border-2 border-custom-chocolat rounded p-2 text-sm resize-none"
-            rows="3"
-            placeholder="Écrire un commentaire"
-          ></textarea>
-          <button class="mt-2 w-full sm:w-auto px-4 py-1.5 bg-custom-chocolat text-white rounded text-sm hover:opacity-90 transition-opacity">
-            ENVOYER
-          </button>
+        <div>
+          <h3 class="text-custom-chocolat font-semibold text-lg mb-4 font-display">Contact</h3>
+          <div class="space-y-3 mb-6">
+            <a href="mailto:uafricas@gmail.com" class="flex items-center gap-2.5 text-sm text-gray-600 hover:text-custom-green transition-colors">
+              <font-awesome-icon icon="fa-solid fa-envelope" class="w-4 h-4 text-custom-chocolat/60" />
+              uafricas@gmail.com
+            </a>
+            <span class="flex items-center gap-2.5 text-sm text-gray-600">
+              <font-awesome-icon icon="fa-solid fa-phone" class="w-4 h-4 text-custom-chocolat/60" />
+              00 00 00 00 00
+            </span>
+          </div>
+
+          <!-- Réseaux sociaux -->
+          <div class="flex gap-2.5">
+            <a
+              v-for="reseau in reseauxSociaux"
+              :key="reseau.nom"
+              href="#"
+              :title="reseau.nom"
+              class="w-9 h-9 rounded-full flex items-center justify-center text-white transition-opacity hover:opacity-80"
+              :class="reseau.bg"
+            >
+              <font-awesome-icon :icon="['fab', reseau.icone]" class="w-4 h-4" />
+            </a>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- Liens -->
-    <div class="flex flex-wrap justify-center sm:justify-end gap-2 px-6 pb-2 text-sm sm:text-base font-semibold">
-      <NuxtLink to="/" class="uppercase text-custom-green hover:underline">Innovation</NuxtLink>
-      <span class="text-custom-chocolat">|</span>
-      <NuxtLink to="/" class="uppercase text-custom-green hover:underline">Médiathèque</NuxtLink>
     </div>
 
     <!-- Copyright -->
@@ -72,3 +66,22 @@
     </div>
   </footer>
 </template>
+
+<script setup lang="ts">
+const liensRapides = [
+  { label: 'Notre Mission', to: '/a-propos/mission', icone: 'fa-solid fa-rocket' },
+  { label: 'Gouvernance', to: '/universite/gouvernance', icone: 'fa-solid fa-landmark' },
+  { label: 'Nos Partenaires', to: '/a-propos/partenaires', icone: 'fa-solid fa-handshake' },
+  { label: 'FAQ', to: '/a-propos/faq', icone: 'fa-solid fa-circle-info' },
+  { label: 'Contactez-nous', to: '/a-propos/contact', icone: 'fa-solid fa-envelope' },
+  { label: 'Devenir Partenaire', to: '/devenir-partenaire', icone: 'fa-solid fa-user-plus' },
+]
+
+const reseauxSociaux = [
+  { nom: 'Facebook', icone: 'facebook', bg: 'bg-blue-600' },
+  { nom: 'Twitter', icone: 'twitter', bg: 'bg-sky-500' },
+  { nom: 'LinkedIn', icone: 'linkedin', bg: 'bg-blue-700' },
+  { nom: 'Instagram', icone: 'instagram', bg: 'bg-pink-600' },
+  { nom: 'YouTube', icone: 'youtube', bg: 'bg-red-600' },
+]
+</script>
