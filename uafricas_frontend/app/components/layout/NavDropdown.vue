@@ -19,7 +19,10 @@
           />
           <div class="absolute inset-0 bg-black/20" />
           <div class="relative h-full flex flex-col justify-between p-3.5 z-10">
-            <p class="text-white font-bold text-sm leading-tight drop-shadow-sm">{{ menuLabel }}</p>
+            <div>
+              <p class="text-white font-bold text-sm leading-tight drop-shadow-sm">{{ menuLabel }}</p>
+              <p v-if="description" class="text-white/80 text-[10px] leading-snug mt-2 drop-shadow-sm">{{ description }}</p>
+            </div>
             <NuxtLink
               :to="menuTo"
               class="inline-flex items-center gap-1.5 self-start text-white text-[11px] font-semibold bg-white/20 hover:bg-white/30 backdrop-blur-sm px-3 py-1.5 rounded-full transition-colors"
@@ -32,9 +35,6 @@
 
         <!-- Liens à droite -->
         <div class="flex-1 min-w-0">
-          <div v-if="description" class="px-4 py-2 border-b border-gray-100">
-            <p class="text-[11px] text-gray-500 leading-relaxed">{{ description }}</p>
-          </div>
           <div class="p-1.5">
             <NuxtLink
               v-for="item in items"
