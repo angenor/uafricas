@@ -49,7 +49,7 @@
     >
       <div
         v-if="state.show && state.pointer === item.id"
-        :ref="(el) => { if (el) ajusterPopup(el as HTMLElement) }"
+        :ref="(el) => { if (el) enregistrerPopup(el as HTMLElement) }"
         class="fixed left-30 z-70 w-72 rounded-xl shadow-xl border border-gray-100 overflow-hidden bg-white"
         :style="{ top: item.popupTop }"
       >
@@ -112,13 +112,13 @@ const checkMobile = () => {
 
 onMounted(() => {
   checkMobile()
-  window.addEventListener('resize', checkMobile)
+  window.addEventListener('resize', onResize)
   // Sur desktop + page d'accueil : ouvrir automatiquement
   state.show = isHomeRoute.value && !isMobile.value
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', checkMobile)
+  window.removeEventListener('resize', onResize)
 })
 
 watch(isHomeRoute, (val) => {
@@ -143,17 +143,43 @@ const togglePointer = (id: string) => {
   state.pointer = state.pointer === id ? null : id
 }
 
-const MARGE_BAS = 16
+const MARGE = 16
+const popupElRef = ref<HTMLElement | null>(null)
 
-const ajusterPopup = (el: HTMLElement) => {
-  nextTick(() => {
+const recalculerPosition = () => {
+  const el = popupElRef.value
+  if (!el || !state.pointer) return
+
+  const item = menuItems.find(m => m.id === state.pointer)
+  if (!item) return
+
+  // Remettre la position initiale avant de mesurer
+  el.style.top = item.popupTop
+
+  requestAnimationFrame(() => {
     const rect = el.getBoundingClientRect()
-    const depassement = rect.bottom - window.innerHeight + MARGE_BAS
+    const depassement = rect.bottom - window.innerHeight + MARGE
     if (depassement > 0) {
-      el.style.top = `${Math.max(MARGE_BAS, rect.top - depassement)}px`
+      el.style.top = `${Math.max(MARGE, rect.top - depassement)}px`
     }
   })
 }
+
+const enregistrerPopup = (el: HTMLElement) => {
+  popupElRef.value = el
+  recalculerPosition()
+}
+
+const onResize = () => {
+  checkMobile()
+  if (popupElRef.value && state.pointer) {
+    recalculerPosition()
+  }
+}
+
+watch(() => state.pointer, (val) => {
+  if (!val) popupElRef.value = null
+})
 
 interface MenuLink {
   label: string
