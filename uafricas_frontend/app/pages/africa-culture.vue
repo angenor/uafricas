@@ -6,7 +6,7 @@
 
       <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
-          AfricaCulture
+          Afroculture
         </h1>
         <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
@@ -63,14 +63,14 @@
 import { africaCulturePageData } from '~/mocks/africa-culture'
 
 useHead({
-  title: 'AfricaCulture - UAfricas',
+  title: 'Afroculture - UAfricas',
   meta: [
     { name: 'description', content: 'Découvrez la richesse culturelle africaine et les opportunités de la diaspora' },
   ],
 })
 
 const breadcrumbs = [
-  { label: 'AfricaCulture', to: undefined }
+  { label: 'Afroculture', to: undefined }
 ]
 </script>
 

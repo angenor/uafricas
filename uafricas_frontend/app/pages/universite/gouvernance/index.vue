@@ -9,7 +9,7 @@
       <!-- Texte avec animation d'entrée -->
       <div class="absolute inset-0 flex flex-col items-center justify-center pt-28">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-fadeInUp">
-          Gouvernance Citoyenne
+          Novagouv
         </h1>
         <div class="h-1 w-32 bg-white rounded animate-expandWidth"></div>
         <p class="text-white text-xl md:text-2xl mt-4 text-center px-4 animate-fadeInUp animation-delay-200">
@@ -124,7 +124,7 @@
 import type { ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
 
 useHead({
-  title: 'Gouvernance Citoyenne - Université'
+  title: 'Novagouv - Gouvernance Citoyenne | UAfricas'
 })
 
 const { getStats, getContributions } = useGouvernance()

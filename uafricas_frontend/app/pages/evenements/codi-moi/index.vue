@@ -9,7 +9,7 @@
 
       <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title text-center px-4">
-          Codi-Moi
+          Codimoi
         </h1>
         <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle max-w-4xl text-center px-4">
@@ -329,7 +329,7 @@ import {
 } from '~/composables/useCodiMoi'
 
 useHead({
-  title: 'Codi-Moi - Codification des valeurs | UAfricas'
+  title: 'Codimoi - Codification des valeurs | UAfricas'
 })
 
 const { erreur: apiErreur, listerPosts, creerPost, reagir, listerCommentaires, creerCommentaire } = useCodiMoi()
@@ -337,7 +337,7 @@ const { erreur: apiErreur, listerPosts, creerPost, reagir, listerCommentaires, c
 const breadcrumbs = [
   { label: 'Centre Culturel', to: '/africa-culture' },
   { label: 'Événements', to: '/evenements' },
-  { label: 'Codi-Moi', to: undefined }
+  { label: 'Codimoi', to: undefined }
 ]
 
 // Données — on utilise directement CodiMoiPostAPI (pas de mapping)

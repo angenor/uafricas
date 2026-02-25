@@ -9,7 +9,7 @@
       <!-- Texte avec animation d'entrée -->
       <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
-          INUDA
+          Mindshiftlab
         </h1>
         <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
@@ -158,7 +158,7 @@
       <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-8">
           <div class="flex justify-between items-start mb-6">
-            <h2 class="text-3xl font-bold">À propos de l'INUDA</h2>
+            <h2 class="text-3xl font-bold">À propos de Mindshiftlab</h2>
             <button @click="afficherAPropos = false" class="text-gray-500 hover:text-gray-700">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -217,7 +217,7 @@
 import { type FormationAPI, getTypeLabel, formatDateFormation } from '~/composables/useFormations'
 
 useHead({
-  title: 'INUDA - Institut universitaire pour le développement de l\'Afrique'
+  title: 'Mindshiftlab - Institut universitaire pour le développement de l\'Afrique'
 })
 
 const { listerFacultes } = useFacultes()

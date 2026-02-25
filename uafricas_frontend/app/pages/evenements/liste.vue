@@ -6,7 +6,7 @@
 
       <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
-          Événements & Ateliers
+          Africalive
         </h1>
         <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
@@ -100,7 +100,7 @@
 import { useEvenements, type EvenementAPI, type EvenementFiltres } from '~/composables/useEvenements'
 
 useHead({
-  title: 'Liste des Événements | UAfricas'
+  title: 'Africalive - Événements & Ateliers | UAfricas'
 })
 
 const breadcrumbs = [
