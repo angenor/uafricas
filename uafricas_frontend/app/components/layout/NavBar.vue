@@ -20,101 +20,67 @@
           aria-label="Ouvrir le menu"
           @click="mobileOpen = !mobileOpen"
         >
-        <font-awesome-icon :icon="mobileOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'" class="text-2xl" />
-      </button>
+          <font-awesome-icon :icon="mobileOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'" class="text-2xl" />
+        </button>
       </div>
     </div>
 
-    <!-- Ligne 2 : Navigation desktop + bouton auth à droite -->
-    <nav class="hidden lg:flex items-center h-8 px-4 lg:px-6 text-custom-chocolat font-semibold text-sm xl:text-base">
-      <!-- Spacer gauche pour équilibrer -->
+    <!-- Ligne 2 : Navigation desktop -->
+    <nav class="hidden lg:flex items-center py-1 px-4 lg:px-6">
       <div class="flex-1" />
 
-      <!-- Liens de navigation centraux -->
-      <div class="flex items-center gap-6 xl:gap-10">
-        <!-- Africarise -->
+      <!-- Menus principaux -->
+      <div class="flex items-center gap-1">
         <div
-          @mouseenter="pointer = 'africarise'"
+          v-for="menu in menus"
+          :key="menu.id"
+          @mouseenter="pointer = menu.id"
           @mouseleave="pointer = null"
           class="relative"
         >
-          <NuxtLink to="/africa-culture" class="cursor-pointer whitespace-nowrap transition-colors">
-            Africarise
+          <NuxtLink
+            :to="menu.to"
+            class="flex flex-col items-center px-3 xl:px-4 py-1.5 rounded-lg hover:bg-gray-50 transition-all duration-150 cursor-pointer"
+          >
+            <span
+              class="text-sm font-semibold whitespace-nowrap transition-colors duration-150"
+              :class="pointer === menu.id ? 'text-custom-green' : (menu.colorClass || 'text-custom-chocolat')"
+            >
+              {{ menu.label }}
+            </span>
+            <span class="text-[10px] text-gray-400 whitespace-nowrap font-normal">
+              {{ menu.subtitle }}
+            </span>
           </NuxtLink>
-          <LayoutNavDropdown :open="pointer === 'africarise'" :items="africariseItems" />
-        </div>
-
-        <!-- Mindshiftlab -->
-        <div
-          @mouseenter="pointer = 'mindshiftlab'"
-          @mouseleave="pointer = null"
-          class="relative"
-        >
-          <NuxtLink to="/universite" class="cursor-pointer whitespace-nowrap transition-colors">
-            Mindshiftlab
-          </NuxtLink>
-          <LayoutNavDropdown :open="pointer === 'mindshiftlab'" :items="mindshiftlabItems" />
-        </div>
-
-        <!-- Novagouv -->
-        <div
-          @mouseenter="pointer = 'novagouv'"
-          @mouseleave="pointer = null"
-          class="relative"
-        >
-          <NuxtLink to="/universite/gouvernance" class="cursor-pointer whitespace-nowrap transition-colors">
-            Novagouv
-          </NuxtLink>
-          <LayoutNavDropdown :open="pointer === 'novagouv'" :items="novagouvItems" />
-        </div>
-
-        <!-- Africamood -->
-        <div
-          @mouseenter="pointer = 'media'"
-          @mouseleave="pointer = null"
-          class="relative"
-        >
-          <NuxtLink to="/medias" class="flex items-center cursor-pointer gap-1">
-            <span class="text-custom-green">Africamood</span>
-            <font-awesome-icon icon="fa-solid fa-tv" class="text-gray-600 text-xs" />
-          </NuxtLink>
-          <LayoutNavDropdown :open="pointer === 'media'" :items="africamoodItems" />
-        </div>
-
-        <!-- Opafrica -->
-        <div
-          @mouseenter="pointer = 'opafrica'"
-          @mouseleave="pointer = null"
-          class="relative"
-        >
-          <NuxtLink to="/actions" class="cursor-pointer whitespace-nowrap transition-colors">
-            Opafrica
-          </NuxtLink>
-          <LayoutNavDropdown :open="pointer === 'opafrica'" :items="opafricaItems" />
+          <LayoutNavDropdown
+            :open="pointer === menu.id"
+            :description="menu.description"
+            :items="menu.items"
+          />
         </div>
       </div>
 
-      <!-- Auth desktop - extrême droite -->
-      <div class="flex-1 flex justify-end items-center">
-        <!-- Bouton recherche desktop (faux input) -->
+      <!-- Auth desktop - droite -->
+      <div class="flex-1 flex justify-end items-center gap-3">
+        <!-- Bouton recherche -->
         <button
           @click="rechercheOuverte = true"
-          class="flex items-center gap-2 mr-4 px-3 py-1 bg-gray-100/60 hover:bg-gray-100 border border-gray-200/80 rounded-lg text-sm text-gray-400 hover:text-gray-500 transition-all cursor-pointer"
+          class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200/60 rounded-lg text-sm text-gray-400 hover:text-gray-500 transition-all cursor-pointer"
           aria-label="Rechercher"
         >
           <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="text-xs" />
           <span class="hidden xl:inline">Rechercher...</span>
-          <kbd class="hidden xl:inline-flex ml-2 px-1.5 py-0.5 text-[10px] bg-white/70 border border-gray-200/80 rounded text-gray-400 font-sans">⌘K</kbd>
+          <kbd class="hidden xl:inline-flex ml-1 px-1.5 py-0.5 text-[10px] bg-white border border-gray-200/80 rounded text-gray-400 font-sans">⌘K</kbd>
         </button>
 
-        <!-- Utilisateur connecté : avatar + dropdown -->
+        <!-- Utilisateur connecté -->
         <div
           v-if="isAuthenticated"
           @mouseenter="pointer = 'profil'"
           @mouseleave="pointer = null"
           class="relative"
         >
-          <div class="flex items-center gap-2 cursor-pointer">
+          <div class="flex items-center gap-2 cursor-pointer px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors">
             <img
               v-if="user?.photo_url"
               :src="user.photo_url"
@@ -127,8 +93,12 @@
             >
               {{ user?.prenom?.charAt(0)?.toUpperCase() }}{{ user?.nom?.charAt(0)?.toUpperCase() }}
             </div>
-            <span class="text-sm text-gray-700 whitespace-nowrap font-medium">{{ fullName }}</span>
-            <font-awesome-icon icon="fa-solid fa-chevron-down" class="text-xs text-gray-500 transition-transform" :class="{ 'rotate-180': pointer === 'profil' }" />
+            <span class="text-sm text-gray-700 whitespace-nowrap font-medium hidden xl:inline">{{ fullName }}</span>
+            <font-awesome-icon
+              icon="fa-solid fa-chevron-down"
+              class="text-[10px] text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': pointer === 'profil' }"
+            />
           </div>
 
           <!-- Dropdown profil -->
@@ -142,10 +112,10 @@
           >
             <div
               v-if="pointer === 'profil'"
-              class="absolute right-0 top-full mt-2 w-60 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50"
+              class="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
             >
               <!-- En-tête profil -->
-              <div class="p-4 bg-gray-50 border-b border-gray-100 flex flex-col items-center gap-2">
+              <div class="p-4 bg-gray-50/80 border-b border-gray-100 flex flex-col items-center gap-2">
                 <img
                   v-if="user?.photo_url"
                   :src="user.photo_url"
@@ -202,7 +172,7 @@
         <NuxtLink
           v-else
           to="/login"
-          class="bg-custom-chocolat text-white px-4 py-1 rounded-full text-sm hover:opacity-90 transition-opacity whitespace-nowrap"
+          class="bg-custom-chocolat text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
         >
           Se connecter
         </NuxtLink>
@@ -220,62 +190,54 @@
     >
       <nav
         v-if="mobileOpen"
-        class="lg:hidden bg-white border-t border-gray-200 shadow-lg max-h-[80vh] overflow-y-auto"
+        class="lg:hidden bg-white border-t border-gray-100 shadow-lg max-h-[80vh] overflow-y-auto"
       >
         <div class="flex flex-col py-2">
-          <!-- Africarise -->
-          <button class="mobile-link flex items-center justify-between" @click="mobileSection = mobileSection === 'africarise' ? null : 'africarise'">
-            Africarise
-            <font-awesome-icon :icon="mobileSection === 'africarise' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
-          </button>
-          <div v-if="mobileSection === 'africarise'" class="bg-gray-50">
-            <NuxtLink v-for="item in africariseItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
-              {{ item.label }}
-            </NuxtLink>
-          </div>
+          <!-- Sections de menu -->
+          <div v-for="menu in menus" :key="menu.id">
+            <button
+              class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+              @click="mobileSection = mobileSection === menu.id ? null : menu.id"
+            >
+              <div class="flex flex-col items-start">
+                <span class="font-semibold text-sm" :class="menu.colorClass || 'text-custom-chocolat'">
+                  {{ menu.label }}
+                </span>
+                <span class="text-[11px] text-gray-400">{{ menu.subtitle }}</span>
+              </div>
+              <font-awesome-icon
+                :icon="mobileSection === menu.id ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"
+                class="text-xs text-gray-400 transition-transform duration-200"
+              />
+            </button>
 
-          <!-- Mindshiftlab -->
-          <button class="mobile-link flex items-center justify-between" @click="mobileSection = mobileSection === 'mindshiftlab' ? null : 'mindshiftlab'">
-            Mindshiftlab
-            <font-awesome-icon :icon="mobileSection === 'mindshiftlab' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
-          </button>
-          <div v-if="mobileSection === 'mindshiftlab'" class="bg-gray-50">
-            <NuxtLink v-for="item in mindshiftlabItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
-              {{ item.label }}
-            </NuxtLink>
-          </div>
-
-          <!-- Novagouv -->
-          <button class="mobile-link flex items-center justify-between" @click="mobileSection = mobileSection === 'novagouv' ? null : 'novagouv'">
-            Novagouv
-            <font-awesome-icon :icon="mobileSection === 'novagouv' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
-          </button>
-          <div v-if="mobileSection === 'novagouv'" class="bg-gray-50">
-            <NuxtLink v-for="item in novagouvItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
-              {{ item.label }}
-            </NuxtLink>
-          </div>
-
-          <!-- Africamood -->
-          <button class="mobile-link flex items-center justify-between" @click="mobileSection = mobileSection === 'media' ? null : 'media'">
-            <span class="text-custom-green">Africamood</span>
-            <font-awesome-icon :icon="mobileSection === 'media' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
-          </button>
-          <div v-if="mobileSection === 'media'" class="bg-gray-50">
-            <NuxtLink v-for="item in africamoodItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
-              {{ item.label }}
-            </NuxtLink>
-          </div>
-
-          <!-- Opafrica -->
-          <button class="mobile-link flex items-center justify-between" @click="mobileSection = mobileSection === 'opafrica' ? null : 'opafrica'">
-            Opafrica
-            <font-awesome-icon :icon="mobileSection === 'opafrica' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-xs" />
-          </button>
-          <div v-if="mobileSection === 'opafrica'" class="bg-gray-50">
-            <NuxtLink v-for="item in opafricaItems" :key="item.to" :to="item.to" class="mobile-sublink" @click="mobileOpen = false">
-              {{ item.label }}
-            </NuxtLink>
+            <!-- Sous-liens mobile avec descriptions -->
+            <Transition
+              enter-active-class="transition-all duration-200 ease-out"
+              enter-from-class="opacity-0 -translate-y-1"
+              enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition-all duration-150 ease-in"
+              leave-from-class="opacity-100 translate-y-0"
+              leave-to-class="opacity-0 -translate-y-1"
+            >
+              <div v-if="mobileSection === menu.id" class="bg-gray-50/50 border-y border-gray-100/80 py-1">
+                <NuxtLink
+                  v-for="item in menu.items"
+                  :key="item.to"
+                  :to="item.to"
+                  class="flex items-start gap-3 px-5 py-2.5 hover:bg-gray-100/50 transition-colors"
+                  @click="mobileOpen = false"
+                >
+                  <div class="shrink-0 w-7 h-7 rounded-md bg-orange-50 text-custom-chocolat flex items-center justify-center mt-0.5">
+                    <font-awesome-icon :icon="item.icon" class="text-xs" />
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-700">{{ item.label }}</p>
+                    <p class="text-[11px] text-gray-400 mt-0.5 leading-snug">{{ item.description }}</p>
+                  </div>
+                </NuxtLink>
+              </div>
+            </Transition>
           </div>
 
           <!-- Auth mobile -->
@@ -331,7 +293,7 @@
             <NuxtLink
               v-else
               to="/login"
-              class="block text-center bg-custom-chocolat text-white py-2 rounded-full text-sm hover:opacity-90 transition-opacity"
+              class="block text-center bg-custom-chocolat text-white py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
               @click="mobileOpen = false"
             >
               Se connecter
@@ -347,6 +309,23 @@
 </template>
 
 <script setup lang="ts">
+interface NavSubItem {
+  label: string
+  to: string
+  description: string
+  icon: string
+}
+
+interface NavMenu {
+  id: string
+  label: string
+  subtitle: string
+  description: string
+  to: string
+  colorClass?: string
+  items: NavSubItem[]
+}
+
 const pointer = ref<string | null>(null)
 const mobileOpen = ref(false)
 const mobileSection = ref<string | null>(null)
@@ -381,47 +360,74 @@ const handleLogout = async () => {
   mobileOpen.value = false
 }
 
-const africariseItems = [
-  { label: 'Afrolang', to: '/afrolang' },
-  { label: 'Codimoi', to: '/evenements/codi-moi' },
-  { label: 'Afroculture', to: '/africain-afro-americain' },
-  { label: 'Africalive', to: '/evenements/liste' },
-]
-
-const mindshiftlabItems = [
-  { label: 'INUDA', to: '/universite/inuda' },
-  { label: 'Numetech', to: '/bibliotheque/numerique' },
-  { label: 'Humantech', to: '/bibliotheque/humaine' },
-]
-
-const novagouvItems = [
-  { label: 'Factcheck', to: '/universite/gouvernance/factcheck' },
-  { label: 'Ideaforces', to: '/universite/gouvernance/ideaforces' },
-  { label: 'Badhabits', to: '/universite/gouvernance/badhabits' },
-]
-
-const africamoodItems = [
-  { label: 'Télé', to: '/tele' },
-  { label: 'Radio', to: '/radios' },
-  { label: 'Africalive', to: '/evenements/liste' },
-]
-
-const opafricaItems = [
-  { label: 'Afripulse', to: '/opportunite-afrique' },
-  { label: 'Diapertise', to: '/experts' },
-  { label: 'Sabbafrica', to: '/echanges-sabbatiques' },
-  { label: 'Afromarket', to: '/marche-africain' },
-  { label: 'Africantives', to: '/africantives' },
+const menus: NavMenu[] = [
+  {
+    id: 'africarise',
+    label: 'Africarise',
+    subtitle: 'Culture & identité',
+    description: 'Découvrez et célébrez la richesse culturelle et identitaire de l\'Afrique',
+    to: '/africa-culture',
+    items: [
+      { label: 'Afrolang', to: '/afrolang', description: 'Apprenez les langues du continent', icon: 'fa-solid fa-language' },
+      { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
+      { label: 'Afroculture', to: '/africain-afro-americain', description: 'Échanges culturels Afrique-diaspora', icon: 'fa-solid fa-earth-africa' },
+      { label: 'Africalive', to: '/evenements/liste', description: 'Événements et rencontres en direct', icon: 'fa-solid fa-calendar-days' },
+    ]
+  },
+  {
+    id: 'mindshiftlab',
+    label: 'Mindshiftlab',
+    subtitle: 'Formation & savoir',
+    description: 'Se former et développer de nouvelles compétences pour le continent',
+    to: '/universite',
+    items: [
+      { label: 'INUDA', to: '/universite/inuda', description: 'Institut numérique universitaire d\'Afrique', icon: 'fa-solid fa-graduation-cap' },
+      { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
+      { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Sciences humaines et sociales', icon: 'fa-solid fa-chalkboard-user' },
+    ]
+  },
+  {
+    id: 'novagouv',
+    label: 'Novagouv',
+    subtitle: 'Gouvernance',
+    description: 'Promouvoir une gouvernance transparente et responsable en Afrique',
+    to: '/universite/gouvernance',
+    items: [
+      { label: 'Factcheck', to: '/universite/gouvernance/factcheck', description: 'Vérification des faits et informations', icon: 'fa-solid fa-scale-balanced' },
+      { label: 'Ideaforces', to: '/universite/gouvernance/ideaforces', description: 'Idées et propositions citoyennes', icon: 'fa-solid fa-lightbulb' },
+      { label: 'Badhabits', to: '/universite/gouvernance/badhabits', description: 'Pratiques néfastes à combattre', icon: 'fa-solid fa-triangle-exclamation' },
+    ]
+  },
+  {
+    id: 'media',
+    label: 'Africamood',
+    subtitle: 'Médias',
+    description: 'Suivre l\'actualité médiatique et culturelle du continent africain',
+    to: '/medias',
+    colorClass: 'text-custom-green',
+    items: [
+      { label: 'Télé', to: '/tele', description: 'Chaînes de télévision africaines', icon: 'fa-solid fa-tv' },
+      { label: 'Radio', to: '/radios', description: 'Stations radio du continent', icon: 'fa-solid fa-radio' },
+      { label: 'Africalive', to: '/evenements/liste', description: 'Événements et directs en streaming', icon: 'fa-solid fa-video' },
+    ]
+  },
+  {
+    id: 'opafrica',
+    label: 'Opafrica',
+    subtitle: 'Opportunités',
+    description: 'Saisir les opportunités et agir concrètement pour le développement du continent',
+    to: '/actions',
+    items: [
+      { label: 'Afripulse', to: '/opportunite-afrique', description: 'Offres d\'emploi et opportunités', icon: 'fa-solid fa-briefcase' },
+      { label: 'Diapertise', to: '/experts', description: 'Experts et consultants de la diaspora', icon: 'fa-solid fa-user-tie' },
+      { label: 'Sabbafrica', to: '/echanges-sabbatiques', description: 'Programmes d\'échanges sabbatiques', icon: 'fa-solid fa-plane' },
+      { label: 'Afromarket', to: '/marche-africain', description: 'Place de marché panafricaine', icon: 'fa-solid fa-store' },
+      { label: 'Africantives', to: '/africantives', description: 'Innovations et startups africaines', icon: 'fa-solid fa-rocket' },
+    ]
+  },
 ]
 </script>
 
 <style scoped>
 @reference "~/assets/css/main.css";
-
-.mobile-link {
-  @apply px-4 py-3 text-custom-chocolat font-semibold hover:bg-gray-50 hover:text-custom-green transition-colors;
-}
-.mobile-sublink {
-  @apply block px-8 py-2.5 text-sm text-gray-700 hover:text-custom-green hover:bg-gray-100 transition-colors;
-}
 </style>

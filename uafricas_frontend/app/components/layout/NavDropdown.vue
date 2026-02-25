@@ -1,27 +1,49 @@
 <template>
-  <div
-    :class="open ? 'max-h-96 border-t-4 border-custom-chocolat' : 'max-h-0'"
-    class="absolute top-full -left-4 z-50 w-48 whitespace-nowrap text-custom-chocolat overflow-hidden transition-all duration-300"
+  <Transition
+    enter-active-class="transition-all duration-200 ease-out"
+    enter-from-class="opacity-0 translate-y-1"
+    enter-to-class="opacity-100 translate-y-0"
+    leave-active-class="transition-all duration-150 ease-in"
+    leave-from-class="opacity-100 translate-y-0"
+    leave-to-class="opacity-0 translate-y-1"
   >
-    <NuxtLink
-      v-for="(item, i) in items"
-      :key="item.to"
-      :to="item.to"
-    >
-      <div
-        :class="open ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'"
-        :style="{ transitionDelay: open ? `${i * 50}ms` : `${(items.length - i) * 50}ms` }"
-        class="px-3 py-2 bg-white/80 cursor-pointer transition-all duration-300 hover:border-l-4 hover:border-custom-green hover:pl-4 hover:text-custom-green hover:bg-white/70"
-      >
-        {{ item.label }}
+    <div v-if="open" class="absolute top-full left-1/2 -translate-x-1/2 z-50 pt-2">
+      <div class="w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+        <!-- En-tête avec description de la section -->
+        <div v-if="description" class="px-4 py-2.5 bg-gray-50/80 border-b border-gray-100">
+          <p class="text-[11px] text-gray-500 leading-relaxed">{{ description }}</p>
+        </div>
+
+        <!-- Liste des liens -->
+        <div class="p-1.5">
+          <NuxtLink
+            v-for="item in items"
+            :key="item.to"
+            :to="item.to"
+            class="group flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-all duration-150"
+          >
+            <div class="shrink-0 w-8 h-8 rounded-lg bg-orange-50 text-custom-chocolat flex items-center justify-center mt-0.5 group-hover:bg-green-50 group-hover:text-custom-green transition-colors duration-150">
+              <font-awesome-icon :icon="item.icon" class="text-sm" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-gray-800 group-hover:text-custom-green transition-colors duration-150">
+                {{ item.label }}
+              </p>
+              <p class="text-[11px] text-gray-400 mt-0.5 leading-snug">
+                {{ item.description }}
+              </p>
+            </div>
+          </NuxtLink>
+        </div>
       </div>
-    </NuxtLink>
-  </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
 defineProps<{
   open: boolean
-  items: Array<{ label: string; to: string }>
+  description?: string
+  items: Array<{ label: string; to: string; description: string; icon: string }>
 }>()
 </script>
