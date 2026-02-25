@@ -21,7 +21,7 @@
           <div class="relative h-full flex flex-col justify-between p-3.5 z-10">
             <div>
               <p class="text-white font-bold text-sm leading-tight drop-shadow-sm">{{ menuLabel }}</p>
-              <p v-if="description" class="text-white/80 text-[10px] leading-snug mt-2 drop-shadow-sm">{{ description }}</p>
+              <p v-if="description" class="text-white/80 text-[11px] leading-snug mt-2 drop-shadow-sm">{{ description }}</p>
             </div>
             <NuxtLink
               :to="menuTo"
