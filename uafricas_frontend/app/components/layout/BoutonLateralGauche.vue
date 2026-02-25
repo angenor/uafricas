@@ -68,7 +68,7 @@
         </div>
 
         <!-- Liens -->
-        <div class="p-1.5 max-h-72 overflow-y-auto">
+        <div class="p-1.5">
           <NuxtLink
             v-for="link in item.links"
             :key="link.to"
