@@ -55,6 +55,10 @@
           <LayoutNavDropdown
             :open="pointer === menu.id"
             :description="menu.description"
+            :image="menu.image"
+            :menu-label="menu.label"
+            :menu-to="menu.to"
+            :gradient="menu.gradient"
             :items="menu.items"
           />
         </div>
@@ -322,6 +326,8 @@ interface NavMenu {
   subtitle: string
   description: string
   to: string
+  gradient: string
+  image?: string
   colorClass?: string
   items: NavSubItem[]
 }
@@ -367,6 +373,8 @@ const menus: NavMenu[] = [
     subtitle: 'Culture & identité',
     description: 'Découvrez et célébrez la richesse culturelle et identitaire de l\'Afrique',
     to: '/africa-culture',
+    gradient: 'bg-linear-to-br from-amber-700 to-orange-900',
+    image: '/images/danse-afrique.jpg',
     items: [
       { label: 'Afrolang', to: '/afrolang', description: 'Apprenez les langues du continent', icon: 'fa-solid fa-language' },
       { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
@@ -380,6 +388,8 @@ const menus: NavMenu[] = [
     subtitle: 'Formation & savoir',
     description: 'Se former et développer de nouvelles compétences pour le continent',
     to: '/universite',
+    gradient: 'bg-linear-to-br from-blue-700 to-indigo-900',
+    image: '/images/education.png',
     items: [
       { label: 'INUDA', to: '/universite/inuda', description: 'Institut numérique universitaire d\'Afrique', icon: 'fa-solid fa-graduation-cap' },
       { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
@@ -392,6 +402,8 @@ const menus: NavMenu[] = [
     subtitle: 'Gouvernance',
     description: 'Promouvoir une gouvernance transparente et responsable en Afrique',
     to: '/universite/gouvernance',
+    gradient: 'bg-linear-to-br from-violet-700 to-purple-900',
+    image: '/images/bonne_gouvernance.png',
     items: [
       { label: 'Factcheck', to: '/universite/gouvernance/factcheck', description: 'Vérification des faits et informations', icon: 'fa-solid fa-scale-balanced' },
       { label: 'Ideaforces', to: '/universite/gouvernance/ideaforces', description: 'Idées et propositions citoyennes', icon: 'fa-solid fa-lightbulb' },
@@ -404,6 +416,8 @@ const menus: NavMenu[] = [
     subtitle: 'Médias',
     description: 'Suivre l\'actualité médiatique et culturelle du continent africain',
     to: '/medias',
+    gradient: 'bg-linear-to-br from-emerald-600 to-green-800',
+    image: '/images/tele_baniere.png',
     colorClass: 'text-custom-green',
     items: [
       { label: 'Télé', to: '/tele', description: 'Chaînes de télévision africaines', icon: 'fa-solid fa-tv' },
@@ -417,6 +431,8 @@ const menus: NavMenu[] = [
     subtitle: 'Opportunités',
     description: 'Saisir les opportunités et agir concrètement pour le développement du continent',
     to: '/actions',
+    gradient: 'bg-linear-to-br from-teal-600 to-cyan-800',
+    image: '/images/fiche-opportunite.jpg',
     items: [
       { label: 'Afripulse', to: '/opportunite-afrique', description: 'Offres d\'emploi et opportunités', icon: 'fa-solid fa-briefcase' },
       { label: 'Diapertise', to: '/experts', description: 'Experts et consultants de la diaspora', icon: 'fa-solid fa-user-tie' },
