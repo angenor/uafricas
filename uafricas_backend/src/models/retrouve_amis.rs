@@ -134,7 +134,7 @@ pub struct CorrespondanceResultat {
 // ══════════════════════════════════════════════════════════════
 
 /// Info pays jointe depuis shared.pays
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, sqlx::FromRow)]
 pub struct PaysInfo {
     pub id: Uuid,
     pub nom: String,

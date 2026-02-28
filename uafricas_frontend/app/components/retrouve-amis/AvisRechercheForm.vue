@@ -48,11 +48,11 @@ onMounted(async () => {
   try {
     const config = useRuntimeConfig()
     const apiBase = config.public.apiBaseUrl as string
-    const reponse = await $fetch<{ success: boolean; data: { pays: PaysInfo[] } }>(
-      `${apiBase}/api/admin/pays`,
+    const reponse = await $fetch<{ success: boolean; data: PaysInfo[] }>(
+      `${apiBase}/api/retrouve-amis/pays`,
     )
-    if (reponse.success && reponse.data?.pays) {
-      listePays.value = reponse.data.pays
+    if (reponse.success && reponse.data) {
+      listePays.value = reponse.data
     }
   }
   catch {

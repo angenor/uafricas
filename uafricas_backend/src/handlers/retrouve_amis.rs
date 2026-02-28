@@ -22,6 +22,28 @@ use crate::models::retrouve_amis::*;
 use crate::services::audit;
 use crate::ApiResponse;
 
+// ════════════════════════════════════════════════════════════════════════════
+// PAYS — Liste publique
+// ════════════════════════════════════════════════════════════════════════════
+
+/// GET /api/retrouve-amis/pays
+/// Liste des pays actifs (id, nom) sans authentification
+pub async fn lister_pays(
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let pays: Vec<PaysInfo> = sqlx::query_as(
+        "SELECT id, nom FROM shared.pays WHERE actif = TRUE ORDER BY nom ASC",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(pays),
+        error: None,
+    }))
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 /// Extraire l'ID utilisateur depuis le token JWT dans le header Authorization
@@ -119,7 +141,7 @@ pub async fn creer_avis(
 
     // Déclencher le matching
     let correspondances: Vec<CorrespondanceResultat> = sqlx::query_as(
-        "SELECT cible_type::text AS cible_type, cible_id, score_total::float8 AS score_total, details
+        "SELECT cible_type::text AS type_cible, cible_id, score_total::float8 AS score_total, details
          FROM retrouve_amis.calculer_correspondances($1)
          WHERE score_total >= 60"
     )
@@ -564,7 +586,7 @@ pub async fn modifier_avis(
 
     // Relancer le matching
     let correspondances: Vec<CorrespondanceResultat> = sqlx::query_as(
-        "SELECT cible_type::text AS cible_type, cible_id, score_total::float8 AS score_total, details
+        "SELECT cible_type::text AS type_cible, cible_id, score_total::float8 AS score_total, details
          FROM retrouve_amis.calculer_correspondances($1)
          WHERE score_total >= 60"
     )
@@ -1525,7 +1547,7 @@ pub async fn basculer_trouvable(
 
         for (a_id,) in &avis_actifs {
             let resultats: Vec<CorrespondanceResultat> = sqlx::query_as(
-                "SELECT cible_type::text AS cible_type, cible_id, score_total::float8 AS score_total, details
+                "SELECT cible_type::text AS type_cible, cible_id, score_total::float8 AS score_total, details
                  FROM retrouve_amis.calculer_correspondances($1)
                  WHERE cible_type = 'profil' AND cible_id = $2 AND score_total >= 60"
             )

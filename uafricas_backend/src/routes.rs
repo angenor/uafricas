@@ -338,6 +338,8 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             // Routes Retrouve Amis
             .service(
                 web::scope("/retrouve-amis")
+                    // Pays (liste publique sans auth)
+                    .route("/pays", web::get().to(retrouve_amis::lister_pays))
                     // Avis de recherche
                     .route("/avis", web::post().to(retrouve_amis::creer_avis))
                     .route("/avis", web::get().to(retrouve_amis::lister_avis))
