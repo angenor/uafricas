@@ -27,7 +27,7 @@ Un utilisateur connecté souhaite retrouver un ami perdu de vue. Il accède à l
 
 **Acceptance Scenarios**:
 
-1. **Given** un utilisateur connecté, **When** il remplit le formulaire d'avis de recherche avec au minimum un nom et une ville/pays, **Then** l'avis est créé avec le statut "actif" et apparaît dans son tableau de bord.
+1. **Given** un utilisateur connecté, **When** il remplit le formulaire d'avis de recherche avec au minimum un nom et au moins un critère supplémentaire (prénom, école, ville, pays ou période), **Then** l'avis est créé avec le statut "actif" et apparaît dans son tableau de bord.
 2. **Given** un utilisateur connecté, **When** il remplit le formulaire sans les champs obligatoires (nom et au moins un critère géographique ou temporel), **Then** un message d'erreur lui indique les champs manquants.
 3. **Given** un utilisateur ayant un avis actif, **When** il modifie les informations de son avis, **Then** les modifications sont enregistrées et le recoupement est relancé.
 4. **Given** un utilisateur ayant un avis actif, **When** il décide de clôturer son avis (ami retrouvé ou abandon), **Then** l'avis passe au statut "clôturé" et n'apparaît plus dans les recoupements.
@@ -103,7 +103,7 @@ L'utilisateur accède à un tableau de bord dédié listant ses avis de recherch
 - Que se passe-t-il si un utilisateur dépose un avis de recherche sur lui-même (se cherche lui-même) ? Le système doit détecter et empêcher l'auto-correspondance.
 - Que se passe-t-il si un utilisateur abuse du système en déposant de nombreux avis frauduleux ? Un mécanisme de limitation (maximum 10 avis actifs simultanés) et de signalement est nécessaire.
 - Que se passe-t-il si la personne recherchée n'est pas inscrite et qu'aucun autre avis ne correspond ? L'utilisateur est informé qu'aucune correspondance n'a été trouvée pour l'instant, et sera notifié dès qu'une correspondance apparaîtra.
-- Que se passe-t-il si un utilisateur supprime son compte alors qu'il a des correspondances en cours ? Les correspondances sont annulées et l'autre partie est notifiée que la correspondance n'est plus disponible.
+- Que se passe-t-il si un utilisateur supprime son compte alors qu'il a des correspondances en cours ? Les FK `ON DELETE CASCADE` suppriment automatiquement les avis, correspondances, parcours et notifications de l'utilisateur. **MVP** : pas de notification à l'autre partie — la correspondance disparaît simplement de sa liste. À améliorer en phase ultérieure si besoin.
 - Comment gérer les homonymes ? Le score de correspondance prend en compte plusieurs critères (nom + lieu + période) pour réduire les faux positifs. Un score minimum de 60% est requis pour notifier. En cas de correspondances multiples (homonymes), toutes sont présentées triées par score décroissant et l'utilisateur choisit la bonne personne.
 - Que se passe-t-il si un utilisateur signale un avis de recherche comme abusif ou malveillant ? L'avis est suspendu en attente de modération par un administrateur.
 - Que se passe-t-il si un utilisateur refuse un contact puis est retrouvé via un nouvel avis ? Impossible : après un refus, une blacklist automatique empêche toute future correspondance entre ces deux utilisateurs.
@@ -124,12 +124,12 @@ L'utilisateur accède à un tableau de bord dédié listant ses avis de recherch
 - **FR-010**: Le système DOIT limiter le nombre d'avis de recherche actifs à 10 par utilisateur.
 - **FR-011**: Le système DOIT permettre aux utilisateurs de signaler un avis de recherche comme abusif, déclenchant une modération administrative.
 - **FR-012**: Le système DOIT archiver automatiquement les correspondances sans réponse après 30 jours.
-- **FR-018**: Le système DOIT conserver indéfiniment les avis de recherche clôturés et les correspondances associées, permettant à l'utilisateur de consulter son historique complet à tout moment.
 - **FR-013**: Le système DOIT relancer le recoupement lorsqu'un nouvel avis est créé ou qu'un profil utilisateur active l'option "trouvable".
 - **FR-014**: Le système DOIT fournir un tableau de bord listant les avis de recherche, correspondances et mises en contact de l'utilisateur.
 - **FR-015**: Le système DOIT empêcher l'auto-correspondance (un utilisateur ne peut pas correspondre avec son propre avis ou profil).
 - **FR-016**: Le système DOIT permettre aux administrateurs de modérer les avis signalés (approuver, suspendre, supprimer).
 - **FR-017**: Le système DOIT bloquer automatiquement toute future correspondance entre deux utilisateurs lorsque l'un refuse le contact de l'autre (blacklist mutuelle implicite), afin de prévenir le harcèlement et les tentatives répétées de contact non désiré.
+- **FR-018**: Le système DOIT conserver indéfiniment les avis de recherche clôturés et les correspondances associées, permettant à l'utilisateur de consulter son historique complet à tout moment.
 
 ### Key Entities
 
@@ -156,5 +156,5 @@ L'utilisateur accède à un tableau de bord dédié listant ses avis de recherch
 - Les informations de profil existantes (nom, ville, pays) peuvent être exploitées pour le recoupement lorsque l'utilisateur consent à être trouvable.
 - La recherche par similarité de noms prend en compte les variantes orthographiques courantes et les noms africains (accents, transcriptions).
 - Le système de notification utilise le mécanisme de notification existant de la plateforme (ou en crée un si inexistant).
-- La messagerie interne comme option de contact utilise un canal simple intégré à la plateforme.
+- La messagerie interne comme option de contact : pour le MVP, il s'agit d'un simple flag booléen dans les coordonnées partagées (`messagerie: true`), signifiant que l'utilisateur accepte d'être contacté via la plateforme. Un système de messagerie intégré pourra être ajouté en phase ultérieure.
 - La modération des avis signalés est effectuée manuellement par les administrateurs via le back-office existant.
