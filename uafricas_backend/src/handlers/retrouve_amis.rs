@@ -1,0 +1,1870 @@
+// ════════════════════════════════════════════════════════════════════════════
+// Handlers publics — Retrouve Amis
+// ════════════════════════════════════════════════════════════════════════════
+//
+// Endpoints publics pour la fonctionnalité "Retrouve Amis" :
+// - CRUD avis de recherche
+// - Correspondances (listing, détail, accepter, refuser)
+// - Signalements
+// - Notifications
+// - Tableau de bord
+// - Profil trouvable (basculer, parcours CRUD)
+// ════════════════════════════════════════════════════════════════════════════
+
+use actix_web::{web, HttpRequest, HttpResponse};
+use chrono::Utc;
+use sqlx::PgPool;
+use uuid::Uuid;
+
+use crate::errors::ApiErreur;
+use crate::jwt;
+use crate::models::retrouve_amis::*;
+use crate::services::audit;
+use crate::ApiResponse;
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+/// Extraire l'ID utilisateur depuis le token JWT dans le header Authorization
+fn extraire_utilisateur_id(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
+    let header = req
+        .headers()
+        .get("Authorization")
+        .and_then(|h| h.to_str().ok())
+        .ok_or_else(|| ApiErreur::NonAutorise("Token manquant".into()))?;
+
+    let token = jwt::extraire_token_du_header(header)?;
+    let jwt_config = req
+        .app_data::<web::Data<crate::config::JwtConfig>>()
+        .ok_or_else(|| ApiErreur::BaseDeDonnees("Configuration JWT manquante".into()))?;
+    let claims = jwt::valider_token(token, &jwt_config.secret)?;
+    claims
+        .sub
+        .parse::<Uuid>()
+        .map_err(|_| ApiErreur::NonAutorise("ID utilisateur invalide".into()))
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// AVIS DE RECHERCHE — CRUD
+// ════════════════════════════════════════════════════════════════════════════
+
+/// POST /api/retrouve-amis/avis
+/// Créer un nouvel avis de recherche et déclencher le matching
+pub async fn creer_avis(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    body: web::Json<CreerAvisRecherche>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let data = body.into_inner();
+
+    // Validation : nom_recherche obligatoire
+    if data.nom_recherche.trim().is_empty() {
+        return Err(ApiErreur::Validation("Le nom recherché est obligatoire".into()));
+    }
+
+    // Validation : au moins un critère supplémentaire
+    let a_critere = data.prenom_recherche.as_ref().map_or(false, |v| !v.trim().is_empty())
+        || data.ecole.as_ref().map_or(false, |v| !v.trim().is_empty())
+        || data.ville.as_ref().map_or(false, |v| !v.trim().is_empty())
+        || data.pays_id.is_some()
+        || data.periode_debut.is_some();
+    if !a_critere {
+        return Err(ApiErreur::Validation(
+            "Au moins un critère supplémentaire est requis (prénom, école, ville, pays ou période)".into(),
+        ));
+    }
+
+    // Validation : période cohérente
+    if let (Some(debut), Some(fin)) = (data.periode_debut, data.periode_fin) {
+        if debut > fin {
+            return Err(ApiErreur::Validation(
+                "La période de début doit être antérieure à la période de fin".into(),
+            ));
+        }
+    }
+
+    // Vérifier la limite de 10 avis actifs
+    let compte: (i64,) = sqlx::query_as(
+        "SELECT COUNT(*) FROM retrouve_amis.avis_recherche WHERE auteur_id = $1 AND etat = 'actif' AND deleted_at IS NULL"
+    )
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    if compte.0 >= 10 {
+        return Err(ApiErreur::Validation(
+            "Limite de 10 avis de recherche actifs atteinte".into(),
+        ));
+    }
+
+    // Insérer l'avis
+    let avis_id: (Uuid,) = sqlx::query_as(
+        "INSERT INTO retrouve_amis.avis_recherche
+         (auteur_id, nom_recherche, prenom_recherche, surnom, ecole, ville, pays_id, periode_debut, periode_fin, description)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         RETURNING id"
+    )
+    .bind(utilisateur_id)
+    .bind(&data.nom_recherche)
+    .bind(&data.prenom_recherche)
+    .bind(&data.surnom)
+    .bind(&data.ecole)
+    .bind(&data.ville)
+    .bind(data.pays_id)
+    .bind(data.periode_debut)
+    .bind(data.periode_fin)
+    .bind(&data.description)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    // Déclencher le matching
+    let correspondances: Vec<CorrespondanceResultat> = sqlx::query_as(
+        "SELECT cible_type::text AS cible_type, cible_id, score_total::float8 AS score_total, details
+         FROM retrouve_amis.calculer_correspondances($1)
+         WHERE score_total >= 60"
+    )
+    .bind(avis_id.0)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let mut nb_correspondances: i64 = 0;
+
+    for corr in &correspondances {
+        // Insérer la correspondance
+        let corr_id: (Uuid,) = match corr.type_cible.as_str() {
+            "avis" => {
+                sqlx::query_as(
+                    "INSERT INTO retrouve_amis.correspondance
+                     (avis_id, type_cible, cible_avis_id, score, details_score, expire_at)
+                     VALUES ($1, 'avis', $2, $3, $4, NOW() + INTERVAL '30 days')
+                     RETURNING id"
+                )
+                .bind(avis_id.0)
+                .bind(corr.cible_id)
+                .bind(corr.score_total)
+                .bind(&corr.details)
+                .fetch_one(pool.get_ref())
+                .await?
+            }
+            "profil" => {
+                sqlx::query_as(
+                    "INSERT INTO retrouve_amis.correspondance
+                     (avis_id, type_cible, cible_utilisateur_id, score, details_score, expire_at)
+                     VALUES ($1, 'profil', $2, $3, $4, NOW() + INTERVAL '30 days')
+                     RETURNING id"
+                )
+                .bind(avis_id.0)
+                .bind(corr.cible_id)
+                .bind(corr.score_total)
+                .bind(&corr.details)
+                .fetch_one(pool.get_ref())
+                .await?
+            }
+            _ => continue,
+        };
+
+        // Créer notification pour l'auteur de l'avis source
+        sqlx::query(
+            "INSERT INTO retrouve_amis.notification_retrouve
+             (utilisateur_id, correspondance_id, type) VALUES ($1, $2, 'nouvelle_correspondance')"
+        )
+        .bind(utilisateur_id)
+        .bind(corr_id.0)
+        .execute(pool.get_ref())
+        .await?;
+
+        // Créer notification pour la cible
+        let cible_utilisateur_id = match corr.type_cible.as_str() {
+            "avis" => {
+                let row: (Uuid,) = sqlx::query_as(
+                    "SELECT auteur_id FROM retrouve_amis.avis_recherche WHERE id = $1"
+                )
+                .bind(corr.cible_id)
+                .fetch_one(pool.get_ref())
+                .await?;
+                row.0
+            }
+            "profil" => corr.cible_id,
+            _ => continue,
+        };
+
+        sqlx::query(
+            "INSERT INTO retrouve_amis.notification_retrouve
+             (utilisateur_id, correspondance_id, type) VALUES ($1, $2, 'nouvelle_correspondance')"
+        )
+        .bind(cible_utilisateur_id)
+        .bind(corr_id.0)
+        .execute(pool.get_ref())
+        .await?;
+
+        nb_correspondances += 1;
+    }
+
+    // Audit
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "INSERT",
+        "retrouve_amis",
+        "avis_recherche",
+        Some(avis_id.0),
+        None,
+        Some(serde_json::json!({
+            "nom_recherche": &data.nom_recherche,
+            "correspondances_trouvees": nb_correspondances
+        })),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(CreerAvisResponse {
+            id: avis_id.0,
+            etat: "actif".to_string(),
+            correspondances_trouvees: nb_correspondances,
+        }),
+        error: None,
+    }))
+}
+
+/// GET /api/retrouve-amis/avis
+/// Lister les avis de recherche de l'utilisateur connecté
+pub async fn lister_avis(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+
+    let etat = query.get("etat").cloned();
+    let page: i64 = query.get("page").and_then(|v| v.parse().ok()).unwrap_or(1).max(1);
+    let par_page: i64 = query.get("par_page").and_then(|v| v.parse().ok()).unwrap_or(20).min(100).max(1);
+    let tri = query.get("tri").cloned().unwrap_or_else(|| "created_at".to_string());
+    let ordre = query.get("ordre").cloned().unwrap_or_else(|| "desc".to_string());
+
+    // Valider la colonne de tri
+    let tri_valide = if AVIS_TRI_COLONNES.contains(&tri.as_str()) { &tri } else { "created_at" };
+    let ordre_valide = if ordre == "asc" { "ASC" } else { "DESC" };
+
+    let offset = (page - 1) * par_page;
+
+    // Construire la requête dynamiquement
+    let mut conditions = vec!["a.auteur_id = $1".to_string(), "a.deleted_at IS NULL".to_string()];
+    if etat.is_some() {
+        conditions.push("a.etat::text = $2".to_string());
+    }
+
+    let where_clause = conditions.join(" AND ");
+    let count_sql = format!(
+        "SELECT COUNT(*) FROM retrouve_amis.avis_recherche a WHERE {}",
+        where_clause
+    );
+    let list_sql = format!(
+        "SELECT a.id, a.nom_recherche, a.prenom_recherche, a.surnom, a.ecole, a.ville,
+                a.pays_id, a.etat::text AS etat, a.periode_debut, a.periode_fin, a.description,
+                a.created_at, a.updated_at, a.deleted_at,
+                p.id AS pays_info_id, p.nom AS pays_nom,
+                (SELECT COUNT(*) FROM retrouve_amis.correspondance c WHERE c.avis_id = a.id) AS nb_correspondances
+         FROM retrouve_amis.avis_recherche a
+         LEFT JOIN shared.pays p ON p.id = a.pays_id
+         WHERE {}
+         ORDER BY a.{} {}
+         LIMIT {} OFFSET {}",
+        where_clause, tri_valide, ordre_valide, par_page, offset
+    );
+
+    let total: (i64,) = if let Some(ref e) = etat {
+        sqlx::query_as(&count_sql)
+            .bind(utilisateur_id)
+            .bind(e)
+            .fetch_one(pool.get_ref())
+            .await?
+    } else {
+        sqlx::query_as(&count_sql)
+            .bind(utilisateur_id)
+            .fetch_one(pool.get_ref())
+            .await?
+    };
+
+    #[derive(sqlx::FromRow)]
+    struct AvisRow {
+        id: Uuid,
+        nom_recherche: String,
+        prenom_recherche: Option<String>,
+        surnom: Option<String>,
+        ecole: Option<String>,
+        ville: Option<String>,
+        pays_id: Option<Uuid>,
+        etat: String,
+        periode_debut: Option<i32>,
+        periode_fin: Option<i32>,
+        description: Option<String>,
+        created_at: chrono::DateTime<Utc>,
+        updated_at: chrono::DateTime<Utc>,
+        deleted_at: Option<chrono::DateTime<Utc>>,
+        pays_info_id: Option<Uuid>,
+        pays_nom: Option<String>,
+        nb_correspondances: i64,
+    }
+
+    let rows: Vec<AvisRow> = if let Some(ref e) = etat {
+        sqlx::query_as(&list_sql)
+            .bind(utilisateur_id)
+            .bind(e)
+            .fetch_all(pool.get_ref())
+            .await?
+    } else {
+        sqlx::query_as(&list_sql)
+            .bind(utilisateur_id)
+            .fetch_all(pool.get_ref())
+            .await?
+    };
+
+    let avis: Vec<AvisRechercheResponse> = rows
+        .into_iter()
+        .map(|r| AvisRechercheResponse {
+            id: r.id,
+            nom_recherche: r.nom_recherche,
+            prenom_recherche: r.prenom_recherche,
+            surnom: r.surnom,
+            ecole: r.ecole,
+            ville: r.ville,
+            pays: r.pays_info_id.map(|id| PaysInfo {
+                id,
+                nom: r.pays_nom.unwrap_or_default(),
+            }),
+            periode_debut: r.periode_debut,
+            periode_fin: r.periode_fin,
+            etat: r.etat,
+            nb_correspondances: r.nb_correspondances,
+            created_at: r.created_at,
+            updated_at: r.updated_at,
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(AvisRechercheListeResponse {
+            avis,
+            total: total.0,
+            page,
+            par_page,
+        }),
+        error: None,
+    }))
+}
+
+/// GET /api/retrouve-amis/avis/{id}
+/// Détail d'un avis de recherche (uniquement si auteur)
+pub async fn detail_avis(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let avis_id = path.into_inner();
+
+    #[derive(sqlx::FromRow)]
+    struct AvisDetailRow {
+        id: Uuid,
+        nom_recherche: String,
+        prenom_recherche: Option<String>,
+        surnom: Option<String>,
+        ecole: Option<String>,
+        ville: Option<String>,
+        pays_id: Option<Uuid>,
+        etat: String,
+        periode_debut: Option<i32>,
+        periode_fin: Option<i32>,
+        description: Option<String>,
+        auteur_id: Uuid,
+        created_at: chrono::DateTime<Utc>,
+        updated_at: chrono::DateTime<Utc>,
+        pays_nom: Option<String>,
+    }
+
+    let avis: AvisDetailRow = sqlx::query_as(
+        "SELECT a.id, a.nom_recherche, a.prenom_recherche, a.surnom, a.ecole, a.ville,
+                a.pays_id, a.etat::text AS etat, a.periode_debut, a.periode_fin, a.description,
+                a.auteur_id, a.created_at, a.updated_at,
+                p.nom AS pays_nom
+         FROM retrouve_amis.avis_recherche a
+         LEFT JOIN shared.pays p ON p.id = a.pays_id
+         WHERE a.id = $1 AND a.deleted_at IS NULL"
+    )
+    .bind(avis_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Avis de recherche introuvable".into()))?;
+
+    if avis.auteur_id != utilisateur_id {
+        return Err(ApiErreur::AccesInterdit("Vous n'êtes pas l'auteur de cet avis".into()));
+    }
+
+    // Charger les correspondances avec résumé anonymisé
+    #[derive(sqlx::FromRow)]
+    struct CorrRow {
+        id: Uuid,
+        score: f64,
+        etat: String,
+        type_cible: String,
+        cible_avis_id: Option<Uuid>,
+        cible_utilisateur_id: Option<Uuid>,
+        created_at: chrono::DateTime<Utc>,
+        // Champs pour construire le résumé anonymisé
+        cible_nom: Option<String>,
+        cible_prenom: Option<String>,
+        cible_ville: Option<String>,
+        cible_periode_debut: Option<i32>,
+        cible_periode_fin: Option<i32>,
+        details_score: serde_json::Value,
+    }
+
+    let corrs: Vec<CorrRow> = sqlx::query_as(
+        "SELECT c.id, c.score::float8 AS score, c.etat::text AS etat, c.type_cible::text AS type_cible,
+                c.cible_avis_id, c.cible_utilisateur_id, c.created_at, c.details_score,
+                CASE
+                    WHEN c.type_cible = 'avis' THEN a2.nom_recherche
+                    WHEN c.type_cible = 'profil' THEN u.nom
+                END AS cible_nom,
+                CASE
+                    WHEN c.type_cible = 'avis' THEN a2.prenom_recherche
+                    WHEN c.type_cible = 'profil' THEN u.prenom
+                END AS cible_prenom,
+                CASE
+                    WHEN c.type_cible = 'avis' THEN a2.ville
+                    WHEN c.type_cible = 'profil' THEN u.ville
+                END AS cible_ville,
+                CASE
+                    WHEN c.type_cible = 'avis' THEN a2.periode_debut
+                END AS cible_periode_debut,
+                CASE
+                    WHEN c.type_cible = 'avis' THEN a2.periode_fin
+                END AS cible_periode_fin
+         FROM retrouve_amis.correspondance c
+         LEFT JOIN retrouve_amis.avis_recherche a2 ON c.cible_avis_id = a2.id
+         LEFT JOIN iam.utilisateur u ON c.cible_utilisateur_id = u.id
+         WHERE c.avis_id = $1
+         ORDER BY c.score DESC"
+    )
+    .bind(avis_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let correspondances: Vec<CorrespondanceResponse> = corrs
+        .into_iter()
+        .map(|c| {
+            let initiales = construire_initiales(c.cible_nom.as_deref(), c.cible_prenom.as_deref());
+            let periode = construire_periode(c.cible_periode_debut, c.cible_periode_fin);
+            let criteres = construire_criteres_communs(&c.details_score);
+
+            CorrespondanceResponse {
+                id: c.id,
+                avis_id,
+                score: c.score,
+                etat: c.etat,
+                type_cible: c.type_cible,
+                resume_anonymise: ResumeAnonyme {
+                    initiales,
+                    ville: c.cible_ville.clone(),
+                    periode,
+                    criteres_communs: criteres,
+                },
+                mon_role: "auteur".to_string(),
+                created_at: c.created_at,
+                expire_at: None,
+            }
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(AvisRechercheDetailResponse {
+            id: avis.id,
+            nom_recherche: avis.nom_recherche,
+            prenom_recherche: avis.prenom_recherche,
+            surnom: avis.surnom,
+            ecole: avis.ecole,
+            ville: avis.ville,
+            pays: avis.pays_id.map(|id| PaysInfo {
+                id,
+                nom: avis.pays_nom.unwrap_or_default(),
+            }),
+            periode_debut: avis.periode_debut,
+            periode_fin: avis.periode_fin,
+            description: avis.description,
+            etat: avis.etat,
+            correspondances,
+            created_at: avis.created_at,
+            updated_at: avis.updated_at,
+        }),
+        error: None,
+    }))
+}
+
+/// PUT /api/retrouve-amis/avis/{id}
+/// Modifier un avis de recherche actif et relancer le matching
+pub async fn modifier_avis(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<ModifierAvisRecherche>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let avis_id = path.into_inner();
+    let data = body.into_inner();
+
+    // Vérifier que l'avis existe et appartient à l'utilisateur
+    let avis: AvisRecherche = sqlx::query_as(&format!(
+        "SELECT {} FROM retrouve_amis.avis_recherche WHERE id = $1 AND deleted_at IS NULL",
+        AVIS_RECHERCHE_COLONNES
+    ))
+    .bind(avis_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Avis de recherche introuvable".into()))?;
+
+    if avis.auteur_id != utilisateur_id {
+        return Err(ApiErreur::AccesInterdit("Vous n'êtes pas l'auteur de cet avis".into()));
+    }
+
+    if avis.etat != "actif" {
+        return Err(ApiErreur::Validation("Seul un avis actif peut être modifié".into()));
+    }
+
+    // Mettre à jour l'avis
+    sqlx::query(
+        "UPDATE retrouve_amis.avis_recherche SET
+            nom_recherche = $2, prenom_recherche = $3, surnom = $4,
+            ecole = $5, ville = $6, pays_id = $7,
+            periode_debut = $8, periode_fin = $9, description = $10
+         WHERE id = $1"
+    )
+    .bind(avis_id)
+    .bind(&data.nom_recherche)
+    .bind(&data.prenom_recherche)
+    .bind(&data.surnom)
+    .bind(&data.ecole)
+    .bind(&data.ville)
+    .bind(data.pays_id)
+    .bind(data.periode_debut)
+    .bind(data.periode_fin)
+    .bind(&data.description)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Supprimer les correspondances en_attente existantes
+    sqlx::query(
+        "DELETE FROM retrouve_amis.correspondance WHERE avis_id = $1 AND etat = 'en_attente'"
+    )
+    .bind(avis_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Relancer le matching
+    let correspondances: Vec<CorrespondanceResultat> = sqlx::query_as(
+        "SELECT cible_type::text AS cible_type, cible_id, score_total::float8 AS score_total, details
+         FROM retrouve_amis.calculer_correspondances($1)
+         WHERE score_total >= 60"
+    )
+    .bind(avis_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let mut nb_correspondances: i64 = 0;
+    for corr in &correspondances {
+        let corr_id: (Uuid,) = match corr.type_cible.as_str() {
+            "avis" => {
+                sqlx::query_as(
+                    "INSERT INTO retrouve_amis.correspondance
+                     (avis_id, type_cible, cible_avis_id, score, details_score, expire_at)
+                     VALUES ($1, 'avis', $2, $3, $4, NOW() + INTERVAL '30 days')
+                     RETURNING id"
+                )
+                .bind(avis_id)
+                .bind(corr.cible_id)
+                .bind(corr.score_total)
+                .bind(&corr.details)
+                .fetch_one(pool.get_ref())
+                .await?
+            }
+            "profil" => {
+                sqlx::query_as(
+                    "INSERT INTO retrouve_amis.correspondance
+                     (avis_id, type_cible, cible_utilisateur_id, score, details_score, expire_at)
+                     VALUES ($1, 'profil', $2, $3, $4, NOW() + INTERVAL '30 days')
+                     RETURNING id"
+                )
+                .bind(avis_id)
+                .bind(corr.cible_id)
+                .bind(corr.score_total)
+                .bind(&corr.details)
+                .fetch_one(pool.get_ref())
+                .await?
+            }
+            _ => continue,
+        };
+
+        // Notifications
+        sqlx::query(
+            "INSERT INTO retrouve_amis.notification_retrouve
+             (utilisateur_id, correspondance_id, type) VALUES ($1, $2, 'nouvelle_correspondance')"
+        )
+        .bind(utilisateur_id)
+        .bind(corr_id.0)
+        .execute(pool.get_ref())
+        .await?;
+
+        let cible_uid = match corr.type_cible.as_str() {
+            "avis" => {
+                let r: (Uuid,) = sqlx::query_as(
+                    "SELECT auteur_id FROM retrouve_amis.avis_recherche WHERE id = $1"
+                )
+                .bind(corr.cible_id)
+                .fetch_one(pool.get_ref())
+                .await?;
+                r.0
+            }
+            "profil" => corr.cible_id,
+            _ => continue,
+        };
+
+        sqlx::query(
+            "INSERT INTO retrouve_amis.notification_retrouve
+             (utilisateur_id, correspondance_id, type) VALUES ($1, $2, 'nouvelle_correspondance')"
+        )
+        .bind(cible_uid)
+        .bind(corr_id.0)
+        .execute(pool.get_ref())
+        .await?;
+
+        nb_correspondances += 1;
+    }
+
+    // Audit
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "UPDATE",
+        "retrouve_amis",
+        "avis_recherche",
+        Some(avis_id),
+        None,
+        Some(serde_json::json!({"correspondances_trouvees": nb_correspondances})),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(ModifierAvisResponse {
+            id: avis_id,
+            correspondances_trouvees: nb_correspondances,
+        }),
+        error: None,
+    }))
+}
+
+/// PATCH /api/retrouve-amis/avis/{id}/cloturer
+/// Clôturer un avis de recherche
+pub async fn cloturer_avis(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let avis_id = path.into_inner();
+
+    let result = sqlx::query(
+        "UPDATE retrouve_amis.avis_recherche SET etat = 'cloture'
+         WHERE id = $1 AND auteur_id = $2 AND etat = 'actif' AND deleted_at IS NULL"
+    )
+    .bind(avis_id)
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(ApiErreur::NonTrouve(
+            "Avis introuvable ou non modifiable".into(),
+        ));
+    }
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "UPDATE",
+        "retrouve_amis",
+        "avis_recherche",
+        Some(avis_id),
+        None,
+        Some(serde_json::json!({"etat": "cloture"})),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({"id": avis_id, "etat": "cloture"})),
+        error: None,
+    }))
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CORRESPONDANCES
+// ════════════════════════════════════════════════════════════════════════════
+
+/// GET /api/retrouve-amis/correspondances
+/// Lister les correspondances de l'utilisateur
+pub async fn lister_correspondances(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+
+    let etat = query.get("etat").cloned();
+    let avis_id = query.get("avis_id").and_then(|v| v.parse::<Uuid>().ok());
+    let page: i64 = query.get("page").and_then(|v| v.parse().ok()).unwrap_or(1).max(1);
+    let par_page: i64 = query.get("par_page").and_then(|v| v.parse().ok()).unwrap_or(20).min(100).max(1);
+    let offset = (page - 1) * par_page;
+
+    // Lazy archival : archiver les correspondances expirées
+    sqlx::query(
+        "UPDATE retrouve_amis.correspondance
+         SET etat = 'archivee'
+         WHERE etat IN ('en_attente', 'acceptee_a', 'acceptee_b')
+           AND created_at < NOW() - INTERVAL '30 days'"
+    )
+    .execute(pool.get_ref())
+    .await?;
+
+    #[derive(sqlx::FromRow)]
+    struct CorrListeRow {
+        id: Uuid,
+        avis_id: Uuid,
+        score: f64,
+        etat: String,
+        type_cible: String,
+        cible_avis_id: Option<Uuid>,
+        cible_utilisateur_id: Option<Uuid>,
+        details_score: serde_json::Value,
+        expire_at: Option<chrono::DateTime<Utc>>,
+        created_at: chrono::DateTime<Utc>,
+        // Pour résumé anonymisé
+        cible_nom: Option<String>,
+        cible_prenom: Option<String>,
+        cible_ville: Option<String>,
+        cible_periode_debut: Option<i32>,
+        cible_periode_fin: Option<i32>,
+        // Pour mon_role
+        avis_auteur_id: Uuid,
+    }
+
+    let base_where = format!(
+        "(c.avis_id IN (SELECT id FROM retrouve_amis.avis_recherche WHERE auteur_id = $1 AND deleted_at IS NULL)
+          OR c.cible_utilisateur_id = $1
+          OR c.cible_avis_id IN (SELECT id FROM retrouve_amis.avis_recherche WHERE auteur_id = $1 AND deleted_at IS NULL))
+        {}
+        {}",
+        if etat.is_some() { " AND c.etat::text = $2" } else { "" },
+        if avis_id.is_some() {
+            if etat.is_some() { " AND c.avis_id = $3" } else { " AND c.avis_id = $2" }
+        } else { "" }
+    );
+
+    let count_sql = format!(
+        "SELECT COUNT(*) FROM retrouve_amis.correspondance c WHERE {}",
+        base_where
+    );
+
+    let list_sql = format!(
+        "SELECT c.id, c.avis_id, c.score::float8 AS score, c.etat::text AS etat,
+                c.type_cible::text AS type_cible, c.cible_avis_id, c.cible_utilisateur_id,
+                c.details_score, c.expire_at, c.created_at,
+                a.auteur_id AS avis_auteur_id,
+                CASE
+                    WHEN c.type_cible = 'avis' THEN a2.nom_recherche
+                    WHEN c.type_cible = 'profil' THEN u.nom
+                END AS cible_nom,
+                CASE
+                    WHEN c.type_cible = 'avis' THEN a2.prenom_recherche
+                    WHEN c.type_cible = 'profil' THEN u.prenom
+                END AS cible_prenom,
+                CASE
+                    WHEN c.type_cible = 'avis' THEN a2.ville
+                    WHEN c.type_cible = 'profil' THEN u.ville
+                END AS cible_ville,
+                CASE WHEN c.type_cible = 'avis' THEN a2.periode_debut END AS cible_periode_debut,
+                CASE WHEN c.type_cible = 'avis' THEN a2.periode_fin END AS cible_periode_fin
+         FROM retrouve_amis.correspondance c
+         JOIN retrouve_amis.avis_recherche a ON c.avis_id = a.id
+         LEFT JOIN retrouve_amis.avis_recherche a2 ON c.cible_avis_id = a2.id
+         LEFT JOIN iam.utilisateur u ON c.cible_utilisateur_id = u.id
+         WHERE {}
+         ORDER BY c.score DESC, c.created_at DESC
+         LIMIT {} OFFSET {}",
+        base_where, par_page, offset
+    );
+
+    // Bind dynamique
+    let total: (i64,);
+    let rows: Vec<CorrListeRow>;
+
+    match (etat.as_ref(), avis_id) {
+        (Some(e), Some(aid)) => {
+            total = sqlx::query_as(&count_sql).bind(utilisateur_id).bind(e).bind(aid).fetch_one(pool.get_ref()).await?;
+            rows = sqlx::query_as(&list_sql).bind(utilisateur_id).bind(e).bind(aid).fetch_all(pool.get_ref()).await?;
+        }
+        (Some(e), None) => {
+            total = sqlx::query_as(&count_sql).bind(utilisateur_id).bind(e).fetch_one(pool.get_ref()).await?;
+            rows = sqlx::query_as(&list_sql).bind(utilisateur_id).bind(e).fetch_all(pool.get_ref()).await?;
+        }
+        (None, Some(aid)) => {
+            total = sqlx::query_as(&count_sql).bind(utilisateur_id).bind(aid).fetch_one(pool.get_ref()).await?;
+            rows = sqlx::query_as(&list_sql).bind(utilisateur_id).bind(aid).fetch_all(pool.get_ref()).await?;
+        }
+        (None, None) => {
+            total = sqlx::query_as(&count_sql).bind(utilisateur_id).fetch_one(pool.get_ref()).await?;
+            rows = sqlx::query_as(&list_sql).bind(utilisateur_id).fetch_all(pool.get_ref()).await?;
+        }
+    }
+
+    let correspondances: Vec<CorrespondanceResponse> = rows
+        .into_iter()
+        .map(|c| {
+            let mon_role = if c.avis_auteur_id == utilisateur_id { "auteur" } else { "cible" };
+            let initiales = construire_initiales(c.cible_nom.as_deref(), c.cible_prenom.as_deref());
+            let periode = construire_periode(c.cible_periode_debut, c.cible_periode_fin);
+            let criteres = construire_criteres_communs(&c.details_score);
+
+            CorrespondanceResponse {
+                id: c.id,
+                avis_id: c.avis_id,
+                score: c.score,
+                etat: c.etat,
+                type_cible: c.type_cible,
+                resume_anonymise: ResumeAnonyme {
+                    initiales,
+                    ville: c.cible_ville,
+                    periode,
+                    criteres_communs: criteres,
+                },
+                mon_role: mon_role.to_string(),
+                created_at: c.created_at,
+                expire_at: c.expire_at,
+            }
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(CorrespondanceListeResponse {
+            correspondances,
+            total: total.0,
+            page,
+            par_page,
+        }),
+        error: None,
+    }))
+}
+
+/// GET /api/retrouve-amis/correspondances/{id}
+/// Détail d'une correspondance
+pub async fn detail_correspondance(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let corr_id = path.into_inner();
+
+    #[derive(sqlx::FromRow)]
+    struct CorrDetailRow {
+        id: Uuid,
+        avis_id: Uuid,
+        score: f64,
+        etat: String,
+        type_cible: String,
+        details_score: serde_json::Value,
+        coordonnees_a: Option<serde_json::Value>,
+        coordonnees_b: Option<serde_json::Value>,
+        expire_at: Option<chrono::DateTime<Utc>>,
+        created_at: chrono::DateTime<Utc>,
+        avis_auteur_id: Uuid,
+        cible_utilisateur_id: Option<Uuid>,
+        cible_nom: Option<String>,
+        cible_prenom: Option<String>,
+        cible_ville: Option<String>,
+        cible_periode_debut: Option<i32>,
+        cible_periode_fin: Option<i32>,
+    }
+
+    let corr: CorrDetailRow = sqlx::query_as(
+        "SELECT c.id, c.avis_id, c.score::float8 AS score, c.etat::text AS etat,
+                c.type_cible::text AS type_cible, c.details_score,
+                c.coordonnees_a, c.coordonnees_b,
+                c.expire_at, c.created_at,
+                a.auteur_id AS avis_auteur_id, c.cible_utilisateur_id,
+                CASE
+                    WHEN c.type_cible = 'avis' THEN a2.nom_recherche
+                    WHEN c.type_cible = 'profil' THEN u.nom
+                END AS cible_nom,
+                CASE
+                    WHEN c.type_cible = 'avis' THEN a2.prenom_recherche
+                    WHEN c.type_cible = 'profil' THEN u.prenom
+                END AS cible_prenom,
+                CASE
+                    WHEN c.type_cible = 'avis' THEN a2.ville
+                    WHEN c.type_cible = 'profil' THEN u.ville
+                END AS cible_ville,
+                CASE WHEN c.type_cible = 'avis' THEN a2.periode_debut END AS cible_periode_debut,
+                CASE WHEN c.type_cible = 'avis' THEN a2.periode_fin END AS cible_periode_fin
+         FROM retrouve_amis.correspondance c
+         JOIN retrouve_amis.avis_recherche a ON c.avis_id = a.id
+         LEFT JOIN retrouve_amis.avis_recherche a2 ON c.cible_avis_id = a2.id
+         LEFT JOIN iam.utilisateur u ON c.cible_utilisateur_id = u.id
+         WHERE c.id = $1"
+    )
+    .bind(corr_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Correspondance introuvable".into()))?;
+
+    // Vérifier que l'utilisateur est participant
+    let est_auteur = corr.avis_auteur_id == utilisateur_id;
+    let est_cible = corr.cible_utilisateur_id == Some(utilisateur_id);
+    // Vérifier aussi si la cible est un avis de l'utilisateur
+    let est_cible_avis = if !est_auteur && !est_cible {
+        // TODO: check if cible_avis_id belongs to user
+        false
+    } else {
+        false
+    };
+
+    if !est_auteur && !est_cible && !est_cible_avis {
+        return Err(ApiErreur::AccesInterdit("Vous n'êtes pas participant à cette correspondance".into()));
+    }
+
+    let mon_role = if est_auteur { "auteur" } else { "cible" };
+    let initiales = construire_initiales(corr.cible_nom.as_deref(), corr.cible_prenom.as_deref());
+    let periode = construire_periode(corr.cible_periode_debut, corr.cible_periode_fin);
+    let criteres = construire_criteres_communs(&corr.details_score);
+
+    // Coordonnées partagées (seulement si état mutuelle)
+    let coordonnees_partagees = if corr.etat == "mutuelle" {
+        if est_auteur {
+            corr.coordonnees_b.clone()
+        } else {
+            corr.coordonnees_a.clone()
+        }
+    } else {
+        None
+    };
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(CorrespondanceDetailResponse {
+            id: corr.id,
+            avis_id: corr.avis_id,
+            score: corr.score,
+            details_score: corr.details_score,
+            etat: corr.etat,
+            type_cible: corr.type_cible,
+            mon_role: mon_role.to_string(),
+            resume_anonymise: ResumeAnonyme {
+                initiales,
+                ville: corr.cible_ville,
+                periode,
+                criteres_communs: criteres,
+            },
+            coordonnees_partagees,
+            created_at: corr.created_at,
+            expire_at: corr.expire_at,
+        }),
+        error: None,
+    }))
+}
+
+/// POST /api/retrouve-amis/correspondances/{id}/accepter
+/// Accepter le contact pour une correspondance
+pub async fn accepter_correspondance(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<AccepterCorrespondance>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let corr_id = path.into_inner();
+    let data = body.into_inner();
+
+    #[derive(sqlx::FromRow)]
+    struct CorrInfo {
+        id: Uuid,
+        avis_id: Uuid,
+        etat: String,
+        cible_utilisateur_id: Option<Uuid>,
+        avis_auteur_id: Uuid,
+    }
+
+    let corr: CorrInfo = sqlx::query_as(
+        "SELECT c.id, c.avis_id, c.etat::text AS etat, c.cible_utilisateur_id, a.auteur_id AS avis_auteur_id
+         FROM retrouve_amis.correspondance c
+         JOIN retrouve_amis.avis_recherche a ON c.avis_id = a.id
+         WHERE c.id = $1"
+    )
+    .bind(corr_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Correspondance introuvable".into()))?;
+
+    let est_a = corr.avis_auteur_id == utilisateur_id;
+    let est_b = corr.cible_utilisateur_id == Some(utilisateur_id);
+
+    if !est_a && !est_b {
+        return Err(ApiErreur::AccesInterdit("Vous n'êtes pas participant".into()));
+    }
+
+    // Déterminer la transition d'état
+    let coordonnees_json = serde_json::to_value(&data.coordonnees)
+        .map_err(|e| ApiErreur::Validation(e.to_string()))?;
+
+    let (nouvel_etat, consentement_mutuel) = if est_a {
+        match corr.etat.as_str() {
+            "en_attente" => {
+                sqlx::query(
+                    "UPDATE retrouve_amis.correspondance
+                     SET etat = 'acceptee_a', accepte_par_a_at = NOW(), coordonnees_a = $2
+                     WHERE id = $1"
+                )
+                .bind(corr_id)
+                .bind(&coordonnees_json)
+                .execute(pool.get_ref())
+                .await?;
+                ("acceptee_a", false)
+            }
+            "acceptee_b" => {
+                sqlx::query(
+                    "UPDATE retrouve_amis.correspondance
+                     SET etat = 'mutuelle', accepte_par_a_at = NOW(), coordonnees_a = $2
+                     WHERE id = $1"
+                )
+                .bind(corr_id)
+                .bind(&coordonnees_json)
+                .execute(pool.get_ref())
+                .await?;
+                ("mutuelle", true)
+            }
+            _ => return Err(ApiErreur::Validation("Cette correspondance ne peut pas être acceptée dans son état actuel".into())),
+        }
+    } else {
+        match corr.etat.as_str() {
+            "en_attente" => {
+                sqlx::query(
+                    "UPDATE retrouve_amis.correspondance
+                     SET etat = 'acceptee_b', accepte_par_b_at = NOW(), coordonnees_b = $2
+                     WHERE id = $1"
+                )
+                .bind(corr_id)
+                .bind(&coordonnees_json)
+                .execute(pool.get_ref())
+                .await?;
+                ("acceptee_b", false)
+            }
+            "acceptee_a" => {
+                sqlx::query(
+                    "UPDATE retrouve_amis.correspondance
+                     SET etat = 'mutuelle', accepte_par_b_at = NOW(), coordonnees_b = $2
+                     WHERE id = $1"
+                )
+                .bind(corr_id)
+                .bind(&coordonnees_json)
+                .execute(pool.get_ref())
+                .await?;
+                ("mutuelle", true)
+            }
+            _ => return Err(ApiErreur::Validation("Cette correspondance ne peut pas être acceptée dans son état actuel".into())),
+        }
+    };
+
+    // Créer notification
+    let notif_type = if consentement_mutuel { "coordonnees_partagees" } else { "acceptation_contact" };
+    let autre_utilisateur = if est_a {
+        corr.cible_utilisateur_id.unwrap_or(corr.avis_auteur_id)
+    } else {
+        corr.avis_auteur_id
+    };
+
+    sqlx::query(
+        "INSERT INTO retrouve_amis.notification_retrouve
+         (utilisateur_id, correspondance_id, type) VALUES ($1, $2, $3::retrouve_amis.type_notification)"
+    )
+    .bind(autre_utilisateur)
+    .bind(corr_id)
+    .bind(notif_type)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Si mutuelle, notifier aussi l'accepteur
+    if consentement_mutuel {
+        sqlx::query(
+            "INSERT INTO retrouve_amis.notification_retrouve
+             (utilisateur_id, correspondance_id, type) VALUES ($1, $2, 'coordonnees_partagees')"
+        )
+        .bind(utilisateur_id)
+        .bind(corr_id)
+        .execute(pool.get_ref())
+        .await?;
+    }
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "UPDATE",
+        "retrouve_amis",
+        "correspondance",
+        Some(corr_id),
+        None,
+        Some(serde_json::json!({"action": "accepter", "nouvel_etat": nouvel_etat})),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({
+            "id": corr_id,
+            "etat": nouvel_etat,
+            "consentement_mutuel": consentement_mutuel
+        })),
+        error: None,
+    }))
+}
+
+/// POST /api/retrouve-amis/correspondances/{id}/refuser
+/// Refuser le contact. Crée une blacklist automatique.
+pub async fn refuser_correspondance(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let corr_id = path.into_inner();
+
+    #[derive(sqlx::FromRow)]
+    struct CorrInfo {
+        id: Uuid,
+        etat: String,
+        cible_utilisateur_id: Option<Uuid>,
+        avis_auteur_id: Uuid,
+    }
+
+    let corr: CorrInfo = sqlx::query_as(
+        "SELECT c.id, c.etat::text AS etat, c.cible_utilisateur_id, a.auteur_id AS avis_auteur_id
+         FROM retrouve_amis.correspondance c
+         JOIN retrouve_amis.avis_recherche a ON c.avis_id = a.id
+         WHERE c.id = $1"
+    )
+    .bind(corr_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Correspondance introuvable".into()))?;
+
+    let est_a = corr.avis_auteur_id == utilisateur_id;
+    let est_b = corr.cible_utilisateur_id == Some(utilisateur_id);
+
+    if !est_a && !est_b {
+        return Err(ApiErreur::AccesInterdit("Vous n'êtes pas participant".into()));
+    }
+
+    if !["en_attente", "acceptee_a", "acceptee_b"].contains(&corr.etat.as_str()) {
+        return Err(ApiErreur::Validation("Cette correspondance ne peut pas être refusée".into()));
+    }
+
+    // Mettre à jour l'état
+    sqlx::query("UPDATE retrouve_amis.correspondance SET etat = 'declinee' WHERE id = $1")
+        .bind(corr_id)
+        .execute(pool.get_ref())
+        .await?;
+
+    // Insérer dans la blacklist
+    let autre_uid = if est_a {
+        corr.cible_utilisateur_id.unwrap_or(corr.avis_auteur_id)
+    } else {
+        corr.avis_auteur_id
+    };
+
+    let (uid_a, uid_b) = if utilisateur_id < autre_uid {
+        (utilisateur_id, autre_uid)
+    } else {
+        (autre_uid, utilisateur_id)
+    };
+
+    sqlx::query(
+        "INSERT INTO retrouve_amis.blacklist (utilisateur_a_id, utilisateur_b_id, correspondance_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT DO NOTHING"
+    )
+    .bind(uid_a)
+    .bind(uid_b)
+    .bind(corr_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "UPDATE",
+        "retrouve_amis",
+        "correspondance",
+        Some(corr_id),
+        None,
+        Some(serde_json::json!({"action": "refuser", "blacklist": true})),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({"id": corr_id, "etat": "declinee"})),
+        error: None,
+    }))
+}
+
+/// POST /api/retrouve-amis/avis/{id}/signaler
+/// Signaler un avis de recherche
+pub async fn signaler_avis(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<SignalerAvis>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let avis_id = path.into_inner();
+    let data = body.into_inner();
+
+    // Vérifier que l'utilisateur a une correspondance avec cet avis
+    let a_correspondance: (bool,) = sqlx::query_as(
+        "SELECT EXISTS(
+            SELECT 1 FROM retrouve_amis.correspondance c
+            JOIN retrouve_amis.avis_recherche a ON c.avis_id = a.id
+            WHERE c.avis_id = $1 AND (c.cible_utilisateur_id = $2
+                OR c.cible_avis_id IN (SELECT id FROM retrouve_amis.avis_recherche WHERE auteur_id = $2))
+        )"
+    )
+    .bind(avis_id)
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    if !a_correspondance.0 {
+        return Err(ApiErreur::AccesInterdit(
+            "Vous devez avoir une correspondance avec cet avis pour le signaler".into(),
+        ));
+    }
+
+    // Valider le motif
+    let motifs_valides = ["contenu_abusif", "usurpation_identite", "harcelement", "autre"];
+    if !motifs_valides.contains(&data.motif.as_str()) {
+        return Err(ApiErreur::Validation("Motif de signalement invalide".into()));
+    }
+
+    let signalement_id: (Uuid,) = sqlx::query_as(
+        "INSERT INTO retrouve_amis.signalement (avis_id, signale_par, motif, description)
+         VALUES ($1, $2, $3::retrouve_amis.motif_signalement, $4)
+         RETURNING id"
+    )
+    .bind(avis_id)
+    .bind(utilisateur_id)
+    .bind(&data.motif)
+    .bind(&data.description)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| {
+        if e.to_string().contains("idx_signalement_unique") {
+            ApiErreur::Conflit("Vous avez déjà signalé cet avis".into())
+        } else {
+            ApiErreur::BaseDeDonnees(e.to_string())
+        }
+    })?;
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "INSERT",
+        "retrouve_amis",
+        "signalement",
+        Some(signalement_id.0),
+        None,
+        Some(serde_json::json!({"avis_id": avis_id, "motif": &data.motif})),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({"id": signalement_id.0})),
+        error: None,
+    }))
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ════════════════════════════════════════════════════════════════════════════
+
+/// GET /api/retrouve-amis/notifications
+pub async fn lister_notifications(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+
+    let lu = query.get("lu").and_then(|v| v.parse::<bool>().ok());
+    let page: i64 = query.get("page").and_then(|v| v.parse().ok()).unwrap_or(1).max(1);
+    let par_page: i64 = query.get("par_page").and_then(|v| v.parse().ok()).unwrap_or(20).min(100).max(1);
+    let offset = (page - 1) * par_page;
+
+    let mut conditions = vec!["utilisateur_id = $1".to_string()];
+    if let Some(l) = lu {
+        conditions.push(format!("lu = {}", l));
+    }
+    let where_clause = conditions.join(" AND ");
+
+    let count_sql = format!(
+        "SELECT COUNT(*) FROM retrouve_amis.notification_retrouve WHERE {}",
+        where_clause
+    );
+    let non_lues_sql = "SELECT COUNT(*) FROM retrouve_amis.notification_retrouve WHERE utilisateur_id = $1 AND lu = FALSE";
+
+    let list_sql = format!(
+        "SELECT id, type::text AS type_notif, correspondance_id, lu, created_at
+         FROM retrouve_amis.notification_retrouve
+         WHERE {}
+         ORDER BY created_at DESC
+         LIMIT {} OFFSET {}",
+        where_clause, par_page, offset
+    );
+
+    let total: (i64,) = sqlx::query_as(&count_sql)
+        .bind(utilisateur_id)
+        .fetch_one(pool.get_ref())
+        .await?;
+
+    let non_lues: (i64,) = sqlx::query_as(non_lues_sql)
+        .bind(utilisateur_id)
+        .fetch_one(pool.get_ref())
+        .await?;
+
+    let rows: Vec<NotificationRetrouve> = sqlx::query_as(&list_sql)
+        .bind(utilisateur_id)
+        .fetch_all(pool.get_ref())
+        .await?;
+
+    let notifications: Vec<NotificationResponse> = rows
+        .into_iter()
+        .map(|n| NotificationResponse {
+            id: n.id,
+            type_notif: n.type_notif,
+            correspondance_id: n.correspondance_id,
+            lu: n.lu,
+            created_at: n.created_at,
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(NotificationListeResponse {
+            notifications,
+            total: total.0,
+            non_lues: non_lues.0,
+            page,
+            par_page,
+        }),
+        error: None,
+    }))
+}
+
+/// PATCH /api/retrouve-amis/notifications/{id}/lire
+pub async fn marquer_lu(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let notif_id = path.into_inner();
+
+    let result = sqlx::query(
+        "UPDATE retrouve_amis.notification_retrouve SET lu = TRUE
+         WHERE id = $1 AND utilisateur_id = $2"
+    )
+    .bind(notif_id)
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(ApiErreur::NonTrouve("Notification introuvable".into()));
+    }
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+/// PATCH /api/retrouve-amis/notifications/tout-lire
+pub async fn tout_marquer_lu(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+
+    let result = sqlx::query(
+        "UPDATE retrouve_amis.notification_retrouve SET lu = TRUE
+         WHERE utilisateur_id = $1 AND lu = FALSE"
+    )
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({"mises_a_jour": result.rows_affected()})),
+        error: None,
+    }))
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TABLEAU DE BORD
+// ════════════════════════════════════════════════════════════════════════════
+
+/// GET /api/retrouve-amis/tableau-de-bord
+pub async fn tableau_de_bord(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+
+    #[derive(sqlx::FromRow)]
+    struct StatsRow {
+        avis_actifs: i64,
+        avis_clotures: i64,
+        correspondances_en_attente: i64,
+        correspondances_mutuelles: i64,
+        notifications_non_lues: i64,
+        est_trouvable: bool,
+        nb_parcours: i64,
+    }
+
+    let stats: StatsRow = sqlx::query_as(
+        "SELECT
+            (SELECT COUNT(*) FROM retrouve_amis.avis_recherche WHERE auteur_id = $1 AND etat = 'actif' AND deleted_at IS NULL) AS avis_actifs,
+            (SELECT COUNT(*) FROM retrouve_amis.avis_recherche WHERE auteur_id = $1 AND etat = 'cloture' AND deleted_at IS NULL) AS avis_clotures,
+            (SELECT COUNT(*) FROM retrouve_amis.correspondance c
+             JOIN retrouve_amis.avis_recherche a ON c.avis_id = a.id
+             WHERE (a.auteur_id = $1 OR c.cible_utilisateur_id = $1) AND c.etat = 'en_attente') AS correspondances_en_attente,
+            (SELECT COUNT(*) FROM retrouve_amis.correspondance c
+             JOIN retrouve_amis.avis_recherche a ON c.avis_id = a.id
+             WHERE (a.auteur_id = $1 OR c.cible_utilisateur_id = $1) AND c.etat = 'mutuelle') AS correspondances_mutuelles,
+            (SELECT COUNT(*) FROM retrouve_amis.notification_retrouve WHERE utilisateur_id = $1 AND lu = FALSE) AS notifications_non_lues,
+            (SELECT est_trouvable FROM iam.utilisateur WHERE id = $1) AS est_trouvable,
+            (SELECT COUNT(*) FROM retrouve_amis.parcours_trouvable WHERE utilisateur_id = $1) AS nb_parcours"
+    )
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(TableauDeBord {
+            avis_actifs: stats.avis_actifs,
+            avis_clotures: stats.avis_clotures,
+            correspondances_en_attente: stats.correspondances_en_attente,
+            correspondances_mutuelles: stats.correspondances_mutuelles,
+            notifications_non_lues: stats.notifications_non_lues,
+            est_trouvable: stats.est_trouvable,
+            nb_parcours: stats.nb_parcours,
+        }),
+        error: None,
+    }))
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PROFIL TROUVABLE
+// ════════════════════════════════════════════════════════════════════════════
+
+/// PATCH /api/profil/trouvable
+pub async fn basculer_trouvable(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    body: web::Json<BasculerTrouvable>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let data = body.into_inner();
+
+    sqlx::query("UPDATE iam.utilisateur SET est_trouvable = $2 WHERE id = $1")
+        .bind(utilisateur_id)
+        .bind(data.est_trouvable)
+        .execute(pool.get_ref())
+        .await?;
+
+    let mut nb_correspondances: i64 = 0;
+
+    if data.est_trouvable {
+        // Matching du profil contre tous les avis actifs
+        // On utilise une approche inverse : pour chaque avis actif, vérifier si ce profil correspond
+        let avis_actifs: Vec<(Uuid,)> = sqlx::query_as(
+            "SELECT id FROM retrouve_amis.avis_recherche WHERE etat = 'actif' AND deleted_at IS NULL AND auteur_id != $1"
+        )
+        .bind(utilisateur_id)
+        .fetch_all(pool.get_ref())
+        .await?;
+
+        for (a_id,) in &avis_actifs {
+            let resultats: Vec<CorrespondanceResultat> = sqlx::query_as(
+                "SELECT cible_type::text AS cible_type, cible_id, score_total::float8 AS score_total, details
+                 FROM retrouve_amis.calculer_correspondances($1)
+                 WHERE cible_type = 'profil' AND cible_id = $2 AND score_total >= 60"
+            )
+            .bind(a_id)
+            .bind(utilisateur_id)
+            .fetch_all(pool.get_ref())
+            .await?;
+
+            for corr in &resultats {
+                let corr_id: (Uuid,) = sqlx::query_as(
+                    "INSERT INTO retrouve_amis.correspondance
+                     (avis_id, type_cible, cible_utilisateur_id, score, details_score, expire_at)
+                     VALUES ($1, 'profil', $2, $3, $4, NOW() + INTERVAL '30 days')
+                     ON CONFLICT DO NOTHING
+                     RETURNING id"
+                )
+                .bind(a_id)
+                .bind(utilisateur_id)
+                .bind(corr.score_total)
+                .bind(&corr.details)
+                .fetch_optional(pool.get_ref())
+                .await?
+                .unwrap_or_default();
+
+                if corr_id.0 != Uuid::nil() {
+                    // Notifications
+                    let auteur_id: (Uuid,) = sqlx::query_as(
+                        "SELECT auteur_id FROM retrouve_amis.avis_recherche WHERE id = $1"
+                    )
+                    .bind(a_id)
+                    .fetch_one(pool.get_ref())
+                    .await?;
+
+                    sqlx::query(
+                        "INSERT INTO retrouve_amis.notification_retrouve
+                         (utilisateur_id, correspondance_id, type) VALUES ($1, $2, 'nouvelle_correspondance')"
+                    )
+                    .bind(auteur_id.0)
+                    .bind(corr_id.0)
+                    .execute(pool.get_ref())
+                    .await?;
+
+                    sqlx::query(
+                        "INSERT INTO retrouve_amis.notification_retrouve
+                         (utilisateur_id, correspondance_id, type) VALUES ($1, $2, 'nouvelle_correspondance')"
+                    )
+                    .bind(utilisateur_id)
+                    .bind(corr_id.0)
+                    .execute(pool.get_ref())
+                    .await?;
+
+                    nb_correspondances += 1;
+                }
+            }
+        }
+    } else {
+        // Désactivation : annuler les correspondances en_attente basées sur ce profil
+        sqlx::query(
+            "UPDATE retrouve_amis.correspondance SET etat = 'archivee'
+             WHERE cible_utilisateur_id = $1 AND etat = 'en_attente'"
+        )
+        .bind(utilisateur_id)
+        .execute(pool.get_ref())
+        .await?;
+    }
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "UPDATE",
+        "iam",
+        "utilisateur",
+        Some(utilisateur_id),
+        None,
+        Some(serde_json::json!({"est_trouvable": data.est_trouvable})),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(BasculerTrouvableResponse {
+            est_trouvable: data.est_trouvable,
+            correspondances_trouvees: nb_correspondances,
+        }),
+        error: None,
+    }))
+}
+
+/// GET /api/profil/parcours
+pub async fn lister_parcours(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+
+    #[derive(sqlx::FromRow)]
+    struct ParcoursRow {
+        id: Uuid,
+        type_entree: String,
+        nom: String,
+        ville: Option<String>,
+        pays_id: Option<Uuid>,
+        pays_nom: Option<String>,
+        periode_debut: Option<i32>,
+        periode_fin: Option<i32>,
+    }
+
+    let rows: Vec<ParcoursRow> = sqlx::query_as(
+        "SELECT pt.id, pt.type_entree::text AS type_entree, pt.nom, pt.ville,
+                pt.pays_id, p.nom AS pays_nom,
+                pt.periode_debut, pt.periode_fin
+         FROM retrouve_amis.parcours_trouvable pt
+         LEFT JOIN shared.pays p ON p.id = pt.pays_id
+         WHERE pt.utilisateur_id = $1
+         ORDER BY pt.periode_debut DESC NULLS LAST, pt.created_at DESC"
+    )
+    .bind(utilisateur_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let parcours: Vec<ParcoursTrouvableResponse> = rows
+        .into_iter()
+        .map(|r| ParcoursTrouvableResponse {
+            id: r.id,
+            type_entree: r.type_entree,
+            nom: r.nom,
+            ville: r.ville,
+            pays: r.pays_id.map(|id| PaysInfo {
+                id,
+                nom: r.pays_nom.unwrap_or_default(),
+            }),
+            periode_debut: r.periode_debut,
+            periode_fin: r.periode_fin,
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(parcours),
+        error: None,
+    }))
+}
+
+/// POST /api/profil/parcours
+pub async fn ajouter_parcours(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    body: web::Json<CreerParcours>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let data = body.into_inner();
+
+    // Valider type_entree
+    if !["ecole", "ville_residence"].contains(&data.type_entree.as_str()) {
+        return Err(ApiErreur::Validation("Type d'entrée invalide (ecole ou ville_residence)".into()));
+    }
+
+    if data.nom.trim().is_empty() {
+        return Err(ApiErreur::Validation("Le nom est obligatoire".into()));
+    }
+
+    if let (Some(debut), Some(fin)) = (data.periode_debut, data.periode_fin) {
+        if debut > fin {
+            return Err(ApiErreur::Validation("La période de début doit être antérieure à la fin".into()));
+        }
+    }
+
+    let id: (Uuid,) = sqlx::query_as(
+        "INSERT INTO retrouve_amis.parcours_trouvable
+         (utilisateur_id, type_entree, nom, ville, pays_id, periode_debut, periode_fin)
+         VALUES ($1, $2::retrouve_amis.type_parcours, $3, $4, $5, $6, $7)
+         RETURNING id"
+    )
+    .bind(utilisateur_id)
+    .bind(&data.type_entree)
+    .bind(&data.nom)
+    .bind(&data.ville)
+    .bind(data.pays_id)
+    .bind(data.periode_debut)
+    .bind(data.periode_fin)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "INSERT",
+        "retrouve_amis",
+        "parcours_trouvable",
+        Some(id.0),
+        None,
+        Some(serde_json::json!({"type_entree": &data.type_entree, "nom": &data.nom})),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({"id": id.0})),
+        error: None,
+    }))
+}
+
+/// PUT /api/profil/parcours/{id}
+pub async fn modifier_parcours(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<ModifierParcours>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let parcours_id = path.into_inner();
+    let data = body.into_inner();
+
+    let result = sqlx::query(
+        "UPDATE retrouve_amis.parcours_trouvable SET
+            type_entree = $3::retrouve_amis.type_parcours, nom = $4, ville = $5,
+            pays_id = $6, periode_debut = $7, periode_fin = $8
+         WHERE id = $1 AND utilisateur_id = $2"
+    )
+    .bind(parcours_id)
+    .bind(utilisateur_id)
+    .bind(&data.type_entree)
+    .bind(&data.nom)
+    .bind(&data.ville)
+    .bind(data.pays_id)
+    .bind(data.periode_debut)
+    .bind(data.periode_fin)
+    .execute(pool.get_ref())
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(ApiErreur::NonTrouve("Entrée de parcours introuvable".into()));
+    }
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "UPDATE",
+        "retrouve_amis",
+        "parcours_trouvable",
+        Some(parcours_id),
+        None,
+        None,
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+/// DELETE /api/profil/parcours/{id}
+pub async fn supprimer_parcours(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let parcours_id = path.into_inner();
+
+    let result = sqlx::query(
+        "DELETE FROM retrouve_amis.parcours_trouvable WHERE id = $1 AND utilisateur_id = $2"
+    )
+    .bind(parcours_id)
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(ApiErreur::NonTrouve("Entrée de parcours introuvable".into()));
+    }
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "DELETE",
+        "retrouve_amis",
+        "parcours_trouvable",
+        Some(parcours_id),
+        None,
+        None,
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPERS PRIVÉS
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Construire les initiales pour le résumé anonymisé
+fn construire_initiales(nom: Option<&str>, prenom: Option<&str>) -> String {
+    let n = nom
+        .and_then(|s| s.chars().next())
+        .map(|c| c.to_uppercase().to_string())
+        .unwrap_or_else(|| "?".to_string());
+    let p = prenom
+        .and_then(|s| s.chars().next())
+        .map(|c| c.to_uppercase().to_string())
+        .unwrap_or_else(|| "".to_string());
+    if p.is_empty() {
+        format!("{}.", n)
+    } else {
+        format!("{}.{}.", p, n)
+    }
+}
+
+/// Construire la période pour le résumé anonymisé
+fn construire_periode(debut: Option<i32>, fin: Option<i32>) -> Option<String> {
+    match (debut, fin) {
+        (Some(d), Some(f)) => Some(format!("{}-{}", d, f)),
+        (Some(d), None) => Some(format!("{}-...", d)),
+        (None, Some(f)) => Some(format!("...-{}", f)),
+        (None, None) => None,
+    }
+}
+
+/// Construire la liste des critères communs à partir des détails du score
+fn construire_criteres_communs(details: &serde_json::Value) -> Vec<String> {
+    let mut criteres = Vec::new();
+    if let Some(obj) = details.as_object() {
+        for (cle, valeur) in obj {
+            if let Some(v) = valeur.as_f64() {
+                if v > 0.0 {
+                    criteres.push(cle.clone());
+                }
+            }
+        }
+    }
+    criteres
+}

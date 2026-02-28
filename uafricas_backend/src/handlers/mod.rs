@@ -17,4 +17,5 @@ pub mod moocs;
 pub mod projets;
 pub mod sabbatiques;
 pub mod stations_radio;
+pub mod retrouve_amis;
 pub mod television;

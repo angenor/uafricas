@@ -193,5 +193,13 @@ const applis: Appli[] = [
     barClass: 'bg-lime-600',
     description: 'Innovations africaines',
   },
+  {
+    label: 'Rootsconnect',
+    to: '/retrouve-amis',
+    icon: 'fa-solid fa-users',
+    bgClass: 'bg-amber-700',
+    barClass: 'bg-amber-700',
+    description: 'Retrouvez vos proches',
+  },
 ]
 </script>

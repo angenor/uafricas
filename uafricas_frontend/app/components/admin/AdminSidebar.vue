@@ -204,6 +204,14 @@ const sidebarSections: SidebarSection[] = [
     ],
   },
   {
+    label: 'Retrouve Amis',
+    faIcon: 'users',
+    children: [
+      { label: 'Avis de recherche', faIcon: 'magnifying-glass', route: '/admin/retrouve-amis' },
+      { label: 'Signalements', faIcon: 'flag', route: '/admin/retrouve-amis/signalements' },
+    ],
+  },
+  {
     label: 'Profils pays',
     faIcon: 'earth-africa',
     route: '/admin/profils-pays',

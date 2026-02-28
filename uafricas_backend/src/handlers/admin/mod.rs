@@ -23,6 +23,7 @@ pub mod salles_privees;
 pub mod sessions_afrolang;
 pub mod gouvernance;
 pub mod radio_tele;
+pub mod retrouve_amis;
 pub mod evenements;
 pub mod mooc;
 pub mod livres;

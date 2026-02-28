@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afrolang, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, sabbatiques, stations_radio, television};
+use crate::handlers::{admin, africantives, afrolang, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, retrouve_amis, sabbatiques, stations_radio, television};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -20,7 +20,13 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/renvoyer-verification", web::post().to(auth::renvoyer_verification))
                     .route("/profil", web::put().to(auth::modifier_profil))
                     .route("/profil/photo", web::post().to(auth::uploader_photo_profil))
-                    .route("/changer-mot-de-passe", web::post().to(auth::changer_mot_de_passe)),
+                    .route("/changer-mot-de-passe", web::post().to(auth::changer_mot_de_passe))
+                    // Profil trouvable (Retrouve Amis)
+                    .route("/profil/trouvable", web::patch().to(retrouve_amis::basculer_trouvable))
+                    .route("/profil/parcours", web::get().to(retrouve_amis::lister_parcours))
+                    .route("/profil/parcours", web::post().to(retrouve_amis::ajouter_parcours))
+                    .route("/profil/parcours/{id}", web::put().to(retrouve_amis::modifier_parcours))
+                    .route("/profil/parcours/{id}", web::delete().to(retrouve_amis::supprimer_parcours)),
             )
             // Routes d'administration
             .service(
@@ -317,7 +323,39 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/profils-pays/{id}/liens-interethniques", web::get().to(admin::profils_pays::lister_liens_interethniques))
                     .route("/profils-pays/{id}/liens-interethniques", web::post().to(admin::profils_pays::creer_lien_interethnique))
                     .route("/profils-pays/{id}/liens-interethniques/{lien_id}", web::put().to(admin::profils_pays::modifier_lien_interethnique))
-                    .route("/profils-pays/{id}/liens-interethniques/{lien_id}", web::delete().to(admin::profils_pays::supprimer_lien_interethnique)),
+                    .route("/profils-pays/{id}/liens-interethniques/{lien_id}", web::delete().to(admin::profils_pays::supprimer_lien_interethnique))
+                    // Retrouve Amis - Avis de recherche
+                    .route("/retrouve-amis/avis", web::get().to(admin::retrouve_amis::lister_avis_admin))
+                    .route("/retrouve-amis/avis/{id}", web::get().to(admin::retrouve_amis::detail_avis_admin))
+                    .route("/retrouve-amis/avis/{id}/etat", web::patch().to(admin::retrouve_amis::changer_etat_avis))
+                    // Retrouve Amis - Signalements
+                    .route("/retrouve-amis/signalements", web::get().to(admin::retrouve_amis::lister_signalements))
+                    .route("/retrouve-amis/signalements/{id}", web::get().to(admin::retrouve_amis::detail_signalement))
+                    .route("/retrouve-amis/signalements/{id}/moderer", web::patch().to(admin::retrouve_amis::moderer_signalement))
+                    // Retrouve Amis - Statistiques
+                    .route("/retrouve-amis/statistiques", web::get().to(admin::retrouve_amis::statistiques)),
+            )
+            // Routes Retrouve Amis
+            .service(
+                web::scope("/retrouve-amis")
+                    // Avis de recherche
+                    .route("/avis", web::post().to(retrouve_amis::creer_avis))
+                    .route("/avis", web::get().to(retrouve_amis::lister_avis))
+                    .route("/avis/{id}", web::get().to(retrouve_amis::detail_avis))
+                    .route("/avis/{id}", web::put().to(retrouve_amis::modifier_avis))
+                    .route("/avis/{id}/cloturer", web::patch().to(retrouve_amis::cloturer_avis))
+                    .route("/avis/{id}/signaler", web::post().to(retrouve_amis::signaler_avis))
+                    // Correspondances
+                    .route("/correspondances", web::get().to(retrouve_amis::lister_correspondances))
+                    .route("/correspondances/{id}", web::get().to(retrouve_amis::detail_correspondance))
+                    .route("/correspondances/{id}/accepter", web::post().to(retrouve_amis::accepter_correspondance))
+                    .route("/correspondances/{id}/refuser", web::post().to(retrouve_amis::refuser_correspondance))
+                    // Notifications
+                    .route("/notifications", web::get().to(retrouve_amis::lister_notifications))
+                    .route("/notifications/{id}/lire", web::patch().to(retrouve_amis::marquer_lu))
+                    .route("/notifications/tout-lire", web::patch().to(retrouve_amis::tout_marquer_lu))
+                    // Tableau de bord
+                    .route("/tableau-de-bord", web::get().to(retrouve_amis::tableau_de_bord)),
             )
             // Routes des livres
             .service(

@@ -18,4 +18,5 @@ pub mod station_radio;
 pub mod television;
 pub mod admin;
 pub mod pagination;
+pub mod retrouve_amis;
 pub mod utilisateur;
