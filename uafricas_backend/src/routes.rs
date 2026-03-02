@@ -347,9 +347,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/public/rechercher", web::get().to(retrouve_amis_public::rechercher_avis_publics))
                     .route("/public/{slug}", web::get().to(retrouve_amis_public::detail_avis_public))
                     .route("/public/{slug}/partage", web::post().to(retrouve_amis_public::incrementer_partage))
-                    // Signalement et demande de retrait depuis la page publique (avec auth)
+                    // Signalement, demande de retrait et reponse depuis la page publique (avec auth)
                     .route("/public/{slug}/signaler", web::post().to(retrouve_amis::signaler_avis_public))
                     .route("/public/{slug}/demande-retrait", web::post().to(retrouve_amis::demander_retrait))
+                    .route("/public/{slug}/repondre", web::post().to(retrouve_amis::repondre_avis_public))
                     // Avis de recherche
                     .route("/avis", web::post().to(retrouve_amis::creer_avis))
                     .route("/avis", web::get().to(retrouve_amis::lister_avis))

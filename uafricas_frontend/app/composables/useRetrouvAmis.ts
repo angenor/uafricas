@@ -26,6 +26,7 @@ export type TypeCible = 'avis' | 'profil'
 export type MotifSignalement = 'contenu_abusif' | 'usurpation_identite' | 'harcelement' | 'autre'
 export type TypeParcours = 'ecole' | 'ville_residence'
 export type TypeNotification = 'nouvelle_correspondance' | 'acceptation_contact' | 'coordonnees_partagees' | 'correspondance_archivee' | 'avis_suspendu' | 'reponse_publique' | 'demande_retrait'
+export type TypeReponsePublique = 'je_suis_cette_personne' | 'je_la_connais' | 'jai_des_informations'
 
 // ── Interfaces de reponse ────────────────────────────────────
 
@@ -128,6 +129,7 @@ export interface TableauDeBord {
 export interface AvisPublicDetail {
   id: string
   slug: string
+  auteur_id: string
   nom_recherche: string
   prenom_recherche?: string
   ecole?: string
@@ -195,6 +197,13 @@ export interface PublierAvisResponse {
   est_public: boolean
   slug: string
   date_publication_publique?: string
+}
+
+/** Reponse apres reponse publique a un avis */
+export interface ReponsePubliqueResult {
+  id: string
+  correspondance_id: string
+  message: string
 }
 
 // ── DTOs de requete ──────────────────────────────────────────
@@ -1162,6 +1171,42 @@ export const useRetrouvAmis = () => {
     }
   }
 
+  // ── Reponse publique ────────────────────────────────────────
+
+  /**
+   * Repondre a un avis public (connexion requise)
+   */
+  const repondreAvisPublic = async (slug: string, data: { type_reponse: TypeReponsePublique; message: string }): Promise<ReponsePubliqueResult | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<ReponsePubliqueResult>>(
+        `${apiBase}/api/retrouve-amis/public/${slug}/repondre`,
+        {
+          method: 'POST',
+          headers: authHeaders(),
+          body: data,
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de l\'envoi de la reponse')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur lors de l\'envoi de la reponse'
+      erreur.value = message
+      console.error('Erreur repondreAvisPublic:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
   // ── Partage social ─────────────────────────────────────────
 
   /**
@@ -1266,6 +1311,8 @@ export const useRetrouvAmis = () => {
     // Protections anti-harcelement
     signalerAvisPublic,
     demanderRetrait,
+    // Reponse publique
+    repondreAvisPublic,
     // Partage social
     incrementerPartage,
     // Recherche publique

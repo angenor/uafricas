@@ -136,11 +136,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T038 [US3] Implémenter le handler `repondre_avis_public` (POST `/api/retrouve-amis/public/{slug}/repondre`) dans `uafricas_backend/src/handlers/retrouve_amis.rs` : vérifier JWT + avis public+actif + pas l'auteur + pas déjà répondu (UNIQUE) + pas dans blacklist + rate limit 10/jour (COUNT reponse_publique WHERE repondeur_id AND created_at > now()-1day), insérer `reponse_publique`, créer `correspondance` (type_cible='profil', score=70, details_score={"source":"reponse_publique","type_reponse":"..."}), créer notification `reponse_publique` pour l'auteur, audit. Contrat: `contracts/auth-api.md` section POST repondre
-- [ ] T039 [US3] Enregistrer la route POST repondre (dans scope JWT) dans `uafricas_backend/src/routes.rs`
-- [ ] T040 [P] [US3] Ajouter la fonction API `repondreAvisPublic(slug, data)` dans `uafricas_frontend/app/composables/useRetrouvAmis.ts`
-- [ ] T041 [US3] Créer le composant `FormulaireReponse.vue` dans `uafricas_frontend/app/components/retrouve-amis/FormulaireReponse.vue` : sélection type de réponse (radio: "Je suis cette personne", "Je la connais", "J'ai des informations"), champ message textarea, bouton envoyer. Redirection vers connexion si non connecté (avec retour automatique vers l'avis après auth — FR-012). Gestion erreur 409 "Vous avez déjà répondu" + erreur 429 "Limite atteinte". Tailwind CSS v4 pur
-- [ ] T042 [US3] Intégrer `FormulaireReponse.vue` dans `uafricas_frontend/app/pages/retrouve-amis/public/[slug].vue` : afficher uniquement quand etat = actif, masquer si l'utilisateur connecté est l'auteur de l'avis
+- [x] T038 [US3] Implémenter le handler `repondre_avis_public` (POST `/api/retrouve-amis/public/{slug}/repondre`) dans `uafricas_backend/src/handlers/retrouve_amis.rs` : vérifier JWT + avis public+actif + pas l'auteur + pas déjà répondu (UNIQUE) + pas dans blacklist + rate limit 10/jour (COUNT reponse_publique WHERE repondeur_id AND created_at > now()-1day), insérer `reponse_publique`, créer `correspondance` (type_cible='profil', score=70, details_score={"source":"reponse_publique","type_reponse":"..."}), créer notification `reponse_publique` pour l'auteur, audit. Contrat: `contracts/auth-api.md` section POST repondre
+- [x] T039 [US3] Enregistrer la route POST repondre (dans scope JWT) dans `uafricas_backend/src/routes.rs`
+- [x] T040 [P] [US3] Ajouter la fonction API `repondreAvisPublic(slug, data)` dans `uafricas_frontend/app/composables/useRetrouvAmis.ts`
+- [x] T041 [US3] Créer le composant `FormulaireReponse.vue` dans `uafricas_frontend/app/components/retrouve-amis/FormulaireReponse.vue` : sélection type de réponse (radio: "Je suis cette personne", "Je la connais", "J'ai des informations"), champ message textarea, bouton envoyer. Redirection vers connexion si non connecté (avec retour automatique vers l'avis après auth — FR-012). Gestion erreur 409 "Vous avez déjà répondu" + erreur 429 "Limite atteinte". Tailwind CSS v4 pur
+- [x] T042 [US3] Intégrer `FormulaireReponse.vue` dans `uafricas_frontend/app/pages/retrouve-amis/public/[slug].vue` : afficher uniquement quand etat = actif, masquer si l'utilisateur connecté est l'auteur de l'avis
 
 **Checkpoint**: Les réponses publiques créent des correspondances visibles dans l'espace de l'auteur.
 

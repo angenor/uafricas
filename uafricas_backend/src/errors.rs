@@ -27,6 +27,8 @@ pub enum ApiErreur {
     AccesInterdit(String),
     /// Conflit - par exemple email deja utilise (409)
     Conflit(String),
+    /// Limite atteinte - trop de requetes (429)
+    LimiteAtteinte(String),
 }
 
 impl fmt::Display for ApiErreur {
@@ -39,6 +41,7 @@ impl fmt::Display for ApiErreur {
             ApiErreur::NonAutorise(msg) => write!(f, "Non autorise: {}", msg),
             ApiErreur::AccesInterdit(msg) => write!(f, "Acces interdit: {}", msg),
             ApiErreur::Conflit(msg) => write!(f, "Conflit: {}", msg),
+            ApiErreur::LimiteAtteinte(msg) => write!(f, "Limite atteinte: {}", msg),
         }
     }
 }
@@ -62,6 +65,7 @@ impl ResponseError for ApiErreur {
             ApiErreur::NonAutorise(_) => HttpResponse::Unauthorized().json(reponse),
             ApiErreur::AccesInterdit(_) => HttpResponse::Forbidden().json(reponse),
             ApiErreur::Conflit(_) => HttpResponse::Conflict().json(reponse),
+            ApiErreur::LimiteAtteinte(_) => HttpResponse::TooManyRequests().json(reponse),
         }
     }
 }

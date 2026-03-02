@@ -2304,3 +2304,159 @@ pub async fn demander_retrait(
         error: None,
     }))
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// REPONSE PUBLIQUE
+// ════════════════════════════════════════════════════════════════════════════
+
+/// POST /api/retrouve-amis/public/{slug}/repondre
+/// Repondre a un avis public (cree une correspondance automatiquement)
+pub async fn repondre_avis_public(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<String>,
+    body: web::Json<ReponsePubliqueRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let slug = path.into_inner();
+    let data = body.into_inner();
+
+    // Valider le type de reponse
+    let types_valides = ["je_suis_cette_personne", "je_la_connais", "jai_des_informations"];
+    if !types_valides.contains(&data.type_reponse.as_str()) {
+        return Err(ApiErreur::Validation("Type de reponse invalide".into()));
+    }
+
+    // Valider le message
+    if data.message.trim().is_empty() {
+        return Err(ApiErreur::Validation("Le message est obligatoire".into()));
+    }
+
+    // Verifier que l'avis existe, est public et actif
+    let avis: Option<(Uuid, Uuid, String, bool)> = sqlx::query_as(
+        "SELECT id, auteur_id, etat::text, est_public
+         FROM retrouve_amis.avis_recherche
+         WHERE slug = $1 AND deleted_at IS NULL"
+    )
+    .bind(&slug)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let (avis_id, auteur_id, etat, est_public) = avis
+        .ok_or_else(|| ApiErreur::NonTrouve("Avis non trouve ou non disponible".into()))?;
+
+    if !est_public || etat != "actif" {
+        return Err(ApiErreur::NonTrouve("Avis non disponible".into()));
+    }
+
+    // Le repondeur ne peut pas etre l'auteur
+    if auteur_id == utilisateur_id {
+        return Err(ApiErreur::AccesInterdit("Vous ne pouvez pas repondre a votre propre avis".into()));
+    }
+
+    // Verifier la blacklist (ordre canonique)
+    let dans_blacklist: Option<(bool,)> = sqlx::query_as(
+        "SELECT TRUE FROM retrouve_amis.blacklist
+         WHERE utilisateur_a_id = $1 AND utilisateur_b_id = $2"
+    )
+    .bind(std::cmp::min(auteur_id, utilisateur_id))
+    .bind(std::cmp::max(auteur_id, utilisateur_id))
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    if dans_blacklist.is_some() {
+        return Err(ApiErreur::AccesInterdit("Vous ne pouvez pas repondre a cet avis".into()));
+    }
+
+    // Rate limit : max 10 reponses par jour
+    let nb_reponses_jour: (i64,) = sqlx::query_as(
+        "SELECT COUNT(*) FROM retrouve_amis.reponse_publique
+         WHERE repondeur_id = $1 AND created_at > NOW() - INTERVAL '1 day'"
+    )
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    if nb_reponses_jour.0 >= 10 {
+        return Err(ApiErreur::LimiteAtteinte("Limite de 10 reponses par jour atteinte. Reessayez demain.".into()));
+    }
+
+    // Creer la correspondance automatiquement (type_cible = 'profil', score = 70)
+    let details_score = serde_json::json!({
+        "source": "reponse_publique",
+        "type_reponse": &data.type_reponse
+    });
+
+    let correspondance_id: (Uuid,) = sqlx::query_as(
+        "INSERT INTO retrouve_amis.correspondance
+         (avis_id, type_cible, cible_utilisateur_id, score, details_score, expire_at)
+         VALUES ($1, 'profil', $2, 70, $3, NOW() + INTERVAL '30 days')
+         RETURNING id"
+    )
+    .bind(avis_id)
+    .bind(utilisateur_id)
+    .bind(&details_score)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    // Inserer la reponse publique
+    let reponse_id: (Uuid,) = sqlx::query_as(
+        "INSERT INTO retrouve_amis.reponse_publique
+         (avis_id, repondeur_id, type_reponse, message, correspondance_id)
+         VALUES ($1, $2, $3::retrouve_amis.type_reponse_publique, $4, $5)
+         RETURNING id"
+    )
+    .bind(avis_id)
+    .bind(utilisateur_id)
+    .bind(&data.type_reponse)
+    .bind(&data.message)
+    .bind(correspondance_id.0)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| {
+        if e.to_string().contains("uq_reponse_publique_avis_repondeur") {
+            ApiErreur::Conflit("Vous avez deja repondu a cet avis".into())
+        } else {
+            ApiErreur::BaseDeDonnees(e.to_string())
+        }
+    })?;
+
+    // Notifier l'auteur de l'avis
+    sqlx::query(
+        "INSERT INTO retrouve_amis.notification_retrouve
+         (utilisateur_id, correspondance_id, type)
+         VALUES ($1, $2, 'reponse_publique'::retrouve_amis.type_notification)"
+    )
+    .bind(auteur_id)
+    .bind(correspondance_id.0)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Audit
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "INSERT",
+        "retrouve_amis",
+        "reponse_publique",
+        Some(reponse_id.0),
+        None,
+        Some(serde_json::json!({
+            "avis_id": avis_id,
+            "type_reponse": &data.type_reponse,
+            "correspondance_id": correspondance_id.0
+        })),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(ReponsePubliqueResponse {
+            id: reponse_id.0,
+            correspondance_id: correspondance_id.0,
+            message: "Votre reponse a ete envoyee. L'auteur de l'avis sera notifie.".to_string(),
+        }),
+        error: None,
+    }))
+}

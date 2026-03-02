@@ -164,6 +164,10 @@ useHead({
           :nom-recherche="(avis as AvisPublicDetail).nom_recherche"
           :prenom-recherche="(avis as AvisPublicDetail).prenom_recherche"
         />
+        <RetrouvAmisFormulaireReponse
+          :slug="slug"
+          :auteur-id="(avis as AvisPublicDetail).auteur_id"
+        />
         <RetrouvAmisDemandeRetrait :slug="slug" @suspendu="$router.go(0)" />
       </template>
     </div>

@@ -394,7 +394,7 @@ pub struct BasculerTrouvable {
 
 /// Colonnes SELECT pour un avis public actif (detail complet)
 pub const AVIS_PUBLIC_DETAIL_COLONNES: &str =
-    "a.id, a.slug, a.nom_recherche, a.prenom_recherche,
+    "a.id, a.auteur_id, a.slug, a.nom_recherche, a.prenom_recherche,
      a.ecole, a.ville, a.periode_debut, a.periode_fin,
      a.description, a.etat::text AS etat,
      a.compteur_partages, a.date_publication_publique, a.created_at,
@@ -417,6 +417,7 @@ pub const AVIS_PUBLIC_TRI_COLONNES: &[&str] = &["created_at", "compteur_partages
 #[derive(Debug, FromRow)]
 pub struct AvisPublicDetailRow {
     pub id: Uuid,
+    pub auteur_id: Uuid,
     pub slug: Option<String>,
     pub nom_recherche: String,
     pub prenom_recherche: Option<String>,
@@ -457,6 +458,7 @@ pub struct AvisPublicListeRow {
 pub struct AvisPublicDetailResponse {
     pub id: Uuid,
     pub slug: String,
+    pub auteur_id: Uuid,
     pub nom_recherche: String,
     pub prenom_recherche: Option<String>,
     pub ecole: Option<String>,
@@ -595,6 +597,7 @@ impl AvisPublicDetailRow {
         AvisPublicDetailResponse {
             id: self.id,
             slug: self.slug.clone().unwrap_or_default(),
+            auteur_id: self.auteur_id,
             nom_recherche: self.nom_recherche.clone(),
             prenom_recherche: self.prenom_recherche.clone(),
             ecole: self.ecole.clone(),
