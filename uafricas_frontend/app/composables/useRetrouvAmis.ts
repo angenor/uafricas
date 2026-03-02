@@ -793,9 +793,9 @@ export const useRetrouvAmis = () => {
 
     try {
       const reponse = await $fetch<ApiResponse<{ est_trouvable: boolean; correspondances_trouvees: number }>>(
-        `${apiBase}/api/profil/trouvable`,
+        `${apiBase}/api/auth/profil/trouvable`,
         {
-          method: 'PUT',
+          method: 'PATCH',
           headers: authHeaders(),
           body: { est_trouvable },
         },
@@ -827,7 +827,7 @@ export const useRetrouvAmis = () => {
 
     try {
       const reponse = await $fetch<ApiResponse<ParcoursTrouvable[]>>(
-        `${apiBase}/api/profil/parcours`,
+        `${apiBase}/api/auth/profil/parcours`,
         { headers: authHeaders() },
       )
 
@@ -857,7 +857,7 @@ export const useRetrouvAmis = () => {
 
     try {
       const reponse = await $fetch<ApiResponse<{ id: string }>>(
-        `${apiBase}/api/profil/parcours`,
+        `${apiBase}/api/auth/profil/parcours`,
         {
           method: 'POST',
           headers: authHeaders(),
@@ -891,7 +891,7 @@ export const useRetrouvAmis = () => {
 
     try {
       const reponse = await $fetch<ApiResponse<null>>(
-        `${apiBase}/api/profil/parcours/${id}`,
+        `${apiBase}/api/auth/profil/parcours/${id}`,
         {
           method: 'PUT',
           headers: authHeaders(),
@@ -925,7 +925,7 @@ export const useRetrouvAmis = () => {
 
     try {
       const reponse = await $fetch<ApiResponse<null>>(
-        `${apiBase}/api/profil/parcours/${id}`,
+        `${apiBase}/api/auth/profil/parcours/${id}`,
         {
           method: 'DELETE',
           headers: authHeaders(),

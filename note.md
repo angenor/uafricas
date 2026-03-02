@@ -48,3 +48,10 @@ il peut arriver que `agent-browser --headed` soit lancé par un autre programme 
   ville (15pts), période (15pts), pays (10pts)
   - Les notifications ont été envoyées aux deux utilisateurs
   - La correspondance est visible dans l'interface avec le statut "En attente"
+
+  Concrètement :
+  - Amadou crée un avis cherchant "Keita Fatou, Lycée de Bamako"
+  - Fatou n'a pas besoin de créer un avis — il suffit qu'elle soit trouvable et
+  qu'elle ait renseigné dans son profil : école = "Lycée de Bamako", ville =
+  "Bamako", etc.
+  - L'algo matchera son profil avec l'avis d'Amadou

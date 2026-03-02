@@ -1,16 +1,8 @@
 <script setup lang="ts">
-// ── Types ────────────────────────────────────────────────────
-interface ParcoursTrouvable {
-  id: string
-  type_entree: 'ecole' | 'ville_residence' | 'emploi' | 'autre'
-  nom: string
-  ville: string | null
-  pays: string | null
-  periode_debut: number | null
-  periode_fin: number | null
-}
+import type { ParcoursTrouvable, PaysInfo } from '~/composables/useRetrouvAmis'
 
-type TypeEntree = ParcoursTrouvable['type_entree']
+// ── Types ────────────────────────────────────────────────────
+type TypeEntree = 'ecole' | 'ville_residence'
 
 interface DonneesParcours {
   type_entree: TypeEntree
@@ -35,6 +27,25 @@ const emit = defineEmits<{
   'supprimer-parcours': [id: string]
 }>()
 
+// ── Chargement des pays ──────────────────────────────────────
+const listePays = ref<PaysInfo[]>([])
+
+onMounted(async () => {
+  try {
+    const config = useRuntimeConfig()
+    const apiBase = config.public.apiBaseUrl as string
+    const reponse = await $fetch<{ success: boolean; data: PaysInfo[] }>(
+      `${apiBase}/api/retrouve-amis/pays`,
+    )
+    if (reponse.success && reponse.data) {
+      listePays.value = reponse.data
+    }
+  }
+  catch {
+    // Silencieux
+  }
+})
+
 // ── Etat local ───────────────────────────────────────────────
 const formulaireOuvert = ref(false)
 const modeEdition = ref(false)
@@ -53,25 +64,21 @@ const formulaire = reactive<DonneesParcours>({
 const typesEntree: { valeur: TypeEntree; label: string }[] = [
   { valeur: 'ecole', label: 'Ecole / Universite' },
   { valeur: 'ville_residence', label: 'Ville de residence' },
-  { valeur: 'emploi', label: 'Emploi' },
-  { valeur: 'autre', label: 'Autre' },
 ]
 
 const iconeTypeEntree = (type: TypeEntree): string => {
   const icones: Record<TypeEntree, string> = {
     ecole: 'graduation-cap',
     ville_residence: 'building',
-    emploi: 'briefcase',
-    autre: 'circle',
   }
-  return icones[type]
+  return icones[type] ?? 'circle'
 }
 
 const labelTypeEntree = (type: TypeEntree): string => {
   return typesEntree.find(t => t.valeur === type)?.label ?? type
 }
 
-const formaterPeriode = (debut: number | null, fin: number | null): string => {
+const formaterPeriode = (debut?: number, fin?: number): string => {
   if (debut && fin) return `${debut} - ${fin}`
   if (debut) return `Depuis ${debut}`
   if (fin) return `Jusqu'en ${fin}`
@@ -96,10 +103,10 @@ const ouvrirAjout = () => {
 }
 
 const ouvrirEdition = (p: ParcoursTrouvable) => {
-  formulaire.type_entree = p.type_entree
+  formulaire.type_entree = p.type_entree as TypeEntree
   formulaire.nom = p.nom
   formulaire.ville = p.ville ?? ''
-  formulaire.pays_id = p.pays ?? ''
+  formulaire.pays_id = p.pays?.id ?? ''
   formulaire.periode_debut = p.periode_debut ?? undefined
   formulaire.periode_fin = p.periode_fin ?? undefined
   modeEdition.value = true
@@ -199,7 +206,7 @@ const soumettre = () => {
         <font-awesome-icon icon="route" class="mx-auto mb-3 h-8 w-8 text-gray-300" />
         <p class="text-sm text-gray-500">Aucun parcours renseigne.</p>
         <p class="mt-1 text-xs text-gray-400">
-          Ajoutez vos ecoles, villes de residence ou emplois pour etre retrouve plus facilement.
+          Ajoutez vos ecoles et villes de residence pour etre retrouve plus facilement.
         </p>
       </div>
 
@@ -212,11 +219,11 @@ const soumettre = () => {
         >
           <div class="flex items-start gap-3">
             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-custom-chocolat/10 text-custom-chocolat">
-              <font-awesome-icon :icon="iconeTypeEntree(item.type_entree)" class="h-4 w-4" />
+              <font-awesome-icon :icon="iconeTypeEntree(item.type_entree as TypeEntree)" class="h-4 w-4" />
             </div>
             <div>
               <p class="text-sm font-semibold text-gray-900">{{ item.nom }}</p>
-              <p class="text-xs text-gray-500">{{ labelTypeEntree(item.type_entree) }}</p>
+              <p class="text-xs text-gray-500">{{ labelTypeEntree(item.type_entree as TypeEntree) }}</p>
               <div class="mt-1 flex flex-wrap gap-2">
                 <span v-if="item.ville" class="inline-flex items-center gap-1 text-xs text-gray-500">
                   <font-awesome-icon icon="location-dot" class="h-3 w-3" />
@@ -224,7 +231,7 @@ const soumettre = () => {
                 </span>
                 <span v-if="item.pays" class="inline-flex items-center gap-1 text-xs text-gray-500">
                   <font-awesome-icon icon="earth-africa" class="h-3 w-3" />
-                  {{ item.pays }}
+                  {{ item.pays.nom }}
                 </span>
                 <span
                   v-if="item.periode_debut || item.periode_fin"
@@ -259,7 +266,7 @@ const soumettre = () => {
         </div>
       </div>
 
-      <!-- Formulaire ajout / edition (depliable) -->
+      <!-- Formulaire ajout / edition -->
       <div
         v-if="formulaireOuvert"
         class="mt-4 rounded-lg border border-gray-200 bg-white p-5"
@@ -289,7 +296,7 @@ const soumettre = () => {
               v-model="formulaire.nom"
               type="text"
               maxlength="150"
-              placeholder="Ex : Universite Cheikh Anta Diop"
+              :placeholder="formulaire.type_entree === 'ecole' ? 'Ex : Universite Cheikh Anta Diop' : 'Ex : Dakar'"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-custom-chocolat"
             >
           </div>
@@ -306,12 +313,15 @@ const soumettre = () => {
             </div>
             <div>
               <label class="mb-1 block text-sm font-medium text-gray-700">Pays</label>
-              <input
+              <select
                 v-model="formulaire.pays_id"
-                type="text"
-                placeholder="Ex : Senegal"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-custom-chocolat"
+                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-custom-chocolat"
               >
+                <option value="">-- Selectionner un pays --</option>
+                <option v-for="pays in listePays" :key="pays.id" :value="pays.id">
+                  {{ pays.nom }}
+                </option>
+              </select>
             </div>
           </div>
 

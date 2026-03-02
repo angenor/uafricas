@@ -8,6 +8,7 @@ const stats = ref<{ avis_actifs: number; correspondances_en_attente: number; not
 
 const liens = [
   { to: '/retrouve-amis', label: 'Accueil', icon: 'home', exact: true },
+  { to: '/retrouve-amis/mon-profil', label: 'Mon profil', icon: 'user-shield' },
   { to: '/retrouve-amis/nouveau', label: 'Nouvel avis', icon: 'plus' },
   { to: '/retrouve-amis/mes-recherches', label: 'Mes recherches', icon: 'magnifying-glass' },
   { to: '/retrouve-amis/correspondances', label: 'Correspondances', icon: 'handshake' },
