@@ -465,22 +465,6 @@ BEGIN
         best.score_total,
         best.details
     FROM iam.utilisateur u
-    WHERE u.est_trouvable = TRUE
-      AND u.id != v_auteur_id
-      AND u.deleted_at IS NULL
-      AND u.etat = 'actif'
-      -- Pas dans la blacklist
-      AND NOT EXISTS (
-          SELECT 1 FROM retrouve_amis.blacklist bl
-          WHERE bl.utilisateur_a_id = LEAST(v_auteur_id, u.id)
-            AND bl.utilisateur_b_id = GREATEST(v_auteur_id, u.id)
-      )
-      -- Pas de correspondance active existante
-      AND NOT EXISTS (
-          SELECT 1 FROM retrouve_amis.correspondance c
-          WHERE c.avis_id = p_avis_id AND c.cible_utilisateur_id = u.id
-            AND c.etat NOT IN ('declinee', 'archivee')
-      )
     CROSS JOIN LATERAL (
         SELECT
             GREATEST(
@@ -585,6 +569,22 @@ BEGIN
                 END
             ) AS details
     ) best
-    WHERE best.score_total > 0;
+    WHERE u.est_trouvable = TRUE
+      AND u.id != v_auteur_id
+      AND u.deleted_at IS NULL
+      AND u.etat = 'actif'
+      -- Pas dans la blacklist
+      AND NOT EXISTS (
+          SELECT 1 FROM retrouve_amis.blacklist bl
+          WHERE bl.utilisateur_a_id = LEAST(v_auteur_id, u.id)
+            AND bl.utilisateur_b_id = GREATEST(v_auteur_id, u.id)
+      )
+      -- Pas de correspondance active existante
+      AND NOT EXISTS (
+          SELECT 1 FROM retrouve_amis.correspondance c
+          WHERE c.avis_id = p_avis_id AND c.cible_utilisateur_id = u.id
+            AND c.etat NOT IN ('declinee', 'archivee')
+      )
+      AND best.score_total > 0;
 END;
 $$ LANGUAGE plpgsql;

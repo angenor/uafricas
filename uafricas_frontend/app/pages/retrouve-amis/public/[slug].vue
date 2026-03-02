@@ -157,18 +157,18 @@ useHead({
 
       <!-- Avis actif : contenu complet -->
       <template v-else-if="estActif">
-        <RetrouvAmisPagePublique :avis="(avis as AvisPublicDetail)" />
-        <RetrouvAmisBoutonsPartage
+        <RetrouveAmisPagePublique :avis="(avis as AvisPublicDetail)" />
+        <RetrouveAmisBoutonsPartage
           :slug="slug"
           :compteur-partages="(avis as AvisPublicDetail).compteur_partages"
           :nom-recherche="(avis as AvisPublicDetail).nom_recherche"
           :prenom-recherche="(avis as AvisPublicDetail).prenom_recherche"
         />
-        <RetrouvAmisFormulaireReponse
+        <RetrouveAmisFormulaireReponse
           :slug="slug"
           :auteur-id="(avis as AvisPublicDetail).auteur_id"
         />
-        <RetrouvAmisDemandeRetrait :slug="slug" @suspendu="$router.go(0)" />
+        <RetrouveAmisDemandeRetrait :slug="slug" @suspendu="$router.go(0)" />
       </template>
     </div>
   </div>
