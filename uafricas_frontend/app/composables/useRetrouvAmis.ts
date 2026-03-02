@@ -150,6 +150,45 @@ export interface AvisPublicEtat {
   message: string
 }
 
+/** Resume d'un avis public dans le listing */
+export interface AvisPublicResume {
+  slug: string
+  nom_recherche: string
+  prenom_recherche?: string
+  ville?: string
+  pays?: PaysInfo
+  periode_debut?: number
+  periode_fin?: number
+  compteur_partages: number
+  created_at: string
+}
+
+/** Info de pagination standard */
+export interface PaginationInfo {
+  page: number
+  par_page: number
+  total: number
+  pages: number
+}
+
+/** Reponse paginee du listing des avis publics */
+export interface ListeAvisPublicsResponse {
+  avis: AvisPublicResume[]
+  pagination: PaginationInfo
+}
+
+/** Parametres de recherche des avis publics */
+export interface RecherchePubliqueParams {
+  page?: number
+  par_page?: number
+  recherche?: string
+  pays_id?: string
+  ville?: string
+  ecole?: string
+  tri?: 'created_at' | 'compteur_partages'
+  ordre?: 'asc' | 'desc'
+}
+
 /** Reponse apres publication/depublication d'un avis */
 export interface PublierAvisResponse {
   id: string
@@ -1123,6 +1162,76 @@ export const useRetrouvAmis = () => {
     }
   }
 
+  // ── Partage social ─────────────────────────────────────────
+
+  /**
+   * Incrementer le compteur de partages d'un avis public (sans auth)
+   */
+  const incrementerPartage = async (slug: string): Promise<{ compteur_partages: number } | null> => {
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<{ compteur_partages: number }>>(
+        `${apiBase}/api/retrouve-amis/public/${slug}/partage`,
+        { method: 'POST' },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du partage')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur lors du partage'
+      erreur.value = message
+      console.error('Erreur incrementerPartage:', e)
+      return null
+    }
+  }
+
+  // ── Recherche publique ────────────────────────────────────
+
+  /**
+   * Rechercher parmi les avis publics actifs (sans auth)
+   */
+  const rechercherAvisPublics = async (params: RecherchePubliqueParams = {}): Promise<ListeAvisPublicsResponse | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const queryParams = new URLSearchParams()
+      if (params.page) queryParams.set('page', String(params.page))
+      if (params.par_page) queryParams.set('par_page', String(params.par_page))
+      if (params.recherche) queryParams.set('recherche', params.recherche)
+      if (params.pays_id) queryParams.set('pays_id', params.pays_id)
+      if (params.ville) queryParams.set('ville', params.ville)
+      if (params.ecole) queryParams.set('ecole', params.ecole)
+      if (params.tri) queryParams.set('tri', params.tri)
+      if (params.ordre) queryParams.set('ordre', params.ordre)
+
+      const queryString = queryParams.toString()
+      const url = `${apiBase}/api/retrouve-amis/public/rechercher${queryString ? `?${queryString}` : ''}`
+
+      const reponse = await $fetch<ApiResponse<ListeAvisPublicsResponse>>(url)
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de la recherche')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur lors de la recherche'
+      erreur.value = message
+      console.error('Erreur rechercherAvisPublics:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -1157,5 +1266,9 @@ export const useRetrouvAmis = () => {
     // Protections anti-harcelement
     signalerAvisPublic,
     demanderRetrait,
+    // Partage social
+    incrementerPartage,
+    // Recherche publique
+    rechercherAvisPublics,
   }
 }

@@ -142,6 +142,7 @@ import {
   faToggleOff,
   faBan,
   faCircleXmark,
+  faShareNodes,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -311,7 +312,8 @@ library.add(
   faLinkedin,
   faInstagram,
   faYoutube,
-  faWhatsapp
+  faWhatsapp,
+  faShareNodes
 )
 
 export default defineNuxtPlugin((nuxtApp) => {

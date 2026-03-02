@@ -100,11 +100,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T028 [US2] Implémenter le handler `incrementer_partage` (POST `/api/retrouve-amis/public/{slug}/partage`) dans `uafricas_backend/src/handlers/retrouve_amis_public.rs` : UPDATE atomique `compteur_partages = compteur_partages + 1` WHERE slug + est_public + actif, retourner nouveau compteur. Contrat: `contracts/public-api.md` section POST partage
-- [ ] T029 [US2] Enregistrer la route POST partage (hors scope JWT) dans `uafricas_backend/src/routes.rs`
-- [ ] T030 [P] [US2] Ajouter la fonction API `incrementerPartage(slug)` dans `uafricas_frontend/app/composables/useRetrouvAmis.ts`
-- [ ] T031 [US2] Créer le composant `BoutonsPartage.vue` dans `uafricas_frontend/app/components/retrouve-amis/BoutonsPartage.vue` : 5 boutons (WhatsApp avec message pré-formaté `whatsapp://send?text=...`, Facebook `https://www.facebook.com/sharer/sharer.php?u=...`, X/Twitter `https://twitter.com/intent/tweet?url=...&text=...`, LinkedIn `https://www.linkedin.com/sharing/share-offsite/?url=...`, Copier le lien avec `navigator.clipboard`). Chaque clic appelle `incrementerPartage()`. Afficher compteur total. Tailwind CSS v4 pur
-- [ ] T032 [US2] Intégrer `BoutonsPartage.vue` dans `uafricas_frontend/app/pages/retrouve-amis/public/[slug].vue` (visible uniquement si etat = actif) et enrichir les balises `useSeoMeta()` avec og:title, og:description, og:image (image par défaut UAfricas), og:type, twitter:card, twitter:title, twitter:description
+- [x] T028 [US2] Implémenter le handler `incrementer_partage` (POST `/api/retrouve-amis/public/{slug}/partage`) dans `uafricas_backend/src/handlers/retrouve_amis_public.rs` : UPDATE atomique `compteur_partages = compteur_partages + 1` WHERE slug + est_public + actif, retourner nouveau compteur. Contrat: `contracts/public-api.md` section POST partage
+- [x] T029 [US2] Enregistrer la route POST partage (hors scope JWT) dans `uafricas_backend/src/routes.rs`
+- [x] T030 [P] [US2] Ajouter la fonction API `incrementerPartage(slug)` dans `uafricas_frontend/app/composables/useRetrouvAmis.ts`
+- [x] T031 [US2] Créer le composant `BoutonsPartage.vue` dans `uafricas_frontend/app/components/retrouve-amis/BoutonsPartage.vue` : 5 boutons (WhatsApp avec message pré-formaté `whatsapp://send?text=...`, Facebook `https://www.facebook.com/sharer/sharer.php?u=...`, X/Twitter `https://twitter.com/intent/tweet?url=...&text=...`, LinkedIn `https://www.linkedin.com/sharing/share-offsite/?url=...`, Copier le lien avec `navigator.clipboard`). Chaque clic appelle `incrementerPartage()`. Afficher compteur total. Tailwind CSS v4 pur
+- [x] T032 [US2] Intégrer `BoutonsPartage.vue` dans `uafricas_frontend/app/pages/retrouve-amis/public/[slug].vue` (visible uniquement si etat = actif) et enrichir les balises `useSeoMeta()` avec og:title, og:description, og:image (image par défaut UAfricas), og:type, twitter:card, twitter:title, twitter:description
 
 **Checkpoint**: Les boutons de partage fonctionnent et le compteur s'incrémente. L'aperçu Open Graph est visible lors du partage.
 
@@ -118,11 +118,11 @@
 
 ### Implementation for User Story 5
 
-- [ ] T033 [US5] Implémenter le handler `rechercher_avis_publics` (GET `/api/retrouve-amis/public/rechercher`) dans `uafricas_backend/src/handlers/retrouve_amis_public.rs` : filtre `est_public = TRUE AND etat = 'actif' AND deleted_at IS NULL`, filtres optionnels (pays_id UUID, ville ILIKE, ecole ILIKE), recherche full-text via `search_vector @@ plainto_tsquery('french', ...)`, pagination (page/par_page max 50), tri (created_at ou compteur_partages), JOIN pays pour nom. Contrat: `contracts/public-api.md` section GET rechercher
-- [ ] T034 [US5] Enregistrer la route GET rechercher (hors scope JWT) dans `uafricas_backend/src/routes.rs`
-- [ ] T035 [P] [US5] Ajouter la fonction API `rechercherAvisPublics(params)` et l'interface `RecherchePubliqueParams` dans `uafricas_frontend/app/composables/useRetrouvAmis.ts`
-- [ ] T036 [P] [US5] Créer le composant `CarteAvisPublic.vue` dans `uafricas_frontend/app/components/retrouve-amis/CarteAvisPublic.vue` : carte résumé (nom recherché, ville, pays, période, compteur partages) avec lien vers `/retrouve-amis/public/{slug}`. Tailwind CSS v4 pur
-- [ ] T037 [US5] Créer la page `uafricas_frontend/app/pages/retrouve-amis/rechercher.vue` : listing paginé avec `CarteAvisPublic.vue`, filtres (dropdown pays via endpoint existant `/api/retrouve-amis/pays`, champs ville et école), barre de recherche full-text, pagination, message "Aucun avis ne correspond" si vide. Tailwind CSS v4 pur. `useSeoMeta()` pour SEO de base
+- [x] T033 [US5] Implémenter le handler `rechercher_avis_publics` (GET `/api/retrouve-amis/public/rechercher`) dans `uafricas_backend/src/handlers/retrouve_amis_public.rs` : filtre `est_public = TRUE AND etat = 'actif' AND deleted_at IS NULL`, filtres optionnels (pays_id UUID, ville ILIKE, ecole ILIKE), recherche full-text via `search_vector @@ plainto_tsquery('french', ...)`, pagination (page/par_page max 50), tri (created_at ou compteur_partages), JOIN pays pour nom. Contrat: `contracts/public-api.md` section GET rechercher
+- [x] T034 [US5] Enregistrer la route GET rechercher (hors scope JWT) dans `uafricas_backend/src/routes.rs`
+- [x] T035 [P] [US5] Ajouter la fonction API `rechercherAvisPublics(params)` et l'interface `RecherchePubliqueParams` dans `uafricas_frontend/app/composables/useRetrouvAmis.ts`
+- [x] T036 [P] [US5] Créer le composant `CarteAvisPublic.vue` dans `uafricas_frontend/app/components/retrouve-amis/CarteAvisPublic.vue` : carte résumé (nom recherché, ville, pays, période, compteur partages) avec lien vers `/retrouve-amis/public/{slug}`. Tailwind CSS v4 pur
+- [x] T037 [US5] Créer la page `uafricas_frontend/app/pages/retrouve-amis/rechercher.vue` : listing paginé avec `CarteAvisPublic.vue`, filtres (dropdown pays via endpoint existant `/api/retrouve-amis/pays`, champs ville et école), barre de recherche full-text, pagination, message "Aucun avis ne correspond" si vide. Tailwind CSS v4 pur. `useSeoMeta()` pour SEO de base
 
 **Checkpoint**: La page de listing affiche les avis publics avec filtres et recherche fonctionnels.
 

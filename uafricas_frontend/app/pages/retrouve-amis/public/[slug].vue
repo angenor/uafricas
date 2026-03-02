@@ -18,7 +18,9 @@ const estActif = computed(() => avis.value && 'auteur_anonyme' in avis.value)
 const estNonActif = computed(() => avis.value && 'message' in avis.value && !('auteur_anonyme' in avis.value))
 const nonDisponible = computed(() => fetchError.value || !data.value?.success)
 
-// SEO — balises de base (dans le setup pour le SSR)
+// SEO — balises completes (Open Graph + Twitter Card pour apercu riche)
+const ogImageUrl = 'https://www.africans-world.org/images/og-retrouve-amis.png'
+
 useSeoMeta({
   title: () => {
     if (estActif.value) {
@@ -54,6 +56,7 @@ useSeoMeta({
   },
   ogType: 'article',
   ogUrl: () => `https://www.africans-world.org/retrouve-amis/public/${slug}`,
+  ogImage: ogImageUrl,
   twitterCard: 'summary_large_image',
   twitterTitle: () => {
     if (estActif.value) {
@@ -69,6 +72,7 @@ useSeoMeta({
     }
     return 'Retrouvez des amis perdus de vue sur UAfricas.'
   },
+  twitterImage: ogImageUrl,
 })
 
 // noindex/nofollow pour les pages non-actives
@@ -154,6 +158,12 @@ useHead({
       <!-- Avis actif : contenu complet -->
       <template v-else-if="estActif">
         <RetrouvAmisPagePublique :avis="(avis as AvisPublicDetail)" />
+        <RetrouvAmisBoutonsPartage
+          :slug="slug"
+          :compteur-partages="(avis as AvisPublicDetail).compteur_partages"
+          :nom-recherche="(avis as AvisPublicDetail).nom_recherche"
+          :prenom-recherche="(avis as AvisPublicDetail).prenom_recherche"
+        />
         <RetrouvAmisDemandeRetrait :slug="slug" @suspendu="$router.go(0)" />
       </template>
     </div>

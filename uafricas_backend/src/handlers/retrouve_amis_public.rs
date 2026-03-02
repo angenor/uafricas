@@ -13,9 +13,166 @@ use crate::ApiResponse;
 // Ils ne necessitent pas de token d'authentification.
 //
 // Endpoints :
-// - GET  /api/retrouve-amis/public/{slug}          → detail_avis_public
-// - GET  /api/retrouve-amis/public/rechercher       → rechercher_avis_publics
-// - POST /api/retrouve-amis/public/{slug}/partage   → incrementer_partage
+// - GET  /api/retrouve-amis/public/{slug}           → detail_avis_public
+// - GET  /api/retrouve-amis/public/rechercher        → rechercher_avis_publics
+// - POST /api/retrouve-amis/public/{slug}/partage    → incrementer_partage
+
+/// POST /api/retrouve-amis/public/{slug}/partage
+/// Incrementer le compteur de partages d'un avis public (sans auth)
+pub async fn incrementer_partage(
+    pool: web::Data<PgPool>,
+    path: web::Path<String>,
+) -> Result<HttpResponse, ApiErreur> {
+    let slug = path.into_inner();
+
+    // UPDATE atomique avec retour du nouveau compteur
+    let result: Option<(i32,)> = sqlx::query_as(
+        "UPDATE retrouve_amis.avis_recherche
+         SET compteur_partages = compteur_partages + 1
+         WHERE slug = $1 AND est_public = TRUE AND etat = 'actif' AND deleted_at IS NULL
+         RETURNING compteur_partages",
+    )
+    .bind(&slug)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    match result {
+        Some((compteur,)) => Ok(HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            data: Some(PartageResponse {
+                compteur_partages: compteur,
+            }),
+            error: None,
+        })),
+        None => Ok(HttpResponse::NotFound().json(ApiResponse::<()> {
+            success: false,
+            data: None,
+            error: Some("Avis non disponible.".to_string()),
+        })),
+    }
+}
+
+/// GET /api/retrouve-amis/public/rechercher
+/// Lister et rechercher parmi les avis publics actifs
+pub async fn rechercher_avis_publics(
+    pool: web::Data<PgPool>,
+    params: web::Query<RecherchePubliqueParams>,
+) -> Result<HttpResponse, ApiErreur> {
+    let page = params.page.unwrap_or(1).max(1);
+    let par_page = params.par_page.unwrap_or(12).min(50).max(1);
+    let offset = (page - 1) * par_page;
+
+    let tri = match params.tri.as_deref() {
+        Some(t) if AVIS_PUBLIC_TRI_COLONNES.contains(&t) => format!("a.{}", t),
+        _ => "a.created_at".to_string(),
+    };
+    let ordre = match params.ordre.as_deref() {
+        Some("asc") => "ASC",
+        _ => "DESC",
+    };
+
+    // Construire les conditions WHERE dynamiquement
+    let mut conditions = vec![
+        "a.est_public = TRUE".to_string(),
+        "a.etat = 'actif'".to_string(),
+        "a.deleted_at IS NULL".to_string(),
+    ];
+    let mut bind_idx: u32 = 1;
+
+    if params.pays_id.is_some() {
+        conditions.push(format!("a.pays_id = ${}", bind_idx));
+        bind_idx += 1;
+    }
+
+    if params.ville.as_ref().map_or(false, |v| !v.trim().is_empty()) {
+        conditions.push(format!("a.ville ILIKE ${}", bind_idx));
+        bind_idx += 1;
+    }
+
+    if params.ecole.as_ref().map_or(false, |v| !v.trim().is_empty()) {
+        conditions.push(format!("a.ecole ILIKE ${}", bind_idx));
+        bind_idx += 1;
+    }
+
+    if params.recherche.as_ref().map_or(false, |v| !v.trim().is_empty()) {
+        conditions.push(format!(
+            "a.search_vector @@ plainto_tsquery('french', ${})",
+            bind_idx
+        ));
+    }
+
+    let where_clause = conditions.join(" AND ");
+
+    let count_sql = format!(
+        "SELECT COUNT(*) FROM retrouve_amis.avis_recherche a WHERE {}",
+        where_clause
+    );
+    let list_sql = format!(
+        "SELECT {} FROM retrouve_amis.avis_recherche a
+         LEFT JOIN shared.pays p ON p.id = a.pays_id
+         WHERE {}
+         ORDER BY {} {}
+         LIMIT {} OFFSET {}",
+        AVIS_PUBLIC_LISTE_COLONNES, where_clause, tri, ordre, par_page, offset
+    );
+
+    // Binder les parametres dynamiquement dans le bon ordre
+    // Utiliser une approche sans macro pour la compatibilite Rust Edition 2024
+    let pays_id_val = params.pays_id;
+    let ville_val = params.ville.as_deref().filter(|v| !v.trim().is_empty()).map(|v| format!("%{}%", v.trim()));
+    let ecole_val = params.ecole.as_deref().filter(|v| !v.trim().is_empty()).map(|v| format!("%{}%", v.trim()));
+    let recherche_val = params.recherche.as_deref().filter(|v| !v.trim().is_empty()).map(|v| v.trim().to_string());
+
+    macro_rules! bind_params {
+        ($query:expr) => {{
+            let mut q = $query;
+            if let Some(pid) = pays_id_val {
+                q = q.bind(pid);
+            }
+            if let Some(v) = &ville_val {
+                q = q.bind(v.clone());
+            }
+            if let Some(e) = &ecole_val {
+                q = q.bind(e.clone());
+            }
+            if let Some(r) = &recherche_val {
+                q = q.bind(r.clone());
+            }
+            q
+        }};
+    }
+
+    let total: (i64,) = bind_params!(sqlx::query_as(&count_sql))
+        .fetch_one(pool.get_ref())
+        .await?;
+
+    let rows: Vec<AvisPublicListeRow> = bind_params!(sqlx::query_as(&list_sql))
+        .fetch_all(pool.get_ref())
+        .await?;
+
+    let avis: Vec<AvisPublicResumeResponse> =
+        rows.iter().map(|r| r.to_resume_response()).collect();
+
+    let pages = if total.0 > 0 {
+        (total.0 + par_page - 1) / par_page
+    } else {
+        0
+    };
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(ListeAvisPublicsResponse {
+            avis,
+            pagination: PaginationInfo {
+                page,
+                par_page,
+                total: total.0,
+                pages,
+            },
+        }),
+        error: None,
+    }))
+}
 
 /// GET /api/retrouve-amis/public/{slug}
 /// Recuperer les details d'un avis public par son slug
