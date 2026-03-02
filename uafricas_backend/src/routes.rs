@@ -333,7 +333,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/retrouve-amis/signalements/{id}", web::get().to(admin::retrouve_amis::detail_signalement))
                     .route("/retrouve-amis/signalements/{id}/moderer", web::patch().to(admin::retrouve_amis::moderer_signalement))
                     // Retrouve Amis - Statistiques
-                    .route("/retrouve-amis/statistiques", web::get().to(admin::retrouve_amis::statistiques)),
+                    .route("/retrouve-amis/statistiques", web::get().to(admin::retrouve_amis::statistiques))
+                    // Retrouve Amis - Demandes de retrait
+                    .route("/retrouve-amis/demandes-retrait", web::get().to(admin::retrouve_amis::lister_demandes_retrait))
+                    .route("/retrouve-amis/demandes-retrait/{id}/statuer", web::patch().to(admin::retrouve_amis::statuer_demande_retrait)),
             )
             // Routes Retrouve Amis
             .service(
@@ -342,6 +345,9 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/pays", web::get().to(retrouve_amis::lister_pays))
                     // Pages publiques (sans auth)
                     .route("/public/{slug}", web::get().to(retrouve_amis_public::detail_avis_public))
+                    // Signalement et demande de retrait depuis la page publique (avec auth)
+                    .route("/public/{slug}/signaler", web::post().to(retrouve_amis::signaler_avis_public))
+                    .route("/public/{slug}/demande-retrait", web::post().to(retrouve_amis::demander_retrait))
                     // Avis de recherche
                     .route("/avis", web::post().to(retrouve_amis::creer_avis))
                     .route("/avis", web::get().to(retrouve_amis::lister_avis))

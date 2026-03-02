@@ -1053,6 +1053,76 @@ export const useRetrouvAmis = () => {
     }
   }
 
+  // ── Protections anti-harcelement (page publique) ────────────
+
+  /**
+   * Signaler un avis depuis la page publique (connexion requise)
+   */
+  const signalerAvisPublic = async (slug: string, data: { motif: MotifSignalement; description?: string }): Promise<{ id: string } | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<{ id: string }>>(
+        `${apiBase}/api/retrouve-amis/public/${slug}/signaler`,
+        {
+          method: 'POST',
+          headers: authHeaders(),
+          body: data,
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du signalement')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur lors du signalement'
+      erreur.value = message
+      console.error('Erreur signalerAvisPublic:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /**
+   * Demander le retrait d'un avis (la personne se reconnait)
+   */
+  const demanderRetrait = async (slug: string, motif: string): Promise<{ id: string; message: string } | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<{ id: string; message: string }>>(
+        `${apiBase}/api/retrouve-amis/public/${slug}/demande-retrait`,
+        {
+          method: 'POST',
+          headers: authHeaders(),
+          body: { motif },
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de la demande de retrait')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur lors de la demande de retrait'
+      erreur.value = message
+      console.error('Erreur demanderRetrait:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -1084,5 +1154,8 @@ export const useRetrouvAmis = () => {
     // Partage public
     publierAvis,
     detailAvisPublic,
+    // Protections anti-harcelement
+    signalerAvisPublic,
+    demanderRetrait,
   }
 }

@@ -89,6 +89,26 @@ export interface AdminStatistiques {
   blacklists_total: number
 }
 
+export interface AdminDemandeRetrait {
+  id: string
+  avis_id: string
+  nom_recherche: string
+  demandeur: { id: string; prenom: string; nom: string }
+  auteur: { id: string; prenom: string; nom: string }
+  motif: string
+  etat: string
+  date_suspension?: string
+  created_at: string
+}
+
+export interface AdminStatuerDemandeResponse {
+  id: string
+  etat: string
+  avis_id: string
+  avis_etat: string
+  avis_est_public: boolean
+}
+
 // ── Reponses paginées spécifiques ──────────────────────────
 
 interface AvisPagineResponse {
@@ -103,6 +123,16 @@ interface SignalementsPagineResponse {
   total: number
   page: number
   par_page: number
+}
+
+interface DemandesRetraitPagineResponse {
+  demandes: AdminDemandeRetrait[]
+  pagination: {
+    page: number
+    par_page: number
+    total: number
+    pages: number
+  }
 }
 
 // ── Composable ─────────────────────────────────────────────
@@ -277,6 +307,60 @@ export const useAdminRetrouvAmis = () => {
     return response.data
   }
 
+  // ── Demandes de retrait ─────────────────────────────────
+
+  const demandesRetrait = ref<AdminDemandeRetrait[]>([])
+  const totalDemandesRetrait = ref(0)
+
+  const filtresDemandesRetrait = reactive({
+    etat: '',
+  })
+
+  const chargerDemandesRetrait = async () => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const filtres: Record<string, string> = {}
+      if (filtresDemandesRetrait.etat) filtres.etat = filtresDemandesRetrait.etat
+
+      const response = await adminFetch<ApiResponse<DemandesRetraitPagineResponse>>(
+        '/api/admin/retrouve-amis/demandes-retrait',
+        {
+          params: {
+            page: pagination.page,
+            par_page: pagination.parPage,
+            tri_par: sort.column,
+            tri_dir: sort.direction,
+            ...filtres,
+          },
+        },
+      )
+
+      if (response.success && response.data) {
+        demandesRetrait.value = response.data.demandes
+        totalDemandesRetrait.value = response.data.pagination.total
+        pagination.total = response.data.pagination.total
+        pagination.page = response.data.pagination.page
+        pagination.totalPages = response.data.pagination.pages
+      }
+    }
+    catch (e: any) {
+      error.value = e?.data?.error || e?.message || 'Erreur lors du chargement des demandes de retrait'
+    }
+    finally {
+      loading.value = false
+    }
+  }
+
+  const statuerDemandeRetrait = async (id: string, data: { decision: string; commentaire?: string }) => {
+    const response = await adminFetch<ApiResponse<AdminStatuerDemandeResponse>>(
+      `/api/admin/retrouve-amis/demandes-retrait/${id}/statuer`,
+      { method: 'PATCH', body: data },
+    )
+    return response.data
+  }
+
   // ── Statistiques ─────────────────────────────────────────
 
   const chargerStatistiques = async () => {
@@ -304,8 +388,9 @@ export const useAdminRetrouvAmis = () => {
   return {
     // Etat
     avis, avisDetail, signalements, signalementDetail, stats,
+    demandesRetrait, totalDemandesRetrait,
     total, totalSignalements,
-    filtresAvis, filtresSignalements,
+    filtresAvis, filtresSignalements, filtresDemandesRetrait,
     pagination, sort, loading, error,
 
     // Actions — Avis
@@ -313,6 +398,9 @@ export const useAdminRetrouvAmis = () => {
 
     // Actions — Signalements
     chargerSignalements, chargerDetailSignalement, modererSignalement,
+
+    // Actions — Demandes de retrait
+    chargerDemandesRetrait, statuerDemandeRetrait,
 
     // Actions — Statistiques
     chargerStatistiques,

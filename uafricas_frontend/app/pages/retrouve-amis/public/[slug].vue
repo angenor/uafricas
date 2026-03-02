@@ -154,6 +154,7 @@ useHead({
       <!-- Avis actif : contenu complet -->
       <template v-else-if="estActif">
         <RetrouvAmisPagePublique :avis="(avis as AvisPublicDetail)" />
+        <RetrouvAmisDemandeRetrait :slug="slug" @suspendu="$router.go(0)" />
       </template>
     </div>
   </div>

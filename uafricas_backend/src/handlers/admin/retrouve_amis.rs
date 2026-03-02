@@ -9,8 +9,12 @@ use crate::models::admin::retrouve_amis::{
     AdminAvisRechercheListeResponse, AdminCorrespondanceRow, AdminSignalementRow,
     AdminSignalementQueryParams, AdminSignalementListe, AdminSignalementListeResponse,
     AdminStatistiques, ChangerEtatAvis, ModererSignalement,
+    AdminDemandeRetraitQueryParams, AdminDemandeRetraitListe,
+    AdminDemandeRetraitListeResponse, AdminDemandeRetraitPagination,
+    AdminStatuerDemandeRequest, AdminStatuerDemandeResponse,
     ADMIN_AVIS_LISTE_COLONNES, ADMIN_AVIS_DETAIL_COLONNES, ADMIN_AVIS_JOINS, ADMIN_AVIS_TRI_COLONNES,
     ADMIN_SIGNALEMENT_LISTE_COLONNES, ADMIN_SIGNALEMENT_JOINS, ADMIN_SIGNALEMENT_TRI_COLONNES,
+    ADMIN_DEMANDE_RETRAIT_LISTE_COLONNES, ADMIN_DEMANDE_RETRAIT_JOINS, ADMIN_DEMANDE_RETRAIT_TRI_COLONNES,
 };
 use crate::models::pagination::PaginationParams;
 use crate::services::audit;
@@ -696,6 +700,229 @@ pub async fn statistiques(
             signalements_en_attente,
             signalements_total,
             blacklists_total,
+        }),
+        error: None,
+    }))
+}
+
+// ══════════════════════════════════════════════════════════════
+// Demandes de retrait
+// ══════════════════════════════════════════════════════════════
+
+/// GET /api/admin/retrouve-amis/demandes-retrait
+pub async fn lister_demandes_retrait(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    params: web::Query<AdminDemandeRetraitQueryParams>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "retrouve_amis", "voir");
+
+    let pagination = PaginationParams {
+        page: params.page,
+        par_page: params.par_page,
+        tri_par: params.tri_par.clone(),
+        tri_dir: params.tri_dir.clone(),
+    };
+
+    let mut conditions: Vec<String> = Vec::new();
+    let mut bind_values: Vec<String> = Vec::new();
+    let mut bind_index: u32 = 1;
+
+    // Filtre etat
+    if let Some(ref etat) = params.etat {
+        let e = etat.trim();
+        if !e.is_empty() {
+            conditions.push(format!("d.etat::text = ${}", bind_index));
+            bind_values.push(e.to_string());
+            bind_index += 1;
+        }
+    }
+
+    let _ = bind_index;
+
+    let where_clause = if conditions.is_empty() {
+        "TRUE".to_string()
+    } else {
+        conditions.join(" AND ")
+    };
+    let colonne = pagination.colonne_tri(ADMIN_DEMANDE_RETRAIT_TRI_COLONNES, "created_at");
+    let direction = pagination.direction_tri();
+    let page = pagination.page();
+    let par_page = pagination.par_page();
+    let offset = pagination.offset();
+
+    // COUNT
+    let count_sql = format!(
+        "SELECT COUNT(*) FROM retrouve_amis.demande_retrait d
+         {} WHERE {}",
+        ADMIN_DEMANDE_RETRAIT_JOINS, where_clause
+    );
+    let mut count_q = sqlx::query_scalar::<_, i64>(&count_sql);
+    for v in &bind_values {
+        count_q = count_q.bind(v);
+    }
+    let total: i64 = count_q.fetch_one(pool.get_ref()).await?;
+
+    // SELECT
+    let select_sql = format!(
+        "SELECT {} FROM retrouve_amis.demande_retrait d
+         {} WHERE {} ORDER BY d.{} {} LIMIT {} OFFSET {}",
+        ADMIN_DEMANDE_RETRAIT_LISTE_COLONNES, ADMIN_DEMANDE_RETRAIT_JOINS,
+        where_clause, colonne, direction, par_page, offset
+    );
+    let mut select_q = sqlx::query_as::<_, AdminDemandeRetraitListe>(&select_sql);
+    for v in &bind_values {
+        select_q = select_q.bind(v);
+    }
+    let rows = select_q.fetch_all(pool.get_ref()).await?;
+
+    let demandes: Vec<_> = rows.iter().map(|r| r.to_response()).collect();
+    let total_pages = if par_page > 0 { (total + par_page - 1) / par_page } else { 0 };
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(AdminDemandeRetraitListeResponse {
+            demandes,
+            pagination: AdminDemandeRetraitPagination {
+                page,
+                par_page,
+                total,
+                pages: total_pages,
+            },
+        }),
+        error: None,
+    }))
+}
+
+/// PATCH /api/admin/retrouve-amis/demandes-retrait/{id}/statuer
+pub async fn statuer_demande_retrait(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<AdminStatuerDemandeRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "retrouve_amis", "modifier");
+    let demande_id = path.into_inner();
+    let data = body.into_inner();
+
+    // Valider la decision
+    if data.decision != "approuvee" && data.decision != "rejetee" {
+        return Err(ApiErreur::Validation(
+            "Decision invalide. Valeurs acceptees: approuvee, rejetee".into(),
+        ));
+    }
+
+    // Verifier que la demande existe et est en_attente
+    let demande: Option<(Uuid, Uuid, String)> = sqlx::query_as(
+        "SELECT avis_id, demandeur_id, etat::text
+         FROM retrouve_amis.demande_retrait WHERE id = $1"
+    )
+    .bind(demande_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let (avis_id, demandeur_id, etat_demande) = demande
+        .ok_or_else(|| ApiErreur::NonTrouve("Demande de retrait non trouvee".into()))?;
+
+    if etat_demande != "en_attente" {
+        return Err(ApiErreur::Conflit(format!(
+            "Cette demande a deja ete traitee (etat: {})",
+            etat_demande
+        )));
+    }
+
+    // Mettre a jour la demande
+    sqlx::query(
+        "UPDATE retrouve_amis.demande_retrait
+         SET etat = $1::retrouve_amis.etat_demande_retrait,
+             decide_par = $2, decision_at = NOW(), commentaire_admin = $3
+         WHERE id = $4"
+    )
+    .bind(&data.decision)
+    .bind(admin.id)
+    .bind(&data.commentaire)
+    .bind(demande_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Appliquer la decision sur l'avis
+    let (avis_etat, avis_est_public) = if data.decision == "approuvee" {
+        // Approuvee : l'avis reste suspendu + est_public = FALSE (retrait definitif)
+        sqlx::query(
+            "UPDATE retrouve_amis.avis_recherche
+             SET est_public = FALSE, updated_at = NOW()
+             WHERE id = $1"
+        )
+        .bind(avis_id)
+        .execute(pool.get_ref())
+        .await?;
+        ("suspendu".to_string(), false)
+    } else {
+        // Rejetee : l'avis revient a actif + est_public = TRUE (republication)
+        sqlx::query(
+            "UPDATE retrouve_amis.avis_recherche
+             SET etat = 'actif'::retrouve_amis.etat_avis, est_public = TRUE, updated_at = NOW()
+             WHERE id = $1"
+        )
+        .bind(avis_id)
+        .execute(pool.get_ref())
+        .await?;
+        ("actif".to_string(), true)
+    };
+
+    // Recuperer l'auteur de l'avis pour la notification
+    let auteur_id: (Uuid,) = sqlx::query_as(
+        "SELECT auteur_id FROM retrouve_amis.avis_recherche WHERE id = $1"
+    )
+    .bind(avis_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    // Notifier l'auteur et le demandeur
+    for uid in &[auteur_id.0, demandeur_id] {
+        sqlx::query(
+            "INSERT INTO retrouve_amis.notification_retrouve
+             (utilisateur_id, type) VALUES ($1, 'demande_retrait'::retrouve_amis.type_notification)"
+        )
+        .bind(uid)
+        .execute(pool.get_ref())
+        .await?;
+    }
+
+    // Audit
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "retrouve_amis",
+        "demande_retrait",
+        Some(demande_id),
+        Some(serde_json::json!({ "etat": "en_attente" })),
+        Some(serde_json::json!({
+            "etat": &data.decision,
+            "avis_etat": &avis_etat,
+            "avis_est_public": avis_est_public
+        })),
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
+    log::info!(
+        "Admin {} a statue sur la demande de retrait {} avec decision '{}'",
+        admin.id, demande_id, data.decision
+    );
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(AdminStatuerDemandeResponse {
+            id: demande_id,
+            etat: data.decision,
+            avis_id,
+            avis_etat,
+            avis_est_public,
         }),
         error: None,
     }))
