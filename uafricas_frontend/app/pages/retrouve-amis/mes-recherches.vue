@@ -2,7 +2,7 @@
 definePageMeta({ layout: 'default' })
 
 const userStore = useUserStore()
-const { listerAvis, cloturerAvis } = useRetrouvAmis()
+const { listerAvis, cloturerAvis, publierAvis } = useRetrouvAmis()
 
 const avisListe = ref<any[]>([])
 const chargement = ref(false)
@@ -77,6 +77,23 @@ const onConfirmerCloture = async () => {
     chargerAvis()
   } catch {
     // erreur silencieuse
+  }
+}
+
+const publicationEnCours = ref<string | null>(null)
+
+const onTogglePublic = async (avisItem: any) => {
+  publicationEnCours.value = avisItem.id
+  try {
+    const res = await publierAvis(avisItem.id, !avisItem.est_public)
+    if (res) {
+      avisItem.est_public = res.est_public
+      avisItem.slug = res.slug
+    }
+  } catch {
+    // erreur geree par le composable
+  } finally {
+    publicationEnCours.value = null
   }
 }
 
@@ -213,6 +230,47 @@ onMounted(() => {
               <p class="text-sm text-gray-600 line-clamp-2 mb-4">
                 {{ avis.description || 'Aucune description.' }}
               </p>
+
+              <!-- Toggle Rendre public -->
+              <div v-if="avis.etat === 'actif'" class="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center justify-between">
+                  <label class="text-sm font-medium text-gray-700 cursor-pointer" :for="'toggle-public-' + avis.id">
+                    <font-awesome-icon :icon="['fas', 'globe']" class="mr-1.5 text-amber-600" />
+                    Rendre public
+                  </label>
+                  <button
+                    :id="'toggle-public-' + avis.id"
+                    type="button"
+                    role="switch"
+                    :aria-checked="avis.est_public"
+                    :disabled="publicationEnCours === avis.id"
+                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50"
+                    :class="avis.est_public ? 'bg-custom-green' : 'bg-gray-200'"
+                    @click="onTogglePublic(avis)"
+                  >
+                    <span
+                      class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                      :class="avis.est_public ? 'translate-x-5' : 'translate-x-0'"
+                    />
+                  </button>
+                </div>
+                <!-- Lien public + compteur de partages -->
+                <div v-if="avis.est_public && avis.slug" class="mt-2 space-y-1">
+                  <NuxtLink
+                    :to="`/retrouve-amis/public/${avis.slug}`"
+                    class="text-xs text-amber-700 hover:text-amber-800 hover:underline break-all"
+                    target="_blank"
+                  >
+                    <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="mr-1" />
+                    /retrouve-amis/public/{{ avis.slug }}
+                  </NuxtLink>
+                  <p class="text-xs text-gray-500">
+                    <font-awesome-icon :icon="['fas', 'share-nodes']" class="mr-1" />
+                    {{ avis.compteur_partages || 0 }} partage{{ (avis.compteur_partages || 0) !== 1 ? 's' : '' }}
+                  </p>
+                </div>
+              </div>
+
               <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
                 <button
                   class="flex-1 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"

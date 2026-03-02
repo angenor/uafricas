@@ -286,6 +286,7 @@ pub async fn lister_avis(
         "SELECT a.id, a.nom_recherche, a.prenom_recherche, a.surnom, a.ecole, a.ville,
                 a.pays_id, a.etat::text AS etat, a.periode_debut, a.periode_fin, a.description,
                 a.created_at, a.updated_at, a.deleted_at,
+                a.est_public, a.slug, a.compteur_partages,
                 p.id AS pays_info_id, p.nom AS pays_nom,
                 (SELECT COUNT(*) FROM retrouve_amis.correspondance c WHERE c.avis_id = a.id) AS nb_correspondances
          FROM retrouve_amis.avis_recherche a
@@ -325,6 +326,9 @@ pub async fn lister_avis(
         created_at: chrono::DateTime<Utc>,
         updated_at: chrono::DateTime<Utc>,
         deleted_at: Option<chrono::DateTime<Utc>>,
+        est_public: bool,
+        slug: Option<String>,
+        compteur_partages: i32,
         pays_info_id: Option<Uuid>,
         pays_nom: Option<String>,
         nb_correspondances: i64,
@@ -360,6 +364,9 @@ pub async fn lister_avis(
             periode_fin: r.periode_fin,
             etat: r.etat,
             nb_correspondances: r.nb_correspondances,
+            est_public: r.est_public,
+            slug: r.slug,
+            compteur_partages: r.compteur_partages,
             created_at: r.created_at,
             updated_at: r.updated_at,
         })
@@ -1889,4 +1896,163 @@ fn construire_criteres_communs(details: &serde_json::Value) -> Vec<String> {
         }
     }
     criteres
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PUBLICATION PUBLIQUE — Partage des avis de recherche
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Generer un slug URL-safe a partir du nom et prenom recherches
+fn generer_slug_avis(nom: &str, prenom: Option<&str>) -> String {
+    let base = if let Some(p) = prenom {
+        format!("{}-{}", nom, p)
+    } else {
+        nom.to_string()
+    };
+
+    // Normaliser : minuscules, remplacer espaces et caracteres speciaux par des tirets
+    let slug: String = base
+        .to_lowercase()
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' {
+                c
+            } else if c == ' ' || c == '_' {
+                '-'
+            } else {
+                // Caracteres accentues courants
+                match c {
+                    'é' | 'è' | 'ê' | 'ë' => 'e',
+                    'à' | 'â' | 'ä' => 'a',
+                    'ù' | 'û' | 'ü' => 'u',
+                    'î' | 'ï' => 'i',
+                    'ô' | 'ö' => 'o',
+                    'ç' => 'c',
+                    'ñ' => 'n',
+                    _ => '-',
+                }
+            }
+        })
+        .collect();
+
+    // Supprimer les tirets multiples et les tirets en debut/fin
+    let slug = slug
+        .split('-')
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+
+    // Ajouter un suffixe UUID8 pour garantir l'unicite
+    let uuid_suffix = &Uuid::new_v4().to_string()[..8];
+    format!("{}-{}", slug, uuid_suffix)
+}
+
+/// PATCH /api/retrouve-amis/avis/{id}/publier
+/// Activer ou desactiver la visibilite publique d'un avis
+pub async fn publier_avis(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<PublierAvisRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let avis_id = path.into_inner();
+    let est_public = body.est_public;
+
+    // Verifier que l'avis existe, appartient a l'auteur et est actif
+    let avis: Option<(Uuid, String, String, Option<String>, Option<String>, bool, Option<String>, Option<chrono::DateTime<Utc>>)> = sqlx::query_as(
+        "SELECT id, etat::text, nom_recherche, prenom_recherche, slug, est_public, slug, date_publication_publique
+         FROM retrouve_amis.avis_recherche
+         WHERE id = $1 AND deleted_at IS NULL"
+    )
+    .bind(avis_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let avis = avis.ok_or_else(|| ApiErreur::NonTrouve("Avis non trouve".into()))?;
+
+    // Verifier l'auteur
+    let auteur_id: Option<(Uuid,)> = sqlx::query_as(
+        "SELECT auteur_id FROM retrouve_amis.avis_recherche WHERE id = $1"
+    )
+    .bind(avis_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let auteur_id = auteur_id.ok_or_else(|| ApiErreur::NonTrouve("Avis non trouve".into()))?;
+    if auteur_id.0 != utilisateur_id {
+        return Err(ApiErreur::AccesInterdit("Vous n'etes pas l'auteur de cet avis".into()));
+    }
+
+    // Verifier que l'etat est actif
+    if avis.1 != "actif" {
+        return Err(ApiErreur::Validation(
+            "Seuls les avis actifs peuvent etre rendus publics".into(),
+        ));
+    }
+
+    // Generer le slug si premiere publication
+    let slug_actuel = avis.4.clone();
+    let slug = if slug_actuel.is_some() {
+        slug_actuel.unwrap()
+    } else {
+        generer_slug_avis(&avis.2, avis.3.as_deref())
+    };
+
+    // Mettre a jour l'avis
+    let now = Utc::now();
+    if avis.7.is_some() {
+        // Slug et date deja definis, juste toggle est_public
+        sqlx::query(
+            "UPDATE retrouve_amis.avis_recherche
+             SET est_public = $1, slug = $2, updated_at = NOW()
+             WHERE id = $3"
+        )
+        .bind(est_public)
+        .bind(&slug)
+        .bind(avis_id)
+        .execute(pool.get_ref())
+        .await?;
+    } else {
+        // Premiere publication : set slug + date_publication_publique
+        sqlx::query(
+            "UPDATE retrouve_amis.avis_recherche
+             SET est_public = $1, slug = $2, date_publication_publique = $3, updated_at = NOW()
+             WHERE id = $4"
+        )
+        .bind(est_public)
+        .bind(&slug)
+        .bind(now)
+        .bind(avis_id)
+        .execute(pool.get_ref())
+        .await?;
+    }
+
+    // Recuperer la date de publication (existante ou nouvelle)
+    let date_pub = if avis.7.is_some() { avis.7 } else if est_public { Some(now) } else { None };
+
+    // Audit
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "UPDATE",
+        "retrouve_amis",
+        "avis_recherche",
+        Some(avis_id),
+        Some(serde_json::json!({ "est_public": avis.5 })),
+        Some(serde_json::json!({ "est_public": est_public, "slug": &slug })),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(PublierAvisResponse {
+            id: avis_id,
+            est_public,
+            slug,
+            date_publication_publique: date_pub,
+        }),
+        error: None,
+    }))
 }

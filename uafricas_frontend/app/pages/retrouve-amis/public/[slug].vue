@@ -1,0 +1,160 @@
+<script setup lang="ts">
+import type { AvisPublicDetail, AvisPublicEtat } from '~/composables/useRetrouvAmis'
+
+definePageMeta({ layout: 'default' })
+
+const route = useRoute()
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBaseUrl as string
+const slug = route.params.slug as string
+
+// Charger les donnees cote serveur via useFetch (SSR)
+const { data, error: fetchError } = await useFetch<{ success: boolean; data: AvisPublicDetail | AvisPublicEtat | null; error: string | null }>(
+  `${apiBase}/api/retrouve-amis/public/${slug}`,
+)
+
+const avis = computed(() => data.value?.data ?? null)
+const estActif = computed(() => avis.value && 'auteur_anonyme' in avis.value)
+const estNonActif = computed(() => avis.value && 'message' in avis.value && !('auteur_anonyme' in avis.value))
+const nonDisponible = computed(() => fetchError.value || !data.value?.success)
+
+// SEO — balises de base (dans le setup pour le SSR)
+useSeoMeta({
+  title: () => {
+    if (estActif.value) {
+      const a = avis.value as AvisPublicDetail
+      return `Recherche : ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''} — UAfricas`
+    }
+    return 'Avis de recherche — UAfricas'
+  },
+  description: () => {
+    if (estActif.value) {
+      const a = avis.value as AvisPublicDetail
+      const parties = []
+      if (a.ville) parties.push(a.ville)
+      if (a.pays) parties.push(a.pays.nom)
+      if (a.ecole) parties.push(a.ecole)
+      return `Aidez ${a.auteur_anonyme} a retrouver ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''}${parties.length ? ' (' + parties.join(', ') + ')' : ''}. Partagez cet avis de recherche.`
+    }
+    return 'Avis de recherche sur UAfricas — Retrouver des amis perdus de vue.'
+  },
+  ogTitle: () => {
+    if (estActif.value) {
+      const a = avis.value as AvisPublicDetail
+      return `Recherche : ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''}`
+    }
+    return 'Avis de recherche — UAfricas'
+  },
+  ogDescription: () => {
+    if (estActif.value) {
+      const a = avis.value as AvisPublicDetail
+      return `Aidez a retrouver ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''} sur UAfricas.`
+    }
+    return 'Retrouvez des amis perdus de vue sur UAfricas.'
+  },
+  ogType: 'article',
+  ogUrl: () => `https://www.africans-world.org/retrouve-amis/public/${slug}`,
+  twitterCard: 'summary_large_image',
+  twitterTitle: () => {
+    if (estActif.value) {
+      const a = avis.value as AvisPublicDetail
+      return `Recherche : ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''}`
+    }
+    return 'Avis de recherche — UAfricas'
+  },
+  twitterDescription: () => {
+    if (estActif.value) {
+      const a = avis.value as AvisPublicDetail
+      return `Aidez a retrouver ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''} sur UAfricas.`
+    }
+    return 'Retrouvez des amis perdus de vue sur UAfricas.'
+  },
+})
+
+// noindex/nofollow pour les pages non-actives
+useHead({
+  meta: () => {
+    if (!estActif.value) {
+      return [{ name: 'robots', content: 'noindex, nofollow' }]
+    }
+    return []
+  },
+})
+</script>
+
+<template>
+  <div class="min-h-screen bg-gray-50">
+    <!-- Hero compact -->
+    <div
+      class="relative h-48 bg-cover bg-center"
+      style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
+    >
+      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
+      <div class="absolute inset-0 flex flex-col items-center justify-center mt-10">
+        <h1 class="text-white text-2xl md:text-3xl font-bold mb-2">
+          Avis de recherche
+        </h1>
+        <div class="h-1 w-16 bg-custom-green rounded" />
+      </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 py-8">
+      <!-- Erreur / non disponible -->
+      <div v-if="nonDisponible" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div class="w-20 h-20 mx-auto mb-6 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center">
+          <font-awesome-icon :icon="['fas', 'circle-xmark']" class="text-3xl" />
+        </div>
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">
+          Avis non disponible
+        </h2>
+        <p class="text-gray-500 mb-6">
+          Cet avis de recherche n'existe pas ou n'est plus disponible.
+        </p>
+        <NuxtLink
+          to="/retrouve-amis"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+        >
+          <font-awesome-icon :icon="['fas', 'arrow-left']" />
+          Retour a Retrouv'Amis
+        </NuxtLink>
+      </div>
+
+      <!-- Avis non actif (cloture / suspendu) -->
+      <div v-else-if="estNonActif" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div class="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center"
+          :class="(avis as AvisPublicEtat).etat === 'cloture'
+            ? 'bg-green-50 text-custom-green'
+            : 'bg-orange-50 text-orange-500'"
+        >
+          <font-awesome-icon
+            :icon="(avis as AvisPublicEtat).etat === 'cloture'
+              ? ['fas', 'heart']
+              : ['fas', 'shield-halved']"
+            class="text-3xl"
+          />
+        </div>
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">
+          {{ (avis as AvisPublicEtat).message }}
+        </h2>
+        <p v-if="(avis as AvisPublicEtat).etat === 'cloture'" class="text-gray-500 mb-6">
+          L'auteur de cet avis a retrouve la personne qu'il recherchait.
+        </p>
+        <p v-else class="text-gray-500 mb-6">
+          Un examen de cet avis est en cours. Veuillez reessayer plus tard.
+        </p>
+        <NuxtLink
+          to="/retrouve-amis"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+        >
+          <font-awesome-icon :icon="['fas', 'arrow-left']" />
+          Retour a Retrouv'Amis
+        </NuxtLink>
+      </div>
+
+      <!-- Avis actif : contenu complet -->
+      <template v-else-if="estActif">
+        <RetrouvAmisPagePublique :avis="(avis as AvisPublicDetail)" />
+      </template>
+    </div>
+  </div>
+</template>

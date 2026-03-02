@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afrolang, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, retrouve_amis, sabbatiques, stations_radio, television};
+use crate::handlers::{admin, africantives, afrolang, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -340,12 +340,15 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/retrouve-amis")
                     // Pays (liste publique sans auth)
                     .route("/pays", web::get().to(retrouve_amis::lister_pays))
+                    // Pages publiques (sans auth)
+                    .route("/public/{slug}", web::get().to(retrouve_amis_public::detail_avis_public))
                     // Avis de recherche
                     .route("/avis", web::post().to(retrouve_amis::creer_avis))
                     .route("/avis", web::get().to(retrouve_amis::lister_avis))
                     .route("/avis/{id}", web::get().to(retrouve_amis::detail_avis))
                     .route("/avis/{id}", web::put().to(retrouve_amis::modifier_avis))
                     .route("/avis/{id}/cloturer", web::patch().to(retrouve_amis::cloturer_avis))
+                    .route("/avis/{id}/publier", web::patch().to(retrouve_amis::publier_avis))
                     .route("/avis/{id}/signaler", web::post().to(retrouve_amis::signaler_avis))
                     // Correspondances
                     .route("/correspondances", web::get().to(retrouve_amis::lister_correspondances))

@@ -163,6 +163,10 @@ pub struct AvisRechercheResponse {
     pub periode_fin: Option<i32>,
     pub etat: String,
     pub nb_correspondances: i64,
+    pub est_public: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub slug: Option<String>,
+    pub compteur_partages: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

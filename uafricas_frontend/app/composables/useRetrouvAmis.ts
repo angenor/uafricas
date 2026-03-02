@@ -25,7 +25,7 @@ export type EtatCorrespondance = 'en_attente' | 'acceptee_a' | 'acceptee_b' | 'm
 export type TypeCible = 'avis' | 'profil'
 export type MotifSignalement = 'contenu_abusif' | 'usurpation_identite' | 'harcelement' | 'autre'
 export type TypeParcours = 'ecole' | 'ville_residence'
-export type TypeNotification = 'nouvelle_correspondance' | 'acceptation_contact' | 'coordonnees_partagees' | 'correspondance_archivee' | 'avis_suspendu'
+export type TypeNotification = 'nouvelle_correspondance' | 'acceptation_contact' | 'coordonnees_partagees' | 'correspondance_archivee' | 'avis_suspendu' | 'reponse_publique' | 'demande_retrait'
 
 // ── Interfaces de reponse ────────────────────────────────────
 
@@ -51,6 +51,9 @@ export interface AvisRecherche {
   description?: string
   etat: EtatAvis
   nb_correspondances: number
+  est_public?: boolean
+  slug?: string
+  compteur_partages?: number
   created_at: string
   updated_at: string
 }
@@ -117,6 +120,42 @@ export interface TableauDeBord {
   notifications_non_lues: number
   est_trouvable: boolean
   nb_parcours: number
+}
+
+// ── Interfaces de reponse — Partage public ─────────────────
+
+/** Detail complet d'un avis public actif */
+export interface AvisPublicDetail {
+  id: string
+  slug: string
+  nom_recherche: string
+  prenom_recherche?: string
+  ecole?: string
+  ville?: string
+  pays?: PaysInfo
+  periode_debut?: number
+  periode_fin?: number
+  description?: string
+  auteur_anonyme: string
+  etat: EtatAvis
+  compteur_partages: number
+  date_publication_publique?: string
+  created_at: string
+}
+
+/** Reponse pour un avis non-actif (cloture, suspendu) */
+export interface AvisPublicEtat {
+  slug: string
+  etat: string
+  message: string
+}
+
+/** Reponse apres publication/depublication d'un avis */
+export interface PublierAvisResponse {
+  id: string
+  est_public: boolean
+  slug: string
+  date_publication_publique?: string
 }
 
 // ── DTOs de requete ──────────────────────────────────────────
@@ -949,6 +988,71 @@ export const useRetrouvAmis = () => {
     }
   }
 
+  // ── Partage public ──────────────────────────────────────────
+
+  /**
+   * Activer ou desactiver la visibilite publique d'un avis
+   */
+  const publierAvis = async (id: string, estPublic: boolean): Promise<PublierAvisResponse | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<PublierAvisResponse>>(
+        `${apiBase}/api/retrouve-amis/avis/${id}/publier`,
+        {
+          method: 'PATCH',
+          headers: authHeaders(),
+          body: { est_public: estPublic },
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de la publication de l\'avis')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur lors de la publication de l\'avis'
+      erreur.value = message
+      console.error('Erreur publierAvis:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /**
+   * Obtenir le detail d'un avis public par son slug (sans auth)
+   */
+  const detailAvisPublic = async (slug: string): Promise<AvisPublicDetail | AvisPublicEtat | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<AvisPublicDetail | AvisPublicEtat>>(
+        `${apiBase}/api/retrouve-amis/public/${slug}`,
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Avis non disponible')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Avis non disponible'
+      erreur.value = message
+      console.error('Erreur detailAvisPublic:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -977,5 +1081,8 @@ export const useRetrouvAmis = () => {
     ajouterParcours,
     modifierParcours,
     supprimerParcours,
+    // Partage public
+    publierAvis,
+    detailAvisPublic,
   }
 }
