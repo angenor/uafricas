@@ -381,3 +381,256 @@ pub struct ModifierParcours {
 pub struct BasculerTrouvable {
     pub est_trouvable: bool,
 }
+
+// ══════════════════════════════════════════════════════════════
+// Partage public des avis de recherche (002-partage-avis-recherche)
+// ══════════════════════════════════════════════════════════════
+
+// ── Colonnes SQL ─────────────────────────────────────────────
+
+/// Colonnes SELECT pour un avis public actif (detail complet)
+pub const AVIS_PUBLIC_DETAIL_COLONNES: &str =
+    "a.id, a.slug, a.nom_recherche, a.prenom_recherche,
+     a.ecole, a.ville, a.periode_debut, a.periode_fin,
+     a.description, a.etat::text AS etat,
+     a.compteur_partages, a.date_publication_publique, a.created_at,
+     u.prenom AS auteur_prenom, u.nom AS auteur_nom,
+     p.id AS pays_id, p.nom AS pays_nom";
+
+/// Colonnes SELECT pour le listing des avis publics (resume)
+pub const AVIS_PUBLIC_LISTE_COLONNES: &str =
+    "a.slug, a.nom_recherche, a.prenom_recherche,
+     a.ville, a.periode_debut, a.periode_fin,
+     a.compteur_partages, a.created_at,
+     p.id AS pays_id, p.nom AS pays_nom";
+
+/// Colonnes autorisees pour le tri des avis publics
+pub const AVIS_PUBLIC_TRI_COLONNES: &[&str] = &["created_at", "compteur_partages"];
+
+// ── Structs FromRow (mapping base de donnees) ────────────────
+
+/// Ligne SQL pour le detail d'un avis public actif
+#[derive(Debug, FromRow)]
+pub struct AvisPublicDetailRow {
+    pub id: Uuid,
+    pub slug: Option<String>,
+    pub nom_recherche: String,
+    pub prenom_recherche: Option<String>,
+    pub ecole: Option<String>,
+    pub ville: Option<String>,
+    pub periode_debut: Option<i32>,
+    pub periode_fin: Option<i32>,
+    pub description: Option<String>,
+    pub etat: String,
+    pub compteur_partages: i32,
+    pub date_publication_publique: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub auteur_prenom: String,
+    pub auteur_nom: String,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+}
+
+/// Ligne SQL pour le listing des avis publics
+#[derive(Debug, FromRow)]
+pub struct AvisPublicListeRow {
+    pub slug: Option<String>,
+    pub nom_recherche: String,
+    pub prenom_recherche: Option<String>,
+    pub ville: Option<String>,
+    pub periode_debut: Option<i32>,
+    pub periode_fin: Option<i32>,
+    pub compteur_partages: i32,
+    pub created_at: DateTime<Utc>,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+}
+
+// ── DTOs de reponse — Publics ────────────────────────────────
+
+/// Detail complet d'un avis public actif
+#[derive(Debug, Serialize)]
+pub struct AvisPublicDetailResponse {
+    pub id: Uuid,
+    pub slug: String,
+    pub nom_recherche: String,
+    pub prenom_recherche: Option<String>,
+    pub ecole: Option<String>,
+    pub ville: Option<String>,
+    pub pays: Option<PaysInfo>,
+    pub periode_debut: Option<i32>,
+    pub periode_fin: Option<i32>,
+    pub description: Option<String>,
+    pub auteur_anonyme: String,
+    pub etat: String,
+    pub compteur_partages: i32,
+    pub date_publication_publique: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// Reponse pour un avis non-actif (cloture, suspendu)
+#[derive(Debug, Serialize)]
+pub struct AvisPublicEtatResponse {
+    pub slug: String,
+    pub etat: String,
+    pub message: String,
+}
+
+/// Resume d'un avis public dans le listing
+#[derive(Debug, Serialize)]
+pub struct AvisPublicResumeResponse {
+    pub slug: String,
+    pub nom_recherche: String,
+    pub prenom_recherche: Option<String>,
+    pub ville: Option<String>,
+    pub pays: Option<PaysInfo>,
+    pub periode_debut: Option<i32>,
+    pub periode_fin: Option<i32>,
+    pub compteur_partages: i32,
+    pub created_at: DateTime<Utc>,
+}
+
+/// Reponse paginee pour le listing des avis publics
+#[derive(Debug, Serialize)]
+pub struct ListeAvisPublicsResponse {
+    pub avis: Vec<AvisPublicResumeResponse>,
+    pub pagination: PaginationInfo,
+}
+
+/// Info de pagination standard
+#[derive(Debug, Serialize)]
+pub struct PaginationInfo {
+    pub page: i64,
+    pub par_page: i64,
+    pub total: i64,
+    pub pages: i64,
+}
+
+/// Reponse apres publication/depublication d'un avis
+#[derive(Debug, Serialize)]
+pub struct PublierAvisResponse {
+    pub id: Uuid,
+    pub est_public: bool,
+    pub slug: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date_publication_publique: Option<DateTime<Utc>>,
+}
+
+/// Reponse apres reponse publique
+#[derive(Debug, Serialize)]
+pub struct ReponsePubliqueResponse {
+    pub id: Uuid,
+    pub correspondance_id: Uuid,
+    pub message: String,
+}
+
+/// Reponse apres demande de retrait
+#[derive(Debug, Serialize)]
+pub struct DemandeRetraitResponse {
+    pub id: Uuid,
+    pub message: String,
+}
+
+/// Reponse apres increment du compteur de partages
+#[derive(Debug, Serialize)]
+pub struct PartageResponse {
+    pub compteur_partages: i32,
+}
+
+// ── DTOs de requete — Publics ────────────────────────────────
+
+/// Corps de la requete pour publier/depublier un avis
+#[derive(Debug, Deserialize)]
+pub struct PublierAvisRequest {
+    pub est_public: bool,
+}
+
+/// Corps de la requete de reponse publique
+#[derive(Debug, Deserialize)]
+pub struct ReponsePubliqueRequest {
+    pub type_reponse: String,
+    pub message: String,
+}
+
+/// Corps de la requete de signalement depuis la page publique
+#[derive(Debug, Deserialize)]
+pub struct SignalerPublicRequest {
+    pub motif: String,
+    pub description: Option<String>,
+}
+
+/// Corps de la requete de demande de retrait
+#[derive(Debug, Deserialize)]
+pub struct DemandeRetraitRequest {
+    pub motif: String,
+}
+
+/// Parametres de recherche des avis publics
+#[derive(Debug, Deserialize)]
+pub struct RecherchePubliqueParams {
+    pub page: Option<i64>,
+    pub par_page: Option<i64>,
+    pub recherche: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub ville: Option<String>,
+    pub ecole: Option<String>,
+    pub tri: Option<String>,
+    pub ordre: Option<String>,
+}
+
+// ── Conversions FromRow → Response DTO ───────────────────────
+
+impl AvisPublicDetailRow {
+    /// Convertit la ligne SQL en DTO de detail public avec auteur anonymise
+    pub fn to_detail_response(&self) -> AvisPublicDetailResponse {
+        let auteur_anonyme = format!(
+            "{} {}.",
+            self.auteur_prenom,
+            self.auteur_nom.chars().next().unwrap_or(' ')
+        );
+        AvisPublicDetailResponse {
+            id: self.id,
+            slug: self.slug.clone().unwrap_or_default(),
+            nom_recherche: self.nom_recherche.clone(),
+            prenom_recherche: self.prenom_recherche.clone(),
+            ecole: self.ecole.clone(),
+            ville: self.ville.clone(),
+            pays: self.pays_id.and_then(|id| {
+                self.pays_nom.as_ref().map(|nom| PaysInfo {
+                    id,
+                    nom: nom.clone(),
+                })
+            }),
+            periode_debut: self.periode_debut,
+            periode_fin: self.periode_fin,
+            description: self.description.clone(),
+            auteur_anonyme,
+            etat: self.etat.clone(),
+            compteur_partages: self.compteur_partages,
+            date_publication_publique: self.date_publication_publique,
+            created_at: self.created_at,
+        }
+    }
+}
+
+impl AvisPublicListeRow {
+    /// Convertit la ligne SQL en DTO de resume public
+    pub fn to_resume_response(&self) -> AvisPublicResumeResponse {
+        AvisPublicResumeResponse {
+            slug: self.slug.clone().unwrap_or_default(),
+            nom_recherche: self.nom_recherche.clone(),
+            prenom_recherche: self.prenom_recherche.clone(),
+            ville: self.ville.clone(),
+            pays: self.pays_id.and_then(|id| {
+                self.pays_nom.as_ref().map(|nom| PaysInfo {
+                    id,
+                    nom: nom.clone(),
+                })
+            }),
+            periode_debut: self.periode_debut,
+            periode_fin: self.periode_fin,
+            compteur_partages: self.compteur_partages,
+            created_at: self.created_at,
+        }
+    }
+}

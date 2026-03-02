@@ -219,6 +219,101 @@ ALTER TABLE iam.utilisateur ADD COLUMN est_trouvable BOOLEAN NOT NULL DEFAULT FA
 
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- Partage public des avis de recherche (002-partage-avis-recherche)
+-- ════════════════════════════════════════════════════════════════════════════
+
+
+-- ── Types (Enums) — Nouveaux ─────────────────────────────────────────
+
+CREATE TYPE retrouve_amis.type_reponse_publique AS ENUM (
+    'je_suis_cette_personne',
+    'je_la_connais',
+    'jai_des_informations'
+);
+
+CREATE TYPE retrouve_amis.etat_demande_retrait AS ENUM (
+    'en_attente',
+    'approuvee',
+    'rejetee'
+);
+
+CREATE TYPE retrouve_amis.source_signalement AS ENUM (
+    'correspondance',
+    'page_publique'
+);
+
+
+-- ── ALTER TABLE : avis_recherche — Colonnes publiques ────────────────
+
+ALTER TABLE retrouve_amis.avis_recherche
+    ADD COLUMN est_public BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN slug VARCHAR(400),
+    ADD COLUMN date_publication_publique TIMESTAMPTZ,
+    ADD COLUMN compteur_partages INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE retrouve_amis.avis_recherche
+    ADD CONSTRAINT uq_avis_recherche_slug UNIQUE (slug),
+    ADD CONSTRAINT chk_compteur_partages_positif CHECK (compteur_partages >= 0);
+
+
+-- ── ALTER TABLE : signalement — Source ───────────────────────────────
+
+ALTER TABLE retrouve_amis.signalement
+    ADD COLUMN source retrouve_amis.source_signalement NOT NULL DEFAULT 'correspondance';
+
+
+-- ── ALTER TYPE : type_notification — Nouvelles valeurs ───────────────
+
+ALTER TYPE retrouve_amis.type_notification ADD VALUE 'reponse_publique';
+ALTER TYPE retrouve_amis.type_notification ADD VALUE 'demande_retrait';
+
+
+-- ── Table : reponse_publique ─────────────────────────────────────────
+
+CREATE TABLE retrouve_amis.reponse_publique (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    avis_id             UUID                                    NOT NULL REFERENCES retrouve_amis.avis_recherche(id) ON DELETE CASCADE,
+    repondeur_id        UUID                                    NOT NULL,   -- [xref] iam.utilisateur
+    type_reponse        retrouve_amis.type_reponse_publique     NOT NULL,
+    message             TEXT                                    NOT NULL,
+    correspondance_id   UUID                                    REFERENCES retrouve_amis.correspondance(id) ON DELETE SET NULL,
+    created_at          TIMESTAMPTZ                             NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_reponse_publique_avis_repondeur UNIQUE (avis_id, repondeur_id)
+);
+
+CREATE INDEX idx_reponse_avis ON retrouve_amis.reponse_publique(avis_id);
+CREATE INDEX idx_reponse_repondeur ON retrouve_amis.reponse_publique(repondeur_id);
+
+
+-- ── Table : demande_retrait ──────────────────────────────────────────
+
+CREATE TABLE retrouve_amis.demande_retrait (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    avis_id             UUID                                    NOT NULL REFERENCES retrouve_amis.avis_recherche(id) ON DELETE CASCADE,
+    demandeur_id        UUID                                    NOT NULL,   -- [xref] iam.utilisateur
+    motif               TEXT                                    NOT NULL,
+    etat                retrouve_amis.etat_demande_retrait      NOT NULL DEFAULT 'en_attente',
+    date_suspension     TIMESTAMPTZ                             NOT NULL DEFAULT NOW(),
+    decide_par          UUID,                                               -- [xref] iam.utilisateur
+    decision_at         TIMESTAMPTZ,
+    commentaire_admin   TEXT,
+    created_at          TIMESTAMPTZ                             NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_demande_retrait_avis_demandeur UNIQUE (avis_id, demandeur_id)
+);
+
+CREATE INDEX idx_demande_avis ON retrouve_amis.demande_retrait(avis_id);
+CREATE INDEX idx_demande_etat ON retrouve_amis.demande_retrait(etat) WHERE etat = 'en_attente';
+
+
+-- ── Index partiel : avis publics actifs ──────────────────────────────
+
+CREATE INDEX idx_avis_public_actif ON retrouve_amis.avis_recherche(est_public, etat)
+    WHERE est_public = TRUE AND etat = 'actif' AND deleted_at IS NULL;
+
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- Fonction de matching : calculer_correspondances
 -- ════════════════════════════════════════════════════════════════════════════
 --

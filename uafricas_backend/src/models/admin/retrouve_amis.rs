@@ -417,6 +417,145 @@ impl AdminSignalementRow {
     }
 }
 
+// ════════════════════════════════════════════════════════════════
+// Demandes de Retrait (Admin) — 002-partage-avis-recherche
+// ════════════════════════════════════════════════════════════════
+
+// ── Colonnes SQL Demandes de Retrait ─────────────────────────
+
+pub const ADMIN_DEMANDE_RETRAIT_LISTE_COLONNES: &str =
+    "d.id, d.avis_id, d.motif, d.etat::text AS etat, d.date_suspension, d.created_at,
+     d.decide_par, d.decision_at, d.commentaire_admin,
+     ar.nom_recherche,
+     ud.id AS demandeur_id, ud.prenom AS demandeur_prenom, ud.nom AS demandeur_nom,
+     ua.id AS auteur_id, ua.prenom AS auteur_prenom, ua.nom AS auteur_nom";
+
+pub const ADMIN_DEMANDE_RETRAIT_JOINS: &str =
+    "JOIN retrouve_amis.avis_recherche ar ON ar.id = d.avis_id
+     JOIN iam.utilisateur ud ON ud.id = d.demandeur_id
+     JOIN iam.utilisateur ua ON ua.id = ar.auteur_id";
+
+pub const ADMIN_DEMANDE_RETRAIT_TRI_COLONNES: &[&str] = &["created_at", "etat"];
+
+// ── Structs de listing (FromRow) ─────────────────────────────
+
+#[derive(Debug, FromRow)]
+pub struct AdminDemandeRetraitListe {
+    pub id: Uuid,
+    pub avis_id: Uuid,
+    pub nom_recherche: String,
+    pub demandeur_id: Uuid,
+    pub demandeur_prenom: String,
+    pub demandeur_nom: String,
+    pub auteur_id: Uuid,
+    pub auteur_prenom: String,
+    pub auteur_nom: String,
+    pub motif: String,
+    pub etat: String,
+    pub date_suspension: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+    pub decide_par: Option<Uuid>,
+    pub decision_at: Option<DateTime<Utc>>,
+    pub commentaire_admin: Option<String>,
+}
+
+// ── Response DTOs ────────────────────────────────────────────
+
+/// Info utilisateur anonymisee pour les demandes de retrait
+#[derive(Debug, Serialize, Clone)]
+pub struct AdminUtilisateurAnonyme {
+    pub id: Uuid,
+    pub prenom: String,
+    pub nom: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdminDemandeRetraitResponse {
+    pub id: Uuid,
+    pub avis_id: Uuid,
+    pub nom_recherche: String,
+    pub demandeur: AdminUtilisateurAnonyme,
+    pub auteur: AdminUtilisateurAnonyme,
+    pub motif: String,
+    pub etat: String,
+    pub date_suspension: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdminDemandeRetraitListeResponse {
+    pub demandes: Vec<AdminDemandeRetraitResponse>,
+    pub pagination: AdminDemandeRetraitPagination,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdminDemandeRetraitPagination {
+    pub page: i64,
+    pub par_page: i64,
+    pub total: i64,
+    pub pages: i64,
+}
+
+/// Reponse apres que l'admin a statue sur une demande
+#[derive(Debug, Serialize)]
+pub struct AdminStatuerDemandeResponse {
+    pub id: Uuid,
+    pub etat: String,
+    pub avis_id: Uuid,
+    pub avis_etat: String,
+    pub avis_est_public: bool,
+}
+
+// ── Request DTOs ─────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct AdminDemandeRetraitQueryParams {
+    pub page: Option<i64>,
+    pub par_page: Option<i64>,
+    pub etat: Option<String>,
+    pub tri_par: Option<String>,
+    pub tri_dir: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminStatuerDemandeRequest {
+    pub decision: String,
+    pub commentaire: Option<String>,
+}
+
+// ── Conversions FromRow → Response DTO ───────────────────────
+
+impl AdminDemandeRetraitListe {
+    /// Convertit la ligne SQL en DTO de reponse avec noms anonymises (initiale du nom)
+    pub fn to_response(&self) -> AdminDemandeRetraitResponse {
+        AdminDemandeRetraitResponse {
+            id: self.id,
+            avis_id: self.avis_id,
+            nom_recherche: self.nom_recherche.clone(),
+            demandeur: AdminUtilisateurAnonyme {
+                id: self.demandeur_id,
+                prenom: self.demandeur_prenom.clone(),
+                nom: format!(
+                    "{}.",
+                    self.demandeur_nom.chars().next().unwrap_or(' ')
+                ),
+            },
+            auteur: AdminUtilisateurAnonyme {
+                id: self.auteur_id,
+                prenom: self.auteur_prenom.clone(),
+                nom: format!(
+                    "{}.",
+                    self.auteur_nom.chars().next().unwrap_or(' ')
+                ),
+            },
+            motif: self.motif.clone(),
+            etat: self.etat.clone(),
+            date_suspension: self.date_suspension,
+            created_at: self.created_at,
+        }
+    }
+}
+
 impl AdminSignalementListe {
     /// Convertit la ligne SQL en DTO de réponse pour la liste des signalements
     pub fn to_response(&self) -> AdminSignalementResponse {
