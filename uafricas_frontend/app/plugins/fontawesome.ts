@@ -37,6 +37,7 @@ import {
   faPlus,
   faHeart,
   faEye,
+  faEyeSlash,
   faThumbsDown,
   faComment,
   faShare,
@@ -99,6 +100,7 @@ import {
   faArrowUpRightFromSquare,
   faUserPlus,
   faUserTie,
+  faUserShield,
   faPlaneArrival,
   faAward,
   faUserTag,
@@ -134,6 +136,13 @@ import {
   faUserClock,
   faChartPie,
   faRadio,
+  faRoute,
+  faClock,
+  faToggleOn,
+  faToggleOff,
+  faBan,
+  faCircleXmark,
+  faShareNodes,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -190,6 +199,7 @@ library.add(
   faPlus,
   faHeart,
   faEye,
+  faEyeSlash,
   faThumbsDown,
   faComment,
   faShare,
@@ -252,6 +262,7 @@ library.add(
   faArrowUpRightFromSquare,
   faUserPlus,
   faUserTie,
+  faUserShield,
   faPlaneArrival,
   faAward,
   faUserTag,
@@ -287,6 +298,12 @@ library.add(
   faUserClock,
   faChartPie,
   faRadio,
+  faRoute,
+  faClock,
+  faToggleOn,
+  faToggleOff,
+  faBan,
+  faCircleXmark,
   farCalendar,
   farClock,
   farHeart,
@@ -295,7 +312,8 @@ library.add(
   faLinkedin,
   faInstagram,
   faYoutube,
-  faWhatsapp
+  faWhatsapp,
+  faShareNodes
 )
 
 export default defineNuxtPlugin((nuxtApp) => {

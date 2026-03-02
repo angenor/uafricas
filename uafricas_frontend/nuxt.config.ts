@@ -23,6 +23,13 @@ export default defineNuxtConfig({
     },
   },
 
+  nitro: {
+    prerender: {
+      failOnError: false,
+      crawlLinks: false,
+    },
+  },
+
   app: {
     head: {
       title: 'UAfricas - United Africa for Sustainable Development',

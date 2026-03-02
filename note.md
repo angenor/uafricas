@@ -36,3 +36,22 @@ Ordre d'exécution recommandé
 
 
 il peut arriver que `agent-browser --headed` soit lancé par un autre programme et utilise un certain
+
+
+  Résultat du test E2E
+
+  - User A (Amadou Diallo) a créé un avis cherchant "Keita Fatou" au Lycée de
+  Bamako
+  - User B (Fatou Keita) a créé un avis cherchant "Diallo Amadou" au Lycée de
+  Bamako
+  - L'algorithme a détecté une correspondance à 61.6% basée sur : école (20pts),
+  ville (15pts), période (15pts), pays (10pts)
+  - Les notifications ont été envoyées aux deux utilisateurs
+  - La correspondance est visible dans l'interface avec le statut "En attente"
+
+  Concrètement :
+  - Amadou crée un avis cherchant "Keita Fatou, Lycée de Bamako"
+  - Fatou n'a pas besoin de créer un avis — il suffit qu'elle soit trouvable et
+  qu'elle ait renseigné dans son profil : école = "Lycée de Bamako", ville =
+  "Bamako", etc.
+  - L'algo matchera son profil avec l'avis d'Amadou

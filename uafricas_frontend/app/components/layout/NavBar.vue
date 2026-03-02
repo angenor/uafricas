@@ -380,6 +380,7 @@ const menus: NavMenu[] = [
       { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
       { label: 'Afroculture', to: '/africain-afro-americain', description: 'Échanges culturels Afrique-diaspora', icon: 'fa-solid fa-earth-africa' },
       { label: 'Africalive', to: '/evenements/liste', description: 'Événements et rencontres en direct', icon: 'fa-solid fa-calendar-days' },
+      { label: 'Rootsconnect', to: '/retrouve-amis', description: 'Retrouvez vos proches perdus de vue', icon: 'fa-solid fa-users' },
     ]
   },
   {

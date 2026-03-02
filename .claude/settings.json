@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.specify/scripts/bash/setup-plan.sh --json)",
+      "Bash(scp -o StrictHostKeyChecking=no /tmp/migration_fk_retrouve_amis.sql root@161.97.92.63:/tmp/)"
+    ]
+  }
+}

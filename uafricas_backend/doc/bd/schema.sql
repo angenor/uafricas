@@ -24,6 +24,7 @@
 --   media_content   → Radio/Télé, livres, événements, MOOC
 --   governance      → Gouvernance citoyenne (FactCheck, BadHabits, IdeaForces)
 --   country_profile → Fiches pays
+--   retrouve_amis   → Retrouver des amis perdus de vue
 --
 -- CONVENTIONS
 -- ───────────
@@ -84,6 +85,7 @@
 \ir schemas/10_governance.sql
 \ir schemas/11_country_profile.sql
 \ir schemas/11b_country_profile_contributions.sql
+\ir schemas/16_retrouve_amis.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

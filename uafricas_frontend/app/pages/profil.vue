@@ -346,6 +346,77 @@
               </form>
             </div>
 
+            <!-- ─── Onglet Retrouve Amis ─── -->
+            <div v-if="ongletActif === 'retrouve-amis'" class="space-y-6">
+              <h2 class="text-lg font-semibold text-gray-800 mb-2">Retrouve Amis</h2>
+
+              <!-- Statut trouvable -->
+              <div class="bg-gray-50 rounded-xl p-5">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-9 h-9 rounded-lg flex items-center justify-center"
+                      :class="profil.est_trouvable ? 'bg-custom-green/10 text-custom-green' : 'bg-gray-200 text-gray-400'"
+                    >
+                      <font-awesome-icon icon="fa-solid fa-eye" class="text-sm" />
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-800">Profil trouvable</p>
+                      <p class="text-xs text-gray-500">
+                        {{ profil.est_trouvable ? 'Votre profil est visible pour le matching' : 'Votre profil est masque' }}
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium"
+                    :class="profil.est_trouvable ? 'bg-custom-green/10 text-custom-green' : 'bg-gray-100 text-gray-500'"
+                  >
+                    {{ profil.est_trouvable ? 'Actif' : 'Inactif' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Parcours -->
+              <div class="border border-gray-200 rounded-xl p-5">
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="w-9 h-9 rounded-lg bg-custom-chocolat/10 text-custom-chocolat flex items-center justify-center">
+                    <font-awesome-icon icon="fa-solid fa-route" class="text-sm" />
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-semibold text-gray-800">Mon parcours</h3>
+                    <p class="text-xs text-gray-500">{{ parcoursRetrouvAmis.length }} entree(s) de parcours</p>
+                  </div>
+                </div>
+
+                <!-- Liste parcours -->
+                <div v-if="parcoursRetrouvAmis.length > 0" class="space-y-2 mb-4">
+                  <div
+                    v-for="p in parcoursRetrouvAmis"
+                    :key="p.id"
+                    class="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg text-sm"
+                  >
+                    <font-awesome-icon
+                      :icon="p.type_entree === 'ecole' ? 'fa-solid fa-graduation-cap' : p.type_entree === 'ville_residence' ? 'fa-solid fa-building' : 'fa-solid fa-briefcase'"
+                      class="text-gray-400 w-4"
+                    />
+                    <span class="font-medium text-gray-700">{{ p.nom }}</span>
+                    <span v-if="p.ville" class="text-gray-400">- {{ p.ville }}</span>
+                    <span v-if="p.periode_debut" class="text-gray-400 ml-auto text-xs">
+                      {{ p.periode_debut }}{{ p.periode_fin ? ` - ${p.periode_fin}` : '' }}
+                    </span>
+                  </div>
+                </div>
+
+                <NuxtLink
+                  to="/retrouve-amis"
+                  class="inline-flex items-center gap-2 px-4 py-2 text-sm text-custom-chocolat hover:bg-orange-50 rounded-lg transition-colors"
+                >
+                  <font-awesome-icon icon="fa-solid fa-arrow-right" class="text-xs" />
+                  Gerer dans Retrouve Amis
+                </NuxtLink>
+              </div>
+            </div>
+
             <!-- ─── Onglet Securite ─── -->
             <div v-if="ongletActif === 'securite'" class="space-y-6">
               <h2 class="text-lg font-semibold text-gray-800 mb-2">Securite du compte</h2>
@@ -484,10 +555,15 @@ const ongletActif = ref('informations')
 const modeEdition = ref(false)
 const modeEditionLocalisation = ref(false)
 
+// Retrouve Amis
+const retrouvAmis = useRetrouvAmis()
+const parcoursRetrouvAmis = ref<any[]>([])
+
 // ── Onglets ──
 const onglets = [
   { id: 'informations', label: 'Informations', icon: 'fa-solid fa-user' },
   { id: 'localisation', label: 'Localisation', icon: 'fa-solid fa-location-dot' },
+  { id: 'retrouve-amis', label: 'Retrouve Amis', icon: 'fa-solid fa-users' },
   { id: 'securite', label: 'Securite', icon: 'fa-solid fa-lock' },
 ]
 
@@ -712,6 +788,13 @@ onMounted(async () => {
 
   try {
     profil.value = await profilComposable.chargerProfil()
+    // Charger le parcours Retrouve Amis
+    try {
+      const parcours = await retrouvAmis.listerParcours()
+      parcoursRetrouvAmis.value = parcours || []
+    } catch {
+      // non bloquant
+    }
   }
   catch {
     // erreur affichee via le composable

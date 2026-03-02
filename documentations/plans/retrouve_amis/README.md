@@ -7,6 +7,8 @@
 1. **Les autres avis de recherche** — quelqu'un cherche peut-être aussi cette personne, ou la personne perdue cherche aussi l'utilisateur.
 2. **Les profils des utilisateurs inscrits** (uniquement ceux ayant consenti à être trouvables).
 
+3. etc...
+
 Quand un recoupement produit une correspondance suffisante, les deux parties sont notifiées et peuvent décider de partager leurs coordonnées de manière sécurisée.
 
 ---

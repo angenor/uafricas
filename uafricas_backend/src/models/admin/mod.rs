@@ -29,3 +29,4 @@ pub mod livre;
 pub mod audit;
 pub mod profils_pays;
 pub mod dashboard;
+pub mod retrouve_amis;

@@ -268,3 +268,44 @@ ALTER TABLE media_content.chaine_tv
 ALTER TABLE media_content.chaine_tv
     ADD CONSTRAINT fk_chaine_tv_cree_par
     FOREIGN KEY (cree_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
+
+-- ── retrouve_amis → iam & shared ──────────────────────────────────────────
+ALTER TABLE retrouve_amis.avis_recherche
+    ADD CONSTRAINT fk_avis_recherche_auteur
+    FOREIGN KEY (auteur_id) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
+
+ALTER TABLE retrouve_amis.avis_recherche
+    ADD CONSTRAINT fk_avis_recherche_pays
+    FOREIGN KEY (pays_id) REFERENCES shared.pays(id) ON DELETE SET NULL;
+
+ALTER TABLE retrouve_amis.correspondance
+    ADD CONSTRAINT fk_correspondance_cible_utilisateur
+    FOREIGN KEY (cible_utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
+
+ALTER TABLE retrouve_amis.parcours_trouvable
+    ADD CONSTRAINT fk_parcours_utilisateur
+    FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
+
+ALTER TABLE retrouve_amis.parcours_trouvable
+    ADD CONSTRAINT fk_parcours_pays
+    FOREIGN KEY (pays_id) REFERENCES shared.pays(id) ON DELETE SET NULL;
+
+ALTER TABLE retrouve_amis.blacklist
+    ADD CONSTRAINT fk_blacklist_utilisateur_a
+    FOREIGN KEY (utilisateur_a_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
+
+ALTER TABLE retrouve_amis.blacklist
+    ADD CONSTRAINT fk_blacklist_utilisateur_b
+    FOREIGN KEY (utilisateur_b_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
+
+ALTER TABLE retrouve_amis.signalement
+    ADD CONSTRAINT fk_signalement_signale_par
+    FOREIGN KEY (signale_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
+
+ALTER TABLE retrouve_amis.signalement
+    ADD CONSTRAINT fk_signalement_modere_par
+    FOREIGN KEY (modere_par) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
+
+ALTER TABLE retrouve_amis.notification_retrouve
+    ADD CONSTRAINT fk_notification_retrouve_utilisateur
+    FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;

@@ -12,7 +12,7 @@ BEGIN
         WHERE schemaname IN (
             'shared','iam','marketplace','exchange',
             'innovation','culture','afrolang','media_content',
-            'governance','country_profile'
+            'governance','country_profile','retrouve_amis'
         )
         AND tablename NOT IN ('audit_log')
     LOOP

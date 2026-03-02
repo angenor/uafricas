@@ -15,7 +15,7 @@ pub const PROFIL_COLONNES: &str =
     "id, nom, prenom, email, mot_de_passe_hash, slug, photo_url,
      telephone, genre::text AS genre, date_naissance, fonction,
      localite, ville, biographie, langue_preferee,
-     etat::text AS etat, email_verifie, derniere_connexion,
+     etat::text AS etat, email_verifie, est_trouvable, derniere_connexion,
      created_at, updated_at, deleted_at";
 
 /// Representation d'un utilisateur en base de donnees
@@ -57,6 +57,7 @@ pub struct ProfilUtilisateur {
     pub langue_preferee: String,
     pub etat: String,
     pub email_verifie: bool,
+    pub est_trouvable: bool,
     pub derniere_connexion: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -154,6 +155,7 @@ pub struct ProfilResponse {
     pub langue_preferee: String,
     pub etat: String,
     pub email_verifie: bool,
+    pub est_trouvable: bool,
     pub roles: Vec<String>,
     pub derniere_connexion: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
@@ -196,6 +198,7 @@ impl ProfilUtilisateur {
             langue_preferee: self.langue_preferee.clone(),
             etat: self.etat.clone(),
             email_verifie: self.email_verifie,
+            est_trouvable: self.est_trouvable,
             roles,
             derniere_connexion: self.derniere_connexion,
             created_at: self.created_at,

@@ -114,3 +114,12 @@ Mettre à jour ce fichier lors de: ajout/suppression service Docker ou dépendan
 ## Test Users
 - **Admin** : `admin@test.com` / `Test1234`
 - **Standard** : `user@test.com` / `Test1234`
+
+## Active Technologies
+- Rust (Edition 2024) + TypeScript (Nuxt 4 / Vue 3) + Actix-Web 4, sqlx (PostgreSQL), Nuxt 4, Pinia, Tailwind CSS v4 (001-retrouve-amis)
+- PostgreSQL 16 — nouveau schema `retrouve_amis` ajouté aux 10 existants (001-retrouve-amis)
+- Rust (Edition 2024) + TypeScript (Nuxt 4 / Vue 3 SSR) + Actix-Web 4, sqlx (PostgreSQL), Nuxt 4, Pinia, Tailwind CSS v4 (002-partage-avis-recherche)
+- PostgreSQL 16, schema `retrouve_amis` existant (6 tables + 1 fonction PL/pgSQL) (002-partage-avis-recherche)
+
+## Recent Changes
+- 001-retrouve-amis: Added Rust (Edition 2024) + TypeScript (Nuxt 4 / Vue 3) + Actix-Web 4, sqlx (PostgreSQL), Nuxt 4, Pinia, Tailwind CSS v4
