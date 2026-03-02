@@ -150,9 +150,9 @@
 
 **Purpose**: Vérifications finales, intégration et validation
 
-- [ ] T043 Vérifier que toutes les mutations sont auditées via `audit::log_action` (publier, signaler, demander_retrait, statuer_retrait, repondre, incrementer_partage) — revue de code dans `uafricas_backend/src/handlers/retrouve_amis.rs`, `retrouve_amis_public.rs` et `admin/retrouve_amis.rs`
-- [ ] T044 Vérifier que toutes les pages publiques utilisent Tailwind CSS v4 pur (aucune classe daisyUI) — revue de `[slug].vue`, `rechercher.vue`, `PagePublique.vue`, `BoutonsPartage.vue`, `FormulaireReponse.vue`, `CarteAvisPublic.vue`, `DemandeRetrait.vue`
-- [ ] T045 Exécuter la validation quickstart.md complète : compiler backend (`cargo run`), démarrer frontend (`pnpm dev`), test E2E manuel (créer avis → rendre public → accéder en privé → partager → répondre → signaler → demander retrait → admin statuer)
+- [x] T043 Vérifier que toutes les mutations sont auditées via `audit::log_action` (publier, signaler, demander_retrait, statuer_retrait, repondre, incrementer_partage) — revue de code dans `uafricas_backend/src/handlers/retrouve_amis.rs`, `retrouve_amis_public.rs` et `admin/retrouve_amis.rs`
+- [x] T044 Vérifier que toutes les pages publiques utilisent Tailwind CSS v4 pur (aucune classe daisyUI) — revue de `[slug].vue`, `rechercher.vue`, `PagePublique.vue`, `BoutonsPartage.vue`, `FormulaireReponse.vue`, `CarteAvisPublic.vue`, `DemandeRetrait.vue`
+- [x] T045 Exécuter la validation quickstart.md complète : compiler backend (`cargo run`), démarrer frontend (`pnpm dev`), test E2E manuel (créer avis → rendre public → accéder en privé → partager → répondre → signaler → demander retrait → admin statuer)
 
 ---
 

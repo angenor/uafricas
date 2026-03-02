@@ -1,8 +1,9 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 
 use crate::errors::ApiErreur;
 use crate::models::retrouve_amis::*;
+use crate::services::audit;
 use crate::ApiResponse;
 
 // ══════════════════════════════════════════════════════════════
@@ -20,30 +21,49 @@ use crate::ApiResponse;
 /// POST /api/retrouve-amis/public/{slug}/partage
 /// Incrementer le compteur de partages d'un avis public (sans auth)
 pub async fn incrementer_partage(
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<String>,
 ) -> Result<HttpResponse, ApiErreur> {
     let slug = path.into_inner();
 
-    // UPDATE atomique avec retour du nouveau compteur
-    let result: Option<(i32,)> = sqlx::query_as(
+    // UPDATE atomique avec retour du nouveau compteur + id pour l'audit
+    let result: Option<(i32, uuid::Uuid)> = sqlx::query_as(
         "UPDATE retrouve_amis.avis_recherche
          SET compteur_partages = compteur_partages + 1
          WHERE slug = $1 AND est_public = TRUE AND etat = 'actif' AND deleted_at IS NULL
-         RETURNING compteur_partages",
+         RETURNING compteur_partages, id",
     )
     .bind(&slug)
     .fetch_optional(pool.get_ref())
     .await?;
 
     match result {
-        Some((compteur,)) => Ok(HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            data: Some(PartageResponse {
-                compteur_partages: compteur,
-            }),
-            error: None,
-        })),
+        Some((compteur, avis_id)) => {
+            let ip = audit::extraire_ip(&req);
+            let ua = audit::extraire_user_agent(&req);
+            audit::log_action(
+                pool.get_ref(),
+                None,
+                "UPDATE",
+                "retrouve_amis",
+                "avis_recherche",
+                Some(avis_id),
+                None,
+                Some(serde_json::json!({ "compteur_partages": compteur })),
+                ip.as_deref(),
+                ua.as_deref(),
+            )
+            .await;
+
+            Ok(HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                data: Some(PartageResponse {
+                    compteur_partages: compteur,
+                }),
+                error: None,
+            }))
+        }
         None => Ok(HttpResponse::NotFound().json(ApiResponse::<()> {
             success: false,
             data: None,
