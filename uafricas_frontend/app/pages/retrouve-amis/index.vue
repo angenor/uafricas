@@ -28,8 +28,10 @@ const onCreerAvis = () => {
 const onActiverTrouvable = async () => {
   chargementTrouvable.value = true
   try {
-    const res = await basculerTrouvable()
-    estTrouvable.value = res.est_trouvable
+    const res = await basculerTrouvable(!estTrouvable.value)
+    if (res) {
+      estTrouvable.value = res.est_trouvable
+    }
   } finally {
     chargementTrouvable.value = false
   }
