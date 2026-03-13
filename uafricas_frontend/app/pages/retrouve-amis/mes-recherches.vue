@@ -51,8 +51,8 @@ const onChangerPage = (nouvellePage: number) => {
   chargerAvis()
 }
 
-const onVoir = (id: string) => {
-  navigateTo(`/retrouve-amis/${id}`)
+const onVoir = (slug: string) => {
+  navigateTo(`/retrouve-amis/public/${slug}`)
 }
 
 const onModifier = (id: string) => {
@@ -274,7 +274,7 @@ onMounted(() => {
               <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
                 <button
                   class="flex-1 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
-                  @click="onVoir(avis.id)"
+                  @click="onVoir(avis.slug)"
                 >
                   <font-awesome-icon :icon="['fas', 'eye']" class="mr-1" />
                   Voir
