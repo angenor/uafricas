@@ -7,6 +7,7 @@ const route = useRoute()
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBaseUrl as string
 const slug = route.params.slug as string
+const userStore = useUserStore()
 
 // Charger les donnees cote serveur via useFetch (SSR)
 const { data, error: fetchError } = await useFetch<{ success: boolean; data: AvisPublicDetail | AvisPublicEtat | null; error: string | null }>(
@@ -164,7 +165,29 @@ useHead({
           :nom-recherche="(avis as AvisPublicDetail).nom_recherche"
           :prenom-recherche="(avis as AvisPublicDetail).prenom_recherche"
         />
+        <!-- CTA connexion pour visiteurs non connectes -->
+        <div
+          v-if="!userStore.isAuthenticated"
+          class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-6 text-center"
+        >
+          <font-awesome-icon :icon="['fas', 'user-lock']" class="text-amber-600 text-2xl mb-3" />
+          <p class="text-gray-800 font-medium mb-2">
+            Vous connaissez cette personne ?
+          </p>
+          <p class="text-gray-600 text-sm mb-4">
+            Connectez-vous pour contacter l'auteur de cet avis et l'aider a retrouver la personne recherchee.
+          </p>
+          <NuxtLink
+            :to="`/login?redirect=${encodeURIComponent(`/retrouve-amis/public/${slug}`)}`"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+          >
+            <font-awesome-icon :icon="['fas', 'right-to-bracket']" />
+            Se connecter pour repondre
+          </NuxtLink>
+        </div>
+
         <RetrouveAmisFormulaireReponse
+          v-else
           :slug="slug"
           :auteur-id="(avis as AvisPublicDetail).auteur_id"
         />

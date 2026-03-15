@@ -120,6 +120,8 @@ Mettre à jour ce fichier lors de: ajout/suppression service Docker ou dépendan
 - PostgreSQL 16 — nouveau schema `retrouve_amis` ajouté aux 10 existants (001-retrouve-amis)
 - Rust (Edition 2024) + TypeScript (Nuxt 4 / Vue 3 SSR) + Actix-Web 4, sqlx (PostgreSQL), Nuxt 4, Pinia, Tailwind CSS v4 (002-partage-avis-recherche)
 - PostgreSQL 16, schema `retrouve_amis` existant (6 tables + 1 fonction PL/pgSQL) (002-partage-avis-recherche)
+- Rust Edition 2024 (backend), TypeScript / Nuxt 4 / Vue 3 (frontend) + Actix-Web 4, actix-multipart, sqlx, Pinia, Tailwind CSS v4 (003-retrouve-amis-public)
+- PostgreSQL 16, schema `retrouve_amis` (8 tables existantes) (003-retrouve-amis-public)
 
 ## Recent Changes
 - 001-retrouve-amis: Added Rust (Edition 2024) + TypeScript (Nuxt 4 / Vue 3) + Actix-Web 4, sqlx (PostgreSQL), Nuxt 4, Pinia, Tailwind CSS v4

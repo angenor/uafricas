@@ -1,11 +1,54 @@
 <script setup lang="ts">
+import type { AvisPublicResume, PaginationInfo, TypeRelationRecherche } from '~/composables/useRetrouvAmis'
+import { TYPES_RELATION } from '~/composables/useRetrouvAmis'
+
 definePageMeta({ layout: 'default' })
 
 const userStore = useUserStore()
-const { tableauDeBord, basculerTrouvable } = useRetrouvAmis()
+const { tableauDeBord, basculerTrouvable, rechercherAvisPublics } = useRetrouvAmis()
 
 const estConnecte = computed(() => userStore.isAuthenticated)
 
+// ── Filtres ───────────────────────────────────────────────
+const filtreRelation = ref<TypeRelationRecherche | ''>('')
+const filtreRecherche = ref('')
+const filtresActifs = computed(() => filtreRelation.value !== '' || filtreRecherche.value.trim() !== '')
+
+// ── Avis publics ──────────────────────────────────────────
+const avisPublics = ref<AvisPublicResume[]>([])
+const pagination = ref<PaginationInfo | null>(null)
+const chargementAvis = ref(false)
+const pageActuelle = ref(1)
+
+const chargerAvisPublics = async (page: number = 1) => {
+  chargementAvis.value = true
+  try {
+    const params: Record<string, any> = { page, par_page: 12 }
+    if (filtreRelation.value) params.type_relation = filtreRelation.value
+    if (filtreRecherche.value.trim()) params.recherche = filtreRecherche.value.trim()
+
+    const res = await rechercherAvisPublics(params)
+    if (res) {
+      avisPublics.value = res.avis
+      pagination.value = res.pagination
+      pageActuelle.value = page
+    }
+  } finally {
+    chargementAvis.value = false
+  }
+}
+
+const appliquerFiltres = () => {
+  chargerAvisPublics(1)
+}
+
+const reinitialiserFiltres = () => {
+  filtreRelation.value = ''
+  filtreRecherche.value = ''
+  chargerAvisPublics(1)
+}
+
+// ── Dashboard utilisateur ─────────────────────────────────
 const dashboard = ref<{ avis_actifs: number; correspondances_en_attente: number; notifications_non_lues: number } | null>(null)
 const estTrouvable = ref(false)
 const chargementTrouvable = ref(false)
@@ -56,6 +99,7 @@ const etapes = [
 ]
 
 onMounted(() => {
+  chargerAvisPublics()
   chargerTableauDeBord()
 })
 </script>
@@ -67,7 +111,7 @@ onMounted(() => {
       class="relative h-96 bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
     >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70" />
       <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
           Retrouve Amis
@@ -109,8 +153,147 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- Avis publics : listing principal -->
+    <section class="py-12 px-4">
+      <div class="max-w-6xl mx-auto">
+        <h2 class="text-3xl font-bold text-gray-800 mb-8 font-[Oswald]">
+          Avis de recherche
+        </h2>
+
+        <!-- Filtres -->
+        <div class="flex flex-wrap items-end gap-3 mb-8">
+          <div class="flex-1 min-w-50">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Rechercher</label>
+            <div class="relative">
+              <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+              <input
+                v-model="filtreRecherche"
+                type="text"
+                placeholder="Nom, lieu, ecole..."
+                class="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                @keyup.enter="appliquerFiltres"
+              >
+            </div>
+          </div>
+          <div class="min-w-45">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Type de relation</label>
+            <select
+              v-model="filtreRelation"
+              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              @change="appliquerFiltres"
+            >
+              <option value="">Toutes les relations</option>
+              <option v-for="t in TYPES_RELATION" :key="t.value" :value="t.value">
+                {{ t.label }}
+              </option>
+            </select>
+          </div>
+          <button
+            class="px-4 py-2.5 bg-amber-700 text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors cursor-pointer"
+            @click="appliquerFiltres"
+          >
+            <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="mr-1.5" />
+            Rechercher
+          </button>
+          <button
+            v-if="filtresActifs"
+            class="px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+            @click="reinitialiserFiltres"
+          >
+            <font-awesome-icon :icon="['fas', 'xmark']" class="mr-1.5" />
+            Reinitialiser
+          </button>
+        </div>
+
+        <!-- Chargement -->
+        <div v-if="chargementAvis" class="flex justify-center py-16">
+          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-700" />
+        </div>
+
+        <!-- Etat vide : aucun resultat avec filtres actifs -->
+        <div v-else-if="avisPublics.length === 0 && filtresActifs" class="text-center py-16">
+          <div class="w-20 h-20 mx-auto mb-6 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center">
+            <font-awesome-icon :icon="['fas', 'filter-circle-xmark']" class="text-3xl" />
+          </div>
+          <h3 class="text-xl font-semibold text-gray-700 mb-3">
+            Aucun resultat pour ces criteres
+          </h3>
+          <p class="text-gray-500 max-w-md mx-auto mb-6">
+            Essayez de modifier vos criteres de recherche ou de reinitialiser les filtres.
+          </p>
+          <button
+            class="inline-block px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors cursor-pointer"
+            @click="reinitialiserFiltres"
+          >
+            <font-awesome-icon :icon="['fas', 'rotate-left']" class="mr-2" />
+            Reinitialiser les filtres
+          </button>
+        </div>
+
+        <!-- Etat vide : aucun avis disponible -->
+        <div v-else-if="avisPublics.length === 0" class="text-center py-16">
+          <div class="w-20 h-20 mx-auto mb-6 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center">
+            <font-awesome-icon :icon="['fas', 'users']" class="text-3xl" />
+          </div>
+          <h3 class="text-xl font-semibold text-gray-700 mb-3">
+            Aucun avis de recherche pour le moment
+          </h3>
+          <p class="text-gray-500 max-w-md mx-auto mb-6">
+            Soyez le premier a publier un avis de recherche et aidez a reunir des proches separes.
+          </p>
+          <NuxtLink
+            v-if="estConnecte"
+            to="/retrouve-amis/nouveau"
+            class="inline-block px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+          >
+            <font-awesome-icon :icon="['fas', 'plus']" class="mr-2" />
+            Creer le premier avis
+          </NuxtLink>
+          <NuxtLink
+            v-else
+            to="/login"
+            class="inline-block px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+          >
+            Se connecter pour creer un avis
+          </NuxtLink>
+        </div>
+
+        <!-- Grille des avis -->
+        <template v-else>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <RetrouveAmisCarteAvisPublic
+              v-for="avis in avisPublics"
+              :key="avis.id"
+              :avis="avis"
+            />
+          </div>
+
+          <!-- Pagination -->
+          <div v-if="pagination && pagination.pages > 1" class="flex justify-center items-center gap-2 mt-10">
+            <button
+              class="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="pageActuelle <= 1"
+              @click="chargerAvisPublics(pageActuelle - 1)"
+            >
+              Precedent
+            </button>
+            <span class="text-sm text-gray-600 px-3">
+              Page {{ pageActuelle }} / {{ pagination.pages }}
+            </span>
+            <button
+              class="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="pageActuelle >= pagination.pages"
+              @click="chargerAvisPublics(pageActuelle + 1)"
+            >
+              Suivant
+            </button>
+          </div>
+        </template>
+      </div>
+    </section>
+
     <!-- Comment ca marche -->
-    <section class="py-16 px-4">
+    <section class="py-16 px-4 bg-white">
       <div class="max-w-5xl mx-auto">
         <h2 class="text-3xl font-bold text-center text-gray-800 mb-12 font-[Oswald]">
           Comment ca marche ?
@@ -119,7 +302,7 @@ onMounted(() => {
           <div
             v-for="(etape, index) in etapes"
             :key="index"
-            class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center hover:shadow-md transition-shadow"
+            class="bg-gray-50 rounded-xl shadow-sm border border-gray-200 p-8 text-center hover:shadow-md transition-shadow"
           >
             <div class="w-16 h-16 mx-auto mb-5 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center">
               <font-awesome-icon :icon="['fas', etape.icone]" class="text-2xl" />
@@ -135,7 +318,7 @@ onMounted(() => {
     </section>
 
     <!-- Tableau de bord (connecte) -->
-    <section v-if="estConnecte && dashboard" class="py-12 px-4 bg-white">
+    <section v-if="estConnecte && dashboard" class="py-12 px-4">
       <div class="max-w-5xl mx-auto">
         <h2 class="text-2xl font-bold text-gray-800 mb-8 font-[Oswald]">
           Votre tableau de bord

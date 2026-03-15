@@ -357,7 +357,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/avis/{id}", web::get().to(retrouve_amis::detail_avis))
                     .route("/avis/{id}", web::put().to(retrouve_amis::modifier_avis))
                     .route("/avis/{id}/cloturer", web::patch().to(retrouve_amis::cloturer_avis))
-                    .route("/avis/{id}/publier", web::patch().to(retrouve_amis::publier_avis))
+                    // Route publier_avis supprimee (003) — publication automatique a la creation
                     .route("/avis/{id}/signaler", web::post().to(retrouve_amis::signaler_avis))
                     // Correspondances
                     .route("/correspondances", web::get().to(retrouve_amis::lister_correspondances))

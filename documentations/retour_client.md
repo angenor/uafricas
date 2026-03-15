@@ -1,0 +1,10 @@
+- Souhaitez-vous être anonyme
+- Qui recherche vous
+- homme/femme, 
+- vos relation(amis enfance, amis école/université, collègue, connaissance, frère/soeur, parent), 
+- les noms de la personne, 
+- ses surnoms
+- comment la personne vous connais de nom, 
+- ou êtes vous rencontré: dans une localité(précisez), dans une école(précisez), une ville(précisez) ou jamais rencontré. Ces 3 options peuvent etre renseignés
+- avez-vous une photo de la personne, uploader, 
+- pouvez-vous décrire la personne(optionnel), souhaitez vous partager vos coordonnées ou celui de vos proches s'il y'a macht

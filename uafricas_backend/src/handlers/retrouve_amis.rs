@@ -11,9 +11,12 @@
 // - Profil trouvable (basculer, parcours CRUD)
 // ════════════════════════════════════════════════════════════════════════════
 
+use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::Utc;
+use futures_util::StreamExt;
 use sqlx::PgPool;
+use std::io::Write;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
@@ -69,43 +72,171 @@ fn extraire_utilisateur_id(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
 // AVIS DE RECHERCHE — CRUD
 // ════════════════════════════════════════════════════════════════════════════
 
-/// POST /api/retrouve-amis/avis
-/// Créer un nouvel avis de recherche et déclencher le matching
+/// POST /api/retrouve-amis/avis (multipart/form-data)
+/// Créer un nouvel avis de recherche avec upload photo et déclencher le matching
 pub async fn creer_avis(
     req: HttpRequest,
     pool: web::Data<PgPool>,
-    body: web::Json<CreerAvisRecherche>,
+    upload_dir: web::Data<String>,
+    mut payload: Multipart,
 ) -> Result<HttpResponse, ApiErreur> {
     let utilisateur_id = extraire_utilisateur_id(&req)?;
-    let data = body.into_inner();
 
-    // Validation : nom_recherche obligatoire
-    if data.nom_recherche.trim().is_empty() {
-        return Err(ApiErreur::Validation("Le nom recherché est obligatoire".into()));
+    // ── Parsing multipart ────────────────────────────────────
+    let mut nom_recherche: Option<String> = None;
+    let mut prenom_recherche: Option<String> = None;
+    let mut surnom: Option<String> = None;
+    let mut ecole: Option<String> = None;
+    let mut ville: Option<String> = None;
+    let mut pays_id: Option<Uuid> = None;
+    let mut periode_debut: Option<i32> = None;
+    let mut periode_fin: Option<i32> = None;
+    let mut description: Option<String> = None;
+    let mut est_anonyme: bool = false;
+    let mut genre_recherche: Option<String> = None;
+    let mut type_relation: Option<String> = None;
+    let mut comment_connu: Option<String> = None;
+    let mut localite_rencontre: Option<String> = None;
+    let mut ecole_rencontre: Option<String> = None;
+    let mut ville_rencontre: Option<String> = None;
+    let mut jamais_rencontre: bool = false;
+    let mut description_physique: Option<String> = None;
+    let mut partage_coordonnees: bool = false;
+    let mut coordonnees_email: Option<String> = None;
+    let mut coordonnees_telephone: Option<String> = None;
+    let mut coordonnees_whatsapp: Option<String> = None;
+    let mut photo_url: Option<String> = None;
+
+    while let Some(item) = payload.next().await {
+        let mut field = item.map_err(|e| {
+            ApiErreur::Upload(format!("Erreur lecture multipart: {}", e))
+        })?;
+
+        let content_disposition = field.content_disposition().cloned();
+        let nom_champ = content_disposition
+            .as_ref()
+            .and_then(|cd| cd.get_name().map(|s| s.to_string()))
+            .unwrap_or_default();
+
+        match nom_champ.as_str() {
+            "nom_recherche" => nom_recherche = Some(lire_champ_texte_avis(&mut field).await?),
+            "prenom_recherche" => prenom_recherche = lire_champ_option(&mut field).await?,
+            "surnom" => surnom = lire_champ_option(&mut field).await?,
+            "ecole" => ecole = lire_champ_option(&mut field).await?,
+            "ville" => ville = lire_champ_option(&mut field).await?,
+            "pays_id" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                if !val.trim().is_empty() {
+                    pays_id = Some(val.trim().parse::<Uuid>().map_err(|_| {
+                        ApiErreur::Validation("pays_id invalide".into())
+                    })?);
+                }
+            }
+            "periode_debut" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                if !val.trim().is_empty() {
+                    periode_debut = Some(val.trim().parse::<i32>().map_err(|_| {
+                        ApiErreur::Validation("periode_debut invalide".into())
+                    })?);
+                }
+            }
+            "periode_fin" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                if !val.trim().is_empty() {
+                    periode_fin = Some(val.trim().parse::<i32>().map_err(|_| {
+                        ApiErreur::Validation("periode_fin invalide".into())
+                    })?);
+                }
+            }
+            "description" => description = lire_champ_option(&mut field).await?,
+            "est_anonyme" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                est_anonyme = val == "true" || val == "1";
+            }
+            "genre_recherche" => genre_recherche = lire_champ_option(&mut field).await?,
+            "type_relation" => type_relation = lire_champ_option(&mut field).await?,
+            "comment_connu" => comment_connu = lire_champ_option(&mut field).await?,
+            "localite_rencontre" => localite_rencontre = lire_champ_option(&mut field).await?,
+            "ecole_rencontre" => ecole_rencontre = lire_champ_option(&mut field).await?,
+            "ville_rencontre" => ville_rencontre = lire_champ_option(&mut field).await?,
+            "jamais_rencontre" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                jamais_rencontre = val == "true" || val == "1";
+            }
+            "description_physique" => description_physique = lire_champ_option(&mut field).await?,
+            "partage_coordonnees" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                partage_coordonnees = val == "true" || val == "1";
+            }
+            "coordonnees_email" => coordonnees_email = lire_champ_option(&mut field).await?,
+            "coordonnees_telephone" => coordonnees_telephone = lire_champ_option(&mut field).await?,
+            "coordonnees_whatsapp" => coordonnees_whatsapp = lire_champ_option(&mut field).await?,
+            "photo" => {
+                // Valider le MIME type
+                let content_type = field.content_type().map(|ct| ct.to_string()).unwrap_or_default();
+                let types_autorises = ["image/jpeg", "image/png", "image/webp"];
+                if !types_autorises.iter().any(|t| content_type.starts_with(t)) {
+                    return Err(ApiErreur::Validation(
+                        "Format photo invalide. Formats acceptes : JPEG, PNG, WebP".into(),
+                    ));
+                }
+
+                let nom_original = content_disposition
+                    .as_ref()
+                    .and_then(|cd| cd.get_filename().map(|f| sanitize_filename::sanitize(f)))
+                    .unwrap_or_else(|| format!("{}.jpg", Uuid::new_v4()));
+
+                let nom_fichier = format!("{}_{}", Uuid::new_v4(), nom_original);
+                let chemin_complet = format!("{}/retrouve-amis/{}", upload_dir.get_ref(), nom_fichier);
+
+                sauvegarder_photo_avis(&mut field, &chemin_complet, 5 * 1024 * 1024).await?;
+                photo_url = Some(format!("/uploads/retrouve-amis/{}", nom_fichier));
+            }
+            _ => {
+                log::warn!("Champ multipart inconnu ignore: {}", nom_champ);
+            }
+        }
     }
 
-    // Validation : au moins un critère supplémentaire
-    let a_critere = data.prenom_recherche.as_ref().map_or(false, |v| !v.trim().is_empty())
-        || data.ecole.as_ref().map_or(false, |v| !v.trim().is_empty())
-        || data.ville.as_ref().map_or(false, |v| !v.trim().is_empty())
-        || data.pays_id.is_some()
-        || data.periode_debut.is_some();
+    // ── Validation ───────────────────────────────────────────
+    let nom_recherche = nom_recherche
+        .filter(|v| !v.trim().is_empty())
+        .ok_or_else(|| ApiErreur::Validation("Le nom recherche est obligatoire".into()))?;
+
+    // Au moins un critere en plus du nom
+    let a_critere = type_relation.is_some()
+        || localite_rencontre.as_ref().map_or(false, |v| !v.trim().is_empty())
+        || ecole_rencontre.as_ref().map_or(false, |v| !v.trim().is_empty())
+        || ville_rencontre.as_ref().map_or(false, |v| !v.trim().is_empty())
+        || jamais_rencontre;
     if !a_critere {
         return Err(ApiErreur::Validation(
-            "Au moins un critère supplémentaire est requis (prénom, école, ville, pays ou période)".into(),
+            "Au moins un critere supplementaire est requis (type de relation, lieu de rencontre, ecole ou 'jamais rencontre')".into(),
         ));
     }
 
-    // Validation : période cohérente
-    if let (Some(debut), Some(fin)) = (data.periode_debut, data.periode_fin) {
-        if debut > fin {
+    // Coordonnees valides si partage active
+    if partage_coordonnees {
+        let a_coordonnee = coordonnees_email.as_ref().map_or(false, |v| !v.trim().is_empty())
+            || coordonnees_telephone.as_ref().map_or(false, |v| !v.trim().is_empty())
+            || coordonnees_whatsapp.as_ref().map_or(false, |v| !v.trim().is_empty());
+        if !a_coordonnee {
             return Err(ApiErreur::Validation(
-                "La période de début doit être antérieure à la période de fin".into(),
+                "Au moins une coordonnee (email, telephone ou WhatsApp) est requise si le partage est active".into(),
             ));
         }
     }
 
-    // Vérifier la limite de 10 avis actifs
+    // Periode coherente
+    if let (Some(debut), Some(fin)) = (periode_debut, periode_fin) {
+        if debut > fin {
+            return Err(ApiErreur::Validation(
+                "La periode de debut doit etre anterieure a la periode de fin".into(),
+            ));
+        }
+    }
+
+    // Limite de 10 avis actifs
     let compte: (i64,) = sqlx::query_as(
         "SELECT COUNT(*) FROM retrouve_amis.avis_recherche WHERE auteur_id = $1 AND etat = 'actif' AND deleted_at IS NULL"
     )
@@ -119,23 +250,48 @@ pub async fn creer_avis(
         ));
     }
 
-    // Insérer l'avis
+    // ── Insertion ────────────────────────────────────────────
+    let slug = generer_slug_avis(&nom_recherche, prenom_recherche.as_deref());
+
     let avis_id: (Uuid,) = sqlx::query_as(
         "INSERT INTO retrouve_amis.avis_recherche
-         (auteur_id, nom_recherche, prenom_recherche, surnom, ecole, ville, pays_id, periode_debut, periode_fin, description)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         (auteur_id, nom_recherche, prenom_recherche, surnom, ecole, ville, pays_id, periode_debut, periode_fin, description,
+          est_anonyme, genre_recherche, type_relation, comment_connu,
+          localite_rencontre, ecole_rencontre, ville_rencontre, jamais_rencontre,
+          photo_url, description_physique, partage_coordonnees, coordonnees_email, coordonnees_telephone, coordonnees_whatsapp,
+          est_public, slug, date_publication_publique)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+                 $11, $12::retrouve_amis.genre_personne, $13::retrouve_amis.type_relation_recherche, $14,
+                 $15, $16, $17, $18,
+                 $19, $20, $21, $22, $23, $24,
+                 TRUE, $25, NOW())
          RETURNING id"
     )
     .bind(utilisateur_id)
-    .bind(&data.nom_recherche)
-    .bind(&data.prenom_recherche)
-    .bind(&data.surnom)
-    .bind(&data.ecole)
-    .bind(&data.ville)
-    .bind(data.pays_id)
-    .bind(data.periode_debut)
-    .bind(data.periode_fin)
-    .bind(&data.description)
+    .bind(&nom_recherche)
+    .bind(&prenom_recherche)
+    .bind(&surnom)
+    .bind(&ecole)
+    .bind(&ville)
+    .bind(pays_id)
+    .bind(periode_debut)
+    .bind(periode_fin)
+    .bind(&description)
+    .bind(est_anonyme)
+    .bind(&genre_recherche)
+    .bind(&type_relation)
+    .bind(&comment_connu)
+    .bind(&localite_rencontre)
+    .bind(&ecole_rencontre)
+    .bind(&ville_rencontre)
+    .bind(jamais_rencontre)
+    .bind(&photo_url)
+    .bind(&description_physique)
+    .bind(partage_coordonnees)
+    .bind(&coordonnees_email)
+    .bind(&coordonnees_telephone)
+    .bind(&coordonnees_whatsapp)
+    .bind(&slug)
     .fetch_one(pool.get_ref())
     .await?;
 
@@ -232,7 +388,7 @@ pub async fn creer_avis(
         Some(avis_id.0),
         None,
         Some(serde_json::json!({
-            "nom_recherche": &data.nom_recherche,
+            "nom_recherche": &nom_recherche,
             "correspondances_trouvees": nb_correspondances
         })),
         audit::extraire_ip(&req).as_deref(),
@@ -244,6 +400,7 @@ pub async fn creer_avis(
         data: Some(CreerAvisResponse {
             id: avis_id.0,
             etat: "actif".to_string(),
+            slug,
             correspondances_trouvees: nb_correspondances,
         }),
         error: None,
@@ -285,6 +442,10 @@ pub async fn lister_avis(
     let list_sql = format!(
         "SELECT a.id, a.nom_recherche, a.prenom_recherche, a.surnom, a.ecole, a.ville,
                 a.pays_id, a.etat::text AS etat, a.periode_debut, a.periode_fin, a.description,
+                a.est_anonyme, a.genre_recherche::text AS genre_recherche,
+                a.type_relation::text AS type_relation,
+                a.localite_rencontre, a.ecole_rencontre, a.ville_rencontre,
+                a.jamais_rencontre, a.photo_url, a.description_physique,
                 a.created_at, a.updated_at, a.deleted_at,
                 a.est_public, a.slug, a.compteur_partages,
                 p.id AS pays_info_id, p.nom AS pays_nom,
@@ -323,12 +484,23 @@ pub async fn lister_avis(
         periode_debut: Option<i32>,
         periode_fin: Option<i32>,
         description: Option<String>,
+        est_anonyme: bool,
+        genre_recherche: Option<String>,
+        type_relation: Option<String>,
+        localite_rencontre: Option<String>,
+        ecole_rencontre: Option<String>,
+        ville_rencontre: Option<String>,
+        jamais_rencontre: bool,
+        photo_url: Option<String>,
+        description_physique: Option<String>,
         created_at: chrono::DateTime<Utc>,
         updated_at: chrono::DateTime<Utc>,
+        #[allow(dead_code)]
         deleted_at: Option<chrono::DateTime<Utc>>,
         est_public: bool,
         slug: Option<String>,
         compteur_partages: i32,
+        #[allow(dead_code)]
         pays_info_id: Option<Uuid>,
         pays_nom: Option<String>,
         nb_correspondances: i64,
@@ -367,6 +539,15 @@ pub async fn lister_avis(
             est_public: r.est_public,
             slug: r.slug,
             compteur_partages: r.compteur_partages,
+            est_anonyme: r.est_anonyme,
+            genre_recherche: r.genre_recherche,
+            type_relation: r.type_relation,
+            localite_rencontre: r.localite_rencontre,
+            ecole_rencontre: r.ecole_rencontre,
+            ville_rencontre: r.ville_rencontre,
+            jamais_rencontre: r.jamais_rencontre,
+            photo_url: r.photo_url,
+            description_physique: r.description_physique,
             created_at: r.created_at,
             updated_at: r.updated_at,
         })
@@ -407,6 +588,20 @@ pub async fn detail_avis(
         periode_debut: Option<i32>,
         periode_fin: Option<i32>,
         description: Option<String>,
+        est_anonyme: bool,
+        genre_recherche: Option<String>,
+        type_relation: Option<String>,
+        comment_connu: Option<String>,
+        localite_rencontre: Option<String>,
+        ecole_rencontre: Option<String>,
+        ville_rencontre: Option<String>,
+        jamais_rencontre: bool,
+        photo_url: Option<String>,
+        description_physique: Option<String>,
+        partage_coordonnees: bool,
+        coordonnees_email: Option<String>,
+        coordonnees_telephone: Option<String>,
+        coordonnees_whatsapp: Option<String>,
         auteur_id: Uuid,
         created_at: chrono::DateTime<Utc>,
         updated_at: chrono::DateTime<Utc>,
@@ -416,6 +611,11 @@ pub async fn detail_avis(
     let avis: AvisDetailRow = sqlx::query_as(
         "SELECT a.id, a.nom_recherche, a.prenom_recherche, a.surnom, a.ecole, a.ville,
                 a.pays_id, a.etat::text AS etat, a.periode_debut, a.periode_fin, a.description,
+                a.est_anonyme, a.genre_recherche::text AS genre_recherche,
+                a.type_relation::text AS type_relation, a.comment_connu,
+                a.localite_rencontre, a.ecole_rencontre, a.ville_rencontre,
+                a.jamais_rencontre, a.photo_url, a.description_physique,
+                a.partage_coordonnees, a.coordonnees_email, a.coordonnees_telephone, a.coordonnees_whatsapp,
                 a.auteur_id, a.created_at, a.updated_at,
                 p.nom AS pays_nom
          FROM retrouve_amis.avis_recherche a
@@ -524,6 +724,20 @@ pub async fn detail_avis(
             periode_fin: avis.periode_fin,
             description: avis.description,
             etat: avis.etat,
+            est_anonyme: avis.est_anonyme,
+            genre_recherche: avis.genre_recherche,
+            type_relation: avis.type_relation,
+            comment_connu: avis.comment_connu,
+            localite_rencontre: avis.localite_rencontre,
+            ecole_rencontre: avis.ecole_rencontre,
+            ville_rencontre: avis.ville_rencontre,
+            jamais_rencontre: avis.jamais_rencontre,
+            photo_url: avis.photo_url,
+            description_physique: avis.description_physique,
+            partage_coordonnees: avis.partage_coordonnees,
+            coordonnees_email: avis.coordonnees_email,
+            coordonnees_telephone: avis.coordonnees_telephone,
+            coordonnees_whatsapp: avis.coordonnees_whatsapp,
             correspondances,
             created_at: avis.created_at,
             updated_at: avis.updated_at,
@@ -537,12 +751,12 @@ pub async fn detail_avis(
 pub async fn modifier_avis(
     req: HttpRequest,
     pool: web::Data<PgPool>,
+    upload_dir: web::Data<String>,
     path: web::Path<Uuid>,
-    body: web::Json<ModifierAvisRecherche>,
+    mut payload: Multipart,
 ) -> Result<HttpResponse, ApiErreur> {
     let utilisateur_id = extraire_utilisateur_id(&req)?;
     let avis_id = path.into_inner();
-    let data = body.into_inner();
 
     // Vérifier que l'avis existe et appartient à l'utilisateur
     let avis: AvisRecherche = sqlx::query_as(&format!(
@@ -562,24 +776,194 @@ pub async fn modifier_avis(
         return Err(ApiErreur::Validation("Seul un avis actif peut être modifié".into()));
     }
 
+    // ── Parsing multipart ────────────────────────────────────
+    let mut nom_recherche: Option<String> = None;
+    let mut prenom_recherche: Option<String> = None;
+    let mut surnom: Option<String> = None;
+    let mut ecole: Option<String> = None;
+    let mut ville: Option<String> = None;
+    let mut pays_id: Option<Uuid> = None;
+    let mut periode_debut: Option<i32> = None;
+    let mut periode_fin: Option<i32> = None;
+    let mut description: Option<String> = None;
+    let mut est_anonyme: bool = avis.est_anonyme;
+    let mut genre_recherche: Option<String> = avis.genre_recherche.clone();
+    let mut type_relation: Option<String> = avis.type_relation.clone();
+    let mut comment_connu: Option<String> = avis.comment_connu.clone();
+    let mut localite_rencontre: Option<String> = avis.localite_rencontre.clone();
+    let mut ecole_rencontre: Option<String> = avis.ecole_rencontre.clone();
+    let mut ville_rencontre: Option<String> = avis.ville_rencontre.clone();
+    let mut jamais_rencontre: bool = avis.jamais_rencontre;
+    let mut description_physique: Option<String> = avis.description_physique.clone();
+    let mut partage_coordonnees: bool = avis.partage_coordonnees;
+    let mut coordonnees_email: Option<String> = avis.coordonnees_email.clone();
+    let mut coordonnees_telephone: Option<String> = avis.coordonnees_telephone.clone();
+    let mut coordonnees_whatsapp: Option<String> = avis.coordonnees_whatsapp.clone();
+    let mut nouvelle_photo: Option<String> = None;
+    let mut photo_recue = false;
+
+    while let Some(item) = payload.next().await {
+        let mut field = item.map_err(|e| {
+            ApiErreur::Upload(format!("Erreur lecture multipart: {}", e))
+        })?;
+
+        let content_disposition = field.content_disposition().cloned();
+        let nom_champ = content_disposition
+            .as_ref()
+            .and_then(|cd| cd.get_name().map(|s| s.to_string()))
+            .unwrap_or_default();
+
+        match nom_champ.as_str() {
+            "nom_recherche" => nom_recherche = Some(lire_champ_texte_avis(&mut field).await?),
+            "prenom_recherche" => prenom_recherche = lire_champ_option(&mut field).await?,
+            "surnom" => surnom = lire_champ_option(&mut field).await?,
+            "ecole" => ecole = lire_champ_option(&mut field).await?,
+            "ville" => ville = lire_champ_option(&mut field).await?,
+            "pays_id" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                if !val.trim().is_empty() {
+                    pays_id = Some(val.trim().parse::<Uuid>().map_err(|_| {
+                        ApiErreur::Validation("pays_id invalide".into())
+                    })?);
+                }
+            }
+            "periode_debut" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                if !val.trim().is_empty() {
+                    periode_debut = Some(val.trim().parse::<i32>().map_err(|_| {
+                        ApiErreur::Validation("periode_debut invalide".into())
+                    })?);
+                }
+            }
+            "periode_fin" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                if !val.trim().is_empty() {
+                    periode_fin = Some(val.trim().parse::<i32>().map_err(|_| {
+                        ApiErreur::Validation("periode_fin invalide".into())
+                    })?);
+                }
+            }
+            "description" => description = lire_champ_option(&mut field).await?,
+            "est_anonyme" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                est_anonyme = val == "true" || val == "1";
+            }
+            "genre_recherche" => genre_recherche = lire_champ_option(&mut field).await?,
+            "type_relation" => type_relation = lire_champ_option(&mut field).await?,
+            "comment_connu" => comment_connu = lire_champ_option(&mut field).await?,
+            "localite_rencontre" => localite_rencontre = lire_champ_option(&mut field).await?,
+            "ecole_rencontre" => ecole_rencontre = lire_champ_option(&mut field).await?,
+            "ville_rencontre" => ville_rencontre = lire_champ_option(&mut field).await?,
+            "jamais_rencontre" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                jamais_rencontre = val == "true" || val == "1";
+            }
+            "description_physique" => description_physique = lire_champ_option(&mut field).await?,
+            "partage_coordonnees" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                partage_coordonnees = val == "true" || val == "1";
+            }
+            "coordonnees_email" => coordonnees_email = lire_champ_option(&mut field).await?,
+            "coordonnees_telephone" => coordonnees_telephone = lire_champ_option(&mut field).await?,
+            "coordonnees_whatsapp" => coordonnees_whatsapp = lire_champ_option(&mut field).await?,
+            "photo" => {
+                let content_type = field.content_type().map(|ct| ct.to_string()).unwrap_or_default();
+                let types_autorises = ["image/jpeg", "image/png", "image/webp"];
+                if !types_autorises.iter().any(|t| content_type.starts_with(t)) {
+                    return Err(ApiErreur::Validation(
+                        "Format photo invalide. Formats acceptes : JPEG, PNG, WebP".into(),
+                    ));
+                }
+
+                let nom_original = content_disposition
+                    .as_ref()
+                    .and_then(|cd| cd.get_filename().map(|f| sanitize_filename::sanitize(f)))
+                    .unwrap_or_else(|| format!("{}.jpg", Uuid::new_v4()));
+
+                let nom_fichier = format!("{}_{}", Uuid::new_v4(), nom_original);
+                let chemin_complet = format!("{}/retrouve-amis/{}", upload_dir.get_ref(), nom_fichier);
+
+                sauvegarder_photo_avis(&mut field, &chemin_complet, 5 * 1024 * 1024).await?;
+                nouvelle_photo = Some(format!("/uploads/retrouve-amis/{}", nom_fichier));
+                photo_recue = true;
+            }
+            _ => {
+                log::warn!("Champ multipart inconnu ignore: {}", nom_champ);
+            }
+        }
+    }
+
+    // ── Validation ───────────────────────────────────────────
+    let nom_recherche = nom_recherche
+        .filter(|v| !v.trim().is_empty())
+        .unwrap_or_else(|| avis.nom_recherche.clone());
+
+    // Coordonnees valides si partage active
+    if partage_coordonnees {
+        let a_coordonnee = coordonnees_email.as_ref().map_or(false, |v| !v.trim().is_empty())
+            || coordonnees_telephone.as_ref().map_or(false, |v| !v.trim().is_empty())
+            || coordonnees_whatsapp.as_ref().map_or(false, |v| !v.trim().is_empty());
+        if !a_coordonnee {
+            return Err(ApiErreur::Validation(
+                "Au moins une coordonnee (email, telephone ou WhatsApp) est requise si le partage est active".into(),
+            ));
+        }
+    }
+
+    // Gestion photo : nouvelle photo remplace l'ancienne, sinon conserver l'existante
+    let photo_url_finale = if photo_recue {
+        // Supprimer l'ancienne photo si elle existe
+        if let Some(ref ancienne) = avis.photo_url {
+            let chemin_ancien = format!("{}{}", upload_dir.get_ref(), ancienne.replace("/uploads", ""));
+            let _ = std::fs::remove_file(&chemin_ancien);
+        }
+        nouvelle_photo
+    } else {
+        avis.photo_url.clone()
+    };
+
     // Mettre à jour l'avis
     sqlx::query(
         "UPDATE retrouve_amis.avis_recherche SET
             nom_recherche = $2, prenom_recherche = $3, surnom = $4,
             ecole = $5, ville = $6, pays_id = $7,
-            periode_debut = $8, periode_fin = $9, description = $10
+            periode_debut = $8, periode_fin = $9, description = $10,
+            est_anonyme = $11,
+            genre_recherche = $12::retrouve_amis.genre_personne,
+            type_relation = $13::retrouve_amis.type_relation_recherche,
+            comment_connu = $14, localite_rencontre = $15,
+            ecole_rencontre = $16, ville_rencontre = $17,
+            jamais_rencontre = $18, photo_url = $19,
+            description_physique = $20,
+            partage_coordonnees = $21, coordonnees_email = $22,
+            coordonnees_telephone = $23, coordonnees_whatsapp = $24,
+            updated_at = NOW()
          WHERE id = $1"
     )
     .bind(avis_id)
-    .bind(&data.nom_recherche)
-    .bind(&data.prenom_recherche)
-    .bind(&data.surnom)
-    .bind(&data.ecole)
-    .bind(&data.ville)
-    .bind(data.pays_id)
-    .bind(data.periode_debut)
-    .bind(data.periode_fin)
-    .bind(&data.description)
+    .bind(&nom_recherche)
+    .bind(&prenom_recherche)
+    .bind(&surnom)
+    .bind(&ecole)
+    .bind(&ville)
+    .bind(pays_id)
+    .bind(periode_debut)
+    .bind(periode_fin)
+    .bind(&description)
+    .bind(est_anonyme)
+    .bind(&genre_recherche)
+    .bind(&type_relation)
+    .bind(&comment_connu)
+    .bind(&localite_rencontre)
+    .bind(&ecole_rencontre)
+    .bind(&ville_rencontre)
+    .bind(jamais_rencontre)
+    .bind(&photo_url_finale)
+    .bind(&description_physique)
+    .bind(partage_coordonnees)
+    .bind(&coordonnees_email)
+    .bind(&coordonnees_telephone)
+    .bind(&coordonnees_whatsapp)
     .execute(pool.get_ref())
     .await?;
 
@@ -1896,6 +2280,94 @@ fn construire_criteres_communs(details: &serde_json::Value) -> Vec<String> {
         }
     }
     criteres
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPERS MULTIPART — Upload photos avis de recherche
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Lire le contenu texte d'un champ multipart avis
+async fn lire_champ_texte_avis(field: &mut actix_multipart::Field) -> Result<String, ApiErreur> {
+    let mut contenu = Vec::new();
+    while let Some(chunk) = field.next().await {
+        let data = chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture champ: {}", e)))?;
+        contenu.extend_from_slice(&data);
+    }
+    String::from_utf8(contenu)
+        .map_err(|e| ApiErreur::Upload(format!("Encodage UTF-8 invalide: {}", e)))
+}
+
+/// Lire un champ texte optionnel (retourne None si vide)
+async fn lire_champ_option(field: &mut actix_multipart::Field) -> Result<Option<String>, ApiErreur> {
+    let val = lire_champ_texte_avis(field).await?;
+    if val.trim().is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(val))
+    }
+}
+
+/// Sauvegarder une photo uploadee avec limite de taille
+/// Verifie que les premiers octets correspondent a un format image autorise (JPEG, PNG, WebP).
+fn valider_magic_bytes(data: &[u8]) -> bool {
+    if data.len() < 4 {
+        return false;
+    }
+    // JPEG : FF D8 FF
+    if data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF {
+        return true;
+    }
+    // PNG : 89 50 4E 47
+    if data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 {
+        return true;
+    }
+    // WebP : RIFF....WEBP
+    if data.len() >= 12 && &data[0..4] == b"RIFF" && &data[8..12] == b"WEBP" {
+        return true;
+    }
+    false
+}
+
+async fn sauvegarder_photo_avis(
+    field: &mut actix_multipart::Field,
+    chemin: &str,
+    taille_max: usize,
+) -> Result<(), ApiErreur> {
+    if let Some(parent) = std::path::Path::new(chemin).parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| ApiErreur::Upload(format!("Impossible de creer le repertoire: {}", e)))?;
+    }
+
+    let mut fichier = std::fs::File::create(chemin)
+        .map_err(|e| ApiErreur::Upload(format!("Impossible de creer le fichier: {}", e)))?;
+
+    let mut taille_totale: usize = 0;
+    let mut premier_chunk = true;
+    while let Some(chunk) = field.next().await {
+        let data = chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture fichier: {}", e)))?;
+        taille_totale += data.len();
+        if taille_totale > taille_max {
+            let _ = std::fs::remove_file(chemin);
+            return Err(ApiErreur::Validation(
+                "La photo depasse la taille maximale de 5 Mo".into(),
+            ));
+        }
+        // Valider les magic bytes sur le premier chunk
+        if premier_chunk {
+            if !valider_magic_bytes(&data) {
+                let _ = std::fs::remove_file(chemin);
+                return Err(ApiErreur::Validation(
+                    "Le contenu du fichier ne correspond pas a un format image valide (JPEG, PNG, WebP)".into(),
+                ));
+            }
+            premier_chunk = false;
+        }
+        fichier
+            .write_all(&data)
+            .map_err(|e| ApiErreur::Upload(format!("Erreur ecriture fichier: {}", e)))?;
+    }
+
+    Ok(())
 }
 
 // ════════════════════════════════════════════════════════════════════════════

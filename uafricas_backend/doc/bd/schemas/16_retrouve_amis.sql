@@ -314,6 +314,129 @@ CREATE INDEX idx_avis_public_actif ON retrouve_amis.avis_recherche(est_public, e
 
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- Avis de recherche publics par defaut (003-retrouve-amis-public)
+-- ════════════════════════════════════════════════════════════════════════════
+
+
+-- ── Types (Enums) — Nouveaux ─────────────────────────────────────────
+
+CREATE TYPE retrouve_amis.genre_personne AS ENUM ('homme', 'femme');
+
+CREATE TYPE retrouve_amis.type_relation_recherche AS ENUM (
+    'amis_enfance',
+    'amis_ecole',
+    'collegue',
+    'connaissance',
+    'frere_soeur',
+    'parent'
+);
+
+
+-- ── ALTER TABLE : avis_recherche — Nouvelles colonnes 003 ────────────
+
+ALTER TABLE retrouve_amis.avis_recherche
+    ADD COLUMN est_anonyme              BOOLEAN             NOT NULL DEFAULT FALSE,
+    ADD COLUMN genre_recherche           retrouve_amis.genre_personne,
+    ADD COLUMN type_relation             retrouve_amis.type_relation_recherche,
+    ADD COLUMN comment_connu             VARCHAR(500),
+    ADD COLUMN localite_rencontre        VARCHAR(200),
+    ADD COLUMN ecole_rencontre           VARCHAR(250),
+    ADD COLUMN ville_rencontre           VARCHAR(200),
+    ADD COLUMN jamais_rencontre          BOOLEAN             NOT NULL DEFAULT FALSE,
+    ADD COLUMN photo_url                 VARCHAR(500),
+    ADD COLUMN description_physique      TEXT,
+    ADD COLUMN partage_coordonnees       BOOLEAN             NOT NULL DEFAULT FALSE,
+    ADD COLUMN coordonnees_email         VARCHAR(250),
+    ADD COLUMN coordonnees_telephone     VARCHAR(50),
+    ADD COLUMN coordonnees_whatsapp      VARCHAR(50);
+
+
+-- ── ALTER TABLE : est_public DEFAULT TRUE ────────────────────────────
+
+ALTER TABLE retrouve_amis.avis_recherche
+    ALTER COLUMN est_public SET DEFAULT TRUE;
+
+-- Mettre a jour les avis existants actifs pour etre publics
+UPDATE retrouve_amis.avis_recherche
+    SET est_public = TRUE
+    WHERE etat = 'actif' AND deleted_at IS NULL;
+
+
+-- ── Contraintes CHECK — 003 ─────────────────────────────────────────
+
+-- Au moins un lieu de rencontre OU jamais_rencontre OU type_relation
+ALTER TABLE retrouve_amis.avis_recherche
+ADD CONSTRAINT chk_lieu_ou_jamais CHECK (
+    localite_rencontre IS NOT NULL
+    OR ecole_rencontre IS NOT NULL
+    OR ville_rencontre IS NOT NULL
+    OR jamais_rencontre = TRUE
+    OR type_relation IS NOT NULL
+);
+
+-- Si partage_coordonnees = true, au moins une coordonnee requise
+ALTER TABLE retrouve_amis.avis_recherche
+ADD CONSTRAINT chk_coordonnees_requises CHECK (
+    partage_coordonnees = FALSE
+    OR coordonnees_email IS NOT NULL
+    OR coordonnees_telephone IS NOT NULL
+    OR coordonnees_whatsapp IS NOT NULL
+);
+
+
+-- ── Index — 003 ─────────────────────────────────────────────────────
+
+-- Index pour le filtrage par type de relation
+CREATE INDEX idx_avis_type_relation
+ON retrouve_amis.avis_recherche (type_relation)
+WHERE deleted_at IS NULL AND etat = 'actif';
+
+-- Index trigram sur les lieux de rencontre
+CREATE INDEX idx_avis_localite_trgm
+ON retrouve_amis.avis_recherche USING gin (localite_rencontre gin_trgm_ops)
+WHERE deleted_at IS NULL;
+
+CREATE INDEX idx_avis_ecole_rencontre_trgm
+ON retrouve_amis.avis_recherche USING gin (ecole_rencontre gin_trgm_ops)
+WHERE deleted_at IS NULL;
+
+CREATE INDEX idx_avis_ville_rencontre_trgm
+ON retrouve_amis.avis_recherche USING gin (ville_rencontre gin_trgm_ops)
+WHERE deleted_at IS NULL;
+
+
+-- ── Mise a jour du trigger search_vector — 003 ──────────────────────
+
+-- Supprimer l'ancien trigger simple (ne supporte pas les poids)
+DROP TRIGGER IF EXISTS trg_avis_recherche_search_vector ON retrouve_amis.avis_recherche;
+
+-- Fonction personnalisee pour le search_vector avec poids
+CREATE OR REPLACE FUNCTION retrouve_amis.maj_search_vector_avis()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector :=
+        setweight(to_tsvector('french', COALESCE(NEW.nom_recherche, '')), 'A')
+        || setweight(to_tsvector('french', COALESCE(NEW.prenom_recherche, '')), 'A')
+        || setweight(to_tsvector('french', COALESCE(NEW.surnom, '')), 'B')
+        || setweight(to_tsvector('french', COALESCE(NEW.ecole, '')), 'B')
+        || setweight(to_tsvector('french', COALESCE(NEW.ecole_rencontre, '')), 'B')
+        || setweight(to_tsvector('french', COALESCE(NEW.ville, '')), 'C')
+        || setweight(to_tsvector('french', COALESCE(NEW.ville_rencontre, '')), 'C')
+        || setweight(to_tsvector('french', COALESCE(NEW.localite_rencontre, '')), 'C')
+        || setweight(to_tsvector('french', COALESCE(NEW.comment_connu, '')), 'D')
+        || setweight(to_tsvector('french', COALESCE(NEW.description, '')), 'D')
+        || setweight(to_tsvector('french', COALESCE(NEW.description_physique, '')), 'D');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Nouveau trigger avec poids
+CREATE TRIGGER trg_avis_recherche_search_vector
+    BEFORE INSERT OR UPDATE ON retrouve_amis.avis_recherche
+    FOR EACH ROW EXECUTE FUNCTION retrouve_amis.maj_search_vector_avis();
+
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- Fonction de matching : calculer_correspondances
 -- ════════════════════════════════════════════════════════════════════════════
 --

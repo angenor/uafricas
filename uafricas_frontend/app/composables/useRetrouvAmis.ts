@@ -27,6 +27,8 @@ export type MotifSignalement = 'contenu_abusif' | 'usurpation_identite' | 'harce
 export type TypeParcours = 'ecole' | 'ville_residence'
 export type TypeNotification = 'nouvelle_correspondance' | 'acceptation_contact' | 'coordonnees_partagees' | 'correspondance_archivee' | 'avis_suspendu' | 'reponse_publique' | 'demande_retrait'
 export type TypeReponsePublique = 'je_suis_cette_personne' | 'je_la_connais' | 'jai_des_informations'
+export type GenrePersonne = 'homme' | 'femme'
+export type TypeRelationRecherche = 'amis_enfance' | 'amis_ecole' | 'collegue' | 'connaissance' | 'frere_soeur' | 'parent'
 
 // ── Interfaces de reponse ────────────────────────────────────
 
@@ -55,6 +57,21 @@ export interface AvisRecherche {
   est_public?: boolean
   slug?: string
   compteur_partages?: number
+  // Champs 003
+  est_anonyme: boolean
+  genre_recherche?: GenrePersonne
+  type_relation?: TypeRelationRecherche
+  comment_connu?: string
+  localite_rencontre?: string
+  ecole_rencontre?: string
+  ville_rencontre?: string
+  jamais_rencontre: boolean
+  photo_url?: string
+  description_physique?: string
+  partage_coordonnees: boolean
+  coordonnees_email?: string
+  coordonnees_telephone?: string
+  coordonnees_whatsapp?: string
   created_at: string
   updated_at: string
 }
@@ -129,19 +146,29 @@ export interface TableauDeBord {
 export interface AvisPublicDetail {
   id: string
   slug: string
-  auteur_id: string
   nom_recherche: string
   prenom_recherche?: string
+  surnom?: string
   ecole?: string
   ville?: string
   pays?: PaysInfo
   periode_debut?: number
   periode_fin?: number
   description?: string
-  auteur_anonyme: string
+  // Champs 003
+  genre_recherche?: GenrePersonne
+  type_relation?: TypeRelationRecherche
+  comment_connu?: string
+  localite_rencontre?: string
+  ecole_rencontre?: string
+  ville_rencontre?: string
+  jamais_rencontre: boolean
+  photo_url?: string
+  description_physique?: string
+  auteur_anonyme: boolean
+  auteur_pseudonyme?: string
   etat: EtatAvis
   compteur_partages: number
-  date_publication_publique?: string
   created_at: string
 }
 
@@ -154,13 +181,23 @@ export interface AvisPublicEtat {
 
 /** Resume d'un avis public dans le listing */
 export interface AvisPublicResume {
+  id: string
   slug: string
   nom_recherche: string
   prenom_recherche?: string
+  etat?: EtatAvis
+  // Champs 003
+  genre_recherche?: GenrePersonne
+  type_relation?: TypeRelationRecherche
+  localite_rencontre?: string
+  ecole_rencontre?: string
+  ville_rencontre?: string
+  photo_url?: string
+  description_physique?: string
+  auteur_anonyme: boolean
+  auteur_pseudonyme?: string
   ville?: string
   pays?: PaysInfo
-  periode_debut?: number
-  periode_fin?: number
   compteur_partages: number
   created_at: string
 }
@@ -184,6 +221,7 @@ export interface RecherchePubliqueParams {
   page?: number
   par_page?: number
   recherche?: string
+  type_relation?: TypeRelationRecherche
   pays_id?: string
   ville?: string
   ecole?: string
@@ -191,13 +229,8 @@ export interface RecherchePubliqueParams {
   ordre?: 'asc' | 'desc'
 }
 
-/** Reponse apres publication/depublication d'un avis */
-export interface PublierAvisResponse {
-  id: string
-  est_public: boolean
-  slug: string
-  date_publication_publique?: string
-}
+/** @deprecated Supprime en 003 — publication automatique a la creation */
+// PublierAvisResponse supprime — plus d'endpoint publier_avis
 
 /** Reponse apres reponse publique a un avis */
 export interface ReponsePubliqueResult {
@@ -219,6 +252,20 @@ export interface CreerAvisRequest {
   periode_debut?: number
   periode_fin?: number
   description?: string
+  // Champs 003
+  est_anonyme?: boolean
+  genre_recherche?: GenrePersonne
+  type_relation?: TypeRelationRecherche
+  comment_connu?: string
+  localite_rencontre?: string
+  ecole_rencontre?: string
+  ville_rencontre?: string
+  jamais_rencontre?: boolean
+  description_physique?: string
+  partage_coordonnees?: boolean
+  coordonnees_email?: string
+  coordonnees_telephone?: string
+  coordonnees_whatsapp?: string
 }
 
 /** Choix de coordonnees a partager lors de l'acceptation */
@@ -323,6 +370,20 @@ export const TYPES_PARCOURS: { value: TypeParcours; label: string; icon: string 
   { value: 'ville_residence', label: 'Ville de residence', icon: 'fa-solid fa-city' },
 ]
 
+export const TYPES_RELATION: { value: TypeRelationRecherche; label: string }[] = [
+  { value: 'amis_enfance', label: 'Amis d\'enfance' },
+  { value: 'amis_ecole', label: 'Amis d\'ecole / universite' },
+  { value: 'collegue', label: 'Collegue' },
+  { value: 'connaissance', label: 'Connaissance' },
+  { value: 'frere_soeur', label: 'Frere / Soeur' },
+  { value: 'parent', label: 'Parent' },
+]
+
+export const GENRES_PERSONNE: { value: GenrePersonne; label: string }[] = [
+  { value: 'homme', label: 'Homme' },
+  { value: 'femme', label: 'Femme' },
+]
+
 // ──────────────────────────────────────────────────────────────
 // Fonctions utilitaires
 // ──────────────────────────────────────────────────────────────
@@ -398,19 +459,19 @@ export const useRetrouvAmis = () => {
   // ── Avis de recherche ────────────────────────────────────────
 
   /**
-   * Creer un nouvel avis de recherche
+   * Creer un nouvel avis de recherche (multipart/form-data pour upload photo)
    */
-  const creerAvis = async (data: CreerAvisRequest): Promise<{ id: string; etat: string; correspondances_trouvees: number } | null> => {
+  const creerAvis = async (formData: FormData): Promise<{ id: string; etat: string; slug: string; correspondances_trouvees: number } | null> => {
     chargement.value = true
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ id: string; etat: string; correspondances_trouvees: number }>>(
+      const reponse = await $fetch<ApiResponse<{ id: string; etat: string; slug: string; correspondances_trouvees: number }>>(
         `${apiBase}/api/retrouve-amis/avis`,
         {
           method: 'POST',
           headers: authHeaders(),
-          body: data,
+          body: formData,
         },
       )
 
@@ -501,9 +562,9 @@ export const useRetrouvAmis = () => {
   }
 
   /**
-   * Modifier un avis de recherche existant
+   * Modifier un avis de recherche existant (multipart/form-data pour upload photo)
    */
-  const modifierAvis = async (id: string, data: CreerAvisRequest): Promise<{ id: string; correspondances_trouvees: number } | null> => {
+  const modifierAvis = async (id: string, formData: FormData): Promise<{ id: string; correspondances_trouvees: number } | null> => {
     chargement.value = true
     erreur.value = null
 
@@ -513,7 +574,7 @@ export const useRetrouvAmis = () => {
         {
           method: 'PUT',
           headers: authHeaders(),
-          body: data,
+          body: formData,
         },
       )
 
@@ -1038,39 +1099,7 @@ export const useRetrouvAmis = () => {
 
   // ── Partage public ──────────────────────────────────────────
 
-  /**
-   * Activer ou desactiver la visibilite publique d'un avis
-   */
-  const publierAvis = async (id: string, estPublic: boolean): Promise<PublierAvisResponse | null> => {
-    chargement.value = true
-    erreur.value = null
-
-    try {
-      const reponse = await $fetch<ApiResponse<PublierAvisResponse>>(
-        `${apiBase}/api/retrouve-amis/avis/${id}/publier`,
-        {
-          method: 'PATCH',
-          headers: authHeaders(),
-          body: { est_public: estPublic },
-        },
-      )
-
-      if (!reponse.success || !reponse.data) {
-        throw new Error(reponse.error || 'Erreur lors de la publication de l\'avis')
-      }
-
-      return reponse.data
-    }
-    catch (e: any) {
-      const message = e?.data?.error || e?.message || 'Erreur lors de la publication de l\'avis'
-      erreur.value = message
-      console.error('Erreur publierAvis:', e)
-      return null
-    }
-    finally {
-      chargement.value = false
-    }
-  }
+  // publierAvis supprime en 003 — publication automatique a la creation
 
   /**
    * Obtenir le detail d'un avis public par son slug (sans auth)
@@ -1249,6 +1278,7 @@ export const useRetrouvAmis = () => {
       if (params.page) queryParams.set('page', String(params.page))
       if (params.par_page) queryParams.set('par_page', String(params.par_page))
       if (params.recherche) queryParams.set('recherche', params.recherche)
+      if (params.type_relation) queryParams.set('type_relation', params.type_relation)
       if (params.pays_id) queryParams.set('pays_id', params.pays_id)
       if (params.ville) queryParams.set('ville', params.ville)
       if (params.ecole) queryParams.set('ecole', params.ecole)
@@ -1305,8 +1335,7 @@ export const useRetrouvAmis = () => {
     ajouterParcours,
     modifierParcours,
     supprimerParcours,
-    // Partage public
-    publierAvis,
+    // Partage public (publierAvis supprime en 003)
     detailAvisPublic,
     // Protections anti-harcelement
     signalerAvisPublic,

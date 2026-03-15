@@ -5,6 +5,11 @@ import { formatDate, formatPeriode } from '~/composables/useRetrouvAmis'
 const props = defineProps<{
   avis: AvisPublicDetail
 }>()
+
+const auteurDisplay = computed(() => {
+  if (props.avis.auteur_anonyme) return 'Anonyme'
+  return props.avis.auteur_pseudonyme ?? 'Anonyme'
+})
 </script>
 
 <template>
@@ -19,7 +24,7 @@ const props = defineProps<{
           </span>
         </h1>
         <p class="text-white/80 text-sm">
-          Avis de recherche publie par <span class="font-medium text-white">{{ props.avis.auteur_anonyme }}</span>
+          Avis de recherche publie par <span class="font-medium text-white">{{ auteurDisplay }}</span>
         </p>
       </div>
 

@@ -119,6 +119,14 @@ pub async fn rechercher_avis_publics(
             "a.search_vector @@ plainto_tsquery('french', ${})",
             bind_idx
         ));
+        bind_idx += 1;
+    }
+
+    if params.type_relation.as_ref().map_or(false, |v| !v.trim().is_empty()) {
+        conditions.push(format!(
+            "a.type_relation = ${}::retrouve_amis.type_relation_recherche",
+            bind_idx
+        ));
     }
 
     let where_clause = conditions.join(" AND ");
@@ -129,6 +137,7 @@ pub async fn rechercher_avis_publics(
     );
     let list_sql = format!(
         "SELECT {} FROM retrouve_amis.avis_recherche a
+         JOIN iam.utilisateur u ON u.id = a.auteur_id
          LEFT JOIN shared.pays p ON p.id = a.pays_id
          WHERE {}
          ORDER BY {} {}
@@ -142,6 +151,7 @@ pub async fn rechercher_avis_publics(
     let ville_val = params.ville.as_deref().filter(|v| !v.trim().is_empty()).map(|v| format!("%{}%", v.trim()));
     let ecole_val = params.ecole.as_deref().filter(|v| !v.trim().is_empty()).map(|v| format!("%{}%", v.trim()));
     let recherche_val = params.recherche.as_deref().filter(|v| !v.trim().is_empty()).map(|v| v.trim().to_string());
+    let type_relation_val = params.type_relation.as_deref().filter(|v| !v.trim().is_empty()).map(|v| v.trim().to_string());
 
     macro_rules! bind_params {
         ($query:expr) => {{
@@ -157,6 +167,9 @@ pub async fn rechercher_avis_publics(
             }
             if let Some(r) = &recherche_val {
                 q = q.bind(r.clone());
+            }
+            if let Some(tr) = &type_relation_val {
+                q = q.bind(tr.clone());
             }
             q
         }};

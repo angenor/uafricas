@@ -13,6 +13,11 @@ pub const AVIS_RECHERCHE_COLONNES: &str =
     "id, auteur_id, nom_recherche, prenom_recherche, surnom,
      ecole, ville, pays_id, periode_debut, periode_fin,
      description, etat::text AS etat,
+     est_anonyme, genre_recherche::text AS genre_recherche,
+     type_relation::text AS type_relation, comment_connu,
+     localite_rencontre, ecole_rencontre, ville_rencontre,
+     jamais_rencontre, photo_url, description_physique,
+     partage_coordonnees, coordonnees_email, coordonnees_telephone, coordonnees_whatsapp,
      created_at, updated_at, deleted_at";
 
 /// Colonnes SELECT pour retrouve_amis.correspondance
@@ -66,6 +71,21 @@ pub struct AvisRecherche {
     pub periode_fin: Option<i32>,
     pub description: Option<String>,
     pub etat: String,
+    // Colonnes 003-retrouve-amis-public
+    pub est_anonyme: bool,
+    pub genre_recherche: Option<String>,
+    pub type_relation: Option<String>,
+    pub comment_connu: Option<String>,
+    pub localite_rencontre: Option<String>,
+    pub ecole_rencontre: Option<String>,
+    pub ville_rencontre: Option<String>,
+    pub jamais_rencontre: bool,
+    pub photo_url: Option<String>,
+    pub description_physique: Option<String>,
+    pub partage_coordonnees: bool,
+    pub coordonnees_email: Option<String>,
+    pub coordonnees_telephone: Option<String>,
+    pub coordonnees_whatsapp: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub deleted_at: Option<DateTime<Utc>>,
@@ -167,6 +187,16 @@ pub struct AvisRechercheResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub slug: Option<String>,
     pub compteur_partages: i32,
+    // Champs 003
+    pub est_anonyme: bool,
+    pub genre_recherche: Option<String>,
+    pub type_relation: Option<String>,
+    pub localite_rencontre: Option<String>,
+    pub ecole_rencontre: Option<String>,
+    pub ville_rencontre: Option<String>,
+    pub jamais_rencontre: bool,
+    pub photo_url: Option<String>,
+    pub description_physique: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -194,6 +224,21 @@ pub struct AvisRechercheDetailResponse {
     pub periode_fin: Option<i32>,
     pub description: Option<String>,
     pub etat: String,
+    // Champs 003
+    pub est_anonyme: bool,
+    pub genre_recherche: Option<String>,
+    pub type_relation: Option<String>,
+    pub comment_connu: Option<String>,
+    pub localite_rencontre: Option<String>,
+    pub ecole_rencontre: Option<String>,
+    pub ville_rencontre: Option<String>,
+    pub jamais_rencontre: bool,
+    pub photo_url: Option<String>,
+    pub description_physique: Option<String>,
+    pub partage_coordonnees: bool,
+    pub coordonnees_email: Option<String>,
+    pub coordonnees_telephone: Option<String>,
+    pub coordonnees_whatsapp: Option<String>,
     pub correspondances: Vec<CorrespondanceResponse>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -288,6 +333,7 @@ pub struct TableauDeBord {
 pub struct CreerAvisResponse {
     pub id: Uuid,
     pub etat: String,
+    pub slug: String,
     pub correspondances_trouvees: i64,
 }
 
@@ -310,6 +356,7 @@ pub struct BasculerTrouvableResponse {
 // ══════════════════════════════════════════════════════════════
 
 /// Corps de la requete de creation d'un avis de recherche
+/// Note: sera remplace par multipart dans le handler (003), mais garde pour retrocompat
 #[derive(Debug, Deserialize)]
 pub struct CreerAvisRecherche {
     pub nom_recherche: String,
@@ -321,6 +368,23 @@ pub struct CreerAvisRecherche {
     pub periode_debut: Option<i32>,
     pub periode_fin: Option<i32>,
     pub description: Option<String>,
+    // Champs 003
+    #[serde(default)]
+    pub est_anonyme: bool,
+    pub genre_recherche: Option<String>,
+    pub type_relation: Option<String>,
+    pub comment_connu: Option<String>,
+    pub localite_rencontre: Option<String>,
+    pub ecole_rencontre: Option<String>,
+    pub ville_rencontre: Option<String>,
+    #[serde(default)]
+    pub jamais_rencontre: bool,
+    pub description_physique: Option<String>,
+    #[serde(default)]
+    pub partage_coordonnees: bool,
+    pub coordonnees_email: Option<String>,
+    pub coordonnees_telephone: Option<String>,
+    pub coordonnees_whatsapp: Option<String>,
 }
 
 /// Corps de la requete de modification d'un avis de recherche
@@ -335,6 +399,23 @@ pub struct ModifierAvisRecherche {
     pub periode_debut: Option<i32>,
     pub periode_fin: Option<i32>,
     pub description: Option<String>,
+    // Champs 003
+    #[serde(default)]
+    pub est_anonyme: bool,
+    pub genre_recherche: Option<String>,
+    pub type_relation: Option<String>,
+    pub comment_connu: Option<String>,
+    pub localite_rencontre: Option<String>,
+    pub ecole_rencontre: Option<String>,
+    pub ville_rencontre: Option<String>,
+    #[serde(default)]
+    pub jamais_rencontre: bool,
+    pub description_physique: Option<String>,
+    #[serde(default)]
+    pub partage_coordonnees: bool,
+    pub coordonnees_email: Option<String>,
+    pub coordonnees_telephone: Option<String>,
+    pub coordonnees_whatsapp: Option<String>,
 }
 
 /// Choix des coordonnees a partager lors de l'acceptation
@@ -395,17 +476,27 @@ pub struct BasculerTrouvable {
 /// Colonnes SELECT pour un avis public actif (detail complet)
 pub const AVIS_PUBLIC_DETAIL_COLONNES: &str =
     "a.id, a.auteur_id, a.slug, a.nom_recherche, a.prenom_recherche,
-     a.ecole, a.ville, a.periode_debut, a.periode_fin,
+     a.surnom, a.ecole, a.ville, a.periode_debut, a.periode_fin,
      a.description, a.etat::text AS etat,
+     a.est_anonyme, a.genre_recherche::text AS genre_recherche,
+     a.type_relation::text AS type_relation, a.comment_connu,
+     a.localite_rencontre, a.ecole_rencontre, a.ville_rencontre,
+     a.jamais_rencontre, a.photo_url, a.description_physique,
      a.compteur_partages, a.date_publication_publique, a.created_at,
      u.prenom AS auteur_prenom, u.nom AS auteur_nom,
      p.id AS pays_id, p.nom AS pays_nom";
 
 /// Colonnes SELECT pour le listing des avis publics (resume)
 pub const AVIS_PUBLIC_LISTE_COLONNES: &str =
-    "a.slug, a.nom_recherche, a.prenom_recherche,
+    "a.id, a.slug, a.nom_recherche, a.prenom_recherche,
+     a.etat::text AS etat,
+     a.est_anonyme, a.genre_recherche::text AS genre_recherche,
+     a.type_relation::text AS type_relation,
+     a.localite_rencontre, a.ecole_rencontre, a.ville_rencontre,
+     a.photo_url, a.description_physique,
      a.ville, a.periode_debut, a.periode_fin,
      a.compteur_partages, a.created_at,
+     u.prenom AS auteur_prenom, u.nom AS auteur_nom,
      p.id AS pays_id, p.nom AS pays_nom";
 
 /// Colonnes autorisees pour le tri des avis publics
@@ -421,12 +512,24 @@ pub struct AvisPublicDetailRow {
     pub slug: Option<String>,
     pub nom_recherche: String,
     pub prenom_recherche: Option<String>,
+    pub surnom: Option<String>,
     pub ecole: Option<String>,
     pub ville: Option<String>,
     pub periode_debut: Option<i32>,
     pub periode_fin: Option<i32>,
     pub description: Option<String>,
     pub etat: String,
+    // Champs 003
+    pub est_anonyme: bool,
+    pub genre_recherche: Option<String>,
+    pub type_relation: Option<String>,
+    pub comment_connu: Option<String>,
+    pub localite_rencontre: Option<String>,
+    pub ecole_rencontre: Option<String>,
+    pub ville_rencontre: Option<String>,
+    pub jamais_rencontre: bool,
+    pub photo_url: Option<String>,
+    pub description_physique: Option<String>,
     pub compteur_partages: i32,
     pub date_publication_publique: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
@@ -439,14 +542,27 @@ pub struct AvisPublicDetailRow {
 /// Ligne SQL pour le listing des avis publics
 #[derive(Debug, FromRow)]
 pub struct AvisPublicListeRow {
+    pub id: Uuid,
     pub slug: Option<String>,
     pub nom_recherche: String,
     pub prenom_recherche: Option<String>,
+    pub etat: String,
+    // Champs 003
+    pub est_anonyme: bool,
+    pub genre_recherche: Option<String>,
+    pub type_relation: Option<String>,
+    pub localite_rencontre: Option<String>,
+    pub ecole_rencontre: Option<String>,
+    pub ville_rencontre: Option<String>,
+    pub photo_url: Option<String>,
+    pub description_physique: Option<String>,
     pub ville: Option<String>,
     pub periode_debut: Option<i32>,
     pub periode_fin: Option<i32>,
     pub compteur_partages: i32,
     pub created_at: DateTime<Utc>,
+    pub auteur_prenom: String,
+    pub auteur_nom: String,
     pub pays_id: Option<Uuid>,
     pub pays_nom: Option<String>,
 }
@@ -458,19 +574,30 @@ pub struct AvisPublicListeRow {
 pub struct AvisPublicDetailResponse {
     pub id: Uuid,
     pub slug: String,
-    pub auteur_id: Uuid,
     pub nom_recherche: String,
     pub prenom_recherche: Option<String>,
+    pub surnom: Option<String>,
     pub ecole: Option<String>,
     pub ville: Option<String>,
     pub pays: Option<PaysInfo>,
     pub periode_debut: Option<i32>,
     pub periode_fin: Option<i32>,
     pub description: Option<String>,
-    pub auteur_anonyme: String,
+    // Champs 003
+    pub genre_recherche: Option<String>,
+    pub type_relation: Option<String>,
+    pub comment_connu: Option<String>,
+    pub localite_rencontre: Option<String>,
+    pub ecole_rencontre: Option<String>,
+    pub ville_rencontre: Option<String>,
+    pub jamais_rencontre: bool,
+    pub photo_url: Option<String>,
+    pub description_physique: Option<String>,
+    pub auteur_anonyme: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auteur_pseudonyme: Option<String>,
     pub etat: String,
     pub compteur_partages: i32,
-    pub date_publication_publique: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
 }
 
@@ -485,13 +612,24 @@ pub struct AvisPublicEtatResponse {
 /// Resume d'un avis public dans le listing
 #[derive(Debug, Serialize)]
 pub struct AvisPublicResumeResponse {
+    pub id: Uuid,
     pub slug: String,
     pub nom_recherche: String,
     pub prenom_recherche: Option<String>,
+    pub etat: String,
+    // Champs 003
+    pub genre_recherche: Option<String>,
+    pub type_relation: Option<String>,
+    pub localite_rencontre: Option<String>,
+    pub ecole_rencontre: Option<String>,
+    pub ville_rencontre: Option<String>,
+    pub photo_url: Option<String>,
+    pub description_physique: Option<String>,
+    pub auteur_anonyme: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auteur_pseudonyme: Option<String>,
     pub ville: Option<String>,
     pub pays: Option<PaysInfo>,
-    pub periode_debut: Option<i32>,
-    pub periode_fin: Option<i32>,
     pub compteur_partages: i32,
     pub created_at: DateTime<Utc>,
 }
@@ -577,6 +715,7 @@ pub struct RecherchePubliqueParams {
     pub page: Option<i64>,
     pub par_page: Option<i64>,
     pub recherche: Option<String>,
+    pub type_relation: Option<String>,
     pub pays_id: Option<Uuid>,
     pub ville: Option<String>,
     pub ecole: Option<String>,
@@ -589,17 +728,21 @@ pub struct RecherchePubliqueParams {
 impl AvisPublicDetailRow {
     /// Convertit la ligne SQL en DTO de detail public avec auteur anonymise
     pub fn to_detail_response(&self) -> AvisPublicDetailResponse {
-        let auteur_anonyme = format!(
-            "{} {}.",
-            self.auteur_prenom,
-            self.auteur_nom.chars().next().unwrap_or(' ')
-        );
+        let auteur_pseudonyme = if self.est_anonyme {
+            None
+        } else {
+            Some(format!(
+                "{} {}.",
+                self.auteur_prenom,
+                self.auteur_nom.chars().next().unwrap_or(' ')
+            ))
+        };
         AvisPublicDetailResponse {
             id: self.id,
             slug: self.slug.clone().unwrap_or_default(),
-            auteur_id: self.auteur_id,
             nom_recherche: self.nom_recherche.clone(),
             prenom_recherche: self.prenom_recherche.clone(),
+            surnom: self.surnom.clone(),
             ecole: self.ecole.clone(),
             ville: self.ville.clone(),
             pays: self.pays_id.and_then(|id| {
@@ -611,10 +754,19 @@ impl AvisPublicDetailRow {
             periode_debut: self.periode_debut,
             periode_fin: self.periode_fin,
             description: self.description.clone(),
-            auteur_anonyme,
+            genre_recherche: self.genre_recherche.clone(),
+            type_relation: self.type_relation.clone(),
+            comment_connu: self.comment_connu.clone(),
+            localite_rencontre: self.localite_rencontre.clone(),
+            ecole_rencontre: self.ecole_rencontre.clone(),
+            ville_rencontre: self.ville_rencontre.clone(),
+            jamais_rencontre: self.jamais_rencontre,
+            photo_url: self.photo_url.clone(),
+            description_physique: self.description_physique.clone(),
+            auteur_anonyme: self.est_anonyme,
+            auteur_pseudonyme,
             etat: self.etat.clone(),
             compteur_partages: self.compteur_partages,
-            date_publication_publique: self.date_publication_publique,
             created_at: self.created_at,
         }
     }
@@ -623,10 +775,30 @@ impl AvisPublicDetailRow {
 impl AvisPublicListeRow {
     /// Convertit la ligne SQL en DTO de resume public
     pub fn to_resume_response(&self) -> AvisPublicResumeResponse {
+        let auteur_pseudonyme = if self.est_anonyme {
+            None
+        } else {
+            Some(format!(
+                "{} {}.",
+                self.auteur_prenom,
+                self.auteur_nom.chars().next().unwrap_or(' ')
+            ))
+        };
         AvisPublicResumeResponse {
+            id: self.id,
             slug: self.slug.clone().unwrap_or_default(),
             nom_recherche: self.nom_recherche.clone(),
             prenom_recherche: self.prenom_recherche.clone(),
+            etat: self.etat.clone(),
+            genre_recherche: self.genre_recherche.clone(),
+            type_relation: self.type_relation.clone(),
+            localite_rencontre: self.localite_rencontre.clone(),
+            ecole_rencontre: self.ecole_rencontre.clone(),
+            ville_rencontre: self.ville_rencontre.clone(),
+            photo_url: self.photo_url.clone(),
+            description_physique: self.description_physique.clone(),
+            auteur_anonyme: self.est_anonyme,
+            auteur_pseudonyme,
             ville: self.ville.clone(),
             pays: self.pays_id.and_then(|id| {
                 self.pays_nom.as_ref().map(|nom| PaysInfo {
@@ -634,8 +806,6 @@ impl AvisPublicListeRow {
                     nom: nom.clone(),
                 })
             }),
-            periode_debut: self.periode_debut,
-            periode_fin: self.periode_fin,
             compteur_partages: self.compteur_partages,
             created_at: self.created_at,
         }
