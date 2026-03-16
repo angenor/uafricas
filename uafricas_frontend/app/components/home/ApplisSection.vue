@@ -201,5 +201,13 @@ const applis: Appli[] = [
     barClass: 'bg-amber-700',
     description: 'Retrouvez vos proches',
   },
+  {
+    label: 'FamilyTree',
+    to: '/arbre-genealogique',
+    icon: 'fa-solid fa-tree',
+    bgClass: 'bg-[var(--color-custom-green)]',
+    barClass: 'bg-[var(--color-custom-green)]',
+    description: 'Arbre généalogique',
+  },
 ]
 </script>

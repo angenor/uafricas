@@ -1,4 +1,5 @@
 pub mod admin;
+pub mod arbre_genealogique;
 pub mod africantives;
 pub mod afrolang;
 pub mod annonces;
@@ -20,3 +21,6 @@ pub mod stations_radio;
 pub mod retrouve_amis;
 pub mod retrouve_amis_public;
 pub mod television;
+pub mod matching;
+pub mod collaboration;
+pub mod notification;

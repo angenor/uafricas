@@ -112,8 +112,11 @@ Commandes: `setup`, `deploy`, `update`, `rebuild`, `status`, `logs [svc]`, `rest
 Mettre à jour ce fichier lors de: ajout/suppression service Docker ou dépendance majeure, nouveau composable/store/module, nouvel endpoint API ou schema BDD, changement commandes dev, conventions, CI/CD.
 
 ## Test Users
-- **Admin** : `admin@test.com` / `Test1234`
-- **Standard** : `user@test.com` / `Test1234`
+  - Email : admin@test.com
+  - Mot de passe : Test1234
+
+  - Email : user2@test.com
+  - Mot de passe : Test1234
 
 ## Active Technologies
 - Rust (Edition 2024) + TypeScript (Nuxt 4 / Vue 3) + Actix-Web 4, sqlx (PostgreSQL), Nuxt 4, Pinia, Tailwind CSS v4 (001-retrouve-amis)
@@ -122,6 +125,21 @@ Mettre à jour ce fichier lors de: ajout/suppression service Docker ou dépendan
 - PostgreSQL 16, schema `retrouve_amis` existant (6 tables + 1 fonction PL/pgSQL) (002-partage-avis-recherche)
 - Rust Edition 2024 (backend), TypeScript / Nuxt 4 / Vue 3 (frontend) + Actix-Web 4, actix-multipart, sqlx, Pinia, Tailwind CSS v4 (003-retrouve-amis-public)
 - PostgreSQL 16, schema `retrouve_amis` (8 tables existantes) (003-retrouve-amis-public)
+- Rust Edition 2024 (backend), TypeScript / Nuxt 4 (frontend) + Actix-Web 4, sqlx (PostgreSQL async), uuid, chrono, serde — frontend : Nuxt 4, Pinia, $fetch (001-personnes-arbre)
+- PostgreSQL 16 — nouveau schema `arbre_genealogique` (11e schema bounded-context) (001-personnes-arbre)
+- Rust Edition 2024 (backend), TypeScript / Nuxt 4 / Vue 3 (frontend) + Actix-Web 4, sqlx (backend) ; @vue-flow/core, @vue-flow/controls, @vue-flow/minimap, relatives-tree (frontend) (001-visualisation-arbre)
+- PostgreSQL 16 — schema `arbre_genealogique` existant (aucune migration) (001-visualisation-arbre)
+- TypeScript / Nuxt 4 / Vue 3 (frontend uniquement) + @vue-flow/core (existant), composants Feature 2 (existants) (001-edition-arbre)
+- Aucune modification — utilise les endpoints existants (001-edition-arbre)
+- Rust Edition 2024 (backend) + TypeScript / Nuxt 4 / Vue 3 (frontend) + Actix-Web 4, sqlx, pg_trgm (PostgreSQL extension), tokio::spawn — frontend: @vue-flow/core (existant) (001-matching-arbres)
+- PostgreSQL 16 — schema `arbre_genealogique` étendu (2 nouvelles tables + 2 colonnes + 3 indexes) (001-matching-arbres)
+- Rust Edition 2024 (backend, 1 endpoint) + TypeScript / Nuxt 4 / Vue 3 (frontend, principal) + pg_trgm existant (Feature 4), @vue-flow/core existan (001-recherche-exploration)
+- Aucune modification SQL — réutilise colonnes normalisées et indexes de Feature 4 (001-recherche-exploration)
+- Rust Edition 2024 (backend) + TypeScript / Nuxt 4 / Vue 3 (frontend) + Actix-Web 4, sqlx, lettre (SMTP existant) (001-collaboration-partage)
+- PostgreSQL 16 — 2 nouvelles tables + 3 colonnes (001-collaboration-partage)
+- Rust Edition 2024 (backend) + TypeScript / Nuxt 4 / Vue 3 (frontend) + pg_trgm existant, audit existan (001-notifications-suggestions)
+- PostgreSQL 16 — 2 nouvelles tables (notifications, doublons_ignores) (001-notifications-suggestions)
 
 ## Recent Changes
+- 001-personnes-arbre: Added schema `arbre_genealogique` (4 tables: personnes, arbres, rattachements, liens_familiaux). Backend: 8 handlers CRUD + liens + photo upload, cycle detection CTE, cascade soft delete. Frontend: composable `useArbreGenealogique`, mock `arbre-genealogique.ts`, composants `PersonneForm.vue` / `PersonneCard.vue` / `LienFamilialForm.vue`, pages `arbre-genealogique/index.vue` + `[id].vue`. Architecture fondation matching inter-arbres documentée (Décision 8 research.md).
 - 001-retrouve-amis: Added Rust (Edition 2024) + TypeScript (Nuxt 4 / Vue 3) + Actix-Web 4, sqlx (PostgreSQL), Nuxt 4, Pinia, Tailwind CSS v4

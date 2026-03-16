@@ -143,6 +143,10 @@ import {
   faBan,
   faCircleXmark,
   faShareNodes,
+  faSitemap,
+  faCompressArrowsAlt,
+  faProjectDiagram,
+  faTree,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -304,6 +308,10 @@ library.add(
   faToggleOff,
   faBan,
   faCircleXmark,
+  faSitemap,
+  faCompressArrowsAlt,
+  faProjectDiagram,
+  faTree,
   farCalendar,
   farClock,
   farHeart,

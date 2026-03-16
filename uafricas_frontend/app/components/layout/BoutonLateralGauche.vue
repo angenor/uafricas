@@ -241,6 +241,7 @@ const menuItems: MenuItem[] = [
       { label: 'Africamood', to: '/medias', description: 'Médias et actualités du continent', icon: 'fa-solid fa-tv' },
       { label: 'Africantives', to: '/africantives', description: 'Innovations et startups africaines', icon: 'fa-solid fa-rocket' },
       { label: 'Rootsconnect', to: '/retrouve-amis', description: 'Retrouvez vos proches perdus de vue', icon: 'fa-solid fa-users' },
+      { label: 'FamilyTree', to: '/arbre-genealogique', description: 'Explorez votre arbre généalogique', icon: 'fa-solid fa-tree' },
     ],
   },
   {

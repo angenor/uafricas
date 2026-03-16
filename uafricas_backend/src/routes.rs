@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afrolang, annonces, auth, bibliotheques_humaines, centres_culturels, codimoi, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, moocs, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television};
+use crate::handlers::{admin, africantives, afrolang, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -524,6 +524,52 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // Utilitaires
                     .route("/stats", web::get().to(afrolang::obtenir_stats))
                     .route("/langues", web::get().to(afrolang::lister_langues)),
+            )
+            // Routes Notifications
+            .service(
+                web::scope("/notifications")
+                    .route("/compteur", web::get().to(notification::compteur_notifications))
+                    .route("", web::get().to(notification::lister_notifications))
+                    .route("/{id}/lire", web::post().to(notification::marquer_lue))
+                    .route("/tout-lire", web::post().to(notification::tout_marquer_lu)),
+            )
+            // Routes Arbre généalogique
+            .service(
+                web::scope("/arbre")
+                    .route("/arbre-complet", web::get().to(arbre_genealogique::obtenir_arbre_complet))
+                    .route("/personnes", web::get().to(arbre_genealogique::lister_personnes))
+                    .route("/personnes", web::post().to(arbre_genealogique::creer_personne))
+                    .route("/personnes/{id}", web::get().to(arbre_genealogique::obtenir_personne))
+                    .route("/personnes/{id}", web::put().to(arbre_genealogique::modifier_personne))
+                    .route("/personnes/{id}", web::delete().to(arbre_genealogique::supprimer_personne))
+                    .route("/personnes/{id}/photo", web::post().to(arbre_genealogique::uploader_photo))
+                    .route("/liens", web::post().to(arbre_genealogique::creer_lien))
+                    .route("/liens/{id}", web::delete().to(arbre_genealogique::supprimer_lien))
+                    // Routes Matching / Découvertes
+                    .route("/decouvertes", web::get().to(matching::lister_decouvertes))
+                    .route("/decouvertes/{id}/confirmer", web::post().to(matching::confirmer_suggestion))
+                    .route("/decouvertes/{id}/rejeter", web::post().to(matching::rejeter_suggestion))
+                    .route("/decouvertes/{id}/branches", web::get().to(matching::obtenir_branches))
+                    .route("/decouvertes/{id}/demande-contact", web::post().to(matching::demander_contact))
+                    .route("/demandes-contact/{id}/accepter", web::post().to(matching::accepter_demande))
+                    .route("/demandes-contact/{id}/refuser", web::post().to(matching::refuser_demande))
+                    .route("/recherche-publique", web::get().to(matching::recherche_publique))
+                    // Routes Collaboration
+                    .route("/mes-arbres", web::get().to(collaboration::mes_arbres))
+                    .route("/invitations", web::post().to(collaboration::creer_invitation))
+                    .route("/invitations", web::get().to(collaboration::lister_invitations_recues))
+                    .route("/invitations/{id}/accepter", web::post().to(collaboration::accepter_invitation))
+                    .route("/invitations/{id}/refuser", web::post().to(collaboration::refuser_invitation))
+                    .route("/{arbre_id}/collaborateurs", web::get().to(collaboration::lister_collaborateurs))
+                    .route("/collaborateurs/{id}", web::put().to(collaboration::modifier_permission))
+                    .route("/collaborateurs/{id}", web::delete().to(collaboration::revoquer_collaborateur))
+                    .route("/{arbre_id}/confidentialite", web::put().to(collaboration::modifier_confidentialite_arbre))
+                    .route("/personnes/{id}/confidentialite", web::put().to(collaboration::modifier_confidentialite_personne))
+                    .route("/{arbre_id}/historique", web::get().to(collaboration::obtenir_historique))
+                    // Routes Doublons
+                    .route("/doublons", web::get().to(notification::detecter_doublons))
+                    .route("/doublons/ignorer", web::post().to(notification::ignorer_doublon))
+                    .route("/doublons/fusionner", web::post().to(notification::fusionner_doublons)),
             )
             // Routes de la télévision
             .service(

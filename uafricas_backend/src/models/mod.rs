@@ -1,3 +1,4 @@
+pub mod arbre_genealogique;
 pub mod africantive;
 pub mod afrolang;
 pub mod annonce;
@@ -20,3 +21,6 @@ pub mod admin;
 pub mod pagination;
 pub mod retrouve_amis;
 pub mod utilisateur;
+pub mod matching;
+pub mod collaboration;
+pub mod notification;

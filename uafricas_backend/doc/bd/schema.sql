@@ -86,6 +86,10 @@
 \ir schemas/11_country_profile.sql
 \ir schemas/11b_country_profile_contributions.sql
 \ir schemas/16_retrouve_amis.sql
+\ir schemas/23_arbre_genealogique.sql
+\ir schemas/24_matching.sql
+\ir schemas/25_collaboration.sql
+\ir schemas/26_notifications.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════
