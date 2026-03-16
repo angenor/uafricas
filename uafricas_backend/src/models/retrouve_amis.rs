@@ -279,6 +279,10 @@ pub struct CorrespondanceDetailResponse {
     pub mon_role: String,
     pub resume_anonymise: ResumeAnonyme,
     pub coordonnees_partagees: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message_reponse: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub type_reponse_publique: Option<String>,
     pub created_at: DateTime<Utc>,
     pub expire_at: Option<DateTime<Utc>>,
 }
@@ -573,6 +577,7 @@ pub struct AvisPublicListeRow {
 #[derive(Debug, Serialize)]
 pub struct AvisPublicDetailResponse {
     pub id: Uuid,
+    pub auteur_id: Uuid,
     pub slug: String,
     pub nom_recherche: String,
     pub prenom_recherche: Option<String>,
@@ -739,6 +744,7 @@ impl AvisPublicDetailRow {
         };
         AvisPublicDetailResponse {
             id: self.id,
+            auteur_id: self.auteur_id,
             slug: self.slug.clone().unwrap_or_default(),
             nom_recherche: self.nom_recherche.clone(),
             prenom_recherche: self.prenom_recherche.clone(),

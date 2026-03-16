@@ -12,12 +12,14 @@ interface CorrespondanceDetailProps {
   id: string
   avis_id: string
   score: number
-  details_score: Record<string, number>
+  details_score: Record<string, number | string>
   etat: EtatCorrespondance
   type_cible: string
   mon_role: string
   resume_anonymise: ResumeAnonyme
   coordonnees_partagees?: Record<string, any> | null
+  message_reponse?: string
+  type_reponse_publique?: string
   created_at: string
   expire_at?: string
 }
@@ -52,6 +54,44 @@ const labelsCriteres: Record<string, string> = {
   ville: 'Ville',
   pays: 'Pays',
   periode: 'Periode',
+  source: 'Source',
+  type_reponse: 'Type de reponse',
+  type_relation: 'Relation',
+  localite: 'Localite',
+  localite_rencontre: 'Localite',
+  ecole_rencontre: 'Ecole',
+  ville_rencontre: 'Ville',
+  description: 'Description',
+  description_physique: 'Physique',
+  surnom: 'Surnom',
+  genre: 'Genre',
+  genre_recherche: 'Genre',
+  comment_connu: 'Comment connu',
+  prenom: 'Prenom',
+  nom_recherche: 'Nom recherche',
+}
+
+/** Convertit une cle snake_case en label lisible */
+const labelCritere = (cle: string): string => {
+  if (labelsCriteres[cle]) return labelsCriteres[cle]
+  return cle.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())
+}
+
+/** Labels lisibles pour les valeurs textuelles du score */
+const labelsValeurs: Record<string, string> = {
+  reponse_publique: 'Reponse publique',
+  je_suis_cette_personne: 'Je suis cette personne',
+  je_la_connais: 'Je la connais',
+  jai_des_informations: 'J\'ai des informations',
+  avis: 'Avis',
+  profil: 'Profil',
+}
+
+/** Convertit une valeur snake_case en label lisible */
+const labelValeur = (val: string | number): string => {
+  if (typeof val === 'number') return `${val}%`
+  if (labelsValeurs[val]) return labelsValeurs[val]
+  return val.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())
 }
 
 // Couleur du score individuel
@@ -140,45 +180,40 @@ const formaterDate = (iso: string): string => {
   <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
     <!-- En-tete -->
     <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-6 border-b border-gray-100">
-      <div class="flex items-start justify-between">
-        <div class="flex items-center gap-4">
-          <!-- Initiales -->
-          <div class="w-16 h-16 rounded-full bg-amber-700 text-white font-bold flex items-center justify-center text-xl shadow-sm">
-            {{ correspondance.resume_anonymise.initiales }}
-          </div>
-          <div>
-            <div class="flex items-center gap-3 mb-1">
-              <RetrouveAmisScoreBadge :score="correspondance.score" taille="lg" />
-              <span
-                class="text-xs px-3 py-1 rounded-full font-medium border"
-                :class="etatClasses"
-              >
-                {{ etatLabel }}
-              </span>
-            </div>
-            <p class="text-sm text-gray-500">
-              Correspondance creee le {{ formaterDate(correspondance.created_at) }}
-            </p>
-          </div>
+      <div class="flex flex-wrap items-center gap-4">
+        <!-- Initiales -->
+        <div class="w-16 h-16 rounded-full bg-amber-700 text-white font-bold flex items-center justify-center text-xl shadow-sm shrink-0">
+          {{ correspondance.resume_anonymise.initiales }}
         </div>
-        <!-- Type et role -->
-        <div class="flex flex-col items-end gap-2">
-          <span
-            class="text-xs px-2 py-0.5 rounded-full font-medium"
-            :class="correspondance.type_cible === 'avis'
-              ? 'bg-indigo-50 text-indigo-700'
-              : 'bg-violet-50 text-violet-700'"
-          >
-            {{ correspondance.type_cible === 'avis' ? 'Via avis' : 'Via profil' }}
-          </span>
-          <span
-            class="text-xs px-2 py-0.5 rounded-full font-medium"
-            :class="correspondance.mon_role === 'auteur'
-              ? 'bg-amber-100 text-amber-700'
-              : 'bg-sky-50 text-sky-700'"
-          >
-            {{ correspondance.mon_role === 'auteur' ? 'Vous etes l\'auteur' : 'Vous etes la cible' }}
-          </span>
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <RetrouveAmisScoreBadge :score="correspondance.score" taille="lg" />
+            <span
+              class="text-xs px-3 py-1 rounded-full font-medium border"
+              :class="etatClasses"
+            >
+              {{ etatLabel }}
+            </span>
+            <span
+              class="text-xs px-2 py-0.5 rounded-full font-medium"
+              :class="correspondance.type_cible === 'avis'
+                ? 'bg-indigo-50 text-indigo-700'
+                : 'bg-violet-50 text-violet-700'"
+            >
+              {{ correspondance.type_cible === 'avis' ? 'Via avis' : 'Via profil' }}
+            </span>
+            <span
+              class="text-xs px-2 py-0.5 rounded-full font-medium"
+              :class="correspondance.mon_role === 'auteur'
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-sky-50 text-sky-700'"
+            >
+              {{ correspondance.mon_role === 'auteur' ? 'Vous etes l\'auteur' : 'Vous etes la cible' }}
+            </span>
+          </div>
+          <p class="text-sm text-gray-500">
+            Correspondance creee le {{ formaterDate(correspondance.created_at) }}
+          </p>
         </div>
       </div>
     </div>
@@ -196,18 +231,43 @@ const formaterDate = (iso: string): string => {
             :key="critere"
             class="flex items-center gap-4"
           >
-            <span class="text-sm text-gray-600 w-20 shrink-0">
-              {{ labelsCriteres[critere as string] || critere }}
+            <span class="text-sm text-gray-600 w-28 shrink-0">
+              {{ labelCritere(critere as string) }}
             </span>
-            <div class="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                class="h-full rounded-full transition-all duration-500"
-                :class="couleurBarre(valeur)"
-                :style="{ width: `${valeur}%` }"
-              />
-            </div>
-            <span class="text-sm font-medium text-gray-700 w-12 text-right">{{ valeur }}%</span>
+            <!-- Valeur numerique : barre de progression -->
+            <template v-if="typeof valeur === 'number'">
+              <div class="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  class="h-full rounded-full transition-all duration-500"
+                  :class="couleurBarre(valeur)"
+                  :style="{ width: `${valeur}%` }"
+                />
+              </div>
+              <span class="text-sm font-medium text-gray-700 w-12 text-right">{{ valeur }}%</span>
+            </template>
+            <!-- Valeur textuelle : badge lisible -->
+            <template v-else>
+              <span class="text-sm font-medium text-gray-700 px-3 py-1 bg-gray-100 rounded-full">
+                {{ labelValeur(valeur) }}
+              </span>
+            </template>
           </div>
+        </div>
+      </section>
+
+      <!-- Message de reponse publique -->
+      <section v-if="correspondance.message_reponse">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+          <font-awesome-icon :icon="['fas', 'comment-dots']" class="mr-2 text-amber-600" />
+          Message recu
+        </h3>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-5">
+          <div v-if="correspondance.type_reponse_publique" class="mb-3">
+            <span class="text-xs px-3 py-1 rounded-full font-medium bg-blue-100 text-blue-700">
+              {{ labelValeur(correspondance.type_reponse_publique) }}
+            </span>
+          </div>
+          <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ correspondance.message_reponse }}</p>
         </div>
       </section>
 

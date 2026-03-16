@@ -1312,6 +1312,8 @@ pub async fn detail_correspondance(
         cible_ville: Option<String>,
         cible_periode_debut: Option<i32>,
         cible_periode_fin: Option<i32>,
+        message_reponse: Option<String>,
+        type_reponse_publique: Option<String>,
     }
 
     let corr: CorrDetailRow = sqlx::query_as(
@@ -1333,11 +1335,14 @@ pub async fn detail_correspondance(
                     WHEN c.type_cible = 'profil' THEN u.ville
                 END AS cible_ville,
                 CASE WHEN c.type_cible = 'avis' THEN a2.periode_debut END AS cible_periode_debut,
-                CASE WHEN c.type_cible = 'avis' THEN a2.periode_fin END AS cible_periode_fin
+                CASE WHEN c.type_cible = 'avis' THEN a2.periode_fin END AS cible_periode_fin,
+                rp.message AS message_reponse,
+                rp.type_reponse::text AS type_reponse_publique
          FROM retrouve_amis.correspondance c
          JOIN retrouve_amis.avis_recherche a ON c.avis_id = a.id
          LEFT JOIN retrouve_amis.avis_recherche a2 ON c.cible_avis_id = a2.id
          LEFT JOIN iam.utilisateur u ON c.cible_utilisateur_id = u.id
+         LEFT JOIN retrouve_amis.reponse_publique rp ON rp.correspondance_id = c.id
          WHERE c.id = $1"
     )
     .bind(corr_id)
@@ -1393,6 +1398,8 @@ pub async fn detail_correspondance(
                 criteres_communs: criteres,
             },
             coordonnees_partagees,
+            message_reponse: corr.message_reponse,
+            type_reponse_publique: corr.type_reponse_publique,
             created_at: corr.created_at,
             expire_at: corr.expire_at,
         }),

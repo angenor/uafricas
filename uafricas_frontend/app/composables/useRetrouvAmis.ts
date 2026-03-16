@@ -105,8 +105,10 @@ export interface Correspondance {
 
 /** Correspondance (detail avec score et coordonnees) */
 export interface CorrespondanceDetail extends Correspondance {
-  details_score: Record<string, number>
+  details_score: Record<string, number | string>
   coordonnees_partagees?: Record<string, any>
+  message_reponse?: string
+  type_reponse_publique?: string
 }
 
 /** Notification du module Retrouv'Amis */
@@ -145,6 +147,7 @@ export interface TableauDeBord {
 /** Detail complet d'un avis public actif */
 export interface AvisPublicDetail {
   id: string
+  auteur_id: string
   slug: string
   nom_recherche: string
   prenom_recherche?: string
@@ -444,6 +447,7 @@ export const useRetrouvAmis = () => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBaseUrl as string
   const userStore = useUserStore()
+  const { refreshAccessToken } = useAuth()
 
   const chargement = ref(false)
   const erreur = ref<string | null>(null)
@@ -456,6 +460,21 @@ export const useRetrouvAmis = () => {
     return {}
   }
 
+  /** $fetch avec retry automatique sur 401 (refresh du token puis re-essai) */
+  const fetchAvecAuth = async <T>(url: string, options: Record<string, any> = {}): Promise<T> => {
+    try {
+      return await $fetch<T>(url, { ...options, headers: { ...authHeaders(), ...options.headers } })
+    } catch (e: any) {
+      if (e?.status === 401 || e?.statusCode === 401) {
+        const refreshed = await refreshAccessToken()
+        if (refreshed) {
+          return await $fetch<T>(url, { ...options, headers: { ...authHeaders(), ...options.headers } })
+        }
+      }
+      throw e
+    }
+  }
+
   // ── Avis de recherche ────────────────────────────────────────
 
   /**
@@ -466,11 +485,10 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ id: string; etat: string; slug: string; correspondances_trouvees: number }>>(
+      const reponse = await fetchAvecAuth<ApiResponse<{ id: string; etat: string; slug: string; correspondances_trouvees: number }>>(
         `${apiBase}/api/retrouve-amis/avis`,
         {
           method: 'POST',
-          headers: authHeaders(),
           body: formData,
         },
       )
@@ -510,9 +528,7 @@ export const useRetrouvAmis = () => {
       const queryString = params.toString()
       const url = `${apiBase}/api/retrouve-amis/avis${queryString ? `?${queryString}` : ''}`
 
-      const reponse = await $fetch<ApiResponse<AvisListeAPI>>(url, {
-        headers: authHeaders(),
-      })
+      const reponse = await fetchAvecAuth<ApiResponse<AvisListeAPI>>(url, {})
 
       if (!reponse.success || !reponse.data) {
         throw new Error(reponse.error || 'Erreur lors du chargement des avis')
@@ -539,9 +555,8 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<AvisRechercheDetail>>(
-        `${apiBase}/api/retrouve-amis/avis/${id}`,
-        { headers: authHeaders() },
+      const reponse = await fetchAvecAuth<ApiResponse<AvisRechercheDetail>>(
+        `${apiBase}/api/retrouve-amis/avis/${id}`, {},
       )
 
       if (!reponse.success || !reponse.data) {
@@ -569,11 +584,10 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ id: string; correspondances_trouvees: number }>>(
+      const reponse = await fetchAvecAuth<ApiResponse<{ id: string; correspondances_trouvees: number }>>(
         `${apiBase}/api/retrouve-amis/avis/${id}`,
         {
           method: 'PUT',
-          headers: authHeaders(),
           body: formData,
         },
       )
@@ -603,12 +617,9 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ id: string; etat: string }>>(
+      const reponse = await fetchAvecAuth<ApiResponse<{ id: string; etat: string }>>(
         `${apiBase}/api/retrouve-amis/avis/${id}/cloturer`,
-        {
-          method: 'POST',
-          headers: authHeaders(),
-        },
+        { method: 'POST' },
       )
 
       if (!reponse.success || !reponse.data) {
@@ -647,9 +658,7 @@ export const useRetrouvAmis = () => {
       const queryString = params.toString()
       const url = `${apiBase}/api/retrouve-amis/correspondances${queryString ? `?${queryString}` : ''}`
 
-      const reponse = await $fetch<ApiResponse<CorrespondanceListeAPI>>(url, {
-        headers: authHeaders(),
-      })
+      const reponse = await fetchAvecAuth<ApiResponse<CorrespondanceListeAPI>>(url, {})
 
       if (!reponse.success || !reponse.data) {
         throw new Error(reponse.error || 'Erreur lors du chargement des correspondances')
@@ -676,9 +685,8 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<CorrespondanceDetail>>(
-        `${apiBase}/api/retrouve-amis/correspondances/${id}`,
-        { headers: authHeaders() },
+      const reponse = await fetchAvecAuth<ApiResponse<CorrespondanceDetail>>(
+        `${apiBase}/api/retrouve-amis/correspondances/${id}`, {},
       )
 
       if (!reponse.success || !reponse.data) {
@@ -706,11 +714,10 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ id: string; etat: string }>>(
+      const reponse = await fetchAvecAuth<ApiResponse<{ id: string; etat: string }>>(
         `${apiBase}/api/retrouve-amis/correspondances/${id}/accepter`,
         {
           method: 'POST',
-          headers: authHeaders(),
           body: coordonnees,
         },
       )
@@ -740,12 +747,9 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ id: string; etat: string }>>(
+      const reponse = await fetchAvecAuth<ApiResponse<{ id: string; etat: string }>>(
         `${apiBase}/api/retrouve-amis/correspondances/${id}/refuser`,
-        {
-          method: 'POST',
-          headers: authHeaders(),
-        },
+        { method: 'POST' },
       )
 
       if (!reponse.success || !reponse.data) {
@@ -775,11 +779,10 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ id: string }>>(
+      const reponse = await fetchAvecAuth<ApiResponse<{ id: string }>>(
         `${apiBase}/api/retrouve-amis/avis/${avisId}/signaler`,
         {
           method: 'POST',
-          headers: authHeaders(),
           body: data,
         },
       )
@@ -819,9 +822,7 @@ export const useRetrouvAmis = () => {
       const queryString = params.toString()
       const url = `${apiBase}/api/retrouve-amis/notifications${queryString ? `?${queryString}` : ''}`
 
-      const reponse = await $fetch<ApiResponse<NotificationListeAPI>>(url, {
-        headers: authHeaders(),
-      })
+      const reponse = await fetchAvecAuth<ApiResponse<NotificationListeAPI>>(url, {})
 
       if (!reponse.success || !reponse.data) {
         throw new Error(reponse.error || 'Erreur lors du chargement des notifications')
@@ -847,12 +848,9 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<null>>(
+      const reponse = await fetchAvecAuth<ApiResponse<null>>(
         `${apiBase}/api/retrouve-amis/notifications/${id}/lu`,
-        {
-          method: 'POST',
-          headers: authHeaders(),
-        },
+        { method: 'POST' },
       )
 
       if (!reponse.success) {
@@ -876,12 +874,9 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ mises_a_jour: number }>>(
+      const reponse = await fetchAvecAuth<ApiResponse<{ mises_a_jour: number }>>(
         `${apiBase}/api/retrouve-amis/notifications/tout-lu`,
-        {
-          method: 'POST',
-          headers: authHeaders(),
-        },
+        { method: 'POST' },
       )
 
       if (!reponse.success || !reponse.data) {
@@ -908,9 +903,8 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<TableauDeBord>>(
-        `${apiBase}/api/retrouve-amis/tableau-de-bord`,
-        { headers: authHeaders() },
+      const reponse = await fetchAvecAuth<ApiResponse<TableauDeBord>>(
+        `${apiBase}/api/retrouve-amis/tableau-de-bord`, {},
       )
 
       if (!reponse.success || !reponse.data) {
@@ -940,11 +934,10 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ est_trouvable: boolean; correspondances_trouvees: number }>>(
+      const reponse = await fetchAvecAuth<ApiResponse<{ est_trouvable: boolean; correspondances_trouvees: number }>>(
         `${apiBase}/api/auth/profil/trouvable`,
         {
           method: 'PATCH',
-          headers: authHeaders(),
           body: { est_trouvable },
         },
       )
@@ -974,9 +967,8 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<ParcoursTrouvable[]>>(
-        `${apiBase}/api/auth/profil/parcours`,
-        { headers: authHeaders() },
+      const reponse = await fetchAvecAuth<ApiResponse<ParcoursTrouvable[]>>(
+        `${apiBase}/api/auth/profil/parcours`, {},
       )
 
       if (!reponse.success || !reponse.data) {
@@ -1004,11 +996,10 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ id: string }>>(
+      const reponse = await fetchAvecAuth<ApiResponse<{ id: string }>>(
         `${apiBase}/api/auth/profil/parcours`,
         {
           method: 'POST',
-          headers: authHeaders(),
           body: data,
         },
       )
@@ -1038,11 +1029,10 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<null>>(
+      const reponse = await fetchAvecAuth<ApiResponse<null>>(
         `${apiBase}/api/auth/profil/parcours/${id}`,
         {
           method: 'PUT',
-          headers: authHeaders(),
           body: data,
         },
       )
@@ -1072,12 +1062,9 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<null>>(
+      const reponse = await fetchAvecAuth<ApiResponse<null>>(
         `${apiBase}/api/auth/profil/parcours/${id}`,
-        {
-          method: 'DELETE',
-          headers: authHeaders(),
-        },
+        { method: 'DELETE' },
       )
 
       if (!reponse.success) {
@@ -1140,11 +1127,10 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ id: string }>>(
+      const reponse = await fetchAvecAuth<ApiResponse<{ id: string }>>(
         `${apiBase}/api/retrouve-amis/public/${slug}/signaler`,
         {
           method: 'POST',
-          headers: authHeaders(),
           body: data,
         },
       )
@@ -1174,11 +1160,10 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<{ id: string; message: string }>>(
+      const reponse = await fetchAvecAuth<ApiResponse<{ id: string; message: string }>>(
         `${apiBase}/api/retrouve-amis/public/${slug}/demande-retrait`,
         {
           method: 'POST',
-          headers: authHeaders(),
           body: { motif },
         },
       )
@@ -1210,11 +1195,10 @@ export const useRetrouvAmis = () => {
     erreur.value = null
 
     try {
-      const reponse = await $fetch<ApiResponse<ReponsePubliqueResult>>(
+      const reponse = await fetchAvecAuth<ApiResponse<ReponsePubliqueResult>>(
         `${apiBase}/api/retrouve-amis/public/${slug}/repondre`,
         {
           method: 'POST',
-          headers: authHeaders(),
           body: data,
         },
       )

@@ -6,6 +6,15 @@ const props = defineProps<{
   avis: AvisPublicResume
 }>()
 
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBaseUrl as string
+
+const photoComplete = computed(() => {
+  if (!props.avis.photo_url) return null
+  if (props.avis.photo_url.startsWith('http')) return props.avis.photo_url
+  return `${apiBase}${props.avis.photo_url}`
+})
+
 const labelRelation = computed(() => {
   if (!props.avis.type_relation) return null
   return TYPES_RELATION.find(t => t.value === props.avis.type_relation)?.label ?? props.avis.type_relation
@@ -37,9 +46,9 @@ const auteurDisplay = computed(() => {
     </div>
 
     <!-- Photo si disponible -->
-    <div v-if="props.avis.photo_url" class="relative h-48 bg-gray-100" :class="{ 'mt-9': props.avis.etat === 'cloture' }">
+    <div v-if="photoComplete" class="relative h-48 bg-gray-100" :class="{ 'mt-9': props.avis.etat === 'cloture' }">
       <img
-        :src="props.avis.photo_url"
+        :src="photoComplete"
         :alt="`Photo de ${props.avis.nom_recherche}`"
         class="w-full h-full object-cover"
         :class="{ 'opacity-70': props.avis.etat === 'cloture' }"

@@ -3,7 +3,7 @@ import type { TypeReponsePublique } from '~/composables/useRetrouvAmis'
 
 const props = defineProps<{
   slug: string
-  auteurId: string
+  auteurId?: string
 }>()
 
 const userStore = useUserStore()
