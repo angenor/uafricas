@@ -18,6 +18,8 @@ export default defineNuxtConfig({
 
   // Configuration d'execution pour l'URL de l'API backend
   runtimeConfig: {
+    // URL utilisee cote serveur (SSR) — en production Docker, pointe vers le service backend interne
+    ssrApiBaseUrl: process.env.NUXT_SSR_API_BASE_URL || '',
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8080',
     },

@@ -5,13 +5,19 @@ definePageMeta({ layout: 'default' })
 
 const route = useRoute()
 const config = useRuntimeConfig()
-const apiBase = config.public.apiBaseUrl as string
 const slug = route.params.slug as string
 const userStore = useUserStore()
 
-// Charger les donnees cote serveur via useFetch (SSR)
+// En SSR, utiliser l'URL interne du backend (Docker) si configuree, sinon l'URL publique
+// En client, utiliser l'URL publique (relative ou absolue selon l'env)
+const apiBase = import.meta.server
+  ? ((config as any).ssrApiBaseUrl || config.public.apiBaseUrl || '')
+  : (config.public.apiBaseUrl as string)
+
+// Charger les donnees cote serveur via useFetch (SSR) — endpoint public sans auth
 const { data, error: fetchError } = await useFetch<{ success: boolean; data: AvisPublicDetail | AvisPublicEtat | null; error: string | null }>(
-  `${apiBase}/api/retrouve-amis/public/${slug}`,
+  `/api/retrouve-amis/public/${slug}`,
+  { baseURL: apiBase },
 )
 
 const avis = computed(() => data.value?.data ?? null)
@@ -187,11 +193,15 @@ useHead({
         </div>
 
         <RetrouveAmisFormulaireReponse
-          v-else
+          v-else-if="userStore.user?.id !== (avis as AvisPublicDetail).auteur_id"
           :slug="slug"
           :auteur-id="(avis as AvisPublicDetail).auteur_id"
         />
-        <RetrouveAmisDemandeRetrait :slug="slug" @suspendu="$router.go(0)" />
+        <RetrouveAmisDemandeRetrait
+          v-if="userStore.isAuthenticated && userStore.user?.id !== (avis as AvisPublicDetail).auteur_id"
+          :slug="slug"
+          @suspendu="$router.go(0)"
+        />
       </template>
     </div>
   </div>

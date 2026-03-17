@@ -69,6 +69,8 @@ services:
     environment:
       # Les composables incluent deja /api/ dans leurs URLs
       NUXT_PUBLIC_API_BASE_URL: ""
+      # URL interne pour les appels SSR (Docker → backend directement, sans passer par nginx/internet)
+      NUXT_SSR_API_BASE_URL: "http://uafricas_backend:8080"
     depends_on:
       - backend
     networks:
