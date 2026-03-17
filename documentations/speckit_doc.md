@@ -25,3 +25,13 @@ specify check — Vérifier les outils installés (git, claude, gemini, cursor, 
 /speckit.checklist — Générer une checklist qualité pour valider la complétude et la clarté des exigences
 Étape 8 :
 /speckit.implement — Exécuter toutes les tâches et construire l'application
+
+
+
+
+Approche recommandée (testée par des utilisateurs dans la Discussion #152) :
+
+Corrigez d'abord le bug directement avec votre agent (Claude Code, Copilot, etc.) dans le code de la feature 1
+Puis mettez à jour la spec en lançant :
+
+/speckit.specify Implementation of <00X-spec-name> was flawed and was corrected as above. Update the required files in spec <00X>.

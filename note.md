@@ -55,3 +55,6 @@ il peut arriver que `agent-browser --headed` soit lancé par un autre programme 
   qu'elle ait renseigné dans son profil : école = "Lycée de Bamako", ville =
   "Bamako", etc.
   - L'algo matchera son profil avec l'avis d'Amadou
+
+
+  /btw Ask a quick side question without interrupting the main conversation
