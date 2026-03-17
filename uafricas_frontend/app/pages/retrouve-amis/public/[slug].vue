@@ -26,7 +26,17 @@ const estNonActif = computed(() => avis.value && 'message' in avis.value && !('a
 const nonDisponible = computed(() => fetchError.value || !data.value?.success)
 
 // SEO — balises completes (Open Graph + Twitter Card pour apercu riche)
-const ogImageUrl = 'https://www.africans-world.org/images/og-retrouve-amis.png'
+const ogImageDefault = 'https://www.africans-world.org/images/og-retrouve-amis.png'
+const ogImageUrl = computed(() => {
+  if (estActif.value) {
+    const a = avis.value as AvisPublicDetail
+    if (a.photo_url) {
+      if (a.photo_url.startsWith('http')) return a.photo_url
+      return `https://www.africans-world.org${a.photo_url}`
+    }
+  }
+  return ogImageDefault
+})
 
 useSeoMeta({
   title: () => {
@@ -63,7 +73,7 @@ useSeoMeta({
   },
   ogType: 'article',
   ogUrl: () => `https://www.africans-world.org/retrouve-amis/public/${slug}`,
-  ogImage: ogImageUrl,
+  ogImage: () => ogImageUrl.value,
   twitterCard: 'summary_large_image',
   twitterTitle: () => {
     if (estActif.value) {
@@ -79,7 +89,7 @@ useSeoMeta({
     }
     return 'Retrouvez des amis perdus de vue sur UAfricas.'
   },
-  twitterImage: ogImageUrl,
+  twitterImage: () => ogImageUrl.value,
 })
 
 // noindex/nofollow pour les pages non-actives
