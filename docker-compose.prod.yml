@@ -109,7 +109,7 @@ services:
     environment:
       LIVEKIT_KEYS: "${LIVEKIT_API_KEY:-devkey}: ${LIVEKIT_API_SECRET:-secret}"
     volumes:
-      - ./livekit.yaml:/livekit.yaml
+      - ./livekit.prod.yaml:/livekit.yaml
     command: --config /livekit.yaml
     networks:
       - uafricas_net

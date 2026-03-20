@@ -1275,9 +1275,43 @@ pub async fn quitter_session(
 
     log::info!("Utilisateur {} a quitte la session {}", utilisateur_id, id);
 
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+    // Verifier s'il reste des participants actifs — si non, terminer la session automatiquement
+    let participants_actifs: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM afrolang.session_participant
+         WHERE session_id = $1 AND quitte_at IS NULL",
+    )
+    .bind(id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let session_terminee = if participants_actifs == 0 {
+        // Terminer la session si elle est en cours
+        let rows = sqlx::query(
+            "UPDATE afrolang.session
+             SET etat = 'terminee', termine_at = NOW(),
+                 duree_secondes = EXTRACT(EPOCH FROM (NOW() - demarre_at))::INT,
+                 updated_at = NOW()
+             WHERE id = $1 AND etat = 'en_cours'",
+        )
+        .bind(id)
+        .execute(pool.get_ref())
+        .await?;
+
+        if rows.rows_affected() > 0 {
+            log::info!("Session {} terminee automatiquement (dernier participant parti)", id);
+            true
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: None,
+        data: Some(serde_json::json!({
+            "session_terminee": session_terminee
+        })),
         error: None,
     }))
 }
