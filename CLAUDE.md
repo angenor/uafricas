@@ -143,3 +143,9 @@ Mettre à jour ce fichier lors de: ajout/suppression service Docker ou dépendan
 ## Recent Changes
 - 001-personnes-arbre: Added schema `arbre_genealogique` (4 tables: personnes, arbres, rattachements, liens_familiaux). Backend: 8 handlers CRUD + liens + photo upload, cycle detection CTE, cascade soft delete. Frontend: composable `useArbreGenealogique`, mock `arbre-genealogique.ts`, composants `PersonneForm.vue` / `PersonneCard.vue` / `LienFamilialForm.vue`, pages `arbre-genealogique/index.vue` + `[id].vue`. Architecture fondation matching inter-arbres documentée (Décision 8 research.md).
 - 001-retrouve-amis: Added Rust (Edition 2024) + TypeScript (Nuxt 4 / Vue 3) + Actix-Web 4, sqlx (PostgreSQL), Nuxt 4, Pinia, Tailwind CSS v4
+
+
+## Conventions
+
+- **Français avec accents** (é, è, ê, à, ç, ù) obligatoires dans le code et les contenus
+- **Nommage de fichiers/dossiers : PAS d'accents ni de caractères spéciaux** (problèmes d'encodage SSH/Docker en production). Utiliser uniquement `[a-z0-9_-]`.

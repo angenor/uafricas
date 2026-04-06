@@ -130,8 +130,7 @@ export interface CreerPersonneForm {
   genre?: Genre
   naissance?: DatePartielle
   naissance_lieu?: string
-  deces?: DatePartielle
-  deces_lieu?: string
+  est_decede?: boolean
 }
 
 export interface ModifierPersonneForm {
@@ -140,8 +139,7 @@ export interface ModifierPersonneForm {
   genre?: Genre
   naissance?: DatePartielle
   naissance_lieu?: string
-  deces?: DatePartielle
-  deces_lieu?: string
+  est_decede?: boolean
 }
 
 export interface CreerLienForm {
