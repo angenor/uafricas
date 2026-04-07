@@ -119,21 +119,21 @@ useHead({
       </div>
     </div>
 
-    <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto px-4 -mt-6 relative z-10 pb-12">
       <!-- Erreur / non disponible -->
-      <div v-if="nonDisponible" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-        <div class="w-20 h-20 mx-auto mb-6 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center">
-          <font-awesome-icon :icon="['fas', 'circle-xmark']" class="text-3xl" />
+      <div v-if="nonDisponible" class="rounded-2xl bg-white p-14 text-center shadow-lg ring-1 ring-gray-200/60">
+        <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-50">
+          <font-awesome-icon :icon="['fas', 'circle-xmark']" class="text-4xl text-gray-300" />
         </div>
         <h2 class="text-xl font-semibold text-gray-700 mb-2">
           Avis non disponible
         </h2>
-        <p class="text-gray-500 mb-6">
+        <p class="text-gray-400 text-sm mb-8">
           Cet avis de recherche n'existe pas ou n'est plus disponible.
         </p>
         <NuxtLink
           to="/retrouve-amis"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+          class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md"
         >
           <font-awesome-icon :icon="['fas', 'arrow-left']" />
           Retour a Retrouv'Amis
@@ -141,31 +141,33 @@ useHead({
       </div>
 
       <!-- Avis non actif (cloture / suspendu) -->
-      <div v-else-if="estNonActif" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-        <div class="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center"
+      <div v-else-if="estNonActif" class="rounded-2xl bg-white p-14 text-center shadow-lg ring-1 ring-gray-200/60">
+        <div
+          class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full"
           :class="(avis as AvisPublicEtat).etat === 'cloture'
-            ? 'bg-green-50 text-custom-green'
-            : 'bg-orange-50 text-orange-500'"
+            ? 'bg-green-50'
+            : 'bg-orange-50'"
         >
           <font-awesome-icon
             :icon="(avis as AvisPublicEtat).etat === 'cloture'
               ? ['fas', 'heart']
               : ['fas', 'shield-halved']"
-            class="text-3xl"
+            class="text-4xl"
+            :class="(avis as AvisPublicEtat).etat === 'cloture' ? 'text-custom-green' : 'text-orange-400'"
           />
         </div>
         <h2 class="text-xl font-semibold text-gray-700 mb-2">
           {{ (avis as AvisPublicEtat).message }}
         </h2>
-        <p v-if="(avis as AvisPublicEtat).etat === 'cloture'" class="text-gray-500 mb-6">
+        <p v-if="(avis as AvisPublicEtat).etat === 'cloture'" class="text-gray-400 text-sm mb-8">
           L'auteur de cet avis a retrouve la personne qu'il recherchait.
         </p>
-        <p v-else class="text-gray-500 mb-6">
+        <p v-else class="text-gray-400 text-sm mb-8">
           Un examen de cet avis est en cours. Veuillez reessayer plus tard.
         </p>
         <NuxtLink
           to="/retrouve-amis"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+          class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md"
         >
           <font-awesome-icon :icon="['fas', 'arrow-left']" />
           Retour a Retrouv'Amis
@@ -175,27 +177,31 @@ useHead({
       <!-- Avis actif : contenu complet -->
       <template v-else-if="estActif">
         <RetrouveAmisPagePublique :avis="(avis as AvisPublicDetail)" />
+
         <RetrouveAmisBoutonsPartage
           :slug="slug"
           :compteur-partages="(avis as AvisPublicDetail).compteur_partages"
           :nom-recherche="(avis as AvisPublicDetail).nom_recherche"
           :prenom-recherche="(avis as AvisPublicDetail).prenom_recherche"
         />
+
         <!-- CTA connexion pour visiteurs non connectes -->
         <div
           v-if="!userStore.isAuthenticated"
-          class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-6 text-center"
+          class="mt-6 rounded-2xl bg-linear-to-br from-amber-50 to-orange-50 p-8 text-center ring-1 ring-amber-200/60"
         >
-          <font-awesome-icon :icon="['fas', 'user-lock']" class="text-amber-600 text-2xl mb-3" />
-          <p class="text-gray-800 font-medium mb-2">
+          <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+            <font-awesome-icon :icon="['fas', 'user-lock']" class="text-xl text-amber-600" />
+          </div>
+          <p class="text-lg font-semibold text-gray-800 mb-1">
             Vous connaissez cette personne ?
           </p>
-          <p class="text-gray-600 text-sm mb-4">
+          <p class="text-gray-500 text-sm mb-6 max-w-md mx-auto">
             Connectez-vous pour contacter l'auteur de cet avis et l'aider a retrouver la personne recherchee.
           </p>
           <NuxtLink
             :to="`/login?redirect=${encodeURIComponent(`/retrouve-amis/public/${slug}`)}`"
-            class="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+            class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md"
           >
             <font-awesome-icon :icon="['fas', 'right-to-bracket']" />
             Se connecter pour repondre

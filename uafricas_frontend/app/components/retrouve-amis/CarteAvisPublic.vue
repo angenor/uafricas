@@ -54,11 +54,14 @@ const auteurDisplay = computed(() => {
         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         :class="{ 'grayscale opacity-60': props.avis.etat === 'cloture' }"
       >
-      <!-- Placeholder si pas de photo -->
-      <div v-else class="flex h-full w-full items-center justify-center">
-        <div class="flex h-24 w-24 items-center justify-center rounded-full bg-amber-200/60 text-amber-600">
-          <font-awesome-icon :icon="['fas', 'user']" class="text-4xl" />
+      <!-- Placeholder silhouette inconnu -->
+      <div v-else class="flex h-full w-full flex-col items-center justify-center bg-linear-to-br from-gray-200 to-gray-300">
+        <!-- Silhouette tete + epaules -->
+        <div class="relative mb-1">
+          <div class="h-16 w-16 rounded-full bg-gray-400/50" />
+          <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 h-10 w-24 rounded-t-full bg-gray-400/50" />
         </div>
+        <span class="mt-6 text-xs font-semibold uppercase tracking-wider text-gray-500/80">Photo non disponible</span>
       </div>
       <!-- Degrade bas pour lisibilite -->
       <div class="absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-black/50 to-transparent" />

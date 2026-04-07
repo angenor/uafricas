@@ -85,24 +85,24 @@ const reseaux = computed(() => [
 
 <template>
   <div class="mt-6">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm text-gray-500 uppercase tracking-wide font-medium">
+    <div class="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-200/60">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-400">
+          <font-awesome-icon :icon="['fas', 'share-nodes']" class="text-amber-600" />
           Partager cet avis
         </h2>
-        <span class="flex items-center gap-1.5 text-sm text-gray-500">
-          <font-awesome-icon :icon="['fas', 'share-nodes']" class="text-amber-700" />
+        <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200/60">
           {{ compteur }} partage{{ compteur !== 1 ? 's' : '' }}
         </span>
       </div>
 
-      <div class="flex flex-wrap gap-3">
+      <div class="flex flex-wrap gap-2.5">
         <!-- Boutons reseaux sociaux -->
         <button
           v-for="reseau in reseaux"
           :key="reseau.nom"
           type="button"
-          class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-medium rounded-lg transition-colors"
+          class="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md active:scale-95 cursor-pointer"
           :class="reseau.couleur"
           :title="`Partager sur ${reseau.nom}`"
           @click="partager(reseau.url)"
@@ -114,10 +114,10 @@ const reseaux = computed(() => [
         <!-- Bouton copier le lien -->
         <button
           type="button"
-          class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors"
+          class="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-sm transition-all active:scale-95 cursor-pointer"
           :class="copieLienOk
-            ? 'bg-green-100 text-green-700 border border-green-300'
-            : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'"
+            ? 'bg-green-50 text-green-700 ring-1 ring-green-300'
+            : 'bg-gray-50 text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100'"
           @click="copierLien"
         >
           <font-awesome-icon :icon="copieLienOk ? ['fas', 'check'] : ['fas', 'link']" />
