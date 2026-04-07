@@ -1,13 +1,12 @@
 <template>
   <header class="absolute top-0 w-full z-50 bg-linear-to-t from-white shadow-md">
-    <!-- Ligne 1 : Logo centré (desktop) / Logo + hamburger (mobile) -->
-    <div class="flex items-center justify-between lg:justify-center px-4 lg:px-6 h-14 relative">
+    <!-- Mobile : Logo + hamburger -->
+    <div class="flex items-center justify-between lg:hidden px-4 h-14">
       <NuxtLink to="/">
         <img class="h-10 sm:h-12" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
       </NuxtLink>
 
-      <!-- Recherche + Hamburger mobile -->
-      <div class="flex items-center gap-1 lg:hidden">
+      <div class="flex items-center gap-1">
         <button
           class="p-2 text-custom-chocolat"
           aria-label="Rechercher"
@@ -25,12 +24,18 @@
       </div>
     </div>
 
-    <!-- Ligne 2 : Navigation desktop -->
-    <nav class="hidden lg:flex items-center py-1 px-4 lg:px-6">
+    <!-- Desktop : Logo à gauche + Navigation + Auth -->
+    <nav class="hidden lg:flex items-center py-1.5 px-4 lg:px-6">
+      <!-- Logo à gauche -->
+      <NuxtLink to="/" class="shrink-0 mr-4">
+        <img class="h-11" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
+      </NuxtLink>
+
+      <!-- Espacement pour centrer les menus -->
       <div class="flex-1" />
 
       <!-- Menus principaux -->
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-0.5 xl:gap-1">
         <div
           v-for="menu in menus"
           :key="menu.id"
@@ -43,12 +48,12 @@
             class="flex flex-col items-center px-3 xl:px-4 py-1.5 rounded-lg hover:bg-gray-50 transition-all duration-150 cursor-pointer"
           >
             <span
-              class="text-sm font-semibold whitespace-nowrap transition-colors duration-150"
+              class="text-base font-semibold whitespace-nowrap transition-colors duration-150"
               :class="pointer === menu.id ? 'text-custom-green' : (menu.colorClass || 'text-custom-chocolat')"
             >
               {{ menu.label }}
             </span>
-            <span class="text-[10px] text-gray-400 whitespace-nowrap font-normal">
+            <span class="text-xs text-gray-400 whitespace-nowrap font-normal">
               {{ menu.subtitle }}
             </span>
           </NuxtLink>
