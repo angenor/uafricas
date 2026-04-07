@@ -95,11 +95,14 @@ pub async fn creer_avis(
     let mut est_anonyme: bool = false;
     let mut genre_recherche: Option<String> = None;
     let mut type_relation: Option<String> = None;
+    let mut type_relation_autre: Option<String> = None;
     let mut comment_connu: Option<String> = None;
     let mut localite_rencontre: Option<String> = None;
     let mut ecole_rencontre: Option<String> = None;
     let mut ville_rencontre: Option<String> = None;
     let mut jamais_rencontre: bool = false;
+    let mut rencontre_reseaux_sociaux: bool = false;
+    let mut reseaux_sociaux: Option<String> = None;
     let mut description_physique: Option<String> = None;
     let mut partage_coordonnees: bool = false;
     let mut coordonnees_email: Option<String> = None;
@@ -155,6 +158,7 @@ pub async fn creer_avis(
             }
             "genre_recherche" => genre_recherche = lire_champ_option(&mut field).await?,
             "type_relation" => type_relation = lire_champ_option(&mut field).await?,
+            "type_relation_autre" => type_relation_autre = lire_champ_option(&mut field).await?,
             "comment_connu" => comment_connu = lire_champ_option(&mut field).await?,
             "localite_rencontre" => localite_rencontre = lire_champ_option(&mut field).await?,
             "ecole_rencontre" => ecole_rencontre = lire_champ_option(&mut field).await?,
@@ -163,6 +167,11 @@ pub async fn creer_avis(
                 let val = lire_champ_texte_avis(&mut field).await?;
                 jamais_rencontre = val == "true" || val == "1";
             }
+            "rencontre_reseaux_sociaux" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                rencontre_reseaux_sociaux = val == "true" || val == "1";
+            }
+            "reseaux_sociaux" => reseaux_sociaux = lire_champ_option(&mut field).await?,
             "description_physique" => description_physique = lire_champ_option(&mut field).await?,
             "partage_coordonnees" => {
                 let val = lire_champ_texte_avis(&mut field).await?;
@@ -208,10 +217,11 @@ pub async fn creer_avis(
         || localite_rencontre.as_ref().map_or(false, |v| !v.trim().is_empty())
         || ecole_rencontre.as_ref().map_or(false, |v| !v.trim().is_empty())
         || ville_rencontre.as_ref().map_or(false, |v| !v.trim().is_empty())
-        || jamais_rencontre;
+        || jamais_rencontre
+        || rencontre_reseaux_sociaux;
     if !a_critere {
         return Err(ApiErreur::Validation(
-            "Au moins un critere supplementaire est requis (type de relation, lieu de rencontre, ecole ou 'jamais rencontre')".into(),
+            "Au moins un critere supplementaire est requis (type de relation, lieu de rencontre, ecole ou reseaux sociaux)".into(),
         ));
     }
 
@@ -256,15 +266,17 @@ pub async fn creer_avis(
     let avis_id: (Uuid,) = sqlx::query_as(
         "INSERT INTO retrouve_amis.avis_recherche
          (auteur_id, nom_recherche, prenom_recherche, surnom, ecole, ville, pays_id, periode_debut, periode_fin, description,
-          est_anonyme, genre_recherche, type_relation, comment_connu,
+          est_anonyme, genre_recherche, type_relation, type_relation_autre, comment_connu,
           localite_rencontre, ecole_rencontre, ville_rencontre, jamais_rencontre,
+          rencontre_reseaux_sociaux, reseaux_sociaux,
           photo_url, description_physique, partage_coordonnees, coordonnees_email, coordonnees_telephone, coordonnees_whatsapp,
           est_public, slug, date_publication_publique)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-                 $11, $12::retrouve_amis.genre_personne, $13::retrouve_amis.type_relation_recherche, $14,
-                 $15, $16, $17, $18,
-                 $19, $20, $21, $22, $23, $24,
-                 TRUE, $25, NOW())
+                 $11, $12::retrouve_amis.genre_personne, $13::retrouve_amis.type_relation_recherche, $14, $15,
+                 $16, $17, $18, $19,
+                 $20, $21,
+                 $22, $23, $24, $25, $26, $27,
+                 TRUE, $28, NOW())
          RETURNING id"
     )
     .bind(utilisateur_id)
@@ -280,11 +292,14 @@ pub async fn creer_avis(
     .bind(est_anonyme)
     .bind(&genre_recherche)
     .bind(&type_relation)
+    .bind(&type_relation_autre)
     .bind(&comment_connu)
     .bind(&localite_rencontre)
     .bind(&ecole_rencontre)
     .bind(&ville_rencontre)
     .bind(jamais_rencontre)
+    .bind(rencontre_reseaux_sociaux)
+    .bind(&reseaux_sociaux)
     .bind(&photo_url)
     .bind(&description_physique)
     .bind(partage_coordonnees)
@@ -443,9 +458,10 @@ pub async fn lister_avis(
         "SELECT a.id, a.nom_recherche, a.prenom_recherche, a.surnom, a.ecole, a.ville,
                 a.pays_id, a.etat::text AS etat, a.periode_debut, a.periode_fin, a.description,
                 a.est_anonyme, a.genre_recherche::text AS genre_recherche,
-                a.type_relation::text AS type_relation,
+                a.type_relation::text AS type_relation, a.type_relation_autre,
                 a.localite_rencontre, a.ecole_rencontre, a.ville_rencontre,
-                a.jamais_rencontre, a.photo_url, a.description_physique,
+                a.jamais_rencontre, a.rencontre_reseaux_sociaux, a.reseaux_sociaux,
+                a.photo_url, a.description_physique,
                 a.created_at, a.updated_at, a.deleted_at,
                 a.est_public, a.slug, a.compteur_partages,
                 p.id AS pays_info_id, p.nom AS pays_nom,
@@ -487,10 +503,13 @@ pub async fn lister_avis(
         est_anonyme: bool,
         genre_recherche: Option<String>,
         type_relation: Option<String>,
+        type_relation_autre: Option<String>,
         localite_rencontre: Option<String>,
         ecole_rencontre: Option<String>,
         ville_rencontre: Option<String>,
         jamais_rencontre: bool,
+        rencontre_reseaux_sociaux: bool,
+        reseaux_sociaux: Option<String>,
         photo_url: Option<String>,
         description_physique: Option<String>,
         created_at: chrono::DateTime<Utc>,
@@ -542,10 +561,13 @@ pub async fn lister_avis(
             est_anonyme: r.est_anonyme,
             genre_recherche: r.genre_recherche,
             type_relation: r.type_relation,
+            type_relation_autre: r.type_relation_autre,
             localite_rencontre: r.localite_rencontre,
             ecole_rencontre: r.ecole_rencontre,
             ville_rencontre: r.ville_rencontre,
             jamais_rencontre: r.jamais_rencontre,
+            rencontre_reseaux_sociaux: r.rencontre_reseaux_sociaux,
+            reseaux_sociaux: r.reseaux_sociaux,
             photo_url: r.photo_url,
             description_physique: r.description_physique,
             created_at: r.created_at,
@@ -591,11 +613,14 @@ pub async fn detail_avis(
         est_anonyme: bool,
         genre_recherche: Option<String>,
         type_relation: Option<String>,
+        type_relation_autre: Option<String>,
         comment_connu: Option<String>,
         localite_rencontre: Option<String>,
         ecole_rencontre: Option<String>,
         ville_rencontre: Option<String>,
         jamais_rencontre: bool,
+        rencontre_reseaux_sociaux: bool,
+        reseaux_sociaux: Option<String>,
         photo_url: Option<String>,
         description_physique: Option<String>,
         partage_coordonnees: bool,
@@ -612,9 +637,10 @@ pub async fn detail_avis(
         "SELECT a.id, a.nom_recherche, a.prenom_recherche, a.surnom, a.ecole, a.ville,
                 a.pays_id, a.etat::text AS etat, a.periode_debut, a.periode_fin, a.description,
                 a.est_anonyme, a.genre_recherche::text AS genre_recherche,
-                a.type_relation::text AS type_relation, a.comment_connu,
+                a.type_relation::text AS type_relation, a.type_relation_autre, a.comment_connu,
                 a.localite_rencontre, a.ecole_rencontre, a.ville_rencontre,
-                a.jamais_rencontre, a.photo_url, a.description_physique,
+                a.jamais_rencontre, a.rencontre_reseaux_sociaux, a.reseaux_sociaux,
+                a.photo_url, a.description_physique,
                 a.partage_coordonnees, a.coordonnees_email, a.coordonnees_telephone, a.coordonnees_whatsapp,
                 a.auteur_id, a.created_at, a.updated_at,
                 p.nom AS pays_nom
@@ -727,11 +753,14 @@ pub async fn detail_avis(
             est_anonyme: avis.est_anonyme,
             genre_recherche: avis.genre_recherche,
             type_relation: avis.type_relation,
+            type_relation_autre: avis.type_relation_autre,
             comment_connu: avis.comment_connu,
             localite_rencontre: avis.localite_rencontre,
             ecole_rencontre: avis.ecole_rencontre,
             ville_rencontre: avis.ville_rencontre,
             jamais_rencontre: avis.jamais_rencontre,
+            rencontre_reseaux_sociaux: avis.rencontre_reseaux_sociaux,
+            reseaux_sociaux: avis.reseaux_sociaux,
             photo_url: avis.photo_url,
             description_physique: avis.description_physique,
             partage_coordonnees: avis.partage_coordonnees,
@@ -789,11 +818,14 @@ pub async fn modifier_avis(
     let mut est_anonyme: bool = avis.est_anonyme;
     let mut genre_recherche: Option<String> = avis.genre_recherche.clone();
     let mut type_relation: Option<String> = avis.type_relation.clone();
+    let mut type_relation_autre: Option<String> = avis.type_relation_autre.clone();
     let mut comment_connu: Option<String> = avis.comment_connu.clone();
     let mut localite_rencontre: Option<String> = avis.localite_rencontre.clone();
     let mut ecole_rencontre: Option<String> = avis.ecole_rencontre.clone();
     let mut ville_rencontre: Option<String> = avis.ville_rencontre.clone();
     let mut jamais_rencontre: bool = avis.jamais_rencontre;
+    let mut rencontre_reseaux_sociaux: bool = avis.rencontre_reseaux_sociaux;
+    let mut reseaux_sociaux: Option<String> = avis.reseaux_sociaux.clone();
     let mut description_physique: Option<String> = avis.description_physique.clone();
     let mut partage_coordonnees: bool = avis.partage_coordonnees;
     let mut coordonnees_email: Option<String> = avis.coordonnees_email.clone();
@@ -850,6 +882,7 @@ pub async fn modifier_avis(
             }
             "genre_recherche" => genre_recherche = lire_champ_option(&mut field).await?,
             "type_relation" => type_relation = lire_champ_option(&mut field).await?,
+            "type_relation_autre" => type_relation_autre = lire_champ_option(&mut field).await?,
             "comment_connu" => comment_connu = lire_champ_option(&mut field).await?,
             "localite_rencontre" => localite_rencontre = lire_champ_option(&mut field).await?,
             "ecole_rencontre" => ecole_rencontre = lire_champ_option(&mut field).await?,
@@ -858,6 +891,11 @@ pub async fn modifier_avis(
                 let val = lire_champ_texte_avis(&mut field).await?;
                 jamais_rencontre = val == "true" || val == "1";
             }
+            "rencontre_reseaux_sociaux" => {
+                let val = lire_champ_texte_avis(&mut field).await?;
+                rencontre_reseaux_sociaux = val == "true" || val == "1";
+            }
+            "reseaux_sociaux" => reseaux_sociaux = lire_champ_option(&mut field).await?,
             "description_physique" => description_physique = lire_champ_option(&mut field).await?,
             "partage_coordonnees" => {
                 let val = lire_champ_texte_avis(&mut field).await?;
@@ -931,12 +969,15 @@ pub async fn modifier_avis(
             est_anonyme = $11,
             genre_recherche = $12::retrouve_amis.genre_personne,
             type_relation = $13::retrouve_amis.type_relation_recherche,
-            comment_connu = $14, localite_rencontre = $15,
-            ecole_rencontre = $16, ville_rencontre = $17,
-            jamais_rencontre = $18, photo_url = $19,
-            description_physique = $20,
-            partage_coordonnees = $21, coordonnees_email = $22,
-            coordonnees_telephone = $23, coordonnees_whatsapp = $24,
+            type_relation_autre = $14,
+            comment_connu = $15, localite_rencontre = $16,
+            ecole_rencontre = $17, ville_rencontre = $18,
+            jamais_rencontre = $19,
+            rencontre_reseaux_sociaux = $20, reseaux_sociaux = $21,
+            photo_url = $22,
+            description_physique = $23,
+            partage_coordonnees = $24, coordonnees_email = $25,
+            coordonnees_telephone = $26, coordonnees_whatsapp = $27,
             updated_at = NOW()
          WHERE id = $1"
     )
@@ -953,11 +994,14 @@ pub async fn modifier_avis(
     .bind(est_anonyme)
     .bind(&genre_recherche)
     .bind(&type_relation)
+    .bind(&type_relation_autre)
     .bind(&comment_connu)
     .bind(&localite_rencontre)
     .bind(&ecole_rencontre)
     .bind(&ville_rencontre)
     .bind(jamais_rencontre)
+    .bind(rencontre_reseaux_sociaux)
+    .bind(&reseaux_sociaux)
     .bind(&photo_url_finale)
     .bind(&description_physique)
     .bind(partage_coordonnees)

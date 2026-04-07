@@ -384,6 +384,28 @@ ADD CONSTRAINT chk_coordonnees_requises CHECK (
 );
 
 
+-- ── Ajout 'autre' au type relation + nouvelles colonnes reseaux sociaux ────
+
+ALTER TYPE retrouve_amis.type_relation_recherche ADD VALUE IF NOT EXISTS 'autre';
+
+ALTER TABLE retrouve_amis.avis_recherche
+    ADD COLUMN IF NOT EXISTS type_relation_autre           VARCHAR(200),
+    ADD COLUMN IF NOT EXISTS rencontre_reseaux_sociaux     BOOLEAN             NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS reseaux_sociaux               VARCHAR(500);
+
+-- Mettre a jour la contrainte CHECK pour inclure rencontre_reseaux_sociaux
+ALTER TABLE retrouve_amis.avis_recherche DROP CONSTRAINT IF EXISTS chk_lieu_ou_jamais;
+ALTER TABLE retrouve_amis.avis_recherche
+ADD CONSTRAINT chk_lieu_ou_jamais CHECK (
+    localite_rencontre IS NOT NULL
+    OR ecole_rencontre IS NOT NULL
+    OR ville_rencontre IS NOT NULL
+    OR jamais_rencontre = TRUE
+    OR rencontre_reseaux_sociaux = TRUE
+    OR type_relation IS NOT NULL
+);
+
+
 -- ── Index — 003 ─────────────────────────────────────────────────────
 
 -- Index pour le filtrage par type de relation

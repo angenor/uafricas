@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PaysInfo } from '~/composables/useRetrouvAmis'
-import { TYPES_RELATION, GENRES_PERSONNE } from '~/composables/useRetrouvAmis'
+import { TYPES_RELATION, GENRES_PERSONNE, RESEAUX_SOCIAUX } from '~/composables/useRetrouvAmis'
 
 // ── Props & Emits ──────────────────────────────────────────────
 interface Props {
@@ -45,11 +45,13 @@ const formulaire = reactive({
   comment_connu: '',
   // Etape 3 : Relation
   type_relation: '',
+  type_relation_autre: '',
   // Etape 4 : Lieu de rencontre
   localite_rencontre: '',
   ecole_rencontre: '',
   ville_rencontre: '',
-  jamais_rencontre: false,
+  rencontre_reseaux_sociaux: false,
+  reseaux_sociaux: [] as string[],
   // Etape 5 : Photo & apparence
   description_physique: '',
   description: '',
@@ -155,10 +157,10 @@ const validerGlobal = (): boolean => {
     || formulaire.localite_rencontre.trim()
     || formulaire.ecole_rencontre.trim()
     || formulaire.ville_rencontre.trim()
-    || formulaire.jamais_rencontre
+    || formulaire.rencontre_reseaux_sociaux
 
   if (!aCritere) {
-    erreurs.global = 'Veuillez renseigner au moins un critere : type de relation, lieu de rencontre, ecole, ou cocher "jamais rencontre".'
+    erreurs.global = 'Veuillez renseigner au moins un critere : type de relation, lieu de rencontre, ecole, ou reseaux sociaux.'
     return false
   }
 
@@ -203,10 +205,18 @@ const soumettre = () => {
   if (formulaire.genre_recherche) fd.append('genre_recherche', formulaire.genre_recherche)
   if (formulaire.comment_connu.trim()) fd.append('comment_connu', formulaire.comment_connu.trim())
   if (formulaire.type_relation) fd.append('type_relation', formulaire.type_relation)
+  if (formulaire.type_relation === 'autre' && formulaire.type_relation_autre.trim()) {
+    fd.append('type_relation_autre', formulaire.type_relation_autre.trim())
+  }
   if (formulaire.localite_rencontre.trim()) fd.append('localite_rencontre', formulaire.localite_rencontre.trim())
   if (formulaire.ecole_rencontre.trim()) fd.append('ecole_rencontre', formulaire.ecole_rencontre.trim())
   if (formulaire.ville_rencontre.trim()) fd.append('ville_rencontre', formulaire.ville_rencontre.trim())
-  if (formulaire.jamais_rencontre) fd.append('jamais_rencontre', 'true')
+  if (formulaire.rencontre_reseaux_sociaux) {
+    fd.append('rencontre_reseaux_sociaux', 'true')
+    if (formulaire.reseaux_sociaux.length > 0) {
+      fd.append('reseaux_sociaux', formulaire.reseaux_sociaux.join(','))
+    }
+  }
   if (formulaire.description_physique.trim()) fd.append('description_physique', formulaire.description_physique.trim())
   if (formulaire.description.trim()) fd.append('description', formulaire.description.trim())
   fd.append('est_anonyme', formulaire.est_anonyme ? 'true' : 'false')
@@ -224,6 +234,11 @@ const soumettre = () => {
 // ── Helpers pour le recapitulatif ──────────────────────────────
 const labelRelation = computed(() => {
   if (!formulaire.type_relation) return null
+  if (formulaire.type_relation === 'autre') {
+    return formulaire.type_relation_autre.trim()
+      ? `Autre : ${formulaire.type_relation_autre.trim()}`
+      : 'Autre'
+  }
   return TYPES_RELATION.find(t => t.value === formulaire.type_relation)?.label ?? formulaire.type_relation
 })
 
@@ -241,7 +256,14 @@ const lignesRecap = computed(() => {
   if (formulaire.localite_rencontre.trim()) lignes.push({ label: 'Localite de rencontre', valeur: formulaire.localite_rencontre })
   if (formulaire.ecole_rencontre.trim()) lignes.push({ label: 'Ecole de rencontre', valeur: formulaire.ecole_rencontre })
   if (formulaire.ville_rencontre.trim()) lignes.push({ label: 'Ville de rencontre', valeur: formulaire.ville_rencontre })
-  if (formulaire.jamais_rencontre) lignes.push({ label: 'Jamais rencontre', valeur: 'Oui' })
+  if (formulaire.rencontre_reseaux_sociaux) {
+    const labels = formulaire.reseaux_sociaux
+      .map(r => RESEAUX_SOCIAUX.find(rs => rs.value === r)?.label ?? r)
+    lignes.push({
+      label: 'Rencontre sur reseaux sociaux',
+      valeur: labels.length > 0 ? labels.join(', ') : 'Oui',
+    })
+  }
   if (photoFichier.value) lignes.push({ label: 'Photo', valeur: photoFichier.value.name })
   if (formulaire.description_physique.trim()) lignes.push({ label: 'Description physique', valeur: formulaire.description_physique })
   if (formulaire.description.trim()) lignes.push({ label: 'Description', valeur: formulaire.description })
@@ -443,7 +465,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
 
     <!-- ── Etape 3 : Relation ─────────────────────────── -->
     <div v-if="etapeCourante === 3" class="space-y-4">
-      <p class="text-sm text-gray-500">Quel type de relation aviez-vous avec cette personne ?</p>
+      <p class="text-sm text-gray-500">Quel est votre lien avec la personne ?</p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label
@@ -463,25 +485,54 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
           <span class="text-sm font-medium text-gray-700">{{ relation.label }}</span>
         </label>
       </div>
+
+      <!-- Precision pour "Autre" -->
+      <div v-if="formulaire.type_relation === 'autre'" class="mt-3">
+        <label :class="labelClass">Precisez le type de relation</label>
+        <input
+          v-model="formulaire.type_relation_autre"
+          type="text"
+          maxlength="200"
+          placeholder="Ex : Voisin, partenaire de sport, membre de la meme association..."
+          :class="inputClass"
+        >
+      </div>
     </div>
 
     <!-- ── Etape 4 : Lieu de rencontre ────────────────── -->
     <div v-if="etapeCourante === 4" class="space-y-4">
       <p class="text-sm text-gray-500">Ou avez-vous rencontre cette personne pour la derniere fois ?</p>
 
-      <!-- Jamais rencontre -->
-      <div class="rounded-lg border border-gray-200 p-4">
+      <!-- Rencontre sur les reseaux sociaux -->
+      <div class="rounded-lg border border-gray-200 p-4 space-y-3">
         <label class="flex items-center gap-3 cursor-pointer">
           <input
-            v-model="formulaire.jamais_rencontre"
+            v-model="formulaire.rencontre_reseaux_sociaux"
             type="checkbox"
             class="h-5 w-5 rounded border-gray-300 accent-custom-chocolat"
           >
-          <span class="text-sm font-medium text-gray-700">Je n'ai jamais rencontre cette personne en vrai</span>
+          <span class="text-sm font-medium text-gray-700">J'ai rencontre cette personne sur les reseaux sociaux</span>
         </label>
+
+        <!-- Choix des reseaux sociaux -->
+        <div v-if="formulaire.rencontre_reseaux_sociaux" class="ml-8 grid grid-cols-2 gap-2">
+          <label
+            v-for="reseau in RESEAUX_SOCIAUX"
+            :key="reseau.value"
+            class="flex items-center gap-2 cursor-pointer"
+          >
+            <input
+              v-model="formulaire.reseaux_sociaux"
+              type="checkbox"
+              :value="reseau.value"
+              class="h-4 w-4 rounded border-gray-300 accent-custom-chocolat"
+            >
+            <span class="text-sm text-gray-700">{{ reseau.label }}</span>
+          </label>
+        </div>
       </div>
 
-      <template v-if="!formulaire.jamais_rencontre">
+      <template v-if="!formulaire.rencontre_reseaux_sociaux">
         <div>
           <label :class="labelClass">Localite / Quartier</label>
           <input

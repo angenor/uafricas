@@ -28,7 +28,7 @@ export type TypeParcours = 'ecole' | 'ville_residence'
 export type TypeNotification = 'nouvelle_correspondance' | 'acceptation_contact' | 'coordonnees_partagees' | 'correspondance_archivee' | 'avis_suspendu' | 'reponse_publique' | 'demande_retrait'
 export type TypeReponsePublique = 'je_suis_cette_personne' | 'je_la_connais' | 'jai_des_informations'
 export type GenrePersonne = 'homme' | 'femme'
-export type TypeRelationRecherche = 'amis_enfance' | 'amis_ecole' | 'collegue' | 'connaissance' | 'frere_soeur' | 'parent'
+export type TypeRelationRecherche = 'amis_enfance' | 'amis_ecole' | 'collegue' | 'connaissance' | 'frere_soeur' | 'parent' | 'autre'
 
 // ── Interfaces de reponse ────────────────────────────────────
 
@@ -380,7 +380,19 @@ export const TYPES_RELATION: { value: TypeRelationRecherche; label: string }[] =
   { value: 'connaissance', label: 'Connaissance' },
   { value: 'frere_soeur', label: 'Frere / Soeur' },
   { value: 'parent', label: 'Parent' },
+  { value: 'autre', label: 'Autre' },
 ]
+
+export const RESEAUX_SOCIAUX = [
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'twitter', label: 'Twitter / X' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'snapchat', label: 'Snapchat' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'telegram', label: 'Telegram' },
+] as const
 
 export const GENRES_PERSONNE: { value: GenrePersonne; label: string }[] = [
   { value: 'homme', label: 'Homme' },
