@@ -25,16 +25,13 @@
     </div>
 
     <!-- Desktop : Logo à gauche + Navigation + Auth -->
-    <nav class="hidden lg:flex items-center py-1.5 px-4 lg:px-6">
-      <!-- Logo à gauche -->
-      <NuxtLink to="/" class="shrink-0 mr-4">
+    <nav class="hidden lg:flex items-center justify-center relative py-1.5 px-4 lg:px-6">
+      <!-- Logo à gauche (absolu pour ne pas décaler le centrage) -->
+      <NuxtLink to="/" class="absolute left-4 lg:left-6">
         <img class="h-11" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
       </NuxtLink>
 
-      <!-- Espacement pour centrer les menus -->
-      <div class="flex-1" />
-
-      <!-- Menus principaux -->
+      <!-- Menus principaux (centrés) -->
       <div class="flex items-center gap-0.5 xl:gap-1">
         <div
           v-for="menu in menus"
@@ -69,8 +66,8 @@
         </div>
       </div>
 
-      <!-- Auth desktop - droite -->
-      <div class="flex-1 flex justify-end items-center gap-3">
+      <!-- Auth desktop - droite (absolu pour ne pas décaler le centrage) -->
+      <div class="absolute right-4 lg:right-6 flex items-center gap-3">
         <!-- Bouton recherche -->
         <button
           @click="rechercheOuverte = true"

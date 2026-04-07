@@ -120,12 +120,14 @@ const validerEtape = (etape: number): boolean => {
   nettoyerErreurs()
 
   if (etape === 1) {
-    if (formulaire.partage_coordonnees) {
+    if (!formulaire.partage_coordonnees) {
+      erreurs.partage_coordonnees = 'Vous devez accepter le partage de coordonnees pour pouvoir continuer.'
+    } else {
       const aCoordonnee = formulaire.coordonnees_email.trim()
         || formulaire.coordonnees_telephone.trim()
         || formulaire.coordonnees_whatsapp.trim()
       if (!aCoordonnee) {
-        erreurs.coordonnees = 'Au moins une coordonnee est requise si le partage est active.'
+        erreurs.coordonnees = 'Au moins une coordonnee est requise.'
       }
     }
   }
@@ -160,15 +162,19 @@ const validerGlobal = (): boolean => {
     return false
   }
 
-  if (formulaire.partage_coordonnees) {
-    const aCoordonnee = formulaire.coordonnees_email.trim()
-      || formulaire.coordonnees_telephone.trim()
-      || formulaire.coordonnees_whatsapp.trim()
-    if (!aCoordonnee) {
-      erreurs.coordonnees = 'Au moins une coordonnee est requise si le partage est active.'
-      etapeCourante.value = 1
-      return false
-    }
+  if (!formulaire.partage_coordonnees) {
+    erreurs.partage_coordonnees = 'Vous devez accepter le partage de coordonnees pour pouvoir continuer.'
+    etapeCourante.value = 1
+    return false
+  }
+
+  const aCoordonnee = formulaire.coordonnees_email.trim()
+    || formulaire.coordonnees_telephone.trim()
+    || formulaire.coordonnees_whatsapp.trim()
+  if (!aCoordonnee) {
+    erreurs.coordonnees = 'Au moins une coordonnee est requise.'
+    etapeCourante.value = 1
+    return false
   }
 
   return true
@@ -239,7 +245,8 @@ const lignesRecap = computed(() => {
   if (photoFichier.value) lignes.push({ label: 'Photo', valeur: photoFichier.value.name })
   if (formulaire.description_physique.trim()) lignes.push({ label: 'Description physique', valeur: formulaire.description_physique })
   if (formulaire.description.trim()) lignes.push({ label: 'Description', valeur: formulaire.description })
-  lignes.push({ label: 'Anonymat', valeur: formulaire.est_anonyme ? 'Oui' : 'Non' })
+  // Anonymat masqué pour le moment
+  // lignes.push({ label: 'Anonymat', valeur: formulaire.est_anonyme ? 'Oui' : 'Non' })
   if (formulaire.partage_coordonnees) lignes.push({ label: 'Partage coordonnees', valeur: 'Oui' })
   return lignes
 })
@@ -292,8 +299,8 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
     <div v-if="etapeCourante === 1" class="space-y-5">
       <p class="text-sm text-gray-500">Definissez vos preferences de confidentialite avant de commencer.</p>
 
-      <!-- Anonymat -->
-      <div class="rounded-lg border border-gray-200 p-4">
+      <!-- Anonymat — masqué pour le moment, seuls les avis publics sont permis -->
+      <!-- <div class="rounded-lg border border-gray-200 p-4">
         <label class="flex items-start gap-3 cursor-pointer">
           <input
             v-model="formulaire.est_anonyme"
@@ -307,7 +314,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
             </p>
           </div>
         </label>
-      </div>
+      </div> -->
 
       <!-- Partage coordonnees -->
       <div class="rounded-lg border border-gray-200 p-4 space-y-3">
@@ -324,6 +331,8 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
             </p>
           </div>
         </label>
+
+        <p v-if="erreurs.partage_coordonnees" class="text-xs text-red-500 mt-1">{{ erreurs.partage_coordonnees }}</p>
 
         <template v-if="formulaire.partage_coordonnees">
           <div>
