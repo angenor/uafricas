@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import gsap from 'gsap'
 import type { PaysInfo } from '~/composables/useRetrouvAmis'
 import { TYPES_RELATION, GENRES_PERSONNE, RESEAUX_SOCIAUX } from '~/composables/useRetrouvAmis'
+import { useAnimationsFormulaire } from '~/composables/useAnimationsFormulaire'
 
 // ── Props & Emits ──────────────────────────────────────────────
 interface Props {
@@ -28,6 +30,22 @@ const etapes = [
   { numero: 6, titre: 'Recapitulatif' },
 ]
 const etapeCourante = ref(1)
+
+// ── Refs template pour animations ──────────────────────────────
+const conteneurFormRef = ref<HTMLElement | null>(null)
+const etapeRef = ref<HTMLElement | null>(null)
+const dotsRef = ref<HTMLElement | null>(null)
+const reseauxSociauxRef = ref<HTMLElement | null>(null)
+const photoPreviewImgRef = ref<HTMLElement | null>(null)
+
+// ── Composable animations GSAP ─────────────────────────────────
+const {
+  enTransition,
+  prefereReducedMotion,
+  animerTransitionEtape,
+  animerChampsEtape,
+  animerProgression,
+} = useAnimationsFormulaire(conteneurFormRef)
 
 // ── Donnees du formulaire ──────────────────────────────────────
 const formulaire = reactive({
@@ -184,14 +202,70 @@ const validerGlobal = (): boolean => {
 
 // ── Navigation ─────────────────────────────────────────────────
 const suivant = () => {
+  if (enTransition.value) return
   if (validerEtape(etapeCourante.value)) {
     etapeCourante.value++
   }
 }
 
 const precedent = () => {
+  if (enTransition.value) return
   nettoyerErreurs()
   etapeCourante.value--
+}
+
+// ── Watch transitions d'etapes (US1 + US2 + US3) ──────────────
+watch(etapeCourante, async (nouvelle, ancienne) => {
+  enTransition.value = true
+  const direction = nouvelle > ancienne ? 'avant' : 'arriere'
+  await nextTick()
+  animerTransitionEtape(direction, etapeRef)
+  animerProgression(nouvelle, ancienne, dotsRef)
+  // Stagger des champs avec leger delai
+  setTimeout(() => {
+    animerChampsEtape(etapeRef)
+    enTransition.value = false
+  }, 200)
+})
+
+// ── Watch champs conditionnels reseaux sociaux (US3) ───────────
+watch(() => formulaire.rencontre_reseaux_sociaux, async (valeur) => {
+  if (prefereReducedMotion.value) return
+  await nextTick()
+  if (reseauxSociauxRef.value) {
+    if (valeur) {
+      gsap.fromTo(reseauxSociauxRef.value,
+        { height: 0, opacity: 0, overflow: 'hidden' },
+        { height: 'auto', opacity: 1, duration: 0.35, ease: 'power2.out' },
+      )
+    } else {
+      gsap.to(reseauxSociauxRef.value,
+        { height: 0, opacity: 0, duration: 0.25, ease: 'power2.in' },
+      )
+    }
+  }
+})
+
+// ── Watch preview photo (US5) ──────────────────────────────────
+watch(photoPreview, async (nouvelle) => {
+  if (!nouvelle || prefereReducedMotion.value) return
+  await nextTick()
+  if (photoPreviewImgRef.value) {
+    gsap.fromTo(photoPreviewImgRef.value,
+      { scale: 0.8, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(1.2)' },
+    )
+  }
+})
+
+// ── Micro-animation radio/selection (US5) ──────────────────────
+const animerSelection = (event: Event) => {
+  if (prefereReducedMotion.value) return
+  const cible = (event.currentTarget as HTMLElement)
+  gsap.fromTo(cible,
+    { scale: 1 },
+    { scale: 1.05, duration: 0.1, yoyo: true, repeat: 1, ease: 'power1.out' },
+  )
 }
 
 // ── Soumission ─────────────────────────────────────────────────
@@ -280,27 +354,29 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-2xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+  <div ref="conteneurFormRef" class="mx-auto w-full max-w-2xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
     <!-- Indicateur d'etapes -->
-    <div class="mb-8 flex items-center justify-center gap-1.5">
+    <div ref="dotsRef" class="mb-8 flex items-center justify-center gap-1.5">
       <template v-for="etape in etapes" :key="etape.numero">
         <button
           type="button"
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors cursor-pointer"
+          class="dot-indicateur flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors cursor-pointer"
           :class="{
             'bg-custom-chocolat text-white': etape.numero === etapeCourante,
             'bg-custom-green text-white': etape.numero < etapeCourante,
             'bg-gray-200 text-gray-500': etape.numero > etapeCourante,
           }"
-          @click="etape.numero < etapeCourante && (etapeCourante = etape.numero)"
+          :disabled="enTransition"
+          @click="!enTransition && etape.numero < etapeCourante && (etapeCourante = etape.numero)"
         >
           <font-awesome-icon v-if="etape.numero < etapeCourante" :icon="['fas', 'check']" class="text-xs" />
           <span v-else>{{ etape.numero }}</span>
         </button>
         <div
           v-if="etape.numero < etapes.length"
-          class="h-0.5 w-4 md:w-8"
+          class="segment-indicateur h-0.5 w-4 md:w-8"
           :class="etape.numero < etapeCourante ? 'bg-custom-green' : 'bg-gray-200'"
+          :style="{ transform: etape.numero < etapeCourante ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left' }"
         />
       </template>
     </div>
@@ -317,6 +393,8 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       {{ erreurs.global }}
     </p>
 
+    <!-- Conteneur anime des etapes -->
+    <div ref="etapeRef">
     <!-- ── Etape 1 : Preferences ──────────────────────── -->
     <div v-if="etapeCourante === 1" class="space-y-5">
       <p class="text-sm text-gray-500">Definissez vos preferences de confidentialite avant de commencer.</p>
@@ -430,7 +508,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       <div>
         <label :class="labelClass">Genre de la personne recherchee</label>
         <div class="flex gap-4">
-          <label v-for="genre in GENRES_PERSONNE" :key="genre.value" class="flex items-center gap-2 cursor-pointer">
+          <label v-for="genre in GENRES_PERSONNE" :key="genre.value" class="flex items-center gap-2 cursor-pointer" @click="animerSelection">
             <input
               v-model="formulaire.genre_recherche"
               type="radio"
@@ -475,6 +553,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
           :class="formulaire.type_relation === relation.value
             ? 'border-custom-chocolat bg-amber-50'
             : 'border-gray-200 hover:border-gray-300'"
+          @click="animerSelection"
         >
           <input
             v-model="formulaire.type_relation"
@@ -515,7 +594,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
         </label>
 
         <!-- Choix des reseaux sociaux -->
-        <div v-if="formulaire.rencontre_reseaux_sociaux" class="ml-8 grid grid-cols-2 gap-2">
+        <div v-if="formulaire.rencontre_reseaux_sociaux" ref="reseauxSociauxRef" class="ml-8 grid grid-cols-2 gap-2">
           <label
             v-for="reseau in RESEAUX_SOCIAUX"
             :key="reseau.value"
@@ -584,7 +663,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
           </label>
         </div>
         <div v-else class="relative inline-block">
-          <img :src="photoPreview" alt="Apercu" class="h-48 w-auto rounded-lg object-cover border border-gray-200">
+          <img ref="photoPreviewImgRef" :src="photoPreview" alt="Apercu" class="h-48 w-auto rounded-lg object-cover border border-gray-200">
           <button
             type="button"
             class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center hover:bg-red-600 cursor-pointer"
@@ -646,12 +725,15 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       </div>
     </div>
 
+    </div><!-- /etapeRef -->
+
     <!-- ── Boutons de navigation ──────────────────────── -->
     <div class="mt-8 flex items-center justify-between">
       <button
         v-if="etapeCourante > 1"
         type="button"
-        class="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 cursor-pointer"
+        class="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:scale-105 active:scale-95 duration-200 cursor-pointer"
+        :disabled="enTransition"
         @click="precedent"
       >
         Precedent
@@ -659,7 +741,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       <button
         v-else
         type="button"
-        class="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 cursor-pointer"
+        class="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:scale-105 active:scale-95 duration-200 cursor-pointer"
         @click="emit('annuler')"
       >
         Annuler
@@ -668,7 +750,8 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       <button
         v-if="etapeCourante < etapes.length"
         type="button"
-        class="rounded-lg bg-custom-chocolat px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-custom-chocolat/90 cursor-pointer"
+        class="rounded-lg bg-custom-chocolat px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-custom-chocolat/90 hover:scale-105 active:scale-95 duration-200 cursor-pointer"
+        :disabled="enTransition"
         @click="suivant"
       >
         Suivant
@@ -676,7 +759,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       <button
         v-else
         type="button"
-        class="rounded-lg bg-custom-green px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-custom-green/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        class="rounded-lg bg-custom-green px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-custom-green/90 hover:scale-105 active:scale-95 duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         :disabled="chargementSoumission"
         @click="soumettre"
       >
@@ -686,3 +769,12 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
     </div>
   </div>
 </template>
+
+<style scoped>
+@media (prefers-reduced-motion: reduce) {
+  .hover\:scale-105:hover,
+  .active\:scale-95:active {
+    transform: none !important;
+  }
+}
+</style>
