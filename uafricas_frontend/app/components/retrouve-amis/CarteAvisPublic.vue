@@ -34,83 +34,103 @@ const auteurDisplay = computed(() => {
 <template>
   <NuxtLink
     :to="`/retrouve-amis/public/${props.avis.slug}`"
-    class="block bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-amber-200 transition-all group overflow-hidden relative"
+    class="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-gray-200/60 transition-all duration-300 hover:shadow-xl hover:ring-amber-300 hover:-translate-y-1"
   >
-    <!-- Bandeau "Personne retrouvee !" pour les avis clotures -->
+    <!-- Badge etat en haut a gauche -->
     <div
       v-if="props.avis.etat === 'cloture'"
-      class="absolute top-0 left-0 right-0 z-10 bg-green-600 text-white text-center py-2 text-sm font-semibold"
+      class="absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded-full bg-green-600 px-3 py-1 text-xs font-bold text-white shadow-lg"
     >
-      <font-awesome-icon :icon="['fas', 'heart']" class="mr-1.5" />
-      Personne retrouvee !
+      <font-awesome-icon :icon="['fas', 'heart']" />
+      Retrouve(e) !
     </div>
 
-    <!-- Photo si disponible -->
-    <div v-if="photoComplete" class="relative h-48 bg-gray-100" :class="{ 'mt-9': props.avis.etat === 'cloture' }">
+    <!-- Zone visuelle : photo ou avatar stylise -->
+    <div class="relative h-56 overflow-hidden bg-linear-to-br from-amber-100 to-amber-50">
       <img
+        v-if="photoComplete"
         :src="photoComplete"
         :alt="`Photo de ${props.avis.nom_recherche}`"
-        class="w-full h-full object-cover"
-        :class="{ 'opacity-70': props.avis.etat === 'cloture' }"
+        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        :class="{ 'grayscale opacity-60': props.avis.etat === 'cloture' }"
       >
+      <!-- Placeholder si pas de photo -->
+      <div v-else class="flex h-full w-full items-center justify-center">
+        <div class="flex h-24 w-24 items-center justify-center rounded-full bg-amber-200/60 text-amber-600">
+          <font-awesome-icon :icon="['fas', 'user']" class="text-4xl" />
+        </div>
+      </div>
+      <!-- Degrade bas pour lisibilite -->
+      <div class="absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-black/50 to-transparent" />
+      <!-- Nom en overlay bas -->
+      <div class="absolute inset-x-0 bottom-0 p-4">
+        <h3 class="text-lg font-bold text-white drop-shadow-md">
+          {{ props.avis.prenom_recherche }}
+          <span class="uppercase">{{ props.avis.nom_recherche }}</span>
+        </h3>
+      </div>
     </div>
 
-    <div class="p-5">
-      <!-- Nom recherche + genre -->
-      <div class="flex items-start justify-between mb-2">
-        <h3 class="text-lg font-semibold text-gray-800 group-hover:text-amber-700 transition-colors">
-          {{ props.avis.nom_recherche }}
-          <span v-if="props.avis.prenom_recherche" class="font-normal text-gray-600">
-            {{ props.avis.prenom_recherche }}
-          </span>
-        </h3>
+    <!-- Contenu -->
+    <div class="flex flex-1 flex-col p-4">
+      <!-- Badges : relation + genre -->
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <span
+          v-if="labelRelation"
+          class="inline-flex items-center gap-1 rounded-full bg-amber-600/10 px-2.5 py-1 text-xs font-semibold text-amber-700"
+        >
+          <font-awesome-icon :icon="['fas', 'link']" class="text-[10px]" />
+          {{ labelRelation }}
+        </span>
         <span
           v-if="props.avis.genre_recherche"
-          class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 shrink-0 ml-2"
+          class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600"
         >
-          <font-awesome-icon :icon="['fas', props.avis.genre_recherche === 'homme' ? 'mars' : 'venus']" class="mr-1" />
+          <font-awesome-icon :icon="['fas', props.avis.genre_recherche === 'homme' ? 'mars' : 'venus']" class="text-[10px]" />
           {{ props.avis.genre_recherche === 'homme' ? 'Homme' : 'Femme' }}
         </span>
       </div>
 
-      <!-- Type de relation -->
-      <span
-        v-if="labelRelation"
-        class="inline-block text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 mb-3"
-      >
-        {{ labelRelation }}
-      </span>
-
-      <!-- Infos cles -->
-      <div class="space-y-1.5 text-sm text-gray-600 mb-3">
-        <div v-if="lieuRencontre || props.avis.ecole_rencontre" class="flex items-center gap-2">
-          <font-awesome-icon :icon="['fas', 'location-dot']" class="w-4 text-gray-400" />
-          <span>
-            <span v-if="lieuRencontre">{{ lieuRencontre }}</span>
-            <span v-if="lieuRencontre && props.avis.ecole_rencontre"> — </span>
-            <span v-if="props.avis.ecole_rencontre" class="italic">{{ props.avis.ecole_rencontre }}</span>
+      <!-- Infos cles compactes -->
+      <div class="space-y-2 text-sm text-gray-600">
+        <div v-if="lieuRencontre" class="flex items-center gap-2">
+          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-400">
+            <font-awesome-icon :icon="['fas', 'location-dot']" class="text-xs" />
           </span>
+          <span class="truncate">{{ lieuRencontre }}</span>
         </div>
-
+        <div v-if="props.avis.ecole_rencontre" class="flex items-center gap-2">
+          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-400">
+            <font-awesome-icon :icon="['fas', 'graduation-cap']" class="text-xs" />
+          </span>
+          <span class="truncate">{{ props.avis.ecole_rencontre }}</span>
+        </div>
         <div v-if="props.avis.description_physique" class="flex items-start gap-2">
-          <font-awesome-icon :icon="['fas', 'user']" class="w-4 text-gray-400 mt-0.5" />
-          <span class="line-clamp-2">{{ props.avis.description_physique }}</span>
+          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-50 text-purple-400 mt-0.5">
+            <font-awesome-icon :icon="['fas', 'id-card']" class="text-xs" />
+          </span>
+          <span class="line-clamp-2 text-gray-500">{{ props.avis.description_physique }}</span>
         </div>
       </div>
 
-      <!-- Footer : auteur + partages + date -->
-      <div class="flex items-center justify-between pt-3 border-t border-gray-100 text-xs text-gray-500">
-        <span class="flex items-center gap-1.5">
-          <font-awesome-icon :icon="['fas', 'user-circle']" class="text-gray-400" />
-          {{ auteurDisplay }}
-        </span>
-        <span class="flex items-center gap-3">
-          <span class="flex items-center gap-1">
+      <!-- Spacer -->
+      <div class="flex-1" />
+
+      <!-- Footer -->
+      <div class="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
+        <div class="flex items-center gap-2 text-xs text-gray-500">
+          <div class="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100">
+            <font-awesome-icon :icon="['fas', 'user']" class="text-[10px] text-gray-400" />
+          </div>
+          <span>{{ auteurDisplay }}</span>
+        </div>
+        <div class="flex items-center gap-3 text-xs text-gray-400">
+          <span v-if="props.avis.compteur_partages > 0" class="flex items-center gap-1">
             <font-awesome-icon :icon="['fas', 'share-nodes']" />
             {{ props.avis.compteur_partages }}
           </span>
           <span>{{ formatDate(props.avis.created_at) }}</span>
-        </span>
+        </div>
       </div>
     </div>
   </NuxtLink>

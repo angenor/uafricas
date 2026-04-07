@@ -151,105 +151,117 @@ onMounted(() => {
     </div>
 
     <!-- Avis publics : listing principal -->
-    <section class="py-12 px-4">
-      <div class="max-w-6xl mx-auto">
-        <h2 class="text-3xl font-bold text-gray-800 mb-8 font-[Oswald]">
-          Avis de recherche
-        </h2>
+    <section class="py-16 px-4">
+      <div class="max-w-7xl mx-auto">
+        <!-- En-tete avec compteur -->
+        <div class="mb-10 text-center">
+          <span class="inline-flex items-center gap-2 rounded-full bg-amber-100 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700 mb-4">
+            <font-awesome-icon :icon="['fas', 'bullhorn']" />
+            Avis de recherche
+          </span>
+          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 font-[Oswald]">
+            Aidez-nous a les retrouver
+          </h2>
+          <p class="mt-3 text-gray-500 max-w-xl mx-auto text-sm">
+            Chaque avis est une histoire, chaque partage est un espoir. Parcourez les recherches en cours et aidez a reunir des proches.
+          </p>
+        </div>
 
-        <!-- Filtres -->
-        <div class="flex flex-wrap items-end gap-3 mb-8">
-          <div class="flex-1 min-w-50">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Rechercher</label>
-            <div class="relative">
-              <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+        <!-- Barre de filtres moderne -->
+        <div class="mb-10 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/60">
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Recherche -->
+            <div class="relative flex-1 min-w-56">
+              <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
               <input
                 v-model="filtreRecherche"
                 type="text"
-                placeholder="Nom, lieu, ecole..."
-                class="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                placeholder="Rechercher un nom, un lieu, une ecole..."
+                class="w-full rounded-xl bg-gray-50 pl-10 pr-4 py-3 text-sm text-gray-700 placeholder-gray-400 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all"
                 @keyup.enter="appliquerFiltres"
               >
             </div>
-          </div>
-          <div class="min-w-45">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Type de relation</label>
-            <select
-              v-model="filtreRelation"
-              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-              @change="appliquerFiltres"
+            <!-- Filtre relation -->
+            <div class="min-w-48">
+              <select
+                v-model="filtreRelation"
+                class="w-full rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-700 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all appearance-none cursor-pointer"
+                @change="appliquerFiltres"
+              >
+                <option value="">Toutes les relations</option>
+                <option v-for="t in TYPES_RELATION" :key="t.value" :value="t.value">
+                  {{ t.label }}
+                </option>
+              </select>
+            </div>
+            <!-- Boutons -->
+            <button
+              class="flex items-center gap-2 rounded-xl bg-custom-chocolat px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md active:scale-95 cursor-pointer"
+              @click="appliquerFiltres"
             >
-              <option value="">Toutes les relations</option>
-              <option v-for="t in TYPES_RELATION" :key="t.value" :value="t.value">
-                {{ t.label }}
-              </option>
-            </select>
+              <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
+              Rechercher
+            </button>
+            <button
+              v-if="filtresActifs"
+              class="flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 cursor-pointer"
+              @click="reinitialiserFiltres"
+            >
+              <font-awesome-icon :icon="['fas', 'xmark']" />
+              Reinitialiser
+            </button>
           </div>
-          <button
-            class="px-4 py-2.5 bg-amber-700 text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors cursor-pointer"
-            @click="appliquerFiltres"
-          >
-            <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="mr-1.5" />
-            Rechercher
-          </button>
-          <button
-            v-if="filtresActifs"
-            class="px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-            @click="reinitialiserFiltres"
-          >
-            <font-awesome-icon :icon="['fas', 'xmark']" class="mr-1.5" />
-            Reinitialiser
-          </button>
         </div>
 
         <!-- Chargement -->
-        <div v-if="chargementAvis" class="flex justify-center py-16">
-          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-700" />
+        <div v-if="chargementAvis" class="flex flex-col items-center justify-center py-20">
+          <div class="h-12 w-12 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
+          <p class="mt-4 text-sm text-gray-500">Chargement des avis...</p>
         </div>
 
         <!-- Etat vide : aucun resultat avec filtres actifs -->
-        <div v-else-if="avisPublics.length === 0 && filtresActifs" class="text-center py-16">
-          <div class="w-20 h-20 mx-auto mb-6 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center">
-            <font-awesome-icon :icon="['fas', 'filter-circle-xmark']" class="text-3xl" />
+        <div v-else-if="avisPublics.length === 0 && filtresActifs" class="text-center py-20">
+          <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
+            <font-awesome-icon :icon="['fas', 'filter-circle-xmark']" class="text-4xl text-gray-300" />
           </div>
-          <h3 class="text-xl font-semibold text-gray-700 mb-3">
+          <h3 class="text-xl font-semibold text-gray-700 mb-2">
             Aucun resultat pour ces criteres
           </h3>
-          <p class="text-gray-500 max-w-md mx-auto mb-6">
+          <p class="text-gray-400 max-w-md mx-auto mb-8 text-sm">
             Essayez de modifier vos criteres de recherche ou de reinitialiser les filtres.
           </p>
           <button
-            class="inline-block px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors cursor-pointer"
+            class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 transition-colors cursor-pointer"
             @click="reinitialiserFiltres"
           >
-            <font-awesome-icon :icon="['fas', 'rotate-left']" class="mr-2" />
+            <font-awesome-icon :icon="['fas', 'rotate-left']" />
             Reinitialiser les filtres
           </button>
         </div>
 
         <!-- Etat vide : aucun avis disponible -->
-        <div v-else-if="avisPublics.length === 0" class="text-center py-16">
-          <div class="w-20 h-20 mx-auto mb-6 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center">
-            <font-awesome-icon :icon="['fas', 'users']" class="text-3xl" />
+        <div v-else-if="avisPublics.length === 0" class="text-center py-20">
+          <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-amber-50">
+            <font-awesome-icon :icon="['fas', 'users']" class="text-4xl text-amber-300" />
           </div>
-          <h3 class="text-xl font-semibold text-gray-700 mb-3">
+          <h3 class="text-xl font-semibold text-gray-700 mb-2">
             Aucun avis de recherche pour le moment
           </h3>
-          <p class="text-gray-500 max-w-md mx-auto mb-6">
+          <p class="text-gray-400 max-w-md mx-auto mb-8 text-sm">
             Soyez le premier a publier un avis de recherche et aidez a reunir des proches separes.
           </p>
           <NuxtLink
             v-if="estConnecte"
             to="/retrouve-amis/nouveau"
-            class="inline-block px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+            class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 transition-colors"
           >
-            <font-awesome-icon :icon="['fas', 'plus']" class="mr-2" />
+            <font-awesome-icon :icon="['fas', 'plus']" />
             Creer le premier avis
           </NuxtLink>
           <NuxtLink
             v-else
             to="/login"
-            class="inline-block px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+            class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 transition-colors"
           >
             Se connecter pour creer un avis
           </NuxtLink>
@@ -257,7 +269,13 @@ onMounted(() => {
 
         <!-- Grille des avis -->
         <template v-else>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Compteur de resultats -->
+          <p v-if="pagination" class="mb-6 text-sm text-gray-500">
+            <span class="font-semibold text-gray-700">{{ pagination.total }}</span> avis de recherche
+            <span v-if="filtresActifs"> correspondant a vos criteres</span>
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <RetrouveAmisCarteAvisPublic
               v-for="avis in avisPublics"
               :key="avis.id"
@@ -266,23 +284,37 @@ onMounted(() => {
           </div>
 
           <!-- Pagination -->
-          <div v-if="pagination && pagination.pages > 1" class="flex justify-center items-center gap-2 mt-10">
+          <div v-if="pagination && pagination.pages > 1" class="mt-12 flex items-center justify-center gap-1">
             <button
-              class="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              class="flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               :disabled="pageActuelle <= 1"
               @click="chargerAvisPublics(pageActuelle - 1)"
             >
+              <font-awesome-icon :icon="['fas', 'chevron-left']" class="text-xs" />
               Precedent
             </button>
-            <span class="text-sm text-gray-600 px-3">
-              Page {{ pageActuelle }} / {{ pagination.pages }}
-            </span>
+            <!-- Numeros de pages -->
+            <template v-for="p in pagination.pages" :key="p">
+              <button
+                v-if="p === 1 || p === pagination.pages || (p >= pageActuelle - 1 && p <= pageActuelle + 1)"
+                class="h-10 w-10 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                :class="p === pageActuelle ? 'bg-custom-chocolat text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'"
+                @click="chargerAvisPublics(p)"
+              >
+                {{ p }}
+              </button>
+              <span
+                v-else-if="p === pageActuelle - 2 || p === pageActuelle + 2"
+                class="px-1 text-gray-400"
+              >...</span>
+            </template>
             <button
-              class="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              class="flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               :disabled="pageActuelle >= pagination.pages"
               @click="chargerAvisPublics(pageActuelle + 1)"
             >
               Suivant
+              <font-awesome-icon :icon="['fas', 'chevron-right']" class="text-xs" />
             </button>
           </div>
         </template>
