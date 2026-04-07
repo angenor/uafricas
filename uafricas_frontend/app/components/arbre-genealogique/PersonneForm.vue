@@ -145,7 +145,7 @@ function soumettre() {
             v-model="estDecede"
             type="radio"
             :value="false"
-            class="radio radio-sm radio-primary"
+            class="h-4 w-4 appearance-none rounded-full border-2 border-stone-400 checked:border-custom-chocolat checked:bg-custom-chocolat checked:shadow-[inset_0_0_0_2px_white] transition-colors"
           />
           <span class="text-sm text-stone-700">En vie</span>
         </label>
@@ -154,7 +154,7 @@ function soumettre() {
             v-model="estDecede"
             type="radio"
             :value="true"
-            class="radio radio-sm radio-primary"
+            class="h-4 w-4 appearance-none rounded-full border-2 border-stone-400 checked:border-custom-chocolat checked:bg-custom-chocolat checked:shadow-[inset_0_0_0_2px_white] transition-colors"
           />
           <span class="text-sm text-stone-700">Décédé(e)</span>
         </label>

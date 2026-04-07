@@ -6,6 +6,7 @@ import { useArbreGenealogique } from '~/composables/useArbreGenealogique'
 import { useDecouvertes } from '~/composables/useDecouvertes'
 import PersonneForm from '~/components/arbre-genealogique/PersonneForm.vue'
 import PersonneCard from '~/components/arbre-genealogique/PersonneCard.vue'
+import AssistantAjoutPersonne from '~/components/arbre-genealogique/AssistantAjoutPersonne.vue'
 
 const { listerPersonnes, creerPersonne } = useArbreGenealogique()
 const { listerDecouvertes } = useDecouvertes()
@@ -35,7 +36,7 @@ const recherche = ref('')
 const rechercheDebounce = ref('')
 let timerId: ReturnType<typeof setTimeout> | null = null
 
-const afficherFormAjout = ref(false)
+const modeAjout = ref<'wizard' | 'classique' | null>(null)
 const creationEnCours = ref(false)
 
 // ─── Debounce recherche ───────────────────────────────────────────────────
@@ -83,7 +84,7 @@ async function ajouterPersonne(form: CreerPersonneForm) {
   try {
     const res = await creerPersonne(form)
     if (res.success && res.data) {
-      afficherFormAjout.value = false
+      modeAjout.value = null
       await charger()
     }
   } catch (e: any) {
@@ -94,7 +95,7 @@ async function ajouterPersonne(form: CreerPersonneForm) {
         await refreshAccessToken()
         const res = await creerPersonne(form)
         if (res.success && res.data) {
-          afficherFormAjout.value = false
+          modeAjout.value = null
           await charger()
         }
       } catch {
@@ -164,25 +165,34 @@ const infoPagination = computed(() => {
         </NuxtLink>
         <button
           class="px-5 py-2.5 bg-custom-chocolat text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
-          @click="afficherFormAjout = true"
+          @click="modeAjout = 'wizard'"
         >
           + Ajouter une personne
         </button>
       </div>
     </div>
 
-    <!-- Modal ajout -->
+    <!-- Wizard ajout -->
+    <AssistantAjoutPersonne
+      v-if="modeAjout === 'wizard'"
+      :loading="creationEnCours"
+      @submit="ajouterPersonne"
+      @annuler="modeAjout = null"
+      @formulaire-classique="modeAjout = 'classique'"
+    />
+
+    <!-- Modal classique -->
     <div
-      v-if="afficherFormAjout"
+      v-if="modeAjout === 'classique'"
       class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      @click.self="afficherFormAjout = false"
+      @click.self="modeAjout = null"
     >
       <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-stone-800">Nouvelle personne</h2>
           <button
             class="text-stone-400 hover:text-stone-600 transition-colors"
-            @click="afficherFormAjout = false"
+            @click="modeAjout = null"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -192,7 +202,7 @@ const infoPagination = computed(() => {
         <PersonneForm
           :loading="creationEnCours"
           @submit="ajouterPersonne"
-          @annuler="afficherFormAjout = false"
+          @annuler="modeAjout = null"
         />
       </div>
     </div>
@@ -277,7 +287,7 @@ const infoPagination = computed(() => {
       <button
         v-if="!recherche"
         class="px-6 py-3 bg-custom-chocolat text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
-        @click="afficherFormAjout = true"
+        @click="modeAjout = 'wizard'"
       >
         Ajouter ma première personne
       </button>

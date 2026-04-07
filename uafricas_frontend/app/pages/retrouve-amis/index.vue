@@ -114,12 +114,9 @@ onMounted(() => {
       <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70" />
       <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
-          Retrouve Amis
+          Retrouvez vos proches
         </h1>
         <div class="h-1 w-24 bg-custom-green rounded animate-line" />
-        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
-          Retrouvez vos proches
-        </p>
         <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
           Retrouvez vos amis, proches et connaissances perdus de vue grace a la communaute panafricaine.
         </p>

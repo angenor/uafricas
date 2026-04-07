@@ -139,6 +139,8 @@ Mettre à jour ce fichier lors de: ajout/suppression service Docker ou dépendan
 - PostgreSQL 16 — 2 nouvelles tables + 3 colonnes (001-collaboration-partage)
 - Rust Edition 2024 (backend) + TypeScript / Nuxt 4 / Vue 3 (frontend) + pg_trgm existant, audit existan (001-notifications-suggestions)
 - PostgreSQL 16 — 2 nouvelles tables (notifications, doublons_ignores) (001-notifications-suggestions)
+- TypeScript (Nuxt 4 / Vue 3 SSR) + GSAP 3.14.2 (existant), Tailwind CSS v4 (existant) (001-ajout-personne-ludique)
+- N/A — aucune modification backend/BDD (001-ajout-personne-ludique)
 
 ## Recent Changes
 - 001-personnes-arbre: Added schema `arbre_genealogique` (4 tables: personnes, arbres, rattachements, liens_familiaux). Backend: 8 handlers CRUD + liens + photo upload, cycle detection CTE, cascade soft delete. Frontend: composable `useArbreGenealogique`, mock `arbre-genealogique.ts`, composants `PersonneForm.vue` / `PersonneCard.vue` / `LienFamilialForm.vue`, pages `arbre-genealogique/index.vue` + `[id].vue`. Architecture fondation matching inter-arbres documentée (Décision 8 research.md).

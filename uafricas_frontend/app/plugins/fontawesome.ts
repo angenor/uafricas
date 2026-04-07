@@ -147,6 +147,9 @@ import {
   faCompressArrowsAlt,
   faProjectDiagram,
   faTree,
+  faSignature,
+  faVenusMars,
+  faDove,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -321,7 +324,10 @@ library.add(
   faInstagram,
   faYoutube,
   faWhatsapp,
-  faShareNodes
+  faShareNodes,
+  faSignature,
+  faVenusMars,
+  faDove,
 )
 
 export default defineNuxtPlugin((nuxtApp) => {

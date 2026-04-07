@@ -8,6 +8,7 @@ import type { Node, Edge } from '@vue-flow/core'
 import ArbreGraphe from '~/components/arbre-genealogique/ArbreGraphe.vue'
 import BarreOutils from '~/components/arbre-genealogique/BarreOutils.vue'
 import PanneauPersonne from '~/components/arbre-genealogique/PanneauPersonne.vue'
+import AssistantAjoutPersonne from '~/components/arbre-genealogique/AssistantAjoutPersonne.vue'
 
 definePageMeta({
   middleware: 'auth',
@@ -39,6 +40,10 @@ const modePanneau = ref<ModePanneau>('fiche')
 const contexteAjout = ref<ContexteAjout | null>(null)
 const mutationEnCours = ref(false)
 const erreurMutation = ref<string | null>(null)
+const afficherWizard = ref(false)
+const wizardTypeLien = ref<'pere' | 'mere' | 'parent' | 'conjoint' | 'enfant' | undefined>(undefined)
+const wizardTypeAction = ref<'parent' | 'enfant' | 'conjoint' | undefined>(undefined)
+const wizardPersonneLiee = ref<{ id: string; nom: string; prenoms?: string } | undefined>(undefined)
 
 // ─── État incomplétude ───────────────────────────────────────────────
 
@@ -175,7 +180,15 @@ const surActionAjouter = (typeAction: 'parent' | 'enfant' | 'conjoint') => {
     typeLienSuggere: typeLien,
   }
 
-  modePanneau.value = 'ajout'
+  // Ouvrir le wizard avec le contexte de lien
+  wizardTypeLien.value = typeLien as 'pere' | 'mere' | 'parent' | 'conjoint' | 'enfant'
+  wizardTypeAction.value = typeAction
+  wizardPersonneLiee.value = {
+    id: personneCourante.value.personne_id,
+    nom: personneCourante.value.nom,
+    prenoms: personneCourante.value.prenoms,
+  }
+  afficherWizard.value = true
   erreurMutation.value = null
 }
 
@@ -277,6 +290,31 @@ const surPersonneAjoutee = async (form: CreerPersonneForm, typeLien: TypeLien) =
   } finally {
     mutationEnCours.value = false
   }
+}
+
+// ─── Flux wizard ajout ──────────────────────────────────────────────
+
+const surWizardSubmit = async (form: CreerPersonneForm, typeLien?: TypeLien) => {
+  if (!contexteAjout.value) return
+  const lienFinal = typeLien ?? contexteAjout.value.typeLienSuggere
+  await surPersonneAjoutee(form, lienFinal)
+  afficherWizard.value = false
+  wizardTypeLien.value = undefined
+  wizardTypeAction.value = undefined
+  wizardPersonneLiee.value = undefined
+}
+
+const surWizardAnnuler = () => {
+  afficherWizard.value = false
+  wizardTypeLien.value = undefined
+  wizardTypeAction.value = undefined
+  wizardPersonneLiee.value = undefined
+  contexteAjout.value = null
+}
+
+const surWizardFormulaireClassique = () => {
+  afficherWizard.value = false
+  modePanneau.value = 'ajout'
 }
 
 // ─── Flux modification ───────────────────────────────────────────────
@@ -420,6 +458,18 @@ onMounted(charger)
           </div>
         </template>
       </ClientOnly>
+
+      <!-- Wizard ajout contextuel -->
+      <AssistantAjoutPersonne
+        v-if="afficherWizard"
+        :type-lien="wizardTypeLien"
+        :type-action="wizardTypeAction"
+        :personne-liee="wizardPersonneLiee"
+        :loading="mutationEnCours"
+        @submit="surWizardSubmit"
+        @annuler="surWizardAnnuler"
+        @formulaire-classique="surWizardFormulaireClassique"
+      />
 
       <!-- Panneau contextuel -->
       <PanneauPersonne
