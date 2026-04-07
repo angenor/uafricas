@@ -631,7 +631,7 @@ export const useRetrouvAmis = () => {
     try {
       const reponse = await fetchAvecAuth<ApiResponse<{ id: string; etat: string }>>(
         `${apiBase}/api/retrouve-amis/avis/${id}/cloturer`,
-        { method: 'POST' },
+        { method: 'PATCH' },
       )
 
       if (!reponse.success || !reponse.data) {
@@ -644,6 +644,36 @@ export const useRetrouvAmis = () => {
       const message = e?.data?.error || e?.message || 'Erreur lors de la cloture de l\'avis'
       erreur.value = message
       console.error('Erreur cloturerAvis:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /**
+   * Supprimer un avis de recherche (soft delete)
+   */
+  const supprimerAvis = async (id: string): Promise<{ id: string; supprime: boolean } | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await fetchAvecAuth<ApiResponse<{ id: string; supprime: boolean }>>(
+        `${apiBase}/api/retrouve-amis/avis/${id}`,
+        { method: 'DELETE' },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de la suppression de l\'avis')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur lors de la suppression de l\'avis'
+      erreur.value = message
+      console.error('Erreur supprimerAvis:', e)
       return null
     }
     finally {
@@ -1312,6 +1342,7 @@ export const useRetrouvAmis = () => {
     detailAvis,
     modifierAvis,
     cloturerAvis,
+    supprimerAvis,
     // Correspondances
     listerCorrespondances,
     detailCorrespondance,

@@ -1168,6 +1168,60 @@ pub async fn cloturer_avis(
     }))
 }
 
+/// DELETE /api/retrouve-amis/avis/{id}
+/// Supprimer un avis de recherche (soft delete)
+pub async fn supprimer_avis(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)?;
+    let avis_id = path.into_inner();
+
+    // Verifier que l'avis existe et appartient a l'auteur
+    let result = sqlx::query(
+        "UPDATE retrouve_amis.avis_recherche SET deleted_at = NOW(), updated_at = NOW()
+         WHERE id = $1 AND auteur_id = $2 AND deleted_at IS NULL"
+    )
+    .bind(avis_id)
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(ApiErreur::NonTrouve(
+            "Avis introuvable ou deja supprime".into(),
+        ));
+    }
+
+    // Supprimer les correspondances en_attente liees
+    sqlx::query(
+        "DELETE FROM retrouve_amis.correspondance WHERE avis_id = $1 AND etat = 'en_attente'"
+    )
+    .bind(avis_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "DELETE",
+        "retrouve_amis",
+        "avis_recherche",
+        Some(avis_id),
+        None,
+        Some(serde_json::json!({"soft_delete": true})),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({"id": avis_id, "supprime": true})),
+        error: None,
+    }))
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // CORRESPONDANCES
 // ════════════════════════════════════════════════════════════════════════════

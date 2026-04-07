@@ -2,7 +2,7 @@
 definePageMeta({ layout: 'default' })
 
 const userStore = useUserStore()
-const { listerAvis, cloturerAvis, publierAvis } = useRetrouvAmis()
+const { listerAvis, cloturerAvis, supprimerAvis } = useRetrouvAmis()
 
 const avisListe = ref<any[]>([])
 const chargement = ref(false)
@@ -15,7 +15,7 @@ const optionsEtat = [
   { valeur: 'tous', libelle: 'Tous les etats' },
   { valeur: 'actif', libelle: 'Actifs' },
   { valeur: 'cloture', libelle: 'Clotures' },
-  { valeur: 'suspendu', libelle: 'Suspendus' }
+  { valeur: 'suspendu', libelle: 'Suspendus' },
 ]
 
 const totalPages = computed(() => Math.ceil(total.value / parPage.value))
@@ -25,7 +25,7 @@ const chargerAvis = async () => {
   try {
     const params: Record<string, any> = {
       page: page.value,
-      par_page: parPage.value
+      par_page: parPage.value,
     }
     if (filtreEtat.value !== 'tous') {
       params.etat = filtreEtat.value
@@ -33,9 +33,11 @@ const chargerAvis = async () => {
     const res = await listerAvis(params)
     avisListe.value = res.avis ?? []
     total.value = res.total ?? 0
-  } catch {
+  }
+  catch {
     avisListe.value = []
-  } finally {
+  }
+  finally {
     chargement.value = false
   }
 }
@@ -59,6 +61,7 @@ const onModifier = (id: string) => {
   navigateTo(`/retrouve-amis/nouveau?id=${id}`)
 }
 
+// ── Cloture ─────────────────────────────────────────────────
 const confirmationCloture = ref<string | null>(null)
 
 const onDemanderCloture = (id: string) => {
@@ -75,25 +78,32 @@ const onConfirmerCloture = async () => {
     await cloturerAvis(confirmationCloture.value)
     confirmationCloture.value = null
     chargerAvis()
-  } catch {
-    // erreur silencieuse
+  }
+  catch {
+    // erreur geree par le composable
   }
 }
 
-const publicationEnCours = ref<string | null>(null)
+// ── Suppression ─────────────────────────────────────────────
+const confirmationSuppression = ref<string | null>(null)
 
-const onTogglePublic = async (avisItem: any) => {
-  publicationEnCours.value = avisItem.id
+const onDemanderSuppression = (id: string) => {
+  confirmationSuppression.value = id
+}
+
+const onAnnulerSuppression = () => {
+  confirmationSuppression.value = null
+}
+
+const onConfirmerSuppression = async () => {
+  if (!confirmationSuppression.value) return
   try {
-    const res = await publierAvis(avisItem.id, !avisItem.est_public)
-    if (res) {
-      avisItem.est_public = res.est_public
-      avisItem.slug = res.slug
-    }
-  } catch {
+    await supprimerAvis(confirmationSuppression.value)
+    confirmationSuppression.value = null
+    chargerAvis()
+  }
+  catch {
     // erreur geree par le composable
-  } finally {
-    publicationEnCours.value = null
   }
 }
 
@@ -104,6 +114,20 @@ const badgeCouleur = (etat: string): string => {
     case 'suspendu': return 'bg-orange-100 text-orange-800'
     default: return 'bg-gray-100 text-gray-600'
   }
+}
+
+const labelRelation = (type: string | null, autre: string | null): string | null => {
+  if (!type) return null
+  const map: Record<string, string> = {
+    amis_enfance: 'Amis d\'enfance',
+    amis_ecole: 'Amis d\'ecole',
+    collegue: 'Collegue',
+    connaissance: 'Connaissance',
+    frere_soeur: 'Frere / Soeur',
+    parent: 'Parent',
+    autre: autre ? `Autre : ${autre}` : 'Autre',
+  }
+  return map[type] ?? type
 }
 
 onMounted(() => {
@@ -122,7 +146,7 @@ onMounted(() => {
       class="relative h-80 bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
     >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70" />
       <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
         <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
           Mes recherches
@@ -142,193 +166,211 @@ onMounted(() => {
       <div class="flex-1 min-w-0">
         <!-- En-tete -->
         <div class="flex items-center justify-end mb-8">
-        <NuxtLink
-          to="/retrouve-amis/nouveau"
-          class="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
-        >
-          <font-awesome-icon :icon="['fas', 'plus']" />
-          Nouvel avis
-        </NuxtLink>
-      </div>
-
-      <!-- Barre de filtres -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-        <div class="flex items-center gap-3">
-          <label for="filtre-etat" class="text-sm font-medium text-gray-700 shrink-0">
-            Etat :
-          </label>
-          <select
-            id="filtre-etat"
-            :value="filtreEtat"
-            class="block w-full sm:w-56 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-            @change="onFiltrerEtat(($event.target as HTMLSelectElement).value)"
+          <NuxtLink
+            to="/retrouve-amis/nouveau"
+            class="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
           >
-            <option v-for="opt in optionsEtat" :key="opt.valeur" :value="opt.valeur">
-              {{ opt.libelle }}
-            </option>
-          </select>
+            <font-awesome-icon :icon="['fas', 'plus']" />
+            Nouvel avis
+          </NuxtLink>
         </div>
-      </div>
 
-      <!-- Chargement -->
-      <div v-if="chargement" class="flex items-center justify-center py-20">
-        <font-awesome-icon :icon="['fas', 'spinner']" class="text-3xl text-amber-600 animate-spin" />
-      </div>
-
-      <!-- Etat vide -->
-      <div v-else-if="avisListe.length === 0" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-        <div class="w-20 h-20 mx-auto mb-6 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center">
-          <font-awesome-icon :icon="['fas', 'users-slash']" class="text-3xl" />
-        </div>
-        <h3 class="text-xl font-semibold text-gray-700 mb-2">
-          Vous n'avez pas encore d'avis de recherche
-        </h3>
-        <p class="text-gray-500 mb-6">
-          Commencez par deposer un avis pour retrouver un proche perdu de vue.
-        </p>
-        <NuxtLink
-          to="/retrouve-amis/nouveau"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
-        >
-          <font-awesome-icon :icon="['fas', 'plus']" />
-          Creer un avis de recherche
-        </NuxtLink>
-      </div>
-
-      <!-- Grille des avis -->
-      <div v-else>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div
-            v-for="avis in avisListe"
-            :key="avis.id"
-            class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-          >
-            <div class="p-5">
-              <div class="flex items-start justify-between mb-3">
-                <h3 class="text-lg font-semibold text-gray-800 line-clamp-1">
-                  {{ avis.nom_recherche }} {{ avis.prenom_recherche }}
-                </h3>
-                <span
-                  class="shrink-0 ml-2 px-2.5 py-0.5 text-xs font-medium rounded-full"
-                  :class="badgeCouleur(avis.etat)"
-                >
-                  {{ avis.etat }}
-                </span>
-              </div>
-              <p v-if="avis.lien_parente" class="text-sm text-gray-500 mb-2">
-                <font-awesome-icon :icon="['fas', 'link']" class="mr-1" />
-                {{ avis.lien_parente }}
-              </p>
-              <p v-if="avis.dernier_lieu_connu" class="text-sm text-gray-500 mb-2">
-                <font-awesome-icon :icon="['fas', 'location-dot']" class="mr-1" />
-                {{ avis.dernier_lieu_connu }}
-              </p>
-              <p v-if="avis.annee_derniere_rencontre" class="text-sm text-gray-500 mb-3">
-                <font-awesome-icon :icon="['fas', 'calendar']" class="mr-1" />
-                Derniere rencontre : {{ avis.annee_derniere_rencontre }}
-              </p>
-              <p class="text-sm text-gray-600 line-clamp-2 mb-4">
-                {{ avis.description || 'Aucune description.' }}
-              </p>
-
-              <!-- Toggle Rendre public -->
-              <div v-if="avis.etat === 'actif'" class="mb-4 p-3 bg-gray-50 rounded-lg">
-                <div class="flex items-center justify-between">
-                  <label class="text-sm font-medium text-gray-700 cursor-pointer" :for="'toggle-public-' + avis.id">
-                    <font-awesome-icon :icon="['fas', 'globe']" class="mr-1.5 text-amber-600" />
-                    Rendre public
-                  </label>
-                  <button
-                    :id="'toggle-public-' + avis.id"
-                    type="button"
-                    role="switch"
-                    :aria-checked="avis.est_public"
-                    :disabled="publicationEnCours === avis.id"
-                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50"
-                    :class="avis.est_public ? 'bg-custom-green' : 'bg-gray-200'"
-                    @click="onTogglePublic(avis)"
-                  >
-                    <span
-                      class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                      :class="avis.est_public ? 'translate-x-5' : 'translate-x-0'"
-                    />
-                  </button>
-                </div>
-                <!-- Lien public + compteur de partages -->
-                <div v-if="avis.est_public && avis.slug" class="mt-2 space-y-1">
-                  <NuxtLink
-                    :to="`/retrouve-amis/public/${avis.slug}`"
-                    class="text-xs text-amber-700 hover:text-amber-800 hover:underline break-all"
-                    target="_blank"
-                  >
-                    <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="mr-1" />
-                    /retrouve-amis/public/{{ avis.slug }}
-                  </NuxtLink>
-                  <p class="text-xs text-gray-500">
-                    <font-awesome-icon :icon="['fas', 'share-nodes']" class="mr-1" />
-                    {{ avis.compteur_partages || 0 }} partage{{ (avis.compteur_partages || 0) !== 1 ? 's' : '' }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
-                <button
-                  class="flex-1 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
-                  @click="onVoir(avis.slug)"
-                >
-                  <font-awesome-icon :icon="['fas', 'eye']" class="mr-1" />
-                  Voir
-                </button>
-                <button
-                  v-if="avis.etat === 'actif'"
-                  class="flex-1 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
-                  @click="onModifier(avis.id)"
-                >
-                  <font-awesome-icon :icon="['fas', 'pen']" class="mr-1" />
-                  Modifier
-                </button>
-                <button
-                  v-if="avis.etat === 'actif'"
-                  class="flex-1 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
-                  @click="onDemanderCloture(avis.id)"
-                >
-                  <font-awesome-icon :icon="['fas', 'xmark']" class="mr-1" />
-                  Cloturer
-                </button>
-              </div>
-            </div>
+        <!-- Barre de filtres -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div class="flex items-center gap-3">
+            <label for="filtre-etat" class="text-sm font-medium text-gray-700 shrink-0">
+              Etat :
+            </label>
+            <select
+              id="filtre-etat"
+              :value="filtreEtat"
+              class="block w-full sm:w-56 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              @change="onFiltrerEtat(($event.target as HTMLSelectElement).value)"
+            >
+              <option v-for="opt in optionsEtat" :key="opt.valeur" :value="opt.valeur">
+                {{ opt.libelle }}
+              </option>
+            </select>
           </div>
         </div>
 
-        <!-- Pagination -->
-        <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 mt-10">
-          <button
-            class="px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer"
-            :class="page === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'"
-            :disabled="page === 1"
-            @click="onChangerPage(page - 1)"
-          >
-            <font-awesome-icon :icon="['fas', 'chevron-left']" />
-          </button>
-          <template v-for="p in totalPages" :key="p">
-            <button
-              class="w-10 h-10 text-sm font-medium rounded-lg transition-colors cursor-pointer"
-              :class="p === page ? 'bg-amber-700 text-white' : 'text-gray-700 hover:bg-gray-100'"
-              @click="onChangerPage(p)"
-            >
-              {{ p }}
-            </button>
-          </template>
-          <button
-            class="px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer"
-            :class="page === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'"
-            :disabled="page === totalPages"
-            @click="onChangerPage(page + 1)"
-          >
-            <font-awesome-icon :icon="['fas', 'chevron-right']" />
-          </button>
+        <!-- Chargement -->
+        <div v-if="chargement" class="flex items-center justify-center py-20">
+          <font-awesome-icon :icon="['fas', 'spinner']" class="text-3xl text-amber-600 animate-spin" />
         </div>
-      </div>
+
+        <!-- Etat vide -->
+        <div v-else-if="avisListe.length === 0" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+          <div class="w-20 h-20 mx-auto mb-6 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center">
+            <font-awesome-icon :icon="['fas', 'users-slash']" class="text-3xl" />
+          </div>
+          <h3 class="text-xl font-semibold text-gray-700 mb-2">
+            Vous n'avez pas encore d'avis de recherche
+          </h3>
+          <p class="text-gray-500 mb-6">
+            Commencez par deposer un avis pour retrouver un proche perdu de vue.
+          </p>
+          <NuxtLink
+            to="/retrouve-amis/nouveau"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+          >
+            <font-awesome-icon :icon="['fas', 'plus']" />
+            Creer un avis de recherche
+          </NuxtLink>
+        </div>
+
+        <!-- Grille des avis -->
+        <div v-else>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div
+              v-for="avis in avisListe"
+              :key="avis.id"
+              class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+            >
+              <!-- Photo ou placeholder -->
+              <div class="h-40 bg-gray-100 overflow-hidden">
+                <img
+                  v-if="avis.photo_url"
+                  :src="avis.photo_url"
+                  :alt="avis.nom_recherche"
+                  class="w-full h-full object-cover"
+                >
+                <div v-else class="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                  <font-awesome-icon :icon="['fas', 'user']" class="text-5xl mb-2" />
+                  <span class="text-xs text-gray-400">Photo non disponible</span>
+                </div>
+              </div>
+
+              <div class="p-5">
+                <div class="flex items-start justify-between mb-3">
+                  <h3 class="text-lg font-semibold text-gray-800 line-clamp-1">
+                    {{ avis.nom_recherche }} {{ avis.prenom_recherche }}
+                  </h3>
+                  <span
+                    class="shrink-0 ml-2 px-2.5 py-0.5 text-xs font-medium rounded-full capitalize"
+                    :class="badgeCouleur(avis.etat)"
+                  >
+                    {{ avis.etat }}
+                  </span>
+                </div>
+
+                <!-- Type de relation -->
+                <p v-if="avis.type_relation" class="text-sm text-gray-500 mb-1">
+                  <font-awesome-icon :icon="['fas', 'heart']" class="mr-1 text-custom-chocolat" />
+                  {{ labelRelation(avis.type_relation, avis.type_relation_autre) }}
+                </p>
+
+                <!-- Genre -->
+                <p v-if="avis.genre_recherche" class="text-sm text-gray-500 mb-1">
+                  <font-awesome-icon :icon="['fas', 'user']" class="mr-1" />
+                  {{ avis.genre_recherche === 'homme' ? 'Homme' : 'Femme' }}
+                </p>
+
+                <!-- Lieu -->
+                <p v-if="avis.ville_rencontre || avis.localite_rencontre" class="text-sm text-gray-500 mb-1">
+                  <font-awesome-icon :icon="['fas', 'location-dot']" class="mr-1" />
+                  {{ avis.localite_rencontre }}{{ avis.localite_rencontre && avis.ville_rencontre ? ', ' : '' }}{{ avis.ville_rencontre }}
+                </p>
+
+                <!-- Reseaux sociaux -->
+                <p v-if="avis.rencontre_reseaux_sociaux && avis.reseaux_sociaux" class="text-sm text-gray-500 mb-1">
+                  <font-awesome-icon :icon="['fas', 'share-nodes']" class="mr-1" />
+                  {{ avis.reseaux_sociaux.split(',').join(', ') }}
+                </p>
+
+                <!-- Description -->
+                <p v-if="avis.description_physique" class="text-sm text-gray-600 line-clamp-2 mt-2 mb-3">
+                  {{ avis.description_physique }}
+                </p>
+
+                <!-- Lien public -->
+                <div v-if="avis.est_public && avis.slug && avis.etat === 'actif'" class="mb-3 p-2.5 bg-green-50 rounded-lg">
+                  <NuxtLink
+                    :to="`/retrouve-amis/public/${avis.slug}`"
+                    class="text-xs text-green-700 hover:text-green-800 hover:underline break-all"
+                    target="_blank"
+                  >
+                    <font-awesome-icon :icon="['fas', 'globe']" class="mr-1" />
+                    Avis public
+                    <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="ml-1" />
+                  </NuxtLink>
+                </div>
+
+                <!-- Date -->
+                <p class="text-xs text-gray-400 mb-3">
+                  <font-awesome-icon :icon="['fas', 'clock']" class="mr-1" />
+                  {{ new Date(avis.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}
+                </p>
+
+                <!-- Boutons d'action -->
+                <div class="flex items-center gap-1.5 pt-3 border-t border-gray-100">
+                  <button
+                    class="flex-1 px-3 py-2 text-xs font-medium text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer text-center"
+                    title="Voir l'avis public"
+                    @click="onVoir(avis.slug)"
+                  >
+                    <font-awesome-icon :icon="['fas', 'eye']" class="mr-1" />
+                    Voir
+                  </button>
+                  <button
+                    v-if="avis.etat === 'actif'"
+                    class="flex-1 px-3 py-2 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer text-center"
+                    title="Modifier l'avis"
+                    @click="onModifier(avis.id)"
+                  >
+                    <font-awesome-icon :icon="['fas', 'pen']" class="mr-1" />
+                    Modifier
+                  </button>
+                  <button
+                    v-if="avis.etat === 'actif'"
+                    class="flex-1 px-3 py-2 text-xs font-medium text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors cursor-pointer text-center"
+                    title="Cloturer l'avis"
+                    @click="onDemanderCloture(avis.id)"
+                  >
+                    <font-awesome-icon :icon="['fas', 'circle-xmark']" class="mr-1" />
+                    Cloturer
+                  </button>
+                  <button
+                    class="px-2.5 py-2 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
+                    title="Supprimer definitivement"
+                    @click="onDemanderSuppression(avis.id)"
+                  >
+                    <font-awesome-icon :icon="['fas', 'trash']" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 mt-10">
+            <button
+              class="px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer"
+              :class="page === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'"
+              :disabled="page === 1"
+              @click="onChangerPage(page - 1)"
+            >
+              <font-awesome-icon :icon="['fas', 'chevron-left']" />
+            </button>
+            <template v-for="p in totalPages" :key="p">
+              <button
+                class="w-10 h-10 text-sm font-medium rounded-lg transition-colors cursor-pointer"
+                :class="p === page ? 'bg-amber-700 text-white' : 'text-gray-700 hover:bg-gray-100'"
+                @click="onChangerPage(p)"
+              >
+                {{ p }}
+              </button>
+            </template>
+            <button
+              class="px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer"
+              :class="page === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'"
+              :disabled="page === totalPages"
+              @click="onChangerPage(page + 1)"
+            >
+              <font-awesome-icon :icon="['fas', 'chevron-right']" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -344,7 +386,8 @@ onMounted(() => {
             Confirmer la cloture
           </h3>
           <p class="text-gray-600 text-sm mb-6">
-            Etes-vous sur de vouloir cloturer cet avis de recherche ? Cette action est irreversible.
+            Etes-vous sur de vouloir cloturer cet avis de recherche ?
+            L'avis ne sera plus visible publiquement mais restera dans votre historique.
           </p>
           <div class="flex items-center justify-end gap-3">
             <button
@@ -354,10 +397,44 @@ onMounted(() => {
               Annuler
             </button>
             <button
-              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+              class="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors cursor-pointer"
               @click="onConfirmerCloture"
             >
               Oui, cloturer
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modale de confirmation de suppression -->
+    <Teleport to="body">
+      <div
+        v-if="confirmationSuppression"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      >
+        <div class="absolute inset-0 bg-black/50" @click="onAnnulerSuppression" />
+        <div class="relative bg-white rounded-xl shadow-xl p-6 max-w-md w-full">
+          <h3 class="text-lg font-semibold text-gray-800 mb-3">
+            <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="text-red-500 mr-2" />
+            Supprimer cet avis
+          </h3>
+          <p class="text-gray-600 text-sm mb-6">
+            Etes-vous sur de vouloir supprimer definitivement cet avis de recherche ?
+            Cette action est irreversible.
+          </p>
+          <div class="flex items-center justify-end gap-3">
+            <button
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+              @click="onAnnulerSuppression"
+            >
+              Annuler
+            </button>
+            <button
+              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+              @click="onConfirmerSuppression"
+            >
+              Oui, supprimer
             </button>
           </div>
         </div>
