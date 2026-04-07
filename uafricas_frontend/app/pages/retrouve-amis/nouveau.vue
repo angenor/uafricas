@@ -171,7 +171,7 @@ onMounted(() => {
               class="px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
             >
               <font-awesome-icon :icon="['fas', 'eye']" class="mr-2" />
-              Voir l'avis public
+              Voir votre avis tel que publié
             </NuxtLink>
             <NuxtLink
               to="/retrouve-amis/mes-recherches"
