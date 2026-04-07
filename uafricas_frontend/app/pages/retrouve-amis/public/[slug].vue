@@ -107,11 +107,11 @@ useHead({
   <div class="min-h-screen bg-gray-50">
     <!-- Hero compact -->
     <div
-      class="relative h-48 bg-cover bg-center"
+      class="relative h-56 bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
     >
       <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-10">
+      <div class="absolute inset-0 flex flex-col items-center justify-center pt-14">
         <h1 class="text-white text-2xl md:text-3xl font-bold mb-2">
           Avis de recherche
         </h1>
