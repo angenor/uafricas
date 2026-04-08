@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-gray-900 text-white">
+  <div class="fixed inset-0 z-9999 flex h-screen bg-gray-900 text-white">
     <!-- Zone video principale -->
     <div class="flex-1 flex flex-col min-w-0">
       <!-- Header -->
