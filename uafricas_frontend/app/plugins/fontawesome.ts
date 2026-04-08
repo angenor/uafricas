@@ -150,6 +150,8 @@ import {
   faSignature,
   faVenusMars,
   faDove,
+  faSkullCrossbones,
+  faHandFist,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -328,6 +330,8 @@ library.add(
   faSignature,
   faVenusMars,
   faDove,
+  faSkullCrossbones,
+  faHandFist,
 )
 
 export default defineNuxtPlugin((nuxtApp) => {
