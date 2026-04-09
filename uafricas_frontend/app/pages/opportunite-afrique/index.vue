@@ -12,7 +12,7 @@
         </h1>
         <div class="h-1 w-24 bg-white rounded animate-line"></div>
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle text-center px-4">
-          Opportunités en Afrique
+          Promouvons notre Afrique
         </p>
         <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
           Rendre visible pour chaque territoire africain les opportunités touristiques, d'investissement et toute autre opportunité pertinente.

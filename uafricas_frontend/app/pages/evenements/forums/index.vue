@@ -3,7 +3,7 @@
     <!-- Hero -->
     <div class="h-64 w-full flex relative bg-linear-to-r from-custom-chocolat to-black/90">
       <div class="absolute bottom-16 left-0 text-white w-screen text-center font-semibold text-3xl py-2">
-        Codification des valeurs africaines et afro-descendantes
+        Préservons nos cultures les meilleures
       </div>
     </div>
 

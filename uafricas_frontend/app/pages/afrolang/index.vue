@@ -34,7 +34,7 @@
         </h1>
         <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
-          Apprentissage des langues africaines
+          Sauvons nos langues
         </p>
         <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
           Apprendre une langue africaine ou afro-descendante à distance et rencontrer des personnes qui pratiquent la langue et souhaitent l'apprendre.

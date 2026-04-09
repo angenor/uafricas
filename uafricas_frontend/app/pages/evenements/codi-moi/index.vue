@@ -13,7 +13,7 @@
         </h1>
         <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle max-w-4xl text-center px-4">
-          Codification des valeurs africaines et afro-descendantes
+          Préservons nos cultures les meilleures
         </p>
         <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
           Codifier, documenter des faits, des récits, des images et des souvenirs qui illustrent l'histoire avant la colonisation, pendant et après de l'Afrique et l'histoire des afro-descendants.

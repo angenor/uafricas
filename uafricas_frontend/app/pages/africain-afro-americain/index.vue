@@ -60,7 +60,7 @@ const erreur = computed(() => fetchError.value?.message ?? null)
       <!-- Description Afroculture -->
       <div class="mt-4 p-4 bg-linear-to-r from-custom-chocolat/5 to-custom-green/5 border-l-4 border-custom-green rounded-r-lg">
         <p class="text-gray-700 text-sm md:text-base leading-relaxed">
-          <span class="font-semibold text-custom-chocolat">Afroculture</span> — Promouvoir des activités mettant en valeur des éléments de culture de peuples issus d'Afrique ou afro-descendants.
+          <span class="font-semibold text-custom-chocolat">Afroculture</span> — Enrichissons nous ici et ailleurs de notre culture diversifiée
         </p>
       </div>
 
