@@ -340,13 +340,18 @@ const connectToRoom = async () => {
   })
 
   // Local track published
-  newRoom.on(RoomEvent.LocalTrackPublished, () => {
+  newRoom.on(RoomEvent.LocalTrackPublished, (publication) => {
     updateLocalParticipant()
+    if (publication.source === Track.Source.ScreenShare) {
+      ecranPartage.value = true
+    }
   })
 
-  newRoom.on(RoomEvent.LocalTrackUnpublished, () => {
+  newRoom.on(RoomEvent.LocalTrackUnpublished, (publication) => {
     updateLocalParticipant()
-    ecranPartage.value = false
+    if (publication.source === Track.Source.ScreenShare) {
+      ecranPartage.value = false
+    }
   })
 
   try {

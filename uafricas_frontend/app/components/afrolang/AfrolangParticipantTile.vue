@@ -6,24 +6,24 @@
       'ring-2 ring-blue-400': participant.isLocal,
     }"
   >
-    <!-- Video -->
+    <!-- Mode partage d'écran (tuile dédiée) -->
     <video
-      v-if="participant.videoTrack && !participant.isCameraOff"
-      ref="videoRef"
-      autoplay
-      playsinline
-      :muted="participant.isLocal"
-      class="w-full h-full object-cover"
-    />
-
-    <!-- Screen share -->
-    <video
-      v-else-if="participant.screenTrack"
+      v-if="isScreenShare && participant.screenTrack"
       ref="screenRef"
       autoplay
       playsinline
       muted
       class="w-full h-full object-contain bg-black"
+    />
+
+    <!-- Video camera (tuile normale) -->
+    <video
+      v-else-if="participant.videoTrack && !participant.isCameraOff"
+      ref="videoRef"
+      autoplay
+      playsinline
+      :muted="participant.isLocal"
+      class="w-full h-full object-cover"
     />
 
     <!-- Avatar fallback (camera off) -->
@@ -50,7 +50,11 @@
           <span class="text-sm font-medium text-white truncate">
             {{ participant.name }}
           </span>
-          <span v-if="participant.isLocal" class="text-xs text-blue-300">(vous)</span>
+          <span v-if="isScreenShare" class="text-xs text-emerald-300 flex items-center gap-1">
+            <font-awesome-icon :icon="['fas', 'display']" class="w-3 h-3" />
+            Partage d'écran
+          </span>
+          <span v-else-if="participant.isLocal" class="text-xs text-blue-300">(vous)</span>
           <span
             v-if="participant.isModerator"
             class="bg-blue-500/80 text-white text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0"
@@ -100,6 +104,7 @@ import type { RoomParticipant } from './AfrolangRoom.vue'
 const props = defineProps<{
   participant: RoomParticipant
   isDominant: boolean
+  isScreenShare?: boolean
 }>()
 
 const videoRef = ref<HTMLVideoElement | null>(null)

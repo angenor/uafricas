@@ -1,19 +1,33 @@
 <template>
-  <div
-    class="flex-1 p-2 sm:p-4 overflow-hidden"
-    :class="gridClass"
-  >
-    <AfrolangParticipantTile
-      v-for="participant in participants"
-      :key="participant.identity"
-      :participant="participant"
-      :is-dominant="participant.identity === dominantSpeaker"
-    />
+  <div class="flex-1 p-2 sm:p-4 overflow-hidden flex flex-col gap-2 sm:gap-4">
+    <!-- Partage d'écran proéminent -->
+    <div v-if="ecranPartageActif" class="flex-1 min-h-0">
+      <AfrolangParticipantTile
+        :participant="ecranPartageActif"
+        :is-dominant="false"
+        :is-screen-share="true"
+      />
+    </div>
+
+    <!-- Grille des participants -->
+    <div
+      :class="[
+        ecranPartageActif ? 'h-32 sm:h-40 shrink-0 flex gap-2 overflow-x-auto' : gridClass,
+      ]"
+    >
+      <AfrolangParticipantTile
+        v-for="participant in participants"
+        :key="participant.identity"
+        :participant="participant"
+        :is-dominant="participant.identity === dominantSpeaker"
+        :class="ecranPartageActif ? 'w-32 sm:w-40 shrink-0 rounded-lg' : ''"
+      />
+    </div>
 
     <!-- Empty state -->
     <div
       v-if="participants.length === 0"
-      class="flex items-center justify-center h-full text-gray-500"
+      class="flex-1 flex items-center justify-center text-gray-500"
     >
       <div class="text-center">
         <font-awesome-icon :icon="['fas', 'video']" class="w-12 h-12 text-gray-600 mb-3" />
@@ -30,6 +44,11 @@ const props = defineProps<{
   participants: RoomParticipant[]
   dominantSpeaker: string | null
 }>()
+
+// Trouver le participant qui partage son écran
+const ecranPartageActif = computed<RoomParticipant | null>(() => {
+  return props.participants.find(p => p.screenTrack !== null) ?? null
+})
 
 const gridClass = computed(() => {
   const count = props.participants.length
