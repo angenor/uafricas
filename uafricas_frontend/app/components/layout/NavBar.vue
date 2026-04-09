@@ -386,17 +386,18 @@ const menus: NavMenu[] = [
     ]
   },
   {
-    id: 'mindshiftlab',
-    label: 'Mindshiftlab',
-    subtitle: 'Formation & savoir',
-    description: 'Se former et développer de nouvelles compétences pour le continent',
-    to: '/universite',
-    gradient: 'bg-linear-to-br from-blue-700 to-indigo-900',
-    image: '/images/education.png',
+    id: 'opafrica',
+    label: 'Opafrica',
+    subtitle: 'Opportunités',
+    description: 'Saisir les opportunités et agir concrètement pour le développement du continent',
+    to: '/actions',
+    gradient: 'bg-linear-to-br from-teal-600 to-cyan-800',
+    image: '/images/fiche-opportunite.jpg',
     items: [
-      { label: 'INUDA', to: '/universite/inuda', description: 'Institut numérique universitaire d\'Afrique', icon: 'fa-solid fa-graduation-cap' },
-      { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
-      { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Sciences humaines et sociales', icon: 'fa-solid fa-chalkboard-user' },
+      { label: 'Afripulse', to: '/opportunite-afrique', description: 'Offres d\'emploi et opportunités', icon: 'fa-solid fa-briefcase' },
+      { label: 'Diapertise', to: '/experts', description: 'Experts et consultants de la diaspora', icon: 'fa-solid fa-user-tie' },
+      { label: 'Sabbafrica', to: '/echanges-sabbatiques', description: 'Programmes d\'échanges sabbatiques', icon: 'fa-solid fa-plane' },
+      { label: 'Afromarket', to: '/marche-africain', description: 'Place de marché panafricaine', icon: 'fa-solid fa-store' },
     ]
   },
   {
@@ -414,7 +415,35 @@ const menus: NavMenu[] = [
     ]
   },
   {
-    id: 'media',
+    id: 'mindshiftlab',
+    label: 'Mindshiftlab',
+    subtitle: 'Formation & savoir',
+    description: 'Se former et développer de nouvelles compétences pour le continent',
+    to: '/universite',
+    gradient: 'bg-linear-to-br from-blue-700 to-indigo-900',
+    image: '/images/education.png',
+    items: [
+      { label: 'INUDA', to: '/universite/inuda', description: 'Institut numérique universitaire d\'Afrique', icon: 'fa-solid fa-graduation-cap' },
+      { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
+      { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Sciences humaines et sociales', icon: 'fa-solid fa-chalkboard-user' },
+    ]
+  },
+  {
+    id: 'africantives',
+    label: 'Africantives',
+    subtitle: 'Innovation & projets',
+    description: 'Découvrir et soutenir les innovations et projets porteurs du continent',
+    to: '/africantives',
+    gradient: 'bg-linear-to-br from-rose-600 to-pink-800',
+    image: '/images/fiche-opportunite.jpg',
+    items: [
+      { label: 'Initiatives', to: '/africantives', description: 'Initiatives et startups africaines', icon: 'fa-solid fa-rocket' },
+      { label: 'Soumettre un projet', to: '/soumettre-projet', description: 'Proposez votre projet innovant', icon: 'fa-solid fa-paper-plane' },
+      { label: 'Financer un projet', to: '/financer-projet', description: 'Investissez dans l\'innovation africaine', icon: 'fa-solid fa-hand-holding-dollar' },
+    ]
+  },
+  {
+    id: 'africamood',
     label: 'Africamood',
     subtitle: 'Médias',
     description: 'Suivre l\'actualité médiatique et culturelle du continent africain',
@@ -426,22 +455,6 @@ const menus: NavMenu[] = [
       { label: 'Télé', to: '/tele', description: 'Chaînes de télévision africaines', icon: 'fa-solid fa-tv' },
       { label: 'Radio', to: '/radios', description: 'Stations radio du continent', icon: 'fa-solid fa-radio' },
       { label: 'Africalive', to: '/evenements/liste', description: 'Événements et directs en streaming', icon: 'fa-solid fa-video' },
-    ]
-  },
-  {
-    id: 'opafrica',
-    label: 'Opafrica',
-    subtitle: 'Opportunités',
-    description: 'Saisir les opportunités et agir concrètement pour le développement du continent',
-    to: '/actions',
-    gradient: 'bg-linear-to-br from-teal-600 to-cyan-800',
-    image: '/images/fiche-opportunite.jpg',
-    items: [
-      { label: 'Afripulse', to: '/opportunite-afrique', description: 'Offres d\'emploi et opportunités', icon: 'fa-solid fa-briefcase' },
-      { label: 'Diapertise', to: '/experts', description: 'Experts et consultants de la diaspora', icon: 'fa-solid fa-user-tie' },
-      { label: 'Sabbafrica', to: '/echanges-sabbatiques', description: 'Programmes d\'échanges sabbatiques', icon: 'fa-solid fa-plane' },
-      { label: 'Afromarket', to: '/marche-africain', description: 'Place de marché panafricaine', icon: 'fa-solid fa-store' },
-      { label: 'Africantives', to: '/africantives', description: 'Innovations et startups africaines', icon: 'fa-solid fa-rocket' },
     ]
   },
 ]
