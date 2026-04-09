@@ -3,7 +3,8 @@
     class="relative bg-gray-800 rounded-xl overflow-hidden"
     :class="{
       'ring-2 ring-emerald-400': isDominant && !participant.isMuted,
-      'ring-2 ring-blue-400': participant.isLocal,
+      'ring-2 ring-blue-400': participant.isLocal && !isScreenShare,
+      'h-full': isScreenShare,
     }"
   >
     <!-- Mode partage d'écran (tuile dédiée) -->
