@@ -192,6 +192,7 @@ const sidebarSections: SidebarSection[] = [
       { label: 'Événements', faIcon: 'calendar', route: '/admin/evenements' },
       { label: 'MOOC', faIcon: 'graduation-cap', route: '/admin/mooc' },
       { label: 'Bibliothèque', faIcon: 'book', route: '/admin/livres' },
+      { label: 'Vidafrica', faIcon: 'closed-captioning', route: '/admin/vidafrica' },
     ],
   },
   {

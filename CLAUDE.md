@@ -48,7 +48,8 @@ Handlers dans `src/handlers/` (un fichier/domaine). Pattern: CRUD + filtres/pagi
 | Domaine | Routes | Endpoints principaux |
 |---------|--------|---------------------|
 | **Auth** | auth | inscription/connexion/JWT/refresh |
-| **Public** | livres, centres-culturels, codimoi, evenements, gouvernance, annonces/marché, television | CRUD + filtres |
+| **Public** | livres, centres-culturels, codimoi, evenements, gouvernance, annonces/marché, television, vidafrica | CRUD + filtres |
+| **Admin Vidafrica** | ~18 | vidéos (CRUD+multipart+état), pistes sous-titres (CRUD), segments (CRUD+réordonnement), timings mot (batch enregistrement/suppression) |
 | **Admin IAM** | ~30 | utilisateurs (CRUD+état+rôles+spécialités+permissions), organisations, partenariats, roles (CRUD+permissions), permissions |
 | **Admin Référentiels** | ~28 | pays (+continent), domaines, categories (+contexte/parent/enfants), tags, medias, specialites |
 | **Admin Programmes** | ~10 | programmes (CRUD+état+candidatures), candidatures (liste/détail/statut) |
@@ -60,7 +61,7 @@ Handlers dans `src/handlers/` (un fichier/domaine). Pattern: CRUD + filtres/pagi
 | **Admin Audit** | 2 | liste paginée (filtres action/user/table/date/IP) + détail (before/after JSONB) |
 | **Admin Profils Pays** | ~43 | fiches pays + 8 sous-entités (regions, groupes-ethniques, alliances, contes, sites-touristiques, secteurs, saisons, liens-interethniques) + modération contributions |
 
-**Fichiers admin** : handlers `src/handlers/admin/` et models `src/models/admin/` — sous-modules: utilisateurs, organisations, partenariats, roles, pays, domaines, categories, tags, medias, specialites, programmes, candidatures, annonces, annonces_favoris, innovations, projets_admin, africantives_admin, centres_culturels, programmations, codimoi_admin, gouvernance, radio_tele, evenements, mooc, livres, audit, profils_pays.
+**Fichiers admin** : handlers `src/handlers/admin/` et models `src/models/admin/` — sous-modules: utilisateurs, organisations, partenariats, roles, pays, domaines, categories, tags, medias, specialites, programmes, candidatures, annonces, annonces_favoris, innovations, projets_admin, africantives_admin, centres_culturels, programmations, codimoi_admin, gouvernance, radio_tele, evenements, mooc, livres, audit, profils_pays, vidafrica.
 
 **Services** : `src/services/` — audit.rs (`log_action` non-bloquant, `extraire_ip`, `extraire_user_agent`). ~100 mutations instrumentées auto.
 
@@ -71,7 +72,7 @@ JWT HS256 access (15min) + refresh (7j, SHA-256 hashé dans `iam.refresh_token`)
 actix-web 4, actix-cors, actix-multipart, actix-files, sqlx (PostgreSQL), uuid, chrono, dotenvy, serde, sanitize-filename, bcrypt, jsonwebtoken, sha2, rand, livekit-api, lettre.
 
 ### Upload
-Stockage local `./uploads/couvertures/` et `./uploads/documents/`, servis via actix-files sur `/uploads/`.
+Stockage local `./uploads/couvertures/`, `./uploads/documents/`, `./uploads/videos/` et `./uploads/vignettes/`, servis via actix-files sur `/uploads/`.
 
 ### Database
 PostgreSQL 16 Docker. Schema SQL: `uafricas_backend/doc/bd/schema.sql` (orchestrateur, 15 fichiers via `\ir` dans `schemas/`). Init auto via `docker-init.sh`.
@@ -143,6 +144,8 @@ Mettre à jour ce fichier lors de: ajout/suppression service Docker ou dépendan
 - N/A — aucune modification backend/BDD (001-ajout-personne-ludique)
 - TypeScript (Nuxt 4 / Vue 3 SSR) + GSAP 3.14.2 (deja installe), Vue 3 Composition API, Tailwind CSS v4 (001-nouveau-avis-ludique)
 - N/A (aucune modification BDD) (001-nouveau-avis-ludique)
+- Rust Edition 2024 (backend), TypeScript / Nuxt 4 / Vue 3 (frontend) + Actix-Web 4, actix-multipart, sqlx (backend) ; Vue 3 Composition API, Pinia (frontend) (004-vidafrica-sous-titres)
+- PostgreSQL 16, schema `media_content` (4 nouvelles tables) + stockage local `./uploads/videos/` et `./uploads/vignettes/` (004-vidafrica-sous-titres)
 
 ## Recent Changes
 - 001-personnes-arbre: Added schema `arbre_genealogique` (4 tables: personnes, arbres, rattachements, liens_familiaux). Backend: 8 handlers CRUD + liens + photo upload, cycle detection CTE, cascade soft delete. Frontend: composable `useArbreGenealogique`, mock `arbre-genealogique.ts`, composants `PersonneForm.vue` / `PersonneCard.vue` / `LienFamilialForm.vue`, pages `arbre-genealogique/index.vue` + `[id].vue`. Architecture fondation matching inter-arbres documentée (Décision 8 research.md).

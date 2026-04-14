@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afrolang, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television};
+use crate::handlers::{admin, africantives, afrolang, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -336,7 +336,27 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/retrouve-amis/statistiques", web::get().to(admin::retrouve_amis::statistiques))
                     // Retrouve Amis - Demandes de retrait
                     .route("/retrouve-amis/demandes-retrait", web::get().to(admin::retrouve_amis::lister_demandes_retrait))
-                    .route("/retrouve-amis/demandes-retrait/{id}/statuer", web::patch().to(admin::retrouve_amis::statuer_demande_retrait)),
+                    .route("/retrouve-amis/demandes-retrait/{id}/statuer", web::patch().to(admin::retrouve_amis::statuer_demande_retrait))
+                    // Vidafrica - Vidéos
+                    .route("/vidafrica/videos", web::get().to(admin::vidafrica::lister_videos))
+                    .route("/vidafrica/videos", web::post().to(admin::vidafrica::creer_video))
+                    .route("/vidafrica/videos/{id}", web::get().to(admin::vidafrica::obtenir_video))
+                    .route("/vidafrica/videos/{id}", web::put().to(admin::vidafrica::modifier_video))
+                    .route("/vidafrica/videos/{id}", web::delete().to(admin::vidafrica::supprimer_video))
+                    .route("/vidafrica/videos/{id}/etat", web::patch().to(admin::vidafrica::changer_etat_video))
+                    // Vidafrica - Pistes de sous-titres
+                    .route("/vidafrica/videos/{video_id}/pistes", web::get().to(admin::vidafrica::lister_pistes))
+                    .route("/vidafrica/videos/{video_id}/pistes", web::post().to(admin::vidafrica::creer_piste))
+                    .route("/vidafrica/pistes/{id}", web::delete().to(admin::vidafrica::supprimer_piste))
+                    // Vidafrica - Segments
+                    .route("/vidafrica/pistes/{piste_id}/segments", web::get().to(admin::vidafrica::lister_segments))
+                    .route("/vidafrica/pistes/{piste_id}/segments", web::post().to(admin::vidafrica::creer_segment))
+                    .route("/vidafrica/pistes/{piste_id}/segments/reordonner", web::put().to(admin::vidafrica::reordonner_segments))
+                    .route("/vidafrica/segments/{id}", web::put().to(admin::vidafrica::modifier_segment))
+                    .route("/vidafrica/segments/{id}", web::delete().to(admin::vidafrica::supprimer_segment))
+                    // Vidafrica - Timings mot
+                    .route("/vidafrica/segments/{segment_id}/timings-mot", web::post().to(admin::vidafrica::enregistrer_timings_mot))
+                    .route("/vidafrica/segments/{segment_id}/timings-mot", web::delete().to(admin::vidafrica::supprimer_timings_mot)),
             )
             // Routes Retrouve Amis
             .service(
@@ -571,6 +591,14 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/doublons", web::get().to(notification::detecter_doublons))
                     .route("/doublons/ignorer", web::post().to(notification::ignorer_doublon))
                     .route("/doublons/fusionner", web::post().to(notification::fusionner_doublons)),
+            )
+            // Routes Vidafrica (public)
+            .service(
+                web::scope("/vidafrica")
+                    .route("/videos", web::get().to(vidafrica::lister_videos_publiques))
+                    .route("/videos/{slug}", web::get().to(vidafrica::obtenir_video_publique))
+                    .route("/videos/{video_id}/sous-titres/{langue}", web::get().to(vidafrica::obtenir_sous_titres))
+                    .route("/langues-sous-titres", web::get().to(vidafrica::lister_langues_disponibles)),
             )
             // Routes de la télévision
             .service(

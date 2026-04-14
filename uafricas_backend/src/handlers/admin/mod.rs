@@ -30,6 +30,7 @@ pub mod livres;
 pub mod audit;
 pub mod profils_pays;
 pub mod dashboard;
+pub mod vidafrica;
 
 use actix_web::HttpResponse;
 use serde::Serialize;

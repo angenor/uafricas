@@ -90,6 +90,7 @@
 \ir schemas/24_matching.sql
 \ir schemas/25_collaboration.sql
 \ir schemas/26_notifications.sql
+\ir schemas/27_vidafrica.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

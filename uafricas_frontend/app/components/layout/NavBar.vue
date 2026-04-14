@@ -454,6 +454,7 @@ const menus: NavMenu[] = [
     items: [
       { label: 'Télé', to: '/tele', description: 'Chaînes de télévision africaines', icon: 'fa-solid fa-tv' },
       { label: 'Radio', to: '/radios', description: 'Stations radio du continent', icon: 'fa-solid fa-radio' },
+      { label: 'Vidafrica', to: '/vidafrica', description: 'Vidéos sous-titrées multilingues karaoké', icon: 'fa-solid fa-closed-captioning' },
       { label: 'Africalive', to: '/evenements/liste', description: 'Événements et directs en streaming', icon: 'fa-solid fa-video' },
     ]
   },
