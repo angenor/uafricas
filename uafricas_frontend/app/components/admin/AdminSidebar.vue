@@ -182,6 +182,9 @@ const sidebarSections: SidebarSection[] = [
       { label: 'Salles publiques', faIcon: 'door-open', route: '/admin/salles' },
       { label: 'Salles privées', faIcon: 'lock', route: '/admin/salles-privees' },
       { label: 'Sessions', faIcon: 'display', route: '/admin/sessions' },
+      { label: 'Propositions', faIcon: 'circle-check', route: '/admin/afrolang/propositions' },
+      { label: 'Modérateurs attitrés', faIcon: 'user-shield', route: '/admin/afrolang/moderateurs' },
+      { label: 'Liens externes', faIcon: 'link', route: '/admin/afrolang/liens-externes' },
     ],
   },
   {

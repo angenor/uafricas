@@ -7,6 +7,26 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+// ── Types de notifications Afrolang (feature 005, research Décision 10) ──
+// Utilisés comme clés de `type` dans la table notifications (quelle qu'elle soit)
+// — centralisées ici pour éviter les typos et garantir la cohérence entre
+// handlers producteurs et UI consommatrice.
+
+pub mod afrolang {
+    pub const PROPOSITION_VALIDEE: &str = "afrolang.proposition_validee";
+    pub const PROPOSITION_REFUSEE: &str = "afrolang.proposition_refusee";
+    pub const MODERATION_REPRISE: &str = "afrolang.moderation_reprise";
+    pub const ADHESION_DEMANDEE: &str = "afrolang.adhesion_demandee";
+    pub const ADHESION_ACCEPTEE: &str = "afrolang.adhesion_acceptee";
+    pub const ADHESION_REFUSEE: &str = "afrolang.adhesion_refusee";
+    pub const ADHESION_GROUPE_COMPLET: &str = "afrolang.adhesion_groupe_complet";
+    pub const INVITATION_RECUE: &str = "afrolang.invitation_recue";
+    pub const INVITATION_REFUSEE: &str = "afrolang.invitation_refusee";
+    pub const SALLE_PRIVEE_ARCHIVEE: &str = "afrolang.salle_privee_archivee";
+    pub const LIEN_EXTERNE_PUBLIE: &str = "afrolang.lien_externe_publie";
+    pub const LIEN_EXTERNE_REFUSE: &str = "afrolang.lien_externe_refuse";
+}
+
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct NotificationRow {
     pub id: Uuid,

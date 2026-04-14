@@ -117,6 +117,25 @@
 
             <AfrolangSessionTimeline :sessions="sallePrivee.sessions" />
           </div>
+
+          <!-- US5 : Gestion (créateur) -->
+          <div v-if="estCreateur" class="p-6 md:p-8 border-t border-gray-100 space-y-4">
+            <AfrolangSallePriveeVisibilitePanel :salle="sallePrivee" @maj="rechargerSalle" />
+
+            <div v-if="adhesions.length > 0">
+              <h3 class="text-sm font-semibold text-gray-900 mb-3">Demandes & invitations</h3>
+              <div class="space-y-2">
+                <AfrolangDemandeAdhesionCard
+                  v-for="a in adhesions"
+                  :key="a.id"
+                  :adhesion="a"
+                  :peut-decider="true"
+                  @decidee="rechargerAdhesions"
+                  @retiree="rechargerAdhesions"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Retour -->
@@ -138,20 +157,40 @@
 import {
   useAfrolang,
   getInitiales,
+  type AdhesionSallePriveeAPI,
   type SallePriveeDetailAPI,
 } from '~/composables/useAfrolang'
+import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
-const { obtenirSallePrivee } = useAfrolang()
+const { obtenirSallePrivee, listerAdhesions } = useAfrolang()
+const userStore = useUserStore()
 
 // State
 const loading = ref(true)
 const sallePrivee = ref<SallePriveeDetailAPI | null>(null)
+const adhesions = ref<AdhesionSallePriveeAPI[]>([])
 
-onMounted(async () => {
+const estCreateur = computed(() => {
+  const uid = userStore.user?.id
+  return !!uid && !!sallePrivee.value && sallePrivee.value.createur.id === uid
+})
+
+const rechargerAdhesions = async () => {
+  if (estCreateur.value && sallePrivee.value) {
+    adhesions.value = await listerAdhesions(sallePrivee.value.id)
+  }
+}
+
+const rechargerSalle = async () => {
   const id = route.params.id as string
   const resultat = await obtenirSallePrivee(id)
   sallePrivee.value = resultat
+  await rechargerAdhesions()
+}
+
+onMounted(async () => {
+  await rechargerSalle()
 
   if (sallePrivee.value) {
     useHead({

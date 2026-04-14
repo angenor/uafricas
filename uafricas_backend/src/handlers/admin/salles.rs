@@ -43,8 +43,9 @@ pub async fn lister_salles(
     let tri = pagination.colonne_tri(SALLE_TRI_COLONNES, "created_at");
     let dir = pagination.direction_tri();
 
-    let mut conditions = vec!["s.actif = true".to_string()];
+    let mut conditions = vec!["s.deleted_at IS NULL".to_string()];
     let mut str_binds: Vec<String> = Vec::new();
+    let mut uuid_binds: Vec<Uuid> = Vec::new();
     let mut bool_binds: Vec<bool> = Vec::new();
     let mut param_types: Vec<&str> = Vec::new();
     let mut bind_index: u32 = 1;
@@ -52,7 +53,7 @@ pub async fn lister_salles(
     if let Some(ref recherche) = query.recherche {
         if !recherche.is_empty() {
             conditions.push(format!(
-                "(s.titre ILIKE ${bi} OR s.description ILIKE ${bi} OR s.langue_cible ILIKE ${bi})",
+                "(s.titre ILIKE ${bi} OR s.description ILIKE ${bi} OR s.langue_cible ILIKE ${bi} OR s.langue_code ILIKE ${bi})",
                 bi = bind_index
             ));
             str_binds.push(format!("%{}%", recherche));
@@ -68,6 +69,22 @@ pub async fn lister_salles(
             param_types.push("str");
             bind_index += 1;
         }
+    }
+
+    if let Some(ref code) = query.langue_code {
+        if !code.is_empty() {
+            conditions.push(format!("s.langue_code ILIKE ${}", bind_index));
+            str_binds.push(format!("%{}%", code));
+            param_types.push("str");
+            bind_index += 1;
+        }
+    }
+
+    if let Some(groupe_id) = query.groupe_ethnique_id {
+        conditions.push(format!("s.groupe_ethnique_id = ${}", bind_index));
+        uuid_binds.push(groupe_id);
+        param_types.push("uuid");
+        bind_index += 1;
     }
 
     if let Some(actif) = query.actif {
@@ -86,10 +103,12 @@ pub async fn lister_salles(
     );
     let mut count_q = sqlx::query_scalar::<_, i64>(&count_sql);
     let mut str_idx = 0usize;
+    let mut uuid_idx = 0usize;
     let mut bool_idx = 0usize;
     for pt in &param_types {
         match *pt {
             "str" => { count_q = count_q.bind(&str_binds[str_idx]); str_idx += 1; }
+            "uuid" => { count_q = count_q.bind(uuid_binds[uuid_idx]); uuid_idx += 1; }
             "bool" => { count_q = count_q.bind(bool_binds[bool_idx]); bool_idx += 1; }
             _ => {}
         }
@@ -99,16 +118,18 @@ pub async fn lister_salles(
     // Data
     let data_sql = format!(
         "SELECT {} FROM afrolang.salle s
-         LEFT JOIN iam.utilisateur u ON s.moderateur_id = u.id
+         LEFT JOIN country_profile.groupe_ethnique ge ON ge.id = s.groupe_ethnique_id
          WHERE {} ORDER BY s.{} {} LIMIT {} OFFSET {}",
         ADMIN_SALLE_LISTE_COLONNES, where_clause, tri, dir, par_page, offset
     );
     let mut data_q = sqlx::query_as::<_, AdminSalleListeResponse>(&data_sql);
     str_idx = 0;
+    uuid_idx = 0;
     bool_idx = 0;
     for pt in &param_types {
         match *pt {
             "str" => { data_q = data_q.bind(&str_binds[str_idx]); str_idx += 1; }
+            "uuid" => { data_q = data_q.bind(uuid_binds[uuid_idx]); uuid_idx += 1; }
             "bool" => { data_q = data_q.bind(bool_binds[bool_idx]); bool_idx += 1; }
             _ => {}
         }
@@ -134,7 +155,7 @@ pub async fn obtenir_salle(
 
     let sql = format!(
         "SELECT {} FROM afrolang.salle s
-         LEFT JOIN iam.utilisateur u ON s.moderateur_id = u.id
+         LEFT JOIN country_profile.groupe_ethnique ge ON ge.id = s.groupe_ethnique_id
          LEFT JOIN iam.utilisateur cr ON s.cree_par = cr.id
          WHERE s.id = $1",
         ADMIN_SALLE_DETAIL_COLONNES
@@ -166,15 +187,20 @@ pub async fn creer_salle(
     let id = Uuid::new_v4();
 
     sqlx::query(
-        "INSERT INTO afrolang.salle (id, titre, slug, description, langue_cible, moderateur_id, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)"
+        "INSERT INTO afrolang.salle
+            (id, titre, slug, description, langue_cible, langue_code,
+             alphabet, dictionnaire_url, groupe_ethnique_id, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
     )
     .bind(id)
     .bind(&body.titre)
     .bind(&slug)
     .bind(&body.description)
     .bind(&body.langue_cible)
-    .bind(body.moderateur_id)
+    .bind(&body.langue_code)
+    .bind(&body.alphabet)
+    .bind(&body.dictionnaire_url)
+    .bind(body.groupe_ethnique_id)
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -233,10 +259,13 @@ pub async fn modifier_salle(
     ajouter_champ_str!(body.titre, "titre");
     ajouter_champ_str!(body.description, "description");
     ajouter_champ_str!(body.langue_cible, "langue_cible");
+    ajouter_champ_str!(body.langue_code, "langue_code");
+    ajouter_champ_str!(body.alphabet, "alphabet");
+    ajouter_champ_str!(body.dictionnaire_url, "dictionnaire_url");
 
-    if let Some(ref mod_id) = body.moderateur_id {
-        sets.push(format!("moderateur_id = ${}", bind_index));
-        uuid_binds.push(*mod_id);
+    if let Some(groupe_id) = body.groupe_ethnique_id {
+        sets.push(format!("groupe_ethnique_id = ${}", bind_index));
+        uuid_binds.push(groupe_id);
         param_types.push("uuid");
         bind_index += 1;
     }

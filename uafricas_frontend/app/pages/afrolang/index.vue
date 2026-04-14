@@ -51,6 +51,23 @@
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 py-8">
+      <!-- Annuaire des groupes ethniques (feature 005 US1) -->
+      <section class="mb-10">
+        <AfrolangAnnuaireGroupesEthniques
+          @rejoindre-salle="onRejoindreSalle"
+          @proposer-salle="onProposerSalle"
+        />
+      </section>
+
+      <!-- Séparateur -->
+      <div class="flex items-center gap-3 my-8">
+        <div class="flex-1 h-px bg-gray-200" />
+        <span class="text-xs uppercase tracking-widest text-gray-400">
+          Toutes les salles publiques
+        </span>
+        <div class="flex-1 h-px bg-gray-200" />
+      </div>
+
       <!-- Search Bar -->
       <div class="max-w-2xl mx-auto mb-8">
         <div class="relative">
@@ -291,6 +308,14 @@
         </div>
       </div>
     </div>
+
+    <!-- US2 : Modal de proposition de salle -->
+    <AfrolangProposerSalleModal
+      :ouvert="proposerModalOuvert"
+      :nom-prerempli="proposerNomPrerempli"
+      @close="proposerModalOuvert = false"
+      @created="proposerModalOuvert = false"
+    />
   </div>
 </template>
 
@@ -432,8 +457,18 @@ const entrerDansSalle = async (salleId: string) => {
       description: `Session ouverte - ${salleDetail.titre}`,
       code_acces: '',
       max_participants: null,
+      motif: 'reseautage_adulte',
+      declaration_adulte: true,
+      visibilite: 'fermee',
     })
     if (!nouvelleSP) throw new Error('Impossible de créer la salle de cours')
+    if ('erreur' in nouvelleSP) {
+      if (nouvelleSP.salle_existante_id) {
+        router.push(`/afrolang/salle-privee/${nouvelleSP.salle_existante_id}`)
+        return
+      }
+      throw new Error('Vous avez déjà une salle privée dans cet espace public')
+    }
     const sallePriveeId = nouvelleSP.id
 
     // 4. Créer une session
@@ -542,6 +577,23 @@ const goToPage = (page: number) => {
     chargerSalles()
     window.scrollTo({ top: 400, behavior: 'smooth' })
   }
+}
+
+// Événements de l'annuaire des groupes ethniques (US1)
+const onRejoindreSalle = (payload: { salleId: string }) => {
+  navigateTo(`/afrolang/${payload.salleId}`)
+}
+
+// US2 : ouvrir le modal ProposerSalleModal avec le nom préfilé.
+const proposerModalOuvert = ref(false)
+const proposerNomPrerempli = ref('')
+const onProposerSalle = (payload: { nomGroupeEthnique: string }) => {
+  if (!userStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+  proposerNomPrerempli.value = payload.nomGroupeEthnique
+  proposerModalOuvert.value = true
 }
 
 // Lifecycle
