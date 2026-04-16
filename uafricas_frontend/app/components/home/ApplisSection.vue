@@ -194,7 +194,7 @@ const applis: Appli[] = [
     description: 'Innovations africaines',
   },
   {
-    label: 'Rootsconnect',
+    label: 'Africonnect',
     to: '/retrouve-amis',
     icon: 'fa-solid fa-users',
     bgClass: 'bg-amber-700',
