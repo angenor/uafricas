@@ -5,12 +5,13 @@ export interface AdminSalle {
   titre: string
   slug: string
   langue_cible: string | null
+  langue_code: string | null
   actif: boolean
   created_at: string
-  moderateur_nom: string | null
-  moderateur_prenom: string | null
+  groupe_ethnique_nom: string | null
   nombre_salles_privees: number
   nombre_sessions: number
+  nombre_moderateurs_attitres: number
 }
 
 export interface AdminSalleDetail {
@@ -20,21 +21,47 @@ export interface AdminSalleDetail {
   description: string | null
   image_couverture_url: string | null
   langue_cible: string | null
-  moderateur_id: string | null
-  moderateur_nom: string | null
+  langue_code: string | null
+  alphabet: string | null
+  dictionnaire_url: string | null
+  groupe_ethnique_id: string
+  groupe_ethnique_nom: string | null
   actif: boolean
   cree_par_nom: string | null
   created_at: string
   updated_at: string
   nombre_salles_privees: number
   nombre_sessions: number
+  nombre_moderateurs_attitres: number
 }
 
 export interface CreerSalleForm {
   titre: string
+  groupe_ethnique_id: string
   description?: string
   langue_cible?: string
-  moderateur_id?: string
+  langue_code?: string
+  alphabet?: string
+  dictionnaire_url?: string
+}
+
+export interface ModifierSalleForm {
+  titre?: string
+  description?: string
+  langue_cible?: string
+  langue_code?: string
+  alphabet?: string
+  dictionnaire_url?: string
+  groupe_ethnique_id?: string
+  actif?: boolean
+}
+
+export interface GroupeEthniqueOption {
+  id: string
+  nom: string
+  pays_nom: string | null
+  salle_id: string | null
+  salle_active: boolean
 }
 
 export const useAdminSalles = () => {
@@ -46,12 +73,16 @@ export const useAdminSalles = () => {
   const filtres = reactive({
     recherche: '',
     langue_cible: '',
+    langue_code: '',
+    groupe_ethnique_id: '',
     actif: '' as string | '',
   })
 
   const chargerListe = async () => {
     const params: Record<string, any> = { ...filtres }
     if (!params.langue_cible) delete params.langue_cible
+    if (!params.langue_code) delete params.langue_code
+    if (!params.groupe_ethnique_id) delete params.groupe_ethnique_id
     if (params.actif === '') delete params.actif
     const result = await listerPagine<AdminSalle>('/api/admin/salles', params)
     if (result) salles.value = result.data
@@ -71,7 +102,7 @@ export const useAdminSalles = () => {
     return response.data
   }
 
-  const modifier = async (id: string, form: Partial<CreerSalleForm> & { actif?: boolean }) => {
+  const modifier = async (id: string, form: ModifierSalleForm) => {
     const response = await adminFetch<ApiResponse<{ id: string }>>(
       `/api/admin/salles/${id}`,
       { method: 'PUT', body: form },
@@ -83,10 +114,21 @@ export const useAdminSalles = () => {
     await adminFetch<ApiResponse<null>>(`/api/admin/salles/${id}`, { method: 'DELETE' })
   }
 
+  const chargerGroupesEthniques = async (q?: string): Promise<GroupeEthniqueOption[]> => {
+    const params: Record<string, any> = { par_page: 100 }
+    if (q && q.trim()) params.q = q.trim()
+    const response = await $fetch<ApiResponse<{ groupes: GroupeEthniqueOption[] }>>(
+      '/api/afrolang/groupes-ethniques',
+      { params },
+    )
+    return response.data?.groupes ?? []
+  }
+
   return {
     salles, salleDetail, filtres,
     pagination, sort, loading, error,
     chargerListe, chargerDetail, creer, modifier, supprimer,
+    chargerGroupesEthniques,
     allerPage, changerTri, reinitialiserPagination,
   }
 }

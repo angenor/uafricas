@@ -12,27 +12,21 @@ const deleteLoading = ref(false)
 const colonnes: TableColumn[] = [
   { key: 'titre', label: 'Titre', sortable: true },
   { key: 'langue_cible', label: 'Langue', width: 'w-28' },
-  { key: 'moderateur_display', label: 'Moderateur', width: 'w-36' },
-  { key: 'nombre_salles_privees', label: 'Salles privees', width: 'w-28', align: 'center' },
+  { key: 'langue_code', label: 'Code', width: 'w-20' },
+  { key: 'groupe_ethnique_nom', label: 'Groupe ethnique', width: 'w-40' },
+  { key: 'nombre_salles_privees', label: 'Salles privées', width: 'w-28', align: 'center' },
   { key: 'nombre_sessions', label: 'Sessions', width: 'w-24', align: 'center' },
+  { key: 'nombre_moderateurs_attitres', label: 'Mod. attitrés', width: 'w-24', align: 'center' },
   { key: 'actif', label: 'Actif', width: 'w-20', align: 'center' },
-  { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
+  { key: 'created_at', label: 'Création', sortable: true, width: 'w-28',
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]
 
 const filterDefs: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Titre, langue...' },
   { key: 'langue_cible', label: 'Langue', type: 'text', placeholder: 'Langue cible...' },
+  { key: 'langue_code', label: 'Code langue', type: 'text', placeholder: 'Ex: sw, wo...' },
 ]
-
-const sallesAvecDisplay = computed(() =>
-  salles.value.map(s => ({
-    ...s,
-    moderateur_display: s.moderateur_prenom && s.moderateur_nom
-      ? `${s.moderateur_prenom} ${s.moderateur_nom}`
-      : '—',
-  }))
-)
 
 const confirmerSuppression = (item: any) => {
   deleteTarget.value = { id: item.id, nom: item.titre }
@@ -52,6 +46,8 @@ const executerSuppression = async () => {
 const reinitialiser = () => {
   filtres.recherche = ''
   filtres.langue_cible = ''
+  filtres.langue_code = ''
+  filtres.groupe_ethnique_id = ''
   filtres.actif = ''
   reinitialiserPagination()
   chargerListe()
@@ -80,7 +76,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
     <AdminDataTable
       :colonnes="colonnes"
-      :donnees="sallesAvecDisplay"
+      :donnees="salles"
       :pagination="pagination"
       :tri-colonne="sort.column"
       :tri-direction="sort.direction"

@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import type { GroupeEthniqueOption } from '~/composables/useAdminSalles'
+
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
 const route = useRoute()
 const id = route.params.id as string
 
-const { salleDetail, loading, error, chargerDetail, modifier } = useAdminSalles()
+const { salleDetail, loading, error, chargerDetail, modifier, chargerGroupesEthniques } = useAdminSalles()
 
 const ongletActif = ref('infos')
 const saving = ref(false)
@@ -14,10 +16,27 @@ const successMsg = ref<string | null>(null)
 const form = reactive({
   titre: '',
   description: '',
+  groupe_ethnique_id: '',
   langue_cible: '',
-  moderateur_id: '',
+  langue_code: '',
+  alphabet: '',
+  dictionnaire_url: '',
   actif: true,
 })
+
+const groupesEthniques = ref<GroupeEthniqueOption[]>([])
+const chargementGroupes = ref(false)
+
+const chargerGroupes = async () => {
+  chargementGroupes.value = true
+  try {
+    groupesEthniques.value = await chargerGroupesEthniques()
+  } catch {
+    // géré plus haut via error
+  } finally {
+    chargementGroupes.value = false
+  }
+}
 
 const charger = async () => {
   await chargerDetail(id)
@@ -25,8 +44,11 @@ const charger = async () => {
     const s = salleDetail.value
     form.titre = s.titre
     form.description = s.description || ''
+    form.groupe_ethnique_id = s.groupe_ethnique_id
     form.langue_cible = s.langue_cible || ''
-    form.moderateur_id = s.moderateur_id || ''
+    form.langue_code = s.langue_code || ''
+    form.alphabet = s.alphabet || ''
+    form.dictionnaire_url = s.dictionnaire_url || ''
     form.actif = s.actif
   }
 }
@@ -36,15 +58,21 @@ const sauvegarderInfos = async () => {
   erreurLocale.value = null
   successMsg.value = null
   try {
-    const body: any = {}
+    const body: Record<string, any> = {}
     if (form.titre.trim()) body.titre = form.titre.trim()
     if (form.description.trim()) body.description = form.description.trim()
-    if (form.langue_cible.trim()) body.langue_cible = form.langue_cible.trim()
-    if (form.moderateur_id.trim()) body.moderateur_id = form.moderateur_id.trim()
+    if (form.groupe_ethnique_id && form.groupe_ethnique_id !== salleDetail.value?.groupe_ethnique_id) {
+      body.groupe_ethnique_id = form.groupe_ethnique_id
+    }
+    body.langue_cible = form.langue_cible.trim()
+    body.langue_code = form.langue_code.trim()
+    body.alphabet = form.alphabet.trim()
+    body.dictionnaire_url = form.dictionnaire_url.trim()
     body.actif = form.actif
     await modifier(id, body)
-    successMsg.value = 'Salle mise a jour'
+    successMsg.value = 'Salle mise à jour'
     setTimeout(() => { successMsg.value = null }, 3000)
+    await charger()
   } catch (e: any) {
     erreurLocale.value = e?.data?.error || e?.message || 'Erreur lors de la sauvegarde'
   } finally {
@@ -67,14 +95,17 @@ watch(ongletActif, (val) => {
   }
 })
 
-onMounted(() => charger())
+onMounted(() => {
+  charger()
+  chargerGroupes()
+})
 </script>
 
 <template>
   <div>
     <AdminPageHeader
       :titre="salleDetail?.titre || 'Chargement...'"
-      sous-titre="Edition de la salle AfroLang"
+      sous-titre="Édition de la salle AfroLang"
     >
       <template #actions>
         <NuxtLink to="/admin/salles" class="btn btn-ghost btn-sm">
@@ -98,15 +129,16 @@ onMounted(() => charger())
         <div>
           <h2 class="text-lg font-bold">{{ salleDetail.titre }}</h2>
           <p class="text-sm text-base-content/60">
-            {{ salleDetail.langue_cible || 'Langue non definie' }}
-            {{ salleDetail.moderateur_nom ? ` — Mod: ${salleDetail.moderateur_nom}` : '' }}
+            {{ salleDetail.langue_cible || 'Langue non définie' }}
+            {{ salleDetail.groupe_ethnique_nom ? ` — ${salleDetail.groupe_ethnique_nom}` : '' }}
           </p>
           <div class="flex gap-2 mt-1">
             <span :class="salleDetail.actif ? 'badge badge-success badge-sm' : 'badge badge-neutral badge-sm'">
               {{ salleDetail.actif ? 'Active' : 'Inactive' }}
             </span>
-            <span class="badge badge-outline badge-sm">{{ salleDetail.nombre_salles_privees }} salles privees</span>
+            <span class="badge badge-outline badge-sm">{{ salleDetail.nombre_salles_privees }} salles privées</span>
             <span class="badge badge-outline badge-sm">{{ salleDetail.nombre_sessions }} sessions</span>
+            <span class="badge badge-outline badge-sm">{{ salleDetail.nombre_moderateurs_attitres }} modérateurs attitrés</span>
           </div>
         </div>
       </div>
@@ -144,6 +176,26 @@ onMounted(() => charger())
             </div>
 
             <div class="form-control">
+              <label class="label"><span class="label-text">Groupe ethnique *</span></label>
+              <select
+                v-model="form.groupe_ethnique_id"
+                class="select select-bordered"
+                :disabled="chargementGroupes"
+                required
+              >
+                <option value="" disabled>Sélectionner un groupe ethnique</option>
+                <option
+                  v-for="g in groupesEthniques"
+                  :key="g.id"
+                  :value="g.id"
+                  :disabled="g.salle_active && g.id !== salleDetail.groupe_ethnique_id"
+                >
+                  {{ g.nom }}{{ g.pays_nom ? ` — ${g.pays_nom}` : '' }}{{ g.salle_active && g.id !== salleDetail.groupe_ethnique_id ? ' (déjà une salle active)' : '' }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-control">
               <label class="label"><span class="label-text">Description</span></label>
               <textarea v-model="form.description" class="textarea textarea-bordered" rows="3" />
             </div>
@@ -154,9 +206,29 @@ onMounted(() => charger())
                 <input v-model="form.langue_cible" type="text" class="input input-bordered" placeholder="Ex: Swahili, Wolof...">
               </div>
               <div class="form-control">
-                <label class="label"><span class="label-text">Moderateur (UUID)</span></label>
-                <input v-model="form.moderateur_id" type="text" class="input input-bordered" placeholder="UUID de l'utilisateur">
+                <label class="label"><span class="label-text">Code langue</span></label>
+                <input v-model="form.langue_code" type="text" class="input input-bordered" placeholder="Ex: sw, wo...">
               </div>
+            </div>
+
+            <div class="form-control">
+              <label class="label"><span class="label-text">Alphabet</span></label>
+              <textarea
+                v-model="form.alphabet"
+                class="textarea textarea-bordered"
+                rows="2"
+                placeholder="Caractères de l'alphabet (affichés dans l'onglet Ressources)"
+              />
+            </div>
+
+            <div class="form-control">
+              <label class="label"><span class="label-text">URL dictionnaire</span></label>
+              <input
+                v-model="form.dictionnaire_url"
+                type="url"
+                class="input input-bordered"
+                placeholder="https://..."
+              >
             </div>
 
             <div class="form-control">
@@ -186,7 +258,7 @@ onMounted(() => charger())
             <thead>
               <tr>
                 <th>Titre</th>
-                <th class="w-24">Etat</th>
+                <th class="w-24">État</th>
                 <th class="w-36">Date</th>
                 <th class="w-24 text-center">Participants</th>
                 <th class="w-16">Actions</th>
