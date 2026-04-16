@@ -495,7 +495,11 @@ pub async fn refuser_lien(
 // Feature 005 — Phase 9 : Archivage & désactivation cascade
 // ══════════════════════════════════════════════════════════════════════════
 
-/// Helper interne : archive toutes les salles privées actives d'un utilisateur
+/// Helper interne : archive toutes les salles privées actives d'un utilisateur.
+///
+/// Refonte 2026-04 : plus de mécanisme d'adhésion, donc plus de liste
+/// d'abonnés à notifier. Seul l'auteur de chaque salle est impacté (il est
+/// à l'origine de l'action ou ciblé par la modération admin).
 pub async fn archiver_salles_privees_utilisateur_impl(
     pool: &PgPool,
     admin_id: Option<Uuid>,
@@ -503,44 +507,21 @@ pub async fn archiver_salles_privees_utilisateur_impl(
     ip: Option<&str>,
     user_agent: Option<&str>,
 ) -> Result<i64, ApiErreur> {
-    let rows: Vec<(Uuid, Vec<Uuid>)> = sqlx::query_as(
-        "WITH archivage AS (
-            UPDATE afrolang.salle_privee
-            SET archivee_at = NOW(), updated_at = NOW()
-            WHERE cree_par = $1
-              AND archivee_at IS NULL
-              AND deleted_at IS NULL
-            RETURNING id
-         )
-         SELECT a.id,
-                COALESCE(
-                    ARRAY_AGG(spa.utilisateur_id) FILTER (WHERE spa.utilisateur_id IS NOT NULL),
-                    ARRAY[]::uuid[]
-                ) AS abonnes
-         FROM archivage a
-         LEFT JOIN afrolang.salle_privee_adhesion spa
-            ON spa.salle_privee_id = a.id
-               AND spa.type = 'abonne' AND spa.deleted_at IS NULL
-         GROUP BY a.id",
+    let ids: Vec<Uuid> = sqlx::query_scalar(
+        "UPDATE afrolang.salle_privee
+         SET archivee_at = NOW(), updated_at = NOW()
+         WHERE cree_par = $1
+           AND archivee_at IS NULL
+           AND deleted_at IS NULL
+         RETURNING id",
     )
     .bind(utilisateur_cible)
     .fetch_all(pool)
     .await?;
 
-    let total = rows.len() as i64;
+    let total = ids.len() as i64;
 
-    for (salle_privee_id, abonnes) in rows {
-        let lien = format!("/afrolang/salle-privee/{}", salle_privee_id);
-        for abonne_id in abonnes {
-            notification::creer_notification(
-                pool,
-                abonne_id,
-                notification::afrolang::SALLE_PRIVEE_ARCHIVEE,
-                "Une salle privée à laquelle vous étiez abonné a été archivée.",
-                Some(&lien),
-            )
-            .await;
-        }
+    for salle_privee_id in ids {
         audit::log_action(
             pool,
             admin_id,
@@ -627,21 +608,21 @@ pub async fn archiver_salle_privee(
     .execute(pool.get_ref())
     .await?;
 
-    let abonnes: Vec<Uuid> = sqlx::query_scalar(
-        "SELECT utilisateur_id FROM afrolang.salle_privee_adhesion
-         WHERE salle_privee_id = $1 AND type = 'abonne' AND deleted_at IS NULL",
+    // Refonte 2026-04 : plus d'abonnés à notifier (table `salle_privee_adhesion`
+    // supprimée). Seul l'auteur est informé via la notification ci-dessous.
+    let auteur_id: Option<Uuid> = sqlx::query_scalar(
+        "SELECT cree_par FROM afrolang.salle_privee WHERE id = $1",
     )
     .bind(id)
-    .fetch_all(pool.get_ref())
+    .fetch_optional(pool.get_ref())
     .await?;
-
-    let lien = format!("/afrolang/salle-privee/{}", id);
-    for abonne_id in abonnes {
+    if let Some(auteur) = auteur_id {
+        let lien = format!("/afrolang/salle-privee/{}", id);
         notification::creer_notification(
             pool.get_ref(),
-            abonne_id,
+            auteur,
             notification::afrolang::SALLE_PRIVEE_ARCHIVEE,
-            "La salle privée à laquelle vous étiez abonné a été archivée.",
+            "Votre salle privée a été archivée par un administrateur.",
             Some(&lien),
         )
         .await;
@@ -693,25 +674,16 @@ pub async fn desactiver_salle_publique_avec_cascade(
         return Err(ApiErreur::Validation("Salle déjà désactivée".into()));
     }
 
-    let salles_privees: Vec<(Uuid, Vec<Uuid>)> = sqlx::query_as(
-        "WITH archivage AS (
-            UPDATE afrolang.salle_privee
-            SET archivee_at = NOW(), updated_at = NOW()
-            WHERE salle_id = $1
-              AND archivee_at IS NULL
-              AND deleted_at IS NULL
-            RETURNING id
-         )
-         SELECT a.id,
-                COALESCE(
-                    ARRAY_AGG(spa.utilisateur_id) FILTER (WHERE spa.utilisateur_id IS NOT NULL),
-                    ARRAY[]::uuid[]
-                ) AS abonnes
-         FROM archivage a
-         LEFT JOIN afrolang.salle_privee_adhesion spa
-            ON spa.salle_privee_id = a.id
-               AND spa.type = 'abonne' AND spa.deleted_at IS NULL
-         GROUP BY a.id",
+    // Refonte 2026-04 : archivage en cascade des salles privées d'une salle
+    // publique désactivée. Plus de table d'adhésion — on remonte juste les
+    // paires (salle_privée_id, auteur) pour notifier les auteurs.
+    let salles_privees: Vec<(Uuid, Uuid)> = sqlx::query_as(
+        "UPDATE afrolang.salle_privee
+         SET archivee_at = NOW(), updated_at = NOW()
+         WHERE salle_id = $1
+           AND archivee_at IS NULL
+           AND deleted_at IS NULL
+         RETURNING id, cree_par",
     )
     .bind(salle_id)
     .fetch_all(&mut *tx)
@@ -732,18 +704,16 @@ pub async fn desactiver_salle_publique_avec_cascade(
     let ip = audit::extraire_ip(&req);
     let ua = audit::extraire_user_agent(&req);
 
-    for (sp_id, abonnes) in &salles_privees {
+    for (sp_id, auteur_id) in &salles_privees {
         let lien = format!("/afrolang/salle-privee/{}", sp_id);
-        for abonne_id in abonnes {
-            notification::creer_notification(
-                pool.get_ref(),
-                *abonne_id,
-                notification::afrolang::SALLE_PRIVEE_ARCHIVEE,
-                "La salle publique associée a été désactivée — votre salle privée a été archivée.",
-                Some(&lien),
-            )
-            .await;
-        }
+        notification::creer_notification(
+            pool.get_ref(),
+            *auteur_id,
+            notification::afrolang::SALLE_PRIVEE_ARCHIVEE,
+            "La salle publique associée a été désactivée — votre salle privée a été archivée.",
+            Some(&lien),
+        )
+        .await;
         audit::log_action(
             pool.get_ref(),
             Some(admin.id),

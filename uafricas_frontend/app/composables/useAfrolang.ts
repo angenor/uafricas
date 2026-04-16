@@ -9,11 +9,6 @@ export type EtatSession = 'planifiee' | 'en_cours' | 'terminee' | 'annulee'
 export type RoleSession = 'moderateur' | 'participant' | 'observateur'
 
 // Enums feature 005 (1:1 avec les enums SQL `afrolang.xxx`)
-export type EtatProposition = 'en_attente' | 'approuvee' | 'refusee'
-export type MotifSallePrivee = 'apprentissage_enfants' | 'reseautage_adulte' | 'echanges_groupe'
-export type VisibiliteSallePrivee = 'fermee' | 'visible'
-export type TypeAdhesion = 'demande' | 'invitation' | 'abonne'
-export type EtatAdhesion = 'en_attente' | 'acceptee' | 'refusee' | 'groupe_complet'
 export type TypeRessource = 'fichier' | 'lien_externe'
 export type EtatRessource = 'publiee' | 'en_attente_validation' | 'refusee'
 
@@ -85,29 +80,20 @@ export interface SalleAPI {
 /** DTO salle publique (detail) */
 export interface SalleDetailAPI extends SalleAPI {
   moderateurs_attitres: ModerateurAttitre[]
-  salles_privees: SallePriveeAPI[]
 }
 
-/** DTO salle privée (feature 005) */
+/** DTO salle privée (feature 001-afrolang-salles-refonte).
+ *  Aligné 1:1 sur `SallePriveeAPI` Rust (src/models/afrolang.rs). */
 export interface SallePriveeAPI {
   id: string
   salle_id: string
   titre: string
   description: string | null
-  image_couverture_url: string | null
-  max_participants: number | null
-  motif: MotifSallePrivee
-  declaration_adulte_at: string
-  visibilite: VisibiliteSallePrivee
-  archivee_at: string | null
-  est_protegee: boolean
-  actif: boolean
-  createur: AfrolangUser
-  salle_titre: string | null
-  salle_langue: string | null
+  auteur_id: string
+  auteur_nom: string | null
   session_en_cours: boolean
+  est_auteur: boolean
   created_at: string
-  updated_at: string
 }
 
 /** DTO salle privee (detail avec sessions) */
@@ -149,41 +135,6 @@ export interface ParticipantAPI {
   rejoint_at: string
   quitte_at: string | null
   duree_secondes: number | null
-}
-
-/** Proposition de salle publique */
-export interface PropositionSalleAPI {
-  id: string
-  nom_groupe_ethnique: string
-  pays_id: string | null
-  groupe_ethnique_id: string | null
-  langue_cible: string | null
-  description: string | null
-  etat: EtatProposition
-  motif_refus: string | null
-  salle_id_creee: string | null
-  propose_par: string
-  decide_par: string | null
-  decide_at: string | null
-  created_at: string
-  updated_at: string
-}
-
-/** Adhésion à une salle privée */
-export interface AdhesionSallePriveeAPI {
-  id: string
-  salle_privee_id: string
-  utilisateur_id: string
-  utilisateur_nom: string | null
-  utilisateur_prenom: string | null
-  utilisateur_photo: string | null
-  type_adhesion: TypeAdhesion
-  etat: EtatAdhesion
-  initiateur_id: string
-  decideur_id: string | null
-  decided_at: string | null
-  created_at: string
-  updated_at: string
 }
 
 /** Ressource pédagogique d'une salle */
@@ -253,10 +204,6 @@ export interface SalleListeAPI extends PageMeta {
   salles: SalleAPI[]
 }
 
-export interface SallePriveeListeAPI extends PageMeta {
-  salles_privees: SallePriveeAPI[]
-}
-
 export interface SessionListeAPI extends PageMeta {
   sessions: SessionAPI[]
 }
@@ -282,13 +229,6 @@ export interface SalleFiltres {
   par_page?: number
 }
 
-/** Filtres pour le listing des salles privees */
-export interface SallePriveeFiltres {
-  recherche?: string
-  page?: number
-  par_page?: number
-}
-
 /** Filtres pour le listing des sessions */
 export interface SessionFiltres {
   etat?: string
@@ -304,18 +244,27 @@ export interface GroupeEthniqueFiltres {
   par_page?: number
 }
 
-/** Formulaire creation salle privee (feature 005).
- *  Les champs feature 005 (motif, declaration_adulte, visibilite) seront rendus
- *  obligatoires côté UI une fois US4 livré. Jusque-là, le composable applique
- *  des valeurs par défaut sûres pour ne pas casser l'UX existante. */
+/** Formulaire création salle privée (feature 001-afrolang-salles-refonte).
+ *  Le `salleId` est passé en paramètre séparé à `creerSallePrivee`, pas inclus ici. */
 export interface CreerSallePriveeForm {
   titre: string
   description: string
   code_acces: string
-  max_participants: number | null
-  motif?: MotifSallePrivee
-  declaration_adulte?: boolean
-  visibilite?: VisibiliteSallePrivee
+}
+
+/** Réponse de `verifierCodeAcces` (endpoint 3) : jeton éphémère. */
+export interface VerifierCodeResponse {
+  salle_privee_id: string
+  acces_jeton: string
+  expires_at: string
+}
+
+/** Réponse de `demarrerOuRejoindreSallePrivee` (endpoint 4) : infos LiveKit. */
+export interface DemarrerRejoindrePriveeResponse {
+  session_id: string
+  livekit_url: string
+  livekit_token: string
+  moderateur_id: string | null
 }
 
 /** Formulaire creation session */
@@ -324,15 +273,6 @@ export interface CreerSessionForm {
   date_debut_prevue: string
   max_participants: number | null
   tableau_blanc_actif: boolean
-}
-
-/** Formulaire proposition de salle */
-export interface ProposerSalleForm {
-  nom_groupe_ethnique: string
-  pays_id: string | null
-  groupe_ethnique_id: string | null
-  langue_cible: string | null
-  description: string | null
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -345,12 +285,6 @@ export const ETATS_SESSION: { value: string; label: string }[] = [
   { value: 'en_cours', label: 'En cours' },
   { value: 'terminee', label: 'Terminée' },
   { value: 'annulee', label: 'Annulée' },
-]
-
-export const MOTIFS_SALLE_PRIVEE: { value: MotifSallePrivee; label: string }[] = [
-  { value: 'apprentissage_enfants', label: 'Apprentissage enfants' },
-  { value: 'reseautage_adulte', label: 'Réseautage entre adultes' },
-  { value: 'echanges_groupe', label: 'Échanges de groupe' },
 ]
 
 // ──────────────────────────────────────────────────────────────
@@ -408,6 +342,41 @@ export const formatDateHeure = (dateStr: string): string => {
 /** Obtenir les initiales d'un utilisateur */
 export const getInitiales = (nom?: string | null, prenom?: string | null): string => {
   return (prenom?.charAt(0).toUpperCase() || '') + (nom?.charAt(0).toUpperCase() || '') || '?'
+}
+
+// ──────────────────────────────────────────────────────────────
+// Mémoire des jetons d'accès (portée session applicative, non persistée)
+// ──────────────────────────────────────────────────────────────
+
+/** Cache en mémoire des jetons d'accès aux salles privées.
+ *  Clé : `sallePriveeId`. Valeur : `{ jeton, expiresAt }`.
+ *  Volontairement non persisté dans localStorage (sécurité : le jeton
+ *  ne doit pas survivre au cycle de vie de la session applicative). */
+const accesJetons = new Map<string, { jeton: string; expiresAt: string }>()
+
+/** Mémoriser le jeton d'accès retourné par `verifierCodeAcces`. */
+const memoriserAccesJeton = (
+  sallePriveeId: string,
+  jeton: string,
+  expiresAt: string,
+): void => {
+  accesJetons.set(sallePriveeId, { jeton, expiresAt })
+}
+
+/** Récupérer le jeton mémorisé pour une salle privée, ou `null` s'il est
+ *  absent ou expiré. L'entrée expirée est purgée au passage. */
+const recupererAccesJeton = (
+  sallePriveeId: string,
+): { jeton: string; expiresAt: string } | null => {
+  const entree = accesJetons.get(sallePriveeId)
+  if (!entree) return null
+
+  const expire = new Date(entree.expiresAt).getTime()
+  if (!Number.isFinite(expire) || expire <= Date.now()) {
+    accesJetons.delete(sallePriveeId)
+    return null
+  }
+  return entree
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -535,12 +504,6 @@ export const useAfrolang = () => {
       for (const mod of reponse.data.moderateurs_attitres) {
         mod.photo_url = resoudreUrl(mod.photo_url)
       }
-      for (const sp of reponse.data.salles_privees) {
-        sp.image_couverture_url = resoudreUrl(sp.image_couverture_url)
-        if (sp.createur.photo_url) {
-          sp.createur.photo_url = resoudreUrl(sp.createur.photo_url)
-        }
-      }
 
       return reponse.data
     }
@@ -555,52 +518,39 @@ export const useAfrolang = () => {
     }
   }
 
-  // ── Salles privees ────────────────────────────────────────
+  // ── Salles privées (feature 001-afrolang-salles-refonte) ─────────────────
 
-  /** Lister les salles privees d'une salle publique */
-  const listerSallesPrivees = async (
+  /** Lister les salles privées d'une salle publique (refonte : pas de pagination). */
+  const listerSallesPriveesParSallePublique = async (
     salleId: string,
-    filtres: SallePriveeFiltres = {},
-  ): Promise<SallePriveeListeAPI | null> => {
+  ): Promise<SallePriveeAPI[]> => {
     chargement.value = true
     erreur.value = null
 
     try {
-      const params = new URLSearchParams()
-      if (filtres.recherche) params.set('recherche', filtres.recherche)
-      if (filtres.page) params.set('page', String(filtres.page))
-      if (filtres.par_page) params.set('par_page', String(filtres.par_page))
-
-      const queryString = params.toString()
-      const url = `${apiBase}/api/afrolang/salles/${salleId}/privees${queryString ? `?${queryString}` : ''}`
-
-      const reponse = await $fetch<ApiResponse<SallePriveeListeAPI>>(url)
+      const reponse = await $fetch<ApiResponse<SallePriveeAPI[]>>(
+        `${apiBase}/api/afrolang/salles/${salleId}/salles-privees`,
+        { headers: authHeaders() },
+      )
 
       if (!reponse.success || !reponse.data) {
-        throw new Error(reponse.error || 'Erreur lors du chargement des salles privees')
-      }
-
-      for (const sp of reponse.data.salles_privees) {
-        sp.image_couverture_url = resoudreUrl(sp.image_couverture_url)
-        if (sp.createur.photo_url) {
-          sp.createur.photo_url = resoudreUrl(sp.createur.photo_url)
-        }
+        throw new Error(reponse.error || 'Erreur lors du chargement des salles privées')
       }
 
       return reponse.data
     }
     catch (e: unknown) {
-      const message = extraireMessage(e, 'Erreur reseau')
+      const message = extraireMessage(e, 'Erreur réseau')
       erreur.value = message
-      console.error('Erreur listerSallesPrivees:', e)
-      return null
+      console.error('Erreur listerSallesPriveesParSallePublique:', e)
+      return []
     }
     finally {
       chargement.value = false
     }
   }
 
-  /** Obtenir le detail d'une salle privee */
+  /** Obtenir le detail d'une salle privee (endpoint legacy — sera supprimé par la refonte). */
   const obtenirSallePrivee = async (id: string): Promise<SallePriveeDetailAPI | null> => {
     chargement.value = true
     erreur.value = null
@@ -608,15 +558,11 @@ export const useAfrolang = () => {
     try {
       const reponse = await $fetch<ApiResponse<SallePriveeDetailAPI>>(
         `${apiBase}/api/afrolang/salles-privees/${id}`,
+        { headers: authHeaders() },
       )
 
       if (!reponse.success || !reponse.data) {
         throw new Error(reponse.error || 'Salle privee non trouvee')
-      }
-
-      reponse.data.image_couverture_url = resoudreUrl(reponse.data.image_couverture_url)
-      if (reponse.data.createur.photo_url) {
-        reponse.data.createur.photo_url = resoudreUrl(reponse.data.createur.photo_url)
       }
 
       return reponse.data
@@ -632,28 +578,25 @@ export const useAfrolang = () => {
     }
   }
 
-  /** Créer une salle privée (feature 005 : motif + déclaration adulte obligatoires).
-   *  Retourne `{ erreur: 'salle_privee_unicite', salle_existante_id? }` si 409. */
+  /** Créer une salle privée (refonte : code secret obligatoire).
+   *  Retourne `{ erreur: 'salle_privee_unicite', salle_privee_existante_id? }` si 409. */
   const creerSallePrivee = async (
     salleId: string,
     form: CreerSallePriveeForm,
-  ): Promise<SallePriveeAPI | { erreur: 'salle_privee_unicite'; salle_existante_id?: string } | null> => {
+  ): Promise<SallePriveeAPI | { erreur: 'salle_privee_unicite'; salle_privee_existante_id?: string } | null> => {
     chargement.value = true
     erreur.value = null
 
     try {
       const body: Record<string, unknown> = {
+        salle_id: salleId,
         titre: form.titre,
-        motif: form.motif ?? 'reseautage_adulte',
-        declaration_adulte: form.declaration_adulte ?? true,
-        visibilite: form.visibilite ?? 'fermee',
+        code_acces: form.code_acces,
       }
       if (form.description) body.description = form.description
-      if (form.code_acces) body.code_acces = form.code_acces
-      if (form.max_participants) body.max_participants = form.max_participants
 
       const reponse = await $fetch<ApiResponse<SallePriveeAPI>>(
-        `${apiBase}/api/afrolang/salles/${salleId}/privees`,
+        `${apiBase}/api/afrolang/salles-privees`,
         {
           method: 'POST',
           headers: { ...authHeaders(), 'Content-Type': 'application/json' },
@@ -668,18 +611,200 @@ export const useAfrolang = () => {
       return reponse.data
     }
     catch (e: unknown) {
-      const anyErr = e as { status?: number; data?: { data?: { erreur?: string; salle_existante_id?: string }; error?: string } }
-      if (anyErr.status === 409 && anyErr.data?.data?.erreur === 'salle_privee_unicite') {
-        erreur.value = anyErr.data?.error || 'Salle privée déjà existante'
+      const anyErr = e as {
+        status?: number
+        data?: {
+          data?: { salle_privee_existante_id?: string }
+          error?: string
+          message?: string
+        }
+      }
+      if (anyErr.status === 409) {
+        erreur.value = anyErr.data?.error || anyErr.data?.message || 'Salle privée déjà existante'
         return {
           erreur: 'salle_privee_unicite',
-          salle_existante_id: anyErr.data?.data?.salle_existante_id,
+          salle_privee_existante_id: anyErr.data?.data?.salle_privee_existante_id,
         }
       }
       const message = extraireMessage(e, 'Erreur réseau')
       erreur.value = message
       console.error('Erreur creerSallePrivee:', e)
       return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Vérifier le code secret d'une salle privée → retourne un jeton éphémère. */
+  const verifierCodeAcces = async (
+    sallePriveeId: string,
+    codeAcces: string,
+  ): Promise<VerifierCodeResponse | { erreur: 'code_incorrect' } | { erreur: 'rate_limit' } | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<VerifierCodeResponse>>(
+        `${apiBase}/api/afrolang/salles-privees/${sallePriveeId}/verifier-code`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: { code_acces: codeAcces },
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de la vérification du code')
+      }
+
+      return reponse.data
+    }
+    catch (e: unknown) {
+      const anyErr = e as { status?: number }
+      if (anyErr.status === 403) {
+        erreur.value = 'Code incorrect'
+        return { erreur: 'code_incorrect' }
+      }
+      if (anyErr.status === 429) {
+        erreur.value = 'Trop de tentatives, veuillez patienter quelques minutes'
+        return { erreur: 'rate_limit' }
+      }
+      const message = extraireMessage(e, 'Erreur réseau')
+      erreur.value = message
+      console.error('Erreur verifierCodeAcces:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Démarrer ou rejoindre la session live d'une salle privée (jeton requis). */
+  const demarrerOuRejoindreSallePrivee = async (
+    sallePriveeId: string,
+    accesJeton: string,
+  ): Promise<DemarrerRejoindrePriveeResponse | { erreur: 'archivee' } | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<DemarrerRejoindrePriveeResponse>>(
+        `${apiBase}/api/afrolang/salles-privees/${sallePriveeId}/sessions/demarrer-ou-rejoindre`,
+        {
+          method: 'POST',
+          headers: {
+            ...authHeaders(),
+            'Content-Type': 'application/json',
+            'X-Afrolang-Acces-Jeton': accesJeton,
+          },
+          body: {},
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du démarrage de la session')
+      }
+
+      return reponse.data
+    }
+    catch (e: unknown) {
+      const anyErr = e as { status?: number }
+      if (anyErr.status === 410) {
+        erreur.value = 'Cette salle privée a été archivée'
+        return { erreur: 'archivee' }
+      }
+      const message = extraireMessage(e, 'Erreur réseau')
+      erreur.value = message
+      console.error('Erreur demarrerOuRejoindreSallePrivee:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** US1 — Démarrer ou rejoindre le livestream public d'une salle en 1 appel. */
+  const demarrerOuRejoindreSallePublique = async (
+    salleId: string,
+  ): Promise<DemarrerRejoindrePriveeResponse | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<DemarrerRejoindrePriveeResponse>>(
+        `${apiBase}/api/afrolang/salles/${salleId}/sessions/demarrer-ou-rejoindre`,
+        {
+          method: 'POST',
+          headers: {
+            ...authHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: {},
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du démarrage du livestream')
+      }
+
+      return reponse.data
+    }
+    catch (e: unknown) {
+      const message = extraireMessage(e, 'Erreur réseau')
+      erreur.value = message
+      console.error('Erreur demarrerOuRejoindreSallePublique:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Modifier le code secret d'une salle privée (auteur uniquement). */
+  const modifierCodeAcces = async (
+    sallePriveeId: string,
+    nouveauCodeAcces: string,
+  ): Promise<boolean> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      await $fetch(`${apiBase}/api/afrolang/salles-privees/${sallePriveeId}/code-acces`, {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: { nouveau_code_acces: nouveauCodeAcces },
+      })
+      return true
+    }
+    catch (e: unknown) {
+      erreur.value = extraireMessage(e, 'Erreur lors de la modification du code')
+      console.error('Erreur modifierCodeAcces:', e)
+      return false
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Archiver sa propre salle privée (auteur uniquement). */
+  const archiverSallePriveeParAuteur = async (
+    sallePriveeId: string,
+  ): Promise<boolean> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      await $fetch(`${apiBase}/api/afrolang/salles-privees/${sallePriveeId}/archiver`, {
+        method: 'POST',
+        headers: authHeaders(),
+      })
+      return true
+    }
+    catch (e: unknown) {
+      erreur.value = extraireMessage(e, 'Erreur lors de l\'archivage')
+      console.error('Erreur archiverSallePriveeParAuteur:', e)
+      return false
     }
     finally {
       chargement.value = false
@@ -1016,89 +1141,6 @@ export const useAfrolang = () => {
     }
   }
 
-  // ── Feature 005 — US2 : Propositions de salles ──
-
-  /**
-   * Soumettre une proposition de nouvelle salle publique.
-   * Retourne `{ erreur: 'doublon', salle_id?, proposition_id? }` en cas de 409.
-   */
-  const soumettrePropositionSalle = async (
-    form: ProposerSalleForm,
-  ): Promise<PropositionSalleAPI | { erreur: 'doublon'; salle_id?: string; proposition_id?: string } | null> => {
-    chargement.value = true
-    erreur.value = null
-
-    try {
-      const body: Record<string, unknown> = {
-        nom_groupe_ethnique: form.nom_groupe_ethnique.trim(),
-      }
-      if (form.pays_id) body.pays_id = form.pays_id
-      if (form.groupe_ethnique_id) body.groupe_ethnique_id = form.groupe_ethnique_id
-      if (form.langue_cible) body.langue_cible = form.langue_cible
-      if (form.description) body.description = form.description
-
-      const reponse = await $fetch<ApiResponse<PropositionSalleAPI>>(
-        `${apiBase}/api/afrolang/salles/propositions`,
-        {
-          method: 'POST',
-          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-          body,
-        },
-      )
-
-      if (!reponse.success || !reponse.data) {
-        throw new Error(reponse.error || 'Erreur lors de la soumission')
-      }
-      return reponse.data
-    }
-    catch (e: unknown) {
-      // Cas du 409 : $fetch lève avec response attachée, on remonte un objet discriminé
-      const anyErr = e as { status?: number; data?: { data?: { salle_id?: string; proposition_id?: string }; error?: string } }
-      if (anyErr.status === 409) {
-        erreur.value = anyErr.data?.error || 'Doublon détecté'
-        return {
-          erreur: 'doublon',
-          salle_id: anyErr.data?.data?.salle_id,
-          proposition_id: anyErr.data?.data?.proposition_id,
-        }
-      }
-      const message = extraireMessage(e, 'Erreur réseau')
-      erreur.value = message
-      console.error('Erreur soumettrePropositionSalle:', e)
-      return null
-    }
-    finally {
-      chargement.value = false
-    }
-  }
-
-  /** Liste des propositions soumises par l'utilisateur courant. */
-  const listerMesPropositions = async (): Promise<PropositionSalleAPI[]> => {
-    chargement.value = true
-    erreur.value = null
-
-    try {
-      const reponse = await $fetch<ApiResponse<PropositionSalleAPI[]>>(
-        `${apiBase}/api/afrolang/salles/propositions/mine`,
-        { headers: authHeaders() },
-      )
-
-      if (!reponse.success || !reponse.data) {
-        throw new Error(reponse.error || 'Erreur lors du chargement')
-      }
-      return reponse.data
-    }
-    catch (e: unknown) {
-      const message = extraireMessage(e, 'Erreur réseau')
-      erreur.value = message
-      console.error('Erreur listerMesPropositions:', e)
-      return []
-    }
-    finally {
-      chargement.value = false
-    }
-  }
-
   // ── Feature 005 — US3 : Modération de session ──
 
   /** Transférer manuellement la modération de session à un autre participant. */
@@ -1122,176 +1164,6 @@ export const useAfrolang = () => {
     catch (e: unknown) {
       erreur.value = extraireMessage(e, 'Erreur réseau')
       console.error('Erreur transfererModerationSession:', e)
-      return false
-    }
-  }
-
-  // ── Feature 005 — US5 : Adhésions / invitations / visibilité ──────────
-
-  type AdhesionResultat =
-    | { succes: true; id: string; etat: EtatAdhesion }
-    | { erreur: 'adhesion_existante'; adhesion_id: string; type: TypeAdhesion; etat: EtatAdhesion }
-    | null
-
-  const demanderAdhesion = async (
-    salleePriveeId: string,
-  ): Promise<AdhesionResultat> => {
-    erreur.value = null
-    try {
-      const reponse = await $fetch<ApiResponse<{ id: string; etat: EtatAdhesion }>>(
-        `${apiBase}/api/afrolang/salles-privees/${salleePriveeId}/demandes`,
-        {
-          method: 'POST',
-          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-          body: {},
-        },
-      )
-      if (!reponse.success || !reponse.data) throw new Error(reponse.error || 'Erreur')
-      return { succes: true, id: reponse.data.id, etat: reponse.data.etat }
-    }
-    catch (e: unknown) {
-      const anyErr = e as { status?: number; data?: { data?: { adhesion_id?: string; type?: TypeAdhesion; etat?: EtatAdhesion }; error?: string } }
-      if (anyErr.status === 409 && anyErr.data?.data?.adhesion_id) {
-        return {
-          erreur: 'adhesion_existante',
-          adhesion_id: anyErr.data.data.adhesion_id,
-          type: anyErr.data.data.type || 'demande',
-          etat: anyErr.data.data.etat || 'en_attente',
-        }
-      }
-      erreur.value = extraireMessage(e, 'Erreur lors de la demande')
-      console.error('Erreur demanderAdhesion:', e)
-      return null
-    }
-  }
-
-  const inviterMembre = async (
-    salleePriveeId: string,
-    utilisateurId: string,
-  ): Promise<{ id: string } | null> => {
-    erreur.value = null
-    try {
-      const reponse = await $fetch<ApiResponse<{ id: string }>>(
-        `${apiBase}/api/afrolang/salles-privees/${salleePriveeId}/invitations`,
-        {
-          method: 'POST',
-          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-          body: { utilisateur_id: utilisateurId },
-        },
-      )
-      if (!reponse.success || !reponse.data) throw new Error(reponse.error || 'Erreur')
-      return reponse.data
-    }
-    catch (e: unknown) {
-      erreur.value = extraireMessage(e, 'Erreur lors de l\'invitation')
-      console.error('Erreur inviterMembre:', e)
-      return null
-    }
-  }
-
-  const decisionAdhesion = async (
-    adhesionId: string,
-    decision: 'acceptee' | 'refusee',
-  ): Promise<{ etat: EtatAdhesion } | null> => {
-    erreur.value = null
-    try {
-      const reponse = await $fetch<ApiResponse<{ id: string; etat: EtatAdhesion }>>(
-        `${apiBase}/api/afrolang/adhesions/${adhesionId}/decision`,
-        {
-          method: 'PATCH',
-          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-          body: { decision },
-        },
-      )
-      if (!reponse.success || !reponse.data) throw new Error(reponse.error || 'Erreur')
-      return { etat: reponse.data.etat }
-    }
-    catch (e: unknown) {
-      erreur.value = extraireMessage(e, 'Erreur lors de la décision')
-      console.error('Erreur decisionAdhesion:', e)
-      return null
-    }
-  }
-
-  const listerAdhesions = async (
-    salleePriveeId: string,
-  ): Promise<AdhesionSallePriveeAPI[]> => {
-    erreur.value = null
-    try {
-      const reponse = await $fetch<ApiResponse<AdhesionSallePriveeAPI[]>>(
-        `${apiBase}/api/afrolang/salles-privees/${salleePriveeId}/adhesions`,
-        { headers: authHeaders() },
-      )
-      if (!reponse.success || !reponse.data) throw new Error(reponse.error || 'Erreur')
-      return reponse.data
-    }
-    catch (e: unknown) {
-      erreur.value = extraireMessage(e, 'Erreur lors du chargement')
-      console.error('Erreur listerAdhesions:', e)
-      return []
-    }
-  }
-
-  const retirerAbonne = async (adhesionId: string): Promise<boolean> => {
-    erreur.value = null
-    try {
-      await $fetch(`${apiBase}/api/afrolang/adhesions/${adhesionId}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      })
-      return true
-    }
-    catch (e: unknown) {
-      erreur.value = extraireMessage(e, 'Erreur lors du retrait')
-      console.error('Erreur retirerAbonne:', e)
-      return false
-    }
-  }
-
-  const changerVisibiliteSallePrivee = async (
-    id: string,
-    visibilite: VisibiliteSallePrivee,
-  ): Promise<boolean> => {
-    erreur.value = null
-    try {
-      const reponse = await $fetch<ApiResponse<unknown>>(
-        `${apiBase}/api/afrolang/salles-privees/${id}/visibilite`,
-        {
-          method: 'PATCH',
-          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-          body: { visibilite },
-        },
-      )
-      if (!reponse.success) throw new Error(reponse.error || 'Erreur')
-      return true
-    }
-    catch (e: unknown) {
-      erreur.value = extraireMessage(e, 'Erreur lors du changement de visibilité')
-      console.error('Erreur changerVisibiliteSallePrivee:', e)
-      return false
-    }
-  }
-
-  const modifierMaxParticipantsSallePrivee = async (
-    id: string,
-    max: number,
-  ): Promise<boolean> => {
-    erreur.value = null
-    try {
-      const reponse = await $fetch<ApiResponse<unknown>>(
-        `${apiBase}/api/afrolang/salles-privees/${id}/max-participants`,
-        {
-          method: 'PATCH',
-          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-          body: { max_participants: max },
-        },
-      )
-      if (!reponse.success) throw new Error(reponse.error || 'Erreur')
-      return true
-    }
-    catch (e: unknown) {
-      erreur.value = extraireMessage(e, 'Erreur lors de la mise à jour de la limite')
-      console.error('Erreur modifierMaxParticipants:', e)
       return false
     }
   }
@@ -1445,12 +1317,20 @@ export const useAfrolang = () => {
     erreur: readonly(erreur),
     // Annuaire (US1)
     listerGroupesEthniques,
-    // Salles
+    // Salles publiques
     listerSalles,
     obtenirSalle,
-    listerSallesPrivees,
+    // Salles privées (refonte : code secret + jeton d'accès)
+    listerSallesPriveesParSallePublique,
     obtenirSallePrivee,
     creerSallePrivee,
+    verifierCodeAcces,
+    demarrerOuRejoindreSallePrivee,
+    demarrerOuRejoindreSallePublique,
+    modifierCodeAcces,
+    archiverSallePriveeParAuteur,
+    memoriserAccesJeton,
+    recupererAccesJeton,
     // Sessions
     obtenirSession,
     creerSession,
@@ -1461,6 +1341,7 @@ export const useAfrolang = () => {
     rejoindreSession,
     quitterSession,
     genererTokenSession,
+    transfererModerationSession,
     // Tableau blanc
     obtenirTableauBlanc,
     sauvegarderTableauBlanc,
@@ -1468,17 +1349,7 @@ export const useAfrolang = () => {
     // Stats
     obtenirStats,
     listerLangues,
-    // Stubs (à implémenter dans US2..US6)
-    soumettrePropositionSalle,
-    listerMesPropositions,
-    transfererModerationSession,
-    demanderAdhesion,
-    inviterMembre,
-    decisionAdhesion,
-    listerAdhesions,
-    retirerAbonne,
-    changerVisibiliteSallePrivee,
-    modifierMaxParticipantsSallePrivee,
+    // Ressources et messagerie (US6)
     listerRessources,
     uploaderRessourceFichier,
     soumettreLienExterne,

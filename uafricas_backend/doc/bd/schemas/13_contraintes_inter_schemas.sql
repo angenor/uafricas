@@ -149,24 +149,7 @@ ALTER TABLE afrolang.session_participant
     ADD CONSTRAINT fk_afrolang_participant_user
     FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
 
--- Propositions de salles publiques
-ALTER TABLE afrolang.proposition_salle
-    ADD CONSTRAINT fk_afrolang_proposition_pays
-    FOREIGN KEY (pays_id) REFERENCES shared.pays(id) ON DELETE SET NULL;
-
-ALTER TABLE afrolang.proposition_salle
-    ADD CONSTRAINT fk_afrolang_proposition_groupe
-    FOREIGN KEY (groupe_ethnique_id) REFERENCES country_profile.groupe_ethnique(id) ON DELETE SET NULL;
-
-ALTER TABLE afrolang.proposition_salle
-    ADD CONSTRAINT fk_afrolang_proposition_propose_par
-    FOREIGN KEY (propose_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
-
-ALTER TABLE afrolang.proposition_salle
-    ADD CONSTRAINT fk_afrolang_proposition_decide_par
-    FOREIGN KEY (decide_par) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
-
--- Modérateurs Afrolang attitrés
+-- Modérateurs Afrolang attitrés (salles publiques uniquement)
 ALTER TABLE afrolang.salle_moderateur
     ADD CONSTRAINT fk_afrolang_moderateur_user
     FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
@@ -175,18 +158,10 @@ ALTER TABLE afrolang.salle_moderateur
     ADD CONSTRAINT fk_afrolang_moderateur_designe_par
     FOREIGN KEY (designe_par) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
 
--- Adhésions aux salles privées
-ALTER TABLE afrolang.salle_privee_adhesion
-    ADD CONSTRAINT fk_afrolang_adhesion_user
+-- Tentatives de saisie du code secret (refonte : rate limit)
+ALTER TABLE afrolang.tentative_code_acces
+    ADD CONSTRAINT fk_afrolang_tentative_user
     FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
-
-ALTER TABLE afrolang.salle_privee_adhesion
-    ADD CONSTRAINT fk_afrolang_adhesion_initiateur
-    FOREIGN KEY (initiateur_id) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
-
-ALTER TABLE afrolang.salle_privee_adhesion
-    ADD CONSTRAINT fk_afrolang_adhesion_decideur
-    FOREIGN KEY (decideur_id) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
 
 -- Ressources de salle publique
 ALTER TABLE afrolang.ressource_salle

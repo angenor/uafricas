@@ -1,5 +1,6 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- AFRICANS-WORLD — Schema : afrolang — Visioconférence WebRTC + ressources
+-- Refonte 2026-04 (feature 001-afrolang-salles-refonte)
 -- ════════════════════════════════════════════════════════════════════════════
 --
 -- Bounded context dédié, conçu pour être scalé indépendamment sur
@@ -12,15 +13,17 @@
 -- opérations du tableau blanc transitent par WebSocket et ne sont PAS
 -- persistés en base (seul le snapshot final est sauvegardé).
 --
--- MODÉRATION (feature 005 : double modération)
--- ────────────────────────────────────────────
--- • Modération attitrée  : table salle_moderateur (N-N admin-désigné,
---                          disponibilité libre-texte, actif/retire_at).
--- • Modération de session : session.moderateur_id est attribué
---                           dynamiquement (1er arrivé ou transfert ou
---                           reprise par attitré entrant).
--- • Salle privée   : le modérateur est TOUJOURS le créateur (cree_par).
--- • Démarrage session privée : seul le modérateur peut démarrer.
+-- REFONTE feature 001-afrolang-salles-refonte
+-- ─────────────────────────────────────────────
+-- • Salle publique : création admin uniquement. Session démarrée/rejointe
+--   en un clic par n'importe quel utilisateur connecté.
+-- • Salle privée : créée par n'importe quel utilisateur connecté,
+--   durable (dormant ↔ live), protégée par un code secret hashé bcrypt.
+--   Une seule salle privée active par (salle publique, créateur).
+-- • Contrôle d'accès : code secret en clair saisi par l'utilisateur,
+--   vérifié contre `code_acces_hash` (bcrypt cost 10). L'auteur n'a
+--   jamais besoin de saisir le code.
+-- • Rate limit : table `tentative_code_acces` + règle 5 échecs/minute.
 -- ════════════════════════════════════════════════════════════════════════════
 
 
@@ -31,38 +34,6 @@ CREATE TYPE afrolang.etat_session AS ENUM (
     'en_cours',       -- visioconférence active
     'terminee',       -- terminée normalement
     'annulee'         -- annulée avant démarrage ou interrompue
-);
-
--- ── Nouveaux enums (feature 005) ────────────────────────────────────────
-
-CREATE TYPE afrolang.etat_proposition AS ENUM (
-    'en_attente',
-    'approuvee',
-    'refusee'
-);
-
-CREATE TYPE afrolang.motif_salle_privee AS ENUM (
-    'apprentissage_enfants',
-    'reseautage_adulte',
-    'echanges_groupe'
-);
-
-CREATE TYPE afrolang.visibilite_salle_privee AS ENUM (
-    'fermee',
-    'visible'
-);
-
-CREATE TYPE afrolang.type_adhesion AS ENUM (
-    'demande',
-    'invitation',
-    'abonne'
-);
-
-CREATE TYPE afrolang.etat_adhesion AS ENUM (
-    'en_attente',
-    'acceptee',
-    'refusee',
-    'groupe_complet'
 );
 
 CREATE TYPE afrolang.type_ressource AS ENUM (
@@ -78,7 +49,7 @@ CREATE TYPE afrolang.etat_ressource AS ENUM (
 
 
 -- ── Salle publique (canal par groupe ethnique) ────────────────────────────
--- Créée par un admin, ou issue d'une proposition validée (proposition_salle).
+-- Créée exclusivement par un admin.
 -- Rattachée à un groupe_ethnique du référentiel country_profile.
 -- La modération attitrée est gérée par la table salle_moderateur (N-N).
 
@@ -108,29 +79,27 @@ CREATE UNIQUE INDEX idx_afrolang_salle_groupe_unique
 CREATE INDEX idx_afrolang_salle_groupe ON afrolang.salle(groupe_ethnique_id);
 
 
--- ── Salle privée (sous-salle créée par un utilisateur) ────────────────────
--- Le modérateur est TOUJOURS le créateur (cree_par). Lui seul peut
--- démarrer une session dans cette salle.
--- Feature 005 : motif obligatoire, déclaration d'adulte (18+) obligatoire,
--- visibilité fermée/visible, archivage automatique (créateur supprimé,
--- salle publique désactivée en cascade) + unicité 1 par (membre × salle).
+-- ── Salle privée (cercle restreint durable, code secret) ─────────────────
+-- Créée par n'importe quel utilisateur connecté, rattachée à exactement une
+-- salle publique. Objet durable : alterne dormant ↔ session live en cours.
+-- Protection : code secret hashé bcrypt (cost 10) ; l'auteur n'a jamais
+-- besoin de saisir le code (vérifié par comparaison d'identité).
+-- Unicité : 1 salle privée active par (salle publique, créateur).
 -- FK salle_id : ON DELETE RESTRICT (pas CASCADE) pour éviter la perte
--- silencieuse de salles privées ; archivage piloté par handler dédié.
+-- silencieuse ; archivage piloté par handler dédié quand la salle publique
+-- est désactivée.
 
 CREATE TABLE afrolang.salle_privee (
     id                    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     salle_id              UUID         NOT NULL REFERENCES afrolang.salle(id) ON DELETE RESTRICT,
     titre                 VARCHAR(350) NOT NULL,
     description           TEXT,
-    code_acces            VARCHAR(100),               -- code pour rejoindre (legacy, optionnel)
+    code_acces_hash       CHAR(60)     NOT NULL,       -- bcrypt cost 10 (R3)
     image_couverture_url  VARCHAR(500),
     max_participants      INT          DEFAULT 50,
-    motif                 afrolang.motif_salle_privee NOT NULL,
-    declaration_adulte_at TIMESTAMPTZ  NOT NULL,      -- capture de la case cochée (FR-033)
-    visibilite            afrolang.visibilite_salle_privee NOT NULL DEFAULT 'fermee',
-    archivee_at           TIMESTAMPTZ,                -- cascade créateur supprimé / salle publique désactivée
+    archivee_at           TIMESTAMPTZ,                 -- cascade désactivation salle publique / archivage auteur
     actif                 BOOLEAN      NOT NULL DEFAULT TRUE,
-    cree_par              UUID         NOT NULL,      -- [xref] iam.utilisateur
+    cree_par              UUID         NOT NULL,       -- [xref] iam.utilisateur
     created_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     deleted_at            TIMESTAMPTZ
@@ -138,30 +107,21 @@ CREATE TABLE afrolang.salle_privee (
 
 CREATE INDEX idx_afrolang_privee_salle ON afrolang.salle_privee(salle_id);
 
--- 1 salle privée active par (membre × salle publique) — FR-035, SC-010
+-- 1 salle privée active par (créateur × salle publique) — FR-010, SC-005
 CREATE UNIQUE INDEX idx_afrolang_privee_unique_par_salle
     ON afrolang.salle_privee(salle_id, cree_par)
     WHERE archivee_at IS NULL AND deleted_at IS NULL;
 
-CREATE INDEX idx_afrolang_privee_visibilite
-    ON afrolang.salle_privee(salle_id, visibilite)
-    WHERE archivee_at IS NULL AND deleted_at IS NULL;
-
 
 -- ── Session de visioconférence (éphémère) ─────────────────────────────────
--- Chaque session représente UNE conférence WebRTC dans une salle privée.
--- C'est cette table que le load-balancer / orchestrateur interroge pour
--- router les participants vers le bon VPS.
+-- Chaque session représente UNE conférence WebRTC dans une salle publique
+-- OU dans une salle privée (XOR).
 --
 -- Modérateur effectif :
---   • Salle privée → toujours salle_privee.cree_par
---   • Salle publique → feature 005 : 1er arrivé, puis transfert manuel
---     possible ou reprise automatique par un modérateur attitré entrant.
+--   • Salle privée  → toujours salle_privee.cree_par (auteur)
+--   • Salle publique → 1er arrivé (FR-005b), puis transfert manuel possible
+--     ou reprise automatique par un modérateur attitré entrant.
 
--- Une session est rattachée EXCLUSIVEMENT à une salle publique OU à une salle
--- privée (XOR). Les salles publiques hébergent leur propre session live
--- communautaire (spec FR-026→FR-029, SC-001, SC-003) ; les salles privées
--- hébergent les sessions de groupes restreints.
 CREATE TABLE afrolang.session (
     id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     salle_privee_id         UUID                   REFERENCES afrolang.salle_privee(id) ON DELETE CASCADE,
@@ -246,40 +206,11 @@ CREATE TABLE afrolang.tableau_blanc (
 );
 
 
--- ── Proposition de salle publique (feature 005) ───────────────────────────
--- Un membre propose la création d'une salle pour un groupe ethnique absent.
--- L'admin valide ou refuse. À l'approbation, la salle est créée et le champ
--- salle_id_creee est renseigné. Détection de doublons applicative via
--- lower(unaccent(nom)) contre les salles actives et les propositions en_attente.
-
-CREATE TABLE afrolang.proposition_salle (
-    id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    nom_groupe_ethnique     VARCHAR(250) NOT NULL,
-    pays_id                 UUID,                          -- [xref] shared.pays (facultatif)
-    groupe_ethnique_id      UUID,                          -- [xref] country_profile.groupe_ethnique
-    langue_cible            VARCHAR(100),
-    description             TEXT,
-    etat                    afrolang.etat_proposition NOT NULL DEFAULT 'en_attente',
-    motif_refus             TEXT,
-    salle_id_creee          UUID REFERENCES afrolang.salle(id) ON DELETE SET NULL,
-    propose_par             UUID         NOT NULL,         -- [xref] iam.utilisateur
-    decide_par              UUID,                          -- [xref] iam.utilisateur (admin)
-    decide_at               TIMESTAMPTZ,
-    created_at              TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at              TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    deleted_at              TIMESTAMPTZ
-);
-
-CREATE INDEX idx_afrolang_proposition_etat
-    ON afrolang.proposition_salle(etat) WHERE deleted_at IS NULL;
-
-CREATE INDEX idx_afrolang_proposition_auteur
-    ON afrolang.proposition_salle(propose_par) WHERE deleted_at IS NULL;
-
-
 -- ── Modérateurs Afrolang attitrés (feature 005) ───────────────────────────
 -- Affectation N-N admin-désignée entre une salle publique et un utilisateur.
 -- Retrait = actif=FALSE + retire_at (conserve l'historique pour audit).
+-- Concerne UNIQUEMENT les salles publiques (les salles privées n'ont pas
+-- de modérateur attitré : le modérateur effectif est toujours l'auteur).
 
 CREATE TABLE afrolang.salle_moderateur (
     id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -302,38 +233,28 @@ CREATE INDEX idx_afrolang_moderateur_user
     ON afrolang.salle_moderateur(utilisateur_id) WHERE actif = TRUE;
 
 
--- ── Adhésion à une salle privée (demande / invitation / abonné) ──────────
--- Modèle unifié :
---   • type=demande     : initié par l'utilisateur, décidé par le créateur.
---   • type=invitation  : initié par le créateur, décidé par l'utilisateur.
---   • type=abonne      : état terminal après acceptation.
--- Atomicité de la limite : SELECT ... FOR UPDATE sur salle_privee puis
--- comparaison avec COUNT(*) des abonnés actifs (gestion « groupe_complet »).
+-- ── Tentative de saisie du code secret (rate limit, R4) ──────────────────
+-- Trace chaque tentative de saisie du code secret d'une salle privée.
+-- Sert à appliquer le rate limit 5 tentatives/minute/(utilisateur, salle).
+-- Règle : si count(succes=FALSE) sur 60 dernières secondes >= 5 ET
+-- dernière tentative < 5 min → refuser sans vérifier le hash.
+-- Granularité : par utilisateur connecté (pas par IP).
 
-CREATE TABLE afrolang.salle_privee_adhesion (
-    id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    salle_privee_id   UUID        NOT NULL REFERENCES afrolang.salle_privee(id) ON DELETE CASCADE,
-    utilisateur_id    UUID        NOT NULL,                -- [xref] iam.utilisateur (destinataire/demandeur)
-    type              afrolang.type_adhesion NOT NULL,
-    etat              afrolang.etat_adhesion NOT NULL DEFAULT 'en_attente',
-    initiateur_id     UUID        NOT NULL,                -- [xref] iam.utilisateur
-    decideur_id       UUID,                                -- [xref] iam.utilisateur
-    decided_at        TIMESTAMPTZ,
-    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    deleted_at        TIMESTAMPTZ,
-    UNIQUE (salle_privee_id, utilisateur_id)
+CREATE TABLE afrolang.tentative_code_acces (
+    id              UUID         PRIMARY KEY DEFAULT uuid_generate_v4(),
+    salle_privee_id UUID         NOT NULL REFERENCES afrolang.salle_privee(id) ON DELETE CASCADE,
+    utilisateur_id  UUID         NOT NULL,                          -- [xref] iam.utilisateur
+    tente_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    succes          BOOLEAN      NOT NULL DEFAULT FALSE,
+    ip              INET,                                            -- traçabilité audit
+    user_agent      TEXT
 );
 
-CREATE INDEX idx_afrolang_adhesion_salle
-    ON afrolang.salle_privee_adhesion(salle_privee_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_afrolang_tentative_lookup
+    ON afrolang.tentative_code_acces(salle_privee_id, utilisateur_id, tente_at DESC);
 
-CREATE INDEX idx_afrolang_adhesion_user
-    ON afrolang.salle_privee_adhesion(utilisateur_id) WHERE deleted_at IS NULL;
-
-CREATE INDEX idx_afrolang_adhesion_attente
-    ON afrolang.salle_privee_adhesion(salle_privee_id, etat)
-    WHERE etat = 'en_attente' AND deleted_at IS NULL;
+CREATE INDEX idx_afrolang_tentative_purge
+    ON afrolang.tentative_code_acces(tente_at);
 
 
 -- ── Ressource pédagogique d'une salle publique (feature 005) ─────────────

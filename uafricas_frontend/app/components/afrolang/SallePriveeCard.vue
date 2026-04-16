@@ -1,116 +1,153 @@
-<template>
-  <div class="relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 group">
-    <!-- Header avec gradient -->
-    <div class="relative h-32 bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 p-4">
-      <!-- Badge protection -->
-      <div class="absolute top-4 right-4">
-        <span
-          v-if="sallePrivee.est_protegee"
-          class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5"
-        >
-          <font-awesome-icon :icon="['fas', 'lock']" class="w-3 h-3" />
-          Protégée
-        </span>
-        <span
-          v-else
-          class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5"
-        >
-          <font-awesome-icon :icon="['fas', 'door-open']" class="w-3 h-3" />
-          Ouverte
-        </span>
-      </div>
-
-      <!-- Indicateur en direct -->
-      <div v-if="sallePrivee.session_en_cours" class="absolute top-4 left-4">
-        <span class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 animate-pulse">
-          <font-awesome-icon :icon="['fas', 'circle']" class="w-2 h-2" />
-          En direct
-        </span>
-      </div>
-
-      <!-- Titre -->
-      <div class="absolute bottom-0 left-0 right-0 p-4 text-white">
-        <h3 class="text-lg font-bold line-clamp-1">{{ sallePrivee.titre }}</h3>
-        <p v-if="sallePrivee.salle_langue" class="text-white/80 text-sm flex items-center gap-1.5">
-          <font-awesome-icon :icon="['fas', 'language']" class="w-3 h-3" />
-          {{ sallePrivee.salle_langue }}
-        </p>
-      </div>
-    </div>
-
-    <!-- Contenu -->
-    <div class="p-5">
-      <!-- Description -->
-      <p class="text-gray-600 text-sm line-clamp-2 mb-4">
-        {{ sallePrivee.description || 'Aucune description' }}
-      </p>
-
-      <!-- Infos -->
-      <div class="space-y-2 mb-4">
-        <div v-if="sallePrivee.max_participants" class="flex items-center gap-2 text-sm text-gray-600">
-          <font-awesome-icon :icon="['fas', 'users']" class="w-4 h-4 text-gray-400" />
-          <span>Max {{ sallePrivee.max_participants }} participants</span>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-        <div class="flex items-center gap-2">
-          <div
-            v-if="sallePrivee.createur.photo_url"
-            class="w-8 h-8 rounded-full overflow-hidden"
-          >
-            <img
-              :src="sallePrivee.createur.photo_url"
-              :alt="sallePrivee.createur.prenom || ''"
-              class="w-full h-full object-cover"
-            />
-          </div>
-          <div
-            v-else
-            class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-semibold"
-          >
-            {{ initiales }}
-          </div>
-          <span class="text-xs text-gray-500">
-            {{ sallePrivee.createur.prenom }} {{ sallePrivee.createur.nom }}
-          </span>
-        </div>
-        <NuxtLink
-          :to="`/afrolang/salle-privee/${sallePrivee.id}`"
-          class="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm rounded-lg font-medium hover:shadow-lg transform hover:scale-[1.02] transition-all"
-          @click.stop
-        >
-          Voir les sessions
-        </NuxtLink>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { getInitiales, type SallePriveeAPI } from '~/composables/useAfrolang'
 
 const props = defineProps<{
   sallePrivee: SallePriveeAPI
+  /** Indique qu'une action (rejoindre / ouvrir) est en cours sur cette carte. */
+  chargement?: boolean
 }>()
 
-const initiales = computed(() => {
-  return getInitiales(props.sallePrivee.createur.nom, props.sallePrivee.createur.prenom)
-})
+const emit = defineEmits<{
+  /** Rejoindre (non-auteur) : ouvrir le modale de saisie du code. */
+  (e: 'rejoindre', sallePriveeId: string): void
+  /** Ouvrir (auteur) : court-circuit code, accès direct. */
+  (e: 'ouvrir', sallePriveeId: string): void
+  /** Modifier le code secret (auteur). */
+  (e: 'modifier-code', sallePriveeId: string): void
+  /** Archiver la salle (auteur). */
+  (e: 'archiver', sallePriveeId: string): void
+}>()
+
+const menuOuvert = ref(false)
+
+const initiales = computed(() =>
+  getInitiales(
+    null,
+    props.sallePrivee.auteur_nom,
+  ),
+)
+
+const handleAction = () => {
+  if (props.sallePrivee.est_auteur) {
+    emit('ouvrir', props.sallePrivee.id)
+  }
+  else {
+    emit('rejoindre', props.sallePrivee.id)
+  }
+}
+
+const handleModifierCode = () => {
+  menuOuvert.value = false
+  emit('modifier-code', props.sallePrivee.id)
+}
+
+const handleArchiver = () => {
+  menuOuvert.value = false
+  emit('archiver', props.sallePrivee.id)
+}
 </script>
 
-<style scoped>
-.line-clamp-1 {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>
+<template>
+  <div class="relative bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md transition-all">
+    <!-- Bandeau supérieur : badges -->
+    <div class="flex items-start justify-between gap-2 mb-2">
+      <h5 class="font-medium text-gray-800 text-sm line-clamp-1 flex-1">
+        {{ sallePrivee.titre }}
+      </h5>
+
+      <div class="flex items-center gap-1.5 shrink-0">
+        <!-- En direct -->
+        <span
+          v-if="sallePrivee.session_en_cours"
+          class="inline-flex items-center gap-1 text-[11px] text-red-600 font-medium"
+        >
+          <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+          En direct
+        </span>
+
+        <!-- Cadenas -->
+        <span class="text-amber-500" title="Protégée par un code secret">
+          <font-awesome-icon :icon="['fas', 'lock']" class="w-3 h-3" />
+        </span>
+
+        <!-- Menu auteur -->
+        <div v-if="sallePrivee.est_auteur" class="relative">
+          <button
+            type="button"
+            class="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded"
+            aria-label="Actions"
+            @click="menuOuvert = !menuOuvert"
+          >
+            <font-awesome-icon :icon="['fas', 'ellipsis-vertical']" class="w-3 h-3" />
+          </button>
+          <div
+            v-if="menuOuvert"
+            class="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20"
+          >
+            <button
+              type="button"
+              class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              @click="handleModifierCode"
+            >
+              <font-awesome-icon :icon="['fas', 'key']" class="w-3 h-3 text-gray-400" />
+              Modifier le code secret
+            </button>
+            <button
+              type="button"
+              class="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-gray-100"
+              @click="handleArchiver"
+            >
+              <font-awesome-icon :icon="['fas', 'box-archive']" class="w-3 h-3" />
+              Archiver ma salle
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <p
+      v-if="sallePrivee.description"
+      class="text-xs text-gray-500 line-clamp-2 mb-3"
+    >
+      {{ sallePrivee.description }}
+    </p>
+
+    <!-- Auteur -->
+    <div class="flex items-center gap-2 text-xs text-gray-400 mb-3">
+      <div class="w-5 h-5 rounded-full bg-custom-chocolat/10 text-custom-chocolat flex items-center justify-center text-[10px] font-semibold">
+        {{ initiales }}
+      </div>
+      <span class="truncate">
+        {{ sallePrivee.est_auteur ? 'Vous' : (sallePrivee.auteur_nom || 'Auteur inconnu') }}
+      </span>
+    </div>
+
+    <!-- Action principale -->
+    <button
+      type="button"
+      :disabled="chargement"
+      class="w-full px-3 py-2 text-xs rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-wait"
+      :class="sallePrivee.est_auteur
+        ? 'bg-custom-chocolat text-white hover:bg-custom-chocolat/90'
+        : 'bg-amber-500 text-white hover:bg-amber-600'"
+      @click="handleAction"
+    >
+      <font-awesome-icon
+        :icon="['fas', chargement ? 'spinner' : (sallePrivee.est_auteur ? 'door-open' : 'key')]"
+        class="w-3 h-3"
+        :class="{ 'animate-spin': chargement }"
+      />
+      <template v-if="chargement">
+        Connexion...
+      </template>
+      <template v-else-if="sallePrivee.est_auteur">
+        Ouvrir ma salle privée
+      </template>
+      <template v-else>
+        Rejoindre
+      </template>
+    </button>
+  </div>
+</template>

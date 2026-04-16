@@ -51,23 +51,6 @@
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 py-8">
-      <!-- Annuaire des groupes ethniques (feature 005 US1) -->
-      <section class="mb-10">
-        <AfrolangAnnuaireGroupesEthniques
-          @rejoindre-salle="onRejoindreSalle"
-          @proposer-salle="onProposerSalle"
-        />
-      </section>
-
-      <!-- Séparateur -->
-      <div class="flex items-center gap-3 my-8">
-        <div class="flex-1 h-px bg-gray-200" />
-        <span class="text-xs uppercase tracking-widest text-gray-400">
-          Toutes les salles publiques
-        </span>
-        <div class="flex-1 h-px bg-gray-200" />
-      </div>
-
       <!-- Search Bar -->
       <div class="max-w-2xl mx-auto mb-8">
         <div class="relative">
@@ -146,111 +129,161 @@
               />
             </div>
 
-            <!-- Section dépliable : salles privées (hors grille) -->
+            <!-- Widget Canal privé : dropdown des salles privées d'une salle publique -->
             <Transition name="expand">
               <div
                 v-if="expandedSalle"
                 :key="expandedSalleId!"
                 class="mb-8 bg-blue-50/50 border border-blue-100 rounded-2xl p-4 md:p-6"
               >
-                <!-- Loading privees -->
                 <div v-if="loadingPrivees" class="flex items-center justify-center py-8">
                   <div class="animate-spin rounded-full h-8 w-8 border-3 border-blue-500 border-t-transparent" />
                   <span class="ml-3 text-gray-500 text-sm">Chargement des cours privés...</span>
                 </div>
 
-                <!-- Liste des salles privées -->
-                <template v-else-if="sallesPriveesCache[expandedSalleId!]?.length">
-                  <div class="flex items-center justify-between mb-4">
+                <template v-else>
+                  <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
                     <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
                       <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4 text-blue-500" />
-                      {{ sallesPriveesCache[expandedSalleId!].length }} cours privé{{ sallesPriveesCache[expandedSalleId!].length > 1 ? 's' : '' }}
+                      {{ (sallesPriveesCache[expandedSalleId!]?.length ?? 0) }}
+                      cours privé{{ (sallesPriveesCache[expandedSalleId!]?.length ?? 0) > 1 ? 's' : '' }}
                       — {{ expandedSalle.titre }}
                     </h4>
-                    <NuxtLink
-                      :to="`/afrolang/${expandedSalleId}`"
-                      class="text-xs text-blue-500 hover:text-blue-700 transition-colors"
+
+                    <!-- US4 : bouton Créer ma salle privée / Ouvrir ma salle privée -->
+                    <button
+                      v-if="userStore.isAuthenticated"
+                      type="button"
+                      class="px-3 py-1.5 text-xs rounded-lg font-semibold transition-all flex items-center gap-1.5"
+                      :class="maSallePriveeIciId
+                        ? 'bg-custom-chocolat text-white hover:bg-custom-chocolat/90'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'"
+                      :disabled="sallePriveeEnCours === (maSallePriveeIciId || 'creation')"
+                      @click="maSallePriveeIciId ? ouvrirMaSallePrivee(maSallePriveeIciId) : ouvrirCreationModal(expandedSalleId!)"
                     >
-                      Voir tout
-                    </NuxtLink>
+                      <font-awesome-icon
+                        :icon="['fas', maSallePriveeIciId ? 'door-open' : 'plus']"
+                        class="w-3 h-3"
+                      />
+                      {{ maSallePriveeIciId ? 'Ouvrir ma salle privée' : 'Créer ma salle privée' }}
+                    </button>
                   </div>
 
-                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <div
-                      v-for="sp in sallesPriveesCache[expandedSalleId!]"
+                  <div
+                    v-if="(sallesPriveesCache[expandedSalleId!]?.length ?? 0) > 0"
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+                  >
+                    <AfrolangSallePriveeCard
+                      v-for="sp in (sallesPriveesCache[expandedSalleId!] ?? [])"
                       :key="sp.id"
-                      class="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md transition-all"
-                    >
-                      <div class="flex items-start justify-between gap-3">
-                        <div class="flex-1 min-w-0">
-                          <div class="flex items-center gap-2 mb-1">
-                            <h5 class="font-medium text-gray-800 text-sm truncate">{{ sp.titre }}</h5>
-                            <span
-                              v-if="sp.est_protegee"
-                              class="flex-shrink-0 text-amber-500"
-                              title="Protégée par un code d'accès"
-                            >
-                              <font-awesome-icon :icon="['fas', 'lock']" class="w-3 h-3" />
-                            </span>
-                          </div>
-                          <p v-if="sp.description" class="text-xs text-gray-500 line-clamp-1 mb-2">
-                            {{ sp.description }}
-                          </p>
-                          <div class="flex items-center gap-3 text-xs text-gray-400">
-                            <span class="flex items-center gap-1">
-                              <font-awesome-icon :icon="['fas', 'user']" class="w-3 h-3" />
-                              {{ sp.createur.prenom }} {{ sp.createur.nom }}
-                            </span>
-                            <span v-if="sp.max_participants" class="flex items-center gap-1">
-                              <font-awesome-icon :icon="['fas', 'users']" class="w-3 h-3" />
-                              Max {{ sp.max_participants }}
-                            </span>
-                          </div>
-                        </div>
+                      :salle-privee="sp"
+                      :chargement="sallePriveeEnCours === sp.id"
+                      @rejoindre="ouvrirJoinModal"
+                      @ouvrir="ouvrirMaSallePrivee"
+                      @modifier-code="ouvrirModifCodeModal"
+                      @archiver="confirmerArchivage"
+                    />
+                  </div>
 
-                        <!-- Bouton action -->
-                        <div class="flex-shrink-0">
-                          <NuxtLink
-                            v-if="sp.session_en_cours"
-                            :to="`/afrolang/salle-privee/${sp.id}`"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs rounded-lg font-medium hover:bg-emerald-600 transition-colors whitespace-nowrap"
-                          >
-                            <font-awesome-icon :icon="['fas', 'video']" class="w-3 h-3" />
-                            Rejoindre
-                          </NuxtLink>
-                          <NuxtLink
-                            v-else
-                            :to="`/afrolang/salle-privee/${sp.id}`"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-600 text-xs rounded-lg font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
-                          >
-                            <font-awesome-icon :icon="['fas', 'arrow-right']" class="w-3 h-3" />
-                            Entrer
-                          </NuxtLink>
-                        </div>
-                      </div>
-
-                      <!-- Badge en direct -->
-                      <div v-if="sp.session_en_cours" class="mt-2 pt-2 border-t border-gray-50">
-                        <span class="inline-flex items-center gap-1.5 text-xs text-red-500 font-medium">
-                          <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                          Session en direct
-                        </span>
-                      </div>
-                    </div>
+                  <div v-else class="text-center py-6">
+                    <font-awesome-icon :icon="['fas', 'door-open']" class="w-8 h-8 text-gray-300 mb-3" />
+                    <p class="text-gray-500 text-sm">Aucun cours privé dans cette salle</p>
                   </div>
                 </template>
+              </div>
+            </Transition>
 
-                <!-- Aucun cours privé -->
-                <div v-else class="text-center py-6">
-                  <font-awesome-icon :icon="['fas', 'door-open']" class="w-8 h-8 text-gray-300 mb-3" />
-                  <p class="text-gray-500 text-sm">Aucun cours privé dans cette salle</p>
-                  <NuxtLink
-                    :to="`/afrolang/${expandedSalleId}`"
-                    class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-blue-500 text-white text-sm rounded-lg font-medium hover:bg-blue-600 transition-colors"
-                  >
-                    <font-awesome-icon :icon="['fas', 'plus']" class="w-3 h-3" />
-                    Créer un cours privé
-                  </NuxtLink>
+            <!-- Erreur widget salle privée -->
+            <div v-if="erreurSallePrivee" class="max-w-2xl mx-auto mb-6">
+              <div class="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2">
+                <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="w-4 h-4" />
+                {{ erreurSallePrivee }}
+                <button class="ml-auto text-red-400 hover:text-red-600" @click="erreurSallePrivee = null">
+                  <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Modales US2 / US3 / Phase 7 -->
+            <AfrolangSallePriveeCreateModal
+              ref="createModalRef"
+              :is-open="createModalOpen"
+              :salle-id="createModalSalleId"
+              @close="createModalOpen = false"
+              @submit="soumettreCreationSallePrivee"
+              @existante="rediriger_vers_salle_existante"
+            />
+
+            <AfrolangSallePriveeJoinModal
+              ref="joinModalRef"
+              :is-open="joinModalOpen"
+              :salle-privee-titre="joinModalSalleTitre"
+              @close="joinModalOpen = false"
+              @submit="soumettreCodeAcces"
+            />
+
+            <!-- Modal simple : modification du code secret (auteur uniquement) -->
+            <Transition name="modal-fade">
+              <div
+                v-if="modifCodeModalOpen"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
+                @click.self="modifCodeModalOpen = false"
+              >
+                <div class="relative w-full max-w-md bg-white shadow-2xl rounded-2xl border-t-4 border-custom-chocolat" @click.stop>
+                  <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                      <h3 class="text-lg font-bold text-gray-800">Modifier le code secret</h3>
+                      <button type="button" class="text-gray-400 hover:text-gray-600" @click="modifCodeModalOpen = false">
+                        <font-awesome-icon :icon="['fas', 'xmark']" class="w-5 h-5" />
+                      </button>
+                    </div>
+                    <form @submit.prevent="soumettreNouveauCode">
+                      <label class="block text-sm font-semibold text-gray-700 mb-2">Nouveau code secret</label>
+                      <input
+                        v-model="nouveauCode"
+                        type="text"
+                        pattern="^[A-Za-z0-9!@#$%&*?-]{4,16}$"
+                        class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-custom-chocolat font-mono tracking-wider"
+                        placeholder="nouveauCode!"
+                        required
+                      >
+                      <p class="text-xs text-gray-400 mt-1">
+                        4 à 16 caractères (lettres, chiffres ou <code>!@#$%&amp;*?-</code>).
+                      </p>
+                      <p v-if="erreurModifCode" class="text-xs text-red-500 mt-2">{{ erreurModifCode }}</p>
+                      <div class="flex gap-3 pt-4">
+                        <button type="button" class="flex-1 p-3 bg-gray-100 text-gray-700 rounded-xl font-medium" @click="modifCodeModalOpen = false">
+                          Annuler
+                        </button>
+                        <button type="submit" :disabled="modifCodeEnCours" class="flex-1 p-3 bg-custom-chocolat text-white rounded-xl font-medium disabled:opacity-50">
+                          {{ modifCodeEnCours ? 'Enregistrement...' : 'Enregistrer' }}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </Transition>
+
+            <!-- Toast succès création salle privée -->
+            <Transition name="fade-slide">
+              <div
+                v-if="toastCreation"
+                class="fixed bottom-6 right-6 z-60 max-w-sm bg-green-600 text-white rounded-xl shadow-2xl p-4"
+              >
+                <div class="flex items-start gap-3">
+                  <font-awesome-icon :icon="['fas', 'circle-check']" class="w-5 h-5 mt-0.5 shrink-0" />
+                  <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-sm">Salle privée créée !</p>
+                    <p class="text-xs text-green-100 mt-1">
+                      Code secret :
+                      <code class="bg-green-700/50 px-1.5 py-0.5 rounded font-mono">{{ toastCreation.code }}</code>
+                    </p>
+                    <p class="text-xs text-green-100 mt-1">Notez-le, il ne sera plus jamais affiché.</p>
+                  </div>
+                  <button type="button" class="text-white/80 hover:text-white" @click="toastCreation = null">
+                    <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </Transition>
@@ -308,14 +341,6 @@
         </div>
       </div>
     </div>
-
-    <!-- US2 : Modal de proposition de salle -->
-    <AfrolangProposerSalleModal
-      :ouvert="proposerModalOuvert"
-      :nom-prerempli="proposerNomPrerempli"
-      @close="proposerModalOuvert = false"
-      @created="proposerModalOuvert = false"
-    />
   </div>
 </template>
 
@@ -347,11 +372,12 @@ const userStore = useUserStore()
 
 const {
   listerSalles,
-  obtenirSalle,
-  obtenirSallePrivee,
+  listerSallesPriveesParSallePublique,
   creerSallePrivee,
-  creerSession,
-  demarrerSession,
+  verifierCodeAcces,
+  modifierCodeAcces,
+  archiverSallePriveeParAuteur,
+  memoriserAccesJeton,
   obtenirStats,
   listerLangues,
 } = useAfrolang()
@@ -366,16 +392,16 @@ const sidebarOpen = ref(false)
 const languesDisponibles = ref<string[]>([])
 const initialLoading = ref(true)
 
-// Expansion des salles privées
+// Widget Canal privé : expansion des salles privées
 const expandedSalleId = ref<string | null>(null)
 const loadingPrivees = ref(false)
 const sallesPriveesCache = ref<Record<string, SallePriveeAPI[]>>({})
 
-// Entrer dans la salle (visioconférence)
+// Entrer dans la salle (visioconférence publique)
 const salleEnCoursEntree = ref<string | null>(null)
 const erreurEntrer = ref<string | null>(null)
 
-const stats = ref<AfrolangStats>({
+const _stats = ref<AfrolangStats>({
   total_salles: 0,
   total_salles_privees: 0,
   sessions_en_cours: 0,
@@ -388,15 +414,12 @@ const filtres = ref<SalleFiltres>({
   langue: '',
 })
 
-// Salle actuellement dépliée (pour la section privées hors grille)
 const expandedSalle = computed(() =>
   salles.value.find(s => s.id === expandedSalleId.value) ?? null,
 )
 
-// Debounce timer pour la recherche
 let rechercheTimer: ReturnType<typeof setTimeout> | null = null
 
-// Construire les filtres API
 const buildApiFiltres = (): SalleFiltres => {
   const f: SalleFiltres = {
     page: currentPage.value,
@@ -407,7 +430,6 @@ const buildApiFiltres = (): SalleFiltres => {
   return f
 }
 
-// Charger les salles
 const chargerSalles = async () => {
   const resultat = await listerSalles(buildApiFiltres())
   if (resultat) {
@@ -417,84 +439,212 @@ const chargerSalles = async () => {
   }
 }
 
-// ── Entrer dans la salle : trouver/créer session + naviguer vers visio ──
-
+// US1 — Entrer dans le livestream public en 1 clic.
 const entrerDansSalle = async (salleId: string) => {
   erreurEntrer.value = null
 
-  // Vérifier authentification
   if (!userStore.isAuthenticated) {
     router.push('/login')
     return
   }
 
   salleEnCoursEntree.value = salleId
-
   try {
-    // 1. Charger le détail de la salle avec ses salles privées
-    const salleDetail = await obtenirSalle(salleId)
-    if (!salleDetail) throw new Error('Impossible de charger la salle')
-
-    // 2. Chercher une salle privée avec session en cours
-    const spAvecSession = salleDetail.salles_privees.find(sp => sp.session_en_cours)
-
-    if (spAvecSession) {
-      // 3a. Trouver la session active dans cette salle privée
-      const spDetail = await obtenirSallePrivee(spAvecSession.id)
-      if (spDetail) {
-        const sessionActive = spDetail.sessions.find(s => s.etat === 'en_cours')
-        if (sessionActive) {
-          router.push(`/afrolang/session/${sessionActive.id}?rejoindre=1`)
-          return
-        }
-      }
-    }
-
-    // 3b. Pas de session active → créer une nouvelle salle privée (l'utilisateur en sera le créateur
-    //     et pourra donc y planifier/démarrer des sessions)
-    const nouvelleSP = await creerSallePrivee(salleId, {
-      titre: `Session ${salleDetail.titre}`,
-      description: `Session ouverte - ${salleDetail.titre}`,
-      code_acces: '',
-      max_participants: null,
-      motif: 'reseautage_adulte',
-      declaration_adulte: true,
-      visibilite: 'fermee',
-    })
-    if (!nouvelleSP) throw new Error('Impossible de créer la salle de cours')
-    if ('erreur' in nouvelleSP) {
-      if (nouvelleSP.salle_existante_id) {
-        router.push(`/afrolang/salle-privee/${nouvelleSP.salle_existante_id}`)
-        return
-      }
-      throw new Error('Vous avez déjà une salle privée dans cet espace public')
-    }
-    const sallePriveeId = nouvelleSP.id
-
-    // 4. Créer une session
-    const nouvelleSession = await creerSession(sallePriveeId, {
-      titre: `Session du ${new Date().toLocaleDateString('fr-FR')}`,
-      date_debut_prevue: new Date().toISOString(),
-      max_participants: null,
-      tableau_blanc_actif: true,
-    })
-    if (!nouvelleSession) throw new Error('Impossible de créer la session')
-
-    // 5. Démarrer la session
-    const demarree = await demarrerSession(nouvelleSession.id)
-    if (!demarree) throw new Error('Impossible de démarrer la session')
-
-    // 6. Naviguer vers la visioconférence
-    router.push(`/afrolang/session/${nouvelleSession.id}?rejoindre=1`)
-  } catch (e: any) {
+    await navigateTo(`/afrolang/session/${salleId}`)
+  }
+  catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'Navigation impossible'
+    erreurEntrer.value = message
     console.error('Erreur entrerDansSalle:', e)
-    erreurEntrer.value = e?.message || 'Une erreur est survenue lors de la connexion à la salle'
-  } finally {
+  }
+  finally {
     salleEnCoursEntree.value = null
   }
 }
 
-// Toggle expansion des salles privées
+// ── Widget salles privées : état modales + actions ────────────────────────
+
+const createModalRef = ref<{
+  setLoading: (v: boolean) => void
+  setError: (m: string) => void
+  setSuccess: () => void
+  setExistante: (id?: string) => void
+} | null>(null)
+const createModalOpen = ref(false)
+const createModalSalleId = ref('')
+let codeSecretEnAttente = ''
+
+const joinModalRef = ref<{
+  setLoading: (v: boolean) => void
+  setError: (m: string) => void
+  setSuccess: () => void
+} | null>(null)
+const joinModalOpen = ref(false)
+const joinModalSalleTitre = ref('')
+const joinModalSallePriveeId = ref('')
+
+const modifCodeModalOpen = ref(false)
+const modifCodeSallePriveeId = ref('')
+const nouveauCode = ref('')
+const erreurModifCode = ref<string | null>(null)
+const modifCodeEnCours = ref(false)
+
+const sallePriveeEnCours = ref<string | null>(null)
+const erreurSallePrivee = ref<string | null>(null)
+const toastCreation = ref<{ code: string } | null>(null)
+
+/** ID de la salle privée dont l'utilisateur courant est l'auteur, pour la
+ *  salle publique actuellement dépliée (US4). `null` si aucune. */
+const maSallePriveeIciId = computed<string | null>(() => {
+  if (!expandedSalleId.value) return null
+  const liste = sallesPriveesCache.value[expandedSalleId.value]
+  return liste?.find(sp => sp.est_auteur)?.id ?? null
+})
+
+const ouvrirCreationModal = (salleId: string) => {
+  if (!userStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+  createModalSalleId.value = salleId
+  createModalOpen.value = true
+}
+
+const soumettreCreationSallePrivee = async (payload: { titre: string; description: string; code_acces: string }) => {
+  createModalRef.value?.setLoading(true)
+  codeSecretEnAttente = payload.code_acces
+
+  const resultat = await creerSallePrivee(createModalSalleId.value, {
+    titre: payload.titre,
+    description: payload.description,
+    code_acces: payload.code_acces,
+  })
+
+  if (!resultat) {
+    createModalRef.value?.setError('Échec de la création — veuillez réessayer.')
+    return
+  }
+  if ('erreur' in resultat && resultat.erreur === 'salle_privee_unicite') {
+    createModalRef.value?.setExistante(resultat.salle_privee_existante_id)
+    return
+  }
+
+  // Succès : rafraîchir la liste du widget + toast
+  const liste = await listerSallesPriveesParSallePublique(createModalSalleId.value)
+  sallesPriveesCache.value[createModalSalleId.value] = liste
+  createModalRef.value?.setSuccess()
+  toastCreation.value = { code: codeSecretEnAttente }
+  setTimeout(() => { toastCreation.value = null }, 8000)
+}
+
+const rediriger_vers_salle_existante = (_sallePriveeId?: string) => {
+  // Aucune navigation dédiée : l'utilisateur peut cliquer "Ouvrir ma salle
+  // privée" depuis le widget. Le modale se ferme, il voit le bouton basculer.
+  createModalOpen.value = false
+  if (createModalSalleId.value) {
+    listerSallesPriveesParSallePublique(createModalSalleId.value).then((liste) => {
+      sallesPriveesCache.value[createModalSalleId.value] = liste
+    })
+  }
+}
+
+const ouvrirJoinModal = (sallePriveeId: string) => {
+  if (!userStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+  const liste = expandedSalleId.value ? sallesPriveesCache.value[expandedSalleId.value] : null
+  joinModalSalleTitre.value = liste?.find(sp => sp.id === sallePriveeId)?.titre ?? ''
+  joinModalSallePriveeId.value = sallePriveeId
+  joinModalOpen.value = true
+}
+
+const soumettreCodeAcces = async (code: string) => {
+  joinModalRef.value?.setLoading(true)
+  const resultat = await verifierCodeAcces(joinModalSallePriveeId.value, code)
+
+  if (!resultat) {
+    joinModalRef.value?.setError('Erreur réseau — veuillez réessayer.')
+    return
+  }
+  if ('erreur' in resultat && resultat.erreur === 'code_incorrect') {
+    joinModalRef.value?.setError('Code incorrect.')
+    return
+  }
+  if ('erreur' in resultat && resultat.erreur === 'rate_limit') {
+    joinModalRef.value?.setError('Trop de tentatives, réessayez dans quelques minutes.')
+    return
+  }
+
+  memoriserAccesJeton(joinModalSallePriveeId.value, resultat.acces_jeton, resultat.expires_at)
+  joinModalRef.value?.setSuccess()
+  sallePriveeEnCours.value = joinModalSallePriveeId.value
+  await navigateTo(`/afrolang/session/privee/${joinModalSallePriveeId.value}`)
+}
+
+/** Court-circuit auteur : pas de saisie, appel direct `verifier-code` avec
+ *  le code actuel inconnu côté client → le backend retourne le jeton parce
+ *  que l'utilisateur est `cree_par`. On envoie une chaîne quelconque. */
+const ouvrirMaSallePrivee = async (sallePriveeId: string) => {
+  if (!userStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+  sallePriveeEnCours.value = sallePriveeId
+  erreurSallePrivee.value = null
+
+  const resultat = await verifierCodeAcces(sallePriveeId, '')
+  if (!resultat || 'erreur' in resultat) {
+    sallePriveeEnCours.value = null
+    erreurSallePrivee.value = 'Impossible d\'ouvrir votre salle privée.'
+    return
+  }
+  memoriserAccesJeton(sallePriveeId, resultat.acces_jeton, resultat.expires_at)
+  await navigateTo(`/afrolang/session/privee/${sallePriveeId}`)
+}
+
+const ouvrirModifCodeModal = (sallePriveeId: string) => {
+  modifCodeSallePriveeId.value = sallePriveeId
+  nouveauCode.value = ''
+  erreurModifCode.value = null
+  modifCodeModalOpen.value = true
+}
+
+const soumettreNouveauCode = async () => {
+  erreurModifCode.value = null
+  const code = nouveauCode.value.trim()
+  if (!/^[A-Za-z0-9!@#$%&*?-]{4,16}$/.test(code)) {
+    erreurModifCode.value = 'Format invalide (4 à 16 caractères, lettres/chiffres/!@#$%&*?-).'
+    return
+  }
+  modifCodeEnCours.value = true
+  const ok = await modifierCodeAcces(modifCodeSallePriveeId.value, code)
+  modifCodeEnCours.value = false
+  if (!ok) {
+    erreurModifCode.value = 'Échec de la modification.'
+    return
+  }
+  modifCodeModalOpen.value = false
+}
+
+const confirmerArchivage = async (sallePriveeId: string) => {
+  if (!confirm('Archiver définitivement cette salle privée ? La session en cours sera terminée.')) {
+    return
+  }
+  sallePriveeEnCours.value = sallePriveeId
+  const ok = await archiverSallePriveeParAuteur(sallePriveeId)
+  sallePriveeEnCours.value = null
+  if (!ok) {
+    erreurSallePrivee.value = 'Échec de l\'archivage.'
+    return
+  }
+  if (expandedSalleId.value) {
+    const liste = await listerSallesPriveesParSallePublique(expandedSalleId.value)
+    sallesPriveesCache.value[expandedSalleId.value] = liste
+  }
+}
+
+// Widget Canal privé : toggle dropdown
 const togglePrivees = async (salleId: string) => {
   if (expandedSalleId.value === salleId) {
     expandedSalleId.value = null
@@ -503,20 +653,22 @@ const togglePrivees = async (salleId: string) => {
 
   expandedSalleId.value = salleId
 
-  // Charger les salles privées si pas en cache
   if (!sallesPriveesCache.value[salleId]) {
     loadingPrivees.value = true
-    const detail = await obtenirSalle(salleId)
-    if (detail) {
-      sallesPriveesCache.value[salleId] = detail.salles_privees
-    } else {
+    try {
+      const liste = await listerSallesPriveesParSallePublique(salleId)
+      sallesPriveesCache.value[salleId] = liste
+    }
+    catch (e: unknown) {
+      console.error('Erreur listerSallesPriveesParSallePublique:', e)
       sallesPriveesCache.value[salleId] = []
     }
-    loadingPrivees.value = false
+    finally {
+      loadingPrivees.value = false
+    }
   }
 }
 
-// Pagination visible
 const visiblePages = computed(() => {
   const pages: (number | string)[] = []
   const tp = totalPages.value
@@ -538,7 +690,6 @@ const visiblePages = computed(() => {
   return pages
 })
 
-// Watchers
 watch(
   () => filtres.value.langue,
   () => {
@@ -547,7 +698,6 @@ watch(
   },
 )
 
-// Debounce recherche
 watch(
   () => filtres.value.recherche,
   () => {
@@ -559,7 +709,6 @@ watch(
   },
 )
 
-// Methods
 const handleSearch = () => {
   if (rechercheTimer) clearTimeout(rechercheTimer)
   currentPage.value = 1
@@ -579,24 +728,6 @@ const goToPage = (page: number) => {
   }
 }
 
-// Événements de l'annuaire des groupes ethniques (US1)
-const onRejoindreSalle = (payload: { salleId: string }) => {
-  navigateTo(`/afrolang/${payload.salleId}`)
-}
-
-// US2 : ouvrir le modal ProposerSalleModal avec le nom préfilé.
-const proposerModalOuvert = ref(false)
-const proposerNomPrerempli = ref('')
-const onProposerSalle = (payload: { nomGroupeEthnique: string }) => {
-  if (!userStore.isAuthenticated) {
-    router.push('/login')
-    return
-  }
-  proposerNomPrerempli.value = payload.nomGroupeEthnique
-  proposerModalOuvert.value = true
-}
-
-// Lifecycle
 onMounted(async () => {
   const [statsResult, languesResult] = await Promise.all([
     obtenirStats(),
@@ -604,7 +735,7 @@ onMounted(async () => {
   ])
 
   if (statsResult) {
-    stats.value = statsResult
+    _stats.value = statsResult
     totalSalles.value = statsResult.total_salles
   }
   languesDisponibles.value = languesResult

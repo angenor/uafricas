@@ -1,32 +1,74 @@
 <template>
-  <!-- Mode visioconference (token obtenu) -->
-  <AfrolangRoom
-    v-if="tokenData"
-    :token="tokenData.token"
-    :room-name="tokenData.room_name"
-    :livekit-url="tokenData.livekit_url"
-    :session="session!"
-    :est-moderateur="tokenData.is_moderator"
-    @quitter="handleQuitterVisio"
-    @terminer="handleTerminerVisio"
-  />
+  <!-- Mode visioconférence (token obtenu) -->
+  <div v-if="tokenData && session">
+    <AfrolangRoom
+      :token="tokenData.token"
+      :room-name="tokenData.room_name"
+      :livekit-url="tokenData.livekit_url"
+      :session="session"
+      :est-moderateur="tokenData.is_moderator"
+      @quitter="handleQuitterVisio"
+      @terminer="handleTerminerVisio"
+    />
 
-  <!-- Mode preview (metadonnees session) -->
-  <div v-else class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-    <!-- Loading -->
+    <!-- Bouton flottant : créer ma salle privée (US2) -->
+    <button
+      type="button"
+      class="fixed bottom-24 right-6 z-10000 px-4 py-3 bg-custom-chocolat text-white rounded-full shadow-2xl hover:bg-custom-chocolat/90 transition-all flex items-center gap-2 text-sm font-semibold"
+      title="Créer une salle privée à partir de cette salle publique"
+      @click="createModalOpen = true"
+    >
+      <font-awesome-icon :icon="['fas', 'plus']" class="w-4 h-4" />
+      Créer ma salle privée
+    </button>
+
+    <AfrolangSallePriveeCreateModal
+      ref="createModalRef"
+      :is-open="createModalOpen"
+      :salle-id="salleId"
+      @close="createModalOpen = false"
+      @submit="soumettreCreationSallePrivee"
+      @existante="handleExistante"
+    />
+
+    <!-- Toast succès création -->
+    <Transition name="fade-slide">
+      <div
+        v-if="toastCreation"
+        class="fixed bottom-6 right-6 z-10001 max-w-sm bg-green-600 text-white rounded-xl shadow-2xl p-4"
+      >
+        <div class="flex items-start gap-3">
+          <font-awesome-icon :icon="['fas', 'circle-check']" class="w-5 h-5 mt-0.5 shrink-0" />
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-sm">Salle privée créée !</p>
+            <p class="text-xs text-green-100 mt-1">
+              Code secret :
+              <code class="bg-green-700/50 px-1.5 py-0.5 rounded font-mono">{{ toastCreation.code }}</code>
+            </p>
+            <p class="text-xs text-green-100 mt-1">Notez-le, il ne sera plus jamais affiché.</p>
+          </div>
+          <button type="button" class="text-white/80 hover:text-white" @click="toastCreation = null">
+            <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </div>
+
+  <!-- Mode chargement / erreur -->
+  <div v-else class="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
     <div v-if="loading" class="min-h-screen flex items-center justify-center">
       <div class="text-center">
         <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4" />
-        <p class="text-gray-500">Chargement...</p>
+        <p class="text-gray-500">Connexion au livestream...</p>
       </div>
     </div>
 
-    <!-- Not found -->
-    <div v-else-if="!session" class="min-h-screen flex items-center justify-center px-4">
-      <div class="text-center">
-        <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="w-20 h-20 text-gray-300 mx-auto mb-4" />
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">Session introuvable</h1>
-        <p class="text-gray-500 mb-6">Cette session n'existe pas ou a été supprimée.</p>
+    <div v-else-if="erreur" class="min-h-screen flex items-center justify-center px-4">
+      <div class="text-center max-w-md">
+        <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="w-20 h-20 text-red-300 mx-auto mb-4" />
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Livestream indisponible</h1>
+        <p class="text-gray-500 mb-6">{{ erreur }}</p>
         <NuxtLink
           to="/afrolang"
           class="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white font-medium rounded-xl hover:bg-blue-600 transition-colors"
@@ -36,180 +78,12 @@
         </NuxtLink>
       </div>
     </div>
-
-    <!-- Contenu -->
-    <template v-else>
-      <!-- Header avec gradient selon etat -->
-      <div class="relative h-40 md:h-48" :class="headerGradient">
-        <div class="absolute inset-0 bg-black/10" />
-
-        <!-- Badge etat -->
-        <div class="absolute top-4 left-4">
-          <span
-            class="px-4 py-2 rounded-full text-sm font-semibold shadow-lg flex items-center gap-2"
-            :class="etatBadgeClass"
-          >
-            <font-awesome-icon :icon="['fas', etatInfo.icone]" class="w-4 h-4" />
-            {{ etatInfo.label }}
-          </span>
-        </div>
-
-        <!-- Live indicator -->
-        <div v-if="session.etat === 'en_cours'" class="absolute top-4 right-4">
-          <span class="bg-red-500 text-white px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 animate-pulse">
-            <font-awesome-icon :icon="['fas', 'circle']" class="w-2 h-2" />
-            LIVE
-          </span>
-        </div>
-      </div>
-
-      <!-- Contenu principal -->
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 relative z-10 pb-16">
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <!-- Header -->
-          <div class="p-6 md:p-8 border-b border-gray-100">
-            <CommonBreadcrumbNav class="mb-6" />
-
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-              {{ session.titre || 'Session de visioconférence' }}
-            </h1>
-
-            <!-- Info grid -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div v-if="session.date_debut_prevue" class="flex items-center gap-2 text-gray-600">
-                <font-awesome-icon :icon="['fas', 'calendar-days']" class="w-4 h-4 text-blue-500" />
-                <span>{{ datePrevue }}</span>
-              </div>
-              <div v-if="session.demarre_at" class="flex items-center gap-2 text-gray-600">
-                <font-awesome-icon :icon="['fas', 'play']" class="w-4 h-4 text-emerald-500" />
-                <span>{{ demarreAt }}</span>
-              </div>
-              <div v-if="session.duree_secondes" class="flex items-center gap-2 text-gray-600">
-                <font-awesome-icon :icon="['far', 'clock']" class="w-4 h-4 text-gray-400" />
-                <span>{{ dureeFormatee }}</span>
-              </div>
-              <div v-if="session.max_participants" class="flex items-center gap-2 text-gray-600">
-                <font-awesome-icon :icon="['fas', 'users']" class="w-4 h-4 text-gray-400" />
-                <span>Max {{ session.max_participants }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Moderateur -->
-          <div v-if="session.moderateur" class="p-6 md:p-8 border-b border-gray-100">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <font-awesome-icon :icon="['fas', 'user']" class="w-4 h-4 text-blue-500" />
-              Modérateur
-            </h2>
-
-            <div class="flex items-center gap-3">
-              <div
-                v-if="session.moderateur.photo_url"
-                class="w-12 h-12 rounded-full overflow-hidden"
-              >
-                <img :src="session.moderateur.photo_url" :alt="session.moderateur.nom" class="w-full h-full object-cover" />
-              </div>
-              <div v-else class="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                {{ getInitiales(session.moderateur.nom, session.moderateur.prenom) }}
-              </div>
-              <div>
-                <p class="font-medium text-gray-800">{{ session.moderateur.prenom }} {{ session.moderateur.nom }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Action rejoindre -->
-          <div v-if="session.etat === 'en_cours'" class="p-6 md:p-8 border-b border-gray-100">
-            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center">
-              <font-awesome-icon :icon="['fas', 'video']" class="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-              <h3 class="text-lg font-semibold text-emerald-800 mb-2">Session en cours</h3>
-              <p class="text-emerald-700 mb-4">Cette session est actuellement en direct. Rejoignez-la maintenant !</p>
-
-              <!-- Erreur de connexion -->
-              <div v-if="joinError" class="mb-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {{ joinError }}
-              </div>
-
-              <button
-                v-if="isAuthenticated"
-                class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all flex items-center gap-2 mx-auto disabled:opacity-50"
-                :disabled="joining"
-                @click="handleRejoindre"
-              >
-                <font-awesome-icon
-                  :icon="['fas', joining ? 'spinner' : 'door-open']"
-                  class="w-5 h-5"
-                  :class="{ 'animate-spin': joining }"
-                />
-                {{ joining ? 'Connexion...' : 'Rejoindre la visioconférence' }}
-              </button>
-              <div v-else class="mt-4">
-                <p class="text-amber-700 text-sm mb-3">Connectez-vous pour rejoindre cette session.</p>
-                <NuxtLink
-                  to="/login"
-                  class="inline-flex items-center gap-2 px-6 py-3 bg-custom-chocolat text-white font-medium rounded-xl hover:bg-custom-chocolat/90 transition-colors"
-                >
-                  <font-awesome-icon :icon="['fas', 'right-to-bracket']" class="w-4 h-4" />
-                  Se connecter
-                </NuxtLink>
-              </div>
-            </div>
-          </div>
-
-          <!-- Participants -->
-          <div class="p-6 md:p-8">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <font-awesome-icon :icon="['fas', 'users']" class="w-4 h-4 text-blue-500" />
-              Participants ({{ session.participants.length }})
-            </h2>
-
-            <div
-              v-if="session.participants.length > 0"
-              class="grid grid-cols-1 md:grid-cols-2 gap-3"
-            >
-              <AfrolangParticipantBadge
-                v-for="p in session.participants"
-                :key="p.id"
-                :participant="p"
-              />
-            </div>
-            <div v-else class="text-center py-6 text-gray-500">
-              <p>Aucun participant pour le moment</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Retour -->
-        <div class="mt-8 text-center">
-          <NuxtLink
-            :to="`/afrolang/salle-privee/${session.salle_privee_id}`"
-            class="inline-flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors"
-          >
-            <font-awesome-icon :icon="['fas', 'arrow-left']" class="w-4 h-4" />
-            Retour au cours privé
-          </NuxtLink>
-        </div>
-      </div>
-    </template>
-
-    <!-- Modal code d'acces -->
-    <AfrolangSallePriveeJoinModal
-      :is-open="showJoinModal"
-      :session-id="sessionId"
-      ref="joinModalRef"
-      @close="showJoinModal = false"
-      @submit="handleJoinWithCode"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import {
   useAfrolang,
-  getInitiales,
-  getEtatInfo,
-  formatDuree,
-  formatDateHeure,
   type SessionDetailAPI,
   type TokenResponse,
 } from '~/composables/useAfrolang'
@@ -218,135 +92,107 @@ import { useUserStore } from '~/stores/user'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const { obtenirSession, genererTokenSession, quitterSession, terminerSession, erreur } = useAfrolang()
+const {
+  demarrerOuRejoindreSallePublique,
+  obtenirSession,
+  quitterSession,
+  terminerSession,
+  creerSallePrivee,
+} = useAfrolang()
 
-const sessionId = computed(() => route.params.id as string)
+// Refonte 2026-04 : `route.params.id` porte désormais l'ID de la salle
+// publique (US1). Le backend crée/rejoint la session live en 1 appel.
+const salleId = computed(() => String(route.params.id))
 
-// State
 const loading = ref(true)
+const erreur = ref<string | null>(null)
 const session = ref<SessionDetailAPI | null>(null)
-const showJoinModal = ref(false)
-const joinModalRef = ref<any>(null)
-const joining = ref(false)
-const joinError = ref<string | null>(null)
-
-// Phase 3 : Token LiveKit
 const tokenData = ref<TokenResponse | null>(null)
 
-const isAuthenticated = computed(() => userStore.isAuthenticated)
+// US2 : modale de création de salle privée depuis le livestream
+const createModalRef = ref<{
+  setLoading: (v: boolean) => void
+  setError: (m: string) => void
+  setSuccess: () => void
+  setExistante: (id?: string) => void
+} | null>(null)
+const createModalOpen = ref(false)
+const toastCreation = ref<{ code: string } | null>(null)
+let codeSecretEnAttente = ''
 
-const etatInfo = computed(() => {
-  if (!session.value) return getEtatInfo('planifiee')
-  return getEtatInfo(session.value.etat)
-})
+useHead({ title: 'Livestream Afrolang - UAfricas' })
 
-const headerGradient = computed(() => {
-  if (!session.value) return 'bg-gradient-to-r from-gray-500 to-gray-600'
-  switch (session.value.etat) {
-    case 'en_cours': return 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500'
-    case 'planifiee': return 'bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500'
-    case 'terminee': return 'bg-gradient-to-r from-gray-500 to-gray-600'
-    case 'annulee': return 'bg-gradient-to-r from-red-500 to-rose-500'
-    default: return 'bg-gradient-to-r from-gray-500 to-gray-600'
-  }
-})
-
-const etatBadgeClass = computed(() => {
-  if (!session.value) return 'bg-gray-100 text-gray-700'
-  switch (session.value.etat) {
-    case 'en_cours': return 'bg-emerald-100 text-emerald-700'
-    case 'planifiee': return 'bg-blue-100 text-blue-700'
-    case 'terminee': return 'bg-gray-100 text-gray-700'
-    case 'annulee': return 'bg-red-100 text-red-700'
-    default: return 'bg-gray-100 text-gray-700'
-  }
-})
-
-const datePrevue = computed(() => {
-  if (!session.value?.date_debut_prevue) return ''
-  return formatDateHeure(session.value.date_debut_prevue)
-})
-
-const demarreAt = computed(() => {
-  if (!session.value?.demarre_at) return ''
-  return formatDateHeure(session.value.demarre_at)
-})
-
-const dureeFormatee = computed(() => formatDuree(session.value?.duree_secondes ?? null))
-
-// Rejoindre la visioconference (Phase 3)
-const handleRejoindre = async () => {
-  joining.value = true
-  joinError.value = null
-
-  const result = await genererTokenSession(sessionId.value)
-
-  if (result) {
-    tokenData.value = result
-  }
-  else {
-    // Si echec par code d'acces requis, ouvrir la modal
-    if (erreur.value?.includes('code') || erreur.value?.includes('acces') || erreur.value?.includes('accès')) {
-      showJoinModal.value = true
-    }
-    else {
-      joinError.value = erreur.value || 'Impossible de rejoindre la session'
-    }
-  }
-
-  joining.value = false
-}
-
-const handleJoinWithCode = async (codeAcces: string) => {
-  joinModalRef.value?.setLoading(true)
-
-  const result = await genererTokenSession(sessionId.value, codeAcces)
-
-  if (result) {
-    joinModalRef.value?.setSuccess()
-    showJoinModal.value = false
-    tokenData.value = result
-  }
-  else {
-    joinModalRef.value?.setError(erreur.value || 'Code d\'accès incorrect')
-  }
-}
-
-// Quitter la visioconference
 const handleQuitterVisio = async () => {
-  await quitterSession(sessionId.value)
+  if (session.value) {
+    await quitterSession(session.value.id)
+  }
   tokenData.value = null
-  // Recharger les donnees de la session
-  const resultat = await obtenirSession(sessionId.value)
-  session.value = resultat
+  router.push('/afrolang')
 }
 
-// Terminer la session (moderateur)
 const handleTerminerVisio = async () => {
-  await terminerSession(sessionId.value)
-  tokenData.value = null
-  // Retourner a la salle privee
   if (session.value) {
-    router.push(`/afrolang/salle-privee/${session.value.salle_privee_id}`)
+    await terminerSession(session.value.id)
   }
+  tokenData.value = null
+  router.push('/afrolang')
+}
+
+const soumettreCreationSallePrivee = async (payload: { titre: string; description: string; code_acces: string }) => {
+  createModalRef.value?.setLoading(true)
+  codeSecretEnAttente = payload.code_acces
+
+  const resultat = await creerSallePrivee(salleId.value, {
+    titre: payload.titre,
+    description: payload.description,
+    code_acces: payload.code_acces,
+  })
+
+  if (!resultat) {
+    createModalRef.value?.setError('Échec de la création — veuillez réessayer.')
+    return
+  }
+  if ('erreur' in resultat && resultat.erreur === 'salle_privee_unicite') {
+    createModalRef.value?.setExistante(resultat.salle_privee_existante_id)
+    return
+  }
+
+  createModalRef.value?.setSuccess()
+  toastCreation.value = { code: codeSecretEnAttente }
+  setTimeout(() => { toastCreation.value = null }, 8000)
+}
+
+const handleExistante = (_id?: string) => {
+  createModalOpen.value = false
 }
 
 onMounted(async () => {
-  const id = route.params.id as string
-  const resultat = await obtenirSession(id)
-  session.value = resultat
-
-  if (session.value) {
-    useHead({
-      title: `${session.value.titre || 'Session'} - Afrolang - UAfricas`,
-    })
+  if (!userStore.isAuthenticated) {
+    router.push('/login')
+    return
   }
 
+  const resultat = await demarrerOuRejoindreSallePublique(salleId.value)
+  if (!resultat) {
+    erreur.value = 'Impossible de démarrer ou rejoindre le livestream.'
+    loading.value = false
+    return
+  }
+
+  const detail = await obtenirSession(resultat.session_id)
+  if (!detail) {
+    erreur.value = 'Session introuvable après démarrage.'
+    loading.value = false
+    return
+  }
+  session.value = detail
+
+  tokenData.value = {
+    token: resultat.livekit_token,
+    room_name: `afrolang-${resultat.session_id}`,
+    livekit_url: resultat.livekit_url,
+    is_moderator: resultat.moderateur_id === userStore.user?.id,
+  }
   loading.value = false
-
-  // Auto-rejoindre la visio si ?rejoindre=1 dans l'URL
-  if (route.query.rejoindre === '1' && session.value?.etat === 'en_cours' && isAuthenticated.value) {
-    await handleRejoindre()
-  }
 })
 </script>

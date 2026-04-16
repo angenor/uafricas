@@ -4,56 +4,11 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 // ══════════════════════════════════════════════════════════════════════════
-// Enums (feature 005)
+// Enums (feature 005 — conservés après refonte 001-afrolang-salles-refonte)
 // ══════════════════════════════════════════════════════════════════════════
 //
-// Les noms de types SQL sont qualifiés `afrolang.xxx`. sqlx gère le mapping
-// avec #[sqlx(type_name = "afrolang.xxx", rename_all = "snake_case")].
-
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type, Serialize, Deserialize)]
-#[sqlx(type_name = "afrolang.etat_proposition", rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum EtatProposition {
-    EnAttente,
-    Approuvee,
-    Refusee,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type, Serialize, Deserialize)]
-#[sqlx(type_name = "afrolang.motif_salle_privee", rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum MotifSallePrivee {
-    ApprentissageEnfants,
-    ReseautageAdulte,
-    EchangesGroupe,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type, Serialize, Deserialize)]
-#[sqlx(type_name = "afrolang.visibilite_salle_privee", rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum VisibiliteSallePrivee {
-    Fermee,
-    Visible,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type, Serialize, Deserialize)]
-#[sqlx(type_name = "afrolang.type_adhesion", rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum TypeAdhesion {
-    Demande,
-    Invitation,
-    Abonne,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type, Serialize, Deserialize)]
-#[sqlx(type_name = "afrolang.etat_adhesion", rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum EtatAdhesion {
-    EnAttente,
-    Acceptee,
-    Refusee,
-    GroupeComplet,
-}
+// Les enums `EtatProposition`, `MotifSallePrivee`, `VisibiliteSallePrivee`,
+// `TypeAdhesion`, `EtatAdhesion` ont été supprimés (tables/types SQL retirés).
 
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::Type, Serialize, Deserialize)]
 #[sqlx(type_name = "afrolang.type_ressource", rename_all = "snake_case")]
@@ -84,13 +39,14 @@ pub const SALLE_COLONNES: &str =
      s.groupe_ethnique_id, s.actif, s.cree_par,
      s.created_at, s.updated_at, s.deleted_at";
 
-/// Colonnes de base pour afrolang.salle_privee
+/// Colonnes de base pour afrolang.salle_privee (refonte 2026-04)
+///
+/// Attention : `code_acces_hash` est inclus pour les chargements serveur
+/// (vérification du code) mais ne DOIT JAMAIS être exposé dans un DTO public.
 pub const SALLE_PRIVEE_COLONNES: &str =
-    "sp.id, sp.salle_id, sp.titre, sp.description, sp.code_acces,
+    "sp.id, sp.salle_id, sp.titre, sp.description, sp.code_acces_hash,
      sp.image_couverture_url, sp.max_participants,
-     sp.motif::TEXT AS motif, sp.declaration_adulte_at,
-     sp.visibilite::TEXT AS visibilite, sp.archivee_at,
-     sp.actif, sp.cree_par,
+     sp.archivee_at, sp.actif, sp.cree_par,
      sp.created_at, sp.updated_at, sp.deleted_at";
 
 /// Colonnes de base pour afrolang.session
@@ -102,26 +58,11 @@ pub const SESSION_COLONNES: &str =
      ses.nombre_participants_pic, ses.tableau_blanc_actif,
      ses.noeud_id, ses.cree_par, ses.created_at, ses.updated_at";
 
-/// Colonnes de base pour afrolang.proposition_salle
-pub const PROPOSITION_SALLE_COLONNES: &str =
-    "ps.id, ps.nom_groupe_ethnique, ps.pays_id, ps.groupe_ethnique_id,
-     ps.langue_cible, ps.description, ps.etat::TEXT AS etat,
-     ps.motif_refus, ps.salle_id_creee, ps.propose_par,
-     ps.decide_par, ps.decide_at,
-     ps.created_at, ps.updated_at, ps.deleted_at";
-
 /// Colonnes de base pour afrolang.salle_moderateur
 pub const SALLE_MODERATEUR_COLONNES: &str =
     "sm.id, sm.salle_id, sm.utilisateur_id, sm.designe_par,
      sm.designe_at, sm.disponibilite, sm.actif, sm.retire_at,
      sm.created_at, sm.updated_at";
-
-/// Colonnes de base pour afrolang.salle_privee_adhesion
-pub const SALLE_PRIVEE_ADHESION_COLONNES: &str =
-    "spa.id, spa.salle_privee_id, spa.utilisateur_id,
-     spa.type::TEXT AS type_adhesion, spa.etat::TEXT AS etat_adhesion,
-     spa.initiateur_id, spa.decideur_id, spa.decided_at,
-     spa.created_at, spa.updated_at, spa.deleted_at";
 
 /// Colonnes de base pour afrolang.ressource_salle
 pub const RESSOURCE_SALLE_COLONNES: &str =
@@ -175,18 +116,20 @@ pub struct SalleRow {
     pub pays_nom: Option<String>,
 }
 
+/// Ligne `afrolang.salle_privee` après refonte 2026-04.
+///
+/// `code_acces_hash` est chargé uniquement pour la vérification serveur
+/// (endpoints `verifier-code` et modération du code). Ne jamais l'injecter
+/// dans une réponse publique.
 #[derive(Debug, FromRow)]
 pub struct SallePriveeRow {
     pub id: Uuid,
     pub salle_id: Uuid,
     pub titre: String,
     pub description: Option<String>,
-    pub code_acces: Option<String>,
+    pub code_acces_hash: String,
     pub image_couverture_url: Option<String>,
     pub max_participants: Option<i32>,
-    pub motif: String,
-    pub declaration_adulte_at: DateTime<Utc>,
-    pub visibilite: String,
     pub archivee_at: Option<DateTime<Utc>>,
     pub actif: bool,
     pub cree_par: Uuid,
@@ -250,32 +193,6 @@ pub struct SessionParticipantRow {
 }
 
 #[derive(Debug, FromRow)]
-pub struct PropositionSalleRow {
-    pub id: Uuid,
-    pub nom_groupe_ethnique: String,
-    pub pays_id: Option<Uuid>,
-    pub groupe_ethnique_id: Option<Uuid>,
-    pub langue_cible: Option<String>,
-    pub description: Option<String>,
-    pub etat: String,
-    pub motif_refus: Option<String>,
-    pub salle_id_creee: Option<Uuid>,
-    pub propose_par: Uuid,
-    pub decide_par: Option<Uuid>,
-    pub decide_at: Option<DateTime<Utc>>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-    pub deleted_at: Option<DateTime<Utc>>,
-    // JOINs auteur
-    #[sqlx(default)]
-    pub proposant_nom: Option<String>,
-    #[sqlx(default)]
-    pub proposant_prenom: Option<String>,
-    #[sqlx(default)]
-    pub proposant_email: Option<String>,
-}
-
-#[derive(Debug, FromRow)]
 pub struct SalleModerateurRow {
     pub id: Uuid,
     pub salle_id: Uuid,
@@ -296,28 +213,6 @@ pub struct SalleModerateurRow {
     pub utilisateur_photo: Option<String>,
     #[sqlx(default)]
     pub utilisateur_email: Option<String>,
-}
-
-#[derive(Debug, FromRow)]
-pub struct SallePriveeAdhesionRow {
-    pub id: Uuid,
-    pub salle_privee_id: Uuid,
-    pub utilisateur_id: Uuid,
-    pub type_adhesion: String,
-    pub etat_adhesion: String,
-    pub initiateur_id: Uuid,
-    pub decideur_id: Option<Uuid>,
-    pub decided_at: Option<DateTime<Utc>>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-    pub deleted_at: Option<DateTime<Utc>>,
-    // JOINs utilisateur concerné
-    #[sqlx(default)]
-    pub utilisateur_nom: Option<String>,
-    #[sqlx(default)]
-    pub utilisateur_prenom: Option<String>,
-    #[sqlx(default)]
-    pub utilisateur_photo: Option<String>,
 }
 
 #[derive(Debug, FromRow)]
@@ -375,17 +270,17 @@ pub struct GroupeEthniqueResume {
 }
 
 /// Colonnes pour le résumé « groupe ethnique + salle » (T023)
+///
+/// Le concept de proposition publique a été supprimé (refonte 2026-04) :
+/// la création d'une salle publique est désormais réservée aux admins.
+/// La colonne `proposition_en_attente` reste dans le DTO pour compatibilité
+/// frontend mais est toujours `FALSE`.
 pub const GROUPE_ETHNIQUE_RESUME_COLONNES: &str =
     "ge.id, ge.nom, ge.fiche_pays_id,
      fp.pays_id AS pays_id, p.nom AS pays_nom,
      s.id AS salle_id, s.slug AS salle_slug,
      (s.id IS NOT NULL AND s.actif = TRUE) AS salle_active,
-     EXISTS(
-         SELECT 1 FROM afrolang.proposition_salle ps
-         WHERE ps.groupe_ethnique_id = ge.id
-           AND ps.etat = 'en_attente'
-           AND ps.deleted_at IS NULL
-     ) AS proposition_en_attente";
+     FALSE AS proposition_en_attente";
 
 // ══════════════════════════════════════════════════════════════════════════
 // DTOs Response (Serialize)
@@ -479,6 +374,11 @@ pub struct ModerateurAttitreResponse {
     pub actif: bool,
 }
 
+/// Réponse détaillée d'une salle privée (refonte 2026-04).
+///
+/// Ne contient jamais `code_acces_hash`. Toute salle privée est protégée par
+/// un code secret — le flag `est_protegee` est donc toujours vrai et a été
+/// supprimé du DTO.
 #[derive(Debug, Serialize)]
 pub struct SallePriveeResponse {
     pub id: Uuid,
@@ -487,11 +387,7 @@ pub struct SallePriveeResponse {
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub max_participants: Option<i32>,
-    pub motif: String,
-    pub declaration_adulte_at: DateTime<Utc>,
-    pub visibilite: String,
     pub archivee_at: Option<DateTime<Utc>>,
-    pub est_protegee: bool,
     pub actif: bool,
     pub createur: CreateurResponse,
     pub salle_titre: Option<String>,
@@ -517,11 +413,7 @@ pub struct SallePriveeDetailResponse {
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub max_participants: Option<i32>,
-    pub motif: String,
-    pub declaration_adulte_at: DateTime<Utc>,
-    pub visibilite: String,
     pub archivee_at: Option<DateTime<Utc>>,
-    pub est_protegee: bool,
     pub actif: bool,
     pub createur: CreateurResponse,
     pub salle_titre: Option<String>,
@@ -530,6 +422,24 @@ pub struct SallePriveeDetailResponse {
     pub sessions: Vec<SessionResponse>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+/// DTO public strictement aligné sur le contrat API (endpoint 1 & 2).
+///
+/// Ce DTO n'expose que les champs nécessaires à l'affichage côté front et
+/// permet de signaler si l'utilisateur courant est l'auteur (pour le
+/// court-circuit du code secret — FR-014).
+#[derive(Debug, Serialize)]
+pub struct SallePriveeAPI {
+    pub id: Uuid,
+    pub salle_id: Uuid,
+    pub titre: String,
+    pub description: Option<String>,
+    pub auteur_id: Uuid,
+    pub auteur_nom: Option<String>,
+    pub session_en_cours: bool,
+    pub est_auteur: bool,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize)]
@@ -602,15 +512,6 @@ pub struct SalleListeResponse {
 }
 
 #[derive(Debug, Serialize)]
-pub struct SallePriveeListeResponse {
-    pub salles_privees: Vec<SallePriveeResponse>,
-    pub total: i64,
-    pub page: i64,
-    pub par_page: i64,
-    pub total_pages: i64,
-}
-
-#[derive(Debug, Serialize)]
 pub struct SessionListeResponse {
     pub sessions: Vec<SessionResponse>,
     pub total: i64,
@@ -623,48 +524,9 @@ pub struct SessionListeResponse {
 pub struct GroupeEthniqueListeResponse {
     pub groupes: Vec<GroupeEthniqueResumeResponse>,
     pub total: i64,
-    pub page: i64,
     pub par_page: i64,
+    pub page: i64,
     pub total_pages: i64,
-}
-
-// ── Propositions de salles ──────────────────────────────────────────────
-
-#[derive(Debug, Serialize)]
-pub struct PropositionSalleResponse {
-    pub id: Uuid,
-    pub nom_groupe_ethnique: String,
-    pub pays_id: Option<Uuid>,
-    pub groupe_ethnique_id: Option<Uuid>,
-    pub langue_cible: Option<String>,
-    pub description: Option<String>,
-    pub etat: String,
-    pub motif_refus: Option<String>,
-    pub salle_id_creee: Option<Uuid>,
-    pub propose_par: Uuid,
-    pub decide_par: Option<Uuid>,
-    pub decide_at: Option<DateTime<Utc>>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-// ── Adhésions ────────────────────────────────────────────────────────────
-
-#[derive(Debug, Serialize)]
-pub struct AdhesionResponse {
-    pub id: Uuid,
-    pub salle_privee_id: Uuid,
-    pub utilisateur_id: Uuid,
-    pub utilisateur_nom: Option<String>,
-    pub utilisateur_prenom: Option<String>,
-    pub utilisateur_photo: Option<String>,
-    pub type_adhesion: String,
-    pub etat: String,
-    pub initiateur_id: Uuid,
-    pub decideur_id: Option<Uuid>,
-    pub decided_at: Option<DateTime<Utc>>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
 // ── Ressources ──────────────────────────────────────────────────────────
@@ -718,13 +580,6 @@ pub struct SalleFiltres {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct SallePriveeFiltres {
-    pub recherche: Option<String>,
-    pub page: Option<i64>,
-    pub par_page: Option<i64>,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct SessionFiltres {
     pub etat: Option<String>,
     pub page: Option<i64>,
@@ -740,18 +595,6 @@ pub struct GroupeEthniqueFiltres {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreerSallePriveeRequest {
-    pub titre: String,
-    pub description: Option<String>,
-    pub code_acces: Option<String>,
-    pub max_participants: Option<i32>,
-    pub motif: Option<String>,
-    #[serde(default)]
-    pub declaration_adulte: bool,
-    pub visibilite: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct ModifierSalleRequest {
     pub titre: Option<String>,
     pub description: Option<String>,
@@ -762,11 +605,14 @@ pub struct ModifierSalleRequest {
     pub groupe_ethnique_id: Option<Uuid>,
 }
 
+/// Payload de modification d'une salle privée (auteur uniquement).
+///
+/// La modification du code d'accès passe par un endpoint dédié
+/// (`PATCH /code-acces`), jamais via ce payload.
 #[derive(Debug, Deserialize)]
 pub struct ModifierSallePriveeRequest {
     pub titre: Option<String>,
     pub description: Option<String>,
-    pub code_acces: Option<String>,
     pub max_participants: Option<i32>,
 }
 
@@ -778,19 +624,11 @@ pub struct CreerSessionRequest {
     pub tableau_blanc_actif: Option<bool>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct RejoindreRequest {
-    pub code_acces: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreerPropositionRequest {
-    pub nom_groupe_ethnique: String,
-    pub pays_id: Option<Uuid>,
-    pub groupe_ethnique_id: Option<Uuid>,
-    pub langue_cible: Option<String>,
-    pub description: Option<String>,
-}
+/// Requête de jointure d'une session publique (plus de code_acces depuis la
+/// refonte : les codes d'accès ne concernent que les salles privées et sont
+/// vérifiés via l'endpoint dédié `verifier-code`).
+#[derive(Debug, Deserialize, Default)]
+pub struct RejoindreRequest {}
 
 /// Requête de transfert du rôle de modérateur de session (US3)
 #[derive(Debug, Deserialize)]
@@ -798,34 +636,54 @@ pub struct TransfererModerationRequest {
     pub destinataire_id: Uuid,
 }
 
-// ── US5 : Visibilité, adhésions, invitations ─────────────────────────────
-
-/// Changement de visibilité d'une salle privée (créateur uniquement)
-#[derive(Debug, Deserialize)]
-pub struct ChangerVisibiliteRequest {
-    pub visibilite: String,
-}
-
-/// Demande d'adhésion à une salle privée visible (aucun payload)
-#[derive(Debug, Deserialize, Default)]
-pub struct DemanderAdhesionRequest {}
-
-/// Invitation d'un membre par le créateur (toutes salles privées)
-#[derive(Debug, Deserialize)]
-pub struct InviterMembreRequest {
-    pub utilisateur_id: Uuid,
-}
-
-/// Décision sur une demande ou invitation (acceptée / refusée)
-#[derive(Debug, Deserialize)]
-pub struct DecisionAdhesionRequest {
-    pub decision: String,
-}
-
 /// Modification de la limite de participants (FR-036)
 #[derive(Debug, Deserialize)]
 pub struct ModifierMaxParticipantsRequest {
     pub max_participants: i32,
+}
+
+// ── Payloads refonte salles privées (001-afrolang-salles-refonte) ────────
+
+/// Payload de création d'une salle privée depuis l'API publique.
+///
+/// Tous les champs sont obligatoires sauf `description`. Le `code_acces` est
+/// transmis en clair (HTTPS) et immédiatement hashé côté serveur.
+#[derive(Debug, Deserialize)]
+pub struct CreerSallePriveePubliquePayload {
+    pub salle_id: Uuid,
+    pub titre: String,
+    pub description: Option<String>,
+    pub code_acces: String,
+}
+
+/// Payload de vérification d'un code d'accès (endpoint 3).
+#[derive(Debug, Deserialize)]
+pub struct VerifierCodeAccesRequest {
+    pub code_acces: String,
+}
+
+/// Payload de modification du code d'accès par l'auteur (endpoint 5).
+#[derive(Debug, Deserialize)]
+pub struct ModifierCodeAccesRequest {
+    pub nouveau_code_acces: String,
+}
+
+/// Réponse de l'endpoint `verifier-code` : remet un jeton d'accès éphémère
+/// à présenter à l'endpoint `sessions/demarrer-ou-rejoindre`.
+#[derive(Debug, Serialize)]
+pub struct VerifierCodeAccesResponse {
+    pub salle_privee_id: Uuid,
+    pub acces_jeton: String,
+    pub expires_at: DateTime<Utc>,
+}
+
+/// Réponse de l'endpoint `demarrer-ou-rejoindre` : informations LiveKit.
+#[derive(Debug, Serialize)]
+pub struct DemarrerRejoindreResponse {
+    pub session_id: Uuid,
+    pub livekit_url: String,
+    pub livekit_token: String,
+    pub moderateur_id: Option<Uuid>,
 }
 
 // ── US6 : Messagerie et ressources ───────────────────────────────────────
@@ -855,29 +713,6 @@ pub struct CreerRessourceLienRequest {
 #[derive(Debug, Deserialize)]
 pub struct RefuserLienRequest {
     pub motif_refus: String,
-}
-
-/// DTO détail d'une proposition côté admin (avec proposant et conflits)
-#[derive(Debug, Serialize)]
-pub struct PropositionSalleAdminResponse {
-    pub id: Uuid,
-    pub nom_groupe_ethnique: String,
-    pub pays_id: Option<Uuid>,
-    pub groupe_ethnique_id: Option<Uuid>,
-    pub langue_cible: Option<String>,
-    pub description: Option<String>,
-    pub etat: String,
-    pub motif_refus: Option<String>,
-    pub salle_id_creee: Option<Uuid>,
-    pub propose_par: Uuid,
-    pub proposant_nom_complet: Option<String>,
-    pub proposant_email: Option<String>,
-    pub decide_par: Option<Uuid>,
-    pub decide_at: Option<DateTime<Utc>>,
-    pub salle_existante_id: Option<Uuid>,
-    pub proposition_doublon_id: Option<Uuid>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -921,6 +756,8 @@ impl SalleRow {
 }
 
 impl SallePriveeRow {
+    /// Conversion en DTO legacy (utilisé par les endpoints admin / détails).
+    /// N'expose jamais `code_acces_hash`.
     pub fn to_response(&self) -> SallePriveeResponse {
         SallePriveeResponse {
             id: self.id,
@@ -929,11 +766,7 @@ impl SallePriveeRow {
             description: self.description.clone(),
             image_couverture_url: self.image_couverture_url.clone(),
             max_participants: self.max_participants,
-            motif: self.motif.clone(),
-            declaration_adulte_at: self.declaration_adulte_at,
-            visibilite: self.visibilite.clone(),
             archivee_at: self.archivee_at,
-            est_protegee: self.code_acces.is_some(),
             actif: self.actif,
             createur: CreateurResponse {
                 id: self.cree_par,
@@ -946,6 +779,30 @@ impl SallePriveeRow {
             session_en_cours: self.session_en_cours.unwrap_or(false),
             created_at: self.created_at,
             updated_at: self.updated_at,
+        }
+    }
+
+    /// Conversion en DTO public aligné sur le contrat (refonte 2026-04).
+    /// Le champ `est_auteur` est calculé par rapport à l'utilisateur courant
+    /// pour permettre au frontend de court-circuiter la saisie du code
+    /// (FR-014). N'expose jamais `code_acces_hash`.
+    pub fn to_api(&self, utilisateur_courant: Uuid) -> SallePriveeAPI {
+        let auteur_nom = match (&self.createur_prenom, &self.createur_nom) {
+            (Some(p), Some(n)) => Some(format!("{} {}", p, n)),
+            (Some(p), None) => Some(p.clone()),
+            (None, Some(n)) => Some(n.clone()),
+            (None, None) => None,
+        };
+        SallePriveeAPI {
+            id: self.id,
+            salle_id: self.salle_id,
+            titre: self.titre.clone(),
+            description: self.description.clone(),
+            auteur_id: self.cree_par,
+            auteur_nom,
+            session_en_cours: self.session_en_cours.unwrap_or(false),
+            est_auteur: self.cree_par == utilisateur_courant,
+            created_at: self.created_at,
         }
     }
 }
@@ -1016,47 +873,6 @@ impl SalleModerateurRow {
             disponibilite: self.disponibilite.clone(),
             designe_at: self.designe_at,
             actif: self.actif,
-        }
-    }
-}
-
-impl PropositionSalleRow {
-    pub fn to_response(&self) -> PropositionSalleResponse {
-        PropositionSalleResponse {
-            id: self.id,
-            nom_groupe_ethnique: self.nom_groupe_ethnique.clone(),
-            pays_id: self.pays_id,
-            groupe_ethnique_id: self.groupe_ethnique_id,
-            langue_cible: self.langue_cible.clone(),
-            description: self.description.clone(),
-            etat: self.etat.clone(),
-            motif_refus: self.motif_refus.clone(),
-            salle_id_creee: self.salle_id_creee,
-            propose_par: self.propose_par,
-            decide_par: self.decide_par,
-            decide_at: self.decide_at,
-            created_at: self.created_at,
-            updated_at: self.updated_at,
-        }
-    }
-}
-
-impl SallePriveeAdhesionRow {
-    pub fn to_response(&self) -> AdhesionResponse {
-        AdhesionResponse {
-            id: self.id,
-            salle_privee_id: self.salle_privee_id,
-            utilisateur_id: self.utilisateur_id,
-            utilisateur_nom: self.utilisateur_nom.clone(),
-            utilisateur_prenom: self.utilisateur_prenom.clone(),
-            utilisateur_photo: self.utilisateur_photo.clone(),
-            type_adhesion: self.type_adhesion.clone(),
-            etat: self.etat_adhesion.clone(),
-            initiateur_id: self.initiateur_id,
-            decideur_id: self.decideur_id,
-            decided_at: self.decided_at,
-            created_at: self.created_at,
-            updated_at: self.updated_at,
         }
     }
 }

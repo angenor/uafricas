@@ -9,23 +9,21 @@ use crate::config::LivekitConfig;
 use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::afrolang::{
-    AdhesionResponse, AfrolangStatsResponse, ChangerVisibiliteRequest, CreerMessageRequest,
-    CreerPropositionRequest, CreerRessourceLienRequest, CreerSallePriveeRequest,
-    CreerSessionRequest, DecisionAdhesionRequest, DemanderAdhesionRequest,
+    AfrolangStatsResponse, CreerMessageRequest, CreerRessourceLienRequest,
+    CreerSallePriveePubliquePayload, CreerSessionRequest, DemarrerRejoindreResponse,
     GroupeEthniqueFiltres, GroupeEthniqueListeResponse, GroupeEthniqueResume,
-    InviterMembreRequest, MessageSessionResponse, MessageSessionRow, MessagesFiltres,
-    ModerateurResponse, ModifierMaxParticipantsRequest, ModifierSallePriveeRequest,
-    ModifierSalleRequest, PropositionSalleResponse, PropositionSalleRow, RejoindreRequest,
-    RessourceSalleResponse, RessourceSalleRow, SalleDetailResponse, SalleFiltres,
-    SalleListeResponse, SallePriveeAdhesionRow, SallePriveeDetailResponse, SallePriveeFiltres,
-    SallePriveeListeResponse, SallePriveeRow, SalleRow, SessionDetailResponse, SessionFiltres,
-    SessionListeResponse, SessionParticipantRow, SessionRow, TransfererModerationRequest,
-    GROUPE_ETHNIQUE_RESUME_COLONNES, MESSAGE_SESSION_COLONNES, PROPOSITION_SALLE_COLONNES,
-    RESSOURCE_SALLE_COLONNES, SALLE_COLONNES, SALLE_PRIVEE_ADHESION_COLONNES,
-    SALLE_PRIVEE_COLONNES, SESSION_COLONNES, generer_slug,
+    MessageSessionResponse, MessageSessionRow, MessagesFiltres, ModerateurResponse,
+    ModifierCodeAccesRequest, ModifierMaxParticipantsRequest, ModifierSallePriveeRequest,
+    ModifierSalleRequest, RejoindreRequest, RessourceSalleResponse, RessourceSalleRow,
+    SalleDetailResponse, SalleFiltres, SalleListeResponse, SallePriveeAPI,
+    SallePriveeDetailResponse, SallePriveeRow,
+    SalleRow, SessionDetailResponse, SessionFiltres, SessionListeResponse, SessionParticipantRow,
+    SessionRow, TransfererModerationRequest, VerifierCodeAccesRequest, VerifierCodeAccesResponse,
+    GROUPE_ETHNIQUE_RESUME_COLONNES, MESSAGE_SESSION_COLONNES, RESSOURCE_SALLE_COLONNES,
+    SALLE_COLONNES, SALLE_PRIVEE_COLONNES, SESSION_COLONNES, generer_slug,
 };
 use crate::models::notification;
-use crate::services::audit;
+use crate::services::{afrolang_rate_limit, audit};
 
 /// Reponse API generique
 #[derive(serde::Serialize)]
@@ -693,95 +691,23 @@ pub async fn supprimer_salle(
 // 1.6 — Handlers salles privees
 // ══════════════════════════════════════════════════════════════════════════
 
-/// GET /api/afrolang/salles/{salle_id}/privees — Salles privees d'une salle publique
+/// GET /api/afrolang/salles/{salle_id}/salles-privees — Salles privées listées
+/// dans le widget d'une salle publique (contrat endpoint 2, refonte 2026-04).
 ///
-/// Règle US5 : on ne retourne que :
-///  - les salles `visibilite='visible'`
-///  - OU les salles où l'utilisateur courant est créateur
-///  - OU les salles où il a une ligne `abonne` / `invitation`/`demande` en cours.
-pub async fn lister_salles_privees(
+/// Toute salle privée non archivée et non supprimée est retournée : la
+/// protection repose uniquement sur le code secret vérifié côté serveur à
+/// l'endpoint `verifier-code`. L'auteur courant est signalé via `est_auteur`
+/// pour permettre au frontend de court-circuiter la modale (FR-014).
+pub async fn lister_salles_privees_par_salle_publique(
     pool: web::Data<PgPool>,
     req: HttpRequest,
     chemin: web::Path<Uuid>,
-    params: web::Query<SallePriveeFiltres>,
 ) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+
     let salle_id = chemin.into_inner();
-    let page = params.page.unwrap_or(1).max(1);
-    let par_page = params.par_page.unwrap_or(20).clamp(1, 100);
-    let offset = (page - 1) * par_page;
 
-    let utilisateur_id = extraire_utilisateur_id(&req);
-
-    let mut conditions: Vec<String> = vec![
-        "sp.salle_id = $1".to_string(),
-        "sp.actif = true".to_string(),
-        "sp.archivee_at IS NULL".to_string(),
-        "sp.deleted_at IS NULL".to_string(),
-    ];
-    let mut bind_index = 2u32;
-    let mut bind_values: Vec<String> = Vec::new();
-    let mut uuid_binds: Vec<Uuid> = Vec::new();
-    let mut param_types: Vec<&str> = Vec::new();
-
-    // Filtre visibilité
-    if let Some(uid) = utilisateur_id {
-        conditions.push(format!(
-            "(sp.visibilite = 'visible' \
-              OR sp.cree_par = ${idx} \
-              OR EXISTS(SELECT 1 FROM afrolang.salle_privee_adhesion spa \
-                        WHERE spa.salle_privee_id = sp.id \
-                          AND spa.utilisateur_id = ${idx} \
-                          AND spa.deleted_at IS NULL))",
-            idx = bind_index
-        ));
-        uuid_binds.push(uid);
-        param_types.push("uuid");
-        bind_index += 1;
-    } else {
-        conditions.push("sp.visibilite = 'visible'".to_string());
-    }
-
-    if let Some(ref recherche) = params.recherche {
-        if !recherche.trim().is_empty() {
-            let terme = format!("%{}%", recherche.trim().to_lowercase());
-            conditions.push(format!(
-                "(LOWER(sp.titre) LIKE ${idx} OR LOWER(sp.description) LIKE ${idx})",
-                idx = bind_index
-            ));
-            bind_values.push(terme);
-            param_types.push("str");
-            bind_index += 1;
-        }
-    }
-
-    let where_clause = conditions.join(" AND ");
-
-    // Compter le total
-    let count_query = format!(
-        "SELECT COUNT(*) FROM afrolang.salle_privee sp WHERE {}",
-        where_clause
-    );
-    let mut count_q = sqlx::query_scalar::<_, i64>(&count_query).bind(salle_id);
-    {
-        let mut str_idx = 0usize;
-        let mut uuid_idx = 0usize;
-        for pt in &param_types {
-            match *pt {
-                "str" => {
-                    count_q = count_q.bind(&bind_values[str_idx]);
-                    str_idx += 1;
-                }
-                "uuid" => {
-                    count_q = count_q.bind(uuid_binds[uuid_idx]);
-                    uuid_idx += 1;
-                }
-                _ => {}
-            }
-        }
-    }
-    let total: i64 = count_q.fetch_one(pool.get_ref()).await?;
-
-    // Récupérer les salles privées
     let select_query = format!(
         "SELECT {},
             u.nom AS createur_nom, u.prenom AS createur_prenom,
@@ -792,43 +718,25 @@ pub async fn lister_salles_privees(
          FROM afrolang.salle_privee sp
          LEFT JOIN iam.utilisateur u ON u.id = sp.cree_par
          LEFT JOIN afrolang.salle s ON s.id = sp.salle_id
-         WHERE {}
-         ORDER BY sp.created_at DESC
-         LIMIT ${} OFFSET ${}",
-        SALLE_PRIVEE_COLONNES, where_clause, bind_index, bind_index + 1
+         WHERE sp.salle_id = $1
+           AND sp.actif = TRUE
+           AND sp.archivee_at IS NULL
+           AND sp.deleted_at IS NULL
+         ORDER BY sp.created_at DESC",
+        SALLE_PRIVEE_COLONNES
     );
 
-    let mut select_q = sqlx::query_as::<_, SallePriveeRow>(&select_query).bind(salle_id);
-    {
-        let mut str_idx = 0usize;
-        let mut uuid_idx = 0usize;
-        for pt in &param_types {
-            match *pt {
-                "str" => {
-                    select_q = select_q.bind(&bind_values[str_idx]);
-                    str_idx += 1;
-                }
-                "uuid" => {
-                    select_q = select_q.bind(uuid_binds[uuid_idx]);
-                    uuid_idx += 1;
-                }
-                _ => {}
-            }
-        }
-    }
-    select_q = select_q.bind(par_page).bind(offset);
+    let rows = sqlx::query_as::<_, SallePriveeRow>(&select_query)
+        .bind(salle_id)
+        .fetch_all(pool.get_ref())
+        .await?;
 
-    let rows = select_q.fetch_all(pool.get_ref()).await?;
+    let salles: Vec<SallePriveeAPI> =
+        rows.iter().map(|r| r.to_api(utilisateur_id)).collect();
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(SallePriveeListeResponse {
-            salles_privees: rows.iter().map(|r| r.to_response()).collect(),
-            total,
-            page,
-            par_page,
-            total_pages: calculer_total_pages(total, par_page),
-        }),
+        data: Some(salles),
         error: None,
     }))
 }
@@ -885,11 +793,7 @@ pub async fn obtenir_salle_privee(
             description: resp.description,
             image_couverture_url: resp.image_couverture_url,
             max_participants: resp.max_participants,
-            motif: resp.motif,
-            declaration_adulte_at: resp.declaration_adulte_at,
-            visibilite: resp.visibilite,
             archivee_at: resp.archivee_at,
-            est_protegee: resp.est_protegee,
             actif: resp.actif,
             createur: resp.createur,
             salle_titre: resp.salle_titre,
@@ -903,125 +807,177 @@ pub async fn obtenir_salle_privee(
     }))
 }
 
-/// POST /api/afrolang/salles/{salle_id}/privees — Creer une salle privee [JWT]
-pub async fn creer_salle_privee(
+/// POST /api/afrolang/salles-privees — Création d'une salle privée par
+/// l'utilisateur courant (refonte 2026-04, endpoint 1 du contrat).
+///
+/// Valide titre, description, code d'accès, vérifie que la salle publique
+/// cible existe et est active, puis hashe le code avant l'INSERT. Retourne
+/// 409 si l'utilisateur possède déjà une salle privée active pour la même
+/// salle publique (FR-010).
+pub async fn creer_salle_privee_publique(
     pool: web::Data<PgPool>,
     req: HttpRequest,
-    chemin: web::Path<Uuid>,
-    body: web::Json<CreerSallePriveeRequest>,
+    body: web::Json<CreerSallePriveePubliquePayload>,
 ) -> Result<HttpResponse, ApiErreur> {
     let utilisateur_id = extraire_utilisateur_id(&req)
         .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
 
-    let salle_id = chemin.into_inner();
+    let titre = body.titre.trim().to_string();
+    let titre_len = titre.chars().count();
+    if !(5..=350).contains(&titre_len) {
+        return Err(ApiErreur::Validation(
+            "Le titre doit contenir entre 5 et 350 caractères".into(),
+        ));
+    }
 
-    // Verifier que la salle parente existe et est active
-    let salle_existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM afrolang.salle WHERE id = $1 AND actif = true)",
+    let description = body
+        .description
+        .as_ref()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    if let Some(ref d) = description {
+        if d.chars().count() > 1000 {
+            return Err(ApiErreur::Validation(
+                "La description ne peut dépasser 1000 caractères".into(),
+            ));
+        }
+    }
+
+    valider_format_code_acces(body.code_acces.as_str())?;
+
+    // Vérifier l'existence et l'activité de la salle publique.
+    let salle_info: Option<(bool, Option<chrono::DateTime<chrono::Utc>>)> = sqlx::query_as(
+        "SELECT actif, deleted_at FROM afrolang.salle WHERE id = $1",
     )
-    .bind(salle_id)
-    .fetch_one(pool.get_ref())
+    .bind(body.salle_id)
+    .fetch_optional(pool.get_ref())
     .await?;
 
-    if !salle_existe {
-        return Err(ApiErreur::NonTrouve("Salle parente non trouvee".into()));
+    let (salle_active, salle_deleted) = salle_info
+        .ok_or_else(|| ApiErreur::Validation("Salle publique inexistante".into()))?;
+    if salle_deleted.is_some() {
+        return Err(ApiErreur::Validation("Salle publique supprimée".into()));
     }
-
-    if body.titre.trim().is_empty() {
-        return Err(ApiErreur::Validation("Le titre est obligatoire".into()));
-    }
-
-    let motif = body
-        .motif
-        .as_deref()
-        .map(str::trim)
-        .filter(|m| !m.is_empty())
-        .ok_or_else(|| ApiErreur::Validation("Le motif est obligatoire".into()))?;
-
-    if !matches!(motif, "apprentissage_enfants" | "reseautage_adulte" | "echanges_groupe") {
+    if !salle_active {
+        // 422 selon le contrat — nous utilisons Validation (400) par défaut,
+        // le contrat distingue « inactive » (422) de « inexistante » (400) :
+        // on exprime cela via le message sans créer de variant supplémentaire.
         return Err(ApiErreur::Validation(
-            "Motif invalide (valeurs autorisées : apprentissage_enfants, reseautage_adulte, echanges_groupe)"
-                .into(),
+            "Salle publique inactive — création impossible".into(),
         ));
     }
 
-    if !body.declaration_adulte {
-        return Err(ApiErreur::Validation(
-            "La déclaration de majorité (18+) est obligatoire".into(),
-        ));
+    // Vérifier l'unicité (salle_id, utilisateur) active avant l'INSERT pour
+    // fournir un 409 porteur d'information (salle_privee_existante_id).
+    let existante_id: Option<Uuid> = sqlx::query_scalar(
+        "SELECT id FROM afrolang.salle_privee
+         WHERE salle_id = $1 AND cree_par = $2
+           AND archivee_at IS NULL AND deleted_at IS NULL
+         LIMIT 1",
+    )
+    .bind(body.salle_id)
+    .bind(utilisateur_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    if let Some(existante) = existante_id {
+        return Ok(HttpResponse::Conflict().json(ApiResponse {
+            success: false,
+            data: Some(serde_json::json!({
+                "salle_privee_existante_id": existante,
+            })),
+            error: Some(
+                "Vous avez déjà une salle privée pour cette salle publique".into(),
+            ),
+        }));
     }
 
-    let visibilite = body
-        .visibilite
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-        .unwrap_or("fermee");
-
-    if !matches!(visibilite, "fermee" | "visible") {
-        return Err(ApiErreur::Validation(
-            "Visibilité invalide (valeurs autorisées : fermee, visible)".into(),
-        ));
-    }
+    let code_hash = hasher_code_acces(body.code_acces.as_str())?;
 
     let insert_result = sqlx::query_as::<_, SallePriveeRow>(
         &format!(
             "INSERT INTO afrolang.salle_privee
-                (salle_id, titre, description, code_acces, max_participants,
-                 motif, declaration_adulte_at, visibilite, cree_par)
-             VALUES ($1, $2, $3, $4, $5, $6::afrolang.motif_salle_privee, NOW(),
-                     $7::afrolang.visibilite_salle_privee, $8)
+                (salle_id, titre, description, code_acces_hash, cree_par)
+             VALUES ($1, $2, $3, $4, $5)
              RETURNING {}",
             SALLE_PRIVEE_COLONNES.replace("sp.", "")
         ),
     )
-    .bind(salle_id)
-    .bind(body.titre.trim())
-    .bind(body.description.as_deref().map(str::trim))
-    .bind(body.code_acces.as_deref().map(str::trim))
-    .bind(body.max_participants)
-    .bind(motif)
-    .bind(visibilite)
+    .bind(body.salle_id)
+    .bind(&titre)
+    .bind(description.as_deref())
+    .bind(&code_hash)
     .bind(utilisateur_id)
     .fetch_one(pool.get_ref())
     .await;
 
-    let row = match insert_result {
+    let mut row = match insert_result {
         Ok(r) => r,
         Err(sqlx::Error::Database(db_err)) if db_err.code().as_deref() == Some("23505") => {
-            // Violation de contrainte d'unicité — récupérer la salle existante
+            // Course critique : une salle a été créée entre notre vérification
+            // et notre INSERT. Retourner le 409 de la même manière.
             let existante_id: Option<Uuid> = sqlx::query_scalar(
                 "SELECT id FROM afrolang.salle_privee
                  WHERE salle_id = $1 AND cree_par = $2
                    AND archivee_at IS NULL AND deleted_at IS NULL
                  LIMIT 1",
             )
-            .bind(salle_id)
+            .bind(body.salle_id)
             .bind(utilisateur_id)
             .fetch_optional(pool.get_ref())
             .await?;
-
             return Ok(HttpResponse::Conflict().json(ApiResponse {
                 success: false,
                 data: existante_id.map(|id| serde_json::json!({
-                    "erreur": "salle_privee_unicite",
-                    "salle_existante_id": id,
+                    "salle_privee_existante_id": id,
                 })),
                 error: Some(
-                    "Vous avez déjà une salle privée active dans cette salle publique, \
-                     archivez-la avant d'en créer une nouvelle"
-                        .into(),
+                    "Vous avez déjà une salle privée pour cette salle publique".into(),
                 ),
             }));
         }
         Err(e) => return Err(ApiErreur::from(e)),
     };
 
-    log::info!("Salle privée créée : {} ({})", row.titre, row.id);
+    // Hydrater les JOINs manquants avec une requête légère (auteur).
+    let auteur: Option<(Option<String>, Option<String>, Option<String>)> = sqlx::query_as(
+        "SELECT nom, prenom, photo_url FROM iam.utilisateur WHERE id = $1",
+    )
+    .bind(utilisateur_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+    if let Some((nom, prenom, photo)) = auteur {
+        row.createur_nom = nom;
+        row.createur_prenom = prenom;
+        row.createur_photo = photo;
+    }
+    row.session_en_cours = Some(false);
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "creer_salle_privee",
+        "afrolang",
+        "salle_privee",
+        Some(row.id),
+        None,
+        Some(serde_json::json!({
+            "salle_id": body.salle_id,
+            "titre": titre,
+        })),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    )
+    .await;
+
+    log::info!(
+        "Salle privée créée : {} ({}) pour utilisateur {}",
+        row.titre, row.id, utilisateur_id
+    );
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
-        data: Some(row.to_response()),
+        data: Some(row.to_api(utilisateur_id)),
         error: None,
     }))
 }
@@ -1068,11 +1024,6 @@ pub async fn modifier_salle_privee(
     if let Some(ref desc) = body.description {
         sets.push(format!("description = ${}", bind_index));
         bind_values.push(desc.trim().to_string());
-        bind_index += 1;
-    }
-    if let Some(ref code) = body.code_acces {
-        sets.push(format!("code_acces = ${}", bind_index));
-        bind_values.push(code.trim().to_string());
         bind_index += 1;
     }
     if let Some(max) = body.max_participants {
@@ -1723,26 +1674,11 @@ pub async fn rejoindre_session(
         ));
     }
 
-    // Verifier le code d'acces de la salle privee (si contexte salle privée)
-    if let Some(sp_id) = session.salle_privee_id {
-        let code_acces_salle: Option<String> = sqlx::query_scalar(
-            "SELECT code_acces FROM afrolang.salle_privee WHERE id = $1",
-        )
-        .bind(sp_id)
-        .fetch_one(pool.get_ref())
-        .await?;
-
-        if let Some(ref code_attendu) = code_acces_salle {
-            match &body.code_acces {
-                Some(code_fourni) if code_fourni == code_attendu => {}
-                _ => {
-                    return Err(ApiErreur::NonAutorise(
-                        "Code d'acces invalide ou manquant".into(),
-                    ));
-                }
-            }
-        }
-    }
+    // Note (refonte 2026-04) : la vérification du code secret d'une salle
+    // privée se fait désormais à l'endpoint dédié `verifier-code` + jeton
+    // d'accès porté par `demarrer-ou-rejoindre`. Cet endpoint n'applique
+    // plus de contrôle de code ici.
+    let _ = &body;
 
     // Verifier max_participants
     let nb_actifs: i64 = sqlx::query_scalar(
@@ -2104,26 +2040,10 @@ pub async fn generer_token_session(
         return Err(ApiErreur::Validation("La session n'est pas en cours".into()));
     }
 
-    // 3. Verifier le code d'acces de la salle privee (si contexte salle privée)
-    if let Some(sp_id) = session.salle_privee_id {
-        let code_acces: Option<String> = sqlx::query_scalar(
-            "SELECT code_acces FROM afrolang.salle_privee WHERE id = $1",
-        )
-        .bind(sp_id)
-        .fetch_one(pool.get_ref())
-        .await?;
-
-        if let Some(ref code_attendu) = code_acces {
-            match &body.code_acces {
-                Some(code_fourni) if code_fourni == code_attendu => {}
-                _ => {
-                    return Err(ApiErreur::NonAutorise(
-                        "Code d'acces invalide ou manquant".into(),
-                    ));
-                }
-            }
-        }
-    }
+    // 3. Note (refonte 2026-04) : le contrôle du code secret passe par
+    //    l'endpoint dédié `verifier-code` + jeton d'accès présenté à
+    //    `demarrer-ou-rejoindre`. Plus de vérification ici.
+    let _ = &body;
 
     // 4. Verifier max_participants
     let nb_actifs: i64 = sqlx::query_scalar(
@@ -2414,137 +2334,16 @@ pub async fn lister_langues(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Feature 005 — Propositions de salles (US2)
+// Legacy supprimé par la refonte 2026-04 (feature 001-afrolang-salles-refonte)
 // ══════════════════════════════════════════════════════════════════════════
-
-/// POST /api/afrolang/salles/propositions — Soumettre une proposition [JWT]
-pub async fn creer_proposition(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-    body: web::Json<CreerPropositionRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    let utilisateur_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
-
-    let nom = body.nom_groupe_ethnique.trim();
-    if nom.is_empty() {
-        return Err(ApiErreur::Validation(
-            "Le nom du groupe ethnique est obligatoire".into(),
-        ));
-    }
-    if nom.len() > 250 {
-        return Err(ApiErreur::Validation(
-            "Le nom du groupe ethnique dépasse 250 caractères".into(),
-        ));
-    }
-
-    // Détection de doublon : salle existante active
-    let salle_existante_id: Option<Uuid> = sqlx::query_scalar(
-        "SELECT s.id FROM afrolang.salle s
-         JOIN country_profile.groupe_ethnique ge ON ge.id = s.groupe_ethnique_id
-         WHERE lower(unaccent(ge.nom)) = lower(unaccent($1))
-           AND s.deleted_at IS NULL
-         LIMIT 1",
-    )
-    .bind(nom)
-    .fetch_optional(pool.get_ref())
-    .await?;
-
-    if let Some(sid) = salle_existante_id {
-        return Ok(HttpResponse::Conflict().json(ApiResponse {
-            success: false,
-            data: Some(serde_json::json!({ "salle_id": sid })),
-            error: Some(
-                "Une salle publique existe déjà pour ce groupe ethnique".into(),
-            ),
-        }));
-    }
-
-    // Détection de doublon : proposition en_attente
-    let proposition_existante_id: Option<Uuid> = sqlx::query_scalar(
-        "SELECT id FROM afrolang.proposition_salle
-         WHERE lower(unaccent(nom_groupe_ethnique)) = lower(unaccent($1))
-           AND etat = 'en_attente'
-           AND deleted_at IS NULL
-         LIMIT 1",
-    )
-    .bind(nom)
-    .fetch_optional(pool.get_ref())
-    .await?;
-
-    if let Some(pid) = proposition_existante_id {
-        return Ok(HttpResponse::Conflict().json(ApiResponse {
-            success: false,
-            data: Some(serde_json::json!({ "proposition_id": pid })),
-            error: Some(
-                "Une proposition pour ce groupe ethnique est déjà en cours d'examen".into(),
-            ),
-        }));
-    }
-
-    let langue_cible = body.langue_cible.as_deref().map(str::trim).filter(|s| !s.is_empty());
-    let description = body.description.as_deref().map(str::trim).filter(|s| !s.is_empty());
-
-    let row = sqlx::query_as::<_, PropositionSalleRow>(
-        &format!(
-            "INSERT INTO afrolang.proposition_salle
-                (nom_groupe_ethnique, pays_id, groupe_ethnique_id,
-                 langue_cible, description, propose_par)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             RETURNING {}",
-            PROPOSITION_SALLE_COLONNES.replace("ps.", "")
-        ),
-    )
-    .bind(nom)
-    .bind(body.pays_id)
-    .bind(body.groupe_ethnique_id)
-    .bind(langue_cible)
-    .bind(description)
-    .bind(utilisateur_id)
-    .fetch_one(pool.get_ref())
-    .await?;
-
-    log::info!(
-        "Proposition de salle afrolang créée : {} ({})",
-        row.nom_groupe_ethnique,
-        row.id
-    );
-
-    Ok(HttpResponse::Created().json(ApiResponse {
-        success: true,
-        data: Some(row.to_response()),
-        error: None,
-    }))
-}
-
-/// GET /api/afrolang/salles/propositions/mine — Liste des propositions de l'utilisateur [JWT]
-pub async fn lister_mes_propositions(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-) -> Result<HttpResponse, ApiErreur> {
-    let utilisateur_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
-
-    let sql = format!(
-        "SELECT {} FROM afrolang.proposition_salle ps
-         WHERE ps.propose_par = $1 AND ps.deleted_at IS NULL
-         ORDER BY ps.created_at DESC",
-        PROPOSITION_SALLE_COLONNES
-    );
-    let rows = sqlx::query_as::<_, PropositionSalleRow>(&sql)
-        .bind(utilisateur_id)
-        .fetch_all(pool.get_ref())
-        .await?;
-
-    let items: Vec<PropositionSalleResponse> =
-        rows.iter().map(|r| r.to_response()).collect();
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(items),
-        error: None,
-    }))
-}
+// Les handlers `creer_proposition`, `lister_mes_propositions`,
+// `changer_visibilite_salle_privee`, `charger_salle_privee_active`,
+// `demander_adhesion`, `inviter_membre`, `decision_adhesion`,
+// `lister_adhesions_salle_privee`, `retirer_abonne` ont été retirés.
+// La création de salles publiques est désormais réservée aux admins et le
+// contrôle d'accès aux salles privées repose uniquement sur le code secret
+// (voir endpoints `verifier-code`, `sessions/demarrer-ou-rejoindre`,
+//  `code-acces`, `archiver` ajoutés en fin de fichier).
 
 // ══════════════════════════════════════════════════════════════════════════
 // Feature 005 — Transfert de modération de session (US3)
@@ -2672,104 +2471,8 @@ pub async fn transferer_moderation_session(
     }))
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// Feature 005 — US5 : Visibilité, adhésions, invitations (salle privée)
-// ══════════════════════════════════════════════════════════════════════════
-
-/// Helper : charger une salle privée active (non archivée, non supprimée)
-async fn charger_salle_privee_active(
-    pool: &PgPool,
-    id: Uuid,
-) -> Result<SallePriveeRow, ApiErreur> {
-    let sql = format!(
-        "SELECT {},
-            u.nom AS createur_nom, u.prenom AS createur_prenom,
-            u.photo_url AS createur_photo,
-            s.titre AS salle_titre, s.langue_cible AS salle_langue,
-            FALSE AS session_en_cours
-         FROM afrolang.salle_privee sp
-         LEFT JOIN iam.utilisateur u ON u.id = sp.cree_par
-         LEFT JOIN afrolang.salle s ON s.id = sp.salle_id
-         WHERE sp.id = $1 AND sp.deleted_at IS NULL",
-        SALLE_PRIVEE_COLONNES
-    );
-    sqlx::query_as::<_, SallePriveeRow>(&sql)
-        .bind(id)
-        .fetch_optional(pool)
-        .await?
-        .ok_or_else(|| ApiErreur::NonTrouve(format!("Salle privée {} non trouvée", id)))
-}
-
-/// PATCH /api/afrolang/salles-privees/{id}/visibilite — Bascule ouverte/fermée [JWT créateur]
-pub async fn changer_visibilite_salle_privee(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-    chemin: web::Path<Uuid>,
-    body: web::Json<ChangerVisibiliteRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    let utilisateur_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
-
-    let id = chemin.into_inner();
-
-    let nouvelle = body.visibilite.trim();
-    if !matches!(nouvelle, "fermee" | "visible") {
-        return Err(ApiErreur::Validation(
-            "Visibilité invalide (valeurs autorisées : fermee, visible)".into(),
-        ));
-    }
-
-    let salle = charger_salle_privee_active(pool.get_ref(), id).await?;
-    if salle.cree_par != utilisateur_id {
-        return Err(ApiErreur::NonAutorise(
-            "Seul le créateur peut modifier la visibilité".into(),
-        ));
-    }
-
-    let ancienne = salle.visibilite.clone();
-    if ancienne == nouvelle {
-        return Ok(HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            data: Some(serde_json::json!({ "visibilite": nouvelle })),
-            error: None,
-        }));
-    }
-
-    sqlx::query(
-        "UPDATE afrolang.salle_privee
-         SET visibilite = $2::afrolang.visibilite_salle_privee, updated_at = NOW()
-         WHERE id = $1",
-    )
-    .bind(id)
-    .bind(nouvelle)
-    .execute(pool.get_ref())
-    .await?;
-
-    audit::log_action(
-        pool.get_ref(),
-        Some(utilisateur_id),
-        "afrolang.salle_privee.visibilite",
-        "afrolang",
-        "salle_privee",
-        Some(id),
-        Some(serde_json::json!({ "visibilite": ancienne })),
-        Some(serde_json::json!({ "visibilite": nouvelle })),
-        audit::extraire_ip(&req).as_deref(),
-        audit::extraire_user_agent(&req).as_deref(),
-    )
-    .await;
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(serde_json::json!({
-            "id": id,
-            "visibilite": nouvelle,
-        })),
-        error: None,
-    }))
-}
-
-/// PATCH /api/afrolang/salles-privees/{id}/max-participants — Modifier limite [JWT créateur]
+/// PATCH /api/afrolang/salles-privees/{id}/max-participants — Modifier la
+/// limite de participants d'une salle privée (auteur uniquement).
 pub async fn modifier_max_participants_salle_privee(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -2787,29 +2490,25 @@ pub async fn modifier_max_participants_salle_privee(
         ));
     }
 
-    let salle = charger_salle_privee_active(pool.get_ref(), id).await?;
-    if salle.cree_par != utilisateur_id {
-        return Err(ApiErreur::NonAutorise(
+    let salle: Option<(Uuid, Option<i32>, Option<chrono::DateTime<chrono::Utc>>)> = sqlx::query_as(
+        "SELECT cree_par, max_participants, archivee_at
+         FROM afrolang.salle_privee
+         WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+    let (createur, ancienne, archivee_at) = salle
+        .ok_or_else(|| ApiErreur::NonTrouve(format!("Salle privée {} non trouvée", id)))?;
+
+    if createur != utilisateur_id {
+        return Err(ApiErreur::AccesInterdit(
             "Seul le créateur peut modifier la limite".into(),
         ));
     }
-
-    let abonnes_actuels: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM afrolang.salle_privee_adhesion
-         WHERE salle_privee_id = $1 AND type = 'abonne' AND deleted_at IS NULL",
-    )
-    .bind(id)
-    .fetch_one(pool.get_ref())
-    .await?;
-
-    if (nouvelle as i64) < abonnes_actuels {
-        return Err(ApiErreur::Validation(format!(
-            "La limite ({}) ne peut être inférieure au nombre d'abonnés actuels ({})",
-            nouvelle, abonnes_actuels
-        )));
+    if archivee_at.is_some() {
+        return Err(ApiErreur::Validation("La salle privée est archivée".into()));
     }
-
-    let ancienne = salle.max_participants;
 
     sqlx::query(
         "UPDATE afrolang.salle_privee
@@ -2824,7 +2523,7 @@ pub async fn modifier_max_participants_salle_privee(
     audit::log_action(
         pool.get_ref(),
         Some(utilisateur_id),
-        "afrolang.salle_privee.max_participants",
+        "modifier_max_participants_salle_privee",
         "afrolang",
         "salle_privee",
         Some(id),
@@ -2840,495 +2539,6 @@ pub async fn modifier_max_participants_salle_privee(
         data: Some(serde_json::json!({ "id": id, "max_participants": nouvelle })),
         error: None,
     }))
-}
-
-/// POST /api/afrolang/salles-privees/{id}/demandes — Demande d'adhésion (salle visible) [JWT]
-pub async fn demander_adhesion(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-    chemin: web::Path<Uuid>,
-    _body: web::Json<DemanderAdhesionRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    let utilisateur_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
-
-    let salle_privee_id = chemin.into_inner();
-
-    let mut tx = pool.begin().await?;
-
-    let salle_visible: Option<(Uuid, Uuid, String, Option<i32>, bool)> = sqlx::query_as(
-        "SELECT id, cree_par, visibilite::TEXT, max_participants,
-                (archivee_at IS NULL)
-         FROM afrolang.salle_privee
-         WHERE id = $1 AND deleted_at IS NULL
-         FOR UPDATE",
-    )
-    .bind(salle_privee_id)
-    .fetch_optional(&mut *tx)
-    .await?;
-
-    let (_, createur_id, visibilite, max_participants, active) = salle_visible
-        .ok_or_else(|| ApiErreur::NonTrouve("Salle privée non trouvée".into()))?;
-
-    if !active {
-        return Err(ApiErreur::Validation("La salle privée est archivée".into()));
-    }
-    if visibilite != "visible" {
-        return Err(ApiErreur::Validation(
-            "Cette salle privée est fermée — une invitation directe est requise".into(),
-        ));
-    }
-    if createur_id == utilisateur_id {
-        return Err(ApiErreur::Validation(
-            "Le créateur est déjà membre de sa propre salle".into(),
-        ));
-    }
-
-    let deja: Option<(Uuid, String, String)> = sqlx::query_as(
-        "SELECT id, type::TEXT, etat::TEXT FROM afrolang.salle_privee_adhesion
-         WHERE salle_privee_id = $1 AND utilisateur_id = $2 AND deleted_at IS NULL
-         LIMIT 1",
-    )
-    .bind(salle_privee_id)
-    .bind(utilisateur_id)
-    .fetch_optional(&mut *tx)
-    .await?;
-
-    if let Some((existing_id, type_, etat_)) = deja {
-        return Ok(HttpResponse::Conflict().json(ApiResponse::<serde_json::Value> {
-            success: false,
-            data: Some(serde_json::json!({
-                "erreur": "adhesion_existante",
-                "adhesion_id": existing_id,
-                "type": type_,
-                "etat": etat_,
-            })),
-            error: Some("Une adhésion existe déjà pour cet utilisateur".into()),
-        }));
-    }
-
-    // Vérification atomique limite groupe
-    let abonnes: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM afrolang.salle_privee_adhesion
-         WHERE salle_privee_id = $1 AND type = 'abonne' AND deleted_at IS NULL",
-    )
-    .bind(salle_privee_id)
-    .fetch_one(&mut *tx)
-    .await?;
-
-    let etat_initial = if let Some(max) = max_participants {
-        if abonnes >= max as i64 { "groupe_complet" } else { "en_attente" }
-    } else {
-        "en_attente"
-    };
-
-    let adhesion_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO afrolang.salle_privee_adhesion
-            (salle_privee_id, utilisateur_id, type, etat, initiateur_id)
-         VALUES ($1, $2, 'demande'::afrolang.type_adhesion,
-                 $3::afrolang.etat_adhesion, $2)
-         RETURNING id",
-    )
-    .bind(salle_privee_id)
-    .bind(utilisateur_id)
-    .bind(etat_initial)
-    .fetch_one(&mut *tx)
-    .await?;
-
-    tx.commit().await?;
-
-    // Notifications (fire-and-forget)
-    if etat_initial == "groupe_complet" {
-        let lien = format!("/afrolang/salle-privee/{}", salle_privee_id);
-        notification::creer_notification(
-            pool.get_ref(),
-            utilisateur_id,
-            notification::afrolang::ADHESION_GROUPE_COMPLET,
-            "La salle privée est complète — votre demande a été refusée automatiquement.",
-            Some(&lien),
-        )
-        .await;
-    } else {
-        let lien = format!("/afrolang/salle-privee/{}", salle_privee_id);
-        notification::creer_notification(
-            pool.get_ref(),
-            createur_id,
-            notification::afrolang::ADHESION_DEMANDEE,
-            "Nouvelle demande d'adhésion à votre salle privée.",
-            Some(&lien),
-        )
-        .await;
-    }
-
-    Ok(HttpResponse::Created().json(ApiResponse {
-        success: true,
-        data: Some(serde_json::json!({
-            "id": adhesion_id,
-            "etat": etat_initial,
-        })),
-        error: None,
-    }))
-}
-
-/// POST /api/afrolang/salles-privees/{id}/invitations — Invitation directe [JWT créateur]
-pub async fn inviter_membre(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-    chemin: web::Path<Uuid>,
-    body: web::Json<InviterMembreRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    let utilisateur_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
-
-    let salle_privee_id = chemin.into_inner();
-    let invite_id = body.utilisateur_id;
-
-    if invite_id == utilisateur_id {
-        return Err(ApiErreur::Validation(
-            "Vous ne pouvez pas vous inviter vous-même".into(),
-        ));
-    }
-
-    let salle = charger_salle_privee_active(pool.get_ref(), salle_privee_id).await?;
-    if salle.cree_par != utilisateur_id {
-        return Err(ApiErreur::NonAutorise(
-            "Seul le créateur peut inviter des membres".into(),
-        ));
-    }
-    if salle.archivee_at.is_some() {
-        return Err(ApiErreur::Validation("La salle privée est archivée".into()));
-    }
-
-    let invite_existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM iam.utilisateur WHERE id = $1 AND etat = 'actif')",
-    )
-    .bind(invite_id)
-    .fetch_one(pool.get_ref())
-    .await?;
-    if !invite_existe {
-        return Err(ApiErreur::Validation(
-            "Utilisateur invité introuvable ou inactif".into(),
-        ));
-    }
-
-    let existe: Option<(Uuid, String, String)> = sqlx::query_as(
-        "SELECT id, type::TEXT, etat::TEXT FROM afrolang.salle_privee_adhesion
-         WHERE salle_privee_id = $1 AND utilisateur_id = $2 AND deleted_at IS NULL
-         LIMIT 1",
-    )
-    .bind(salle_privee_id)
-    .bind(invite_id)
-    .fetch_optional(pool.get_ref())
-    .await?;
-
-    if let Some((existing_id, type_, etat_)) = existe {
-        return Ok(HttpResponse::Conflict().json(ApiResponse::<serde_json::Value> {
-            success: false,
-            data: Some(serde_json::json!({
-                "erreur": "adhesion_existante",
-                "adhesion_id": existing_id,
-                "type": type_,
-                "etat": etat_,
-            })),
-            error: Some("Une adhésion existe déjà pour cet utilisateur".into()),
-        }));
-    }
-
-    let adhesion_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO afrolang.salle_privee_adhesion
-            (salle_privee_id, utilisateur_id, type, etat, initiateur_id)
-         VALUES ($1, $2, 'invitation'::afrolang.type_adhesion,
-                 'en_attente'::afrolang.etat_adhesion, $3)
-         RETURNING id",
-    )
-    .bind(salle_privee_id)
-    .bind(invite_id)
-    .bind(utilisateur_id)
-    .fetch_one(pool.get_ref())
-    .await?;
-
-    let lien = format!("/afrolang/salle-privee/{}", salle_privee_id);
-    notification::creer_notification(
-        pool.get_ref(),
-        invite_id,
-        notification::afrolang::INVITATION_RECUE,
-        "Vous avez reçu une invitation à rejoindre une salle privée.",
-        Some(&lien),
-    )
-    .await;
-
-    Ok(HttpResponse::Created().json(ApiResponse {
-        success: true,
-        data: Some(serde_json::json!({ "id": adhesion_id })),
-        error: None,
-    }))
-}
-
-/// PATCH /api/afrolang/adhesions/{id}/decision — Accepter/refuser [JWT]
-pub async fn decision_adhesion(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-    chemin: web::Path<Uuid>,
-    body: web::Json<DecisionAdhesionRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    let utilisateur_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
-
-    let adhesion_id = chemin.into_inner();
-    let decision = body.decision.trim();
-    if !matches!(decision, "acceptee" | "refusee") {
-        return Err(ApiErreur::Validation(
-            "Décision invalide (valeurs autorisées : acceptee, refusee)".into(),
-        ));
-    }
-
-    let mut tx = pool.begin().await?;
-
-    let adhesion: Option<(Uuid, Uuid, Uuid, String, String)> = sqlx::query_as(
-        "SELECT id, salle_privee_id, utilisateur_id, type::TEXT, etat::TEXT
-         FROM afrolang.salle_privee_adhesion
-         WHERE id = $1 AND deleted_at IS NULL
-         FOR UPDATE",
-    )
-    .bind(adhesion_id)
-    .fetch_optional(&mut *tx)
-    .await?;
-
-    let (_, salle_privee_id, invite_id, type_, etat_) = adhesion
-        .ok_or_else(|| ApiErreur::NonTrouve("Adhésion introuvable".into()))?;
-
-    if etat_ != "en_attente" {
-        return Err(ApiErreur::Validation(format!(
-            "L'adhésion est déjà au statut '{}'",
-            etat_
-        )));
-    }
-
-    let (createur_id, max_participants): (Uuid, Option<i32>) = sqlx::query_as(
-        "SELECT cree_par, max_participants FROM afrolang.salle_privee
-         WHERE id = $1 AND deleted_at IS NULL FOR UPDATE",
-    )
-    .bind(salle_privee_id)
-    .fetch_one(&mut *tx)
-    .await?;
-
-    // Contrôle d'accès : demande → créateur décide ; invitation → invité décide
-    let autorise = match type_.as_str() {
-        "demande" => utilisateur_id == createur_id,
-        "invitation" => utilisateur_id == invite_id,
-        _ => false,
-    };
-    if !autorise {
-        return Err(ApiErreur::NonAutorise(
-            "Vous n'êtes pas autorisé à décider de cette adhésion".into(),
-        ));
-    }
-
-    if decision == "acceptee" {
-        // Vérification atomique de la limite
-        if let Some(max) = max_participants {
-            let abonnes: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM afrolang.salle_privee_adhesion
-                 WHERE salle_privee_id = $1 AND type = 'abonne' AND deleted_at IS NULL",
-            )
-            .bind(salle_privee_id)
-            .fetch_one(&mut *tx)
-            .await?;
-
-            if abonnes >= max as i64 {
-                sqlx::query(
-                    "UPDATE afrolang.salle_privee_adhesion
-                     SET etat = 'groupe_complet'::afrolang.etat_adhesion,
-                         decideur_id = $2, decided_at = NOW(), updated_at = NOW()
-                     WHERE id = $1",
-                )
-                .bind(adhesion_id)
-                .bind(utilisateur_id)
-                .execute(&mut *tx)
-                .await?;
-
-                tx.commit().await?;
-
-                let lien = format!("/afrolang/salle-privee/{}", salle_privee_id);
-                notification::creer_notification(
-                    pool.get_ref(),
-                    invite_id,
-                    notification::afrolang::ADHESION_GROUPE_COMPLET,
-                    "La salle privée est complète — la demande ne peut plus être acceptée.",
-                    Some(&lien),
-                )
-                .await;
-
-                return Ok(HttpResponse::Ok().json(ApiResponse {
-                    success: true,
-                    data: Some(serde_json::json!({
-                        "id": adhesion_id,
-                        "etat": "groupe_complet",
-                    })),
-                    error: None,
-                }));
-            }
-        }
-
-        sqlx::query(
-            "UPDATE afrolang.salle_privee_adhesion
-             SET type = 'abonne'::afrolang.type_adhesion,
-                 etat = 'acceptee'::afrolang.etat_adhesion,
-                 decideur_id = $2, decided_at = NOW(), updated_at = NOW()
-             WHERE id = $1",
-        )
-        .bind(adhesion_id)
-        .bind(utilisateur_id)
-        .execute(&mut *tx)
-        .await?;
-    } else {
-        sqlx::query(
-            "UPDATE afrolang.salle_privee_adhesion
-             SET etat = 'refusee'::afrolang.etat_adhesion,
-                 decideur_id = $2, decided_at = NOW(), updated_at = NOW()
-             WHERE id = $1",
-        )
-        .bind(adhesion_id)
-        .bind(utilisateur_id)
-        .execute(&mut *tx)
-        .await?;
-    }
-
-    tx.commit().await?;
-
-    let lien = format!("/afrolang/salle-privee/{}", salle_privee_id);
-    // Notifier la contrepartie (celle qui n'a pas décidé)
-    let destinataire = if utilisateur_id == createur_id { invite_id } else { createur_id };
-    let (type_notif, message) = match (type_.as_str(), decision) {
-        ("demande", "acceptee") => (
-            notification::afrolang::ADHESION_ACCEPTEE,
-            "Votre demande d'adhésion a été acceptée.",
-        ),
-        ("demande", "refusee") => (
-            notification::afrolang::ADHESION_REFUSEE,
-            "Votre demande d'adhésion a été refusée.",
-        ),
-        ("invitation", "acceptee") => (
-            notification::afrolang::ADHESION_ACCEPTEE,
-            "Votre invitation a été acceptée.",
-        ),
-        ("invitation", "refusee") => (
-            notification::afrolang::INVITATION_REFUSEE,
-            "Votre invitation a été refusée.",
-        ),
-        _ => (notification::afrolang::ADHESION_ACCEPTEE, "Décision enregistrée."),
-    };
-    notification::creer_notification(
-        pool.get_ref(),
-        destinataire,
-        type_notif,
-        message,
-        Some(&lien),
-    )
-    .await;
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(serde_json::json!({
-            "id": adhesion_id,
-            "etat": if decision == "acceptee" { "acceptee" } else { "refusee" },
-        })),
-        error: None,
-    }))
-}
-
-/// GET /api/afrolang/salles-privees/{id}/adhesions — Lister (créateur) [JWT]
-pub async fn lister_adhesions_salle_privee(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-    chemin: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    let utilisateur_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
-
-    let id = chemin.into_inner();
-
-    let createur_id: Option<Uuid> = sqlx::query_scalar(
-        "SELECT cree_par FROM afrolang.salle_privee
-         WHERE id = $1 AND deleted_at IS NULL",
-    )
-    .bind(id)
-    .fetch_optional(pool.get_ref())
-    .await?;
-    let createur_id = createur_id
-        .ok_or_else(|| ApiErreur::NonTrouve("Salle privée non trouvée".into()))?;
-
-    if createur_id != utilisateur_id {
-        return Err(ApiErreur::NonAutorise(
-            "Seul le créateur peut consulter les adhésions".into(),
-        ));
-    }
-
-    let sql = format!(
-        "SELECT {},
-            u.nom AS utilisateur_nom,
-            u.prenom AS utilisateur_prenom,
-            u.photo_url AS utilisateur_photo
-         FROM afrolang.salle_privee_adhesion spa
-         LEFT JOIN iam.utilisateur u ON u.id = spa.utilisateur_id
-         WHERE spa.salle_privee_id = $1 AND spa.deleted_at IS NULL
-         ORDER BY spa.created_at DESC",
-        SALLE_PRIVEE_ADHESION_COLONNES
-    );
-
-    let rows = sqlx::query_as::<_, SallePriveeAdhesionRow>(&sql)
-        .bind(id)
-        .fetch_all(pool.get_ref())
-        .await?;
-
-    let items: Vec<AdhesionResponse> = rows.iter().map(|r| r.to_response()).collect();
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(items),
-        error: None,
-    }))
-}
-
-/// DELETE /api/afrolang/adhesions/{id} — Retirer un abonné (soft delete) [JWT créateur]
-pub async fn retirer_abonne(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-    chemin: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    let utilisateur_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
-
-    let adhesion_id = chemin.into_inner();
-
-    let adhesion: Option<(Uuid, Uuid, Uuid)> = sqlx::query_as(
-        "SELECT spa.id, spa.salle_privee_id, sp.cree_par
-         FROM afrolang.salle_privee_adhesion spa
-         JOIN afrolang.salle_privee sp ON sp.id = spa.salle_privee_id
-         WHERE spa.id = $1 AND spa.deleted_at IS NULL",
-    )
-    .bind(adhesion_id)
-    .fetch_optional(pool.get_ref())
-    .await?;
-
-    let (_, _, createur_id) =
-        adhesion.ok_or_else(|| ApiErreur::NonTrouve("Adhésion introuvable".into()))?;
-
-    if createur_id != utilisateur_id {
-        return Err(ApiErreur::NonAutorise(
-            "Seul le créateur peut retirer un abonné".into(),
-        ));
-    }
-
-    sqlx::query(
-        "UPDATE afrolang.salle_privee_adhesion
-         SET deleted_at = NOW(), updated_at = NOW()
-         WHERE id = $1",
-    )
-    .bind(adhesion_id)
-    .execute(pool.get_ref())
-    .await?;
-
-    Ok(HttpResponse::NoContent().finish())
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -3782,6 +2992,674 @@ pub async fn supprimer_ressource(
         Some(id),
         None,
         None,
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::NoContent().finish())
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Refonte 2026-04 — Salles privées : code secret, rate limit, jeton d'accès
+// ══════════════════════════════════════════════════════════════════════════
+
+/// Durée de vie d'un jeton d'accès salle privée (4 heures).
+const ACCES_JETON_TTL_SECONDES: i64 = 4 * 60 * 60;
+
+/// Nom du header HTTP portant le jeton d'accès salle privée
+const HEADER_ACCES_JETON: &str = "X-Afrolang-Acces-Jeton";
+
+/// Valide le format du code d'accès saisi par un utilisateur.
+///
+/// Règle (R2) : 4 à 16 caractères, alphanumérique + symboles courants
+/// `!@#$%&*?-`. Les espaces, unicode étendu et autres symboles sont refusés
+/// pour éviter les confusions orales / saisie mobile.
+pub fn valider_format_code_acces(code: &str) -> Result<(), ApiErreur> {
+    let long = code.chars().count();
+    if !(4..=16).contains(&long) {
+        return Err(ApiErreur::Validation(
+            "Le code d'accès doit contenir entre 4 et 16 caractères".into(),
+        ));
+    }
+    let charset_ok = code.chars().all(|c| {
+        c.is_ascii_alphanumeric()
+            || matches!(c, '!' | '@' | '#' | '$' | '%' | '&' | '*' | '?' | '-')
+    });
+    if !charset_ok {
+        return Err(ApiErreur::Validation(
+            "Le code d'accès ne peut contenir que des caractères alphanumériques ou les symboles !@#$%&*?-"
+                .into(),
+        ));
+    }
+    Ok(())
+}
+
+/// Calcule le hash bcrypt (cost 10) d'un code d'accès en clair.
+///
+/// Cost 10 choisi (vs 12 pour les mots de passe) : le code est à faible
+/// entropie ; la protection principale repose sur le rate limit (R4).
+pub fn hasher_code_acces(code: &str) -> Result<String, ApiErreur> {
+    bcrypt::hash(code, 10).map_err(|e| {
+        ApiErreur::BaseDeDonnees(format!("Erreur hashage code accès : {}", e))
+    })
+}
+
+/// Vérifie un code en clair contre son hash bcrypt.
+pub fn verifier_code_acces_plain(code: &str, hash: &str) -> Result<bool, ApiErreur> {
+    bcrypt::verify(code, hash).map_err(|e| {
+        ApiErreur::BaseDeDonnees(format!("Erreur vérification code accès : {}", e))
+    })
+}
+
+/// Charge la ligne complète d'une salle privée (y compris `code_acces_hash`)
+/// pour vérification serveur. Filtre les salles supprimées.
+async fn charger_salle_privee_interne(
+    pool: &PgPool,
+    id: Uuid,
+) -> Result<Option<SallePriveeRow>, ApiErreur> {
+    let sql = format!(
+        "SELECT {},
+            u.nom AS createur_nom, u.prenom AS createur_prenom,
+            u.photo_url AS createur_photo,
+            s.titre AS salle_titre, s.langue_cible AS salle_langue,
+            EXISTS(SELECT 1 FROM afrolang.session ses
+                   WHERE ses.salle_privee_id = sp.id AND ses.etat = 'en_cours') AS session_en_cours
+         FROM afrolang.salle_privee sp
+         LEFT JOIN iam.utilisateur u ON u.id = sp.cree_par
+         LEFT JOIN afrolang.salle s ON s.id = sp.salle_id
+         WHERE sp.id = $1 AND sp.deleted_at IS NULL",
+        SALLE_PRIVEE_COLONNES
+    );
+    let row = sqlx::query_as::<_, SallePriveeRow>(&sql)
+        .bind(id)
+        .fetch_optional(pool)
+        .await?;
+    Ok(row)
+}
+
+/// POST /api/afrolang/salles-privees/{id}/verifier-code
+///
+/// Vérifie le code d'accès saisi. Cas particuliers :
+///  1. Utilisateur == auteur → jeton remis sans vérification (FR-014).
+///  2. Rate limit (5 échecs / 1 min, verrou 5 min).
+///  3. Salle archivée ou supprimée → 404 (message générique, ne rien fuiter).
+///
+/// Audit : `verifier_code_salle_privee_echec` sur échec uniquement (les
+/// succès sont loggés implicitement lors du démarrage de session).
+pub async fn verifier_code_acces_salle_privee(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<VerifierCodeAccesRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+
+    let salle_privee_id = chemin.into_inner();
+
+    // Charger la salle (sans vérifier le code) pour détecter 404/archivée.
+    let salle = charger_salle_privee_interne(pool.get_ref(), salle_privee_id).await?;
+    let Some(salle) = salle else {
+        return Err(ApiErreur::NonTrouve("Salle privée inexistante".into()));
+    };
+    if salle.archivee_at.is_some() {
+        // Même message générique que « inexistante » pour ne rien fuiter.
+        return Err(ApiErreur::NonTrouve("Salle privée inexistante".into()));
+    }
+
+    // Auteur : court-circuit (FR-014) — pas de vérification, pas d'audit.
+    if salle.cree_par == utilisateur_id {
+        let (jeton, expires_at) = jwt::creer_acces_jeton_salle_privee(
+            salle_privee_id,
+            utilisateur_id,
+            ACCES_JETON_TTL_SECONDES,
+        )?;
+        return Ok(HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            data: Some(VerifierCodeAccesResponse {
+                salle_privee_id,
+                acces_jeton: jeton,
+                expires_at,
+            }),
+            error: None,
+        }));
+    }
+
+    // Rate limit avant toute vérification du hash.
+    if afrolang_rate_limit::est_verrouillee(pool.get_ref(), salle_privee_id, utilisateur_id)
+        .await?
+    {
+        return Err(ApiErreur::LimiteAtteinte(
+            "Trop de tentatives, réessayez dans quelques minutes".into(),
+        ));
+    }
+
+    let code = body.code_acces.as_str();
+    let succes = verifier_code_acces_plain(code, &salle.code_acces_hash)?;
+
+    // Enregistrer la tentative (succès ou échec) pour le rate limit.
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    afrolang_rate_limit::enregistrer_tentative(
+        pool.get_ref(),
+        salle_privee_id,
+        utilisateur_id,
+        succes,
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await?;
+
+    if !succes {
+        // Audit échec uniquement — jamais le code en clair.
+        audit::log_action(
+            pool.get_ref(),
+            Some(utilisateur_id),
+            "verifier_code_salle_privee_echec",
+            "afrolang",
+            "salle_privee",
+            Some(salle_privee_id),
+            None,
+            None,
+            ip.as_deref(),
+            ua.as_deref(),
+        )
+        .await;
+        return Err(ApiErreur::AccesInterdit("Code incorrect".into()));
+    }
+
+    let (jeton, expires_at) = jwt::creer_acces_jeton_salle_privee(
+        salle_privee_id,
+        utilisateur_id,
+        ACCES_JETON_TTL_SECONDES,
+    )?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(VerifierCodeAccesResponse {
+            salle_privee_id,
+            acces_jeton: jeton,
+            expires_at,
+        }),
+        error: None,
+    }))
+}
+
+/// POST /api/afrolang/salles-privees/{id}/sessions/demarrer-ou-rejoindre
+///
+/// Démarre une nouvelle session si aucune n'est en cours, ou rejoint la
+/// session `en_cours` existante. Requiert un jeton d'accès valide (obtenu
+/// via `verifier-code`) dans le header `X-Afrolang-Acces-Jeton`.
+pub async fn demarrer_ou_rejoindre_session_salle_privee(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+
+    let salle_privee_id = chemin.into_inner();
+
+    // Récupérer et valider le jeton d'accès.
+    let jeton_header = req
+        .headers()
+        .get(HEADER_ACCES_JETON)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string())
+        .ok_or_else(|| ApiErreur::NonAutorise(
+            format!("Header {} manquant", HEADER_ACCES_JETON)
+        ))?;
+    jwt::valider_acces_jeton_salle_privee(&jeton_header, salle_privee_id, utilisateur_id)?;
+
+    // Charger la salle pour vérifier son état (410 si archivée).
+    let salle = charger_salle_privee_interne(pool.get_ref(), salle_privee_id).await?
+        .ok_or_else(|| ApiErreur::NonTrouve("Salle privée inexistante".into()))?;
+    if salle.archivee_at.is_some() {
+        return Ok(HttpResponse::Gone().json(ApiResponse::<()> {
+            success: false,
+            data: None,
+            error: Some("Salle privée archivée".into()),
+        }));
+    }
+
+    let moderateur_id = salle.cree_par;
+
+    // Transaction pour garantir au plus UNE session en_cours par salle privée.
+    let mut tx = pool.begin().await?;
+
+    let session_existante: Option<Uuid> = sqlx::query_scalar(
+        "SELECT id FROM afrolang.session
+         WHERE salle_privee_id = $1 AND etat = 'en_cours'
+         FOR UPDATE",
+    )
+    .bind(salle_privee_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    let session_id = match session_existante {
+        Some(id) => id,
+        None => {
+            // Créer une nouvelle session en_cours ; moderateur = auteur de la
+            // salle privée, cree_par = utilisateur courant (peut différer).
+            sqlx::query_scalar(
+                "INSERT INTO afrolang.session
+                    (salle_privee_id, etat, moderateur_id, demarre_at,
+                     max_participants, tableau_blanc_actif, cree_par)
+                 VALUES ($1, 'en_cours', $2, NOW(), $3, TRUE, $4)
+                 RETURNING id",
+            )
+            .bind(salle_privee_id)
+            .bind(moderateur_id)
+            .bind(salle.max_participants.unwrap_or(50))
+            .bind(utilisateur_id)
+            .fetch_one(&mut *tx)
+            .await?
+        }
+    };
+
+    // INSERT du participant (idempotent — reconnexion possible).
+    let role = if utilisateur_id == moderateur_id {
+        "moderateur"
+    } else {
+        "participant"
+    };
+    sqlx::query(
+        "INSERT INTO afrolang.session_participant (session_id, utilisateur_id, role_session)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (session_id, utilisateur_id)
+         DO UPDATE SET quitte_at = NULL, rejoint_at = NOW()",
+    )
+    .bind(session_id)
+    .bind(utilisateur_id)
+    .bind(role)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    // Mettre à jour le pic de participants (hors transaction).
+    sqlx::query(
+        "UPDATE afrolang.session
+         SET nombre_participants_pic = GREATEST(
+                nombre_participants_pic,
+                (SELECT COUNT(*) FROM afrolang.session_participant
+                 WHERE session_id = $1 AND quitte_at IS NULL)
+             ), updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(session_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Générer le token LiveKit.
+    let (user_nom, user_prenom): (String, Option<String>) = sqlx::query_as(
+        "SELECT nom, prenom FROM iam.utilisateur WHERE id = $1",
+    )
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    let display_name = format!(
+        "{} {}",
+        user_prenom.as_deref().unwrap_or(""),
+        user_nom
+    )
+    .trim()
+    .to_string();
+    let room_name = format!("afrolang-{}", session_id);
+
+    let livekit_token = livekit_api::access_token::AccessToken::with_api_key(
+        &livekit_config.api_key,
+        &livekit_config.api_secret,
+    )
+    .with_identity(&utilisateur_id.to_string())
+    .with_name(&display_name)
+    .with_grants(livekit_api::access_token::VideoGrants {
+        room_join: true,
+        room: room_name.clone(),
+        can_publish: true,
+        can_subscribe: true,
+        can_publish_data: true,
+        ..Default::default()
+    })
+    .to_jwt()
+    .map_err(|e| ApiErreur::Validation(format!("Erreur génération token LiveKit : {}", e)))?;
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "rejoindre_session_salle_privee",
+        "afrolang",
+        "session",
+        Some(session_id),
+        None,
+        Some(serde_json::json!({
+            "salle_privee_id": salle_privee_id,
+            "role": role,
+        })),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(DemarrerRejoindreResponse {
+            session_id,
+            livekit_url: livekit_config.url.clone(),
+            livekit_token,
+            moderateur_id: Some(moderateur_id),
+        }),
+        error: None,
+    }))
+}
+
+/// POST /api/afrolang/salles/{salle_id}/sessions/demarrer-ou-rejoindre
+///
+/// US1 — Refonte 2026-04. Démarre une nouvelle session live si aucune
+/// n'est en cours dans la salle publique, sinon rejoint la session
+/// existante. Ouvert à n'importe quel utilisateur connecté (FR-005b) :
+/// le premier arrivé devient modérateur de session ; si un modérateur
+/// attitré arrive ensuite, `rejoindre_session` (endpoint compat)
+/// gère la reprise automatique côté legacy — ici on se limite au
+/// démarrage/jointure pour tenir SC-001 (≤ 3 s).
+pub async fn demarrer_ou_rejoindre_session_salle_publique(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+
+    let salle_id = chemin.into_inner();
+
+    // Vérifier que la salle publique existe et est active.
+    let salle_active: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM afrolang.salle
+                       WHERE id = $1 AND actif = TRUE AND deleted_at IS NULL)",
+    )
+    .bind(salle_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !salle_active {
+        return Err(ApiErreur::NonTrouve("Salle publique introuvable".into()));
+    }
+
+    // Transaction : garantir au plus UNE session en_cours par salle publique.
+    let mut tx = pool.begin().await?;
+
+    let session_existante: Option<(Uuid, Option<Uuid>)> = sqlx::query_as(
+        "SELECT id, moderateur_id FROM afrolang.session
+         WHERE salle_id = $1 AND etat = 'en_cours'
+         FOR UPDATE",
+    )
+    .bind(salle_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    let (session_id, moderateur_effectif_id, est_nouveau) = match session_existante {
+        Some((id, m)) => (id, m, false),
+        None => {
+            // Aucun live en cours : créer et démarrer immédiatement. Le
+            // créateur = modérateur initial (FR-005b).
+            let nouvelle_id: Uuid = sqlx::query_scalar(
+                "INSERT INTO afrolang.session
+                    (salle_id, etat, moderateur_id, demarre_at,
+                     max_participants, tableau_blanc_actif, cree_par)
+                 VALUES ($1, 'en_cours', $2, NOW(), $3, TRUE, $2)
+                 RETURNING id",
+            )
+            .bind(salle_id)
+            .bind(utilisateur_id)
+            .bind(50_i32)
+            .fetch_one(&mut *tx)
+            .await?;
+            (nouvelle_id, Some(utilisateur_id), true)
+        }
+    };
+
+    // INSERT participant (idempotent).
+    let role = if moderateur_effectif_id == Some(utilisateur_id) {
+        "moderateur"
+    } else {
+        "participant"
+    };
+    sqlx::query(
+        "INSERT INTO afrolang.session_participant (session_id, utilisateur_id, role_session)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (session_id, utilisateur_id)
+         DO UPDATE SET quitte_at = NULL, rejoint_at = NOW()",
+    )
+    .bind(session_id)
+    .bind(utilisateur_id)
+    .bind(role)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    // Pic de participants (hors transaction).
+    sqlx::query(
+        "UPDATE afrolang.session
+         SET nombre_participants_pic = GREATEST(
+                nombre_participants_pic,
+                (SELECT COUNT(*) FROM afrolang.session_participant
+                 WHERE session_id = $1 AND quitte_at IS NULL)
+             ), updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(session_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Générer le token LiveKit.
+    let (user_nom, user_prenom): (String, Option<String>) = sqlx::query_as(
+        "SELECT nom, prenom FROM iam.utilisateur WHERE id = $1",
+    )
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    let display_name = format!(
+        "{} {}",
+        user_prenom.as_deref().unwrap_or(""),
+        user_nom
+    )
+    .trim()
+    .to_string();
+    let room_name = format!("afrolang-{}", session_id);
+
+    let livekit_token = livekit_api::access_token::AccessToken::with_api_key(
+        &livekit_config.api_key,
+        &livekit_config.api_secret,
+    )
+    .with_identity(&utilisateur_id.to_string())
+    .with_name(&display_name)
+    .with_grants(livekit_api::access_token::VideoGrants {
+        room_join: true,
+        room: room_name.clone(),
+        can_publish: true,
+        can_subscribe: true,
+        can_publish_data: true,
+        ..Default::default()
+    })
+    .to_jwt()
+    .map_err(|e| ApiErreur::Validation(format!("Erreur génération token LiveKit : {}", e)))?;
+
+    let action = if est_nouveau {
+        "demarrer_session_salle_publique"
+    } else {
+        "rejoindre_session_salle_publique"
+    };
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        action,
+        "afrolang",
+        "session",
+        Some(session_id),
+        None,
+        Some(serde_json::json!({
+            "salle_id": salle_id,
+            "role": role,
+        })),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(DemarrerRejoindreResponse {
+            session_id,
+            livekit_url: livekit_config.url.clone(),
+            livekit_token,
+            moderateur_id: moderateur_effectif_id,
+        }),
+        error: None,
+    }))
+}
+
+/// PATCH /api/afrolang/salles-privees/{id}/code-acces
+///
+/// Met à jour le code d'accès (auteur uniquement). Hash before/after
+/// tracé dans l'audit — jamais les plaintexts.
+pub async fn modifier_code_acces_salle_privee(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<ModifierCodeAccesRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+
+    let salle_privee_id = chemin.into_inner();
+
+    valider_format_code_acces(body.nouveau_code_acces.as_str())?;
+
+    let actuel: Option<(Uuid, String, Option<chrono::DateTime<chrono::Utc>>)> = sqlx::query_as(
+        "SELECT cree_par, code_acces_hash, archivee_at
+         FROM afrolang.salle_privee
+         WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(salle_privee_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+    let (createur, ancien_hash, archivee_at) = actuel
+        .ok_or_else(|| ApiErreur::NonTrouve("Salle privée inexistante".into()))?;
+
+    if createur != utilisateur_id {
+        return Err(ApiErreur::AccesInterdit(
+            "Seul le créateur peut modifier le code d'accès".into(),
+        ));
+    }
+    if archivee_at.is_some() {
+        return Err(ApiErreur::Validation("La salle privée est archivée".into()));
+    }
+
+    let nouveau_hash = hasher_code_acces(body.nouveau_code_acces.as_str())?;
+
+    sqlx::query(
+        "UPDATE afrolang.salle_privee
+         SET code_acces_hash = $2, updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(salle_privee_id)
+    .bind(&nouveau_hash)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Audit : on ne trace JAMAIS le plaintext, seulement les hashes
+    // (pour permettre la reconstitution d'historique sans fuite).
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "modifier_code_salle_privee",
+        "afrolang",
+        "salle_privee",
+        Some(salle_privee_id),
+        Some(serde_json::json!({ "code_acces_hash": ancien_hash })),
+        Some(serde_json::json!({ "code_acces_hash": nouveau_hash })),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::NoContent().finish())
+}
+
+/// POST /api/afrolang/salles-privees/{id}/archiver
+///
+/// Archive la salle privée (auteur uniquement). Si une session est en cours,
+/// elle est terminée. L'archivage libère le verrou d'unicité
+/// (salle_id, cree_par) → l'utilisateur peut en recréer une.
+pub async fn archiver_salle_privee_par_auteur(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+
+    let salle_privee_id = chemin.into_inner();
+
+    let mut tx = pool.begin().await?;
+
+    let salle: Option<(Uuid, Option<chrono::DateTime<chrono::Utc>>)> = sqlx::query_as(
+        "SELECT cree_par, archivee_at
+         FROM afrolang.salle_privee
+         WHERE id = $1 AND deleted_at IS NULL
+         FOR UPDATE",
+    )
+    .bind(salle_privee_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    let (createur, archivee_at) = salle
+        .ok_or_else(|| ApiErreur::NonTrouve("Salle privée inexistante".into()))?;
+
+    if createur != utilisateur_id {
+        return Err(ApiErreur::AccesInterdit(
+            "Seul le créateur peut archiver cette salle".into(),
+        ));
+    }
+    if archivee_at.is_some() {
+        return Err(ApiErreur::Validation("Salle déjà archivée".into()));
+    }
+
+    // Archiver la salle.
+    sqlx::query(
+        "UPDATE afrolang.salle_privee
+         SET archivee_at = NOW(), updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(salle_privee_id)
+    .execute(&mut *tx)
+    .await?;
+
+    // Terminer la session en cours s'il y en a une.
+    sqlx::query(
+        "UPDATE afrolang.session
+         SET etat = 'terminee', termine_at = NOW(),
+             duree_secondes = EXTRACT(EPOCH FROM (NOW() - COALESCE(demarre_at, created_at)))::INT,
+             updated_at = NOW()
+         WHERE salle_privee_id = $1 AND etat = 'en_cours'",
+    )
+    .bind(salle_privee_id)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "archiver_salle_privee",
+        "afrolang",
+        "salle_privee",
+        Some(salle_privee_id),
+        Some(serde_json::json!({ "archivee_at": null })),
+        Some(serde_json::json!({ "archivee_at": "NOW()" })),
         audit::extraire_ip(&req).as_deref(),
         audit::extraire_user_agent(&req).as_deref(),
     )
