@@ -124,14 +124,14 @@ ALTER TABLE culture.membre_centre
     ADD CONSTRAINT fk_membre_centre_utilisateur
     FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
 
--- ── afrolang → iam ─────────────────────────────────────────────────────
+-- ── afrolang → iam / country_profile / shared (feature 005) ────────────
 ALTER TABLE afrolang.salle
     ADD CONSTRAINT fk_afrolang_salle_cree_par
     FOREIGN KEY (cree_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
 
 ALTER TABLE afrolang.salle
-    ADD CONSTRAINT fk_afrolang_salle_moderateur
-    FOREIGN KEY (moderateur_id) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
+    ADD CONSTRAINT fk_afrolang_salle_groupe_ethnique
+    FOREIGN KEY (groupe_ethnique_id) REFERENCES country_profile.groupe_ethnique(id) ON DELETE RESTRICT;
 
 ALTER TABLE afrolang.salle_privee
     ADD CONSTRAINT fk_afrolang_privee_cree_par
@@ -148,6 +148,34 @@ ALTER TABLE afrolang.session
 ALTER TABLE afrolang.session_participant
     ADD CONSTRAINT fk_afrolang_participant_user
     FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
+
+-- Modérateurs Afrolang attitrés (salles publiques uniquement)
+ALTER TABLE afrolang.salle_moderateur
+    ADD CONSTRAINT fk_afrolang_moderateur_user
+    FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
+
+ALTER TABLE afrolang.salle_moderateur
+    ADD CONSTRAINT fk_afrolang_moderateur_designe_par
+    FOREIGN KEY (designe_par) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
+
+-- Tentatives de saisie du code secret (refonte : rate limit)
+ALTER TABLE afrolang.tentative_code_acces
+    ADD CONSTRAINT fk_afrolang_tentative_user
+    FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
+
+-- Ressources de salle publique
+ALTER TABLE afrolang.ressource_salle
+    ADD CONSTRAINT fk_afrolang_ressource_ajoute_par
+    FOREIGN KEY (ajoute_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
+
+ALTER TABLE afrolang.ressource_salle
+    ADD CONSTRAINT fk_afrolang_ressource_valide_par
+    FOREIGN KEY (valide_par) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
+
+-- Messages de session
+ALTER TABLE afrolang.message_session
+    ADD CONSTRAINT fk_afrolang_message_auteur
+    FOREIGN KEY (auteur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
 
 ALTER TABLE culture.codimoi
     ADD CONSTRAINT fk_codimoi_pays

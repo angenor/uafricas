@@ -4,28 +4,78 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 // ══════════════════════════════════════════════════════════════════════════
+// Enums (feature 005 — conservés après refonte 001-afrolang-salles-refonte)
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Les enums `EtatProposition`, `MotifSallePrivee`, `VisibiliteSallePrivee`,
+// `TypeAdhesion`, `EtatAdhesion` ont été supprimés (tables/types SQL retirés).
+
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type, Serialize, Deserialize)]
+#[sqlx(type_name = "afrolang.type_ressource", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum TypeRessource {
+    Fichier,
+    LienExterne,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type, Serialize, Deserialize)]
+#[sqlx(type_name = "afrolang.etat_ressource", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum EtatRessource {
+    Publiee,
+    EnAttenteValidation,
+    Refusee,
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // Constantes SQL
 // ══════════════════════════════════════════════════════════════════════════
 
-/// Colonnes de base pour afrolang.salle
+/// Colonnes de base pour afrolang.salle (feature 005 : plus de moderateur_id
+/// direct ; remplacé par la table salle_moderateur).
 pub const SALLE_COLONNES: &str =
     "s.id, s.titre, s.slug, s.description, s.image_couverture_url,
-     s.langue_cible, s.moderateur_id, s.actif, s.cree_par,
-     s.created_at, s.updated_at";
+     s.langue_cible, s.langue_code, s.alphabet, s.dictionnaire_url,
+     s.groupe_ethnique_id, s.actif, s.cree_par,
+     s.created_at, s.updated_at, s.deleted_at";
 
-/// Colonnes de base pour afrolang.salle_privee (inclut code_acces pour usage interne)
+/// Colonnes de base pour afrolang.salle_privee (refonte 2026-04)
+///
+/// Attention : `code_acces_hash` est inclus pour les chargements serveur
+/// (vérification du code) mais ne DOIT JAMAIS être exposé dans un DTO public.
 pub const SALLE_PRIVEE_COLONNES: &str =
-    "sp.id, sp.salle_id, sp.titre, sp.description, sp.code_acces,
-     sp.image_couverture_url, sp.max_participants, sp.actif, sp.cree_par,
-     sp.created_at, sp.updated_at";
+    "sp.id, sp.salle_id, sp.titre, sp.description, sp.code_acces_hash,
+     sp.image_couverture_url, sp.max_participants,
+     sp.archivee_at, sp.actif, sp.cree_par,
+     sp.created_at, sp.updated_at, sp.deleted_at";
 
-/// Colonnes de base pour afrolang.session (cast enum → text)
+/// Colonnes de base pour afrolang.session
+/// `salle_privee_id` et `salle_id` sont exclusifs (XOR via CHECK ck_session_contexte)
 pub const SESSION_COLONNES: &str =
-    "ses.id, ses.salle_privee_id, ses.titre, ses.etat::TEXT,
+    "ses.id, ses.salle_privee_id, ses.salle_id, ses.titre, ses.etat::TEXT,
      ses.moderateur_id, ses.date_debut_prevue, ses.demarre_at,
      ses.termine_at, ses.duree_secondes, ses.max_participants,
      ses.nombre_participants_pic, ses.tableau_blanc_actif,
      ses.noeud_id, ses.cree_par, ses.created_at, ses.updated_at";
+
+/// Colonnes de base pour afrolang.salle_moderateur
+pub const SALLE_MODERATEUR_COLONNES: &str =
+    "sm.id, sm.salle_id, sm.utilisateur_id, sm.designe_par,
+     sm.designe_at, sm.disponibilite, sm.actif, sm.retire_at,
+     sm.created_at, sm.updated_at";
+
+/// Colonnes de base pour afrolang.ressource_salle
+pub const RESSOURCE_SALLE_COLONNES: &str =
+    "rs.id, rs.salle_id, rs.titre, rs.description,
+     rs.type::TEXT AS type_ressource, rs.fichier_url, rs.lien_url,
+     rs.etat::TEXT AS etat_ressource, rs.motif_refus,
+     rs.ajoute_par, rs.valide_par, rs.valide_at,
+     rs.created_at, rs.updated_at, rs.deleted_at";
+
+/// Colonnes de base pour afrolang.message_session
+pub const MESSAGE_SESSION_COLONNES: &str =
+    "ms.id, ms.session_id, ms.auteur_id, ms.contenu,
+     ms.created_at, ms.deleted_at";
 
 // ══════════════════════════════════════════════════════════════════════════
 // Structs FromRow
@@ -39,38 +89,53 @@ pub struct SalleRow {
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub langue_cible: Option<String>,
-    pub moderateur_id: Option<Uuid>,
+    pub langue_code: Option<String>,
+    pub alphabet: Option<String>,
+    pub dictionnaire_url: Option<String>,
+    pub groupe_ethnique_id: Uuid,
     pub actif: bool,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
     // Champs calcules (sous-requetes)
     #[sqlx(default)]
     pub nombre_salles_privees: Option<i64>,
     #[sqlx(default)]
     pub sessions_en_cours: Option<i64>,
-    // JOINs moderateur
     #[sqlx(default)]
-    pub moderateur_nom: Option<String>,
+    pub nombre_moderateurs_attitres: Option<i64>,
     #[sqlx(default)]
-    pub moderateur_prenom: Option<String>,
+    pub ressources_count: Option<i64>,
+    // JOIN groupe_ethnique + pays
     #[sqlx(default)]
-    pub moderateur_photo: Option<String>,
+    pub groupe_ethnique_nom: Option<String>,
+    #[sqlx(default)]
+    pub fiche_pays_id: Option<Uuid>,
+    #[sqlx(default)]
+    pub pays_nom: Option<String>,
 }
 
+/// Ligne `afrolang.salle_privee` après refonte 2026-04.
+///
+/// `code_acces_hash` est chargé uniquement pour la vérification serveur
+/// (endpoints `verifier-code` et modération du code). Ne jamais l'injecter
+/// dans une réponse publique.
 #[derive(Debug, FromRow)]
 pub struct SallePriveeRow {
     pub id: Uuid,
     pub salle_id: Uuid,
     pub titre: String,
     pub description: Option<String>,
-    pub code_acces: Option<String>,
+    pub code_acces_hash: String,
     pub image_couverture_url: Option<String>,
     pub max_participants: Option<i32>,
+    pub archivee_at: Option<DateTime<Utc>>,
     pub actif: bool,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
     // JOINs createur
     #[sqlx(default)]
     pub createur_nom: Option<String>,
@@ -91,7 +156,8 @@ pub struct SallePriveeRow {
 #[derive(Debug, FromRow)]
 pub struct SessionRow {
     pub id: Uuid,
-    pub salle_privee_id: Uuid,
+    pub salle_privee_id: Option<Uuid>,
+    pub salle_id: Option<Uuid>,
     pub titre: Option<String>,
     pub etat: String,
     pub moderateur_id: Option<Uuid>,
@@ -126,9 +192,120 @@ pub struct SessionParticipantRow {
     pub photo_url: Option<String>,
 }
 
+#[derive(Debug, FromRow)]
+pub struct SalleModerateurRow {
+    pub id: Uuid,
+    pub salle_id: Uuid,
+    pub utilisateur_id: Uuid,
+    pub designe_par: Uuid,
+    pub designe_at: DateTime<Utc>,
+    pub disponibilite: Option<String>,
+    pub actif: bool,
+    pub retire_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    // JOINs utilisateur
+    #[sqlx(default)]
+    pub utilisateur_nom: Option<String>,
+    #[sqlx(default)]
+    pub utilisateur_prenom: Option<String>,
+    #[sqlx(default)]
+    pub utilisateur_photo: Option<String>,
+    #[sqlx(default)]
+    pub utilisateur_email: Option<String>,
+}
+
+#[derive(Debug, FromRow)]
+pub struct RessourceSalleRow {
+    pub id: Uuid,
+    pub salle_id: Uuid,
+    pub titre: String,
+    pub description: Option<String>,
+    pub type_ressource: String,
+    pub fichier_url: Option<String>,
+    pub lien_url: Option<String>,
+    pub etat_ressource: String,
+    pub motif_refus: Option<String>,
+    pub ajoute_par: Uuid,
+    pub valide_par: Option<Uuid>,
+    pub valide_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
+    // JOINs auteur
+    #[sqlx(default)]
+    pub auteur_nom: Option<String>,
+    #[sqlx(default)]
+    pub auteur_prenom: Option<String>,
+}
+
+#[derive(Debug, FromRow)]
+pub struct MessageSessionRow {
+    pub id: Uuid,
+    pub session_id: Uuid,
+    pub auteur_id: Uuid,
+    pub contenu: String,
+    pub created_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
+    // JOINs auteur
+    #[sqlx(default)]
+    pub auteur_nom: Option<String>,
+    #[sqlx(default)]
+    pub auteur_prenom: Option<String>,
+    #[sqlx(default)]
+    pub auteur_photo: Option<String>,
+}
+
+#[derive(Debug, FromRow)]
+pub struct GroupeEthniqueResume {
+    pub id: Uuid,
+    pub nom: String,
+    pub fiche_pays_id: Uuid,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+    pub salle_id: Option<Uuid>,
+    pub salle_slug: Option<String>,
+    pub salle_active: Option<bool>,
+    pub proposition_en_attente: Option<bool>,
+}
+
+/// Colonnes pour le résumé « groupe ethnique + salle » (T023)
+///
+/// Le concept de proposition publique a été supprimé (refonte 2026-04) :
+/// la création d'une salle publique est désormais réservée aux admins.
+/// La colonne `proposition_en_attente` reste dans le DTO pour compatibilité
+/// frontend mais est toujours `FALSE`.
+pub const GROUPE_ETHNIQUE_RESUME_COLONNES: &str =
+    "ge.id, ge.nom, ge.fiche_pays_id,
+     fp.pays_id AS pays_id, p.nom AS pays_nom,
+     s.id AS salle_id, s.slug AS salle_slug,
+     (s.id IS NOT NULL AND s.actif = TRUE) AS salle_active,
+     FALSE AS proposition_en_attente";
+
 // ══════════════════════════════════════════════════════════════════════════
 // DTOs Response (Serialize)
 // ══════════════════════════════════════════════════════════════════════════
+
+#[derive(Debug, Serialize)]
+pub struct GroupeEthniqueResumeResponse {
+    pub id: Uuid,
+    pub nom: String,
+    pub fiche_pays_id: Uuid,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+    pub salle_id: Option<Uuid>,
+    pub salle_slug: Option<String>,
+    pub salle_active: bool,
+    pub proposition_en_attente: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GroupeEthniqueLightResponse {
+    pub id: Uuid,
+    pub nom: String,
+    pub fiche_pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+}
 
 #[derive(Debug, Serialize)]
 pub struct SalleResponse {
@@ -138,9 +315,16 @@ pub struct SalleResponse {
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub langue_cible: Option<String>,
+    pub langue_code: Option<String>,
+    pub alphabet: Option<String>,
+    pub dictionnaire_url: Option<String>,
+    pub groupe_ethnique_id: Uuid,
+    pub groupe_ethnique: Option<GroupeEthniqueLightResponse>,
     pub actif: bool,
     pub nombre_salles_privees: i64,
     pub sessions_en_cours: i64,
+    pub nombre_moderateurs_attitres: i64,
+    pub ressources_count: i64,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -153,10 +337,16 @@ pub struct SalleDetailResponse {
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub langue_cible: Option<String>,
+    pub langue_code: Option<String>,
+    pub alphabet: Option<String>,
+    pub dictionnaire_url: Option<String>,
+    pub groupe_ethnique_id: Uuid,
+    pub groupe_ethnique: Option<GroupeEthniqueLightResponse>,
     pub actif: bool,
-    pub moderateur: Option<ModerateurResponse>,
+    pub moderateurs_attitres: Vec<ModerateurAttitreResponse>,
     pub nombre_salles_privees: i64,
     pub sessions_en_cours: i64,
+    pub ressources_count: i64,
     pub salles_privees: Vec<SallePriveeResponse>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -171,6 +361,25 @@ pub struct ModerateurResponse {
 }
 
 #[derive(Debug, Serialize)]
+pub struct ModerateurAttitreResponse {
+    pub id: Uuid,
+    pub salle_id: Uuid,
+    pub utilisateur_id: Uuid,
+    pub nom: Option<String>,
+    pub prenom: Option<String>,
+    pub photo_url: Option<String>,
+    pub email: Option<String>,
+    pub disponibilite: Option<String>,
+    pub designe_at: DateTime<Utc>,
+    pub actif: bool,
+}
+
+/// Réponse détaillée d'une salle privée (refonte 2026-04).
+///
+/// Ne contient jamais `code_acces_hash`. Toute salle privée est protégée par
+/// un code secret — le flag `est_protegee` est donc toujours vrai et a été
+/// supprimé du DTO.
+#[derive(Debug, Serialize)]
 pub struct SallePriveeResponse {
     pub id: Uuid,
     pub salle_id: Uuid,
@@ -178,7 +387,7 @@ pub struct SallePriveeResponse {
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub max_participants: Option<i32>,
-    pub est_protegee: bool,
+    pub archivee_at: Option<DateTime<Utc>>,
     pub actif: bool,
     pub createur: CreateurResponse,
     pub salle_titre: Option<String>,
@@ -204,7 +413,7 @@ pub struct SallePriveeDetailResponse {
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub max_participants: Option<i32>,
-    pub est_protegee: bool,
+    pub archivee_at: Option<DateTime<Utc>>,
     pub actif: bool,
     pub createur: CreateurResponse,
     pub salle_titre: Option<String>,
@@ -215,10 +424,29 @@ pub struct SallePriveeDetailResponse {
     pub updated_at: DateTime<Utc>,
 }
 
+/// DTO public strictement aligné sur le contrat API (endpoint 1 & 2).
+///
+/// Ce DTO n'expose que les champs nécessaires à l'affichage côté front et
+/// permet de signaler si l'utilisateur courant est l'auteur (pour le
+/// court-circuit du code secret — FR-014).
+#[derive(Debug, Serialize)]
+pub struct SallePriveeAPI {
+    pub id: Uuid,
+    pub salle_id: Uuid,
+    pub titre: String,
+    pub description: Option<String>,
+    pub auteur_id: Uuid,
+    pub auteur_nom: Option<String>,
+    pub session_en_cours: bool,
+    pub est_auteur: bool,
+    pub created_at: DateTime<Utc>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct SessionResponse {
     pub id: Uuid,
-    pub salle_privee_id: Uuid,
+    pub salle_privee_id: Option<Uuid>,
+    pub salle_id: Option<Uuid>,
     pub titre: Option<String>,
     pub etat: String,
     pub date_debut_prevue: Option<DateTime<Utc>>,
@@ -235,7 +463,8 @@ pub struct SessionResponse {
 #[derive(Debug, Serialize)]
 pub struct SessionDetailResponse {
     pub id: Uuid,
-    pub salle_privee_id: Uuid,
+    pub salle_privee_id: Option<Uuid>,
+    pub salle_id: Option<Uuid>,
     pub titre: Option<String>,
     pub etat: String,
     pub moderateur: Option<ModerateurResponse>,
@@ -283,8 +512,8 @@ pub struct SalleListeResponse {
 }
 
 #[derive(Debug, Serialize)]
-pub struct SallePriveeListeResponse {
-    pub salles_privees: Vec<SallePriveeResponse>,
+pub struct SessionListeResponse {
+    pub sessions: Vec<SessionResponse>,
     pub total: i64,
     pub page: i64,
     pub par_page: i64,
@@ -292,12 +521,48 @@ pub struct SallePriveeListeResponse {
 }
 
 #[derive(Debug, Serialize)]
-pub struct SessionListeResponse {
-    pub sessions: Vec<SessionResponse>,
+pub struct GroupeEthniqueListeResponse {
+    pub groupes: Vec<GroupeEthniqueResumeResponse>,
     pub total: i64,
-    pub page: i64,
     pub par_page: i64,
+    pub page: i64,
     pub total_pages: i64,
+}
+
+// ── Ressources ──────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct RessourceSalleResponse {
+    pub id: Uuid,
+    pub salle_id: Uuid,
+    pub titre: String,
+    pub description: Option<String>,
+    pub type_ressource: String,
+    pub fichier_url: Option<String>,
+    pub lien_url: Option<String>,
+    pub etat: String,
+    pub motif_refus: Option<String>,
+    pub ajoute_par: Uuid,
+    pub auteur_nom: Option<String>,
+    pub auteur_prenom: Option<String>,
+    pub valide_par: Option<Uuid>,
+    pub valide_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+// ── Messages de session ─────────────────────────────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct MessageSessionResponse {
+    pub id: Uuid,
+    pub session_id: Uuid,
+    pub auteur_id: Uuid,
+    pub auteur_nom: Option<String>,
+    pub auteur_prenom: Option<String>,
+    pub auteur_photo: Option<String>,
+    pub contenu: String,
+    pub created_at: DateTime<Utc>,
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -308,13 +573,8 @@ pub struct SessionListeResponse {
 pub struct SalleFiltres {
     pub recherche: Option<String>,
     pub langue: Option<String>,
-    pub page: Option<i64>,
-    pub par_page: Option<i64>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct SallePriveeFiltres {
-    pub recherche: Option<String>,
+    pub langue_code: Option<String>,
+    pub groupe_ethnique_id: Option<Uuid>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,
 }
@@ -327,11 +587,11 @@ pub struct SessionFiltres {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreerSallePriveeRequest {
-    pub titre: String,
-    pub description: Option<String>,
-    pub code_acces: Option<String>,
-    pub max_participants: Option<i32>,
+pub struct GroupeEthniqueFiltres {
+    pub q: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub page: Option<i64>,
+    pub par_page: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -339,14 +599,20 @@ pub struct ModifierSalleRequest {
     pub titre: Option<String>,
     pub description: Option<String>,
     pub langue_cible: Option<String>,
-    pub moderateur_id: Option<String>,
+    pub langue_code: Option<String>,
+    pub alphabet: Option<String>,
+    pub dictionnaire_url: Option<String>,
+    pub groupe_ethnique_id: Option<Uuid>,
 }
 
+/// Payload de modification d'une salle privée (auteur uniquement).
+///
+/// La modification du code d'accès passe par un endpoint dédié
+/// (`PATCH /code-acces`), jamais via ce payload.
 #[derive(Debug, Deserialize)]
 pub struct ModifierSallePriveeRequest {
     pub titre: Option<String>,
     pub description: Option<String>,
-    pub code_acces: Option<String>,
     pub max_participants: Option<i32>,
 }
 
@@ -358,9 +624,95 @@ pub struct CreerSessionRequest {
     pub tableau_blanc_actif: Option<bool>,
 }
 
+/// Requête de jointure d'une session publique (plus de code_acces depuis la
+/// refonte : les codes d'accès ne concernent que les salles privées et sont
+/// vérifiés via l'endpoint dédié `verifier-code`).
+#[derive(Debug, Deserialize, Default)]
+pub struct RejoindreRequest {}
+
+/// Requête de transfert du rôle de modérateur de session (US3)
 #[derive(Debug, Deserialize)]
-pub struct RejoindreRequest {
-    pub code_acces: Option<String>,
+pub struct TransfererModerationRequest {
+    pub destinataire_id: Uuid,
+}
+
+/// Modification de la limite de participants (FR-036)
+#[derive(Debug, Deserialize)]
+pub struct ModifierMaxParticipantsRequest {
+    pub max_participants: i32,
+}
+
+// ── Payloads refonte salles privées (001-afrolang-salles-refonte) ────────
+
+/// Payload de création d'une salle privée depuis l'API publique.
+///
+/// Tous les champs sont obligatoires sauf `description`. Le `code_acces` est
+/// transmis en clair (HTTPS) et immédiatement hashé côté serveur.
+#[derive(Debug, Deserialize)]
+pub struct CreerSallePriveePubliquePayload {
+    pub salle_id: Uuid,
+    pub titre: String,
+    pub description: Option<String>,
+    pub code_acces: String,
+}
+
+/// Payload de vérification d'un code d'accès (endpoint 3).
+#[derive(Debug, Deserialize)]
+pub struct VerifierCodeAccesRequest {
+    pub code_acces: String,
+}
+
+/// Payload de modification du code d'accès par l'auteur (endpoint 5).
+#[derive(Debug, Deserialize)]
+pub struct ModifierCodeAccesRequest {
+    pub nouveau_code_acces: String,
+}
+
+/// Réponse de l'endpoint `verifier-code` : remet un jeton d'accès éphémère
+/// à présenter à l'endpoint `sessions/demarrer-ou-rejoindre`.
+#[derive(Debug, Serialize)]
+pub struct VerifierCodeAccesResponse {
+    pub salle_privee_id: Uuid,
+    pub acces_jeton: String,
+    pub expires_at: DateTime<Utc>,
+}
+
+/// Réponse de l'endpoint `demarrer-ou-rejoindre` : informations LiveKit.
+#[derive(Debug, Serialize)]
+pub struct DemarrerRejoindreResponse {
+    pub session_id: Uuid,
+    pub livekit_url: String,
+    pub livekit_token: String,
+    pub moderateur_id: Option<Uuid>,
+}
+
+// ── US6 : Messagerie et ressources ───────────────────────────────────────
+
+/// Création d'un message de session
+#[derive(Debug, Deserialize)]
+pub struct CreerMessageRequest {
+    pub contenu: String,
+}
+
+/// Filtres d'historique de messages
+#[derive(Debug, Deserialize)]
+pub struct MessagesFiltres {
+    pub since: Option<DateTime<Utc>>,
+    pub limit: Option<i64>,
+}
+
+/// Soumission d'un lien externe par un membre (ressource modérée)
+#[derive(Debug, Deserialize)]
+pub struct CreerRessourceLienRequest {
+    pub titre: String,
+    pub description: Option<String>,
+    pub lien_url: String,
+}
+
+/// Motif de refus d'un lien externe (admin/modérateur attitré)
+#[derive(Debug, Deserialize)]
+pub struct RefuserLienRequest {
+    pub motif_refus: String,
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -368,6 +720,17 @@ pub struct RejoindreRequest {
 // ══════════════════════════════════════════════════════════════════════════
 
 impl SalleRow {
+    pub fn to_groupe_ethnique_light(&self) -> Option<GroupeEthniqueLightResponse> {
+        self.groupe_ethnique_nom
+            .as_ref()
+            .map(|nom| GroupeEthniqueLightResponse {
+                id: self.groupe_ethnique_id,
+                nom: nom.clone(),
+                fiche_pays_id: self.fiche_pays_id,
+                pays_nom: self.pays_nom.clone(),
+            })
+    }
+
     pub fn to_response(&self) -> SalleResponse {
         SalleResponse {
             id: self.id,
@@ -376,25 +739,25 @@ impl SalleRow {
             description: self.description.clone(),
             image_couverture_url: self.image_couverture_url.clone(),
             langue_cible: self.langue_cible.clone(),
+            langue_code: self.langue_code.clone(),
+            alphabet: self.alphabet.clone(),
+            dictionnaire_url: self.dictionnaire_url.clone(),
+            groupe_ethnique_id: self.groupe_ethnique_id,
+            groupe_ethnique: self.to_groupe_ethnique_light(),
             actif: self.actif,
             nombre_salles_privees: self.nombre_salles_privees.unwrap_or(0),
             sessions_en_cours: self.sessions_en_cours.unwrap_or(0),
+            nombre_moderateurs_attitres: self.nombre_moderateurs_attitres.unwrap_or(0),
+            ressources_count: self.ressources_count.unwrap_or(0),
             created_at: self.created_at,
             updated_at: self.updated_at,
         }
     }
-
-    pub fn to_moderateur(&self) -> Option<ModerateurResponse> {
-        self.moderateur_id.map(|id| ModerateurResponse {
-            id,
-            nom: self.moderateur_nom.clone().unwrap_or_default(),
-            prenom: self.moderateur_prenom.clone(),
-            photo_url: self.moderateur_photo.clone(),
-        })
-    }
 }
 
 impl SallePriveeRow {
+    /// Conversion en DTO legacy (utilisé par les endpoints admin / détails).
+    /// N'expose jamais `code_acces_hash`.
     pub fn to_response(&self) -> SallePriveeResponse {
         SallePriveeResponse {
             id: self.id,
@@ -403,7 +766,7 @@ impl SallePriveeRow {
             description: self.description.clone(),
             image_couverture_url: self.image_couverture_url.clone(),
             max_participants: self.max_participants,
-            est_protegee: self.code_acces.is_some(),
+            archivee_at: self.archivee_at,
             actif: self.actif,
             createur: CreateurResponse {
                 id: self.cree_par,
@@ -418,6 +781,30 @@ impl SallePriveeRow {
             updated_at: self.updated_at,
         }
     }
+
+    /// Conversion en DTO public aligné sur le contrat (refonte 2026-04).
+    /// Le champ `est_auteur` est calculé par rapport à l'utilisateur courant
+    /// pour permettre au frontend de court-circuiter la saisie du code
+    /// (FR-014). N'expose jamais `code_acces_hash`.
+    pub fn to_api(&self, utilisateur_courant: Uuid) -> SallePriveeAPI {
+        let auteur_nom = match (&self.createur_prenom, &self.createur_nom) {
+            (Some(p), Some(n)) => Some(format!("{} {}", p, n)),
+            (Some(p), None) => Some(p.clone()),
+            (None, Some(n)) => Some(n.clone()),
+            (None, None) => None,
+        };
+        SallePriveeAPI {
+            id: self.id,
+            salle_id: self.salle_id,
+            titre: self.titre.clone(),
+            description: self.description.clone(),
+            auteur_id: self.cree_par,
+            auteur_nom,
+            session_en_cours: self.session_en_cours.unwrap_or(false),
+            est_auteur: self.cree_par == utilisateur_courant,
+            created_at: self.created_at,
+        }
+    }
 }
 
 impl SessionRow {
@@ -425,6 +812,7 @@ impl SessionRow {
         SessionResponse {
             id: self.id,
             salle_privee_id: self.salle_privee_id,
+            salle_id: self.salle_id,
             titre: self.titre.clone(),
             etat: self.etat.clone(),
             date_debut_prevue: self.date_debut_prevue,
@@ -452,6 +840,77 @@ impl SessionParticipantRow {
             rejoint_at: self.rejoint_at,
             quitte_at: self.quitte_at,
             duree_secondes: self.duree_secondes,
+        }
+    }
+}
+
+impl GroupeEthniqueResume {
+    pub fn to_response(&self) -> GroupeEthniqueResumeResponse {
+        GroupeEthniqueResumeResponse {
+            id: self.id,
+            nom: self.nom.clone(),
+            fiche_pays_id: self.fiche_pays_id,
+            pays_id: self.pays_id,
+            pays_nom: self.pays_nom.clone(),
+            salle_id: self.salle_id,
+            salle_slug: self.salle_slug.clone(),
+            salle_active: self.salle_active.unwrap_or(false),
+            proposition_en_attente: self.proposition_en_attente.unwrap_or(false),
+        }
+    }
+}
+
+impl SalleModerateurRow {
+    pub fn to_response(&self) -> ModerateurAttitreResponse {
+        ModerateurAttitreResponse {
+            id: self.id,
+            salle_id: self.salle_id,
+            utilisateur_id: self.utilisateur_id,
+            nom: self.utilisateur_nom.clone(),
+            prenom: self.utilisateur_prenom.clone(),
+            photo_url: self.utilisateur_photo.clone(),
+            email: self.utilisateur_email.clone(),
+            disponibilite: self.disponibilite.clone(),
+            designe_at: self.designe_at,
+            actif: self.actif,
+        }
+    }
+}
+
+impl RessourceSalleRow {
+    pub fn to_response(&self) -> RessourceSalleResponse {
+        RessourceSalleResponse {
+            id: self.id,
+            salle_id: self.salle_id,
+            titre: self.titre.clone(),
+            description: self.description.clone(),
+            type_ressource: self.type_ressource.clone(),
+            fichier_url: self.fichier_url.clone(),
+            lien_url: self.lien_url.clone(),
+            etat: self.etat_ressource.clone(),
+            motif_refus: self.motif_refus.clone(),
+            ajoute_par: self.ajoute_par,
+            auteur_nom: self.auteur_nom.clone(),
+            auteur_prenom: self.auteur_prenom.clone(),
+            valide_par: self.valide_par,
+            valide_at: self.valide_at,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+}
+
+impl MessageSessionRow {
+    pub fn to_response(&self) -> MessageSessionResponse {
+        MessageSessionResponse {
+            id: self.id,
+            session_id: self.session_id,
+            auteur_id: self.auteur_id,
+            auteur_nom: self.auteur_nom.clone(),
+            auteur_prenom: self.auteur_prenom.clone(),
+            auteur_photo: self.auteur_photo.clone(),
+            contenu: self.contenu.clone(),
+            created_at: self.created_at,
         }
     }
 }

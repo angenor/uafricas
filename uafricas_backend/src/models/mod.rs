@@ -24,3 +24,4 @@ pub mod utilisateur;
 pub mod matching;
 pub mod collaboration;
 pub mod notification;
+pub mod vidafrica;

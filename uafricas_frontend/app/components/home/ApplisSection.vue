@@ -194,7 +194,7 @@ const applis: Appli[] = [
     description: 'Innovations africaines',
   },
   {
-    label: 'Rootsconnect',
+    label: 'Africonnect',
     to: '/retrouve-amis',
     icon: 'fa-solid fa-users',
     bgClass: 'bg-amber-700',
@@ -202,7 +202,7 @@ const applis: Appli[] = [
     description: 'Retrouvez vos proches',
   },
   {
-    label: 'FamilyTree',
+    label: 'Rootstree',
     to: '/arbre-genealogique',
     icon: 'fa-solid fa-tree',
     bgClass: 'bg-[var(--color-custom-green)]',

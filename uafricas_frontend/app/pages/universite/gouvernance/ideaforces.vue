@@ -9,38 +9,16 @@
       <div class="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5 animate-pulse" style="animation-delay: 1s;"></div>
 
       <div class="absolute inset-0 flex flex-col items-center justify-center px-4">
-        <div class="flex items-center gap-3 mb-4 animate-fadeInUp">
-          <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            <font-awesome-icon :icon="['fas', 'lightbulb']" class="text-white text-xl" />
-          </div>
-          <span class="text-white/60 text-sm font-semibold tracking-widest uppercase">Gouvernance Citoyenne</span>
-        </div>
+        
         <h1 class="text-white text-5xl md:text-6xl font-display font-bold mb-4 animate-fadeInUp tracking-tight">
           IdeaForces
         </h1>
         <div class="h-1 w-24 bg-linear-to-r from-yellow-200 to-white rounded-full mb-4 animate-expandWidth"></div>
         <p class="text-white/80 text-lg md:text-xl text-center max-w-2xl animate-fadeInUp animation-delay-200">
-          Propositions d'idées et forces positives pour l'Afrique
+          Partager des idées et des orientations sur des enjeux de développement
         </p>
 
-        <!-- Stats Hero -->
-        <div class="flex flex-wrap items-center justify-center gap-4 mt-8 animate-fadeInUp animation-delay-400">
-          <div class="flex items-center bg-white/15 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/20">
-            <font-awesome-icon :icon="['fas', 'lightbulb']" class="text-yellow-200 mr-2" />
-            <span class="text-white font-bold text-lg">{{ contributions.length }}</span>
-            <span class="text-white/70 ml-2 text-sm">idées</span>
-          </div>
-          <div class="flex items-center bg-white/15 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/20">
-            <font-awesome-icon :icon="['fas', 'earth-africa']" class="text-yellow-200 mr-2" />
-            <span class="text-white font-bold text-lg">{{ paysDisponibles.length }}</span>
-            <span class="text-white/70 ml-2 text-sm">pays concernés</span>
-          </div>
-          <div class="flex items-center bg-white/15 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/20">
-            <font-awesome-icon :icon="['fas', 'thumbs-up']" class="text-yellow-200 mr-2" />
-            <span class="text-white font-bold text-lg">{{ totalSoutiens }}</span>
-            <span class="text-white/70 ml-2 text-sm">soutiens</span>
-          </div>
-        </div>
+      
       </div>
     </div>
 

@@ -4,6 +4,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 // ── Colonnes SQL ──────────────────────────────────────────────
+// Refonte 2026-04 : on n'expose JAMAIS `code_acces_hash` côté admin (IV).
 
 pub const ADMIN_SALLE_PRIVEE_LISTE_COLONNES: &str =
     "sp.id, sp.titre, sp.salle_id, sp.max_participants, sp.actif, sp.created_at,
@@ -12,8 +13,8 @@ pub const ADMIN_SALLE_PRIVEE_LISTE_COLONNES: &str =
      (SELECT COUNT(*) FROM afrolang.session se WHERE se.salle_privee_id = sp.id AND 1=1) AS nombre_sessions";
 
 pub const ADMIN_SALLE_PRIVEE_DETAIL_COLONNES: &str =
-    "sp.id, sp.titre, sp.description, sp.salle_id, sp.code_acces,
-     sp.image_couverture_url, sp.max_participants, sp.actif,
+    "sp.id, sp.titre, sp.description, sp.salle_id,
+     sp.image_couverture_url, sp.max_participants, sp.actif, sp.archivee_at,
      sp.cree_par, sp.created_at, sp.updated_at,
      s.titre AS salle_titre, s.langue_cible AS salle_langue,
      u.nom AS createur_nom, u.prenom AS createur_prenom,
@@ -48,10 +49,11 @@ pub struct AdminSallePriveeDetailRow {
     pub titre: String,
     pub description: Option<String>,
     pub salle_id: Uuid,
-    pub code_acces: Option<String>,
     pub image_couverture_url: Option<String>,
     pub max_participants: Option<i32>,
     pub actif: bool,
+    pub archivee_at: Option<DateTime<Utc>>,
+    #[allow(dead_code)]
     pub cree_par: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -70,10 +72,10 @@ pub struct AdminSallePriveeDetailResponse {
     pub salle_id: Uuid,
     pub salle_titre: Option<String>,
     pub salle_langue: Option<String>,
-    pub code_acces: Option<String>,
     pub image_couverture_url: Option<String>,
     pub max_participants: Option<i32>,
     pub actif: bool,
+    pub archivee_at: Option<DateTime<Utc>>,
     pub cree_par_nom: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -93,10 +95,10 @@ impl AdminSallePriveeDetailRow {
             salle_id: self.salle_id,
             salle_titre: self.salle_titre,
             salle_langue: self.salle_langue,
-            code_acces: self.code_acces,
             image_couverture_url: self.image_couverture_url,
             max_participants: self.max_participants,
             actif: self.actif,
+            archivee_at: self.archivee_at,
             cree_par_nom,
             created_at: self.created_at,
             updated_at: self.updated_at,

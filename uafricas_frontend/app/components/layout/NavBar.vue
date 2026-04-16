@@ -382,7 +382,7 @@ const menus: NavMenu[] = [
       { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
       { label: 'Afroculture', to: '/africain-afro-americain', description: 'Échanges culturels Afrique-diaspora', icon: 'fa-solid fa-earth-africa' },
       { label: 'Africalive', to: '/evenements/liste', description: 'Événements et rencontres en direct', icon: 'fa-solid fa-calendar-days' },
-      { label: 'Rootsconnect', to: '/retrouve-amis', description: 'Retrouvez vos proches perdus de vue', icon: 'fa-solid fa-users' },
+      { label: 'Africonnect', to: '/retrouve-amis', description: 'Retrouvez vos proches perdus de vue', icon: 'fa-solid fa-users' },
     ]
   },
   {
@@ -426,20 +426,7 @@ const menus: NavMenu[] = [
       { label: 'INUDA', to: '/universite/inuda', description: 'Institut numérique universitaire d\'Afrique', icon: 'fa-solid fa-graduation-cap' },
       { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
       { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Sciences humaines et sociales', icon: 'fa-solid fa-chalkboard-user' },
-    ]
-  },
-  {
-    id: 'africantives',
-    label: 'Africantives',
-    subtitle: 'Innovation & projets',
-    description: 'Découvrir et soutenir les innovations et projets porteurs du continent',
-    to: '/africantives',
-    gradient: 'bg-linear-to-br from-rose-600 to-pink-800',
-    image: '/images/fiche-opportunite.jpg',
-    items: [
-      { label: 'Initiatives', to: '/africantives', description: 'Initiatives et startups africaines', icon: 'fa-solid fa-rocket' },
-      { label: 'Soumettre un projet', to: '/soumettre-projet', description: 'Proposez votre projet innovant', icon: 'fa-solid fa-paper-plane' },
-      { label: 'Financer un projet', to: '/financer-projet', description: 'Investissez dans l\'innovation africaine', icon: 'fa-solid fa-hand-holding-dollar' },
+      { label: 'Africantives', to: '/africantives', description: 'Innovations et projets porteurs du continent', icon: 'fa-solid fa-rocket' },
     ]
   },
   {
@@ -454,6 +441,7 @@ const menus: NavMenu[] = [
     items: [
       { label: 'Télé', to: '/tele', description: 'Chaînes de télévision africaines', icon: 'fa-solid fa-tv' },
       { label: 'Radio', to: '/radios', description: 'Stations radio du continent', icon: 'fa-solid fa-radio' },
+      { label: 'Vidafrica', to: '/vidafrica', description: 'Vidéos sous-titrées multilingues karaoké', icon: 'fa-solid fa-closed-captioning' },
       { label: 'Africalive', to: '/evenements/liste', description: 'Événements et directs en streaming', icon: 'fa-solid fa-video' },
     ]
   },

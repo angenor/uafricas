@@ -48,7 +48,8 @@ Handlers dans `src/handlers/` (un fichier/domaine). Pattern: CRUD + filtres/pagi
 | Domaine | Routes | Endpoints principaux |
 |---------|--------|---------------------|
 | **Auth** | auth | inscription/connexion/JWT/refresh |
-| **Public** | livres, centres-culturels, codimoi, evenements, gouvernance, annonces/marché, television | CRUD + filtres |
+| **Public** | livres, centres-culturels, codimoi, evenements, gouvernance, annonces/marché, television, vidafrica | CRUD + filtres |
+| **Admin Vidafrica** | ~18 | vidéos (CRUD+multipart+état), pistes sous-titres (CRUD), segments (CRUD+réordonnement), timings mot (batch enregistrement/suppression) |
 | **Admin IAM** | ~30 | utilisateurs (CRUD+état+rôles+spécialités+permissions), organisations, partenariats, roles (CRUD+permissions), permissions |
 | **Admin Référentiels** | ~28 | pays (+continent), domaines, categories (+contexte/parent/enfants), tags, medias, specialites |
 | **Admin Programmes** | ~10 | programmes (CRUD+état+candidatures), candidatures (liste/détail/statut) |
@@ -60,7 +61,7 @@ Handlers dans `src/handlers/` (un fichier/domaine). Pattern: CRUD + filtres/pagi
 | **Admin Audit** | 2 | liste paginée (filtres action/user/table/date/IP) + détail (before/after JSONB) |
 | **Admin Profils Pays** | ~43 | fiches pays + 8 sous-entités (regions, groupes-ethniques, alliances, contes, sites-touristiques, secteurs, saisons, liens-interethniques) + modération contributions |
 
-**Fichiers admin** : handlers `src/handlers/admin/` et models `src/models/admin/` — sous-modules: utilisateurs, organisations, partenariats, roles, pays, domaines, categories, tags, medias, specialites, programmes, candidatures, annonces, annonces_favoris, innovations, projets_admin, africantives_admin, centres_culturels, programmations, codimoi_admin, gouvernance, radio_tele, evenements, mooc, livres, audit, profils_pays.
+**Fichiers admin** : handlers `src/handlers/admin/` et models `src/models/admin/` — sous-modules: utilisateurs, organisations, partenariats, roles, pays, domaines, categories, tags, medias, specialites, programmes, candidatures, annonces, annonces_favoris, innovations, projets_admin, africantives_admin, centres_culturels, programmations, codimoi_admin, gouvernance, radio_tele, evenements, mooc, livres, audit, profils_pays, vidafrica.
 
 **Services** : `src/services/` — audit.rs (`log_action` non-bloquant, `extraire_ip`, `extraire_user_agent`). ~100 mutations instrumentées auto.
 
@@ -71,7 +72,7 @@ JWT HS256 access (15min) + refresh (7j, SHA-256 hashé dans `iam.refresh_token`)
 actix-web 4, actix-cors, actix-multipart, actix-files, sqlx (PostgreSQL), uuid, chrono, dotenvy, serde, sanitize-filename, bcrypt, jsonwebtoken, sha2, rand, livekit-api, lettre.
 
 ### Upload
-Stockage local `./uploads/couvertures/` et `./uploads/documents/`, servis via actix-files sur `/uploads/`.
+Stockage local `./uploads/couvertures/`, `./uploads/documents/`, `./uploads/videos/` et `./uploads/vignettes/`, servis via actix-files sur `/uploads/`.
 
 ### Database
 PostgreSQL 16 Docker. Schema SQL: `uafricas_backend/doc/bd/schema.sql` (orchestrateur, 15 fichiers via `\ir` dans `schemas/`). Init auto via `docker-init.sh`.
@@ -143,8 +144,14 @@ Mettre à jour ce fichier lors de: ajout/suppression service Docker ou dépendan
 - N/A — aucune modification backend/BDD (001-ajout-personne-ludique)
 - TypeScript (Nuxt 4 / Vue 3 SSR) + GSAP 3.14.2 (deja installe), Vue 3 Composition API, Tailwind CSS v4 (001-nouveau-avis-ludique)
 - N/A (aucune modification BDD) (001-nouveau-avis-ludique)
+- Rust Edition 2024 (backend), TypeScript / Nuxt 4 / Vue 3 (frontend) + Actix-Web 4, actix-multipart, sqlx (backend) ; Vue 3 Composition API, Pinia (frontend) (004-vidafrica-sous-titres)
+- PostgreSQL 16, schema `media_content` (4 nouvelles tables) + stockage local `./uploads/videos/` et `./uploads/vignettes/` (004-vidafrica-sous-titres)
+- Rust Edition 2024 (backend), TypeScript / Nuxt 4 / Vue 3 SSR (frontend) + Actix-Web 4, actix-multipart, sqlx (PostgreSQL), uuid, chrono, serde, sanitize-filename, livekit-api (backend) ; Pinia, $fetch, FontAwesome, GSAP, AOS (frontend) ; tableau blanc & chat temps réel via canal data LiveKit déjà configuré (005-afrolang-salles)
+- PostgreSQL 16 — schema `afrolang` étendu (3 nouvelles tables + ajout de colonnes sur 2 tables existantes) ; FK vers `country_profile.groupe_ethnique` existant ; stockage local `./uploads/afrolang/ressources/` pour fichiers ressources (005-afrolang-salles)
 
 ## Recent Changes
+- 001-afrolang-salles-refonte (US1→US4 + endpoints additionnels livrés): refonte complète des salles Afrolang → streaming public en 1 clic + salles privées par code secret bcrypt. BDD table rase : `afrolang.salle_privee` refondue (suppression `motif`, `declaration_adulte_at`, `visibilite`, `code_acces` plaintext ; ajout `code_acces_hash CHAR(60)`), suppression tables `salle_privee_adhesion` et `proposition_salle` + 5 enums legacy, ajout table `tentative_code_acces` (rate limit). Backend : 6 nouveaux endpoints publics (`POST /salles-privees`, `GET /salles/{id}/salles-privees`, `POST /salles-privees/{id}/verifier-code`, `POST /salles-privees/{id}/sessions/demarrer-ou-rejoindre`, `PATCH /salles-privees/{id}/code-acces`, `POST /salles-privees/{id}/archiver`) + helpers `hasher_code_acces` / `verifier_code_acces_plain` / `valider_format_code_acces` dans `handlers/afrolang.rs` + service `services/afrolang_rate_limit.rs` (5 échecs / 60 s) + JWT accès jeton 4 h dans `jwt.rs` ; suppression handlers/models `admin/propositions_afrolang` et nettoyage `admin/salle_privee` (plus de visibilité/adhésion/invitation) ; audit::log_action sur toutes nouvelles mutations (jamais de plaintext dans before/after). Frontend : suppression 9 composants legacy (AnnuaireGroupesEthniques, ProposerSalleModal, PropositionCard, SalleModerationPanel, SallePriveeVisibilitePanel, DemandeAdhesionCard, InvitationBanner, SalleSessionsLive, admin/ValidationPropositionsList) + 3 pages legacy (proposer, salle-privee/[id], admin/propositions), refonte `SallePriveeCreateModal` / `SallePriveeJoinModal` / `SallePriveeCard`, widget Canal privé (création + ouverture code secret), nouvelle page `pages/afrolang/session/privee/[id].vue`, middleware `afrolang-redirect-legacy.global.ts` (redirige `/afrolang/salle-privee/*` → `/afrolang`), composables `useAfrolang` / `useAdminAfrolangSalles` nettoyés.
+- 005-afrolang-salles (US1→US6 livrés): schema `afrolang` étendu (propositions, salle_moderateur, salle_privee_adhesion, ressource_salle, message_session + 7 enums) + FK RESTRICT salle_privee→salle. Backend: 25+ handlers (propositions, modérateurs attitrés, transfert modération session, visibilité/limite/adhésions/invitations atomiques, ressources fichier+lien modéré, messagerie écrite, liens en attente admin, archivage batch/manuel, désactivation cascade salle publique) + `audit::log_action` sur chaque mutation, notifications `afrolang.*`. Frontend: composables `useAfrolang` et `useAdminAfrolangSalles` complets, composants public Tailwind v4 (AnnuaireGroupesEthniques, ProposerSalleModal, PropositionCard, SalleModerationPanel, SallePriveeVisibilitePanel, DemandeAdhesionCard, InvitationBanner, SalleChat, SalleRessources), admin daisyUI (ValidationPropositionsList, ModerateursAttitresPanel, LiensExternesValidation) + 3 pages admin sous `/admin/afrolang/`.
 - 001-personnes-arbre: Added schema `arbre_genealogique` (4 tables: personnes, arbres, rattachements, liens_familiaux). Backend: 8 handlers CRUD + liens + photo upload, cycle detection CTE, cascade soft delete. Frontend: composable `useArbreGenealogique`, mock `arbre-genealogique.ts`, composants `PersonneForm.vue` / `PersonneCard.vue` / `LienFamilialForm.vue`, pages `arbre-genealogique/index.vue` + `[id].vue`. Architecture fondation matching inter-arbres documentée (Décision 8 research.md).
 - 001-retrouve-amis: Added Rust (Edition 2024) + TypeScript (Nuxt 4 / Vue 3) + Actix-Web 4, sqlx (PostgreSQL), Nuxt 4, Pinia, Tailwind CSS v4
 

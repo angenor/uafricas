@@ -13,10 +13,7 @@
         </h1>
         <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
-          Initiatives Africaines
-        </p>
-        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
-          Promotion des initiatives de la diaspora et des afro-descendants dans plusieurs domaines : union des africains, culture, associations, investissements, immobilier, éducation, réseautage, etc.
+          Organiser un évenement mettant en valeur l’Afrique et son développement
         </p>
       </div>
     </div>

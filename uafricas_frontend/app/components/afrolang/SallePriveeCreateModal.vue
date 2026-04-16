@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed, reactive, watch } from 'vue'
+
 interface Props {
   isOpen: boolean
   salleId: string
@@ -8,19 +10,16 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'submit', data: {
-    titre: string
-    description: string
-    code_acces: string
-    max_participants: number | null
-  }): void
+  (e: 'submit', data: { titre: string; description: string; code_acces: string }): void
+  (e: 'existante', sallePriveeId?: string): void
 }>()
+
+const CODE_PATTERN = /^[A-Za-z0-9!@#$%&*?-]{4,16}$/
 
 const form = reactive({
   titre: '',
   description: '',
   code_acces: '',
-  max_participants: null as number | null,
   loading: false,
   submitted: false,
   error: false,
@@ -28,106 +27,146 @@ const form = reactive({
 })
 
 const isFormValid = computed(() => {
-  return form.titre.trim().length >= 3
+  const titreOk = form.titre.trim().length >= 5 && form.titre.trim().length <= 350
+  const codeOk = CODE_PATTERN.test(form.code_acces)
+  const descOk = form.description.length <= 1000
+  return titreOk && codeOk && descOk
 })
 
 const resetForm = () => {
   form.titre = ''
   form.description = ''
   form.code_acces = ''
-  form.max_participants = null
   form.loading = false
   form.submitted = false
   form.error = false
   form.errorMessage = ''
 }
 
-const handleSubmit = async () => {
+const handleSubmit = () => {
   form.error = false
   form.errorMessage = ''
 
-  if (!form.titre.trim()) {
+  const titre = form.titre.trim()
+  if (titre.length < 5 || titre.length > 350) {
     form.error = true
-    form.errorMessage = 'Le titre est requis.'
+    form.errorMessage = 'Le titre doit contenir entre 5 et 350 caractères.'
     return
   }
-
-  if (form.titre.trim().length < 3) {
+  if (form.description.length > 1000) {
     form.error = true
-    form.errorMessage = 'Le titre doit contenir au moins 3 caractères.'
+    form.errorMessage = 'La description ne peut dépasser 1000 caractères.'
+    return
+  }
+  if (!CODE_PATTERN.test(form.code_acces)) {
+    form.error = true
+    form.errorMessage = 'Le code secret doit contenir 4 à 16 caractères (lettres, chiffres ou !@#$%&*?-).'
     return
   }
 
   emit('submit', {
-    titre: form.titre.trim(),
+    titre,
     description: form.description.trim(),
-    code_acces: form.code_acces.trim(),
-    max_participants: form.max_participants,
+    code_acces: form.code_acces,
   })
 }
 
 defineExpose({
-  setLoading: (val: boolean) => { form.loading = val },
-  setError: (msg: string) => { form.error = true; form.errorMessage = msg; form.loading = false },
+  setLoading: (val: boolean) => {
+    form.loading = val
+  },
+  setError: (msg: string) => {
+    form.error = true
+    form.errorMessage = msg
+    form.loading = false
+  },
   setSuccess: () => {
     form.submitted = true
     form.loading = false
     setTimeout(() => {
       resetForm()
       emit('close')
-    }, 2000)
+    }, 1200)
+  },
+  setExistante: (sallePriveeId?: string) => {
+    form.loading = false
+    form.error = true
+    form.errorMessage = 'Vous avez déjà une salle privée pour cette salle publique.'
+    emit('existante', sallePriveeId)
   },
 })
 
-watch(() => props.isOpen, (isOpen) => {
-  if (!isOpen) {
-    resetForm()
-  }
-})
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (!isOpen) resetForm()
+  },
+)
 </script>
 
 <template>
   <Transition name="modal-fade">
     <div
       v-if="isOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
+      class="fixed inset-0 z-10002 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
       @click.self="emit('close')"
     >
       <div
-        class="relative w-full max-w-lg bg-white shadow-2xl rounded-2xl border-t-4 border-blue-500 transform transition-all duration-300 max-h-[90vh] overflow-hidden"
+        class="relative w-full max-w-lg bg-white shadow-2xl rounded-2xl border-t-4 border-custom-chocolat transition-all duration-300 max-h-[92vh] overflow-hidden"
         @click.stop
       >
-        <!-- En-tete -->
-        <div class="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-6">
+        <!-- En-tête -->
+        <div class="bg-gradient-to-r from-custom-chocolat to-custom-chocolat/80 text-white p-6">
           <div class="flex items-center justify-between">
             <div>
-              <h2 class="text-2xl font-bold">Créer un cours privé</h2>
-              <p class="text-blue-100 text-sm mt-1">Créez votre espace de cours privé</p>
+              <h2 class="text-2xl font-bold">Créer ma salle privée</h2>
+              <p class="text-white/80 text-sm mt-1">
+                Un espace à votre initiative, accessible par un code secret.
+              </p>
             </div>
-            <button @click="emit('close')" class="text-white hover:text-blue-200 transition-colors">
+            <button
+              type="button"
+              class="text-white/80 hover:text-white transition-colors"
+              @click="emit('close')"
+            >
               <font-awesome-icon :icon="['fas', 'xmark']" class="w-6 h-6" />
             </button>
           </div>
         </div>
 
         <!-- Formulaire -->
-        <form @submit.prevent="handleSubmit" class="p-6 space-y-5 bg-white max-h-[70vh] overflow-y-auto">
-          <!-- Message de succes -->
+        <form
+          class="p-6 space-y-5 bg-white max-h-[72vh] overflow-y-auto"
+          @submit.prevent="handleSubmit"
+        >
+          <!-- Message de succès -->
           <Transition name="fade-slide">
-            <div v-if="form.submitted" class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+            <div
+              v-if="form.submitted"
+              class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg"
+            >
               <div class="flex items-center">
-                <font-awesome-icon :icon="['fas', 'circle-check']" class="w-6 h-6 text-green-500 mr-3" />
-                <p class="text-green-700 font-medium">Cours privé créé avec succès !</p>
+                <font-awesome-icon
+                  :icon="['fas', 'circle-check']"
+                  class="w-6 h-6 text-green-500 mr-3"
+                />
+                <p class="text-green-700 font-medium">Salle privée créée avec succès !</p>
               </div>
             </div>
           </Transition>
 
           <!-- Message d'erreur -->
           <Transition name="fade-slide">
-            <div v-if="form.error" class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-              <div class="flex items-center">
-                <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="w-6 h-6 text-red-500 mr-3" />
-                <p class="text-red-700">{{ form.errorMessage }}</p>
+            <div
+              v-if="form.error"
+              class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg"
+            >
+              <div class="flex items-start gap-3">
+                <font-awesome-icon
+                  :icon="['fas', 'circle-exclamation']"
+                  class="w-6 h-6 text-red-500 mt-0.5 shrink-0"
+                />
+                <p class="text-red-700 text-sm">{{ form.errorMessage }}</p>
               </div>
             </div>
           </Transition>
@@ -135,57 +174,58 @@ watch(() => props.isOpen, (isOpen) => {
           <!-- Titre -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Titre du cours *
+              Titre de la salle <span class="text-red-500">*</span>
             </label>
             <input
               v-model="form.titre"
               type="text"
-              class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-blue-500 transition-colors"
-              placeholder="Ex: Cours de Wolof débutant"
-            />
+              minlength="5"
+              maxlength="350"
+              class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-custom-chocolat transition-colors"
+              placeholder="Ex : Mon cercle Wolof du soir"
+              required
+            >
+            <p class="text-xs text-gray-400 mt-1">
+              Entre 5 et 350 caractères.
+            </p>
+          </div>
+
+          <!-- Code secret -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <font-awesome-icon :icon="['fas', 'lock']" class="w-4 h-4 mr-1 text-gray-400" />
+              Code secret <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="form.code_acces"
+              type="text"
+              pattern="^[A-Za-z0-9!@#$%&*?-]{4,16}$"
+              autocomplete="off"
+              class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-custom-chocolat transition-colors font-mono tracking-wider"
+              placeholder="wolof2026"
+              required
+            >
+            <p class="text-xs text-gray-400 mt-1">
+              4 à 16 caractères (lettres, chiffres ou <code>!@#$%&amp;*?-</code>).
+              Notez-le soigneusement : il n'est plus jamais affiché.
+            </p>
           </div>
 
           <!-- Description -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Description
+              Description (facultative)
             </label>
             <textarea
               v-model="form.description"
               rows="3"
-              class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-blue-500 transition-colors resize-none"
-              placeholder="Décrivez votre cours..."
+              maxlength="1000"
+              class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-custom-chocolat transition-colors resize-none"
+              placeholder="À qui s'adresse cette salle, quand se retrouve-t-on…"
             />
-          </div>
-
-          <!-- Code d'acces -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              <font-awesome-icon :icon="['fas', 'lock']" class="w-4 h-4 mr-1 text-gray-400" />
-              Code d'accès (optionnel)
-            </label>
-            <input
-              v-model="form.code_acces"
-              type="text"
-              class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-blue-500 transition-colors"
-              placeholder="Laissez vide pour un cours ouvert"
-            />
-            <p class="text-xs text-gray-400 mt-1">Si défini, les participants devront saisir ce code pour rejoindre les sessions.</p>
-          </div>
-
-          <!-- Max participants -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Nombre max de participants
-            </label>
-            <input
-              v-model.number="form.max_participants"
-              type="number"
-              min="2"
-              max="100"
-              class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-blue-500 transition-colors"
-              placeholder="Illimité par défaut"
-            />
+            <p class="text-xs text-gray-400 mt-1">
+              {{ form.description.length }} / 1000
+            </p>
           </div>
 
           <!-- Boutons -->
@@ -200,10 +240,14 @@ watch(() => props.isOpen, (isOpen) => {
             <button
               type="submit"
               :disabled="!isFormValid || form.loading"
-              class="flex-1 p-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              class="flex-1 p-3 bg-custom-chocolat text-white rounded-xl font-medium hover:bg-custom-chocolat/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <font-awesome-icon v-if="form.loading" :icon="['fas', 'spinner']" class="w-4 h-4 animate-spin" />
-              {{ form.loading ? 'Création...' : 'Créer le cours' }}
+              <font-awesome-icon
+                v-if="form.loading"
+                :icon="['fas', 'spinner']"
+                class="w-4 h-4 animate-spin"
+              />
+              {{ form.loading ? 'Création...' : 'Créer la salle privée' }}
             </button>
           </div>
         </form>

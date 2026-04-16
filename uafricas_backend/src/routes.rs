@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afrolang, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television};
+use crate::handlers::{admin, africantives, afrolang, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -193,6 +193,18 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/sessions/{id}", web::get().to(admin::sessions_afrolang::obtenir_session))
                     .route("/sessions/{id}/participants", web::get().to(admin::sessions_afrolang::lister_participants))
                     .route("/sessions/{id}/tableau-blanc", web::get().to(admin::sessions_afrolang::obtenir_tableau_blanc))
+                    // AfroLang - Modérateurs attitrés (feature 005, US3) — salles publiques uniquement
+                    .route("/afrolang/salles/{salle_id}/moderateurs", web::get().to(admin::moderateurs_afrolang::lister_moderateurs_attitres))
+                    .route("/afrolang/salles/{salle_id}/moderateurs", web::post().to(admin::moderateurs_afrolang::designer_moderateur))
+                    .route("/afrolang/salles/{salle_id}/moderateurs/{utilisateur_id}", web::delete().to(admin::moderateurs_afrolang::retirer_moderateur))
+                    // AfroLang - Ressources & liens externes (feature 005, US6)
+                    .route("/afrolang/ressources/en-attente", web::get().to(admin::sessions_afrolang::lister_liens_en_attente))
+                    .route("/afrolang/ressources/{id}/publier", web::post().to(admin::sessions_afrolang::publier_lien))
+                    .route("/afrolang/ressources/{id}/refuser", web::post().to(admin::sessions_afrolang::refuser_lien))
+                    // AfroLang - Archivage salles privées (feature 005, Phase 9)
+                    .route("/afrolang/salles-privees/archiver-batch-utilisateur", web::post().to(admin::sessions_afrolang::archiver_batch_utilisateur))
+                    .route("/afrolang/salles-privees/{id}/archiver", web::post().to(admin::sessions_afrolang::archiver_salle_privee))
+                    .route("/afrolang/salles/{id}/desactiver", web::post().to(admin::sessions_afrolang::desactiver_salle_publique_avec_cascade))
                     // Gouvernance - FactCheck
                     .route("/factcheck", web::get().to(admin::gouvernance::lister_factchecks))
                     .route("/factcheck", web::post().to(admin::gouvernance::creer_factcheck))
@@ -336,7 +348,27 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/retrouve-amis/statistiques", web::get().to(admin::retrouve_amis::statistiques))
                     // Retrouve Amis - Demandes de retrait
                     .route("/retrouve-amis/demandes-retrait", web::get().to(admin::retrouve_amis::lister_demandes_retrait))
-                    .route("/retrouve-amis/demandes-retrait/{id}/statuer", web::patch().to(admin::retrouve_amis::statuer_demande_retrait)),
+                    .route("/retrouve-amis/demandes-retrait/{id}/statuer", web::patch().to(admin::retrouve_amis::statuer_demande_retrait))
+                    // Vidafrica - Vidéos
+                    .route("/vidafrica/videos", web::get().to(admin::vidafrica::lister_videos))
+                    .route("/vidafrica/videos", web::post().to(admin::vidafrica::creer_video))
+                    .route("/vidafrica/videos/{id}", web::get().to(admin::vidafrica::obtenir_video))
+                    .route("/vidafrica/videos/{id}", web::put().to(admin::vidafrica::modifier_video))
+                    .route("/vidafrica/videos/{id}", web::delete().to(admin::vidafrica::supprimer_video))
+                    .route("/vidafrica/videos/{id}/etat", web::patch().to(admin::vidafrica::changer_etat_video))
+                    // Vidafrica - Pistes de sous-titres
+                    .route("/vidafrica/videos/{video_id}/pistes", web::get().to(admin::vidafrica::lister_pistes))
+                    .route("/vidafrica/videos/{video_id}/pistes", web::post().to(admin::vidafrica::creer_piste))
+                    .route("/vidafrica/pistes/{id}", web::delete().to(admin::vidafrica::supprimer_piste))
+                    // Vidafrica - Segments
+                    .route("/vidafrica/pistes/{piste_id}/segments", web::get().to(admin::vidafrica::lister_segments))
+                    .route("/vidafrica/pistes/{piste_id}/segments", web::post().to(admin::vidafrica::creer_segment))
+                    .route("/vidafrica/pistes/{piste_id}/segments/reordonner", web::put().to(admin::vidafrica::reordonner_segments))
+                    .route("/vidafrica/segments/{id}", web::put().to(admin::vidafrica::modifier_segment))
+                    .route("/vidafrica/segments/{id}", web::delete().to(admin::vidafrica::supprimer_segment))
+                    // Vidafrica - Timings mot
+                    .route("/vidafrica/segments/{segment_id}/timings-mot", web::post().to(admin::vidafrica::enregistrer_timings_mot))
+                    .route("/vidafrica/segments/{segment_id}/timings-mot", web::delete().to(admin::vidafrica::supprimer_timings_mot)),
             )
             // Routes Retrouve Amis
             .service(
@@ -495,20 +527,39 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             // Routes Afrolang (visioconference WebRTC)
             .service(
                 web::scope("/afrolang")
-                    // Salles publiques
+                    // Annuaire des groupes ethniques (utilisé côté admin uniquement)
+                    .route("/groupes-ethniques", web::get().to(afrolang::lister_groupes_ethniques))
+                    // Salles publiques (création restreinte aux admins)
                     .route("/salles", web::get().to(afrolang::lister_salles))
                     .route("/salles", web::post().to(afrolang::creer_salle))
                     .route("/salles/{id}", web::get().to(afrolang::obtenir_salle))
                     .route("/salles/{id}", web::put().to(afrolang::modifier_salle))
                     .route("/salles/{id}", web::delete().to(afrolang::supprimer_salle))
-                    // Salles privees (sous une salle publique)
-                    .route("/salles/{salle_id}/privees", web::get().to(afrolang::lister_salles_privees))
-                    .route("/salles/{salle_id}/privees", web::post().to(afrolang::creer_salle_privee))
-                    // Salles privees (CRUD direct)
+                    // Salles privées (refonte : code secret)
+                    .route("/salles/{salle_id}/salles-privees", web::get().to(afrolang::lister_salles_privees_par_salle_publique))
+                    .route("/salles-privees", web::post().to(afrolang::creer_salle_privee_publique))
+                    .route("/salles-privees/{id}/verifier-code", web::post().to(afrolang::verifier_code_acces_salle_privee))
+                    .route("/salles-privees/{id}/sessions/demarrer-ou-rejoindre", web::post().to(afrolang::demarrer_ou_rejoindre_session_salle_privee))
+                    .route("/salles-privees/{id}/code-acces", web::patch().to(afrolang::modifier_code_acces_salle_privee))
+                    .route("/salles-privees/{id}/archiver", web::post().to(afrolang::archiver_salle_privee_par_auteur))
+                    .route("/salles-privees/{id}/max-participants", web::patch().to(afrolang::modifier_max_participants_salle_privee))
                     .route("/salles-privees/{id}", web::get().to(afrolang::obtenir_salle_privee))
                     .route("/salles-privees/{id}", web::put().to(afrolang::modifier_salle_privee))
                     .route("/salles-privees/{id}", web::delete().to(afrolang::supprimer_salle_privee))
-                    // Sessions
+                    // Ressources de salle publique (feature 005, US6)
+                    .route("/salles/{salle_id}/ressources", web::get().to(afrolang::lister_ressources))
+                    .route("/salles/{salle_id}/ressources/fichier", web::post().to(afrolang::uploader_ressource_fichier))
+                    .route("/salles/{salle_id}/ressources/lien", web::post().to(afrolang::soumettre_lien_externe))
+                    .route("/ressources/{id}", web::delete().to(afrolang::supprimer_ressource))
+                    // Messagerie de session (feature 005, US6)
+                    .route("/sessions/{id}/messages", web::get().to(afrolang::lister_messages_session))
+                    .route("/sessions/{id}/messages", web::post().to(afrolang::envoyer_message_session))
+                    // Sessions - salles publiques (feature 005 Option A)
+                    .route("/salles/{salle_id}/sessions", web::get().to(afrolang::lister_sessions_salle_publique))
+                    .route("/salles/{salle_id}/sessions", web::post().to(afrolang::creer_session_salle_publique))
+                    // US1 refonte : démarrer/rejoindre en 1 appel pour streaming direct
+                    .route("/salles/{salle_id}/sessions/demarrer-ou-rejoindre", web::post().to(afrolang::demarrer_ou_rejoindre_session_salle_publique))
+                    // Sessions - salles privées
                     .route("/salles-privees/{sp_id}/sessions", web::get().to(afrolang::lister_sessions))
                     .route("/salles-privees/{sp_id}/sessions", web::post().to(afrolang::creer_session))
                     .route("/sessions/{id}", web::get().to(afrolang::obtenir_session))
@@ -516,6 +567,8 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/sessions/{id}/terminer", web::put().to(afrolang::terminer_session))
                     .route("/sessions/{id}/rejoindre", web::post().to(afrolang::rejoindre_session))
                     .route("/sessions/{id}/quitter", web::post().to(afrolang::quitter_session))
+                    // Transfert de modération (feature 005, US3)
+                    .route("/sessions/{id}/moderation/transferer", web::put().to(afrolang::transferer_moderation_session))
                     // Phase 3 : Token LiveKit
                     .route("/sessions/{id}/token", web::post().to(afrolang::generer_token_session))
                     // Phase 4 : Tableau blanc
@@ -571,6 +624,14 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/doublons", web::get().to(notification::detecter_doublons))
                     .route("/doublons/ignorer", web::post().to(notification::ignorer_doublon))
                     .route("/doublons/fusionner", web::post().to(notification::fusionner_doublons)),
+            )
+            // Routes Vidafrica (public)
+            .service(
+                web::scope("/vidafrica")
+                    .route("/videos", web::get().to(vidafrica::lister_videos_publiques))
+                    .route("/videos/{slug}", web::get().to(vidafrica::obtenir_video_publique))
+                    .route("/videos/{video_id}/sous-titres/{langue}", web::get().to(vidafrica::obtenir_sous_titres))
+                    .route("/langues-sous-titres", web::get().to(vidafrica::lister_langues_disponibles)),
             )
             // Routes de la télévision
             .service(

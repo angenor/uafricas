@@ -240,8 +240,8 @@ const menuItems: MenuItem[] = [
       { label: 'Novagouv', to: '/universite/gouvernance', description: 'Gouvernance transparente et responsable', icon: 'fa-solid fa-scale-balanced' },
       { label: 'Africamood', to: '/medias', description: 'Médias et actualités du continent', icon: 'fa-solid fa-tv' },
       { label: 'Africantives', to: '/africantives', description: 'Innovations et startups africaines', icon: 'fa-solid fa-rocket' },
-      { label: 'Rootsconnect', to: '/retrouve-amis', description: 'Retrouvez vos proches perdus de vue', icon: 'fa-solid fa-users' },
-      { label: 'FamilyTree', to: '/arbre-genealogique', description: 'Explorez votre arbre généalogique', icon: 'fa-solid fa-tree' },
+      { label: 'Africonnect', to: '/retrouve-amis', description: 'Retrouvez vos proches perdus de vue', icon: 'fa-solid fa-users' },
+      { label: 'Rootstree', to: '/arbre-genealogique', description: 'Explorez votre arbre généalogique', icon: 'fa-solid fa-tree' },
     ],
   },
   {
