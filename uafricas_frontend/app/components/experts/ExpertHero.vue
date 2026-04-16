@@ -12,7 +12,7 @@
     <div class="relative max-w-7xl mx-auto px-4 py-20 lg:py-28">
       <div class="text-center space-y-6">
         <h1 class="text-4xl lg:text-6xl font-extrabold text-white tracking-tight">
-          L'Excellence Africaine
+          Mobiliser une expertise de pointe
         </h1>
         <p class="text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto font-light">
           Connectez-vous avec les meilleurs experts africains et afro-descendants

@@ -126,7 +126,7 @@ const infoPagination = computed(() => {
         <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-custom-green)]/20">
           <font-awesome-icon :icon="['fas', 'tree']" class="text-2xl text-[var(--color-custom-green)]" />
         </div>
-        <h1 class="mb-2 text-3xl font-bold text-stone-800">FamilyTree</h1>
+        <h1 class="mb-2 text-3xl font-bold text-stone-800">Rootstree</h1>
         <p class="text-stone-500">
           Explorez votre arbre généalogique, découvrez vos origines et connectez-vous avec votre famille à travers les générations.
         </p>

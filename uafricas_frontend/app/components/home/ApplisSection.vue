@@ -202,7 +202,7 @@ const applis: Appli[] = [
     description: 'Retrouvez vos proches',
   },
   {
-    label: 'FamilyTree',
+    label: 'Rootstree',
     to: '/arbre-genealogique',
     icon: 'fa-solid fa-tree',
     bgClass: 'bg-[var(--color-custom-green)]',

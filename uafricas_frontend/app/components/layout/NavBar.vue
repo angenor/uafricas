@@ -426,20 +426,7 @@ const menus: NavMenu[] = [
       { label: 'INUDA', to: '/universite/inuda', description: 'Institut numérique universitaire d\'Afrique', icon: 'fa-solid fa-graduation-cap' },
       { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
       { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Sciences humaines et sociales', icon: 'fa-solid fa-chalkboard-user' },
-    ]
-  },
-  {
-    id: 'africantives',
-    label: 'Africantives',
-    subtitle: 'Innovation & projets',
-    description: 'Découvrir et soutenir les innovations et projets porteurs du continent',
-    to: '/africantives',
-    gradient: 'bg-linear-to-br from-rose-600 to-pink-800',
-    image: '/images/fiche-opportunite.jpg',
-    items: [
-      { label: 'Initiatives', to: '/africantives', description: 'Initiatives et startups africaines', icon: 'fa-solid fa-rocket' },
-      { label: 'Soumettre un projet', to: '/soumettre-projet', description: 'Proposez votre projet innovant', icon: 'fa-solid fa-paper-plane' },
-      { label: 'Financer un projet', to: '/financer-projet', description: 'Investissez dans l\'innovation africaine', icon: 'fa-solid fa-hand-holding-dollar' },
+      { label: 'Africantives', to: '/africantives', description: 'Innovations et projets porteurs du continent', icon: 'fa-solid fa-rocket' },
     ]
   },
   {

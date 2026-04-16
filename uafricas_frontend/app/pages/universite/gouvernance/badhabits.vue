@@ -13,38 +13,14 @@
       <div class="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5 animate-pulse" style="animation-delay: 1s;"></div>
 
       <div class="absolute inset-0 flex flex-col items-center justify-center px-4">
-        <div class="flex items-center gap-3 mb-4 animate-fadeInUp">
-          <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            <font-awesome-icon :icon="['fas', 'exclamation-triangle']" class="text-white text-xl" />
-          </div>
-          <span class="text-white/60 text-sm font-semibold tracking-widest uppercase">Gouvernance Citoyenne</span>
-        </div>
+    
         <h1 class="text-white text-5xl md:text-6xl font-display font-bold mb-4 animate-fadeInUp tracking-tight">
-          BadHabits
+          BadGoodhabits
         </h1>
         <div class="h-1 w-24 bg-linear-to-r from-orange-400 to-yellow-300 rounded-full mb-4 animate-expandWidth"></div>
         <p class="text-white/80 text-lg md:text-xl text-center max-w-2xl animate-fadeInUp animation-delay-200">
-          Signalement des mauvaises pratiques et habitudes néfastes
+          Dénoncer ou féliciter des bonnes habitudes.
         </p>
-
-        <!-- Stats Hero -->
-        <div class="flex flex-wrap items-center justify-center gap-4 mt-8 animate-fadeInUp animation-delay-400">
-          <div class="flex items-center bg-white/15 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/20">
-            <font-awesome-icon :icon="['fas', 'file-lines']" class="text-orange-300 mr-2" />
-            <span class="text-white font-bold text-lg">{{ contributions.length }}</span>
-            <span class="text-white/70 ml-2 text-sm">signalements</span>
-          </div>
-          <div class="flex items-center bg-white/15 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/20">
-            <font-awesome-icon :icon="['fas', 'earth-africa']" class="text-orange-300 mr-2" />
-            <span class="text-white font-bold text-lg">{{ paysDisponibles.length }}</span>
-            <span class="text-white/70 ml-2 text-sm">pays concernés</span>
-          </div>
-          <div class="flex items-center bg-white/15 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/20">
-            <font-awesome-icon :icon="['fas', 'exclamation-circle']" class="text-red-300 mr-2" />
-            <span class="text-white font-bold text-lg">{{ nombreCritiques }}</span>
-            <span class="text-white/70 ml-2 text-sm">critiques</span>
-          </div>
-        </div>
       </div>
     </div>
 

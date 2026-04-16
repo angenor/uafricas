@@ -21,10 +21,7 @@
         </h1>
         <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
         <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
-          Bibliothèque Numérique
-        </p>
-        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
-          Rendre accessible aux citoyens africains des ressources issues des thèses africaines et toute autre ressource pertinente libre d'accès au développement de l'Afrique.
+          Permettre à des africains ou à des écoles de consulter vos publications ou ouvrages 
         </p>
       </div>
     </div>
