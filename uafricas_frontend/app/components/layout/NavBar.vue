@@ -69,15 +69,14 @@
 
       <!-- Auth desktop - droite (absolu pour ne pas décaler le centrage) -->
       <div class="absolute right-4 lg:right-6 flex items-center gap-3">
-        <!-- Bouton recherche -->
+        <!-- Bouton recherche compact -->
         <button
           @click="rechercheOuverte = true"
-          class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200/60 rounded-lg text-sm text-gray-400 hover:text-gray-500 transition-all cursor-pointer"
-          aria-label="Rechercher"
+          class="flex items-center justify-center w-9 h-9 bg-gray-50 hover:bg-gray-100 border border-gray-200/60 rounded-lg text-gray-400 hover:text-gray-500 transition-all cursor-pointer"
+          aria-label="Rechercher (⌘K)"
+          title="Rechercher (⌘K)"
         >
-          <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="text-xs" />
-          <span class="hidden xl:inline">Rechercher...</span>
-          <kbd class="hidden xl:inline-flex ml-1 px-1.5 py-0.5 text-[10px] bg-white border border-gray-200/80 rounded text-gray-400 font-sans">⌘K</kbd>
+          <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="text-sm" />
         </button>
 
         <!-- Utilisateur connecté -->
@@ -100,7 +99,6 @@
             >
               {{ user?.prenom?.charAt(0)?.toUpperCase() }}{{ user?.nom?.charAt(0)?.toUpperCase() }}
             </div>
-            <span class="text-sm text-gray-700 whitespace-nowrap font-medium hidden xl:inline">{{ fullName }}</span>
             <font-awesome-icon
               icon="fa-solid fa-chevron-down"
               class="text-[10px] text-gray-400 transition-transform duration-200"
@@ -467,7 +465,7 @@ const menus: NavMenu[] = [
     image: '/images/tele_baniere.png',
     colorClass: 'text-custom-green',
     items: [
-      { label: 'Vidafrica', to: '/vidafrica', description: 'Votre musique et des vidéos spéciales sur l\'Afrique à votre portée', icon: 'fa-solid fa-closed-captioning' },
+      { label: 'Vidafrica', to: '/vidafrica', description: 'Votre musique et des vidéos spéciales sur l\'Afrique à votre portée', icon: 'fa-solid fa-video' },
       { label: 'Télé', to: '/tele', description: 'La télé au service de l\'union et du développement de l\'Afrique', icon: 'fa-solid fa-tv' },
       { label: 'Radio', to: '/radios', description: 'La radio au service de l\'union et du développement de l\'Afrique', icon: 'fa-solid fa-radio' },
     ]
