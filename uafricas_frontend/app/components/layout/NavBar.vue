@@ -55,6 +55,7 @@
             </span>
           </NuxtLink>
           <LayoutNavDropdown
+            v-if="menu.items.length > 0"
             :open="pointer === menu.id"
             :description="menu.description"
             :image="menu.image"
@@ -201,7 +202,9 @@
         <div class="flex flex-col py-2">
           <!-- Sections de menu -->
           <div v-for="menu in menus" :key="menu.id">
+            <!-- Menu avec sous-items : bouton accordéon -->
             <button
+              v-if="menu.items.length > 0"
               class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
               @click="mobileSection = mobileSection === menu.id ? null : menu.id"
             >
@@ -217,6 +220,22 @@
               />
             </button>
 
+            <!-- Menu sans sous-items : lien direct -->
+            <NuxtLink
+              v-else
+              :to="menu.to"
+              class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+              @click="mobileOpen = false"
+            >
+              <div class="flex flex-col items-start">
+                <span class="font-semibold text-sm" :class="menu.colorClass || 'text-custom-chocolat'">
+                  {{ menu.label }}
+                </span>
+                <span class="text-[11px] text-gray-400">{{ menu.subtitle }}</span>
+              </div>
+              <font-awesome-icon icon="fa-solid fa-chevron-right" class="text-xs text-gray-400" />
+            </NuxtLink>
+
             <!-- Sous-liens mobile avec descriptions -->
             <Transition
               enter-active-class="transition-all duration-200 ease-out"
@@ -226,7 +245,7 @@
               leave-from-class="opacity-100 translate-y-0"
               leave-to-class="opacity-0 -translate-y-1"
             >
-              <div v-if="mobileSection === menu.id" class="bg-gray-50/50 border-y border-gray-100/80 py-1">
+              <div v-if="menu.items.length > 0 && mobileSection === menu.id" class="bg-gray-50/50 border-y border-gray-100/80 py-1">
                 <NuxtLink
                   v-for="item in menu.items"
                   :key="item.to"
@@ -380,9 +399,8 @@ const menus: NavMenu[] = [
     items: [
       { label: 'Afrolang', to: '/afrolang', description: 'Apprenez les langues du continent', icon: 'fa-solid fa-language' },
       { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
+      { label: 'Afripulse', to: '/opportunite-afrique', description: 'Promouvoir la vitalité africaine', icon: 'fa-solid fa-briefcase' },
       { label: 'Afroculture', to: '/africain-afro-americain', description: 'Échanges culturels Afrique-diaspora', icon: 'fa-solid fa-earth-africa' },
-      { label: 'Africalive', to: '/evenements/liste', description: 'Événements et rencontres en direct', icon: 'fa-solid fa-calendar-days' },
-      { label: 'Africonnect', to: '/retrouve-amis', description: 'Retrouvez vos proches perdus de vue', icon: 'fa-solid fa-users' },
     ]
   },
   {
@@ -394,10 +412,10 @@ const menus: NavMenu[] = [
     gradient: 'bg-linear-to-br from-teal-600 to-cyan-800',
     image: '/images/fiche-opportunite.jpg',
     items: [
-      { label: 'Afripulse', to: '/opportunite-afrique', description: 'Offres d\'emploi et opportunités', icon: 'fa-solid fa-briefcase' },
+      { label: 'Rootstree', to: '/arbre-genealogique', description: 'Tracez votre arbre généalogique', icon: 'fa-solid fa-tree' },
+      { label: 'Africonnect', to: '/retrouve-amis', description: 'Retrouvez vos proches perdus de vue', icon: 'fa-solid fa-users' },
       { label: 'Diapertise', to: '/experts', description: 'Experts et consultants de la diaspora', icon: 'fa-solid fa-user-tie' },
-      { label: 'Sabbafrica', to: '/echanges-sabbatiques', description: 'Programmes d\'échanges sabbatiques', icon: 'fa-solid fa-plane' },
-      { label: 'Afromarket', to: '/marche-africain', description: 'Place de marché panafricaine', icon: 'fa-solid fa-store' },
+      { label: 'Sabbatique', to: '/echanges-sabbatiques', description: 'Programmes d\'échanges sabbatiques', icon: 'fa-solid fa-plane' },
     ]
   },
   {
@@ -411,7 +429,7 @@ const menus: NavMenu[] = [
     items: [
       { label: 'Factcheck', to: '/universite/gouvernance/factcheck', description: 'Vérification des faits et informations', icon: 'fa-solid fa-scale-balanced' },
       { label: 'Ideaforces', to: '/universite/gouvernance/ideaforces', description: 'Idées et propositions citoyennes', icon: 'fa-solid fa-lightbulb' },
-      { label: 'Badhabits', to: '/universite/gouvernance/badhabits', description: 'Pratiques néfastes à combattre', icon: 'fa-solid fa-triangle-exclamation' },
+      { label: 'BadGoodhabits', to: '/universite/gouvernance/badhabits', description: 'Dénoncer les pratiques néfastes, saluer les bonnes', icon: 'fa-solid fa-triangle-exclamation' },
     ]
   },
   {
@@ -423,11 +441,20 @@ const menus: NavMenu[] = [
     gradient: 'bg-linear-to-br from-blue-700 to-indigo-900',
     image: '/images/education.png',
     items: [
-      { label: 'INUDA', to: '/universite/inuda', description: 'Institut numérique universitaire d\'Afrique', icon: 'fa-solid fa-graduation-cap' },
-      { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
+      { label: 'Africalive', to: '/evenements/liste', description: 'Événements et rencontres en direct', icon: 'fa-solid fa-calendar-days' },
       { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Sciences humaines et sociales', icon: 'fa-solid fa-chalkboard-user' },
-      { label: 'Africantives', to: '/africantives', description: 'Innovations et projets porteurs du continent', icon: 'fa-solid fa-rocket' },
+      { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
+      { label: 'Muniversa', to: '/universite/inuda', description: 'Mindshift University of Africa', icon: 'fa-solid fa-graduation-cap' },
     ]
+  },
+  {
+    id: 'africantives',
+    label: 'Africantives',
+    subtitle: 'Initiatives & projets',
+    description: 'Valoriser les initiatives et projets porteurs du développement du continent',
+    to: '/africantives',
+    gradient: 'bg-linear-to-br from-rose-600 to-pink-800',
+    items: []
   },
   {
     id: 'africamood',
@@ -439,10 +466,9 @@ const menus: NavMenu[] = [
     image: '/images/tele_baniere.png',
     colorClass: 'text-custom-green',
     items: [
+      { label: 'Vidafrica', to: '/vidafrica', description: 'Vidéos sous-titrées multilingues karaoké', icon: 'fa-solid fa-closed-captioning' },
       { label: 'Télé', to: '/tele', description: 'Chaînes de télévision africaines', icon: 'fa-solid fa-tv' },
       { label: 'Radio', to: '/radios', description: 'Stations radio du continent', icon: 'fa-solid fa-radio' },
-      { label: 'Vidafrica', to: '/vidafrica', description: 'Vidéos sous-titrées multilingues karaoké', icon: 'fa-solid fa-closed-captioning' },
-      { label: 'Africalive', to: '/evenements/liste', description: 'Événements et directs en streaming', icon: 'fa-solid fa-video' },
     ]
   },
 ]
