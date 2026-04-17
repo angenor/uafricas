@@ -397,10 +397,10 @@ const menus: NavMenu[] = [
     gradient: 'bg-linear-to-br from-amber-700 to-orange-900',
     image: '/images/danse-afrique.jpg',
     items: [
-      { label: 'Afrolang', to: '/afrolang', description: 'Apprenez les langues du continent', icon: 'fa-solid fa-language' },
-      { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
-      { label: 'Afripulse', to: '/opportunite-afrique', description: 'Promouvoir la vitalité africaine', icon: 'fa-solid fa-briefcase' },
-      { label: 'Afroculture', to: '/africain-afro-americain', description: 'Échanges culturels Afrique-diaspora', icon: 'fa-solid fa-earth-africa' },
+      { label: 'Afrolang', to: '/afrolang', description: 'Sauvons nos langues', icon: 'fa-solid fa-language' },
+      { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Préservons nos cultures les meilleures', icon: 'fa-solid fa-book-open' },
+      { label: 'Afripulse', to: '/opportunite-afrique', description: 'Promouvons notre Afrique', icon: 'fa-solid fa-briefcase' },
+      { label: 'Afroculture', to: '/africain-afro-americain', description: 'Enrichissons-nous ici et ailleurs de notre culture diversifiée', icon: 'fa-solid fa-earth-africa' },
     ]
   },
   {
@@ -412,10 +412,10 @@ const menus: NavMenu[] = [
     gradient: 'bg-linear-to-br from-teal-600 to-cyan-800',
     image: '/images/fiche-opportunite.jpg',
     items: [
-      { label: 'Rootstree', to: '/arbre-genealogique', description: 'Tracez votre arbre généalogique', icon: 'fa-solid fa-tree' },
-      { label: 'Africonnect', to: '/retrouve-amis', description: 'Retrouvez vos proches perdus de vue', icon: 'fa-solid fa-users' },
-      { label: 'Diapertise', to: '/experts', description: 'Experts et consultants de la diaspora', icon: 'fa-solid fa-user-tie' },
-      { label: 'Sabbatique', to: '/echanges-sabbatiques', description: 'Programmes d\'échanges sabbatiques', icon: 'fa-solid fa-plane' },
+      { label: 'Rootstree', to: '/arbre-genealogique', description: 'Tracer ton arbre généalogique', icon: 'fa-solid fa-tree' },
+      { label: 'Africonnect', to: '/retrouve-amis', description: 'Retrouver une personne perdue de vue', icon: 'fa-solid fa-users' },
+      { label: 'Diapertise', to: '/experts', description: 'Mobiliser une expertise de pointe', icon: 'fa-solid fa-user-tie' },
+      { label: 'Sabbatique', to: '/echanges-sabbatiques', description: 'Offrir son expertise en volontariat et bénévolat', icon: 'fa-solid fa-plane' },
       { label: 'Afromarket', to: '/marche-africain', description: 'Place de marché panafricaine', icon: 'fa-solid fa-store' },
     ]
   },
@@ -428,9 +428,9 @@ const menus: NavMenu[] = [
     gradient: 'bg-linear-to-br from-violet-700 to-purple-900',
     image: '/images/bonne_gouvernance.png',
     items: [
-      { label: 'Factcheck', to: '/universite/gouvernance/factcheck', description: 'Vérification des faits et informations', icon: 'fa-solid fa-scale-balanced' },
-      { label: 'Ideaforces', to: '/universite/gouvernance/ideaforces', description: 'Idées et propositions citoyennes', icon: 'fa-solid fa-lightbulb' },
-      { label: 'BadGoodhabits', to: '/universite/gouvernance/badhabits', description: 'Dénoncer les pratiques néfastes, saluer les bonnes', icon: 'fa-solid fa-triangle-exclamation' },
+      { label: 'Factcheck', to: '/universite/gouvernance/factcheck', description: 'Vérifier des idées reçues sur l\'Afrique', icon: 'fa-solid fa-scale-balanced' },
+      { label: 'Ideaforces', to: '/universite/gouvernance/ideaforces', description: 'Partager des idées et orientations sur les enjeux de développement', icon: 'fa-solid fa-lightbulb' },
+      { label: 'BadGoodhabits', to: '/universite/gouvernance/badhabits', description: 'Dénoncer ou féliciter des habitudes', icon: 'fa-solid fa-triangle-exclamation' },
     ]
   },
   {
@@ -442,10 +442,10 @@ const menus: NavMenu[] = [
     gradient: 'bg-linear-to-br from-blue-700 to-indigo-900',
     image: '/images/education.png',
     items: [
-      { label: 'Africalive', to: '/evenements/liste', description: 'Événements et rencontres en direct', icon: 'fa-solid fa-calendar-days' },
-      { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Sciences humaines et sociales', icon: 'fa-solid fa-chalkboard-user' },
-      { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
-      { label: 'Muniversa', to: '/universite/inuda', description: 'Mindshift University of Africa', icon: 'fa-solid fa-graduation-cap' },
+      { label: 'Africalive', to: '/evenements/liste', description: 'Organiser un événement mettant en valeur l\'Afrique et son développement', icon: 'fa-solid fa-calendar-days' },
+      { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Parler à une bibliothèque humaine', icon: 'fa-solid fa-chalkboard-user' },
+      { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Permettre aux Africains et aux écoles de consulter vos publications', icon: 'fa-solid fa-display' },
+      { label: 'Muniversa', to: '/universite/inuda', description: 'Mindshift University of Africa — éduquer sur les enjeux prioritaires', icon: 'fa-solid fa-graduation-cap' },
     ]
   },
   {
@@ -467,9 +467,9 @@ const menus: NavMenu[] = [
     image: '/images/tele_baniere.png',
     colorClass: 'text-custom-green',
     items: [
-      { label: 'Vidafrica', to: '/vidafrica', description: 'Vidéos sous-titrées multilingues karaoké', icon: 'fa-solid fa-closed-captioning' },
-      { label: 'Télé', to: '/tele', description: 'Chaînes de télévision africaines', icon: 'fa-solid fa-tv' },
-      { label: 'Radio', to: '/radios', description: 'Stations radio du continent', icon: 'fa-solid fa-radio' },
+      { label: 'Vidafrica', to: '/vidafrica', description: 'Votre musique et des vidéos spéciales sur l\'Afrique à votre portée', icon: 'fa-solid fa-closed-captioning' },
+      { label: 'Télé', to: '/tele', description: 'La télé au service de l\'union et du développement de l\'Afrique', icon: 'fa-solid fa-tv' },
+      { label: 'Radio', to: '/radios', description: 'La radio au service de l\'union et du développement de l\'Afrique', icon: 'fa-solid fa-radio' },
     ]
   },
 ]
