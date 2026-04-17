@@ -3,15 +3,14 @@
     <div
       class="text-center text-custom-chocolat px-6 md:pr-16 lg:pr-24 max-w-xl"
     >
-      <NuxtLink
-        to="/universite/gouvernance"
+      <div
         data-aos="fade-down"
         data-aos-duration="1000"
-        class="inline-flex items-center gap-2 mb-4 px-5 py-2.5 bg-custom-green text-white font-semibold rounded-full shadow-lg hover:bg-custom-green/90 hover:shadow-xl transition-all duration-300 group"
+        class="inline-flex items-center gap-2 mb-4 px-5 py-2.5 bg-custom-green text-white font-semibold rounded-full shadow-lg"
       >
-        <span>Accéder à votre page AfricanS</span>
-        <font-awesome-icon :icon="['fas', 'arrow-right']" class="transform group-hover:translate-x-1 transition-transform" />
-      </NuxtLink>
+        <span>Publications de la Communautés</span>
+        <font-awesome-icon :icon="['fas', 'arrow-right']" />
+      </div>
       <p data-aos="fade-left" data-aos-duration="1200" class="text-2xl sm:text-3xl lg:text-4xl font-display">
         Bienvenue sur le site officiel de
       </p>
