@@ -5,6 +5,7 @@ use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 
 mod config;
+pub mod constants;
 mod email;
 mod errors;
 mod handlers;

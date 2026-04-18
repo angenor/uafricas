@@ -519,10 +519,60 @@ pub struct AdminContributionQueryParams {
     pub etat: Option<String>,
     pub fiche_pays_id: Option<Uuid>,
     pub cree_par: Option<Uuid>,
+    /// Filtre Afripulse : site_touristique, secteur_developpement, personnalite_connue,
+    /// savoir_pratique, recommandation_visiteur, photo_visiteur, fiche_pays.
+    pub type_objet: Option<String>,
+    /// Filtre Afripulse : sites_emblematiques, sites_prives, secteurs_opportunites,
+    /// personnalites, savoir_avant_voyager, recommandations, galerie_photos.
+    pub section: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ModererContributionRequest {
     pub etat: String,
     pub note_moderation: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RetirerContributionRequest {
+    /// Motif obligatoire (10..1000 car.) expliquant le retrait.
+    pub motif: String,
+}
+
+/// Contribution concurrente (meme fiche_pays, meme type_objet, meme target_id,
+/// etat=en_attente) — avertit l'admin qu'elles seront marquees 'obsolete' a
+/// l'approbation.
+#[derive(Debug, Serialize, FromRow)]
+pub struct AdminContributionConcurrente {
+    pub id: Uuid,
+    pub cree_par_nom: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// Piece jointe d'une contribution photo_visiteur en attente (URL servie par
+/// actix-files `/uploads/opportunite-afrique/photos/...`).
+#[derive(Debug, Serialize, serde::Deserialize, Clone)]
+pub struct AdminContributionPieceJointe {
+    pub chemin_fichier: String,
+    pub legende: String,
+    pub format: String,
+    pub taille_octets: i64,
+    pub largeur: i64,
+    pub hauteur: i64,
+    pub url_signee: String,
+}
+
+/// Reponse enrichie GET /api/admin/profils-pays/contributions/{id} — inclut
+/// diff structure JSONB + pieces jointes + contributions concurrentes (T040).
+#[derive(Debug, Serialize)]
+pub struct AdminContributionDetailResponse {
+    #[serde(flatten)]
+    pub base: AdminContributionDetailRow,
+    pub type_objet_contribution: String,
+    pub section_afripulse: Option<String>,
+    pub target_id: Option<Uuid>,
+    pub nouvelle_valeur_jsonb: Option<serde_json::Value>,
+    pub ancienne_valeur_jsonb: Option<serde_json::Value>,
+    pub pieces_jointes: Vec<AdminContributionPieceJointe>,
+    pub contributions_concurrentes: Vec<AdminContributionConcurrente>,
 }

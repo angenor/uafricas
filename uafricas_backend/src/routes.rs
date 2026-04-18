@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afrolang, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -292,6 +292,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/profils-pays/contributions", web::get().to(admin::profils_pays::lister_contributions))
                     .route("/profils-pays/contributions/{contrib_id}", web::get().to(admin::profils_pays::obtenir_contribution))
                     .route("/profils-pays/contributions/{contrib_id}/etat", web::patch().to(admin::profils_pays::moderer_contribution))
+                    .route("/profils-pays/contributions/{contrib_id}/retirer", web::post().to(admin::profils_pays::retirer_contribution_approuvee))
                     // Profils Pays - Routes parametrees
                     .route("/profils-pays/{id}", web::get().to(admin::profils_pays::obtenir_fiche_pays))
                     .route("/profils-pays/{id}", web::put().to(admin::profils_pays::modifier_fiche_pays))
@@ -510,7 +511,11 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("/fiches-pays")
                     .route("", web::get().to(fiches_pays::lister_fiches))
+                    // US3 — creation d'une nouvelle fiche pays (soumission)
+                    .route("", web::post().to(afripulse_public::creer_fiche_pays))
                     .route("/regions", web::get().to(fiches_pays::lister_regions))
+                    // T071 — mes contributions (utilisateur connecte)
+                    .route("/moi/contributions", web::get().to(afripulse_public::lister_mes_contributions))
                     // Contributions (routes statiques avant parametrees)
                     .route("/contributions/{id}/valider", web::put().to(contributions_fiche::valider_contribution))
                     .route("/contributions/{id}/rejeter", web::put().to(contributions_fiche::rejeter_contribution))
@@ -518,7 +523,16 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{id}", web::get().to(fiches_pays::obtenir_fiche))
                     .route("/{id}/contributions", web::get().to(contributions_fiche::lister_contributions))
                     .route("/{id}/contributions", web::post().to(contributions_fiche::soumettre_contribution))
-                    .route("/{id}/contributeurs", web::get().to(contributions_fiche::lister_contributeurs)),
+                    .route("/{id}/contributions/multipart", web::post().to(contributions_fiche::soumettre_contribution_multipart))
+                    .route("/{id}/contributeurs", web::get().to(contributions_fiche::lister_contributeurs))
+                    // Sections Afripulse enrichies (US1)
+                    .route("/{id}/sites-touristiques", web::get().to(afripulse_public::lister_sites_touristiques))
+                    .route("/{id}/secteurs-opportunites", web::get().to(afripulse_public::lister_secteurs_opportunites))
+                    .route("/{id}/personnalites", web::get().to(afripulse_public::lister_personnalites))
+                    .route("/{id}/savoirs-pratiques", web::get().to(afripulse_public::lister_savoirs_pratiques))
+                    // US4 — galerie photos + recommandations
+                    .route("/{id}/recommandations", web::get().to(afripulse_public::lister_recommandations))
+                    .route("/{id}/galerie-photos", web::get().to(afripulse_public::lister_galerie_photos)),
             )
             // Routes des africantives (initiatives africaines)
             .service(

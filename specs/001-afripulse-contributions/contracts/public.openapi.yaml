@@ -1,0 +1,710 @@
+openapi: 3.1.0
+info:
+  title: UAfricas — Afripulse Public API (contributions fiches pays)
+  version: "1.0.0-001-afripulse-contributions"
+  description: |
+    Endpoints publics pour la feature "Afripulse — Enrichissement collaboratif des fiches pays".
+    Tous les endpoints de MUTATION exigent un JWT valide (schéma `bearerAuth`).
+    Les endpoints de LECTURE sont publics (anonymes acceptés).
+
+    Les contrats ici décrits viennent EN EXTENSION des endpoints existants
+    (`GET /api/fiches-pays`, `GET /api/fiches-pays/{id}`, `GET /api/fiches-pays/{id}/contributeurs`,
+     `GET /api/fiches-pays/regions`) qui restent inchangés.
+
+servers:
+  - url: http://localhost:8080
+    description: Dev local
+  - url: https://www.africans-world.org
+    description: Production
+
+tags:
+  - name: FichesPays
+    description: Fiches pays publiques (lecture + création modérée)
+  - name: SectionsEnrichies
+    description: Lecture des 6 sections enrichies Afripulse
+  - name: Contributions
+    description: Soumission et suivi de ses contributions
+
+paths:
+
+  # ============================================================
+  # CRÉATION DE FICHE PAYS (US3) — soumis à modération
+  # ============================================================
+  /api/fiches-pays:
+    post:
+      tags: [FichesPays]
+      summary: Proposer la création d'une nouvelle fiche pays
+      description: |
+        Crée une contribution de type `fiche_pays` + `ajout` dans `country_profile.contribution_fiche`.
+        La fiche n'apparaît publiquement qu'après approbation admin.
+        Le code ISO fourni doit appartenir à la liste figée des 54 codes africains.
+        Si une fiche existe déjà pour ce pays (code ISO), renvoie 409 avec lien vers la fiche existante.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreationFichePaysRequete"
+      responses:
+        "202":
+          description: Contribution de création enregistrée, en attente de modération.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionCreeeReponse"
+        "400":
+          $ref: "#/components/responses/ErreurValidation"
+        "401":
+          $ref: "#/components/responses/NonAuthentifie"
+        "409":
+          description: Fiche déjà existante pour ce code ISO.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflitFicheExistante"
+        "422":
+          description: Code ISO hors périmètre africain.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErreurApi"
+        "429":
+          $ref: "#/components/responses/LimiteAtteinte"
+
+  # ============================================================
+  # CONTRIBUTION SUR FICHE EXISTANTE (US1, US4)
+  # ============================================================
+  /api/fiches-pays/{id}/contributions:
+    post:
+      tags: [Contributions]
+      summary: Soumettre une contribution (ajout / édition / suppression / photo / recommandation)
+      description: |
+        Endpoint unique pour toutes les contributions sur une fiche existante.
+        Accepte deux `Content-Type` :
+          - `application/json` pour contribution textuelle seule.
+          - `multipart/form-data` pour contribution avec 1 à 5 photos (jpeg/png, 2 Mo max, 2048×2048 max).
+
+        Application des règles anti-spam (FR-014a) :
+          - 20 contributions textuelles / utilisateur / 24 h glissantes
+          - 10 contributions photo / utilisateur / 24 h glissantes
+          - 5 contributions `en_attente` simultanées par utilisateur sur un même pays
+
+        Application des règles recommandation (FR-013) :
+          - Note entière 1..5, commentaire 50..2000 caractères
+          - Une seule recommandation active par (utilisateur, pays) — la soumission sur un pays
+            déjà doté d'une recommandation active est une contribution de type `edition`
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FichePaysId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContributionTextuelleRequete"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ContributionMultipartRequete"
+            encoding:
+              photos:
+                contentType: image/jpeg, image/png
+      responses:
+        "202":
+          description: Contribution enregistrée, en attente de modération.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionCreeeReponse"
+        "400":
+          $ref: "#/components/responses/ErreurValidation"
+        "401":
+          $ref: "#/components/responses/NonAuthentifie"
+        "413":
+          description: Pièce jointe hors bornes (>2 Mo, >2048×2048, format non JPEG/PNG ou >5 photos).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErreurApi"
+        "429":
+          $ref: "#/components/responses/LimiteAtteinte"
+
+  # ============================================================
+  # SUIVI DE SES CONTRIBUTIONS (FR-026)
+  # ============================================================
+  /api/fiches-pays/moi/contributions:
+    get:
+      tags: [Contributions]
+      summary: Lister les contributions de l'utilisateur connecté
+      description: |
+        Permet à l'auteur de consulter l'état de ses soumissions (en attente, approuvée, refusée, obsolète)
+        avec filtres par état, type d'objet et pays.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: etat
+          schema:
+            type: string
+            enum: [en_attente, approuvee, rejetee, obsolete]
+        - in: query
+          name: type_objet
+          schema:
+            $ref: "#/components/schemas/TypeObjetContribution"
+        - in: query
+          name: fiche_pays_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: par_page
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+      responses:
+        "200":
+          description: Liste paginée des contributions de l'utilisateur.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListePaginee"
+        "401":
+          $ref: "#/components/responses/NonAuthentifie"
+
+  # ============================================================
+  # LECTURE DES SECTIONS ENRICHIES (FR-001..FR-006)
+  # ============================================================
+  /api/fiches-pays/{id}/sites-touristiques:
+    get:
+      tags: [SectionsEnrichies]
+      summary: Lister les sites touristiques (emblématiques + privés) d'un pays
+      parameters:
+        - $ref: "#/components/parameters/FichePaysId"
+        - in: query
+          name: categorie
+          schema:
+            type: string
+            enum: [emblematique, prive]
+      responses:
+        "200":
+          description: Liste des sites validés.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SiteTouristiqueAPI"
+
+  /api/fiches-pays/{id}/secteurs-opportunites:
+    get:
+      tags: [SectionsEnrichies]
+      summary: Lister les secteurs d'opportunités d'un pays
+      parameters:
+        - $ref: "#/components/parameters/FichePaysId"
+      responses:
+        "200":
+          description: Liste des secteurs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SecteurOpportuniteAPI"
+
+  /api/fiches-pays/{id}/personnalites:
+    get:
+      tags: [SectionsEnrichies]
+      summary: Lister les personnalités connues d'un pays
+      parameters:
+        - $ref: "#/components/parameters/FichePaysId"
+        - in: query
+          name: domaine
+          schema:
+            $ref: "#/components/schemas/DomainePersonnalite"
+      responses:
+        "200":
+          description: Liste des personnalités.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PersonnaliteConnueAPI"
+
+  /api/fiches-pays/{id}/savoirs-pratiques:
+    get:
+      tags: [SectionsEnrichies]
+      summary: Lister les items "À savoir avant de voyager"
+      parameters:
+        - $ref: "#/components/parameters/FichePaysId"
+        - in: query
+          name: categorie
+          schema:
+            $ref: "#/components/schemas/CategorieSavoir"
+      responses:
+        "200":
+          description: Liste des savoirs pratiques.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavoirPratiqueAPI"
+
+  /api/fiches-pays/{id}/recommandations:
+    get:
+      tags: [SectionsEnrichies]
+      summary: Lister les recommandations de visiteurs (actives validées) + note moyenne
+      parameters:
+        - $ref: "#/components/parameters/FichePaysId"
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: par_page
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        "200":
+          description: Note moyenne + page de recommandations.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [note_moyenne, nombre_total, recommandations]
+                properties:
+                  note_moyenne:
+                    type: number
+                    format: float
+                    description: Moyenne des notes actives sur 5.
+                  nombre_total:
+                    type: integer
+                  recommandations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RecommandationVisiteurAPI"
+
+  /api/fiches-pays/{id}/galerie-photos:
+    get:
+      tags: [SectionsEnrichies]
+      summary: Lister les photos validées (galerie visiteurs) d'un pays
+      parameters:
+        - $ref: "#/components/parameters/FichePaysId"
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: par_page
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+      responses:
+        "200":
+          description: Liste paginée de photos.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [nombre_total, photos]
+                properties:
+                  nombre_total: { type: integer }
+                  photos:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PhotoVisiteurAPI"
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    FichePaysId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    NonAuthentifie:
+      description: JWT absent ou invalide.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErreurApi"
+    ErreurValidation:
+      description: Corps de requête invalide.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErreurApi"
+    LimiteAtteinte:
+      description: |
+        Plafond anti-spam atteint (FR-014a). Le corps de réponse indique quel seuil est dépassé
+        et l'horizon de libération.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErreurLimiteAtteinte"
+
+  schemas:
+
+    # ------------- Enums partagés -------------
+    TypeObjetContribution:
+      type: string
+      enum:
+        - fiche_pays
+        - site_touristique
+        - secteur_developpement
+        - personnalite_connue
+        - savoir_pratique
+        - recommandation_visiteur
+        - photo_visiteur
+
+    SectionAfripulse:
+      type: string
+      enum:
+        - sites_emblematiques
+        - sites_prives
+        - secteurs_opportunites
+        - personnalites
+        - savoir_avant_voyager
+        - recommandations
+        - galerie_photos
+
+    TypeContribution:
+      type: string
+      enum: [modification, ajout, suppression]
+
+    EtatContribution:
+      type: string
+      enum: [en_attente, approuvee, rejetee, obsolete]
+
+    CategorieSiteTouristique:
+      type: string
+      enum: [emblematique, prive]
+
+    CategorieSavoir:
+      type: string
+      enum: [langue_argot, coutumes, etiquette, securite, sante, transports, autre]
+
+    DomainePersonnalite:
+      type: string
+      enum:
+        - politique
+        - artiste_musicien
+        - artiste_autre
+        - sportif
+        - entrepreneur
+        - scientifique
+        - militaire_historique
+        - autre
+
+    # ------------- Requêtes -------------
+
+    CreationFichePaysRequete:
+      type: object
+      required: [code_iso2, nom, capitale]
+      properties:
+        code_iso2:
+          type: string
+          pattern: "^[a-z]{2}$"
+          description: Code ISO 3166-1 alpha-2 en minuscules (ex. `ci` pour Côte d'Ivoire).
+        nom:
+          type: string
+          minLength: 2
+          maxLength: 120
+        capitale:
+          type: string
+          maxLength: 120
+        region:
+          type: string
+          enum:
+            - "Afrique de l'Ouest"
+            - "Afrique Centrale"
+            - "Afrique de l'Est"
+            - "Afrique du Nord"
+            - "Afrique Australe"
+        population:
+          type: string
+          maxLength: 40
+        superficie_km2:
+          type: number
+          format: float
+        monnaie:
+          type: string
+          maxLength: 120
+        langues_populaires:
+          type: string
+        slogan:
+          type: string
+          maxLength: 500
+        image_couverture_url:
+          type: string
+          format: uri
+        image_drapeau_url:
+          type: string
+          format: uri
+
+    ContributionTextuelleRequete:
+      type: object
+      required: [section, type_objet, type_contribution, nouvelle_valeur]
+      properties:
+        section:
+          $ref: "#/components/schemas/SectionAfripulse"
+        type_objet:
+          $ref: "#/components/schemas/TypeObjetContribution"
+        type_contribution:
+          $ref: "#/components/schemas/TypeContribution"
+        target_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Requis pour `edition` ou `suppression` ; NULL pour `ajout`.
+        nouvelle_valeur:
+          description: Payload structuré propre au type_objet (voir exemples).
+          oneOf:
+            - type: object
+            - type: string
+        justification:
+          type: string
+          maxLength: 500
+      examples:
+        ajout_site_emblematique:
+          summary: Ajout d'un site touristique emblématique
+          value:
+            section: sites_emblematiques
+            type_objet: site_touristique
+            type_contribution: ajout
+            target_id: null
+            nouvelle_valeur:
+              nom: "Basilique Notre-Dame de la Paix"
+              description: "Plus grand édifice chrétien au monde."
+              longitude: -5.2767
+              latitude: 6.8395
+              categorie: emblematique
+              region_id: null
+            justification: "Site UNESCO non encore listé."
+        recommandation:
+          summary: Recommandation visiteur
+          value:
+            section: recommandations
+            type_objet: recommandation_visiteur
+            type_contribution: ajout
+            target_id: null
+            nouvelle_valeur:
+              note: 5
+              commentaire: "Accueil chaleureux, gastronomie exceptionnelle, paysages variés. Un voyage qui marque durablement."
+
+    ContributionMultipartRequete:
+      type: object
+      required: [section, type_objet, type_contribution, photos, legendes]
+      properties:
+        section:
+          $ref: "#/components/schemas/SectionAfripulse"
+        type_objet:
+          $ref: "#/components/schemas/TypeObjetContribution"
+        type_contribution:
+          $ref: "#/components/schemas/TypeContribution"
+        target_id:
+          type: string
+          format: uuid
+          nullable: true
+        nouvelle_valeur:
+          type: string
+          description: JSON sérialisé des métadonnées texte (optionnel selon type_objet).
+        justification:
+          type: string
+          maxLength: 500
+        photos:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            type: string
+            format: binary
+            description: Fichier JPEG ou PNG, ≤ 2 Mo, ≤ 2048×2048.
+        legendes:
+          type: array
+          minItems: 1
+          maxItems: 5
+          description: Une légende par photo (même index).
+          items:
+            type: string
+            minLength: 1
+            maxLength: 500
+
+    # ------------- Réponses -------------
+
+    ContributionCreeeReponse:
+      type: object
+      required: [id, etat, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        etat:
+          $ref: "#/components/schemas/EtatContribution"
+        created_at:
+          type: string
+          format: date-time
+      example:
+        id: "00000000-0000-0000-0000-000000000001"
+        etat: "en_attente"
+        created_at: "2026-04-18T10:00:00Z"
+
+    ConflitFicheExistante:
+      type: object
+      required: [code_iso2, fiche_pays_id]
+      properties:
+        code_iso2: { type: string }
+        fiche_pays_id: { type: string, format: uuid }
+        message:
+          type: string
+          description: Suggestion à l'utilisateur de passer par la modification de la fiche existante.
+      example:
+        code_iso2: "ci"
+        fiche_pays_id: "00000000-0000-0000-0000-000000000042"
+        message: "Une fiche existe déjà pour la Côte d'Ivoire. Proposez une modification à la place."
+
+    SiteTouristiqueAPI:
+      type: object
+      required: [id, fiche_pays_id, nom, categorie]
+      properties:
+        id: { type: string, format: uuid }
+        fiche_pays_id: { type: string, format: uuid }
+        nom: { type: string }
+        description: { type: string, nullable: true }
+        image_url: { type: string, format: uri, nullable: true }
+        longitude: { type: number, format: double, nullable: true }
+        latitude: { type: number, format: double, nullable: true }
+        categorie:
+          $ref: "#/components/schemas/CategorieSiteTouristique"
+        region:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            nom: { type: string }
+
+    SecteurOpportuniteAPI:
+      type: object
+      required: [id, fiche_pays_id, nom]
+      properties:
+        id: { type: string, format: uuid }
+        fiche_pays_id: { type: string, format: uuid }
+        nom: { type: string }
+        description: { type: string, nullable: true }
+
+    PersonnaliteConnueAPI:
+      type: object
+      required: [id, fiche_pays_id, nom_complet, domaine, biographie_courte]
+      properties:
+        id: { type: string, format: uuid }
+        fiche_pays_id: { type: string, format: uuid }
+        nom_complet: { type: string }
+        domaine:
+          $ref: "#/components/schemas/DomainePersonnalite"
+        biographie_courte: { type: string }
+        annee_naissance: { type: integer, nullable: true }
+        annee_deces: { type: integer, nullable: true }
+        portrait_url: { type: string, format: uri, nullable: true }
+        lien_reference: { type: string, format: uri, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    SavoirPratiqueAPI:
+      type: object
+      required: [id, fiche_pays_id, titre, categorie, explication]
+      properties:
+        id: { type: string, format: uuid }
+        fiche_pays_id: { type: string, format: uuid }
+        titre: { type: string }
+        categorie:
+          $ref: "#/components/schemas/CategorieSavoir"
+        explication: { type: string }
+        exemple: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    RecommandationVisiteurAPI:
+      type: object
+      required: [id, fiche_pays_id, note, commentaire, utilisateur, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        fiche_pays_id: { type: string, format: uuid }
+        note:
+          type: integer
+          minimum: 1
+          maximum: 5
+        commentaire:
+          type: string
+          minLength: 50
+          maxLength: 2000
+        utilisateur:
+          $ref: "#/components/schemas/UtilisateurPublic"
+        created_at: { type: string, format: date-time }
+
+    PhotoVisiteurAPI:
+      type: object
+      required: [id, fiche_pays_id, url, legende, utilisateur, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        fiche_pays_id: { type: string, format: uuid }
+        url: { type: string, format: uri }
+        legende: { type: string }
+        largeur_px: { type: integer }
+        hauteur_px: { type: integer }
+        utilisateur:
+          $ref: "#/components/schemas/UtilisateurPublic"
+        created_at: { type: string, format: date-time }
+
+    UtilisateurPublic:
+      type: object
+      description: |
+        Identité publique d'un contributeur. Si le compte est supprimé,
+        `nom`="Contributeur", `prenom`="retiré" et `id`=NULL.
+      properties:
+        id: { type: string, format: uuid, nullable: true }
+        nom: { type: string }
+        prenom: { type: string }
+        photo_url: { type: string, format: uri, nullable: true }
+
+    ListePaginee:
+      type: object
+      required: [items, total, page, par_page, total_pages]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        total: { type: integer }
+        page: { type: integer }
+        par_page: { type: integer }
+        total_pages: { type: integer }
+
+    ErreurApi:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+        code: { type: string }
+        details:
+          type: object
+          additionalProperties: true
+
+    ErreurLimiteAtteinte:
+      allOf:
+        - $ref: "#/components/schemas/ErreurApi"
+        - type: object
+          properties:
+            seuil_depasse:
+              type: string
+              enum:
+                - "20_contributions_textuelles_24h"
+                - "10_contributions_photos_24h"
+                - "5_contributions_en_attente_par_pays"
+            prochain_creneau:
+              type: string
+              format: date-time

@@ -157,6 +157,32 @@
               </div>
             </div>
 
+            <!-- Afripulse — sections enrichies (US1) -->
+            <OpportuniteAfriqueSitesTouristiquesSection
+              :fiche-id="pays.id"
+              :est-authentifie="userStore.isAuthenticated"
+              @open-contribution="onOpenContribution"
+              @require-login="onRequireLogin"
+            />
+            <OpportuniteAfriqueSecteursOpportunitesSection
+              :fiche-id="pays.id"
+              :est-authentifie="userStore.isAuthenticated"
+              @open-contribution="onOpenContribution"
+              @require-login="onRequireLogin"
+            />
+            <OpportuniteAfriquePersonnalitesSection
+              :fiche-id="pays.id"
+              :est-authentifie="userStore.isAuthenticated"
+              @open-contribution="onOpenContribution"
+              @require-login="onRequireLogin"
+            />
+            <OpportuniteAfriqueSavoirAvantVoyagerSection
+              :fiche-id="pays.id"
+              :est-authentifie="userStore.isAuthenticated"
+              @open-contribution="onOpenContribution"
+              @require-login="onRequireLogin"
+            />
+
             <!-- Symboles nationaux -->
             <div class="bg-white rounded-lg shadow-md p-6">
               <h2 class="text-2xl font-bold mb-6 flex items-center">
@@ -251,7 +277,8 @@
       :is-open="showContributionModal"
       :fiche-id="pays?.id || ''"
       :pays-nom="pays?.nom || ''"
-      @close="showContributionModal = false"
+      :afripulse-context="afripulseContext"
+      @close="fermerContributionModal"
       @submit="handleContributionSubmit"
     />
   </div>
@@ -263,16 +290,32 @@ import {
   formatDate,
   type FichePaysDetailAPI,
   type ContributeurAPI,
+  type TypeObjetContribution,
+  type SectionAfripulse,
 } from '~/composables/useOpportuniteAfrique'
 import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const userStore = useUserStore()
-const { chargement, obtenirFiche, soumettreContribution, listerContributeurs } = useOpportuniteAfrique()
+const {
+  chargement,
+  obtenirFiche,
+  soumettreContribution,
+  soumettreContributionEnrichie,
+  listerContributeurs,
+} = useOpportuniteAfrique()
+
+interface AfripulseContext {
+  type_objet_contribution: TypeObjetContribution
+  section_afripulse: SectionAfripulse
+  type_contribution: 'ajout' | 'edition' | 'suppression'
+  target_id?: string
+}
 
 const pays = ref<FichePaysDetailAPI | null>(null)
 const contributeurs = ref<ContributeurAPI[]>([])
 const showContributionModal = ref(false)
+const afripulseContext = ref<AfripulseContext | null>(null)
 const contributionModalRef = ref<{ setLoading: (val: boolean) => void; setError: (msg: string) => void; setSuccess: () => void } | null>(null)
 
 const proposerModification = () => {
@@ -280,35 +323,76 @@ const proposerModification = () => {
     navigateTo('/login')
     return
   }
+  afripulseContext.value = null
   showContributionModal.value = true
 }
 
-const signalerProbleme = () => {
-  alert('Cette fonctionnalite sera disponible prochainement. Vous pourrez signaler des erreurs ou des problemes.')
+const onOpenContribution = (ctx: AfripulseContext) => {
+  afripulseContext.value = ctx
+  showContributionModal.value = true
 }
 
-const handleContributionSubmit = async (data: {
+const onRequireLogin = () => {
+  navigateTo('/login')
+}
+
+const fermerContributionModal = () => {
+  showContributionModal.value = false
+  afripulseContext.value = null
+}
+
+const signalerProbleme = () => {
+  alert('Cette fonctionnalité sera disponible prochainement. Vous pourrez signaler des erreurs ou des problèmes.')
+}
+
+type SubmitLegacy = {
+  mode: 'legacy'
   section: string
   type_contribution: string
   nouvelle_valeur: string
   justification: string
-}) => {
+}
+
+type SubmitAfripulse = {
+  mode: 'afripulse'
+  type_objet_contribution: TypeObjetContribution
+  section_afripulse: SectionAfripulse
+  type_contribution: 'ajout' | 'edition' | 'suppression'
+  target_id?: string
+  nouvelle_valeur_jsonb: Record<string, unknown>
+  justification: string
+}
+
+const handleContributionSubmit = async (data: SubmitLegacy | SubmitAfripulse) => {
   if (!pays.value) return
   contributionModalRef.value?.setLoading(true)
 
-  const result = await soumettreContribution(pays.value.id, {
-    section: data.section,
-    type_contribution: data.type_contribution,
-    nouvelle_valeur: data.nouvelle_valeur,
-    justification: data.justification || undefined,
-  })
+  let ok = false
+  if (data.mode === 'afripulse') {
+    const res = await soumettreContributionEnrichie(pays.value.id, {
+      type_objet_contribution: data.type_objet_contribution,
+      section_afripulse: data.section_afripulse,
+      type_contribution: data.type_contribution,
+      target_id: data.target_id,
+      nouvelle_valeur_jsonb: data.nouvelle_valeur_jsonb,
+      justification: data.justification || undefined,
+    })
+    ok = !!res
+  } else {
+    const res = await soumettreContribution(pays.value.id, {
+      section: data.section,
+      type_contribution: data.type_contribution,
+      nouvelle_valeur: data.nouvelle_valeur,
+      justification: data.justification || undefined,
+    })
+    ok = !!res
+  }
 
-  if (result) {
+  if (ok) {
     contributionModalRef.value?.setSuccess()
-    // Rafraichir la liste des contributeurs
     contributeurs.value = await listerContributeurs(pays.value.id)
   } else {
-    contributionModalRef.value?.setError('Erreur lors de la soumission de votre contribution. Veuillez reessayer.')
+    contributionModalRef.value?.setError('Erreur lors de la soumission de votre contribution. Veuillez réessayer.')
   }
 }
 
