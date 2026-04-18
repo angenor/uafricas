@@ -1,119 +1,317 @@
 <template>
-  <div class="min-h-screen pb-10 bg-gray-50">
+  <div class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
-    <div
-      class="relative h-80 bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');"
-    >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/85 via-custom-green/70 to-black/70"></div>
+    <div class="relative h-96 overflow-hidden bg-linear-to-br from-custom-chocolat via-amber-700 to-custom-green">
+      <div class="absolute inset-0 opacity-10"
+           style="background-image: repeating-linear-gradient(135deg, transparent, transparent 35px, rgba(255,255,255,0.1) 35px, rgba(255,255,255,0.1) 70px);"></div>
+      <div class="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-white/5 animate-pulse"></div>
+      <div class="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5 animate-pulse" style="animation-delay: 1s;"></div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center pt-24 px-4 text-center">
-        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-fadeInUp">
-          Publications de la Communauté
+      <div class="absolute inset-0 flex flex-col items-center justify-center px-4">
+        <h1 class="text-white text-5xl md:text-6xl font-display font-bold mb-4 animate-fadeInUp tracking-tight">
+          Publications
         </h1>
-        <div class="h-1 w-32 bg-white rounded animate-expandWidth"></div>
-        <p class="text-white text-xl md:text-2xl mt-4 animate-fadeInUp animation-delay-200 max-w-3xl">
+        <div class="h-1 w-24 bg-linear-to-r from-amber-300 to-custom-green rounded-full mb-4 animate-expandWidth"></div>
+        <p class="text-white/85 text-lg md:text-xl text-center max-w-2xl animate-fadeInUp animation-delay-200">
           Un flux unique pour toutes les voix d'Afrique
         </p>
       </div>
     </div>
 
-    <!-- Filtres -->
-    <div class="max-w-6xl mx-auto px-4 -mt-8 relative z-10">
-      <div class="bg-white rounded-xl shadow-lg p-4">
-        <div class="flex flex-wrap items-center gap-2">
-          <button
-            v-for="filtre in filtres"
-            :key="filtre.value"
-            @click="activeFilter = filtre.value"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200"
-            :class="activeFilter === filtre.value
-              ? 'bg-custom-green text-white border-custom-green shadow-md'
-              : 'bg-white text-gray-700 border-gray-200 hover:border-custom-green hover:text-custom-green'"
-          >
-            <font-awesome-icon :icon="filtre.icon" />
-            <span>{{ filtre.label }}</span>
-            <span
-              v-if="compteurs[filtre.value] !== undefined"
-              class="ml-1 px-2 py-0.5 text-xs rounded-full"
-              :class="activeFilter === filtre.value ? 'bg-white/20' : 'bg-gray-100 text-gray-600'"
+    <!-- Contenu -->
+    <div class="max-w-7xl mx-auto px-4 py-8 -mt-16 relative z-10">
+      <!-- Barre de navigation -->
+      <div class="bg-white rounded-xl shadow-lg p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
+        <div class="text-sm text-gray-500">
+          <span class="font-semibold text-gray-900">{{ publications.length }}</span> publication{{ publications.length > 1 ? 's' : '' }} au total
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Sidebar — Filtres par catégorie -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-xl shadow-lg overflow-hidden sticky top-4">
+            <div class="bg-linear-to-r from-custom-chocolat to-amber-700 px-6 py-4">
+              <h3 class="text-white font-bold flex items-center gap-2">
+                <font-awesome-icon :icon="['fas', 'filter']" />
+                Filtres
+              </h3>
+            </div>
+
+            <div class="p-6 space-y-5">
+              <!-- Catégories -->
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                  Catégories
+                </label>
+                <div class="space-y-2">
+                  <button
+                    v-for="filtre in filtres"
+                    :key="filtre.value"
+                    @click="activeFilter = filtre.value"
+                    class="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200"
+                    :class="activeFilter === filtre.value
+                      ? `${filtre.activeClasses} shadow-sm`
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50'"
+                  >
+                    <span class="flex items-center gap-2">
+                      <font-awesome-icon :icon="filtre.icon" class="text-xs" />
+                      <span>{{ filtre.label }}</span>
+                    </span>
+                    <span
+                      class="px-2 py-0.5 text-xs rounded-full"
+                      :class="activeFilter === filtre.value ? 'bg-white/30' : 'bg-gray-100 text-gray-600'"
+                    >
+                      {{ compteurs[filtre.value] }}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Recherche -->
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Recherche
+                </label>
+                <div class="relative">
+                  <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+                  <input v-model="recherche"
+                         type="text"
+                         placeholder="Mot-clé..."
+                         class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-custom-green/30 focus:border-custom-green transition text-sm">
+                </div>
+              </div>
+
+              <!-- Pays -->
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pays</label>
+                <select v-model="paysSelectionne" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-custom-green/30 focus:border-custom-green transition bg-white text-sm">
+                  <option value="">Tous les pays</option>
+                  <option v-for="pays in paysDisponibles" :key="pays" :value="pays">{{ pays }}</option>
+                </select>
+              </div>
+
+              <!-- Reset -->
+              <button
+                v-if="hasFiltresActifs"
+                @click="reinitialiser"
+                class="w-full py-2.5 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition flex items-center justify-center gap-2"
+              >
+                <font-awesome-icon :icon="['fas', 'rotate-left']" class="text-xs" />
+                Réinitialiser
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Liste principale -->
+        <div class="lg:col-span-3">
+          <!-- État de chargement -->
+          <div v-if="loading" class="flex justify-center py-16 bg-white rounded-xl shadow-md">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-green"></div>
+          </div>
+
+          <!-- État d'erreur -->
+          <div v-else-if="erreurChargement" class="py-16 text-center bg-white rounded-xl shadow-md">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-50 mb-4">
+              <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="text-3xl text-red-400" />
+            </div>
+            <h3 class="text-lg font-semibold text-gray-600">Erreur de chargement</h3>
+            <p class="text-gray-400 mt-1 text-sm">{{ erreurChargement }}</p>
+            <button
+              @click="chargerTout"
+              class="mt-4 px-5 py-2.5 bg-linear-to-r from-custom-green to-green-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 text-sm font-medium"
             >
-              {{ compteurs[filtre.value] }}
-            </span>
-          </button>
+              <font-awesome-icon :icon="['fas', 'rotate-right']" class="mr-2" />
+              Réessayer
+            </button>
+          </div>
+
+          <template v-else>
+            <!-- Résultats count + titre -->
+            <div class="flex items-center justify-between mb-4">
+              <p class="text-sm text-gray-500">
+                <span class="font-semibold text-gray-900">{{ publicationsFiltrees.length }}</span> résultat{{ publicationsFiltrees.length > 1 ? 's' : '' }}
+                <span v-if="hasFiltresActifs"> (filtré{{ publicationsFiltrees.length > 1 ? 's' : '' }})</span>
+              </p>
+            </div>
+
+            <!-- État vide -->
+            <div v-if="publicationsFiltrees.length === 0" class="text-center py-20 bg-white rounded-xl shadow-lg">
+              <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="text-gray-400 text-2xl" />
+              </div>
+              <p class="text-gray-900 font-semibold text-lg mb-2">Aucun résultat trouvé</p>
+              <p class="text-gray-500 text-sm">Essayez de modifier vos filtres de recherche</p>
+            </div>
+
+            <!-- Cartes unifiées -->
+            <TransitionGroup v-else name="feed" tag="div" class="space-y-5">
+              <div
+                v-for="pub in publicationsFiltrees"
+                :key="pub.key"
+                class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-gray-200"
+                @click="ouvrirPublication(pub)"
+              >
+                <!-- Bande colorée -->
+                <div class="h-1.5" :class="pub.typeStyle.bande"></div>
+
+                <div class="p-6">
+                  <div class="flex items-start gap-4">
+                    <!-- Icône -->
+                    <div class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
+                         :class="pub.typeStyle.iconeBg">
+                      <font-awesome-icon :icon="pub.typeStyle.icone" class="text-lg" />
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                      <!-- Badges -->
+                      <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide"
+                              :class="pub.typeStyle.badge">
+                          {{ pub.typeStyle.label }}
+                        </span>
+                        <!-- Sous-badge spécifique -->
+                        <span v-if="pub.source === 'gouvernance' && pub.data.verified"
+                              class="flex items-center gap-1 px-2.5 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                          <font-awesome-icon :icon="['fas', 'circle-check']" class="text-[10px]" />
+                          Vérifié
+                        </span>
+                        <span v-if="pub.source === 'gouvernance' && pub.data.problematique?.gravite"
+                              class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide"
+                              :class="getGraviteClasses(pub.data.problematique.gravite)">
+                          {{ pub.data.problematique.gravite }}
+                        </span>
+                      </div>
+
+                      <!-- Titre -->
+                      <h3 class="text-lg font-bold text-gray-900 mb-2 transition-colors line-clamp-2"
+                          :class="pub.typeStyle.titreHover">
+                        {{ pub.source === 'codimoi' ? titreCodimoi(pub.data) : pub.data.titre }}
+                      </h3>
+
+                      <!-- Description -->
+                      <p class="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">
+                        {{ pub.source === 'codimoi' ? (pub.data.explication || pub.data.contenu) : pub.data.description }}
+                      </p>
+
+                      <!-- Contenu spécifique FactCheck : préjugé vs réalité -->
+                      <div v-if="pub.source === 'gouvernance' && pub.data.type === 'factcheck' && pub.data.factcheck"
+                           class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <div class="p-3 bg-red-50 rounded-lg border-l-4 border-red-400">
+                          <p class="text-xs font-bold text-red-600 uppercase tracking-wide mb-1">
+                            <font-awesome-icon :icon="['fas', 'xmark']" class="mr-1" />Préjugé
+                          </p>
+                          <p class="text-red-800 text-sm line-clamp-2">{{ pub.data.factcheck.prejuge.titre }}</p>
+                        </div>
+                        <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                          <p class="text-xs font-bold text-green-600 uppercase tracking-wide mb-1">
+                            <font-awesome-icon :icon="['fas', 'check']" class="mr-1" />Réalité
+                          </p>
+                          <p class="text-green-800 text-sm line-clamp-2">{{ pub.data.factcheck.contrePrejuge.titre }}</p>
+                        </div>
+                      </div>
+
+                      <!-- Contenu spécifique IdeaForces -->
+                      <div v-if="pub.source === 'gouvernance' && pub.data.type === 'ideaforces' && pub.data.proposition"
+                           class="p-3 bg-amber-50 rounded-lg border-l-4 border-amber-400 mb-4">
+                        <p class="text-xs font-bold text-amber-700 uppercase tracking-wide mb-1">
+                          <font-awesome-icon :icon="['fas', 'lightbulb']" class="mr-1" />Objectif
+                        </p>
+                        <p class="text-amber-900 text-sm line-clamp-2">{{ pub.data.proposition.objectif }}</p>
+                      </div>
+
+                      <!-- Contenu spécifique BadHabits -->
+                      <div v-if="pub.source === 'gouvernance' && pub.data.type === 'badhabits' && pub.data.problematique"
+                           class="p-3 bg-red-50 rounded-lg border-l-4 border-red-400 mb-4">
+                        <p class="text-xs font-bold text-red-600 uppercase tracking-wide mb-1">
+                          <font-awesome-icon :icon="['fas', 'tag']" class="mr-1" />{{ pub.data.problematique.categorie }}
+                        </p>
+                        <p v-if="pub.data.problematique.urgence" class="text-red-800 text-sm">
+                          Urgence : {{ pub.data.problematique.urgence }}
+                        </p>
+                      </div>
+
+                      <!-- Contenu spécifique Codimoi (proverbe/citation) -->
+                      <div v-if="pub.source === 'codimoi' && isQuoteType(pub.data.type)"
+                           class="p-4 rounded-lg text-white text-center mb-4"
+                           :style="{ backgroundColor: pub.data.couleur_fond || '#2D5A27' }">
+                        <p class="text-sm italic leading-relaxed line-clamp-3">
+                          « {{ pub.data.contenu }} »
+                        </p>
+                        <p v-if="pub.data.nom_auteur_originel" class="text-xs opacity-90 mt-2">
+                          — {{ pub.data.nom_auteur_originel }}
+                        </p>
+                      </div>
+
+                      <!-- Hashtags Codimoi -->
+                      <div v-if="pub.source === 'codimoi' && pub.data.hashtags && pub.data.hashtags.length"
+                           class="flex flex-wrap gap-1.5 mb-4">
+                        <span v-for="tag in pub.data.hashtags.slice(0, 3)"
+                              :key="tag"
+                              class="px-2 py-0.5 bg-custom-green/10 text-custom-green text-xs rounded-full font-medium">
+                          #{{ tag }}
+                        </span>
+                      </div>
+
+                      <!-- Tags Gouvernance -->
+                      <div v-if="pub.source === 'gouvernance' && pub.data.tags && pub.data.tags.length"
+                           class="flex flex-wrap gap-1.5 mb-4">
+                        <span v-for="tag in pub.data.tags.slice(0, 3)"
+                              :key="tag"
+                              class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+                          #{{ tag }}
+                        </span>
+                      </div>
+
+                      <!-- Métadonnées -->
+                      <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-400">
+                        <span class="flex items-center gap-1.5">
+                          <font-awesome-icon :icon="['fas', 'user']" />
+                          {{ nomAuteur(pub) }}
+                        </span>
+                        <span v-if="paysPub(pub)" class="flex items-center gap-1.5">
+                          <font-awesome-icon :icon="['fas', 'location-dot']" />
+                          {{ paysPub(pub) }}
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                          <font-awesome-icon :icon="['fas', 'calendar-alt']" />
+                          {{ formatDate(pub.date) }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Flèche -->
+                    <div class="shrink-0 hidden sm:flex items-center">
+                      <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-all group-hover:translate-x-1"
+                           :class="pub.typeStyle.flecheHoverBg">
+                        <font-awesome-icon :icon="['fas', 'chevron-right']" class="text-gray-400 text-xs transition-colors"
+                                           :class="pub.typeStyle.flecheHoverColor" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Stats footer -->
+                  <div class="flex items-center gap-6 mt-5 pt-4 border-t border-gray-100 text-xs text-gray-400">
+                    <span class="flex items-center gap-1.5 hover:text-gray-600 transition">
+                      <font-awesome-icon :icon="['fas', 'eye']" />
+                      {{ statsVues(pub) }} vues
+                    </span>
+                    <span class="flex items-center gap-1.5 hover:text-red-500 transition">
+                      <font-awesome-icon :icon="['fas', 'heart']" />
+                      {{ statsLikes(pub) }} likes
+                    </span>
+                    <span class="flex items-center gap-1.5 hover:text-blue-500 transition">
+                      <font-awesome-icon :icon="['fas', 'comment']" />
+                      {{ statsCommentaires(pub) }} commentaires
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </TransitionGroup>
+          </template>
         </div>
-      </div>
-    </div>
-
-    <!-- Breadcrumb + titre -->
-    <div class="max-w-6xl mx-auto px-4 mt-6">
-      <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
-      <h2 class="mt-4 text-2xl font-bold text-gray-800">
-        {{ titreSection }}
-        <span class="text-base font-normal text-gray-500 ml-2">
-          ({{ publicationsFiltrees.length }} publication{{ publicationsFiltrees.length > 1 ? 's' : '' }})
-        </span>
-      </h2>
-    </div>
-
-    <!-- État de chargement -->
-    <div v-if="loading" class="flex justify-center py-16">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-green"></div>
-    </div>
-
-    <!-- État d'erreur -->
-    <div v-else-if="erreurChargement" class="max-w-6xl mx-auto px-4 py-16 text-center">
-      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-50 mb-4">
-        <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="text-3xl text-red-400" />
-      </div>
-      <h3 class="text-lg font-semibold text-gray-600">Erreur de chargement</h3>
-      <p class="text-gray-400 mt-1 text-sm">{{ erreurChargement }}</p>
-      <button
-        @click="chargerTout"
-        class="mt-4 px-5 py-2.5 bg-gradient-to-r from-custom-green to-green-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 text-sm font-medium"
-      >
-        <font-awesome-icon :icon="['fas', 'rotate-right']" class="mr-2" />
-        Réessayer
-      </button>
-    </div>
-
-    <!-- Feed unifié -->
-    <div v-else class="max-w-6xl mx-auto px-4 mt-6">
-      <!-- Grille de cartes -->
-      <TransitionGroup
-        v-if="publicationsFiltrees.length > 0"
-        name="feed"
-        tag="div"
-        class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
-      >
-        <template v-for="pub in publicationsFiltrees" :key="pub.key">
-          <!-- Carte Codimoi -->
-          <CodiMoiCard
-            v-if="pub.source === 'codimoi'"
-            :post="pub.data"
-            @click="ouvrirPostCodimoi(pub.data)"
-            @like="reagirCodimoi(pub.data.id, 'like')"
-            @dislike="reagirCodimoi(pub.data.id, 'dislike')"
-            @comment="ouvrirPostCodimoi(pub.data)"
-            @share="partagerCodimoi(pub.data)"
-          />
-
-          <!-- Carte Gouvernance -->
-          <UniversiteGouvernanceContributionCard
-            v-else
-            :contribution="pub.data"
-            @click="voirContribution(pub.data)"
-          />
-        </template>
-      </TransitionGroup>
-
-      <!-- État vide -->
-      <div v-else class="text-center py-16">
-        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white shadow-md mb-4">
-          <font-awesome-icon :icon="['fas', 'file-circle-xmark']" class="text-3xl text-gray-300" />
-        </div>
-        <h3 class="text-lg font-semibold text-gray-600">Aucune publication dans cette catégorie</h3>
-        <p class="text-gray-400 mt-1 text-sm">Essayez un autre filtre ou revenez plus tard</p>
       </div>
     </div>
 
@@ -143,15 +341,25 @@
 </template>
 
 <script setup lang="ts">
-import type { CodiMoiPostAPI, CommentaireAPI } from '~/composables/useCodiMoi'
+import { getCategoryLabel, type CodiMoiPostAPI, type CategoriePost, type CommentaireAPI } from '~/composables/useCodiMoi'
 import type { ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
 
 useHead({
   title: 'Publications de la Communauté | UAfricas',
 })
 
-type SourceType = 'codimoi' | 'gouvernance'
 type FiltreValue = 'tous' | 'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits'
+
+interface TypeStyle {
+  label: string
+  icone: string[]
+  iconeBg: string
+  badge: string
+  bande: string
+  titreHover: string
+  flecheHoverBg: string
+  flecheHoverColor: string
+}
 
 interface PublicationCodimoi {
   key: string
@@ -159,6 +367,7 @@ interface PublicationCodimoi {
   data: CodiMoiPostAPI
   date: Date
   typeFiltre: 'codimoi'
+  typeStyle: TypeStyle
 }
 
 interface PublicationGouvernance {
@@ -167,6 +376,7 @@ interface PublicationGouvernance {
   data: ContributionCitoyenne
   date: Date
   typeFiltre: 'factcheck' | 'ideaforces' | 'badhabits'
+  typeStyle: TypeStyle
 }
 
 type Publication = PublicationCodimoi | PublicationGouvernance
@@ -176,15 +386,60 @@ const breadcrumbs = [
   { label: 'Publications', to: undefined },
 ]
 
-const filtres: { value: FiltreValue; label: string; icon: string[] }[] = [
-  { value: 'tous', label: 'Toutes', icon: ['fas', 'layer-group'] },
-  { value: 'codimoi', label: 'Codimoi', icon: ['fas', 'quote-left'] },
-  { value: 'factcheck', label: 'FactCheck', icon: ['fas', 'magnifying-glass'] },
-  { value: 'ideaforces', label: 'IdeaForces', icon: ['fas', 'lightbulb'] },
-  { value: 'badhabits', label: 'BadHabits', icon: ['fas', 'triangle-exclamation'] },
+const filtres: { value: FiltreValue; label: string; icon: string[]; activeClasses: string }[] = [
+  { value: 'tous', label: 'Toutes', icon: ['fas', 'layer-group'], activeClasses: 'bg-gray-800 text-white border-gray-800' },
+  { value: 'codimoi', label: 'Codimoi', icon: ['fas', 'quote-left'], activeClasses: 'bg-custom-chocolat text-white border-custom-chocolat' },
+  { value: 'factcheck', label: 'FactCheck', icon: ['fas', 'magnifying-glass'], activeClasses: 'bg-blue-600 text-white border-blue-600' },
+  { value: 'ideaforces', label: 'IdeaForces', icon: ['fas', 'lightbulb'], activeClasses: 'bg-amber-500 text-white border-amber-500' },
+  { value: 'badhabits', label: 'BadHabits', icon: ['fas', 'triangle-exclamation'], activeClasses: 'bg-red-600 text-white border-red-600' },
 ]
 
+const STYLES_PAR_TYPE: Record<'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits', TypeStyle> = {
+  codimoi: {
+    label: 'Codimoi',
+    icone: ['fas', 'quote-left'],
+    iconeBg: 'bg-amber-100 text-custom-chocolat',
+    badge: 'bg-amber-100 text-custom-chocolat',
+    bande: 'bg-linear-to-r from-custom-chocolat to-amber-600',
+    titreHover: 'group-hover:text-custom-chocolat',
+    flecheHoverBg: 'group-hover:bg-amber-100',
+    flecheHoverColor: 'group-hover:text-custom-chocolat',
+  },
+  factcheck: {
+    label: 'FactCheck',
+    icone: ['fas', 'magnifying-glass'],
+    iconeBg: 'bg-blue-100 text-blue-600',
+    badge: 'bg-blue-100 text-blue-700',
+    bande: 'bg-linear-to-r from-blue-500 to-indigo-500',
+    titreHover: 'group-hover:text-blue-700',
+    flecheHoverBg: 'group-hover:bg-blue-100',
+    flecheHoverColor: 'group-hover:text-blue-600',
+  },
+  ideaforces: {
+    label: 'IdeaForces',
+    icone: ['fas', 'lightbulb'],
+    iconeBg: 'bg-amber-100 text-amber-600',
+    badge: 'bg-amber-100 text-amber-700',
+    bande: 'bg-linear-to-r from-amber-400 to-orange-500',
+    titreHover: 'group-hover:text-amber-700',
+    flecheHoverBg: 'group-hover:bg-amber-100',
+    flecheHoverColor: 'group-hover:text-amber-600',
+  },
+  badhabits: {
+    label: 'BadHabits',
+    icone: ['fas', 'triangle-exclamation'],
+    iconeBg: 'bg-red-100 text-red-600',
+    badge: 'bg-red-100 text-red-700',
+    bande: 'bg-linear-to-r from-red-500 to-rose-500',
+    titreHover: 'group-hover:text-red-700',
+    flecheHoverBg: 'group-hover:bg-red-100',
+    flecheHoverColor: 'group-hover:text-red-600',
+  },
+}
+
 const activeFilter = ref<FiltreValue>('tous')
+const recherche = ref('')
+const paysSelectionne = ref('')
 const publications = ref<Publication[]>([])
 const loading = ref(false)
 const erreurChargement = ref<string | null>(null)
@@ -223,21 +478,93 @@ const compteurs = computed<Record<FiltreValue, number>>(() => {
   return c
 })
 
-const publicationsFiltrees = computed<Publication[]>(() => {
-  if (activeFilter.value === 'tous') return publications.value
-  return publications.value.filter(p => p.typeFiltre === activeFilter.value)
+const paysDisponibles = computed(() => {
+  const pays = new Set<string>()
+  for (const p of publications.value) {
+    const pays_ = paysPub(p)
+    if (pays_) pays.add(pays_)
+  }
+  return Array.from(pays).sort()
 })
 
-const titreSection = computed(() => {
-  const map: Record<FiltreValue, string> = {
-    tous: 'Toutes les publications',
-    codimoi: 'Publications Codimoi',
-    factcheck: 'Vérifications FactCheck',
-    ideaforces: 'Idées-Forces',
-    badhabits: 'Mauvaises pratiques signalées',
-  }
-  return map[activeFilter.value]
+const hasFiltresActifs = computed(() =>
+  activeFilter.value !== 'tous' || !!recherche.value || !!paysSelectionne.value
+)
+
+const publicationsFiltrees = computed<Publication[]>(() => {
+  return publications.value.filter(p => {
+    // Filtre par catégorie
+    if (activeFilter.value !== 'tous' && p.typeFiltre !== activeFilter.value) return false
+
+    // Filtre par recherche
+    if (recherche.value) {
+      const q = recherche.value.toLowerCase()
+      const titre = p.source === 'codimoi' ? titreCodimoi(p.data).toLowerCase() : p.data.titre.toLowerCase()
+      const desc = p.source === 'codimoi' ? (p.data.explication || p.data.contenu).toLowerCase() : p.data.description.toLowerCase()
+      if (!titre.includes(q) && !desc.includes(q)) return false
+    }
+
+    // Filtre par pays
+    if (paysSelectionne.value && paysPub(p) !== paysSelectionne.value) return false
+
+    return true
+  })
 })
+
+// Helpers données
+function titreCodimoi(post: CodiMoiPostAPI): string {
+  if (isQuoteType(post.type)) {
+    return getCategoryLabel(post.type as CategoriePost)
+  }
+  return post.contenu.length > 80 ? post.contenu.slice(0, 80) + '…' : post.contenu
+}
+
+function isQuoteType(type: string): boolean {
+  return type === 'proverbe_adage' || type === 'citation'
+}
+
+function nomAuteur(pub: Publication): string {
+  if (pub.source === 'codimoi') {
+    const { prenom, nom } = pub.data.auteur
+    return `${prenom ?? ''} ${nom}`.trim() || 'Anonyme'
+  }
+  return `${pub.data.auteur.prenom} ${pub.data.auteur.nom}`
+}
+
+function paysPub(pub: Publication): string | null {
+  if (pub.source === 'codimoi') return pub.data.pays || null
+  return pub.data.localisation.pays || null
+}
+
+function statsVues(pub: Publication): number {
+  return pub.source === 'codimoi' ? pub.data.nombre_vues : pub.data.stats.vues
+}
+
+function statsLikes(pub: Publication): number {
+  return pub.source === 'codimoi' ? pub.data.nombre_likes : pub.data.stats.likes
+}
+
+function statsCommentaires(pub: Publication): number {
+  return pub.source === 'codimoi' ? pub.data.nombre_commentaires : pub.data.stats.commentaires
+}
+
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
+function getGraviteClasses(gravite: string): string {
+  const classes: Record<string, string> = {
+    faible: 'bg-yellow-100 text-yellow-800',
+    moyenne: 'bg-orange-100 text-orange-800',
+    grave: 'bg-red-100 text-red-800',
+    critique: 'bg-red-600 text-white',
+  }
+  return classes[gravite] || 'bg-gray-100 text-gray-800'
+}
 
 const chargerTout = async () => {
   loading.value = true
@@ -258,6 +585,7 @@ const chargerTout = async () => {
         data: p,
         date: new Date(p.created_at),
         typeFiltre: 'codimoi',
+        typeStyle: STYLES_PAR_TYPE.codimoi,
       })
     }
   }
@@ -273,6 +601,7 @@ const chargerTout = async () => {
         data: c,
         date: c.dateCreation instanceof Date ? c.dateCreation : new Date(c.dateCreation),
         typeFiltre: c.type,
+        typeStyle: STYLES_PAR_TYPE[c.type],
       })
     }
   }
@@ -283,20 +612,30 @@ const chargerTout = async () => {
   items.sort((a, b) => b.date.getTime() - a.date.getTime())
   publications.value = items
 
-  // Afficher une erreur seulement si AUCUNE source n'a retourné de données
-  if (items.length === 0) {
-    if (resCodimoi.status === 'rejected' && resGouv.status === 'rejected') {
-      erreurChargement.value = 'Impossible de charger les publications'
-    }
-    else if (erreurCodimoi.value && resCodimoi.status === 'fulfilled' && !resCodimoi.value) {
-      erreurChargement.value = erreurCodimoi.value
-    }
+  if (items.length === 0 && resCodimoi.status === 'rejected' && resGouv.status === 'rejected') {
+    erreurChargement.value = 'Impossible de charger les publications'
   }
 
   loading.value = false
 }
 
-// Actions Codimoi
+const reinitialiser = () => {
+  activeFilter.value = 'tous'
+  recherche.value = ''
+  paysSelectionne.value = ''
+}
+
+// Clic sur une publication
+const ouvrirPublication = async (pub: Publication) => {
+  if (pub.source === 'codimoi') {
+    await ouvrirPostCodimoi(pub.data)
+  }
+  else {
+    navigateTo(`/universite/gouvernance/${pub.data.id}`)
+  }
+}
+
+// Actions Codimoi (modale)
 const ouvrirPostCodimoi = async (post: CodiMoiPostAPI) => {
   selectedPost.value = post
   chargementCommentaires.value = true
@@ -327,11 +666,6 @@ const mettreAJourPostCodimoi = (updated: CodiMoiPostAPI) => {
   }
 }
 
-const reagirCodimoi = async (postId: string, type: 'like' | 'dislike') => {
-  const updated = await reagir(postId, type)
-  if (updated) mettreAJourPostCodimoi(updated)
-}
-
 const reagirModalCodimoi = async (type: 'like' | 'dislike') => {
   if (!selectedPost.value) return
   const updated = await reagir(selectedPost.value.id, type)
@@ -359,20 +693,12 @@ const commenterModalCodimoi = async (contenu: string) => {
   }
 }
 
-const partagerCodimoi = (post: CodiMoiPostAPI) => {
+const partagerModalCodimoi = () => {
+  if (!selectedPost.value) return
   if (import.meta.client && navigator.clipboard) {
-    navigator.clipboard.writeText(`${window.location.origin}/evenements/codi-moi/${post.id}`)
+    navigator.clipboard.writeText(`${window.location.origin}/evenements/codi-moi/${selectedPost.value.id}`)
     notifier('Lien copié dans le presse-papiers !')
   }
-}
-
-const partagerModalCodimoi = () => {
-  if (selectedPost.value) partagerCodimoi(selectedPost.value)
-}
-
-// Action Gouvernance
-const voirContribution = (contribution: ContributionCitoyenne) => {
-  navigateTo(`/universite/gouvernance/${contribution.id}`)
 }
 
 onMounted(async () => {
@@ -390,13 +716,12 @@ onMounted(async () => {
 
 @keyframes expandWidth {
   from { width: 0; }
-  to { width: 8rem; }
+  to { width: 6rem; }
 }
 
 .animate-fadeInUp { animation: fadeInUp 0.6s ease-out forwards; }
 .animate-expandWidth { animation: expandWidth 0.8s ease-out forwards; }
 .animation-delay-200 { animation-delay: 200ms; }
-.animation-delay-400 { animation-delay: 400ms; }
 
 .feed-enter-active,
 .feed-leave-active {
