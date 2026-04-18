@@ -243,51 +243,57 @@ const chargerTout = async () => {
   loading.value = true
   erreurChargement.value = null
 
-  try {
-    const [resCodimoi, resGouv] = await Promise.all([
-      listerPosts({ page: 1, par_page: 30 }),
-      getContributions({ page: 1, parPage: 30 }),
-    ])
+  const [resCodimoi, resGouv] = await Promise.allSettled([
+    listerPosts({ page: 1, par_page: 30 }),
+    getContributions({ page: 1, parPage: 30 }),
+  ])
 
-    const items: Publication[] = []
+  const items: Publication[] = []
 
-    if (resCodimoi?.posts) {
-      for (const p of resCodimoi.posts) {
-        items.push({
-          key: `codimoi-${p.id}`,
-          source: 'codimoi',
-          data: p,
-          date: new Date(p.created_at),
-          typeFiltre: 'codimoi',
-        })
-      }
+  if (resCodimoi.status === 'fulfilled' && resCodimoi.value?.posts) {
+    for (const p of resCodimoi.value.posts) {
+      items.push({
+        key: `codimoi-${p.id}`,
+        source: 'codimoi',
+        data: p,
+        date: new Date(p.created_at),
+        typeFiltre: 'codimoi',
+      })
     }
+  }
+  else if (resCodimoi.status === 'rejected') {
+    console.error('Erreur chargement Codimoi:', resCodimoi.reason)
+  }
 
-    if (resGouv?.contributions) {
-      for (const c of resGouv.contributions) {
-        items.push({
-          key: `gouv-${c.id}`,
-          source: 'gouvernance',
-          data: c,
-          date: c.dateCreation instanceof Date ? c.dateCreation : new Date(c.dateCreation),
-          typeFiltre: c.type,
-        })
-      }
+  if (resGouv.status === 'fulfilled' && resGouv.value?.contributions) {
+    for (const c of resGouv.value.contributions) {
+      items.push({
+        key: `gouv-${c.id}`,
+        source: 'gouvernance',
+        data: c,
+        date: c.dateCreation instanceof Date ? c.dateCreation : new Date(c.dateCreation),
+        typeFiltre: c.type,
+      })
     }
+  }
+  else if (resGouv.status === 'rejected') {
+    console.error('Erreur chargement Gouvernance:', resGouv.reason)
+  }
 
-    items.sort((a, b) => b.date.getTime() - a.date.getTime())
-    publications.value = items
+  items.sort((a, b) => b.date.getTime() - a.date.getTime())
+  publications.value = items
 
-    if (items.length === 0 && erreurCodimoi.value) {
+  // Afficher une erreur seulement si AUCUNE source n'a retourné de données
+  if (items.length === 0) {
+    if (resCodimoi.status === 'rejected' && resGouv.status === 'rejected') {
+      erreurChargement.value = 'Impossible de charger les publications'
+    }
+    else if (erreurCodimoi.value && resCodimoi.status === 'fulfilled' && !resCodimoi.value) {
       erreurChargement.value = erreurCodimoi.value
     }
   }
-  catch (e: any) {
-    erreurChargement.value = e?.message || 'Erreur lors du chargement des publications'
-  }
-  finally {
-    loading.value = false
-  }
+
+  loading.value = false
 }
 
 // Actions Codimoi

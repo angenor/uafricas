@@ -52,8 +52,6 @@ interface ApiResponse<T> {
   error: string | null
 }
 
-const API_BASE = 'http://127.0.0.1:8080/api'
-
 /** Mapper une contribution API vers l'interface frontend ContributionCitoyenne */
 function mapperContribution(api: ApiContribution): ContributionCitoyenne {
   return {
@@ -87,13 +85,15 @@ function mapperContribution(api: ApiContribution): ContributionCitoyenne {
 }
 
 export function useGouvernance() {
+  const config = useRuntimeConfig()
+  const apiBase = `${config.public.apiBaseUrl as string}/api`
   const loading = ref(false)
   const error = ref<string | null>(null)
 
   /** Recuperer les statistiques de gouvernance */
   async function getStats(): Promise<{ factcheck: number; badhabits: number; ideaforces: number; total: number; totalLikes: number }> {
     const reponse = await $fetch<ApiResponse<ApiGouvernanceStats>>(
-      `${API_BASE}/gouvernance/stats`
+      `${apiBase}/gouvernance/stats`
     )
 
     if (!reponse.success || !reponse.data) {
@@ -121,7 +121,7 @@ export function useGouvernance() {
     if (options?.type) params.set('type', options.type)
 
     const reponse = await $fetch<ApiResponse<ApiContributionListeResponse>>(
-      `${API_BASE}/gouvernance/contributions?${params.toString()}`
+      `${apiBase}/gouvernance/contributions?${params.toString()}`
     )
 
     if (!reponse.success || !reponse.data) {
