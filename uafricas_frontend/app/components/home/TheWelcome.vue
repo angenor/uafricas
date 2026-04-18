@@ -13,7 +13,7 @@
         <font-awesome-icon :icon="['fas', 'arrow-right']" />
       </NuxtLink>
       <h1 data-aos="fade-left" data-aos-duration="1200" class="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-display">
-        Africans, afro-descendants, Nation and Sustainable development <span data-aos="zoom-in" data-aos-delay="1300" class="block text-5xl sm:text-6xl lg:text-8xl">(AFRICANS)</span>
+        Africains, afrodescendants, Nation et développement soutenable <span data-aos="zoom-in" data-aos-delay="1300" class="block text-5xl sm:text-6xl lg:text-8xl">(AFRICANS)</span>
       </h1>
     </div>
 
