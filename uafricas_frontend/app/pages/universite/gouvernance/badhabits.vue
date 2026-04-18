@@ -29,12 +29,28 @@
       <!-- Barre de navigation -->
       <div class="bg-white rounded-xl shadow-lg p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <CommonBreadcrumbNav />
-        <NuxtLink to="/universite/gouvernance"
-                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors font-medium text-sm">
-          <font-awesome-icon :icon="['fas', 'arrow-left']" class="text-xs" />
-          Retour à la gouvernance
-        </NuxtLink>
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-red-600 to-orange-600 text-white hover:from-red-700 hover:to-orange-700 transition font-medium text-sm shadow-md"
+            @click="ouvrirModalPublication"
+          >
+            <font-awesome-icon :icon="['fas', 'plus']" class="text-xs" />
+            Signaler une mauvaise pratique
+          </button>
+          <NuxtLink to="/universite/gouvernance"
+                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition font-medium text-sm">
+            <font-awesome-icon :icon="['fas', 'arrow-left']" class="text-xs" />
+            Retour
+          </NuxtLink>
+        </div>
       </div>
+
+      <UniversiteGouvernanceBadHabitsCreateModal
+        :open="modalOuvert"
+        @close="modalOuvert = false"
+        @created="apresPublication"
+      />
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Filtres -->
@@ -208,10 +224,25 @@ useHead({
   title: 'BadHabits - Gouvernance Citoyenne'
 })
 
+const userStore = useUserStore()
+
 const contributions = ref<ContributionCitoyenne[]>([])
 const recherche = ref('')
 const paysSelectionne = ref('')
 const graviteSelectionnee = ref('')
+const modalOuvert = ref(false)
+
+function ouvrirModalPublication() {
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  modalOuvert.value = true
+}
+
+function apresPublication(_id: string) {
+  modalOuvert.value = false
+}
 
 const niveauxGravite = [
   { valeur: 'critique', label: 'Critique', couleurPastille: 'bg-red-600' },

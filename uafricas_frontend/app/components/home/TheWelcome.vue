@@ -12,15 +12,9 @@
         <span>Publications de la Communauté</span>
         <font-awesome-icon :icon="['fas', 'arrow-right']" />
       </NuxtLink>
-      <p data-aos="fade-left" data-aos-duration="1200" class="text-2xl sm:text-3xl lg:text-4xl font-display">
-        Bienvenue sur le site officiel de
-      </p>
-      <h1 data-aos="zoom-in" data-aos-delay="1300" class="text-5xl sm:text-6xl lg:text-8xl font-extrabold font-display">
-        AfricanS
+      <h1 data-aos="fade-left" data-aos-duration="1200" class="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-display">
+        Africans, afro-descendants, Nation and Sustainable development <span data-aos="zoom-in" data-aos-delay="1300" class="block text-5xl sm:text-6xl lg:text-8xl">(AFRICANS)</span>
       </h1>
-      <p data-aos="zoom-in-up" data-aos-delay="1400" class="font-semibold text-base sm:text-lg font-body">
-        Afrique, une Nation pour le développement durable
-      </p>
     </div>
 
     <a

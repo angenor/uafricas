@@ -1,10 +1,14 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
+use serde::Deserialize;
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use crate::errors::ApiErreur;
+use crate::jwt;
 use crate::models::gouvernance::{
     ContributionListeResponse, ContributionQueryParams, ContributionRow, GouvernanceStats,
 };
+use crate::services::audit;
 
 /// Reponse API generique
 #[derive(serde::Serialize)]
@@ -12,6 +16,40 @@ struct ApiResponse<T: serde::Serialize> {
     success: bool,
     data: Option<T>,
     error: Option<String>,
+}
+
+/// Extraire l'utilisateur connecte depuis le header Authorization (obligatoire)
+fn exiger_utilisateur_id(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
+    let header = req
+        .headers()
+        .get("Authorization")
+        .and_then(|h| h.to_str().ok())
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let token = header
+        .strip_prefix("Bearer ")
+        .ok_or_else(|| ApiErreur::NonAutorise("Token invalide".into()))?;
+    let secret = std::env::var("JWT_SECRET")
+        .map_err(|_| ApiErreur::BaseDeDonnees("Configuration JWT absente".into()))?;
+    let claims = jwt::valider_token(token, &secret)
+        .map_err(|_| ApiErreur::NonAutorise("Token invalide ou expire".into()))?;
+    Uuid::parse_str(&claims.sub)
+        .map_err(|_| ApiErreur::NonAutorise("Token invalide".into()))
+}
+
+/// Generer un slug URL-friendly a partir d'un titre
+fn generer_slug(titre: &str) -> String {
+    titre
+        .to_lowercase()
+        .replace(['é', 'è', 'ê', 'ë'], "e")
+        .replace(['à', 'â', 'ä'], "a")
+        .replace(['ù', 'û', 'ü'], "u")
+        .replace(['î', 'ï'], "i")
+        .replace(['ô', 'ö'], "o")
+        .replace('ç', "c")
+        .replace(|c: char| !c.is_alphanumeric() && c != ' ', "")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join("-")
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -198,4 +236,419 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
          LIMIT $1 OFFSET $2",
         union
     )
+}
+
+// ──────────────────────────────────────────────────────────────
+// GET /api/pays — Liste publique des pays (pour selecteurs)
+// ──────────────────────────────────────────────────────────────
+
+#[derive(Debug, serde::Serialize, sqlx::FromRow)]
+pub struct PaysPublicRow {
+    pub id: Uuid,
+    pub nom: String,
+    pub code_iso2: Option<String>,
+    pub code_iso3: Option<String>,
+}
+
+pub async fn lister_pays_public(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
+    let rows = sqlx::query_as::<_, PaysPublicRow>(
+        "SELECT id, nom, code_iso2, code_iso3
+         FROM shared.pays
+         WHERE actif = TRUE
+         ORDER BY nom ASC",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(rows),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// POST /api/gouvernance/factcheck — Publier un factcheck (authentifie)
+// ──────────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct CreerFactcheckPublicRequest {
+    pub contenu: String,
+    pub source_originale: Option<String>,
+    pub verdict: Option<String>,
+    pub image_couverture_url: Option<String>,
+    pub couleur_fond: Option<String>,
+    pub pays_id: Option<Uuid>,
+}
+
+pub async fn creer_factcheck_public(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    body: web::Json<CreerFactcheckPublicRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = exiger_utilisateur_id(&req)?;
+
+    let contenu = body.contenu.trim();
+    if contenu.is_empty() {
+        return Err(ApiErreur::Validation("Le contenu est requis".into()));
+    }
+
+    if let Some(ref verdict) = body.verdict {
+        let verdicts_valides = ["vrai", "faux", "partiellement_vrai", "trompeur", "non_verifie"];
+        if !verdicts_valides.contains(&verdict.as_str()) {
+            return Err(ApiErreur::Validation(format!(
+                "Verdict invalide. Valeurs acceptees: {}",
+                verdicts_valides.join(", ")
+            )));
+        }
+    }
+
+    let id = Uuid::new_v4();
+
+    sqlx::query(
+        "INSERT INTO governance.factcheck
+         (id, contenu, source_originale, verdict, image_couverture_url, couleur_fond, pays_id, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'publie', $8)",
+    )
+    .bind(id)
+    .bind(contenu)
+    .bind(body.source_originale.as_deref().map(|s| s.trim()))
+    .bind(body.verdict.as_deref())
+    .bind(body.image_couverture_url.as_deref().map(|s| s.trim()))
+    .bind(body.couleur_fond.as_deref().map(|s| s.trim()))
+    .bind(body.pays_id)
+    .bind(auteur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    sqlx::query(
+        "UPDATE governance.factcheck SET search_vector =
+         to_tsvector('french', COALESCE(contenu, '') || ' ' || COALESCE(source_originale, ''))
+         WHERE id = $1",
+    )
+    .bind(id)
+    .execute(pool.get_ref())
+    .await?;
+
+    log::info!("Utilisateur {} a publie le factcheck {}", auteur_id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "CREATE",
+        "governance",
+        "factcheck",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "id": id })),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// POST /api/gouvernance/bad-habits — Publier une mauvaise pratique
+// ──────────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct CreerBadHabitPublicRequest {
+    pub titre: String,
+    pub description_generale: String,
+    pub details_problematique: String,
+    pub categorie_probleme: String,
+    pub categorie_probleme_detail: Option<String>,
+    pub gravite: Option<String>,
+    pub preuves_temoignages: Option<String>,
+    pub solutions_proposees: Option<String>,
+    pub publication_anonyme: Option<bool>,
+    pub geolocalisation_autorisee: Option<bool>,
+    pub longitude: Option<f64>,
+    pub latitude: Option<f64>,
+    pub pays_id: Option<Uuid>,
+    pub region: Option<String>,
+    pub ville_quartier_zone: Option<String>,
+    pub medias_urls: Option<Vec<String>>,
+}
+
+pub async fn creer_bad_habit_public(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    body: web::Json<CreerBadHabitPublicRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = exiger_utilisateur_id(&req)?;
+
+    let titre = body.titre.trim();
+    if titre.is_empty() {
+        return Err(ApiErreur::Validation("Le titre est requis".into()));
+    }
+    let description = body.description_generale.trim();
+    if description.is_empty() {
+        return Err(ApiErreur::Validation("La description est requise".into()));
+    }
+    let details = body.details_problematique.trim();
+    if details.is_empty() {
+        return Err(ApiErreur::Validation("Les details de la problematique sont requis".into()));
+    }
+    if body.pays_id.is_none() {
+        return Err(ApiErreur::Validation("Le pays est requis".into()));
+    }
+
+    let categories_valides = [
+        "corruption",
+        "service_public_defaillant",
+        "infrastructure_degradee",
+        "acces_services_limite",
+        "insalubrite",
+        "probleme_securite",
+        "autre",
+    ];
+    if !categories_valides.contains(&body.categorie_probleme.as_str()) {
+        return Err(ApiErreur::Validation(format!(
+            "Categorie invalide. Valeurs acceptees: {}",
+            categories_valides.join(", ")
+        )));
+    }
+
+    if let Some(ref gravite) = body.gravite {
+        let gravites_valides = ["faible", "elevee", "critique"];
+        if !gravites_valides.contains(&gravite.as_str()) {
+            return Err(ApiErreur::Validation(format!(
+                "Gravite invalide. Valeurs acceptees: {}",
+                gravites_valides.join(", ")
+            )));
+        }
+    }
+
+    let gravite = body.gravite.as_deref().unwrap_or("faible");
+    let id = Uuid::new_v4();
+    let slug = format!("{}-{}", generer_slug(titre), &id.to_string()[..8]);
+
+    sqlx::query(
+        "INSERT INTO governance.bad_habit
+         (id, titre, slug, description_generale, details_problematique,
+          categorie_probleme, categorie_probleme_detail, gravite,
+          preuves_temoignages, solutions_proposees,
+          publication_anonyme, geolocalisation_autorisee, longitude, latitude,
+          pays_id, region, ville_quartier_zone, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8::governance.niveau_gravite, $9, $10,
+                 $11, $12, $13, $14, $15, $16, $17, 'publie', $18)",
+    )
+    .bind(id)
+    .bind(titre)
+    .bind(&slug)
+    .bind(description)
+    .bind(details)
+    .bind(&body.categorie_probleme)
+    .bind(body.categorie_probleme_detail.as_deref().map(|s| s.trim()))
+    .bind(gravite)
+    .bind(body.preuves_temoignages.as_deref().map(|s| s.trim()))
+    .bind(body.solutions_proposees.as_deref().map(|s| s.trim()))
+    .bind(body.publication_anonyme.unwrap_or(false))
+    .bind(body.geolocalisation_autorisee.unwrap_or(false))
+    .bind(body.longitude)
+    .bind(body.latitude)
+    .bind(body.pays_id)
+    .bind(body.region.as_deref().map(|s| s.trim()))
+    .bind(body.ville_quartier_zone.as_deref().map(|s| s.trim()))
+    .bind(auteur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Inserer les medias optionnels (URLs)
+    if let Some(medias) = &body.medias_urls {
+        for (ordre, url) in medias.iter().enumerate() {
+            let url_clean = url.trim();
+            if url_clean.is_empty() {
+                continue;
+            }
+            sqlx::query(
+                "INSERT INTO governance.bad_habit_media (id, bad_habit_id, media_url, ordre)
+                 VALUES ($1, $2, $3, $4)",
+            )
+            .bind(Uuid::new_v4())
+            .bind(id)
+            .bind(url_clean)
+            .bind(ordre as i32)
+            .execute(pool.get_ref())
+            .await?;
+        }
+    }
+
+    log::info!("Utilisateur {} a publie la mauvaise pratique {} ({})", auteur_id, titre, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "CREATE",
+        "governance",
+        "mauvaise_pratique",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "id": id })),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// POST /api/gouvernance/idea-forces — Publier une idee force
+// ──────────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct CreerIdeaForcePublicRequest {
+    pub titre: String,
+    pub description_generale: String,
+    pub details_proposition: String,
+    pub categorie_proposition: String,
+    pub categorie_proposition_detail: Option<String>,
+    pub urgence: Option<String>,
+    pub plan_implementation: Option<String>,
+    pub ressources_necessaires: Option<String>,
+    pub impact_attendu: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub region: Option<String>,
+    pub ville_quartier_zone: Option<String>,
+    pub medias_urls: Option<Vec<String>>,
+}
+
+pub async fn creer_idea_force_public(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    body: web::Json<CreerIdeaForcePublicRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = exiger_utilisateur_id(&req)?;
+
+    let titre = body.titre.trim();
+    if titre.is_empty() {
+        return Err(ApiErreur::Validation("Le titre est requis".into()));
+    }
+    let description = body.description_generale.trim();
+    if description.is_empty() {
+        return Err(ApiErreur::Validation("La description est requise".into()));
+    }
+    let details = body.details_proposition.trim();
+    if details.is_empty() {
+        return Err(ApiErreur::Validation("Les details de la proposition sont requis".into()));
+    }
+    if body.pays_id.is_none() {
+        return Err(ApiErreur::Validation("Le pays est requis".into()));
+    }
+
+    let categories_valides = [
+        "amelioration_gouvernance",
+        "education_formation",
+        "sante_publique",
+        "emploi_jeunes",
+        "environnement",
+        "transport",
+        "autre",
+    ];
+    if !categories_valides.contains(&body.categorie_proposition.as_str()) {
+        return Err(ApiErreur::Validation(format!(
+            "Categorie invalide. Valeurs acceptees: {}",
+            categories_valides.join(", ")
+        )));
+    }
+
+    if let Some(ref urgence) = body.urgence {
+        let urgences_valides = ["faible", "elevee", "critique"];
+        if !urgences_valides.contains(&urgence.as_str()) {
+            return Err(ApiErreur::Validation(format!(
+                "Urgence invalide. Valeurs acceptees: {}",
+                urgences_valides.join(", ")
+            )));
+        }
+    }
+
+    let urgence = body.urgence.as_deref().unwrap_or("faible");
+    let id = Uuid::new_v4();
+    let slug = format!("{}-{}", generer_slug(titre), &id.to_string()[..8]);
+
+    sqlx::query(
+        "INSERT INTO governance.idea_force
+         (id, titre, slug, description_generale, details_proposition,
+          categorie_proposition, categorie_proposition_detail, urgence,
+          plan_implementation, ressources_necessaires, impact_attendu,
+          pays_id, region, ville_quartier_zone, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8::governance.niveau_gravite, $9, $10,
+                 $11, $12, $13, $14, 'publie', $15)",
+    )
+    .bind(id)
+    .bind(titre)
+    .bind(&slug)
+    .bind(description)
+    .bind(details)
+    .bind(&body.categorie_proposition)
+    .bind(body.categorie_proposition_detail.as_deref().map(|s| s.trim()))
+    .bind(urgence)
+    .bind(body.plan_implementation.as_deref().map(|s| s.trim()))
+    .bind(body.ressources_necessaires.as_deref().map(|s| s.trim()))
+    .bind(body.impact_attendu.as_deref().map(|s| s.trim()))
+    .bind(body.pays_id)
+    .bind(body.region.as_deref().map(|s| s.trim()))
+    .bind(body.ville_quartier_zone.as_deref().map(|s| s.trim()))
+    .bind(auteur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if let Some(medias) = &body.medias_urls {
+        for (ordre, url) in medias.iter().enumerate() {
+            let url_clean = url.trim();
+            if url_clean.is_empty() {
+                continue;
+            }
+            sqlx::query(
+                "INSERT INTO governance.idea_force_media (id, idea_force_id, media_url, ordre)
+                 VALUES ($1, $2, $3, $4)",
+            )
+            .bind(Uuid::new_v4())
+            .bind(id)
+            .bind(url_clean)
+            .bind(ordre as i32)
+            .execute(pool.get_ref())
+            .await?;
+        }
+    }
+
+    log::info!("Utilisateur {} a publie l'idee force {} ({})", auteur_id, titre, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "CREATE",
+        "governance",
+        "idee_force",
+        Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "id": id })),
+        error: None,
+    }))
 }

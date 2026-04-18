@@ -431,8 +431,13 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("/gouvernance")
                     .route("/stats", web::get().to(gouvernance::obtenir_stats))
-                    .route("/contributions", web::get().to(gouvernance::lister_contributions)),
+                    .route("/contributions", web::get().to(gouvernance::lister_contributions))
+                    .route("/factcheck", web::post().to(gouvernance::creer_factcheck_public))
+                    .route("/bad-habits", web::post().to(gouvernance::creer_bad_habit_public))
+                    .route("/idea-forces", web::post().to(gouvernance::creer_idea_force_public)),
             )
+            // Liste publique des pays pour selecteurs
+            .route("/pays", web::get().to(gouvernance::lister_pays_public))
             // Routes Codi-Moi
             .service(
                 web::scope("/codimoi")

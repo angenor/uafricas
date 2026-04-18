@@ -25,12 +25,28 @@
       <!-- Barre de navigation -->
       <div class="bg-white rounded-xl shadow-lg p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <CommonBreadcrumbNav />
-        <NuxtLink to="/universite/gouvernance"
-                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors font-medium text-sm">
-          <font-awesome-icon :icon="['fas', 'arrow-left']" class="text-xs" />
-          Retour à la gouvernance
-        </NuxtLink>
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition font-medium text-sm shadow-md"
+            @click="ouvrirModalPublication"
+          >
+            <font-awesome-icon :icon="['fas', 'plus']" class="text-xs" />
+            Publier un factcheck
+          </button>
+          <NuxtLink to="/universite/gouvernance"
+                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition font-medium text-sm">
+            <font-awesome-icon :icon="['fas', 'arrow-left']" class="text-xs" />
+            Retour
+          </NuxtLink>
+        </div>
       </div>
+
+      <UniversiteGouvernanceFactCheckCreateModal
+        :open="modalOuvert"
+        @close="modalOuvert = false"
+        @created="apresPublication"
+      />
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Filtres -->
@@ -217,10 +233,25 @@ useHead({
   title: 'FactCheck - Gouvernance Citoyenne'
 })
 
+const userStore = useUserStore()
+
 const contributions = ref<ContributionCitoyenne[]>([])
 const recherche = ref('')
 const paysSelectionne = ref('')
 const seulementVerifies = ref(false)
+const modalOuvert = ref(false)
+
+function ouvrirModalPublication() {
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  modalOuvert.value = true
+}
+
+function apresPublication(_id: string) {
+  modalOuvert.value = false
+}
 
 const paysDisponibles = computed(() => {
   const pays = new Set(contributions.value.map(c => c.localisation.pays))
