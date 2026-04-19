@@ -4,16 +4,53 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 // ────────────────────────────────────────────────────────────────
+// Enums Afripulse (alignés sur country_profile.type_objet_contribution
+// et country_profile.section_afripulse — cf. 11c_country_profile_afripulse.sql)
+// ────────────────────────────────────────────────────────────────
+
+#[derive(sqlx::Type, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[sqlx(type_name = "country_profile.type_objet_contribution", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum TypeObjetContribution {
+    FichePays,
+    SiteTouristique,
+    SecteurDeveloppement,
+    PersonnaliteConnue,
+    SavoirPratique,
+    RecommandationVisiteur,
+    PhotoVisiteur,
+}
+
+#[derive(sqlx::Type, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[sqlx(type_name = "country_profile.section_afripulse", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum SectionAfripulse {
+    SitesEmblematiques,
+    SitesPrives,
+    SecteursOpportunites,
+    Personnalites,
+    SavoirAvantVoyager,
+    Recommandations,
+    GaleriePhotos,
+}
+
+// ────────────────────────────────────────────────────────────────
 // Constantes SQL
 // ────────────────────────────────────────────────────────────────
 
-/// Colonnes pour SELECT sur contribution_fiche + JOIN iam.utilisateur (auteur)
+/// Colonnes pour SELECT sur contribution_fiche + JOIN iam.utilisateur (auteur).
+/// Inclut les colonnes Afripulse (type_objet_contribution, section_afripulse,
+/// target_id, nouvelle_valeur_jsonb, ancienne_valeur_jsonb, pieces_jointes).
 pub const CONTRIBUTION_COLONNES: &str =
     "cf.id, cf.fiche_pays_id, cf.cree_par, cf.section,
      cf.type_contribution::text AS type_contribution,
      cf.ancienne_valeur, cf.nouvelle_valeur, cf.justification,
      cf.etat::text AS etat, cf.traite_par, cf.note_moderation, cf.traite_at,
      cf.created_at, cf.updated_at,
+     cf.type_objet_contribution::text AS type_objet_contribution,
+     cf.section_afripulse::text AS section_afripulse,
+     cf.target_id,
+     cf.nouvelle_valeur_jsonb, cf.ancienne_valeur_jsonb, cf.pieces_jointes,
      u.nom AS auteur_nom, u.prenom AS auteur_prenom, u.photo_url AS auteur_photo_url";
 
 /// Sections modifiables d'une fiche pays
@@ -42,7 +79,10 @@ pub fn section_est_valide(section: &str) -> bool {
 // Row structs (from DB)
 // ────────────────────────────────────────────────────────────────
 
-/// Ligne brute issue de la BDD (JOIN contribution_fiche + iam.utilisateur)
+/// Ligne brute issue de la BDD (JOIN contribution_fiche + iam.utilisateur).
+/// Les champs Afripulse (type_objet_contribution, section_afripulse, target_id,
+/// *_jsonb, pieces_jointes) sont renseignés pour les nouvelles contributions ;
+/// les contributions legacy conservent leurs colonnes TEXT (ancienne/nouvelle_valeur).
 #[derive(Debug, FromRow)]
 pub struct ContributionFicheRow {
     pub id: Uuid,
@@ -59,6 +99,13 @@ pub struct ContributionFicheRow {
     pub traite_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    // Afripulse (11c_country_profile_afripulse.sql)
+    pub type_objet_contribution: String,
+    pub section_afripulse: Option<String>,
+    pub target_id: Option<Uuid>,
+    pub nouvelle_valeur_jsonb: Option<serde_json::Value>,
+    pub ancienne_valeur_jsonb: Option<serde_json::Value>,
+    pub pieces_jointes: serde_json::Value,
     // JOIN iam.utilisateur
     pub auteur_nom: String,
     pub auteur_prenom: String,
@@ -130,13 +177,24 @@ pub struct ContributeurResponse {
 // Request DTOs
 // ────────────────────────────────────────────────────────────────
 
-/// Body pour soumettre une contribution
+/// Body pour soumettre une contribution.
+///
+/// Deux modes coexistent :
+///   • **Legacy** (fiche pays scalaire) : `section` + `nouvelle_valeur` TEXT uniquement.
+///   • **Afripulse** : `type_objet_contribution` ≠ "fiche_pays" ; `nouvelle_valeur_jsonb`
+///     (payload structuré) ; `section_afripulse` ; `target_id` pour edition/suppression.
 #[derive(Debug, Deserialize)]
 pub struct CreerContributionBody {
     pub section: String,
     pub type_contribution: Option<String>,
-    pub nouvelle_valeur: String,
+    #[serde(default)]
+    pub nouvelle_valeur: Option<String>,
     pub justification: Option<String>,
+    // Afripulse
+    pub type_objet_contribution: Option<String>,
+    pub section_afripulse: Option<String>,
+    pub target_id: Option<Uuid>,
+    pub nouvelle_valeur_jsonb: Option<serde_json::Value>,
 }
 
 /// Parametres de requete pour lister les contributions

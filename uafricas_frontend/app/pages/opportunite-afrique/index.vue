@@ -331,6 +331,7 @@ import {
   type FichePaysAPI,
 } from '~/composables/useOpportuniteAfrique'
 import World from '@svg-maps/world'
+import { PAYS_AFRICAINS_ISO2 } from '~/constants/afripulsePaysAutorises'
 
 useHead({
   title: 'Afripulse - Opportunités en Afrique | UAfricas',
@@ -390,14 +391,8 @@ const resetFilters = () => {
 
 // === MODE CARTE ===
 
-// Codes ISO des pays africains (minuscules)
-const PAYS_AFRICAINS = new Set([
-  'dz', 'ao', 'bj', 'bw', 'bf', 'bi', 'cv', 'cm', 'cf', 'td', 'km', 'cg', 'cd',
-  'ci', 'dj', 'eg', 'gq', 'er', 'sz', 'et', 'ga', 'gm', 'gh', 'gn', 'gw', 'ke',
-  'ls', 'lr', 'ly', 'mg', 'mw', 'ml', 'mr', 'mu', 'ma', 'mz', 'na', 'ne', 'ng',
-  'rw', 'st', 'sn', 'sc', 'sl', 'so', 'za', 'ss', 'sd', 'tz', 'tg', 'tn', 'ug',
-  'zm', 'zw', 'eh',
-])
+// Codes ISO des pays africains (source unique partagée avec le backend)
+const PAYS_AFRICAINS = new Set<string>(PAYS_AFRICAINS_ISO2)
 
 // Noms francais des pays africains
 const nomsPaysFr: Record<string, string> = {

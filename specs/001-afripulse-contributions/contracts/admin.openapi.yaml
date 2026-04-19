@@ -1,0 +1,422 @@
+openapi: 3.1.0
+info:
+  title: UAfricas — Afripulse Admin API (modération des contributions)
+  version: "1.0.0-001-afripulse-contributions"
+  description: |
+    Extensions des endpoints admin existants (`/api/admin/profils-pays/contributions*`)
+    pour supporter :
+      - le diff structuré ancienne/nouvelle valeur avec pièces jointes (photos en attente) ;
+      - le retrait d'une contribution déjà approuvée (FR-028) ;
+      - le filtrage par section Afripulse et type d'objet ;
+      - la marquage automatique en `obsolete` des contributions concurrentes (FR-021).
+
+    Tous les endpoints exigent un JWT valide dont le porteur possède un rôle `admin` ou `super_admin`.
+
+servers:
+  - url: http://localhost:8080
+    description: Dev local
+  - url: https://www.africans-world.org
+    description: Production
+
+tags:
+  - name: Moderation
+    description: File d'attente et décisions de modération
+  - name: Retrait
+    description: Retrait de contribution déjà approuvée
+
+paths:
+
+  # ============================================================
+  # LISTE DES CONTRIBUTIONS (extension des filtres)
+  # ============================================================
+  /api/admin/profils-pays/contributions:
+    get:
+      tags: [Moderation]
+      summary: Lister les contributions (tous statuts, tous types) avec filtres enrichis
+      description: |
+        Extension de l'endpoint existant pour supporter les filtres par section et type d'objet.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: etat
+          schema:
+            $ref: "#/components/schemas/EtatContribution"
+        - in: query
+          name: type_objet
+          schema:
+            $ref: "#/components/schemas/TypeObjetContribution"
+        - in: query
+          name: section
+          schema:
+            $ref: "#/components/schemas/SectionAfripulse"
+        - in: query
+          name: fiche_pays_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: cree_par
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer les soumissions d'un utilisateur donné.
+        - in: query
+          name: date_debut
+          schema: { type: string, format: date-time }
+        - in: query
+          name: date_fin
+          schema: { type: string, format: date-time }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: par_page
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        "200":
+          description: Liste paginée.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListePagineeContributionsAdmin"
+        "401":
+          $ref: "#/components/responses/NonAuthentifie"
+        "403":
+          $ref: "#/components/responses/AccesRefuse"
+
+  # ============================================================
+  # DÉTAIL + DIFF STRUCTURÉ
+  # ============================================================
+  /api/admin/profils-pays/contributions/{contrib_id}:
+    get:
+      tags: [Moderation]
+      summary: Obtenir le détail d'une contribution avec diff structuré
+      description: |
+        Renvoie la contribution + la valeur actuelle côté base (récupérée au runtime à partir de
+        `type_objet` + `target_id`) + les pièces jointes + les contributions concurrentes en attente
+        (pour anticiper le marquage automatique en `obsolete`).
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ContribId"
+      responses:
+        "200":
+          description: Détail de la contribution.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionDetailAdmin"
+        "404":
+          $ref: "#/components/responses/NonTrouve"
+
+  # ============================================================
+  # MODÉRATION (approuver / refuser)
+  # ============================================================
+  /api/admin/profils-pays/contributions/{contrib_id}/etat:
+    patch:
+      tags: [Moderation]
+      summary: Approuver ou refuser une contribution
+      description: |
+        En cas d'approbation (`etat = approuvee`), le handler exécute une transaction qui :
+          1. met à jour `contribution_fiche` avec `etat`, `traite_par`, `traite_at`, `note_moderation` ;
+          2. applique l'effet à la table cible selon `type_objet_contribution` + `type_contribution`
+             (INSERT pour `ajout`, UPDATE pour `edition`, soft-delete `deleted_at = NOW()` pour `suppression`) ;
+          3. pour `recommandation_visiteur` avec `type_contribution = edition`, désactive toute
+             recommandation active précédente `(utilisateur_id, fiche_pays_id)` en `active = FALSE` ;
+          4. marque toutes les autres contributions `en_attente` ciblant le même
+             `(fiche_pays_id, type_objet, target_id)` en `etat = obsolete` (FR-021) ;
+          5. appelle `audit::log_action`.
+        En cas de refus (`etat = rejetee`), `note_moderation` est OBLIGATOIRE.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ContribId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionModerationRequete"
+      responses:
+        "200":
+          description: Décision appliquée.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionDetailAdmin"
+        "400":
+          $ref: "#/components/responses/ErreurValidation"
+        "404":
+          $ref: "#/components/responses/NonTrouve"
+        "409":
+          description: |
+            La contribution n'est plus dans un état modifiable (déjà approuvée, refusée ou obsolète).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErreurApi"
+
+  # ============================================================
+  # RETRAIT POST-APPROBATION (FR-028)
+  # ============================================================
+  /api/admin/profils-pays/contributions/{contrib_id}/retirer:
+    post:
+      tags: [Retrait]
+      summary: Retirer une contribution précédemment approuvée
+      description: |
+        Cette action applique un soft-delete sur la ligne effectivement intégrée dans la table cible
+        (selon `type_objet_contribution` + `target_id` persisté au moment de l'approbation) et
+        passe la contribution dans un état logique de retrait. Le motif est obligatoire.
+        Les crédits des autres contributeurs sur la même fiche sont préservés.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ContribId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motif]
+              properties:
+                motif:
+                  type: string
+                  minLength: 10
+                  maxLength: 1000
+      responses:
+        "200":
+          description: Retrait appliqué.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionDetailAdmin"
+        "400":
+          $ref: "#/components/responses/ErreurValidation"
+        "404":
+          $ref: "#/components/responses/NonTrouve"
+        "409":
+          description: |
+            La contribution n'est pas dans un état `approuvee` — retrait impossible.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErreurApi"
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ContribId:
+      in: path
+      name: contrib_id
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    NonAuthentifie:
+      description: JWT absent ou invalide.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErreurApi"
+    AccesRefuse:
+      description: Porteur du JWT sans rôle admin.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErreurApi"
+    NonTrouve:
+      description: Contribution introuvable.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErreurApi"
+    ErreurValidation:
+      description: Corps de requête invalide.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErreurApi"
+
+  schemas:
+
+    # ------------- Enums -------------
+    EtatContribution:
+      type: string
+      enum: [en_attente, approuvee, rejetee, obsolete]
+
+    TypeContribution:
+      type: string
+      enum: [modification, ajout, suppression]
+
+    TypeObjetContribution:
+      type: string
+      enum:
+        - fiche_pays
+        - site_touristique
+        - secteur_developpement
+        - personnalite_connue
+        - savoir_pratique
+        - recommandation_visiteur
+        - photo_visiteur
+
+    SectionAfripulse:
+      type: string
+      enum:
+        - sites_emblematiques
+        - sites_prives
+        - secteurs_opportunites
+        - personnalites
+        - savoir_avant_voyager
+        - recommandations
+        - galerie_photos
+
+    # ------------- Requêtes -------------
+    DecisionModerationRequete:
+      type: object
+      required: [etat]
+      properties:
+        etat:
+          type: string
+          enum: [approuvee, rejetee]
+        note_moderation:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          description: Obligatoire si `etat = rejetee` (motif du refus).
+      examples:
+        approbation:
+          value:
+            etat: approuvee
+            note_moderation: "Source vérifiée ; ajout pertinent."
+        refus:
+          value:
+            etat: rejetee
+            note_moderation: "Contenu non vérifiable, aucune source."
+
+    # ------------- Réponses -------------
+
+    ContributionDetailAdmin:
+      type: object
+      required: [id, fiche_pays_id, type_objet, type_contribution, section, etat, cree_par_nom, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        fiche_pays_id: { type: string, format: uuid }
+        fiche_pays_nom: { type: string }
+        type_objet:
+          $ref: "#/components/schemas/TypeObjetContribution"
+        type_contribution:
+          $ref: "#/components/schemas/TypeContribution"
+        section:
+          $ref: "#/components/schemas/SectionAfripulse"
+        target_id:
+          type: string
+          format: uuid
+          nullable: true
+        ancienne_valeur:
+          description: Snapshot de la donnée actuelle (pour édition/suppression).
+          oneOf:
+            - type: object
+            - type: string
+            - type: "null"
+        nouvelle_valeur:
+          description: Payload proposé par l'auteur.
+          oneOf:
+            - type: object
+            - type: string
+        pieces_jointes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PieceJointeAdmin"
+        justification: { type: string, nullable: true }
+        etat:
+          $ref: "#/components/schemas/EtatContribution"
+        note_moderation: { type: string, nullable: true }
+        cree_par: { type: string, format: uuid }
+        cree_par_nom: { type: string }
+        traite_par: { type: string, format: uuid, nullable: true }
+        traite_par_nom: { type: string, nullable: true }
+        traite_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        contributions_concurrentes:
+          type: array
+          description: Autres contributions `en_attente` ciblant la même entité (FR-021).
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              cree_par_nom: { type: string }
+              created_at: { type: string, format: date-time }
+      example:
+        id: "00000000-0000-0000-0000-000000000010"
+        fiche_pays_id: "00000000-0000-0000-0000-000000000042"
+        fiche_pays_nom: "Côte d'Ivoire"
+        type_objet: "site_touristique"
+        type_contribution: "ajout"
+        section: "sites_emblematiques"
+        target_id: null
+        ancienne_valeur: null
+        nouvelle_valeur:
+          nom: "Basilique Notre-Dame de la Paix"
+          description: "Plus grand édifice chrétien au monde."
+          categorie: "emblematique"
+        pieces_jointes:
+          - chemin_fichier: "uploads/opportunite-afrique/photos/00000000-0000-0000-0000-00000000abcd.jpg"
+            url_signee: "/uploads/opportunite-afrique/photos/00000000-0000-0000-0000-00000000abcd.jpg"
+            legende: "Vue frontale de la basilique"
+            taille_octets: 1572864
+            largeur: 1920
+            hauteur: 1280
+        justification: "Site UNESCO absent de la fiche."
+        etat: "en_attente"
+        note_moderation: null
+        cree_par: "00000000-0000-0000-0000-000000000100"
+        cree_par_nom: "Ouattara K."
+        traite_par: null
+        traite_par_nom: null
+        traite_at: null
+        created_at: "2026-04-18T10:00:00Z"
+        contributions_concurrentes: []
+
+    PieceJointeAdmin:
+      type: object
+      required: [chemin_fichier, url_signee, legende]
+      properties:
+        chemin_fichier: { type: string }
+        url_signee: { type: string, format: uri }
+        legende: { type: string }
+        taille_octets: { type: integer }
+        largeur: { type: integer }
+        hauteur: { type: integer }
+
+    ListePagineeContributionsAdmin:
+      type: object
+      required: [items, total, page, par_page, total_pages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContributionDetailAdmin"
+        total: { type: integer }
+        page: { type: integer }
+        par_page: { type: integer }
+        total_pages: { type: integer }
+
+    ErreurApi:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+        code: { type: string }
+        details:
+          type: object
+          additionalProperties: true

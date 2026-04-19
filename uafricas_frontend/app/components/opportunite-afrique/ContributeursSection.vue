@@ -8,7 +8,22 @@ interface Props {
 defineProps<Props>()
 
 const getInitiales = (prenom: string, nom: string): string => {
+  if (!prenom || !nom) return '?'
   return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase()
+}
+
+/** Formattage relatif type « il y a 2 jours » */
+const formatDateRelative = (iso: string | null): string => {
+  if (!iso) return ''
+  const date = new Date(iso)
+  const diff = Date.now() - date.getTime()
+  const jours = Math.floor(diff / (1000 * 60 * 60 * 24))
+  if (jours === 0) return 'aujourd\'hui'
+  if (jours === 1) return 'hier'
+  if (jours < 7) return `il y a ${jours} jours`
+  if (jours < 30) return `il y a ${Math.floor(jours / 7)} semaine${jours >= 14 ? 's' : ''}`
+  if (jours < 365) return `il y a ${Math.floor(jours / 30)} mois`
+  return `il y a ${Math.floor(jours / 365)} an${jours >= 730 ? 's' : ''}`
 }
 </script>
 
@@ -31,32 +46,53 @@ const getInitiales = (prenom: string, nom: string): string => {
 
     <div v-else class="space-y-3">
       <div
-        v-for="c in contributeurs"
-        :key="c.utilisateur_id"
+        v-for="(c, idx) in contributeurs"
+        :key="c.utilisateur_id ?? `anonyme-${idx}`"
         class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+        :class="{ 'opacity-60': c.utilisateur_id === null }"
       >
-        <!-- Avatar -->
+        <!-- Avatar : masque si anonymise -->
         <div class="flex-shrink-0">
           <img
-            v-if="c.photo_url"
+            v-if="c.utilisateur_id !== null && c.photo_url"
             :src="c.photo_url"
             :alt="c.prenom + ' ' + c.nom"
             class="w-10 h-10 rounded-full object-cover border-2 border-custom-green/20"
           />
           <div
-            v-else
+            v-else-if="c.utilisateur_id !== null"
             class="w-10 h-10 rounded-full bg-custom-green/15 flex items-center justify-center text-custom-green font-bold text-sm border-2 border-custom-green/20"
           >
             {{ getInitiales(c.prenom, c.nom) }}
           </div>
+          <div
+            v-else
+            class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-2 border-gray-300"
+            title="Compte retire"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+          </div>
         </div>
         <!-- Infos -->
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-900 truncate">
-            {{ c.prenom }} {{ c.nom }}
+          <p
+            class="text-sm font-medium text-gray-900 truncate"
+            :class="{ italic: c.utilisateur_id === null }"
+          >
+            <template v-if="c.utilisateur_id === null">
+              Contributeur retire
+            </template>
+            <template v-else>
+              {{ c.prenom }} {{ c.nom }}
+            </template>
           </p>
           <p class="text-xs text-gray-500">
             {{ c.nombre_contributions }} contribution{{ c.nombre_contributions > 1 ? 's' : '' }} validee{{ c.nombre_contributions > 1 ? 's' : '' }}
+            <span v-if="c.date_derniere_contribution" class="text-gray-400">
+              · {{ formatDateRelative(c.date_derniere_contribution) }}
+            </span>
           </p>
         </div>
         <!-- Badge -->

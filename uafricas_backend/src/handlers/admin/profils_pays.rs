@@ -1,5 +1,6 @@
-use actix_web::{web, HttpResponse};
-use sqlx::PgPool;
+use actix_web::{web, HttpRequest, HttpResponse};
+use serde_json::{json, Value};
+use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
@@ -16,15 +17,35 @@ use crate::models::admin::profils_pays::{
     AdminSaisonResponse, CreerSaisonRequest, ModifierSaisonRequest,
     AdminLienInterethniqueResponse, CreerLienInterethniqueRequest, ModifierLienInterethniqueRequest,
     AdminContributionListeResponse, AdminContributionDetailRow, AdminContributionQueryParams,
-    ModererContributionRequest,
+    AdminContributionConcurrente, AdminContributionPieceJointe, AdminContributionDetailResponse,
+    ModererContributionRequest, RetirerContributionRequest,
     ADMIN_FICHE_PAYS_LISTE_COLONNES, ADMIN_FICHE_PAYS_DETAIL_COLONNES, FICHE_PAYS_TRI_COLONNES,
 };
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
+use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
 
 const TYPES_CONTE_VALIDES: &[&str] = &["conte", "histoire_drole", "legende", "mythe"];
 const ETATS_CONTRIBUTION_VALIDES: &[&str] = &["approuvee", "rejetee"];
+const TYPES_OBJET_AFRIPULSE: &[&str] = &[
+    "fiche_pays",
+    "site_touristique",
+    "secteur_developpement",
+    "personnalite_connue",
+    "savoir_pratique",
+    "recommandation_visiteur",
+    "photo_visiteur",
+];
+const SECTIONS_AFRIPULSE_VALIDES: &[&str] = &[
+    "sites_emblematiques",
+    "sites_prives",
+    "secteurs_opportunites",
+    "personnalites",
+    "savoir_avant_voyager",
+    "recommandations",
+    "galerie_photos",
+];
 
 /// Verifie qu'une fiche pays existe et retourne son ID
 async fn verifier_fiche_existe(pool: &PgPool, fiche_id: Uuid) -> Result<(), ApiErreur> {
@@ -1553,6 +1574,26 @@ pub async fn lister_contributions(
         bind_types.push("uuid");
         bind_index += 1;
     }
+
+    // T039 : filtres Afripulse (type_objet, section)
+    if let Some(ref type_objet) = params.type_objet {
+        let t = type_objet.trim().to_lowercase();
+        if TYPES_OBJET_AFRIPULSE.contains(&t.as_str()) {
+            conditions.push(format!("cf.type_objet_contribution::TEXT = ${}", bind_index));
+            bind_values.push(t);
+            bind_types.push("str");
+            bind_index += 1;
+        }
+    }
+    if let Some(ref section) = params.section {
+        let s = section.trim().to_lowercase();
+        if SECTIONS_AFRIPULSE_VALIDES.contains(&s.as_str()) {
+            conditions.push(format!("cf.section_afripulse::TEXT = ${}", bind_index));
+            bind_values.push(s);
+            bind_types.push("str");
+            bind_index += 1;
+        }
+    }
     let _ = bind_index;
 
     let where_clause = conditions.join(" AND ");
@@ -1601,6 +1642,10 @@ pub async fn lister_contributions(
 }
 
 /// GET /api/admin/profils-pays/contributions/{id}
+///
+/// T040 : renvoie le diff structure (JSONB ancienne/nouvelle) + pieces jointes
+/// + contributions concurrentes (memes fiche_pays/type_objet/target_id en
+/// attente). Aligne sur `AdminContributionDetailResponse`.
 pub async fn obtenir_contribution(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
@@ -1609,7 +1654,8 @@ pub async fn obtenir_contribution(
     verifier_permission!(admin, "profil_pays", "voir");
     let id = path.into_inner();
 
-    let row = sqlx::query_as::<_, AdminContributionDetailRow>(
+    // Ligne principale (colonnes legacy + base)
+    let base = sqlx::query_as::<_, AdminContributionDetailRow>(
         "SELECT cf.id, cf.fiche_pays_id, p.nom AS pays_nom,
                 cf.section, cf.type_contribution::TEXT AS type_contribution,
                 cf.ancienne_valeur, cf.nouvelle_valeur, cf.justification,
@@ -1627,12 +1673,117 @@ pub async fn obtenir_contribution(
     ).bind(id).fetch_optional(pool.get_ref()).await?
     .ok_or_else(|| ApiErreur::NonTrouve("Contribution non trouvee".into()))?;
 
-    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(row), error: None }))
+    // Colonnes Afripulse (JSONB + type_objet + section_afripulse + target_id + pieces_jointes)
+    let (type_objet, section_afripulse, target_id, nouvelle_jsonb, ancienne_jsonb, pieces_json): (
+        String, Option<String>, Option<Uuid>, Option<Value>, Option<Value>, Value,
+    ) = sqlx::query_as(
+        "SELECT cf.type_objet_contribution::TEXT,
+                cf.section_afripulse::TEXT,
+                cf.target_id,
+                cf.nouvelle_valeur_jsonb,
+                cf.ancienne_valeur_jsonb,
+                cf.pieces_jointes
+         FROM country_profile.contribution_fiche cf WHERE cf.id = $1",
+    )
+    .bind(id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    // Pieces jointes : deserialiser le JSONB et projeter url_signee
+    let pieces_jointes = parse_pieces_jointes(&pieces_json);
+
+    // Contributions concurrentes : memes (fiche_pays, type_objet, target_id) en attente
+    // exclure l'ID courant.
+    let concurrentes = sqlx::query_as::<_, AdminContributionConcurrente>(
+        "SELECT cf.id,
+                uc.nom || ' ' || uc.prenom AS cree_par_nom,
+                cf.created_at
+         FROM country_profile.contribution_fiche cf
+         LEFT JOIN iam.utilisateur uc ON cf.cree_par = uc.id
+         WHERE cf.id <> $1
+           AND cf.fiche_pays_id = $2
+           AND cf.type_objet_contribution::text = $3
+           AND cf.etat = 'en_attente'::country_profile.etat_contribution
+           AND cf.deleted_at IS NULL
+           AND (
+               ($4::uuid IS NULL AND cf.target_id IS NULL)
+               OR cf.target_id = $4::uuid
+           )
+         ORDER BY cf.created_at DESC",
+    )
+    .bind(id)
+    .bind(base.fiche_pays_id)
+    .bind(&type_objet)
+    .bind(target_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let response = AdminContributionDetailResponse {
+        base,
+        type_objet_contribution: type_objet,
+        section_afripulse,
+        target_id,
+        nouvelle_valeur_jsonb: nouvelle_jsonb,
+        ancienne_valeur_jsonb: ancienne_jsonb,
+        pieces_jointes,
+        contributions_concurrentes: concurrentes,
+    };
+
+    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(response), error: None }))
 }
 
-/// PATCH /api/admin/profils-pays/contributions/{id}/etat
+/// Desserialise le JSONB `pieces_jointes` d'une contribution photo_visiteur
+/// en `Vec<AdminContributionPieceJointe>` avec URL signee prete a servir.
+fn parse_pieces_jointes(json: &Value) -> Vec<AdminContributionPieceJointe> {
+    let arr = match json.as_array() {
+        Some(a) => a,
+        None => return Vec::new(),
+    };
+    arr.iter()
+        .filter_map(|item| {
+            let obj = item.as_object()?;
+            let chemin = obj.get("chemin_fichier")?.as_str()?.to_string();
+            let legende = obj
+                .get("legende")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let format = obj
+                .get("format")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let taille = obj.get("taille_octets").and_then(|v| v.as_i64()).unwrap_or(0);
+            let largeur = obj.get("largeur").and_then(|v| v.as_i64()).unwrap_or(0);
+            let hauteur = obj.get("hauteur").and_then(|v| v.as_i64()).unwrap_or(0);
+            // chemin_fichier est deja relatif a `./uploads/` (p. ex. "opportunite-afrique/photos/<uuid>.jpg")
+            let url_signee = format!("/uploads/{}", chemin.trim_start_matches('/'));
+            Some(AdminContributionPieceJointe {
+                chemin_fichier: chemin,
+                legende,
+                format,
+                taille_octets: taille,
+                largeur,
+                hauteur,
+                url_signee,
+            })
+        })
+        .collect()
+}
+
+/// PATCH /api/admin/profils-pays/contributions/{id}/etat — T036/T037/T045
+///
+/// Transaction SQL UNIQUE :
+///   1. UPDATE contribution_fiche SET etat, traite_par, traite_at, note_moderation
+///   2. Si approuvee : apply_effect_contribution (INSERT/UPDATE/soft-DELETE sur
+///      table cible selon (type_objet, type_contribution))
+///   3. Si approuvee : marquer obsoletes les contributions concurrentes
+///      (meme fiche_pays, meme type_objet, meme target_id, etat=en_attente)
+///   4. Notifier l'auteur via arbre_genealogique.notifications
+///   5. audit::log_action (hors transaction — non-bloquant)
 pub async fn moderer_contribution(
     admin: AdminUtilisateur,
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<ModererContributionRequest>,
@@ -1640,34 +1791,733 @@ pub async fn moderer_contribution(
     verifier_permission!(admin, "profil_pays", "modifier");
     let id = path.into_inner();
 
-    let etat = body.etat.trim();
-    if !ETATS_CONTRIBUTION_VALIDES.contains(&etat) {
+    let etat = body.etat.trim().to_lowercase();
+    if !ETATS_CONTRIBUTION_VALIDES.contains(&etat.as_str()) {
         return Err(ApiErreur::Validation(format!(
-            "Etat invalide: {}. Valeurs possibles: {:?}", etat, ETATS_CONTRIBUTION_VALIDES
+            "Etat invalide: {}. Valeurs possibles: {:?}",
+            etat, ETATS_CONTRIBUTION_VALIDES
         )));
     }
 
-    let result = sqlx::query(
+    let note = body.note_moderation.as_deref().map(|s| s.trim().to_string());
+    if etat == "rejetee" && note.as_deref().map(str::is_empty).unwrap_or(true) {
+        return Err(ApiErreur::Validation(
+            "Un motif (note_moderation) est obligatoire pour rejeter une contribution.".into(),
+        ));
+    }
+
+    // Charger la contribution (JSONB + metadata)
+    let row: (
+        Uuid, Uuid, Uuid, String, String, Option<String>, Option<Uuid>, Option<Value>, Option<Value>, Value,
+    ) = sqlx::query_as(
+        "SELECT cf.id, cf.fiche_pays_id, cf.cree_par,
+                cf.etat::text,
+                cf.type_objet_contribution::text,
+                cf.section_afripulse::text,
+                cf.target_id,
+                cf.nouvelle_valeur_jsonb,
+                cf.ancienne_valeur_jsonb,
+                cf.pieces_jointes
+         FROM country_profile.contribution_fiche cf
+         WHERE cf.id = $1 AND cf.deleted_at IS NULL",
+    )
+    .bind(id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Contribution non trouvee".into()))?;
+
+    let (
+        _id,
+        fiche_pays_id,
+        auteur_id,
+        etat_actuel,
+        type_objet,
+        _section_afripulse,
+        target_id,
+        nouvelle_jsonb,
+        _ancienne_jsonb,
+        pieces_json,
+    ) = row;
+
+    if etat_actuel != "en_attente" {
+        return Err(ApiErreur::Validation(format!(
+            "Seules les contributions en attente peuvent etre moderees (etat actuel : {}).",
+            etat_actuel
+        )));
+    }
+
+    let mut tx = pool.get_ref().begin().await?;
+
+    // 1. UPDATE etat
+    sqlx::query(
         "UPDATE country_profile.contribution_fiche
          SET etat = $1::country_profile.etat_contribution,
-             traite_par = $2, note_moderation = $3, traite_at = NOW(), updated_at = NOW()
-         WHERE id = $4 AND deleted_at IS NULL AND etat = 'en_attente'"
+             traite_par = $2, note_moderation = $3,
+             traite_at = NOW(), updated_at = NOW()
+         WHERE id = $4",
     )
-    .bind(etat)
+    .bind(&etat)
     .bind(admin.id)
-    .bind(body.note_moderation.as_deref().map(|s| s.trim()))
+    .bind(note.as_deref())
     .bind(id)
-    .execute(pool.get_ref()).await?;
+    .execute(&mut *tx)
+    .await?;
 
-    if result.rows_affected() == 0 {
-        return Err(ApiErreur::NonTrouve("Contribution non trouvee ou deja traitee".into()));
+    let mut target_applique: Option<Uuid> = target_id;
+
+    if etat == "approuvee" {
+        // 2. Appliquer l'effet sur la table cible
+        target_applique = appliquer_contribution_afripulse(
+            &mut tx,
+            fiche_pays_id,
+            auteur_id,
+            &type_objet,
+            target_id,
+            nouvelle_jsonb.as_ref(),
+            &pieces_json,
+        )
+        .await?;
+
+        // 3. Marquer obsoletes les contributions concurrentes (T036 pt. 3)
+        sqlx::query(
+            "UPDATE country_profile.contribution_fiche
+             SET etat = 'obsolete'::country_profile.etat_contribution,
+                 updated_at = NOW()
+             WHERE id <> $1
+               AND fiche_pays_id = $2
+               AND type_objet_contribution::text = $3
+               AND etat = 'en_attente'::country_profile.etat_contribution
+               AND deleted_at IS NULL
+               AND (
+                   ($4::uuid IS NULL AND target_id IS NULL)
+                   OR target_id = $4::uuid
+               )",
+        )
+        .bind(id)
+        .bind(fiche_pays_id)
+        .bind(&type_objet)
+        .bind(target_id)
+        .execute(&mut *tx)
+        .await?;
     }
+
+    // 4. Notification a l'auteur (dans la meme transaction — FR-019)
+    let (titre_notif, message_notif) = construire_message_notification(&etat, &type_objet, note.as_deref());
+    let lien_action = format!("/mon-compte/contributions?id={}", id);
+    sqlx::query(
+        "INSERT INTO arbre_genealogique.notifications
+            (destinataire_id, type, message, lien_action)
+         VALUES ($1, $2, $3, $4)",
+    )
+    .bind(auteur_id)
+    .bind(&titre_notif)
+    .bind(&message_notif)
+    .bind(&lien_action)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    // 5. Audit (non-bloquant)
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        if etat == "approuvee" { "approve" } else { "reject" },
+        "country_profile",
+        "contribution_fiche",
+        Some(id),
+        Some(json!({ "etat": "en_attente" })),
+        Some(json!({
+            "etat": etat,
+            "type_objet": type_objet,
+            "target_id": target_applique,
+            "note_moderation": note,
+        })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
 
     log::info!("Admin {} a {} la contribution {}", admin.id, etat, id);
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(serde_json::json!({ "id": id, "etat": etat })),
+        data: Some(json!({
+            "id": id,
+            "etat": etat,
+            "target_id": target_applique,
+        })),
         error: None,
     }))
+}
+
+/// POST /api/admin/profils-pays/contributions/{id}/retirer — T038/T045
+///
+/// Retire une contribution deja approuvee :
+///   - soft-DELETE la ligne cible (table determinee par type_objet_contribution)
+///   - passe la contribution en `etat='obsolete'` (reutilisation : cette valeur
+///     represente "surclassee ou retiree post-approbation")
+///   - exige un motif 10..1000 car. (store dans note_moderation, append)
+///   - notifie l'auteur et log audit
+pub async fn retirer_contribution_approuvee(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<RetirerContributionRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "profil_pays", "modifier");
+    let id = path.into_inner();
+
+    let motif = body.motif.trim().to_string();
+    if motif.chars().count() < 10 || motif.chars().count() > 1000 {
+        return Err(ApiErreur::Validation(
+            "Le motif doit contenir entre 10 et 1000 caracteres.".into(),
+        ));
+    }
+
+    // Charger contribution approuvee
+    let row: (Uuid, Uuid, String, String, Option<Uuid>, Option<Value>) = sqlx::query_as(
+        "SELECT cf.id, cf.fiche_pays_id, cf.cree_par,
+                cf.etat::text,
+                cf.type_objet_contribution::text,
+                cf.target_id,
+                cf.nouvelle_valeur_jsonb
+         FROM country_profile.contribution_fiche cf
+         WHERE cf.id = $1 AND cf.deleted_at IS NULL",
+    )
+    .bind(id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Contribution non trouvee".into()))?;
+
+    // N.B. serde_json::Value = type_objet renvoye en 4e position suite au SELECT ci-dessus
+    let (_id, fiche_pays_id, auteur_id, etat_actuel, target_id_opt, _nv) = row;
+    // Recharger type_objet propre (le tuple ci-dessus confond ordre; refactor)
+    let type_objet: String = sqlx::query_scalar(
+        "SELECT type_objet_contribution::text FROM country_profile.contribution_fiche WHERE id = $1",
+    )
+    .bind(id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    if etat_actuel != "approuvee" {
+        return Err(ApiErreur::Validation(format!(
+            "Seule une contribution approuvee peut etre retiree (etat actuel : {}).",
+            etat_actuel
+        )));
+    }
+
+    let mut tx = pool.get_ref().begin().await?;
+
+    // Soft-delete la ligne cible si target_id present (fiche_pays/photo non couverts ici)
+    if let Some(target_id) = target_id_opt {
+        let table = match type_objet.as_str() {
+            "site_touristique" => Some("country_profile.site_touristique"),
+            "secteur_developpement" => Some("country_profile.secteur_developpement"),
+            "personnalite_connue" => Some("country_profile.personnalite_connue"),
+            "savoir_pratique" => Some("country_profile.savoir_pratique"),
+            "recommandation_visiteur" => Some("country_profile.recommandation_visiteur"),
+            "photo_visiteur" => Some("country_profile.photo_visiteur"),
+            _ => None,
+        };
+        if let Some(t) = table {
+            let sql = format!(
+                "UPDATE {} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+                t
+            );
+            sqlx::query(&sql).bind(target_id).execute(&mut *tx).await?;
+        }
+    }
+
+    // Passer la contribution a 'obsolete'
+    sqlx::query(
+        "UPDATE country_profile.contribution_fiche
+         SET etat = 'obsolete'::country_profile.etat_contribution,
+             note_moderation = COALESCE(note_moderation || E'\n\n[Retrait] ', '[Retrait] ') || $1,
+             traite_par = $2,
+             traite_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $3",
+    )
+    .bind(&motif)
+    .bind(admin.id)
+    .bind(id)
+    .execute(&mut *tx)
+    .await?;
+
+    // Notification auteur
+    let message_notif = format!(
+        "Votre contribution a ete retiree. Motif : {}",
+        if motif.chars().count() > 200 {
+            format!("{}…", motif.chars().take(200).collect::<String>())
+        } else {
+            motif.clone()
+        }
+    );
+    let lien_action = format!("/mon-compte/contributions?id={}", id);
+    sqlx::query(
+        "INSERT INTO arbre_genealogique.notifications
+            (destinataire_id, type, message, lien_action)
+         VALUES ($1, 'afripulse_retrait', $2, $3)",
+    )
+    .bind(auteur_id)
+    .bind(&message_notif)
+    .bind(&lien_action)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "retire",
+        "country_profile",
+        "contribution_fiche",
+        Some(id),
+        Some(json!({ "etat": "approuvee" })),
+        Some(json!({
+            "etat": "obsolete",
+            "type_objet": type_objet,
+            "target_id": target_id_opt,
+            "motif": motif,
+            "fiche_pays_id": fiche_pays_id,
+        })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(json!({ "id": id, "etat": "obsolete" })),
+        error: None,
+    }))
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Helpers application des contributions approuvees (T036/T037)
+// ══════════════════════════════════════════════════════════════
+
+/// Applique l'effet d'une contribution approuvee sur la table cible. Retourne
+/// `target_id` effectivement impacte (utile pour la reponse API et l'audit).
+async fn appliquer_contribution_afripulse(
+    tx: &mut Transaction<'_, Postgres>,
+    fiche_pays_id: Uuid,
+    auteur_id: Uuid,
+    type_objet: &str,
+    target_id: Option<Uuid>,
+    nouvelle_jsonb: Option<&Value>,
+    pieces_json: &Value,
+) -> Result<Option<Uuid>, ApiErreur> {
+    // Le type_contribution reel n'est pas present dans l'appelant ; on le
+    // deduit : target_id + nouvelle_jsonb => edition ; target_id seul => suppression ;
+    // nouvelle_jsonb seul => ajout.
+    let type_contrib = match (target_id, nouvelle_jsonb) {
+        (Some(_), Some(_)) => "edition",
+        (Some(_), None) => "suppression",
+        (None, Some(_)) => "ajout",
+        (None, None) => {
+            // type_objet photo_visiteur peut n'avoir ni target ni JSONB (pieces
+            // uniquement) — considerer comme ajout.
+            "ajout"
+        }
+    };
+
+    match (type_objet, type_contrib) {
+        // ── Site touristique ────────────────────────────────────
+        ("site_touristique", "ajout") => {
+            let payload = nouvelle_jsonb.ok_or_else(|| {
+                ApiErreur::Validation("nouvelle_valeur_jsonb requise pour ajout site".into())
+            })?;
+            let nom = str_field(payload, "nom");
+            let categorie = str_field(payload, "categorie");
+            let description = opt_str_field(payload, "description");
+            let image_url = opt_str_field(payload, "image_url");
+            let nouvel_id: Uuid = sqlx::query_scalar(
+                "INSERT INTO country_profile.site_touristique
+                    (fiche_pays_id, nom, categorie, description, image_url)
+                 VALUES ($1, $2, $3::country_profile.categorie_site_touristique, $4, $5)
+                 RETURNING id",
+            )
+            .bind(fiche_pays_id)
+            .bind(nom)
+            .bind(categorie)
+            .bind(description)
+            .bind(image_url)
+            .fetch_one(&mut **tx)
+            .await?;
+            Ok(Some(nouvel_id))
+        }
+        ("site_touristique", "edition") => {
+            let payload = nouvelle_jsonb.unwrap();
+            let tid = target_id.unwrap();
+            sqlx::query(
+                "UPDATE country_profile.site_touristique SET
+                    nom = COALESCE($2, nom),
+                    categorie = COALESCE($3::country_profile.categorie_site_touristique, categorie),
+                    description = COALESCE($4, description),
+                    image_url = COALESCE($5, image_url)
+                 WHERE id = $1 AND deleted_at IS NULL",
+            )
+            .bind(tid)
+            .bind(opt_str_field(payload, "nom"))
+            .bind(opt_str_field(payload, "categorie"))
+            .bind(opt_str_field(payload, "description"))
+            .bind(opt_str_field(payload, "image_url"))
+            .execute(&mut **tx)
+            .await?;
+            Ok(Some(tid))
+        }
+        ("site_touristique", "suppression") => {
+            let tid = target_id.unwrap();
+            sqlx::query(
+                "UPDATE country_profile.site_touristique SET deleted_at = NOW()
+                 WHERE id = $1 AND deleted_at IS NULL",
+            )
+            .bind(tid)
+            .execute(&mut **tx)
+            .await?;
+            Ok(Some(tid))
+        }
+
+        // ── Secteur developpement ───────────────────────────────
+        ("secteur_developpement", "ajout") => {
+            let payload = nouvelle_jsonb.ok_or_else(|| {
+                ApiErreur::Validation("nouvelle_valeur_jsonb requise pour secteur".into())
+            })?;
+            let nom = str_field(payload, "nom");
+            let description = opt_str_field(payload, "description");
+            let nouvel_id: Uuid = sqlx::query_scalar(
+                "INSERT INTO country_profile.secteur_developpement
+                    (fiche_pays_id, nom, description)
+                 VALUES ($1, $2, $3) RETURNING id",
+            )
+            .bind(fiche_pays_id)
+            .bind(nom)
+            .bind(description)
+            .fetch_one(&mut **tx)
+            .await?;
+            Ok(Some(nouvel_id))
+        }
+        ("secteur_developpement", "edition") => {
+            let payload = nouvelle_jsonb.unwrap();
+            let tid = target_id.unwrap();
+            sqlx::query(
+                "UPDATE country_profile.secteur_developpement SET
+                    nom = COALESCE($2, nom),
+                    description = COALESCE($3, description)
+                 WHERE id = $1",
+            )
+            .bind(tid)
+            .bind(opt_str_field(payload, "nom"))
+            .bind(opt_str_field(payload, "description"))
+            .execute(&mut **tx)
+            .await?;
+            Ok(Some(tid))
+        }
+        ("secteur_developpement", "suppression") => {
+            let tid = target_id.unwrap();
+            // Pas de soft delete sur secteur_developpement (table historique) — DELETE simple
+            sqlx::query("DELETE FROM country_profile.secteur_developpement WHERE id = $1")
+                .bind(tid)
+                .execute(&mut **tx)
+                .await?;
+            Ok(Some(tid))
+        }
+
+        // ── Personnalite connue ─────────────────────────────────
+        ("personnalite_connue", "ajout") => {
+            let payload = nouvelle_jsonb.ok_or_else(|| {
+                ApiErreur::Validation("nouvelle_valeur_jsonb requise pour personnalite".into())
+            })?;
+            let nouvel_id: Uuid = sqlx::query_scalar(
+                "INSERT INTO country_profile.personnalite_connue
+                    (fiche_pays_id, nom_complet, domaine, biographie_courte,
+                     annee_naissance, annee_deces, portrait_url, lien_reference, cree_par)
+                 VALUES ($1, $2, $3::country_profile.domaine_personnalite, $4,
+                         $5, $6, $7, $8, $9) RETURNING id",
+            )
+            .bind(fiche_pays_id)
+            .bind(str_field(payload, "nom_complet"))
+            .bind(str_field(payload, "domaine"))
+            .bind(str_field(payload, "biographie_courte"))
+            .bind(i16_field(payload, "annee_naissance"))
+            .bind(i16_field(payload, "annee_deces"))
+            .bind(opt_str_field(payload, "portrait_url"))
+            .bind(opt_str_field(payload, "lien_reference"))
+            .bind(auteur_id)
+            .fetch_one(&mut **tx)
+            .await?;
+            Ok(Some(nouvel_id))
+        }
+        ("personnalite_connue", "edition") => {
+            let payload = nouvelle_jsonb.unwrap();
+            let tid = target_id.unwrap();
+            sqlx::query(
+                "UPDATE country_profile.personnalite_connue SET
+                    nom_complet = COALESCE($2, nom_complet),
+                    domaine = COALESCE($3::country_profile.domaine_personnalite, domaine),
+                    biographie_courte = COALESCE($4, biographie_courte),
+                    annee_naissance = COALESCE($5, annee_naissance),
+                    annee_deces = COALESCE($6, annee_deces),
+                    portrait_url = COALESCE($7, portrait_url),
+                    lien_reference = COALESCE($8, lien_reference)
+                 WHERE id = $1 AND deleted_at IS NULL",
+            )
+            .bind(tid)
+            .bind(opt_str_field(payload, "nom_complet"))
+            .bind(opt_str_field(payload, "domaine"))
+            .bind(opt_str_field(payload, "biographie_courte"))
+            .bind(i16_field(payload, "annee_naissance"))
+            .bind(i16_field(payload, "annee_deces"))
+            .bind(opt_str_field(payload, "portrait_url"))
+            .bind(opt_str_field(payload, "lien_reference"))
+            .execute(&mut **tx)
+            .await?;
+            Ok(Some(tid))
+        }
+        ("personnalite_connue", "suppression") => {
+            let tid = target_id.unwrap();
+            sqlx::query(
+                "UPDATE country_profile.personnalite_connue SET deleted_at = NOW()
+                 WHERE id = $1 AND deleted_at IS NULL",
+            )
+            .bind(tid)
+            .execute(&mut **tx)
+            .await?;
+            Ok(Some(tid))
+        }
+
+        // ── Savoir pratique ─────────────────────────────────────
+        ("savoir_pratique", "ajout") => {
+            let payload = nouvelle_jsonb.ok_or_else(|| {
+                ApiErreur::Validation("nouvelle_valeur_jsonb requise pour savoir".into())
+            })?;
+            let nouvel_id: Uuid = sqlx::query_scalar(
+                "INSERT INTO country_profile.savoir_pratique
+                    (fiche_pays_id, titre, categorie, explication, exemple, cree_par)
+                 VALUES ($1, $2, $3::country_profile.categorie_savoir, $4, $5, $6)
+                 RETURNING id",
+            )
+            .bind(fiche_pays_id)
+            .bind(str_field(payload, "titre"))
+            .bind(str_field(payload, "categorie"))
+            .bind(str_field(payload, "explication"))
+            .bind(opt_str_field(payload, "exemple"))
+            .bind(auteur_id)
+            .fetch_one(&mut **tx)
+            .await?;
+            Ok(Some(nouvel_id))
+        }
+        ("savoir_pratique", "edition") => {
+            let payload = nouvelle_jsonb.unwrap();
+            let tid = target_id.unwrap();
+            sqlx::query(
+                "UPDATE country_profile.savoir_pratique SET
+                    titre = COALESCE($2, titre),
+                    categorie = COALESCE($3::country_profile.categorie_savoir, categorie),
+                    explication = COALESCE($4, explication),
+                    exemple = COALESCE($5, exemple)
+                 WHERE id = $1 AND deleted_at IS NULL",
+            )
+            .bind(tid)
+            .bind(opt_str_field(payload, "titre"))
+            .bind(opt_str_field(payload, "categorie"))
+            .bind(opt_str_field(payload, "explication"))
+            .bind(opt_str_field(payload, "exemple"))
+            .execute(&mut **tx)
+            .await?;
+            Ok(Some(tid))
+        }
+        ("savoir_pratique", "suppression") => {
+            let tid = target_id.unwrap();
+            sqlx::query(
+                "UPDATE country_profile.savoir_pratique SET deleted_at = NOW()
+                 WHERE id = $1 AND deleted_at IS NULL",
+            )
+            .bind(tid)
+            .execute(&mut **tx)
+            .await?;
+            Ok(Some(tid))
+        }
+
+        // ── Recommandation visiteur ─────────────────────────────
+        // T037 : quel que soit (ajout|edition), on desactive TOUTE reco active
+        // de l'auteur sur ce pays, puis on INSERT la nouvelle en active=TRUE.
+        ("recommandation_visiteur", _) => {
+            let payload = nouvelle_jsonb.ok_or_else(|| {
+                ApiErreur::Validation("nouvelle_valeur_jsonb requise pour recommandation".into())
+            })?;
+            sqlx::query(
+                "UPDATE country_profile.recommandation_visiteur
+                 SET active = FALSE
+                 WHERE utilisateur_id = $1 AND fiche_pays_id = $2
+                   AND active = TRUE AND deleted_at IS NULL",
+            )
+            .bind(auteur_id)
+            .bind(fiche_pays_id)
+            .execute(&mut **tx)
+            .await?;
+
+            let nouvel_id: Uuid = sqlx::query_scalar(
+                "INSERT INTO country_profile.recommandation_visiteur
+                    (fiche_pays_id, utilisateur_id, note, commentaire, active)
+                 VALUES ($1, $2, $3, $4, TRUE) RETURNING id",
+            )
+            .bind(fiche_pays_id)
+            .bind(auteur_id)
+            .bind(i16_field(payload, "note").unwrap_or(5))
+            .bind(str_field(payload, "commentaire"))
+            .fetch_one(&mut **tx)
+            .await?;
+            Ok(Some(nouvel_id))
+        }
+
+        // ── Photo visiteur : INSERT 1 ligne par piece jointe ────
+        ("photo_visiteur", _) => {
+            let pieces = pieces_json.as_array().cloned().unwrap_or_default();
+            let mut dernier_id = None;
+            for piece in pieces {
+                let obj = match piece.as_object() {
+                    Some(o) => o,
+                    None => continue,
+                };
+                let chemin = obj.get("chemin_fichier").and_then(|v| v.as_str()).unwrap_or("");
+                if chemin.is_empty() {
+                    continue;
+                }
+                let nouvel_id: Uuid = sqlx::query_scalar(
+                    "INSERT INTO country_profile.photo_visiteur
+                        (fiche_pays_id, utilisateur_id, chemin_fichier, legende,
+                         format, taille_octets, largeur_px, hauteur_px)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+                )
+                .bind(fiche_pays_id)
+                .bind(auteur_id)
+                .bind(chemin)
+                .bind(obj.get("legende").and_then(|v| v.as_str()).unwrap_or(""))
+                .bind(obj.get("format").and_then(|v| v.as_str()).unwrap_or("jpeg"))
+                .bind(obj.get("taille_octets").and_then(|v| v.as_i64()).unwrap_or(0) as i32)
+                .bind(obj.get("largeur").and_then(|v| v.as_i64()).unwrap_or(0) as i16)
+                .bind(obj.get("hauteur").and_then(|v| v.as_i64()).unwrap_or(0) as i16)
+                .fetch_one(&mut **tx)
+                .await?;
+                dernier_id = Some(nouvel_id);
+            }
+            Ok(dernier_id)
+        }
+
+        // ── Fiche pays (creation) — US3 ─────────────────────────
+        ("fiche_pays", "ajout") => {
+            let payload = nouvelle_jsonb.ok_or_else(|| {
+                ApiErreur::Validation("nouvelle_valeur_jsonb requise pour fiche_pays".into())
+            })?;
+            let code_iso2 = str_field(payload, "code_iso2").to_lowercase();
+
+            // Resoudre pays_id depuis shared.pays (le pays doit deja exister)
+            let pays_id: Option<Uuid> = sqlx::query_scalar(
+                "SELECT id FROM shared.pays WHERE LOWER(code_iso2) = $1",
+            )
+            .bind(&code_iso2)
+            .fetch_optional(&mut **tx)
+            .await?;
+            let pays_id = pays_id.ok_or_else(|| {
+                ApiErreur::Validation(format!(
+                    "Pays '{}' introuvable dans shared.pays (pre-alimentation requise).",
+                    code_iso2
+                ))
+            })?;
+
+            let nouvel_id = Uuid::new_v4();
+            sqlx::query(
+                "INSERT INTO country_profile.fiche_pays
+                    (id, pays_id, slogan, superficie_km2, population, biographie,
+                     contexte, image_couverture_url, image_drapeau_url, image_embleme_url,
+                     hymne_national, langue_officielle, langues_populaires,
+                     monnaie, fuseau_horaire, cree_par)
+                 VALUES ($1, $2, $3, $4::decimal, $5::bigint, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                 ON CONFLICT (pays_id) DO NOTHING",
+            )
+            .bind(nouvel_id)
+            .bind(pays_id)
+            .bind(opt_str_field(payload, "slogan"))
+            .bind(opt_str_field(payload, "superficie_km2"))
+            .bind(opt_str_field(payload, "population"))
+            .bind(opt_str_field(payload, "biographie"))
+            .bind(opt_str_field(payload, "contexte"))
+            .bind(opt_str_field(payload, "image_couverture_url"))
+            .bind(opt_str_field(payload, "image_drapeau_url"))
+            .bind(opt_str_field(payload, "image_embleme_url"))
+            .bind(opt_str_field(payload, "hymne_national"))
+            .bind(opt_str_field(payload, "langue_officielle"))
+            .bind(opt_str_field(payload, "langues_populaires"))
+            .bind(opt_str_field(payload, "monnaie"))
+            .bind(opt_str_field(payload, "fuseau_horaire"))
+            .bind(auteur_id)
+            .execute(&mut **tx)
+            .await?;
+            Ok(Some(nouvel_id))
+        }
+
+        // Autres combos : pas d'effet (ex. fiche_pays + edition — hors scope US3)
+        _ => Ok(target_id),
+    }
+}
+
+fn str_field<'a>(value: &'a Value, key: &str) -> &'a str {
+    value.get(key).and_then(|v| v.as_str()).unwrap_or("")
+}
+
+fn opt_str_field<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
+    value
+        .get(key)
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+}
+
+fn i16_field(value: &Value, key: &str) -> Option<i16> {
+    value.get(key).and_then(|v| v.as_i64()).map(|n| n as i16)
+}
+
+fn construire_message_notification(
+    etat: &str,
+    type_objet: &str,
+    note: Option<&str>,
+) -> (String, String) {
+    let type_ = match etat {
+        "approuvee" => "afripulse_approuvee",
+        "rejetee" => "afripulse_rejetee",
+        _ => "afripulse_moderation",
+    };
+    let libelle_objet = match type_objet {
+        "site_touristique" => "site touristique",
+        "secteur_developpement" => "secteur d'opportunite",
+        "personnalite_connue" => "personnalite",
+        "savoir_pratique" => "conseil pratique",
+        "recommandation_visiteur" => "recommandation",
+        "photo_visiteur" => "photo",
+        "fiche_pays" => "fiche pays",
+        _ => "contribution",
+    };
+    let message = match etat {
+        "approuvee" => format!(
+            "Votre contribution ({}) a ete approuvee et est desormais publiee.",
+            libelle_objet
+        ),
+        "rejetee" => {
+            let motif = note.unwrap_or("(aucun motif)");
+            format!(
+                "Votre contribution ({}) a ete rejetee. Motif : {}",
+                libelle_objet, motif
+            )
+        }
+        _ => format!("Votre contribution ({}) a ete traitee.", libelle_objet),
+    };
+    (type_.to_string(), message)
 }

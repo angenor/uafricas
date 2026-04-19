@@ -1853,6 +1853,22 @@ export interface AdminContribution {
   traite_at: string | null
 }
 
+export interface AdminContributionPieceJointe {
+  chemin_fichier: string
+  legende: string
+  format: string
+  taille_octets: number
+  largeur: number
+  hauteur: number
+  url_signee: string
+}
+
+export interface AdminContributionConcurrente {
+  id: string
+  cree_par_nom: string | null
+  created_at: string
+}
+
 export interface AdminContributionDetail {
   id: string
   fiche_pays_id: string
@@ -1871,6 +1887,14 @@ export interface AdminContributionDetail {
   traite_at: string | null
   created_at: string
   updated_at: string
+  // Afripulse (T040)
+  type_objet_contribution?: string
+  section_afripulse?: string | null
+  target_id?: string | null
+  nouvelle_valeur_jsonb?: unknown | null
+  ancienne_valeur_jsonb?: unknown | null
+  pieces_jointes?: AdminContributionPieceJointe[]
+  contributions_concurrentes?: AdminContributionConcurrente[]
 }
 
 // ── Audit & Logs ────────────────────────────────────────────
