@@ -139,6 +139,35 @@ export function formatHeureFrancais(dateStr: string): string {
   })
 }
 
+/**
+ * Trier les programmations selon la règle FR-017a :
+ *   1. Programmations à venir (date_heure_debut >= maintenant) — ordre croissant.
+ *   2. Programmations passées — ordre décroissant.
+ * Retourne un nouveau tableau (immutabilité).
+ */
+export function trierProgrammations(
+  programmations: ProgrammationAPI[],
+  maintenant: Date = new Date(),
+): ProgrammationAPI[] {
+  const aVenir: ProgrammationAPI[] = []
+  const passees: ProgrammationAPI[] = []
+
+  for (const prog of programmations) {
+    const debut = new Date(prog.date_heure_debut)
+    if (debut.getTime() >= maintenant.getTime()) {
+      aVenir.push(prog)
+    }
+    else {
+      passees.push(prog)
+    }
+  }
+
+  aVenir.sort((a, b) => new Date(a.date_heure_debut).getTime() - new Date(b.date_heure_debut).getTime())
+  passees.sort((a, b) => new Date(b.date_heure_debut).getTime() - new Date(a.date_heure_debut).getTime())
+
+  return [...aVenir, ...passees]
+}
+
 /** Obtenir le label du mode d'evenement */
 export function getModeLabel(mode: string): string {
   switch (mode) {

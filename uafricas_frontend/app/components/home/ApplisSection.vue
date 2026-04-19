@@ -115,7 +115,7 @@ const applis: Appli[] = [
   },
   {
     label: 'Afroculture',
-    to: '/africain-afro-americain',
+    to: '/centres',
     icon: 'fa-solid fa-earth-africa',
     bgClass: 'bg-amber-500',
     barClass: 'bg-amber-500',

@@ -36,14 +36,6 @@ export interface CentreCulturel {
   updatedAt: Date
 }
 
-// Images pour le carrousel
-export const CAROUSEL_IMAGES: string[] = [
-  'https://images.unsplash.com/photo-1523805009345-7448845a9e53?w=1200&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1580746738229-91921a92e4c0?w=1200&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=1200&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=1200&h=400&fit=crop'
-]
-
 // Types de programmation
 export const TYPES_PROGRAMMATION: { value: TypeProgrammation | ''; label: string }[] = [
   { value: '', label: 'Sélectionner un type' },

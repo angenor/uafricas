@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { CAROUSEL_IMAGES } from '~/mocks/centres-culturels'
 import type { CentreCulturelAPI } from '~/composables/useCentresCulturels'
 
 useAOS()
@@ -13,17 +12,23 @@ interface ApiResponse<T> {
   error: string | null
 }
 
+// Visuel de repli quand aucun centre publié n'a d'image de couverture (FR-005a).
+const FALLBACK_CAROUSEL: { src: string, alt: string }[] = [
+  {
+    src: 'https://images.unsplash.com/photo-1523805009345-7448845a9e53?w=1200&h=400&fit=crop',
+    alt: 'Centres culturels UAfricas',
+  },
+]
+
 useHead({
-  title: 'Centres Culturels Africain et Afro-Descendant - UAfricas',
+  title: 'Centres culturels africains et afro-descendants – UAfricas',
   meta: [
     {
       name: 'description',
-      content: 'Découvrez les centres culturels africains et afro-descendants à travers le monde. Événements, programmations et activités culturelles.'
-    }
-  ]
+      content: 'Découvrez les centres culturels africains et afro-descendants à travers le monde. Événements, programmations et activités culturelles.',
+    },
+  ],
 })
-
-const carouselImages = CAROUSEL_IMAGES
 
 const { data: centresData, status, error: fetchError, refresh } = await useAsyncData(
   'centres-culturels',
@@ -46,6 +51,14 @@ const { data: centresData, status, error: fetchError, refresh } = await useAsync
 const centres = computed(() => centresData.value ?? [])
 const chargement = computed(() => status.value === 'pending')
 const erreur = computed(() => fetchError.value?.message ?? null)
+
+// Carrousel dérivé des centres publiés (FR-005a, Décision 2 research.md).
+const carouselImages = computed<{ src: string, alt: string }[]>(() => {
+  const derivees = centres.value
+    .filter(c => c.image_couverture_url)
+    .map(c => ({ src: c.image_couverture_url as string, alt: c.nom }))
+  return derivees.length > 0 ? derivees : FALLBACK_CAROUSEL
+})
 </script>
 
 <template>
@@ -85,7 +98,7 @@ const erreur = computed(() => fetchError.value?.message ?? null)
         <NuxtLink
           v-for="centre in centres"
           :key="centre.id"
-          :to="`/site/${centre.id}`"
+          :to="`/centres/${centre.id}`"
         >
           <CentresCulturelsCentreCulturelCard :centre="centre" />
         </NuxtLink>

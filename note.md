@@ -60,3 +60,5 @@ il peut arriver que `agent-browser --headed` soit lancé par un autre programme 
   /btw Ask a quick side question without interrupting the main conversation
 
   `agent-browser --headed`
+
+  `claude --dangerously-skip-permissions`

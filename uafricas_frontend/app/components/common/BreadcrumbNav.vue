@@ -108,6 +108,8 @@ const routeLabels: Record<string, string> = {
   'africain-afro-americain': 'Afrocult',
   'site': 'Centre Culturel',
   'programmation': 'Programmation',
+  'centres': 'Centres culturels',
+  'programmations': 'Programmation',
   'experts': 'Experts',
   'marche-africain': 'Marché Africain',
   'financer-projet': 'Financer un Projet',
