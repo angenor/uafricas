@@ -415,7 +415,7 @@ const menus: NavMenu[] = [
       { label: 'Afrolang', to: '/afrolang', description: 'Sauvons nos langues', icon: 'fa-solid fa-language' },
       { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Préservons nos cultures les meilleures', icon: 'fa-solid fa-book-open' },
       { label: 'Afripulse', to: '/opportunite-afrique', description: 'Promouvons notre Afrique', icon: 'fa-solid fa-briefcase' },
-      { label: 'Afroculture', to: '/africain-afro-americain', description: 'Enrichissons-nous ici et ailleurs de notre culture diversifiée', icon: 'fa-solid fa-earth-africa' },
+      { label: 'Afroculture', to: '/centres', description: 'Enrichissons-nous ici et ailleurs de notre culture diversifiée', icon: 'fa-solid fa-earth-africa' },
     ]
   },
   {

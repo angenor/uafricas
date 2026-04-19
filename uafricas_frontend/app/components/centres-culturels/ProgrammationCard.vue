@@ -16,7 +16,7 @@ const getRandomColor = (id: string) => {
 </script>
 
 <template>
-  <NuxtLink :to="`/site/${siteId}/programmation/${programmation.id}`">
+  <NuxtLink :to="`/centres/${siteId}/programmations/${programmation.id}`">
     <div
       :class="[
         getRandomColor(programmation.id),

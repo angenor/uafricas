@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import type { CentreCulturelDetailAPI } from '~/composables/useCentresCulturels'
-import { useUserStore } from '~/stores/user'
+import type { CentreCulturelDetailAPI, ProgrammationAPI } from '~/composables/useCentresCulturels'
+import { trierProgrammations } from '~/composables/useCentresCulturels'
 
 useAOS()
 
 const route = useRoute()
-const userStore = useUserStore()
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBaseUrl as string
 const { genererLienGoogleMaps } = useCentresCulturels()
@@ -19,9 +18,6 @@ interface ApiResponse<T> {
 const id = computed(() => route.params.id as string)
 
 const showInscription = ref(false)
-const showCreateProg = ref(false)
-
-const isAdmin = computed(() => userStore.user?.roles?.includes('admin'))
 
 const { data: centre, status, error: fetchError } = await useAsyncData(
   `centre-${id.value}`,
@@ -44,6 +40,11 @@ const { data: centre, status, error: fetchError } = await useAsyncData(
 const chargement = computed(() => status.value === 'pending')
 const erreur = computed(() => fetchError.value?.message ?? null)
 
+// Tri FR-017a : à venir croissant puis passées décroissant (Décision 3 research.md).
+const programmationsTriees = computed<ProgrammationAPI[]>(() => {
+  return centre.value ? trierProgrammations(centre.value.programmations) : []
+})
+
 const googleMapsUrl = computed(() => {
   if (!centre.value) return null
   return genererLienGoogleMaps(centre.value.latitude, centre.value.longitude)
@@ -51,28 +52,22 @@ const googleMapsUrl = computed(() => {
 
 useHead(() => ({
   title: centre.value
-    ? `Centre Culturel de ${centre.value.nom} - UAfricas`
-    : 'Centre Culturel - UAfricas',
+    ? `Centre culturel de ${centre.value.nom} – UAfricas`
+    : 'Centre culturel – UAfricas',
   meta: [
     {
       name: 'description',
       content: centre.value
         ? `Découvrez le centre culturel de ${centre.value.nom}. ${centre.value.programmations.length} événements programmés.`
-        : 'Centre culturel africain et afro-descendant'
-    }
-  ]
+        : 'Centre culturel africain et afro-descendant',
+    },
+  ],
 }))
 
-const handleInscriptionSubmit = (options: { prioritaires: boolean; toutes: boolean }) => {
+const handleInscriptionSubmit = (options: { prioritaires: boolean, toutes: boolean }) => {
   console.log('Inscription avec options:', options)
   alert('Inscription enregistrée avec succès!')
   showInscription.value = false
-}
-
-const handleCreateProgrammation = (programmation: any) => {
-  console.log('Nouvelle programmation:', programmation)
-  alert('Programmation créée avec succès! (Mode mock - non persisté)')
-  showCreateProg.value = false
 }
 </script>
 
@@ -83,14 +78,6 @@ const handleCreateProgrammation = (programmation: any) => {
       :is-open="showInscription"
       @close="showInscription = false"
       @submit="handleInscriptionSubmit"
-    />
-
-    <CentresCulturelsCreateProgrammationModal
-      v-if="centre"
-      :is-open="showCreateProg"
-      :centre-id="centre.id"
-      @close="showCreateProg = false"
-      @submit="handleCreateProgrammation"
     />
 
     <!-- Loading state -->
@@ -107,7 +94,7 @@ const handleCreateProgrammation = (programmation: any) => {
       <h1 class="text-2xl font-bold text-gray-700">Centre non trouvé</h1>
       <p class="text-gray-500 mt-2">{{ erreur }}</p>
       <NuxtLink
-        to="/africain-afro-americain"
+        to="/centres"
         class="mt-4 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
       >
         Retour à la liste
@@ -118,7 +105,12 @@ const handleCreateProgrammation = (programmation: any) => {
     <div v-else-if="centre" class="h-full mx-4 md:mx-16 lg:mx-56">
       <!-- Header avec bannière -->
       <div class="bg-white pt-32 px-4 md:px-7 pb-5 rounded-b-xl shadow-md">
-        <CommonBreadcrumbNav />
+        <CommonBreadcrumbNav
+          :custom-breadcrumbs="[
+            { label: 'Centres culturels', to: '/centres' },
+            { label: centre.nom },
+          ]"
+        />
 
         <div class="relative mt-3">
           <img
@@ -149,8 +141,8 @@ const handleCreateProgrammation = (programmation: any) => {
             </div>
             <div class="absolute bottom-3 right-3">
               <button
-                @click="showInscription = true"
                 class="transition-all hover:scale-105 active:scale-95 mt-3 inline-flex rounded-md px-3 py-1 bg-custom-green text-white text-sm md:text-base"
+                @click="showInscription = true"
               >
                 S'inscrire à ce centre
               </button>
@@ -197,13 +189,13 @@ const handleCreateProgrammation = (programmation: any) => {
         </div>
       </div>
 
-      <!-- Grille des programmations -->
+      <!-- Grille des programmations triées (à venir puis passées) -->
       <div
-        v-if="centre.programmations.length > 0"
+        v-if="programmationsTriees.length > 0"
         class="bg-white mb-4 mt-2 rounded-xl min-h-[20rem] flex flex-wrap justify-center py-4"
       >
         <CentresCulturelsProgrammationCard
-          v-for="programmation in centre.programmations"
+          v-for="programmation in programmationsTriees"
           :key="programmation.id"
           :programmation="programmation"
           :site-id="centre.id"
@@ -217,16 +209,6 @@ const handleCreateProgrammation = (programmation: any) => {
         <font-awesome-icon :icon="['fas', 'calendar-xmark']" class="text-4xl text-gray-400 mb-3" />
         <p class="text-gray-500">Aucune programmation pour le moment</p>
       </div>
-
-      <!-- Bouton Admin -->
-      <button
-        v-if="isAdmin"
-        @click="showCreateProg = true"
-        class="bg-custom-chocolat text-white rounded-md mb-4 px-4 py-2 hover:bg-custom-chocolat/90 transition-colors"
-      >
-        <font-awesome-icon :icon="['fas', 'plus']" class="mr-2" />
-        Ajouter une programmation
-      </button>
     </div>
   </div>
 </template>

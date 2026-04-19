@@ -16,16 +16,16 @@ interface ApiResponse<T> {
   error: string | null
 }
 
-const siteId = computed(() => route.params.siteId as string)
+const centreId = computed(() => route.params.id as string)
 const programmationId = computed(() => route.params.programmationId as string)
 
 const isAuthenticated = computed(() => userStore.isAuthenticated)
 
 const { data: detail, status, error: fetchError } = await useAsyncData(
-  `programmation-${siteId.value}-${programmationId.value}`,
+  `programmation-${centreId.value}-${programmationId.value}`,
   async () => {
     const reponse = await $fetch<ApiResponse<ProgrammationDetailAPI>>(
-      `${apiBase}/api/centres-culturels/${siteId.value}/programmations/${programmationId.value}`,
+      `${apiBase}/api/centres-culturels/${centreId.value}/programmations/${programmationId.value}`,
     )
     if (!reponse.success || !reponse.data) {
       throw createError({ message: reponse.error || 'Programmation non trouvée' })
@@ -41,14 +41,14 @@ const centreNom = computed(() => detail.value?.centre.nom ?? '')
 
 useHead(() => ({
   title: programmation.value
-    ? `${programmation.value.titre} - UAfricas`
-    : 'Programmation - UAfricas',
+    ? `${programmation.value.titre} – UAfricas`
+    : 'Programmation – UAfricas',
   meta: [
     {
       name: 'description',
-      content: programmation.value?.description || 'Détails de la programmation culturelle'
-    }
-  ]
+      content: programmation.value?.description || 'Détails de la programmation culturelle',
+    },
+  ],
 }))
 
 const handleInterest = () => {
@@ -72,7 +72,7 @@ const handleInterest = () => {
       <h1 class="text-2xl font-bold text-gray-700">Programmation non trouvée</h1>
       <p class="text-gray-500 mt-2">{{ erreur }}</p>
       <NuxtLink
-        :to="`/site/${siteId}`"
+        :to="`/centres/${centreId}`"
         class="mt-4 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
       >
         Retour au centre
@@ -84,7 +84,13 @@ const handleInterest = () => {
       <div
         class="bg-white mx-4 md:mx-16 lg:mx-72 pt-32 px-4 md:px-7 pb-20 rounded-b-md shadow-md"
       >
-        <CommonBreadcrumbNav />
+        <CommonBreadcrumbNav
+          :custom-breadcrumbs="[
+            { label: 'Centres culturels', to: '/centres' },
+            { label: centreNom, to: `/centres/${centreId}` },
+            { label: programmation.titre },
+          ]"
+        />
 
         <!-- Info bar -->
         <div
@@ -94,7 +100,7 @@ const handleInterest = () => {
         >
           <div class="flex flex-wrap items-center text-custom-chocolat gap-2">
             <NuxtLink
-              :to="`/site/${siteId}`"
+              :to="`/centres/${centreId}`"
               class="font-bold underline hover:text-custom-green transition-colors"
             >
               {{ centreNom }}
@@ -158,8 +164,8 @@ const handleInterest = () => {
           data-aos-duration="600"
         >
           <button
-            @click="handleInterest"
             class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-all hover:scale-105"
+            @click="handleInterest"
           >
             <font-awesome-icon :icon="['fas', 'star']" class="mr-2" />
             Je suis intéressé(e)
@@ -196,14 +202,14 @@ const handleInterest = () => {
         <!-- Navigation -->
         <div class="mt-6 flex justify-between">
           <NuxtLink
-            :to="`/site/${siteId}`"
+            :to="`/centres/${centreId}`"
             class="text-custom-chocolat hover:text-custom-green transition-colors"
           >
             <font-awesome-icon :icon="['fas', 'arrow-left']" class="mr-2" />
             Retour au centre
           </NuxtLink>
           <NuxtLink
-            to="/africain-afro-americain"
+            to="/centres"
             class="text-custom-chocolat hover:text-custom-green transition-colors"
           >
             Tous les centres

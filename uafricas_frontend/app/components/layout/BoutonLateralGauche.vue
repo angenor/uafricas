@@ -230,7 +230,7 @@ const menuItems: MenuItem[] = [
       { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
       { label: 'Afrolang', to: '/afrolang', description: 'Apprenez les langues du continent', icon: 'fa-solid fa-language' },
       { label: 'Africalive', to: '/evenements/liste', description: 'Événements et rencontres en direct', icon: 'fa-solid fa-calendar-days' },
-      { label: 'Afroculture', to: '/africain-afro-americain', description: 'Échanges culturels Afrique-diaspora', icon: 'fa-solid fa-earth-africa' },
+      { label: 'Afroculture', to: '/centres', description: 'Échanges culturels Afrique-diaspora', icon: 'fa-solid fa-earth-africa' },
       { label: 'Afromarket', to: '/marche-africain', description: 'Place de marché panafricaine', icon: 'fa-solid fa-store' },
       { label: 'Diapertise', to: '/experts', description: 'Experts et consultants de la diaspora', icon: 'fa-solid fa-user-tie' },
       { label: 'Afripulse', to: '/opportunite-afrique', description: 'Offres d\'emploi et opportunités', icon: 'fa-solid fa-briefcase' },

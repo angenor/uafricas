@@ -32,6 +32,16 @@ export default defineNuxtConfig({
     },
   },
 
+  // Redirection permanente 301 (feature 001-centres-reorganisation, Décision 1 research.md).
+  // Les redirections paramétrées `/site/:id` et `/site/:siteId/programmation/:programmationId`
+  // sont traitées par `server/middleware/redirect-legacy-site.ts` car Nitro ne substitue
+  // pas les segments `:param` dans le champ `redirect.to` des routeRules.
+  routeRules: {
+    '/africain-afro-americain': {
+      redirect: { to: '/centres', statusCode: 301 },
+    },
+  },
+
   app: {
     head: {
       title: 'UAfricas - United Africa for Sustainable Development',
