@@ -1,9 +1,9 @@
 <template>
   <header class="absolute top-0 w-full z-50 bg-linear-to-t from-white shadow-md">
     <!-- Mobile : Logo + hamburger -->
-    <div class="flex items-center justify-between lg:hidden px-4 h-14">
+    <div class="flex items-center justify-between lg:hidden px-4 h-16">
       <NuxtLink to="/">
-        <img class="h-10 sm:h-12" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
+        <img class="h-14 sm:h-16" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
       </NuxtLink>
 
       <div class="flex items-center gap-1">
@@ -28,7 +28,7 @@
     <nav class="hidden lg:flex items-center justify-center relative py-1.5 px-4 lg:px-6">
       <!-- Logo à gauche (absolu pour ne pas décaler le centrage) -->
       <NuxtLink to="/" class="absolute left-4 lg:left-6">
-        <img class="h-11" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
+        <img class="h-16" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
       </NuxtLink>
 
       <!-- Menus principaux (centrés) -->
