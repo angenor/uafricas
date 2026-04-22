@@ -427,7 +427,7 @@ const menus: NavMenu[] = [
     gradient: 'bg-linear-to-br from-teal-600 to-cyan-800',
     image: '/images/fiche-opportunite.jpg',
     items: [
-      { label: 'Rootstree', to: '/arbre-genealogique', description: 'Tracer ton arbre généalogique', icon: 'fa-solid fa-tree' },
+      { label: 'Rootstree', to: '/arbre-genealogique', description: 'Tracer son arbre généalogique', icon: 'fa-solid fa-tree' },
       { label: 'Africonnect', to: '/retrouve-amis', description: 'Retrouver une personne perdue de vue', icon: 'fa-solid fa-users' },
       { label: 'Diapertise', to: '/experts', description: 'Mobiliser une expertise de pointe', icon: 'fa-solid fa-user-tie' },
       { label: 'Sabbatique', to: '/echanges-sabbatiques', description: 'Offrir son expertise en volontariat et bénévolat', icon: 'fa-solid fa-plane' },
