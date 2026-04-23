@@ -75,6 +75,7 @@
 \ir schemas/03_shared.sql
 \ir schemas/04_iam.sql
 \ir schemas/04b_iam_expertise.sql
+\ir schemas/04b_iam_biblio_demande.sql
 \ir schemas/04c_iam_verification_email.sql
 \ir schemas/05_marketplace.sql
 \ir schemas/06_exchange.sql

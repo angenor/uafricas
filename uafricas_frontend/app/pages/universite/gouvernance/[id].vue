@@ -26,7 +26,7 @@
     <template v-else>
       <!-- Hero -->
       <div class="relative h-72 md:h-80 overflow-hidden"
-           :class="getTypeGradient(contribution.type)">
+           :class="getTypeGradient(contribution.type, contribution.typePratique)">
         <!-- Motif décoratif -->
         <div class="absolute inset-0 opacity-10"
              style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,0.1) 35px, rgba(255,255,255,0.1) 70px);"></div>
@@ -39,13 +39,17 @@
             <CommonBreadcrumbNav class="mb-5 text-white/70" />
             <div class="flex flex-wrap items-center gap-3 mb-3">
               <span class="px-4 py-1.5 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-semibold border border-white/20">
-                <font-awesome-icon :icon="getTypeIcon(contribution.type)" class="mr-1.5" />
-                {{ getTypeLabel(contribution.type) }}
+                <font-awesome-icon :icon="getTypeIcon(contribution.type, contribution.typePratique)" class="mr-1.5" />
+                {{ getTypeLabel(contribution.type, contribution.typePratique) }}
               </span>
-              <span v-if="contribution.problematique?.gravite"
+              <span v-if="contribution.typePratique !== 'bonne' && contribution.problematique?.gravite"
                     class="px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide"
                     :class="getGraviteHeroClass(contribution.problematique.gravite)">
                 {{ contribution.problematique.gravite }}
+              </span>
+              <span v-if="contribution.typePratique === 'bonne' && contribution.bonnePratique?.impact"
+                    class="px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-emerald-500/25 text-emerald-100 border border-emerald-300/40">
+                Impact {{ contribution.bonnePratique.impact }}
               </span>
               <span v-if="contribution.verified"
                     class="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/20 backdrop-blur-sm text-green-300 rounded-full text-sm font-medium border border-green-400/30">
@@ -148,8 +152,8 @@
               </div>
             </div>
 
-            <!-- Contenu BadHabits -->
-            <div v-if="contribution.type === 'badhabits' && contribution.problematique" class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <!-- Contenu BadHabits (mauvaise pratique) -->
+            <div v-if="contribution.type === 'badhabits' && contribution.typePratique !== 'bonne' && contribution.problematique" class="bg-white rounded-xl shadow-lg overflow-hidden">
               <div class="h-1.5" :class="getBandeGraviteClass(contribution.problematique.gravite)"></div>
               <div class="p-8">
                 <h3 class="font-bold text-red-800 mb-6 text-lg flex items-center gap-2">
@@ -167,6 +171,33 @@
                     <font-awesome-icon :icon="getGraviteIcon(contribution.problematique.gravite)" />
                     Gravité : {{ contribution.problematique.gravite }}
                   </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contenu BadHabits (bonne pratique) -->
+            <div v-if="contribution.type === 'badhabits' && contribution.typePratique === 'bonne' && contribution.bonnePratique" class="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div class="h-1.5" :class="getBandeImpactClass(contribution.bonnePratique.impact)"></div>
+              <div class="p-8">
+                <h3 class="font-bold text-emerald-800 mb-6 text-lg flex items-center gap-2">
+                  <font-awesome-icon :icon="['fas', 'thumbs-up']" class="text-emerald-500" />
+                  Bonne pratique saluée
+                </h3>
+                <div class="flex flex-wrap items-center gap-3">
+                  <span class="px-4 py-2 bg-emerald-100 text-emerald-800 rounded-lg text-sm font-semibold flex items-center gap-2">
+                    <font-awesome-icon :icon="['fas', 'tag']" class="text-emerald-400" />
+                    {{ contribution.bonnePratique.categorie }}
+                  </span>
+                  <span v-if="contribution.bonnePratique.impact"
+                        class="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
+                        :class="getImpactClass(contribution.bonnePratique.impact)">
+                    <font-awesome-icon :icon="getImpactIcon(contribution.bonnePratique.impact)" />
+                    Impact : {{ contribution.bonnePratique.impact }}
+                  </span>
+                </div>
+                <div v-if="contribution.bonnePratique.reproductibilite" class="mt-6">
+                  <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-1">Reproductibilité</p>
+                  <p class="text-gray-800 leading-relaxed">{{ contribution.bonnePratique.reproductibilite }}</p>
                 </div>
               </div>
             </div>
@@ -296,7 +327,10 @@ const route = useRoute()
 const loading = ref(true)
 const contribution = ref<ContributionCitoyenne | null>(null)
 
-const getTypeLabel = (type: string) => {
+const getTypeLabel = (type: string, typePratique?: string) => {
+  if (type === 'badhabits') {
+    return typePratique === 'bonne' ? 'Bonne pratique' : 'Mauvaise pratique'
+  }
   const labels: Record<string, string> = {
     factcheck: 'FactCheck',
     badhabits: 'BadHabits',
@@ -305,7 +339,10 @@ const getTypeLabel = (type: string) => {
   return labels[type] || type
 }
 
-const getTypeIcon = (type: string): string[] => {
+const getTypeIcon = (type: string, typePratique?: string): string[] => {
+  if (type === 'badhabits' && typePratique === 'bonne') {
+    return ['fas', 'thumbs-up']
+  }
   const icons: Record<string, string[]> = {
     factcheck: ['fas', 'eye'],
     badhabits: ['fas', 'exclamation-triangle'],
@@ -314,13 +351,46 @@ const getTypeIcon = (type: string): string[] => {
   return icons[type] || ['fas', 'file-lines']
 }
 
-const getTypeGradient = (type: string) => {
+const getTypeGradient = (type: string, typePratique?: string) => {
+  if (type === 'badhabits' && typePratique === 'bonne') {
+    return 'bg-linear-to-br from-emerald-900 via-emerald-700 to-green-600'
+  }
   const gradients: Record<string, string> = {
     factcheck: 'bg-linear-to-br from-blue-700 via-blue-600 to-indigo-700',
     badhabits: 'bg-linear-to-br from-red-900 via-red-700 to-orange-600',
     ideaforces: 'bg-linear-to-br from-amber-600 via-orange-500 to-yellow-500'
   }
   return gradients[type] || 'bg-linear-to-br from-gray-700 to-gray-900'
+}
+
+const getImpactClass = (impact: string) => {
+  const classes: Record<string, string> = {
+    faible: 'bg-lime-100 text-lime-800',
+    moyen: 'bg-lime-200 text-lime-900',
+    fort: 'bg-emerald-100 text-emerald-800',
+    exemplaire: 'bg-green-600 text-white'
+  }
+  return classes[impact] || 'bg-gray-100 text-gray-800'
+}
+
+const getBandeImpactClass = (impact?: string) => {
+  const classes: Record<string, string> = {
+    faible: 'bg-linear-to-r from-lime-300 to-lime-400',
+    moyen: 'bg-linear-to-r from-lime-400 to-emerald-400',
+    fort: 'bg-linear-to-r from-emerald-400 to-emerald-500',
+    exemplaire: 'bg-linear-to-r from-emerald-600 to-green-600'
+  }
+  return classes[impact || ''] || 'bg-emerald-300'
+}
+
+const getImpactIcon = (impact: string): string[] => {
+  const icons: Record<string, string[]> = {
+    faible: ['fas', 'seedling'],
+    moyen: ['fas', 'leaf'],
+    fort: ['fas', 'hands-clapping'],
+    exemplaire: ['fas', 'star']
+  }
+  return icons[impact] || ['fas', 'thumbs-up']
 }
 
 const getGraviteClass = (gravite: string) => {

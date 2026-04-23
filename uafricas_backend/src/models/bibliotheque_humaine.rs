@@ -123,6 +123,32 @@ pub struct InscriptionBiblioBody {
     pub organisation: Option<String>,
 }
 
+/// Reponse apres soumission d'une demande (201)
+#[derive(Debug, Serialize)]
+pub struct DemandeCreeeResponse {
+    pub id: Uuid,
+    pub statut: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: DateTime<Utc>,
+}
+
+/// Suivi de la demande par le candidat (US4)
+#[derive(Debug, Serialize)]
+pub struct MaDemandeResponse {
+    pub id: Uuid,
+    pub statut: String,
+    pub fonction: String,
+    pub biographie: String,
+    pub pays: Option<String>,
+    pub specialites: Vec<String>,
+    #[serde(rename = "commentaireAdmin")]
+    pub commentaire_admin: Option<String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: DateTime<Utc>,
+    #[serde(rename = "traiteLe")]
+    pub traite_le: Option<DateTime<Utc>>,
+}
+
 // ────────────────────────────────────────────────────────────────
 // Conversions Row → Response
 // ────────────────────────────────────────────────────────────────

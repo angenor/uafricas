@@ -38,6 +38,14 @@ export interface ContributionProblematique {
   urgence?: string
 }
 
+export type TypePratique = 'mauvaise' | 'bonne'
+
+export interface ContributionBonnePratique {
+  categorie: string
+  impact?: 'faible' | 'moyen' | 'fort' | 'exemplaire'
+  reproductibilite?: string
+}
+
 export interface ContributionMedias {
   photos: string[]
   videos: string[]
@@ -54,7 +62,9 @@ export interface ContributionCitoyenne {
   localisation: ContributionLocalisation
   dateCreation: Date
   dateMiseAJour?: Date
+  typePratique?: TypePratique
   problematique?: ContributionProblematique
+  bonnePratique?: ContributionBonnePratique
   factcheck?: {
     prejuge: Prejudice
     contrePrejuge: Prejudice
@@ -173,6 +183,7 @@ export const contributionsMock: ContributionCitoyenne[] = [
       region: 'Lagunes'
     },
     dateCreation: new Date('2025-01-12'),
+    typePratique: 'mauvaise',
     problematique: {
       categorie: 'Corruption',
       gravite: 'grave',
@@ -211,6 +222,7 @@ export const contributionsMock: ContributionCitoyenne[] = [
       quartier: 'Tampouy'
     },
     dateCreation: new Date('2025-01-18'),
+    typePratique: 'mauvaise',
     problematique: {
       categorie: 'Environnement',
       gravite: 'moyenne',
@@ -225,6 +237,105 @@ export const contributionsMock: ContributionCitoyenne[] = [
       soutiens: 89
     },
     tags: ['environnement', 'déchets', 'santé publique']
+  },
+  {
+    id: 'contrib-7',
+    type: 'badhabits',
+    statut: 'publie',
+    titre: 'Brigades citoyennes de salubrité à Kigali',
+    description: 'Chaque dernier samedi du mois, les habitants nettoient collectivement leur quartier. Résultat : Kigali est l\'une des villes les plus propres d\'Afrique.',
+    auteur: {
+      id: 'user-7',
+      prenom: 'Aline',
+      nom: 'Mukamana',
+      photoURL: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100'
+    },
+    localisation: {
+      pays: 'Rwanda',
+      ville: 'Kigali'
+    },
+    dateCreation: new Date('2025-02-02'),
+    typePratique: 'bonne',
+    bonnePratique: {
+      categorie: 'Civisme',
+      impact: 'exemplaire',
+      reproductibilite: 'Adaptable à toute commune avec une organisation de quartier.'
+    },
+    stats: {
+      vues: 712,
+      vuesUniques: 540,
+      likes: 298,
+      commentaires: 42,
+      partages: 88,
+      soutiens: 321
+    },
+    tags: ['civisme', 'propreté', 'communauté']
+  },
+  {
+    id: 'contrib-8',
+    type: 'badhabits',
+    statut: 'publie',
+    titre: 'Guichet unique 100% digital au ministère des transports',
+    description: 'Démarches administratives dématérialisées : permis, cartes grises, vignettes. Délai réduit de 3 semaines à 48h.',
+    auteur: {
+      id: 'user-8',
+      prenom: 'Ismaël',
+      nom: 'Traoré'
+    },
+    localisation: {
+      pays: 'Togo',
+      ville: 'Lomé'
+    },
+    dateCreation: new Date('2025-02-08'),
+    typePratique: 'bonne',
+    bonnePratique: {
+      categorie: 'Service public',
+      impact: 'fort',
+      reproductibilite: 'Nécessite un investissement initial mais ROI rapide.'
+    },
+    stats: {
+      vues: 489,
+      vuesUniques: 398,
+      likes: 176,
+      commentaires: 29,
+      partages: 54,
+      soutiens: 203
+    },
+    tags: ['digitalisation', 'administration', 'efficacité']
+  },
+  {
+    id: 'contrib-9',
+    type: 'badhabits',
+    statut: 'publie',
+    titre: 'Cantine scolaire bio financée par la coopérative agricole',
+    description: 'Les agriculteurs locaux fournissent gratuitement une partie de leur production pour alimenter les cantines scolaires du village.',
+    auteur: {
+      id: 'user-9',
+      prenom: 'Mariam',
+      nom: 'Sow',
+      photoURL: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100'
+    },
+    localisation: {
+      pays: 'Sénégal',
+      ville: 'Kaolack',
+      region: 'Kaolack'
+    },
+    dateCreation: new Date('2025-02-14'),
+    typePratique: 'bonne',
+    bonnePratique: {
+      categorie: 'Solidarité',
+      impact: 'fort',
+      reproductibilite: 'Modèle duplicable dans toute zone rurale agricole.'
+    },
+    stats: {
+      vues: 356,
+      vuesUniques: 287,
+      likes: 134,
+      commentaires: 21,
+      partages: 41,
+      soutiens: 189
+    },
+    tags: ['solidarité', 'éducation', 'agriculture']
   },
 
   // IdeaForces
@@ -343,5 +454,19 @@ export const categoriesProblematiques = [
   'Économie',
   'Droits humains',
   'Justice',
+  'Autre'
+]
+
+export const categoriesBonnesPratiques = [
+  'Civisme',
+  'Service public',
+  'Solidarité',
+  'Innovation sociale',
+  'Initiative citoyenne',
+  'Leadership exemplaire',
+  'Transparence',
+  'Environnement',
+  'Éducation',
+  'Santé',
   'Autre'
 ]

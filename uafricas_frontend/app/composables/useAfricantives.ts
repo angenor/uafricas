@@ -89,6 +89,14 @@ export const DOMAINES_AFRICANTIVES: { value: string; label: string }[] = [
   { value: 'Culture', label: 'Culture' },
   { value: 'Transport', label: 'Transport' },
   { value: 'Commerce', label: 'Commerce' },
+  { value: 'Associations de diaspora', label: 'Associations de diaspora' },
+  { value: 'Transfert d\'argent', label: 'Transfert d\'argent' },
+  { value: 'Investissements en Afrique', label: 'Investissements en Afrique' },
+  { value: 'Réseautage professionnel', label: 'Réseautage professionnel' },
+  { value: 'Intégration dans les pays d\'accueil', label: 'Intégration dans les pays d\'accueil' },
+  { value: 'Associations de solidarité et de développement en Afrique', label: 'Associations de solidarité et de développement en Afrique' },
+  { value: 'Innovations', label: 'Innovations' },
+  { value: 'Entrepreneuriat', label: 'Entrepreneuriat' },
 ]
 
 export const PAYS_AFRICAINS = [

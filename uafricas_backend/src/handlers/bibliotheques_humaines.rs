@@ -6,7 +6,8 @@ use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::bibliotheque_humaine::{
     BiblioHumaineListeResponse, BiblioHumaineQueryParams, BiblioHumaineRow,
-    InscriptionBiblioBody, SpecialiteRow, BIBLIO_HUMAINE_COLONNES,
+    DemandeCreeeResponse, InscriptionBiblioBody, MaDemandeResponse, SpecialiteRow,
+    BIBLIO_HUMAINE_COLONNES,
 };
 
 #[derive(serde::Serialize)]
@@ -30,6 +31,7 @@ fn extraire_utilisateur_id(req: &HttpRequest) -> Option<Uuid> {
 // ────────────────────────────────────────────────────────────────
 
 /// GET /api/bibliotheques-humaines — Liste paginee avec filtres
+/// Ne retourne que les profils avec une demande en statut 'valide' (US3)
 pub async fn lister_biblios(
     pool: web::Data<PgPool>,
     params: web::Query<BiblioHumaineQueryParams>,
@@ -39,7 +41,13 @@ pub async fn lister_biblios(
     let offset = (page - 1) * par_page;
 
     let mut conditions: Vec<String> = vec![
-        "u.bibliotheque_humain = TRUE".to_string(),
+        "EXISTS (
+            SELECT 1 FROM iam.demande_biblio_humaine d
+            WHERE d.utilisateur_id = u.id
+              AND d.statut = 'valide'
+              AND d.deleted_at IS NULL
+         )"
+        .to_string(),
         "u.deleted_at IS NULL".to_string(),
         "u.etat = 'actif'".to_string(),
     ];
@@ -71,7 +79,7 @@ pub async fn lister_biblios(
         }
     }
 
-    // Recherche textuelle (nom, prenom, fonction, biographie, specialite)
+    // Recherche textuelle
     if let Some(ref recherche) = params.recherche {
         let trimmed = recherche.trim();
         if !trimmed.is_empty() {
@@ -120,7 +128,6 @@ pub async fn lister_biblios(
     select_q = select_q.bind(par_page).bind(offset);
 
     let rows = select_q.fetch_all(pool.get_ref()).await?;
-
     let bibliotheques: Vec<_> = rows.iter().map(|r| r.to_response()).collect();
 
     let total_pages = if total == 0 {
@@ -152,7 +159,12 @@ pub async fn obtenir_biblio(
     let query = format!(
         "SELECT {} FROM iam.utilisateur u
          LEFT JOIN shared.pays p ON p.id = u.pays_origine_id
-         WHERE u.id = $1 AND u.bibliotheque_humain = TRUE AND u.deleted_at IS NULL",
+         WHERE u.id = $1
+           AND u.deleted_at IS NULL
+           AND EXISTS (
+               SELECT 1 FROM iam.demande_biblio_humaine d
+               WHERE d.utilisateur_id = u.id AND d.statut = 'valide' AND d.deleted_at IS NULL
+           )",
         BIBLIO_HUMAINE_COLONNES
     );
 
@@ -174,7 +186,8 @@ pub async fn obtenir_biblio(
     }))
 }
 
-/// POST /api/bibliotheques-humaines/inscription — Devenir bibliotheque humaine (JWT requis)
+/// POST /api/bibliotheques-humaines/inscription — Soumettre une demande (JWT requis)
+/// Cree une demande en statut 'en_attente' ; retourne 409 si demande active existante
 pub async fn inscrire_biblio(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -192,33 +205,35 @@ pub async fn inscrire_biblio(
     .await?;
 
     if !user_exists {
-        return Err(ApiErreur::NonTrouve(
-            "Utilisateur non trouve".to_string(),
-        ));
+        return Err(ApiErreur::NonTrouve("Utilisateur non trouve".to_string()));
     }
 
-    // Verifier qu'il n'est pas deja bibliotheque humaine
-    let deja_biblio: bool = sqlx::query_scalar(
-        "SELECT COALESCE(bibliotheque_humain, FALSE) FROM iam.utilisateur WHERE id = $1",
+    // Verifier qu'il n'a pas deja une demande active (en_attente ou valide)
+    let demande_active: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM iam.demande_biblio_humaine
+            WHERE utilisateur_id = $1
+              AND statut IN ('en_attente', 'valide')
+              AND deleted_at IS NULL
+         )",
     )
     .bind(utilisateur_id)
     .fetch_one(pool.get_ref())
     .await?;
 
-    if deja_biblio {
+    if demande_active {
         return Err(ApiErreur::Conflit(
-            "Vous etes deja inscrit comme bibliotheque humaine".to_string(),
+            "Vous avez deja une demande active (en attente ou validee)".to_string(),
         ));
     }
 
-    // Valider qu'au moins une specialite est fournie
+    // Valider les champs obligatoires
     if body.specialites.is_empty() {
         return Err(ApiErreur::Validation(
             "Au moins une specialite est requise".to_string(),
         ));
     }
 
-    // Valider la biographie (obligatoire)
     let biographie = body.biographie.as_deref().unwrap_or("").trim().to_string();
     if biographie.is_empty() {
         return Err(ApiErreur::Validation(
@@ -231,7 +246,6 @@ pub async fn inscrire_biblio(
         ));
     }
 
-    // Valider la fonction (obligatoire)
     let fonction = body.fonction.as_deref().unwrap_or("").trim().to_string();
     if fonction.is_empty() {
         return Err(ApiErreur::Validation(
@@ -239,51 +253,35 @@ pub async fn inscrire_biblio(
         ));
     }
 
-    // Construire la mise a jour dynamique du profil
-    let mut set_clauses = vec![
-        "bibliotheque_humain = TRUE".to_string(),
-        "biographie = $2".to_string(),
-        "fonction = $3".to_string(),
-        "updated_at = NOW()".to_string(),
-    ];
-    let bind_index = 4u32;
-
     // Resoudre le pays si fourni
     let pays_nom = body.pays.as_deref().unwrap_or("").trim().to_string();
     let pays_id: Option<Uuid> = if !pays_nom.is_empty() {
-        let id = sqlx::query_scalar::<_, Uuid>(
+        sqlx::query_scalar::<_, Uuid>(
             "SELECT id FROM shared.pays WHERE LOWER(nom) = LOWER($1)",
         )
         .bind(&pays_nom)
         .fetch_optional(pool.get_ref())
-        .await?;
-        if id.is_some() {
-            set_clauses.push(format!("pays_origine_id = ${}", bind_index));
-        }
-        id
+        .await?
     } else {
         None
     };
 
-    let update_query = format!(
-        "UPDATE iam.utilisateur SET {} WHERE id = $1",
-        set_clauses.join(", ")
-    );
+    // Creer la demande
+    let demande_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO iam.demande_biblio_humaine
+         (utilisateur_id, statut, fonction, biographie, pays_origine_id)
+         VALUES ($1, 'en_attente', $2, $3, $4)
+         RETURNING id",
+    )
+    .bind(utilisateur_id)
+    .bind(&fonction)
+    .bind(&biographie)
+    .bind(pays_id)
+    .fetch_one(pool.get_ref())
+    .await?;
 
-    let mut query = sqlx::query(&update_query)
-        .bind(utilisateur_id)
-        .bind(&biographie)
-        .bind(&fonction);
-
-    if let Some(pid) = pays_id {
-        query = query.bind(pid);
-    }
-
-    query.execute(pool.get_ref()).await?;
-
-    // Inserer les specialites
+    // Associer les specialites a la demande
     for nom_specialite in &body.specialites {
-        // Recuperer l'id de la specialite par nom
         let specialite_id: Option<Uuid> = sqlx::query_scalar(
             "SELECT id FROM iam.specialite_bibliotheque WHERE LOWER(nom) = LOWER($1)",
         )
@@ -293,10 +291,10 @@ pub async fn inscrire_biblio(
 
         if let Some(spec_id) = specialite_id {
             sqlx::query(
-                "INSERT INTO iam.utilisateur_specialite (utilisateur_id, specialite_id)
+                "INSERT INTO iam.demande_biblio_specialite (demande_id, specialite_id)
                  VALUES ($1, $2) ON CONFLICT DO NOTHING",
             )
-            .bind(utilisateur_id)
+            .bind(demande_id)
             .bind(spec_id)
             .execute(pool.get_ref())
             .await?;
@@ -304,27 +302,99 @@ pub async fn inscrire_biblio(
     }
 
     log::info!(
-        "Utilisateur {} inscrit comme bibliotheque humaine avec {} specialites",
+        "Demande bibliotheque humaine soumise par {} (demande: {})",
         utilisateur_id,
-        body.specialites.len()
+        demande_id
     );
 
-    // Recuperer le profil complet pour le retourner
-    let row_query = format!(
-        "SELECT {} FROM iam.utilisateur u
-         LEFT JOIN shared.pays p ON p.id = u.pays_origine_id
-         WHERE u.id = $1",
-        BIBLIO_HUMAINE_COLONNES
-    );
-
-    let row = sqlx::query_as::<_, BiblioHumaineRow>(&row_query)
-        .bind(utilisateur_id)
-        .fetch_one(pool.get_ref())
-        .await?;
+    // Recuperer la date de creation pour la reponse
+    let created_at: chrono::DateTime<chrono::Utc> = sqlx::query_scalar(
+        "SELECT created_at FROM iam.demande_biblio_humaine WHERE id = $1",
+    )
+    .bind(demande_id)
+    .fetch_one(pool.get_ref())
+    .await?;
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
-        data: Some(row.to_response()),
+        data: Some(DemandeCreeeResponse {
+            id: demande_id,
+            statut: "en_attente".to_string(),
+            created_at,
+        }),
+        error: None,
+    }))
+}
+
+/// GET /api/bibliotheques-humaines/moi/demande — Suivi de statut pour le candidat (US4)
+pub async fn ma_demande(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+
+    #[derive(sqlx::FromRow)]
+    struct MaDemandeRow {
+        id: Uuid,
+        statut: String,
+        fonction: String,
+        biographie: String,
+        pays: Option<String>,
+        specialites_noms: String,
+        commentaire_admin: Option<String>,
+        created_at: chrono::DateTime<chrono::Utc>,
+        traite_le: Option<chrono::DateTime<chrono::Utc>>,
+    }
+
+    let row = sqlx::query_as::<_, MaDemandeRow>(
+        "SELECT
+            d.id,
+            d.statut::TEXT AS statut,
+            d.fonction,
+            d.biographie,
+            p.nom AS pays,
+            COALESCE(
+                (SELECT string_agg(sb.nom, ', ' ORDER BY sb.nom)
+                 FROM iam.demande_biblio_specialite ds2
+                 JOIN iam.specialite_bibliotheque sb ON sb.id = ds2.specialite_id
+                 WHERE ds2.demande_id = d.id),
+                ''
+            ) AS specialites_noms,
+            d.commentaire_admin,
+            d.created_at,
+            d.traite_le
+         FROM iam.demande_biblio_humaine d
+         LEFT JOIN shared.pays p ON p.id = d.pays_origine_id
+         WHERE d.utilisateur_id = $1
+           AND d.deleted_at IS NULL
+         ORDER BY d.created_at DESC
+         LIMIT 1",
+    )
+    .bind(utilisateur_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Aucune demande trouvee".to_string()))?;
+
+    let specialites: Vec<String> = if row.specialites_noms.is_empty() {
+        vec![]
+    } else {
+        row.specialites_noms.split(", ").map(|s: &str| s.to_string()).collect()
+    };
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(MaDemandeResponse {
+            id: row.id,
+            statut: row.statut,
+            fonction: row.fonction,
+            biographie: row.biographie,
+            pays: row.pays,
+            specialites,
+            commentaire_admin: row.commentaire_admin,
+            created_at: row.created_at,
+            traite_le: row.traite_le,
+        }),
         error: None,
     }))
 }

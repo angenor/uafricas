@@ -162,7 +162,8 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                     f.nombre_likes, 0 AS nombre_soutiens,
                     f.etat AS statut,
                     f.cree_par, f.pays_id, f.created_at,
-                    NULL::VARCHAR AS region, NULL::VARCHAR AS ville
+                    NULL::VARCHAR AS region, NULL::VARCHAR AS ville,
+                    NULL::TEXT AS categorie, NULL::TEXT AS gravite
              FROM governance.factcheck f
              WHERE f.deleted_at IS NULL AND f.etat = 'publie'"
                 .to_string(),
@@ -177,7 +178,9 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                     0 AS nombre_likes, b.nombre_soutiens,
                     b.etat AS statut,
                     b.cree_par, b.pays_id, b.created_at,
-                    b.region, b.ville_quartier_zone AS ville
+                    b.region, b.ville_quartier_zone AS ville,
+                    b.categorie_probleme::TEXT AS categorie,
+                    b.gravite::TEXT AS gravite
              FROM governance.bad_habit b
              WHERE b.deleted_at IS NULL AND b.etat = 'publie'"
                 .to_string(),
@@ -192,7 +195,9 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                     0 AS nombre_likes, i.nombre_soutiens,
                     i.etat AS statut,
                     i.cree_par, i.pays_id, i.created_at,
-                    i.region, i.ville_quartier_zone AS ville
+                    i.region, i.ville_quartier_zone AS ville,
+                    i.categorie_proposition::TEXT AS categorie,
+                    i.urgence::TEXT AS gravite
              FROM governance.idea_force i
              WHERE i.deleted_at IS NULL AND i.etat = 'publie'"
                 .to_string(),
@@ -212,6 +217,8 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                        NULL::VARCHAR AS pays_nom,
                        NULL::VARCHAR AS region,
                        NULL::VARCHAR AS ville,
+                       NULL::TEXT AS categorie,
+                       NULL::TEXT AS gravite,
                        0::BIGINT AS total_count
                 WHERE FALSE"
             .to_string();
@@ -228,6 +235,7 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                 u.photo_url AS auteur_photo_url,
                 p.nom AS pays_nom,
                 c.region, c.ville,
+                c.categorie, c.gravite,
                 COUNT(*) OVER() AS total_count
          FROM ({}) c
          LEFT JOIN iam.utilisateur u ON c.cree_par = u.id

@@ -1,0 +1,316 @@
+<script setup lang="ts">
+import type { BiblioHumaineAPI } from '~/composables/useBibliothequeHumaine'
+import type { ExpertAPI } from '~/composables/useExperts'
+
+const route = useRoute()
+const id = route.params.id as string
+
+const { obtenirBiblio } = useBibliothequeHumaine()
+const { obtenirExpert } = useExperts()
+
+const chargement = ref(true)
+const biblio = ref<BiblioHumaineAPI | null>(null)
+const expert = ref<ExpertAPI | null>(null)
+
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBaseUrl as string
+
+const estBiblio = computed(() => biblio.value !== null)
+const estExpert = computed(() => expert.value !== null && expert.value.expertiseInfo.statut === 'valide')
+
+const profil = computed(() => {
+  if (biblio.value) {
+    return {
+      id: biblio.value.userId,
+      nom: biblio.value.nom,
+      prenom: biblio.value.prenom,
+      photoUrl: biblio.value.photoUrl,
+      fonction: biblio.value.fonction,
+      pays: biblio.value.pays,
+      ville: biblio.value.ville,
+      dateInscription: biblio.value.dateInscription,
+    }
+  }
+  if (expert.value) {
+    return {
+      id: expert.value.id,
+      nom: expert.value.nom,
+      prenom: expert.value.prenom,
+      photoUrl: expert.value.photoURL,
+      fonction: expert.value.expertiseInfo.domaine,
+      pays: expert.value.pays,
+      ville: expert.value.ville,
+      dateInscription: expert.value.dateInscription,
+    }
+  }
+  return null
+})
+
+const ongletActif = ref<'apropos' | 'biblio' | 'expert'>('apropos')
+
+const onglets = computed(() => {
+  const items: Array<{ id: 'apropos' | 'biblio' | 'expert', label: string, icon: string }> = [
+    { id: 'apropos', label: 'À propos', icon: 'fa-solid fa-user' },
+  ]
+  if (estBiblio.value) items.push({ id: 'biblio', label: 'Bibliothèque Humaine', icon: 'fa-solid fa-book-open' })
+  if (estExpert.value) items.push({ id: 'expert', label: 'Expertise', icon: 'fa-solid fa-briefcase' })
+  return items
+})
+
+useHead({
+  title: computed(() =>
+    profil.value
+      ? `${profil.value.prenom} ${profil.value.nom} — UAfricas`
+      : 'Profil — UAfricas',
+  ),
+})
+
+const photoComplete = computed(() => {
+  const url = profil.value?.photoUrl
+  if (!url) return null
+  return url.startsWith('http') ? url : `${apiBase}${url}`
+})
+
+const initiaux = computed(() => {
+  if (!profil.value) return ''
+  return (profil.value.prenom[0] ?? '') + (profil.value.nom[0] ?? '')
+})
+
+const dateInscriptionFormatee = computed(() => {
+  if (!profil.value?.dateInscription) return ''
+  return new Date(profil.value.dateInscription).toLocaleDateString('fr-FR', {
+    month: 'long',
+    year: 'numeric',
+  })
+})
+
+onMounted(async () => {
+  chargement.value = true
+  const [b, e] = await Promise.all([
+    obtenirBiblio(id).catch(() => null),
+    obtenirExpert(id).catch(() => null),
+  ])
+  biblio.value = b
+  expert.value = e
+
+  if (estBiblio.value) ongletActif.value = 'biblio'
+  else if (estExpert.value) ongletActif.value = 'expert'
+
+  chargement.value = false
+})
+</script>
+
+<template>
+  <div class="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 pt-28 pb-16">
+    <div class="max-w-5xl mx-auto px-4">
+      <!-- Chargement -->
+      <div v-if="chargement" class="flex items-center justify-center py-32">
+        <font-awesome-icon icon="fa-solid fa-spinner" class="text-4xl text-custom-chocolat animate-spin" />
+      </div>
+
+      <!-- Profil introuvable -->
+      <div v-else-if="!profil" class="text-center py-20">
+        <font-awesome-icon icon="fa-solid fa-user-slash" class="text-5xl text-gray-300 mb-4" />
+        <h1 class="text-2xl font-bold text-gray-700 mb-2">Profil introuvable</h1>
+        <p class="text-gray-500 text-sm mb-6">Ce profil n'existe pas ou n'est pas visible publiquement.</p>
+        <NuxtLink
+          to="/"
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-custom-chocolat text-white font-medium rounded-xl hover:shadow-lg transition"
+        >
+          <font-awesome-icon icon="fa-solid fa-house" />
+          Retour à l'accueil
+        </NuxtLink>
+      </div>
+
+      <template v-else>
+        <!-- Fil d'ariane -->
+        <nav class="text-sm text-gray-500 mb-4 flex items-center gap-2 flex-wrap">
+          <NuxtLink to="/" class="hover:text-custom-chocolat">Accueil</NuxtLink>
+          <font-awesome-icon icon="fa-solid fa-chevron-right" class="text-xs" />
+          <span class="text-gray-700 font-medium">{{ profil.prenom }} {{ profil.nom }}</span>
+        </nav>
+
+        <!-- En-tête profil -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+          <div class="h-32 bg-linear-to-r from-custom-chocolat via-amber-700 to-custom-green"></div>
+          <div class="px-6 pb-6 -mt-16 relative">
+            <div class="flex flex-col sm:flex-row items-center sm:items-end gap-5">
+              <div class="relative">
+                <img
+                  v-if="photoComplete"
+                  :src="photoComplete"
+                  :alt="profil.prenom + ' ' + profil.nom"
+                  class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                />
+                <div
+                  v-else
+                  class="w-32 h-32 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-4xl font-bold border-4 border-white shadow-lg"
+                >
+                  {{ initiaux }}
+                </div>
+              </div>
+
+              <div class="flex-1 text-center sm:text-left">
+                <h1 class="text-3xl font-bold text-gray-800 font-display">{{ profil.prenom }} {{ profil.nom }}</h1>
+                <p class="text-lg text-custom-chocolat font-medium mt-1">{{ profil.fonction }}</p>
+                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
+                  <span
+                    v-if="estBiblio"
+                    class="inline-flex items-center gap-1.5 px-3 py-1 bg-custom-chocolat/10 text-custom-chocolat text-xs font-semibold rounded-full"
+                  >
+                    <font-awesome-icon icon="fa-solid fa-book-open" />
+                    Bibliothèque Humaine
+                  </span>
+                  <span
+                    v-if="estExpert"
+                    class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full"
+                  >
+                    <font-awesome-icon icon="fa-solid fa-briefcase" />
+                    Expert
+                  </span>
+                </div>
+                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3 text-sm text-gray-600">
+                  <span v-if="profil.pays" class="flex items-center gap-1.5">
+                    <font-awesome-icon icon="fa-solid fa-location-dot" class="text-custom-chocolat" />
+                    {{ profil.pays }}
+                  </span>
+                  <span v-if="profil.ville" class="flex items-center gap-1.5">
+                    <font-awesome-icon icon="fa-solid fa-city" class="text-custom-chocolat" />
+                    {{ profil.ville }}
+                  </span>
+                  <span v-if="dateInscriptionFormatee" class="flex items-center gap-1.5 text-gray-400">
+                    <font-awesome-icon icon="fa-solid fa-calendar" />
+                    Membre depuis {{ dateInscriptionFormatee }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglets dynamiques selon rôles -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div class="flex border-b border-gray-200 overflow-x-auto">
+            <button
+              v-for="tab in onglets"
+              :key="tab.id"
+              class="flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-medium transition-all relative whitespace-nowrap"
+              :class="ongletActif === tab.id
+                ? 'text-custom-chocolat'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+              @click="ongletActif = tab.id"
+            >
+              <font-awesome-icon :icon="tab.icon" />
+              {{ tab.label }}
+              <div
+                v-if="ongletActif === tab.id"
+                class="absolute bottom-0 left-0 right-0 h-0.5 bg-custom-chocolat"
+              ></div>
+            </button>
+          </div>
+
+          <div class="p-6">
+            <!-- Onglet À propos -->
+            <div v-if="ongletActif === 'apropos'" class="space-y-4">
+              <h2 class="text-lg font-semibold text-gray-800">À propos</h2>
+              <p class="text-gray-700 leading-relaxed whitespace-pre-line">
+                {{ biblio?.biographie || expert?.expertiseInfo.biographie || 'Aucune biographie disponible.' }}
+              </p>
+            </div>
+
+            <!-- Onglet Bibliothèque Humaine -->
+            <div v-if="ongletActif === 'biblio' && biblio" class="space-y-5">
+              <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <font-awesome-icon icon="fa-solid fa-book-open" class="text-custom-chocolat" />
+                Bibliothèque Humaine
+              </h2>
+              <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ biblio.biographie }}</p>
+
+              <div v-if="biblio.specialites.length > 0">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Domaines d'expertise</h3>
+                <div class="flex flex-wrap gap-2">
+                  <span
+                    v-for="s in biblio.specialites"
+                    :key="s"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-custom-chocolat/10 text-custom-chocolat text-sm font-medium rounded-full"
+                  >
+                    <font-awesome-icon icon="fa-solid fa-star" class="text-xs" />
+                    {{ s }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Onglet Expertise -->
+            <div v-if="ongletActif === 'expert' && expert" class="space-y-5">
+              <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <font-awesome-icon icon="fa-solid fa-briefcase" class="text-emerald-600" />
+                Profil Expert
+              </h2>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-gray-50 rounded-xl p-4">
+                  <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Domaine</p>
+                  <p class="text-sm font-semibold text-gray-800">{{ expert.expertiseInfo.domaine }}</p>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4">
+                  <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Expérience</p>
+                  <p class="text-sm font-semibold text-gray-800">{{ expert.expertiseInfo.nbAnneesExperience }} ans</p>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4">
+                  <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Note</p>
+                  <p class="text-sm font-semibold text-gray-800 flex items-center gap-1">
+                    <font-awesome-icon icon="fa-solid fa-star" class="text-amber-500" />
+                    {{ expert.expertiseInfo.rating.toFixed(1) }}/5
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Biographie</h3>
+                <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ expert.expertiseInfo.biographie }}</p>
+              </div>
+
+              <div v-if="expert.situationProfessionnelle.length > 0">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Situation professionnelle</h3>
+                <div class="flex flex-wrap gap-2">
+                  <span
+                    v-for="s in expert.situationProfessionnelle"
+                    :key="s"
+                    class="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full"
+                  >{{ s }}</span>
+                </div>
+              </div>
+
+              <div v-if="expert.expertiseInfo.portfolio">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Portfolio</h3>
+                <a
+                  :href="expert.expertiseInfo.portfolio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-custom-chocolat hover:underline text-sm inline-flex items-center gap-1.5"
+                >
+                  <font-awesome-icon icon="fa-solid fa-link" />
+                  {{ expert.expertiseInfo.portfolio }}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Carte contact -->
+        <div class="mt-6 bg-white rounded-2xl shadow-lg p-6 text-center">
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Entrer en contact</h3>
+          <button
+            class="inline-flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-custom-chocolat to-custom-green text-white font-semibold rounded-xl hover:shadow-lg transition disabled:opacity-60"
+            disabled
+          >
+            <font-awesome-icon icon="fa-solid fa-envelope" />
+            Envoyer un message
+          </button>
+          <p class="text-xs text-gray-400 mt-3">La messagerie directe sera bientôt disponible.</p>
+        </div>
+      </template>
+    </div>
+  </div>
+</template>

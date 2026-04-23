@@ -528,6 +528,107 @@
               </div>
             </div>
 
+            <!-- ─── Onglet Bibliothèque Humaine ─── -->
+            <div v-if="ongletActif === 'bibliotheque-humaine'" class="space-y-6">
+              <h2 class="text-lg font-semibold text-gray-800">Bibliothèque Humaine</h2>
+
+              <div v-if="chargementDemande" class="flex justify-center py-8">
+                <font-awesome-icon icon="fa-solid fa-spinner" class="text-2xl text-custom-chocolat animate-spin" />
+              </div>
+
+              <div v-else-if="!maDemande" class="text-center py-10">
+                <font-awesome-icon icon="fa-solid fa-book-open" class="text-4xl text-gray-300 mb-3" />
+                <p class="text-gray-500 text-sm mb-4">Vous n'avez pas encore soumis de demande pour rejoindre la Bibliothèque Humaine.</p>
+                <NuxtLink
+                  to="/bibliotheque/humaine"
+                  class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-linear-to-r from-custom-chocolat to-custom-green text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300"
+                >
+                  <font-awesome-icon icon="fa-solid fa-plus" />
+                  Soumettre une demande
+                </NuxtLink>
+              </div>
+
+              <div v-else class="space-y-4">
+                <!-- Badge statut -->
+                <div
+                  class="flex items-center gap-3 p-4 rounded-xl border"
+                  :class="{
+                    'bg-amber-50 border-amber-200': maDemande.statut === 'en_attente',
+                    'bg-green-50 border-green-200': maDemande.statut === 'valide',
+                    'bg-red-50 border-red-200': maDemande.statut === 'rejete',
+                  }"
+                >
+                  <font-awesome-icon
+                    :icon="maDemande.statut === 'valide' ? 'fa-solid fa-circle-check' : maDemande.statut === 'rejete' ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-clock'"
+                    class="text-xl"
+                    :class="{
+                      'text-amber-500': maDemande.statut === 'en_attente',
+                      'text-green-600': maDemande.statut === 'valide',
+                      'text-red-600': maDemande.statut === 'rejete',
+                    }"
+                  />
+                  <div class="flex-1">
+                    <p
+                      class="font-semibold text-sm"
+                      :class="{
+                        'text-amber-700': maDemande.statut === 'en_attente',
+                        'text-green-700': maDemande.statut === 'valide',
+                        'text-red-700': maDemande.statut === 'rejete',
+                      }"
+                    >
+                      {{
+                        maDemande.statut === 'en_attente' ? 'En attente de validation'
+                        : maDemande.statut === 'valide' ? 'Demande validée'
+                        : 'Demande rejetée'
+                      }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                      Soumis le {{ new Date(maDemande.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Commentaire admin si rejeté -->
+                <div v-if="maDemande.statut === 'rejete' && maDemande.commentaireAdmin" class="p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <p class="text-xs font-semibold text-red-600 uppercase tracking-wide mb-1">Motif du rejet</p>
+                  <p class="text-sm text-red-700">{{ maDemande.commentaireAdmin }}</p>
+                </div>
+
+                <!-- Re-soumettre si rejeté -->
+                <div v-if="maDemande.statut === 'rejete'" class="text-center pt-2">
+                  <NuxtLink
+                    to="/bibliotheque/humaine"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-linear-to-r from-custom-chocolat to-custom-green text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300"
+                  >
+                    <font-awesome-icon icon="fa-solid fa-rotate-right" />
+                    Soumettre une nouvelle demande
+                  </NuxtLink>
+                </div>
+
+                <!-- Résumé -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Fonction déclarée</p>
+                    <p class="text-sm text-gray-700">{{ maDemande.fonction }}</p>
+                  </div>
+                  <div v-if="maDemande.pays">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Pays</p>
+                    <p class="text-sm text-gray-700">{{ maDemande.pays }}</p>
+                  </div>
+                  <div v-if="maDemande.specialites.length > 0" class="md:col-span-2">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Spécialités</p>
+                    <div class="flex flex-wrap gap-1">
+                      <span
+                        v-for="s in maDemande.specialites"
+                        :key="s"
+                        class="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full"
+                      >{{ s }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </template>
@@ -538,6 +639,7 @@
 
 <script setup lang="ts">
 import type { Profil, ModifierProfilForm } from '~/composables/useProfil'
+import type { MaDemandeAPI } from '~/composables/useBibliothequeHumaine'
 
 useHead({
   title: 'Mon profil - UAfricas',
@@ -559,12 +661,18 @@ const modeEditionLocalisation = ref(false)
 const retrouvAmis = useRetrouvAmis()
 const parcoursRetrouvAmis = ref<any[]>([])
 
+// Bibliothèque Humaine
+const { obtenirMaDemande } = useBibliothequeHumaine()
+const maDemande = ref<MaDemandeAPI | null>(null)
+const chargementDemande = ref(false)
+
 // ── Onglets ──
 const onglets = [
   { id: 'informations', label: 'Informations', icon: 'fa-solid fa-user' },
   { id: 'localisation', label: 'Localisation', icon: 'fa-solid fa-location-dot' },
   { id: 'retrouve-amis', label: 'Retrouve Amis', icon: 'fa-solid fa-users' },
   { id: 'securite', label: 'Securite', icon: 'fa-solid fa-lock' },
+  { id: 'bibliotheque-humaine', label: 'Bibliothèque', icon: 'fa-solid fa-book-open' },
 ]
 
 // ── Formulaires ──
@@ -794,6 +902,15 @@ onMounted(async () => {
       parcoursRetrouvAmis.value = parcours || []
     } catch {
       // non bloquant
+    }
+    // Charger le statut de la demande Bibliothèque Humaine
+    try {
+      chargementDemande.value = true
+      maDemande.value = await obtenirMaDemande()
+    } catch {
+      // non bloquant
+    } finally {
+      chargementDemande.value = false
     }
   }
   catch {

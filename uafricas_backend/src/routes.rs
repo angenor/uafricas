@@ -369,7 +369,12 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/vidafrica/segments/{id}", web::delete().to(admin::vidafrica::supprimer_segment))
                     // Vidafrica - Timings mot
                     .route("/vidafrica/segments/{segment_id}/timings-mot", web::post().to(admin::vidafrica::enregistrer_timings_mot))
-                    .route("/vidafrica/segments/{segment_id}/timings-mot", web::delete().to(admin::vidafrica::supprimer_timings_mot)),
+                    .route("/vidafrica/segments/{segment_id}/timings-mot", web::delete().to(admin::vidafrica::supprimer_timings_mot))
+                    // Bibliotheques Humaines admin (US1 + US2)
+                    .route("/bibliotheques-humaines", web::get().to(admin::bibliotheques_humaines::lister_demandes))
+                    .route("/bibliotheques-humaines/{id}", web::get().to(admin::bibliotheques_humaines::obtenir_demande))
+                    .route("/bibliotheques-humaines/{id}/valider", web::patch().to(admin::bibliotheques_humaines::valider_demande))
+                    .route("/bibliotheques-humaines/{id}/rejeter", web::patch().to(admin::bibliotheques_humaines::rejeter_demande)),
             )
             // Routes Retrouve Amis
             .service(
@@ -419,6 +424,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("", web::get().to(bibliotheques_humaines::lister_biblios))
                     .route("/specialites", web::get().to(bibliotheques_humaines::lister_specialites))
                     .route("/inscription", web::post().to(bibliotheques_humaines::inscrire_biblio))
+                    .route("/moi/demande", web::get().to(bibliotheques_humaines::ma_demande))
                     .route("/{id}", web::get().to(bibliotheques_humaines::obtenir_biblio)),
             )
             // Routes des centres culturels

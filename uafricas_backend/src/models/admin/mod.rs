@@ -32,3 +32,4 @@ pub mod profils_pays;
 pub mod dashboard;
 pub mod retrouve_amis;
 pub mod vidafrica;
+pub mod biblio_humaine;

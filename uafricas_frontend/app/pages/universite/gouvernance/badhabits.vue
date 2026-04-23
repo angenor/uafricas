@@ -1,7 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
-    <div class="relative h-96 overflow-hidden bg-linear-to-br from-red-900 via-red-700 to-orange-600">
+    <div
+      class="relative h-96 overflow-hidden transition-colors duration-500"
+      :class="vueActive === 'bonne'
+        ? 'bg-linear-to-br from-emerald-900 via-emerald-700 to-green-600'
+        : 'bg-linear-to-br from-red-900 via-red-700 to-orange-600'"
+    >
       <!-- Motif géométrique animé -->
       <div class="absolute inset-0 opacity-10">
         <div class="absolute top-0 left-0 w-full h-full"
@@ -13,13 +18,15 @@
       <div class="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5 animate-pulse" style="animation-delay: 1s;"></div>
 
       <div class="absolute inset-0 flex flex-col items-center justify-center px-4">
-    
         <h1 class="text-white text-5xl md:text-6xl font-display font-bold mb-4 animate-fadeInUp tracking-tight">
           BadGoodhabits
         </h1>
-        <div class="h-1 w-24 bg-linear-to-r from-orange-400 to-yellow-300 rounded-full mb-4 animate-expandWidth"></div>
+        <div class="h-1 w-24 rounded-full mb-4 animate-expandWidth"
+             :class="vueActive === 'bonne'
+               ? 'bg-linear-to-r from-lime-300 to-yellow-200'
+               : 'bg-linear-to-r from-orange-400 to-yellow-300'"></div>
         <p class="text-white/80 text-lg md:text-xl text-center max-w-2xl animate-fadeInUp animation-delay-200">
-          Dénoncer ou féliciter des bonnes habitudes.
+          Dénoncer les mauvaises pratiques et féliciter les bonnes actions.
         </p>
       </div>
     </div>
@@ -32,22 +39,47 @@
         <div class="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-red-600 to-orange-600 text-white hover:from-red-700 hover:to-orange-700 transition font-medium text-sm shadow-md"
-            @click="ouvrirModalPublication"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium text-sm shadow-md transition"
+            :class="vueActive === 'bonne'
+              ? 'bg-linear-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700'
+              : 'bg-linear-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700'"
+            @click="ouvrirModalPublication(vueActive === 'bonne' ? 'bonne' : 'mauvaise')"
           >
             <font-awesome-icon :icon="['fas', 'plus']" class="text-xs" />
-            Signaler une mauvaise pratique
+            {{ vueActive === 'bonne' ? 'Féliciter une bonne pratique' : 'Signaler une mauvaise pratique' }}
           </button>
           <NuxtLink to="/universite/gouvernance"
-                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition font-medium text-sm">
+                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition font-medium text-sm">
             <font-awesome-icon :icon="['fas', 'arrow-left']" class="text-xs" />
             Retour
           </NuxtLink>
         </div>
       </div>
 
+      <!-- Onglets -->
+      <div class="bg-white rounded-xl shadow-sm p-1.5 mb-6 inline-flex flex-wrap gap-1">
+        <button
+          v-for="onglet in onglets"
+          :key="onglet.value"
+          type="button"
+          class="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+          :class="vueActive === onglet.value
+            ? onglet.activeClass
+            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+          @click="vueActive = onglet.value"
+        >
+          <font-awesome-icon :icon="onglet.icon" class="text-xs" />
+          {{ onglet.label }}
+          <span class="ml-1 text-xs px-2 py-0.5 rounded-full"
+                :class="vueActive === onglet.value ? 'bg-white/30' : 'bg-gray-100 text-gray-500'">
+            {{ onglet.compte }}
+          </span>
+        </button>
+      </div>
+
       <UniversiteGouvernanceBadHabitsCreateModal
         :open="modalOuvert"
+        :type-pratique-initial="typePratiqueInitial"
         @close="modalOuvert = false"
         @created="apresPublication"
       />
@@ -56,7 +88,10 @@
         <!-- Filtres -->
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-lg overflow-hidden sticky top-4">
-            <div class="bg-linear-to-r from-red-600 to-red-700 px-6 py-4">
+            <div class="px-6 py-4 transition-colors duration-300"
+                 :class="vueActive === 'bonne'
+                   ? 'bg-linear-to-r from-emerald-600 to-emerald-700'
+                   : 'bg-linear-to-r from-red-600 to-red-700'">
               <h3 class="text-white font-bold flex items-center gap-2">
                 <font-awesome-icon :icon="['fas', 'filter']" />
                 Filtres
@@ -70,20 +105,27 @@
                 <input v-model="recherche"
                        type="text"
                        placeholder="Rechercher..."
-                       class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition">
+                       class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg transition"
+                       :class="vueActive === 'bonne'
+                         ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
+                         : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'">
               </div>
 
               <!-- Pays -->
               <div>
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pays</label>
-                <select v-model="paysSelectionne" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition bg-white">
+                <select v-model="paysSelectionne"
+                        class="w-full px-3 py-2.5 border border-gray-200 rounded-lg transition bg-white"
+                        :class="vueActive === 'bonne'
+                          ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
+                          : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'">
                   <option value="">Tous les pays</option>
                   <option v-for="pays in paysDisponibles" :key="pays" :value="pays">{{ pays }}</option>
                 </select>
               </div>
 
-              <!-- Gravité -->
-              <div>
+              <!-- Gravité (mauvaises pratiques) -->
+              <div v-if="vueActive !== 'bonne'">
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Gravité</label>
                 <div class="space-y-2">
                   <button v-for="g in niveauxGravite" :key="g.valeur"
@@ -96,6 +138,25 @@
                     <span class="font-medium">{{ g.label }}</span>
                     <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
                       {{ compterParGravite(g.valeur) }}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Impact (bonnes pratiques) -->
+              <div v-if="vueActive !== 'mauvaise'">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Impact</label>
+                <div class="space-y-2">
+                  <button v-for="i in niveauxImpact" :key="i.valeur"
+                          @click="impactSelectionne = impactSelectionne === i.valeur ? '' : i.valeur"
+                          class="w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-sm"
+                          :class="impactSelectionne === i.valeur
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
+                            : 'border-gray-200 hover:border-gray-300 text-gray-600 hover:bg-gray-50'">
+                    <span class="w-3 h-3 rounded-full" :class="i.couleurPastille"></span>
+                    <span class="font-medium">{{ i.label }}</span>
+                    <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                      {{ compterParImpact(i.valeur) }}
                     </span>
                   </button>
                 </div>
@@ -116,12 +177,32 @@
           <div class="flex items-center justify-between mb-4">
             <p class="text-sm text-gray-500">
               <span class="font-semibold text-gray-900">{{ contributionsFiltrees.length }}</span> résultat{{ contributionsFiltrees.length > 1 ? 's' : '' }}
-              <span v-if="recherche || paysSelectionne || graviteSelectionnee"> (filtré{{ contributionsFiltrees.length > 1 ? 's' : '' }})</span>
+              <span v-if="recherche || paysSelectionne || graviteSelectionnee || impactSelectionne"> (filtré{{ contributionsFiltrees.length > 1 ? 's' : '' }})</span>
             </p>
           </div>
 
+          <!-- Chargement -->
+          <div v-if="chargement" class="text-center py-20 bg-white rounded-xl shadow-lg">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-gray-200 border-t-gray-600 animate-spin"></div>
+            <p class="text-gray-500 text-sm">Chargement des contributions…</p>
+          </div>
+
+          <!-- Erreur réseau -->
+          <div v-else-if="erreurChargement"
+               class="text-center py-20 bg-white rounded-xl shadow-lg border border-red-100">
+            <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-red-50 flex items-center justify-center">
+              <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="text-red-400 text-2xl" />
+            </div>
+            <p class="text-gray-900 font-semibold text-lg mb-2">Impossible de charger les contributions</p>
+            <p class="text-gray-500 text-sm mb-4">{{ erreurChargement }}</p>
+            <button @click="chargerContributions"
+                    class="px-5 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition text-sm font-medium">
+              Réessayer
+            </button>
+          </div>
+
           <!-- État vide -->
-          <div v-if="contributionsFiltrees.length === 0"
+          <div v-else-if="contributionsFiltrees.length === 0"
                class="text-center py-20 bg-white rounded-xl shadow-lg">
             <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
               <font-awesome-icon :icon="['fas', 'search']" class="text-gray-400 text-2xl" />
@@ -136,34 +217,46 @@
                  class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-gray-200"
                  :style="{ animationDelay: `${index * 80}ms` }"
                  @click="voirDetail(contribution)">
-              <!-- Bande de gravité -->
-              <div class="h-1.5"
-                   :class="getBandeGraviteClass(contribution.problematique?.gravite)"></div>
+              <!-- Bande de gravité / impact -->
+              <div class="h-1.5" :class="getBandeClass(contribution)"></div>
 
               <div class="p-6">
                 <div class="flex items-start gap-4">
-                  <!-- Icône gravité -->
+                  <!-- Icône gravité / impact -->
                   <div class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
-                       :class="getIconeGraviteClass(contribution.problematique?.gravite)">
-                    <font-awesome-icon :icon="getIconeGravite(contribution.problematique?.gravite)" class="text-lg" />
+                       :class="getIconeWrapperClass(contribution)">
+                    <font-awesome-icon :icon="getIconeContribution(contribution)" class="text-lg" />
                   </div>
 
                   <div class="flex-1 min-w-0">
                     <!-- Badges -->
                     <div class="flex flex-wrap items-center gap-2 mb-2">
-                      <span v-if="contribution.problematique?.gravite"
+                      <span v-if="contribution.typePratique === 'bonne'"
+                            class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide bg-emerald-100 text-emerald-700">
+                        <font-awesome-icon :icon="['fas', 'thumbs-up']" class="text-xs mr-1" />
+                        Bonne pratique
+                      </span>
+                      <span v-if="contribution.typePratique !== 'bonne' && contribution.problematique?.gravite"
                             class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide"
                             :class="getGraviteClass(contribution.problematique.gravite)">
                         {{ contribution.problematique.gravite }}
                       </span>
-                      <span v-if="contribution.problematique?.categorie"
+                      <span v-if="contribution.typePratique === 'bonne' && contribution.bonnePratique?.impact"
+                            class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide"
+                            :class="getImpactClass(contribution.bonnePratique.impact)">
+                        Impact {{ contribution.bonnePratique.impact }}
+                      </span>
+                      <span v-if="getCategorieAffichee(contribution)"
                             class="px-2.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                        {{ contribution.problematique.categorie }}
+                        {{ getCategorieAffichee(contribution) }}
                       </span>
                     </div>
 
                     <!-- Titre -->
-                    <h3 class="text-lg font-bold text-gray-900 mb-2 group-hover:text-red-700 transition-colors line-clamp-2">
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 transition-colors line-clamp-2"
+                        :class="contribution.typePratique === 'bonne'
+                          ? 'group-hover:text-emerald-700'
+                          : 'group-hover:text-red-700'">
                       {{ contribution.titre }}
                     </h3>
 
@@ -191,8 +284,15 @@
 
                   <!-- Flèche -->
                   <div class="shrink-0 hidden sm:flex items-center">
-                    <div class="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-red-100 flex items-center justify-center transition-all group-hover:translate-x-1">
-                      <font-awesome-icon :icon="['fas', 'chevron-right']" class="text-gray-400 group-hover:text-red-600 text-xs transition-colors" />
+                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-all group-hover:translate-x-1"
+                         :class="contribution.typePratique === 'bonne'
+                           ? 'group-hover:bg-emerald-100'
+                           : 'group-hover:bg-red-100'">
+                      <font-awesome-icon :icon="['fas', 'chevron-right']"
+                                         class="text-gray-400 text-xs transition-colors"
+                                         :class="contribution.typePratique === 'bonne'
+                                           ? 'group-hover:text-emerald-600'
+                                           : 'group-hover:text-red-600'" />
                     </div>
                   </div>
                 </div>
@@ -203,9 +303,13 @@
                     <font-awesome-icon :icon="['fas', 'eye']" />
                     {{ contribution.stats.vues }} vues
                   </span>
-                  <span class="flex items-center gap-1.5 hover:text-red-500 transition">
-                    <font-awesome-icon :icon="['fas', 'hand-fist']" />
-                    {{ contribution.stats.soutiens || 0 }} soutiens
+                  <span class="flex items-center gap-1.5 transition"
+                        :class="contribution.typePratique === 'bonne'
+                          ? 'hover:text-emerald-500'
+                          : 'hover:text-red-500'">
+                    <font-awesome-icon :icon="['fas', contribution.typePratique === 'bonne' ? 'hands-clapping' : 'hand-fist']" />
+                    {{ contribution.stats.soutiens || 0 }}
+                    {{ contribution.typePratique === 'bonne' ? 'félicitations' : 'soutiens' }}
                   </span>
                 </div>
               </div>
@@ -218,25 +322,36 @@
 </template>
 
 <script setup lang="ts">
-import { getContributionsByType, type ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { TypePratique } from '~/composables/useGouvernance'
+
+const { getContributions } = useGouvernance()
+const chargement = ref(false)
+const erreurChargement = ref<string | null>(null)
 
 useHead({
-  title: 'BadHabits - Gouvernance Citoyenne'
+  title: 'BadGoodhabits - Gouvernance Citoyenne'
 })
 
 const userStore = useUserStore()
 
+type VueActive = 'toutes' | 'mauvaise' | 'bonne'
+
 const contributions = ref<ContributionCitoyenne[]>([])
+const vueActive = ref<VueActive>('toutes')
 const recherche = ref('')
 const paysSelectionne = ref('')
 const graviteSelectionnee = ref('')
+const impactSelectionne = ref('')
 const modalOuvert = ref(false)
+const typePratiqueInitial = ref<TypePratique>('mauvaise')
 
-function ouvrirModalPublication() {
+function ouvrirModalPublication(type: TypePratique = 'mauvaise') {
   if (!userStore.isAuthenticated) {
     navigateTo('/login')
     return
   }
+  typePratiqueInitial.value = type
   modalOuvert.value = true
 }
 
@@ -251,20 +366,60 @@ const niveauxGravite = [
   { valeur: 'faible', label: 'Faible', couleurPastille: 'bg-yellow-400' },
 ]
 
+const niveauxImpact = [
+  { valeur: 'exemplaire', label: 'Exemplaire', couleurPastille: 'bg-green-600' },
+  { valeur: 'fort', label: 'Fort', couleurPastille: 'bg-emerald-500' },
+  { valeur: 'moyen', label: 'Moyen', couleurPastille: 'bg-lime-400' },
+  { valeur: 'faible', label: 'Modeste', couleurPastille: 'bg-lime-300' },
+]
+
+const contributionsMauvaises = computed(() =>
+  contributions.value.filter(c => c.typePratique !== 'bonne')
+)
+const contributionsBonnes = computed(() =>
+  contributions.value.filter(c => c.typePratique === 'bonne')
+)
+
+const onglets = computed(() => [
+  {
+    value: 'toutes' as VueActive,
+    label: 'Toutes',
+    icon: ['fas', 'layer-group'],
+    compte: contributions.value.length,
+    activeClass: 'bg-gray-900 text-white shadow-sm',
+  },
+  {
+    value: 'mauvaise' as VueActive,
+    label: 'Mauvaises pratiques',
+    icon: ['fas', 'triangle-exclamation'],
+    compte: contributionsMauvaises.value.length,
+    activeClass: 'bg-linear-to-r from-red-600 to-orange-600 text-white shadow-sm',
+  },
+  {
+    value: 'bonne' as VueActive,
+    label: 'Bonnes pratiques',
+    icon: ['fas', 'thumbs-up'],
+    compte: contributionsBonnes.value.length,
+    activeClass: 'bg-linear-to-r from-emerald-600 to-green-600 text-white shadow-sm',
+  },
+])
+
 const paysDisponibles = computed(() => {
   const pays = new Set(contributions.value.map(c => c.localisation.pays))
   return Array.from(pays).sort()
 })
 
-const nombreCritiques = computed(() =>
-  contributions.value.filter(c => c.problematique?.gravite === 'critique').length
-)
-
 const compterParGravite = (gravite: string) =>
-  contributions.value.filter(c => c.problematique?.gravite === gravite).length
+  contributionsMauvaises.value.filter(c => c.problematique?.gravite === gravite).length
+
+const compterParImpact = (impact: string) =>
+  contributionsBonnes.value.filter(c => c.bonnePratique?.impact === impact).length
 
 const contributionsFiltrees = computed(() => {
   return contributions.value.filter(c => {
+    if (vueActive.value === 'mauvaise' && c.typePratique === 'bonne') return false
+    if (vueActive.value === 'bonne' && c.typePratique !== 'bonne') return false
+
     if (recherche.value) {
       const search = recherche.value.toLowerCase()
       if (!c.titre.toLowerCase().includes(search) && !c.description.toLowerCase().includes(search)) {
@@ -274,7 +429,10 @@ const contributionsFiltrees = computed(() => {
     if (paysSelectionne.value && c.localisation.pays !== paysSelectionne.value) {
       return false
     }
-    if (graviteSelectionnee.value && c.problematique?.gravite !== graviteSelectionnee.value) {
+    if (vueActive.value !== 'bonne' && graviteSelectionnee.value && c.problematique?.gravite !== graviteSelectionnee.value) {
+      return false
+    }
+    if (vueActive.value !== 'mauvaise' && impactSelectionne.value && c.bonnePratique?.impact !== impactSelectionne.value) {
       return false
     }
     return true
@@ -289,6 +447,7 @@ const reinitialiser = () => {
   recherche.value = ''
   paysSelectionne.value = ''
   graviteSelectionnee.value = ''
+  impactSelectionne.value = ''
 }
 
 const getGraviteClass = (gravite: string) => {
@@ -301,41 +460,96 @@ const getGraviteClass = (gravite: string) => {
   return classes[gravite] || 'bg-gray-100 text-gray-800'
 }
 
-const getBandeGraviteClass = (gravite?: string) => {
+const getImpactClass = (impact: string) => {
+  const classes: Record<string, string> = {
+    faible: 'bg-lime-100 text-lime-800',
+    moyen: 'bg-lime-200 text-lime-900',
+    fort: 'bg-emerald-100 text-emerald-800',
+    exemplaire: 'bg-green-600 text-white'
+  }
+  return classes[impact] || 'bg-gray-100 text-gray-800'
+}
+
+const getBandeClass = (c: ContributionCitoyenne) => {
+  if (c.typePratique === 'bonne') {
+    const classes: Record<string, string> = {
+      faible: 'bg-linear-to-r from-lime-300 to-lime-400',
+      moyen: 'bg-linear-to-r from-lime-400 to-emerald-400',
+      fort: 'bg-linear-to-r from-emerald-400 to-emerald-500',
+      exemplaire: 'bg-linear-to-r from-emerald-600 to-green-600'
+    }
+    return classes[c.bonnePratique?.impact || ''] || 'bg-emerald-400'
+  }
   const classes: Record<string, string> = {
     faible: 'bg-linear-to-r from-yellow-300 to-yellow-400',
     moyenne: 'bg-linear-to-r from-orange-400 to-orange-500',
     grave: 'bg-linear-to-r from-red-400 to-red-500',
     critique: 'bg-linear-to-r from-red-600 to-red-700'
   }
-  return classes[gravite || ''] || 'bg-gray-200'
+  return classes[c.problematique?.gravite || ''] || 'bg-gray-200'
 }
 
-const getIconeGraviteClass = (gravite?: string) => {
+const getIconeWrapperClass = (c: ContributionCitoyenne) => {
+  if (c.typePratique === 'bonne') {
+    const classes: Record<string, string> = {
+      faible: 'bg-lime-100 text-lime-700',
+      moyen: 'bg-lime-100 text-lime-700',
+      fort: 'bg-emerald-100 text-emerald-700',
+      exemplaire: 'bg-green-600 text-white'
+    }
+    return classes[c.bonnePratique?.impact || ''] || 'bg-emerald-100 text-emerald-700'
+  }
   const classes: Record<string, string> = {
     faible: 'bg-yellow-100 text-yellow-600',
     moyenne: 'bg-orange-100 text-orange-600',
     grave: 'bg-red-100 text-red-600',
     critique: 'bg-red-600 text-white'
   }
-  return classes[gravite || ''] || 'bg-gray-100 text-gray-500'
+  return classes[c.problematique?.gravite || ''] || 'bg-gray-100 text-gray-500'
 }
 
-const getIconeGravite = (gravite?: string): string[] => {
+const getIconeContribution = (c: ContributionCitoyenne): string[] => {
+  if (c.typePratique === 'bonne') {
+    const icones: Record<string, string[]> = {
+      faible: ['fas', 'seedling'],
+      moyen: ['fas', 'leaf'],
+      fort: ['fas', 'hands-clapping'],
+      exemplaire: ['fas', 'star']
+    }
+    return icones[c.bonnePratique?.impact || ''] || ['fas', 'thumbs-up']
+  }
   const icones: Record<string, string[]> = {
     faible: ['fas', 'info-circle'],
     moyenne: ['fas', 'exclamation-circle'],
     grave: ['fas', 'exclamation-triangle'],
     critique: ['fas', 'skull-crossbones']
   }
-  return icones[gravite || ''] || ['fas', 'question-circle']
+  return icones[c.problematique?.gravite || ''] || ['fas', 'question-circle']
+}
+
+const getCategorieAffichee = (c: ContributionCitoyenne): string | undefined => {
+  return c.typePratique === 'bonne'
+    ? c.bonnePratique?.categorie
+    : c.problematique?.categorie
 }
 
 const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(date))
 }
 
-onMounted(() => {
-  contributions.value = getContributionsByType('badhabits')
-})
+async function chargerContributions() {
+  chargement.value = true
+  erreurChargement.value = null
+  try {
+    const resultat = await getContributions({ type: 'badhabits', parPage: 50 })
+    contributions.value = resultat.contributions
+  } catch (e: unknown) {
+    erreurChargement.value = e instanceof Error ? e.message : 'Erreur inconnue'
+    contributions.value = []
+  } finally {
+    chargement.value = false
+  }
+}
+
+onMounted(chargerContributions)
 </script>
