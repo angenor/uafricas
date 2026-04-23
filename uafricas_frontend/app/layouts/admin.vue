@@ -113,6 +113,7 @@ const pageTitle = computed(() => {
     'bad-habits': 'Mauvaises pratiques',
     'idea-forces': 'Idées forces',
     'profils-pays': 'Profils pays',
+    'bibliotheques-humaines': 'Bibliothèques Humaines',
     'audit': 'Audit & Logs',
   }
 

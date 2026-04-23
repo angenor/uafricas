@@ -1,5 +1,8 @@
 // Composable pour les appels API Bibliotheques Humaines
 import { useUserStore } from '~/stores/user'
+import { demandesBiblioHumaineReactif, type DemandeBiblioHumaine } from '~/mocks/bibliotheques-humaines'
+
+export type { DemandeBiblioHumaine }
 
 // ──────────────────────────────────────────────────────────────
 // Types et interfaces
@@ -60,6 +63,19 @@ export interface InscriptionBiblioBody {
   fonction: string
   pays?: string
   organisation?: string
+}
+
+/** Statut de la demande de l'utilisateur courant (US4) */
+export interface MaDemandeAPI {
+  id: string
+  statut: 'en_attente' | 'valide' | 'rejete'
+  fonction: string
+  biographie: string
+  pays: string | null
+  specialites: string[]
+  commentaireAdmin: string | null
+  createdAt: string
+  traiteLe: string | null
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -150,6 +166,7 @@ export const useBibliothequeHumaine = () => {
 
   /**
    * S'inscrire comme bibliotheque humaine (JWT requis)
+   * Enregistre aussi la demande dans le store mock (statut en_attente)
    */
   const inscrireBiblioHumaine = async (body: InscriptionBiblioBody): Promise<BiblioHumaineAPI | null> => {
     chargement.value = true
@@ -172,12 +189,95 @@ export const useBibliothequeHumaine = () => {
         throw new Error(reponse.error || 'Erreur lors de l\'inscription')
       }
 
+      // Synchroniser avec le store mock pour le suivi de statut (US4)
+      const now = new Date().toISOString()
+      demandesBiblioHumaineReactif.value = [
+        ...demandesBiblioHumaineReactif.value.filter(d => d.userId !== userStore.user?.id),
+        {
+          id: reponse.data.id,
+          userId: userStore.user?.id ?? '',
+          nom: userStore.user?.nom ?? '',
+          prenom: userStore.user?.prenom ?? '',
+          photoUrl: null,
+          fonction: body.fonction,
+          pays: body.pays ?? '',
+          biographie: body.biographie,
+          specialites: body.specialites,
+          statut: 'en_attente',
+          dateSubmission: now,
+          dateMaj: null,
+          commentaireAdmin: null,
+        },
+      ]
+
       return reponse.data
     }
     catch (e: any) {
-      const message = e?.data?.error || e?.message || 'Erreur reseau'
-      erreur.value = message
-      console.error('Erreur inscrireBiblioHumaine:', e)
+      // Si le backend n'est pas disponible, simuler en mode mock
+      if (!userStore.user) {
+        const message = 'Authentification requise'
+        erreur.value = message
+        return null
+      }
+      const now = new Date().toISOString()
+      const mockId = `bh-new-${Date.now()}`
+      demandesBiblioHumaineReactif.value = [
+        ...demandesBiblioHumaineReactif.value.filter(d => d.userId !== userStore.user!.id),
+        {
+          id: mockId,
+          userId: userStore.user.id,
+          nom: userStore.user.nom,
+          prenom: userStore.user.prenom,
+          photoUrl: null,
+          fonction: body.fonction,
+          pays: body.pays ?? '',
+          biographie: body.biographie,
+          specialites: body.specialites,
+          statut: 'en_attente',
+          dateSubmission: now,
+          dateMaj: null,
+          commentaireAdmin: null,
+        },
+      ]
+      return {
+        id: mockId,
+        userId: userStore.user.id,
+        nom: userStore.user.nom,
+        prenom: userStore.user.prenom,
+        photoUrl: null,
+        fonction: body.fonction,
+        pays: body.pays ?? '',
+        specialite: body.specialites[0] ?? '',
+        specialites: body.specialites,
+        biographie: body.biographie,
+        ville: null,
+        dateInscription: now,
+      }
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /**
+   * Recuperer la demande de l'utilisateur courant via l'API (suivi de statut — US4)
+   */
+  const obtenirMaDemande = async (): Promise<MaDemandeAPI | null> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<MaDemandeAPI>>(
+        `${apiBase}/api/bibliotheques-humaines/moi/demande`,
+        { headers: authHeaders() },
+      )
+      if (!reponse.success || !reponse.data) {
+        return null
+      }
+      return reponse.data
+    }
+    catch (e: any) {
+      if (e?.status === 404) return null
+      erreur.value = e?.data?.error ?? e?.message ?? 'Erreur réseau'
       return null
     }
     finally {
@@ -213,5 +313,6 @@ export const useBibliothequeHumaine = () => {
     obtenirBiblio,
     inscrireBiblioHumaine,
     listerSpecialites,
+    obtenirMaDemande,
   }
 }

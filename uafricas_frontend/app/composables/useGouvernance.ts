@@ -36,6 +36,39 @@ interface ApiContribution {
   localisation: ApiContributionLocalisation
   date_creation: string
   stats: ApiContributionStats
+  categorie?: string | null
+  gravite?: string | null
+  type_pratique?: string | null
+}
+
+/** Mapping slug categorie DB → label FR pour affichage */
+const LIBELLES_CATEGORIE_PROBLEME: Record<string, string> = {
+  corruption: 'Corruption',
+  service_public_defaillant: 'Service public défaillant',
+  infrastructure_degradee: 'Infrastructure dégradée',
+  acces_services_limite: 'Accès services limité',
+  insalubrite: 'Insalubrité',
+  probleme_securite: 'Sécurité',
+  autre: 'Autre',
+}
+
+const LIBELLES_CATEGORIE_PROPOSITION: Record<string, string> = {
+  amelioration_gouvernance: 'Gouvernance',
+  education_formation: 'Éducation',
+  sante_publique: 'Santé',
+  emploi_jeunes: 'Emploi jeunes',
+  environnement: 'Environnement',
+  transport: 'Transport',
+  autre: 'Autre',
+}
+
+/** Mapping niveau gravite DB (faible/elevee/critique) → niveau affiche sur la page */
+function mapperGraviteProblematique(g: string | null | undefined): 'faible' | 'moyenne' | 'grave' | 'critique' | undefined {
+  if (!g) return undefined
+  if (g === 'critique') return 'critique'
+  if (g === 'elevee') return 'grave'
+  if (g === 'faible') return 'faible'
+  return undefined
 }
 
 interface ApiContributionListeResponse {
@@ -54,7 +87,11 @@ interface ApiResponse<T> {
 
 /** Mapper une contribution API vers l'interface frontend ContributionCitoyenne */
 function mapperContribution(api: ApiContribution): ContributionCitoyenne {
-  return {
+  const typePratique = api.type_pratique === 'mauvaise' || api.type_pratique === 'bonne'
+    ? (api.type_pratique as TypePratique)
+    : undefined
+
+  const base: ContributionCitoyenne = {
     id: api.id,
     type: api.type,
     statut: api.statut as 'brouillon' | 'publie' | 'archive',
@@ -81,7 +118,30 @@ function mapperContribution(api: ApiContribution): ContributionCitoyenne {
       soutiens: api.stats.soutiens,
     },
     tags: [],
+    typePratique,
   }
+
+  if (api.type === 'badhabits') {
+    const categorieLabel = api.categorie
+      ? (LIBELLES_CATEGORIE_PROBLEME[api.categorie] ?? api.categorie)
+      : 'Autre'
+    base.problematique = {
+      categorie: categorieLabel,
+      gravite: mapperGraviteProblematique(api.gravite),
+    }
+  } else if (api.type === 'ideaforces') {
+    const categorieLabel = api.categorie
+      ? (LIBELLES_CATEGORIE_PROPOSITION[api.categorie] ?? api.categorie)
+      : 'Autre'
+    base.proposition = {
+      objectif: categorieLabel,
+      moyens: [],
+      beneficiaires: [],
+      impact: api.gravite ?? '',
+    }
+  }
+
+  return base
 }
 
 export interface CreerFactcheckPayload {
@@ -93,22 +153,42 @@ export interface CreerFactcheckPayload {
   pays_id?: string
 }
 
+export type TypePratique = 'mauvaise' | 'bonne'
+
+export type CategorieProbleme =
+  | 'corruption'
+  | 'service_public_defaillant'
+  | 'infrastructure_degradee'
+  | 'acces_services_limite'
+  | 'insalubrite'
+  | 'probleme_securite'
+  | 'autre'
+
+export type CategorieBonnePratique =
+  | 'civisme'
+  | 'service_public_exemplaire'
+  | 'solidarite'
+  | 'innovation_sociale'
+  | 'initiative_citoyenne'
+  | 'leadership_exemplaire'
+  | 'transparence'
+  | 'environnement'
+  | 'education'
+  | 'sante'
+  | 'autre'
+
 export interface CreerBadHabitPayload {
+  type_pratique?: TypePratique
   titre: string
   description_generale: string
   details_problematique: string
-  categorie_probleme:
-    | 'corruption'
-    | 'service_public_defaillant'
-    | 'infrastructure_degradee'
-    | 'acces_services_limite'
-    | 'insalubrite'
-    | 'probleme_securite'
-    | 'autre'
+  categorie_probleme: CategorieProbleme | CategorieBonnePratique
   categorie_probleme_detail?: string
   gravite?: 'faible' | 'elevee' | 'critique'
+  impact?: 'faible' | 'fort' | 'exemplaire'
   preuves_temoignages?: string
   solutions_proposees?: string
+  reproductibilite?: string
   publication_anonyme?: boolean
   pays_id?: string
   region?: string

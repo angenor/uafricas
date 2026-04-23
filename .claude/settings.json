@@ -6,6 +6,9 @@
       "Bash(.specify/scripts/bash/update-agent-context.sh claude:*)",
       "Bash(git merge:*)",
       "Bash(git stash:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/pages/bibliotheque/humaine"
     ]
   }
 }

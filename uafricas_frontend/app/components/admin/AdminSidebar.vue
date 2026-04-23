@@ -221,6 +221,11 @@ const sidebarSections: SidebarSection[] = [
     route: '/admin/profils-pays',
   },
   {
+    label: 'Bibliothèques Humaines',
+    faIcon: 'book-open',
+    route: '/admin/bibliotheques-humaines',
+  },
+  {
     label: 'Audit & Logs',
     faIcon: 'clock-rotate-left',
     route: '/admin/audit',

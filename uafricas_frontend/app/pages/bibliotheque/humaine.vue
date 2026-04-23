@@ -34,6 +34,52 @@
         </button>
       </div>
 
+      <!-- Bannière statut de la demande de l'utilisateur connecté -->
+      <div v-if="maDemande" class="max-w-2xl mx-auto mt-6 px-4">
+        <!-- En attente -->
+        <div
+          v-if="maDemande.statut === 'en_attente'"
+          class="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800"
+        >
+          <font-awesome-icon icon="clock" class="mt-0.5 shrink-0 text-amber-500" />
+          <div>
+            <p class="font-semibold text-sm">Votre demande est en cours d'examen</p>
+            <p class="text-xs mt-0.5 text-amber-700">
+              Soumise le {{ new Date(maDemande.dateSubmission).toLocaleDateString('fr-FR') }} — un administrateur la traitera prochainement.
+            </p>
+          </div>
+        </div>
+
+        <!-- Validée -->
+        <div
+          v-else-if="maDemande.statut === 'valide'"
+          class="flex items-start gap-3 px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-green-800"
+        >
+          <font-awesome-icon icon="circle-check" class="mt-0.5 shrink-0 text-green-500" />
+          <div>
+            <p class="font-semibold text-sm">Vous êtes une Bibliothèque Humaine !</p>
+            <p class="text-xs mt-0.5 text-green-700">Votre inscription a été validée. Votre profil est visible dans la liste ci-dessous.</p>
+          </div>
+        </div>
+
+        <!-- Rejetée -->
+        <div
+          v-else-if="maDemande.statut === 'rejete'"
+          class="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800"
+        >
+          <font-awesome-icon icon="circle-xmark" class="mt-0.5 shrink-0 text-red-500" />
+          <div>
+            <p class="font-semibold text-sm">Votre demande n'a pas été retenue</p>
+            <p v-if="maDemande.commentaireAdmin" class="text-xs mt-0.5 text-red-700 italic">
+              "{{ maDemande.commentaireAdmin }}"
+            </p>
+            <p class="text-xs mt-1 text-red-600">
+              Vous pouvez soumettre une nouvelle candidature en cliquant sur le bouton ci-dessus.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Barre de recherche -->
       <div class="max-w-4xl mx-auto mt-8 px-4">
         <div class="bg-white rounded-xl shadow-xl p-5 transform transition-all hover:shadow-2xl">
@@ -351,7 +397,7 @@
 
 <script setup lang="ts">
 import { useUserStore } from '~/stores/user'
-import type { BiblioHumaineAPI, SpecialiteAPI } from '~/composables/useBibliothequeHumaine'
+import type { BiblioHumaineAPI, SpecialiteAPI, DemandeBiblioHumaine } from '~/composables/useBibliothequeHumaine'
 
 useHead({
   title: 'Bibliothèques Humaines - UAfricas',
@@ -363,7 +409,11 @@ useHead({
 useAOS()
 
 const userStore = useUserStore()
-const { chargement, erreur, listerBiblios, inscrireBiblioHumaine, listerSpecialites } = useBibliothequeHumaine()
+const { chargement, erreur, listerBiblios, inscrireBiblioHumaine, listerSpecialites, obtenirMaDemande } = useBibliothequeHumaine()
+
+const maDemande = computed<DemandeBiblioHumaine | null>(
+  () => userStore.user ? obtenirMaDemande(userStore.user.id) : null,
+)
 
 const searchQuery = ref('')
 const selectedFilter = ref('Tous')

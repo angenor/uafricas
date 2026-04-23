@@ -33,6 +33,8 @@ pub struct ContributionRow {
     pub pays_nom: Option<String>,
     pub region: Option<String>,
     pub ville: Option<String>,
+    pub categorie: Option<String>,
+    pub gravite: Option<String>,
     pub total_count: i64,
 }
 
@@ -71,6 +73,9 @@ pub struct ContributionResponse {
     pub localisation: ContributionLocalisationResponse,
     pub date_creation: DateTime<Utc>,
     pub stats: ContributionStatsResponse,
+    pub categorie: Option<String>,
+    pub gravite: Option<String>,
+    pub type_pratique: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -84,6 +89,13 @@ pub struct ContributionListeResponse {
 
 impl ContributionRow {
     pub fn to_response(&self) -> ContributionResponse {
+        // Pour l'instant, le backend ne stocke que des mauvaises pratiques
+        // dans governance.bad_habit. Les bonnes pratiques n'ont pas encore
+        // de table dediee : on expose donc "mauvaise" pour badhabits.
+        let type_pratique = match self.type_contribution.as_str() {
+            "badhabits" => Some("mauvaise".to_string()),
+            _ => None,
+        };
         ContributionResponse {
             id: self.id,
             type_contribution: self.type_contribution.clone(),
@@ -106,6 +118,9 @@ impl ContributionRow {
                 likes: self.nombre_likes,
                 soutiens: self.nombre_soutiens,
             },
+            categorie: self.categorie.clone(),
+            gravite: self.gravite.clone(),
+            type_pratique,
         }
     }
 }
