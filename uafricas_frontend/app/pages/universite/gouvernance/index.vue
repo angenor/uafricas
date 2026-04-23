@@ -85,7 +85,7 @@
 
             <!-- BadHabits Card -->
             <NuxtLink
-              to="/universite/gouvernance/badhabits"
+              to="/universite/gouvernance/bad-good-habits"
               class="group block p-8 bg-gradient-to-br from-red-50 to-red-100 rounded-xl border-2 border-red-200 hover:border-red-400 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
             >
               <div class="flex items-center justify-between mb-6">

@@ -445,7 +445,7 @@ const menus: NavMenu[] = [
     items: [
       { label: 'Factcheck', to: '/universite/gouvernance/factcheck', description: 'Vérifier des idées reçues sur l\'Afrique', icon: 'fa-solid fa-scale-balanced' },
       { label: 'Ideaforces', to: '/universite/gouvernance/ideaforces', description: 'Partager des idées et orientations sur les enjeux de développement', icon: 'fa-solid fa-lightbulb' },
-      { label: 'BadGoodhabits', to: '/universite/gouvernance/badhabits', description: 'Dénoncer ou féliciter des habitudes', icon: 'fa-solid fa-triangle-exclamation' },
+      { label: 'BadGoodhabits', to: '/universite/gouvernance/bad-good-habits', description: 'Dénoncer ou féliciter des habitudes', icon: 'fa-solid fa-triangle-exclamation' },
     ]
   },
   {

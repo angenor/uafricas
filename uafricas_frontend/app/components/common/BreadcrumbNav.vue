@@ -93,6 +93,7 @@ const routeLabels: Record<string, string> = {
   'gouvernance': 'Gouvernance',
   'factcheck': 'FactCheck',
   'badhabits': 'BadHabits',
+  'bad-good-habits': 'BadGoodHabits',
   'ideaforces': 'IdeaForces',
   'bibliotheques': 'Bibliothèques',
   'actions': 'Actions',
