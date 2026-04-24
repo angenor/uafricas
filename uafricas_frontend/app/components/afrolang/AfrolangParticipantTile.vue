@@ -17,9 +17,12 @@
       class="w-full h-full object-contain bg-black"
     />
 
-    <!-- Video camera (tuile normale) -->
+    <!-- Video camera (tuile normale) — monté tant qu'un track existe, caché via v-show
+         si la caméra est coupée. Évite le démontage/remontage qui cassait srcObject
+         au cycle mute → unmute du correspondant (MediaStreamTrack identique). -->
     <video
-      v-else-if="participant.videoTrack && !participant.isCameraOff"
+      v-if="!isScreenShare && participant.videoTrack"
+      v-show="!participant.isCameraOff"
       ref="videoRef"
       autoplay
       playsinline
@@ -27,9 +30,9 @@
       class="w-full h-full object-cover"
     />
 
-    <!-- Avatar fallback (camera off) -->
+    <!-- Avatar fallback (pas de track ou caméra off) -->
     <div
-      v-else
+      v-if="!isScreenShare && (!participant.videoTrack || participant.isCameraOff)"
       class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800"
     >
       <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-white">
