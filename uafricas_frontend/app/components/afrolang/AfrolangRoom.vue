@@ -81,7 +81,11 @@
         @toggle-tableau-blanc="toggleTableauBlanc"
         @quitter="handleQuitter"
         @terminer="handleTerminer"
-      />
+      >
+        <template #apres-actions>
+          <slot name="apres-actions" />
+        </template>
+      </AfrolangControls>
     </div>
 
     <!-- Sidebar participants -->

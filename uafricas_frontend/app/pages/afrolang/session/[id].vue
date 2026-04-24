@@ -9,18 +9,20 @@
       :est-moderateur="tokenData.is_moderator"
       @quitter="handleQuitterVisio"
       @terminer="handleTerminerVisio"
-    />
-
-    <!-- Bouton flottant : créer ma salle privée (US2) -->
-    <button
-      type="button"
-      class="fixed bottom-24 right-6 z-10000 px-4 py-3 bg-custom-chocolat text-white rounded-full shadow-2xl hover:bg-custom-chocolat/90 transition-all flex items-center gap-2 text-sm font-semibold"
-      title="Créer une salle privée à partir de cette salle publique"
-      @click="createModalOpen = true"
     >
-      <font-awesome-icon :icon="['fas', 'plus']" class="w-4 h-4" />
-      Créer ma salle privée
-    </button>
+      <!-- Bouton : créer ma salle privée (US2), placé après Terminer / Quitter -->
+      <template #apres-actions>
+        <button
+          type="button"
+          class="px-4 h-12 rounded-full bg-custom-chocolat hover:bg-custom-chocolat/90 text-white font-medium text-sm flex items-center gap-2 transition-all"
+          title="Créer une salle privée à partir de cette salle publique"
+          @click="createModalOpen = true"
+        >
+          <font-awesome-icon :icon="['fas', 'plus']" class="w-4 h-4" />
+          <span class="hidden sm:inline">Créer ma salle privée</span>
+        </button>
+      </template>
+    </AfrolangRoom>
 
     <AfrolangSallePriveeCreateModal
       ref="createModalRef"

@@ -81,6 +81,9 @@
         <font-awesome-icon :icon="['fas', 'right-from-bracket']" class="w-4 h-4" />
         <span class="hidden sm:inline">Quitter</span>
       </button>
+
+      <!-- Actions supplémentaires (ex : créer ma salle privée) -->
+      <slot name="apres-actions" />
     </div>
   </div>
 </template>
