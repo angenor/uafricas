@@ -703,8 +703,11 @@ pub async fn lister_salles_privees_par_salle_publique(
     req: HttpRequest,
     chemin: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
-    let utilisateur_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    // Accès public : un visiteur non authentifié doit pouvoir voir la liste.
+    // L'authentification sera exigée au moment d'intégrer une salle (via
+    // `verifier-code` / `demarrer-ou-rejoindre`). Sans utilisateur courant,
+    // `est_auteur` vaudra toujours `false` (comparaison à `Uuid::nil()`).
+    let utilisateur_id = extraire_utilisateur_id(&req).unwrap_or_else(Uuid::nil);
 
     let salle_id = chemin.into_inner();
 
