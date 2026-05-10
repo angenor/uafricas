@@ -47,6 +47,15 @@ CREATE TYPE afrolang.etat_ressource AS ENUM (
     'refusee'
 );
 
+-- Statut du workflow de proposition de salle publique (feature 001-admin-salles-publiques)
+-- en_attente → validee | rejetee | retiree (terminaux)
+CREATE TYPE afrolang.statut_proposition_salle AS ENUM (
+    'en_attente',
+    'validee',
+    'rejetee',
+    'retiree'
+);
+
 
 -- ── Salle publique (canal par groupe ethnique) ────────────────────────────
 -- Créée exclusivement par un admin.
@@ -338,3 +347,105 @@ COMMENT ON TABLE  afrolang.salle_pays_origine IS
     'Pays d''origine d''une salle publique Afrolang (feature 001-afrolang-pays-origine).';
 COMMENT ON COLUMN afrolang.salle_pays_origine.pays_id IS
     'FK vers shared.pays. Filtré sur actif=TRUE côté API publique (Q3).';
+
+
+-- ── Proposition communautaire de salle publique (feature 001-admin-salles-publiques) ──
+-- Workflow : en_attente → validee (création atomique d'une afrolang.salle)
+--                       | rejetee (commentaire admin obligatoire)
+--                       | retiree (auteur lui-même)
+-- Anti-spam : ≥ 5 rejets sur 7 jours → 429 (vérifié côté handler).
+-- Unicité : une seule proposition `en_attente` par (auteur, groupe ethnique).
+
+CREATE TABLE afrolang.proposition_salle (
+    id                    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    -- Données soumises par l'utilisateur
+    auteur_id             UUID         NOT NULL,                 -- [xref] iam.utilisateur
+    titre                 VARCHAR(350) NOT NULL,
+    description           TEXT         NOT NULL,
+    justification         TEXT         NOT NULL,
+    langue_cible          VARCHAR(100) NOT NULL,
+    langue_code           VARCHAR(40),
+    groupe_ethnique_id    UUID         NOT NULL,                 -- [xref] country_profile.groupe_ethnique
+    pays_origine_ids      UUID[]       NOT NULL DEFAULT '{}',    -- ≥ 1 (CHECK)
+
+    -- Workflow
+    statut                afrolang.statut_proposition_salle NOT NULL DEFAULT 'en_attente',
+    decideur              UUID,                                  -- [xref] iam.utilisateur (admin plateforme)
+    decide_at             TIMESTAMPTZ,
+    commentaire_decision  TEXT,                                  -- obligatoire si statut=rejetee
+    salle_id_creee        UUID         REFERENCES afrolang.salle(id) ON DELETE SET NULL,
+
+    created_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT ck_proposition_pays_non_vide CHECK (cardinality(pays_origine_ids) >= 1),
+    CONSTRAINT ck_proposition_decision_coherente CHECK (
+        (statut = 'en_attente' AND decideur IS NULL AND decide_at IS NULL) OR
+        (statut IN ('validee', 'rejetee') AND decideur IS NOT NULL AND decide_at IS NOT NULL) OR
+        (statut = 'retiree' AND decideur IS NULL)
+    ),
+    CONSTRAINT ck_proposition_rejet_commente CHECK (
+        statut <> 'rejetee' OR commentaire_decision IS NOT NULL
+    ),
+    CONSTRAINT ck_proposition_validation_a_salle CHECK (
+        statut <> 'validee' OR salle_id_creee IS NOT NULL
+    )
+);
+
+CREATE UNIQUE INDEX idx_proposition_salle_unique_attente
+    ON afrolang.proposition_salle(auteur_id, groupe_ethnique_id)
+    WHERE statut = 'en_attente';
+
+CREATE INDEX idx_proposition_salle_statut
+    ON afrolang.proposition_salle(statut, created_at DESC);
+
+CREATE INDEX idx_proposition_salle_auteur
+    ON afrolang.proposition_salle(auteur_id, created_at DESC);
+
+COMMENT ON TABLE afrolang.proposition_salle IS
+    'Proposition communautaire de salle publique Afrolang (feature 001-admin-salles-publiques).';
+
+
+-- ── Administrateurs de salle publique (feature 001-admin-salles-publiques) ──
+-- Rôle distinct de salle_moderateur (FR-018) — capacités effectives reportées (FR-019).
+-- Cette table est le réceptacle d'autorisation : toute future capacité doit
+-- s'appuyer sur le helper Rust est_administrateur_salle(salle_id, user_id).
+-- Cascades automatiques (FR-021/FR-022) : suspension par handler Rust quand
+-- la salle est archivée OU quand le compte utilisateur est désactivé.
+
+CREATE TABLE afrolang.salle_administrateur (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    salle_id            UUID         NOT NULL REFERENCES afrolang.salle(id) ON DELETE CASCADE,
+    utilisateur_id      UUID         NOT NULL,                 -- [xref] iam.utilisateur
+    nomme_par           UUID         NOT NULL,                 -- [xref] iam.utilisateur (admin plateforme)
+    nomme_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    actif               BOOLEAN      NOT NULL DEFAULT TRUE,
+    revoque_at          TIMESTAMPTZ,
+    revoque_par         UUID,                                   -- [xref] iam.utilisateur
+    motif_revocation    TEXT,
+    suspendu_at         TIMESTAMPTZ,                            -- cascade FR-021/FR-022
+    motif_suspension    TEXT,                                   -- 'salle_archivee' | 'compte_desactive'
+
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT ck_admin_revocation_coherente CHECK (
+        (actif = TRUE  AND revoque_at IS NULL AND revoque_par IS NULL AND motif_revocation IS NULL) OR
+        (actif = FALSE)
+    )
+);
+
+CREATE UNIQUE INDEX idx_salle_admin_unique_actif
+    ON afrolang.salle_administrateur(salle_id, utilisateur_id)
+    WHERE actif = TRUE;
+
+CREATE INDEX idx_salle_admin_par_salle
+    ON afrolang.salle_administrateur(salle_id) WHERE actif = TRUE;
+
+CREATE INDEX idx_salle_admin_par_user
+    ON afrolang.salle_administrateur(utilisateur_id) WHERE actif = TRUE;
+
+COMMENT ON TABLE afrolang.salle_administrateur IS
+    'Administrateurs scopés à une salle publique Afrolang (feature 001-admin-salles-publiques).';

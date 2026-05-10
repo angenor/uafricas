@@ -213,6 +213,9 @@ onMounted(() => {
         <button role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'pays' }" @click="ongletActif = 'pays'">
           <font-awesome-icon icon="globe" class="mr-1" /> Pays d'origine
         </button>
+        <button role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'administrateurs' }" @click="ongletActif = 'administrateurs'">
+          <font-awesome-icon icon="user-shield" class="mr-1" /> Administrateurs de salle
+        </button>
       </div>
 
       <!-- Onglet Infos -->
@@ -363,6 +366,20 @@ onMounted(() => {
               Ajouter
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Onglet Administrateurs de salle (feature 001-admin-salles-publiques, US3) -->
+      <div v-if="ongletActif === 'administrateurs'" class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+          <h3 class="font-semibold mb-2">
+            Administrateurs de cette salle publique
+          </h3>
+          <p class="text-sm text-base-content/60 mb-4">
+            Distinct du panneau « Modérateurs attitrés » et du rôle global « Admin plateforme ».
+            Les capacités effectives seront ajoutées progressivement (FR-019).
+          </p>
+          <AdminAfrolangSalleAdministrateursPanel :salle-id="id" />
         </div>
       </div>
 

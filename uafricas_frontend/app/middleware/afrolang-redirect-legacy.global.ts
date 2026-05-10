@@ -7,6 +7,8 @@ export default defineNuxtRouteMiddleware((to) => {
   if (/^\/afrolang\/salle-privee\//.test(to.path)) {
     return navigateTo('/afrolang', { replace: true })
   }
+  // /afrolang/proposer est désormais une modale ouverte depuis /afrolang.
+  // On redirige les anciens liens directs vers la page d'accueil Afrolang.
   if (to.path === '/afrolang/proposer') {
     return navigateTo('/afrolang', { replace: true })
   }

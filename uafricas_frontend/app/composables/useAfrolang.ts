@@ -62,6 +62,62 @@ export interface PaysOrigineLight {
   code_iso2: string | null
 }
 
+/** Administrateur d'une salle publique (vue allégée publique).
+ *  Feature 001-admin-salles-publiques. */
+export interface AdministrateurLight {
+  utilisateur_id: string
+  nom: string
+  prenom: string
+  photo_url: string | null
+  nomme_at: string
+}
+
+/** Statut d'une proposition communautaire de salle publique. */
+export type StatutProposition = 'en_attente' | 'validee' | 'rejetee' | 'retiree'
+
+/** DTO d'une proposition de salle (public et admin) — feature 001-admin-salles-publiques. */
+export interface PropositionSalle {
+  id: string
+  auteur: { id: string; nom: string; prenom: string }
+  titre: string
+  description: string
+  justification: string
+  langue_cible: string
+  langue_code: string | null
+  groupe_ethnique: { id: string; nom: string }
+  pays_origine: PaysOrigineLight[]
+  statut: StatutProposition
+  decideur: { id: string; nom: string; prenom: string } | null
+  decide_at: string | null
+  commentaire_decision: string | null
+  salle_id_creee: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PropositionListeAPI {
+  items: PropositionSalle[]
+  total: number
+  page: number
+  taille: number
+}
+
+export interface PropositionMesFiltres {
+  statut?: StatutProposition
+  page?: number
+  taille?: number
+}
+
+export interface SoumettrePropositionPayload {
+  titre: string
+  description: string
+  justification: string
+  langue_cible: string
+  langue_code?: string | null
+  groupe_ethnique_id: string
+  pays_origine_ids: string[]
+}
+
 /** DTO salle publique (liste) — feature 005 */
 export interface SalleAPI {
   id: string
@@ -81,6 +137,7 @@ export interface SalleAPI {
   nombre_moderateurs_attitres: number
   ressources_count: number
   pays_origine: PaysOrigineLight[]
+  administrateurs: AdministrateurLight[]
   created_at: string
   updated_at: string
 }
@@ -1322,6 +1379,104 @@ export const useAfrolang = () => {
     }
   }
 
+  // ── Propositions communautaires (feature 001-admin-salles-publiques, US1) ──
+
+  /** Soumet une nouvelle proposition de salle publique. */
+  const proposerSalle = async (
+    payload: SoumettrePropositionPayload,
+  ): Promise<PropositionSalle | null> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<PropositionSalle>>(
+        `${apiBase}/api/afrolang/propositions`,
+        { method: 'POST', headers: authHeaders(), body: payload },
+      )
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de la soumission')
+      }
+      return reponse.data
+    }
+    catch (e: unknown) {
+      const status = (e as { status?: number; statusCode?: number })?.statusCode
+        ?? (e as { status?: number })?.status
+      let message = extraireMessage(e, 'Erreur lors de la soumission')
+      if (status === 409) {
+        message = extraireMessage(e, 'Conflit : une salle ou une proposition existe déjà pour ce groupe ethnique.')
+      }
+      else if (status === 429) {
+        message = extraireMessage(e, 'Trop de propositions rejetées récemment. Réessayez dans quelques jours.')
+      }
+      erreur.value = message
+      console.error('Erreur proposerSalle:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Liste les propositions de l'utilisateur courant. */
+  const listerMesPropositions = async (
+    filtres: PropositionMesFiltres = {},
+  ): Promise<PropositionListeAPI | null> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      const params = new URLSearchParams()
+      if (filtres.statut) params.set('statut', filtres.statut)
+      if (filtres.page) params.set('page', String(filtres.page))
+      if (filtres.taille) params.set('taille', String(filtres.taille))
+      const qs = params.toString()
+      const url = `${apiBase}/api/afrolang/propositions/moi${qs ? `?${qs}` : ''}`
+      const reponse = await $fetch<ApiResponse<PropositionListeAPI>>(url, {
+        headers: authHeaders(),
+      })
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement')
+      }
+      return reponse.data
+    }
+    catch (e: unknown) {
+      erreur.value = extraireMessage(e, 'Erreur lors du chargement')
+      console.error('Erreur listerMesPropositions:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Retire une proposition encore en attente (auteur uniquement). */
+  const retirerProposition = async (id: string): Promise<PropositionSalle | null> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<PropositionSalle>>(
+        `${apiBase}/api/afrolang/propositions/${id}/retirer`,
+        { method: 'PATCH', headers: authHeaders() },
+      )
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du retrait')
+      }
+      return reponse.data
+    }
+    catch (e: unknown) {
+      const status = (e as { status?: number; statusCode?: number })?.statusCode
+        ?? (e as { status?: number })?.status
+      let message = extraireMessage(e, 'Erreur lors du retrait')
+      if (status === 409) {
+        message = extraireMessage(e, 'Cette proposition a déjà été décidée et ne peut plus être retirée.')
+      }
+      erreur.value = message
+      console.error('Erreur retirerProposition:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -1366,6 +1521,10 @@ export const useAfrolang = () => {
     supprimerRessource,
     listerMessagesSession,
     envoyerMessageSession,
+    // Propositions communautaires (US1)
+    proposerSalle,
+    listerMesPropositions,
+    retirerProposition,
   }
 }
 

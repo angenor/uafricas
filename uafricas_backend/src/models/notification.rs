@@ -25,6 +25,9 @@ pub mod afrolang {
     pub const SALLE_PRIVEE_ARCHIVEE: &str = "afrolang.salle_privee_archivee";
     pub const LIEN_EXTERNE_PUBLIE: &str = "afrolang.lien_externe_publie";
     pub const LIEN_EXTERNE_REFUSE: &str = "afrolang.lien_externe_refuse";
+    // Feature 001-admin-salles-publiques (US3)
+    pub const ADMIN_SALLE_NOMME: &str = "afrolang.admin_salle_nomme";
+    pub const ADMIN_SALLE_REVOQUE: &str = "afrolang.admin_salle_revoque";
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow)]

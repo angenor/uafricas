@@ -85,6 +85,11 @@
         </span>
       </div>
 
+      <!-- Administrateurs de la salle (feature 001-admin-salles-publiques, US3) -->
+      <div v-if="(salle.administrateurs?.length ?? 0) > 0" class="mb-3">
+        <AfrolangSalleAdministrateursWidget :administrateurs="salle.administrateurs" taille="sm" />
+      </div>
+
       <!-- Boutons d'action -->
       <div class="flex flex-col gap-1.5 pt-3 border-t border-gray-100">
         <!-- Bouton principal : démarrer / rejoindre la visioconférence -->
