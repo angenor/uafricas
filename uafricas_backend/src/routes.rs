@@ -205,6 +205,9 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/afrolang/salles-privees/archiver-batch-utilisateur", web::post().to(admin::sessions_afrolang::archiver_batch_utilisateur))
                     .route("/afrolang/salles-privees/{id}/archiver", web::post().to(admin::sessions_afrolang::archiver_salle_privee))
                     .route("/afrolang/salles/{id}/desactiver", web::post().to(admin::sessions_afrolang::desactiver_salle_publique_avec_cascade))
+                    // AfroLang - Pays d'origine (feature 001-afrolang-pays-origine)
+                    .route("/afrolang/salles/{id}/pays", web::post().to(admin::salles::ajouter_pays_origine_salle))
+                    .route("/afrolang/salles/{id}/pays/{pays_id}", web::delete().to(admin::salles::retirer_pays_origine_salle))
                     // Gouvernance - FactCheck
                     .route("/factcheck", web::get().to(admin::gouvernance::lister_factchecks))
                     .route("/factcheck", web::post().to(admin::gouvernance::creer_factcheck))

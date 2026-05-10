@@ -158,6 +158,42 @@ export const useAdminAfrolangSalles = () => {
     }
   }
 
+  // ── Pays d'origine (feature 001-afrolang-pays-origine) ──
+
+  const ajouterPaysOrigine = async (
+    salleId: string,
+    paysId: string,
+  ): Promise<boolean> => {
+    try {
+      const response = await adminFetch<ApiResponse<unknown>>(
+        `/api/admin/afrolang/salles/${salleId}/pays`,
+        { method: 'POST', body: { pays_id: paysId } },
+      )
+      return response.success
+    }
+    catch (e) {
+      console.error('Erreur ajouterPaysOrigine:', e)
+      return false
+    }
+  }
+
+  const retirerPaysOrigine = async (
+    salleId: string,
+    paysId: string,
+  ): Promise<boolean> => {
+    try {
+      const response = await adminFetch<ApiResponse<unknown>>(
+        `/api/admin/afrolang/salles/${salleId}/pays/${paysId}`,
+        { method: 'DELETE' },
+      )
+      return response.success
+    }
+    catch (e) {
+      console.error('Erreur retirerPaysOrigine:', e)
+      return false
+    }
+  }
+
   return {
     pagination,
     sort,
@@ -175,5 +211,8 @@ export const useAdminAfrolangSalles = () => {
     archiverSallePrivee,
     archiverBatchUtilisateur,
     desactiverSallePublique,
+    // Pays d'origine
+    ajouterPaysOrigine,
+    retirerPaysOrigine,
   }
 }

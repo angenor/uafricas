@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { GroupeEthniqueOption } from '~/composables/useAdminSalles'
+import type { AdminPays } from '~/types/admin'
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
@@ -7,6 +8,8 @@ const route = useRoute()
 const id = route.params.id as string
 
 const { salleDetail, loading, error, chargerDetail, modifier, chargerGroupesEthniques } = useAdminSalles()
+const { ajouterPaysOrigine, retirerPaysOrigine } = useAdminAfrolangSalles()
+const { pays: paysListe, chargerListe: chargerPaysListe, filtres: filtresPays } = useAdminPays()
 
 const ongletActif = ref('infos')
 const saving = ref(false)
@@ -80,6 +83,46 @@ const sauvegarderInfos = async () => {
   }
 }
 
+// Pays d'origine (feature 001-afrolang-pays-origine)
+const paysSelectionne = ref<string>('')
+const sauvegardePays = ref(false)
+const erreurPays = ref<string | null>(null)
+
+const paysDisponibles = computed<AdminPays[]>(() => {
+  const dejaAssocies = new Set((salleDetail.value?.pays_origine ?? []).map(p => p.id))
+  return paysListe.value.filter(p => p.actif && !dejaAssocies.has(p.id))
+})
+
+const ajouterPays = async () => {
+  if (!paysSelectionne.value) return
+  sauvegardePays.value = true
+  erreurPays.value = null
+  try {
+    const ok = await ajouterPaysOrigine(id, paysSelectionne.value)
+    if (!ok) throw new Error('Échec de l\'ajout du pays')
+    paysSelectionne.value = ''
+    await chargerDetail(id)
+  } catch (e: any) {
+    erreurPays.value = e?.data?.error || e?.message || 'Erreur lors de l\'ajout du pays'
+  } finally {
+    sauvegardePays.value = false
+  }
+}
+
+const retirerPays = async (paysId: string) => {
+  sauvegardePays.value = true
+  erreurPays.value = null
+  try {
+    const ok = await retirerPaysOrigine(id, paysId)
+    if (!ok) throw new Error('Échec du retrait du pays')
+    await chargerDetail(id)
+  } catch (e: any) {
+    erreurPays.value = e?.data?.error || e?.message || 'Erreur lors du retrait du pays'
+  } finally {
+    sauvegardePays.value = false
+  }
+}
+
 // Sessions de cette salle (via composable sessions)
 const { sessions: sessionsListe, chargerListe: chargerSessions } = useAdminSessions()
 
@@ -98,6 +141,9 @@ watch(ongletActif, (val) => {
 onMounted(() => {
   charger()
   chargerGroupes()
+  // Charger la liste complète des pays (référentiel ~54 entrées) pour le sélecteur
+  filtresPays.recherche = ''
+  chargerPaysListe()
 })
 </script>
 
@@ -163,6 +209,9 @@ onMounted(() => {
         </button>
         <button role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'sessions' }" @click="ongletActif = 'sessions'">
           <font-awesome-icon icon="video" class="mr-1" /> Sessions
+        </button>
+        <button role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'pays' }" @click="ongletActif = 'pays'">
+          <font-awesome-icon icon="globe" class="mr-1" /> Pays d'origine
         </button>
       </div>
 
@@ -247,6 +296,73 @@ onMounted(() => {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- Onglet Pays d'origine (feature 001-afrolang-pays-origine) -->
+      <div v-if="ongletActif === 'pays'" class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+          <h3 class="font-semibold mb-4">
+            Pays d'origine de la langue
+            <span class="badge badge-outline badge-sm ml-2">{{ salleDetail.pays_origine?.length ?? 0 }}</span>
+          </h3>
+
+          <p class="text-sm text-base-content/60 mb-4">
+            Associe à cette salle les pays où la langue cible est parlée à l'origine. Visible côté public sur la carte de la salle. Les pays archivés sont affichés en gris et peuvent être retirés.
+          </p>
+
+          <div v-if="erreurPays" class="alert alert-error mb-4">
+            <font-awesome-icon icon="circle-exclamation" />
+            <span>{{ erreurPays }}</span>
+          </div>
+
+          <!-- Liste des pays associés -->
+          <div class="flex flex-wrap gap-2 mb-6 min-h-[2.5rem]">
+            <span
+              v-for="p in salleDetail.pays_origine ?? []"
+              :key="p.id"
+              class="badge badge-lg gap-2"
+              :class="paysListe.find(pl => pl.id === p.id && !pl.actif) ? 'badge-ghost opacity-60' : 'badge-primary'"
+              :title="paysListe.find(pl => pl.id === p.id && !pl.actif) ? 'Pays archivé — masqué côté public' : ''"
+            >
+              <span v-if="p.code_iso2">{{ p.code_iso2 }}</span>
+              <span>{{ p.nom }}</span>
+              <span v-if="paysListe.find(pl => pl.id === p.id && !pl.actif)" class="text-[10px]">(archivé)</span>
+              <button
+                class="btn btn-ghost btn-xs btn-circle"
+                :disabled="sauvegardePays"
+                @click="retirerPays(p.id)"
+                aria-label="Retirer ce pays"
+              >
+                <font-awesome-icon icon="xmark" />
+              </button>
+            </span>
+            <span v-if="!salleDetail.pays_origine?.length" class="text-sm text-base-content/50 italic">
+              Aucun pays d'origine associé
+            </span>
+          </div>
+
+          <!-- Sélecteur d'ajout -->
+          <div class="flex items-end gap-2">
+            <div class="form-control flex-1">
+              <label class="label"><span class="label-text">Ajouter un pays</span></label>
+              <select v-model="paysSelectionne" class="select select-bordered" :disabled="sauvegardePays">
+                <option value="" disabled>Sélectionner un pays</option>
+                <option v-for="p in paysDisponibles" :key="p.id" :value="p.id">
+                  {{ p.code_iso2 ? `${p.code_iso2} — ` : '' }}{{ p.nom }}
+                </option>
+              </select>
+            </div>
+            <button
+              class="btn btn-primary"
+              :disabled="!paysSelectionne || sauvegardePays"
+              :class="{ loading: sauvegardePays }"
+              @click="ajouterPays"
+            >
+              <font-awesome-icon v-if="!sauvegardePays" icon="plus" class="mr-1" />
+              Ajouter
+            </button>
+          </div>
         </div>
       </div>
 

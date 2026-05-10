@@ -7,6 +7,7 @@
       :total-salles="totalSalles"
       :filtered-count="total"
       :langues="languesDisponibles"
+      :pays="paysDisponibles"
       @close="sidebarOpen = false"
       @reset="resetFilters"
     />
@@ -85,6 +86,7 @@
             :total-salles="totalSalles"
             :filtered-count="total"
             :langues="languesDisponibles"
+            :pays="paysDisponibles"
             @reset="resetFilters"
           />
         </div>
@@ -412,6 +414,18 @@ const _stats = ref<AfrolangStats>({
 const filtres = ref<SalleFiltres>({
   recherche: '',
   langue: '',
+  pays_id: '',
+})
+
+// Pays d'origine disponibles, dérivés des salles affichées (feature 001-afrolang-pays-origine)
+const paysDisponibles = computed(() => {
+  const map = new Map<string, { id: string; nom: string; code_iso2: string | null }>()
+  for (const salle of salles.value) {
+    for (const p of salle.pays_origine ?? []) {
+      if (!map.has(p.id)) map.set(p.id, p)
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
 })
 
 const expandedSalle = computed(() =>
@@ -427,6 +441,7 @@ const buildApiFiltres = (): SalleFiltres => {
   }
   if (filtres.value.recherche?.trim()) f.recherche = filtres.value.recherche.trim()
   if (filtres.value.langue) f.langue = filtres.value.langue
+  if (filtres.value.pays_id) f.pays_id = filtres.value.pays_id
   return f
 }
 
@@ -699,6 +714,14 @@ watch(
 )
 
 watch(
+  () => filtres.value.pays_id,
+  () => {
+    currentPage.value = 1
+    chargerSalles()
+  },
+)
+
+watch(
   () => filtres.value.recherche,
   () => {
     if (rechercheTimer) clearTimeout(rechercheTimer)
@@ -716,7 +739,7 @@ const handleSearch = () => {
 }
 
 const resetFilters = () => {
-  filtres.value = { recherche: '', langue: '' }
+  filtres.value = { recherche: '', langue: '', pays_id: '' }
   currentPage.value = 1
 }
 

@@ -256,6 +256,19 @@ pub async fn lister_salles(
         bind_index += 1;
     }
 
+    // Filtre pays d'origine (feature 001-afrolang-pays-origine, US2 — Q3 archivés masqués)
+    if let Some(pays_id) = params.pays_id {
+        conditions.push(format!(
+            "EXISTS (SELECT 1 FROM afrolang.salle_pays_origine spo \
+              JOIN shared.pays p2 ON p2.id = spo.pays_id \
+              WHERE spo.salle_id = s.id AND spo.pays_id = ${} AND p2.actif = TRUE)",
+            bind_index
+        ));
+        uuid_binds.push(pays_id);
+        param_types.push("uuid");
+        bind_index += 1;
+    }
+
     if let Some(ref recherche) = params.recherche {
         if !recherche.trim().is_empty() {
             let terme = format!("%{}%", recherche.trim().to_lowercase());
@@ -308,7 +321,16 @@ pub async fn lister_salles(
              WHERE sm.salle_id = s.id AND sm.actif = TRUE) AS nombre_moderateurs_attitres,
             (SELECT COUNT(*) FROM afrolang.ressource_salle rs
              WHERE rs.salle_id = s.id AND rs.etat = 'publiee' AND rs.deleted_at IS NULL)
-                AS ressources_count
+                AS ressources_count,
+            COALESCE((SELECT json_agg(json_build_object(
+                        'id', po.id,
+                        'nom', po.nom,
+                        'code_iso2', po.code_iso2
+                     ) ORDER BY po.nom)
+                     FROM afrolang.salle_pays_origine spo
+                     JOIN shared.pays po ON po.id = spo.pays_id
+                     WHERE spo.salle_id = s.id AND po.actif = TRUE),
+                     '[]'::json) AS pays_origine_json
          FROM afrolang.salle s
          LEFT JOIN country_profile.groupe_ethnique ge ON ge.id = s.groupe_ethnique_id
          LEFT JOIN country_profile.fiche_pays fp ON fp.id = ge.fiche_pays_id
@@ -377,7 +399,16 @@ pub async fn obtenir_salle(
              WHERE sm.salle_id = s.id AND sm.actif = TRUE) AS nombre_moderateurs_attitres,
             (SELECT COUNT(*) FROM afrolang.ressource_salle rs
              WHERE rs.salle_id = s.id AND rs.etat = 'publiee' AND rs.deleted_at IS NULL)
-                AS ressources_count
+                AS ressources_count,
+            COALESCE((SELECT json_agg(json_build_object(
+                        'id', po.id,
+                        'nom', po.nom,
+                        'code_iso2', po.code_iso2
+                     ) ORDER BY po.nom)
+                     FROM afrolang.salle_pays_origine spo
+                     JOIN shared.pays po ON po.id = spo.pays_id
+                     WHERE spo.salle_id = s.id AND po.actif = TRUE),
+                     '[]'::json) AS pays_origine_json
          FROM afrolang.salle s
          LEFT JOIN country_profile.groupe_ethnique ge ON ge.id = s.groupe_ethnique_id
          LEFT JOIN country_profile.fiche_pays fp ON fp.id = ge.fiche_pays_id
@@ -456,6 +487,7 @@ pub async fn obtenir_salle(
             sessions_en_cours: salle.sessions_en_cours.unwrap_or(0),
             ressources_count: salle.ressources_count.unwrap_or(0),
             salles_privees: salles_privees.iter().map(|sp| sp.to_response()).collect(),
+            pays_origine: salle.to_pays_origine(),
             created_at: salle.created_at,
             updated_at: salle.updated_at,
         }),

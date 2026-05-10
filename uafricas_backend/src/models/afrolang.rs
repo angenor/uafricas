@@ -114,6 +114,9 @@ pub struct SalleRow {
     pub fiche_pays_id: Option<Uuid>,
     #[sqlx(default)]
     pub pays_nom: Option<String>,
+    // Pays d'origine agrégés via json_agg (feature 001-afrolang-pays-origine)
+    #[sqlx(default)]
+    pub pays_origine_json: Option<serde_json::Value>,
 }
 
 /// Ligne `afrolang.salle_privee` après refonte 2026-04.
@@ -307,6 +310,16 @@ pub struct GroupeEthniqueLightResponse {
     pub pays_nom: Option<String>,
 }
 
+/// Pays d'origine d'une salle Afrolang (feature 001-afrolang-pays-origine).
+///
+/// Vue allégée de `shared.pays` exposée par l'API publique et admin.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PaysOrigineLight {
+    pub id: Uuid,
+    pub nom: String,
+    pub code_iso2: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct SalleResponse {
     pub id: Uuid,
@@ -325,6 +338,7 @@ pub struct SalleResponse {
     pub sessions_en_cours: i64,
     pub nombre_moderateurs_attitres: i64,
     pub ressources_count: i64,
+    pub pays_origine: Vec<PaysOrigineLight>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -348,6 +362,7 @@ pub struct SalleDetailResponse {
     pub sessions_en_cours: i64,
     pub ressources_count: i64,
     pub salles_privees: Vec<SallePriveeResponse>,
+    pub pays_origine: Vec<PaysOrigineLight>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -575,6 +590,7 @@ pub struct SalleFiltres {
     pub langue: Option<String>,
     pub langue_code: Option<String>,
     pub groupe_ethnique_id: Option<Uuid>,
+    pub pays_id: Option<Uuid>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,
 }
@@ -731,6 +747,13 @@ impl SalleRow {
             })
     }
 
+    pub fn to_pays_origine(&self) -> Vec<PaysOrigineLight> {
+        self.pays_origine_json
+            .as_ref()
+            .and_then(|v| serde_json::from_value::<Vec<PaysOrigineLight>>(v.clone()).ok())
+            .unwrap_or_default()
+    }
+
     pub fn to_response(&self) -> SalleResponse {
         SalleResponse {
             id: self.id,
@@ -749,6 +772,7 @@ impl SalleRow {
             sessions_en_cours: self.sessions_en_cours.unwrap_or(0),
             nombre_moderateurs_attitres: self.nombre_moderateurs_attitres.unwrap_or(0),
             ressources_count: self.ressources_count.unwrap_or(0),
+            pays_origine: self.to_pays_origine(),
             created_at: self.created_at,
             updated_at: self.updated_at,
         }

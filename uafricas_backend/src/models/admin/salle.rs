@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
+use crate::models::afrolang::PaysOrigineLight;
+
 // ── Colonnes SQL ──────────────────────────────────────────────
 // feature 005 : la colonne `salle.moderateur_id` est supprimée —
 // la modération attitrée passe désormais par `salle_moderateur`.
@@ -35,7 +37,16 @@ pub const ADMIN_SALLE_DETAIL_COLONNES: &str =
         JOIN afrolang.salle_privee sp2 ON se.salle_privee_id = sp2.id
         WHERE sp2.salle_id = s.id AND sp2.actif = true) AS nombre_sessions,
      (SELECT COUNT(*) FROM afrolang.salle_moderateur sm
-        WHERE sm.salle_id = s.id AND sm.actif = TRUE) AS nombre_moderateurs_attitres";
+        WHERE sm.salle_id = s.id AND sm.actif = TRUE) AS nombre_moderateurs_attitres,
+     COALESCE((SELECT json_agg(json_build_object(
+                  'id', po.id,
+                  'nom', po.nom,
+                  'code_iso2', po.code_iso2
+               ) ORDER BY po.nom)
+               FROM afrolang.salle_pays_origine spo
+               JOIN shared.pays po ON po.id = spo.pays_id
+               WHERE spo.salle_id = s.id),
+              '[]'::json) AS pays_origine_json";
 
 pub const SALLE_TRI_COLONNES: &[&str] = &[
     "created_at", "titre", "langue_cible", "langue_code",
@@ -82,6 +93,7 @@ pub struct AdminSalleDetailRow {
     pub nombre_salles_privees: Option<i64>,
     pub nombre_sessions: Option<i64>,
     pub nombre_moderateurs_attitres: Option<i64>,
+    pub pays_origine_json: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize)]
@@ -104,6 +116,7 @@ pub struct AdminSalleDetailResponse {
     pub nombre_salles_privees: i64,
     pub nombre_sessions: i64,
     pub nombre_moderateurs_attitres: i64,
+    pub pays_origine: Vec<PaysOrigineLight>,
 }
 
 impl AdminSalleDetailRow {
@@ -112,6 +125,11 @@ impl AdminSalleDetailRow {
             (Some(p), Some(n)) => Some(format!("{} {}", p, n)),
             _ => None,
         };
+        let pays_origine = self
+            .pays_origine_json
+            .as_ref()
+            .and_then(|v| serde_json::from_value::<Vec<PaysOrigineLight>>(v.clone()).ok())
+            .unwrap_or_default();
         AdminSalleDetailResponse {
             id: self.id,
             titre: self.titre,
@@ -131,6 +149,7 @@ impl AdminSalleDetailRow {
             nombre_salles_privees: self.nombre_salles_privees.unwrap_or(0),
             nombre_sessions: self.nombre_sessions.unwrap_or(0),
             nombre_moderateurs_attitres: self.nombre_moderateurs_attitres.unwrap_or(0),
+            pays_origine,
         }
     }
 }

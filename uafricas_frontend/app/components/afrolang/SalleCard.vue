@@ -40,6 +40,39 @@
         {{ salle.description || 'Salle de visioconférence pour l\'apprentissage linguistique' }}
       </p>
 
+      <!-- Pays d'origine (feature 001-afrolang-pays-origine) -->
+      <div
+        v-if="paysAffiches.length > 0"
+        class="mb-3"
+        :aria-label="`Pays d'origine : ${tooltipPays}`"
+      >
+        <div class="text-[10px] uppercase tracking-wide text-gray-400 mb-1">
+          Pays d'origine
+        </div>
+        <div
+          v-if="modeCompact"
+          class="flex items-center flex-wrap gap-1"
+          :title="tooltipPays"
+        >
+          <span
+            v-for="p in paysAffiches"
+            :key="p.id"
+            class="text-base leading-none"
+            :title="p.nom"
+          >{{ drapeauEmoji(p.code_iso2) || '·' }}</span>
+        </div>
+        <div v-else class="flex items-center flex-wrap gap-1">
+          <span
+            v-for="p in paysAffiches"
+            :key="p.id"
+            class="inline-flex items-center gap-1 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded text-[11px] text-gray-700"
+          >
+            <span class="leading-none">{{ drapeauEmoji(p.code_iso2) }}</span>
+            <span class="truncate max-w-[8rem]">{{ p.nom }}</span>
+          </span>
+        </div>
+      </div>
+
       <!-- Informations principales -->
       <div class="flex items-center gap-4 text-xs text-gray-500 mb-3">
         <span class="flex items-center gap-1">
@@ -97,9 +130,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { SalleAPI } from '~/composables/useAfrolang'
 
-defineProps<{
+const props = defineProps<{
   salle: SalleAPI
   expanded: boolean
   chargement: boolean
@@ -109,6 +143,19 @@ defineEmits<{
   'entrer': [salleId: string]
   'toggle-privees': [salleId: string]
 }>()
+
+const paysAffiches = computed(() => props.salle.pays_origine ?? [])
+const modeCompact = computed(() => paysAffiches.value.length >= 4)
+const tooltipPays = computed(() => paysAffiches.value.map(p => p.nom).join(', '))
+
+function drapeauEmoji(codeIso2: string | null): string {
+  if (!codeIso2 || codeIso2.length !== 2) return ''
+  const code = codeIso2.toUpperCase()
+  const c0 = code.charCodeAt(0)
+  const c1 = code.charCodeAt(1)
+  if (c0 < 65 || c0 > 90 || c1 < 65 || c1 > 90) return ''
+  return String.fromCodePoint(0x1F1E6 + c0 - 65, 0x1F1E6 + c1 - 65)
+}
 </script>
 
 <style scoped>

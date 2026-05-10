@@ -62,6 +62,24 @@
           </select>
         </div>
 
+        <!-- Filtre par pays d'origine (feature 001-afrolang-pays-origine) -->
+        <div v-if="pays.length > 0">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <font-awesome-icon :icon="['fas', 'globe']" class="w-4 h-4 mr-2 text-gray-400" />
+            Pays d'origine
+          </label>
+          <select
+            v-model="localFiltres.pays_id"
+            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            @change="emitChange"
+          >
+            <option value="">Tous les pays</option>
+            <option v-for="p in pays" :key="p.id" :value="p.id">
+              {{ p.nom }}
+            </option>
+          </select>
+        </div>
+
         <!-- Statistiques -->
         <div class="pt-4 border-t border-gray-200">
           <div class="space-y-3">
@@ -97,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import type { SalleFiltres } from '~/composables/useAfrolang'
+import type { PaysOrigineLight, SalleFiltres } from '~/composables/useAfrolang'
 
 const props = defineProps<{
   isOpen: boolean
@@ -105,6 +123,7 @@ const props = defineProps<{
   filteredCount: number
   modelValue: SalleFiltres
   langues: string[]
+  pays: PaysOrigineLight[]
 }>()
 
 const emit = defineEmits<{
