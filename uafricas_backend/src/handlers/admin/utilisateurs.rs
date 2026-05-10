@@ -551,6 +551,20 @@ pub async fn changer_etat_utilisateur(
 
     log::info!("Admin {} a change l'etat de {} a {}", admin.id, utilisateur_id, etat);
 
+    // Cascade FR-022 (feature 001-admin-salles-publiques T045) :
+    // si l'utilisateur n'est plus actif, suspendre toutes ses nominations
+    // d'administrateur de salle publique.
+    if matches!(etat, "suspendu" | "bloque" | "inactif" | "supprime") {
+        crate::handlers::admin::salles::cascader_suspendre_admins_utilisateur(
+            pool.get_ref(),
+            utilisateur_id,
+            "compte_desactive",
+            admin.id,
+            &req,
+        )
+        .await;
+    }
+
     let ip = audit::extraire_ip(&req);
     let ua = audit::extraire_user_agent(&req);
     audit::log_action(
@@ -600,6 +614,16 @@ pub async fn supprimer_utilisateur(
     }
 
     log::info!("Admin {} a supprime l'utilisateur {}", admin.id, utilisateur_id);
+
+    // Cascade FR-022 (feature 001-admin-salles-publiques T045)
+    crate::handlers::admin::salles::cascader_suspendre_admins_utilisateur(
+        pool.get_ref(),
+        utilisateur_id,
+        "compte_desactive",
+        admin.id,
+        &req,
+    )
+    .await;
 
     let ip = audit::extraire_ip(&req);
     let ua = audit::extraire_user_agent(&req);

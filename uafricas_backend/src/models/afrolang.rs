@@ -27,6 +27,18 @@ pub enum EtatRessource {
     Refusee,
 }
 
+/// Statut d'une proposition communautaire de salle publique
+/// (feature 001-admin-salles-publiques).
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type, Serialize, Deserialize)]
+#[sqlx(type_name = "afrolang.statut_proposition_salle", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum PropositionStatut {
+    EnAttente,
+    Validee,
+    Rejetee,
+    Retiree,
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 // Constantes SQL
 // ══════════════════════════════════════════════════════════════════════════
@@ -77,6 +89,21 @@ pub const MESSAGE_SESSION_COLONNES: &str =
     "ms.id, ms.session_id, ms.auteur_id, ms.contenu,
      ms.created_at, ms.deleted_at";
 
+/// Colonnes de base pour afrolang.proposition_salle
+/// (feature 001-admin-salles-publiques)
+pub const COLONNES_PROPOSITION: &str =
+    "ps.id, ps.auteur_id, ps.titre, ps.description, ps.justification,
+     ps.langue_cible, ps.langue_code, ps.groupe_ethnique_id, ps.pays_origine_ids,
+     ps.statut, ps.decideur, ps.decide_at, ps.commentaire_decision,
+     ps.salle_id_creee, ps.created_at, ps.updated_at";
+
+/// Colonnes de base pour afrolang.salle_administrateur
+/// (feature 001-admin-salles-publiques)
+pub const COLONNES_SALLE_ADMIN: &str =
+    "sa.id, sa.salle_id, sa.utilisateur_id, sa.nomme_par, sa.nomme_at,
+     sa.actif, sa.revoque_at, sa.revoque_par, sa.motif_revocation,
+     sa.suspendu_at, sa.motif_suspension, sa.created_at, sa.updated_at";
+
 // ══════════════════════════════════════════════════════════════════════════
 // Structs FromRow
 // ══════════════════════════════════════════════════════════════════════════
@@ -117,6 +144,9 @@ pub struct SalleRow {
     // Pays d'origine agrégés via json_agg (feature 001-afrolang-pays-origine)
     #[sqlx(default)]
     pub pays_origine_json: Option<serde_json::Value>,
+    // Administrateurs de la salle agrégés via json_agg (feature 001-admin-salles-publiques)
+    #[sqlx(default)]
+    pub administrateurs_json: Option<serde_json::Value>,
 }
 
 /// Ligne `afrolang.salle_privee` après refonte 2026-04.
@@ -339,6 +369,7 @@ pub struct SalleResponse {
     pub nombre_moderateurs_attitres: i64,
     pub ressources_count: i64,
     pub pays_origine: Vec<PaysOrigineLight>,
+    pub administrateurs: Vec<AdministrateurLight>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -363,6 +394,7 @@ pub struct SalleDetailResponse {
     pub ressources_count: i64,
     pub salles_privees: Vec<SallePriveeResponse>,
     pub pays_origine: Vec<PaysOrigineLight>,
+    pub administrateurs: Vec<AdministrateurLight>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -754,6 +786,13 @@ impl SalleRow {
             .unwrap_or_default()
     }
 
+    pub fn to_administrateurs(&self) -> Vec<AdministrateurLight> {
+        self.administrateurs_json
+            .as_ref()
+            .and_then(|v| serde_json::from_value::<Vec<AdministrateurLight>>(v.clone()).ok())
+            .unwrap_or_default()
+    }
+
     pub fn to_response(&self) -> SalleResponse {
         SalleResponse {
             id: self.id,
@@ -773,6 +812,7 @@ impl SalleRow {
             nombre_moderateurs_attitres: self.nombre_moderateurs_attitres.unwrap_or(0),
             ressources_count: self.ressources_count.unwrap_or(0),
             pays_origine: self.to_pays_origine(),
+            administrateurs: self.to_administrateurs(),
             created_at: self.created_at,
             updated_at: self.updated_at,
         }
@@ -942,6 +982,289 @@ impl MessageSessionRow {
 // ══════════════════════════════════════════════════════════════════════════
 // Utilitaires
 // ══════════════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════════════
+// Feature 001-admin-salles-publiques — Propositions & administrateurs salle
+// ══════════════════════════════════════════════════════════════════════════
+
+/// Ligne brute lue de `afrolang.proposition_salle` (avec jointures auteur,
+/// décideur, groupe ethnique, et json_agg des pays d'origine).
+#[derive(Debug, FromRow)]
+pub struct PropositionSalleRow {
+    pub id: Uuid,
+    pub auteur_id: Uuid,
+    pub titre: String,
+    pub description: String,
+    pub justification: String,
+    pub langue_cible: String,
+    pub langue_code: Option<String>,
+    pub groupe_ethnique_id: Uuid,
+    pub pays_origine_ids: Vec<Uuid>,
+    pub statut: PropositionStatut,
+    pub decideur: Option<Uuid>,
+    pub decide_at: Option<DateTime<Utc>>,
+    pub commentaire_decision: Option<String>,
+    pub salle_id_creee: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    // Jointures auteur
+    #[sqlx(default)]
+    pub auteur_nom: Option<String>,
+    #[sqlx(default)]
+    pub auteur_prenom: Option<String>,
+    // Jointures décideur
+    #[sqlx(default)]
+    pub decideur_nom: Option<String>,
+    #[sqlx(default)]
+    pub decideur_prenom: Option<String>,
+    // Jointure groupe ethnique
+    #[sqlx(default)]
+    pub groupe_ethnique_nom: Option<String>,
+    // json_agg des pays d'origine
+    #[sqlx(default)]
+    pub pays_origine_json: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct UtilisateurLight {
+    pub id: Uuid,
+    pub nom: String,
+    pub prenom: String,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct GroupeEthniqueLight {
+    pub id: Uuid,
+    pub nom: String,
+}
+
+/// DTO public d'une proposition de salle (contracts/public.md & admin.md)
+#[derive(Debug, Serialize)]
+pub struct PropositionResponse {
+    pub id: Uuid,
+    pub auteur: UtilisateurLight,
+    pub titre: String,
+    pub description: String,
+    pub justification: String,
+    pub langue_cible: String,
+    pub langue_code: Option<String>,
+    pub groupe_ethnique: GroupeEthniqueLight,
+    pub pays_origine: Vec<PaysOrigineLight>,
+    pub statut: PropositionStatut,
+    pub decideur: Option<UtilisateurLight>,
+    pub decide_at: Option<DateTime<Utc>>,
+    pub commentaire_decision: Option<String>,
+    pub salle_id_creee: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl PropositionSalleRow {
+    pub fn to_response(&self) -> PropositionResponse {
+        let pays_origine: Vec<PaysOrigineLight> = self
+            .pays_origine_json
+            .as_ref()
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .unwrap_or_default();
+
+        let decideur = match (self.decideur, &self.decideur_nom, &self.decideur_prenom) {
+            (Some(id), Some(nom), Some(prenom)) => Some(UtilisateurLight {
+                id,
+                nom: nom.clone(),
+                prenom: prenom.clone(),
+            }),
+            _ => None,
+        };
+
+        PropositionResponse {
+            id: self.id,
+            auteur: UtilisateurLight {
+                id: self.auteur_id,
+                nom: self.auteur_nom.clone().unwrap_or_default(),
+                prenom: self.auteur_prenom.clone().unwrap_or_default(),
+            },
+            titre: self.titre.clone(),
+            description: self.description.clone(),
+            justification: self.justification.clone(),
+            langue_cible: self.langue_cible.clone(),
+            langue_code: self.langue_code.clone(),
+            groupe_ethnique: GroupeEthniqueLight {
+                id: self.groupe_ethnique_id,
+                nom: self.groupe_ethnique_nom.clone().unwrap_or_default(),
+            },
+            pays_origine,
+            statut: self.statut.clone(),
+            decideur,
+            decide_at: self.decide_at,
+            commentaire_decision: self.commentaire_decision.clone(),
+            salle_id_creee: self.salle_id_creee,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct PropositionListeResponse {
+    pub items: Vec<PropositionResponse>,
+    pub total: i64,
+    pub page: i64,
+    pub taille: i64,
+}
+
+/// Vue allégée d'un administrateur de salle pour l'affichage public sur la
+/// fiche de salle. Filtré sur `actif=TRUE`.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AdministrateurLight {
+    pub utilisateur_id: Uuid,
+    pub nom: String,
+    pub prenom: String,
+    pub photo_url: Option<String>,
+    pub nomme_at: DateTime<Utc>,
+}
+
+#[derive(Debug, FromRow)]
+pub struct SalleAdministrateurRow {
+    pub id: Uuid,
+    pub salle_id: Uuid,
+    pub utilisateur_id: Uuid,
+    pub nomme_par: Uuid,
+    pub nomme_at: DateTime<Utc>,
+    pub actif: bool,
+    pub revoque_at: Option<DateTime<Utc>>,
+    pub revoque_par: Option<Uuid>,
+    pub motif_revocation: Option<String>,
+    pub suspendu_at: Option<DateTime<Utc>>,
+    pub motif_suspension: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    // Jointures utilisateur
+    #[sqlx(default)]
+    pub utilisateur_nom: Option<String>,
+    #[sqlx(default)]
+    pub utilisateur_prenom: Option<String>,
+    #[sqlx(default)]
+    pub utilisateur_email: Option<String>,
+    #[sqlx(default)]
+    pub utilisateur_photo: Option<String>,
+    // Jointures nomme_par
+    #[sqlx(default)]
+    pub nomme_par_nom: Option<String>,
+    #[sqlx(default)]
+    pub nomme_par_prenom: Option<String>,
+    // Jointures revoque_par
+    #[sqlx(default)]
+    pub revoque_par_nom: Option<String>,
+    #[sqlx(default)]
+    pub revoque_par_prenom: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UtilisateurAdminResponse {
+    pub id: Uuid,
+    pub nom: String,
+    pub prenom: String,
+    pub email: String,
+    pub photo_url: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SalleAdministrateurResponse {
+    pub id: Uuid,
+    pub salle_id: Uuid,
+    pub utilisateur: UtilisateurAdminResponse,
+    pub nomme_par: UtilisateurLight,
+    pub nomme_at: DateTime<Utc>,
+    pub actif: bool,
+    pub revoque_at: Option<DateTime<Utc>>,
+    pub revoque_par: Option<UtilisateurLight>,
+    pub motif_revocation: Option<String>,
+    pub suspendu_at: Option<DateTime<Utc>>,
+    pub motif_suspension: Option<String>,
+}
+
+impl SalleAdministrateurRow {
+    pub fn to_response(&self) -> SalleAdministrateurResponse {
+        SalleAdministrateurResponse {
+            id: self.id,
+            salle_id: self.salle_id,
+            utilisateur: UtilisateurAdminResponse {
+                id: self.utilisateur_id,
+                nom: self.utilisateur_nom.clone().unwrap_or_default(),
+                prenom: self.utilisateur_prenom.clone().unwrap_or_default(),
+                email: self.utilisateur_email.clone().unwrap_or_default(),
+                photo_url: self.utilisateur_photo.clone(),
+            },
+            nomme_par: UtilisateurLight {
+                id: self.nomme_par,
+                nom: self.nomme_par_nom.clone().unwrap_or_default(),
+                prenom: self.nomme_par_prenom.clone().unwrap_or_default(),
+            },
+            nomme_at: self.nomme_at,
+            actif: self.actif,
+            revoque_at: self.revoque_at,
+            revoque_par: match (self.revoque_par, &self.revoque_par_nom, &self.revoque_par_prenom) {
+                (Some(id), Some(nom), Some(prenom)) => Some(UtilisateurLight {
+                    id,
+                    nom: nom.clone(),
+                    prenom: prenom.clone(),
+                }),
+                _ => None,
+            },
+            motif_revocation: self.motif_revocation.clone(),
+            suspendu_at: self.suspendu_at,
+            motif_suspension: self.motif_suspension.clone(),
+        }
+    }
+}
+
+// ── Payloads de requête ─────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct SoumettrePropositionRequest {
+    pub titre: String,
+    pub description: String,
+    pub justification: String,
+    pub langue_cible: String,
+    pub langue_code: Option<String>,
+    pub groupe_ethnique_id: Uuid,
+    pub pays_origine_ids: Vec<Uuid>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DecisionRequest {
+    pub commentaire: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NommerAdministrateurRequest {
+    pub utilisateur_id: Uuid,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RevoquerAdministrateurRequest {
+    pub motif: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PropositionMesFiltres {
+    pub statut: Option<PropositionStatut>,
+    pub page: Option<i64>,
+    pub taille: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PropositionAdminFiltres {
+    pub statut: Option<PropositionStatut>,
+    pub langue_code: Option<String>,
+    pub groupe_ethnique_id: Option<Uuid>,
+    pub auteur_id: Option<Uuid>,
+    pub date_debut: Option<DateTime<Utc>>,
+    pub date_fin: Option<DateTime<Utc>>,
+    pub page: Option<i64>,
+    pub taille: Option<i64>,
+    pub tri: Option<String>,
+}
 
 pub fn generer_slug(titre: &str) -> String {
     titre

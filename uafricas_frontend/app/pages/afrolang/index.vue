@@ -40,6 +40,15 @@
         <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
           Apprendre une langue africaine ou afro-descendante à distance et rencontrer des personnes qui pratiquent la langue et souhaitent l'apprendre.
         </p>
+        <button
+          v-if="userStore.isAuthenticated"
+          type="button"
+          class="mt-5 inline-flex items-center gap-2 rounded-full bg-white/95 hover:bg-white text-custom-chocolat font-semibold text-sm px-5 py-2.5 shadow-lg transition-colors animate-subtitle"
+          @click="proposerOuvert = true"
+        >
+          <font-awesome-icon :icon="['fas', 'lightbulb']" class="w-4 h-4" />
+          Proposer une salle
+        </button>
       </div>
     </div>
 
@@ -343,6 +352,12 @@
         </div>
       </div>
     </div>
+
+    <!-- Modale Proposer une salle (US1) -->
+    <AfrolangProposerSalleModal
+      :open="proposerOuvert"
+      @close="proposerOuvert = false"
+    />
   </div>
 </template>
 
@@ -371,6 +386,9 @@ useHead({
 const ITEMS_PER_PAGE = 12
 const router = useRouter()
 const userStore = useUserStore()
+
+// Modale « Proposer une salle » (feature 001-admin-salles-publiques, US1)
+const proposerOuvert = ref(false)
 
 const {
   listerSalles,

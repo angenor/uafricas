@@ -10,6 +10,28 @@ export interface DesignerModerateurForm {
   disponibilite?: string
 }
 
+/** Administrateur de salle publique (vue admin complète, historique inclus).
+ *  Feature 001-admin-salles-publiques, US3. */
+export interface SalleAdministrateurAPI {
+  id: string
+  salle_id: string
+  utilisateur: {
+    id: string
+    nom: string
+    prenom: string
+    email: string
+    photo_url: string | null
+  }
+  nomme_par: { id: string; nom: string; prenom: string }
+  nomme_at: string
+  actif: boolean
+  revoque_at: string | null
+  revoque_par: { id: string; nom: string; prenom: string } | null
+  motif_revocation: string | null
+  suspendu_at: string | null
+  motif_suspension: string | null
+}
+
 export const useAdminAfrolangSalles = () => {
   const admin = useAdmin()
   const { adminFetch, pagination, sort, loading, error } = admin
@@ -194,6 +216,58 @@ export const useAdminAfrolangSalles = () => {
     }
   }
 
+  // ── Administrateurs de salle publique (feature 001-admin-salles-publiques, US3) ──
+
+  const listerAdministrateurs = async (
+    salleId: string,
+  ): Promise<SalleAdministrateurAPI[]> => {
+    try {
+      const response = await adminFetch<ApiResponse<SalleAdministrateurAPI[]>>(
+        `/api/admin/afrolang/salles/${salleId}/administrateurs`,
+      )
+      return response.success && response.data ? response.data : []
+    }
+    catch (e) {
+      console.error('Erreur listerAdministrateurs:', e)
+      return []
+    }
+  }
+
+  const nommerAdministrateur = async (
+    salleId: string,
+    utilisateurId: string,
+  ): Promise<SalleAdministrateurAPI | null> => {
+    try {
+      const response = await adminFetch<ApiResponse<SalleAdministrateurAPI>>(
+        `/api/admin/afrolang/salles/${salleId}/administrateurs`,
+        { method: 'POST', body: { utilisateur_id: utilisateurId } },
+      )
+      return response.success && response.data ? response.data : null
+    }
+    catch (e) {
+      console.error('Erreur nommerAdministrateur:', e)
+      return null
+    }
+  }
+
+  const revoquerAdministrateur = async (
+    salleId: string,
+    utilisateurId: string,
+    motif?: string,
+  ): Promise<SalleAdministrateurAPI | null> => {
+    try {
+      const response = await adminFetch<ApiResponse<SalleAdministrateurAPI>>(
+        `/api/admin/afrolang/salles/${salleId}/administrateurs/${utilisateurId}`,
+        { method: 'DELETE', body: { motif: motif ?? null } },
+      )
+      return response.success && response.data ? response.data : null
+    }
+    catch (e) {
+      console.error('Erreur revoquerAdministrateur:', e)
+      return null
+    }
+  }
+
   return {
     pagination,
     sort,
@@ -214,5 +288,9 @@ export const useAdminAfrolangSalles = () => {
     // Pays d'origine
     ajouterPaysOrigine,
     retirerPaysOrigine,
+    // Administrateurs de salle (US3)
+    listerAdministrateurs,
+    nommerAdministrateur,
+    revoquerAdministrateur,
   }
 }

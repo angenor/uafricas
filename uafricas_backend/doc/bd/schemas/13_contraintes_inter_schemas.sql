@@ -177,6 +177,32 @@ ALTER TABLE afrolang.message_session
     ADD CONSTRAINT fk_afrolang_message_auteur
     FOREIGN KEY (auteur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
 
+-- Propositions communautaires de salle publique (feature 001-admin-salles-publiques)
+ALTER TABLE afrolang.proposition_salle
+    ADD CONSTRAINT fk_afrolang_proposition_auteur
+    FOREIGN KEY (auteur_id) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
+
+ALTER TABLE afrolang.proposition_salle
+    ADD CONSTRAINT fk_afrolang_proposition_decideur
+    FOREIGN KEY (decideur) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
+
+ALTER TABLE afrolang.proposition_salle
+    ADD CONSTRAINT fk_afrolang_proposition_groupe_ethnique
+    FOREIGN KEY (groupe_ethnique_id) REFERENCES country_profile.groupe_ethnique(id) ON DELETE RESTRICT;
+
+-- Administrateurs de salle publique (feature 001-admin-salles-publiques)
+ALTER TABLE afrolang.salle_administrateur
+    ADD CONSTRAINT fk_afrolang_salle_admin_user
+    FOREIGN KEY (utilisateur_id) REFERENCES iam.utilisateur(id) ON DELETE CASCADE;
+
+ALTER TABLE afrolang.salle_administrateur
+    ADD CONSTRAINT fk_afrolang_salle_admin_nomme_par
+    FOREIGN KEY (nomme_par) REFERENCES iam.utilisateur(id) ON DELETE RESTRICT;
+
+ALTER TABLE afrolang.salle_administrateur
+    ADD CONSTRAINT fk_afrolang_salle_admin_revoque_par
+    FOREIGN KEY (revoque_par) REFERENCES iam.utilisateur(id) ON DELETE SET NULL;
+
 ALTER TABLE culture.codimoi
     ADD CONSTRAINT fk_codimoi_pays
     FOREIGN KEY (pays_id) REFERENCES shared.pays(id) ON DELETE SET NULL;

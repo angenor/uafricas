@@ -14,13 +14,16 @@ use crate::models::afrolang::{
     GroupeEthniqueFiltres, GroupeEthniqueListeResponse, GroupeEthniqueResume,
     MessageSessionResponse, MessageSessionRow, MessagesFiltres, ModerateurResponse,
     ModifierCodeAccesRequest, ModifierMaxParticipantsRequest, ModifierSallePriveeRequest,
-    ModifierSalleRequest, RejoindreRequest, RessourceSalleResponse, RessourceSalleRow,
-    SalleDetailResponse, SalleFiltres, SalleListeResponse, SallePriveeAPI,
+    ModifierSalleRequest, PropositionListeResponse, PropositionMesFiltres, PropositionResponse,
+    PropositionSalleRow, PropositionStatut, RejoindreRequest, RessourceSalleResponse,
+    RessourceSalleRow, SalleDetailResponse, SalleFiltres, SalleListeResponse, SallePriveeAPI,
     SallePriveeDetailResponse, SallePriveeRow,
     SalleRow, SessionDetailResponse, SessionFiltres, SessionListeResponse, SessionParticipantRow,
-    SessionRow, TransfererModerationRequest, VerifierCodeAccesRequest, VerifierCodeAccesResponse,
-    GROUPE_ETHNIQUE_RESUME_COLONNES, MESSAGE_SESSION_COLONNES, RESSOURCE_SALLE_COLONNES,
-    SALLE_COLONNES, SALLE_PRIVEE_COLONNES, SESSION_COLONNES, generer_slug,
+    SessionRow, SoumettrePropositionRequest, TransfererModerationRequest, VerifierCodeAccesRequest,
+    VerifierCodeAccesResponse,
+    COLONNES_PROPOSITION, GROUPE_ETHNIQUE_RESUME_COLONNES, MESSAGE_SESSION_COLONNES,
+    RESSOURCE_SALLE_COLONNES, SALLE_COLONNES, SALLE_PRIVEE_COLONNES, SESSION_COLONNES,
+    generer_slug,
 };
 use crate::models::notification;
 use crate::services::{afrolang_rate_limit, audit};
@@ -91,6 +94,30 @@ async fn sauvegarder_fichier(field: &mut actix_multipart::Field, chemin: &str) -
 
 fn calculer_total_pages(total: i64, par_page: i64) -> i64 {
     if total == 0 { 1 } else { (total as f64 / par_page as f64).ceil() as i64 }
+}
+
+/// Helper d'autorisation centralisé (FR-019, feature 001-admin-salles-publiques).
+///
+/// Retourne `true` si l'utilisateur a une nomination active comme administrateur
+/// de la salle publique passée en argument. Aucune capacité concrète n'est encore
+/// branchée à cette table — ce helper sert de point d'autorisation unique pour
+/// toutes les futures capacités du rôle (modération étendue, gestion des
+/// ressources, etc.) sans rupture de compatibilité.
+pub async fn est_administrateur_salle(
+    pool: &PgPool,
+    salle_id: Uuid,
+    user_id: Uuid,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(
+            SELECT 1 FROM afrolang.salle_administrateur
+            WHERE salle_id = $1 AND utilisateur_id = $2 AND actif = TRUE
+        )",
+    )
+    .bind(salle_id)
+    .bind(user_id)
+    .fetch_one(pool)
+    .await
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -330,7 +357,18 @@ pub async fn lister_salles(
                      FROM afrolang.salle_pays_origine spo
                      JOIN shared.pays po ON po.id = spo.pays_id
                      WHERE spo.salle_id = s.id AND po.actif = TRUE),
-                     '[]'::json) AS pays_origine_json
+                     '[]'::json) AS pays_origine_json,
+            COALESCE((SELECT json_agg(json_build_object(
+                        'utilisateur_id', sa.utilisateur_id,
+                        'nom', ua.nom,
+                        'prenom', ua.prenom,
+                        'photo_url', ua.photo_url,
+                        'nomme_at', sa.nomme_at
+                     ) ORDER BY sa.nomme_at ASC)
+                     FROM afrolang.salle_administrateur sa
+                     JOIN iam.utilisateur ua ON ua.id = sa.utilisateur_id
+                     WHERE sa.salle_id = s.id AND sa.actif = TRUE),
+                     '[]'::json) AS administrateurs_json
          FROM afrolang.salle s
          LEFT JOIN country_profile.groupe_ethnique ge ON ge.id = s.groupe_ethnique_id
          LEFT JOIN country_profile.fiche_pays fp ON fp.id = ge.fiche_pays_id
@@ -408,7 +446,18 @@ pub async fn obtenir_salle(
                      FROM afrolang.salle_pays_origine spo
                      JOIN shared.pays po ON po.id = spo.pays_id
                      WHERE spo.salle_id = s.id AND po.actif = TRUE),
-                     '[]'::json) AS pays_origine_json
+                     '[]'::json) AS pays_origine_json,
+            COALESCE((SELECT json_agg(json_build_object(
+                        'utilisateur_id', sa.utilisateur_id,
+                        'nom', ua.nom,
+                        'prenom', ua.prenom,
+                        'photo_url', ua.photo_url,
+                        'nomme_at', sa.nomme_at
+                     ) ORDER BY sa.nomme_at ASC)
+                     FROM afrolang.salle_administrateur sa
+                     JOIN iam.utilisateur ua ON ua.id = sa.utilisateur_id
+                     WHERE sa.salle_id = s.id AND sa.actif = TRUE),
+                     '[]'::json) AS administrateurs_json
          FROM afrolang.salle s
          LEFT JOIN country_profile.groupe_ethnique ge ON ge.id = s.groupe_ethnique_id
          LEFT JOIN country_profile.fiche_pays fp ON fp.id = ge.fiche_pays_id
@@ -488,6 +537,7 @@ pub async fn obtenir_salle(
             ressources_count: salle.ressources_count.unwrap_or(0),
             salles_privees: salles_privees.iter().map(|sp| sp.to_response()).collect(),
             pays_origine: salle.to_pays_origine(),
+            administrateurs: salle.to_administrateurs(),
             created_at: salle.created_at,
             updated_at: salle.updated_at,
         }),
@@ -3701,4 +3751,389 @@ pub async fn archiver_salle_privee_par_auteur(
     .await;
 
     Ok(HttpResponse::NoContent().finish())
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Feature 001-admin-salles-publiques — Propositions communautaires (US1)
+// ══════════════════════════════════════════════════════════════════════════
+
+/// Construit les jointures + json_agg communs aux endpoints proposition.
+fn proposition_select_query(where_clause: &str, order_limit: &str) -> String {
+    format!(
+        "SELECT {cols},
+            ua.nom AS auteur_nom, ua.prenom AS auteur_prenom,
+            ud.nom AS decideur_nom, ud.prenom AS decideur_prenom,
+            ge.nom AS groupe_ethnique_nom,
+            COALESCE((SELECT json_agg(json_build_object(
+                        'id', p.id, 'nom', p.nom, 'code_iso2', p.code_iso2
+                     ) ORDER BY p.nom)
+                     FROM unnest(ps.pays_origine_ids) AS pid(id)
+                     JOIN shared.pays p ON p.id = pid.id),
+                     '[]'::json) AS pays_origine_json
+         FROM afrolang.proposition_salle ps
+         LEFT JOIN iam.utilisateur ua ON ua.id = ps.auteur_id
+         LEFT JOIN iam.utilisateur ud ON ud.id = ps.decideur
+         LEFT JOIN country_profile.groupe_ethnique ge ON ge.id = ps.groupe_ethnique_id
+         WHERE {where_clause}
+         {order_limit}",
+        cols = COLONNES_PROPOSITION,
+        where_clause = where_clause,
+        order_limit = order_limit,
+    )
+}
+
+/// GET /api/afrolang/pays-disponibles — Liste légère des pays actifs (US1)
+/// pour alimenter le formulaire de proposition.
+pub async fn lister_pays_disponibles(
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let rows: Vec<(Uuid, String, Option<String>)> = sqlx::query_as(
+        "SELECT id, nom, code_iso2 FROM shared.pays
+         WHERE actif = TRUE
+         ORDER BY nom ASC",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let items: Vec<serde_json::Value> = rows
+        .into_iter()
+        .map(|(id, nom, code_iso2)| serde_json::json!({
+            "id": id,
+            "nom": nom,
+            "code_iso2": code_iso2,
+        }))
+        .collect();
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(items),
+        error: None,
+    }))
+}
+
+/// Helper interne : recharge une proposition avec ses jointures.
+async fn charger_proposition_par_id(
+    pool: &PgPool,
+    proposition_id: Uuid,
+) -> Result<PropositionResponse, ApiErreur> {
+    let query = proposition_select_query("ps.id = $1", "");
+    let row = sqlx::query_as::<_, PropositionSalleRow>(&query)
+        .bind(proposition_id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| ApiErreur::NonTrouve("Proposition introuvable".into()))?;
+    Ok(row.to_response())
+}
+
+/// POST /api/afrolang/propositions
+/// Soumet une nouvelle proposition de salle publique (US1, FR-001..FR-007).
+pub async fn soumettre_proposition(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    body: web::Json<SoumettrePropositionRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+
+    let titre = body.titre.trim();
+    let description = body.description.trim();
+    let justification = body.justification.trim();
+    let langue_cible = body.langue_cible.trim();
+    if titre.is_empty()
+        || description.is_empty()
+        || justification.is_empty()
+        || langue_cible.is_empty()
+    {
+        return Err(ApiErreur::Validation(
+            "Tous les champs textuels sont obligatoires".into(),
+        ));
+    }
+    if titre.chars().count() > 350 {
+        return Err(ApiErreur::Validation(
+            "Le titre ne peut excéder 350 caractères".into(),
+        ));
+    }
+    if langue_cible.chars().count() > 100 {
+        return Err(ApiErreur::Validation(
+            "La langue cible ne peut excéder 100 caractères".into(),
+        ));
+    }
+    if let Some(ref code) = body.langue_code {
+        if code.trim().chars().count() > 40 {
+            return Err(ApiErreur::Validation(
+                "Le code de langue ne peut excéder 40 caractères".into(),
+            ));
+        }
+    }
+    if body.pays_origine_ids.is_empty() {
+        return Err(ApiErreur::Validation(
+            "Au moins un pays d'origine est requis".into(),
+        ));
+    }
+
+    let auteur_actif: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM iam.utilisateur
+            WHERE id = $1 AND etat::text = 'actif' AND deleted_at IS NULL
+        )",
+    )
+    .bind(auteur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !auteur_actif {
+        return Err(ApiErreur::AccesInterdit(
+            "Compte non actif — vérifiez votre e-mail".into(),
+        ));
+    }
+
+    let groupe_existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM country_profile.groupe_ethnique WHERE id = $1)",
+    )
+    .bind(body.groupe_ethnique_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !groupe_existe {
+        return Err(ApiErreur::Validation("Groupe ethnique introuvable".into()));
+    }
+
+    let pays_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM shared.pays
+         WHERE id = ANY($1) AND actif = TRUE",
+    )
+    .bind(&body.pays_origine_ids)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if pays_count != body.pays_origine_ids.len() as i64 {
+        return Err(ApiErreur::Validation(
+            "Un ou plusieurs pays d'origine sont introuvables ou inactifs".into(),
+        ));
+    }
+
+    let salle_existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM afrolang.salle
+            WHERE groupe_ethnique_id = $1 AND actif = TRUE AND deleted_at IS NULL
+        )",
+    )
+    .bind(body.groupe_ethnique_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if salle_existe {
+        return Err(ApiErreur::Conflit(
+            "Une salle publique existe déjà pour ce groupe ethnique".into(),
+        ));
+    }
+
+    let proposition_existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM afrolang.proposition_salle
+            WHERE auteur_id = $1 AND groupe_ethnique_id = $2 AND statut = 'en_attente'
+        )",
+    )
+    .bind(auteur_id)
+    .bind(body.groupe_ethnique_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if proposition_existe {
+        return Err(ApiErreur::Conflit(
+            "Vous avez déjà une proposition en attente pour ce groupe ethnique".into(),
+        ));
+    }
+
+    // Anti-spam : ≥ 5 rejets sur 7 jours (Décision 6 research.md)
+    let rejets_recents: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM afrolang.proposition_salle
+         WHERE auteur_id = $1 AND statut = 'rejetee'
+           AND decide_at > NOW() - INTERVAL '7 days'",
+    )
+    .bind(auteur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if rejets_recents >= 5 {
+        return Err(ApiErreur::LimiteAtteinte(
+            "Trop de propositions rejetées récemment ; réessayez plus tard".into(),
+        ));
+    }
+
+    let langue_code_clean = body
+        .langue_code
+        .as_ref()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+
+    let proposition_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO afrolang.proposition_salle
+            (auteur_id, titre, description, justification,
+             langue_cible, langue_code, groupe_ethnique_id, pays_origine_ids)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING id",
+    )
+    .bind(auteur_id)
+    .bind(titre)
+    .bind(description)
+    .bind(justification)
+    .bind(langue_cible)
+    .bind(langue_code_clean.as_deref())
+    .bind(body.groupe_ethnique_id)
+    .bind(&body.pays_origine_ids)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "CREATE",
+        "afrolang",
+        "proposition_salle",
+        Some(proposition_id),
+        None,
+        Some(serde_json::json!({
+            "titre": titre,
+            "groupe_ethnique_id": body.groupe_ethnique_id,
+            "langue_cible": langue_cible,
+        })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    let proposition = charger_proposition_par_id(pool.get_ref(), proposition_id).await?;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(proposition),
+        error: None,
+    }))
+}
+
+/// GET /api/afrolang/propositions/moi
+/// Liste les propositions de l'utilisateur authentifié (US1).
+pub async fn lister_mes_propositions(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    params: web::Query<PropositionMesFiltres>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+
+    let page = params.page.unwrap_or(1).max(1);
+    let taille = params.taille.unwrap_or(20).clamp(1, 100);
+    let offset = (page - 1) * taille;
+
+    let mut conditions: Vec<String> = vec!["ps.auteur_id = $1".to_string()];
+    let mut bind_index = 2u32;
+
+    if params.statut.is_some() {
+        conditions.push(format!("ps.statut = ${}", bind_index));
+        bind_index += 1;
+    }
+
+    let where_clause = conditions.join(" AND ");
+
+    let count_sql = format!(
+        "SELECT COUNT(*) FROM afrolang.proposition_salle ps WHERE {}",
+        where_clause
+    );
+    let mut count_q = sqlx::query_scalar::<_, i64>(&count_sql).bind(auteur_id);
+    if let Some(ref statut) = params.statut {
+        count_q = count_q.bind(statut);
+    }
+    let total: i64 = count_q.fetch_one(pool.get_ref()).await?;
+
+    let order_limit = format!(
+        "ORDER BY ps.created_at DESC LIMIT ${} OFFSET ${}",
+        bind_index,
+        bind_index + 1
+    );
+    let select_sql = proposition_select_query(&where_clause, &order_limit);
+    let mut select_q = sqlx::query_as::<_, PropositionSalleRow>(&select_sql).bind(auteur_id);
+    if let Some(ref statut) = params.statut {
+        select_q = select_q.bind(statut);
+    }
+    select_q = select_q.bind(taille).bind(offset);
+    let rows = select_q.fetch_all(pool.get_ref()).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(PropositionListeResponse {
+            items: rows.iter().map(|r| r.to_response()).collect(),
+            total,
+            page,
+            taille,
+        }),
+        error: None,
+    }))
+}
+
+/// PATCH /api/afrolang/propositions/{id}/retirer
+/// Retire une proposition `en_attente` (auteur uniquement) — US1.
+pub async fn retirer_ma_proposition(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let proposition_id = path.into_inner();
+
+    let mut tx = pool.begin().await?;
+
+    let row: Option<(Uuid, PropositionStatut)> = sqlx::query_as(
+        "SELECT auteur_id, statut FROM afrolang.proposition_salle
+         WHERE id = $1 FOR UPDATE",
+    )
+    .bind(proposition_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    let (auteur_proposition, statut) = row
+        .ok_or_else(|| ApiErreur::NonTrouve("Proposition introuvable".into()))?;
+
+    if auteur_proposition != auteur_id {
+        return Err(ApiErreur::AccesInterdit(
+            "Cette proposition ne vous appartient pas".into(),
+        ));
+    }
+    if statut != PropositionStatut::EnAttente {
+        return Err(ApiErreur::Conflit(
+            "Seule une proposition en attente peut être retirée".into(),
+        ));
+    }
+
+    sqlx::query(
+        "UPDATE afrolang.proposition_salle
+         SET statut = 'retiree', updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(proposition_id)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "UPDATE",
+        "afrolang",
+        "proposition_salle",
+        Some(proposition_id),
+        Some(serde_json::json!({ "statut": "en_attente" })),
+        Some(serde_json::json!({ "statut": "retiree" })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    let proposition = charger_proposition_par_id(pool.get_ref(), proposition_id).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(proposition),
+        error: None,
+    }))
 }

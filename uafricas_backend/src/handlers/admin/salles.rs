@@ -10,6 +10,11 @@ use crate::models::admin::salle::{
     CreerSalleRequest, ModifierSalleRequest,
     ADMIN_SALLE_DETAIL_COLONNES, ADMIN_SALLE_LISTE_COLONNES, SALLE_TRI_COLONNES,
 };
+use crate::models::afrolang::{
+    NommerAdministrateurRequest, RevoquerAdministrateurRequest, SalleAdministrateurResponse,
+    SalleAdministrateurRow, COLONNES_SALLE_ADMIN,
+};
+use crate::models::notification;
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
 use crate::services::audit;
 use crate::verifier_permission;
@@ -276,6 +281,7 @@ pub async fn modifier_salle(
         bind_index += 1;
     }
 
+    let actif_a_false = matches!(body.actif, Some(false));
     if let Some(actif) = body.actif {
         sets.push(format!("actif = ${}", bind_index));
         bool_binds.push(actif);
@@ -321,6 +327,10 @@ pub async fn modifier_salle(
         return Err(ApiErreur::NonTrouve("Salle non trouvée".into()));
     }
 
+    if actif_a_false {
+        cascader_suspendre_admins_salle(pool.get_ref(), id, "salle_archivee", admin.id, &req).await;
+    }
+
     let ip = audit::extraire_ip(&req);
     let ua = audit::extraire_user_agent(&req);
     audit::log_action(
@@ -364,6 +374,9 @@ pub async fn supprimer_salle(
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Salle non trouvée".into()));
     }
+
+    // Cascade administrateurs salle (FR-021, feature 001-admin-salles-publiques T044)
+    cascader_suspendre_admins_salle(pool.get_ref(), id, "salle_archivee", admin.id, &req).await;
 
     let ip = audit::extraire_ip(&req);
     let ua = audit::extraire_user_agent(&req);
@@ -509,4 +522,398 @@ pub async fn retirer_pays_origine_salle(
         data: None,
         error: None,
     }))
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Feature 001-admin-salles-publiques — US3
+// Administrateurs de salle publique : nomination, révocation, historique.
+// ════════════════════════════════════════════════════════════════════════════
+
+fn salle_admin_select(where_clause: &str, order: &str) -> String {
+    format!(
+        "SELECT {cols},
+            u.nom AS utilisateur_nom, u.prenom AS utilisateur_prenom,
+            u.email AS utilisateur_email, u.photo_url AS utilisateur_photo,
+            np.nom AS nomme_par_nom, np.prenom AS nomme_par_prenom,
+            rp.nom AS revoque_par_nom, rp.prenom AS revoque_par_prenom
+         FROM afrolang.salle_administrateur sa
+         LEFT JOIN iam.utilisateur u  ON u.id  = sa.utilisateur_id
+         LEFT JOIN iam.utilisateur np ON np.id = sa.nomme_par
+         LEFT JOIN iam.utilisateur rp ON rp.id = sa.revoque_par
+         WHERE {where_clause}
+         {order}",
+        cols = COLONNES_SALLE_ADMIN,
+        where_clause = where_clause,
+        order = order,
+    )
+}
+
+/// POST /api/admin/afrolang/salles/{salle_id}/administrateurs
+pub async fn nommer_administrateur_salle(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<NommerAdministrateurRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "afrolang", "modifier");
+    let salle_id = path.into_inner();
+
+    let salle_ok: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM afrolang.salle
+         WHERE id = $1 AND actif = TRUE AND deleted_at IS NULL)",
+    )
+    .bind(salle_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !salle_ok {
+        return Err(ApiErreur::NonTrouve(
+            "Salle introuvable ou archivée".into(),
+        ));
+    }
+
+    let user_ok: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM iam.utilisateur
+         WHERE id = $1 AND etat::text = 'actif' AND deleted_at IS NULL)",
+    )
+    .bind(body.utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !user_ok {
+        return Err(ApiErreur::NonTrouve(
+            "Utilisateur introuvable ou inactif".into(),
+        ));
+    }
+
+    let existant: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM afrolang.salle_administrateur
+         WHERE salle_id = $1 AND utilisateur_id = $2 AND actif = TRUE)",
+    )
+    .bind(salle_id)
+    .bind(body.utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if existant {
+        return Err(ApiErreur::Conflit(
+            "Cet utilisateur est déjà administrateur actif de cette salle".into(),
+        ));
+    }
+
+    let id: Uuid = sqlx::query_scalar(
+        "INSERT INTO afrolang.salle_administrateur
+            (salle_id, utilisateur_id, nomme_par)
+         VALUES ($1, $2, $3)
+         RETURNING id",
+    )
+    .bind(salle_id)
+    .bind(body.utilisateur_id)
+    .bind(admin.id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "afrolang",
+        "salle_administrateur",
+        Some(id),
+        None,
+        Some(serde_json::json!({
+            "salle_id": salle_id,
+            "utilisateur_id": body.utilisateur_id,
+            "actif": true,
+        })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    notification::creer_notification(
+        pool.get_ref(),
+        body.utilisateur_id,
+        notification::afrolang::ADMIN_SALLE_NOMME,
+        "Vous avez été nommé administrateur d'une salle publique Afrolang.",
+        Some(&format!("/afrolang/salles/{}", salle_id)),
+    )
+    .await;
+
+    let row = charger_salle_admin(pool.get_ref(), id).await?;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(row),
+        error: None,
+    }))
+}
+
+/// DELETE /api/admin/afrolang/salles/{salle_id}/administrateurs/{utilisateur_id}
+pub async fn revoquer_administrateur_salle(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<(Uuid, Uuid)>,
+    body: web::Json<RevoquerAdministrateurRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "afrolang", "modifier");
+    let (salle_id, utilisateur_id) = path.into_inner();
+
+    let motif = body
+        .motif
+        .as_ref()
+        .map(|m| m.trim().to_string())
+        .filter(|m| !m.is_empty());
+
+    let mut tx = pool.begin().await?;
+
+    let row: Option<(Uuid,)> = sqlx::query_as(
+        "SELECT id FROM afrolang.salle_administrateur
+         WHERE salle_id = $1 AND utilisateur_id = $2 AND actif = TRUE
+         FOR UPDATE",
+    )
+    .bind(salle_id)
+    .bind(utilisateur_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    let id = row
+        .ok_or_else(|| ApiErreur::NonTrouve(
+            "Aucune nomination active pour ce couple salle/utilisateur".into(),
+        ))?
+        .0;
+
+    sqlx::query(
+        "UPDATE afrolang.salle_administrateur
+         SET actif = FALSE,
+             revoque_at = NOW(),
+             revoque_par = $1,
+             motif_revocation = $2,
+             updated_at = NOW()
+         WHERE id = $3",
+    )
+    .bind(admin.id)
+    .bind(motif.as_deref())
+    .bind(id)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "afrolang",
+        "salle_administrateur",
+        Some(id),
+        Some(serde_json::json!({ "actif": true })),
+        Some(serde_json::json!({
+            "actif": false,
+            "motif_revocation": motif,
+        })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    let message = if let Some(ref m) = motif {
+        format!("Vous n'êtes plus administrateur de cette salle. Motif : {}", m)
+    } else {
+        "Votre rôle d'administrateur de salle a été révoqué.".to_string()
+    };
+    notification::creer_notification(
+        pool.get_ref(),
+        utilisateur_id,
+        notification::afrolang::ADMIN_SALLE_REVOQUE,
+        &message,
+        Some(&format!("/afrolang/salles/{}", salle_id)),
+    )
+    .await;
+
+    let row = charger_salle_admin(pool.get_ref(), id).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(row),
+        error: None,
+    }))
+}
+
+/// GET /api/admin/afrolang/salles/{salle_id}/administrateurs
+pub async fn lister_administrateurs_salle(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "afrolang", "voir");
+    let salle_id = path.into_inner();
+
+    let sql = salle_admin_select(
+        "sa.salle_id = $1",
+        "ORDER BY sa.actif DESC, sa.nomme_at DESC",
+    );
+    let rows = sqlx::query_as::<_, SalleAdministrateurRow>(&sql)
+        .bind(salle_id)
+        .fetch_all(pool.get_ref())
+        .await?;
+
+    let items: Vec<SalleAdministrateurResponse> =
+        rows.iter().map(|r| r.to_response()).collect();
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(items),
+        error: None,
+    }))
+}
+
+async fn charger_salle_admin(
+    pool: &PgPool,
+    id: Uuid,
+) -> Result<SalleAdministrateurResponse, ApiErreur> {
+    let sql = salle_admin_select("sa.id = $1", "");
+    let row = sqlx::query_as::<_, SalleAdministrateurRow>(&sql)
+        .bind(id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| ApiErreur::NonTrouve("Nomination introuvable".into()))?;
+    Ok(row.to_response())
+}
+
+/// Cascade FR-021/FR-022 : suspend toutes les nominations actives sur une salle.
+/// Audit best-effort (chaque ligne suspendue est tracée).
+pub(crate) async fn cascader_suspendre_admins_salle(
+    pool: &PgPool,
+    salle_id: Uuid,
+    motif: &str,
+    admin_id: Uuid,
+    req: &HttpRequest,
+) {
+    let lignes: Vec<(Uuid,)> = match sqlx::query_as(
+        "SELECT id FROM afrolang.salle_administrateur
+         WHERE salle_id = $1 AND actif = TRUE",
+    )
+    .bind(salle_id)
+    .fetch_all(pool)
+    .await
+    {
+        Ok(v) => v,
+        Err(e) => {
+            log::error!("cascade admins salle {}: {}", salle_id, e);
+            return;
+        }
+    };
+
+    if lignes.is_empty() {
+        return;
+    }
+
+    if let Err(e) = sqlx::query(
+        "UPDATE afrolang.salle_administrateur
+         SET actif = FALSE,
+             suspendu_at = NOW(),
+             motif_suspension = $2,
+             updated_at = NOW()
+         WHERE salle_id = $1 AND actif = TRUE",
+    )
+    .bind(salle_id)
+    .bind(motif)
+    .execute(pool)
+    .await
+    {
+        log::error!("cascade UPDATE admins salle {}: {}", salle_id, e);
+        return;
+    }
+
+    let ip = audit::extraire_ip(req);
+    let ua = audit::extraire_user_agent(req);
+    for (id,) in lignes {
+        audit::log_action(
+            pool,
+            Some(admin_id),
+            "UPDATE",
+            "afrolang",
+            "salle_administrateur",
+            Some(id),
+            Some(serde_json::json!({ "actif": true })),
+            Some(serde_json::json!({
+                "actif": false,
+                "motif_suspension": motif,
+            })),
+            ip.as_deref(),
+            ua.as_deref(),
+        )
+        .await;
+    }
+}
+
+/// Cascade FR-022 : suspend toutes les nominations actives d'un utilisateur
+/// (compte désactivé/suspendu/supprimé). Appelée depuis admin/utilisateurs.rs.
+pub(crate) async fn cascader_suspendre_admins_utilisateur(
+    pool: &PgPool,
+    utilisateur_id: Uuid,
+    motif: &str,
+    admin_id: Uuid,
+    req: &HttpRequest,
+) {
+    let lignes: Vec<(Uuid,)> = match sqlx::query_as(
+        "SELECT id FROM afrolang.salle_administrateur
+         WHERE utilisateur_id = $1 AND actif = TRUE",
+    )
+    .bind(utilisateur_id)
+    .fetch_all(pool)
+    .await
+    {
+        Ok(v) => v,
+        Err(e) => {
+            log::error!("cascade admins user {}: {}", utilisateur_id, e);
+            return;
+        }
+    };
+
+    if lignes.is_empty() {
+        return;
+    }
+
+    if let Err(e) = sqlx::query(
+        "UPDATE afrolang.salle_administrateur
+         SET actif = FALSE,
+             suspendu_at = NOW(),
+             motif_suspension = $2,
+             updated_at = NOW()
+         WHERE utilisateur_id = $1 AND actif = TRUE",
+    )
+    .bind(utilisateur_id)
+    .bind(motif)
+    .execute(pool)
+    .await
+    {
+        log::error!("cascade UPDATE admins user {}: {}", utilisateur_id, e);
+        return;
+    }
+
+    let ip = audit::extraire_ip(req);
+    let ua = audit::extraire_user_agent(req);
+    for (id,) in lignes {
+        audit::log_action(
+            pool,
+            Some(admin_id),
+            "UPDATE",
+            "afrolang",
+            "salle_administrateur",
+            Some(id),
+            Some(serde_json::json!({ "actif": true })),
+            Some(serde_json::json!({
+                "actif": false,
+                "motif_suspension": motif,
+            })),
+            ip.as_deref(),
+            ua.as_deref(),
+        )
+        .await;
+    }
 }
