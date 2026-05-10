@@ -55,6 +55,13 @@ export interface ModerateurAttitre {
   actif: boolean
 }
 
+/** Pays d'origine d'une salle publique (feature 001-afrolang-pays-origine). */
+export interface PaysOrigineLight {
+  id: string
+  nom: string
+  code_iso2: string | null
+}
+
 /** DTO salle publique (liste) — feature 005 */
 export interface SalleAPI {
   id: string
@@ -73,6 +80,7 @@ export interface SalleAPI {
   sessions_en_cours: number
   nombre_moderateurs_attitres: number
   ressources_count: number
+  pays_origine: PaysOrigineLight[]
   created_at: string
   updated_at: string
 }
@@ -225,6 +233,7 @@ export interface SalleFiltres {
   langue?: string
   langue_code?: string
   groupe_ethnique_id?: string
+  pays_id?: string
   page?: number
   par_page?: number
 }
@@ -457,6 +466,7 @@ export const useAfrolang = () => {
       if (filtres.langue) params.set('langue', filtres.langue)
       if (filtres.langue_code) params.set('langue_code', filtres.langue_code)
       if (filtres.groupe_ethnique_id) params.set('groupe_ethnique_id', filtres.groupe_ethnique_id)
+      if (filtres.pays_id) params.set('pays_id', filtres.pays_id)
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))
 

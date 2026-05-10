@@ -316,3 +316,25 @@ CREATE TABLE afrolang.message_session (
 CREATE INDEX idx_afrolang_message_session
     ON afrolang.message_session(session_id, created_at)
     WHERE deleted_at IS NULL;
+
+
+-- ── Pays d'origine d'une salle publique (feature 001-afrolang-pays-origine) ──
+--
+-- Relation N-N entre une salle publique et les pays où la langue cible est
+-- parlée à l'origine. Indépendante du pays implicite via groupe_ethnique →
+-- fiche_pays. Enrichie manuellement par les admins (Q1 — aucun pré-remplissage).
+
+CREATE TABLE afrolang.salle_pays_origine (
+    salle_id    UUID         NOT NULL REFERENCES afrolang.salle(id)   ON DELETE CASCADE,
+    pays_id     UUID         NOT NULL REFERENCES shared.pays(id)      ON DELETE CASCADE,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (salle_id, pays_id)
+);
+
+CREATE INDEX idx_afrolang_salle_pays_origine_pays
+    ON afrolang.salle_pays_origine (pays_id);
+
+COMMENT ON TABLE  afrolang.salle_pays_origine IS
+    'Pays d''origine d''une salle publique Afrolang (feature 001-afrolang-pays-origine).';
+COMMENT ON COLUMN afrolang.salle_pays_origine.pays_id IS
+    'FK vers shared.pays. Filtré sur actif=TRUE côté API publique (Q3).';

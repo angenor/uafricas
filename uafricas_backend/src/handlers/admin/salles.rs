@@ -1,4 +1,5 @@
 use actix_web::{web, HttpRequest, HttpResponse};
+use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -13,6 +14,11 @@ use crate::models::pagination::{PaginatedResponse, PaginationParams};
 use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
+
+#[derive(Debug, Deserialize)]
+pub struct AjouterPaysOrigineRequest {
+    pub pays_id: Uuid,
+}
 
 fn generer_slug(titre: &str) -> String {
     titre
@@ -368,6 +374,130 @@ pub async fn supprimer_salle(
         "afrolang",
         "salle",
         Some(id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+/// POST /api/admin/afrolang/salles/{id}/pays
+/// Associe un pays au tableau « pays d'origine » d'une salle publique
+/// (feature 001-afrolang-pays-origine).
+pub async fn ajouter_pays_origine_salle(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<AjouterPaysOrigineRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "afrolang", "modifier");
+    let salle_id = path.into_inner();
+
+    // Vérifier l'existence de la salle (non supprimée)
+    let salle_existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM afrolang.salle WHERE id = $1 AND deleted_at IS NULL)",
+    )
+    .bind(salle_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !salle_existe {
+        return Err(ApiErreur::NonTrouve("Salle non trouvée".into()));
+    }
+
+    // Vérifier l'existence du pays actif
+    let pays_existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM shared.pays WHERE id = $1 AND actif = true)",
+    )
+    .bind(body.pays_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !pays_existe {
+        return Err(ApiErreur::NonTrouve("Pays non trouvé ou archivé".into()));
+    }
+
+    // Insertion idempotente
+    sqlx::query(
+        "INSERT INTO afrolang.salle_pays_origine (salle_id, pays_id) \
+         VALUES ($1, $2) ON CONFLICT DO NOTHING",
+    )
+    .bind(salle_id)
+    .bind(body.pays_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    log::info!(
+        "Admin {} a ajouté le pays {} à la salle afrolang {}",
+        admin.id, body.pays_id, salle_id
+    );
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "CREATE",
+        "afrolang",
+        "salle_pays_origine",
+        Some(salle_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "salle_id": salle_id, "pays_id": body.pays_id })),
+        error: None,
+    }))
+}
+
+/// DELETE /api/admin/afrolang/salles/{id}/pays/{pays_id}
+/// Retire un pays du tableau « pays d'origine » d'une salle publique.
+pub async fn retirer_pays_origine_salle(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<(Uuid, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "afrolang", "modifier");
+    let (salle_id, pays_id) = path.into_inner();
+
+    let result = sqlx::query(
+        "DELETE FROM afrolang.salle_pays_origine WHERE salle_id = $1 AND pays_id = $2",
+    )
+    .bind(salle_id)
+    .bind(pays_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(ApiErreur::NonTrouve(
+            "Couple salle/pays d'origine non trouvé".into(),
+        ));
+    }
+
+    log::info!(
+        "Admin {} a retiré le pays {} de la salle afrolang {}",
+        admin.id, pays_id, salle_id
+    );
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DELETE",
+        "afrolang",
+        "salle_pays_origine",
+        Some(salle_id),
         None,
         None,
         ip.as_deref(),

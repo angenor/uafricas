@@ -14,6 +14,12 @@ export interface AdminSalle {
   nombre_moderateurs_attitres: number
 }
 
+export interface AdminSalleDetailPaysOrigine {
+  id: string
+  nom: string
+  code_iso2: string | null
+}
+
 export interface AdminSalleDetail {
   id: string
   titre: string
@@ -33,6 +39,7 @@ export interface AdminSalleDetail {
   nombre_salles_privees: number
   nombre_sessions: number
   nombre_moderateurs_attitres: number
+  pays_origine: AdminSalleDetailPaysOrigine[]
 }
 
 export interface CreerSalleForm {
