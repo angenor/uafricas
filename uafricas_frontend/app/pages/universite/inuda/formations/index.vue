@@ -22,7 +22,7 @@
       <!-- Header avec breadcrumb -->
       <div class="bg-white shadow-xs rounded-t-lg">
         <div class="px-4 py-6">
-          <CommonBreadcrumbNav class="mb-4" />
+          <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" class="mb-4" />
 
           <div class="flex items-center justify-between">
             <div>
@@ -240,6 +240,12 @@ import {
 useHead({
   title: 'Formations - INUDA'
 })
+
+const breadcrumbs = [
+  { label: 'Université', to: '/universite' },
+  { label: 'INUDA', to: '/universite/inuda' },
+  { label: 'Formations', to: undefined }
+]
 
 const { chargement, erreur, listerFormations, inscrireFormation } = useFormations()
 

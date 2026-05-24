@@ -22,7 +22,7 @@
       <!-- Header avec breadcrumb -->
       <div class="bg-white shadow-xs rounded-t-lg">
         <div class="px-4 py-6">
-          <CommonBreadcrumbNav class="mb-4" />
+          <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" class="mb-4" />
 
           <div class="flex items-center justify-between">
             <div>
@@ -219,6 +219,12 @@ import { getFacultesActives, getDomainesUniques, type Faculte } from '~/mocks/in
 useHead({
   title: 'Facultés partenaires - INUDA'
 })
+
+const breadcrumbs = [
+  { label: 'Université', to: '/universite' },
+  { label: 'INUDA', to: '/universite/inuda' },
+  { label: 'Facultés', to: undefined }
+]
 
 const { loading, erreur, listerFacultes } = useFacultes()
 

@@ -59,7 +59,7 @@
           <!-- Header -->
           <div class="p-6 md:p-8 border-b border-gray-100">
             <!-- Breadcrumb -->
-            <CommonBreadcrumbNav class="mb-6" />
+            <CommonBreadcrumbNav class="mb-6" :custom-breadcrumbs="breadcrumbs" />
 
             <!-- Info bar -->
             <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
@@ -243,6 +243,11 @@ const dateFormatee = computed(() => {
   if (!annonce.value) return ''
   return formatDate(annonce.value.created_at)
 })
+
+const breadcrumbs = computed(() => [
+  { label: 'Marché Africain', to: '/marche-africain' },
+  { label: annonce.value?.titre || 'Détail', to: undefined },
+])
 
 const paysAffiche = computed(() => {
   if (!annonce.value) return ''

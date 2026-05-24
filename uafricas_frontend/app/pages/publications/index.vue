@@ -382,7 +382,6 @@ interface PublicationGouvernance {
 type Publication = PublicationCodimoi | PublicationGouvernance
 
 const breadcrumbs = [
-  { label: 'Accueil', to: '/' },
   { label: 'Publications', to: undefined },
 ]
 
@@ -696,7 +695,7 @@ const commenterModalCodimoi = async (contenu: string) => {
 const partagerModalCodimoi = () => {
   if (!selectedPost.value) return
   if (import.meta.client && navigator.clipboard) {
-    navigator.clipboard.writeText(`${window.location.origin}/evenements/codi-moi/${selectedPost.value.id}`)
+    navigator.clipboard.writeText(`${window.location.origin}/codi-moi/${selectedPost.value.id}`)
     notifier('Lien copié dans le presse-papiers !')
   }
 }

@@ -47,7 +47,7 @@
             alt="Codification"
           />
           <div class="absolute inset-0 bg-black/30 flex items-end p-3">
-            <NuxtLink to="/evenements/codi-moi">
+            <NuxtLink to="/codi-moi">
               <button class="text-white text-sm whitespace-nowrap rounded-full bg-custom-green px-3 py-1 hover:scale-105 transition-all">
                 Découvrir
                 <font-awesome-icon icon="fa-solid fa-arrow-right" class="ml-1" />
@@ -116,9 +116,7 @@ useHead({
 })
 
 const breadcrumbs = [
-  { label: 'Centre Culturel', to: '/africa-culture' },
-  { label: 'Promotion des Valeurs', to: '/promotion-valeur' },
-  { label: 'Événements', to: null }
+  { label: 'Événements', to: undefined }
 ]
 </script>
 

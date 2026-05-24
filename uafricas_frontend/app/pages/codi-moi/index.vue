@@ -335,7 +335,6 @@ useHead({
 const { erreur: apiErreur, listerPosts, creerPost, reagir, listerCommentaires, creerCommentaire } = useCodiMoi()
 
 const breadcrumbs = [
-  { label: 'Événements', to: '/evenements' },
   { label: 'Codimoi', to: undefined }
 ]
 
@@ -472,7 +471,7 @@ const handleModalComment = async (contenu: string) => {
 const handleModalShare = () => {
   if (!selectedPost.value) return
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(`${window.location.origin}/evenements/codi-moi/${selectedPost.value.id}`)
+    navigator.clipboard.writeText(`${window.location.origin}/codi-moi/${selectedPost.value.id}`)
   }
   showNotification('Lien copié dans le presse-papiers !')
 }
@@ -490,7 +489,7 @@ const handleReaction = async (postId: string, type: 'like' | 'dislike') => {
 
 const handleShare = (post: CodiMoiPostAPI) => {
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(`${window.location.origin}/evenements/codi-moi/${post.id}`)
+    navigator.clipboard.writeText(`${window.location.origin}/codi-moi/${post.id}`)
   }
   showNotification('Lien copié dans le presse-papiers !')
 }

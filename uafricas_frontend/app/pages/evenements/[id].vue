@@ -245,9 +245,7 @@ onMounted(async () => {
 })
 
 const breadcrumbs = computed(() => [
-  { label: 'Centre Culturel', to: '/africa-culture' },
   { label: 'Événements', to: '/evenements' },
-  { label: 'Liste', to: '/evenements/liste' },
   { label: evenement.value?.titre || 'Détail', to: undefined }
 ])
 

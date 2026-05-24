@@ -16,7 +16,13 @@
     </div>
 
     <!-- Breadcrumb -->
-    <CommonBreadcrumbNav class="mx-4 md:mx-16 lg:mx-64 pt-6" />
+    <CommonBreadcrumbNav
+      class="mx-4 md:mx-16 lg:mx-64 pt-6"
+      :custom-breadcrumbs="[
+        { label: 'Échanges Sabbatiques', to: '/echanges-sabbatiques' },
+        { label: 'Programmes' },
+      ]"
+    />
 
     <!-- Liste des programmes -->
     <section class="px-4 md:px-16 lg:px-64 py-12">

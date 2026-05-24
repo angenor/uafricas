@@ -104,8 +104,6 @@ useHead({
 })
 
 const breadcrumbs = [
-  { label: 'Centre Culturel', to: '/africa-culture' },
-  { label: 'Promotion des Valeurs', to: '/promotion-valeur' },
   { label: 'Événements', to: '/evenements' },
   { label: 'Liste', to: undefined }
 ]

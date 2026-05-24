@@ -55,7 +55,7 @@
     <!-- Breadcrumb -->
     <div class="bg-gray-50">
       <div class="max-w-7xl mx-auto px-4 py-4">
-        <CommonBreadcrumbNav />
+        <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
       </div>
     </div>
 
@@ -372,6 +372,10 @@ import {
 import { useUserStore } from '~/stores/user'
 
 useAOS()
+
+const breadcrumbs = [
+  { label: 'Afrolang', to: undefined }
+]
 
 useHead({
   title: 'Salles Afrolang - UAfricas',

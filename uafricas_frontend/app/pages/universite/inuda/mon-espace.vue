@@ -12,7 +12,7 @@
     <div class="max-w-7xl mx-auto px-4 py-8 -mt-8">
       <!-- Header -->
       <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <CommonBreadcrumbNav class="mb-4" />
+        <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" class="mb-4" />
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-xl font-bold">Mes inscriptions</h2>
@@ -171,6 +171,12 @@
 useHead({
   title: 'Mon Espace - INUDA'
 })
+
+const breadcrumbs = [
+  { label: 'Université', to: '/universite' },
+  { label: 'INUDA', to: '/universite/inuda' },
+  { label: 'Mon Espace', to: undefined }
+]
 
 interface InscriptionMock {
   id: string

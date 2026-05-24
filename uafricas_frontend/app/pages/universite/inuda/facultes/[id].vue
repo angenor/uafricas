@@ -25,7 +25,7 @@
         <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50"></div>
         <div class="absolute inset-0 flex flex-col justify-center px-4 md:px-8">
           <div class="max-w-6xl mx-auto w-full">
-            <CommonBreadcrumbNav class="mb-4 text-white" />
+            <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" class="mb-4 text-white" />
             <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">{{ faculte.titre }}</h1>
             <p class="text-xl text-white/80">{{ faculte.acronyme }}</p>
             <div v-if="faculte.accepteNouveauxInscrits" class="mt-4">
@@ -198,6 +198,13 @@ import { getFaculteById, type Faculte } from '~/mocks/inuda/facultes'
 const route = useRoute()
 const { loading, obtenirFaculte } = useFacultes()
 const faculte = ref<Faculte | null>(null)
+
+const breadcrumbs = computed(() => [
+  { label: 'Université', to: '/universite' },
+  { label: 'INUDA', to: '/universite/inuda' },
+  { label: 'Facultés', to: '/universite/inuda/facultes' },
+  { label: faculte.value?.titre || 'Faculté', to: undefined }
+])
 
 const manifesterInteret = () => {
   alert('Cette fonctionnalité sera disponible prochainement.')

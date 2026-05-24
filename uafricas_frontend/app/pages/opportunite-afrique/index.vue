@@ -25,7 +25,7 @@
       <!-- Header avec breadcrumb -->
       <div class="bg-white shadow-xs rounded-t-lg">
         <div class="px-4 py-6">
-          <CommonBreadcrumbNav class="mb-4" />
+          <CommonBreadcrumbNav class="mb-4" :custom-breadcrumbs="[{ label: 'Opportunités en Afrique', to: undefined }]" />
 
           <div class="flex items-center justify-between">
             <div>

@@ -242,9 +242,8 @@ onMounted(async () => {
 })
 
 const breadcrumbs = computed(() => [
-  { label: 'Accueil', to: '/' },
   { label: 'Experts', to: '/experts' },
-  { label: expert.value ? `${expert.value.prenom} ${expert.value.nom}` : 'Detail', to: undefined },
+  { label: expert.value ? `${expert.value.prenom} ${expert.value.nom}` : 'Détail', to: undefined },
 ])
 
 useHead({

@@ -19,7 +19,12 @@
     </div>
 
     <!-- Breadcrumb -->
-    <CommonBreadcrumbNav class="mx-4 md:mx-16 lg:mx-64 pt-6" />
+    <CommonBreadcrumbNav
+      class="mx-4 md:mx-16 lg:mx-64 pt-6"
+      :custom-breadcrumbs="[
+        { label: 'Échanges Sabbatiques' },
+      ]"
+    />
 
     <!-- Section Interafricain -->
     <section

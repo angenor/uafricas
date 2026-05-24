@@ -36,7 +36,7 @@
         <div class="absolute inset-0 bg-black/20"></div>
         <div class="absolute inset-0 flex flex-col justify-end px-4 md:px-8 pb-10">
           <div class="max-w-6xl mx-auto w-full">
-            <CommonBreadcrumbNav class="mb-5 text-white/70" />
+            <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" class="mb-5 text-white/70" />
             <div class="flex flex-wrap items-center gap-3 mb-3">
               <span class="px-4 py-1.5 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-semibold border border-white/20">
                 <font-awesome-icon :icon="getTypeIcon(contribution.type, contribution.typePratique)" class="mr-1.5" />
@@ -326,6 +326,12 @@ import { getContributionById, type ContributionCitoyenne } from '~/mocks/gouvern
 const route = useRoute()
 const loading = ref(true)
 const contribution = ref<ContributionCitoyenne | null>(null)
+
+const breadcrumbs = computed(() => [
+  { label: 'Université', to: '/universite' },
+  { label: 'Gouvernance', to: '/universite/gouvernance' },
+  { label: contribution.value?.titre || 'Contribution', to: undefined }
+])
 
 const getTypeLabel = (type: string, typePratique?: string) => {
   if (type === 'badhabits') {

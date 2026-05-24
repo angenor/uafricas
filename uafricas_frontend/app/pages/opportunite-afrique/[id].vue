@@ -27,7 +27,7 @@
         <!-- Contenu du hero -->
         <div class="absolute inset-0 flex flex-col justify-end px-4 md:px-8 pb-8">
           <div class="max-w-6xl mx-auto w-full">
-            <CommonBreadcrumbNav class="mb-4" />
+            <CommonBreadcrumbNav class="mb-4" :custom-breadcrumbs="breadcrumbs" />
 
             <div class="flex items-center gap-4">
               <!-- Drapeau -->
@@ -313,6 +313,11 @@ interface AfripulseContext {
 }
 
 const pays = ref<FichePaysDetailAPI | null>(null)
+
+const breadcrumbs = computed(() => [
+  { label: 'Opportunités en Afrique', to: '/opportunite-afrique' },
+  { label: pays.value?.nom || 'Détail', to: undefined },
+])
 const contributeurs = ref<ContributeurAPI[]>([])
 const showContributionModal = ref(false)
 const afripulseContext = ref<AfripulseContext | null>(null)

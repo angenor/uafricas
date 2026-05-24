@@ -227,7 +227,7 @@ const menuItems: MenuItem[] = [
     gradient: 'bg-linear-to-br from-amber-700 to-orange-900',
     image: '/images/danse-afrique.jpg',
     links: [
-      { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
+      { label: 'Codimoi', to: '/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
       { label: 'Afrolang', to: '/afrolang', description: 'Apprenez les langues du continent', icon: 'fa-solid fa-language' },
       { label: 'Africalive', to: '/evenements/liste', description: 'Événements et rencontres en direct', icon: 'fa-solid fa-calendar-days' },
       { label: 'Afroculture', to: '/centres', description: 'Échanges culturels Afrique-diaspora', icon: 'fa-solid fa-earth-africa' },

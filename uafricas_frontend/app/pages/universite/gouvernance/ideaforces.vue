@@ -26,7 +26,7 @@
     <div class="max-w-7xl mx-auto px-4 py-8 -mt-16 relative z-10">
       <!-- Barre de navigation -->
       <div class="bg-white rounded-xl shadow-lg p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <CommonBreadcrumbNav />
+        <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
         <div class="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -213,6 +213,12 @@ import { getContributionsByType, type ContributionCitoyenne } from '~/mocks/gouv
 useHead({
   title: 'IdeaForces - Gouvernance Citoyenne'
 })
+
+const breadcrumbs = [
+  { label: 'Université', to: '/universite' },
+  { label: 'Gouvernance', to: '/universite/gouvernance' },
+  { label: 'IdeaForces', to: undefined }
+]
 
 const userStore = useUserStore()
 

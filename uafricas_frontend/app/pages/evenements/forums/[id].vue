@@ -45,10 +45,9 @@ const forum = ref<Forum | undefined>(undefined)
 const forumComments = ref<ForumComment[]>([])
 
 const breadcrumbs = computed(() => [
-  { label: 'Centre Culturel', to: '/africa-culture' },
   { label: 'Événements', to: '/evenements' },
   { label: 'Forums', to: '/evenements/forums' },
-  { label: 'Détail', to: null }
+  { label: forum.value?.type || 'Détail', to: undefined }
 ])
 
 useHead({

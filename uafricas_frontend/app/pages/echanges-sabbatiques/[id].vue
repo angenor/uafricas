@@ -47,7 +47,13 @@
       <!-- Contenu principal -->
       <div class="bg-white mx-4 md:mx-16 lg:mx-72 -mt-16 relative z-10 rounded-t-lg shadow-xl">
         <!-- Breadcrumb -->
-        <CommonBreadcrumbNav class="px-7 pt-6" />
+        <CommonBreadcrumbNav
+          class="px-7 pt-6"
+          :custom-breadcrumbs="[
+            { label: 'Échanges Sabbatiques', to: '/echanges-sabbatiques' },
+            { label: programme.titre },
+          ]"
+        />
 
         <!-- Info bar -->
         <div

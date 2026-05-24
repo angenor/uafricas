@@ -25,7 +25,7 @@
         <div class="absolute inset-0 bg-black/30"></div>
         <div class="absolute inset-0 flex flex-col justify-center px-4 md:px-8">
           <div class="max-w-6xl mx-auto w-full">
-            <CommonBreadcrumbNav class="mb-4 text-white" />
+            <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" class="mb-4 text-white" />
             <div class="flex items-center gap-3 mb-3">
               <span class="px-3 py-1 bg-white/20 backdrop-blur-xs text-white rounded-full text-sm font-medium">
                 {{ getTypeLabel(formation.type) }}
@@ -166,6 +166,13 @@ const route = useRoute()
 const { chargement, obtenirFormation, inscrireFormation } = useFormations()
 
 const formation = ref<FormationDetailAPI | null>(null)
+
+const breadcrumbs = computed(() => [
+  { label: 'Université', to: '/universite' },
+  { label: 'INUDA', to: '/universite/inuda' },
+  { label: 'Formations', to: '/universite/inuda/formations' },
+  { label: formation.value?.titre || 'Formation', to: undefined }
+])
 
 const canInscribe = computed(() => {
   if (!formation.value) return false

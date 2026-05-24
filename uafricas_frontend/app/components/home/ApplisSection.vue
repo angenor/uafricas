@@ -91,7 +91,7 @@ interface Appli {
 const applis: Appli[] = [
   {
     label: 'Codimoi',
-    to: '/evenements/codi-moi',
+    to: '/codi-moi',
     icon: 'fa-solid fa-comments',
     bgClass: 'bg-blue-500',
     barClass: 'bg-blue-500',
