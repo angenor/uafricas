@@ -335,7 +335,6 @@ useHead({
 const { erreur: apiErreur, listerPosts, creerPost, reagir, listerCommentaires, creerCommentaire } = useCodiMoi()
 
 const breadcrumbs = [
-  { label: 'Centre Culturel', to: '/africa-culture' },
   { label: 'Événements', to: '/evenements' },
   { label: 'Codimoi', to: undefined }
 ]

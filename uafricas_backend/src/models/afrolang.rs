@@ -1418,4 +1418,12 @@ impl NiveauModerateur {
             Self::AdminPlateforme | Self::AdminSalle | Self::CreateurSallePrivee
         )
     }
+
+    /// Capacité de fermer une session pour abus + désactiver la salle hôte.
+    /// Réservée aux admins plateforme et aux admins de salle (FR-019).
+    /// Les modérateurs attitrés et créateurs de salle privée ne peuvent pas
+    /// désactiver la salle eux-mêmes.
+    pub fn peut_fermer_pour_abus(&self) -> bool {
+        matches!(self, Self::AdminPlateforme | Self::AdminSalle)
+    }
 }

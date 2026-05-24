@@ -59,6 +59,9 @@
         <font-awesome-icon :icon="['fas', 'chalkboard-user']" class="w-5 h-5" />
       </button>
 
+      <!-- Réactions emoji (slot injecté par AfrolangRoom) -->
+      <slot name="reactions" />
+
       <!-- Separator -->
       <div class="w-px h-8 bg-gray-600 mx-1" />
 

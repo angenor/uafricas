@@ -20,29 +20,41 @@ use crate::services::{audit, livekit_moderation};
 use crate::verifier_permission;
 use crate::ApiResponse;
 
-const MOTIF_FERMETURE_MIN: usize = 10;
-const MOTIF_FERMETURE_MAX: usize = 1000;
+pub const MOTIF_FERMETURE_MIN: usize = 10;
+pub const MOTIF_FERMETURE_MAX: usize = 1000;
 const COMMENTAIRE_REACTIVATION_MAX: usize = 1000;
 const MOTIF_PUBLIC_PARTICIPANT: &str =
     "Cette session a été fermée par l'administration.";
 
 // ──────────────────────────────────────────────────────────────────────────
-// POST /api/admin/afrolang/sessions/{session_id}/fermer-admin
+// Logique partagée — utilisable depuis l'endpoint admin plateforme OU
+// depuis un endpoint public ouvert aux admins de salle (FR-019).
 // ──────────────────────────────────────────────────────────────────────────
 
-/// Ferme une session live pour cause d'abus et désactive la salle hôte.
-pub async fn fermer_session_admin(
-    admin: AdminUtilisateur,
-    req: HttpRequest,
-    pool: web::Data<PgPool>,
-    livekit_config: web::Data<LivekitConfig>,
-    path: web::Path<Uuid>,
-    body: web::Json<FermetureAdminRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "afrolang", "moderer");
+/// Réponse standard d'une fermeture pour abus.
+pub struct ResultatFermeture {
+    pub salle_id: Uuid,
+    pub session_id: Uuid,
+    pub participants_notifies_count: usize,
+    pub acteur_id: Uuid,
+    pub motif: String,
+    pub created_at: DateTime<Utc>,
+}
 
-    let session_id = path.into_inner();
-    let motif = body.motif.trim().to_string();
+/// Implémentation partagée — valide motif, exécute la transaction, broadcast LiveKit,
+/// notifie participants/admins, écrit l'audit.
+///
+/// L'autorisation (admin plateforme OU admin de salle) DOIT être vérifiée par
+/// l'appelant avant de passer ici.
+pub async fn fermer_session_pour_abus_impl(
+    pool: &PgPool,
+    livekit_config: &LivekitConfig,
+    req: &HttpRequest,
+    session_id: Uuid,
+    motif_brut: &str,
+    acteur_id: Uuid,
+) -> Result<ResultatFermeture, ApiErreur> {
+    let motif = motif_brut.trim().to_string();
     if motif.len() < MOTIF_FERMETURE_MIN || motif.len() > MOTIF_FERMETURE_MAX {
         return Err(ApiErreur::Validation(format!(
             "Le motif doit contenir entre {} et {} caractères",
@@ -50,13 +62,11 @@ pub async fn fermer_session_admin(
         )));
     }
 
-    // Récupérer la session + résoudre la salle publique cible.
     let session_info: Option<(Option<Uuid>, Option<Uuid>, String)> = sqlx::query_as(
-        "SELECT salle_id, salle_privee_id, etat::TEXT
-         FROM afrolang.session WHERE id = $1",
+        "SELECT salle_id, salle_privee_id, etat::TEXT FROM afrolang.session WHERE id = $1",
     )
     .bind(session_id)
-    .fetch_optional(pool.get_ref())
+    .fetch_optional(pool)
     .await?;
 
     let (salle_id_directe, salle_privee_id, etat) = session_info
@@ -64,26 +74,27 @@ pub async fn fermer_session_admin(
 
     let salle_id: Uuid = if let Some(s) = salle_id_directe {
         s
-    } else if let Some(sp_id) = salle_privee_id {
+    }
+    else if let Some(sp_id) = salle_privee_id {
         sqlx::query_scalar::<_, Uuid>(
             "SELECT salle_id FROM afrolang.salle_privee WHERE id = $1",
         )
         .bind(sp_id)
-        .fetch_optional(pool.get_ref())
+        .fetch_optional(pool)
         .await?
         .ok_or_else(|| ApiErreur::NonTrouve("Salle privée parente introuvable".into()))?
-    } else {
+    }
+    else {
         return Err(ApiErreur::Validation(
             "Session sans rattachement à une salle".into(),
         ));
     };
 
-    // Idempotence FR-021 : 409 si déjà désactivée.
     let salle_etat: Option<(Option<DateTime<Utc>>, Option<DateTime<Utc>>)> = sqlx::query_as(
         "SELECT desactivee_admin_at, deleted_at FROM afrolang.salle WHERE id = $1",
     )
     .bind(salle_id)
-    .fetch_optional(pool.get_ref())
+    .fetch_optional(pool)
     .await?;
     let (desactivee_admin_at, deleted_at) =
         salle_etat.ok_or_else(|| ApiErreur::NonTrouve("Salle introuvable".into()))?;
@@ -94,7 +105,6 @@ pub async fn fermer_session_admin(
         return Err(ApiErreur::Conflit("Salle déjà désactivée".into()));
     }
 
-    // Transaction : session → terminée, salle → désactivée, évènement append-only.
     let mut tx = pool.begin().await?;
 
     if etat == "en_cours" || etat == "planifiee" {
@@ -115,7 +125,7 @@ pub async fn fermer_session_admin(
          WHERE id = $1",
     )
     .bind(salle_id)
-    .bind(admin.id)
+    .bind(acteur_id)
     .bind(&motif)
     .execute(&mut *tx)
     .await?;
@@ -128,36 +138,34 @@ pub async fn fermer_session_admin(
     )
     .bind(salle_id)
     .bind(session_id)
-    .bind(admin.id)
+    .bind(acteur_id)
     .bind(&motif)
     .fetch_one(&mut *tx)
     .await?;
 
     tx.commit().await?;
 
-    // Hors transaction : LiveKit + notifications.
     let room_name = format!("afrolang-{}", session_id);
     let _ = livekit_moderation::fermer_session_admin(
-        livekit_config.get_ref(),
+        livekit_config,
         &room_name,
         MOTIF_PUBLIC_PARTICIPANT,
     )
     .await;
 
-    // Notifier les participants actifs (sans motif).
     let participants: Vec<Uuid> = sqlx::query_scalar(
         "SELECT utilisateur_id FROM afrolang.session_participant
          WHERE session_id = $1 AND quitte_at IS NULL",
     )
     .bind(session_id)
-    .fetch_all(pool.get_ref())
+    .fetch_all(pool)
     .await
     .unwrap_or_default();
 
     let lien_participant = format!("/afrolang/session/{}", session_id);
     for p_id in &participants {
         notification::creer_notification(
-            pool.get_ref(),
+            pool,
             *p_id,
             notification::afrolang::SESSION_FERMEE_ADMIN,
             "La session a été fermée par l'administration.",
@@ -166,13 +174,12 @@ pub async fn fermer_session_admin(
         .await;
     }
 
-    // Notifier les admins de salle (avec motif) ou le créateur de salle privée.
     let admins_salle: Vec<Uuid> = sqlx::query_scalar(
         "SELECT utilisateur_id FROM afrolang.salle_administrateur
          WHERE salle_id = $1 AND actif = TRUE",
     )
     .bind(salle_id)
-    .fetch_all(pool.get_ref())
+    .fetch_all(pool)
     .await
     .unwrap_or_default();
 
@@ -182,7 +189,7 @@ pub async fn fermer_session_admin(
             "SELECT cree_par FROM afrolang.salle_privee WHERE id = $1",
         )
         .bind(sp_id)
-        .fetch_optional(pool.get_ref())
+        .fetch_optional(pool)
         .await
         {
             destinataires_admin.push(createur);
@@ -194,7 +201,7 @@ pub async fn fermer_session_admin(
     let lien_salle = format!("/afrolang/{}", salle_id);
     for adm_id in &destinataires_admin {
         notification::creer_notification(
-            pool.get_ref(),
+            pool,
             *adm_id,
             notification::afrolang::SALLE_DESACTIVEE_ADMIN,
             &format!(
@@ -206,12 +213,12 @@ pub async fn fermer_session_admin(
         .await;
     }
 
-    let ip = audit::extraire_ip(&req);
-    let ua = audit::extraire_user_agent(&req);
+    let ip = audit::extraire_ip(req);
+    let ua = audit::extraire_user_agent(req);
 
     audit::log_action(
-        pool.get_ref(),
-        Some(admin.id),
+        pool,
+        Some(acteur_id),
         "UPDATE",
         "afrolang",
         "salle",
@@ -228,8 +235,8 @@ pub async fn fermer_session_admin(
     .await;
 
     audit::log_action(
-        pool.get_ref(),
-        Some(admin.id),
+        pool,
+        Some(acteur_id),
         "CREATE",
         "afrolang",
         "evenement_moderation_salle",
@@ -246,17 +253,53 @@ pub async fn fermer_session_admin(
     )
     .await;
 
+    Ok(ResultatFermeture {
+        salle_id,
+        session_id,
+        participants_notifies_count: participants.len(),
+        acteur_id,
+        motif,
+        created_at: Utc::now(),
+    })
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// POST /api/admin/afrolang/sessions/{session_id}/fermer-admin
+// ──────────────────────────────────────────────────────────────────────────
+
+/// Ferme une session live pour cause d'abus et désactive la salle hôte.
+pub async fn fermer_session_admin(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    path: web::Path<Uuid>,
+    body: web::Json<FermetureAdminRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "afrolang", "moderer");
+
+    let session_id = path.into_inner();
+    let resultat = fermer_session_pour_abus_impl(
+        pool.get_ref(),
+        livekit_config.get_ref(),
+        &req,
+        session_id,
+        &body.motif,
+        admin.id,
+    )
+    .await?;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({
-            "salle_id": salle_id,
-            "session_id": session_id,
+            "salle_id": resultat.salle_id,
+            "session_id": resultat.session_id,
             "fermeture": {
-                "admin_id": admin.id,
-                "motif": motif,
-                "created_at": Utc::now(),
+                "admin_id": resultat.acteur_id,
+                "motif": resultat.motif,
+                "created_at": resultat.created_at,
             },
-            "participants_notifies_count": participants.len(),
+            "participants_notifies_count": resultat.participants_notifies_count,
         })),
         error: None,
     }))

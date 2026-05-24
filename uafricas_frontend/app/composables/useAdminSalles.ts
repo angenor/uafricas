@@ -7,6 +7,9 @@ export interface AdminSalle {
   langue_cible: string | null
   langue_code: string | null
   actif: boolean
+  /** Horodatage de désactivation administrative (feature 001-ressources-fermeture-session).
+   *  Null → la salle n'est pas désactivée par modération. */
+  desactivee_admin_at: string | null
   created_at: string
   groupe_ethnique_nom: string | null
   nombre_salles_privees: number

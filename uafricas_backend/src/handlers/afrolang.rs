@@ -5052,3 +5052,62 @@ pub async fn retirer_mise_en_evidence(
 
     Ok(HttpResponse::NoContent().finish())
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// Fermeture pour abus par un admin de session (admin plateforme OU admin de salle)
+// Feature 001-ressources-fermeture-session, FR-019 — depuis la salle live.
+// ══════════════════════════════════════════════════════════════════════════
+
+/// POST /api/afrolang/sessions/{session_id}/fermer-pour-abus
+///
+/// Variante session-level de l'endpoint admin `fermer-admin`.
+/// Ouvert à tout utilisateur authentifié dont `est_moderateur_session`
+/// renvoie `AdminPlateforme` OU `AdminSalle` (cf. FR-019).
+pub async fn fermer_session_pour_abus(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<crate::models::admin::sessions_moderation::FermetureAdminRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let session_id = chemin.into_inner();
+
+    let niveau = est_moderateur_session(pool.get_ref(), session_id, utilisateur_id).await?;
+    let niveau = niveau.ok_or_else(|| {
+        ApiErreur::AccesInterdit(
+            "Réservé aux administrateurs de salle ou de la plateforme".into(),
+        )
+    })?;
+    if !niveau.peut_fermer_pour_abus() {
+        return Err(ApiErreur::AccesInterdit(
+            "Réservé aux administrateurs de salle ou de la plateforme".into(),
+        ));
+    }
+
+    let resultat = crate::handlers::admin::sessions_moderation::fermer_session_pour_abus_impl(
+        pool.get_ref(),
+        livekit_config.get_ref(),
+        &req,
+        session_id,
+        &body.motif,
+        utilisateur_id,
+    )
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({
+            "salle_id": resultat.salle_id,
+            "session_id": resultat.session_id,
+            "fermeture": {
+                "admin_id": resultat.acteur_id,
+                "motif": resultat.motif,
+                "created_at": resultat.created_at,
+            },
+            "participants_notifies_count": resultat.participants_notifies_count,
+        })),
+        error: None,
+    }))
+}

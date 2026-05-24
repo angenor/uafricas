@@ -17,7 +17,7 @@ const colonnes: TableColumn[] = [
   { key: 'nombre_salles_privees', label: 'Salles privées', width: 'w-28', align: 'center' },
   { key: 'nombre_sessions', label: 'Sessions', width: 'w-24', align: 'center' },
   { key: 'nombre_moderateurs_attitres', label: 'Mod. attitrés', width: 'w-24', align: 'center' },
-  { key: 'actif', label: 'Actif', width: 'w-20', align: 'center' },
+  { key: 'statut', label: 'Statut', width: 'w-32', align: 'center' },
   { key: 'created_at', label: 'Création', sortable: true, width: 'w-28',
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]
@@ -84,10 +84,20 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
       @trier="changerTri"
       @aller-page="allerPage"
     >
-      <template #cell-actif="{ value }">
-        <span :class="value ? 'badge badge-success badge-sm' : 'badge badge-neutral badge-sm'">
-          {{ value ? 'Oui' : 'Non' }}
+      <template #cell-statut="{ item }">
+        <span
+          v-if="item.desactivee_admin_at"
+          class="badge badge-error badge-sm gap-1"
+          title="Désactivée par administration"
+        >
+          <font-awesome-icon icon="ban" class="text-[10px]" />
+          Désactivée
         </span>
+        <span
+          v-else-if="item.actif"
+          class="badge badge-success badge-sm"
+        >Actif</span>
+        <span v-else class="badge badge-neutral badge-sm">Inactif</span>
       </template>
       <template #actions="{ item }">
         <div class="flex gap-1">

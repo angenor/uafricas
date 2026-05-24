@@ -42,6 +42,17 @@
             <font-awesome-icon :icon="['fas', 'shield-halved']" class="w-4 h-4" />
             <span class="hidden sm:inline">Modération</span>
           </button>
+          <!-- Fermeture pour abus (admin plateforme OU admin de salle) — FR-019 -->
+          <button
+            v-if="peutFermerPourAbus"
+            class="px-3 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2 text-sm font-medium bg-red-700/70 text-red-50"
+            aria-label="Fermer la session pour abus et désactiver la salle"
+            title="Fermer pour abus (désactive la salle)"
+            @click="fermetureModaleOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'ban']" class="w-4 h-4" />
+            <span class="hidden sm:inline">Fermer la salle</span>
+          </button>
           <!-- Ressources contribuées (feature 001-ressources-fermeture-session, US1) -->
           <button
             class="px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
@@ -148,10 +159,21 @@
         @quitter="handleQuitter"
         @terminer="handleTerminer"
       >
+        <template #reactions>
+          <AfrolangReactionPicker
+            :room="room"
+            :identite="localParticipant?.name ?? null"
+            :connected="connectionState === 'connected'"
+            @envoye="onReactionLocale"
+          />
+        </template>
         <template #apres-actions>
           <slot name="apres-actions" />
         </template>
       </AfrolangControls>
+
+      <!-- Overlay des réactions emoji flottantes (s'envolent à la Meet) -->
+      <AfrolangReactionsOverlay ref="reactionsOverlayRef" />
     </div>
 
     <!-- Sidebar participants -->
@@ -160,6 +182,15 @@
       :participants="allParticipants"
       :session-id="session.id"
       :dominant-speaker="dominantSpeaker"
+    />
+
+    <!-- Modale fermeture pour abus (feature 001-ressources-fermeture-session, FR-019) -->
+    <AfrolangFermerSessionModal
+      v-if="peutFermerPourAbus"
+      :ouvert="fermetureModaleOuverte"
+      :session-id="session.id"
+      @fermer="fermetureModaleOuverte = false"
+      @success="onSessionFermee"
     />
   </div>
 </template>
@@ -208,6 +239,21 @@ const props = defineProps<{
 
 const salleIdPourRessources = computed(() => props.salleId ?? null)
 
+/** Fermeture pour abus (feature 001-ressources-fermeture-session, FR-019).
+ *  Accessible aux admins plateforme ET admins de salle (pas les modérateurs
+ *  attitrés ni les créateurs de salle privée). */
+const fermetureModaleOuverte = ref(false)
+const peutFermerPourAbus = computed(() => {
+  const n = monNiveauModerateurSession.value
+  return n === 'admin_plateforme' || n === 'admin_salle'
+})
+
+const onSessionFermee = () => {
+  fermetureModaleOuverte.value = false
+  // Sortie propre — la salle est désactivée, on quitte la session.
+  emit('quitter')
+}
+
 const emit = defineEmits<{
   quitter: []
   terminer: []
@@ -222,6 +268,33 @@ const {
   attacherListenerModeration,
 } = useAfrolang()
 let detacherListenerModeration: (() => void) | null = null
+
+// Réactions emoji flottantes (à la Google Meet)
+interface ReactionDataPacket {
+  type: 'reaction'
+  emoji: string
+  identite: string | null
+  ts: number
+}
+const reactionsOverlayRef = ref<{ jouer: (emoji: string, identite?: string | null) => void } | null>(null)
+const decoderReactions = new TextDecoder()
+
+const onReactionLocale = (emoji: string): void => {
+  reactionsOverlayRef.value?.jouer(emoji, localParticipant.value?.name ?? null)
+}
+
+const handleReactionData = (payload: Uint8Array, participant?: { identity?: string } | null): void => {
+  try {
+    // Ignorer ses propres paquets (déjà joués localement à l'envoi)
+    if (participant?.identity && room.value?.localParticipant?.identity === participant.identity) return
+    const data = JSON.parse(decoderReactions.decode(payload)) as Partial<ReactionDataPacket>
+    if (data?.type !== 'reaction' || typeof data.emoji !== 'string') return
+    reactionsOverlayRef.value?.jouer(data.emoji, data.identite ?? null)
+  }
+  catch {
+    /* paquet ignoré */
+  }
+}
 
 // State
 const room = shallowRef<Room | null>(null)
@@ -436,6 +509,11 @@ const connectToRoom = async () => {
     if (publication.source === Track.Source.ScreenShare) {
       ecranPartage.value = true
     }
+  })
+
+  // Réactions emoji (DataPacket `type:'reaction'`)
+  newRoom.on(RoomEvent.DataReceived, (payload: Uint8Array, participant?: RemoteParticipant) => {
+    handleReactionData(payload, participant)
   })
 
   newRoom.on(RoomEvent.LocalTrackUnpublished, (publication) => {

@@ -10,7 +10,8 @@ use crate::models::afrolang::{AdministrateurLight, DesactivationAdminInfo, PaysO
 // la modération attitrée passe désormais par `salle_moderateur`.
 
 pub const ADMIN_SALLE_LISTE_COLONNES: &str =
-    "s.id, s.titre, s.slug, s.langue_cible, s.langue_code, s.actif, s.created_at,
+    "s.id, s.titre, s.slug, s.langue_cible, s.langue_code, s.actif,
+     s.desactivee_admin_at, s.created_at,
      ge.nom AS groupe_ethnique_nom,
      (SELECT COUNT(*) FROM afrolang.salle_privee sp
         WHERE sp.salle_id = s.id AND sp.actif = true
@@ -74,6 +75,8 @@ pub struct AdminSalleListeResponse {
     pub langue_cible: Option<String>,
     pub langue_code: Option<String>,
     pub actif: bool,
+    #[sqlx(default)]
+    pub desactivee_admin_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub groupe_ethnique_nom: Option<String>,
     pub nombre_salles_privees: Option<i64>,
