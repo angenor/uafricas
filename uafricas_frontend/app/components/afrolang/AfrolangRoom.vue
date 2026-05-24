@@ -23,6 +23,15 @@
           >
             <font-awesome-icon :icon="['fas', 'users']" class="w-4 h-4" />
           </button>
+          <button
+            v-if="monNiveauModerateurSession"
+            class="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+            :class="moderationPanelOuvert ? 'bg-gray-700 text-amber-400' : 'text-gray-400'"
+            aria-label="Modération"
+            @click="moderationPanelOuvert = !moderationPanelOuvert"
+          >
+            <font-awesome-icon :icon="['fas', 'shield-halved']" class="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -61,9 +70,19 @@
           v-if="tableauBlancOuvert && session.tableau_blanc_actif"
           :session-id="session.id"
           :est-moderateur="estModerateur"
+          :ecriture-autorisee="monEcritureAutorisee"
           :room="room"
           class="w-1/2 border-l border-gray-700"
           @fermer="tableauBlancOuvert = false"
+        />
+
+        <!-- Panneau modération (visible uniquement pour les modérateurs de session) -->
+        <SalleModerationPanel
+          v-if="moderationPanelOuvert && monNiveauModerateurSession"
+          :session-id="session.id"
+          :participants="allParticipants"
+          :est-session-publique="!session.salle_privee_id"
+          @fermer="moderationPanelOuvert = false"
         />
       </div>
 
@@ -138,11 +157,22 @@ const emit = defineEmits<{
   terminer: []
 }>()
 
+// Feature 001-session-moderation : composable partagé
+const {
+  monNiveauModerateurSession,
+  monEcritureAutorisee,
+  spotlightActif,
+  listerPermissionsTableauBlanc,
+  attacherListenerModeration,
+} = useAfrolang()
+let detacherListenerModeration: (() => void) | null = null
+
 // State
 const room = shallowRef<Room | null>(null)
 const connectionState = ref<string>('connecting')
 const wasConnected = ref(false)
 const sidebarOuverte = ref(false)
+const moderationPanelOuvert = ref(false)
 const tableauBlancOuvert = ref(false)
 const microActif = ref(true)
 const cameraActive = ref(true)
@@ -379,6 +409,12 @@ const connectToRoom = async () => {
     }, 1000)
 
     connectionState.value = 'connected'
+
+    // Feature 001-session-moderation : état initial + listener temps réel
+    await listerPermissionsTableauBlanc(props.session.id)
+    // FR-024 : initialiser spotlight depuis le GET /sessions/{id} (transmis en prop)
+    spotlightActif.value = props.session.spotlight ?? null
+    detacherListenerModeration = attacherListenerModeration(newRoom)
   }
   catch (e) {
     console.error('Erreur connexion LiveKit:', e)
@@ -392,6 +428,10 @@ onMounted(() => {
 
 onBeforeUnmount(async () => {
   if (dureeInterval) clearInterval(dureeInterval)
+  if (detacherListenerModeration) {
+    detacherListenerModeration()
+    detacherListenerModeration = null
+  }
   if (room.value) {
     await room.value.disconnect()
   }

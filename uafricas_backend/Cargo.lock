@@ -3242,6 +3242,7 @@ dependencies = [
  "jsonwebtoken",
  "lettre",
  "livekit-api",
+ "livekit-protocol",
  "log",
  "percent-encoding",
  "rand 0.8.5",

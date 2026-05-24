@@ -617,6 +617,28 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/sessions/{id}/tableau-blanc", web::get().to(afrolang::obtenir_tableau_blanc))
                     .route("/sessions/{id}/tableau-blanc", web::put().to(afrolang::sauvegarder_tableau_blanc))
                     .route("/sessions/{id}/tableau-blanc", web::delete().to(afrolang::effacer_tableau_blanc))
+                    // Feature 001-session-moderation : permissions tableau blanc
+                    .route(
+                        "/sessions/{id}/permissions-tableau-blanc",
+                        web::get().to(afrolang::lister_permissions_tableau_blanc),
+                    )
+                    .route(
+                        "/sessions/{id}/permissions-tableau-blanc",
+                        web::post().to(afrolang::accorder_permission_tableau_blanc),
+                    )
+                    .route(
+                        "/sessions/{id}/permissions-tableau-blanc/{user_id}",
+                        web::delete().to(afrolang::retirer_permission_tableau_blanc),
+                    )
+                    // Feature 001-session-moderation : spotlight (mise en évidence)
+                    .route(
+                        "/sessions/{id}/spotlight",
+                        web::post().to(afrolang::mettre_en_evidence),
+                    )
+                    .route(
+                        "/sessions/{id}/spotlight",
+                        web::delete().to(afrolang::retirer_mise_en_evidence),
+                    )
                     // Utilitaires
                     .route("/stats", web::get().to(afrolang::obtenir_stats))
                     .route("/langues", web::get().to(afrolang::lister_langues)),

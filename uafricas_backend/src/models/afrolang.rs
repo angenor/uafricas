@@ -525,6 +525,8 @@ pub struct SessionDetailResponse {
     pub participants: Vec<ParticipantResponse>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub spotlight: Option<SpotlightInfo>,
+    pub permissions_tableau_blanc_count: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -1279,4 +1281,91 @@ pub fn generer_slug(titre: &str) -> String {
         .split_whitespace()
         .collect::<Vec<&str>>()
         .join("-")
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Feature 001-session-moderation
+// ══════════════════════════════════════════════════════════════════════════
+
+/// Colonnes lues sur `afrolang.session_permission_tableau_blanc`.
+pub const COLONNES_PERMISSION_TB: &str =
+    "sptb.session_id, sptb.utilisateur_id, sptb.accorde_par, sptb.accorde_at";
+
+#[derive(Debug, FromRow)]
+pub struct PermissionTableauBlancRow {
+    pub session_id: Uuid,
+    pub utilisateur_id: Uuid,
+    pub accorde_par: Uuid,
+    pub accorde_at: DateTime<Utc>,
+    #[sqlx(default)]
+    pub nom: Option<String>,
+    #[sqlx(default)]
+    pub prenom: Option<String>,
+    #[sqlx(default)]
+    pub photo_url: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PermissionTableauBlancResponse {
+    pub utilisateur_id: Uuid,
+    pub nom_complet: String,
+    pub avatar_url: Option<String>,
+    pub accorde_par: Uuid,
+    pub accorde_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ModerateurOfficeResponse {
+    pub utilisateur_id: Uuid,
+    pub nom_complet: String,
+    pub avatar_url: Option<String>,
+    pub niveau: NiveauModerateur,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PermissionsTableauBlancListeResponse {
+    pub session_id: Uuid,
+    pub moderateurs_office: Vec<ModerateurOfficeResponse>,
+    pub permissions_individuelles: Vec<PermissionTableauBlancResponse>,
+    pub mon_niveau_moderateur: Option<NiveauModerateur>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AccorderPermissionPayload {
+    pub utilisateur_id: Uuid,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct SpotlightInfo {
+    pub utilisateur_id: Uuid,
+    pub nom_complet: String,
+    pub avatar_url: Option<String>,
+    pub mis_en_evidence_par: Uuid,
+    pub mis_en_evidence_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MettreEnEvidencePayload {
+    pub utilisateur_id: Uuid,
+}
+
+/// Niveau de modérateur calculé applicatif (FR-001/FR-001b).
+/// Sérialisé en `snake_case` pour le frontend.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NiveauModerateur {
+    AdminPlateforme,
+    AdminSalle,
+    ModerateurAttitre,
+    CreateurSallePrivee,
+}
+
+impl NiveauModerateur {
+    /// Capacité spotlight : tout sauf modérateur attitré (FR-001b).
+    pub fn peut_spotlight(&self) -> bool {
+        matches!(
+            self,
+            Self::AdminPlateforme | Self::AdminSalle | Self::CreateurSallePrivee
+        )
+    }
 }

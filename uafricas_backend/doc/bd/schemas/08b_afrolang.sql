@@ -449,3 +449,44 @@ CREATE INDEX idx_salle_admin_par_user
 
 COMMENT ON TABLE afrolang.salle_administrateur IS
     'Administrateurs scopés à une salle publique Afrolang (feature 001-admin-salles-publiques).';
+
+
+-- ============================================================================
+-- Feature 001-session-moderation
+-- ============================================================================
+-- 1) Permissions tableau blanc — état session-scoped (FR-010/FR-011/FR-012)
+--    Modérateurs d'office (admin plateforme, admin salle, modérateur attitré,
+--    créateur de salle privée) ne sont PAS stockés ici : leur droit est calculé
+--    par le helper Rust `est_moderateur_session()`.
+-- 2) Spotlight de session — 3 colonnes ajoutées à `session` (FR-020/FR-021/FR-022).
+
+-- ── Permissions tableau blanc (FR-010) ──
+CREATE TABLE afrolang.session_permission_tableau_blanc (
+    session_id      UUID         NOT NULL REFERENCES afrolang.session(id) ON DELETE CASCADE,
+    utilisateur_id  UUID         NOT NULL,                 -- [xref] iam.utilisateur
+    accorde_par     UUID         NOT NULL,                 -- [xref] iam.utilisateur (modérateur)
+    accorde_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (session_id, utilisateur_id)
+);
+
+CREATE INDEX idx_afrolang_perm_tb_session
+    ON afrolang.session_permission_tableau_blanc(session_id);
+CREATE INDEX idx_afrolang_perm_tb_user
+    ON afrolang.session_permission_tableau_blanc(utilisateur_id);
+
+COMMENT ON TABLE afrolang.session_permission_tableau_blanc IS
+    'Permissions d''écriture sur le tableau blanc d''une session Afrolang (feature 001-session-moderation).';
+
+
+-- ── Spotlight / mise en évidence (FR-020) ──
+ALTER TABLE afrolang.session
+    ADD COLUMN participant_mis_en_evidence_id UUID         NULL,  -- [xref] iam.utilisateur
+    ADD COLUMN mis_en_evidence_par            UUID         NULL,  -- [xref] iam.utilisateur (admin)
+    ADD COLUMN mis_en_evidence_at             TIMESTAMPTZ  NULL;
+
+ALTER TABLE afrolang.session
+    ADD CONSTRAINT ck_session_spotlight_coherent CHECK (
+        (participant_mis_en_evidence_id IS NULL AND mis_en_evidence_par IS NULL AND mis_en_evidence_at IS NULL)
+        OR
+        (participant_mis_en_evidence_id IS NOT NULL AND mis_en_evidence_par IS NOT NULL AND mis_en_evidence_at IS NOT NULL)
+    );

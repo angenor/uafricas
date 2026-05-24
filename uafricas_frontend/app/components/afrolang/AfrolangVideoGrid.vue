@@ -9,10 +9,38 @@
       />
     </div>
 
+    <!-- Spotlight (FR-023) : participant mis en évidence agrandi au centre. -->
+    <template v-else-if="participantSpotlight">
+      <div class="relative flex-1 min-h-0 transition-all duration-300 ease-in-out">
+        <AfrolangParticipantTile
+          :participant="participantSpotlight"
+          :is-dominant="true"
+          class="border-2 border-custom-chocolat rounded-lg h-full"
+        />
+        <span
+          class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-custom-chocolat text-white text-[11px] font-semibold tracking-wide"
+        >
+          <font-awesome-icon :icon="['fas', 'star']" class="w-3 h-3" />
+          En vedette
+        </span>
+      </div>
+      <div class="h-24 sm:h-32 shrink-0 flex gap-2 overflow-x-auto transition-all duration-300">
+        <AfrolangParticipantTile
+          v-for="participant in autresParticipants"
+          :key="participant.identity"
+          :participant="participant"
+          :is-dominant="participant.identity === dominantSpeaker"
+          class="w-28 sm:w-36 shrink-0 rounded-lg"
+        />
+      </div>
+    </template>
+
     <!-- Grille des participants -->
     <div
+      v-else
       :class="[
         ecranPartageActif ? 'h-32 sm:h-40 shrink-0 flex gap-2 overflow-x-auto' : gridClass,
+        'transition-all duration-300 ease-in-out',
       ]"
     >
       <AfrolangParticipantTile
@@ -44,6 +72,21 @@ const props = defineProps<{
   participants: RoomParticipant[]
   dominantSpeaker: string | null
 }>()
+
+// Feature 001-session-moderation : mise en évidence (spotlight)
+const { spotlightActif } = useAfrolang()
+
+const participantSpotlight = computed<RoomParticipant | null>(() => {
+  const id = spotlightActif.value?.utilisateur_id
+  if (!id) return null
+  return props.participants.find(p => p.identity === id) ?? null
+})
+
+const autresParticipants = computed<RoomParticipant[]>(() => {
+  const id = spotlightActif.value?.utilisateur_id
+  if (!id) return props.participants
+  return props.participants.filter(p => p.identity !== id)
+})
 
 // Trouver le participant qui partage son écran
 const ecranPartageActif = computed<RoomParticipant | null>(() => {

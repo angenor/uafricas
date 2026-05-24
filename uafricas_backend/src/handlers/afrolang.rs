@@ -26,7 +26,7 @@ use crate::models::afrolang::{
     generer_slug,
 };
 use crate::models::notification;
-use crate::services::{afrolang_rate_limit, audit};
+use crate::services::{afrolang_rate_limit, audit, livekit_moderation};
 
 /// Reponse API generique
 #[derive(serde::Serialize)]
@@ -118,6 +118,103 @@ pub async fn est_administrateur_salle(
     .bind(user_id)
     .fetch_one(pool)
     .await
+}
+
+/// Identifie le niveau de modérateur d'un utilisateur pour une session donnée
+/// (feature 001-session-moderation, FR-001/FR-001b — R6 research).
+///
+/// Hiérarchie testée dans l'ordre :
+/// 1. Rôle global plateforme `admin` → `AdminPlateforme`.
+/// 2. Si la session a `salle_id` :
+///    - actif dans `salle_administrateur` → `AdminSalle`
+///    - actif dans `salle_moderateur` → `ModerateurAttitre`
+/// 3. Si la session a `salle_privee_id` :
+///    - `salle_privee.cree_par = utilisateur_id` → `CreateurSallePrivee`
+/// 4. Sinon → `None`.
+///
+/// Aucun cache : recalcul à chaque appel (FR-003).
+pub async fn est_moderateur_session(
+    pool: &PgPool,
+    session_id: Uuid,
+    utilisateur_id: Uuid,
+) -> Result<Option<crate::models::afrolang::NiveauModerateur>, ApiErreur> {
+    use crate::models::afrolang::NiveauModerateur;
+
+    // 1) Admin plateforme
+    let est_admin_plateforme: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM iam.utilisateur_role ur
+            JOIN iam.role r ON ur.role_id = r.id
+            WHERE ur.utilisateur_id = $1 AND r.slug = 'admin'
+        )",
+    )
+    .bind(utilisateur_id)
+    .fetch_one(pool)
+    .await?;
+    if est_admin_plateforme {
+        return Ok(Some(NiveauModerateur::AdminPlateforme));
+    }
+
+    // Lire le contexte de session (salle_id XOR salle_privee_id)
+    let ctx: Option<(Option<Uuid>, Option<Uuid>)> = sqlx::query_as(
+        "SELECT salle_id, salle_privee_id FROM afrolang.session WHERE id = $1",
+    )
+    .bind(session_id)
+    .fetch_optional(pool)
+    .await?;
+    let Some((salle_id, salle_privee_id)) = ctx else {
+        return Ok(None);
+    };
+
+    // 2) Contexte salle publique
+    if let Some(salle_id) = salle_id {
+        let est_admin_salle: bool = sqlx::query_scalar(
+            "SELECT EXISTS(
+                SELECT 1 FROM afrolang.salle_administrateur
+                WHERE salle_id = $1 AND utilisateur_id = $2 AND actif = TRUE
+            )",
+        )
+        .bind(salle_id)
+        .bind(utilisateur_id)
+        .fetch_one(pool)
+        .await?;
+        if est_admin_salle {
+            return Ok(Some(NiveauModerateur::AdminSalle));
+        }
+
+        let est_moderateur: bool = sqlx::query_scalar(
+            "SELECT EXISTS(
+                SELECT 1 FROM afrolang.salle_moderateur
+                WHERE salle_id = $1 AND utilisateur_id = $2 AND actif = TRUE
+            )",
+        )
+        .bind(salle_id)
+        .bind(utilisateur_id)
+        .fetch_one(pool)
+        .await?;
+        if est_moderateur {
+            return Ok(Some(NiveauModerateur::ModerateurAttitre));
+        }
+    }
+
+    // 3) Contexte salle privée
+    if let Some(salle_privee_id) = salle_privee_id {
+        let est_createur: bool = sqlx::query_scalar(
+            "SELECT EXISTS(
+                SELECT 1 FROM afrolang.salle_privee
+                WHERE id = $1 AND cree_par = $2
+            )",
+        )
+        .bind(salle_privee_id)
+        .bind(utilisateur_id)
+        .fetch_one(pool)
+        .await?;
+        if est_createur {
+            return Ok(Some(NiveauModerateur::CreateurSallePrivee));
+        }
+    }
+
+    Ok(None)
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1478,6 +1575,15 @@ pub async fn obtenir_session(
         None
     };
 
+    // Feature 001-session-moderation (FR-024) : état spotlight + nb permissions TB
+    let spotlight = charger_spotlight(pool.get_ref(), id).await?;
+    let permissions_tableau_blanc_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM afrolang.session_permission_tableau_blanc WHERE session_id = $1",
+    )
+    .bind(id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(SessionDetailResponse {
@@ -1497,6 +1603,8 @@ pub async fn obtenir_session(
             participants: participants.iter().map(|p| p.to_response()).collect(),
             created_at: session.created_at,
             updated_at: session.updated_at,
+            spotlight,
+            permissions_tableau_blanc_count,
         }),
         error: None,
     }))
@@ -1693,11 +1801,18 @@ pub async fn terminer_session(
     }
 
     // Terminer la session et calculer la duree
+    // FR-017 (feature 001-session-moderation) : nettoyer les permissions tableau
+    // blanc et l'éventuel spotlight à la clôture, en même transaction.
+    let mut tx = pool.begin().await?;
+
     let row = sqlx::query_as::<_, SessionRow>(
         &format!(
             "UPDATE afrolang.session
              SET etat = 'terminee', termine_at = NOW(),
                  duree_secondes = EXTRACT(EPOCH FROM (NOW() - demarre_at))::INT,
+                 participant_mis_en_evidence_id = NULL,
+                 mis_en_evidence_par = NULL,
+                 mis_en_evidence_at = NULL,
                  updated_at = NOW()
              WHERE id = $1
              RETURNING {}",
@@ -1705,7 +1820,14 @@ pub async fn terminer_session(
         ),
     )
     .bind(id)
-    .fetch_one(pool.get_ref())
+    .fetch_one(&mut *tx)
+    .await?;
+
+    sqlx::query(
+        "DELETE FROM afrolang.session_permission_tableau_blanc WHERE session_id = $1",
+    )
+    .bind(id)
+    .execute(&mut *tx)
     .await?;
 
     // Mettre a jour tous les participants encore actifs
@@ -1716,8 +1838,10 @@ pub async fn terminer_session(
          WHERE session_id = $1 AND quitte_at IS NULL",
     )
     .bind(id)
-    .execute(pool.get_ref())
+    .execute(&mut *tx)
     .await?;
+
+    tx.commit().await?;
 
     log::info!("Session terminee: {}", id);
 
@@ -1920,6 +2044,7 @@ pub async fn rejoindre_session(
 /// POST /api/afrolang/sessions/{id}/quitter — Quitter une session [JWT]
 pub async fn quitter_session(
     pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
     req: HttpRequest,
     chemin: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -1959,6 +2084,59 @@ pub async fn quitter_session(
     }
 
     log::info!("Utilisateur {} a quitté la session {}", utilisateur_id, id);
+
+    // Feature 001-session-moderation (FR-025) : si le partant était mis en évidence,
+    // remettre les 3 colonnes spotlight à NULL et publier un DataPacket
+    // `moderation.spotlight: null` pour notifier les clients en temps réel.
+    let cascade_spotlight = sqlx::query(
+        "UPDATE afrolang.session
+         SET participant_mis_en_evidence_id = NULL,
+             mis_en_evidence_par = NULL,
+             mis_en_evidence_at = NULL,
+             updated_at = NOW()
+         WHERE id = $1 AND participant_mis_en_evidence_id = $2",
+    )
+    .bind(id)
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if cascade_spotlight.rows_affected() > 0 {
+        let ip = audit::extraire_ip(&req);
+        let ua = audit::extraire_user_agent(&req);
+        audit::log_action(
+            pool.get_ref(),
+            Some(utilisateur_id),
+            "UPDATE",
+            "afrolang",
+            "session",
+            Some(id),
+            Some(serde_json::json!({ "spotlight_id": utilisateur_id })),
+            Some(serde_json::json!({ "spotlight_id": serde_json::Value::Null })),
+            ip.as_deref(),
+            ua.as_deref(),
+        )
+        .await;
+
+        let payload = serde_json::json!({
+            "type": "moderation",
+            "subtype": "spotlight",
+            "payload": serde_json::Value::Null,
+        });
+        // Erreur LiveKit non bloquante : on log mais on n'interrompt pas la sortie de session
+        if let Err(e) = livekit_moderation::publier_evenement_moderation(
+            livekit_config.get_ref(),
+            &room_name_session(id),
+            &payload,
+        )
+        .await
+        {
+            log::warn!(
+                "Échec publication DataPacket spotlight=null (cascade quitter): {}",
+                e
+            );
+        }
+    }
 
     // Vérifier s'il reste des participants actifs
     let participants_actifs: i64 = sqlx::query_scalar(
@@ -2160,6 +2338,27 @@ pub async fn generer_token_session(
         user_nom
     ).trim().to_string();
 
+    // 5b. Feature 001-session-moderation — droit initial d'écriture sur le tableau blanc :
+    //     (1) modérateur de session → autorisé ;
+    //     (2) sinon, permission individuelle déjà accordée → autorisé (FR edge-case
+    //         « permission différée appliquée à la jointure ») ;
+    //     (3) sinon → refusé (le SFU LiveKit rejettera les DataPacket).
+    let niveau_moderateur = est_moderateur_session(pool.get_ref(), session_id, utilisateur_id).await?;
+    let can_publish_data = if niveau_moderateur.is_some() {
+        true
+    } else {
+        sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(
+                SELECT 1 FROM afrolang.session_permission_tableau_blanc
+                WHERE session_id = $1 AND utilisateur_id = $2
+            )",
+        )
+        .bind(session_id)
+        .bind(utilisateur_id)
+        .fetch_one(pool.get_ref())
+        .await?
+    };
+
     // 6. Generer le token LiveKit
     let token = livekit_api::access_token::AccessToken::with_api_key(
         &livekit_config.api_key,
@@ -2172,7 +2371,7 @@ pub async fn generer_token_session(
         room: room_name.clone(),
         can_publish: true,
         can_subscribe: true,
-        can_publish_data: true,
+        can_publish_data,
         ..Default::default()
     })
     .to_jwt()
@@ -4136,4 +4335,567 @@ pub async fn retirer_ma_proposition(
         data: Some(proposition),
         error: None,
     }))
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Feature 001-session-moderation — permissions tableau blanc + spotlight
+// ══════════════════════════════════════════════════════════════════════════
+
+use crate::models::afrolang::{
+    AccorderPermissionPayload, MettreEnEvidencePayload, ModerateurOfficeResponse,
+    NiveauModerateur, PermissionTableauBlancResponse,
+    PermissionsTableauBlancListeResponse, SpotlightInfo,
+};
+/// Nom de la room LiveKit associée à une session Afrolang.
+fn room_name_session(session_id: Uuid) -> String {
+    format!("afrolang-{}", session_id)
+}
+
+/// Charge le contexte salle d'une session pour calculer les modérateurs d'office.
+async fn charger_contexte_salle(
+    pool: &PgPool,
+    session_id: Uuid,
+) -> Result<(Option<Uuid>, Option<Uuid>), ApiErreur> {
+    let row: Option<(Option<Uuid>, Option<Uuid>)> = sqlx::query_as(
+        "SELECT salle_id, salle_privee_id FROM afrolang.session WHERE id = $1",
+    )
+    .bind(session_id)
+    .fetch_optional(pool)
+    .await?;
+    row.ok_or_else(|| ApiErreur::NonTrouve(format!("Session {} non trouvée", session_id)))
+}
+
+/// Liste les modérateurs d'office d'une session (admin plateforme connecté
+/// inclus uniquement s'ils participent — l'admin global est calculé côté
+/// `est_moderateur_session` à l'arrivée). Retourne au moins :
+/// - administrateurs actifs de la salle publique (`AdminSalle`)
+/// - modérateurs attitrés actifs (`ModerateurAttitre`)
+/// - créateur de la salle privée (`CreateurSallePrivee`)
+async fn lister_moderateurs_office(
+    pool: &PgPool,
+    salle_id: Option<Uuid>,
+    salle_privee_id: Option<Uuid>,
+) -> Result<Vec<ModerateurOfficeResponse>, ApiErreur> {
+    let mut resultats: Vec<ModerateurOfficeResponse> = Vec::new();
+
+    if let Some(salle_id) = salle_id {
+        let admins = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>)>(
+            "SELECT sa.utilisateur_id, u.nom, u.prenom, u.photo_url
+             FROM afrolang.salle_administrateur sa
+             JOIN iam.utilisateur u ON u.id = sa.utilisateur_id
+             WHERE sa.salle_id = $1 AND sa.actif = TRUE",
+        )
+        .bind(salle_id)
+        .fetch_all(pool)
+        .await?;
+        for (uid, nom, prenom, photo) in admins {
+            resultats.push(ModerateurOfficeResponse {
+                utilisateur_id: uid,
+                nom_complet: format!("{} {}", prenom.unwrap_or_default(), nom).trim().to_string(),
+                avatar_url: photo,
+                niveau: NiveauModerateur::AdminSalle,
+            });
+        }
+
+        let mods = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>)>(
+            "SELECT sm.utilisateur_id, u.nom, u.prenom, u.photo_url
+             FROM afrolang.salle_moderateur sm
+             JOIN iam.utilisateur u ON u.id = sm.utilisateur_id
+             WHERE sm.salle_id = $1 AND sm.actif = TRUE",
+        )
+        .bind(salle_id)
+        .fetch_all(pool)
+        .await?;
+        for (uid, nom, prenom, photo) in mods {
+            if resultats.iter().any(|m| m.utilisateur_id == uid) { continue; }
+            resultats.push(ModerateurOfficeResponse {
+                utilisateur_id: uid,
+                nom_complet: format!("{} {}", prenom.unwrap_or_default(), nom).trim().to_string(),
+                avatar_url: photo,
+                niveau: NiveauModerateur::ModerateurAttitre,
+            });
+        }
+    }
+
+    if let Some(salle_privee_id) = salle_privee_id {
+        if let Some((uid, nom, prenom, photo)) = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>)>(
+            "SELECT sp.cree_par, u.nom, u.prenom, u.photo_url
+             FROM afrolang.salle_privee sp
+             JOIN iam.utilisateur u ON u.id = sp.cree_par
+             WHERE sp.id = $1",
+        )
+        .bind(salle_privee_id)
+        .fetch_optional(pool)
+        .await?
+        {
+            if !resultats.iter().any(|m| m.utilisateur_id == uid) {
+                resultats.push(ModerateurOfficeResponse {
+                    utilisateur_id: uid,
+                    nom_complet: format!("{} {}", prenom.unwrap_or_default(), nom).trim().to_string(),
+                    avatar_url: photo,
+                    niveau: NiveauModerateur::CreateurSallePrivee,
+                });
+            }
+        }
+    }
+
+    Ok(resultats)
+}
+
+/// Charge l'état spotlight courant pour une session (FR-024).
+async fn charger_spotlight(
+    pool: &PgPool,
+    session_id: Uuid,
+) -> Result<Option<SpotlightInfo>, ApiErreur> {
+    let row: Option<(Uuid, Uuid, chrono::DateTime<chrono::Utc>, String, Option<String>, Option<String>)> = sqlx::query_as(
+        "SELECT s.participant_mis_en_evidence_id, s.mis_en_evidence_par, s.mis_en_evidence_at,
+                u.nom, u.prenom, u.photo_url
+         FROM afrolang.session s
+         JOIN iam.utilisateur u ON u.id = s.participant_mis_en_evidence_id
+         WHERE s.id = $1 AND s.participant_mis_en_evidence_id IS NOT NULL",
+    )
+    .bind(session_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row.map(|(uid, par, at, nom, prenom, photo)| SpotlightInfo {
+        utilisateur_id: uid,
+        nom_complet: format!("{} {}", prenom.unwrap_or_default(), nom).trim().to_string(),
+        avatar_url: photo,
+        mis_en_evidence_par: par,
+        mis_en_evidence_at: at,
+    }))
+}
+
+/// GET /api/afrolang/sessions/{id}/permissions-tableau-blanc
+pub async fn lister_permissions_tableau_blanc(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let session_id = chemin.into_inner();
+
+    let (salle_id, salle_privee_id) = charger_contexte_salle(pool.get_ref(), session_id).await?;
+
+    let moderateurs_office = lister_moderateurs_office(pool.get_ref(), salle_id, salle_privee_id).await?;
+
+    let perms = sqlx::query_as::<_, (Uuid, Uuid, chrono::DateTime<chrono::Utc>, String, Option<String>, Option<String>)>(
+        "SELECT sptb.utilisateur_id, sptb.accorde_par, sptb.accorde_at,
+                u.nom, u.prenom, u.photo_url
+         FROM afrolang.session_permission_tableau_blanc sptb
+         JOIN iam.utilisateur u ON u.id = sptb.utilisateur_id
+         WHERE sptb.session_id = $1
+         ORDER BY sptb.accorde_at ASC",
+    )
+    .bind(session_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let permissions_individuelles: Vec<PermissionTableauBlancResponse> = perms
+        .into_iter()
+        .map(|(uid, par, at, nom, prenom, photo)| PermissionTableauBlancResponse {
+            utilisateur_id: uid,
+            nom_complet: format!("{} {}", prenom.unwrap_or_default(), nom).trim().to_string(),
+            avatar_url: photo,
+            accorde_par: par,
+            accorde_at: at,
+        })
+        .collect();
+
+    let mon_niveau = est_moderateur_session(pool.get_ref(), session_id, utilisateur_id).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(PermissionsTableauBlancListeResponse {
+            session_id,
+            moderateurs_office,
+            permissions_individuelles,
+            mon_niveau_moderateur: mon_niveau,
+        }),
+        error: None,
+    }))
+}
+
+/// POST /api/afrolang/sessions/{id}/permissions-tableau-blanc
+pub async fn accorder_permission_tableau_blanc(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<AccorderPermissionPayload>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let session_id = chemin.into_inner();
+    let cible_id = body.utilisateur_id;
+
+    // 1) Auteur doit être modérateur de session
+    let niveau = est_moderateur_session(pool.get_ref(), session_id, auteur_id).await?;
+    if niveau.is_none() {
+        return Err(ApiErreur::AccesInterdit(
+            "Seul un modérateur de session peut accorder cette permission.".into(),
+        ));
+    }
+
+    // 2) Refuser si cible est déjà modérateur de session
+    let niveau_cible = est_moderateur_session(pool.get_ref(), session_id, cible_id).await?;
+    if niveau_cible.is_some() {
+        return Err(ApiErreur::Conflit(
+            "L'utilisateur est déjà modérateur de session.".into(),
+        ));
+    }
+
+    // 3) INSERT idempotent
+    sqlx::query(
+        "INSERT INTO afrolang.session_permission_tableau_blanc (session_id, utilisateur_id, accorde_par)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (session_id, utilisateur_id) DO NOTHING",
+    )
+    .bind(session_id)
+    .bind(cible_id)
+    .bind(auteur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    // 4) Charger les infos cible pour la réponse
+    let (nom, prenom, photo, accorde_at): (String, Option<String>, Option<String>, chrono::DateTime<chrono::Utc>) = sqlx::query_as(
+        "SELECT u.nom, u.prenom, u.photo_url, sptb.accorde_at
+         FROM afrolang.session_permission_tableau_blanc sptb
+         JOIN iam.utilisateur u ON u.id = sptb.utilisateur_id
+         WHERE sptb.session_id = $1 AND sptb.utilisateur_id = $2",
+    )
+    .bind(session_id)
+    .bind(cible_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let nom_complet = format!("{} {}", prenom.unwrap_or_default(), nom).trim().to_string();
+    let reponse = PermissionTableauBlancResponse {
+        utilisateur_id: cible_id,
+        nom_complet: nom_complet.clone(),
+        avatar_url: photo.clone(),
+        accorde_par: auteur_id,
+        accorde_at,
+    };
+
+    // 5) LiveKit : autoriser data publish
+    let room_name = room_name_session(session_id);
+    livekit_moderation::update_participant_can_publish_data(
+        livekit_config.get_ref(),
+        &room_name,
+        &cible_id.to_string(),
+        true,
+    )
+    .await?;
+
+    // 6) Audit
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "CREATE",
+        "afrolang",
+        "session_permission_tableau_blanc",
+        Some(session_id),
+        None,
+        Some(serde_json::json!({ "utilisateur_id": cible_id })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    // 7) DataPacket modération
+    let payload = serde_json::json!({
+        "type": "moderation",
+        "subtype": "permission_update",
+        "payload": {
+            "session_id": session_id,
+            "utilisateur_id": cible_id,
+            "action": "accordee",
+            "accorde_par": auteur_id,
+            "accorde_at": accorde_at,
+        }
+    });
+    livekit_moderation::publier_evenement_moderation(
+        livekit_config.get_ref(),
+        &room_name,
+        &payload,
+    )
+    .await?;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(reponse),
+        error: None,
+    }))
+}
+
+/// DELETE /api/afrolang/sessions/{id}/permissions-tableau-blanc/{user_id}
+pub async fn retirer_permission_tableau_blanc(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<(Uuid, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let (session_id, cible_id) = chemin.into_inner();
+
+    let niveau = est_moderateur_session(pool.get_ref(), session_id, auteur_id).await?;
+    if niveau.is_none() {
+        return Err(ApiErreur::AccesInterdit(
+            "Seul un modérateur de session peut retirer cette permission.".into(),
+        ));
+    }
+
+    // FR-013 : refuser de retirer la permission d'un modérateur de session
+    let niveau_cible = est_moderateur_session(pool.get_ref(), session_id, cible_id).await?;
+    if niveau_cible.is_some() {
+        return Err(ApiErreur::Conflit(
+            "Cette permission ne peut pas être retirée à un modérateur.".into(),
+        ));
+    }
+
+    let res = sqlx::query(
+        "DELETE FROM afrolang.session_permission_tableau_blanc
+         WHERE session_id = $1 AND utilisateur_id = $2",
+    )
+    .bind(session_id)
+    .bind(cible_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if res.rows_affected() == 0 {
+        return Err(ApiErreur::NonTrouve(
+            "Aucune permission individuelle à retirer.".into(),
+        ));
+    }
+
+    let room_name = room_name_session(session_id);
+    livekit_moderation::update_participant_can_publish_data(
+        livekit_config.get_ref(),
+        &room_name,
+        &cible_id.to_string(),
+        false,
+    )
+    .await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "DELETE",
+        "afrolang",
+        "session_permission_tableau_blanc",
+        Some(session_id),
+        Some(serde_json::json!({ "utilisateur_id": cible_id })),
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    let payload = serde_json::json!({
+        "type": "moderation",
+        "subtype": "permission_update",
+        "payload": {
+            "session_id": session_id,
+            "utilisateur_id": cible_id,
+            "action": "retiree",
+            "accorde_par": auteur_id,
+            "accorde_at": chrono::Utc::now(),
+        }
+    });
+    livekit_moderation::publier_evenement_moderation(
+        livekit_config.get_ref(),
+        &room_name,
+        &payload,
+    )
+    .await?;
+
+    Ok(HttpResponse::NoContent().finish())
+}
+
+/// POST /api/afrolang/sessions/{id}/spotlight
+pub async fn mettre_en_evidence(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<MettreEnEvidencePayload>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let session_id = chemin.into_inner();
+    let cible_id = body.utilisateur_id;
+
+    let niveau = est_moderateur_session(pool.get_ref(), session_id, auteur_id).await?;
+    let Some(n) = niveau else {
+        return Err(ApiErreur::AccesInterdit(
+            "Modérateur de session requis.".into(),
+        ));
+    };
+    if !n.peut_spotlight() {
+        return Err(ApiErreur::AccesInterdit(
+            "Les modérateurs attitrés ne peuvent pas mettre en évidence (FR-001b).".into(),
+        ));
+    }
+
+    let (salle_id, salle_privee_id) = charger_contexte_salle(pool.get_ref(), session_id).await?;
+    if salle_privee_id.is_some() || salle_id.is_none() {
+        return Err(ApiErreur::Validation(
+            "Spotlight indisponible dans une session privée (FR-027).".into(),
+        ));
+    }
+
+    let cible_presente: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM afrolang.session_participant
+            WHERE session_id = $1 AND utilisateur_id = $2 AND quitte_at IS NULL
+        )",
+    )
+    .bind(session_id)
+    .bind(cible_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !cible_presente {
+        return Err(ApiErreur::NonTrouve("Participant absent de la session.".into()));
+    }
+
+    let ancien: Option<Uuid> = sqlx::query_scalar(
+        "SELECT participant_mis_en_evidence_id FROM afrolang.session WHERE id = $1",
+    )
+    .bind(session_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    sqlx::query(
+        "UPDATE afrolang.session
+         SET participant_mis_en_evidence_id = $2,
+             mis_en_evidence_par = $3,
+             mis_en_evidence_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(session_id)
+    .bind(cible_id)
+    .bind(auteur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    let spotlight = charger_spotlight(pool.get_ref(), session_id).await?
+        .ok_or_else(|| ApiErreur::BaseDeDonnees("Spotlight non rechargé".into()))?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "UPDATE",
+        "afrolang",
+        "session",
+        Some(session_id),
+        Some(serde_json::json!({ "spotlight_id": ancien })),
+        Some(serde_json::json!({ "spotlight_id": cible_id })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    let payload = serde_json::json!({
+        "type": "moderation",
+        "subtype": "spotlight",
+        "payload": spotlight,
+    });
+    livekit_moderation::publier_evenement_moderation(
+        livekit_config.get_ref(),
+        &room_name_session(session_id),
+        &payload,
+    )
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(spotlight),
+        error: None,
+    }))
+}
+
+/// DELETE /api/afrolang/sessions/{id}/spotlight
+pub async fn retirer_mise_en_evidence(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let session_id = chemin.into_inner();
+
+    let niveau = est_moderateur_session(pool.get_ref(), session_id, auteur_id).await?;
+    let Some(n) = niveau else {
+        return Err(ApiErreur::AccesInterdit("Modérateur de session requis.".into()));
+    };
+    if !n.peut_spotlight() {
+        return Err(ApiErreur::AccesInterdit("Capacité spotlight requise.".into()));
+    }
+
+    let (salle_id, salle_privee_id) = charger_contexte_salle(pool.get_ref(), session_id).await?;
+    if salle_privee_id.is_some() || salle_id.is_none() {
+        return Err(ApiErreur::Validation(
+            "Spotlight indisponible dans une session privée.".into(),
+        ));
+    }
+
+    let ancien: Option<Uuid> = sqlx::query_scalar(
+        "SELECT participant_mis_en_evidence_id FROM afrolang.session WHERE id = $1",
+    )
+    .bind(session_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    sqlx::query(
+        "UPDATE afrolang.session
+         SET participant_mis_en_evidence_id = NULL,
+             mis_en_evidence_par = NULL,
+             mis_en_evidence_at = NULL,
+             updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(session_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "UPDATE",
+        "afrolang",
+        "session",
+        Some(session_id),
+        Some(serde_json::json!({ "spotlight_id": ancien })),
+        Some(serde_json::json!({ "spotlight_id": serde_json::Value::Null })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    let payload = serde_json::json!({
+        "type": "moderation",
+        "subtype": "spotlight",
+        "payload": serde_json::Value::Null,
+    });
+    livekit_moderation::publier_evenement_moderation(
+        livekit_config.get_ref(),
+        &room_name_session(session_id),
+        &payload,
+    )
+    .await?;
+
+    Ok(HttpResponse::NoContent().finish())
 }
