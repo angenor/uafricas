@@ -16,6 +16,14 @@ const saving = ref(false)
 const erreurLocale = ref<string | null>(null)
 const successMsg = ref<string | null>(null)
 
+// Modération admin (feature 001-ressources-fermeture-session, US2)
+const modalReactivation = ref(false)
+const rechargerSalleApresReactivation = async () => {
+  await chargerDetail(id)
+  successMsg.value = 'Salle réactivée avec succès'
+  setTimeout(() => { successMsg.value = null }, 3000)
+}
+
 const form = reactive({
   titre: '',
   description: '',
@@ -216,6 +224,30 @@ onMounted(() => {
         <button role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'administrateurs' }" @click="ongletActif = 'administrateurs'">
           <font-awesome-icon icon="user-shield" class="mr-1" /> Administrateurs de salle
         </button>
+        <button role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'historique-moderation' }" @click="ongletActif = 'historique-moderation'">
+          <font-awesome-icon icon="gavel" class="mr-1" /> Historique de modération
+        </button>
+      </div>
+
+      <!-- Bandeau désactivation administrative (feature 001-ressources-fermeture-session, US2) -->
+      <div
+        v-if="salleDetail.desactivee_admin"
+        class="alert alert-error mb-4 flex items-center justify-between"
+      >
+        <div>
+          <font-awesome-icon icon="ban" class="mr-2" />
+          <span class="font-semibold">Salle désactivée par administration</span>
+          <p v-if="salleDetail.desactivee_admin.motif" class="text-sm mt-1">
+            Motif : {{ salleDetail.desactivee_admin.motif }}
+          </p>
+          <p class="text-xs opacity-75">
+            Désactivée le {{ new Date(salleDetail.desactivee_admin.desactivee_at).toLocaleString('fr-FR') }}
+          </p>
+        </div>
+        <button class="btn btn-success btn-sm" @click="modalReactivation = true">
+          <font-awesome-icon icon="circle-check" class="mr-1" />
+          Réactiver
+        </button>
       </div>
 
       <!-- Onglet Infos -->
@@ -382,6 +414,20 @@ onMounted(() => {
           <AdminAfrolangSalleAdministrateursPanel :salle-id="id" />
         </div>
       </div>
+
+      <!-- Onglet Historique de modération (feature 001-ressources-fermeture-session, US3) -->
+      <div v-if="ongletActif === 'historique-moderation'">
+        <AdminAfrolangSalleHistoriqueModerationPanel :salle-id="id" />
+      </div>
+
+      <!-- Modal de réactivation (feature 001-ressources-fermeture-session, US2) -->
+      <AdminAfrolangSalleReactivationModal
+        :open="modalReactivation"
+        :salle-id="id"
+        :salle-titre="salleDetail?.titre"
+        @close="modalReactivation = false"
+        @success="rechargerSalleApresReactivation"
+      />
 
       <!-- Onglet Sessions -->
       <div v-if="ongletActif === 'sessions'" class="card bg-base-100 shadow-sm">

@@ -73,6 +73,40 @@ pub async fn update_participant_can_publish_data(
     Ok(())
 }
 
+/// Ferme administrativement une session : diffuse un DataPacket `RELIABLE`
+/// `{type:'admin', subtype:'session_fermee', motif_public}` à tous les
+/// participants, puis détruit la room LiveKit (kick effectif < 5 s, SC-005).
+///
+/// `motif_public` est volontairement court et générique — le motif détaillé
+/// saisi par l'admin n'est PAS diffusé aux participants (FR : seuls les
+/// admins de salle / créateur reçoivent le motif détaillé via notification).
+///
+/// Les erreurs LiveKit sont journalisées mais ne propagent pas une 500 — la
+/// mutation Postgres (etat='terminee' + salle.desactivee_admin) reste la source
+/// de vérité et déclenche l'éjection effective au prochain heartbeat client.
+pub async fn fermer_session_admin(
+    cfg: &LivekitConfig,
+    room_name: &str,
+    motif_public: &str,
+) -> Result<(), ApiErreur> {
+    // 1. Diffuser l'évènement aux participants encore connectés
+    let payload = serde_json::json!({
+        "type": "admin",
+        "subtype": "session_fermee",
+        "motif_public": motif_public,
+    });
+    let _ = publier_evenement_moderation(cfg, room_name, &payload).await;
+
+    // 2. Détruire la room LiveKit (déconnexion forcée de tous les pairs)
+    if let Err(err) = room_client(cfg).delete_room(room_name).await {
+        eprintln!(
+            "[livekit_moderation] delete_room({}) a échoué : {}",
+            room_name, err
+        );
+    }
+    Ok(())
+}
+
 /// Publie un DataPacket JSON sur le canal `RELIABLE` à tous les participants
 /// de la room. Utilisé pour notifier en temps réel les mutations de modération
 /// (permission_update, spotlight).

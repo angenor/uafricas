@@ -96,6 +96,45 @@ fn calculer_total_pages(total: i64, par_page: i64) -> i64 {
     if total == 0 { 1 } else { (total as f64 / par_page as f64).ceil() as i64 }
 }
 
+/// Indique si `utilisateur_id` a un accès actif à la salle privée `salle_privee_id`
+/// (feature 001-ressources-fermeture-session, FR-001 option C).
+///
+/// Un accès est dit actif s'il existe une ligne dans `afrolang.acces_salle_privee`
+/// avec `revoque_at IS NULL`. Le créateur de la salle privée a toujours accès
+/// (test d'identité direct sans passage par la table).
+pub async fn a_acces_salle_privee_actif(
+    pool: &PgPool,
+    salle_privee_id: Uuid,
+    utilisateur_id: Uuid,
+) -> Result<bool, sqlx::Error> {
+    // Court-circuit créateur : pas de saisie de code requise pour son auteur.
+    let est_createur: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM afrolang.salle_privee
+            WHERE id = $1 AND cree_par = $2
+              AND archivee_at IS NULL AND deleted_at IS NULL
+        )",
+    )
+    .bind(salle_privee_id)
+    .bind(utilisateur_id)
+    .fetch_one(pool)
+    .await?;
+    if est_createur {
+        return Ok(true);
+    }
+
+    sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM afrolang.acces_salle_privee
+            WHERE salle_privee_id = $1 AND utilisateur_id = $2 AND revoque_at IS NULL
+        )",
+    )
+    .bind(salle_privee_id)
+    .bind(utilisateur_id)
+    .fetch_one(pool)
+    .await
+}
+
 /// Helper d'autorisation centralisé (FR-019, feature 001-admin-salles-publiques).
 ///
 /// Retourne `true` si l'utilisateur a une nomination active comme administrateur
@@ -635,6 +674,10 @@ pub async fn obtenir_salle(
             salles_privees: salles_privees.iter().map(|sp| sp.to_response()).collect(),
             pays_origine: salle.to_pays_origine(),
             administrateurs: salle.to_administrateurs(),
+            // Vue publique : motif masqué (FR-020). Les endpoints admin
+            // (cf. `admin/sessions_moderation.rs`) utilisent
+            // `to_desactivation_admin()` pour exposer le motif détaillé.
+            desactivee_admin: salle.to_desactivation_public(),
             created_at: salle.created_at,
             updated_at: salle.updated_at,
         }),
@@ -3392,6 +3435,20 @@ pub async fn verifier_code_acces_salle_privee(
         return Err(ApiErreur::NonTrouve("Salle privée inexistante".into()));
     }
 
+    // Salle publique parente désactivée par l'administration (FR-019).
+    let parent_desactivee: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM afrolang.salle
+                       WHERE id = $1 AND desactivee_admin_at IS NOT NULL)",
+    )
+    .bind(salle.salle_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if parent_desactivee {
+        return Err(ApiErreur::AccesInterdit(
+            "Salle désactivée par l'administration".into(),
+        ));
+    }
+
     // Auteur : court-circuit (FR-014) — pas de vérification, pas d'audit.
     if salle.cree_par == utilisateur_id {
         let (jeton, expires_at) = jwt::creer_acces_jeton_salle_privee(
@@ -3453,6 +3510,36 @@ pub async fn verifier_code_acces_salle_privee(
         return Err(ApiErreur::AccesInterdit("Code incorrect".into()));
     }
 
+    // Mémoriser l'accès à la salle privée pour la lecture future des ressources
+    // contribuées (feature 001-ressources-fermeture-session, FR-001 option C).
+    // ON CONFLICT idempotent : pas d'audit sur les re-validations.
+    let inserted_acces = sqlx::query(
+        "INSERT INTO afrolang.acces_salle_privee (salle_privee_id, utilisateur_id, valide_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (salle_privee_id, utilisateur_id) WHERE revoque_at IS NULL
+         DO NOTHING",
+    )
+    .bind(salle_privee_id)
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if inserted_acces.rows_affected() == 1 {
+        audit::log_action(
+            pool.get_ref(),
+            Some(utilisateur_id),
+            "CREATE",
+            "afrolang",
+            "acces_salle_privee",
+            Some(salle_privee_id),
+            None,
+            Some(serde_json::json!({ "salle_privee_id": salle_privee_id })),
+            ip.as_deref(),
+            ua.as_deref(),
+        )
+        .await;
+    }
+
     let (jeton, expires_at) = jwt::creer_acces_jeton_salle_privee(
         salle_privee_id,
         utilisateur_id,
@@ -3506,6 +3593,20 @@ pub async fn demarrer_ou_rejoindre_session_salle_privee(
             data: None,
             error: Some("Salle privée archivée".into()),
         }));
+    }
+
+    // Salle publique parente désactivée par l'administration (FR-019).
+    let parent_desactivee: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM afrolang.salle
+                       WHERE id = $1 AND desactivee_admin_at IS NOT NULL)",
+    )
+    .bind(salle.salle_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if parent_desactivee {
+        return Err(ApiErreur::AccesInterdit(
+            "Salle désactivée par l'administration".into(),
+        ));
     }
 
     let moderateur_id = salle.cree_par;
@@ -3669,6 +3770,20 @@ pub async fn demarrer_ou_rejoindre_session_salle_publique(
     .await?;
     if !salle_active {
         return Err(ApiErreur::NonTrouve("Salle publique introuvable".into()));
+    }
+
+    // Désactivation administrative (feature 001-ressources-fermeture-session, FR-019)
+    let desactivee_admin: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM afrolang.salle
+                       WHERE id = $1 AND desactivee_admin_at IS NOT NULL)",
+    )
+    .bind(salle_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if desactivee_admin {
+        return Err(ApiErreur::AccesInterdit(
+            "Salle désactivée par l'administration".into(),
+        ));
     }
 
     // Transaction : garantir au plus UNE session en_cours par salle publique.
@@ -3844,6 +3959,10 @@ pub async fn modifier_code_acces_salle_privee(
 
     let nouveau_hash = hasher_code_acces(body.nouveau_code_acces.as_str())?;
 
+    // Transaction : mise à jour du hash + révocation des accès mémorisés
+    // (feature 001-ressources-fermeture-session, FR-001 option C).
+    let mut tx = pool.begin().await?;
+
     sqlx::query(
         "UPDATE afrolang.salle_privee
          SET code_acces_hash = $2, updated_at = NOW()
@@ -3851,8 +3970,22 @@ pub async fn modifier_code_acces_salle_privee(
     )
     .bind(salle_privee_id)
     .bind(&nouveau_hash)
-    .execute(pool.get_ref())
+    .execute(&mut *tx)
     .await?;
+
+    let revoques = sqlx::query(
+        "UPDATE afrolang.acces_salle_privee
+            SET revoque_at = NOW()
+          WHERE salle_privee_id = $1 AND revoque_at IS NULL",
+    )
+    .bind(salle_privee_id)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
 
     // Audit : on ne trace JAMAIS le plaintext, seulement les hashes
     // (pour permettre la reconstitution d'historique sans fuite).
@@ -3865,10 +3998,30 @@ pub async fn modifier_code_acces_salle_privee(
         Some(salle_privee_id),
         Some(serde_json::json!({ "code_acces_hash": ancien_hash })),
         Some(serde_json::json!({ "code_acces_hash": nouveau_hash })),
-        audit::extraire_ip(&req).as_deref(),
-        audit::extraire_user_agent(&req).as_deref(),
+        ip.as_deref(),
+        ua.as_deref(),
     )
     .await;
+
+    if revoques.rows_affected() > 0 {
+        audit::log_action(
+            pool.get_ref(),
+            Some(utilisateur_id),
+            "UPDATE",
+            "afrolang",
+            "acces_salle_privee",
+            Some(salle_privee_id),
+            None,
+            Some(serde_json::json!({
+                "revoque_at": "NOW()",
+                "motif": "changement_code",
+                "lignes_revoquees": revoques.rows_affected(),
+            })),
+            ip.as_deref(),
+            ua.as_deref(),
+        )
+        .await;
+    }
 
     Ok(HttpResponse::NoContent().finish())
 }

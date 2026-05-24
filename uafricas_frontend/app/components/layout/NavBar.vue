@@ -158,6 +158,18 @@
                 </NuxtLink>
 
                 <NuxtLink
+                  to="/mon-compte/recommandations-accompagnateur"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
+                >
+                  <font-awesome-icon icon="fa-solid fa-user-graduate" class="w-4 text-gray-400" />
+                  Recommandations
+                  <span v-if="recommandationsAccompagnateurEnAttente > 0"
+                        class="ml-auto bg-custom-chocolat text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                    {{ recommandationsAccompagnateurEnAttente }}
+                  </span>
+                </NuxtLink>
+
+                <NuxtLink
                   v-if="isAdmin"
                   to="/admin"
                   class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
@@ -376,6 +388,9 @@ const rechercheOuverte = ref(false)
 const { isAuthenticated, user, fullName, isAdmin, logout } = useAuth()
 const route = useRoute()
 
+// Feature 001-ressources-fermeture-session : badge recommandations accompagnateur
+const { mesRecommandationsEnAttente: recommandationsAccompagnateurEnAttente, rafraichirCompteur } = useAfrolangAccompagnateur()
+
 watch(() => route.path, () => {
   mobileOpen.value = false
   mobileSection.value = null
@@ -391,6 +406,12 @@ const handleRaccourciRecherche = (e: KeyboardEvent) => {
 
 onMounted(() => {
   document.addEventListener('keydown', handleRaccourciRecherche)
+  // Rafraîchit le badge recommandations accompagnateur (silencieux si non connecté)
+  rafraichirCompteur()
+})
+
+watch(() => isAuthenticated.value, () => {
+  rafraichirCompteur()
 })
 
 onUnmounted(() => {

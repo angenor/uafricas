@@ -119,6 +119,13 @@ export interface SoumettrePropositionPayload {
   pays_origine_ids: string[]
 }
 
+/** Désactivation administrative d'une salle (feature 001-ressources-fermeture-session).
+ *  `motif` est `null` côté public, rempli côté admin uniquement. */
+export interface DesactivationAdminInfoAPI {
+  desactivee_at: string
+  motif: string | null
+}
+
 /** DTO salle publique (liste) — feature 005 */
 export interface SalleAPI {
   id: string
@@ -139,6 +146,7 @@ export interface SalleAPI {
   ressources_count: number
   pays_origine: PaysOrigineLight[]
   administrateurs: AdministrateurLight[]
+  desactivee_admin: DesactivationAdminInfoAPI | null
   created_at: string
   updated_at: string
 }
@@ -1778,9 +1786,30 @@ export const useAfrolang = () => {
     }
   }
 
+  // ── Feature 001-ressources-fermeture-session : helpers d'autorisation ──
+
+  /** Indique si la salle est gelée par administration (lecture seule + bandeau). */
+  const salleDesactiveeAdmin = (salle: SalleAPI | null): DesactivationAdminInfoAPI | null => {
+    return salle?.desactivee_admin ?? null
+  }
+
+  /** Combine : compte connecté actif + salle vivante + accès salle privée si applicable.
+   *  Si `salle` n'est pas chargée (ex. depuis l'intérieur d'une session live),
+   *  on autorise — le backend re-valide tous les invariants. */
+  const peutContribuerRessource = (
+    salle: SalleAPI | null,
+    aAccesSallePriveeSiNecessaire: boolean = true,
+  ): boolean => {
+    if (!userStore.accessToken) return false
+    if (salle && salle.desactivee_admin !== null) return false
+    return aAccesSallePriveeSiNecessaire
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
+    salleDesactiveeAdmin,
+    peutContribuerRessource,
     // Annuaire (US1)
     listerGroupesEthniques,
     // Salles publiques

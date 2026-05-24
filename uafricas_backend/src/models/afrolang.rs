@@ -49,7 +49,9 @@ pub const SALLE_COLONNES: &str =
     "s.id, s.titre, s.slug, s.description, s.image_couverture_url,
      s.langue_cible, s.langue_code, s.alphabet, s.dictionnaire_url,
      s.groupe_ethnique_id, s.actif, s.cree_par,
-     s.created_at, s.updated_at, s.deleted_at";
+     s.created_at, s.updated_at, s.deleted_at,
+     s.desactivee_admin_at, s.desactivee_par, s.motif_desactivation,
+     s.reactivee_at, s.reactivee_par, s.commentaire_reactivation";
 
 /// Colonnes de base pour afrolang.salle_privee (refonte 2026-04)
 ///
@@ -125,6 +127,19 @@ pub struct SalleRow {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub deleted_at: Option<DateTime<Utc>>,
+    // Désactivation administrative (feature 001-ressources-fermeture-session)
+    #[sqlx(default)]
+    pub desactivee_admin_at: Option<DateTime<Utc>>,
+    #[sqlx(default)]
+    pub desactivee_par: Option<Uuid>,
+    #[sqlx(default)]
+    pub motif_desactivation: Option<String>,
+    #[sqlx(default)]
+    pub reactivee_at: Option<DateTime<Utc>>,
+    #[sqlx(default)]
+    pub reactivee_par: Option<Uuid>,
+    #[sqlx(default)]
+    pub commentaire_reactivation: Option<String>,
     // Champs calcules (sous-requetes)
     #[sqlx(default)]
     pub nombre_salles_privees: Option<i64>,
@@ -350,6 +365,16 @@ pub struct PaysOrigineLight {
     pub code_iso2: Option<String>,
 }
 
+/// État de désactivation administrative d'une salle (feature 001-ressources-fermeture-session).
+///
+/// `motif` n'est rempli que pour les appelants admin ; il reste `None` dans les
+/// réponses publiques (voir handler de lecture).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DesactivationAdminInfo {
+    pub desactivee_at: DateTime<Utc>,
+    pub motif: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct SalleResponse {
     pub id: Uuid,
@@ -370,6 +395,7 @@ pub struct SalleResponse {
     pub ressources_count: i64,
     pub pays_origine: Vec<PaysOrigineLight>,
     pub administrateurs: Vec<AdministrateurLight>,
+    pub desactivee_admin: Option<DesactivationAdminInfo>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -395,6 +421,7 @@ pub struct SalleDetailResponse {
     pub salles_privees: Vec<SallePriveeResponse>,
     pub pays_origine: Vec<PaysOrigineLight>,
     pub administrateurs: Vec<AdministrateurLight>,
+    pub desactivee_admin: Option<DesactivationAdminInfo>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -795,6 +822,25 @@ impl SalleRow {
             .unwrap_or_default()
     }
 
+    /// Construit l'info de désactivation administrative pour un appelant non admin
+    /// (le motif reste `None` côté public — voir [`Self::to_desactivation_admin`]).
+    pub fn to_desactivation_public(&self) -> Option<DesactivationAdminInfo> {
+        self.desactivee_admin_at
+            .map(|desactivee_at| DesactivationAdminInfo {
+                desactivee_at,
+                motif: None,
+            })
+    }
+
+    /// Variante admin : expose le motif détaillé.
+    pub fn to_desactivation_admin(&self) -> Option<DesactivationAdminInfo> {
+        self.desactivee_admin_at
+            .map(|desactivee_at| DesactivationAdminInfo {
+                desactivee_at,
+                motif: self.motif_desactivation.clone(),
+            })
+    }
+
     pub fn to_response(&self) -> SalleResponse {
         SalleResponse {
             id: self.id,
@@ -815,6 +861,10 @@ impl SalleRow {
             ressources_count: self.ressources_count.unwrap_or(0),
             pays_origine: self.to_pays_origine(),
             administrateurs: self.to_administrateurs(),
+            // Lecture publique : motif systématiquement masqué (FR-020).
+            // Le handler admin doit utiliser `to_desactivation_admin` pour
+            // restituer le motif détaillé.
+            desactivee_admin: self.to_desactivation_public(),
             created_at: self.created_at,
             updated_at: self.updated_at,
         }

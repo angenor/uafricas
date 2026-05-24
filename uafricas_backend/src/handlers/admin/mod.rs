@@ -21,6 +21,7 @@ pub mod codimoi_admin;
 pub mod salles;
 pub mod salles_privees;
 pub mod sessions_afrolang;
+pub mod sessions_moderation;
 pub mod moderateurs_afrolang;
 pub mod propositions_salle;
 pub mod gouvernance;

@@ -3,6 +3,7 @@ pub mod afripulse_public;
 pub mod arbre_genealogique;
 pub mod africantives;
 pub mod afrolang;
+pub mod afrolang_ressources;
 pub mod annonces;
 pub mod auth;
 pub mod bibliotheques_humaines;

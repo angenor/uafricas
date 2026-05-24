@@ -5,7 +5,15 @@
       <!-- Header -->
       <div class="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
         <div class="flex items-center gap-3 min-w-0">
-          <h2 class="text-lg font-bold truncate">{{ session.titre || 'Session Afrolang' }}</h2>
+          <div class="min-w-0 flex flex-col leading-tight">
+            <h2 class="text-base sm:text-lg font-bold truncate">
+              {{ salleNom || session.titre || 'Session Afrolang' }}
+            </h2>
+            <span
+              v-if="sousTitre"
+              class="text-xs text-gray-400 truncate"
+            >{{ sousTitre }}</span>
+          </div>
           <span
             v-if="connectionState === 'connected'"
             class="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 animate-pulse shrink-0"
@@ -33,6 +41,17 @@
           >
             <font-awesome-icon :icon="['fas', 'shield-halved']" class="w-4 h-4" />
             <span class="hidden sm:inline">Modération</span>
+          </button>
+          <!-- Ressources contribuées (feature 001-ressources-fermeture-session, US1) -->
+          <button
+            class="px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
+            :class="ressourcesOuvertes ? 'bg-emerald-500 text-white' : 'bg-gray-700/60 text-emerald-300'"
+            aria-label="Ouvrir le panneau des ressources contribuées"
+            title="Partager un document, une vidéo YouTube, un lien ou recommander un accompagnateur"
+            @click="ressourcesOuvertes = !ressourcesOuvertes"
+          >
+            <font-awesome-icon :icon="['fas', 'share-nodes']" class="w-4 h-4" />
+            <span class="hidden sm:inline">Ressources</span>
           </button>
         </div>
       </div>
@@ -86,6 +105,32 @@
           :est-session-publique="!session.salle_privee_id"
           @fermer="moderationPanelOuvert = false"
         />
+
+        <!-- Ressources contribuées (feature 001-ressources-fermeture-session, US1) -->
+        <aside
+          v-if="ressourcesOuvertes && salleIdPourRessources"
+          class="w-full max-w-md lg:max-w-lg xl:max-w-xl border-l border-gray-700 bg-gray-50 text-gray-900 overflow-y-auto"
+        >
+          <div class="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 sticky top-0">
+            <span class="font-semibold text-sm flex items-center gap-2">
+              <font-awesome-icon :icon="['fas', 'share-nodes']" class="w-4 h-4 text-emerald-600" />
+              Ressources contribuées
+            </span>
+            <button
+              class="text-gray-500 hover:text-gray-800"
+              aria-label="Fermer"
+              @click="ressourcesOuvertes = false"
+            >
+              <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
+            </button>
+          </div>
+          <div class="p-3">
+            <AfrolangRessourcesContribueesPanel
+              :salle-id="salleIdPourRessources"
+              :session-id="session.id"
+            />
+          </div>
+        </aside>
       </div>
 
       <!-- Controles -->
@@ -151,7 +196,17 @@ const props = defineProps<{
   livekitUrl: string
   session: SessionDetailAPI
   estModerateur: boolean
+  /** ID de la salle publique parente — requis pour le panneau « Ressources contribuées »
+   *  (feature 001-ressources-fermeture-session, US1). Pour une session privée, le
+   *  parent doit résoudre `salle_privee.salle_id` et le passer ici. */
+  salleId?: string | null
+  /** Nom de la salle (langue / groupe ethnique) à afficher dans le header. */
+  salleNom?: string | null
+  /** Sous-titre du header (ex. nom de la salle privée ou titre de la session). */
+  sousTitre?: string | null
 }>()
+
+const salleIdPourRessources = computed(() => props.salleId ?? null)
 
 const emit = defineEmits<{
   quitter: []
@@ -174,6 +229,7 @@ const connectionState = ref<string>('connecting')
 const wasConnected = ref(false)
 const sidebarOuverte = ref(false)
 const moderationPanelOuvert = ref(false)
+const ressourcesOuvertes = ref(false)
 const tableauBlancOuvert = ref(false)
 const microActif = ref(true)
 const cameraActive = ref(true)

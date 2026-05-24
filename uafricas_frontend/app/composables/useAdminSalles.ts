@@ -20,6 +20,12 @@ export interface AdminSalleDetailPaysOrigine {
   code_iso2: string | null
 }
 
+/** Désactivation administrative (feature 001-ressources-fermeture-session). */
+export interface AdminDesactivationInfo {
+  desactivee_at: string
+  motif: string | null
+}
+
 export interface AdminSalleDetail {
   id: string
   titre: string
@@ -40,6 +46,7 @@ export interface AdminSalleDetail {
   nombre_sessions: number
   nombre_moderateurs_attitres: number
   pays_origine: AdminSalleDetailPaysOrigine[]
+  desactivee_admin: AdminDesactivationInfo | null
 }
 
 export interface CreerSalleForm {

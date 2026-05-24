@@ -7,6 +7,9 @@
       :livekit-url="tokenData.livekit_url"
       :session="session"
       :est-moderateur="tokenData.is_moderator"
+      :salle-id="salleId"
+      :salle-nom="salleNom"
+      :sous-titre="session.titre"
       @quitter="handleQuitterVisio"
       @terminer="handleTerminerVisio"
     >
@@ -59,10 +62,15 @@
 
   <!-- Mode chargement / erreur -->
   <div v-else class="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
-    <div v-if="loading" class="min-h-screen flex items-center justify-center">
-      <div class="text-center">
+    <div v-if="loading" class="min-h-screen flex flex-col items-center justify-center p-4">
+      <div class="text-center mb-6">
         <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4" />
         <p class="text-gray-500">Connexion au livestream...</p>
+      </div>
+      <!-- Feature 001-ressources-fermeture-session : panneau des ressources contribuées
+           pré-affiché pendant la phase d'attente. -->
+      <div class="w-full max-w-3xl">
+        <AfrolangRessourcesContribueesPanel :salle-id="salleId" />
       </div>
     </div>
 
@@ -97,10 +105,13 @@ const userStore = useUserStore()
 const {
   demarrerOuRejoindreSallePublique,
   obtenirSession,
+  obtenirSalle,
   quitterSession,
   terminerSession,
   creerSallePrivee,
 } = useAfrolang()
+
+const salleNom = ref<string | null>(null)
 
 // Refonte 2026-04 : `route.params.id` porte désormais l'ID de la salle
 // publique (US1). Le backend crée/rejoint la session live en 1 appel.
@@ -173,6 +184,11 @@ onMounted(async () => {
     router.push('/login')
     return
   }
+
+  // Récupère le nom de la salle (langue / groupe ethnique) pour l'afficher dans le header.
+  obtenirSalle(salleId.value).then((s) => {
+    salleNom.value = s?.titre ?? null
+  })
 
   const resultat = await demarrerOuRejoindreSallePublique(salleId.value)
   if (!resultat) {

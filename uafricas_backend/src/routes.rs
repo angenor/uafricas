@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -205,6 +205,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/afrolang/salles-privees/archiver-batch-utilisateur", web::post().to(admin::sessions_afrolang::archiver_batch_utilisateur))
                     .route("/afrolang/salles-privees/{id}/archiver", web::post().to(admin::sessions_afrolang::archiver_salle_privee))
                     .route("/afrolang/salles/{id}/desactiver", web::post().to(admin::sessions_afrolang::desactiver_salle_publique_avec_cascade))
+                    // AfroLang - Modération admin (feature 001-ressources-fermeture-session)
+                    .route("/afrolang/sessions/{session_id}/fermer-admin", web::post().to(admin::sessions_moderation::fermer_session_admin))
+                    .route("/afrolang/salles/{salle_id}/reactiver", web::post().to(admin::sessions_moderation::reactiver_salle))
+                    .route("/afrolang/salles/{salle_id}/historique-moderation", web::get().to(admin::sessions_moderation::historique_moderation))
                     // AfroLang - Pays d'origine (feature 001-afrolang-pays-origine)
                     .route("/afrolang/salles/{id}/pays", web::post().to(admin::salles::ajouter_pays_origine_salle))
                     .route("/afrolang/salles/{id}/pays/{pays_id}", web::delete().to(admin::salles::retirer_pays_origine_salle))
@@ -583,6 +587,15 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/salles-privees/{id}", web::get().to(afrolang::obtenir_salle_privee))
                     .route("/salles-privees/{id}", web::put().to(afrolang::modifier_salle_privee))
                     .route("/salles-privees/{id}", web::delete().to(afrolang::supprimer_salle_privee))
+                    // Ressources contribuées communauté (feature 001-ressources-fermeture-session, US1)
+                    .route("/salles/{salle_id}/ressources-contribuees", web::get().to(afrolang_ressources::lister_ressources_contribuees))
+                    .route("/salles/{salle_id}/ressources-contribuees", web::post().to(afrolang_ressources::ajouter_ressource_contribuee))
+                    .route("/ressources-contribuees/{id}", web::delete().to(afrolang_ressources::supprimer_ressource_contribuee))
+                    // Workflow accompagnateur
+                    .route("/accompagnateur/recommandations-recues", web::get().to(afrolang_ressources::lister_recommandations_recues))
+                    .route("/ressources-contribuees/{id}/accepter", web::post().to(afrolang_ressources::accepter_recommandation))
+                    .route("/ressources-contribuees/{id}/refuser", web::post().to(afrolang_ressources::refuser_recommandation))
+                    .route("/ressources-contribuees/{id}/retirer-consentement", web::post().to(afrolang_ressources::retirer_consentement))
                     // Ressources de salle publique (feature 005, US6)
                     .route("/salles/{salle_id}/ressources", web::get().to(afrolang::lister_ressources))
                     .route("/salles/{salle_id}/ressources/fichier", web::post().to(afrolang::uploader_ressource_fichier))

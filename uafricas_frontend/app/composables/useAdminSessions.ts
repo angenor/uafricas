@@ -97,10 +97,26 @@ export const useAdminSessions = () => {
     return response.data
   }
 
+  /**
+   * Ferme administrativement une session pour abus
+   * (feature 001-ressources-fermeture-session — US2).
+   */
+  const fermerSessionAdmin = async (sessionId: string, motif: string) => {
+    const response = await adminFetch<ApiResponse<{ salle_id: string; session_id: string }>>(
+      `/api/admin/afrolang/sessions/${sessionId}/fermer-admin`,
+      {
+        method: 'POST',
+        body: { motif },
+      },
+    )
+    return response
+  }
+
   return {
     sessions, sessionDetail, tableauBlanc, filtres,
     pagination, sort, loading, error,
     chargerListe, chargerDetail, chargerTableauBlanc,
+    fermerSessionAdmin,
     allerPage, changerTri, reinitialiserPagination,
   }
 }

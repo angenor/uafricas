@@ -141,6 +141,7 @@ import {
   faToggleOn,
   faToggleOff,
   faBan,
+  faGavel,
   faCircleXmark,
   faShareNodes,
   faSitemap,
@@ -152,11 +153,13 @@ import {
   faDove,
   faSkullCrossbones,
   faHandFist,
+  faUserGraduate,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
   faClock as farClock,
   faHeart as farHeart,
+  faFolderOpen as farFolderOpen,
 } from '@fortawesome/free-regular-svg-icons'
 import {
   faFacebook,
@@ -312,6 +315,7 @@ library.add(
   faToggleOn,
   faToggleOff,
   faBan,
+  faGavel,
   faCircleXmark,
   faSitemap,
   faCompressArrowsAlt,
@@ -320,6 +324,7 @@ library.add(
   farCalendar,
   farClock,
   farHeart,
+  farFolderOpen,
   faFacebook,
   faTwitter,
   faLinkedin,
@@ -329,6 +334,7 @@ library.add(
   faShareNodes,
   faSignature,
   faVenusMars,
+  faUserGraduate,
   faDove,
   faSkullCrossbones,
   faHandFist,
