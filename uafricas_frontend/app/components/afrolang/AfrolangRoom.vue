@@ -25,12 +25,14 @@
           </button>
           <button
             v-if="monNiveauModerateurSession"
-            class="p-2 rounded-lg hover:bg-gray-700 transition-colors"
-            :class="moderationPanelOuvert ? 'bg-gray-700 text-amber-400' : 'text-gray-400'"
-            aria-label="Modération"
+            class="px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
+            :class="moderationPanelOuvert ? 'bg-amber-500 text-white' : 'bg-gray-700/60 text-amber-300'"
+            aria-label="Ouvrir le panneau de modération"
+            title="Permissions tableau blanc & mise en évidence"
             @click="moderationPanelOuvert = !moderationPanelOuvert"
           >
             <font-awesome-icon :icon="['fas', 'shield-halved']" class="w-4 h-4" />
+            <span class="hidden sm:inline">Modération</span>
           </button>
         </div>
       </div>
@@ -77,7 +79,7 @@
         />
 
         <!-- Panneau modération (visible uniquement pour les modérateurs de session) -->
-        <SalleModerationPanel
+        <AfrolangSalleModerationPanel
           v-if="moderationPanelOuvert && monNiveauModerateurSession"
           :session-id="session.id"
           :participants="allParticipants"
@@ -124,7 +126,6 @@ import {
   ConnectionState,
   Track,
   type RemoteParticipant,
-  type LocalParticipant,
   type Participant,
   type RemoteTrackPublication,
   type RemoteTrack,

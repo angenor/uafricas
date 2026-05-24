@@ -114,10 +114,10 @@ Commandes: `setup`, `deploy`, `update`, `rebuild`, `status`, `logs [svc]`, `rest
 Mettre à jour ce fichier lors de: ajout/suppression service Docker ou dépendance majeure, nouveau composable/store/module, nouvel endpoint API ou schema BDD, changement commandes dev, conventions, CI/CD.
 
 ## Test Users
-  - Email : admin@test.com
+  - Email : test-admin@test.com
   - Mot de passe : Test1234
 
-  - Email : user2@test.com
+  - Email : test-user@test.com
   - Mot de passe : Test1234
 
 ## Active Technologies

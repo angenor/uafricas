@@ -523,11 +523,13 @@ export const useAfrolang = () => {
   const chargement = ref(false)
   const erreur = ref<string | null>(null)
 
-  // ── Feature 001-session-moderation : état partagé ──────────
-  const monNiveauModerateurSession = ref<NiveauModerateur | null>(null)
-  const permissionsTableauBlanc = ref<PermissionTableauBlancAPI[]>([])
-  const moderateursOffice = ref<ModerateurOfficeAPI[]>([])
-  const spotlightActif = ref<SpotlightInfoAPI | null>(null)
+  // ── Feature 001-session-moderation : état partagé (singleton via useState) ──
+  // Nécessaire pour que AfrolangRoom et SalleModerationPanel partagent la même
+  // instance — sinon chaque appel à useAfrolang() crée des refs locales isolées.
+  const monNiveauModerateurSession = useState<NiveauModerateur | null>('afrolang.monNiveauModerateurSession', () => null)
+  const permissionsTableauBlanc = useState<PermissionTableauBlancAPI[]>('afrolang.permissionsTableauBlanc', () => [])
+  const moderateursOffice = useState<ModerateurOfficeAPI[]>('afrolang.moderateursOffice', () => [])
+  const spotlightActif = useState<SpotlightInfoAPI | null>('afrolang.spotlightActif', () => null)
 
   /** Headers d'authentification si l'utilisateur est connecte */
   const authHeaders = (): Record<string, string> => {
@@ -1716,7 +1718,7 @@ export const useAfrolang = () => {
    *  - ou s'il figure dans `permissionsTableauBlanc`. */
   const monEcritureAutorisee = computed<boolean>(() => {
     if (monNiveauModerateurSession.value !== null) return true
-    const moi = userStore.utilisateur?.id
+    const moi = userStore.user?.id
     if (!moi) return false
     return permissionsTableauBlanc.value.some(p => p.utilisateur_id === moi)
   })

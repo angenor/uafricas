@@ -257,6 +257,7 @@ export default function WhiteboardApp() {
         excalidrawAPI={setExcalidrawAPI}
         langCode="fr-FR"
         onChange={handleChange}
+        UIOptions={{ dockedSidebarBreakpoint: 0 }}
       />
     </div>
   )

@@ -239,11 +239,17 @@ watch(
 
 // FR-018 : propager le mode lecture seule à Excalidraw (iframe) à chaque
 // changement de la prop `ecritureAutorisee`.
+// `immediate: true` couvre le cas où la prop passe à true via listerPermissions
+// AVANT que le composant Whiteboard soit monté (l'iframe sera notifiée dès qu'elle
+// répondra excalidraw-ready, mais le watch garantit aussi une notification en cas
+// de changement ultérieur — y compris si l'iframe n'est pas encore prête, le
+// message sera mis en file via postMessage et délivré dès qu'elle l'est).
 watch(
   () => props.ecritureAutorisee,
   (value) => {
     envoyerAIframe({ type: 'set-readonly', value: !value })
   },
+  { immediate: true },
 )
 
 function handleBeforeUnload(): void {
