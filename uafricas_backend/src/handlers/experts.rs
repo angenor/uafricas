@@ -6,7 +6,7 @@ use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::expert::{
     CandidatureExpertBody, ExpertListeResponse, ExpertQueryParams,
-    ExpertRow, EXPERT_COLONNES, mapper_domaine_db,
+    ExpertRow, MaCandidatureRow, EXPERT_COLONNES, mapper_domaine_db,
 };
 
 #[derive(serde::Serialize)]
@@ -210,24 +210,40 @@ pub async fn creer_candidature(
         ));
     }
 
-    // Verifier qu'il n'a pas deja de candidature
-    let deja_candidat: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM iam.expertise WHERE utilisateur_id = $1 AND deleted_at IS NULL)",
+    // Etat de la candidature active eventuelle (FR-006 + FR-015)
+    let statut_actif: Option<String> = sqlx::query_scalar(
+        "SELECT statut::text FROM iam.expertise
+         WHERE utilisateur_id = $1 AND deleted_at IS NULL",
     )
     .bind(utilisateur_id)
-    .fetch_one(pool.get_ref())
+    .fetch_optional(pool.get_ref())
     .await?;
 
-    if deja_candidat {
-        return Err(ApiErreur::Conflit(
-            "Vous avez deja soumis une candidature expert".to_string(),
-        ));
+    // Bloquer si une demande active en_attente ou valide existe deja
+    if let Some(ref statut) = statut_actif {
+        if statut == "en_attente" || statut == "valide" {
+            return Err(ApiErreur::Conflit(
+                "Vous avez deja une demande d'expertise active".to_string(),
+            ));
+        }
     }
 
     // Mapper le domaine
     let domaine_db = mapper_domaine_db(&body.domaine);
 
-    // Inserer la candidature
+    // Transaction : archiver une eventuelle demande refusee puis inserer la nouvelle
+    let mut tx = pool.begin().await?;
+
+    if statut_actif.as_deref() == Some("refuse") {
+        sqlx::query(
+            "UPDATE iam.expertise SET deleted_at = NOW(), updated_at = NOW()
+             WHERE utilisateur_id = $1 AND deleted_at IS NULL",
+        )
+        .bind(utilisateur_id)
+        .execute(&mut *tx)
+        .await?;
+    }
+
     let expertise_id: Uuid = sqlx::query_scalar(
         "INSERT INTO iam.expertise
             (utilisateur_id, domaine, biographie, nb_annees_experience,
@@ -242,8 +258,10 @@ pub async fn creer_candidature(
     .bind(body.nb_annees_experience)
     .bind(&body.portfolio)
     .bind(&body.situations_professionnelles)
-    .fetch_one(pool.get_ref())
+    .fetch_one(&mut *tx)
     .await?;
+
+    tx.commit().await?;
 
     log::info!(
         "Candidature expert creee: {} pour utilisateur {}",
@@ -268,6 +286,33 @@ pub async fn creer_candidature(
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(row.to_response()),
+        error: None,
+    }))
+}
+
+/// GET /api/experts/moi — Candidature active du membre connecte (suivi US3)
+pub async fn ma_candidature(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+
+    let row = sqlx::query_as::<_, MaCandidatureRow>(
+        "SELECT id, domaine::text AS domaine, biographie, nb_annees_experience,
+                portfolio,
+                situations_professionnelles::text[] AS situations_professionnelles,
+                statut::text AS statut, commentaire_admin, date_validation, created_at
+         FROM iam.expertise
+         WHERE utilisateur_id = $1 AND deleted_at IS NULL",
+    )
+    .bind(utilisateur_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: row.map(|r| r.to_response()),
         error: None,
     }))
 }

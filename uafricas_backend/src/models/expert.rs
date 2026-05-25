@@ -120,6 +120,62 @@ pub struct CandidatureExpertBody {
 }
 
 // ────────────────────────────────────────────────────────────────
+// Suivi de la candidature du membre connecte (US3)
+// ────────────────────────────────────────────────────────────────
+
+/// Row brute de la candidature active du membre (lecture directe iam.expertise)
+#[derive(Debug, FromRow)]
+pub struct MaCandidatureRow {
+    pub id: Uuid,
+    pub domaine: String,
+    pub biographie: String,
+    pub nb_annees_experience: i32,
+    pub portfolio: Option<String>,
+    pub situations_professionnelles: Vec<String>,
+    pub statut: String,
+    pub commentaire_admin: Option<String>,
+    pub date_validation: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// DTO de suivi expose au membre (statut + commentaire de refus eventuel)
+#[derive(Debug, Serialize)]
+pub struct MaCandidatureResponse {
+    pub id: Uuid,
+    pub domaine: String,
+    pub biographie: String,
+    #[serde(rename = "nbAnneesExperience")]
+    pub nb_annees_experience: i32,
+    pub portfolio: Option<String>,
+    #[serde(rename = "situationsProfessionnelles")]
+    pub situations_professionnelles: Vec<String>,
+    pub statut: String,
+    #[serde(rename = "commentaireAdmin")]
+    pub commentaire_admin: Option<String>,
+    #[serde(rename = "dateValidation")]
+    pub date_validation: Option<DateTime<Utc>>,
+    #[serde(rename = "createdAt")]
+    pub created_at: DateTime<Utc>,
+}
+
+impl MaCandidatureRow {
+    pub fn to_response(&self) -> MaCandidatureResponse {
+        MaCandidatureResponse {
+            id: self.id,
+            domaine: mapper_domaine_frontend(&self.domaine),
+            biographie: self.biographie.clone(),
+            nb_annees_experience: self.nb_annees_experience,
+            portfolio: self.portfolio.clone(),
+            situations_professionnelles: self.situations_professionnelles.clone(),
+            statut: self.statut.clone(),
+            commentaire_admin: self.commentaire_admin.clone(),
+            date_validation: self.date_validation,
+            created_at: self.created_at,
+        }
+    }
+}
+
+// ────────────────────────────────────────────────────────────────
 // Fonctions utilitaires
 // ────────────────────────────────────────────────────────────────
 

@@ -155,6 +155,8 @@ import {
   faSkullCrossbones,
   faHandFist,
   faUserGraduate,
+  faUserCheck,
+  faUserXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -340,6 +342,8 @@ library.add(
   faDove,
   faSkullCrossbones,
   faHandFist,
+  faUserCheck,
+  faUserXmark,
 )
 
 export default defineNuxtPlugin((nuxtApp) => {

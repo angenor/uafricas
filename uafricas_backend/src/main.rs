@@ -94,6 +94,9 @@ async fn main() -> std::io::Result<()> {
     let livekit_config = app_config.livekit_config();
     let smtp_config = app_config.smtp_config();
 
+    // Registre des connexions SSE de la messagerie (partagé entre workers, mono-instance)
+    let registre_sse = services::messagerie_sse::RegistreSse::new();
+
     log::info!(
         "Serveur en ecoute sur http://{}:{}",
         app_config.host,
@@ -119,6 +122,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(jwt_config.clone()))
             .app_data(web::Data::new(livekit_config.clone()))
             .app_data(web::Data::new(smtp_config.clone()))
+            .app_data(web::Data::new(registre_sse.clone()))
             .app_data(web::PayloadConfig::new(50 * 1024 * 1024))
             .configure(routes::configurer_routes)
             // Servir les fichiers uploades avec Content-Disposition: inline

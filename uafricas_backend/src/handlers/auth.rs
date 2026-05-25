@@ -651,6 +651,21 @@ pub async fn modifier_profil(
         }
     }
 
+    // Valider le pays de residence si fourni (FK shared.pays)
+    if let Some(pays_id) = body.pays_residence_id {
+        let pays_existe: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM shared.pays WHERE id = $1)",
+        )
+        .bind(pays_id)
+        .fetch_one(pool.get_ref())
+        .await?;
+        if !pays_existe {
+            return Err(ApiErreur::Validation(
+                "Pays de residence invalide".into(),
+            ));
+        }
+    }
+
     // Construire la requete UPDATE dynamiquement
     let mut sets: Vec<String> = Vec::new();
     let mut param_idx = 2u32; // $1 est utilisateur_id
@@ -701,6 +716,10 @@ pub async fn modifier_profil(
     }
     if body.langue_preferee.is_some() {
         sets.push(format!("langue_preferee = ${}", param_idx));
+        param_idx += 1;
+    }
+    if body.pays_residence_id.is_some() {
+        sets.push(format!("pays_residence_id = ${}", param_idx));
         // param_idx += 1; -- dernier champ
     }
 
@@ -746,6 +765,9 @@ pub async fn modifier_profil(
     }
     if let Some(ref langue) = body.langue_preferee {
         query = query.bind(langue.as_str());
+    }
+    if let Some(ref pays_id) = body.pays_residence_id {
+        query = query.bind(pays_id);
     }
 
     query.execute(pool.get_ref()).await?;

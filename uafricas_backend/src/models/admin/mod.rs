@@ -34,3 +34,4 @@ pub mod retrouve_amis;
 pub mod vidafrica;
 pub mod biblio_humaine;
 pub mod sessions_moderation;
+pub mod expertise;

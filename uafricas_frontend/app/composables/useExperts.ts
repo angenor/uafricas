@@ -65,6 +65,20 @@ export interface CandidatureExpertBody {
   situations_professionnelles: string[]
 }
 
+/** Suivi de la candidature active du membre (US3) */
+export interface MaCandidatureAPI {
+  id: string
+  domaine: string
+  biographie: string
+  nbAnneesExperience: number
+  portfolio: string | null
+  situationsProfessionnelles: string[]
+  statut: 'en_attente' | 'valide' | 'refuse'
+  commentaireAdmin: string | null
+  dateValidation: string | null
+  createdAt: string
+}
+
 // ──────────────────────────────────────────────────────────────
 // Constantes
 // ──────────────────────────────────────────────────────────────
@@ -255,11 +269,43 @@ export const useExperts = () => {
     }
   }
 
+  /**
+   * Obtenir la candidature active du membre connecte (suivi US3).
+   * Renvoie null si aucune candidature active.
+   */
+  const obtenirMaCandidature = async (): Promise<MaCandidatureAPI | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<MaCandidatureAPI | null>>(
+        `${apiBase}/api/experts/moi`,
+        { headers: authHeaders() },
+      )
+
+      if (!reponse.success) {
+        throw new Error(reponse.error || 'Erreur lors du chargement de la candidature')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur obtenirMaCandidature:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
     listerExperts,
     obtenirExpert,
     creerCandidature,
+    obtenirMaCandidature,
   }
 }

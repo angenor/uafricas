@@ -253,7 +253,7 @@ const menuItems: MenuItem[] = [
     gradient: 'bg-linear-to-br from-teal-600 to-cyan-800',
     image: '/images/fiche-opportunite.jpg',
     links: [
-      { label: 'Apporter mon expertise', to: '/experts', description: 'Partagez vos compétences avec le continent', icon: 'fa-solid fa-hand-holding-heart' },
+      { label: 'Apporter mon expertise', to: '/devenir-expert', description: 'Partagez vos compétences avec le continent', icon: 'fa-solid fa-hand-holding-heart' },
       { label: 'Financer un projet', to: '/financer-projet', description: 'Soutenez des initiatives prometteuses', icon: 'fa-solid fa-coins' },
       { label: 'Partager une innovation', to: '/partager-innovation', description: 'Faites connaître vos idées novatrices', icon: 'fa-solid fa-lightbulb' },
       { label: 'Devenir partenaire', to: '/devenir-partenaire', description: 'Rejoignez notre réseau de partenaires', icon: 'fa-solid fa-handshake' },

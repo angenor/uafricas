@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, membres, messagerie, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -390,7 +390,12 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/bibliotheques-humaines", web::get().to(admin::bibliotheques_humaines::lister_demandes))
                     .route("/bibliotheques-humaines/{id}", web::get().to(admin::bibliotheques_humaines::obtenir_demande))
                     .route("/bibliotheques-humaines/{id}/valider", web::patch().to(admin::bibliotheques_humaines::valider_demande))
-                    .route("/bibliotheques-humaines/{id}/rejeter", web::patch().to(admin::bibliotheques_humaines::rejeter_demande)),
+                    .route("/bibliotheques-humaines/{id}/rejeter", web::patch().to(admin::bibliotheques_humaines::rejeter_demande))
+                    // Demandes d'expertise admin (US2)
+                    .route("/experts", web::get().to(admin::expertise::lister_demandes))
+                    .route("/experts/{id}", web::get().to(admin::expertise::obtenir_demande))
+                    .route("/experts/{id}/valider", web::patch().to(admin::expertise::valider_demande))
+                    .route("/experts/{id}/rejeter", web::patch().to(admin::expertise::rejeter_demande)),
             )
             // Routes Retrouve Amis
             .service(
@@ -498,7 +503,54 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/experts")
                     .route("", web::get().to(experts::lister_experts))
                     .route("/candidature", web::post().to(experts::creer_candidature))
+                    .route("/moi", web::get().to(experts::ma_candidature))
                     .route("/{id}", web::get().to(experts::obtenir_expert)),
+            )
+            // Routes annuaire des membres (profils publics)
+            .service(
+                web::scope("/utilisateurs")
+                    .route("", web::get().to(membres::lister_membres))
+                    .route("/{id}", web::get().to(membres::obtenir_membre)),
+            )
+            // Routes des amitiés & relations sociales (US1 + US2 + US4)
+            .service(
+                web::scope("/amities")
+                    // Demandes
+                    .route("/demandes", web::post().to(amitie::creer_demande))
+                    .route("/demandes/recues", web::get().to(amitie::lister_demandes_recues))
+                    .route("/demandes/envoyees", web::get().to(amitie::lister_demandes_envoyees))
+                    .route("/demandes/{id}/accepter", web::post().to(amitie::accepter_demande))
+                    .route("/demandes/{id}/refuser", web::post().to(amitie::refuser_demande))
+                    // Annulation d'une demande émise (US4, FR-010)
+                    .route("/demandes/{id}", web::delete().to(amitie::annuler_demande))
+                    // États de relation
+                    .route("/etat/{utilisateur_id}", web::get().to(amitie::etat_relation))
+                    .route("/etats", web::post().to(amitie::etats_relation_lot))
+                    // Notifications relationnelles
+                    .route("/notifications", web::get().to(amitie::lister_notifications))
+                    .route("/notifications/tout-lu", web::patch().to(amitie::marquer_tout_lu))
+                    .route("/notifications/{id}/lu", web::patch().to(amitie::marquer_notification_lue))
+                    // Liste des amis & retrait (US4, FR-011/FR-012)
+                    .route("", web::get().to(amitie::lister_amis))
+                    .route("/{utilisateur_id}", web::delete().to(amitie::retirer_ami)),
+            )
+            // Routes de blocage (US4, FR-013)
+            .service(
+                web::scope("/blocages")
+                    .route("", web::get().to(amitie::lister_blocages))
+                    .route("", web::post().to(amitie::bloquer))
+                    .route("/{utilisateur_id}", web::delete().to(amitie::debloquer)),
+            )
+            // Routes de la messagerie privée temps réel (US3)
+            .service(
+                web::scope("/messagerie")
+                    .route("/flux", web::get().to(messagerie::flux))
+                    .route("/non-lus", web::get().to(messagerie::compteur_non_lus))
+                    .route("/conversations", web::get().to(messagerie::lister_conversations))
+                    .route("/conversations/{ami_id}/messages", web::get().to(messagerie::lister_messages))
+                    .route("/conversations/{ami_id}/messages", web::post().to(messagerie::envoyer_message))
+                    .route("/conversations/{ami_id}/lu", web::post().to(messagerie::marquer_conversation_lue))
+                    .route("/messages/{id}", web::delete().to(messagerie::supprimer_message)),
             )
             // Routes des formations (MOOC/CLOM)
             .service(

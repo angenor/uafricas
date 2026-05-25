@@ -1,4 +1,5 @@
 pub mod afripulse;
+pub mod amitie;
 pub mod arbre_genealogique;
 pub mod africantive;
 pub mod afrolang;
@@ -13,6 +14,8 @@ pub mod faculte;
 pub mod fiche_pays;
 pub mod gouvernance;
 pub mod livre;
+pub mod membre;
+pub mod messagerie;
 pub mod mooc;
 pub mod projet;
 pub mod sabbatique;
