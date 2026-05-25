@@ -50,16 +50,16 @@ const descriptionSignalement = ref('')
 // Labels des criteres de score
 const labelsCriteres: Record<string, string> = {
   nom: 'Nom',
-  ecole: 'Ecole',
+  ecole: 'École',
   ville: 'Ville',
   pays: 'Territoire',
-  periode: 'Periode',
+  periode: 'Période',
   source: 'Source',
-  type_reponse: 'Type de reponse',
+  type_reponse: 'Type de réponse',
   type_relation: 'Relation',
-  localite: 'Localite',
-  localite_rencontre: 'Localite',
-  ecole_rencontre: 'Ecole',
+  localite: 'Localité',
+  localite_rencontre: 'Localité',
+  ecole_rencontre: 'École',
   ville_rencontre: 'Ville',
   description: 'Description',
   description_physique: 'Physique',
@@ -67,8 +67,8 @@ const labelsCriteres: Record<string, string> = {
   genre: 'Genre',
   genre_recherche: 'Genre',
   comment_connu: 'Comment connu',
-  prenom: 'Prenom',
-  nom_recherche: 'Nom recherche',
+  prenom: 'Prénom',
+  nom_recherche: 'Nom recherché',
 }
 
 /** Convertit une cle snake_case en label lisible */
@@ -79,7 +79,7 @@ const labelCritere = (cle: string): string => {
 
 /** Labels lisibles pour les valeurs textuelles du score */
 const labelsValeurs: Record<string, string> = {
-  reponse_publique: 'Reponse publique',
+  reponse_publique: 'Réponse publique',
   je_suis_cette_personne: 'Je suis cette personne',
   je_la_connais: 'Je la connais',
   jai_des_informations: 'J\'ai des informations',
@@ -118,18 +118,18 @@ const etatClasses = computed(() => {
 const etatLabel = computed(() => {
   const labels: Record<string, string> = {
     en_attente: 'En attente',
-    acceptee_a: 'Acceptee (vous)',
-    acceptee_b: 'Acceptee (autre partie)',
+    acceptee_a: 'Acceptée (vous)',
+    acceptee_b: 'Acceptée (autre partie)',
     mutuelle: 'Contact mutuel',
-    declinee: 'Declinee',
-    archivee: 'Archivee',
+    declinee: 'Déclinée',
+    archivee: 'Archivée',
   }
   return labels[props.correspondance.etat] || props.correspondance.etat
 })
 
 // Timeline des etats
 const etatsTimeline: { etat: EtatCorrespondance; label: string }[] = [
-  { etat: 'en_attente', label: 'Creation' },
+  { etat: 'en_attente', label: 'Création' },
   { etat: 'acceptee_a', label: 'Acceptation A' },
   { etat: 'acceptee_b', label: 'Acceptation B' },
   { etat: 'mutuelle', label: 'Contact mutuel' },
@@ -174,12 +174,25 @@ const onSignaler = () => {
 const formaterDate = (iso: string): string => {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 }
+
+// Le message de reponse est ecrit par la cible (le repondeur).
+// L'auteur de l'avis le recoit ; la cible l'a envoye.
+const estMessageRecu = computed(() => props.correspondance.mon_role === 'auteur')
+
+// Jours restants avant expiration (negatif si deja expiree)
+const joursAvantExpiration = computed<number | null>(() => {
+  if (!props.correspondance.expire_at) return null
+  const diffMs = new Date(props.correspondance.expire_at).getTime() - Date.now()
+  return Math.ceil(diffMs / 86_400_000)
+})
+
+const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAvantExpiration.value <= 0)
 </script>
 
 <template>
   <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
     <!-- En-tete -->
-    <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-6 border-b border-gray-100">
+    <div class="bg-linear-to-r from-amber-50 to-orange-50 p-6 border-b border-gray-100">
       <div class="flex flex-wrap items-center gap-4">
         <!-- Initiales -->
         <div class="w-16 h-16 rounded-full bg-amber-700 text-white font-bold flex items-center justify-center text-xl shadow-sm shrink-0">
@@ -208,11 +221,11 @@ const formaterDate = (iso: string): string => {
                 ? 'bg-amber-100 text-amber-700'
                 : 'bg-sky-50 text-sky-700'"
             >
-              {{ correspondance.mon_role === 'auteur' ? 'Vous etes l\'auteur' : 'Vous etes la cible' }}
+              {{ correspondance.mon_role === 'auteur' ? 'Vous êtes l\'auteur' : 'Vous êtes la cible' }}
             </span>
           </div>
           <p class="text-sm text-gray-500">
-            Correspondance creee le {{ formaterDate(correspondance.created_at) }}
+            Correspondance créée le {{ formaterDate(correspondance.created_at) }}
           </p>
         </div>
       </div>
@@ -223,7 +236,7 @@ const formaterDate = (iso: string): string => {
       <section>
         <h3 class="text-lg font-semibold text-gray-800 mb-4">
           <font-awesome-icon :icon="['fas', 'chart-bar']" class="mr-2 text-amber-600" />
-          Detail du score
+          Détail du score
         </h3>
         <div class="space-y-3">
           <div
@@ -255,15 +268,21 @@ const formaterDate = (iso: string): string => {
         </div>
       </section>
 
-      <!-- Message de reponse publique -->
+      <!-- Message de reponse publique (recu par l'auteur, envoye par la cible) -->
       <section v-if="correspondance.message_reponse">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">
-          <font-awesome-icon :icon="['fas', 'comment-dots']" class="mr-2 text-amber-600" />
-          Message recu
+          <font-awesome-icon :icon="['fas', estMessageRecu ? 'comment-dots' : 'paper-plane']" class="mr-2 text-amber-600" />
+          {{ estMessageRecu ? 'Message reçu' : 'Votre message envoyé' }}
         </h3>
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-5">
+        <div
+          class="border rounded-lg p-5"
+          :class="estMessageRecu ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'"
+        >
           <div v-if="correspondance.type_reponse_publique" class="mb-3">
-            <span class="text-xs px-3 py-1 rounded-full font-medium bg-blue-100 text-blue-700">
+            <span
+              class="text-xs px-3 py-1 rounded-full font-medium"
+              :class="estMessageRecu ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'"
+            >
               {{ labelValeur(correspondance.type_reponse_publique) }}
             </span>
           </div>
@@ -284,7 +303,7 @@ const formaterDate = (iso: string): string => {
             :class="correspondance.etat === 'declinee' ? 'text-red-500' : 'text-gray-400'"
           />
           <span class="text-sm text-gray-600">
-            Cette correspondance a ete {{ correspondance.etat === 'declinee' ? 'declinee' : 'archivee' }}.
+            Cette correspondance a été {{ correspondance.etat === 'declinee' ? 'déclinée' : 'archivée' }}.
           </span>
         </div>
         <div v-else class="flex items-center gap-0">
@@ -325,7 +344,7 @@ const formaterDate = (iso: string): string => {
       <section v-if="correspondance.resume_anonymise.ville || correspondance.resume_anonymise.periode || correspondance.resume_anonymise.criteres_communs?.length">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">
           <font-awesome-icon :icon="['fas', 'user-secret']" class="mr-2 text-amber-600" />
-          Resume anonymise
+          Résumé anonymisé
         </h3>
         <div class="bg-gray-50 rounded-lg p-4 space-y-2">
           <p v-if="correspondance.resume_anonymise.ville" class="text-sm text-gray-600">
@@ -352,21 +371,33 @@ const formaterDate = (iso: string): string => {
       <section v-if="correspondance.etat === 'mutuelle' && correspondance.coordonnees_partagees">
         <h3 class="text-lg font-semibold text-green-700 mb-4">
           <font-awesome-icon :icon="['fas', 'address-book']" class="mr-2" />
-          Coordonnees partagees
+          Coordonnées partagées
         </h3>
         <div class="bg-green-50 border border-green-200 rounded-lg p-5 space-y-3">
-          <div v-if="correspondance.coordonnees_partagees.email" class="flex items-center gap-3">
+          <a
+            v-if="correspondance.coordonnees_partagees.email"
+            :href="`mailto:${correspondance.coordonnees_partagees.email}`"
+            class="flex items-center gap-3 group"
+          >
             <font-awesome-icon :icon="['fas', 'envelope']" class="text-green-600 w-5" />
-            <span class="text-sm text-gray-800">{{ correspondance.coordonnees_partagees.email }}</span>
-          </div>
-          <div v-if="correspondance.coordonnees_partagees.telephone" class="flex items-center gap-3">
+            <span class="text-sm text-gray-800 group-hover:text-green-700 group-hover:underline">{{ correspondance.coordonnees_partagees.email }}</span>
+          </a>
+          <a
+            v-if="correspondance.coordonnees_partagees.telephone"
+            :href="`tel:${correspondance.coordonnees_partagees.telephone}`"
+            class="flex items-center gap-3 group"
+          >
             <font-awesome-icon :icon="['fas', 'phone']" class="text-green-600 w-5" />
-            <span class="text-sm text-gray-800">{{ correspondance.coordonnees_partagees.telephone }}</span>
-          </div>
-          <div v-if="correspondance.coordonnees_partagees.messagerie" class="flex items-center gap-3">
+            <span class="text-sm text-gray-800 group-hover:text-green-700 group-hover:underline">{{ correspondance.coordonnees_partagees.telephone }}</span>
+          </a>
+          <NuxtLink
+            v-if="correspondance.coordonnees_partagees.messagerie && correspondance.coordonnees_partagees.messagerie_utilisateur_id"
+            :to="`/profil/${correspondance.coordonnees_partagees.messagerie_utilisateur_id}`"
+            class="flex items-center gap-3 group"
+          >
             <font-awesome-icon :icon="['fas', 'comment-dots']" class="text-green-600 w-5" />
-            <span class="text-sm text-gray-800">{{ correspondance.coordonnees_partagees.messagerie }}</span>
-          </div>
+            <span class="text-sm text-gray-800 group-hover:text-green-700 group-hover:underline">Contacter via la messagerie interne</span>
+          </NuxtLink>
         </div>
       </section>
 
@@ -392,7 +423,7 @@ const formaterDate = (iso: string): string => {
         <!-- Formulaire d'acceptation inline -->
         <div v-else class="bg-green-50 border border-green-200 rounded-lg p-5">
           <h4 class="text-sm font-semibold text-green-800 mb-3">
-            Choisissez les coordonnees a partager :
+            Choisissez les coordonnées à partager :
           </h4>
           <div class="space-y-2 mb-4">
             <label class="flex items-center gap-3 cursor-pointer">
@@ -411,7 +442,7 @@ const formaterDate = (iso: string): string => {
                 class="w-4 h-4 accent-green-600"
               />
               <font-awesome-icon :icon="['fas', 'phone']" class="text-green-600 w-4" />
-              <span class="text-sm text-gray-700">Telephone</span>
+              <span class="text-sm text-gray-700">Téléphone</span>
             </label>
             <label class="flex items-center gap-3 cursor-pointer">
               <input
@@ -424,7 +455,7 @@ const formaterDate = (iso: string): string => {
             </label>
           </div>
           <p v-if="!coordonneesValides" class="text-xs text-red-500 mb-3">
-            Veuillez selectionner au moins une coordonnee.
+            Veuillez sélectionner au moins une coordonnée.
           </p>
           <div class="flex items-center gap-3">
             <button
@@ -445,9 +476,17 @@ const formaterDate = (iso: string): string => {
       </section>
 
       <!-- Expiration -->
-      <div v-if="correspondance.expire_at" class="flex items-center text-sm text-gray-400">
+      <div
+        v-if="correspondance.expire_at"
+        class="flex items-center text-sm"
+        :class="estExpiree ? 'text-red-500' : 'text-gray-400'"
+      >
         <font-awesome-icon :icon="['fas', 'clock']" class="w-4 mr-2" />
-        Expire le {{ formaterDate(correspondance.expire_at) }}
+        <span v-if="estExpiree">Expirée le {{ formaterDate(correspondance.expire_at) }}</span>
+        <span v-else>
+          Expire le {{ formaterDate(correspondance.expire_at) }}
+          <span class="text-gray-400">(dans {{ joursAvantExpiration }} jour{{ joursAvantExpiration && joursAvantExpiration > 1 ? 's' : '' }})</span>
+        </span>
       </div>
 
       <!-- Signalement -->

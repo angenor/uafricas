@@ -10,9 +10,8 @@ use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::afripulse::{CategorieSiteTouristique, sous_type_appartient_a};
 use crate::models::contribution_fiche::{
-    CONTRIBUTION_COLONNES, ContributeurRow, ContributionFicheRow, ContributionListeResponse,
-    ContributionQueryParams, CreerContributionBody, TypeObjetContribution,
-    construire_contributeur_response, construire_contribution_response, section_est_valide,
+    CONTRIBUTION_COLONNES, ContributionFicheRow, ContributionListeResponse,
+    ContributionQueryParams, CreerContributionBody, TypeObjetContribution, construire_contribution_response, section_est_valide,
 };
 use crate::services::{audit, image_validation, rate_limit_afripulse};
 

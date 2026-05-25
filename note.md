@@ -62,3 +62,5 @@ il peut arriver que `agent-browser --headed` soit lancé par un autre programme 
   `agent-browser --headed`
 
   `claude --dangerously-skip-permissions`
+
+  de plus, cette page de correspondence pourrais au moins afficher la photo de la personne recherchée

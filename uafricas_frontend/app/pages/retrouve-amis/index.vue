@@ -151,25 +151,27 @@ onMounted(() => {
     </div>
 
     <!-- Comment ça marche (placé avant le listing : comprendre avant de commencer) -->
-    <section class="py-16 px-4 bg-white">
+    <section class="py-10 px-4 bg-white border-b border-gray-100">
       <div class="max-w-5xl mx-auto">
-        <h2 class="text-3xl font-bold text-center text-gray-800 mb-12 font-[Oswald]">
+        <h2 class="text-xl font-bold text-center text-gray-800 mb-8 font-[Oswald]">
           Comment ça marche ?
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
           <div
             v-for="(etape, index) in etapes"
             :key="index"
-            class="bg-gray-50 rounded-xl shadow-sm border border-gray-200 p-8 text-center hover:shadow-md transition-shadow"
+            class="flex items-start gap-3"
           >
-            <div class="w-16 h-16 mx-auto mb-5 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center">
-              <font-awesome-icon :icon="['fas', etape.icone]" class="text-2xl" />
-            </div>
-            <span class="inline-block w-8 h-8 bg-amber-700 text-white rounded-full text-sm font-bold leading-8 mb-3">
+            <span class="shrink-0 w-7 h-7 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center text-sm font-bold">
               {{ index + 1 }}
             </span>
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ etape.titre }}</h3>
-            <p class="text-gray-600 text-sm leading-relaxed">{{ etape.description }}</p>
+            <div>
+              <h3 class="text-sm font-semibold text-gray-800 mb-0.5">
+                <font-awesome-icon :icon="['fas', etape.icone]" class="mr-1.5 text-amber-600" />
+                {{ etape.titre }}
+              </h3>
+              <p class="text-gray-500 text-xs leading-relaxed">{{ etape.description }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -180,14 +182,6 @@ onMounted(() => {
       <div class="max-w-7xl mx-auto lg:flex lg:gap-8">
         <RetrouveAmisSideBar v-if="estConnecte" />
         <div class="flex-1 min-w-0">
-        <!-- En-tête avec compteur -->
-        <div class="mb-10 text-center">
-          <span class="inline-flex items-center gap-2 rounded-full bg-amber-100 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700 mb-4">
-            <font-awesome-icon :icon="['fas', 'bullhorn']" />
-            Avis de recherche
-          </span>
-        </div>
-
         <!-- Barre de filtres compacte -->
         <div class="mb-10 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-200/60">
           <div class="flex flex-wrap items-center gap-2">

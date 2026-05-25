@@ -64,8 +64,8 @@
 
           <!-- Main Content Area -->
           <div class="flex-1 min-w-0">
-            <!-- Bouton Expert sur mesure moderne -->
-            <div class="flex justify-center mb-10">
+            <!-- Boutons d'action : trouver un expert sur mesure + devenir expert -->
+            <div class="flex flex-wrap justify-center items-center gap-4 mb-10">
               <NuxtLink
                 to="/filtre-expert"
                 class="inline-flex items-center gap-3 bg-white px-8 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all group"
@@ -96,6 +96,24 @@
                     d="M17 8l4 4m0 0l-4 4m4-4H3"
                   />
                 </svg>
+              </NuxtLink>
+
+              <!-- CTA : soumettre sa demande pour devenir expert -->
+              <NuxtLink
+                to="/devenir-expert"
+                class="inline-flex items-center gap-3 bg-linear-to-r from-emerald-500 to-teal-500 text-white px-8 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all group"
+              >
+                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                    />
+                  </svg>
+                </div>
+                <span class="font-semibold">Faire connaître mon expertise</span>
               </NuxtLink>
             </div>
 
