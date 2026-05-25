@@ -2,7 +2,7 @@
 import type { BiblioHumaineAPI } from '~/composables/useBibliothequeHumaine'
 import type { ExpertAPI } from '~/composables/useExperts'
 import type { MembreAPI } from '~/composables/useMembres'
-import type { EtatRelation } from '~/composables/useAmis'
+import type { EtatRelation, MembreLightAPI } from '~/composables/useAmis'
 import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
@@ -12,12 +12,30 @@ const { obtenirBiblio } = useBibliothequeHumaine()
 const { obtenirExpert } = useExperts()
 const { obtenirMembre } = useMembres()
 const { obtenirEtatRelation } = useAmis()
+const { demanderOuverture } = useMessagerie()
 const userStore = useUserStore()
 
 // État de la relation avec ce membre (FR-016)
 const etatRelation = ref<EtatRelation>('aucune')
 const estMoi = computed(() => userStore.user?.id === id)
 const peutAfficherAmitie = computed(() => userStore.isAuthenticated && !estMoi.value)
+// La messagerie n'est ouverte qu'entre amis (FR-022)
+const peutEnvoyerMessage = computed(() => peutAfficherAmitie.value && etatRelation.value === 'amis')
+
+/** Ouvre la fenêtre flottante de messagerie sur la conversation de ce profil. */
+const ouvrirMessagerie = () => {
+  if (!membre.value) return
+  const ami: MembreLightAPI = {
+    id: membre.value.id,
+    nom: membre.value.nom,
+    prenom: membre.value.prenom,
+    slug: membre.value.slug,
+    photoUrl: membre.value.photoUrl,
+    fonction: membre.value.fonction,
+    pays: membre.value.pays,
+  }
+  demanderOuverture(ami)
+}
 
 const chargement = ref(true)
 const membre = ref<MembreAPI | null>(null)
@@ -346,13 +364,16 @@ onMounted(async () => {
           </div>
 
           <button
-            class="inline-flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-custom-chocolat to-custom-green text-white font-semibold rounded-xl hover:shadow-lg transition disabled:opacity-60"
-            disabled
+            type="button"
+            class="inline-flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-custom-chocolat to-custom-green text-white font-semibold rounded-xl hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
+            :disabled="!peutEnvoyerMessage"
+            @click="ouvrirMessagerie"
           >
             <font-awesome-icon icon="fa-solid fa-envelope" />
             Envoyer un message
           </button>
-          <p class="text-xs text-gray-400 mt-3">La messagerie directe sera bientôt disponible.</p>
+          <p v-if="!peutAfficherAmitie" class="text-xs text-gray-400 mt-3">Connectez-vous pour échanger avec ce membre.</p>
+          <p v-else-if="!peutEnvoyerMessage" class="text-xs text-gray-400 mt-3">Vous devez être amis pour envoyer un message.</p>
         </div>
       </template>
     </div>

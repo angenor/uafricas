@@ -1,12 +1,26 @@
 <script setup lang="ts">
 import type { MembreLightAPI } from '~/composables/useAmis'
 
-const { conversations, nonLusTotal, listerConversations, fermerConversation } = useMessagerie()
+const { conversations, nonLusTotal, listerConversations, fermerConversation, demandeOuverture } = useMessagerie()
 
 const ouvert = ref(false)
 const amiSelectionne = ref<MembreLightAPI | null>(null)
 const verrouilleeSelection = ref(false)
 const chargee = ref(false)
+
+// Ouverture programmatique depuis l'extérieur (ex. /codi-moi → « Envoyer un message »).
+watch(demandeOuverture, async (ami) => {
+  if (!ami) return
+  ouvert.value = true
+  if (!chargee.value) {
+    await listerConversations()
+    chargee.value = true
+  }
+  const conv = conversations.value.find(c => c.ami.id === ami.id)
+  amiSelectionne.value = conv ? conv.ami : ami
+  verrouilleeSelection.value = conv ? conv.verrouillee : false
+  demandeOuverture.value = null
+})
 
 const badge = computed(() => (nonLusTotal.value > 9 ? '9+' : String(nonLusTotal.value)))
 

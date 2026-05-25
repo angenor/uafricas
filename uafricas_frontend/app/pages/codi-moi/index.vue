@@ -139,6 +139,7 @@
           :stats="stats"
           :popular-posts="popularPosts"
           @go-to-post="(post: CodiMoiPostAPI) => openPostDetail(post.id)"
+          @envoyer-message="demanderOuverture"
         />
       </div>
     </div>
@@ -327,12 +328,17 @@ import {
   type CommentaireAPI,
   type CategoriePost,
 } from '~/composables/useCodiMoi'
+import type { MembreLightAPI } from '~/composables/useAmis'
+import { useUserStore } from '~/stores/user'
 
 useHead({
   title: 'Codimoi - Codification des valeurs | UAfricas'
 })
 
 const { erreur: apiErreur, listerPosts, creerPost, reagir, listerCommentaires, creerCommentaire } = useCodiMoi()
+const { listerAmis } = useAmis()
+const { demanderOuverture } = useMessagerie()
+const userStore = useUserStore()
 
 const breadcrumbs = [
   { label: 'Codimoi', to: undefined }
@@ -342,8 +348,17 @@ const breadcrumbs = [
 const posts = ref<CodiMoiPostAPI[]>([])
 const totalPosts = ref(0)
 
-// Amis (pas d'API backend pour le moment)
-const amis = ref<{ id: string; nom: string; prenom: string }[]>([])
+// Amis de l'utilisateur connecté (alimente la sidebar : profil + messagerie)
+const amis = ref<MembreLightAPI[]>([])
+
+const chargerAmis = async () => {
+  if (!userStore.isAuthenticated) {
+    amis.value = []
+    return
+  }
+  const liste = await listerAmis()
+  amis.value = liste.map(a => a.utilisateur)
+}
 
 // Stats calculées depuis les posts chargés
 const stats = computed(() => {
@@ -595,6 +610,7 @@ onMounted(async () => {
   const { initAuth } = useAuth()
   await initAuth()
   chargerPosts()
+  chargerAmis()
 })
 </script>
 

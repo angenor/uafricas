@@ -58,6 +58,9 @@ export const useMessagerie = () => {
   const conversationOuverte = useState<string | null>('messagerie:ouverte', () => null)
   const messages = useState<MessageAPI[]>('messagerie:messages', () => [])
   const chargementMessages = useState<boolean>('messagerie:chargement', () => false)
+  // Signal d'ouverture programmatique de la fenêtre flottante sur un ami précis
+  // (ex. bouton « Envoyer un message » depuis /codi-moi). La fenêtre l'observe.
+  const demandeOuverture = useState<MembreLightAPI | null>('messagerie:demande-ouverture', () => null)
 
   const authHeaders = (): Record<string, string> => {
     if (userStore.accessToken) return { Authorization: `Bearer ${userStore.accessToken}` }
@@ -185,6 +188,11 @@ export const useMessagerie = () => {
     messages.value = []
   }
 
+  /** Demande l'ouverture de la fenêtre flottante sur la conversation d'un ami. */
+  const demanderOuverture = (ami: MembreLightAPI): void => {
+    demandeOuverture.value = ami
+  }
+
   // ── Helpers internes ────────────────────────────────────────
 
   const amiDeConversation = (conversationId: string): string | undefined =>
@@ -268,6 +276,7 @@ export const useMessagerie = () => {
     conversationOuverte,
     messages,
     chargementMessages,
+    demandeOuverture,
     listerConversations,
     obtenirNonLus,
     listerMessages,
@@ -276,6 +285,7 @@ export const useMessagerie = () => {
     supprimerMessage,
     ouvrirConversation,
     fermerConversation,
+    demanderOuverture,
     gererEvenement,
   }
 }
