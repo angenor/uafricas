@@ -612,7 +612,7 @@
                     <p class="text-sm text-gray-700">{{ maDemande.fonction }}</p>
                   </div>
                   <div v-if="maDemande.pays">
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Pays</p>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Territoire</p>
                     <p class="text-sm text-gray-700">{{ maDemande.pays }}</p>
                   </div>
                   <div v-if="maDemande.specialites.length > 0" class="md:col-span-2">

@@ -98,7 +98,7 @@ const confirmerRejet = () => {
           <p>{{ proposition.groupe_ethnique.nom }}</p>
         </div>
         <div>
-          <h3 class="font-semibold text-sm uppercase text-base-content/70">Pays d'origine</h3>
+          <h3 class="font-semibold text-sm uppercase text-base-content/70">Territoire d'origine</h3>
           <div class="flex flex-wrap gap-2 mt-1">
             <span
               v-for="p in proposition.pays_origine"

@@ -58,10 +58,10 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
 <template>
   <div>
-    <AdminPageHeader titre="Pays" sous-titre="Gerer les pays de reference">
+    <AdminPageHeader titre="Territoires" sous-titre="Gerer les territoires de reference">
       <template #actions>
         <NuxtLink to="/admin/pays/create" class="btn btn-primary btn-sm">
-          <font-awesome-icon icon="plus" class="mr-1" /> Nouveau pays
+          <font-awesome-icon icon="plus" class="mr-1" /> Nouveau territoire
         </NuxtLink>
       </template>
     </AdminPageHeader>

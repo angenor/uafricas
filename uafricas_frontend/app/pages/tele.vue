@@ -25,7 +25,7 @@ const paysDisponibles = ref<string[]>([])
 const categoriesDisponibles = ref<string[]>([])
 
 // Filtres
-const filtrePays = ref('Tous les pays')
+const filtrePays = ref('Tous les territoires')
 const filtreCategorie = ref('Toutes les catégories')
 const rechercheTexte = ref('')
 
@@ -39,7 +39,7 @@ const heroVideoUrl = computed(() => {
 const chainesFiltrees = computed(() => {
   let result = chaines.value
 
-  if (filtrePays.value && filtrePays.value !== 'Tous les pays') {
+  if (filtrePays.value && filtrePays.value !== 'Tous les territoires') {
     result = result.filter(c => c.country === filtrePays.value)
   }
   if (filtreCategorie.value && filtreCategorie.value !== 'Toutes les catégories') {
@@ -228,7 +228,7 @@ onMounted(() => {
             v-model="filtrePays"
             class="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
-            <option>Tous les pays</option>
+            <option>Tous les territoires</option>
             <option v-for="pays in paysDisponibles" :key="pays" :value="pays">{{ pays }}</option>
           </select>
           <select

@@ -37,7 +37,7 @@
           </div>
           <div class="text-center">
             <div class="text-4xl font-bold text-orange-600">{{ stats.nombrePays }}+</div>
-            <div class="text-gray-600 mt-2">Pays représentés</div>
+            <div class="text-gray-600 mt-2">Territoires représentés</div>
           </div>
         </div>
       </div>

@@ -222,7 +222,7 @@ onMounted(() => obtenirDemande(id))
                 <p class="text-sm">{{ demandeDetail.traiteParNom }}</p>
               </div>
               <div v-if="demandeDetail.pays">
-                <p class="text-xs text-base-content/50 uppercase tracking-wide font-semibold mb-0.5">Pays</p>
+                <p class="text-xs text-base-content/50 uppercase tracking-wide font-semibold mb-0.5">Territoire</p>
                 <p class="text-sm">{{ demandeDetail.pays }}</p>
               </div>
             </div>

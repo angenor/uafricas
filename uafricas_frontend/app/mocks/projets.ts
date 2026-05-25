@@ -54,7 +54,7 @@ export interface StatistiquesProjet {
 
 // Liste des pays africains
 export const paysAfricains: Country[] = [
-  { value: '', label: 'Tous les pays' },
+  { value: '', label: 'Tous les territoires' },
   { value: 'Senegal', label: 'Sénégal' },
   { value: 'Cote_d_Ivoire', label: "Côte d'Ivoire" },
   { value: 'Cameroun', label: 'Cameroun' },

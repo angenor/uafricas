@@ -133,7 +133,7 @@ const sidebarSections: SidebarSection[] = [
     label: 'Référentiels',
     faIcon: 'database',
     children: [
-      { label: 'Pays', faIcon: 'globe', route: '/admin/pays' },
+      { label: 'Territoires', faIcon: 'globe', route: '/admin/pays' },
       { label: 'Domaines & Secteurs', faIcon: 'layer-group', route: '/admin/domaines' },
       { label: 'Catégories', faIcon: 'folder-tree', route: '/admin/categories' },
       { label: 'Tags', faIcon: 'tags', route: '/admin/tags' },
@@ -216,7 +216,7 @@ const sidebarSections: SidebarSection[] = [
     ],
   },
   {
-    label: 'Profils pays',
+    label: 'Profils territoires',
     faIcon: 'earth-africa',
     route: '/admin/profils-pays',
   },

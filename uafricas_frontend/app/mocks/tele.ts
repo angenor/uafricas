@@ -29,7 +29,7 @@ export interface TvStats {
 // Statistiques pour la page télévision
 export const teleStats: TvStats[] = [
   { value: '50+', label: 'Chaînes TV' },
-  { value: '54', label: 'Pays Africains' },
+  { value: '54', label: 'Territoires Africains' },
   { value: '24/7', label: 'Diffusion Continue' },
   { value: 'HD+', label: 'Qualité Vidéo' }
 ]
@@ -172,7 +172,7 @@ export const getTvChannelById = (id: string): TvChannel | undefined => {
 }
 
 export const getTvChannelsByCountry = (country: string): TvChannel[] => {
-  if (country === 'Tous les pays') return tvChannels
+  if (country === 'Tous les territoires') return tvChannels
   return tvChannels.filter(channel => channel.country === country)
 }
 

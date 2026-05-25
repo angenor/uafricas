@@ -110,7 +110,7 @@ export const DUREES: { value: string; label: string }[] = [
 ]
 
 export const PAYS_AFRICAINS: { value: string; label: string }[] = [
-  { value: '', label: 'Tous les pays' },
+  { value: '', label: 'Tous les territoires' },
   { value: 'Afrique du Sud', label: 'Afrique du Sud' },
   { value: 'Algérie', label: 'Algérie' },
   { value: 'Bénin', label: 'Bénin' },

@@ -72,7 +72,7 @@ function valider(): boolean {
   Object.keys(erreurs).forEach(k => delete erreurs[k])
 
   if (!form.fonction.trim()) erreurs.fonction = 'Votre fonction est requise.'
-  if (!form.paysId) erreurs.paysId = 'Sélectionnez votre pays de résidence.'
+  if (!form.paysId) erreurs.paysId = 'Sélectionnez votre territoire de résidence.'
   if (!form.domaine) erreurs.domaine = 'Choisissez un domaine d\'expertise.'
   if (form.biographie.trim().length < 10) erreurs.biographie = 'La biographie doit contenir au moins 10 caractères.'
   else if (form.biographie.trim().length > 5000) erreurs.biographie = 'La biographie ne doit pas dépasser 5000 caractères.'
@@ -348,7 +348,7 @@ onMounted(async () => {
 
           <!-- Pays de résidence -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Pays de résidence <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Territoire de résidence <span class="text-red-500">*</span></label>
             <select
               v-model="form.paysId"
               class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"

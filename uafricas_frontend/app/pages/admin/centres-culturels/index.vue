@@ -12,7 +12,7 @@ const deleteLoading = ref(false)
 const colonnes: TableColumn[] = [
   { key: 'nom', label: 'Nom', sortable: true },
   { key: 'ville', label: 'Ville', width: 'w-32' },
-  { key: 'pays_nom', label: 'Pays', width: 'w-32' },
+  { key: 'pays_nom', label: 'Territoire', width: 'w-32' },
   { key: 'nombre_membres', label: 'Membres', width: 'w-24', align: 'center' },
   { key: 'nombre_programmations', label: 'Programmations', width: 'w-28', align: 'center' },
   { key: 'actif', label: 'Actif', width: 'w-20', align: 'center' },

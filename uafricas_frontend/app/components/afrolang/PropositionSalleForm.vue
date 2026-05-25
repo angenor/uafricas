@@ -94,11 +94,11 @@
 
       <div class="md:col-span-2">
         <label class="block text-sm font-medium text-gray-700 mb-1">
-          Pays d'origine <span class="text-red-500">*</span>
+          Territoire d'origine <span class="text-red-500">*</span>
         </label>
         <div class="rounded-lg border border-gray-300 p-3 max-h-48 overflow-y-auto bg-gray-50">
           <div v-if="!paysDisponibles.length" class="text-sm text-gray-500">
-            Chargement des pays africains…
+            Chargement des territoires africains…
           </div>
           <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <label
@@ -117,7 +117,7 @@
           </div>
         </div>
         <p class="text-xs text-gray-500 mt-1">
-          Sélectionnez au moins un pays où la langue cible est parlée à l'origine.
+          Sélectionnez au moins un territoire où la langue cible est parlée à l'origine.
         </p>
       </div>
 

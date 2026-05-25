@@ -248,8 +248,8 @@ onMounted(async () => {
               <h3 class="text-lg font-semibold border-b pb-2">Localisation & domaine</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="form-control">
-                  <label class="label"><span class="label-text">Pays de destination</span></label>
-                  <input v-model="form.pays_id" type="text" class="input input-bordered" placeholder="UUID du pays">
+                  <label class="label"><span class="label-text">Territoire de destination</span></label>
+                  <input v-model="form.pays_id" type="text" class="input input-bordered" placeholder="UUID du territoire">
                   <label v-if="programmeDetail.pays_nom" class="label"><span class="label-text-alt text-success">{{ programmeDetail.pays_nom }}</span></label>
                 </div>
                 <div class="form-control">

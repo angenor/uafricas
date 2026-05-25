@@ -110,7 +110,7 @@
           </div>
           <div>
             <div class="text-3xl font-bold">54</div>
-            <div class="text-sm opacity-90">Pays Représentés</div>
+            <div class="text-sm opacity-90">Territoires Représentés</div>
           </div>
           <div>
             <div class="text-3xl font-bold">100%</div>

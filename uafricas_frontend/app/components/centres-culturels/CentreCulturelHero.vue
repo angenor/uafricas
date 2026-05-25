@@ -28,7 +28,7 @@ defineProps<{
       bonnes pratiques communes aux peuples issus ou descendant d'Afrique.
       Ces centres sont installés sous la coordination d'Africans en
       considérant l'intérêt et la population cible. Ils peuvent donc être
-      installés aussi dans les territoires d'Afrique que dans les pays hors
+      installés aussi dans les territoires d'Afrique que dans les territoires hors
       d'Afrique. Les centres culturels portent les activités suivantes en
       ligne ou en présentiel :
       <ul class="list-disc ml-10 mt-2">

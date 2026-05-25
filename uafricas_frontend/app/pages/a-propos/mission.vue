@@ -58,13 +58,13 @@
             </p>
             <p>
               Africans comprend un Bureau international qui est l'équipe dirigeante
-              à l'international. Le réseau comprend également dans chaque pays un
+              à l'international. Le réseau comprend également dans chaque territoire un
               Comité national relais dont la composition du bureau est désignée par
               vote et reconnue par l'équipe dirigeante d'Africans.
             </p>
             <p>
               Le Bureau international met en place des Centres culturels africains et
-              Afro-descendants dans tous les pays en vue de valoriser les valeurs
+              Afro-descendants dans tous les territoires en vue de valoriser les valeurs
               culturelles, socio-économiques et scientifiques de l'Afrique. Le Bureau
               s'appuie sur les Comités nationaux relais pour développer une
               programmation et faciliter la réalisation des activités liées au (i)

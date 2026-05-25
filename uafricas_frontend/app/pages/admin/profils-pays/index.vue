@@ -10,7 +10,7 @@ const deleteTarget = ref<{ id: string; titre: string } | null>(null)
 const deleteLoading = ref(false)
 
 const colonnes: TableColumn[] = [
-  { key: 'pays_nom', label: 'Pays', sortable: false },
+  { key: 'pays_nom', label: 'Territoire', sortable: false },
   { key: 'pays_code', label: 'Code', width: 'w-20', align: 'center' },
   { key: 'slogan', label: 'Slogan' },
   { key: 'population', label: 'Population', width: 'w-28' },
@@ -20,7 +20,7 @@ const colonnes: TableColumn[] = [
 ]
 
 const filterDefs: FilterDefinition[] = [
-  { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom du pays, code...' },
+  { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom du territoire, code...' },
   { key: 'continent', label: 'Continent', type: 'select', placeholder: 'Tous', options: [
     { label: 'Afrique', value: 'Afrique' },
     { label: 'Europe', value: 'Europe' },
@@ -68,7 +68,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
 <template>
   <div>
-    <AdminPageHeader titre="Profils pays" sous-titre="Gerer les fiches pays de la plateforme">
+    <AdminPageHeader titre="Profils territoires" sous-titre="Gerer les fiches territoires de la plateforme">
       <template #actions>
         <NuxtLink to="/admin/profils-pays/contributions" class="btn btn-outline btn-sm">
           <font-awesome-icon icon="clipboard-list" class="mr-1" /> Contributions

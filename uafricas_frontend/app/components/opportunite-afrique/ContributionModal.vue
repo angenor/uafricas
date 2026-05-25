@@ -106,7 +106,7 @@ const titreModal = computed(() => {
   if (!estModeAfripulse.value) return 'Proposer une contribution'
   const ctx = contexteAfripulse.value!
   const map: Record<TypeObjetContribution, string> = {
-    fiche_pays: 'Contribuer à la fiche pays',
+    fiche_pays: 'Contribuer à la fiche territoire',
     site_touristique: 'Proposer un site touristique',
     secteur_developpement: 'Proposer un secteur d\'opportunité',
     personnalite_connue: 'Proposer une personnalité',

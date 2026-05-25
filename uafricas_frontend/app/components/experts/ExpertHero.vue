@@ -79,7 +79,7 @@
           </div>
           <div class="text-center">
             <div class="text-3xl font-bold text-white">25+</div>
-            <div class="text-sm text-white/70">Pays</div>
+            <div class="text-sm text-white/70">Territoires</div>
           </div>
         </div>
       </div>

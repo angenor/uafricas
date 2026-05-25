@@ -95,7 +95,7 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="space-y-2">
               <label class="block text-sm font-bold text-gray-700">
-                <font-awesome-icon icon="fa-solid fa-flag" class="mr-2 text-custom-green" />Pays:
+                <font-awesome-icon icon="fa-solid fa-flag" class="mr-2 text-custom-green" />Territoire:
               </label>
               <select
                 :value="filterCountry"

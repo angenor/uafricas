@@ -122,7 +122,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 <template>
   <div>
     <!-- Header -->
-    <AdminPageHeader titre="Contributions" sous-titre="Moderer les contributions aux fiches pays">
+    <AdminPageHeader titre="Contributions" sous-titre="Moderer les contributions aux fiches territoires">
       <template #actions>
         <NuxtLink to="/admin/profils-pays" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour
@@ -173,7 +173,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
           <table class="table table-sm">
             <thead>
               <tr>
-                <th>Pays</th>
+                <th>Territoire</th>
                 <th>Section</th>
                 <th>Type</th>
                 <th>Contributeur</th>

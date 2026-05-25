@@ -339,7 +339,7 @@ onMounted(() => charger())
             <div class="flex items-center justify-between pt-4">
               <div class="text-sm text-base-content/50">
                 Auteur : {{ projetDetail.auteur_prenom }} {{ projetDetail.auteur_nom }} |
-                Pays : {{ projetDetail.pays_nom || 'Non defini' }}
+                Territoire : {{ projetDetail.pays_nom || 'Non defini' }}
               </div>
               <button type="submit" class="btn btn-primary" :class="{ loading: saving }" :disabled="saving">
                 <font-awesome-icon v-if="!saving" icon="floppy-disk" class="mr-1" /> Enregistrer

@@ -12,7 +12,7 @@ const colonnesStations: TableColumn[] = [
   { key: 'type_station', label: 'Type', sortable: true },
   { key: 'genre', label: 'Genre' },
   { key: 'etat', label: 'Etat', sortable: true, width: 'w-24', align: 'center' },
-  { key: 'pays_nom', label: 'Pays' },
+  { key: 'pays_nom', label: 'Territoire' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]
@@ -22,7 +22,7 @@ const colonnesChaines: TableColumn[] = [
   { key: 'categorie', label: 'Categorie', sortable: true },
   { key: 'etat', label: 'Etat', sortable: true, width: 'w-24', align: 'center' },
   { key: 'est_en_direct', label: 'En direct', width: 'w-24', align: 'center' },
-  { key: 'pays_nom', label: 'Pays' },
+  { key: 'pays_nom', label: 'Territoire' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]

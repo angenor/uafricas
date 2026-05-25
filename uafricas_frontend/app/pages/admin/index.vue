@@ -59,7 +59,7 @@ const kpis = computed<StatsCardData[]>(() => {
       color: 'bg-accent/10 text-accent',
     },
     {
-      label: 'Contributions pays',
+      label: 'Contributions territoires',
       value: s.fiches_pays.contributions_en_attente,
       icon: 'earth-africa',
       color: 'bg-secondary/10 text-secondary',
@@ -143,7 +143,7 @@ const modulesOverview = computed(() => {
     { label: 'Radio', total: s.radio_tv.stations_radio, icon: 'radio', lien: '/admin/radio-tele' },
     { label: 'TV', total: s.radio_tv.chaines_tv, icon: 'tv', lien: '/admin/radio-tele' },
     { label: 'Factchecks', total: s.factchecks.total, icon: 'scale-balanced', lien: '/admin/factcheck' },
-    { label: 'Fiches pays', total: s.fiches_pays.total, icon: 'earth-africa', lien: '/admin/profils-pays' },
+    { label: 'Fiches territoires', total: s.fiches_pays.total, icon: 'earth-africa', lien: '/admin/profils-pays' },
   ]
 })
 </script>

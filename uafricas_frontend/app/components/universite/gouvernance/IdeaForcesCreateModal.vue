@@ -155,14 +155,14 @@
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Localisation</p>
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
-                Pays <span class="text-red-500">*</span>
+                Territoire <span class="text-red-500">*</span>
               </label>
               <select
                 v-model="form.pays_id"
                 required
                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm bg-white"
               >
-                <option value="" disabled>Sélectionnez un pays</option>
+                <option value="" disabled>Sélectionnez un territoire</option>
                 <option v-for="p in paysListe" :key="p.id" :value="p.id">{{ p.nom }}</option>
               </select>
             </div>
@@ -378,7 +378,7 @@ watch(() => props.open, async (v) => {
     try {
       paysListe.value = await getPays()
     } catch (err) {
-      erreurMessage.value = err instanceof Error ? err.message : 'Erreur chargement pays'
+      erreurMessage.value = err instanceof Error ? err.message : 'Erreur chargement territoires'
     }
   }
 })

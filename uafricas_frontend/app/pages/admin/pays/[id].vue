@@ -43,7 +43,7 @@ const sauvegarder = async () => {
   successMsg.value = null
   try {
     await modifier(id, { ...form })
-    successMsg.value = 'Pays mis a jour'
+    successMsg.value = 'Territoire mis a jour'
     setTimeout(() => { successMsg.value = null }, 3000)
   } catch (e: any) {
     erreurLocale.value = e?.data?.error || e?.message || 'Erreur'
@@ -55,7 +55,7 @@ onMounted(() => charger())
 
 <template>
   <div>
-    <AdminPageHeader :titre="paysDetail?.nom || 'Chargement...'" sous-titre="Modifier le pays">
+    <AdminPageHeader :titre="paysDetail?.nom || 'Chargement...'" sous-titre="Modifier le territoire">
       <template #actions>
         <NuxtLink to="/admin/pays" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour
@@ -80,7 +80,7 @@ onMounted(() => charger())
 
         <form @submit.prevent="sauvegarder" class="space-y-4">
           <div class="form-control">
-            <label class="label"><span class="label-text">Nom du pays *</span></label>
+            <label class="label"><span class="label-text">Nom du territoire *</span></label>
             <input v-model="form.nom" type="text" class="input input-bordered" required>
           </div>
 
@@ -131,7 +131,7 @@ onMounted(() => charger())
           <div class="form-control">
             <label class="label cursor-pointer justify-start gap-3">
               <input v-model="form.actif" type="checkbox" class="toggle toggle-success" />
-              <span class="label-text">Pays actif</span>
+              <span class="label-text">Territoire actif</span>
             </label>
           </div>
 

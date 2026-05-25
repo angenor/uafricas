@@ -20,7 +20,7 @@ const alertes = computed(() => {
   }
   if (props.stats.fiches_pays.contributions_en_attente > 0) {
     items.push({
-      label: 'Contributions pays en attente',
+      label: 'Contributions territoires en attente',
       count: props.stats.fiches_pays.contributions_en_attente,
       lien: '/admin/profils-pays',
       icon: 'earth-africa',

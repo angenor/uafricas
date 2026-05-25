@@ -25,13 +25,13 @@
 
     <!-- Pays -->
     <div class="mb-6">
-      <h4 class="text-sm font-medium text-gray-700 mb-3">Pays</h4>
+      <h4 class="text-sm font-medium text-gray-700 mb-3">Territoire</h4>
       <select
         :value="modelValue.pays"
         @change="updatePays"
         class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
       >
-        <option value="">Tous les pays</option>
+        <option value="">Tous les territoires</option>
         <option v-for="p in pays" :key="p" :value="p">
           {{ p }}
         </option>

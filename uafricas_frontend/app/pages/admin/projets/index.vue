@@ -24,7 +24,7 @@ const colonnes: TableColumn[] = [
   { key: 'titre', label: 'Titre', sortable: true },
   { key: 'etat', label: 'Etat', sortable: true, width: 'w-28', align: 'center' },
   { key: 'nom_organisation', label: 'Organisation', width: 'w-36' },
-  { key: 'pays_nom', label: 'Pays', width: 'w-32' },
+  { key: 'pays_nom', label: 'Territoire', width: 'w-32' },
   { key: 'cout_total', label: 'Budget', sortable: true, width: 'w-28', align: 'right',
     format: (v: number | null) => v ? `${v.toLocaleString('fr-FR')} XOF` : '-' },
   { key: 'duree_mois', label: 'Duree', width: 'w-24', align: 'center',

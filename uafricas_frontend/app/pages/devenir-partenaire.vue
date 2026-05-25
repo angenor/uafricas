@@ -204,14 +204,14 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label for="pays" class="block text-sm font-medium text-gray-700 mb-1">
-                    Pays
+                    Territoire
                   </label>
                   <select
                     id="pays"
                     v-model="form.pays"
                     class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden"
                   >
-                    <option value="" disabled>Choisir un pays</option>
+                    <option value="" disabled>Choisir un territoire</option>
                     <option
                       v-for="pays in PAYS_PARTENARIAT"
                       :key="pays.value"

@@ -59,7 +59,7 @@ const filterDefs: FilterDefinition[] = [
     { label: 'Suspendu', value: 'suspendu' },
     { label: 'Cloture', value: 'cloture' },
   ]},
-  { key: 'pays_id', label: 'Pays', type: 'text', placeholder: 'ID du pays...' },
+  { key: 'pays_id', label: 'Territoire', type: 'text', placeholder: 'ID du territoire...' },
 ]
 
 const ouvrirChangerEtat = (item: any) => {

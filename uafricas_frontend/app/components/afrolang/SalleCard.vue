@@ -52,10 +52,10 @@
       <div
         v-if="paysAffiches.length > 0"
         class="mb-3"
-        :aria-label="`Pays d'origine : ${tooltipPays}`"
+        :aria-label="`Territoire d'origine : ${tooltipPays}`"
       >
         <div class="text-[10px] uppercase tracking-wide text-gray-400 mb-1">
-          Pays d'origine
+          Territoire d'origine
         </div>
         <div
           v-if="modeCompact"

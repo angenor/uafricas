@@ -62,14 +62,14 @@
 
               <div>
                 <label for="pays" class="block text-sm font-medium text-gray-700 mb-1">
-                  Pays *
+                  Territoire *
                 </label>
                 <select
                   id="pays"
                   v-model="form.pays"
                   class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden"
                 >
-                  <option value="" disabled>Choisir pays</option>
+                  <option value="" disabled>Choisir territoire</option>
                   <option v-for="pays in PAYS_AFRICAINS" :key="pays" :value="pays">
                     {{ pays }}
                   </option>

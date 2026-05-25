@@ -115,7 +115,7 @@ export const useStationsRadio = () => {
       const params = new URLSearchParams()
       if (filtres.recherche) params.set('recherche', filtres.recherche)
       if (filtres.type_station && filtres.type_station !== 'Tous les types') params.set('type_station', filtres.type_station)
-      if (filtres.pays && filtres.pays !== 'Tous les pays') params.set('pays', filtres.pays)
+      if (filtres.pays && filtres.pays !== 'Tous les territoires') params.set('pays', filtres.pays)
       if (filtres.genre && filtres.genre !== 'Tous les genres') params.set('genre', filtres.genre)
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))

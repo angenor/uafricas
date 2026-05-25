@@ -72,9 +72,9 @@
 
               <!-- Pays -->
               <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pays</label>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Territoire</label>
                 <select v-model="paysSelectionne" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition bg-white">
-                  <option value="">Tous les pays</option>
+                  <option value="">Tous les territoires</option>
                   <option v-for="pays in paysDisponibles" :key="pays" :value="pays">{{ pays }}</option>
                 </select>
               </div>

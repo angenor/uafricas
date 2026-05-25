@@ -117,7 +117,7 @@ export interface PaysOption {
 }
 
 export const PAYS_EXPERTS: PaysOption[] = [
-  { value: '', label: 'Tous les pays' },
+  { value: '', label: 'Tous les territoires' },
   { value: 'Sénégal', label: 'Sénégal' },
   { value: 'Côte d\'Ivoire', label: 'Côte d\'Ivoire' },
   { value: 'Cameroun', label: 'Cameroun' },

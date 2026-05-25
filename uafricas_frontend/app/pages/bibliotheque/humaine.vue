@@ -317,13 +317,13 @@
           <!-- Champ Pays -->
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">
-              Pays d'origine
+              Territoire d'origine
             </label>
             <select
               v-model="formInscription.pays"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green text-sm"
             >
-              <option value="">-- Sélectionner un pays --</option>
+              <option value="">-- Sélectionner un territoire --</option>
               <option v-for="p in paysOptions" :key="p" :value="p">{{ p }}</option>
             </select>
           </div>

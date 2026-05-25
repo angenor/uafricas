@@ -52,7 +52,7 @@ const labelsCriteres: Record<string, string> = {
   nom: 'Nom',
   ecole: 'Ecole',
   ville: 'Ville',
-  pays: 'Pays',
+  pays: 'Territoire',
   periode: 'Periode',
   source: 'Source',
   type_reponse: 'Type de reponse',

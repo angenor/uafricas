@@ -259,13 +259,13 @@
               <!-- Pays et Groupe ethnique -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label class="block text-gray-700 text-sm font-bold mb-2">Pays d'origine</label>
+                  <label class="block text-gray-700 text-sm font-bold mb-2">Territoire d'origine</label>
                   <select
                     v-model="postForm.pays"
                     required
                     class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
                   >
-                    <option value="">Sélectionnez un pays</option>
+                    <option value="">Sélectionnez un territoire</option>
                     <option v-for="pays in PAYS_AFRICAINS" :key="pays" :value="pays">{{ pays }}</option>
                   </select>
                 </div>

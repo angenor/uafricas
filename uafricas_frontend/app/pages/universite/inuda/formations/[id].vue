@@ -105,7 +105,7 @@
                   <span class="font-medium">{{ mapperFormatFrontend(formation.format) }}</span>
                 </div>
                 <div v-if="formation.pays" class="flex justify-between py-2 border-b">
-                  <span class="text-gray-500">Pays</span>
+                  <span class="text-gray-500">Territoire</span>
                   <span class="font-medium">{{ formation.pays }}</span>
                 </div>
                 <div v-if="formation.ville" class="flex justify-between py-2 border-b">

@@ -26,7 +26,7 @@ const availableGenres = ref<string[]>([])
 
 // Filtres
 const selectedProgramType = ref('Tous les types')
-const selectedCountry = ref('Tous les pays')
+const selectedCountry = ref('Tous les territoires')
 const selectedGenre = ref('Tous les genres')
 
 // Computed
@@ -138,7 +138,7 @@ const handleVolumeChange = (newVolume: number) => {
 
 const resetFilters = () => {
   selectedProgramType.value = 'Tous les types'
-  selectedCountry.value = 'Tous les pays'
+  selectedCountry.value = 'Tous les territoires'
   selectedGenre.value = 'Tous les genres'
 }
 
@@ -226,9 +226,9 @@ onMounted(async () => {
             </svg>
             {{ filteredStations.length }} Stations
             <span v-if="selectedProgramType !== 'Tous les types'">&nbsp;{{ selectedProgramType.toLowerCase() }}s</span>
-            <span v-if="selectedCountry !== 'Tous les pays'">&nbsp;en {{ selectedCountry }}</span>
+            <span v-if="selectedCountry !== 'Tous les territoires'">&nbsp;en {{ selectedCountry }}</span>
             <span v-if="selectedGenre !== 'Tous les genres'">&nbsp;genre {{ selectedGenre }}</span>
-            <span v-if="selectedProgramType === 'Tous les types' && selectedCountry === 'Tous les pays' && selectedGenre === 'Tous les genres'">&nbsp;populaires</span>
+            <span v-if="selectedProgramType === 'Tous les types' && selectedCountry === 'Tous les territoires' && selectedGenre === 'Tous les genres'">&nbsp;populaires</span>
           </h2>
 
           <div v-if="filteredStations.length === 0 && !chargement" class="text-center py-12">

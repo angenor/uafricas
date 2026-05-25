@@ -175,7 +175,7 @@ function mapperProgrammeApiVersTv(programme: ProgrammeTeleAPI, apiBase: string):
 function mapperStatsApiVersFrontend(stats: TelevisionStatsAPI): TvStat[] {
   return [
     { value: `${stats.nombre_chaines}+`, label: 'Chaînes TV' },
-    { value: `${stats.nombre_pays}`, label: 'Pays Africains' },
+    { value: `${stats.nombre_pays}`, label: 'Territoires Africains' },
     { value: '24/7', label: 'Diffusion Continue' },
     { value: 'HD+', label: 'Qualité Vidéo' },
   ]
@@ -208,7 +208,7 @@ export const useTelevision = () => {
       const params = new URLSearchParams()
       if (filtres.recherche) params.set('recherche', filtres.recherche)
       if (filtres.categorie && filtres.categorie !== 'Toutes les catégories') params.set('categorie', filtres.categorie)
-      if (filtres.pays && filtres.pays !== 'Tous les pays') params.set('pays', filtres.pays)
+      if (filtres.pays && filtres.pays !== 'Tous les territoires') params.set('pays', filtres.pays)
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))
 
@@ -276,7 +276,7 @@ export const useTelevision = () => {
     try {
       const params = new URLSearchParams()
       if (filtres.recherche) params.set('recherche', filtres.recherche)
-      if (filtres.pays && filtres.pays !== 'Tous les pays') params.set('pays', filtres.pays)
+      if (filtres.pays && filtres.pays !== 'Tous les territoires') params.set('pays', filtres.pays)
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))
 

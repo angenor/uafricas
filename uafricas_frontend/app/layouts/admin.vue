@@ -86,7 +86,7 @@ const pageTitle = computed(() => {
     'organisations': 'Organisations',
     'partenariats': 'Partenariats',
     'roles': 'Rôles & Permissions',
-    'pays': 'Pays',
+    'pays': 'Territoire',
     'domaines': 'Domaines & Secteurs',
     'categories': 'Catégories',
     'tags': 'Tags',
@@ -112,7 +112,7 @@ const pageTitle = computed(() => {
     'factcheck': 'FactCheck',
     'bad-habits': 'Mauvaises pratiques',
     'idea-forces': 'Idées forces',
-    'profils-pays': 'Profils pays',
+    'profils-pays': 'Profils territoires',
     'bibliotheques-humaines': 'Bibliothèques Humaines',
     'audit': 'Audit & Logs',
   }

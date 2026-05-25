@@ -22,7 +22,7 @@
         @change="emit('update:searchPays', ($event.target as HTMLSelectElement).value)"
         class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all sm:w-44 bg-white"
       >
-        <option value="">Tous les pays</option>
+        <option value="">Tous les territoires</option>
         <option v-for="pays in PAYS_AFRICAINS" :key="pays" :value="pays">{{ pays }}</option>
       </select>
 

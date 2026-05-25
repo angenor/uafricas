@@ -162,7 +162,7 @@ onMounted(() => charger())
               {{ africantiveDetail.domaine_nom || 'Non defini' }}
             </div>
             <div class="text-sm">
-              <span class="font-semibold">Pays :</span>
+              <span class="font-semibold">Territoire :</span>
               {{ africantiveDetail.pays_nom || 'Non defini' }}
             </div>
           </div>

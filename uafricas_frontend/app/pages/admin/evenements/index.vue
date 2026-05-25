@@ -21,7 +21,7 @@ const colonnes: TableColumn[] = [
   { key: 'date_heure_debut', label: 'Debut', sortable: true, width: 'w-32',
     format: (v: string) => v ? new Date(v).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-' },
   { key: 'nombre_places', label: 'Places', width: 'w-20', align: 'center' },
-  { key: 'pays_nom', label: 'Pays', width: 'w-28' },
+  { key: 'pays_nom', label: 'Territoire', width: 'w-28' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]

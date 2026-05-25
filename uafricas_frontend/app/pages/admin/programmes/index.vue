@@ -18,7 +18,7 @@ const colonnes: TableColumn[] = [
   { key: 'titre', label: 'Titre', sortable: true },
   { key: 'etat', label: 'Etat', sortable: true, width: 'w-28', align: 'center' },
   { key: 'duree', label: 'Duree', width: 'w-28' },
-  { key: 'pays_nom', label: 'Pays', width: 'w-32' },
+  { key: 'pays_nom', label: 'Territoire', width: 'w-32' },
   { key: 'domaine_nom', label: 'Domaine', width: 'w-32' },
   { key: 'nombre_places', label: 'Places', width: 'w-20', align: 'center' },
   { key: 'date_debut', label: 'Debut', sortable: true, width: 'w-28',

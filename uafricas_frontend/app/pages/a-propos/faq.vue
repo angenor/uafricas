@@ -109,11 +109,11 @@ const faqItems = [
   },
   {
     question: "Qu'est-ce que le programme d'échange sabbatique ?",
-    reponse: "Le programme d'échange sabbatique permet aux membres du réseau de participer à des échanges entre pays africains et la diaspora. Il vise à favoriser le partage de compétences, le transfert de savoir-faire et le renforcement des liens entre les communautés africaines à travers le monde."
+    reponse: "Le programme d'échange sabbatique permet aux membres du réseau de participer à des échanges entre territoires africains et la diaspora. Il vise à favoriser le partage de compétences, le transfert de savoir-faire et le renforcement des liens entre les communautés africaines à travers le monde."
   },
   {
     question: "Comment trouver un expert sur la plateforme ?",
-    reponse: "Accédez à la section « Experts » depuis le menu principal. Vous pouvez rechercher des experts par domaine de compétence, par pays ou par spécialité. Chaque profil d'expert détaille ses qualifications, son expérience et ses domaines d'intervention."
+    reponse: "Accédez à la section « Experts » depuis le menu principal. Vous pouvez rechercher des experts par domaine de compétence, par territoire ou par spécialité. Chaque profil d'expert détaille ses qualifications, son expérience et ses domaines d'intervention."
   },
   {
     question: "Comment contribuer à la gouvernance ?",
