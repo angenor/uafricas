@@ -48,17 +48,15 @@ const reinitialiserFiltres = () => {
   chargerAvisPublics(1)
 }
 
-// ── Dashboard utilisateur ─────────────────────────────────
-const dashboard = ref<{ avis_actifs: number; correspondances_en_attente: number; notifications_non_lues: number } | null>(null)
+// ── Statut « trouvable » utilisateur ──────────────────────
 const estTrouvable = ref(false)
 const chargementTrouvable = ref(false)
 
-const chargerTableauDeBord = async () => {
+const chargerStatutTrouvable = async () => {
   if (!estConnecte.value) return
   try {
     const res = await tableauDeBord()
-    dashboard.value = res
-    estTrouvable.value = res.est_trouvable ?? false
+    estTrouvable.value = res?.est_trouvable ?? false
   } catch {
     // silencieux sur page publique
   }
@@ -83,24 +81,24 @@ const onActiverTrouvable = async () => {
 const etapes = [
   {
     icone: 'fa-pen-to-square',
-    titre: 'Deposez un avis',
-    description: 'Decrivez la personne que vous recherchez : nom, lieu de derniere rencontre, epoque, details physiques ou anecdotes.'
+    titre: 'Déposez un avis',
+    description: 'Décrivez la personne que vous recherchez : nom, lieu de dernière rencontre, époque, détails physiques ou anecdotes.'
   },
   {
     icone: 'fa-magnifying-glass',
-    titre: 'Le systeme compare',
+    titre: 'Le système compare',
     description: 'Notre algorithme croise votre avis avec les profils et autres avis de recherche pour identifier des correspondances potentielles.'
   },
   {
     icone: 'fa-handshake',
     titre: 'Acceptez le contact',
-    description: 'Quand une correspondance est trouvee, les deux parties doivent accepter avant que les coordonnees ne soient partagees.'
+    description: 'Quand une correspondance est trouvée, les deux parties doivent accepter avant que les coordonnées ne soient partagées.'
   }
 ]
 
 onMounted(() => {
   chargerAvisPublics()
-  chargerTableauDeBord()
+  chargerStatutTrouvable()
 })
 </script>
 
@@ -111,7 +109,7 @@ onMounted(() => {
       class="group relative bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
     >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70" />
       <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
         <!-- Conteneur fixe : titre et description se superposent (crossfade au survol) -->
         <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
@@ -119,7 +117,7 @@ onMounted(() => {
             Retrouver une personne perdue de vue
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Retrouvez vos amis, proches et connaissances perdus de vue grace a la communaute panafricaine.
+            Retrouvez vos amis, proches et connaissances perdus de vue grâce à la communauté panafricaine.
           </p>
         </div>
         <div class="flex flex-wrap justify-center gap-4 mt-6">
@@ -129,7 +127,7 @@ onMounted(() => {
             @click="onCreerAvis"
           >
             <font-awesome-icon :icon="['fas', 'plus']" class="mr-2" />
-            Creer un avis de recherche
+            Créer un avis de recherche
           </button>
           <button
             v-if="estConnecte"
@@ -139,7 +137,7 @@ onMounted(() => {
             @click="onActiverTrouvable"
           >
             <font-awesome-icon :icon="['fas', estTrouvable ? 'eye' : 'eye-slash']" class="mr-2" />
-            {{ estTrouvable ? 'Vous etes trouvable' : 'Devenir trouvable' }}
+            {{ estTrouvable ? 'Vous êtes trouvable' : 'Devenir trouvable' }}
           </button>
           <NuxtLink
             v-if="!estConnecte"
@@ -152,21 +150,42 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Avis publics : listing principal -->
+    <!-- Comment ça marche (placé avant le listing : comprendre avant de commencer) -->
+    <section class="py-16 px-4 bg-white">
+      <div class="max-w-5xl mx-auto">
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-12 font-[Oswald]">
+          Comment ça marche ?
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div
+            v-for="(etape, index) in etapes"
+            :key="index"
+            class="bg-gray-50 rounded-xl shadow-sm border border-gray-200 p-8 text-center hover:shadow-md transition-shadow"
+          >
+            <div class="w-16 h-16 mx-auto mb-5 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center">
+              <font-awesome-icon :icon="['fas', etape.icone]" class="text-2xl" />
+            </div>
+            <span class="inline-block w-8 h-8 bg-amber-700 text-white rounded-full text-sm font-bold leading-8 mb-3">
+              {{ index + 1 }}
+            </span>
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ etape.titre }}</h3>
+            <p class="text-gray-600 text-sm leading-relaxed">{{ etape.description }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Avis publics : listing principal (+ sidebar si connecté) -->
     <section class="py-16 px-4">
-      <div class="max-w-7xl mx-auto">
-        <!-- En-tete avec compteur -->
+      <div class="max-w-7xl mx-auto lg:flex lg:gap-8">
+        <RetrouveAmisSideBar v-if="estConnecte" />
+        <div class="flex-1 min-w-0">
+        <!-- En-tête avec compteur -->
         <div class="mb-10 text-center">
           <span class="inline-flex items-center gap-2 rounded-full bg-amber-100 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700 mb-4">
             <font-awesome-icon :icon="['fas', 'bullhorn']" />
             Avis de recherche
           </span>
-          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 font-[Oswald]">
-            Aidez-nous a les retrouver
-          </h2>
-          <p class="mt-3 text-gray-500 max-w-xl mx-auto text-sm">
-            Chaque avis est une histoire, chaque partage est un espoir. Parcourez les recherches en cours et aidez a reunir des proches.
-          </p>
         </div>
 
         <!-- Barre de filtres compacte -->
@@ -178,7 +197,7 @@ onMounted(() => {
               <input
                 v-model="filtreRecherche"
                 type="text"
-                placeholder="Rechercher un nom, un lieu, une ecole..."
+                placeholder="Rechercher un nom, un lieu, une école..."
                 class="w-full rounded-xl bg-gray-50 pl-9 pr-3 py-2 text-sm text-gray-700 placeholder-gray-400 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all"
                 @keyup.enter="appliquerFiltres"
               >
@@ -196,7 +215,7 @@ onMounted(() => {
                 </option>
               </select>
             </div>
-            <!-- Bouton recherche (input texte non reactif) -->
+            <!-- Bouton recherche (input texte non réactif) -->
             <button
               class="flex items-center gap-2 rounded-xl bg-custom-chocolat px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md active:scale-95 cursor-pointer"
               @click="appliquerFiltres"
@@ -210,7 +229,7 @@ onMounted(() => {
               @click="reinitialiserFiltres"
             >
               <font-awesome-icon :icon="['fas', 'xmark']" />
-              Reinitialiser
+              Réinitialiser
             </button>
           </div>
         </div>
@@ -221,27 +240,27 @@ onMounted(() => {
           <p class="mt-4 text-sm text-gray-500">Chargement des avis...</p>
         </div>
 
-        <!-- Etat vide : aucun resultat avec filtres actifs -->
+        <!-- État vide : aucun résultat avec filtres actifs -->
         <div v-else-if="avisPublics.length === 0 && filtresActifs" class="text-center py-20">
           <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
             <font-awesome-icon :icon="['fas', 'filter-circle-xmark']" class="text-4xl text-gray-300" />
           </div>
           <h3 class="text-xl font-semibold text-gray-700 mb-2">
-            Aucun resultat pour ces criteres
+            Aucun résultat pour ces critères
           </h3>
           <p class="text-gray-400 max-w-md mx-auto mb-8 text-sm">
-            Essayez de modifier vos criteres de recherche ou de reinitialiser les filtres.
+            Essayez de modifier vos critères de recherche ou de réinitialiser les filtres.
           </p>
           <button
             class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 transition-colors cursor-pointer"
             @click="reinitialiserFiltres"
           >
             <font-awesome-icon :icon="['fas', 'rotate-left']" />
-            Reinitialiser les filtres
+            Réinitialiser les filtres
           </button>
         </div>
 
-        <!-- Etat vide : aucun avis disponible -->
+        <!-- État vide : aucun avis disponible -->
         <div v-else-if="avisPublics.length === 0" class="text-center py-20">
           <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-amber-50">
             <font-awesome-icon :icon="['fas', 'users']" class="text-4xl text-amber-300" />
@@ -250,7 +269,7 @@ onMounted(() => {
             Aucun avis de recherche pour le moment
           </h3>
           <p class="text-gray-400 max-w-md mx-auto mb-8 text-sm">
-            Soyez le premier a publier un avis de recherche et aidez a reunir des proches separes.
+            Soyez le premier à publier un avis de recherche et aidez à réunir des proches séparés.
           </p>
           <NuxtLink
             v-if="estConnecte"
@@ -258,23 +277,23 @@ onMounted(() => {
             class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 transition-colors"
           >
             <font-awesome-icon :icon="['fas', 'plus']" />
-            Creer le premier avis
+            Créer le premier avis
           </NuxtLink>
           <NuxtLink
             v-else
             to="/login"
             class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 transition-colors"
           >
-            Se connecter pour creer un avis
+            Se connecter pour créer un avis
           </NuxtLink>
         </div>
 
         <!-- Grille des avis -->
         <template v-else>
-          <!-- Compteur de resultats -->
+          <!-- Compteur de résultats -->
           <p v-if="pagination" class="mb-6 text-sm text-gray-500">
             <span class="font-semibold text-gray-700">{{ pagination.total }}</span> avis de recherche
-            <span v-if="filtresActifs"> correspondant a vos criteres</span>
+            <span v-if="filtresActifs"> correspondant à vos critères</span>
           </p>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -293,9 +312,9 @@ onMounted(() => {
               @click="chargerAvisPublics(pageActuelle - 1)"
             >
               <font-awesome-icon :icon="['fas', 'chevron-left']" class="text-xs" />
-              Precedent
+              Précédent
             </button>
-            <!-- Numeros de pages -->
+            <!-- Numéros de pages -->
             <template v-for="p in pagination.pages" :key="p">
               <button
                 v-if="p === 1 || p === pagination.pages || (p >= pageActuelle - 1 && p <= pageActuelle + 1)"
@@ -320,74 +339,6 @@ onMounted(() => {
             </button>
           </div>
         </template>
-      </div>
-    </section>
-
-    <!-- Comment ca marche -->
-    <section class="py-16 px-4 bg-white">
-      <div class="max-w-5xl mx-auto">
-        <h2 class="text-3xl font-bold text-center text-gray-800 mb-12 font-[Oswald]">
-          Comment ca marche ?
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div
-            v-for="(etape, index) in etapes"
-            :key="index"
-            class="bg-gray-50 rounded-xl shadow-sm border border-gray-200 p-8 text-center hover:shadow-md transition-shadow"
-          >
-            <div class="w-16 h-16 mx-auto mb-5 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center">
-              <font-awesome-icon :icon="['fas', etape.icone]" class="text-2xl" />
-            </div>
-            <span class="inline-block w-8 h-8 bg-amber-700 text-white rounded-full text-sm font-bold leading-8 mb-3">
-              {{ index + 1 }}
-            </span>
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ etape.titre }}</h3>
-            <p class="text-gray-600 text-sm leading-relaxed">{{ etape.description }}</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tableau de bord (connecte) -->
-    <section v-if="estConnecte && dashboard" class="py-12 px-4">
-      <div class="max-w-5xl mx-auto">
-        <h2 class="text-2xl font-bold text-gray-800 mb-8 font-[Oswald]">
-          Votre tableau de bord
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <NuxtLink
-            to="/retrouve-amis/mes-recherches"
-            class="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center hover:shadow-md hover:border-amber-300 transition-all"
-          >
-            <p class="text-3xl font-bold text-amber-800">{{ dashboard.avis_actifs }}</p>
-            <p class="text-sm text-amber-700 mt-1">Avis actifs</p>
-            <p class="text-xs text-amber-500 mt-2">
-              <font-awesome-icon :icon="['fas', 'arrow-right']" class="mr-1" />
-              Voir mes recherches
-            </p>
-          </NuxtLink>
-          <NuxtLink
-            to="/retrouve-amis/correspondances"
-            class="bg-green-50 border border-green-200 rounded-xl p-6 text-center hover:shadow-md hover:border-green-300 transition-all"
-          >
-            <p class="text-3xl font-bold text-green-800">{{ dashboard.correspondances_en_attente }}</p>
-            <p class="text-sm text-green-700 mt-1">Correspondances en attente</p>
-            <p class="text-xs text-green-500 mt-2">
-              <font-awesome-icon :icon="['fas', 'arrow-right']" class="mr-1" />
-              Voir les correspondances
-            </p>
-          </NuxtLink>
-          <NuxtLink
-            to="/retrouve-amis/correspondances"
-            class="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center hover:shadow-md hover:border-blue-300 transition-all"
-          >
-            <p class="text-3xl font-bold text-blue-800">{{ dashboard.notifications_non_lues }}</p>
-            <p class="text-sm text-blue-700 mt-1">Notifications non lues</p>
-            <p class="text-xs text-blue-500 mt-2">
-              <font-awesome-icon :icon="['fas', 'arrow-right']" class="mr-1" />
-              Consulter
-            </p>
-          </NuxtLink>
         </div>
       </div>
     </section>
@@ -396,16 +347,16 @@ onMounted(() => {
     <section v-if="!estConnecte" class="py-16 px-4 bg-amber-50">
       <div class="max-w-3xl mx-auto text-center">
         <h2 class="text-2xl font-bold text-gray-800 mb-4 font-[Oswald]">
-          Rejoignez la communaute
+          Rejoignez la communauté
         </h2>
         <p class="text-gray-600 mb-8">
-          Inscrivez-vous gratuitement pour deposer un avis de recherche et retrouver vos proches perdus de vue.
+          Inscrivez-vous gratuitement pour déposer un avis de recherche et retrouver vos proches perdus de vue.
         </p>
         <NuxtLink
           to="/login?mode=inscription"
           class="inline-block px-8 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
         >
-          Creer un compte gratuitement
+          Créer un compte gratuitement
         </NuxtLink>
       </div>
     </section>

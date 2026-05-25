@@ -84,14 +84,17 @@ const erreur = computed(() => fetchError.value?.message ?? null)
       </div>
 
       <!-- Liste des centres -->
-      <div v-else class="mt-4">
-        <NuxtLink
-          v-for="centre in centres"
-          :key="centre.id"
-          :to="`/centres/${centre.id}`"
-        >
-          <CentresCulturelsCentreCulturelCard :centre="centre" />
-        </NuxtLink>
+      <div v-else>
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <NuxtLink
+            v-for="centre in centres"
+            :key="centre.id"
+            :to="`/centres/${centre.id}`"
+            class="block"
+          >
+            <CentresCulturelsCentreCulturelCard :centre="centre" />
+          </NuxtLink>
+        </div>
 
         <!-- Aucun centre -->
         <div v-if="centres.length === 0" class="text-center py-16">
