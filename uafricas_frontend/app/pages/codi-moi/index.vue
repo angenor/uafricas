@@ -1,20 +1,22 @@
 <template>
   <div class="min-h-screen pb-10 bg-gray-50">
-    <!-- Hero Section (compact) -->
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
     <div
-      class="relative bg-cover bg-center"
+      class="hero-codimoi group relative bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
     >
       <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
 
-      <div class="relative max-w-4xl mx-auto px-4 pt-20 pb-12 text-center">
-        <h1 class="text-white text-3xl md:text-4xl font-bold animate-title">
-          Codimoi
-        </h1>
-        <div class="h-1 w-20 bg-custom-green rounded mx-auto mt-3 animate-line"></div>
-        <p class="text-white/90 text-base md:text-lg mt-3 animate-subtitle">
-          Préservons nos cultures les meilleures — codifier les récits, images et souvenirs de l'Afrique et des afro-descendants.
-        </p>
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <!-- Conteneur fixe : le titre et la description se superposent -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="hero-titre absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold">
+            Codimoi
+          </h1>
+          <p class="hero-desc absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2">
+            Préservons nos cultures les meilleures — codifier les récits, images et souvenirs de l'Afrique et des afro-descendants.
+          </p>
+        </div>
       </div>
     </div>
 
@@ -634,6 +636,24 @@ onMounted(async () => {
 .animate-line {
   animation: expandLine 1.2s ease-out 0.1s forwards;
   width: 0;
+}
+
+/* Survol du hero : la description remplace le titre (crossfade) */
+.hero-titre,
+.hero-desc {
+  transition: opacity 0.4s ease;
+}
+
+.hero-desc {
+  opacity: 0;
+}
+
+.hero-codimoi:hover .hero-titre {
+  opacity: 0;
+}
+
+.hero-codimoi:hover .hero-desc {
+  opacity: 1;
 }
 
 .post-list-enter-active,
