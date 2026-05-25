@@ -5,11 +5,14 @@ import type {
   CategorieSavoir,
   SectionAfripulse,
   TypeObjetContribution,
+  FichePaysDetailAPI,
 } from '~/composables/useOpportuniteAfrique'
 
 interface Props {
   ficheId: string
   estAuthentifie: boolean
+  /** Fiche territoire — fournit les valeurs du bloc « infos pratiques » */
+  fiche?: FichePaysDetailAPI | null
 }
 
 const props = defineProps<Props>()
@@ -23,9 +26,46 @@ type OpenContributionPayload = {
   libelle?: string
 }
 
+/** Demande de contribution sur un champ scalaire ciblé de la fiche (infos pratiques) */
+type ChampVoyagePayload = {
+  section: string
+  label: string
+  valeurActuelle?: string
+}
+
 const emit = defineEmits<{
   (e: 'open-contribution', payload: OpenContributionPayload): void
+  (e: 'open-champ-voyage', payload: ChampVoyagePayload): void
+  (e: 'require-login'): void
 }>()
+
+/** Champs « infos pratiques » du bloc — chaque clé est une colonne fiche_pays */
+const champsVoyage = [
+  { section: 'voyage_langue_internationale', label: 'Langue internationale' },
+  { section: 'voyage_langue_locale', label: 'Langue locale la plus utilisée' },
+  { section: 'voyage_infos_visa', label: 'Informations visa' },
+  { section: 'voyage_infos_sanitaires', label: 'Informations sanitaires' },
+  { section: 'voyage_meteo', label: 'Météo' },
+  { section: 'voyage_prises_electriques', label: 'Prises électriques' },
+  { section: 'voyage_contacts_tourisme', label: 'Contacts officiels du tourisme' },
+  { section: 'voyage_recommandations_securite', label: 'Recommandations sécurité (liens officiels)' },
+] as const
+
+const infosVoyage = computed(() =>
+  champsVoyage.map(c => ({
+    section: c.section,
+    label: c.label,
+    valeur: (props.fiche?.[c.section as keyof FichePaysDetailAPI] as string | null | undefined) ?? null,
+  })),
+)
+
+const ouvrirChampVoyage = (section: string, label: string, valeur: string | null) => {
+  if (!props.estAuthentifie) {
+    emit('require-login')
+    return
+  }
+  emit('open-champ-voyage', { section, label, valeurActuelle: valeur ?? undefined })
+}
 
 const { listerSavoirsPratiques } = useOpportuniteAfrique()
 
@@ -108,6 +148,41 @@ const proposerSavoir = () => {
         >
           Proposer un savoir
         </button>
+      </div>
+
+      <!-- Bloc « Infos pratiques » — champs structurés contribuables par tous -->
+      <div class="bg-white rounded-lg shadow-sm p-5 mb-6">
+        <h3 class="font-oswald text-xl font-semibold text-gray-900 mb-1">Infos pratiques</h3>
+        <p class="text-sm text-gray-500 mb-5">
+          L'essentiel à connaître avant de partir. Chaque information peut être proposée ou corrigée par la communauté (validation par un administrateur).
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+          <div
+            v-for="info in infosVoyage"
+            :key="info.section"
+            class="border-b border-gray-100 pb-4"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <h4 class="text-sm font-medium text-gray-500">{{ info.label }}</h4>
+              <button
+                type="button"
+                class="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
+                @click="ouvrirChampVoyage(info.section, info.label, info.valeur)"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                {{ info.valeur ? 'Modifier' : 'Contribuer' }}
+              </button>
+            </div>
+            <p v-if="info.valeur" class="mt-1 text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+              {{ info.valeur }}
+            </p>
+            <p v-else class="mt-1 text-sm italic text-gray-400">
+              Non renseigné — proposez cette information.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div v-if="chargement" class="space-y-3">

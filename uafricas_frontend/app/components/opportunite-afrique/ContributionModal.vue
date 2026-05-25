@@ -22,15 +22,28 @@ interface AfripulseContext {
   libelle?: string
 }
 
+/** Contexte « champ ciblé » : contribution scalaire sur un champ précis de la fiche
+ *  (ex. bloc « À savoir avant de voyager »). Réutilise le canal legacy. */
+interface LegacyFieldContext {
+  /** Nom de la section/colonne fiche_pays (ex. voyage_infos_visa) */
+  section: string
+  /** Libellé lisible du champ (titre du modal + en-tête) */
+  label: string
+  /** Valeur actuelle (pré-remplissage du textarea) */
+  valeurActuelle?: string | null
+}
+
 interface Props {
   isOpen: boolean
   ficheId: string
   paysNom: string
   afripulseContext?: AfripulseContext | null
+  legacyContext?: LegacyFieldContext | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   afripulseContext: null,
+  legacyContext: null,
 })
 
 type SubmitLegacy = {
@@ -57,7 +70,10 @@ const emit = defineEmits<{
 }>()
 
 const contexteAfripulse = ref<AfripulseContext | null>(props.afripulseContext)
+const contexteLegacy = ref<LegacyFieldContext | null>(props.legacyContext)
 const estModeAfripulse = computed(() => contexteAfripulse.value !== null)
+/** Mode legacy ciblé sur un champ précis (section + valeur pré-remplie, sélecteurs masqués) */
+const estChampCible = computed(() => contexteLegacy.value !== null)
 const typeAction = computed(() => contexteAfripulse.value?.type_contribution ?? 'ajout')
 const estSuppression = computed(() => typeAction.value === 'suppression')
 
@@ -141,6 +157,7 @@ const categoriesSavoir: { value: CategorieSavoir, label: string }[] = [
 const sections = SECTIONS_FICHE_PAYS
 
 const titreModal = computed(() => {
+  if (estChampCible.value) return `Contribuer : ${contexteLegacy.value!.label}`
   if (!estModeAfripulse.value) return 'Proposer une contribution'
   const ctx = contexteAfripulse.value!
   const cibles: Record<TypeObjetContribution, string> = {
@@ -161,7 +178,7 @@ const titreModal = computed(() => {
 const labelBouton = computed(() => {
   if (form.loading) return 'Envoi...'
   if (estSuppression.value) return 'Proposer la suppression'
-  if (typeAction.value === 'edition') return 'Proposer la modification'
+  if (estChampCible.value || typeAction.value === 'edition') return 'Proposer la modification'
   return 'Soumettre'
 })
 
@@ -202,6 +219,14 @@ const resetForm = () => {
   formAfripulse.categorie = 'autre'
   formAfripulse.explication = ''
   formAfripulse.exemple = ''
+}
+
+/** Pré-remplit le formulaire legacy pour une contribution sur un champ ciblé */
+const prefillLegacy = (ctx: LegacyFieldContext | null) => {
+  if (!ctx) return
+  form.section = ctx.section
+  form.type_contribution = 'modification'
+  form.nouvelle_valeur = ctx.valeurActuelle ?? ''
 }
 
 /** Pré-remplit le formulaire Afripulse avec les valeurs actuelles (édition / suppression) */
@@ -392,16 +417,29 @@ watch(() => props.isOpen, (isOpen) => {
   if (!isOpen) {
     resetForm()
     contexteAfripulse.value = null
+    contexteLegacy.value = null
   }
 })
 
 watch(() => props.afripulseContext, (ctx) => {
   if (ctx) {
     resetForm()
+    contexteLegacy.value = null
     contexteAfripulse.value = ctx
     prefillAfripulse(ctx)
   } else {
     contexteAfripulse.value = null
+  }
+})
+
+watch(() => props.legacyContext, (ctx) => {
+  if (ctx) {
+    resetForm()
+    contexteAfripulse.value = null
+    contexteLegacy.value = ctx
+    prefillLegacy(ctx)
+  } else {
+    contexteLegacy.value = null
   }
 })
 </script>
@@ -736,43 +774,64 @@ watch(() => props.afripulseContext, (ctx) => {
           </template>
 
           <template v-else>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Section concernée *</label>
-              <select
-                v-model="form.section"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
-              >
-                <option value="">Sélectionnez une section</option>
-                <option v-for="s in sections" :key="s.value" :value="s.value">{{ s.label }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Type *</label>
-              <div class="flex flex-wrap gap-4">
-                <label class="flex items-center gap-2">
-                  <input v-model="form.type_contribution" type="radio" value="modification" />
-                  <span class="text-sm">Modification</span>
-                </label>
-                <label class="flex items-center gap-2">
-                  <input v-model="form.type_contribution" type="radio" value="ajout" />
-                  <span class="text-sm">Ajout</span>
-                </label>
-                <label class="flex items-center gap-2">
-                  <input v-model="form.type_contribution" type="radio" value="suppression" />
-                  <span class="text-sm">Suppression</span>
-                </label>
+            <!-- Champ ciblé : section pré-déterminée, on ne montre que la valeur à proposer -->
+            <template v-if="estChampCible && contexteLegacy">
+              <div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-md p-3 text-sm">
+                Vous proposez une mise à jour de <strong>« {{ contexteLegacy.label }} »</strong>.
+                Votre contribution sera examinée par un administrateur avant publication.
               </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Nouvelle valeur *</label>
-              <textarea
-                v-model="form.nouvelle_valeur"
-                rows="4"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
-              />
-            </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ contexteLegacy.label }} *</label>
+                <textarea
+                  v-model="form.nouvelle_valeur"
+                  rows="5"
+                  required
+                  placeholder="Saisissez l'information…"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                />
+              </div>
+            </template>
+
+            <!-- Mode générique : sélection libre de la section -->
+            <template v-else>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Section concernée *</label>
+                <select
+                  v-model="form.section"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                >
+                  <option value="">Sélectionnez une section</option>
+                  <option v-for="s in sections" :key="s.value" :value="s.value">{{ s.label }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                <div class="flex flex-wrap gap-4">
+                  <label class="flex items-center gap-2">
+                    <input v-model="form.type_contribution" type="radio" value="modification" />
+                    <span class="text-sm">Modification</span>
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input v-model="form.type_contribution" type="radio" value="ajout" />
+                    <span class="text-sm">Ajout</span>
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input v-model="form.type_contribution" type="radio" value="suppression" />
+                    <span class="text-sm">Suppression</span>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nouvelle valeur *</label>
+                <textarea
+                  v-model="form.nouvelle_valeur"
+                  rows="4"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                />
+              </div>
+            </template>
           </template>
 
           <div>

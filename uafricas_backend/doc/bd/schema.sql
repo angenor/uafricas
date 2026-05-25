@@ -88,6 +88,7 @@
 \ir schemas/11b_country_profile_contributions.sql
 \ir schemas/11c_country_profile_afripulse.sql
 \ir schemas/11d_country_profile_sites_enrichis.sql
+\ir schemas/11e_country_profile_infos_voyage.sql
 \ir schemas/16_retrouve_amis.sql
 \ir schemas/23_arbre_genealogique.sql
 \ir schemas/24_matching.sql

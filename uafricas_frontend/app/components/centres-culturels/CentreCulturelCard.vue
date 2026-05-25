@@ -25,10 +25,6 @@ defineProps<{
       <div class="text-3xl text-custom-chocolat font-bold">
         <span class="text-black">{{ centre.nom }}</span>
       </div>
-      <div class="flex items-center mt-1">
-        <font-awesome-icon class="text-gray-500" :icon="['fas', 'location-dot']" />
-        <div class="ml-2 text-gray-600">{{ centre.adresse || centre.ville || 'Adresse non renseignée' }}</div>
-      </div>
       <div
         class="border mt-2 inline-flex rounded-xl px-3 py-0.5 text-custom-green border-custom-green text-sm"
       >

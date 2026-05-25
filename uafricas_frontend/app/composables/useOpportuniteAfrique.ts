@@ -42,6 +42,15 @@ export interface FichePaysDetailAPI extends FichePaysAPI {
   biographie: string | null
   contexte: string | null
   fuseau_horaire: string | null
+  // Bloc « À savoir avant de voyager » (infos pratiques uniques par territoire)
+  voyage_langue_internationale: string | null
+  voyage_langue_locale: string | null
+  voyage_infos_visa: string | null
+  voyage_infos_sanitaires: string | null
+  voyage_meteo: string | null
+  voyage_prises_electriques: string | null
+  voyage_contacts_tourisme: string | null
+  voyage_recommandations_securite: string | null
 }
 
 /** Reponse paginee */
@@ -337,6 +346,14 @@ export const SECTIONS_FICHE_PAYS = [
   { value: 'langues_populaires', label: 'Langues populaires' },
   { value: 'monnaie', label: 'Monnaie' },
   { value: 'fuseau_horaire', label: 'Fuseau horaire' },
+  { value: 'voyage_langue_internationale', label: 'Langue internationale' },
+  { value: 'voyage_langue_locale', label: 'Langue locale la plus utilisée' },
+  { value: 'voyage_infos_visa', label: 'Informations visa' },
+  { value: 'voyage_infos_sanitaires', label: 'Informations sanitaires' },
+  { value: 'voyage_meteo', label: 'Météo' },
+  { value: 'voyage_prises_electriques', label: 'Prises électriques' },
+  { value: 'voyage_contacts_tourisme', label: 'Contacts officiels du tourisme' },
+  { value: 'voyage_recommandations_securite', label: 'Recommandations sécurité' },
   { value: 'groupe_ethnique', label: 'Groupe ethnique' },
   { value: 'site_touristique', label: 'Site touristique' },
   { value: 'secteur_developpement', label: 'Secteur de developpement' },

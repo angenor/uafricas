@@ -178,8 +178,10 @@
             />
             <OpportuniteAfriqueSavoirAvantVoyagerSection
               :fiche-id="pays.id"
+              :fiche="pays"
               :est-authentifie="userStore.isAuthenticated"
               @open-contribution="onOpenContribution"
+              @open-champ-voyage="onOpenChampVoyage"
               @require-login="onRequireLogin"
             />
 
@@ -278,6 +280,7 @@
       :fiche-id="pays?.id || ''"
       :pays-nom="pays?.nom || ''"
       :afripulse-context="afripulseContext"
+      :legacy-context="legacyFieldContext"
       @close="fermerContributionModal"
       @submit="handleContributionSubmit"
     />
@@ -314,6 +317,12 @@ interface AfripulseContext {
   libelle?: string
 }
 
+interface LegacyFieldContext {
+  section: string
+  label: string
+  valeurActuelle?: string
+}
+
 const pays = ref<FichePaysDetailAPI | null>(null)
 
 const breadcrumbs = computed(() => [
@@ -323,6 +332,7 @@ const breadcrumbs = computed(() => [
 const contributeurs = ref<ContributeurAPI[]>([])
 const showContributionModal = ref(false)
 const afripulseContext = ref<AfripulseContext | null>(null)
+const legacyFieldContext = ref<LegacyFieldContext | null>(null)
 const contributionModalRef = ref<{ setLoading: (val: boolean) => void; setError: (msg: string) => void; setSuccess: () => void } | null>(null)
 
 const proposerModification = () => {
@@ -331,11 +341,19 @@ const proposerModification = () => {
     return
   }
   afripulseContext.value = null
+  legacyFieldContext.value = null
   showContributionModal.value = true
 }
 
 const onOpenContribution = (ctx: AfripulseContext) => {
+  legacyFieldContext.value = null
   afripulseContext.value = ctx
+  showContributionModal.value = true
+}
+
+const onOpenChampVoyage = (ctx: LegacyFieldContext) => {
+  afripulseContext.value = null
+  legacyFieldContext.value = ctx
   showContributionModal.value = true
 }
 
@@ -346,6 +364,7 @@ const onRequireLogin = () => {
 const fermerContributionModal = () => {
   showContributionModal.value = false
   afripulseContext.value = null
+  legacyFieldContext.value = null
 }
 
 const signalerProbleme = () => {

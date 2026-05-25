@@ -2706,6 +2706,15 @@ async fn appliquer_fiche_scalaire(
         "langues_populaires" => "langues_populaires = $1",
         "monnaie" => "monnaie = $1",
         "fuseau_horaire" => "fuseau_horaire = $1",
+        // Bloc « À savoir avant de voyager »
+        "voyage_langue_internationale" => "voyage_langue_internationale = $1",
+        "voyage_langue_locale" => "voyage_langue_locale = $1",
+        "voyage_infos_visa" => "voyage_infos_visa = $1",
+        "voyage_infos_sanitaires" => "voyage_infos_sanitaires = $1",
+        "voyage_meteo" => "voyage_meteo = $1",
+        "voyage_prises_electriques" => "voyage_prises_electriques = $1",
+        "voyage_contacts_tourisme" => "voyage_contacts_tourisme = $1",
+        "voyage_recommandations_securite" => "voyage_recommandations_securite = $1",
         _ => return Ok(()),
     };
 

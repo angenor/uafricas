@@ -12,12 +12,10 @@ interface ApiResponse<T> {
   error: string | null
 }
 
-// Visuel de repli quand aucun centre publié n'a d'image de couverture (FR-005a).
-const FALLBACK_CAROUSEL: { src: string, alt: string }[] = [
-  {
-    src: 'https://images.unsplash.com/photo-1523805009345-7448845a9e53?w=1200&h=400&fit=crop',
-    alt: 'Centres culturels UAfricas',
-  },
+// Images fixes du carrousel.
+const carouselImages: string[] = [
+  'https://africangreens.org/wp-content/uploads/2024/07/joyinafrica.jpg',
+  'https://static.vecteezy.com/ti/vecteur-libre/p1/3500664-banniere-culture-africaine-tradition-vectoriel.jpg',
 ]
 
 useHead({
@@ -51,14 +49,6 @@ const { data: centresData, status, error: fetchError, refresh } = await useAsync
 const centres = computed(() => centresData.value ?? [])
 const chargement = computed(() => status.value === 'pending')
 const erreur = computed(() => fetchError.value?.message ?? null)
-
-// Carrousel dérivé des centres publiés (FR-005a, Décision 2 research.md).
-const carouselImages = computed<{ src: string, alt: string }[]>(() => {
-  const derivees = centres.value
-    .filter(c => c.image_couverture_url)
-    .map(c => ({ src: c.image_couverture_url as string, alt: c.nom }))
-  return derivees.length > 0 ? derivees : FALLBACK_CAROUSEL
-})
 </script>
 
 <template>
@@ -70,10 +60,10 @@ const carouselImages = computed<{ src: string, alt: string }[]>(() => {
       <!-- Hero section -->
       <CentresCulturelsCentreCulturelHero :total="centres.length" />
 
-      <!-- Description Afroculture -->
+      <!-- Description Africans International -->
       <div class="mt-4 p-4 bg-linear-to-r from-custom-chocolat/5 to-custom-green/5 border-l-4 border-custom-green rounded-r-lg">
         <p class="text-gray-700 text-sm md:text-base leading-relaxed">
-          <span class="font-semibold text-custom-chocolat">Afroculture</span> — Enrichissons nous ici et ailleurs de notre culture diversifiée
+          <span class="font-semibold text-custom-chocolat">Africans International</span> — Enrichissons nous ici et ailleurs de notre culture diversifiée
         </p>
       </div>
 

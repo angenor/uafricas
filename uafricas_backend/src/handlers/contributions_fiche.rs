@@ -139,6 +139,25 @@ async fn obtenir_valeur_actuelle(
             .fetch_one(pool)
             .await?
         }
+        // Bloc « À savoir avant de voyager » — colonnes TEXT (liste fermée de littéraux)
+        s @ ("voyage_langue_internationale"
+        | "voyage_langue_locale"
+        | "voyage_infos_visa"
+        | "voyage_infos_sanitaires"
+        | "voyage_meteo"
+        | "voyage_prises_electriques"
+        | "voyage_contacts_tourisme"
+        | "voyage_recommandations_securite") => {
+            // `s` provient d'un motif littéral fermé → interpolation sûre (pas d'injection).
+            let requete = format!(
+                "SELECT {} FROM country_profile.fiche_pays WHERE id = $1",
+                s
+            );
+            sqlx::query_scalar(&requete)
+                .bind(fiche_id)
+                .fetch_one(pool)
+                .await?
+        }
         // Pour les tables liees (groupe_ethnique, site_touristique, etc.), pas de valeur actuelle
         _ => None,
     };
