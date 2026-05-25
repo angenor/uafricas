@@ -1,28 +1,26 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
     <div
-      class="relative h-80 bg-cover bg-center z-0"
-      style="background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80');">
+      class="group relative bg-cover bg-center"
+      style="background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')">
       <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
 
-      <!-- Texte avec animation d'entrée -->
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
-        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
-          Mindshiftlab
-        </h1>
-        <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
-        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
-          Institut universitaire pour le développement de l'Afrique
-        </p>
-        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
-          Vulgariser des formations de masse sur des enjeux d'intérêt pour le développement et le renforcement de gouvernance en Afrique.
-        </p>
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Mindshiftlab
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Institut universitaire pour le développement de l'Afrique — vulgariser des formations de masse sur des enjeux d'intérêt pour le développement et le renforcement de gouvernance en Afrique.
+          </p>
+        </div>
       </div>
     </div>
 
     <!-- Statistiques -->
-    <div class="max-w-6xl mx-auto px-4 relative -top-10">
+    <div class="max-w-6xl mx-auto px-4 mt-6">
       <div class="bg-white rounded-lg shadow-lg p-8">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div class="text-center">
@@ -281,49 +279,5 @@ onMounted(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-/* Animations pour la bannière */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes expandWidth {
-  from {
-    width: 0;
-  }
-  to {
-    width: 6rem;
-  }
-}
-
-@keyframes fadeInDelay {
-  0%, 40% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-title {
-  animation: fadeInUp 1s ease-out 0.3s both;
-}
-
-.animate-line {
-  animation: expandWidth 1s ease-out 1s both;
-}
-
-.animate-subtitle {
-  animation: fadeInDelay 1.5s ease-out 0.8s both;
 }
 </style>

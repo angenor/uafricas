@@ -20,12 +20,12 @@
     <!-- Contenu -->
     <template v-else>
       <!-- Hero Section avec image de couverture -->
-      <div class="relative h-72 md:h-96 bg-cover bg-center"
+      <div class="relative h-56 md:h-72 bg-cover bg-center"
            :style="{ backgroundImage: `url(${pays.image_couverture})` }">
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
 
         <!-- Contenu du hero -->
-        <div class="absolute inset-0 flex flex-col justify-end px-4 md:px-8 pb-8">
+        <div class="absolute inset-0 flex flex-col justify-end px-4 md:px-8 pb-6 pt-16">
           <div class="max-w-6xl mx-auto w-full">
             <CommonBreadcrumbNav class="mb-4" :custom-breadcrumbs="breadcrumbs" />
 

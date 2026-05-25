@@ -1,29 +1,28 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
-    <div class="relative h-96 overflow-hidden bg-linear-to-br from-amber-700 via-orange-500 to-yellow-400">
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
+    <div class="group relative overflow-hidden bg-linear-to-br from-amber-700 via-orange-500 to-yellow-400">
       <!-- Motif décoratif -->
       <div class="absolute inset-0 opacity-10"
            style="background-image: repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(255,255,255,0.1) 35px, rgba(255,255,255,0.1) 70px);"></div>
       <div class="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-white/5 animate-pulse"></div>
       <div class="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5 animate-pulse" style="animation-delay: 1s;"></div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center px-4">
-        
-        <h1 class="text-white text-5xl md:text-6xl font-display font-bold mb-4 animate-fadeInUp tracking-tight">
-          IdeaForces
-        </h1>
-        <div class="h-1 w-24 bg-linear-to-r from-yellow-200 to-white rounded-full mb-4 animate-expandWidth"></div>
-        <p class="text-white/80 text-lg md:text-xl text-center max-w-2xl animate-fadeInUp animation-delay-200">
-          Partager des idées et des orientations sur des enjeux de développement
-        </p>
-
-      
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-display font-bold tracking-tight transition-opacity duration-300 group-hover:opacity-0">
+            IdeaForces
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Partager des idées et des orientations sur des enjeux de développement
+          </p>
+        </div>
       </div>
     </div>
 
     <!-- Contenu -->
-    <div class="max-w-7xl mx-auto px-4 py-8 -mt-16 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 py-8 relative z-10">
       <!-- Barre de navigation -->
       <div class="bg-white rounded-xl shadow-lg p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
@@ -54,34 +53,34 @@
         <!-- Filtres -->
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-lg overflow-hidden sticky top-4">
-            <div class="bg-linear-to-r from-orange-500 to-amber-500 px-6 py-4">
-              <h3 class="text-white font-bold flex items-center gap-2">
+            <div class="bg-linear-to-r from-orange-500 to-amber-500 px-4 py-3">
+              <h3 class="text-white font-bold text-sm flex items-center gap-2">
                 <font-awesome-icon :icon="['fas', 'filter']" />
                 Filtres
               </h3>
             </div>
 
-            <div class="p-6 space-y-5">
+            <div class="p-4 space-y-4">
               <!-- Recherche -->
               <div class="relative">
                 <font-awesome-icon :icon="['fas', 'search']" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
                 <input v-model="recherche"
                        type="text"
                        placeholder="Rechercher..."
-                       class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition">
+                       class="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition">
               </div>
 
               <!-- Pays -->
               <div>
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pays</label>
-                <select v-model="paysSelectionne" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition bg-white">
+                <select v-model="paysSelectionne" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition bg-white">
                   <option value="">Tous les pays</option>
                   <option v-for="pays in paysDisponibles" :key="pays" :value="pays">{{ pays }}</option>
                 </select>
               </div>
 
               <button @click="reinitialiser"
-                      class="w-full py-2.5 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition flex items-center justify-center gap-2">
+                      class="w-full py-2 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition flex items-center justify-center gap-2">
                 <font-awesome-icon :icon="['fas', 'undo']" class="text-xs" />
                 Réinitialiser
               </button>

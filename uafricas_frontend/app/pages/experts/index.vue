@@ -99,12 +99,12 @@
               </NuxtLink>
             </div>
 
-            <!-- Filtres modernises -->
-            <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
-              <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <!-- Filtres modernises (compacts) -->
+            <div class="bg-white rounded-2xl shadow-xl p-3 mb-8">
+              <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <!-- Filtres par tags -->
                 <div class="flex-1">
-                  <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+                  <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
                     Domaines d'expertise
                   </h3>
                   <div class="flex flex-wrap gap-2">
@@ -115,7 +115,7 @@
                         'bg-gray-100 text-gray-700 hover:bg-gray-200':
                           categorySelected !== 'Tout',
                       }"
-                      class="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                      class="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                       @click="filterByCategory('Tout')"
                     >
                       Tout
@@ -129,14 +129,14 @@
                         'bg-gray-100 text-gray-700 hover:bg-gray-200':
                           categorySelected !== category,
                       }"
-                      class="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                      class="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                       @click="filterByCategory(category)"
                     >
                       {{ category }}
                     </button>
                     <div v-if="categories.length > 5" class="relative">
                       <button
-                        class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all flex items-center gap-1"
+                        class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all flex items-center gap-1"
                         @click="showMoreCategories = !showMoreCategories"
                       >
                         Plus
@@ -168,11 +168,11 @@
                 </div>
 
                 <!-- Controles de tri et filtre pays -->
-                <div class="flex flex-col sm:flex-row gap-4">
+                <div class="flex flex-col sm:flex-row gap-3">
                   <!-- Filtre pays -->
                   <select
                     v-model="selectedCountry"
-                    class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                    class="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                   >
                     <option v-for="country in countries" :key="country.value" :value="country.value">
                       {{ country.label }}

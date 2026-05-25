@@ -22,28 +22,28 @@
       </button>
     </div>
 
-    <!-- Hero Section -->
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
     <div
-      class="relative h-80 bg-cover bg-center"
+      class="group relative bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
     >
       <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
-        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
-          Afrolang
-        </h1>
-        <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
-        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
-          Sauvons nos langues
-        </p>
-        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
-          Apprendre une langue africaine ou afro-descendante à distance et rencontrer des personnes qui pratiquent la langue et souhaitent l'apprendre.
-        </p>
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Afrolang — Sauvons nos langues
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Apprendre une langue africaine ou afro-descendante à distance et rencontrer des personnes qui pratiquent la langue et souhaitent l'apprendre.
+          </p>
+        </div>
+
         <button
           v-if="userStore.isAuthenticated"
           type="button"
-          class="mt-5 inline-flex items-center gap-2 rounded-full bg-white/95 hover:bg-white text-custom-chocolat font-semibold text-sm px-5 py-2.5 shadow-lg transition-colors animate-subtitle"
+          class="mt-4 inline-flex items-center gap-2 rounded-full bg-white/95 hover:bg-white text-custom-chocolat font-semibold text-sm px-5 py-2.5 shadow-lg transition-colors"
           @click="proposerOuvert = true"
         >
           <font-awesome-icon :icon="['fas', 'lightbulb']" class="w-4 h-4" />
@@ -64,11 +64,11 @@
       <!-- Search Bar -->
       <div class="max-w-2xl mx-auto mb-8">
         <div class="relative">
-          <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             v-model="filtres.recherche"
             type="text"
-            class="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-700 placeholder-gray-400"
+            class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-xl shadow-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-700 placeholder-gray-400"
             placeholder="Rechercher une salle par nom ou langue..."
             @keyup.enter="handleSearch"
           />
@@ -813,29 +813,5 @@ onMounted(async () => {
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes expandLine {
-  from { width: 0; }
-  to { width: 6rem; }
-}
-
-.animate-title {
-  animation: fadeIn 1s ease-out forwards;
-}
-
-.animate-subtitle {
-  animation: fadeIn 1s ease-out 0.3s forwards;
-  opacity: 0;
-}
-
-.animate-line {
-  animation: expandLine 1.2s ease-out 0.1s forwards;
-  width: 0;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <section class="bg-gradient-to-br from-custom-chocolat/5 via-white to-custom-green/5 py-16 md:py-24">
+  <section class="bg-gradient-to-br from-custom-chocolat/5 via-white to-custom-green/5 pt-16 pb-10">
     <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-12">
       <!-- Contenu texte -->
       <div class="flex-1 text-center md:text-left">

@@ -2,18 +2,18 @@
   <div class="min-h-screen pb-10 bg-gray-50">
     <!-- Hero Section (compact, titre ↔ description au survol) -->
     <div
-      class="hero-codimoi group relative bg-cover bg-center"
+      class="group relative bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
     >
       <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
 
       <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <!-- Conteneur fixe : le titre et la description se superposent -->
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
         <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="hero-titre absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
             Codimoi
           </h1>
-          <p class="hero-desc absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2">
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             Préservons nos cultures les meilleures — codifier les récits, images et souvenirs de l'Afrique et des afro-descendants.
           </p>
         </div>
@@ -614,48 +614,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes expandLine {
-  from { width: 0; }
-  to { width: 6rem; }
-}
-
-.animate-title {
-  animation: fadeIn 1s ease-out forwards;
-}
-
-.animate-subtitle {
-  animation: fadeIn 1s ease-out 0.3s forwards;
-  opacity: 0;
-}
-
-.animate-line {
-  animation: expandLine 1.2s ease-out 0.1s forwards;
-  width: 0;
-}
-
-/* Survol du hero : la description remplace le titre (crossfade) */
-.hero-titre,
-.hero-desc {
-  transition: opacity 0.4s ease;
-}
-
-.hero-desc {
-  opacity: 0;
-}
-
-.hero-codimoi:hover .hero-titre {
-  opacity: 0;
-}
-
-.hero-codimoi:hover .hero-desc {
-  opacity: 1;
-}
-
 .post-list-enter-active,
 .post-list-leave-active {
   transition: all 0.5s ease;

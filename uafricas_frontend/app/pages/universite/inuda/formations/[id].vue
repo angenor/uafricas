@@ -20,10 +20,10 @@
     <!-- Contenu -->
     <template v-else>
       <!-- Hero Section -->
-      <div class="relative h-64 md:h-72 bg-gradient-to-r"
+      <div class="relative bg-gradient-to-r"
            :class="getTypeGradient(formation.type)">
         <div class="absolute inset-0 bg-black/30"></div>
-        <div class="absolute inset-0 flex flex-col justify-center px-4 md:px-8">
+        <div class="relative px-4 md:px-8 pt-16 pb-6">
           <div class="max-w-6xl mx-auto w-full">
             <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" class="mb-4 text-white" />
             <div class="flex items-center gap-3 mb-3">

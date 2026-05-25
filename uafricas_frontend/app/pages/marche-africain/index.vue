@@ -1,49 +1,45 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
     <div
-      class="relative h-80 bg-cover bg-center"
+      class="group relative bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1555217851-6141535bd771?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
     >
       <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
-        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
-          Marché Africain
-        </h1>
-        <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
-        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
-          Annonces et échanges
-        </p>
-        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
-          Offrir un marché virtuel aux africains, aux afro-descendants et à la diaspora africaine.
-        </p>
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Marché Africain
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Offrir un marché virtuel aux africains, aux afro-descendants et à la diaspora africaine.
+          </p>
+        </div>
       </div>
     </div>
 
     <!-- Barre de recherche -->
-    <div class="max-w-4xl mx-auto -mt-8 relative z-10 px-4">
-      <div class="bg-white rounded-xl shadow-xl p-5 transform transition-all hover:shadow-2xl">
-        <div class="flex flex-col md:flex-row gap-3">
-          <div class="flex-1">
+    <div class="max-w-4xl mx-auto -mt-5 relative z-10 px-4">
+      <div class="bg-white rounded-xl shadow-xl p-3 transform transition-all hover:shadow-2xl">
+        <div class="flex flex-col md:flex-row gap-2">
+          <div class="relative flex-1">
+            <font-awesome-icon
+              icon="fa-solid fa-search"
+              class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
+            />
             <input
               v-model="filtres.recherche"
               type="text"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all"
+              class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all"
               placeholder="Rechercher une annonce..."
               @keyup.enter="handleSearch"
             />
           </div>
           <button
-            @click="handleSearch"
-            class="bg-linear-to-r from-custom-green to-green-600 hover:from-green-600 hover:to-custom-green text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-custom-green flex items-center justify-center"
-          >
-            <font-awesome-icon icon="fa-solid fa-search" class="mr-2" />
-            Recherche
-          </button>
-          <button
             @click="handlePublish"
-            class="bg-linear-to-r from-custom-chocolat to-amber-700 hover:from-amber-700 hover:to-custom-chocolat text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-custom-chocolat flex items-center justify-center"
+            class="bg-linear-to-r from-custom-chocolat to-amber-700 hover:from-amber-700 hover:to-custom-chocolat text-white px-4 py-2 text-sm rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-custom-chocolat flex items-center justify-center"
           >
             <font-awesome-icon :icon="['fas', 'plus']" class="mr-2" />
             Publier
@@ -51,7 +47,7 @@
         </div>
 
         <!-- Filtres catégories -->
-        <div class="flex flex-wrap mt-3 gap-2">
+        <div class="flex flex-wrap mt-2 gap-1.5">
           <label
             v-for="cat in categoriesFiltre"
             :key="cat.key"
@@ -64,7 +60,7 @@
               class="hidden"
             />
             <div
-              class="px-4 py-2 rounded-full text-sm cursor-pointer transition-all duration-200"
+              class="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all duration-200"
               :class="[
                 filtres.categorie === cat.key
                   ? 'bg-custom-chocolat text-white'
@@ -513,31 +509,3 @@ onMounted(async () => {
   await chargerAnnonces()
 })
 </script>
-
-<style scoped>
-@reference "~/assets/css/main.css";
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes expandLine {
-  from { width: 0; }
-  to { width: 6rem; }
-}
-
-.animate-title {
-  animation: fadeIn 1s ease-out forwards;
-}
-
-.animate-subtitle {
-  animation: fadeIn 1s ease-out 0.3s forwards;
-  opacity: 0;
-}
-
-.animate-line {
-  animation: expandLine 1.2s ease-out 0.1s forwards;
-  width: 0;
-}
-</style>

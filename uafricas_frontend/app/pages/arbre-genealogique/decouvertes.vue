@@ -77,16 +77,21 @@ onMounted(charger)
 
 <template>
   <div class="mt-28 min-h-screen">
-    <!-- Hero Section -->
-    <div class="bg-gradient-to-br from-[var(--color-custom-green)]/10 to-[var(--color-custom-chocolat)]/5 px-4 py-12 text-center">
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
+    <div class="group bg-gradient-to-br from-[var(--color-custom-green)]/10 to-[var(--color-custom-chocolat)]/5 px-4 pt-6 pb-6 text-center select-none">
       <div class="mx-auto max-w-2xl">
-        <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-custom-green)]/20">
+        <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-custom-green)]/20">
           <font-awesome-icon :icon="['fas', 'users']" class="text-2xl text-[var(--color-custom-green)]" />
         </div>
-        <h1 class="mb-2 text-3xl font-bold text-stone-800">Mes Découvertes</h1>
-        <p class="text-stone-500">
-          Explorez les correspondances détectées entre votre arbre et ceux d'autres membres de la communauté.
-        </p>
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-12 md:min-h-14">
+          <h1 class="absolute inset-0 flex items-center justify-center text-stone-800 text-2xl md:text-3xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Mes Découvertes
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-stone-500 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Explorez les correspondances détectées entre votre arbre et ceux d'autres membres de la communauté.
+          </p>
+        </div>
       </div>
     </div>
 

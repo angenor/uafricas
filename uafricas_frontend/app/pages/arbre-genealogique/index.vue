@@ -120,16 +120,21 @@ const infoPagination = computed(() => {
 
 <template>
   <div class="mt-28">
-    <!-- Hero Section -->
-    <div class="bg-gradient-to-br from-[var(--color-custom-green)]/10 via-white to-[var(--color-custom-chocolat)]/5 px-4 py-12 text-center">
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
+    <div class="group bg-gradient-to-br from-[var(--color-custom-green)]/10 via-white to-[var(--color-custom-chocolat)]/5 px-4 pt-6 pb-6 text-center select-none">
       <div class="mx-auto max-w-2xl">
-        <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-custom-green)]/20">
+        <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-custom-green)]/20">
           <font-awesome-icon :icon="['fas', 'tree']" class="text-2xl text-[var(--color-custom-green)]" />
         </div>
-        <h1 class="mb-2 text-3xl font-bold text-stone-800">Rootstree</h1>
-        <p class="text-stone-500">
-          Explorez votre arbre généalogique, découvrez vos origines et connectez-vous avec votre famille à travers les générations.
-        </p>
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-12 md:min-h-14">
+          <h1 class="absolute inset-0 flex items-center justify-center text-stone-800 text-2xl md:text-3xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Rootstree
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-stone-500 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Explorez votre arbre généalogique, découvrez vos origines et connectez-vous avec votre famille à travers les générations.
+          </p>
+        </div>
       </div>
     </div>
 
@@ -221,7 +226,7 @@ const infoPagination = computed(() => {
         v-model="recherche"
         type="text"
         placeholder="Rechercher par nom ou prénom…"
-        class="w-full pl-10 pr-4 py-2.5 border border-stone-300 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-custom-chocolat/50"
+        class="w-full pl-10 pr-4 py-2 text-sm border border-stone-300 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-custom-chocolat/50"
       />
     </div>
 

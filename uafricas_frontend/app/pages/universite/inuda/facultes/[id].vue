@@ -20,10 +20,10 @@
     <!-- Contenu -->
     <template v-else>
       <!-- Hero Section -->
-      <div class="relative h-64 md:h-80 bg-cover bg-center"
+      <div class="relative bg-cover bg-center"
            :style="{ backgroundImage: faculte.imageCouverture ? `url(${faculte.imageCouverture})` : 'linear-gradient(to right, #3B82F6, #6366F1)' }">
         <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50"></div>
-        <div class="absolute inset-0 flex flex-col justify-center px-4 md:px-8">
+        <div class="relative px-4 md:px-8 pt-16 pb-6">
           <div class="max-w-6xl mx-auto w-full">
             <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" class="mb-4 text-white" />
             <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">{{ faculte.titre }}</h1>

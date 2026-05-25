@@ -28,9 +28,13 @@ const charger = async () => {
   chargement.value = false
 }
 
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
 const rechercher = () => {
-  page.value = 1
-  charger()
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    page.value = 1
+    charger()
+  }, 300)
 }
 
 const changerLangue = (code: string) => {
@@ -52,28 +56,30 @@ onMounted(async () => {
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero -->
-    <section class="bg-gradient-to-r from-custom-chocolat to-custom-chocolat/80 text-white py-16">
-      <div class="max-w-5xl mx-auto px-4 text-center">
-        <h1 class="text-4xl md:text-5xl font-bold font-['Oswald'] mb-4">Vidafrica</h1>
-        <p class="text-lg text-white/80 max-w-2xl mx-auto">
-          Découvrez des vidéos sous-titrées en plusieurs langues africaines et internationales
-          avec un surlignage karaoké mot par mot.
-        </p>
+    <!-- Hero (compact, titre ↔ description au survol) -->
+    <section class="group relative bg-gradient-to-r from-custom-chocolat to-custom-chocolat/80 text-white">
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center">
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12 select-none">
+          <h1 class="absolute inset-0 flex items-center justify-center text-2xl md:text-4xl font-bold font-['Oswald'] transition-opacity duration-300 group-hover:opacity-0">
+            Vidafrica
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Vidéos sous-titrées en langues africaines et internationales, surlignage karaoké mot par mot.
+          </p>
+        </div>
 
         <!-- Barre de recherche -->
-        <div class="mt-8 max-w-xl mx-auto">
-          <div class="flex gap-2">
+        <div class="mt-5 max-w-xl mx-auto">
+          <div class="relative">
+            <font-awesome-icon icon="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
             <input
               v-model="recherche"
               type="text"
-              class="flex-1 px-4 py-3 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50"
+              class="w-full pl-10 pr-4 py-2 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50"
               placeholder="Rechercher une vidéo..."
               @keydown.enter="rechercher"
+              @input="rechercher"
             />
-            <button class="bg-white text-custom-chocolat px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition" @click="rechercher">
-              <font-awesome-icon icon="search" />
-            </button>
           </div>
         </div>
       </div>

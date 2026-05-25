@@ -106,21 +106,23 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
     <div
-      class="relative h-96 bg-cover bg-center"
+      class="group relative bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
     >
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70" />
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
-        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
-          Retrouver une personne perdue de vue
-        </h1>
-        <div class="h-1 w-24 bg-custom-green rounded animate-line" />
-        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
-          Retrouvez vos amis, proches et connaissances perdus de vue grace a la communaute panafricaine.
-        </p>
-        <div class="flex flex-wrap justify-center gap-4 mt-8">
+      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <!-- Conteneur fixe : titre et description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Retrouver une personne perdue de vue
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Retrouvez vos amis, proches et connaissances perdus de vue grace a la communaute panafricaine.
+          </p>
+        </div>
+        <div class="flex flex-wrap justify-center gap-4 mt-6">
           <button
             v-if="estConnecte"
             class="px-6 py-3 bg-white text-custom-chocolat font-semibold rounded-lg hover:bg-amber-50 transition-colors cursor-pointer"
@@ -167,25 +169,25 @@ onMounted(() => {
           </p>
         </div>
 
-        <!-- Barre de filtres moderne -->
-        <div class="mb-10 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/60">
-          <div class="flex flex-wrap items-center gap-3">
+        <!-- Barre de filtres compacte -->
+        <div class="mb-10 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-200/60">
+          <div class="flex flex-wrap items-center gap-2">
             <!-- Recherche -->
             <div class="relative flex-1 min-w-56">
-              <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+              <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
               <input
                 v-model="filtreRecherche"
                 type="text"
                 placeholder="Rechercher un nom, un lieu, une ecole..."
-                class="w-full rounded-xl bg-gray-50 pl-10 pr-4 py-3 text-sm text-gray-700 placeholder-gray-400 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all"
+                class="w-full rounded-xl bg-gray-50 pl-9 pr-3 py-2 text-sm text-gray-700 placeholder-gray-400 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all"
                 @keyup.enter="appliquerFiltres"
               >
             </div>
             <!-- Filtre relation -->
-            <div class="min-w-48">
+            <div class="min-w-44">
               <select
                 v-model="filtreRelation"
-                class="w-full rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-700 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all appearance-none cursor-pointer"
+                class="w-full rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all appearance-none cursor-pointer"
                 @change="appliquerFiltres"
               >
                 <option value="">Toutes les relations</option>
@@ -194,9 +196,9 @@ onMounted(() => {
                 </option>
               </select>
             </div>
-            <!-- Boutons -->
+            <!-- Bouton recherche (input texte non reactif) -->
             <button
-              class="flex items-center gap-2 rounded-xl bg-custom-chocolat px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md active:scale-95 cursor-pointer"
+              class="flex items-center gap-2 rounded-xl bg-custom-chocolat px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md active:scale-95 cursor-pointer"
               @click="appliquerFiltres"
             >
               <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
@@ -204,7 +206,7 @@ onMounted(() => {
             </button>
             <button
               v-if="filtresActifs"
-              class="flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 cursor-pointer"
+              class="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 cursor-pointer"
               @click="reinitialiserFiltres"
             >
               <font-awesome-icon :icon="['fas', 'xmark']" />

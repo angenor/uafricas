@@ -1,15 +1,21 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
-    <div class="relative h-48 bg-gradient-to-r from-purple-600 to-indigo-700">
-      <div class="absolute inset-0 flex flex-col items-center justify-center">
-        <h1 class="text-white text-3xl md:text-4xl font-bold mb-2">Mon Espace INUDA</h1>
-        <p class="text-white/80">Suivez votre parcours de formation</p>
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
+    <div class="group relative bg-gradient-to-r from-purple-600 to-indigo-700">
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Mon Espace INUDA
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Suivez votre parcours de formation
+          </p>
+        </div>
       </div>
     </div>
 
     <!-- Contenu -->
-    <div class="max-w-7xl mx-auto px-4 py-8 -mt-8">
+    <div class="max-w-7xl mx-auto px-4 py-8 mt-2">
       <!-- Header -->
       <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" class="mb-4" />
@@ -60,21 +66,23 @@
       </div>
 
       <!-- Filtres -->
-      <div class="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div class="flex flex-wrap items-center gap-4">
-          <div class="flex-1 min-w-[200px]">
+      <div class="bg-white rounded-lg shadow-md p-3 mb-6">
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex-1 min-w-[200px] relative">
+            <font-awesome-icon icon="fa-solid fa-magnifying-glass"
+                               class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
             <input v-model="recherche"
                    type="text"
                    placeholder="Rechercher une formation..."
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-3 focus:ring-purple-500 focus:border-purple-500">
+                   class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
           </div>
-          <select v-model="filtreStatut" class="px-3 py-2 border border-gray-300 rounded-md">
+          <select v-model="filtreStatut" class="px-3 py-2 text-sm border border-gray-300 rounded-md">
             <option value="">Tous les statuts</option>
             <option value="en_cours">En cours</option>
             <option value="terminee">Terminée</option>
             <option value="non_commencee">Non commencée</option>
           </select>
-          <select v-model="filtreType" class="px-3 py-2 border border-gray-300 rounded-md">
+          <select v-model="filtreType" class="px-3 py-2 text-sm border border-gray-300 rounded-md">
             <option value="">Tous les types</option>
             <option value="mooc">MOOC</option>
             <option value="clom">CLOM</option>

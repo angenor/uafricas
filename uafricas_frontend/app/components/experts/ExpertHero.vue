@@ -1,5 +1,5 @@
 <template>
-  <div class="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600">
+  <div class="group relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600">
     <div class="absolute inset-0 bg-black opacity-10" />
     <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
 
@@ -9,14 +9,17 @@
       <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-white rounded-full blur-3xl" />
     </div>
 
-    <div class="relative max-w-7xl mx-auto px-4 py-20 lg:py-28">
+    <div class="relative max-w-7xl mx-auto px-4 pt-16 pb-6">
       <div class="text-center space-y-6">
-        <h1 class="text-4xl lg:text-6xl font-extrabold text-white tracking-tight">
-          Mobiliser une expertise de pointe
-        </h1>
-        <p class="text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto font-light">
-          Connectez-vous avec les meilleurs experts africains et afro-descendants
-        </p>
+        <!-- Titre ↔ sous-titre en crossfade au survol -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12 select-none">
+          <h1 class="absolute inset-0 flex items-center justify-center text-2xl md:text-4xl font-extrabold text-white tracking-tight transition-opacity duration-300 group-hover:opacity-0">
+            Mobiliser une expertise de pointe
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-sm md:text-base text-white/90 max-w-3xl mx-auto px-2 font-light opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Connectez-vous avec les meilleurs experts africains et afro-descendants
+          </p>
+        </div>
         <p class="text-white/70 text-sm md:text-base mt-3 max-w-3xl mx-auto text-center px-4">
           Valoriser en un seul endroit l'expertise africaine et afro-descendante et encourager les entreprises en Afrique à recourir aux ressources pertinentes sur le continent et au-delà.
         </p>
