@@ -15,7 +15,7 @@ const {
   chargerGroupesEthniques, creerGroupeEthnique, modifierGroupeEthnique, supprimerGroupeEthnique,
   chargerAlliances, creerAlliance, modifierAlliance, supprimerAlliance,
   chargerContes, creerConte, modifierConte, supprimerConte,
-  chargerSitesTouristiques, creerSiteTouristique, modifierSiteTouristique, supprimerSiteTouristique,
+  chargerSitesTouristiques, creerSiteTouristique, modifierSiteTouristique, supprimerSiteTouristique, definirVerificationSite,
   chargerSecteurs, creerSecteur, modifierSecteur, supprimerSecteur,
   chargerSaisons, creerSaison, modifierSaison, supprimerSaison,
   chargerLiensInterethniques, creerLienInterethnique, modifierLienInterethnique, supprimerLienInterethnique,
@@ -338,6 +338,13 @@ const statsCards = computed<StatsCardData[]>(() => {
     { label: 'Liens', value: f.nb_liens_interethniques, icon: 'link', color: 'bg-neutral/10 text-neutral' },
   ]
 })
+
+// ── Badge « Vérifié » des sites (US3) ───────────────────────
+
+const basculerVerification = async (site: { id: string, verifie: boolean }) => {
+  await definirVerificationSite(id, site.id, !site.verifie)
+  await chargerSitesTouristiques(id)
+}
 
 // ── Chargement par onglet ───────────────────────────────────
 
@@ -683,7 +690,7 @@ onMounted(async () => {
             </div>
             <div v-else class="overflow-x-auto">
               <table class="table table-zebra">
-                <thead><tr><th>Nom</th><th>Region</th><th>Coordonnees</th><th class="w-24">Actions</th></tr></thead>
+                <thead><tr><th>Nom</th><th>Region</th><th>Coordonnees</th><th>Verifie</th><th class="w-24">Actions</th></tr></thead>
                 <tbody>
                   <tr v-for="s in sitesTouristiques" :key="s.id">
                     <td>{{ s.nom }}</td>
@@ -691,6 +698,19 @@ onMounted(async () => {
                     <td>
                       <span v-if="s.latitude && s.longitude" class="text-sm">{{ s.latitude?.toFixed(4) }}, {{ s.longitude?.toFixed(4) }}</span>
                       <span v-else>-</span>
+                    </td>
+                    <td>
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          class="toggle toggle-success toggle-sm"
+                          :checked="s.verifie"
+                          @change="basculerVerification(s)"
+                        />
+                        <span v-if="s.verifie" class="badge badge-success badge-sm gap-1">
+                          <font-awesome-icon icon="circle-check" /> Verifie
+                        </span>
+                      </label>
                     </td>
                     <td>
                       <div class="flex gap-1">

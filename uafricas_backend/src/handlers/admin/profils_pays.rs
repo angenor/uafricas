@@ -1,30 +1,30 @@
-use actix_web::{web, HttpRequest, HttpResponse};
-use serde_json::{json, Value};
+use actix_web::{HttpRequest, HttpResponse, web};
+use serde_json::{Value, json};
 use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
+use crate::ApiResponse;
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
 use crate::models::admin::profils_pays::{
-    AdminFichePayListeResponse, AdminFichePayDetailRow, AdminFichePayQueryParams,
-    CreerFichePayRequest, ModifierFichePayRequest, SousEntiteCounts,
-    AdminRegionResponse, CreerRegionRequest, ModifierRegionRequest,
-    AdminGroupeEthniqueResponse, CreerGroupeEthniqueRequest, ModifierGroupeEthniqueRequest,
-    AdminAllianceResponse, CreerAllianceRequest, ModifierAllianceRequest,
-    AdminConteResponse, AdminConteQueryParams, CreerConteRequest, ModifierConteRequest,
-    AdminSiteTouristiqueResponse, CreerSiteTouristiqueRequest, ModifierSiteTouristiqueRequest,
-    AdminSecteurResponse, CreerSecteurRequest, ModifierSecteurRequest,
-    AdminSaisonResponse, CreerSaisonRequest, ModifierSaisonRequest,
-    AdminLienInterethniqueResponse, CreerLienInterethniqueRequest, ModifierLienInterethniqueRequest,
-    AdminContributionListeResponse, AdminContributionDetailRow, AdminContributionQueryParams,
-    AdminContributionConcurrente, AdminContributionPieceJointe, AdminContributionDetailResponse,
-    ModererContributionRequest, RetirerContributionRequest,
-    ADMIN_FICHE_PAYS_LISTE_COLONNES, ADMIN_FICHE_PAYS_DETAIL_COLONNES, FICHE_PAYS_TRI_COLONNES,
+    ADMIN_FICHE_PAYS_DETAIL_COLONNES, ADMIN_FICHE_PAYS_LISTE_COLONNES, AdminAllianceResponse,
+    AdminConteQueryParams, AdminConteResponse, AdminContributionConcurrente,
+    AdminContributionDetailResponse, AdminContributionDetailRow, AdminContributionListeResponse,
+    AdminContributionPieceJointe, AdminContributionQueryParams, AdminFichePayDetailRow,
+    AdminFichePayListeResponse, AdminFichePayQueryParams, AdminGroupeEthniqueResponse,
+    AdminLienInterethniqueResponse, AdminRegionResponse, AdminSaisonResponse, AdminSecteurResponse,
+    AdminSiteTouristiqueResponse, CreerAllianceRequest, CreerConteRequest, CreerFichePayRequest,
+    CreerGroupeEthniqueRequest, CreerLienInterethniqueRequest, CreerRegionRequest,
+    CreerSaisonRequest, CreerSecteurRequest, CreerSiteTouristiqueRequest, FICHE_PAYS_TRI_COLONNES,
+    MasquerAvisBody, ModererContributionRequest, ModifierAllianceRequest, ModifierConteRequest,
+    ModifierFichePayRequest, ModifierGroupeEthniqueRequest, ModifierLienInterethniqueRequest,
+    ModifierRegionRequest, ModifierSaisonRequest, ModifierSecteurRequest,
+    ModifierSiteTouristiqueRequest, RetirerContributionRequest, SousEntiteCounts,
+    VerificationSiteBody,
 };
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
 use crate::services::audit;
 use crate::verifier_permission;
-use crate::ApiResponse;
 
 const TYPES_CONTE_VALIDES: &[&str] = &["conte", "histoire_drole", "legende", "mythe"];
 const ETATS_CONTRIBUTION_VALIDES: &[&str] = &["approuvee", "rejetee"];
@@ -49,9 +49,11 @@ const SECTIONS_AFRIPULSE_VALIDES: &[&str] = &[
 
 /// Verifie qu'une fiche pays existe et retourne son ID
 async fn verifier_fiche_existe(pool: &PgPool, fiche_id: Uuid) -> Result<(), ApiErreur> {
-    let existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM country_profile.fiche_pays WHERE id = $1)"
-    ).bind(fiche_id).fetch_one(pool).await?;
+    let existe: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM country_profile.fiche_pays WHERE id = $1)")
+            .bind(fiche_id)
+            .fetch_one(pool)
+            .await?;
     if !existe {
         return Err(ApiErreur::NonTrouve("Fiche pays non trouvee".into()));
     }
@@ -123,7 +125,9 @@ pub async fn lister_fiches_pays(
         joins, where_clause
     );
     let mut count_q = sqlx::query_scalar::<_, i64>(&count_sql);
-    for v in &bind_values { count_q = count_q.bind(v); }
+    for v in &bind_values {
+        count_q = count_q.bind(v);
+    }
     let total: i64 = count_q.fetch_one(pool.get_ref()).await?;
 
     let select_sql = format!(
@@ -131,7 +135,9 @@ pub async fn lister_fiches_pays(
         ADMIN_FICHE_PAYS_LISTE_COLONNES, joins, where_clause, colonne, direction, par_page, offset
     );
     let mut select_q = sqlx::query_as::<_, AdminFichePayListeResponse>(&select_sql);
-    for v in &bind_values { select_q = select_q.bind(v); }
+    for v in &bind_values {
+        select_q = select_q.bind(v);
+    }
     let items = select_q.fetch_all(pool.get_ref()).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
@@ -165,29 +171,53 @@ pub async fn obtenir_fiche_pays(
 
     let counts = SousEntiteCounts {
         nb_regions: sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM country_profile.region WHERE fiche_pays_id = $1"
-        ).bind(id).fetch_one(pool.get_ref()).await?,
+            "SELECT COUNT(*) FROM country_profile.region WHERE fiche_pays_id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool.get_ref())
+        .await?,
         nb_groupes_ethniques: sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM country_profile.groupe_ethnique WHERE fiche_pays_id = $1"
-        ).bind(id).fetch_one(pool.get_ref()).await?,
+            "SELECT COUNT(*) FROM country_profile.groupe_ethnique WHERE fiche_pays_id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool.get_ref())
+        .await?,
         nb_alliances: sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM country_profile.alliance_interethnique WHERE fiche_pays_id = $1"
-        ).bind(id).fetch_one(pool.get_ref()).await?,
+            "SELECT COUNT(*) FROM country_profile.alliance_interethnique WHERE fiche_pays_id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool.get_ref())
+        .await?,
         nb_contes: sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM country_profile.conte_histoire WHERE fiche_pays_id = $1"
-        ).bind(id).fetch_one(pool.get_ref()).await?,
+            "SELECT COUNT(*) FROM country_profile.conte_histoire WHERE fiche_pays_id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool.get_ref())
+        .await?,
         nb_sites_touristiques: sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM country_profile.site_touristique WHERE fiche_pays_id = $1"
-        ).bind(id).fetch_one(pool.get_ref()).await?,
+            "SELECT COUNT(*) FROM country_profile.site_touristique WHERE fiche_pays_id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool.get_ref())
+        .await?,
         nb_secteurs: sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM country_profile.secteur_developpement WHERE fiche_pays_id = $1"
-        ).bind(id).fetch_one(pool.get_ref()).await?,
+            "SELECT COUNT(*) FROM country_profile.secteur_developpement WHERE fiche_pays_id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool.get_ref())
+        .await?,
         nb_saisons: sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM country_profile.saison WHERE fiche_pays_id = $1"
-        ).bind(id).fetch_one(pool.get_ref()).await?,
+            "SELECT COUNT(*) FROM country_profile.saison WHERE fiche_pays_id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool.get_ref())
+        .await?,
         nb_liens_interethniques: sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM country_profile.lien_interethnique WHERE fiche_pays_id = $1"
-        ).bind(id).fetch_one(pool.get_ref()).await?,
+            "SELECT COUNT(*) FROM country_profile.lien_interethnique WHERE fiche_pays_id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool.get_ref())
+        .await?,
     };
 
     Ok(HttpResponse::Ok().json(ApiResponse {
@@ -206,19 +236,26 @@ pub async fn creer_fiche_pays(
     verifier_permission!(admin, "profil_pays", "modifier");
 
     // Verifier que le pays existe
-    let pays_existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM shared.pays WHERE id = $1)"
-    ).bind(body.pays_id).fetch_one(pool.get_ref()).await?;
+    let pays_existe: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM shared.pays WHERE id = $1)")
+            .bind(body.pays_id)
+            .fetch_one(pool.get_ref())
+            .await?;
     if !pays_existe {
         return Err(ApiErreur::Validation("Pays non trouve".into()));
     }
 
     // Verifier unicite (1 fiche par pays)
     let deja_existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM country_profile.fiche_pays WHERE pays_id = $1)"
-    ).bind(body.pays_id).fetch_one(pool.get_ref()).await?;
+        "SELECT EXISTS(SELECT 1 FROM country_profile.fiche_pays WHERE pays_id = $1)",
+    )
+    .bind(body.pays_id)
+    .fetch_one(pool.get_ref())
+    .await?;
     if deja_existe {
-        return Err(ApiErreur::Validation("Une fiche existe deja pour ce pays".into()));
+        return Err(ApiErreur::Validation(
+            "Une fiche existe deja pour ce pays".into(),
+        ));
     }
 
     let id = Uuid::new_v4();
@@ -228,7 +265,7 @@ pub async fn creer_fiche_pays(
           contexte_historique, image_couverture_url, image_drapeau_url, image_embleme_url,
           image_devise_url, hymne_national, langue_officielle, langues_populaires,
           monnaie, fuseau_horaire, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)"
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)",
     )
     .bind(id)
     .bind(body.pays_id)
@@ -251,7 +288,12 @@ pub async fn creer_fiche_pays(
     .execute(pool.get_ref())
     .await?;
 
-    log::info!("Admin {} a cree la fiche pays {} pour pays {}", admin.id, id, body.pays_id);
+    log::info!(
+        "Admin {} a cree la fiche pays {} pour pays {}",
+        admin.id,
+        id,
+        body.pays_id
+    );
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
@@ -314,11 +356,14 @@ pub async fn modifier_fiche_pays(
     sets.push("updated_at = NOW()".to_string());
     let sql = format!(
         "UPDATE country_profile.fiche_pays SET {} WHERE id = ${}",
-        sets.join(", "), bind_index
+        sets.join(", "),
+        bind_index
     );
 
     let mut q = sqlx::query(&sql);
-    for v in &bind_strings { q = q.bind(v); }
+    for v in &bind_strings {
+        q = q.bind(v);
+    }
     q = q.bind(id);
     q.execute(pool.get_ref()).await?;
 
@@ -340,9 +385,10 @@ pub async fn supprimer_fiche_pays(
     verifier_permission!(admin, "profil_pays", "supprimer");
     let id = path.into_inner();
 
-    let result = sqlx::query(
-        "DELETE FROM country_profile.fiche_pays WHERE id = $1"
-    ).bind(id).execute(pool.get_ref()).await?;
+    let result = sqlx::query("DELETE FROM country_profile.fiche_pays WHERE id = $1")
+        .bind(id)
+        .execute(pool.get_ref())
+        .await?;
 
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Fiche pays non trouvee".into()));
@@ -350,7 +396,11 @@ pub async fn supprimer_fiche_pays(
 
     log::info!("Admin {} a supprime la fiche pays {}", admin.id, id);
 
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -368,10 +418,17 @@ pub async fn lister_regions(
 
     let items = sqlx::query_as::<_, AdminRegionResponse>(
         "SELECT id, fiche_pays_id, nom, chef_lieu, description, population, created_at, updated_at
-         FROM country_profile.region WHERE fiche_pays_id = $1 ORDER BY nom"
-    ).bind(fiche_id).fetch_all(pool.get_ref()).await?;
+         FROM country_profile.region WHERE fiche_pays_id = $1 ORDER BY nom",
+    )
+    .bind(fiche_id)
+    .fetch_all(pool.get_ref())
+    .await?;
 
-    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(items), error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(items),
+        error: None,
+    }))
 }
 
 /// POST /api/admin/profils-pays/{id}/regions
@@ -401,7 +458,12 @@ pub async fn creer_region(
     .bind(body.population)
     .execute(pool.get_ref()).await?;
 
-    log::info!("Admin {} a cree la region {} pour fiche {}", admin.id, id, fiche_id);
+    log::info!(
+        "Admin {} a cree la region {} pour fiche {}",
+        admin.id,
+        id,
+        fiche_id
+    );
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
@@ -448,10 +510,14 @@ pub async fn modifier_region(
 
     let sql = format!(
         "UPDATE country_profile.region SET {} WHERE id = ${} AND fiche_pays_id = ${}",
-        sets.join(", "), bind_index, bind_index + 1
+        sets.join(", "),
+        bind_index,
+        bind_index + 1
     );
     let mut q = sqlx::query(&sql);
-    for v in &bind_strings { q = q.bind(v); }
+    for v in &bind_strings {
+        q = q.bind(v);
+    }
     q = q.bind(region_id).bind(fiche_id);
     let result = q.execute(pool.get_ref()).await?;
 
@@ -477,9 +543,12 @@ pub async fn supprimer_region(
     verifier_permission!(admin, "profil_pays", "supprimer");
     let (fiche_id, region_id) = path.into_inner();
 
-    let result = sqlx::query(
-        "DELETE FROM country_profile.region WHERE id = $1 AND fiche_pays_id = $2"
-    ).bind(region_id).bind(fiche_id).execute(pool.get_ref()).await?;
+    let result =
+        sqlx::query("DELETE FROM country_profile.region WHERE id = $1 AND fiche_pays_id = $2")
+            .bind(region_id)
+            .bind(fiche_id)
+            .execute(pool.get_ref())
+            .await?;
 
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Region non trouvee".into()));
@@ -487,7 +556,11 @@ pub async fn supprimer_region(
 
     log::info!("Admin {} a supprime la region {}", admin.id, region_id);
 
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -510,10 +583,17 @@ pub async fn lister_groupes_ethniques(
                 ge.created_at, ge.updated_at
          FROM country_profile.groupe_ethnique ge
          LEFT JOIN country_profile.region r ON ge.region_id = r.id
-         WHERE ge.fiche_pays_id = $1 ORDER BY ge.nom"
-    ).bind(fiche_id).fetch_all(pool.get_ref()).await?;
+         WHERE ge.fiche_pays_id = $1 ORDER BY ge.nom",
+    )
+    .bind(fiche_id)
+    .fetch_all(pool.get_ref())
+    .await?;
 
-    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(items), error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(items),
+        error: None,
+    }))
 }
 
 /// POST /api/admin/profils-pays/{id}/groupes-ethniques
@@ -537,17 +617,29 @@ pub async fn creer_groupe_ethnique(
         "INSERT INTO country_profile.groupe_ethnique
          (id, fiche_pays_id, nom, description, objets_culturels_distinctifs,
           population_estimee, langues, region_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
     )
-    .bind(id).bind(fiche_id).bind(nom)
+    .bind(id)
+    .bind(fiche_id)
+    .bind(nom)
     .bind(body.description.as_deref().map(|s| s.trim()))
-    .bind(body.objets_culturels_distinctifs.as_deref().map(|s| s.trim()))
+    .bind(
+        body.objets_culturels_distinctifs
+            .as_deref()
+            .map(|s| s.trim()),
+    )
     .bind(body.population_estimee.as_deref().map(|s| s.trim()))
     .bind(body.langues.as_deref().map(|s| s.trim()))
     .bind(body.region_id)
-    .execute(pool.get_ref()).await?;
+    .execute(pool.get_ref())
+    .await?;
 
-    log::info!("Admin {} a cree le groupe ethnique {} pour fiche {}", admin.id, id, fiche_id);
+    log::info!(
+        "Admin {} a cree le groupe ethnique {} pour fiche {}",
+        admin.id,
+        id,
+        fiche_id
+    );
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
@@ -582,7 +674,10 @@ pub async fn modifier_groupe_ethnique(
 
     champ_str!(body.nom, "nom");
     champ_str!(body.description, "description");
-    champ_str!(body.objets_culturels_distinctifs, "objets_culturels_distinctifs");
+    champ_str!(
+        body.objets_culturels_distinctifs,
+        "objets_culturels_distinctifs"
+    );
     champ_str!(body.population_estimee, "population_estimee");
     champ_str!(body.langues, "langues");
 
@@ -597,10 +692,14 @@ pub async fn modifier_groupe_ethnique(
 
     let sql = format!(
         "UPDATE country_profile.groupe_ethnique SET {} WHERE id = ${} AND fiche_pays_id = ${}",
-        sets.join(", "), bind_index, bind_index + 1
+        sets.join(", "),
+        bind_index,
+        bind_index + 1
     );
     let mut q = sqlx::query(&sql);
-    for v in &bind_strings { q = q.bind(v); }
+    for v in &bind_strings {
+        q = q.bind(v);
+    }
     q = q.bind(ge_id).bind(fiche_id);
     let result = q.execute(pool.get_ref()).await?;
 
@@ -627,8 +726,12 @@ pub async fn supprimer_groupe_ethnique(
     let (fiche_id, ge_id) = path.into_inner();
 
     let result = sqlx::query(
-        "DELETE FROM country_profile.groupe_ethnique WHERE id = $1 AND fiche_pays_id = $2"
-    ).bind(ge_id).bind(fiche_id).execute(pool.get_ref()).await?;
+        "DELETE FROM country_profile.groupe_ethnique WHERE id = $1 AND fiche_pays_id = $2",
+    )
+    .bind(ge_id)
+    .bind(fiche_id)
+    .execute(pool.get_ref())
+    .await?;
 
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Groupe ethnique non trouve".into()));
@@ -636,7 +739,11 @@ pub async fn supprimer_groupe_ethnique(
 
     log::info!("Admin {} a supprime le groupe ethnique {}", admin.id, ge_id);
 
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -655,10 +762,17 @@ pub async fn lister_alliances(
     let items = sqlx::query_as::<_, AdminAllianceResponse>(
         "SELECT id, fiche_pays_id, nom, description, groupes_impliques, signification,
                 created_at, updated_at
-         FROM country_profile.alliance_interethnique WHERE fiche_pays_id = $1 ORDER BY nom"
-    ).bind(fiche_id).fetch_all(pool.get_ref()).await?;
+         FROM country_profile.alliance_interethnique WHERE fiche_pays_id = $1 ORDER BY nom",
+    )
+    .bind(fiche_id)
+    .fetch_all(pool.get_ref())
+    .await?;
 
-    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(items), error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(items),
+        error: None,
+    }))
 }
 
 /// POST /api/admin/profils-pays/{id}/alliances
@@ -681,15 +795,23 @@ pub async fn creer_alliance(
     sqlx::query(
         "INSERT INTO country_profile.alliance_interethnique
          (id, fiche_pays_id, nom, description, groupes_impliques, signification)
-         VALUES ($1, $2, $3, $4, $5, $6)"
+         VALUES ($1, $2, $3, $4, $5, $6)",
     )
-    .bind(id).bind(fiche_id).bind(nom)
+    .bind(id)
+    .bind(fiche_id)
+    .bind(nom)
     .bind(body.description.as_deref().map(|s| s.trim()))
     .bind(body.groupes_impliques.as_deref().map(|s| s.trim()))
     .bind(body.signification.as_deref().map(|s| s.trim()))
-    .execute(pool.get_ref()).await?;
+    .execute(pool.get_ref())
+    .await?;
 
-    log::info!("Admin {} a cree l'alliance {} pour fiche {}", admin.id, id, fiche_id);
+    log::info!(
+        "Admin {} a cree l'alliance {} pour fiche {}",
+        admin.id,
+        id,
+        fiche_id
+    );
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
@@ -734,10 +856,14 @@ pub async fn modifier_alliance(
 
     let sql = format!(
         "UPDATE country_profile.alliance_interethnique SET {} WHERE id = ${} AND fiche_pays_id = ${}",
-        sets.join(", "), bind_index, bind_index + 1
+        sets.join(", "),
+        bind_index,
+        bind_index + 1
     );
     let mut q = sqlx::query(&sql);
-    for v in &bind_strings { q = q.bind(v); }
+    for v in &bind_strings {
+        q = q.bind(v);
+    }
     q = q.bind(alliance_id).bind(fiche_id);
     let result = q.execute(pool.get_ref()).await?;
 
@@ -764,8 +890,12 @@ pub async fn supprimer_alliance(
     let (fiche_id, alliance_id) = path.into_inner();
 
     let result = sqlx::query(
-        "DELETE FROM country_profile.alliance_interethnique WHERE id = $1 AND fiche_pays_id = $2"
-    ).bind(alliance_id).bind(fiche_id).execute(pool.get_ref()).await?;
+        "DELETE FROM country_profile.alliance_interethnique WHERE id = $1 AND fiche_pays_id = $2",
+    )
+    .bind(alliance_id)
+    .bind(fiche_id)
+    .execute(pool.get_ref())
+    .await?;
 
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Alliance non trouvee".into()));
@@ -773,7 +903,11 @@ pub async fn supprimer_alliance(
 
     log::info!("Admin {} a supprime l'alliance {}", admin.id, alliance_id);
 
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -816,10 +950,16 @@ pub async fn lister_contes(
     );
 
     let mut q = sqlx::query_as::<_, AdminConteResponse>(&sql).bind(fiche_id);
-    for v in &bind_values { q = q.bind(v); }
+    for v in &bind_values {
+        q = q.bind(v);
+    }
     let items = q.fetch_all(pool.get_ref()).await?;
 
-    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(items), error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(items),
+        error: None,
+    }))
 }
 
 /// POST /api/admin/profils-pays/{id}/contes
@@ -841,7 +981,8 @@ pub async fn creer_conte(
     if let Some(ref t) = body.type_conte {
         if !TYPES_CONTE_VALIDES.contains(&t.as_str()) {
             return Err(ApiErreur::Validation(format!(
-                "Type invalide: {}. Valeurs possibles: {:?}", t, TYPES_CONTE_VALIDES
+                "Type invalide: {}. Valeurs possibles: {:?}",
+                t, TYPES_CONTE_VALIDES
             )));
         }
     }
@@ -850,16 +991,24 @@ pub async fn creer_conte(
     sqlx::query(
         "INSERT INTO country_profile.conte_histoire
          (id, fiche_pays_id, titre, contenu, type, groupe_ethnique_id, image_url)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)"
+         VALUES ($1, $2, $3, $4, $5, $6, $7)",
     )
-    .bind(id).bind(fiche_id).bind(titre)
+    .bind(id)
+    .bind(fiche_id)
+    .bind(titre)
     .bind(body.contenu.as_deref().map(|s| s.trim()))
     .bind(body.type_conte.as_deref())
     .bind(body.groupe_ethnique_id)
     .bind(body.image_url.as_deref().map(|s| s.trim()))
-    .execute(pool.get_ref()).await?;
+    .execute(pool.get_ref())
+    .await?;
 
-    log::info!("Admin {} a cree le conte {} pour fiche {}", admin.id, id, fiche_id);
+    log::info!(
+        "Admin {} a cree le conte {} pour fiche {}",
+        admin.id,
+        id,
+        fiche_id
+    );
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
@@ -881,7 +1030,8 @@ pub async fn modifier_conte(
     if let Some(ref t) = body.type_conte {
         if !TYPES_CONTE_VALIDES.contains(&t.as_str()) {
             return Err(ApiErreur::Validation(format!(
-                "Type invalide: {}. Valeurs possibles: {:?}", t, TYPES_CONTE_VALIDES
+                "Type invalide: {}. Valeurs possibles: {:?}",
+                t, TYPES_CONTE_VALIDES
             )));
         }
     }
@@ -916,10 +1066,14 @@ pub async fn modifier_conte(
 
     let sql = format!(
         "UPDATE country_profile.conte_histoire SET {} WHERE id = ${} AND fiche_pays_id = ${}",
-        sets.join(", "), bind_index, bind_index + 1
+        sets.join(", "),
+        bind_index,
+        bind_index + 1
     );
     let mut q = sqlx::query(&sql);
-    for v in &bind_strings { q = q.bind(v); }
+    for v in &bind_strings {
+        q = q.bind(v);
+    }
     q = q.bind(conte_id).bind(fiche_id);
     let result = q.execute(pool.get_ref()).await?;
 
@@ -946,8 +1100,12 @@ pub async fn supprimer_conte(
     let (fiche_id, conte_id) = path.into_inner();
 
     let result = sqlx::query(
-        "DELETE FROM country_profile.conte_histoire WHERE id = $1 AND fiche_pays_id = $2"
-    ).bind(conte_id).bind(fiche_id).execute(pool.get_ref()).await?;
+        "DELETE FROM country_profile.conte_histoire WHERE id = $1 AND fiche_pays_id = $2",
+    )
+    .bind(conte_id)
+    .bind(fiche_id)
+    .execute(pool.get_ref())
+    .await?;
 
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Conte non trouve".into()));
@@ -955,7 +1113,11 @@ pub async fn supprimer_conte(
 
     log::info!("Admin {} a supprime le conte {}", admin.id, conte_id);
 
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -972,16 +1134,26 @@ pub async fn lister_sites_touristiques(
     let fiche_id = path.into_inner();
 
     let items = sqlx::query_as::<_, AdminSiteTouristiqueResponse>(
-        "SELECT st.id, st.fiche_pays_id, st.nom, st.description, st.image_url,
+        "SELECT st.id, st.fiche_pays_id, st.nom,
+                st.categorie::text AS categorie, st.sous_type::text AS sous_type,
+                st.description, st.info_pertinente, st.image_url, st.images,
+                st.gestionnaire, st.ville, st.village,
                 st.longitude::float8 AS longitude, st.latitude::float8 AS latitude,
+                st.contact_telephone, st.contact_courriel, st.contact_adresse,
+                st.constitution_statut_juridique, st.constitution_numero, st.constitution_document_url,
+                st.verifie,
                 st.region_id, r.nom AS region_nom,
                 st.created_at, st.updated_at
          FROM country_profile.site_touristique st
          LEFT JOIN country_profile.region r ON st.region_id = r.id
-         WHERE st.fiche_pays_id = $1 ORDER BY st.nom"
+         WHERE st.fiche_pays_id = $1 AND st.deleted_at IS NULL ORDER BY st.nom"
     ).bind(fiche_id).fetch_all(pool.get_ref()).await?;
 
-    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(items), error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(items),
+        error: None,
+    }))
 }
 
 /// POST /api/admin/profils-pays/{id}/sites-touristiques
@@ -1000,21 +1172,71 @@ pub async fn creer_site_touristique(
         return Err(ApiErreur::Validation("Le nom est requis".into()));
     }
 
+    let categorie = body.categorie.as_deref().unwrap_or("emblematique");
+    // Galerie (≤3) + couverture image_url = 1re image (rétrocompat).
+    let images: Vec<String> = body
+        .images
+        .clone()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .take(3)
+        .collect();
+    let cover = images
+        .first()
+        .map(|s| s.as_str())
+        .or_else(|| body.image_url.as_deref().map(|s| s.trim()));
     let id = Uuid::new_v4();
     sqlx::query(
         "INSERT INTO country_profile.site_touristique
-         (id, fiche_pays_id, nom, description, image_url, longitude, latitude, region_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+         (id, fiche_pays_id, nom, categorie, sous_type, description, info_pertinente, image_url,
+          gestionnaire, ville, village, longitude, latitude,
+          contact_telephone, contact_courriel, contact_adresse,
+          constitution_statut_juridique, constitution_numero, constitution_document_url, region_id, images)
+         VALUES ($1, $2, $3, $4::country_profile.categorie_site_touristique,
+                 $5::country_profile.sous_type_site, $6, $7, $8,
+                 $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)",
     )
-    .bind(id).bind(fiche_id).bind(nom)
+    .bind(id)
+    .bind(fiche_id)
+    .bind(nom)
+    .bind(categorie)
+    .bind(
+        body.sous_type
+            .as_deref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty()),
+    )
     .bind(body.description.as_deref().map(|s| s.trim()))
-    .bind(body.image_url.as_deref().map(|s| s.trim()))
+    .bind(body.info_pertinente.as_deref().map(|s| s.trim()))
+    .bind(cover)
+    .bind(body.gestionnaire.as_deref().map(|s| s.trim()))
+    .bind(body.ville.as_deref().map(|s| s.trim()))
+    .bind(body.village.as_deref().map(|s| s.trim()))
     .bind(body.longitude)
     .bind(body.latitude)
+    .bind(body.contact_telephone.as_deref().map(|s| s.trim()))
+    .bind(body.contact_courriel.as_deref().map(|s| s.trim()))
+    .bind(body.contact_adresse.as_deref().map(|s| s.trim()))
+    .bind(
+        body.constitution_statut_juridique
+            .as_deref()
+            .map(|s| s.trim()),
+    )
+    .bind(body.constitution_numero.as_deref().map(|s| s.trim()))
+    .bind(body.constitution_document_url.as_deref().map(|s| s.trim()))
     .bind(body.region_id)
-    .execute(pool.get_ref()).await?;
+    .bind(&images)
+    .execute(pool.get_ref())
+    .await?;
 
-    log::info!("Admin {} a cree le site touristique {} pour fiche {}", admin.id, id, fiche_id);
+    log::info!(
+        "Admin {} a cree le site touristique {} pour fiche {}",
+        admin.id,
+        id,
+        fiche_id
+    );
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
@@ -1047,9 +1269,43 @@ pub async fn modifier_site_touristique(
         };
     }
 
+    // Variante avec cast d'enum SQL sur le placeholder.
+    macro_rules! champ_str_cast {
+        ($field:expr, $col:expr, $cast:expr) => {
+            if let Some(ref val) = $field {
+                sets.push(format!("{} = ${}{}", $col, bind_index, $cast));
+                bind_strings.push(val.trim().to_string());
+                bind_index += 1;
+            }
+        };
+    }
+
     champ_str!(body.nom, "nom");
+    champ_str_cast!(
+        body.categorie,
+        "categorie",
+        "::country_profile.categorie_site_touristique"
+    );
+    champ_str_cast!(
+        body.sous_type,
+        "sous_type",
+        "::country_profile.sous_type_site"
+    );
     champ_str!(body.description, "description");
+    champ_str!(body.info_pertinente, "info_pertinente");
     champ_str!(body.image_url, "image_url");
+    champ_str!(body.gestionnaire, "gestionnaire");
+    champ_str!(body.ville, "ville");
+    champ_str!(body.village, "village");
+    champ_str!(body.contact_telephone, "contact_telephone");
+    champ_str!(body.contact_courriel, "contact_courriel");
+    champ_str!(body.contact_adresse, "contact_adresse");
+    champ_str!(
+        body.constitution_statut_juridique,
+        "constitution_statut_juridique"
+    );
+    champ_str!(body.constitution_numero, "constitution_numero");
+    champ_str!(body.constitution_document_url, "constitution_document_url");
 
     if let Some(v) = body.longitude {
         sets.push(format!("longitude = {}", v));
@@ -1061,6 +1317,27 @@ pub async fn modifier_site_touristique(
         sets.push(format!("region_id = '{}'", region_id));
     }
 
+    // Galerie (≤3) : si fournie, on remplace `images` et la couverture `image_url`
+    // (sauf si image_url explicitement fourni ci-dessus).
+    let images_vec: Option<Vec<String>> = body.images.as_ref().map(|v| {
+        v.iter()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .take(3)
+            .collect()
+    });
+    if let Some(ref imgs) = images_vec {
+        if body.image_url.is_none() {
+            if let Some(cover) = imgs.first() {
+                sets.push(format!("image_url = ${}", bind_index));
+                bind_strings.push(cover.clone());
+                bind_index += 1;
+            }
+        }
+        sets.push(format!("images = ${}::text[]", bind_index));
+        bind_index += 1;
+    }
+
     if sets.is_empty() {
         return Err(ApiErreur::Validation("Aucun champ a modifier".into()));
     }
@@ -1068,10 +1345,17 @@ pub async fn modifier_site_touristique(
 
     let sql = format!(
         "UPDATE country_profile.site_touristique SET {} WHERE id = ${} AND fiche_pays_id = ${}",
-        sets.join(", "), bind_index, bind_index + 1
+        sets.join(", "),
+        bind_index,
+        bind_index + 1
     );
     let mut q = sqlx::query(&sql);
-    for v in &bind_strings { q = q.bind(v); }
+    for v in &bind_strings {
+        q = q.bind(v);
+    }
+    if let Some(ref imgs) = images_vec {
+        q = q.bind(imgs);
+    }
     q = q.bind(site_id).bind(fiche_id);
     let result = q.execute(pool.get_ref()).await?;
 
@@ -1079,7 +1363,11 @@ pub async fn modifier_site_touristique(
         return Err(ApiErreur::NonTrouve("Site touristique non trouve".into()));
     }
 
-    log::info!("Admin {} a modifie le site touristique {}", admin.id, site_id);
+    log::info!(
+        "Admin {} a modifie le site touristique {}",
+        admin.id,
+        site_id
+    );
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -1098,16 +1386,145 @@ pub async fn supprimer_site_touristique(
     let (fiche_id, site_id) = path.into_inner();
 
     let result = sqlx::query(
-        "DELETE FROM country_profile.site_touristique WHERE id = $1 AND fiche_pays_id = $2"
-    ).bind(site_id).bind(fiche_id).execute(pool.get_ref()).await?;
+        "DELETE FROM country_profile.site_touristique WHERE id = $1 AND fiche_pays_id = $2",
+    )
+    .bind(site_id)
+    .bind(fiche_id)
+    .execute(pool.get_ref())
+    .await?;
 
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Site touristique non trouve".into()));
     }
 
-    log::info!("Admin {} a supprime le site touristique {}", admin.id, site_id);
+    log::info!(
+        "Admin {} a supprime le site touristique {}",
+        admin.id,
+        site_id
+    );
 
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+/// PATCH /api/admin/profils-pays/{id}/sites-touristiques/{site_id}/verification
+///
+/// Active ou retire le badge « Vérifié » d'un site (US3 — réservé admin, FR-012).
+/// Journalise l'avant/après via `audit::log_action` (Principe VII).
+pub async fn definir_verification_site(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    path: web::Path<(Uuid, Uuid)>,
+    body: web::Json<VerificationSiteBody>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "profil_pays", "modifier");
+    let (fiche_id, site_id) = path.into_inner();
+
+    // État courant (pour l'audit + 404 si inexistant/supprimé).
+    let avant: Option<bool> = sqlx::query_scalar(
+        "SELECT verifie FROM country_profile.site_touristique
+         WHERE id = $1 AND fiche_pays_id = $2 AND deleted_at IS NULL",
+    )
+    .bind(site_id)
+    .bind(fiche_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+    let avant = avant.ok_or_else(|| ApiErreur::NonTrouve("Site touristique non trouvé".into()))?;
+
+    let verifie_at: Option<chrono::DateTime<chrono::Utc>> = sqlx::query_scalar(
+        "UPDATE country_profile.site_touristique
+         SET verifie = $3,
+             verifie_par = CASE WHEN $3 THEN $4 ELSE NULL END,
+             verifie_at = CASE WHEN $3 THEN NOW() ELSE NULL END
+         WHERE id = $1 AND fiche_pays_id = $2 AND deleted_at IS NULL
+         RETURNING verifie_at",
+    )
+    .bind(site_id)
+    .bind(fiche_id)
+    .bind(body.verifie)
+    .bind(admin.id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "update",
+        "country_profile",
+        "site_touristique",
+        Some(site_id),
+        Some(json!({ "verifie": avant })),
+        Some(json!({ "verifie": body.verifie })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(json!({ "id": site_id, "verifie": body.verifie, "verifie_at": verifie_at })),
+        error: None,
+    }))
+}
+
+/// PATCH /api/admin/sites-touristiques/avis/{avis_id}/masquer
+///
+/// Masque ou réaffiche un avis inapproprié (US5 — FR-015d). Audité.
+pub async fn masquer_avis_site(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<MasquerAvisBody>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "profil_pays", "modifier");
+    let avis_id = path.into_inner();
+
+    let avant: Option<bool> = sqlx::query_scalar(
+        "SELECT masque_par_admin FROM country_profile.avis_site
+         WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(avis_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+    let avant = avant.ok_or_else(|| ApiErreur::NonTrouve("Avis non trouvé".into()))?;
+
+    sqlx::query(
+        "UPDATE country_profile.avis_site SET masque_par_admin = $2
+         WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(avis_id)
+    .bind(body.masque)
+    .execute(pool.get_ref())
+    .await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "update",
+        "country_profile",
+        "avis_site",
+        Some(avis_id),
+        Some(json!({ "masque_par_admin": avant })),
+        Some(json!({ "masque_par_admin": body.masque })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(json!({ "id": avis_id, "masque": body.masque })),
+        error: None,
+    }))
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1125,10 +1542,17 @@ pub async fn lister_secteurs(
 
     let items = sqlx::query_as::<_, AdminSecteurResponse>(
         "SELECT id, fiche_pays_id, nom, description, created_at
-         FROM country_profile.secteur_developpement WHERE fiche_pays_id = $1 ORDER BY nom"
-    ).bind(fiche_id).fetch_all(pool.get_ref()).await?;
+         FROM country_profile.secteur_developpement WHERE fiche_pays_id = $1 ORDER BY nom",
+    )
+    .bind(fiche_id)
+    .fetch_all(pool.get_ref())
+    .await?;
 
-    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(items), error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(items),
+        error: None,
+    }))
 }
 
 /// POST /api/admin/profils-pays/{id}/secteurs
@@ -1150,13 +1574,21 @@ pub async fn creer_secteur(
     let id = Uuid::new_v4();
     sqlx::query(
         "INSERT INTO country_profile.secteur_developpement (id, fiche_pays_id, nom, description)
-         VALUES ($1, $2, $3, $4)"
+         VALUES ($1, $2, $3, $4)",
     )
-    .bind(id).bind(fiche_id).bind(nom)
+    .bind(id)
+    .bind(fiche_id)
+    .bind(nom)
     .bind(body.description.as_deref().map(|s| s.trim()))
-    .execute(pool.get_ref()).await?;
+    .execute(pool.get_ref())
+    .await?;
 
-    log::info!("Admin {} a cree le secteur {} pour fiche {}", admin.id, id, fiche_id);
+    log::info!(
+        "Admin {} a cree le secteur {} pour fiche {}",
+        admin.id,
+        id,
+        fiche_id
+    );
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
@@ -1196,10 +1628,14 @@ pub async fn modifier_secteur(
 
     let sql = format!(
         "UPDATE country_profile.secteur_developpement SET {} WHERE id = ${} AND fiche_pays_id = ${}",
-        sets.join(", "), bind_index, bind_index + 1
+        sets.join(", "),
+        bind_index,
+        bind_index + 1
     );
     let mut q = sqlx::query(&sql);
-    for v in &bind_strings { q = q.bind(v); }
+    for v in &bind_strings {
+        q = q.bind(v);
+    }
     q = q.bind(secteur_id).bind(fiche_id);
     let result = q.execute(pool.get_ref()).await?;
 
@@ -1226,8 +1662,12 @@ pub async fn supprimer_secteur(
     let (fiche_id, secteur_id) = path.into_inner();
 
     let result = sqlx::query(
-        "DELETE FROM country_profile.secteur_developpement WHERE id = $1 AND fiche_pays_id = $2"
-    ).bind(secteur_id).bind(fiche_id).execute(pool.get_ref()).await?;
+        "DELETE FROM country_profile.secteur_developpement WHERE id = $1 AND fiche_pays_id = $2",
+    )
+    .bind(secteur_id)
+    .bind(fiche_id)
+    .execute(pool.get_ref())
+    .await?;
 
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Secteur non trouve".into()));
@@ -1235,7 +1675,11 @@ pub async fn supprimer_secteur(
 
     log::info!("Admin {} a supprime le secteur {}", admin.id, secteur_id);
 
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1253,10 +1697,17 @@ pub async fn lister_saisons(
 
     let items = sqlx::query_as::<_, AdminSaisonResponse>(
         "SELECT id, fiche_pays_id, nom, description, mois_debut, mois_fin, created_at
-         FROM country_profile.saison WHERE fiche_pays_id = $1 ORDER BY mois_debut"
-    ).bind(fiche_id).fetch_all(pool.get_ref()).await?;
+         FROM country_profile.saison WHERE fiche_pays_id = $1 ORDER BY mois_debut",
+    )
+    .bind(fiche_id)
+    .fetch_all(pool.get_ref())
+    .await?;
 
-    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(items), error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(items),
+        error: None,
+    }))
 }
 
 /// POST /api/admin/profils-pays/{id}/saisons
@@ -1277,12 +1728,16 @@ pub async fn creer_saison(
 
     if let Some(m) = body.mois_debut {
         if !(1..=12).contains(&m) {
-            return Err(ApiErreur::Validation("mois_debut doit etre entre 1 et 12".into()));
+            return Err(ApiErreur::Validation(
+                "mois_debut doit etre entre 1 et 12".into(),
+            ));
         }
     }
     if let Some(m) = body.mois_fin {
         if !(1..=12).contains(&m) {
-            return Err(ApiErreur::Validation("mois_fin doit etre entre 1 et 12".into()));
+            return Err(ApiErreur::Validation(
+                "mois_fin doit etre entre 1 et 12".into(),
+            ));
         }
     }
 
@@ -1297,7 +1752,12 @@ pub async fn creer_saison(
     .bind(body.mois_fin)
     .execute(pool.get_ref()).await?;
 
-    log::info!("Admin {} a cree la saison {} pour fiche {}", admin.id, id, fiche_id);
+    log::info!(
+        "Admin {} a cree la saison {} pour fiche {}",
+        admin.id,
+        id,
+        fiche_id
+    );
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
@@ -1318,12 +1778,16 @@ pub async fn modifier_saison(
 
     if let Some(m) = body.mois_debut {
         if !(1..=12).contains(&m) {
-            return Err(ApiErreur::Validation("mois_debut doit etre entre 1 et 12".into()));
+            return Err(ApiErreur::Validation(
+                "mois_debut doit etre entre 1 et 12".into(),
+            ));
         }
     }
     if let Some(m) = body.mois_fin {
         if !(1..=12).contains(&m) {
-            return Err(ApiErreur::Validation("mois_fin doit etre entre 1 et 12".into()));
+            return Err(ApiErreur::Validation(
+                "mois_fin doit etre entre 1 et 12".into(),
+            ));
         }
     }
 
@@ -1354,10 +1818,14 @@ pub async fn modifier_saison(
 
     let sql = format!(
         "UPDATE country_profile.saison SET {} WHERE id = ${} AND fiche_pays_id = ${}",
-        sets.join(", "), bind_index, bind_index + 1
+        sets.join(", "),
+        bind_index,
+        bind_index + 1
     );
     let mut q = sqlx::query(&sql);
-    for v in &bind_strings { q = q.bind(v); }
+    for v in &bind_strings {
+        q = q.bind(v);
+    }
     q = q.bind(saison_id).bind(fiche_id);
     let result = q.execute(pool.get_ref()).await?;
 
@@ -1383,9 +1851,12 @@ pub async fn supprimer_saison(
     verifier_permission!(admin, "profil_pays", "supprimer");
     let (fiche_id, saison_id) = path.into_inner();
 
-    let result = sqlx::query(
-        "DELETE FROM country_profile.saison WHERE id = $1 AND fiche_pays_id = $2"
-    ).bind(saison_id).bind(fiche_id).execute(pool.get_ref()).await?;
+    let result =
+        sqlx::query("DELETE FROM country_profile.saison WHERE id = $1 AND fiche_pays_id = $2")
+            .bind(saison_id)
+            .bind(fiche_id)
+            .execute(pool.get_ref())
+            .await?;
 
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Saison non trouvee".into()));
@@ -1393,7 +1864,11 @@ pub async fn supprimer_saison(
 
     log::info!("Admin {} a supprime la saison {}", admin.id, saison_id);
 
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1414,10 +1889,17 @@ pub async fn lister_liens_interethniques(
                 li.description, li.type_lien, li.created_at, li.updated_at
          FROM country_profile.lien_interethnique li
          LEFT JOIN shared.pays p ON li.pays_lie_id = p.id
-         WHERE li.fiche_pays_id = $1 ORDER BY li.type_lien"
-    ).bind(fiche_id).fetch_all(pool.get_ref()).await?;
+         WHERE li.fiche_pays_id = $1 ORDER BY li.type_lien",
+    )
+    .bind(fiche_id)
+    .fetch_all(pool.get_ref())
+    .await?;
 
-    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(items), error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(items),
+        error: None,
+    }))
 }
 
 /// POST /api/admin/profils-pays/{id}/liens-interethniques
@@ -1435,15 +1917,22 @@ pub async fn creer_lien_interethnique(
     sqlx::query(
         "INSERT INTO country_profile.lien_interethnique
          (id, fiche_pays_id, pays_lie_id, description, type_lien)
-         VALUES ($1, $2, $3, $4, $5)"
+         VALUES ($1, $2, $3, $4, $5)",
     )
-    .bind(id).bind(fiche_id)
+    .bind(id)
+    .bind(fiche_id)
     .bind(body.pays_lie_id)
     .bind(body.description.as_deref().map(|s| s.trim()))
     .bind(body.type_lien.as_deref().map(|s| s.trim()))
-    .execute(pool.get_ref()).await?;
+    .execute(pool.get_ref())
+    .await?;
 
-    log::info!("Admin {} a cree le lien interethnique {} pour fiche {}", admin.id, id, fiche_id);
+    log::info!(
+        "Admin {} a cree le lien interethnique {} pour fiche {}",
+        admin.id,
+        id,
+        fiche_id
+    );
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
@@ -1487,10 +1976,14 @@ pub async fn modifier_lien_interethnique(
 
     let sql = format!(
         "UPDATE country_profile.lien_interethnique SET {} WHERE id = ${} AND fiche_pays_id = ${}",
-        sets.join(", "), bind_index, bind_index + 1
+        sets.join(", "),
+        bind_index,
+        bind_index + 1
     );
     let mut q = sqlx::query(&sql);
-    for v in &bind_strings { q = q.bind(v); }
+    for v in &bind_strings {
+        q = q.bind(v);
+    }
     q = q.bind(lien_id).bind(fiche_id);
     let result = q.execute(pool.get_ref()).await?;
 
@@ -1498,7 +1991,11 @@ pub async fn modifier_lien_interethnique(
         return Err(ApiErreur::NonTrouve("Lien interethnique non trouve".into()));
     }
 
-    log::info!("Admin {} a modifie le lien interethnique {}", admin.id, lien_id);
+    log::info!(
+        "Admin {} a modifie le lien interethnique {}",
+        admin.id,
+        lien_id
+    );
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -1517,16 +2014,28 @@ pub async fn supprimer_lien_interethnique(
     let (fiche_id, lien_id) = path.into_inner();
 
     let result = sqlx::query(
-        "DELETE FROM country_profile.lien_interethnique WHERE id = $1 AND fiche_pays_id = $2"
-    ).bind(lien_id).bind(fiche_id).execute(pool.get_ref()).await?;
+        "DELETE FROM country_profile.lien_interethnique WHERE id = $1 AND fiche_pays_id = $2",
+    )
+    .bind(lien_id)
+    .bind(fiche_id)
+    .execute(pool.get_ref())
+    .await?;
 
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Lien interethnique non trouve".into()));
     }
 
-    log::info!("Admin {} a supprime le lien interethnique {}", admin.id, lien_id);
+    log::info!(
+        "Admin {} a supprime le lien interethnique {}",
+        admin.id,
+        lien_id
+    );
 
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1579,7 +2088,10 @@ pub async fn lister_contributions(
     if let Some(ref type_objet) = params.type_objet {
         let t = type_objet.trim().to_lowercase();
         if TYPES_OBJET_AFRIPULSE.contains(&t.as_str()) {
-            conditions.push(format!("cf.type_objet_contribution::TEXT = ${}", bind_index));
+            conditions.push(format!(
+                "cf.type_objet_contribution::TEXT = ${}",
+                bind_index
+            ));
             bind_values.push(t);
             bind_types.push("str");
             bind_index += 1;
@@ -1610,8 +2122,13 @@ pub async fn lister_contributions(
     let mut str_idx = 0;
     let mut uuid_idx = 0;
     for t in &bind_types {
-        if *t == "str" { count_q = count_q.bind(&bind_values[str_idx]); str_idx += 1; }
-        else { count_q = count_q.bind(bind_uuids[uuid_idx]); uuid_idx += 1; }
+        if *t == "str" {
+            count_q = count_q.bind(&bind_values[str_idx]);
+            str_idx += 1;
+        } else {
+            count_q = count_q.bind(bind_uuids[uuid_idx]);
+            uuid_idx += 1;
+        }
     }
     let total: i64 = count_q.fetch_one(pool.get_ref()).await?;
 
@@ -1627,10 +2144,16 @@ pub async fn lister_contributions(
         joins, where_clause, par_page, offset
     );
     let mut select_q = sqlx::query_as::<_, AdminContributionListeResponse>(&select_sql);
-    str_idx = 0; uuid_idx = 0;
+    str_idx = 0;
+    uuid_idx = 0;
     for t in &bind_types {
-        if *t == "str" { select_q = select_q.bind(&bind_values[str_idx]); str_idx += 1; }
-        else { select_q = select_q.bind(bind_uuids[uuid_idx]); uuid_idx += 1; }
+        if *t == "str" {
+            select_q = select_q.bind(&bind_values[str_idx]);
+            str_idx += 1;
+        } else {
+            select_q = select_q.bind(bind_uuids[uuid_idx]);
+            uuid_idx += 1;
+        }
     }
     let items = select_q.fetch_all(pool.get_ref()).await?;
 
@@ -1669,13 +2192,21 @@ pub async fn obtenir_contribution(
          JOIN shared.pays p ON fp.pays_id = p.id
          LEFT JOIN iam.utilisateur uc ON cf.cree_par = uc.id
          LEFT JOIN iam.utilisateur ut ON cf.traite_par = ut.id
-         WHERE cf.id = $1 AND cf.deleted_at IS NULL"
-    ).bind(id).fetch_optional(pool.get_ref()).await?
+         WHERE cf.id = $1 AND cf.deleted_at IS NULL",
+    )
+    .bind(id)
+    .fetch_optional(pool.get_ref())
+    .await?
     .ok_or_else(|| ApiErreur::NonTrouve("Contribution non trouvee".into()))?;
 
     // Colonnes Afripulse (JSONB + type_objet + section_afripulse + target_id + pieces_jointes)
     let (type_objet, section_afripulse, target_id, nouvelle_jsonb, ancienne_jsonb, pieces_json): (
-        String, Option<String>, Option<Uuid>, Option<Value>, Option<Value>, Value,
+        String,
+        Option<String>,
+        Option<Uuid>,
+        Option<Value>,
+        Option<Value>,
+        Value,
     ) = sqlx::query_as(
         "SELECT cf.type_objet_contribution::TEXT,
                 cf.section_afripulse::TEXT,
@@ -1729,7 +2260,11 @@ pub async fn obtenir_contribution(
         contributions_concurrentes: concurrentes,
     };
 
-    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(response), error: None }))
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(response),
+        error: None,
+    }))
 }
 
 /// Desserialise le JSONB `pieces_jointes` d'une contribution photo_visiteur
@@ -1753,7 +2288,10 @@ fn parse_pieces_jointes(json: &Value) -> Vec<AdminContributionPieceJointe> {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let taille = obj.get("taille_octets").and_then(|v| v.as_i64()).unwrap_or(0);
+            let taille = obj
+                .get("taille_octets")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
             let largeur = obj.get("largeur").and_then(|v| v.as_i64()).unwrap_or(0);
             let hauteur = obj.get("hauteur").and_then(|v| v.as_i64()).unwrap_or(0);
             // chemin_fichier est deja relatif a `./uploads/` (p. ex. "opportunite-afrique/photos/<uuid>.jpg")
@@ -1799,7 +2337,10 @@ pub async fn moderer_contribution(
         )));
     }
 
-    let note = body.note_moderation.as_deref().map(|s| s.trim().to_string());
+    let note = body
+        .note_moderation
+        .as_deref()
+        .map(|s| s.trim().to_string());
     if etat == "rejetee" && note.as_deref().map(str::is_empty).unwrap_or(true) {
         return Err(ApiErreur::Validation(
             "Un motif (note_moderation) est obligatoire pour rejeter une contribution.".into(),
@@ -1808,8 +2349,19 @@ pub async fn moderer_contribution(
 
     // Charger la contribution (JSONB Afripulse + champs legacy scalaires + metadata)
     let row: (
-        Uuid, Uuid, Uuid, String, String, Option<String>, Option<Uuid>, Option<Value>, Option<Value>, Value,
-        String, String, Option<String>,
+        Uuid,
+        Uuid,
+        Uuid,
+        String,
+        String,
+        Option<String>,
+        Option<Uuid>,
+        Option<Value>,
+        Option<Value>,
+        Value,
+        String,
+        String,
+        Option<String>,
     ) = sqlx::query_as(
         "SELECT cf.id, cf.fiche_pays_id, cf.cree_par,
                 cf.etat::text,
@@ -1923,7 +2475,8 @@ pub async fn moderer_contribution(
     }
 
     // 4. Notification a l'auteur (dans la meme transaction — FR-019)
-    let (titre_notif, message_notif) = construire_message_notification(&etat, &type_objet, note.as_deref());
+    let (titre_notif, message_notif) =
+        construire_message_notification(&etat, &type_objet, note.as_deref());
     let lien_action = format!("/mon-compte/contributions?id={}", id);
     sqlx::query(
         "INSERT INTO arbre_genealogique.notifications
@@ -1945,7 +2498,11 @@ pub async fn moderer_contribution(
     audit::log_action(
         pool.get_ref(),
         Some(admin.id),
-        if etat == "approuvee" { "approve" } else { "reject" },
+        if etat == "approuvee" {
+            "approve"
+        } else {
+            "reject"
+        },
         "country_profile",
         "contribution_fiche",
         Some(id),
@@ -2188,21 +2745,45 @@ async fn appliquer_contribution_afripulse(
             let payload = nouvelle_jsonb.ok_or_else(|| {
                 ApiErreur::Validation("nouvelle_valeur_jsonb requise pour ajout site".into())
             })?;
-            let nom = str_field(payload, "nom");
-            let categorie = str_field(payload, "categorie");
-            let description = opt_str_field(payload, "description");
-            let image_url = opt_str_field(payload, "image_url");
+            // Galerie (≤3) + couverture image_url = 1re image (rétrocompat lectures).
+            let images = images_site_field(payload).unwrap_or_default();
+            let cover = images
+                .first()
+                .map(|s| s.as_str())
+                .or_else(|| opt_str_field(payload, "image_url"));
+            // Le badge `verifie` n'est jamais piloté par le canal de contribution (FR-012).
             let nouvel_id: Uuid = sqlx::query_scalar(
                 "INSERT INTO country_profile.site_touristique
-                    (fiche_pays_id, nom, categorie, description, image_url)
-                 VALUES ($1, $2, $3::country_profile.categorie_site_touristique, $4, $5)
+                    (fiche_pays_id, nom, categorie, sous_type, description, image_url,
+                     gestionnaire, ville, village, info_pertinente, latitude, longitude,
+                     contact_telephone, contact_courriel, contact_adresse,
+                     constitution_statut_juridique, constitution_numero, constitution_document_url,
+                     images)
+                 VALUES ($1, $2, $3::country_profile.categorie_site_touristique,
+                         $4::country_profile.sous_type_site, $5, $6,
+                         $7, $8, $9, $10, $11::numeric, $12::numeric,
+                         $13, $14, $15, $16, $17, $18, $19)
                  RETURNING id",
             )
             .bind(fiche_pays_id)
-            .bind(nom)
-            .bind(categorie)
-            .bind(description)
-            .bind(image_url)
+            .bind(str_field(payload, "nom"))
+            .bind(str_field(payload, "categorie"))
+            .bind(opt_str_field(payload, "sous_type"))
+            .bind(opt_str_field(payload, "description"))
+            .bind(cover)
+            .bind(opt_str_field(payload, "gestionnaire"))
+            .bind(opt_str_field(payload, "ville"))
+            .bind(opt_str_field(payload, "village"))
+            .bind(opt_str_field(payload, "info_pertinente"))
+            .bind(opt_f64_field(payload, "latitude"))
+            .bind(opt_f64_field(payload, "longitude"))
+            .bind(opt_str_field(payload, "contact_telephone"))
+            .bind(opt_str_field(payload, "contact_courriel"))
+            .bind(opt_str_field(payload, "contact_adresse"))
+            .bind(opt_str_field(payload, "constitution_statut_juridique"))
+            .bind(opt_str_field(payload, "constitution_numero"))
+            .bind(opt_str_field(payload, "constitution_document_url"))
+            .bind(&images)
             .fetch_one(&mut **tx)
             .await?;
             Ok(Some(nouvel_id))
@@ -2210,19 +2791,54 @@ async fn appliquer_contribution_afripulse(
         ("site_touristique", "edition") => {
             let payload = nouvelle_jsonb.unwrap();
             let tid = target_id.unwrap();
+            // Galerie fournie ? alors on remplace images + couverture ; sinon on garde.
+            let images_opt = images_site_field(payload);
+            let cover = images_opt
+                .as_ref()
+                .and_then(|v| v.first())
+                .map(|s| s.as_str())
+                .or_else(|| opt_str_field(payload, "image_url"));
             sqlx::query(
                 "UPDATE country_profile.site_touristique SET
                     nom = COALESCE($2, nom),
                     categorie = COALESCE($3::country_profile.categorie_site_touristique, categorie),
-                    description = COALESCE($4, description),
-                    image_url = COALESCE($5, image_url)
+                    sous_type = COALESCE($4::country_profile.sous_type_site, sous_type),
+                    description = COALESCE($5, description),
+                    image_url = COALESCE($6, image_url),
+                    gestionnaire = COALESCE($7, gestionnaire),
+                    ville = COALESCE($8, ville),
+                    village = COALESCE($9, village),
+                    info_pertinente = COALESCE($10, info_pertinente),
+                    latitude = COALESCE($11::numeric, latitude),
+                    longitude = COALESCE($12::numeric, longitude),
+                    contact_telephone = COALESCE($13, contact_telephone),
+                    contact_courriel = COALESCE($14, contact_courriel),
+                    contact_adresse = COALESCE($15, contact_adresse),
+                    constitution_statut_juridique = COALESCE($16, constitution_statut_juridique),
+                    constitution_numero = COALESCE($17, constitution_numero),
+                    constitution_document_url = COALESCE($18, constitution_document_url),
+                    images = COALESCE($19::text[], images)
                  WHERE id = $1 AND deleted_at IS NULL",
             )
             .bind(tid)
             .bind(opt_str_field(payload, "nom"))
             .bind(opt_str_field(payload, "categorie"))
+            .bind(opt_str_field(payload, "sous_type"))
             .bind(opt_str_field(payload, "description"))
-            .bind(opt_str_field(payload, "image_url"))
+            .bind(cover)
+            .bind(opt_str_field(payload, "gestionnaire"))
+            .bind(opt_str_field(payload, "ville"))
+            .bind(opt_str_field(payload, "village"))
+            .bind(opt_str_field(payload, "info_pertinente"))
+            .bind(opt_f64_field(payload, "latitude"))
+            .bind(opt_f64_field(payload, "longitude"))
+            .bind(opt_str_field(payload, "contact_telephone"))
+            .bind(opt_str_field(payload, "contact_courriel"))
+            .bind(opt_str_field(payload, "contact_adresse"))
+            .bind(opt_str_field(payload, "constitution_statut_juridique"))
+            .bind(opt_str_field(payload, "constitution_numero"))
+            .bind(opt_str_field(payload, "constitution_document_url"))
+            .bind(images_opt.as_ref())
             .execute(&mut **tx)
             .await?;
             Ok(Some(tid))
@@ -2441,7 +3057,10 @@ async fn appliquer_contribution_afripulse(
                     Some(o) => o,
                     None => continue,
                 };
-                let chemin = obj.get("chemin_fichier").and_then(|v| v.as_str()).unwrap_or("");
+                let chemin = obj
+                    .get("chemin_fichier")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 if chemin.is_empty() {
                     continue;
                 }
@@ -2456,7 +3075,11 @@ async fn appliquer_contribution_afripulse(
                 .bind(chemin)
                 .bind(obj.get("legende").and_then(|v| v.as_str()).unwrap_or(""))
                 .bind(obj.get("format").and_then(|v| v.as_str()).unwrap_or("jpeg"))
-                .bind(obj.get("taille_octets").and_then(|v| v.as_i64()).unwrap_or(0) as i32)
+                .bind(
+                    obj.get("taille_octets")
+                        .and_then(|v| v.as_i64())
+                        .unwrap_or(0) as i32,
+                )
                 .bind(obj.get("largeur").and_then(|v| v.as_i64()).unwrap_or(0) as i16)
                 .bind(obj.get("hauteur").and_then(|v| v.as_i64()).unwrap_or(0) as i16)
                 .fetch_one(&mut **tx)
@@ -2474,12 +3097,11 @@ async fn appliquer_contribution_afripulse(
             let code_iso2 = str_field(payload, "code_iso2").to_lowercase();
 
             // Resoudre pays_id depuis shared.pays (le pays doit deja exister)
-            let pays_id: Option<Uuid> = sqlx::query_scalar(
-                "SELECT id FROM shared.pays WHERE LOWER(code_iso2) = $1",
-            )
-            .bind(&code_iso2)
-            .fetch_optional(&mut **tx)
-            .await?;
+            let pays_id: Option<Uuid> =
+                sqlx::query_scalar("SELECT id FROM shared.pays WHERE LOWER(code_iso2) = $1")
+                    .bind(&code_iso2)
+                    .fetch_optional(&mut **tx)
+                    .await?;
             let pays_id = pays_id.ok_or_else(|| {
                 ApiErreur::Validation(format!(
                     "Pays '{}' introuvable dans shared.pays (pre-alimentation requise).",
@@ -2536,6 +3158,28 @@ fn opt_str_field<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
 
 fn i16_field(value: &Value, key: &str) -> Option<i16> {
     value.get(key).and_then(|v| v.as_i64()).map(|n| n as i16)
+}
+
+fn opt_f64_field(value: &Value, key: &str) -> Option<f64> {
+    value.get(key).and_then(|v| v.as_f64())
+}
+
+/// Extrait la galerie d'images d'un payload de site (clé `images`), plafonnée à 3.
+/// Repli sur `image_url` (legacy) si `images` absent. `None` => rien fourni
+/// (permet de conserver l'existant en édition via COALESCE).
+fn images_site_field(value: &Value) -> Option<Vec<String>> {
+    if let Some(arr) = value.get("images").and_then(|v| v.as_array()) {
+        let images: Vec<String> = arr
+            .iter()
+            .filter_map(|x| x.as_str())
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .take(3)
+            .map(String::from)
+            .collect();
+        return Some(images);
+    }
+    opt_str_field(value, "image_url").map(|s| vec![s.to_string()])
 }
 
 fn construire_message_notification(

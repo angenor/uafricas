@@ -7,7 +7,7 @@
 //! Toutes les requêtes de lecture filtrent `deleted_at IS NULL` (soft delete).
 //! Les écritures nécessitent une authentification (JWT Bearer).
 
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, web};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::{FromRow, PgPool};
@@ -30,21 +30,58 @@ struct ApiResponse<T: Serialize> {
 // Site touristique
 // ────────────────────────────────────────────────────────────────
 
+/// Réponse enrichie d'un site touristique (feature 001-sites-touristiques-enrichis).
+/// Contacts et constitution légale sont publics (clarification résolue).
+/// `note_moyenne`/`nombre_avis` sont des agrégats dérivés (table `avis_site`).
 #[derive(Debug, FromRow, Serialize)]
 pub struct SiteTouristiqueResponse {
     pub id: Uuid,
     pub fiche_pays_id: Uuid,
     pub nom: String,
     pub categorie: String,
+    pub sous_type: Option<String>,
     pub description: Option<String>,
+    pub info_pertinente: Option<String>,
     pub image_url: Option<String>,
+    pub images: Vec<String>,
+    pub gestionnaire: Option<String>,
+    pub ville: Option<String>,
+    pub village: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub contact_telephone: Option<String>,
+    pub contact_courriel: Option<String>,
+    pub contact_adresse: Option<String>,
+    pub constitution_statut_juridique: Option<String>,
+    pub constitution_numero: Option<String>,
+    pub constitution_document_url: Option<String>,
+    pub verifie: bool,
+    pub note_moyenne: Option<f64>,
+    pub nombre_avis: i64,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct SiteTouristiqueQuery {
     pub categorie: Option<String>,
+    pub sous_type: Option<String>,
 }
+
+/// Colonnes + agrégat avis communs aux requêtes de lecture des sites.
+const SITE_TOURISTIQUE_SELECT: &str = "SELECT st.id, st.fiche_pays_id, st.nom,
+        st.categorie::text AS categorie, st.sous_type::text AS sous_type,
+        st.description, st.info_pertinente, st.image_url, st.images,
+        st.gestionnaire, st.ville, st.village,
+        st.latitude::float8 AS latitude, st.longitude::float8 AS longitude,
+        st.contact_telephone, st.contact_courriel, st.contact_adresse,
+        st.constitution_statut_juridique, st.constitution_numero, st.constitution_document_url,
+        st.verifie, av.note_moyenne, av.nombre_avis, st.created_at
+     FROM country_profile.site_touristique st
+     LEFT JOIN LATERAL (
+        SELECT AVG(a.note)::float8 AS note_moyenne, COUNT(*)::bigint AS nombre_avis
+        FROM country_profile.avis_site a
+        WHERE a.site_id = st.id AND a.deleted_at IS NULL AND a.masque_par_admin = FALSE
+     ) av ON TRUE";
 
 pub async fn lister_sites_touristiques(
     pool: web::Data<PgPool>,
@@ -54,37 +91,41 @@ pub async fn lister_sites_touristiques(
     let fiche_id = Uuid::parse_str(&chemin.into_inner())
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
 
+    // Filtres optionnels — ignorés si valeur invalide (cohérence avec l'existant).
     let categorie_filtre = params
         .categorie
         .as_deref()
         .map(|c| c.trim().to_lowercase())
         .filter(|c| c == "emblematique" || c == "prive");
+    let sous_type_filtre = params
+        .sous_type
+        .as_deref()
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| crate::models::afripulse::sous_type_site_valide(s));
 
-    let rows: Vec<SiteTouristiqueResponse> = if let Some(cat) = categorie_filtre {
-        sqlx::query_as(
-            "SELECT id, fiche_pays_id, nom, categorie::text AS categorie,
-                    description, image_url, created_at
-             FROM country_profile.site_touristique
-             WHERE fiche_pays_id = $1 AND deleted_at IS NULL
-               AND categorie = $2::country_profile.categorie_site_touristique
-             ORDER BY created_at DESC",
-        )
-        .bind(fiche_id)
-        .bind(cat)
-        .fetch_all(pool.get_ref())
-        .await?
-    } else {
-        sqlx::query_as(
-            "SELECT id, fiche_pays_id, nom, categorie::text AS categorie,
-                    description, image_url, created_at
-             FROM country_profile.site_touristique
-             WHERE fiche_pays_id = $1 AND deleted_at IS NULL
-             ORDER BY created_at DESC",
-        )
-        .bind(fiche_id)
-        .fetch_all(pool.get_ref())
-        .await?
-    };
+    // Construction dynamique des conditions (binds $2, $3 selon présence).
+    let mut conditions = String::from(" WHERE st.fiche_pays_id = $1 AND st.deleted_at IS NULL");
+    let mut bind_index = 2u32;
+    if categorie_filtre.is_some() {
+        conditions.push_str(&format!(
+            " AND st.categorie = ${}::country_profile.categorie_site_touristique",
+            bind_index
+        ));
+        bind_index += 1;
+    }
+    if sous_type_filtre.is_some() {
+        conditions.push_str(&format!(" AND st.sous_type::text = ${}", bind_index));
+    }
+
+    let sql = format!("{SITE_TOURISTIQUE_SELECT}{conditions} ORDER BY st.created_at DESC");
+    let mut query = sqlx::query_as::<_, SiteTouristiqueResponse>(&sql).bind(fiche_id);
+    if let Some(cat) = &categorie_filtre {
+        query = query.bind(cat);
+    }
+    if let Some(st) = &sous_type_filtre {
+        query = query.bind(st);
+    }
+    let rows = query.fetch_all(pool.get_ref()).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -163,8 +204,14 @@ pub async fn lister_personnalites(
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
 
     let domaines_valides = [
-        "politique", "artiste_musicien", "artiste_autre", "sportif",
-        "entrepreneur", "scientifique", "militaire_historique", "autre",
+        "politique",
+        "artiste_musicien",
+        "artiste_autre",
+        "sportif",
+        "entrepreneur",
+        "scientifique",
+        "militaire_historique",
+        "autre",
     ];
 
     let domaine_filtre = params
@@ -238,8 +285,13 @@ pub async fn lister_savoirs_pratiques(
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
 
     let categories_valides = [
-        "langue_argot", "coutumes", "etiquette", "securite",
-        "sante", "transports", "autre",
+        "langue_argot",
+        "coutumes",
+        "etiquette",
+        "securite",
+        "sante",
+        "transports",
+        "autre",
     ];
 
     let categorie_filtre = params
@@ -628,6 +680,194 @@ pub async fn lister_galerie_photos(
 }
 
 // ════════════════════════════════════════════════════════════════
+// US5 — Avis de visiteurs sur un site (note 1–5, écriture directe)
+// ════════════════════════════════════════════════════════════════
+
+#[derive(Debug, Serialize)]
+pub struct AvisSiteAuteur {
+    pub id: Option<Uuid>,
+    pub nom: String,
+    pub prenom: String,
+    pub photo_url: Option<String>,
+}
+
+#[derive(Debug, FromRow)]
+struct AvisSiteRowPublic {
+    id: Uuid,
+    utilisateur_id: Option<Uuid>,
+    auteur_nom: Option<String>,
+    auteur_prenom: Option<String>,
+    auteur_photo_url: Option<String>,
+    note: i16,
+    commentaire: String,
+    created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AvisSiteResponse {
+    pub id: Uuid,
+    pub utilisateur: AvisSiteAuteur,
+    pub note: i16,
+    pub commentaire: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AvisSiteListeResponse {
+    pub note_moyenne: Option<f64>,
+    pub nombre_total: i64,
+    pub avis: Vec<AvisSiteResponse>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreerAvisBody {
+    pub note: i16,
+    pub commentaire: String,
+}
+
+/// GET /api/sites-touristiques/{site_id}/avis — liste paginée + agrégats (public).
+pub async fn lister_avis_site(
+    pool: web::Data<PgPool>,
+    chemin: web::Path<String>,
+    params: web::Query<PaginationQuery>,
+) -> Result<HttpResponse, ApiErreur> {
+    let site_id = Uuid::parse_str(&chemin.into_inner())
+        .map_err(|_| ApiErreur::Validation("ID de site invalide".into()))?;
+
+    let page = params.page.unwrap_or(1).max(1);
+    let par_page = params.par_page.unwrap_or(10).clamp(1, 50);
+    let offset = (page - 1) * par_page;
+
+    let (nombre_total, note_moyenne): (i64, Option<f64>) = sqlx::query_as(
+        "SELECT COUNT(*)::bigint, AVG(note)::float8
+         FROM country_profile.avis_site
+         WHERE site_id = $1 AND deleted_at IS NULL AND masque_par_admin = FALSE",
+    )
+    .bind(site_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let rows: Vec<AvisSiteRowPublic> = sqlx::query_as(
+        "SELECT a.id,
+                CASE WHEN u.deleted_at IS NULL THEN a.utilisateur_id ELSE NULL END AS utilisateur_id,
+                CASE WHEN u.deleted_at IS NULL THEN u.nom ELSE 'Contributeur' END AS auteur_nom,
+                CASE WHEN u.deleted_at IS NULL THEN u.prenom ELSE 'retire' END AS auteur_prenom,
+                CASE WHEN u.deleted_at IS NULL THEN u.photo_url ELSE NULL END AS auteur_photo_url,
+                a.note, a.commentaire, a.created_at
+         FROM country_profile.avis_site a
+         LEFT JOIN iam.utilisateur u ON u.id = a.utilisateur_id
+         WHERE a.site_id = $1 AND a.deleted_at IS NULL AND a.masque_par_admin = FALSE
+         ORDER BY a.created_at DESC
+         LIMIT $2 OFFSET $3",
+    )
+    .bind(site_id)
+    .bind(par_page)
+    .bind(offset)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let avis = rows
+        .into_iter()
+        .map(|r| AvisSiteResponse {
+            id: r.id,
+            utilisateur: AvisSiteAuteur {
+                id: r.utilisateur_id,
+                nom: r.auteur_nom.unwrap_or_else(|| "Contributeur".to_string()),
+                prenom: r.auteur_prenom.unwrap_or_else(|| "retire".to_string()),
+                photo_url: r.auteur_photo_url,
+            },
+            note: r.note,
+            commentaire: r.commentaire,
+            created_at: r.created_at,
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(AvisSiteListeResponse {
+            note_moyenne,
+            nombre_total,
+            avis,
+        }),
+        error: None,
+    }))
+}
+
+/// POST /api/sites-touristiques/{site_id}/avis — dépose/met à jour l'avis (auth).
+/// Upsert sur l'avis actif (un seul par utilisateur/site). 201 création, 200 MAJ.
+pub async fn soumettre_avis_site(
+    pool: web::Data<PgPool>,
+    chemin: web::Path<String>,
+    body: web::Json<CreerAvisBody>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+
+    let site_id = Uuid::parse_str(&chemin.into_inner())
+        .map_err(|_| ApiErreur::Validation("ID de site invalide".into()))?;
+
+    // Validation note + commentaire.
+    if !(1..=5).contains(&body.note) {
+        return Err(ApiErreur::Validation(
+            "La note doit être comprise entre 1 et 5.".into(),
+        ));
+    }
+    let commentaire = body.commentaire.trim();
+    let longueur = commentaire.chars().count();
+    if !(1..=2000).contains(&longueur) {
+        return Err(ApiErreur::Validation(
+            "Le commentaire doit contenir entre 1 et 2000 caractères.".into(),
+        ));
+    }
+
+    // Le site doit exister et ne pas être supprimé.
+    let site_existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM country_profile.site_touristique
+                       WHERE id = $1 AND deleted_at IS NULL)",
+    )
+    .bind(site_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !site_existe {
+        return Err(ApiErreur::NonTrouve("Site touristique introuvable.".into()));
+    }
+
+    // Upsert sur l'index unique partiel (utilisateur_id, site_id) WHERE deleted_at IS NULL.
+    let row: (Uuid, bool, chrono::DateTime<chrono::Utc>) = sqlx::query_as(
+        "INSERT INTO country_profile.avis_site (site_id, utilisateur_id, note, commentaire)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (utilisateur_id, site_id) WHERE deleted_at IS NULL
+         DO UPDATE SET note = EXCLUDED.note, commentaire = EXCLUDED.commentaire
+         RETURNING id, (xmax = 0) AS est_creation, created_at",
+    )
+    .bind(site_id)
+    .bind(utilisateur_id)
+    .bind(body.note)
+    .bind(commentaire)
+    .fetch_one(pool.get_ref())
+    .await?;
+    let (avis_id, est_creation, created_at) = row;
+
+    let payload = json!({
+        "id": avis_id,
+        "note": body.note,
+        "commentaire": commentaire,
+        "created_at": created_at,
+    });
+    let reponse = ApiResponse {
+        success: true,
+        data: Some(payload),
+        error: None,
+    };
+    if est_creation {
+        Ok(HttpResponse::Created().json(reponse))
+    } else {
+        Ok(HttpResponse::Ok().json(reponse))
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
 // T071 — Mes contributions (utilisateur connecté)
 // ════════════════════════════════════════════════════════════════
 
@@ -687,7 +927,10 @@ pub async fn lister_mes_contributions(
     if let Some(ref t) = params.type_objet {
         let t = t.trim().to_lowercase();
         if !t.is_empty() {
-            conditions.push(format!("cf.type_objet_contribution::text = ${}", bind_index));
+            conditions.push(format!(
+                "cf.type_objet_contribution::text = ${}",
+                bind_index
+            ));
             bind_strings.push(t);
             ordre.push("str");
             bind_index += 1;

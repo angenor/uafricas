@@ -338,6 +338,9 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/profils-pays/{id}/sites-touristiques", web::post().to(admin::profils_pays::creer_site_touristique))
                     .route("/profils-pays/{id}/sites-touristiques/{site_id}", web::put().to(admin::profils_pays::modifier_site_touristique))
                     .route("/profils-pays/{id}/sites-touristiques/{site_id}", web::delete().to(admin::profils_pays::supprimer_site_touristique))
+                    .route("/profils-pays/{id}/sites-touristiques/{site_id}/verification", web::patch().to(admin::profils_pays::definir_verification_site))
+                    // Moderation des avis de site (US5)
+                    .route("/sites-touristiques/avis/{avis_id}/masquer", web::patch().to(admin::profils_pays::masquer_avis_site))
                     // Profils Pays - Secteurs de developpement
                     .route("/profils-pays/{id}/secteurs", web::get().to(admin::profils_pays::lister_secteurs))
                     .route("/profils-pays/{id}/secteurs", web::post().to(admin::profils_pays::creer_secteur))
@@ -608,6 +611,12 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // US4 — galerie photos + recommandations
                     .route("/{id}/recommandations", web::get().to(afripulse_public::lister_recommandations))
                     .route("/{id}/galerie-photos", web::get().to(afripulse_public::lister_galerie_photos)),
+            )
+            // Avis de visiteurs sur un site touristique (US5 - ecriture directe)
+            .service(
+                web::scope("/sites-touristiques")
+                    .route("/{site_id}/avis", web::get().to(afripulse_public::lister_avis_site))
+                    .route("/{site_id}/avis", web::post().to(afripulse_public::soumettre_avis_site)),
             )
             // Routes des africantives (initiatives africaines)
             .service(

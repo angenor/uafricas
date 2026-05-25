@@ -1799,10 +1799,23 @@ export interface AdminSiteTouristique {
   id: string
   fiche_pays_id: string
   nom: string
+  categorie: string | null
+  sous_type: string | null
   description: string | null
+  info_pertinente: string | null
   image_url: string | null
+  gestionnaire: string | null
+  ville: string | null
+  village: string | null
   longitude: number | null
   latitude: number | null
+  contact_telephone: string | null
+  contact_courriel: string | null
+  contact_adresse: string | null
+  constitution_statut_juridique: string | null
+  constitution_numero: string | null
+  constitution_document_url: string | null
+  verifie: boolean
   region_id: string | null
   region_nom: string | null
   created_at: string

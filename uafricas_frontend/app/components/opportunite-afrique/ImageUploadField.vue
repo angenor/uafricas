@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { useOpportuniteAfrique } from '~/composables/useOpportuniteAfrique'
+import {
+  useOpportuniteAfrique,
+  preparerImageContribution,
+  IMAGE_TAILLE_MAX,
+} from '~/composables/useOpportuniteAfrique'
 
 interface Props {
   modelValue: string
@@ -14,9 +18,8 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
 }>()
 
-const { uploaderImageContribution, resoudreUrlImage } = useOpportuniteAfrique()
+const { uploaderImageContribution, resoudreUrlImage, erreur } = useOpportuniteAfrique()
 
-const TAILLE_MAX = 2 * 1024 * 1024 // 2 Mo (aligné backend)
 const FORMATS = ['image/jpeg', 'image/png']
 
 const enChargement = ref(false)
@@ -35,22 +38,28 @@ const onChange = async (event: Event) => {
     input.value = ''
     return
   }
-  if (fichier.size > TAILLE_MAX) {
-    erreurLocale.value = 'Image trop volumineuse (max 2 Mo).'
-    input.value = ''
-    return
-  }
 
   enChargement.value = true
-  const url = await uploaderImageContribution(fichier)
-  enChargement.value = false
-  input.value = ''
-
-  if (url) {
-    emit('update:modelValue', url)
+  try {
+    const prepare = await preparerImageContribution(fichier)
+    if (prepare.size > IMAGE_TAILLE_MAX) {
+      erreurLocale.value = 'Image trop volumineuse même après compression (max 2 Mo).'
+      return
+    }
+    const url = await uploaderImageContribution(prepare)
+    if (url) {
+      emit('update:modelValue', url)
+    }
+    else {
+      erreurLocale.value = erreur.value || 'Échec du téléversement. Veuillez réessayer.'
+    }
   }
-  else {
-    erreurLocale.value = "Échec du téléversement. Veuillez réessayer."
+  catch {
+    erreurLocale.value = "Impossible de lire l'image. Veuillez réessayer."
+  }
+  finally {
+    enChargement.value = false
+    input.value = ''
   }
 }
 

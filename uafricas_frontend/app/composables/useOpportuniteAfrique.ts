@@ -150,6 +150,31 @@ export type SectionAfripulse =
 /** Catégorie d'un site touristique */
 export type CategorieSiteTouristique = 'emblematique' | 'prive'
 
+/** Sous-type d'un site touristique (précise la famille `categorie`) — 20 valeurs */
+export type SousTypeSite =
+  // Emblématiques
+  | 'plage'
+  | 'monument'
+  | 'relief_naturel'
+  | 'parc_naturel'
+  | 'mosquee'
+  | 'eglise'
+  | 'pont'
+  | 'route'
+  | 'service_public'
+  | 'immeuble_edifice'
+  | 'mer_riviere'
+  | 'site_naturel'
+  // Privés
+  | 'hotel'
+  | 'plage_privee'
+  | 'espace_jeux'
+  | 'agriculture_touristique'
+  | 'residence_touristique'
+  | 'restaurant'
+  | 'discotheque'
+  | 'bar_maquis'
+
 /** Catégorie d'un savoir pratique */
 export type CategorieSavoir =
   | 'langue_argot'
@@ -228,16 +253,52 @@ export interface PhotoVisiteurAPI {
   created_at: string
 }
 
-/** Site touristique (emblématique ou privé) */
+/** Site touristique (emblématique ou privé) — enrichi (feature 001-sites-touristiques-enrichis) */
 export interface SiteTouristiqueAPI {
   id: string
   fiche_pays_id: string
   nom: string
   categorie: CategorieSiteTouristique
+  sous_type: SousTypeSite | null
   description: string | null
+  info_pertinente: string | null
   image_url: string | null
-  coordonnees: string | null
+  images: string[]
+  gestionnaire: string | null
+  ville: string | null
+  village: string | null
+  latitude: number | null
+  longitude: number | null
+  // Contacts (publics — CL résolue) ; renseignés surtout pour les sites privés
+  contact_telephone: string | null
+  contact_courriel: string | null
+  contact_adresse: string | null
+  // Constitution légale (facultatif)
+  constitution_statut_juridique: string | null
+  constitution_numero: string | null
+  constitution_document_url: string | null
+  // Fiabilité
+  verifie: boolean
+  // Agrégats avis
+  note_moyenne: number | null
+  nombre_avis: number
   created_at: string
+}
+
+/** Avis d'un visiteur sur un site (note 1–5) */
+export interface AvisSiteAPI {
+  id: string
+  utilisateur: UtilisateurPublicAPI
+  note: number
+  commentaire: string
+  created_at: string
+}
+
+/** Liste paginée d'avis d'un site + agrégats */
+export interface AvisSiteListe {
+  note_moyenne: number | null
+  nombre_total: number
+  avis: AvisSiteAPI[]
 }
 
 /** Secteur d'opportunité (agriculture, mines, etc.) */
@@ -281,9 +342,121 @@ export const SECTIONS_FICHE_PAYS = [
   { value: 'secteur_developpement', label: 'Secteur de developpement' },
 ] as const
 
+/** Libellés français des sous-types de site (affichage UI) */
+export const LIBELLES_SOUS_TYPE: Record<SousTypeSite, string> = {
+  // Emblématiques
+  plage: 'Plage',
+  monument: 'Monument',
+  relief_naturel: 'Relief naturel',
+  parc_naturel: 'Parc naturel',
+  mosquee: 'Mosquée',
+  eglise: 'Église',
+  pont: 'Pont',
+  route: 'Route',
+  service_public: 'Service public',
+  immeuble_edifice: 'Immeuble / Édifice',
+  mer_riviere: 'Mer / Rivière',
+  site_naturel: 'Site naturel',
+  // Privés
+  hotel: 'Hôtel',
+  plage_privee: 'Plage privée',
+  espace_jeux: 'Espace de jeux',
+  agriculture_touristique: 'Agriculture touristique',
+  residence_touristique: 'Résidence touristique',
+  restaurant: 'Restaurant',
+  discotheque: 'Discothèque',
+  bar_maquis: 'Bar / Maquis',
+}
+
+/** Sous-types autorisés par famille (cohérence famille↔sous-type — FR-003) */
+export const SOUS_TYPES_PAR_CATEGORIE: Record<CategorieSiteTouristique, SousTypeSite[]> = {
+  emblematique: [
+    'plage',
+    'monument',
+    'relief_naturel',
+    'parc_naturel',
+    'mosquee',
+    'eglise',
+    'pont',
+    'route',
+    'service_public',
+    'immeuble_edifice',
+    'mer_riviere',
+    'site_naturel',
+  ],
+  prive: [
+    'hotel',
+    'plage_privee',
+    'espace_jeux',
+    'agriculture_touristique',
+    'residence_touristique',
+    'restaurant',
+    'discotheque',
+    'bar_maquis',
+  ],
+}
+
 // ──────────────────────────────────────────────────────────────
 // Fonctions utilitaires
 // ──────────────────────────────────────────────────────────────
+
+// ── Préparation d'image côté client (alignée limites backend) ──────────────
+
+export const IMAGE_TAILLE_MAX = 2 * 1024 * 1024 // 2 Mo
+export const IMAGE_DIMENSION_MAX = 2048 // px
+
+const chargerImageElement = (fichier: File): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(fichier)
+    const img = new Image()
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img) }
+    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e) }
+    img.src = url
+  })
+
+/**
+ * Redimensionne/recompresse une image (canvas) pour respecter les limites
+ * backend (≤ 2048 px par côté, ≤ 2 Mo). Retourne le fichier d'origine s'il est
+ * déjà conforme. JPEG : qualité abaissée jusqu'à passer sous 2 Mo.
+ */
+export const preparerImageContribution = async (fichier: File): Promise<File> => {
+  if (fichier.size <= IMAGE_TAILLE_MAX) {
+    const dims = await chargerImageElement(fichier).catch(() => null)
+    if (dims && dims.width <= IMAGE_DIMENSION_MAX && dims.height <= IMAGE_DIMENSION_MAX) {
+      return fichier
+    }
+  }
+  const img = await chargerImageElement(fichier)
+  const ratio = Math.min(IMAGE_DIMENSION_MAX / img.width, IMAGE_DIMENSION_MAX / img.height, 1)
+  const largeur = Math.max(1, Math.round(img.width * ratio))
+  const hauteur = Math.max(1, Math.round(img.height * ratio))
+
+  const canvas = document.createElement('canvas')
+  canvas.width = largeur
+  canvas.height = hauteur
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return fichier
+  ctx.drawImage(img, 0, 0, largeur, hauteur)
+
+  const estPng = fichier.type === 'image/png'
+  const mime = estPng ? 'image/png' : 'image/jpeg'
+  const exporter = (q: number): Promise<Blob> =>
+    new Promise((res, rej) =>
+      canvas.toBlob(b => (b ? res(b) : rej(new Error('toBlob null'))), mime, q),
+    )
+
+  let blob = await exporter(estPng ? 1 : 0.9)
+  if (!estPng) {
+    let q = 0.9
+    while (blob.size > IMAGE_TAILLE_MAX && q > 0.4) {
+      q -= 0.15
+      blob = await exporter(q)
+    }
+  }
+  const ext = estPng ? 'png' : 'jpg'
+  const nom = fichier.name.replace(/\.[^.]+$/, '') + '.' + ext
+  return new File([blob], nom, { type: mime })
+}
 
 /** Formater une date ISO en francais long (ex: "15 janvier 2025") */
 export const formatDate = (dateStr: string): string => {
@@ -839,6 +1012,59 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
+  // ── US5 — Avis de visiteurs sur un site ──────────────────────────
+
+  /**
+   * Lister les avis visibles d'un site (paginé) + agrégats (note moyenne, total).
+   * Lecture publique ; exclut les avis masqués/supprimés.
+   */
+  const listerAvisSite = async (
+    siteId: string,
+    page = 1,
+    parPage = 10,
+  ): Promise<AvisSiteListe | null> => {
+    try {
+      const params = new URLSearchParams({ page: String(page), par_page: String(parPage) })
+      const reponse = await $fetch<ApiResponse<AvisSiteListe>>(
+        `${apiBase}/api/sites-touristiques/${encodeURIComponent(siteId)}/avis?${params}`,
+      )
+      return reponse.data ?? null
+    }
+    catch (e) {
+      console.error('Erreur listerAvisSite:', e)
+      return null
+    }
+  }
+
+  /**
+   * Déposer ou mettre à jour son avis sur un site (upsert). Auth requise.
+   * Erreurs typées : 401 (non connecté), 404 (site absent), 422 (validation).
+   */
+  const soumettreAvisSite = async (
+    siteId: string,
+    note: number,
+    commentaire: string,
+  ): Promise<{ id: string, note: number, commentaire: string, created_at: string } | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<{ id: string, note: number, commentaire: string, created_at: string }>>(
+        `${apiBase}/api/sites-touristiques/${encodeURIComponent(siteId)}/avis`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: { note, commentaire },
+        },
+      )
+      if (!reponse.success || !reponse.data) throw new Error(reponse.error || 'Soumission impossible')
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur réseau'
+      erreur.value = message
+      console.error('Erreur soumettreAvisSite:', e)
+      return null
+    }
+  }
+
   /** Résout une URL d'image stockée (`/uploads/...` → préfixée par l'API ; http(s) inchangé). */
   const resoudreUrlImage = (url: string | null | undefined): string => {
     if (!url) return ''
@@ -869,5 +1095,8 @@ export const useOpportuniteAfrique = () => {
     listerRecommandations,
     listerGaleriePhotos,
     soumettreContributionMultipart,
+    // US5 — avis de site
+    listerAvisSite,
+    soumettreAvisSite,
   }
 }

@@ -98,5 +98,10 @@ Spécifications détaillées sous `specs/`. Historique des features livrées (co
 - **bibliothèques humaines** (`001-admin-biblio-humaine`) : workflow admin de validation. Schéma `iam` (`04b_iam_biblio_demande.sql`).
 - **afrolang** : refonte salles (streaming public + privées par code bcrypt), pays d'origine, propositions communautaires + admins de salle, modération de session (permissions tableau blanc + spotlight), fermeture admin + historique modération, migration tableau blanc tldraw → Excalidraw.
 - **afripulse** (`001-afripulse-contributions`) : enrichissement collaboratif fiches pays `/opportunite-afrique`. Schéma `country_profile` étendu (`11c_country_profile_afripulse.sql`).
+- **sites touristiques enrichis** (`001-sites-touristiques-enrichis`) : sous-type (enum `sous_type_site`, 20 valeurs, validation famille↔sous-type en code), fiche complète (gestionnaire, localisation, GPS, info pertinente, contacts publics), constitution légale facultative, badge « Vérifié » admin (audité), avis visiteurs notés 1–5 (table `avis_site`, upsert écriture directe + modération admin). Schéma `country_profile` étendu (`11d_country_profile_sites_enrichis.sql`). Endpoints publics `/api/sites-touristiques/{id}/avis` + admin vérification/masquage. Composants `SiteTouristiqueCarte.vue`, `SiteAvisListe.vue`.
 - **vidafrica** (`004-vidafrica-sous-titres`) : vidéos + sous-titres. Schéma `media_content` étendu.
 - **arbre généalogique** (`001-personnes-arbre` et suivantes) : schéma `arbre_genealogique`, visualisation @vue-flow, édition, matching inter-arbres (pg_trgm), recherche, collaboration/partage, notifications/suggestions.
+
+## Active Technologies
+- Rust Edition 2024 (backend), TypeScript / Nuxt 4 (Vue 3 SSR) (frontend) + Actix-Web 4, sqlx (PostgreSQL), uuid, chrono, serde, sanitize-filename, image, lettre (backend) ; Pinia, Tailwind CSS v4, FontAwesome (frontend) (001-sites-touristiques-enrichis)
+- PostgreSQL 16, schéma `country_profile` (source de vérité — Principe III) (001-sites-touristiques-enrichis)

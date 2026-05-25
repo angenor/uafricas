@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { useOpportuniteAfrique } from '~/composables/useOpportuniteAfrique'
-import type {
-  SiteTouristiqueAPI,
-  SectionAfripulse,
-  TypeObjetContribution,
+import {
+  SOUS_TYPES_PAR_CATEGORIE,
+  LIBELLES_SOUS_TYPE,
+  type SiteTouristiqueAPI,
+  type SectionAfripulse,
+  type TypeObjetContribution,
+  type SousTypeSite,
 } from '~/composables/useOpportuniteAfrique'
 
 interface Props {
@@ -26,12 +29,30 @@ const emit = defineEmits<{
   (e: 'open-contribution', payload: OpenContributionPayload): void
 }>()
 
-const { listerSitesTouristiques, resoudreUrlImage } = useOpportuniteAfrique()
+const { listerSitesTouristiques } = useOpportuniteAfrique()
 
 const sitesEmblematiques = ref<SiteTouristiqueAPI[]>([])
 const sitesPrives = ref<SiteTouristiqueAPI[]>([])
 const chargementEmblematiques = ref(true)
 const chargementPrives = ref(true)
+
+// Filtres par sous-type (client-side) par famille
+const filtreEmblematique = ref<SousTypeSite | ''>('')
+const filtrePrive = ref<SousTypeSite | ''>('')
+
+const optionsEmblematiques = SOUS_TYPES_PAR_CATEGORIE.emblematique.map(v => ({ value: v, label: LIBELLES_SOUS_TYPE[v] }))
+const optionsPrives = SOUS_TYPES_PAR_CATEGORIE.prive.map(v => ({ value: v, label: LIBELLES_SOUS_TYPE[v] }))
+
+const emblematiquesFiltres = computed(() =>
+  filtreEmblematique.value
+    ? sitesEmblematiques.value.filter(s => s.sous_type === filtreEmblematique.value)
+    : sitesEmblematiques.value,
+)
+const privesFiltres = computed(() =>
+  filtrePrive.value
+    ? sitesPrives.value.filter(s => s.sous_type === filtrePrive.value)
+    : sitesPrives.value,
+)
 
 const chargerEmblematiques = async () => {
   chargementEmblematiques.value = true
@@ -51,6 +72,27 @@ onMounted(async () => {
 
 const router = useRouter()
 
+/** Construit le snapshot complet des champs d'un site (pré-remplissage édition). */
+const snapshotSite = (site: SiteTouristiqueAPI): Record<string, unknown> => ({
+  nom: site.nom,
+  sous_type: site.sous_type,
+  description: site.description,
+  info_pertinente: site.info_pertinente,
+  image_url: site.image_url,
+  images: site.images,
+  gestionnaire: site.gestionnaire,
+  ville: site.ville,
+  village: site.village,
+  latitude: site.latitude,
+  longitude: site.longitude,
+  contact_telephone: site.contact_telephone,
+  contact_courriel: site.contact_courriel,
+  contact_adresse: site.contact_adresse,
+  constitution_statut_juridique: site.constitution_statut_juridique,
+  constitution_numero: site.constitution_numero,
+  constitution_document_url: site.constitution_document_url,
+})
+
 const ouvrirContribution = (
   type_contribution: 'ajout' | 'edition' | 'suppression',
   section: 'sites_emblematiques' | 'sites_prives',
@@ -65,9 +107,7 @@ const ouvrirContribution = (
     section_afripulse: section,
     type_contribution,
     target_id: site?.id,
-    donnees_actuelles: site
-      ? { nom: site.nom, description: site.description, image_url: site.image_url }
-      : undefined,
+    donnees_actuelles: site ? snapshotSite(site) : undefined,
     libelle: site?.nom,
   })
 }
@@ -78,6 +118,9 @@ const proposerSite = (section: 'sites_emblematiques' | 'sites_prives') => {
 
 const sectionDe = (site: SiteTouristiqueAPI): 'sites_emblematiques' | 'sites_prives' =>
   site.categorie === 'prive' ? 'sites_prives' : 'sites_emblematiques'
+
+const onEdit = (site: SiteTouristiqueAPI) => ouvrirContribution('edition', sectionDe(site), site)
+const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression', sectionDe(site), site)
 </script>
 
 <template>
@@ -88,18 +131,28 @@ const sectionDe = (site: SiteTouristiqueAPI): 'sites_emblematiques' | 'sites_pri
       </h2>
 
       <div class="space-y-12">
+        <!-- Sites emblématiques -->
         <div>
-          <div class="flex items-center justify-between mb-6">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
             <h3 class="font-oswald text-2xl font-semibold text-custom-chocolat">
               Sites emblématiques
             </h3>
-            <button
-              type="button"
-              class="px-4 py-2 bg-custom-chocolat text-white rounded-md hover:bg-custom-chocolat/90 transition-colors text-sm font-medium"
-              @click="proposerSite('sites_emblematiques')"
-            >
-              Proposer un site
-            </button>
+            <div class="flex items-center gap-3">
+              <select
+                v-model="filtreEmblematique"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+              >
+                <option value="">Tous les types</option>
+                <option v-for="o in optionsEmblematiques" :key="o.value" :value="o.value">{{ o.label }}</option>
+              </select>
+              <button
+                type="button"
+                class="px-4 py-2 bg-custom-chocolat text-white rounded-md hover:bg-custom-chocolat/90 transition-colors text-sm font-medium"
+                @click="proposerSite('sites_emblematiques')"
+              >
+                Proposer un site
+              </button>
+            </div>
           </div>
 
           <div v-if="chargementEmblematiques" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -107,10 +160,12 @@ const sectionDe = (site: SiteTouristiqueAPI): 'sites_emblematiques' | 'sites_pri
           </div>
 
           <div
-            v-else-if="sitesEmblematiques.length === 0"
+            v-else-if="emblematiquesFiltres.length === 0"
             class="text-center py-10 bg-gray-50 rounded-lg"
           >
-            <p class="text-gray-600 mb-4">Aucun site pour l'instant.</p>
+            <p class="text-gray-600 mb-4">
+              {{ filtreEmblematique ? 'Aucun site pour ce type.' : 'Aucun site pour l\'instant.' }}
+            </p>
             <button
               type="button"
               class="px-4 py-2 bg-custom-chocolat text-white rounded-md hover:bg-custom-chocolat/90 transition-colors text-sm font-medium"
@@ -121,67 +176,39 @@ const sectionDe = (site: SiteTouristiqueAPI): 'sites_emblematiques' | 'sites_pri
           </div>
 
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <article
-              v-for="site in sitesEmblematiques"
+            <OpportuniteAfriqueSiteTouristiqueCarte
+              v-for="site in emblematiquesFiltres"
               :key="site.id"
-              class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="aspect-video relative overflow-hidden">
-                <img
-                  v-if="site.image_url"
-                  :src="resoudreUrlImage(site.image_url)"
-                  :alt="site.nom"
-                  class="w-full h-full object-cover"
-                />
-                <div
-                  v-else
-                  class="w-full h-full bg-gradient-to-br from-custom-chocolat to-custom-chocolat/60"
-                />
-              </div>
-              <div class="p-4">
-                <h4 class="font-oswald text-lg font-semibold text-gray-900 mb-2">{{ site.nom }}</h4>
-                <p v-if="site.description" class="text-sm text-gray-600 line-clamp-3">
-                  {{ site.description }}
-                </p>
-                <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
-                    @click="ouvrirContribution('edition', sectionDe(site), site)"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Modifier
-                  </button>
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
-                    @click="ouvrirContribution('suppression', sectionDe(site), site)"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Supprimer
-                  </button>
-                </div>
-              </div>
-            </article>
+              :site="site"
+              :est-authentifie="estAuthentifie"
+              @edit="onEdit"
+              @delete="onDelete"
+            />
           </div>
         </div>
 
+        <!-- Sites privés -->
         <div>
-          <div class="flex items-center justify-between mb-6">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
             <h3 class="font-oswald text-2xl font-semibold text-custom-green">
               Sites privés
             </h3>
-            <button
-              type="button"
-              class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors text-sm font-medium"
-              @click="proposerSite('sites_prives')"
-            >
-              Proposer un site
-            </button>
+            <div class="flex items-center gap-3">
+              <select
+                v-model="filtrePrive"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-green focus:border-transparent"
+              >
+                <option value="">Tous les types</option>
+                <option v-for="o in optionsPrives" :key="o.value" :value="o.value">{{ o.label }}</option>
+              </select>
+              <button
+                type="button"
+                class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors text-sm font-medium"
+                @click="proposerSite('sites_prives')"
+              >
+                Proposer un site
+              </button>
+            </div>
           </div>
 
           <div v-if="chargementPrives" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -189,10 +216,12 @@ const sectionDe = (site: SiteTouristiqueAPI): 'sites_emblematiques' | 'sites_pri
           </div>
 
           <div
-            v-else-if="sitesPrives.length === 0"
+            v-else-if="privesFiltres.length === 0"
             class="text-center py-10 bg-gray-50 rounded-lg"
           >
-            <p class="text-gray-600 mb-4">Aucun site pour l'instant.</p>
+            <p class="text-gray-600 mb-4">
+              {{ filtrePrive ? 'Aucun site pour ce type.' : 'Aucun site pour l\'instant.' }}
+            </p>
             <button
               type="button"
               class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors text-sm font-medium"
@@ -203,52 +232,14 @@ const sectionDe = (site: SiteTouristiqueAPI): 'sites_emblematiques' | 'sites_pri
           </div>
 
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <article
-              v-for="site in sitesPrives"
+            <OpportuniteAfriqueSiteTouristiqueCarte
+              v-for="site in privesFiltres"
               :key="site.id"
-              class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="aspect-video relative overflow-hidden">
-                <img
-                  v-if="site.image_url"
-                  :src="resoudreUrlImage(site.image_url)"
-                  :alt="site.nom"
-                  class="w-full h-full object-cover"
-                />
-                <div
-                  v-else
-                  class="w-full h-full bg-gradient-to-br from-custom-chocolat to-custom-green"
-                />
-              </div>
-              <div class="p-4">
-                <h4 class="font-oswald text-lg font-semibold text-gray-900 mb-2">{{ site.nom }}</h4>
-                <p v-if="site.description" class="text-sm text-gray-600 line-clamp-3">
-                  {{ site.description }}
-                </p>
-                <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
-                    @click="ouvrirContribution('edition', sectionDe(site), site)"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Modifier
-                  </button>
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
-                    @click="ouvrirContribution('suppression', sectionDe(site), site)"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Supprimer
-                  </button>
-                </div>
-              </div>
-            </article>
+              :site="site"
+              :est-authentifie="estAuthentifie"
+              @edit="onEdit"
+              @delete="onDelete"
+            />
           </div>
         </div>
       </div>
