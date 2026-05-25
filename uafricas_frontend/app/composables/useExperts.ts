@@ -11,6 +11,12 @@ export interface ExpertiseInfoAPI {
   nbAnneesExperience: number
   rating: number
   portfolio: string | null
+  linkedinUrl: string | null
+  cvUrl: string | null
+  specialites: string[]
+  /** Objectifs avec libellés lisibles */
+  objectifs: string[]
+  realisations: string[]
   statut: 'valide' | 'en_attente' | 'refuse'
 }
 
@@ -64,6 +70,13 @@ export interface CandidatureExpertBody {
   biographie: string
   nb_annees_experience: number
   portfolio?: string
+  linkedin_url?: string
+  /** URL du CV déjà uploadé via POST /api/experts/cv */
+  cv_url?: string
+  specialites?: string[]
+  /** Objectifs actuels (valeurs DB, ex: "reseautage") */
+  objectifs?: string[]
+  realisations?: string[]
   situations_professionnelles: string[]
 }
 
@@ -74,12 +87,34 @@ export interface MaCandidatureAPI {
   biographie: string
   nbAnneesExperience: number
   portfolio: string | null
+  linkedinUrl: string | null
+  cvUrl: string | null
+  specialites: string[]
+  objectifs: string[]
+  realisations: string[]
   situationsProfessionnelles: string[]
   statut: 'en_attente' | 'valide' | 'refuse'
   commentaireAdmin: string | null
   dateValidation: string | null
   createdAt: string
 }
+
+/** Option d'objectif actuel (valeur DB + libellé) */
+export interface ObjectifOption {
+  value: string
+  label: string
+}
+
+/** Objectifs actuels proposés au candidat (valeur DB ↔ libellé affiché) */
+export const OBJECTIFS_EXPERTISE: ObjectifOption[] = [
+  { value: 'reseautage', label: 'Réseautage' },
+  { value: 'consultance', label: 'Consultance' },
+  { value: 'recherche_emploi', label: 'Recherche d\'emploi' },
+  { value: 'offre_services_court_terme', label: 'Offre de services court terme' },
+  { value: 'travail_vacances', label: 'Travail de vacances (Sabbafrica)' },
+  { value: 'volontariat', label: 'Volontariat' },
+  { value: 'benevolat', label: 'Bénévolat' },
+]
 
 // ──────────────────────────────────────────────────────────────
 // Constantes
@@ -272,6 +307,38 @@ export const useExperts = () => {
   }
 
   /**
+   * Uploader un CV (PDF) et récupérer son URL (JWT requis).
+   */
+  const uploaderCV = async (fichier: File): Promise<string | null> => {
+    erreur.value = null
+    try {
+      const formData = new FormData()
+      formData.append('cv', fichier)
+
+      const reponse = await $fetch<ApiResponse<{ cv_url: string }>>(
+        `${apiBase}/api/experts/cv`,
+        {
+          method: 'POST',
+          headers: authHeaders(),
+          body: formData,
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de l\'upload du CV')
+      }
+
+      return reponse.data.cv_url
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur uploaderCV:', e)
+      throw new Error(message)
+    }
+  }
+
+  /**
    * Obtenir la candidature active du membre connecte (suivi US3).
    * Renvoie null si aucune candidature active.
    */
@@ -308,6 +375,7 @@ export const useExperts = () => {
     listerExperts,
     obtenirExpert,
     creerCandidature,
+    uploaderCV,
     obtenirMaCandidature,
   }
 }

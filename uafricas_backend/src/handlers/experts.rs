@@ -1,5 +1,8 @@
+use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse};
+use futures_util::StreamExt;
 use sqlx::PgPool;
+use std::io::Write;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
@@ -7,6 +10,7 @@ use crate::jwt;
 use crate::models::expert::{
     CandidatureExpertBody, ExpertListeResponse, ExpertQueryParams,
     ExpertRow, MaCandidatureRow, EXPERT_COLONNES, mapper_domaine_db,
+    OBJECTIFS_VALIDES,
 };
 
 #[derive(serde::Serialize)]
@@ -250,6 +254,35 @@ pub async fn creer_candidature(
         None
     };
 
+    // Nettoyer / valider les champs additionnels
+    let nettoyer_liste = |valeurs: &[String]| -> Vec<String> {
+        valeurs
+            .iter()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect()
+    };
+    let specialites = nettoyer_liste(&body.specialites);
+    let realisations = nettoyer_liste(&body.realisations);
+    let objectifs: Vec<String> = body
+        .objectifs
+        .iter()
+        .map(|o| o.trim().to_lowercase())
+        .filter(|o| OBJECTIFS_VALIDES.contains(&o.as_str()))
+        .collect();
+    let linkedin_url = body
+        .linkedin_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from);
+    let cv_url = body
+        .cv_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from);
+
     // Transaction : archiver une eventuelle demande refusee puis inserer la nouvelle
     let mut tx = pool.begin().await?;
 
@@ -266,9 +299,11 @@ pub async fn creer_candidature(
     let expertise_id: Uuid = sqlx::query_scalar(
         "INSERT INTO iam.expertise
             (utilisateur_id, domaine, domaine_autre, biographie, nb_annees_experience,
-             portfolio, situations_professionnelles, statut)
-         VALUES ($1, $2::iam.domaine_expertise, $3, $4, $5, $6,
-                 $7::iam.situation_professionnelle[], 'en_attente')
+             portfolio, linkedin_url, cv_url, specialites, objectifs, realisations,
+             situations_professionnelles, statut)
+         VALUES ($1, $2::iam.domaine_expertise, $3, $4, $5,
+                 $6, $7, $8, $9, $10::iam.objectif_expertise[], $11,
+                 $12::iam.situation_professionnelle[], 'en_attente')
          RETURNING id",
     )
     .bind(utilisateur_id)
@@ -277,6 +312,11 @@ pub async fn creer_candidature(
     .bind(&body.biographie)
     .bind(body.nb_annees_experience)
     .bind(&body.portfolio)
+    .bind(&linkedin_url)
+    .bind(&cv_url)
+    .bind(&specialites)
+    .bind(&objectifs)
+    .bind(&realisations)
     .bind(&body.situations_professionnelles)
     .fetch_one(&mut *tx)
     .await?;
@@ -320,7 +360,8 @@ pub async fn ma_candidature(
 
     let row = sqlx::query_as::<_, MaCandidatureRow>(
         "SELECT id, domaine::text AS domaine, domaine_autre, biographie, nb_annees_experience,
-                portfolio,
+                portfolio, linkedin_url, cv_url, specialites,
+                objectifs::text[] AS objectifs, realisations,
                 situations_professionnelles::text[] AS situations_professionnelles,
                 statut::text AS statut, commentaire_admin, date_validation, created_at
          FROM iam.expertise
@@ -333,6 +374,89 @@ pub async fn ma_candidature(
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: row.map(|r| r.to_response()),
+        error: None,
+    }))
+}
+
+/// POST /api/experts/cv — Uploader un CV (PDF) pour une candidature d'expertise.
+/// Retourne l'URL à inclure dans le corps de `creer_candidature`.
+pub async fn uploader_cv(
+    req: HttpRequest,
+    upload_dir: web::Data<String>,
+    mut payload: Multipart,
+) -> Result<HttpResponse, ApiErreur> {
+    extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+
+    let mut cv_url: Option<String> = None;
+
+    while let Some(item) = payload.next().await {
+        let mut field =
+            item.map_err(|e| ApiErreur::Upload(format!("Erreur lecture multipart: {}", e)))?;
+
+        let content_disposition = field.content_disposition().cloned();
+        let nom_champ = content_disposition
+            .as_ref()
+            .and_then(|cd| cd.get_name().map(|s| s.to_string()))
+            .unwrap_or_default();
+
+        if nom_champ != "cv" && nom_champ != "fichier" && nom_champ != "file" {
+            continue;
+        }
+
+        let nom_original = content_disposition
+            .as_ref()
+            .and_then(|cd| cd.get_filename().map(sanitize_filename::sanitize))
+            .unwrap_or_else(|| format!("{}.pdf", Uuid::new_v4()));
+        let extension = nom_original.rsplit('.').next().unwrap_or("pdf").to_lowercase();
+        if extension != "pdf" {
+            return Err(ApiErreur::Validation(
+                "Le CV doit être un fichier PDF".into(),
+            ));
+        }
+
+        let nom_fichier = format!("{}.pdf", Uuid::new_v4());
+        let dossier = format!("{}/cv-experts", upload_dir.get_ref());
+        std::fs::create_dir_all(&dossier)
+            .map_err(|e| ApiErreur::Upload(format!("Impossible de creer le repertoire: {}", e)))?;
+        let chemin_complet = format!("{}/{}", dossier, nom_fichier);
+        let mut fichier = std::fs::File::create(&chemin_complet)
+            .map_err(|e| ApiErreur::Upload(format!("Impossible de creer le fichier: {}", e)))?;
+
+        let mut taille_totale: usize = 0;
+        let mut premier_chunk = true;
+        while let Some(chunk) = field.next().await {
+            let data = chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture: {}", e)))?;
+            // Vérifier la signature PDF (%PDF) sur le premier morceau
+            if premier_chunk {
+                premier_chunk = false;
+                if data.len() < 4 || &data[0..4] != b"%PDF" {
+                    let _ = std::fs::remove_file(&chemin_complet);
+                    return Err(ApiErreur::Validation(
+                        "Le fichier n'est pas un PDF valide".into(),
+                    ));
+                }
+            }
+            taille_totale += data.len();
+            if taille_totale > 10 * 1024 * 1024 {
+                let _ = std::fs::remove_file(&chemin_complet);
+                return Err(ApiErreur::Validation(
+                    "Le CV ne doit pas depasser 10 Mo".into(),
+                ));
+            }
+            fichier
+                .write_all(&data)
+                .map_err(|e| ApiErreur::Upload(format!("Erreur ecriture: {}", e)))?;
+        }
+
+        cv_url = Some(format!("/uploads/cv-experts/{}", nom_fichier));
+    }
+
+    let url = cv_url.ok_or_else(|| ApiErreur::Validation("Aucun fichier CV recu".into()))?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "cv_url": url })),
         error: None,
     }))
 }

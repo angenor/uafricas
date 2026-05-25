@@ -505,6 +505,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("/experts")
                     .route("", web::get().to(experts::lister_experts))
+                    .route("/cv", web::post().to(experts::uploader_cv))
                     .route("/candidature", web::post().to(experts::creer_candidature))
                     .route("/moi", web::get().to(experts::ma_candidature))
                     .route("/{id}", web::get().to(experts::obtenir_expert)),

@@ -20,6 +20,12 @@ CREATE TYPE iam.situation_professionnelle AS ENUM (
     'volontariat_expertise', 'recherche_nouvelles_opportunites'
 );
 
+-- Objectifs actuels du candidat (multi-sélection, distinct des situations professionnelles)
+CREATE TYPE iam.objectif_expertise AS ENUM (
+    'reseautage', 'consultance', 'recherche_emploi',
+    'offre_services_court_terme', 'travail_vacances', 'volontariat', 'benevolat'
+);
+
 
 -- ── Table expertise (1-to-1 avec utilisateur) ────────────────────────────
 
@@ -38,6 +44,11 @@ CREATE TABLE iam.expertise (
     rating                      NUMERIC(2,1) NOT NULL DEFAULT 0.0
                                 CHECK (rating >= 0 AND rating <= 5),
     portfolio                   VARCHAR(500),
+    linkedin_url                VARCHAR(255),
+    cv_url                      VARCHAR(500),
+    specialites                 TEXT[]       NOT NULL DEFAULT '{}',
+    objectifs                   iam.objectif_expertise[] NOT NULL DEFAULT '{}',
+    realisations                TEXT[]       NOT NULL DEFAULT '{}',
     situations_professionnelles iam.situation_professionnelle[] NOT NULL DEFAULT '{}',
     statut                      iam.statut_expertise NOT NULL DEFAULT 'en_attente',
     valide_par                  UUID         REFERENCES iam.utilisateur(id) ON DELETE SET NULL,

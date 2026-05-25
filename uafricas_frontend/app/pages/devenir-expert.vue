@@ -2,6 +2,7 @@
 import {
   CATEGORIES_EXPERTISE,
   PROFILS_PROFESSIONNELS,
+  OBJECTIFS_EXPERTISE,
   type CandidatureExpertBody,
   type MaCandidatureAPI,
 } from '~/composables/useExperts'
@@ -15,7 +16,7 @@ const config = useRuntimeConfig()
 const apiBase = config.public.apiBaseUrl as string
 
 const profilComposable = useProfil()
-const { creerCandidature, obtenirMaCandidature } = useExperts()
+const { creerCandidature, uploaderCV, obtenirMaCandidature } = useExperts()
 
 // ── Données de référence ──
 interface PaysOptionAPI { id: string, nom: string }
@@ -43,8 +44,77 @@ const form = reactive({
   biographie: '',
   nbAnnees: 0,
   situations: [] as string[],
+  objectifs: [] as string[],
+  specialites: [] as string[],
+  realisations: [] as string[],
   portfolio: '',
+  linkedin: '',
 })
+
+// ── Saisie des tags (spécialités) et items (réalisations) ──
+const specialiteInput = ref('')
+const realisationInput = ref('')
+
+function ajouterSpecialite() {
+  const valeur = specialiteInput.value.trim()
+  if (valeur && !form.specialites.includes(valeur) && form.specialites.length < 15) {
+    form.specialites.push(valeur)
+  }
+  specialiteInput.value = ''
+}
+
+function retirerSpecialite(index: number) {
+  form.specialites.splice(index, 1)
+}
+
+function ajouterRealisation() {
+  const valeur = realisationInput.value.trim()
+  if (valeur && form.realisations.length < 15) {
+    form.realisations.push(valeur)
+  }
+  realisationInput.value = ''
+}
+
+function retirerRealisation(index: number) {
+  form.realisations.splice(index, 1)
+}
+
+function toggleObjectif(valeur: string) {
+  const idx = form.objectifs.indexOf(valeur)
+  if (idx === -1) form.objectifs.push(valeur)
+  else form.objectifs.splice(idx, 1)
+}
+
+// ── CV (PDF, optionnel) ──
+const cvFile = ref<File | null>(null)
+const cvNom = ref<string | null>(null)
+const inputCV = ref<HTMLInputElement | null>(null)
+
+function declencherSelectionCV() {
+  inputCV.value?.click()
+}
+
+function onCVChange(event: Event) {
+  const fichier = (event.target as HTMLInputElement).files?.[0]
+  if (!fichier) return
+  if (fichier.type !== 'application/pdf') {
+    erreurs.cv = 'Le CV doit être un fichier PDF.'
+    return
+  }
+  if (fichier.size > 10 * 1024 * 1024) {
+    erreurs.cv = 'Le CV ne doit pas dépasser 10 Mo.'
+    return
+  }
+  delete erreurs.cv
+  cvFile.value = fichier
+  cvNom.value = fichier.name
+}
+
+function retirerCV() {
+  cvFile.value = null
+  cvNom.value = null
+  if (inputCV.value) inputCV.value.value = ''
+}
 
 // ── Photo ──
 const photoUrlActuelle = ref<string | null>(null)
@@ -91,6 +161,9 @@ function valider(): boolean {
   if (form.portfolio.trim() && !/^https?:\/\/.+/.test(form.portfolio.trim())) {
     erreurs.portfolio = 'Le lien doit commencer par http:// ou https://'
   }
+  if (form.linkedin.trim() && !/^https?:\/\/(www\.)?linkedin\.com\/.+/i.test(form.linkedin.trim())) {
+    erreurs.linkedin = 'Indiquez une URL LinkedIn valide (https://www.linkedin.com/…).'
+  }
 
   return Object.keys(erreurs).length === 0
 }
@@ -116,16 +189,27 @@ async function soumettre() {
       pays_residence_id: form.paysId,
     })
 
-    // 3. Candidature d'expertise
+    // 3. CV (optionnel, PDF) — uploadé avant la création de la candidature
+    let cvUrl: string | undefined
+    if (cvFile.value) {
+      cvUrl = (await uploaderCV(cvFile.value)) ?? undefined
+    }
+
+    // 4. Candidature d'expertise
     const estAutre = form.domaine === DOMAINE_AUTRE
     const body: CandidatureExpertBody = {
       domaine: estAutre ? 'autre' : form.domaine,
       biographie: form.biographie.trim(),
       nb_annees_experience: form.nbAnnees,
       situations_professionnelles: form.situations,
+      objectifs: form.objectifs,
+      specialites: form.specialites,
+      realisations: form.realisations,
     }
     if (estAutre) body.domaine_autre = form.domaineAutre.trim()
     if (form.portfolio.trim()) body.portfolio = form.portfolio.trim()
+    if (form.linkedin.trim()) body.linkedin_url = form.linkedin.trim()
+    if (cvUrl) body.cv_url = cvUrl
 
     const resultat = await creerCandidature(body)
     if (!resultat) {
@@ -411,6 +495,42 @@ onMounted(async () => {
             </div>
           </div>
 
+          <!-- Spécialités (tags libres) -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Spécialités <span class="text-gray-400">(optionnel)</span>
+            </label>
+            <p class="text-xs text-gray-400 mb-2">Sous-domaines ou compétences précises. Appuyez sur Entrée pour ajouter.</p>
+            <div v-if="form.specialites.length" class="flex flex-wrap gap-2 mb-2">
+              <span
+                v-for="(s, i) in form.specialites"
+                :key="i"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-custom-green text-sm border border-green-200"
+              >
+                {{ s }}
+                <button type="button" class="hover:text-red-500" @click="retirerSpecialite(i)">
+                  <font-awesome-icon icon="fa-solid fa-xmark" />
+                </button>
+              </span>
+            </div>
+            <div class="flex gap-2">
+              <input
+                v-model="specialiteInput"
+                type="text"
+                placeholder="Ex : Développement web, Cardiologie…"
+                class="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+                @keydown.enter.prevent="ajouterSpecialite"
+              />
+              <button
+                type="button"
+                class="px-4 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                @click="ajouterSpecialite"
+              >
+                Ajouter
+              </button>
+            </div>
+          </div>
+
           <!-- Biographie -->
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Biographie <span class="text-red-500">*</span></label>
@@ -423,6 +543,43 @@ onMounted(async () => {
             <div class="flex justify-between mt-1">
               <p v-if="erreurs.biographie" class="text-xs text-red-500">{{ erreurs.biographie }}</p>
               <p class="text-xs text-gray-400 ml-auto">{{ form.biographie.length }} / 5000</p>
+            </div>
+          </div>
+
+          <!-- Réalisations majeures (liste d'items) -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Réalisations majeures <span class="text-gray-400">(optionnel)</span>
+            </label>
+            <p class="text-xs text-gray-400 mb-2">Ajoutez vos réalisations marquantes, une par une.</p>
+            <ul v-if="form.realisations.length" class="space-y-2 mb-2">
+              <li
+                v-for="(r, i) in form.realisations"
+                :key="i"
+                class="flex items-start gap-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-200"
+              >
+                <font-awesome-icon icon="fa-solid fa-award" class="text-custom-chocolat mt-0.5" />
+                <span class="flex-1 text-sm text-gray-700">{{ r }}</span>
+                <button type="button" class="text-gray-400 hover:text-red-500" @click="retirerRealisation(i)">
+                  <font-awesome-icon icon="fa-solid fa-xmark" />
+                </button>
+              </li>
+            </ul>
+            <div class="flex gap-2">
+              <input
+                v-model="realisationInput"
+                type="text"
+                placeholder="Ex : Prix d'innovation 2023, publication scientifique…"
+                class="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+                @keydown.enter.prevent="ajouterRealisation"
+              />
+              <button
+                type="button"
+                class="px-4 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                @click="ajouterRealisation"
+              >
+                Ajouter
+              </button>
             </div>
           </div>
 
@@ -462,8 +619,31 @@ onMounted(async () => {
             <p v-if="erreurs.situations" class="text-xs text-red-500 mt-1">{{ erreurs.situations }}</p>
           </div>
 
+          <!-- Objectifs actuels -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Objectifs actuels <span class="text-gray-400">(optionnel)</span></label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label
+                v-for="o in OBJECTIFS_EXPERTISE"
+                :key="o.value"
+                class="flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors"
+                :class="form.objectifs.includes(o.value)
+                  ? 'border-custom-green bg-green-50 text-custom-green'
+                  : 'border-gray-200 hover:bg-gray-50 text-gray-600'"
+              >
+                <input
+                  type="checkbox"
+                  :checked="form.objectifs.includes(o.value)"
+                  class="accent-custom-green"
+                  @change="toggleObjectif(o.value)"
+                />
+                <span class="text-sm">{{ o.label }}</span>
+              </label>
+            </div>
+          </div>
+
           <!-- Portfolio -->
-          <div>
+          <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Portfolio / site web <span class="text-gray-400">(optionnel)</span></label>
             <input
               v-model="form.portfolio"
@@ -472,6 +652,49 @@ onMounted(async () => {
               class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
             />
             <p v-if="erreurs.portfolio" class="text-xs text-red-500 mt-1">{{ erreurs.portfolio }}</p>
+          </div>
+
+          <!-- LinkedIn -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Profil LinkedIn <span class="text-gray-400">(optionnel)</span></label>
+            <input
+              v-model="form.linkedin"
+              type="url"
+              placeholder="https://www.linkedin.com/in/votre-profil"
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+            />
+            <p v-if="erreurs.linkedin" class="text-xs text-red-500 mt-1">{{ erreurs.linkedin }}</p>
+          </div>
+
+          <!-- CV (PDF) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">CV <span class="text-gray-400">(optionnel, PDF)</span></label>
+            <div class="flex items-center gap-3 flex-wrap">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                @click="declencherSelectionCV"
+              >
+                <font-awesome-icon icon="fa-solid fa-file" />
+                Choisir un fichier
+              </button>
+              <span v-if="cvNom" class="inline-flex items-center gap-2 text-sm text-gray-600">
+                {{ cvNom }}
+                <button type="button" class="text-gray-400 hover:text-red-500" @click="retirerCV">
+                  <font-awesome-icon icon="fa-solid fa-xmark" />
+                </button>
+              </span>
+              <span v-else class="text-xs text-gray-400">Aucun fichier sélectionné</span>
+            </div>
+            <input
+              ref="inputCV"
+              type="file"
+              accept="application/pdf"
+              class="hidden"
+              @change="onCVChange"
+            />
+            <p v-if="erreurs.cv" class="text-xs text-red-500 mt-1">{{ erreurs.cv }}</p>
+            <p class="text-xs text-gray-400 mt-1">PDF uniquement, 10 Mo maximum.</p>
           </div>
         </div>
 

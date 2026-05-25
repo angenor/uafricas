@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-use crate::models::expert::label_domaine;
+use crate::models::expert::{label_domaine, label_objectif};
 
 // ────────────────────────────────────────────────────────────────
 // Row brute depuis la BDD (liste + detail admin)
@@ -22,6 +22,11 @@ pub struct AdminDemandeExpertiseRow {
     pub biographie: String,
     pub nb_annees_experience: i32,
     pub portfolio: Option<String>,
+    pub linkedin_url: Option<String>,
+    pub cv_url: Option<String>,
+    pub specialites: Vec<String>,
+    pub objectifs: Vec<String>,
+    pub realisations: Vec<String>,
     pub situations_professionnelles: Vec<String>,
     pub pays_nom: Option<String>,
     pub statut: String,
@@ -69,6 +74,13 @@ pub struct AdminDemandeExpertiseDetailResponse {
     #[serde(rename = "nbAnneesExperience")]
     pub nb_annees_experience: i32,
     pub portfolio: Option<String>,
+    #[serde(rename = "linkedinUrl")]
+    pub linkedin_url: Option<String>,
+    #[serde(rename = "cvUrl")]
+    pub cv_url: Option<String>,
+    pub specialites: Vec<String>,
+    pub objectifs: Vec<String>,
+    pub realisations: Vec<String>,
     #[serde(rename = "situationsProfessionnelles")]
     pub situations_professionnelles: Vec<String>,
     pub pays: Option<String>,
@@ -142,6 +154,11 @@ impl AdminDemandeExpertiseRow {
             biographie: self.biographie.clone(),
             nb_annees_experience: self.nb_annees_experience,
             portfolio: self.portfolio.clone(),
+            linkedin_url: self.linkedin_url.clone(),
+            cv_url: self.cv_url.clone(),
+            specialites: self.specialites.clone(),
+            objectifs: self.objectifs.iter().map(|o| label_objectif(o)).collect(),
+            realisations: self.realisations.clone(),
             situations_professionnelles: self.situations_professionnelles.clone(),
             pays: self.pays_nom.clone(),
             statut: self.statut.clone(),

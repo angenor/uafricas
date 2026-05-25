@@ -15,6 +15,11 @@ pub const EXPERT_COLONNES: &str =
      e.biographie, e.nb_annees_experience,
      e.rating::float8 AS rating,
      e.portfolio,
+     e.linkedin_url,
+     e.cv_url,
+     e.specialites,
+     e.objectifs::text[] AS objectifs,
+     e.realisations,
      e.situations_professionnelles::text[] AS situations_professionnelles,
      e.statut::text AS statut,
      e.created_at AS expertise_created_at,
@@ -37,6 +42,11 @@ pub struct ExpertRow {
     pub nb_annees_experience: i32,
     pub rating: f64,
     pub portfolio: Option<String>,
+    pub linkedin_url: Option<String>,
+    pub cv_url: Option<String>,
+    pub specialites: Vec<String>,
+    pub objectifs: Vec<String>,
+    pub realisations: Vec<String>,
     pub situations_professionnelles: Vec<String>,
     pub statut: String,
     pub expertise_created_at: DateTime<Utc>,
@@ -65,6 +75,14 @@ pub struct ExpertiseInfoResponse {
     pub nb_annees_experience: i32,
     pub rating: f64,
     pub portfolio: Option<String>,
+    #[serde(rename = "linkedinUrl")]
+    pub linkedin_url: Option<String>,
+    #[serde(rename = "cvUrl")]
+    pub cv_url: Option<String>,
+    pub specialites: Vec<String>,
+    /// Objectifs avec libellés lisibles (front)
+    pub objectifs: Vec<String>,
+    pub realisations: Vec<String>,
     pub statut: String,
 }
 
@@ -120,6 +138,16 @@ pub struct CandidatureExpertBody {
     pub biographie: String,
     pub nb_annees_experience: i32,
     pub portfolio: Option<String>,
+    pub linkedin_url: Option<String>,
+    /// URL du CV déjà uploadé (via POST /api/experts/cv)
+    pub cv_url: Option<String>,
+    #[serde(default)]
+    pub specialites: Vec<String>,
+    /// Objectifs actuels (valeurs enum DB)
+    #[serde(default)]
+    pub objectifs: Vec<String>,
+    #[serde(default)]
+    pub realisations: Vec<String>,
     pub situations_professionnelles: Vec<String>,
 }
 
@@ -136,6 +164,11 @@ pub struct MaCandidatureRow {
     pub biographie: String,
     pub nb_annees_experience: i32,
     pub portfolio: Option<String>,
+    pub linkedin_url: Option<String>,
+    pub cv_url: Option<String>,
+    pub specialites: Vec<String>,
+    pub objectifs: Vec<String>,
+    pub realisations: Vec<String>,
     pub situations_professionnelles: Vec<String>,
     pub statut: String,
     pub commentaire_admin: Option<String>,
@@ -152,6 +185,13 @@ pub struct MaCandidatureResponse {
     #[serde(rename = "nbAnneesExperience")]
     pub nb_annees_experience: i32,
     pub portfolio: Option<String>,
+    #[serde(rename = "linkedinUrl")]
+    pub linkedin_url: Option<String>,
+    #[serde(rename = "cvUrl")]
+    pub cv_url: Option<String>,
+    pub specialites: Vec<String>,
+    pub objectifs: Vec<String>,
+    pub realisations: Vec<String>,
     #[serde(rename = "situationsProfessionnelles")]
     pub situations_professionnelles: Vec<String>,
     pub statut: String,
@@ -171,6 +211,11 @@ impl MaCandidatureRow {
             biographie: self.biographie.clone(),
             nb_annees_experience: self.nb_annees_experience,
             portfolio: self.portfolio.clone(),
+            linkedin_url: self.linkedin_url.clone(),
+            cv_url: self.cv_url.clone(),
+            specialites: self.specialites.clone(),
+            objectifs: self.objectifs.iter().map(|o| label_objectif(o)).collect(),
+            realisations: self.realisations.clone(),
             situations_professionnelles: self.situations_professionnelles.clone(),
             statut: self.statut.clone(),
             commentaire_admin: self.commentaire_admin.clone(),
@@ -199,6 +244,26 @@ pub fn mapper_domaine_frontend(db_val: &str) -> String {
         autre => autre.to_string(),
     }
 }
+
+/// Mapper un objectif DB (snake_case) vers un libellé lisible (front)
+pub fn label_objectif(db_val: &str) -> String {
+    match db_val {
+        "reseautage" => "Réseautage".to_string(),
+        "consultance" => "Consultance".to_string(),
+        "recherche_emploi" => "Recherche d'emploi".to_string(),
+        "offre_services_court_terme" => "Offre de services court terme".to_string(),
+        "travail_vacances" => "Travail de vacances (Sabbafrica)".to_string(),
+        "volontariat" => "Volontariat".to_string(),
+        "benevolat" => "Bénévolat".to_string(),
+        autre => autre.to_string(),
+    }
+}
+
+/// Valeurs DB valides pour l'enum objectif_expertise
+pub const OBJECTIFS_VALIDES: &[&str] = &[
+    "reseautage", "consultance", "recherche_emploi",
+    "offre_services_court_terme", "travail_vacances", "volontariat", "benevolat",
+];
 
 /// Label de domaine affiché : la précision libre si `domaine = 'autre'`, sinon le label standard.
 pub fn label_domaine(db_val: &str, domaine_autre: Option<&str>) -> String {
@@ -247,6 +312,11 @@ impl ExpertRow {
                 nb_annees_experience: self.nb_annees_experience,
                 rating: self.rating,
                 portfolio: self.portfolio.clone(),
+                linkedin_url: self.linkedin_url.clone(),
+                cv_url: self.cv_url.clone(),
+                specialites: self.specialites.clone(),
+                objectifs: self.objectifs.iter().map(|o| label_objectif(o)).collect(),
+                realisations: self.realisations.clone(),
                 statut: self.statut.clone(),
             },
             situation_professionnelle: self.situations_professionnelles.clone(),
