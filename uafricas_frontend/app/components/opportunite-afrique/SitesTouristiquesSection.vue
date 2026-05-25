@@ -26,7 +26,7 @@ const emit = defineEmits<{
   (e: 'open-contribution', payload: OpenContributionPayload): void
 }>()
 
-const { listerSitesTouristiques } = useOpportuniteAfrique()
+const { listerSitesTouristiques, resoudreUrlImage } = useOpportuniteAfrique()
 
 const sitesEmblematiques = ref<SiteTouristiqueAPI[]>([])
 const sitesPrives = ref<SiteTouristiqueAPI[]>([])
@@ -129,7 +129,7 @@ const sectionDe = (site: SiteTouristiqueAPI): 'sites_emblematiques' | 'sites_pri
               <div class="aspect-video relative overflow-hidden">
                 <img
                   v-if="site.image_url"
-                  :src="site.image_url"
+                  :src="resoudreUrlImage(site.image_url)"
                   :alt="site.nom"
                   class="w-full h-full object-cover"
                 />
@@ -211,7 +211,7 @@ const sectionDe = (site: SiteTouristiqueAPI): 'sites_emblematiques' | 'sites_pri
               <div class="aspect-video relative overflow-hidden">
                 <img
                   v-if="site.image_url"
-                  :src="site.image_url"
+                  :src="resoudreUrlImage(site.image_url)"
                   :alt="site.nom"
                   class="w-full h-full object-cover"
                 />

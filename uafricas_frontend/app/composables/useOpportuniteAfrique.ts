@@ -808,6 +808,44 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
+  /**
+   * Uploader une image isolée pour une contribution (site, personnalité).
+   * Retourne l'URL relative (`/uploads/...`) à placer dans le payload, ou null.
+   */
+  const uploaderImageContribution = async (fichier: File): Promise<string | null> => {
+    try {
+      const formData = new FormData()
+      formData.append('image', fichier)
+      const reponse = await $fetch<ApiResponse<{ url: string }>>(
+        `${apiBase}/api/fiches-pays/contributions/upload-image`,
+        {
+          method: 'POST',
+          headers: authHeaders(),
+          body: formData,
+        },
+      )
+      if (!reponse.success || !reponse.data?.url) {
+        throw new Error(reponse.error || 'Upload impossible')
+      }
+      return reponse.data.url
+    }
+    catch (e: any) {
+      const status = e?.response?.status ?? e?.statusCode
+      const message = e?.data?.error || e?.message || 'Erreur réseau'
+      if (status === 413) erreur.value = `Image trop volumineuse : ${message}`
+      else erreur.value = message
+      console.error('Erreur uploaderImageContribution:', e)
+      return null
+    }
+  }
+
+  /** Résout une URL d'image stockée (`/uploads/...` → préfixée par l'API ; http(s) inchangé). */
+  const resoudreUrlImage = (url: string | null | undefined): string => {
+    if (!url) return ''
+    if (url.startsWith('http://') || url.startsWith('https://')) return url
+    return `${apiBase}${url}`
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -820,6 +858,8 @@ export const useOpportuniteAfrique = () => {
     listerContributeurs,
     // Afripulse (sections enrichies)
     soumettreContributionEnrichie,
+    uploaderImageContribution,
+    resoudreUrlImage,
     listerSitesTouristiques,
     listerSecteursOpportunites,
     listerPersonnalites,

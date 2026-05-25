@@ -955,3 +955,81 @@ pub async fn soumettre_contribution_multipart(
         error: None,
     }))
 }
+
+/// POST /api/fiches-pays/contributions/upload-image
+///
+/// Upload d'une image isolée pour une contribution Afripulse (image de site
+/// touristique, portrait de personnalité). Valide en mémoire (JPEG/PNG, ≤ 2 Mo,
+/// ≤ 2048 px), stocke sous `opportunite-afrique/images/<uuid>.<ext>` et retourne
+/// l'URL relative. Cette URL est ensuite placée dans `nouvelle_valeur_jsonb`
+/// (`image_url` / `portrait_url`) lors de la soumission de la contribution.
+pub async fn uploader_image_contribution(
+    upload_dir: web::Data<String>,
+    req: HttpRequest,
+    mut payload: Multipart,
+) -> Result<HttpResponse, ApiErreur> {
+    // Réservé aux utilisateurs connectés (comme toute contribution).
+    extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+
+    // Lire le champ fichier `image` (un seul attendu), avec garde-fou de taille.
+    let mut bytes: Option<Vec<u8>> = None;
+    while let Some(item) = payload.next().await {
+        let mut field =
+            item.map_err(|e| ApiErreur::Upload(format!("Erreur lecture multipart: {}", e)))?;
+        let nom = field
+            .content_disposition()
+            .and_then(|c| c.get_name().map(|s| s.to_string()))
+            .unwrap_or_default();
+        if nom == "image" {
+            let mut buf: Vec<u8> = Vec::new();
+            while let Some(chunk) = field.next().await {
+                let data = chunk
+                    .map_err(|e| ApiErreur::Upload(format!("Erreur lecture chunk: {}", e)))?;
+                buf.extend_from_slice(&data);
+                if buf.len() > image_validation::TAILLE_MAX_OCTETS + 1 {
+                    return Err(ApiErreur::LimiteAtteinte(format!(
+                        "Image trop volumineuse (>{} octets)",
+                        image_validation::TAILLE_MAX_OCTETS
+                    )));
+                }
+            }
+            bytes = Some(buf);
+        }
+    }
+
+    let bytes =
+        bytes.ok_or_else(|| ApiErreur::Validation("Aucune image reçue (champ `image`).".into()))?;
+
+    // Validation en mémoire AVANT toute écriture disque.
+    let dim = image_validation::valider_photo_contribution(&bytes)
+        .map_err(|err| ApiErreur::Validation(err.message()))?;
+
+    let dossier = format!("{}/opportunite-afrique/images", upload_dir.get_ref());
+    std::fs::create_dir_all(&dossier)
+        .map_err(|e| ApiErreur::Upload(format!("Impossible de creer le dossier images: {}", e)))?;
+
+    let nom_fichier = format!("{}.{}", Uuid::new_v4(), dim.format.extension());
+    let chemin_complet = format!("{}/{}", dossier, nom_fichier);
+    let chemin_relatif = format!("/uploads/opportunite-afrique/images/{}", nom_fichier);
+
+    let res = (|| -> std::io::Result<()> {
+        let mut f = std::fs::File::create(&chemin_complet)?;
+        f.write_all(&bytes)?;
+        Ok(())
+    })();
+    if let Err(e) = res {
+        return Err(ApiErreur::Upload(format!("Ecriture disque echouee: {}", e)));
+    }
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(json!({
+            "url": chemin_relatif,
+            "format": dim.format.as_str(),
+            "largeur": dim.largeur as i64,
+            "hauteur": dim.hauteur as i64,
+        })),
+        error: None,
+    }))
+}

@@ -27,7 +27,7 @@ const emit = defineEmits<{
   (e: 'open-contribution', payload: OpenContributionPayload): void
 }>()
 
-const { listerPersonnalites } = useOpportuniteAfrique()
+const { listerPersonnalites, resoudreUrlImage } = useOpportuniteAfrique()
 
 const personnalites = ref<PersonnaliteConnueAPI[]>([])
 const chargement = ref(true)
@@ -157,7 +157,7 @@ const proposerPersonnalite = () => {
           <div class="aspect-square bg-gray-100 relative overflow-hidden">
             <img
               v-if="p.portrait_url"
-              :src="p.portrait_url"
+              :src="resoudreUrlImage(p.portrait_url)"
               :alt="p.nom_complet"
               class="w-full h-full object-cover"
             />

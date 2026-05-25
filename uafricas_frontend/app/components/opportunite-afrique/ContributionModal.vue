@@ -394,14 +394,10 @@ watch(() => props.afripulseContext, (ctx) => {
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
                 />
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">URL d'image (optionnel)</label>
-                <input
-                  v-model="formAfripulse.image_url"
-                  type="url"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
-                />
-              </div>
+              <OpportuniteAfriqueImageUploadField
+                v-model="formAfripulse.image_url"
+                label="Image du site (optionnel)"
+              />
             </template>
 
             <template v-else-if="contexteAfripulse.type_objet_contribution === 'secteur_developpement'">
@@ -471,14 +467,10 @@ watch(() => props.afripulseContext, (ctx) => {
                   />
                 </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">URL portrait (optionnel)</label>
-                <input
-                  v-model="formAfripulse.portrait_url"
-                  type="url"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
-                />
-              </div>
+              <OpportuniteAfriqueImageUploadField
+                v-model="formAfripulse.portrait_url"
+                label="Portrait (optionnel)"
+              />
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Lien de référence (optionnel)</label>
                 <input

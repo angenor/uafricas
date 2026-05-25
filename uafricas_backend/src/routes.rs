@@ -590,6 +590,8 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/regions", web::get().to(fiches_pays::lister_regions))
                     // T071 — mes contributions (utilisateur connecte)
                     .route("/moi/contributions", web::get().to(afripulse_public::lister_mes_contributions))
+                    // Upload d'image isolée pour une contribution (site, personnalité)
+                    .route("/contributions/upload-image", web::post().to(contributions_fiche::uploader_image_contribution))
                     // La modération des contributions (valider/rejeter) se fait via
                     // /api/admin/profils-pays/contributions/{id}/etat (admin::profils_pays::moderer_contribution).
                     // Routes parametrees
