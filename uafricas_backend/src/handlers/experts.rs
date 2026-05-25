@@ -231,6 +231,25 @@ pub async fn creer_candidature(
     // Mapper le domaine
     let domaine_db = mapper_domaine_db(&body.domaine);
 
+    // Précision libre obligatoire (et conservée) uniquement quand domaine = "autre"
+    let domaine_autre: Option<String> = if domaine_db == "autre" {
+        let precision = body
+            .domaine_autre
+            .as_deref()
+            .map(str::trim)
+            .filter(|p| !p.is_empty());
+        match precision {
+            Some(p) => Some(p.to_string()),
+            None => {
+                return Err(ApiErreur::Validation(
+                    "Veuillez préciser votre domaine d'expertise".to_string(),
+                ))
+            }
+        }
+    } else {
+        None
+    };
+
     // Transaction : archiver une eventuelle demande refusee puis inserer la nouvelle
     let mut tx = pool.begin().await?;
 
@@ -246,14 +265,15 @@ pub async fn creer_candidature(
 
     let expertise_id: Uuid = sqlx::query_scalar(
         "INSERT INTO iam.expertise
-            (utilisateur_id, domaine, biographie, nb_annees_experience,
+            (utilisateur_id, domaine, domaine_autre, biographie, nb_annees_experience,
              portfolio, situations_professionnelles, statut)
-         VALUES ($1, $2::iam.domaine_expertise, $3, $4, $5,
-                 $6::iam.situation_professionnelle[], 'en_attente')
+         VALUES ($1, $2::iam.domaine_expertise, $3, $4, $5, $6,
+                 $7::iam.situation_professionnelle[], 'en_attente')
          RETURNING id",
     )
     .bind(utilisateur_id)
     .bind(&domaine_db)
+    .bind(&domaine_autre)
     .bind(&body.biographie)
     .bind(body.nb_annees_experience)
     .bind(&body.portfolio)
@@ -299,7 +319,7 @@ pub async fn ma_candidature(
         .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
 
     let row = sqlx::query_as::<_, MaCandidatureRow>(
-        "SELECT id, domaine::text AS domaine, biographie, nb_annees_experience,
+        "SELECT id, domaine::text AS domaine, domaine_autre, biographie, nb_annees_experience,
                 portfolio,
                 situations_professionnelles::text[] AS situations_professionnelles,
                 statut::text AS statut, commentaire_admin, date_validation, created_at

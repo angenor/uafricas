@@ -21,6 +21,7 @@ const ADMIN_EXPERTISE_COLONNES: &str = "
     u.email,
     u.photo_url,
     e.domaine::text AS domaine,
+    e.domaine_autre,
     e.biographie,
     e.nb_annees_experience,
     e.portfolio,

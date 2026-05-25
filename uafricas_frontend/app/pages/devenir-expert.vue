@@ -23,6 +23,9 @@ const listePays = ref<PaysOptionAPI[]>([])
 const domainesDisponibles = CATEGORIES_EXPERTISE.filter(d => d !== 'Tout')
 const situationsDisponibles = PROFILS_PROFESSIONNELS.filter(s => s.id !== 'tous')
 
+// Valeur sentinelle pour le domaine « Autre » (précision libre)
+const DOMAINE_AUTRE = 'Autre'
+
 // ── État de chargement / soumission ──
 const chargementInit = ref(true)
 const soumission = ref(false)
@@ -36,6 +39,7 @@ const form = reactive({
   fonction: '',
   paysId: '',
   domaine: '',
+  domaineAutre: '',
   biographie: '',
   nbAnnees: 0,
   situations: [] as string[],
@@ -74,6 +78,12 @@ function valider(): boolean {
   if (!form.fonction.trim()) erreurs.fonction = 'Votre fonction est requise.'
   if (!form.paysId) erreurs.paysId = 'Sélectionnez votre territoire de résidence.'
   if (!form.domaine) erreurs.domaine = 'Choisissez un domaine d\'expertise.'
+  else if (form.domaine === DOMAINE_AUTRE && !form.domaineAutre.trim()) {
+    erreurs.domaineAutre = 'Précisez votre domaine d\'expertise.'
+  }
+  else if (form.domaine === DOMAINE_AUTRE && form.domaineAutre.trim().length > 120) {
+    erreurs.domaineAutre = 'La précision ne doit pas dépasser 120 caractères.'
+  }
   if (form.biographie.trim().length < 10) erreurs.biographie = 'La biographie doit contenir au moins 10 caractères.'
   else if (form.biographie.trim().length > 5000) erreurs.biographie = 'La biographie ne doit pas dépasser 5000 caractères.'
   if (form.nbAnnees < 0 || Number.isNaN(form.nbAnnees)) erreurs.nbAnnees = 'Le nombre d\'années doit être positif.'
@@ -107,12 +117,14 @@ async function soumettre() {
     })
 
     // 3. Candidature d'expertise
+    const estAutre = form.domaine === DOMAINE_AUTRE
     const body: CandidatureExpertBody = {
-      domaine: form.domaine,
+      domaine: estAutre ? 'autre' : form.domaine,
       biographie: form.biographie.trim(),
       nb_annees_experience: form.nbAnnees,
       situations_professionnelles: form.situations,
     }
+    if (estAutre) body.domaine_autre = form.domaineAutre.trim()
     if (form.portfolio.trim()) body.portfolio = form.portfolio.trim()
 
     const resultat = await creerCandidature(body)
@@ -376,8 +388,27 @@ onMounted(async () => {
             >
               <option value="">— Sélectionner —</option>
               <option v-for="d in domainesDisponibles" :key="d" :value="d">{{ d }}</option>
+              <option :value="DOMAINE_AUTRE">Autre…</option>
             </select>
             <p v-if="erreurs.domaine" class="text-xs text-red-500 mt-1">{{ erreurs.domaine }}</p>
+
+            <!-- Précision libre si « Autre » -->
+            <div v-if="form.domaine === DOMAINE_AUTRE" class="mt-3">
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Précisez votre domaine <span class="text-red-500">*</span>
+              </label>
+              <input
+                v-model="form.domaineAutre"
+                type="text"
+                maxlength="120"
+                placeholder="Ex : Cybersécurité, Droit international, Énergies renouvelables…"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+              />
+              <div class="flex justify-between mt-1">
+                <p v-if="erreurs.domaineAutre" class="text-xs text-red-500">{{ erreurs.domaineAutre }}</p>
+                <p class="text-xs text-gray-400 ml-auto">{{ form.domaineAutre.length }} / 120</p>
+              </div>
+            </div>
           </div>
 
           <!-- Biographie -->

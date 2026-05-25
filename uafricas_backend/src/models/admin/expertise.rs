@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-use crate::models::expert::mapper_domaine_frontend;
+use crate::models::expert::label_domaine;
 
 // ────────────────────────────────────────────────────────────────
 // Row brute depuis la BDD (liste + detail admin)
@@ -18,6 +18,7 @@ pub struct AdminDemandeExpertiseRow {
     pub email: String,
     pub photo_url: Option<String>,
     pub domaine: String,
+    pub domaine_autre: Option<String>,
     pub biographie: String,
     pub nb_annees_experience: i32,
     pub portfolio: Option<String>,
@@ -121,7 +122,7 @@ impl AdminDemandeExpertiseRow {
             prenom: self.prenom.clone(),
             email: self.email.clone(),
             photo_url: self.photo_url.clone(),
-            domaine: mapper_domaine_frontend(&self.domaine),
+            domaine: label_domaine(&self.domaine, self.domaine_autre.as_deref()),
             nb_annees_experience: self.nb_annees_experience,
             pays: self.pays_nom.clone(),
             statut: self.statut.clone(),
@@ -137,7 +138,7 @@ impl AdminDemandeExpertiseRow {
             prenom: self.prenom.clone(),
             email: self.email.clone(),
             photo_url: self.photo_url.clone(),
-            domaine: mapper_domaine_frontend(&self.domaine),
+            domaine: label_domaine(&self.domaine, self.domaine_autre.as_deref()),
             biographie: self.biographie.clone(),
             nb_annees_experience: self.nb_annees_experience,
             portfolio: self.portfolio.clone(),

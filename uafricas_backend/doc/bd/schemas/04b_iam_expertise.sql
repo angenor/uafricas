@@ -12,7 +12,7 @@ CREATE TYPE iam.statut_expertise AS ENUM (
 
 CREATE TYPE iam.domaine_expertise AS ENUM (
     'agriculture', 'informatique', 'electronique', 'immobilier',
-    'mecanique', 'sante', 'education', 'finance'
+    'mecanique', 'sante', 'education', 'finance', 'autre'
 );
 
 CREATE TYPE iam.situation_professionnelle AS ENUM (
@@ -31,6 +31,8 @@ CREATE TABLE iam.expertise (
     utilisateur_id              UUID         NOT NULL
                                 REFERENCES iam.utilisateur(id) ON DELETE CASCADE,
     domaine                     iam.domaine_expertise NOT NULL,
+    -- Précision libre quand domaine = 'autre' (NULL sinon)
+    domaine_autre               VARCHAR(120),
     biographie                  TEXT         NOT NULL,
     nb_annees_experience        INT          NOT NULL CHECK (nb_annees_experience >= 0),
     rating                      NUMERIC(2,1) NOT NULL DEFAULT 0.0

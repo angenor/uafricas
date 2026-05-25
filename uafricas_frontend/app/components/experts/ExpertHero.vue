@@ -33,7 +33,7 @@
                   v-model="localSearchTerm"
                   type="search"
                   class="w-full px-6 py-4 bg-white rounded-xl text-gray-900 placeholder-gray-500 focus:outline-hidden focus:ring-4 focus:ring-white/20 transition-all"
-                  placeholder="Rechercher un expert, une competence..."
+                  placeholder="Rechercher un(e) expert(e), une compétence..."
                 />
                 <svg
                   class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"

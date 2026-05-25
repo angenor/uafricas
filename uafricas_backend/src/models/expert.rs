@@ -11,6 +11,7 @@ use uuid::Uuid;
 pub const EXPERT_COLONNES: &str =
     "e.id AS expertise_id, e.utilisateur_id,
      e.domaine::text AS domaine,
+     e.domaine_autre,
      e.biographie, e.nb_annees_experience,
      e.rating::float8 AS rating,
      e.portfolio,
@@ -31,6 +32,7 @@ pub struct ExpertRow {
     pub expertise_id: Uuid,
     pub utilisateur_id: Uuid,
     pub domaine: String,
+    pub domaine_autre: Option<String>,
     pub biographie: String,
     pub nb_annees_experience: i32,
     pub rating: f64,
@@ -113,6 +115,8 @@ pub struct ExpertQueryParams {
 #[derive(Debug, Deserialize)]
 pub struct CandidatureExpertBody {
     pub domaine: String,
+    /// Précision libre lorsque `domaine` vaut "autre"
+    pub domaine_autre: Option<String>,
     pub biographie: String,
     pub nb_annees_experience: i32,
     pub portfolio: Option<String>,
@@ -128,6 +132,7 @@ pub struct CandidatureExpertBody {
 pub struct MaCandidatureRow {
     pub id: Uuid,
     pub domaine: String,
+    pub domaine_autre: Option<String>,
     pub biographie: String,
     pub nb_annees_experience: i32,
     pub portfolio: Option<String>,
@@ -162,7 +167,7 @@ impl MaCandidatureRow {
     pub fn to_response(&self) -> MaCandidatureResponse {
         MaCandidatureResponse {
             id: self.id,
-            domaine: mapper_domaine_frontend(&self.domaine),
+            domaine: label_domaine(&self.domaine, self.domaine_autre.as_deref()),
             biographie: self.biographie.clone(),
             nb_annees_experience: self.nb_annees_experience,
             portfolio: self.portfolio.clone(),
@@ -190,8 +195,19 @@ pub fn mapper_domaine_frontend(db_val: &str) -> String {
         "sante" => "Santé".to_string(),
         "education" => "Éducation".to_string(),
         "finance" => "Finance".to_string(),
+        "autre" => "Autre".to_string(),
         autre => autre.to_string(),
     }
+}
+
+/// Label de domaine affiché : la précision libre si `domaine = 'autre'`, sinon le label standard.
+pub fn label_domaine(db_val: &str, domaine_autre: Option<&str>) -> String {
+    if db_val == "autre" {
+        if let Some(precision) = domaine_autre.map(str::trim).filter(|p| !p.is_empty()) {
+            return precision.to_string();
+        }
+    }
+    mapper_domaine_frontend(db_val)
 }
 
 /// Mapper domaine frontend vers valeur DB (snake_case)
@@ -205,6 +221,7 @@ pub fn mapper_domaine_db(frontend_val: &str) -> String {
         "sante" | "santé" => "sante".to_string(),
         "education" | "éducation" => "education".to_string(),
         "finance" => "finance".to_string(),
+        "autre" => "autre".to_string(),
         autre => autre.to_string(),
     }
 }
@@ -225,7 +242,7 @@ impl ExpertRow {
             ville: self.ville.clone(),
             email: self.email.clone(),
             expertise_info: ExpertiseInfoResponse {
-                domaine: mapper_domaine_frontend(&self.domaine),
+                domaine: label_domaine(&self.domaine, self.domaine_autre.as_deref()),
                 biographie: self.biographie.clone(),
                 nb_annees_experience: self.nb_annees_experience,
                 rating: self.rating,

@@ -82,7 +82,7 @@
                     />
                   </svg>
                 </div>
-                <span class="font-semibold text-gray-900">Trouver un expert sur mesure</span>
+                <span class="font-semibold text-gray-900">Trouver un(e) expert(e) sur mesure</span>
                 <svg
                   class="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform"
                   fill="none"
@@ -260,7 +260,7 @@
                   />
                 </svg>
               </div>
-              <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun expert trouve</h3>
+              <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun(e) expert(e) trouvé(e)</h3>
               <p class="text-gray-500 max-w-md mx-auto">
                 Essayez de modifier vos criteres de recherche ou explorez d'autres domaines
                 d'expertise.

@@ -59,6 +59,8 @@ export interface ExpertFiltres {
 /** Body pour creer une candidature */
 export interface CandidatureExpertBody {
   domaine: string
+  /** Précision libre lorsque `domaine` vaut "autre" */
+  domaine_autre?: string
   biographie: string
   nb_annees_experience: number
   portfolio?: string
