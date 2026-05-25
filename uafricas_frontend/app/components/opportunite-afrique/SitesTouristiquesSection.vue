@@ -13,15 +13,17 @@ interface Props {
 
 const props = defineProps<Props>()
 
+type OpenContributionPayload = {
+  type_objet_contribution: TypeObjetContribution
+  section_afripulse: SectionAfripulse
+  type_contribution: 'ajout' | 'edition' | 'suppression'
+  target_id?: string
+  donnees_actuelles?: Record<string, unknown>
+  libelle?: string
+}
+
 const emit = defineEmits<{
-  (
-    e: 'open-contribution',
-    payload: {
-      type_objet_contribution: TypeObjetContribution
-      section_afripulse: SectionAfripulse
-      type_contribution: 'ajout'
-    }
-  ): void
+  (e: 'open-contribution', payload: OpenContributionPayload): void
 }>()
 
 const { listerSitesTouristiques } = useOpportuniteAfrique()
@@ -49,7 +51,11 @@ onMounted(async () => {
 
 const router = useRouter()
 
-const proposerSite = (section: 'sites_emblematiques' | 'sites_prives') => {
+const ouvrirContribution = (
+  type_contribution: 'ajout' | 'edition' | 'suppression',
+  section: 'sites_emblematiques' | 'sites_prives',
+  site?: SiteTouristiqueAPI,
+) => {
   if (!props.estAuthentifie) {
     router.push('/login')
     return
@@ -57,9 +63,21 @@ const proposerSite = (section: 'sites_emblematiques' | 'sites_prives') => {
   emit('open-contribution', {
     type_objet_contribution: 'site_touristique',
     section_afripulse: section,
-    type_contribution: 'ajout',
+    type_contribution,
+    target_id: site?.id,
+    donnees_actuelles: site
+      ? { nom: site.nom, description: site.description, image_url: site.image_url }
+      : undefined,
+    libelle: site?.nom,
   })
 }
+
+const proposerSite = (section: 'sites_emblematiques' | 'sites_prives') => {
+  ouvrirContribution('ajout', section)
+}
+
+const sectionDe = (site: SiteTouristiqueAPI): 'sites_emblematiques' | 'sites_prives' =>
+  site.categorie === 'prive' ? 'sites_prives' : 'sites_emblematiques'
 </script>
 
 <template>
@@ -125,6 +143,28 @@ const proposerSite = (section: 'sites_emblematiques' | 'sites_prives') => {
                 <p v-if="site.description" class="text-sm text-gray-600 line-clamp-3">
                   {{ site.description }}
                 </p>
+                <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
+                    @click="ouvrirContribution('edition', sectionDe(site), site)"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Modifier
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
+                    @click="ouvrirContribution('suppression', sectionDe(site), site)"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Supprimer
+                  </button>
+                </div>
               </div>
             </article>
           </div>
@@ -185,6 +225,28 @@ const proposerSite = (section: 'sites_emblematiques' | 'sites_prives') => {
                 <p v-if="site.description" class="text-sm text-gray-600 line-clamp-3">
                   {{ site.description }}
                 </p>
+                <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
+                    @click="ouvrirContribution('edition', sectionDe(site), site)"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Modifier
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
+                    @click="ouvrirContribution('suppression', sectionDe(site), site)"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Supprimer
+                  </button>
+                </div>
               </div>
             </article>
           </div>

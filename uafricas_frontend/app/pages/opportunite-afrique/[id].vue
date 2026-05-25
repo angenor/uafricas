@@ -5,21 +5,21 @@
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-custom-green"></div>
     </div>
 
-    <!-- Pays non trouve -->
+    <!-- Pays non trouvé -->
     <div v-else-if="!pays" class="flex flex-col items-center justify-center h-screen">
       <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
       </svg>
-      <h1 class="text-2xl font-bold text-gray-700 mb-2">Territoire non trouve</h1>
+      <h1 class="text-2xl font-bold text-gray-700 mb-2">Territoire non trouvé</h1>
       <p class="text-gray-500 mb-4">Le territoire que vous recherchez n'existe pas dans notre base.</p>
       <NuxtLink to="/opportunite-afrique" class="text-custom-green hover:underline">
-        &#8592; Retour a la liste des territoires
+        &#8592; Retour à la liste des territoires
       </NuxtLink>
     </div>
 
     <!-- Contenu -->
     <template v-else>
-      <!-- Hero Section avec image de couverture -->
+      <!-- Hero section avec image de couverture -->
       <div class="relative h-56 md:h-72 bg-cover bg-center"
            :style="{ backgroundImage: `url(${pays.image_couverture})` }">
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
@@ -41,7 +41,7 @@
               </div>
             </div>
 
-            <!-- Badge region -->
+            <!-- Badge région -->
             <div class="mt-4">
               <span class="px-4 py-2 bg-custom-green text-white rounded-full text-sm font-medium">
                 {{ pays.region }}
@@ -63,13 +63,13 @@
                    class="w-full h-64 md:h-80 object-cover" />
             </div>
 
-            <!-- Informations generales -->
+            <!-- Informations générales -->
             <div class="bg-white rounded-lg shadow-md p-6">
               <h2 class="text-2xl font-bold mb-6 flex items-center">
                 <svg class="w-6 h-6 mr-2 text-custom-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                Informations generales
+                Informations générales
               </h2>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -135,7 +135,7 @@
               <div class="space-y-6">
                 <!-- Langues -->
                 <div>
-                  <h3 class="text-sm font-medium text-gray-500 mb-3">Langues parlees</h3>
+                  <h3 class="text-sm font-medium text-gray-500 mb-3">Langues parlées</h3>
                   <div class="flex flex-wrap gap-2">
                     <span v-for="langue in pays.langues" :key="langue"
                           class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
@@ -144,9 +144,9 @@
                   </div>
                 </div>
 
-                <!-- Ethnies -->
+                <!-- Ethnies / groupes ethniques -->
                 <div>
-                  <h3 class="text-sm font-medium text-gray-500 mb-3">Principales ethnies</h3>
+                  <h3 class="text-sm font-medium text-gray-500 mb-3">Principaux groupes ethniques</h3>
                   <div class="flex flex-wrap gap-2">
                     <span v-for="ethnie in pays.ethnies" :key="ethnie"
                           class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
@@ -220,7 +220,7 @@
               <h3 class="text-lg font-bold mb-4">Statistiques</h3>
               <div class="space-y-4">
                 <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                  <span class="text-gray-600">Region</span>
+                  <span class="text-gray-600">Région</span>
                   <span class="font-medium text-custom-green">{{ pays.region }}</span>
                 </div>
                 <div class="flex items-center justify-between py-2 border-b border-gray-100">
@@ -228,7 +228,7 @@
                   <span class="font-medium">{{ pays.nombre_contributions }}</span>
                 </div>
                 <div class="flex items-center justify-between py-2">
-                  <span class="text-gray-600">Derniere mise a jour</span>
+                  <span class="text-gray-600">Dernière mise à jour</span>
                   <span class="font-medium text-sm">{{ formatDate(pays.updated_at) }}</span>
                 </div>
               </div>
@@ -254,7 +254,7 @@
                   <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                   </svg>
-                  Signaler un probleme
+                  Signaler un problème
                 </button>
 
                 <NuxtLink to="/opportunite-afrique"
@@ -262,7 +262,7 @@
                   <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                   </svg>
-                  Retour a la liste
+                  Retour à la liste
                 </NuxtLink>
               </div>
             </div>
@@ -310,6 +310,8 @@ interface AfripulseContext {
   section_afripulse: SectionAfripulse
   type_contribution: 'ajout' | 'edition' | 'suppression'
   target_id?: string
+  donnees_actuelles?: Record<string, unknown>
+  libelle?: string
 }
 
 const pays = ref<FichePaysDetailAPI | null>(null)
@@ -410,9 +412,9 @@ onMounted(async () => {
     contributeurs.value = await listerContributeurs(pays.value.id)
 
     useHead({
-      title: `${pays.value.nom} - Opportunites en Afrique - UAfricas`,
+      title: `${pays.value.nom} - Opportunités en Afrique - UAfricas`,
       meta: [
-        { name: 'description', content: `Decouvrez le ${pays.value.nom}: capitale ${pays.value.capitale}, population ${pays.value.population}, langues et culture.` }
+        { name: 'description', content: `Découvrez le ${pays.value.nom} : capitale ${pays.value.capitale}, population ${pays.value.population}, langues et culture.` }
       ]
     })
   }

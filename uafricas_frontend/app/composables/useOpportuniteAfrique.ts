@@ -492,51 +492,8 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
-  /** Valider une contribution (admin) */
-  const validerContribution = async (
-    contributionId: string,
-    note?: string,
-  ): Promise<ContributionFicheAPI | null> => {
-    try {
-      const reponse = await $fetch<ApiResponse<ContributionFicheAPI>>(
-        `${apiBase}/api/fiches-pays/contributions/${contributionId}/valider`,
-        {
-          method: 'PUT',
-          headers: authHeaders(),
-          body: { note_moderation: note },
-        },
-      )
-      if (!reponse.success || !reponse.data) return null
-      return reponse.data
-    }
-    catch (e: any) {
-      console.error('Erreur validerContribution:', e)
-      return null
-    }
-  }
-
-  /** Rejeter une contribution (admin) */
-  const rejeterContribution = async (
-    contributionId: string,
-    note?: string,
-  ): Promise<ContributionFicheAPI | null> => {
-    try {
-      const reponse = await $fetch<ApiResponse<ContributionFicheAPI>>(
-        `${apiBase}/api/fiches-pays/contributions/${contributionId}/rejeter`,
-        {
-          method: 'PUT',
-          headers: authHeaders(),
-          body: { note_moderation: note },
-        },
-      )
-      if (!reponse.success || !reponse.data) return null
-      return reponse.data
-    }
-    catch (e: any) {
-      console.error('Erreur rejeterContribution:', e)
-      return null
-    }
-  }
+  // La modération des contributions (valider/rejeter) est réservée à l'admin
+  // et passe par useAdminContributions (PATCH /api/admin/profils-pays/contributions/{id}/etat).
 
   // ── Afripulse — Méthodes de soumission et de lecture enrichies ──────
 
@@ -861,8 +818,6 @@ export const useOpportuniteAfrique = () => {
     soumettreContribution,
     listerContributions,
     listerContributeurs,
-    validerContribution,
-    rejeterContribution,
     // Afripulse (sections enrichies)
     soumettreContributionEnrichie,
     listerSitesTouristiques,

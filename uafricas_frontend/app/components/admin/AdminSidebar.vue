@@ -218,7 +218,10 @@ const sidebarSections: SidebarSection[] = [
   {
     label: 'Profils territoires',
     faIcon: 'earth-africa',
-    route: '/admin/profils-pays',
+    children: [
+      { label: 'Fiches territoires', faIcon: 'earth-africa', route: '/admin/profils-pays' },
+      { label: 'Contributions', faIcon: 'clipboard-list', route: '/admin/profils-pays/contributions' },
+    ],
   },
   {
     label: 'Bibliothèques Humaines',

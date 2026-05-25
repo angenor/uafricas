@@ -14,15 +14,17 @@ interface Props {
 
 const props = defineProps<Props>()
 
+type OpenContributionPayload = {
+  type_objet_contribution: TypeObjetContribution
+  section_afripulse: SectionAfripulse
+  type_contribution: 'ajout' | 'edition' | 'suppression'
+  target_id?: string
+  donnees_actuelles?: Record<string, unknown>
+  libelle?: string
+}
+
 const emit = defineEmits<{
-  (
-    e: 'open-contribution',
-    payload: {
-      type_objet_contribution: TypeObjetContribution
-      section_afripulse: SectionAfripulse
-      type_contribution: 'ajout'
-    }
-  ): void
+  (e: 'open-contribution', payload: OpenContributionPayload): void
 }>()
 
 const { listerSavoirsPratiques } = useOpportuniteAfrique()
@@ -62,7 +64,10 @@ const basculerCategorie = (cat: CategorieSavoir) => {
 
 const router = useRouter()
 
-const proposerSavoir = () => {
+const ouvrirContribution = (
+  type_contribution: 'ajout' | 'edition' | 'suppression',
+  savoir?: SavoirPratiqueAPI,
+) => {
   if (!props.estAuthentifie) {
     router.push('/login')
     return
@@ -70,8 +75,22 @@ const proposerSavoir = () => {
   emit('open-contribution', {
     type_objet_contribution: 'savoir_pratique',
     section_afripulse: 'savoir_avant_voyager',
-    type_contribution: 'ajout',
+    type_contribution,
+    target_id: savoir?.id,
+    donnees_actuelles: savoir
+      ? {
+          titre: savoir.titre,
+          categorie: savoir.categorie,
+          explication: savoir.explication,
+          exemple: savoir.exemple,
+        }
+      : undefined,
+    libelle: savoir?.titre,
   })
+}
+
+const proposerSavoir = () => {
+  ouvrirContribution('ajout')
 }
 </script>
 
@@ -145,6 +164,28 @@ const proposerSavoir = () => {
               <p v-if="s.exemple" class="text-sm italic text-gray-500 border-l-2 border-custom-green pl-3">
                 {{ s.exemple }}
               </p>
+              <div class="flex items-center gap-3 mt-3">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
+                  @click="ouvrirContribution('edition', s)"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Modifier
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
+                  @click="ouvrirContribution('suppression', s)"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Supprimer
+                </button>
+              </div>
             </article>
           </div>
         </div>

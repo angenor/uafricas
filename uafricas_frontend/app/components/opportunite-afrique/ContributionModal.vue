@@ -12,6 +12,10 @@ interface AfripulseContext {
   section_afripulse: SectionAfripulse
   type_contribution: 'ajout' | 'edition' | 'suppression'
   target_id?: string
+  /** Valeurs actuelles de l'élément (pré-remplissage en édition / aperçu en suppression) */
+  donnees_actuelles?: Record<string, unknown>
+  /** Libellé lisible de l'élément concerné (confirmation de suppression) */
+  libelle?: string
 }
 
 interface Props {
@@ -50,6 +54,8 @@ const emit = defineEmits<{
 
 const contexteAfripulse = ref<AfripulseContext | null>(props.afripulseContext)
 const estModeAfripulse = computed(() => contexteAfripulse.value !== null)
+const typeAction = computed(() => contexteAfripulse.value?.type_contribution ?? 'ajout')
+const estSuppression = computed(() => typeAction.value === 'suppression')
 
 const form = reactive({
   section: '',
@@ -105,16 +111,26 @@ const sections = SECTIONS_FICHE_PAYS
 const titreModal = computed(() => {
   if (!estModeAfripulse.value) return 'Proposer une contribution'
   const ctx = contexteAfripulse.value!
-  const map: Record<TypeObjetContribution, string> = {
-    fiche_pays: 'Contribuer à la fiche territoire',
-    site_touristique: 'Proposer un site touristique',
-    secteur_developpement: 'Proposer un secteur d\'opportunité',
-    personnalite_connue: 'Proposer une personnalité',
-    savoir_pratique: 'Proposer un savoir pratique',
-    recommandation_visiteur: 'Laisser une recommandation',
-    photo_visiteur: 'Proposer une photo',
+  const cibles: Record<TypeObjetContribution, string> = {
+    fiche_pays: 'la fiche territoire',
+    site_touristique: 'un site touristique',
+    secteur_developpement: 'un secteur d\'opportunité',
+    personnalite_connue: 'une personnalité',
+    savoir_pratique: 'un savoir pratique',
+    recommandation_visiteur: 'une recommandation',
+    photo_visiteur: 'une photo',
   }
-  return map[ctx.type_objet_contribution] ?? 'Contribuer'
+  const cible = cibles[ctx.type_objet_contribution] ?? 'un élément'
+  if (ctx.type_contribution === 'edition') return `Modifier ${cible}`
+  if (ctx.type_contribution === 'suppression') return `Supprimer ${cible}`
+  return `Proposer ${cible}`
+})
+
+const labelBouton = computed(() => {
+  if (form.loading) return 'Envoi...'
+  if (estSuppression.value) return 'Proposer la suppression'
+  if (typeAction.value === 'edition') return 'Proposer la modification'
+  return 'Soumettre'
 })
 
 const resetForm = () => {
@@ -139,6 +155,27 @@ const resetForm = () => {
   formAfripulse.titre = ''
   formAfripulse.categorie = 'autre'
   formAfripulse.explication = ''
+  formAfripulse.exemple = ''
+}
+
+/** Pré-remplit le formulaire Afripulse avec les valeurs actuelles (édition / suppression) */
+const prefillAfripulse = (ctx: AfripulseContext | null) => {
+  const d = ctx?.donnees_actuelles
+  if (!d) return
+  if (typeof d.nom === 'string') formAfripulse.nom = d.nom
+  if (typeof d.description === 'string') formAfripulse.description = d.description
+  if (typeof d.image_url === 'string') formAfripulse.image_url = d.image_url
+  if (typeof d.nom_complet === 'string') formAfripulse.nom_complet = d.nom_complet
+  if (typeof d.domaine === 'string') formAfripulse.domaine = d.domaine as DomainePersonnalite
+  if (typeof d.biographie_courte === 'string') formAfripulse.biographie_courte = d.biographie_courte
+  if (typeof d.annee_naissance === 'number') formAfripulse.annee_naissance = d.annee_naissance
+  if (typeof d.annee_deces === 'number') formAfripulse.annee_deces = d.annee_deces
+  if (typeof d.portrait_url === 'string') formAfripulse.portrait_url = d.portrait_url
+  if (typeof d.lien_reference === 'string') formAfripulse.lien_reference = d.lien_reference
+  if (typeof d.titre === 'string') formAfripulse.titre = d.titre
+  if (typeof d.categorie === 'string') formAfripulse.categorie = d.categorie as CategorieSavoir
+  if (typeof d.explication === 'string') formAfripulse.explication = d.explication
+  if (typeof d.exemple === 'string') formAfripulse.exemple = d.exemple
 }
 
 const construirePayloadAfripulse = (): Record<string, unknown> | null => {
@@ -146,8 +183,13 @@ const construirePayloadAfripulse = (): Record<string, unknown> | null => {
   const type = contexteAfripulse.value.type_objet_contribution
   if (type === 'site_touristique') {
     if (!formAfripulse.nom.trim() || !formAfripulse.description.trim()) return null
+    // La catégorie (enum SQL) dérive de la section : emblématique vs privé.
+    const categorie = contexteAfripulse.value?.section_afripulse === 'sites_prives'
+      ? 'prive'
+      : 'emblematique'
     return {
       nom: formAfripulse.nom.trim(),
+      categorie,
       description: formAfripulse.description.trim(),
       image_url: formAfripulse.image_url.trim() || null,
     }
@@ -188,13 +230,19 @@ const handleSubmit = () => {
   form.errorMessage = ''
 
   if (estModeAfripulse.value) {
-    const payload = construirePayloadAfripulse()
-    if (!payload) {
-      form.error = true
-      form.errorMessage = 'Veuillez remplir les champs obligatoires.'
-      return
-    }
     const ctx = contexteAfripulse.value!
+    // En suppression, aucun champ n'est requis : le backend retire l'élément ciblé via target_id.
+    let payload: Record<string, unknown> | null
+    if (estSuppression.value) {
+      payload = ctx.donnees_actuelles ?? {}
+    } else {
+      payload = construirePayloadAfripulse()
+      if (!payload) {
+        form.error = true
+        form.errorMessage = 'Veuillez remplir les champs obligatoires.'
+        return
+      }
+    }
     form.loading = true
     emit('submit', {
       mode: 'afripulse',
@@ -247,6 +295,7 @@ defineExpose({
   openWithContext: (ctx: AfripulseContext) => {
     resetForm()
     contexteAfripulse.value = ctx
+    prefillAfripulse(ctx)
   },
 })
 
@@ -258,7 +307,13 @@ watch(() => props.isOpen, (isOpen) => {
 })
 
 watch(() => props.afripulseContext, (ctx) => {
-  contexteAfripulse.value = ctx ?? null
+  if (ctx) {
+    resetForm()
+    contexteAfripulse.value = ctx
+    prefillAfripulse(ctx)
+  } else {
+    contexteAfripulse.value = null
+  }
 })
 </script>
 
@@ -306,7 +361,21 @@ watch(() => props.afripulseContext, (ctx) => {
           </div>
 
           <template v-if="estModeAfripulse && contexteAfripulse">
-            <template v-if="contexteAfripulse.type_objet_contribution === 'site_touristique'">
+            <div
+              v-if="estSuppression"
+              class="bg-amber-50 border border-amber-200 text-amber-800 rounded-md p-4 text-sm"
+            >
+              <p class="font-medium mb-1">Proposer la suppression de cet élément</p>
+              <p v-if="contexteAfripulse.libelle">
+                Élément concerné : <strong>« {{ contexteAfripulse.libelle }} »</strong>.
+              </p>
+              <p class="mt-2">
+                Aucune suppression ne sera effectuée immédiatement. Votre proposition sera
+                examinée par un administrateur avant d'être appliquée.
+              </p>
+            </div>
+
+            <template v-else-if="contexteAfripulse.type_objet_contribution === 'site_touristique'">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nom du site *</label>
                 <input
@@ -521,10 +590,13 @@ watch(() => props.afripulseContext, (ctx) => {
           <button
             type="button"
             :disabled="form.loading"
-            class="px-4 py-2 text-sm font-medium text-white bg-custom-chocolat rounded-md hover:bg-custom-chocolat/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            :class="estSuppression
+              ? 'bg-red-600 hover:bg-red-700'
+              : 'bg-custom-chocolat hover:bg-custom-chocolat/90'"
             @click="handleSubmit"
           >
-            {{ form.loading ? 'Envoi...' : 'Soumettre' }}
+            {{ labelBouton }}
           </button>
         </div>
       </div>

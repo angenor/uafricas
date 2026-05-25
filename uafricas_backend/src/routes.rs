@@ -590,9 +590,8 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/regions", web::get().to(fiches_pays::lister_regions))
                     // T071 — mes contributions (utilisateur connecte)
                     .route("/moi/contributions", web::get().to(afripulse_public::lister_mes_contributions))
-                    // Contributions (routes statiques avant parametrees)
-                    .route("/contributions/{id}/valider", web::put().to(contributions_fiche::valider_contribution))
-                    .route("/contributions/{id}/rejeter", web::put().to(contributions_fiche::rejeter_contribution))
+                    // La modération des contributions (valider/rejeter) se fait via
+                    // /api/admin/profils-pays/contributions/{id}/etat (admin::profils_pays::moderer_contribution).
                     // Routes parametrees
                     .route("/{id}", web::get().to(fiches_pays::obtenir_fiche))
                     .route("/{id}/contributions", web::get().to(contributions_fiche::lister_contributions))

@@ -1806,9 +1806,10 @@ pub async fn moderer_contribution(
         ));
     }
 
-    // Charger la contribution (JSONB + metadata)
+    // Charger la contribution (JSONB Afripulse + champs legacy scalaires + metadata)
     let row: (
         Uuid, Uuid, Uuid, String, String, Option<String>, Option<Uuid>, Option<Value>, Option<Value>, Value,
+        String, String, Option<String>,
     ) = sqlx::query_as(
         "SELECT cf.id, cf.fiche_pays_id, cf.cree_par,
                 cf.etat::text,
@@ -1817,7 +1818,10 @@ pub async fn moderer_contribution(
                 cf.target_id,
                 cf.nouvelle_valeur_jsonb,
                 cf.ancienne_valeur_jsonb,
-                cf.pieces_jointes
+                cf.pieces_jointes,
+                cf.type_contribution::text,
+                cf.section,
+                cf.nouvelle_valeur
          FROM country_profile.contribution_fiche cf
          WHERE cf.id = $1 AND cf.deleted_at IS NULL",
     )
@@ -1837,6 +1841,9 @@ pub async fn moderer_contribution(
         nouvelle_jsonb,
         _ancienne_jsonb,
         pieces_json,
+        type_contribution,
+        section_legacy,
+        nouvelle_valeur_legacy,
     ) = row;
 
     if etat_actuel != "en_attente" {
@@ -1866,17 +1873,31 @@ pub async fn moderer_contribution(
     let mut target_applique: Option<Uuid> = target_id;
 
     if etat == "approuvee" {
-        // 2. Appliquer l'effet sur la table cible
-        target_applique = appliquer_contribution_afripulse(
-            &mut tx,
-            fiche_pays_id,
-            auteur_id,
-            &type_objet,
-            target_id,
-            nouvelle_jsonb.as_ref(),
-            &pieces_json,
-        )
-        .await?;
+        // 2. Appliquer l'effet sur la table cible.
+        //    Cas legacy : contribution scalaire sur la fiche pays elle-même
+        //    (population, slogan, biographie, etc.) stockée en `section` + `nouvelle_valeur`.
+        if type_objet == "fiche_pays" && type_contribution == "modification" {
+            appliquer_fiche_scalaire(
+                &mut tx,
+                fiche_pays_id,
+                &section_legacy,
+                nouvelle_valeur_legacy.as_deref().unwrap_or(""),
+            )
+            .await?;
+            target_applique = None;
+        } else {
+            target_applique = appliquer_contribution_afripulse(
+                &mut tx,
+                fiche_pays_id,
+                auteur_id,
+                &type_objet,
+                &type_contribution,
+                target_id,
+                nouvelle_jsonb.as_ref(),
+                &pieces_json,
+            )
+            .await?;
+        }
 
         // 3. Marquer obsoletes les contributions concurrentes (T036 pt. 3)
         sqlx::query(
@@ -2106,27 +2127,59 @@ pub async fn retirer_contribution_approuvee(
 
 /// Applique l'effet d'une contribution approuvee sur la table cible. Retourne
 /// `target_id` effectivement impacte (utile pour la reponse API et l'audit).
+/// Applique une contribution legacy scalaire directement sur la fiche pays
+/// (champs texte/numériques de `country_profile.fiche_pays`). La colonne ciblée
+/// est déterminée par `section`. Les sections inconnues sont ignorées sans erreur.
+async fn appliquer_fiche_scalaire(
+    tx: &mut Transaction<'_, Postgres>,
+    fiche_pays_id: Uuid,
+    section: &str,
+    nouvelle_valeur: &str,
+) -> Result<(), ApiErreur> {
+    // Colonne SQL (avec cast éventuel) autorisée par section — liste fermée.
+    let set_clause = match section {
+        "population" => "population = $1::bigint",
+        "superficie_km2" => "superficie_km2 = $1::decimal",
+        "biographie" => "biographie = $1",
+        "contexte" => "contexte = $1",
+        "contexte_historique" => "contexte_historique = $1",
+        "slogan" => "slogan = $1",
+        "hymne_national" => "hymne_national = $1",
+        "langue_officielle" => "langue_officielle = $1",
+        "langues_populaires" => "langues_populaires = $1",
+        "monnaie" => "monnaie = $1",
+        "fuseau_horaire" => "fuseau_horaire = $1",
+        _ => return Ok(()),
+    };
+
+    let requete = format!(
+        "UPDATE country_profile.fiche_pays SET {}, updated_at = NOW() WHERE id = $2",
+        set_clause
+    );
+    sqlx::query(&requete)
+        .bind(nouvelle_valeur)
+        .bind(fiche_pays_id)
+        .execute(&mut **tx)
+        .await?;
+    Ok(())
+}
+
 async fn appliquer_contribution_afripulse(
     tx: &mut Transaction<'_, Postgres>,
     fiche_pays_id: Uuid,
     auteur_id: Uuid,
     type_objet: &str,
+    type_contribution: &str,
     target_id: Option<Uuid>,
     nouvelle_jsonb: Option<&Value>,
     pieces_json: &Value,
 ) -> Result<Option<Uuid>, ApiErreur> {
-    // Le type_contribution reel n'est pas present dans l'appelant ; on le
-    // deduit : target_id + nouvelle_jsonb => edition ; target_id seul => suppression ;
-    // nouvelle_jsonb seul => ajout.
-    let type_contrib = match (target_id, nouvelle_jsonb) {
-        (Some(_), Some(_)) => "edition",
-        (Some(_), None) => "suppression",
-        (None, Some(_)) => "ajout",
-        (None, None) => {
-            // type_objet photo_visiteur peut n'avoir ni target ni JSONB (pieces
-            // uniquement) — considerer comme ajout.
-            "ajout"
-        }
+    // Le type d'action provient directement de la colonne `type_contribution`
+    // (fiable) — l'enum SQL utilise « modification », les branches internes « edition ».
+    let type_contrib = if type_contribution == "modification" {
+        "edition"
+    } else {
+        type_contribution
     };
 
     match (type_objet, type_contrib) {
