@@ -1,22 +1,19 @@
 <template>
   <div class="min-h-screen pb-10 bg-gray-50">
-    <!-- Hero Section -->
+    <!-- Hero Section (compact) -->
     <div
-      class="relative h-80 bg-cover bg-center"
+      class="relative bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
     >
       <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
-        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title text-center px-4">
+      <div class="relative max-w-4xl mx-auto px-4 pt-20 pb-12 text-center">
+        <h1 class="text-white text-3xl md:text-4xl font-bold animate-title">
           Codimoi
         </h1>
-        <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
-        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle max-w-4xl text-center px-4">
-          Préservons nos cultures les meilleures
-        </p>
-        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
-          Codifier, documenter des faits, des récits, des images et des souvenirs qui illustrent l'histoire avant la colonisation, pendant et après de l'Afrique et l'histoire des afro-descendants.
+        <div class="h-1 w-20 bg-custom-green rounded mx-auto mt-3 animate-line"></div>
+        <p class="text-white/90 text-base md:text-lg mt-3 animate-subtitle">
+          Préservons nos cultures les meilleures — codifier les récits, images et souvenirs de l'Afrique et des afro-descendants.
         </p>
       </div>
     </div>
