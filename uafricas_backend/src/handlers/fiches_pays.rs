@@ -111,7 +111,8 @@ pub async fn lister_fiches(
     params: web::Query<FichePaysQueryParams>,
 ) -> Result<HttpResponse, ApiErreur> {
     let page = params.page.unwrap_or(1).max(1);
-    let par_page = params.par_page.unwrap_or(20).clamp(1, 54);
+    // Plafond = périmètre Afripulse complet (54 États + Sahara occidental).
+    let par_page = params.par_page.unwrap_or(20).clamp(1, 60);
     let offset = (page - 1) * par_page;
 
     // Construction dynamique du WHERE

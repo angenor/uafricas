@@ -126,6 +126,7 @@
 \ir schemas/20_seed_fiches_pays.sql
 \ir schemas/21_seed_facultes.sql
 \ir schemas/22_seed_experts.sql
+\ir schemas/30_seed_pays_africains.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════
