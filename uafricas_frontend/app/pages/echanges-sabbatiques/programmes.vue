@@ -59,8 +59,6 @@
           v-for="programme in programmesFiltres"
           :key="programme.id"
           :programme="programme"
-          data-aos="fade-up"
-          data-aos-duration="400"
           @click="voirDetail"
         />
       </div>

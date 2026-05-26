@@ -568,7 +568,19 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/sabbatiques")
                     .route("", web::get().to(sabbatiques::lister_programmes))
                     .route("", web::post().to(sabbatiques::creer_programme))
-                    .route("/{id}", web::get().to(sabbatiques::obtenir_programme)),
+                    .route("/{id}", web::get().to(sabbatiques::obtenir_programme))
+                    .route(
+                        "/{id}/candidatures",
+                        web::get().to(sabbatiques::lister_candidatures),
+                    )
+                    .route(
+                        "/{id}/candidatures",
+                        web::post().to(sabbatiques::candidater),
+                    )
+                    .route(
+                        "/{id}/candidatures/{candidature_id}/retenir",
+                        web::post().to(sabbatiques::selectionner_candidat),
+                    ),
             )
             // Routes des facultes INUDA
             .service(

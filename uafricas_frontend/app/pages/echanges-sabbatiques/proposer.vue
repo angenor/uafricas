@@ -23,15 +23,6 @@
             Les champs marqués d'un <span class="text-red-500">*</span> sont obligatoires.
           </p>
 
-          <!-- Message de succès -->
-          <div
-            v-if="succes"
-            class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm mb-6 flex items-center gap-2"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-check']" />
-            Votre projet d'échange a été soumis avec succès !
-          </div>
-
           <!-- Message d'erreur -->
           <div
             v-if="erreur"
@@ -180,29 +171,32 @@
                   {{ duree.label }}
                 </option>
               </select>
+              <p class="text-xs text-gray-400 mt-1">
+                Durée comprise entre 2 semaines et 12 mois.
+              </p>
             </div>
 
             <!-- Dates début & fin -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label for="date-debut" class="block text-sm font-medium text-gray-700 mb-1">
-                  Date & heure de début <span class="text-red-500">*</span>
+                  Date de début <span class="text-red-500">*</span>
                 </label>
                 <input
                   id="date-debut"
                   v-model="form.dateDebut"
-                  type="datetime-local"
+                  type="date"
                   class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden"
                 />
               </div>
               <div>
                 <label for="date-fin" class="block text-sm font-medium text-gray-700 mb-1">
-                  Date & heure de fin <span class="text-red-500">*</span>
+                  Date de fin <span class="text-red-500">*</span>
                 </label>
                 <input
                   id="date-fin"
                   v-model="form.dateFin"
-                  type="datetime-local"
+                  type="date"
                   class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden"
                 />
               </div>
@@ -261,8 +255,40 @@
             <!-- Informations organisateur -->
             <div class="border-t pt-5 mt-5">
               <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
-                Informations de l'organisateur
+                Organisation soumettante
               </h3>
+
+              <!-- Type d'organisation -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Type d'organisation <span class="text-red-500">*</span>
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <label
+                    v-for="org in TYPES_ORGANISATION"
+                    :key="org.value"
+                    class="cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="type-organisation"
+                      :value="org.value"
+                      v-model="form.typeOrganisation"
+                      class="hidden"
+                    />
+                    <div
+                      class="text-center py-3 px-2 rounded-md border-2 transition-all text-sm font-medium"
+                      :class="form.typeOrganisation === org.value
+                        ? 'border-custom-green bg-custom-green/10 text-custom-green'
+                        : 'border-gray-200 text-gray-500 hover:border-gray-300'"
+                    >
+                      <font-awesome-icon :icon="['fas', org.icon]" class="mr-2" />
+                      {{ org.label }}
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label for="org-nom" class="block text-sm font-medium text-gray-700 mb-1">
@@ -316,6 +342,51 @@
         </div>
       </div>
     </section>
+
+    <!-- Modale de succès -->
+    <Teleport to="body">
+      <div
+        v-if="succes"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+        @click.self="fermerSucces"
+      >
+        <div class="bg-white rounded-lg shadow-2xl max-w-md w-full p-8 text-center">
+          <div class="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+            <font-awesome-icon :icon="['fas', 'circle-check']" class="text-3xl text-custom-green" />
+          </div>
+          <h2 class="text-xl font-bold text-custom-chocolat mb-2">
+            Projet soumis avec succès !
+          </h2>
+          <p class="text-gray-600 text-sm mb-6">
+            Votre projet d'échange sabbatique a bien été enregistré. Les candidats
+            pourront désormais postuler.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              class="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+              @click="fermerSucces"
+            >
+              Proposer un autre projet
+            </button>
+            <NuxtLink
+              v-if="dernierProgrammeId"
+              :to="`/echanges-sabbatiques/${dernierProgrammeId}`"
+              class="px-5 py-2.5 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
+            >
+              Voir le projet
+            </NuxtLink>
+            <NuxtLink
+              v-else
+              to="/echanges-sabbatiques"
+              class="px-5 py-2.5 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
+            >
+              Voir les programmes
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -328,12 +399,13 @@ import {
   DUREES,
   PAYS_AFRICAINS,
   PRISES_EN_CHARGE,
+  TYPES_ORGANISATION,
   type TypeProgramme,
 } from '~/composables/useSabbatiques'
 import { editorJsToHtml, type EditorJsData } from '~/composables/useEditorJs'
 
 const route = useRoute()
-const { creerProgramme } = useSabbatiques()
+const { creerProgramme, erreur: sabbatiqueErreur } = useSabbatiques()
 
 const typesValides: TypeProgramme[] = ['interafricain', 'hors_afrique']
 const typeParam = route.query.type as string | undefined
@@ -362,6 +434,7 @@ const editorRef = ref<{ save: () => Promise<EditorJsData | null>; clear: () => P
 
 const form = reactive({
   type: typeInitial as string,
+  typeOrganisation: '' as string,
   titre: '',
   descriptionData: undefined as EditorJsData | undefined,
   domaine: '' as string,
@@ -380,6 +453,7 @@ const form = reactive({
 const loading = ref(false)
 const succes = ref(false)
 const erreur = ref<string | null>(null)
+const dernierProgrammeId = ref<string | null>(null)
 
 const hasDescription = computed(() => {
   return form.descriptionData && form.descriptionData.blocks && form.descriptionData.blocks.length > 0
@@ -387,6 +461,7 @@ const hasDescription = computed(() => {
 
 const isFormValid = computed(() => {
   return form.type &&
+    form.typeOrganisation &&
     form.titre.trim() &&
     hasDescription.value &&
     form.domaine &&
@@ -412,6 +487,7 @@ const handleDocumentChange = (event: Event) => {
 
 const resetForm = async () => {
   form.type = ''
+  form.typeOrganisation = ''
   form.titre = ''
   form.descriptionData = undefined
   form.domaine = ''
@@ -451,6 +527,7 @@ const handleSubmit = async () => {
     const result = await creerProgramme(
       {
         type: form.type,
+        typeOrganisation: form.typeOrganisation,
         titre: form.titre,
         description: descriptionHtml,
         domaine: form.domaine,
@@ -468,17 +545,22 @@ const handleSubmit = async () => {
     )
 
     if (result) {
+      dernierProgrammeId.value = result.id
       succes.value = true
       await resetForm()
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
-      erreur.value = 'Une erreur est survenue lors de la soumission'
+      erreur.value = sabbatiqueErreur.value || 'Une erreur est survenue lors de la soumission'
     }
   } catch (e: any) {
     erreur.value = e?.message || 'Une erreur est survenue lors de la soumission'
   } finally {
     loading.value = false
   }
+}
+
+const fermerSucces = () => {
+  succes.value = false
 }
 
 onMounted(() => {

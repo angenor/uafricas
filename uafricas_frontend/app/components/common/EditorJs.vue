@@ -40,6 +40,11 @@ const emit = defineEmits<{
   'error': [message: string]
 }>()
 
+// Drapeau : vrai quand la dernière modification de modelValue provient de
+// l'éditeur lui-même (onChange). Empêche le watcher de re-render l'éditeur
+// à chaque frappe (ce qui ferait sauter le curseur / perdre le focus).
+let majInterne = false
+
 const {
   isReady,
   isLoading,
@@ -58,6 +63,7 @@ const {
   autofocus: props.autofocus,
   headerLevels: props.headerLevels,
   onChange: (data) => {
+    majInterne = true
     emit('update:modelValue', data)
   }
 })
@@ -71,12 +77,19 @@ watch(error, (err) => {
   if (err) emit('error', err)
 })
 
-// Charger de nouvelles données quand modelValue change (si différent)
+// Charger de nouvelles données uniquement quand modelValue est poussé depuis
+// l'extérieur (ex. chargement d'un contenu existant en mode édition).
+// On ignore les changements émis par l'éditeur lui-même pour ne pas le
+// reconstruire à chaque frappe.
 watch(() => props.modelValue, async (newData) => {
+  if (majInterne) {
+    majInterne = false
+    return
+  }
   if (isReady.value && newData) {
     await render(newData)
   }
-}, { deep: true })
+})
 
 // Exposer les méthodes pour le parent
 defineExpose({

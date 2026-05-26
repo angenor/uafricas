@@ -34,9 +34,20 @@ export interface SabbatiqueAPI {
   prise_en_charge: string[]
   nombre_places: number | null
   nombre_candidatures: number
+  type_organisation: string | null
+  type_organisation_label: string | null
+  candidat_retenu: CandidatRetenu | null
   user: SabbatiqueOrganisateur
   created_at: string
   updated_at: string
+}
+
+/** Candidat retenu (sélection finale, affichage public) */
+export interface CandidatRetenu {
+  uid: string
+  nom: string
+  prenom: string | null
+  retenu_at: string | null
 }
 
 /** DTO pour le detail d'un programme */
@@ -47,6 +58,40 @@ export interface SabbatiqueDetailAPI extends SabbatiqueAPI {
   prise_en_charge_details: string | null
   prerequis: string | null
   langues_requises: string | null
+  type_organisation: string | null
+  type_organisation_label: string | null
+  candidat_retenu: CandidatRetenu | null
+  est_organisateur: boolean
+  a_deja_candidate: boolean
+}
+
+/** Données d'une candidature (vue organisateur) */
+export interface CandidatureAPI {
+  id: string
+  candidat: SabbatiqueOrganisateur
+  nom_etat_civil: string | null
+  fonction_actuelle: string | null
+  lieu_residence: string | null
+  statut_emploi: string | null
+  statut_emploi_label: string | null
+  repond_profil: boolean
+  lettre_motivation: string | null
+  cv_url: string | null
+  lien_expertise: string | null
+  statut: string
+  est_retenu: boolean
+  created_at: string
+}
+
+/** Données saisies dans le formulaire de candidature */
+export interface CandidatureForm {
+  nomEtatCivil: string
+  fonctionActuelle: string
+  lieuResidence: string
+  statutEmploi: StatutEmploi | ''
+  repondProfil: boolean
+  lettreMotivation?: string
+  lienExpertise?: string
 }
 
 /** Reponse paginee */
@@ -97,8 +142,8 @@ export const DOMAINES: { value: string; label: string }[] = [
   { value: 'technologie-innovation', label: 'Technologie & Innovation' },
 ]
 
+// Durée du programme : minimum 2 semaines, maximum 12 mois (1 an)
 export const DUREES: { value: string; label: string }[] = [
-  { value: '1_semaine', label: '1 semaine' },
   { value: '2_semaines', label: '2 semaines' },
   { value: '3_semaines', label: '3 semaines' },
   { value: '6_semaines', label: '6 semaines' },
@@ -106,7 +151,24 @@ export const DUREES: { value: string; label: string }[] = [
   { value: '2_mois', label: '2 mois' },
   { value: '3_mois', label: '3 mois' },
   { value: '6_mois', label: '6 mois' },
-  { value: '1_an', label: '1 an' },
+  { value: '1_an', label: '12 mois (1 an)' },
+]
+
+// Types d'organisation soumettante (proposition d'un échange)
+export type TypeOrganisation = 'association' | 'entreprise' | 'service_public'
+
+export const TYPES_ORGANISATION: { value: TypeOrganisation; label: string; icon: string }[] = [
+  { value: 'association', label: 'Association', icon: 'handshake' },
+  { value: 'entreprise', label: 'Entreprise', icon: 'building' },
+  { value: 'service_public', label: 'Service public', icon: 'landmark' },
+]
+
+// Statut d'emploi requis pour candidater (jamais « sans emploi »)
+export type StatutEmploi = 'en_emploi' | 'retraite'
+
+export const STATUTS_EMPLOI: { value: StatutEmploi; label: string }[] = [
+  { value: 'en_emploi', label: 'En emploi' },
+  { value: 'retraite', label: 'Retraité(e)' },
 ]
 
 export const PAYS_AFRICAINS: { value: string; label: string }[] = [
@@ -180,6 +242,20 @@ export const useSabbatiques = () => {
   const chargement = ref(false)
   const erreur = ref<string | null>(null)
 
+  /** Préfixe une URL relative d'upload (/uploads/...) avec l'origine du backend */
+  const mapperUrl = (url: string | null): string | null => {
+    if (!url) return url
+    if (url.startsWith('http')) return url
+    return `${apiBase}${url}`
+  }
+
+  /** Normalise les URLs d'upload d'un programme (couverture + photo organisateur) */
+  const normaliserProgramme = <T extends SabbatiqueAPI>(p: T): T => {
+    p.couverture_url = mapperUrl(p.couverture_url)
+    if (p.user) p.user.photo_url = mapperUrl(p.user.photo_url)
+    return p
+  }
+
   /** Headers d'authentification si l'utilisateur est connecte */
   const authHeaders = (): Record<string, string> => {
     if (userStore.accessToken) {
@@ -213,6 +289,7 @@ export const useSabbatiques = () => {
         throw new Error(reponse.error || 'Erreur lors du chargement des programmes')
       }
 
+      reponse.data.programmes.forEach(normaliserProgramme)
       return reponse.data
     }
     catch (e: any) {
@@ -236,12 +313,15 @@ export const useSabbatiques = () => {
     try {
       const reponse = await $fetch<ApiResponse<SabbatiqueDetailAPI>>(
         `${apiBase}/api/sabbatiques/${id}`,
+        { headers: authHeaders() },
       )
 
       if (!reponse.success || !reponse.data) {
         throw new Error(reponse.error || 'Programme non trouve')
       }
 
+      normaliserProgramme(reponse.data)
+      reponse.data.document_url = mapperUrl(reponse.data.document_url)
       return reponse.data
     }
     catch (e: any) {
@@ -261,6 +341,7 @@ export const useSabbatiques = () => {
   const creerProgramme = async (
     formData: {
       type: string
+      typeOrganisation: string
       titre: string
       description: string
       domaine: string
@@ -282,6 +363,7 @@ export const useSabbatiques = () => {
     try {
       const data = new FormData()
       data.append('type_programme', formData.type)
+      data.append('type_organisation', formData.typeOrganisation)
       data.append('titre', formData.titre)
       data.append('description', formData.description)
       data.append('domaine', formData.domaine)
@@ -314,6 +396,8 @@ export const useSabbatiques = () => {
         throw new Error(reponse.error || 'Erreur lors de la creation du programme')
       }
 
+      normaliserProgramme(reponse.data)
+      reponse.data.document_url = mapperUrl(reponse.data.document_url)
       return reponse.data
     }
     catch (e: any) {
@@ -327,11 +411,110 @@ export const useSabbatiques = () => {
     }
   }
 
+  /**
+   * Candidater à un programme (multipart pour le CV facultatif)
+   */
+  const candidater = async (
+    programmeId: string,
+    form: CandidatureForm,
+    cvFile: File | null,
+  ): Promise<boolean> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const data = new FormData()
+      data.append('nom_etat_civil', form.nomEtatCivil)
+      data.append('fonction_actuelle', form.fonctionActuelle)
+      data.append('lieu_residence', form.lieuResidence)
+      data.append('statut_emploi', form.statutEmploi)
+      data.append('repond_profil', form.repondProfil ? 'true' : 'false')
+      if (form.lettreMotivation) data.append('lettre_motivation', form.lettreMotivation)
+      if (form.lienExpertise) data.append('lien_expertise', form.lienExpertise)
+      if (cvFile) data.append('cv', cvFile)
+
+      const reponse = await $fetch<ApiResponse<unknown>>(
+        `${apiBase}/api/sabbatiques/${programmeId}/candidatures`,
+        { method: 'POST', headers: authHeaders(), body: data },
+      )
+
+      if (!reponse.success) {
+        throw new Error(reponse.error || 'Erreur lors de la candidature')
+      }
+      return true
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur candidater:', e)
+      return false
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /**
+   * Lister les candidatures d'un programme (organisateur uniquement)
+   */
+  const listerCandidatures = async (
+    programmeId: string,
+  ): Promise<CandidatureAPI[] | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<CandidatureAPI[]>>(
+        `${apiBase}/api/sabbatiques/${programmeId}/candidatures`,
+        { headers: authHeaders() },
+      )
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement des candidatures')
+      }
+      reponse.data.forEach((c) => {
+        c.cv_url = mapperUrl(c.cv_url)
+        if (c.candidat) c.candidat.photo_url = mapperUrl(c.candidat.photo_url)
+      })
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur listerCandidatures:', e)
+      return null
+    }
+  }
+
+  /**
+   * Sélectionner le candidat final (organisateur uniquement)
+   */
+  const selectionnerCandidat = async (
+    programmeId: string,
+    candidatureId: string,
+  ): Promise<boolean> => {
+    try {
+      const reponse = await $fetch<ApiResponse<unknown>>(
+        `${apiBase}/api/sabbatiques/${programmeId}/candidatures/${candidatureId}/retenir`,
+        { method: 'POST', headers: authHeaders() },
+      )
+      if (!reponse.success) {
+        throw new Error(reponse.error || 'Erreur lors de la sélection')
+      }
+      return true
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur selectionnerCandidat:', e)
+      return false
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
     listerProgrammes,
     obtenirProgramme,
     creerProgramme,
+    candidater,
+    listerCandidatures,
+    selectionnerCandidat,
   }
 }
