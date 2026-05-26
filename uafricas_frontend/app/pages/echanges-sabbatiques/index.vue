@@ -8,7 +8,7 @@
         <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
         <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
           <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Échanges Sabbatiques
+            Échanges Sabbafrica
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             Offrir des canaux aux entreprises et organisations en Afrique de bénéficier de l'expérience pointue de la diaspora dans des domaines clés de développement.
@@ -21,7 +21,7 @@
     <CommonBreadcrumbNav
       class="mx-4 md:mx-16 lg:mx-64 pt-6"
       :custom-breadcrumbs="[
-        { label: 'Échanges Sabbatiques' },
+        { label: 'Échanges Sabbafrica' },
       ]"
     />
 
@@ -141,7 +141,7 @@ import { useSabbatiques } from '~/composables/useSabbatiques'
 const { listerProgrammes } = useSabbatiques()
 
 useHead({
-  title: 'Échanges Sabbatiques - UAfricas',
+  title: 'Échanges Sabbafrica - UAfricas',
   meta: [
     {
       name: 'description',

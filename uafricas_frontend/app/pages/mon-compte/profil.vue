@@ -731,6 +731,24 @@
               </div>
             </div>
 
+            <!-- ─── Onglet Mes échanges sabbatiques ─── -->
+            <div v-if="ongletActif === 'mes-echanges'" class="space-y-6">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-800">Mes projets d'échange</h2>
+                <NuxtLink
+                  to="/echanges-sabbatiques/proposer"
+                  class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-custom-green text-white font-medium rounded-xl hover:bg-custom-green/90 transition-all"
+                >
+                  <font-awesome-icon icon="fa-solid fa-plus" />
+                  <span class="hidden sm:inline">Proposer</span>
+                </NuxtLink>
+              </div>
+              <p class="text-sm text-gray-500 -mt-3">
+                Gérez les candidatures reçues et sélectionnez le candidat final pour chaque projet.
+              </p>
+              <SabbatiqueMesEchanges />
+            </div>
+
           </div>
         </div>
       </template>
@@ -782,6 +800,7 @@ const onglets = [
   { id: 'securite', label: 'Securite', icon: 'fa-solid fa-lock' },
   { id: 'bibliotheque-humaine', label: 'Bibliothèque', icon: 'fa-solid fa-book-open' },
   { id: 'expertise', label: 'Expertise', icon: 'fa-solid fa-user-tie' },
+  { id: 'mes-echanges', label: 'Mes échanges', icon: 'fa-solid fa-right-left' },
 ]
 
 // ── Formulaires ──

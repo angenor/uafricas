@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+  <div class="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
     <!-- Loading -->
     <div
       v-if="loading"
@@ -42,7 +42,7 @@
           :alt="annonce.titre"
           class="w-full h-full object-cover opacity-90"
         />
-        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+        <div class="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-black/20"></div>
 
         <!-- Badge type -->
         <span
@@ -107,7 +107,7 @@
               <img
                 :src="annonce.photo_url || '/images/placeholder.jpg'"
                 :alt="annonce.titre"
-                class="w-full max-h-[500px] object-cover bg-gray-50"
+                class="w-full max-h-125 object-cover bg-gray-50"
               />
             </div>
           </div>
@@ -127,11 +127,11 @@
           <div class="p-6 md:p-8 border-b border-gray-100">
             <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <font-awesome-icon :icon="['fas', 'user']" class="w-4 h-4 text-custom-green" />
-              Vendeur
+              Annonceur
             </h2>
 
             <div class="flex items-center gap-4">
-              <div class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+              <div class="w-12 h-12 bg-linear-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
                 {{ annonce.user.prenom.charAt(0) }}{{ annonce.user.nom.charAt(0) }}
               </div>
               <div>
@@ -145,31 +145,38 @@
 
           <!-- Actions -->
           <div class="p-6 md:p-8">
-            <!-- Si authentifié -->
-            <div v-if="isAuthenticated" class="space-y-4">
-              <button
-                @click="envoyerInteret"
-                :disabled="interetEnvoye"
-                class="w-full py-4 font-semibold rounded-xl transition-all flex items-center justify-center gap-3"
-                :class="interetEnvoye
-                  ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-lg hover:shadow-xl'"
+            <!-- Propriétaire de l'annonce (FR-013) -->
+            <div
+              v-if="estProprietaire"
+              class="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center"
+            >
+              <font-awesome-icon :icon="['fas', 'circle-info']" class="w-8 h-8 text-emerald-500 mx-auto mb-3" />
+              <p class="text-emerald-800 font-medium mb-4">Ceci est votre annonce.</p>
+              <NuxtLink
+                to="/marche-africain/mes-annonces"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-custom-green text-white font-medium rounded-xl hover:bg-custom-green/90 transition-colors"
               >
-                <font-awesome-icon
-                  :icon="interetEnvoye ? ['fas', 'check-circle'] : ['fas', 'hand-point-up']"
-                  class="w-5 h-5"
-                />
-                {{ interetEnvoye ? 'Intérêt envoyé' : 'Je suis intéressé(e)' }}
+                <font-awesome-icon :icon="['fas', 'sliders']" class="w-4 h-4" />
+                Gérer mes annonces
+              </NuxtLink>
+            </div>
+
+            <!-- Si authentifié (et pas propriétaire) -->
+            <div v-else-if="isAuthenticated" class="space-y-4">
+              <button
+                @click="ouvrirContact"
+                class="w-full py-4 font-semibold rounded-xl transition-all flex items-center justify-center gap-3 bg-linear-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-lg hover:shadow-xl"
+              >
+                <font-awesome-icon :icon="['fas', 'hand-point-up']" class="w-5 h-5" />
+                Contacter l'auteur
               </button>
 
-              <a
-                v-if="annonce.contact_info"
-                :href="`tel:${annonce.contact_info}`"
-                class="w-full py-4 bg-white border-2 border-emerald-500 text-emerald-600 font-semibold rounded-xl hover:bg-emerald-50 transition-colors flex items-center justify-center gap-3"
-              >
-                <font-awesome-icon :icon="['fas', 'phone']" class="w-5 h-5" />
-                Appeler : {{ annonce.contact_info }}
-              </a>
+              <MarcheFavoriBouton
+                :annonce-id="annonce.id"
+                avec-libelle
+                variante="detail"
+                class="w-full"
+              />
             </div>
 
             <!-- Si non authentifié -->
@@ -182,7 +189,7 @@
                 class="w-8 h-8 text-amber-500 mx-auto mb-3"
               />
               <p class="text-amber-800 font-medium mb-4">
-                Connectez-vous pour contacter le vendeur
+                Connectez-vous pour contacter l'auteur
               </p>
               <NuxtLink
                 to="/login"
@@ -206,6 +213,54 @@
           </NuxtLink>
         </div>
       </div>
+
+      <!-- Modal de contact -->
+      <Teleport to="body">
+        <Transition
+          enter-active-class="transition ease-out duration-300"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+          leave-active-class="transition ease-in duration-200"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
+        >
+          <div v-if="showContactModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/50" @click="showContactModal = false"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+              <h2 class="text-xl font-bold text-gray-800 mb-1">Contacter l'auteur</h2>
+              <p class="text-sm text-gray-500 mb-4">
+                À propos de : <span class="font-medium text-gray-700">{{ annonce.titre }}</span>
+              </p>
+              <textarea
+                v-model="messageContact"
+                rows="4"
+                maxlength="2000"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+                placeholder="Bonjour, je suis intéressé(e) par votre annonce…"
+              ></textarea>
+              <p v-if="erreurContact" class="text-sm text-red-600 mt-2">{{ erreurContact }}</p>
+              <div class="flex items-center justify-end gap-3 mt-4">
+                <button
+                  type="button"
+                  class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50"
+                  @click="showContactModal = false"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  :disabled="contactEnCours"
+                  class="px-6 py-2.5 rounded-xl bg-linear-to-r from-emerald-500 to-teal-500 text-white font-semibold hover:from-emerald-600 hover:to-teal-600 disabled:opacity-60 flex items-center gap-2"
+                  @click="envoyerContact"
+                >
+                  <span v-if="contactEnCours" class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                  Envoyer
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
     </template>
   </div>
 </template>
@@ -220,19 +275,28 @@ import {
   type AnnonceDetailAPI,
   type TypeEchange,
 } from '~/composables/useMarcheAfricain'
+import { useMessagerie } from '~/composables/useMessagerie'
 import { useUserStore } from '~/stores/user'
+import { navigateTo } from '#app'
 
 const route = useRoute()
 const userStore = useUserStore()
-const { obtenirAnnonce } = useMarcheAfricain()
+const { obtenirAnnonce, contacterAuteur, erreur } = useMarcheAfricain()
+const { listerConversations, demanderOuverture } = useMessagerie()
 
 // State
 const loading = ref(true)
 const annonce = ref<AnnonceDetailAPI | null>(null)
-const interetEnvoye = ref(false)
+const showContactModal = ref(false)
+const messageContact = ref('')
+const contactEnCours = ref(false)
+const erreurContact = ref<string | null>(null)
 
 // Computed
 const isAuthenticated = computed(() => userStore.isAuthenticated)
+const estProprietaire = computed(
+  () => isAuthenticated.value && annonce.value?.user.uid === userStore.user?.id,
+)
 
 const prixFormate = computed(() => {
   if (!annonce.value) return ''
@@ -271,9 +335,45 @@ const getTypeColor = (type: string): string => {
   }
 }
 
-const envoyerInteret = () => {
-  interetEnvoye.value = true
-  alert('Votre intérêt a été enregistré ! Le vendeur sera notifié.')
+const ouvrirContact = () => {
+  if (!isAuthenticated.value) {
+    navigateTo('/login')
+    return
+  }
+  erreurContact.value = null
+  showContactModal.value = true
+}
+
+const envoyerContact = async () => {
+  if (!annonce.value) return
+  if (messageContact.value.trim().length === 0) {
+    erreurContact.value = 'Veuillez écrire un message.'
+    return
+  }
+  contactEnCours.value = true
+  erreurContact.value = null
+  try {
+    const resultat = await contacterAuteur(annonce.value.id, messageContact.value.trim())
+    if (resultat) {
+      showContactModal.value = false
+      messageContact.value = ''
+      // Ouvre la fenêtre de messagerie sur la conversation avec l'auteur
+      await listerConversations()
+      demanderOuverture({
+        id: resultat.ami_id,
+        nom: annonce.value.user.nom,
+        prenom: annonce.value.user.prenom,
+        slug: null,
+        photoUrl: null,
+        fonction: null,
+        pays: null,
+      })
+    } else {
+      erreurContact.value = erreur.value || "Impossible de contacter l'auteur."
+    }
+  } finally {
+    contactEnCours.value = false
+  }
 }
 
 // Lifecycle

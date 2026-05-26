@@ -65,6 +65,10 @@ pub struct ConversationRow {
     pub non_lus: i64,
     pub amis: bool,
     pub bloque: bool,
+    // Contexte marketplace : conversation née d'un contact d'annonce (D2)
+    pub annonce_id: Option<Uuid>,
+    pub annonce_titre: Option<String>,
+    pub annonce_slug: Option<String>,
 }
 
 const EXTRAIT_MAX: usize = 120;
@@ -91,8 +95,18 @@ impl ConversationRow {
             },
             dernier_message,
             non_lus: self.non_lus,
-            // FR-025 : verrouillée si l'amitié n'existe plus ou si blocage
-            verrouillee: !self.amis || self.bloque,
+            // FR-025 : verrouillée si l'amitié n'existe plus ou si blocage.
+            // Exception marketplace : une conversation née d'un contact d'annonce
+            // reste ouverte sans amitié (D2).
+            verrouillee: self.bloque || (!self.amis && self.annonce_id.is_none()),
+            annonce: match (self.annonce_id, &self.annonce_titre) {
+                (Some(id), Some(titre)) => Some(AnnonceContexte {
+                    id,
+                    titre: titre.clone(),
+                    slug: self.annonce_slug.clone(),
+                }),
+                _ => None,
+            },
         }
     }
 }
@@ -117,6 +131,13 @@ pub struct ExtraitMessage {
 }
 
 #[derive(Debug, Serialize)]
+pub struct AnnonceContexte {
+    pub id: Uuid,
+    pub titre: String,
+    pub slug: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
 pub struct ConversationResponse {
     pub conversation_id: Uuid,
     pub ami: MembreLight,
@@ -124,6 +145,8 @@ pub struct ConversationResponse {
     pub dernier_message: Option<ExtraitMessage>,
     pub non_lus: i64,
     pub verrouillee: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub annonce: Option<AnnonceContexte>,
 }
 
 #[derive(Debug, Serialize)]

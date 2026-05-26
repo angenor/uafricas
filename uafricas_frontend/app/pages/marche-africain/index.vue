@@ -46,6 +46,24 @@
           </button>
         </div>
 
+        <!-- Accès rapides membre -->
+        <div v-if="userStore.isAuthenticated" class="flex flex-wrap mt-2 gap-2">
+          <NuxtLink
+            to="/marche-africain/mes-annonces"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+          >
+            <font-awesome-icon :icon="['fas', 'sliders']" class="w-3 h-3" />
+            Mes annonces
+          </NuxtLink>
+          <NuxtLink
+            to="/marche-africain/favoris"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+          >
+            <font-awesome-icon :icon="['far', 'heart']" class="w-3 h-3" />
+            Mes favoris
+          </NuxtLink>
+        </div>
+
         <!-- Filtres catégories -->
         <div class="flex flex-wrap mt-2 gap-1.5">
           <label
@@ -289,7 +307,7 @@
       </Transition>
     </Teleport>
 
-    <!-- Modal publication (placeholder) -->
+    <!-- Modal publication d'une annonce -->
     <Teleport to="body">
       <Transition
         enter-active-class="transition ease-out duration-300"
@@ -308,24 +326,22 @@
             @click="showPublishModal = false"
           ></div>
 
-          <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-center">
-            <font-awesome-icon
-              :icon="['fas', 'tools']"
-              class="w-16 h-16 text-amber-500 mx-auto mb-4"
-            />
-            <h2 class="text-xl font-bold text-gray-800 mb-2">
-              Fonctionnalité bientôt disponible
-            </h2>
-            <p class="text-gray-600 mb-6">
-              La publication d'annonces sera disponible dans une prochaine mise à jour.
-              Restez connecté !
-            </p>
-            <button
-              @click="showPublishModal = false"
-              class="px-6 py-2.5 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 transition-colors"
-            >
-              Compris
-            </button>
+          <div class="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white flex items-center justify-between px-6 py-4 border-b border-gray-100 z-10">
+              <h2 class="text-xl font-bold text-gray-800">Publier une annonce</h2>
+              <button
+                @click="showPublishModal = false"
+                class="p-2 text-gray-400 hover:text-gray-600"
+              >
+                <font-awesome-icon :icon="['fas', 'xmark']" class="w-5 h-5" />
+              </button>
+            </div>
+            <div class="p-6">
+              <MarcheAnnonceForm
+                @success="onPublicationReussie"
+                @cancel="showPublishModal = false"
+              />
+            </div>
           </div>
         </div>
       </Transition>
@@ -340,10 +356,13 @@ import {
   CATEGORIES,
   mapperTypesVersDb,
   type AnnonceAPI,
+  type AnnonceDetailAPI,
   type AnnonceFiltres,
   type FiltresAnnonce,
   type Categorie,
 } from '~/composables/useMarcheAfricain'
+import { useUserStore } from '~/stores/user'
+import { navigateTo } from '#app'
 
 useHead({
   title: 'Marché Africain - UAfricas',
@@ -358,6 +377,7 @@ useHead({
 const ITEMS_PER_PAGE = 12
 
 const { chargement, erreur, listerAnnonces } = useMarcheAfricain()
+const userStore = useUserStore()
 
 // State
 const annonces = ref<AnnonceAPI[]>([])
@@ -481,7 +501,18 @@ const handleSearch = () => {
 }
 
 const handlePublish = () => {
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
   showPublishModal.value = true
+}
+
+const onPublicationReussie = async (detail: AnnonceDetailAPI) => {
+  showPublishModal.value = false
+  // Recharger la liste puis ouvrir le détail de la nouvelle annonce
+  await chargerAnnonces()
+  navigateTo(`/marche-africain/${detail.id}`)
 }
 
 const resetFilters = () => {

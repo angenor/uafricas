@@ -412,6 +412,34 @@ export const useSabbatiques = () => {
   }
 
   /**
+   * Lister les programmes créés par l'utilisateur connecté (tous statuts)
+   */
+  const listerMesProgrammes = async (): Promise<SabbatiqueAPI[] | null> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<SabbatiqueAPI[]>>(
+        `${apiBase}/api/sabbatiques/mes-programmes`,
+        { headers: authHeaders() },
+      )
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement de vos programmes')
+      }
+      reponse.data.forEach(normaliserProgramme)
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur listerMesProgrammes:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /**
    * Candidater à un programme (multipart pour le CV facultatif)
    */
   const candidater = async (
@@ -513,6 +541,7 @@ export const useSabbatiques = () => {
     listerProgrammes,
     obtenirProgramme,
     creerProgramme,
+    listerMesProgrammes,
     candidater,
     listerCandidatures,
     selectionnerCandidat,

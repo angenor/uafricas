@@ -8,7 +8,7 @@ CREATE TYPE marketplace.type_operation AS ENUM (
 );
 
 CREATE TYPE marketplace.etat_annonce AS ENUM (
-    'brouillon', 'publiee', 'en_attente', 'expiree', 'suspendue', 'supprimee'
+    'brouillon', 'publiee', 'en_attente', 'expiree', 'suspendue', 'supprimee', 'conclue'
 );
 
 CREATE TYPE marketplace.type_contact AS ENUM (

@@ -159,6 +159,7 @@ import {
   faUserCheck,
   faUserXmark,
   faFilePdf,
+  faRightLeft,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -348,6 +349,7 @@ library.add(
   faUserCheck,
   faUserXmark,
   faFilePdf,
+  faRightLeft,
 )
 
 export default defineNuxtPlugin((nuxtApp) => {

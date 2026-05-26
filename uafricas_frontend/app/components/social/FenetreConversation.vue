@@ -10,7 +10,12 @@ const props = defineProps<{
 defineEmits<{ (e: 'retour'): void }>()
 
 const userStore = useUserStore()
-const { messages, chargementMessages, ouvrirConversation, fermerConversation, envoyerMessage, supprimerMessage } = useMessagerie()
+const { conversations, messages, chargementMessages, ouvrirConversation, fermerConversation, envoyerMessage, supprimerMessage } = useMessagerie()
+
+// Contexte annonce : conversation née d'un contact du Marché Africain
+const conversationCourante = computed(() =>
+  conversations.value.find(c => c.ami.id === props.ami.id),
+)
 
 const CONTENU_MAX = 2000
 const brouillon = ref('')
@@ -67,6 +72,16 @@ watch(() => messages.value.length, defilerEnBas)
         {{ ami.prenom }} {{ ami.nom }}
       </NuxtLink>
     </header>
+
+    <!-- Contexte annonce (Marché Africain) -->
+    <NuxtLink
+      v-if="conversationCourante?.annonce"
+      :to="`/marche-africain/${conversationCourante.annonce.id}`"
+      class="flex items-center gap-2 px-3 py-1.5 bg-custom-chocolat/5 border-b border-custom-chocolat/10 text-xs text-custom-chocolat hover:bg-custom-chocolat/10 transition shrink-0"
+    >
+      <font-awesome-icon icon="fa-solid fa-tag" class="w-3 h-3" />
+      <span class="truncate">À propos de : {{ conversationCourante.annonce.titre }}</span>
+    </NuxtLink>
 
     <!-- Fil de messages -->
     <div ref="filRef" class="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-gray-50">

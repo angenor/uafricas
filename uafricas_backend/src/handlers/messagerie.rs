@@ -173,11 +173,15 @@ pub async fn lister_conversations(
                   AND a.utilisateur_b_id = GREATEST($1, ami.id)) AS amis,
             EXISTS(SELECT 1 FROM social.blocage b
                 WHERE (b.bloqueur_id = $1 AND b.bloque_id = ami.id)
-                   OR (b.bloqueur_id = ami.id AND b.bloque_id = $1)) AS bloque
+                   OR (b.bloqueur_id = ami.id AND b.bloque_id = $1)) AS bloque,
+            c.annonce_id,
+            an.titre AS annonce_titre,
+            an.slug AS annonce_slug
          FROM social.conversation c
          JOIN iam.utilisateur ami
             ON ami.id = CASE WHEN c.utilisateur_a_id = $1 THEN c.utilisateur_b_id ELSE c.utilisateur_a_id END
          LEFT JOIN shared.pays p ON p.id = ami.pays_residence_id
+         LEFT JOIN marketplace.annonce an ON an.id = c.annonce_id
          WHERE (c.utilisateur_a_id = $1 OR c.utilisateur_b_id = $1)
            AND ami.deleted_at IS NULL
          ORDER BY c.dernier_message_at DESC NULLS LAST, c.created_at DESC",
@@ -290,13 +294,19 @@ pub async fn envoyer_message(
             "Messagerie indisponible avec ce membre".to_string(),
         ));
     }
-    if !amitie_active(pool.get_ref(), moi, ami_id).await? {
+    // R5 / D2 : envoi autorisé si amitié active OU si une conversation existe
+    // déjà (ex. née d'un contact d'annonce du Marché Africain, sans amitié).
+    let conversation_existante = trouver_conversation(pool.get_ref(), moi, ami_id).await?;
+    if conversation_existante.is_none() && !amitie_active(pool.get_ref(), moi, ami_id).await? {
         return Err(ApiErreur::AccesInterdit(
-            "Vous devez être amis pour échanger des messages".to_string(),
+            "Vous devez être amis pour démarrer cette conversation".to_string(),
         ));
     }
 
-    let conv_id = obtenir_ou_creer_conversation(pool.get_ref(), moi, ami_id).await?;
+    let conv_id = match conversation_existante {
+        Some(id) => id,
+        None => obtenir_ou_creer_conversation(pool.get_ref(), moi, ami_id).await?,
+    };
 
     let (message_id, created_at): (Uuid, DateTime<Utc>) = sqlx::query_as(
         "INSERT INTO social.message (conversation_id, expediteur_id, contenu)

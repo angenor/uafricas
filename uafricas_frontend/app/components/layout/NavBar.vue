@@ -468,7 +468,7 @@ const menus: NavMenu[] = [
       { label: 'Rootstree', to: '/arbre-genealogique', description: 'Tracer son arbre généalogique', icon: 'fa-solid fa-tree' },
       { label: 'Africonnect', to: '/retrouve-amis', description: 'Retrouver une personne perdue de vue', icon: 'fa-solid fa-users' },
       { label: 'Diapertise', to: '/experts', description: 'Mobiliser une expertise de pointe', icon: 'fa-solid fa-user-tie' },
-      { label: 'Sabbatique', to: '/echanges-sabbatiques', description: 'Offrir son expertise en volontariat et bénévolat', icon: 'fa-solid fa-plane' },
+      { label: 'Sabbafrica', to: '/echanges-sabbatiques', description: 'Offrir son expertise en volontariat et bénévolat', icon: 'fa-solid fa-plane' },
       { label: 'Afromarket', to: '/marche-africain', description: 'Place de marché panafricaine', icon: 'fa-solid fa-store' },
     ]
   },

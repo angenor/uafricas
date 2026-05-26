@@ -51,7 +51,7 @@ JWT HS256 access (15min) + refresh (7j, SHA-256 hashé dans `iam.refresh_token`)
 actix-web 4, actix-cors, actix-multipart, actix-files, sqlx (PostgreSQL), uuid, chrono, dotenvy, serde, sanitize-filename, bcrypt, jsonwebtoken, sha2, rand, livekit-api, lettre, futures-util, tokio, image.
 
 ### Upload
-Stockage local sous `./uploads/` (`couvertures/`, `documents/`, `videos/`, `vignettes/`, `afrolang/ressources/`, `opportunite-afrique/photos/`), servi via actix-files sur `/uploads/`.
+Stockage local sous `./uploads/` (`couvertures/`, `documents/`, `videos/`, `vignettes/`, `afrolang/ressources/`, `opportunite-afrique/photos/`, `marketplace/annonces/`), servi via actix-files sur `/uploads/`.
 
 ### Database
 PostgreSQL 16 Docker. Schema SQL: `uafricas_backend/doc/bd/schema.sql` (orchestrateur via `\ir` dans `schemas/`). Init auto via `docker-init.sh`.
@@ -92,6 +92,7 @@ Backend Rust Edition 2024 + Actix-Web 4 + sqlx (PostgreSQL) ; frontend Nuxt 4 / 
 
 ## Recent Changes (résumé)
 Spécifications détaillées sous `specs/`. Historique des features livrées (consulter git log + specs pour le détail) :
+- **marché membre** (`001-marche-achat-vente-troc-don`) : couche d'endpoints membre `/api/annonces` (auth JWT) pour publier (multipart, photos `marketplace/annonces/`, `etat='publiee'` immédiat), gérer (« Mes annonces », modifier, conclure, supprimer soft), favoris, et contacter l'auteur via la **messagerie existante** (`social.conversation.annonce_id`, `30_social_conversation_annonce.sql`). Enum `etat_annonce` étend `'conclue'`. `envoyer_message` assoupli (amitié OU conversation existante, D2). Endpoint public `/api/annonces/categories`. Validation photos `image_validation::valider_photo_annonce` (JPEG/PNG/WebP, 3 Mo). Composable `useMarcheAfricain` étendu, composants `MarcheAnnonceForm.vue`/`MarcheFavoriBouton.vue`, pages `mes-annonces.vue`/`favoris.vue`.
 - **social** (`001-demande-amitie`) : amitié entre membres + messagerie privée temps réel (SSE) via bouton flottant global. Schéma `social` (`schemas/29_social.sql`).
 - **expertise** (`001-demande-expertise`) : candidature `/devenir-expert`, validation admin + email. Schéma `iam.expertise` étendu.
 - **annuaire-membres** : `/profil` = annuaire public, `/profil/[id]` = page de détail unifiée (membre + biblio + expertise).
@@ -106,3 +107,5 @@ Spécifications détaillées sous `specs/`. Historique des features livrées (co
 ## Active Technologies
 - Rust Edition 2024 (backend), TypeScript / Nuxt 4 (Vue 3 SSR) (frontend) + Actix-Web 4, sqlx (PostgreSQL), uuid, chrono, serde, sanitize-filename, image, lettre (backend) ; Pinia, Tailwind CSS v4, FontAwesome (frontend) (001-sites-touristiques-enrichis)
 - PostgreSQL 16, schéma `country_profile` (source de vérité — Principe III) (001-sites-touristiques-enrichis)
+- Rust Edition 2024 (backend) ; TypeScript / Nuxt 4 (Vue 3 SSR) (frontend) + Actix-Web 4, sqlx (PostgreSQL), actix-multipart, `image` crate, service interne `image_validation`, JWT (`jwt.rs`), `audit::log_action`, SSE (`messagerie_sse::RegistreSse`) ; Pinia, Tailwind CSS v4 (pur), FontAwesome (frontend) (001-marche-achat-vente-troc-don)
+- PostgreSQL 16, schémas `marketplace` (source de vérité — Principe III) et `social` (messagerie). Upload photos en local sous `./uploads/marketplace/annonces/` servi par actix-files (001-marche-achat-vente-troc-don)

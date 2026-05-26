@@ -12,12 +12,19 @@ export interface ExtraitMessageAPI {
   created_at: string
 }
 
+export interface AnnonceContexteAPI {
+  id: string
+  titre: string
+  slug: string | null
+}
+
 export interface ConversationAPI {
   conversation_id: string
   ami: MembreLightAPI
   dernier_message?: ExtraitMessageAPI
   non_lus: number
   verrouillee: boolean
+  annonce?: AnnonceContexteAPI
 }
 
 export interface MessageAPI {

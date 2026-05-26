@@ -483,7 +483,21 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("/annonces")
                     .route("", web::get().to(annonces::lister_annonces))
-                    .route("/{id}", web::get().to(annonces::obtenir_annonce)),
+                    // Publication membre (auth via JWT dans le handler)
+                    .route("", web::post().to(annonces::creer_annonce_membre))
+                    // Routes statiques AVANT la route dynamique /{id} (D8)
+                    .route("/categories", web::get().to(annonces::lister_categories_annonce))
+                    .route("/mes-annonces", web::get().to(annonces::mes_annonces))
+                    .route("/favoris", web::get().to(annonces::mes_favoris))
+                    .route("/{id}", web::get().to(annonces::obtenir_annonce))
+                    .route("/{id}", web::put().to(annonces::modifier_annonce_membre))
+                    .route("/{id}", web::delete().to(annonces::supprimer_annonce_membre))
+                    .route("/{id}/conclure", web::patch().to(annonces::conclure_annonce))
+                    .route("/{id}/contacter", web::post().to(annonces::contacter_auteur))
+                    .route("/{id}/favori", web::post().to(annonces::ajouter_favori))
+                    .route("/{id}/favori", web::delete().to(annonces::retirer_favori))
+                    .route("/{id}/medias", web::post().to(annonces::ajouter_medias_membre))
+                    .route("/{id}/medias/{media_id}", web::delete().to(annonces::supprimer_media_membre)),
             )
             // Routes des evenements
             .service(
@@ -568,6 +582,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/sabbatiques")
                     .route("", web::get().to(sabbatiques::lister_programmes))
                     .route("", web::post().to(sabbatiques::creer_programme))
+                    .route(
+                        "/mes-programmes",
+                        web::get().to(sabbatiques::lister_mes_programmes),
+                    )
                     .route("/{id}", web::get().to(sabbatiques::obtenir_programme))
                     .route(
                         "/{id}/candidatures",

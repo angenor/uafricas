@@ -13,6 +13,11 @@ use image::GenericImageView;
 pub const TAILLE_MAX_OCTETS: usize = 2_097_152; // 2 Mo
 pub const DIMENSION_MAX: u32 = 2048;
 
+/// Limite de taille des photos d'annonce du Marché Africain (3 Mo, spec).
+pub const TAILLE_MAX_OCTETS_ANNONCE: usize = 3_145_728; // 3 Mo
+/// Dimension maximale des photos d'annonce (pixels).
+pub const DIMENSION_MAX_ANNONCE: u32 = 4096;
+
 /// Dimensions et métadonnées validées d'une photo acceptée.
 #[derive(Debug, Clone)]
 pub struct DimensionsValides {
@@ -26,6 +31,7 @@ pub struct DimensionsValides {
 pub enum FormatPhoto {
     Jpeg,
     Png,
+    Webp,
 }
 
 impl FormatPhoto {
@@ -33,6 +39,7 @@ impl FormatPhoto {
         match self {
             FormatPhoto::Jpeg => "jpeg",
             FormatPhoto::Png => "png",
+            FormatPhoto::Webp => "webp",
         }
     }
 
@@ -40,6 +47,16 @@ impl FormatPhoto {
         match self {
             FormatPhoto::Jpeg => "jpg",
             FormatPhoto::Png => "png",
+            FormatPhoto::Webp => "webp",
+        }
+    }
+
+    /// Type MIME associé (pour persistance `annonce_media.type_mime`).
+    pub fn type_mime(&self) -> &'static str {
+        match self {
+            FormatPhoto::Jpeg => "image/jpeg",
+            FormatPhoto::Png => "image/png",
+            FormatPhoto::Webp => "image/webp",
         }
     }
 }
@@ -104,6 +121,51 @@ pub fn valider_photo_contribution(bytes: &[u8]) -> Result<DimensionsValides, Err
             largeur,
             hauteur,
             max: DIMENSION_MAX,
+        });
+    }
+
+    Ok(DimensionsValides {
+        format,
+        taille_octets: bytes.len(),
+        largeur,
+        hauteur,
+    })
+}
+
+/// Valide une photo d'annonce du Marché Africain : taille ≤ 3 Mo, format
+/// JPEG/PNG/WebP (magic bytes), dimensions ≤ 4096 px. Validation EN MÉMOIRE
+/// avant écriture disque (défense en profondeur, comme les contributions).
+pub fn valider_photo_annonce(bytes: &[u8]) -> Result<DimensionsValides, ErreurValidationPhoto> {
+    if bytes.len() > TAILLE_MAX_OCTETS_ANNONCE {
+        return Err(ErreurValidationPhoto::TailleTropGrande {
+            taille_octets: bytes.len(),
+            max_octets: TAILLE_MAX_OCTETS_ANNONCE,
+        });
+    }
+
+    let format_detecte = image::guess_format(bytes)
+        .map_err(|_| ErreurValidationPhoto::FormatNonAutorise { format_detecte: None })?;
+
+    let format = match format_detecte {
+        image::ImageFormat::Jpeg => FormatPhoto::Jpeg,
+        image::ImageFormat::Png => FormatPhoto::Png,
+        image::ImageFormat::WebP => FormatPhoto::Webp,
+        autre => {
+            return Err(ErreurValidationPhoto::FormatNonAutorise {
+                format_detecte: Some(format!("{:?}", autre).to_lowercase()),
+            });
+        }
+    };
+
+    let image = image::load_from_memory(bytes)
+        .map_err(|_| ErreurValidationPhoto::DecodageImpossible)?;
+
+    let (largeur, hauteur) = image.dimensions();
+    if largeur > DIMENSION_MAX_ANNONCE || hauteur > DIMENSION_MAX_ANNONCE {
+        return Err(ErreurValidationPhoto::DimensionsTropGrandes {
+            largeur,
+            hauteur,
+            max: DIMENSION_MAX_ANNONCE,
         });
     }
 

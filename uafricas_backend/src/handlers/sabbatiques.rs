@@ -705,6 +705,41 @@ pub async fn creer_programme(
 }
 
 // ──────────────────────────────────────────────────────────────
+// GET /api/sabbatiques/mes-programmes — Programmes créés par l'utilisateur
+// ──────────────────────────────────────────────────────────────
+pub async fn lister_mes_programmes(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req).ok_or_else(|| {
+        ApiErreur::NonAutorise("Authentification requise".into())
+    })?;
+
+    let query = format!(
+        "SELECT {} FROM exchange.programme p
+         WHERE p.cree_par = $1 AND p.deleted_at IS NULL
+         ORDER BY p.created_at DESC",
+        PROGRAMME_COLONNES
+    );
+
+    let rows = sqlx::query_as::<_, SabbatiqueRow>(&query)
+        .bind(utilisateur_id)
+        .fetch_all(pool.get_ref())
+        .await?;
+
+    let mut programmes = Vec::with_capacity(rows.len());
+    for row in &rows {
+        programmes.push(construire_response(pool.get_ref(), row).await?);
+    }
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(programmes),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
 // POST /api/sabbatiques/{id}/candidatures — Candidater a un programme
 // ──────────────────────────────────────────────────────────────
 pub async fn candidater(

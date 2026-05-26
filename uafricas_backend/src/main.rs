@@ -86,6 +86,8 @@ async fn main() -> std::io::Result<()> {
         .expect("Impossible de creer le repertoire uploads/couvertures");
     std::fs::create_dir_all(format!("{}/documents", &app_config.upload_dir))
         .expect("Impossible de creer le repertoire uploads/documents");
+    std::fs::create_dir_all(format!("{}/marketplace/annonces", &app_config.upload_dir))
+        .expect("Impossible de creer le repertoire uploads/marketplace/annonces");
     log::info!("Repertoires d'upload prets: {}", &app_config.upload_dir);
 
     let upload_dir = app_config.upload_dir.clone();
