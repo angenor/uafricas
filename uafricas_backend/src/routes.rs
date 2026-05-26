@@ -464,6 +464,8 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/stats", web::get().to(gouvernance::obtenir_stats))
                     .route("/contributions", web::get().to(gouvernance::lister_contributions))
                     .route("/factcheck", web::post().to(gouvernance::creer_factcheck_public))
+                    .route("/factcheck/{id}/reaction", web::post().to(gouvernance::reagir_factcheck))
+                    .route("/factcheck/{id}/signalement", web::post().to(gouvernance::signaler_factcheck))
                     .route("/bad-habits", web::post().to(gouvernance::creer_bad_habit_public))
                     .route("/idea-forces", web::post().to(gouvernance::creer_idea_force_public)),
             )

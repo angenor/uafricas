@@ -166,7 +166,7 @@ const definirSources = (): SourceRecherche[] => [
         sousTexte: m.description ? m.description.substring(0, 60) + '...' : '',
         categorie: 'Formations',
         icone: 'fa-solid fa-graduation-cap',
-        lien: `/universite/inuda/formations`,
+        lien: `/universite/formations`,
       })),
   },
   {

@@ -233,7 +233,7 @@
           </button>
           <button
             type="button"
-            :disabled="!estValide || enCours"
+            :disabled="enCours"
             class="px-5 py-2.5 rounded-lg bg-linear-to-r from-amber-500 to-orange-600 text-white text-sm font-semibold hover:from-amber-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2 shadow-md"
             @click="soumettre"
           >
@@ -298,13 +298,15 @@ const urgences = [
   { value: 'critique' as const, label: 'Critique', icon: ['fas', 'fire'], activeClass: 'bg-red-50 text-red-700' },
 ]
 
-const estValide = computed(() =>
-  form.titre.trim().length >= 5
-  && form.description_generale.trim().length >= 10
-  && form.details_proposition.trim().length >= 10
-  && !!form.categorie_proposition
-  && !!form.pays_id,
-)
+/** Retourne un message d'erreur si le formulaire est invalide, sinon null. */
+function premiereErreurValidation(): string | null {
+  if (form.titre.trim().length < 5) return 'Le titre doit contenir au moins 5 caractères.'
+  if (form.description_generale.trim().length < 10) return 'La description générale doit contenir au moins 10 caractères.'
+  if (form.details_proposition.trim().length < 10) return 'Les détails de la proposition doivent contenir au moins 10 caractères.'
+  if (!form.categorie_proposition) return 'Veuillez sélectionner une catégorie.'
+  if (!form.pays_id) return 'Veuillez sélectionner un territoire.'
+  return null
+}
 
 function ajouterMedia() {
   if (mediasUrls.value.length < 5) mediasUrls.value.push('')
@@ -337,7 +339,12 @@ function fermer() {
 }
 
 async function soumettre() {
-  if (!estValide.value || enCours.value) return
+  if (enCours.value) return
+  const erreur = premiereErreurValidation()
+  if (erreur) {
+    erreurMessage.value = erreur
+    return
+  }
   enCours.value = true
   erreurMessage.value = null
   try {

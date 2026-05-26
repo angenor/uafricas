@@ -8,10 +8,14 @@ const amiSelectionne = ref<MembreLightAPI | null>(null)
 const verrouilleeSelection = ref(false)
 const chargee = ref(false)
 
+// Onglets : conversations existantes vs annuaire des inscrits.
+const ongletActif = ref<'discussions' | 'membres'>('discussions')
+
 // Ouverture programmatique depuis l'extérieur (ex. /codi-moi → « Envoyer un message »).
 watch(demandeOuverture, async (ami) => {
   if (!ami) return
   ouvert.value = true
+  ongletActif.value = 'discussions'
   if (!chargee.value) {
     await listerConversations()
     chargee.value = true
@@ -92,23 +96,51 @@ const fermerFenetre = () => {
           />
         </div>
 
-        <!-- Liste / état vide -->
+        <!-- Liste / annuaire -->
         <div v-else class="flex-1 min-h-0 flex flex-col">
-          <div v-if="conversations.length === 0" class="flex-1 flex flex-col items-center justify-center text-center px-6">
-            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <font-awesome-icon icon="fa-solid fa-users" class="text-2xl text-gray-400" />
-            </div>
-            <p class="text-sm font-semibold text-gray-700 mb-1">Aucune conversation</p>
-            <p class="text-xs text-gray-400 mb-4">Faites-vous des amis pour commencer à discuter.</p>
-            <NuxtLink
-              to="/profil"
-              class="text-xs font-semibold text-white bg-custom-chocolat px-4 py-2 rounded-xl hover:shadow-md transition"
-              @click="fermerFenetre"
+          <!-- Sélecteur d'onglets -->
+          <div class="flex shrink-0 border-b border-gray-100">
+            <button
+              type="button"
+              class="flex-1 py-2.5 text-xs font-semibold transition flex items-center justify-center gap-1.5"
+              :class="ongletActif === 'discussions' ? 'text-custom-chocolat border-b-2 border-custom-chocolat' : 'text-gray-400 hover:text-gray-600'"
+              @click="ongletActif = 'discussions'"
             >
-              Parcourir l'annuaire
-            </NuxtLink>
+              <font-awesome-icon icon="fa-solid fa-comments" />
+              Discussions
+            </button>
+            <button
+              type="button"
+              class="flex-1 py-2.5 text-xs font-semibold transition flex items-center justify-center gap-1.5"
+              :class="ongletActif === 'membres' ? 'text-custom-chocolat border-b-2 border-custom-chocolat' : 'text-gray-400 hover:text-gray-600'"
+              @click="ongletActif = 'membres'"
+            >
+              <font-awesome-icon icon="fa-solid fa-users" />
+              Membres
+            </button>
           </div>
-          <SocialListeAmis v-else class="flex-1" @selectionner="selectionner" />
+
+          <!-- Onglet Discussions -->
+          <div v-if="ongletActif === 'discussions'" class="flex-1 min-h-0 flex flex-col">
+            <div v-if="conversations.length === 0" class="flex-1 flex flex-col items-center justify-center text-center px-6">
+              <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <font-awesome-icon icon="fa-solid fa-users" class="text-2xl text-gray-400" />
+              </div>
+              <p class="text-sm font-semibold text-gray-700 mb-1">Aucune conversation</p>
+              <p class="text-xs text-gray-400 mb-4">Faites-vous des amis pour commencer à discuter.</p>
+              <button
+                type="button"
+                class="text-xs font-semibold text-white bg-custom-chocolat px-4 py-2 rounded-xl hover:shadow-md transition"
+                @click="ongletActif = 'membres'"
+              >
+                Parcourir les membres
+              </button>
+            </div>
+            <SocialListeAmis v-else class="flex-1" @selectionner="selectionner" />
+          </div>
+
+          <!-- Onglet Membres : annuaire des inscrits + demande d'amitié -->
+          <SocialAnnuaireMembres v-else class="flex-1" />
         </div>
       </div>
     </Transition>

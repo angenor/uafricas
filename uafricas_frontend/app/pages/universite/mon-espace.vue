@@ -24,7 +24,7 @@
             <h2 class="text-xl font-bold">Mes inscriptions</h2>
             <p class="text-gray-600">Gérez vos formations et suivez votre progression</p>
           </div>
-          <NuxtLink to="/universite/inuda" class="text-purple-600 hover:text-purple-800">
+          <NuxtLink to="/universite" class="text-purple-600 hover:text-purple-800">
             ← Retour à l'INUDA
           </NuxtLink>
         </div>
@@ -166,7 +166,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
         </svg>
         <p class="mt-4 text-gray-600">Aucune inscription trouvée</p>
-        <NuxtLink to="/universite/inuda/formations"
+        <NuxtLink to="/universite/formations"
                   class="mt-4 inline-block px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition">
           Découvrir les formations
         </NuxtLink>
@@ -182,7 +182,7 @@ useHead({
 
 const breadcrumbs = [
   { label: 'Université', to: '/universite' },
-  { label: 'INUDA', to: '/universite/inuda' },
+  { label: 'INUDA', to: '/universite' },
   { label: 'Mon Espace', to: undefined }
 ]
 

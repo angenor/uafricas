@@ -111,8 +111,9 @@
           <!-- Cartes -->
           <div v-else class="space-y-5">
             <div v-for="contribution in contributionsFiltrees" :key="contribution.id"
-                 class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-gray-200"
-                 @click="voirDetail(contribution)">
+                 :id="`contrib-${contribution.id}`"
+                 class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border scroll-mt-24"
+                 :class="pubCible === contribution.id ? 'border-orange-400 ring-2 ring-orange-400 ring-offset-2' : 'border-gray-100 hover:border-gray-200'">
               <!-- Bande orange -->
               <div class="h-1.5 bg-linear-to-r from-amber-400 to-orange-500"></div>
 
@@ -124,13 +125,6 @@
                   </div>
 
                   <div class="flex-1 min-w-0">
-                    <!-- Badge -->
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                      <span class="px-2.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-bold uppercase tracking-wide">
-                        IdeaForces
-                      </span>
-                    </div>
-
                     <!-- Titre -->
                     <h3 class="text-lg font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors line-clamp-2">
                       {{ contribution.titre }}
@@ -174,12 +168,6 @@
                     </div>
                   </div>
 
-                  <!-- Flèche -->
-                  <div class="shrink-0 hidden sm:flex items-center">
-                    <div class="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-orange-100 flex items-center justify-center transition-all group-hover:translate-x-1">
-                      <font-awesome-icon :icon="['fas', 'chevron-right']" class="text-gray-400 group-hover:text-orange-600 text-xs transition-colors" />
-                    </div>
-                  </div>
                 </div>
 
                 <!-- Stats footer -->
@@ -196,6 +184,12 @@
                     <font-awesome-icon :icon="['fas', 'hand-fist']" />
                     {{ contribution.stats.soutiens || 0 }} soutiens
                   </span>
+                  <UniversiteGouvernancePartagePublication
+                    class="ml-auto"
+                    path="/universite/gouvernance/ideaforces"
+                    :id="contribution.id"
+                    :titre="contribution.titre"
+                  />
                 </div>
               </div>
             </div>
@@ -207,7 +201,7 @@
 </template>
 
 <script setup lang="ts">
-import { getContributionsByType, type ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 useHead({
   title: 'IdeaForces - Gouvernance Citoyenne'
@@ -220,8 +214,12 @@ const breadcrumbs = [
 ]
 
 const userStore = useUserStore()
+const { getContributions } = useGouvernance()
+const { pubCible, cibler } = usePartagePublication()
 
 const contributions = ref<ContributionCitoyenne[]>([])
+const chargement = ref(false)
+const erreurChargement = ref<string | null>(null)
 const recherche = ref('')
 const paysSelectionne = ref('')
 const modalOuvert = ref(false)
@@ -236,16 +234,13 @@ function ouvrirModalPublication() {
 
 function apresPublication(_id: string) {
   modalOuvert.value = false
+  chargerContributions()
 }
 
 const paysDisponibles = computed(() => {
   const pays = new Set(contributions.value.map(c => c.localisation.pays))
   return Array.from(pays).sort()
 })
-
-const totalSoutiens = computed(() =>
-  contributions.value.reduce((acc, c) => acc + (c.stats.soutiens || 0), 0)
-)
 
 const contributionsFiltrees = computed(() => {
   return contributions.value.filter(c => {
@@ -262,10 +257,6 @@ const contributionsFiltrees = computed(() => {
   })
 })
 
-const voirDetail = (contribution: ContributionCitoyenne) => {
-  navigateTo(`/universite/gouvernance/${contribution.id}`)
-}
-
 const reinitialiser = () => {
   recherche.value = ''
   paysSelectionne.value = ''
@@ -275,7 +266,19 @@ const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(date))
 }
 
-onMounted(() => {
-  contributions.value = getContributionsByType('ideaforces')
-})
+async function chargerContributions() {
+  chargement.value = true
+  erreurChargement.value = null
+  try {
+    const { contributions: liste } = await getContributions({ type: 'ideaforces', parPage: 50 })
+    contributions.value = liste
+    cibler(liste.map(c => c.id))
+  } catch (err) {
+    erreurChargement.value = err instanceof Error ? err.message : 'Erreur lors du chargement'
+  } finally {
+    chargement.value = false
+  }
+}
+
+onMounted(chargerContributions)
 </script>

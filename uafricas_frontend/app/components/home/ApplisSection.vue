@@ -163,7 +163,7 @@ const applis: Appli[] = [
   },
   {
     label: 'Mindshiftlab',
-    to: '/universite/inuda',
+    to: '/universite',
     icon: 'fa-solid fa-graduation-cap',
     bgClass: 'bg-violet-500',
     barClass: 'bg-violet-500',

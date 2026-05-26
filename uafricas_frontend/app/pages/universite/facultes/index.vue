@@ -31,7 +31,7 @@
                 Explorez nos partenariats académiques d'excellence
               </p>
             </div>
-            <NuxtLink to="/universite/inuda"
+            <NuxtLink to="/universite"
                       class="text-custom-chocolat hover:text-custom-green font-medium">
               ← Retour
             </NuxtLink>
@@ -225,7 +225,7 @@ useHead({
 
 const breadcrumbs = [
   { label: 'Université', to: '/universite' },
-  { label: 'INUDA', to: '/universite/inuda' },
+  { label: 'INUDA', to: '/universite' },
   { label: 'Facultés', to: undefined }
 ]
 
@@ -251,7 +251,7 @@ const facultesFiltrees = computed(() => {
 })
 
 const voirDetail = (faculte: Faculte) => {
-  navigateTo(`/universite/inuda/facultes/${faculte.id}`)
+  navigateTo(`/universite/facultes/${faculte.id}`)
 }
 
 const ouvrirFormulaireInteret = (faculte: Faculte) => {

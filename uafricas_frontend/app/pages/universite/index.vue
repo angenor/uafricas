@@ -233,11 +233,11 @@ const stats = ref({
 const formationsRecentes = ref<FormationAPI[]>([])
 
 const naviguerVers = (route: string) => {
-  navigateTo(`/universite/inuda/${route}`)
+  navigateTo(`/universite/${route}`)
 }
 
 const voirFormation = (formationId: string) => {
-  navigateTo(`/universite/inuda/formations/${formationId}`)
+  navigateTo(`/universite/formations/${formationId}`)
 }
 
 const chargerDonnees = async () => {

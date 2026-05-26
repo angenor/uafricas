@@ -213,9 +213,10 @@
           <!-- Cartes -->
           <div v-else class="space-y-5">
             <div v-for="(contribution, index) in contributionsFiltrees" :key="contribution.id"
-                 class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-gray-200"
-                 :style="{ animationDelay: `${index * 80}ms` }"
-                 @click="voirDetail(contribution)">
+                 :id="`contrib-${contribution.id}`"
+                 class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border scroll-mt-24"
+                 :class="pubCible === contribution.id ? 'border-amber-400 ring-2 ring-amber-400 ring-offset-2' : 'border-gray-100 hover:border-gray-200'"
+                 :style="{ animationDelay: `${index * 80}ms` }">
               <!-- Bande de gravité / impact -->
               <div class="h-1.5" :class="getBandeClass(contribution)"></div>
 
@@ -280,20 +281,6 @@
                       </span>
                     </div>
                   </div>
-
-                  <!-- Flèche -->
-                  <div class="shrink-0 hidden sm:flex items-center">
-                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-all group-hover:translate-x-1"
-                         :class="contribution.typePratique === 'bonne'
-                           ? 'group-hover:bg-emerald-100'
-                           : 'group-hover:bg-red-100'">
-                      <font-awesome-icon :icon="['fas', 'chevron-right']"
-                                         class="text-gray-400 text-xs transition-colors"
-                                         :class="contribution.typePratique === 'bonne'
-                                           ? 'group-hover:text-emerald-600'
-                                           : 'group-hover:text-red-600'" />
-                    </div>
-                  </div>
                 </div>
 
                 <!-- Stats footer -->
@@ -310,6 +297,12 @@
                     {{ contribution.stats.soutiens || 0 }}
                     {{ contribution.typePratique === 'bonne' ? 'félicitations' : 'soutiens' }}
                   </span>
+                  <UniversiteGouvernancePartagePublication
+                    class="ml-auto"
+                    path="/universite/gouvernance/bad-good-habits"
+                    :id="contribution.id"
+                    :titre="contribution.titre"
+                  />
                 </div>
               </div>
             </div>
@@ -321,10 +314,11 @@
 </template>
 
 <script setup lang="ts">
-import type { ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne } from '~/types/gouvernance'
 import type { TypePratique } from '~/composables/useGouvernance'
 
 const { getContributions } = useGouvernance()
+const { pubCible, cibler } = usePartagePublication()
 const chargement = ref(false)
 const erreurChargement = ref<string | null>(null)
 
@@ -444,10 +438,6 @@ const contributionsFiltrees = computed(() => {
   })
 })
 
-const voirDetail = (contribution: ContributionCitoyenne) => {
-  navigateTo(`/universite/gouvernance/${contribution.id}`)
-}
-
 const reinitialiser = () => {
   recherche.value = ''
   paysSelectionne.value = ''
@@ -548,6 +538,7 @@ async function chargerContributions() {
   try {
     const resultat = await getContributions({ type: 'badhabits', parPage: 50 })
     contributions.value = resultat.contributions
+    cibler(resultat.contributions.map(c => c.id))
   } catch (e: unknown) {
     erreurChargement.value = e instanceof Error ? e.message : 'Erreur inconnue'
     contributions.value = []

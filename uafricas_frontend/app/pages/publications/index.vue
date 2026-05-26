@@ -150,7 +150,8 @@
               <div
                 v-for="pub in publicationsFiltrees"
                 :key="pub.key"
-                class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-gray-200"
+                class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-gray-200"
+                :class="{ 'cursor-pointer': pub.source === 'codimoi' }"
                 @click="ouvrirPublication(pub)"
               >
                 <!-- Bande colorée -->
@@ -341,7 +342,7 @@
 
 <script setup lang="ts">
 import { getCategoryLabel, type CodiMoiPostAPI, type CategoriePost, type CommentaireAPI } from '~/composables/useCodiMoi'
-import type { ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 useHead({
   title: 'Publications de la Communauté | UAfricas',
@@ -625,11 +626,10 @@ const reinitialiser = () => {
 
 // Clic sur une publication
 const ouvrirPublication = async (pub: Publication) => {
+  // Seules les publications Codimoi ouvrent une vue détaillée (modale).
+  // Les contributions de gouvernance n'ont pas de page détail.
   if (pub.source === 'codimoi') {
     await ouvrirPostCodimoi(pub.data)
-  }
-  else {
-    navigateTo(`/universite/gouvernance/${pub.data.id}`)
   }
 }
 

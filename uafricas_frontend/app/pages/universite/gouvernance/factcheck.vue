@@ -46,7 +46,7 @@
       <UniversiteGouvernanceFactCheckCreateModal
         :open="modalOuvert"
         @close="modalOuvert = false"
-        @created="apresPublication"
+        @created="apresPublicationRecharger"
       />
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -113,8 +113,29 @@
             </p>
           </div>
 
+          <!-- Erreur (réaction / chargement / signalement) -->
+          <div v-if="erreurReaction"
+               class="mb-4 bg-red-50 border-l-4 border-red-500 p-3 rounded-lg text-sm text-red-700 flex items-center gap-2">
+            <font-awesome-icon :icon="['fas', 'circle-exclamation']" />
+            <span>{{ erreurReaction }}</span>
+          </div>
+
+          <!-- Info (signalement) -->
+          <div v-if="messageInfo"
+               class="mb-4 bg-orange-50 border-l-4 border-orange-500 p-3 rounded-lg text-sm text-orange-700 flex items-center gap-2">
+            <font-awesome-icon :icon="['fas', 'flag']" />
+            <span>{{ messageInfo }}</span>
+          </div>
+
+          <!-- Chargement -->
+          <div v-if="chargement && contributions.length === 0"
+               class="text-center py-20 bg-white rounded-xl shadow-lg">
+            <font-awesome-icon :icon="['fas', 'spinner']" class="text-blue-500 text-2xl animate-spin" />
+            <p class="text-gray-500 text-sm mt-3">Chargement des factchecks…</p>
+          </div>
+
           <!-- État vide -->
-          <div v-if="contributionsFiltrees.length === 0"
+          <div v-else-if="contributionsFiltrees.length === 0"
                class="text-center py-20 bg-white rounded-xl shadow-lg">
             <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
               <font-awesome-icon :icon="['fas', 'search']" class="text-gray-400 text-2xl" />
@@ -126,8 +147,9 @@
           <!-- Cartes -->
           <div v-else class="space-y-5">
             <div v-for="contribution in contributionsFiltrees" :key="contribution.id"
-                 class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-gray-200"
-                 @click="voirDetail(contribution)">
+                 :id="`contrib-${contribution.id}`"
+                 class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border scroll-mt-24"
+                 :class="pubCible === contribution.id ? 'border-blue-400 ring-2 ring-blue-400 ring-offset-2' : 'border-gray-100 hover:border-gray-200'">
               <!-- Bande bleue -->
               <div class="h-1.5 bg-linear-to-r from-blue-500 to-indigo-500"></div>
 
@@ -140,18 +162,6 @@
                   </div>
 
                   <div class="flex-1 min-w-0">
-                    <!-- Badges -->
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                      <span class="px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-bold uppercase tracking-wide">
-                        FactCheck
-                      </span>
-                      <span v-if="contribution.verified"
-                            class="flex items-center gap-1 px-2.5 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                        <font-awesome-icon :icon="['fas', 'circle-check']" class="text-[10px]" />
-                        Vérifié
-                      </span>
-                    </div>
-
                     <!-- Titre -->
                     <h3 class="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors line-clamp-2">
                       {{ contribution.titre }}
@@ -164,18 +174,60 @@
 
                     <!-- FactCheck préjugé vs réalité -->
                     <div v-if="contribution.factcheck" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                      <div class="p-3 bg-red-50 rounded-lg border-l-4 border-red-400">
+                      <div class="p-3 bg-red-50 rounded-lg border-l-4 border-red-400 flex flex-col">
                         <p class="text-xs font-bold text-red-600 uppercase tracking-wide mb-1">
                           <font-awesome-icon :icon="['fas', 'times']" class="mr-1" />Préjugé
                         </p>
-                        <p class="text-red-800 text-sm line-clamp-2">{{ contribution.factcheck.prejuge.titre }}</p>
+                        <p class="text-red-800 text-sm line-clamp-2 flex-1">{{ contribution.factcheck.prejuge.titre }}</p>
+                        <button
+                          type="button"
+                          class="mt-2 self-start inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition"
+                          :class="contribution.aLikePrejuge
+                            ? 'bg-red-500 text-white shadow-sm'
+                            : 'bg-white text-red-600 border border-red-200 hover:bg-red-100'"
+                          @click.stop="reagirVolet(contribution, 'prejuge')"
+                        >
+                          <font-awesome-icon :icon="['fas', 'heart']" class="text-[11px]" />
+                          {{ contribution.factcheck.prejuge.likes || 0 }}
+                        </button>
                       </div>
-                      <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                      <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-400 flex flex-col">
                         <p class="text-xs font-bold text-green-600 uppercase tracking-wide mb-1">
                           <font-awesome-icon :icon="['fas', 'check']" class="mr-1" />Réalité
                         </p>
-                        <p class="text-green-800 text-sm line-clamp-2">{{ contribution.factcheck.contrePrejuge.titre }}</p>
+                        <p class="text-green-800 text-sm line-clamp-2 flex-1">{{ contribution.factcheck.contrePrejuge.titre }}</p>
+                        <button
+                          type="button"
+                          class="mt-2 self-start inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition"
+                          :class="contribution.aLikeRealite
+                            ? 'bg-green-500 text-white shadow-sm'
+                            : 'bg-white text-green-600 border border-green-200 hover:bg-green-100'"
+                          @click.stop="reagirVolet(contribution, 'realite')"
+                        >
+                          <font-awesome-icon :icon="['fas', 'heart']" class="text-[11px]" />
+                          {{ contribution.factcheck.contrePrejuge.likes || 0 }}
+                        </button>
                       </div>
+                    </div>
+
+                    <!-- Sources (appuient la réalité) -->
+                    <div v-if="contribution.sources?.length" class="flex flex-wrap items-center gap-2 mb-4">
+                      <span class="flex items-center gap-1 text-xs font-bold text-green-600 uppercase tracking-wide">
+                        <font-awesome-icon :icon="['fas', 'link']" />
+                        Sources
+                      </span>
+                      <a
+                        v-for="(source, index) in contribution.sources"
+                        :key="index"
+                        :href="source.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium hover:bg-green-100 hover:border-green-300 transition"
+                        @click.stop
+                      >
+                        <font-awesome-icon :icon="['fas', 'circle-check']" class="text-[10px]" />
+                        {{ source.titre }}
+                      </a>
                     </div>
 
                     <!-- Métadonnées -->
@@ -195,28 +247,46 @@
                     </div>
                   </div>
 
-                  <!-- Flèche -->
-                  <div class="shrink-0 hidden sm:flex items-center">
-                    <div class="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-all group-hover:translate-x-1">
-                      <font-awesome-icon :icon="['fas', 'chevron-right']" class="text-gray-400 group-hover:text-blue-600 text-xs transition-colors" />
-                    </div>
-                  </div>
                 </div>
 
-                <!-- Stats footer -->
-                <div class="flex items-center gap-6 mt-5 pt-4 border-t border-gray-100 text-xs text-gray-400">
-                  <span class="flex items-center gap-1.5 hover:text-gray-600 transition">
-                    <font-awesome-icon :icon="['fas', 'eye']" />
-                    {{ contribution.stats.vues }} vues
-                  </span>
-                  <span class="flex items-center gap-1.5 hover:text-red-500 transition">
-                    <font-awesome-icon :icon="['fas', 'heart']" />
-                    {{ contribution.stats.likes }} likes
-                  </span>
-                  <span class="flex items-center gap-1.5 hover:text-green-500 transition">
-                    <font-awesome-icon :icon="['fas', 'circle-check']" />
-                    {{ contribution.stats.validations || 0 }} validations
-                  </span>
+                <!-- Réactions globales (emojis) + signalement -->
+                <div class="flex flex-wrap items-center gap-2 mt-5 pt-4 border-t border-gray-100 text-xs text-gray-400">
+                  <button
+                    v-for="r in reactionsConfig"
+                    :key="r.type"
+                    type="button"
+                    :title="r.label"
+                    class="flex items-center gap-1.5 px-2.5 py-1 rounded-full transition"
+                    :class="contribution.reactions?.maReaction === r.type
+                      ? `${r.actifClass} bg-gray-100 font-semibold`
+                      : 'hover:bg-gray-100'"
+                    @click.stop="reagirGlobal(contribution, r.type)"
+                  >
+                    <font-awesome-icon :icon="r.icon" />
+                    {{ nombreReaction(contribution, r.type) }}
+                  </button>
+
+                  <!-- Signaler -->
+                  <button
+                    type="button"
+                    :title="contribution.aSignale ? 'Vous avez signalé cette publication' : 'Signaler cette publication'"
+                    :disabled="contribution.aSignale"
+                    class="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full transition"
+                    :class="contribution.aSignale
+                      ? 'text-orange-600 font-semibold cursor-default'
+                      : 'hover:bg-orange-50 hover:text-orange-600'"
+                    @click.stop="signalerContribution(contribution)"
+                  >
+                    <font-awesome-icon :icon="['fas', 'flag']" />
+                    {{ contribution.aSignale ? 'Signalé' : 'Signaler' }}
+                  </button>
+
+                  <UniversiteGouvernancePartagePublication
+                    class="px-2.5 py-1"
+                    path="/universite/gouvernance/factcheck"
+                    :id="contribution.id"
+                    :titre="contribution.titre"
+                  />
                 </div>
               </div>
             </div>
@@ -228,11 +298,14 @@
 </template>
 
 <script setup lang="ts">
-import { getContributionsByType, type ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne, TypeReactionGlobale } from '~/types/gouvernance'
 
 useHead({
   title: 'FactCheck - Gouvernance Citoyenne'
 })
+
+const { getContributions, reagir, signaler } = useGouvernance()
+const { pubCible, cibler } = usePartagePublication()
 
 const breadcrumbs = [
   { label: 'Université', to: '/universite' },
@@ -247,6 +320,8 @@ const recherche = ref('')
 const paysSelectionne = ref('')
 const seulementVerifies = ref(false)
 const modalOuvert = ref(false)
+const chargement = ref(false)
+const erreurReaction = ref<string | null>(null)
 
 function ouvrirModalPublication() {
   if (!userStore.isAuthenticated) {
@@ -264,10 +339,6 @@ const paysDisponibles = computed(() => {
   const pays = new Set(contributions.value.map(c => c.localisation.pays))
   return Array.from(pays).sort()
 })
-
-const nombreVerifies = computed(() =>
-  contributions.value.filter(c => c.verified).length
-)
 
 const contributionsFiltrees = computed(() => {
   return contributions.value.filter(c => {
@@ -288,8 +359,103 @@ const contributionsFiltrees = computed(() => {
   })
 })
 
-const voirDetail = (contribution: ContributionCitoyenne) => {
-  navigateTo(`/universite/gouvernance/${contribution.id}`)
+// Réactions globales (emojis) du post
+const reactionsConfig: { type: TypeReactionGlobale; icon: [string, string]; label: string; actifClass: string }[] = [
+  { type: 'coeur', icon: ['fas', 'heart'], label: 'Cœur', actifClass: 'text-red-500' },
+  { type: 'pouce', icon: ['fas', 'thumbs-up'], label: "J'aime", actifClass: 'text-blue-500' },
+  { type: 'rire', icon: ['fas', 'face-laugh-squint'], label: 'Ça me fait rire', actifClass: 'text-amber-500' },
+  { type: 'jaime_pas', icon: ['fas', 'thumbs-down'], label: "Je n'aime pas", actifClass: 'text-gray-700' },
+]
+
+function nombreReaction(c: ContributionCitoyenne, type: TypeReactionGlobale): number {
+  const r = c.reactions
+  if (!r) return 0
+  switch (type) {
+    case 'coeur': return r.coeur
+    case 'pouce': return r.pouce
+    case 'rire': return r.rire
+    case 'jaime_pas': return r.jaimePas
+  }
+}
+
+/** Remplace immutablement la contribution dans la liste avec le nouvel état de réaction */
+function appliquerEtat(id: string, etat: Awaited<ReturnType<typeof reagir>>) {
+  const index = contributions.value.findIndex(c => c.id === id)
+  if (index === -1) return
+  const actuelle = contributions.value[index]!
+  const maj: ContributionCitoyenne = {
+    ...actuelle,
+    reactions: etat.reactions,
+    aLikePrejuge: etat.aLikePrejuge,
+    aLikeRealite: etat.aLikeRealite,
+    factcheck: actuelle.factcheck
+      ? {
+          prejuge: { ...actuelle.factcheck.prejuge, likes: etat.prejugeLikes },
+          contrePrejuge: { ...actuelle.factcheck.contrePrejuge, likes: etat.realiteLikes },
+        }
+      : undefined,
+  }
+  const copie = [...contributions.value]
+  copie[index] = maj
+  contributions.value = copie
+}
+
+async function reagirGlobal(c: ContributionCitoyenne, type: TypeReactionGlobale) {
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  erreurReaction.value = null
+  try {
+    appliquerEtat(c.id, await reagir(c.id, 'general', type))
+  } catch (err) {
+    erreurReaction.value = err instanceof Error ? err.message : 'Erreur lors de la réaction'
+  }
+}
+
+async function reagirVolet(c: ContributionCitoyenne, cible: 'prejuge' | 'realite') {
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  erreurReaction.value = null
+  try {
+    appliquerEtat(c.id, await reagir(c.id, cible))
+  } catch (err) {
+    erreurReaction.value = err instanceof Error ? err.message : 'Erreur lors de la réaction'
+  }
+}
+
+const messageInfo = ref<string | null>(null)
+
+async function signalerContribution(c: ContributionCitoyenne) {
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  if (c.aSignale) return
+  if (!confirm('Signaler cette publication comme inappropriée ou trompeuse ?')) return
+  erreurReaction.value = null
+  try {
+    const etat = await signaler(c.id)
+    if (etat.suspendu) {
+      // Suspendue : elle quitte la liste publique
+      contributions.value = contributions.value.filter(x => x.id !== c.id)
+      messageInfo.value = 'Publication suspendue : elle a dépassé le seuil de signalements.'
+    } else {
+      // Marquer comme signalée (immutable)
+      const index = contributions.value.findIndex(x => x.id === c.id)
+      if (index !== -1) {
+        const copie = [...contributions.value]
+        copie[index] = { ...contributions.value[index]!, aSignale: true }
+        contributions.value = copie
+      }
+      messageInfo.value = etat.dejaSignale ? 'Vous aviez déjà signalé cette publication.' : 'Merci, votre signalement a été pris en compte.'
+    }
+    setTimeout(() => { messageInfo.value = null }, 4000)
+  } catch (err) {
+    erreurReaction.value = err instanceof Error ? err.message : 'Erreur lors du signalement'
+  }
 }
 
 const reinitialiser = () => {
@@ -306,7 +472,39 @@ const formatDate = (date: Date) => {
   }).format(new Date(date))
 }
 
-onMounted(() => {
-  contributions.value = getContributionsByType('factcheck')
+// Garde de séquence : le chargement anonyme (onMounted) et le rechargement
+// authentifié (après restauration du token) peuvent se courser. Seule la
+// requête la plus récente applique son résultat, pour ne pas écraser l'état
+// personnalisé (ma_reaction / a_like_*) par une réponse anonyme tardive.
+let chargementSeq = 0
+async function chargerContributions() {
+  const seq = ++chargementSeq
+  chargement.value = true
+  try {
+    const { contributions: liste } = await getContributions({ type: 'factcheck', parPage: 50 })
+    if (seq !== chargementSeq) return
+    contributions.value = liste
+    cibler(liste.map(c => c.id))
+  } catch (err) {
+    if (seq === chargementSeq) {
+      erreurReaction.value = err instanceof Error ? err.message : 'Erreur lors du chargement'
+    }
+  } finally {
+    if (seq === chargementSeq) chargement.value = false
+  }
+}
+
+function apresPublicationRecharger(id: string) {
+  apresPublication(id)
+  chargerContributions()
+}
+
+onMounted(chargerContributions)
+
+// Le token d'accès est restauré en mémoire de façon asynchrone après le montage.
+// Dès qu'il devient disponible, on recharge pour récupérer l'état de réaction
+// personnalisé (ma_reaction / a_like_*) sans lequel les surbrillances manquent.
+watch(() => userStore.accessToken, (token, ancien) => {
+  if (token && !ancien) chargerContributions()
 })
 </script>

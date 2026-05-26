@@ -85,6 +85,8 @@
 \ir schemas/08b_afrolang.sql
 \ir schemas/09_media_content.sql
 \ir schemas/10_governance.sql
+\ir schemas/10f_governance_factcheck_volets_reactions.sql
+\ir schemas/10g_governance_factcheck_signalement.sql
 \ir schemas/11_country_profile.sql
 \ir schemas/11b_country_profile_contributions.sql
 \ir schemas/11c_country_profile_afripulse.sql

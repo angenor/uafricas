@@ -12,7 +12,7 @@
       </svg>
       <h1 class="text-2xl font-bold text-gray-700 mb-2">Faculté non trouvée</h1>
       <p class="text-gray-500 mb-4">La faculté que vous recherchez n'existe pas.</p>
-      <NuxtLink to="/universite/inuda/facultes" class="text-blue-600 hover:underline">
+      <NuxtLink to="/universite/facultes" class="text-blue-600 hover:underline">
         ← Retour à la liste des facultés
       </NuxtLink>
     </div>
@@ -201,8 +201,8 @@ const faculte = ref<Faculte | null>(null)
 
 const breadcrumbs = computed(() => [
   { label: 'Université', to: '/universite' },
-  { label: 'INUDA', to: '/universite/inuda' },
-  { label: 'Facultés', to: '/universite/inuda/facultes' },
+  { label: 'INUDA', to: '/universite' },
+  { label: 'Facultés', to: '/universite/facultes' },
   { label: faculte.value?.titre || 'Faculté', to: undefined }
 ])
 

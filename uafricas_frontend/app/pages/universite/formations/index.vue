@@ -31,7 +31,7 @@
                 Découvrez nos formations pour développer vos compétences
               </p>
             </div>
-            <NuxtLink to="/universite/inuda"
+            <NuxtLink to="/universite"
                       class="text-custom-chocolat hover:text-custom-green font-medium">
               ← Retour
             </NuxtLink>
@@ -247,7 +247,7 @@ useHead({
 
 const breadcrumbs = [
   { label: 'Université', to: '/universite' },
-  { label: 'INUDA', to: '/universite/inuda' },
+  { label: 'INUDA', to: '/universite' },
   { label: 'Formations', to: undefined }
 ]
 
@@ -293,7 +293,7 @@ const formationsTriees = computed(() => {
 })
 
 const voirDetail = (formation: FormationAPI) => {
-  navigateTo(`/universite/inuda/formations/${formation.id}`)
+  navigateTo(`/universite/formations/${formation.id}`)
 }
 
 const ouvrirInscription = (formation: FormationAPI) => {

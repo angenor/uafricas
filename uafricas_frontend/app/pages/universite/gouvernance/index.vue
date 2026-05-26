@@ -115,7 +115,6 @@
             v-for="contribution in dernieresContributions"
             :key="contribution.id"
             :contribution="contribution"
-            @click="voirContribution"
           />
         </div>
       </div>
@@ -124,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 useHead({
   title: 'Novagouv - Gouvernance Citoyenne | UAfricas'
@@ -134,10 +133,6 @@ const { getStats, getContributions } = useGouvernance()
 
 const stats = ref({ total: 0, factcheck: 0, badhabits: 0, ideaforces: 0, totalLikes: 0 })
 const dernieresContributions = ref<ContributionCitoyenne[]>([])
-
-const voirContribution = (contribution: ContributionCitoyenne) => {
-  navigateTo(`/universite/gouvernance/${contribution.id}`)
-}
 
 onMounted(async () => {
   try {

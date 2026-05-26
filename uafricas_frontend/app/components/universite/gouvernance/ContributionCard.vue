@@ -1,6 +1,5 @@
 <template>
-  <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
-       @click="$emit('click', contribution)">
+  <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
     <!-- Header avec type -->
     <div class="px-6 py-4 border-b border-gray-100">
       <div class="flex items-center justify-between">
@@ -89,14 +88,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 defineProps<{
   contribution: ContributionCitoyenne
-}>()
-
-defineEmits<{
-  (e: 'click', contribution: ContributionCitoyenne): void
 }>()
 
 const getTypeLabel = (type: string) => {

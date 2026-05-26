@@ -1,4 +1,9 @@
-import type { ContributionCitoyenne, ContributionStats } from '~/mocks/gouvernance/contributions'
+import type {
+  ContributionCitoyenne,
+  ContributionStats,
+  ReactionsGlobales,
+  TypeReactionGlobale,
+} from '~/types/gouvernance'
 
 interface ApiGouvernanceStats {
   total: number
@@ -26,6 +31,29 @@ interface ApiContributionStats {
   soutiens: number
 }
 
+interface ApiFactcheckVolet {
+  titre: string
+  description: string
+  likes: number
+}
+
+interface ApiFactcheckReactions {
+  coeur: number
+  pouce: number
+  rire: number
+  jaime_pas: number
+  ma_reaction: string | null
+}
+
+interface ApiFactcheckDetail {
+  prejuge: ApiFactcheckVolet
+  contrePrejuge: ApiFactcheckVolet
+  reactions: ApiFactcheckReactions
+  a_like_prejuge: boolean
+  a_like_realite: boolean
+  a_signale: boolean
+}
+
 interface ApiContribution {
   id: string
   type: 'factcheck' | 'badhabits' | 'ideaforces'
@@ -39,6 +67,43 @@ interface ApiContribution {
   categorie?: string | null
   gravite?: string | null
   type_pratique?: string | null
+  factcheck?: ApiFactcheckDetail | null
+}
+
+/** État de réaction renvoyé par POST .../reaction */
+interface ApiFactcheckReactionEtat {
+  nombre_coeur: number
+  nombre_pouce: number
+  nombre_rire: number
+  nombre_jaime_pas: number
+  prejuge_nombre_likes: number
+  realite_nombre_likes: number
+  ma_reaction_general: string | null
+  a_like_prejuge: boolean
+  a_like_realite: boolean
+}
+
+export interface ReactionEtat {
+  reactions: ReactionsGlobales
+  prejugeLikes: number
+  realiteLikes: number
+  aLikePrejuge: boolean
+  aLikeRealite: boolean
+}
+
+/** État de signalement renvoyé par POST .../signalement */
+interface ApiSignalementEtat {
+  nombre_signalements: number
+  etat: string
+  deja_signale: boolean
+  suspendu: boolean
+}
+
+export interface SignalementEtat {
+  nombreSignalements: number
+  etat: string
+  dejaSignale: boolean
+  suspendu: boolean
 }
 
 /** Mapping slug categorie DB → label FR pour affichage */
@@ -121,7 +186,23 @@ function mapperContribution(api: ApiContribution): ContributionCitoyenne {
     typePratique,
   }
 
-  if (api.type === 'badhabits') {
+  if (api.type === 'factcheck' && api.factcheck) {
+    const fc = api.factcheck
+    base.factcheck = {
+      prejuge: { titre: fc.prejuge.titre, description: fc.prejuge.description, likes: fc.prejuge.likes },
+      contrePrejuge: { titre: fc.contrePrejuge.titre, description: fc.contrePrejuge.description, likes: fc.contrePrejuge.likes },
+    }
+    base.reactions = {
+      coeur: fc.reactions.coeur,
+      pouce: fc.reactions.pouce,
+      rire: fc.reactions.rire,
+      jaimePas: fc.reactions.jaime_pas,
+      maReaction: (fc.reactions.ma_reaction as TypeReactionGlobale | null) ?? null,
+    }
+    base.aLikePrejuge = fc.a_like_prejuge
+    base.aLikeRealite = fc.a_like_realite
+    base.aSignale = fc.a_signale
+  } else if (api.type === 'badhabits') {
     const categorieLabel = api.categorie
       ? (LIBELLES_CATEGORIE_PROBLEME[api.categorie] ?? api.categorie)
       : 'Autre'
@@ -151,6 +232,10 @@ export interface CreerFactcheckPayload {
   image_couverture_url?: string
   couleur_fond?: string
   pays_id?: string
+  prejuge_titre?: string
+  prejuge_description?: string
+  realite_titre?: string
+  realite_description?: string
 }
 
 export type TypePratique = 'mauvaise' | 'bonne'
@@ -270,8 +355,11 @@ export function useGouvernance() {
     if (options?.parPage) params.set('par_page', String(options.parPage))
     if (options?.type) params.set('type', options.type)
 
+    // Header d'auth optionnel : permet au backend de renseigner l'état de
+    // réaction personnalisé (ma_reaction / a_like_*) quand l'utilisateur est connecté.
     const reponse = await $fetch<ApiResponse<ApiContributionListeResponse>>(
-      `${apiBase}/gouvernance/contributions?${params.toString()}`
+      `${apiBase}/gouvernance/contributions?${params.toString()}`,
+      { headers: authHeaders() },
     )
 
     if (!reponse.success || !reponse.data) {
@@ -381,6 +469,76 @@ export function useGouvernance() {
     }
   }
 
+  /**
+   * Réagir à un factcheck (toggle). Cible : 'general' (avec type d'emoji),
+   * 'prejuge' ou 'realite' (cœur implicite). Renvoie l'état de réaction à jour.
+   */
+  async function reagir(
+    factcheckId: string,
+    cible: 'general' | 'prejuge' | 'realite',
+    typeReaction?: TypeReactionGlobale,
+  ): Promise<ReactionEtat> {
+    if (!userStore.accessToken) {
+      throw new Error('Authentification requise pour réagir')
+    }
+    const reponse = await $fetch<ApiResponse<ApiFactcheckReactionEtat>>(
+      `${apiBase}/gouvernance/factcheck/${factcheckId}/reaction`,
+      {
+        method: 'POST',
+        headers: authHeaders(),
+        body: { cible, type_reaction: cible === 'general' ? typeReaction : undefined },
+      },
+    )
+    if (!reponse.success || !reponse.data) {
+      throw new Error(reponse.error || 'Erreur lors de la réaction')
+    }
+    const d = reponse.data
+    return {
+      reactions: {
+        coeur: d.nombre_coeur,
+        pouce: d.nombre_pouce,
+        rire: d.nombre_rire,
+        jaimePas: d.nombre_jaime_pas,
+        maReaction: (d.ma_reaction_general as TypeReactionGlobale | null) ?? null,
+      },
+      prejugeLikes: d.prejuge_nombre_likes,
+      realiteLikes: d.realite_nombre_likes,
+      aLikePrejuge: d.a_like_prejuge,
+      aLikeRealite: d.a_like_realite,
+    }
+  }
+
+  /**
+   * Signaler un factcheck. Au-delà de 20 signalements distincts, le backend
+   * suspend la publication (etat='suspendu') et elle quitte la liste publique.
+   */
+  async function signaler(
+    factcheckId: string,
+    motif?: string,
+    commentaire?: string,
+  ): Promise<SignalementEtat> {
+    if (!userStore.accessToken) {
+      throw new Error('Authentification requise pour signaler')
+    }
+    const reponse = await $fetch<ApiResponse<ApiSignalementEtat>>(
+      `${apiBase}/gouvernance/factcheck/${factcheckId}/signalement`,
+      {
+        method: 'POST',
+        headers: authHeaders(),
+        body: { motif, commentaire },
+      },
+    )
+    if (!reponse.success || !reponse.data) {
+      throw new Error(reponse.error || 'Erreur lors du signalement')
+    }
+    return {
+      nombreSignalements: reponse.data.nombre_signalements,
+      etat: reponse.data.etat,
+      dejaSignale: reponse.data.deja_signale,
+      suspendu: reponse.data.suspendu,
+    }
+  }
+
   return {
     loading,
     error,
@@ -390,5 +548,7 @@ export function useGouvernance() {
     creerFactcheck,
     creerBadHabit,
     creerIdeaForce,
+    reagir,
+    signaler,
   }
 }

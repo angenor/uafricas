@@ -236,7 +236,7 @@ const menuItems: MenuItem[] = [
       { label: 'Afripulse', to: '/opportunite-afrique', description: 'Offres d\'emploi et opportunités', icon: 'fa-solid fa-briefcase' },
       { label: 'Sabbafrica', to: '/echanges-sabbatiques', description: 'Programmes d\'échanges sabbatiques', icon: 'fa-solid fa-plane' },
       { label: 'Librafrica', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
-      { label: 'Mindshiftlab', to: '/universite/inuda', description: 'Institut numérique universitaire', icon: 'fa-solid fa-graduation-cap' },
+      { label: 'Mindshiftlab', to: '/universite', description: 'Institut numérique universitaire', icon: 'fa-solid fa-graduation-cap' },
       { label: 'Novagouv', to: '/universite/gouvernance', description: 'Gouvernance transparente et responsable', icon: 'fa-solid fa-scale-balanced' },
       { label: 'Africamood', to: '/medias', description: 'Médias et actualités du continent', icon: 'fa-solid fa-tv' },
       { label: 'Africantives', to: '/africantives', description: 'Innovations et startups africaines', icon: 'fa-solid fa-rocket' },

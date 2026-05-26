@@ -12,7 +12,7 @@
       </svg>
       <h1 class="text-2xl font-bold text-gray-700 mb-2">Formation non trouvée</h1>
       <p class="text-gray-500 mb-4">La formation que vous recherchez n'existe pas.</p>
-      <NuxtLink to="/universite/inuda/formations" class="text-blue-600 hover:underline">
+      <NuxtLink to="/universite/formations" class="text-blue-600 hover:underline">
         ← Retour à la liste des formations
       </NuxtLink>
     </div>
@@ -169,8 +169,8 @@ const formation = ref<FormationDetailAPI | null>(null)
 
 const breadcrumbs = computed(() => [
   { label: 'Université', to: '/universite' },
-  { label: 'INUDA', to: '/universite/inuda' },
-  { label: 'Formations', to: '/universite/inuda/formations' },
+  { label: 'INUDA', to: '/universite' },
+  { label: 'Formations', to: '/universite/formations' },
   { label: formation.value?.titre || 'Formation', to: undefined }
 ])
 

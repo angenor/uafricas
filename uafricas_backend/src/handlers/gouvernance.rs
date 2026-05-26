@@ -6,9 +6,13 @@ use uuid::Uuid;
 use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::gouvernance::{
-    ContributionListeResponse, ContributionQueryParams, ContributionRow, GouvernanceStats,
+    ContributionListeResponse, ContributionQueryParams, ContributionRow, FactcheckReactionEtat,
+    GouvernanceStats, ReactionFactcheckRequest, SignalementEtat, SignalementRequest,
 };
 use crate::services::audit;
+
+/// Seuil de signalements distincts au-delà duquel un factcheck est suspendu
+const SEUIL_SIGNALEMENTS_SUSPENSION: i64 = 20;
 
 /// Reponse API generique
 #[derive(serde::Serialize)]
@@ -34,6 +38,15 @@ fn exiger_utilisateur_id(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
         .map_err(|_| ApiErreur::NonAutorise("Token invalide ou expire".into()))?;
     Uuid::parse_str(&claims.sub)
         .map_err(|_| ApiErreur::NonAutorise("Token invalide".into()))
+}
+
+/// Extraire l'utilisateur connecte si present (optionnel, ne renvoie jamais d'erreur)
+fn extraire_utilisateur_id_opt(req: &HttpRequest) -> Option<Uuid> {
+    let header = req.headers().get("Authorization")?.to_str().ok()?;
+    let token = header.strip_prefix("Bearer ")?;
+    let secret = std::env::var("JWT_SECRET").ok()?;
+    let claims = jwt::valider_token(token, &secret).ok()?;
+    Uuid::parse_str(&claims.sub).ok()
 }
 
 /// Generer un slug URL-friendly a partir d'un titre
@@ -104,6 +117,7 @@ pub async fn obtenir_stats(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiE
 // GET /api/gouvernance/contributions — Liste paginee des contributions
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_contributions(
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     params: web::Query<ContributionQueryParams>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -114,11 +128,15 @@ pub async fn lister_contributions(
     // Filtre optionnel par type
     let filtre_type = params.type_contribution.as_deref();
 
+    // Utilisateur courant (optionnel) pour resoudre son etat de reaction par cible
+    let utilisateur_id = extraire_utilisateur_id_opt(&req).unwrap_or(Uuid::nil());
+
     let query = build_contributions_query(filtre_type);
 
     let rows = sqlx::query_as::<_, ContributionRow>(&query)
         .bind(par_page)
         .bind(offset)
+        .bind(utilisateur_id)
         .fetch_all(pool.get_ref())
         .await?;
 
@@ -163,7 +181,10 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                     f.etat AS statut,
                     f.cree_par, f.pays_id, f.created_at,
                     NULL::VARCHAR AS region, NULL::VARCHAR AS ville,
-                    NULL::TEXT AS categorie, NULL::TEXT AS gravite
+                    NULL::TEXT AS categorie, NULL::TEXT AS gravite,
+                    f.prejuge_titre, f.prejuge_description, f.prejuge_nombre_likes AS prejuge_likes,
+                    f.realite_titre, f.realite_description, f.realite_nombre_likes AS realite_likes,
+                    f.nombre_coeur, f.nombre_pouce, f.nombre_rire, f.nombre_jaime_pas
              FROM governance.factcheck f
              WHERE f.deleted_at IS NULL AND f.etat = 'publie'"
                 .to_string(),
@@ -180,7 +201,10 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                     b.cree_par, b.pays_id, b.created_at,
                     b.region, b.ville_quartier_zone AS ville,
                     b.categorie_probleme::TEXT AS categorie,
-                    b.gravite::TEXT AS gravite
+                    b.gravite::TEXT AS gravite,
+                    NULL::VARCHAR AS prejuge_titre, NULL::TEXT AS prejuge_description, 0 AS prejuge_likes,
+                    NULL::VARCHAR AS realite_titre, NULL::TEXT AS realite_description, 0 AS realite_likes,
+                    0 AS nombre_coeur, 0 AS nombre_pouce, 0 AS nombre_rire, 0 AS nombre_jaime_pas
              FROM governance.bad_habit b
              WHERE b.deleted_at IS NULL AND b.etat = 'publie'"
                 .to_string(),
@@ -197,7 +221,10 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                     i.cree_par, i.pays_id, i.created_at,
                     i.region, i.ville_quartier_zone AS ville,
                     i.categorie_proposition::TEXT AS categorie,
-                    i.urgence::TEXT AS gravite
+                    i.urgence::TEXT AS gravite,
+                    NULL::VARCHAR AS prejuge_titre, NULL::TEXT AS prejuge_description, 0 AS prejuge_likes,
+                    NULL::VARCHAR AS realite_titre, NULL::TEXT AS realite_description, 0 AS realite_likes,
+                    0 AS nombre_coeur, 0 AS nombre_pouce, 0 AS nombre_rire, 0 AS nombre_jaime_pas
              FROM governance.idea_force i
              WHERE i.deleted_at IS NULL AND i.etat = 'publie'"
                 .to_string(),
@@ -219,6 +246,11 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                        NULL::VARCHAR AS ville,
                        NULL::TEXT AS categorie,
                        NULL::TEXT AS gravite,
+                       NULL::VARCHAR AS prejuge_titre, NULL::TEXT AS prejuge_description, 0 AS prejuge_likes,
+                       NULL::VARCHAR AS realite_titre, NULL::TEXT AS realite_description, 0 AS realite_likes,
+                       0 AS nombre_coeur, 0 AS nombre_pouce, 0 AS nombre_rire, 0 AS nombre_jaime_pas,
+                       NULL::VARCHAR AS ma_reaction_general,
+                       FALSE AS a_like_prejuge, FALSE AS a_like_realite, FALSE AS a_signale,
                        0::BIGINT AS total_count
                 WHERE FALSE"
             .to_string();
@@ -236,6 +268,17 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                 p.nom AS pays_nom,
                 c.region, c.ville,
                 c.categorie, c.gravite,
+                c.prejuge_titre, c.prejuge_description, c.prejuge_likes,
+                c.realite_titre, c.realite_description, c.realite_likes,
+                c.nombre_coeur, c.nombre_pouce, c.nombre_rire, c.nombre_jaime_pas,
+                (SELECT r.type_reaction FROM governance.factcheck_reaction r
+                  WHERE r.factcheck_id = c.id AND r.utilisateur_id = $3 AND r.cible = 'general') AS ma_reaction_general,
+                EXISTS(SELECT 1 FROM governance.factcheck_reaction r
+                  WHERE r.factcheck_id = c.id AND r.utilisateur_id = $3 AND r.cible = 'prejuge') AS a_like_prejuge,
+                EXISTS(SELECT 1 FROM governance.factcheck_reaction r
+                  WHERE r.factcheck_id = c.id AND r.utilisateur_id = $3 AND r.cible = 'realite') AS a_like_realite,
+                EXISTS(SELECT 1 FROM governance.factcheck_signalement s
+                  WHERE s.factcheck_id = c.id AND s.utilisateur_id = $3) AS a_signale,
                 COUNT(*) OVER() AS total_count
          FROM ({}) c
          LEFT JOIN iam.utilisateur u ON c.cree_par = u.id
@@ -244,6 +287,176 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
          LIMIT $1 OFFSET $2",
         union
     )
+}
+
+// ──────────────────────────────────────────────────────────────
+// POST /api/gouvernance/factcheck/{id}/reaction — Toggle d'une reaction
+// ──────────────────────────────────────────────────────────────
+
+/// Colonne compteur de la table factcheck pour un type de reaction globale
+fn colonne_compteur_general(type_reaction: &str) -> Option<&'static str> {
+    match type_reaction {
+        "coeur" => Some("nombre_coeur"),
+        "pouce" => Some("nombre_pouce"),
+        "rire" => Some("nombre_rire"),
+        "jaime_pas" => Some("nombre_jaime_pas"),
+        _ => None,
+    }
+}
+
+pub async fn reagir_factcheck(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    body: web::Json<ReactionFactcheckRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = exiger_utilisateur_id(&req)?;
+    let factcheck_id = chemin.into_inner();
+
+    // Valider la cible et le type de reaction associe
+    let cible = body.cible.as_str();
+    let type_reaction = match cible {
+        "general" => {
+            let t = body
+                .type_reaction
+                .as_deref()
+                .ok_or_else(|| ApiErreur::Validation("type_reaction requis pour la cible 'general'".into()))?;
+            if colonne_compteur_general(t).is_none() {
+                return Err(ApiErreur::Validation(
+                    "type_reaction doit etre 'coeur', 'pouce', 'rire' ou 'jaime_pas'".into(),
+                ));
+            }
+            t.to_string()
+        }
+        "prejuge" | "realite" => "coeur".to_string(),
+        _ => {
+            return Err(ApiErreur::Validation(
+                "cible doit etre 'general', 'prejuge' ou 'realite'".into(),
+            ));
+        }
+    };
+
+    // Verifier que le factcheck existe et est publie
+    let existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM governance.factcheck
+         WHERE id = $1 AND etat = 'publie' AND deleted_at IS NULL)",
+    )
+    .bind(factcheck_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !existe {
+        return Err(ApiErreur::NonTrouve("Factcheck non trouve".into()));
+    }
+
+    // Colonne compteur de la cible (prejuge/realite : compteur dedie)
+    let colonne_cible = match cible {
+        "prejuge" => "prejuge_nombre_likes",
+        "realite" => "realite_nombre_likes",
+        _ => colonne_compteur_general(&type_reaction).unwrap(),
+    };
+
+    // Reaction existante pour (factcheck, utilisateur, cible)
+    let reaction_existante: Option<String> = sqlx::query_scalar(
+        "SELECT type_reaction FROM governance.factcheck_reaction
+         WHERE factcheck_id = $1 AND utilisateur_id = $2 AND cible = $3",
+    )
+    .bind(factcheck_id)
+    .bind(utilisateur_id)
+    .bind(cible)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    match reaction_existante {
+        Some(ref ancien) if ancien == &type_reaction => {
+            // Meme reaction = toggle off
+            sqlx::query(
+                "DELETE FROM governance.factcheck_reaction
+                 WHERE factcheck_id = $1 AND utilisateur_id = $2 AND cible = $3",
+            )
+            .bind(factcheck_id)
+            .bind(utilisateur_id)
+            .bind(cible)
+            .execute(pool.get_ref())
+            .await?;
+
+            sqlx::query(&format!(
+                "UPDATE governance.factcheck SET {0} = GREATEST({0} - 1, 0) WHERE id = $1",
+                colonne_cible
+            ))
+            .bind(factcheck_id)
+            .execute(pool.get_ref())
+            .await?;
+        }
+        Some(ref ancien) => {
+            // Reaction differente (cible 'general' uniquement) = changer d'emoji
+            let ancienne_colonne = colonne_compteur_general(ancien).unwrap_or(colonne_cible);
+            sqlx::query(
+                "UPDATE governance.factcheck_reaction
+                 SET type_reaction = $1, created_at = NOW()
+                 WHERE factcheck_id = $2 AND utilisateur_id = $3 AND cible = $4",
+            )
+            .bind(&type_reaction)
+            .bind(factcheck_id)
+            .bind(utilisateur_id)
+            .bind(cible)
+            .execute(pool.get_ref())
+            .await?;
+
+            sqlx::query(&format!(
+                "UPDATE governance.factcheck
+                 SET {0} = {0} + 1, {1} = GREATEST({1} - 1, 0) WHERE id = $1",
+                colonne_cible, ancienne_colonne
+            ))
+            .bind(factcheck_id)
+            .execute(pool.get_ref())
+            .await?;
+        }
+        None => {
+            // Nouvelle reaction
+            sqlx::query(
+                "INSERT INTO governance.factcheck_reaction
+                 (factcheck_id, utilisateur_id, cible, type_reaction)
+                 VALUES ($1, $2, $3, $4)",
+            )
+            .bind(factcheck_id)
+            .bind(utilisateur_id)
+            .bind(cible)
+            .bind(&type_reaction)
+            .execute(pool.get_ref())
+            .await?;
+
+            sqlx::query(&format!(
+                "UPDATE governance.factcheck SET {0} = {0} + 1 WHERE id = $1",
+                colonne_cible
+            ))
+            .bind(factcheck_id)
+            .execute(pool.get_ref())
+            .await?;
+        }
+    }
+
+    // Renvoyer l'etat de reaction a jour pour ce factcheck et cet utilisateur
+    let etat = sqlx::query_as::<_, FactcheckReactionEtat>(
+        "SELECT f.nombre_coeur, f.nombre_pouce, f.nombre_rire, f.nombre_jaime_pas,
+                f.prejuge_nombre_likes, f.realite_nombre_likes,
+                (SELECT r.type_reaction FROM governance.factcheck_reaction r
+                  WHERE r.factcheck_id = f.id AND r.utilisateur_id = $2 AND r.cible = 'general') AS ma_reaction_general,
+                EXISTS(SELECT 1 FROM governance.factcheck_reaction r
+                  WHERE r.factcheck_id = f.id AND r.utilisateur_id = $2 AND r.cible = 'prejuge') AS a_like_prejuge,
+                EXISTS(SELECT 1 FROM governance.factcheck_reaction r
+                  WHERE r.factcheck_id = f.id AND r.utilisateur_id = $2 AND r.cible = 'realite') AS a_like_realite
+         FROM governance.factcheck f WHERE f.id = $1",
+    )
+    .bind(factcheck_id)
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(etat),
+        error: None,
+    }))
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -276,6 +489,105 @@ pub async fn lister_pays_public(pool: web::Data<PgPool>) -> Result<HttpResponse,
 }
 
 // ──────────────────────────────────────────────────────────────
+// POST /api/gouvernance/factcheck/{id}/signalement — Signaler un factcheck
+// ──────────────────────────────────────────────────────────────
+pub async fn signaler_factcheck(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    body: web::Json<SignalementRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = exiger_utilisateur_id(&req)?;
+    let factcheck_id = chemin.into_inner();
+
+    // Le factcheck doit exister et ne pas etre supprime
+    let existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM governance.factcheck WHERE id = $1 AND deleted_at IS NULL)",
+    )
+    .bind(factcheck_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !existe {
+        return Err(ApiErreur::NonTrouve("Factcheck non trouve".into()));
+    }
+
+    // Insertion idempotente : un seul signalement par utilisateur
+    let resultat = sqlx::query(
+        "INSERT INTO governance.factcheck_signalement (factcheck_id, utilisateur_id, motif, commentaire)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (factcheck_id, utilisateur_id) DO NOTHING",
+    )
+    .bind(factcheck_id)
+    .bind(utilisateur_id)
+    .bind(body.motif.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()))
+    .bind(body.commentaire.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()))
+    .execute(pool.get_ref())
+    .await?;
+    let nouveau_signalement = resultat.rows_affected() > 0;
+
+    // Recompter les signalements distincts et suspendre au-dela du seuil
+    let nombre: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM governance.factcheck_signalement WHERE factcheck_id = $1",
+    )
+    .bind(factcheck_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let doit_suspendre = nombre > SEUIL_SIGNALEMENTS_SUSPENSION;
+
+    // Met a jour le compteur ; suspend uniquement (jamais de re-publication auto)
+    let etat: String = sqlx::query_scalar(
+        "UPDATE governance.factcheck
+         SET nombre_signalements = $2,
+             etat = CASE WHEN $3 AND etat = 'publie' THEN 'suspendu' ELSE etat END,
+             updated_at = NOW()
+         WHERE id = $1
+         RETURNING etat",
+    )
+    .bind(factcheck_id)
+    .bind(nombre as i32)
+    .bind(doit_suspendre)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    if nouveau_signalement {
+        let ip = audit::extraire_ip(&req);
+        let ua = audit::extraire_user_agent(&req);
+        audit::log_action(
+            pool.get_ref(),
+            Some(utilisateur_id),
+            "SIGNALEMENT",
+            "governance",
+            "factcheck",
+            Some(factcheck_id),
+            None,
+            None,
+            ip.as_deref(),
+            ua.as_deref(),
+        )
+        .await;
+    }
+
+    if doit_suspendre && etat == "suspendu" {
+        log::warn!(
+            "Factcheck {} suspendu automatiquement ({} signalements)",
+            factcheck_id, nombre
+        );
+    }
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(SignalementEtat {
+            nombre_signalements: nombre as i32,
+            suspendu: etat == "suspendu",
+            etat,
+            deja_signale: !nouveau_signalement,
+        }),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
 // POST /api/gouvernance/factcheck — Publier un factcheck (authentifie)
 // ──────────────────────────────────────────────────────────────
 
@@ -287,6 +599,10 @@ pub struct CreerFactcheckPublicRequest {
     pub image_couverture_url: Option<String>,
     pub couleur_fond: Option<String>,
     pub pays_id: Option<Uuid>,
+    pub prejuge_titre: Option<String>,
+    pub prejuge_description: Option<String>,
+    pub realite_titre: Option<String>,
+    pub realite_description: Option<String>,
 }
 
 pub async fn creer_factcheck_public(
@@ -313,10 +629,16 @@ pub async fn creer_factcheck_public(
 
     let id = Uuid::new_v4();
 
+    // Nettoyage des volets optionnels (chaine vide => NULL)
+    let nettoyer = |o: &Option<String>| -> Option<String> {
+        o.as_deref().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string)
+    };
+
     sqlx::query(
         "INSERT INTO governance.factcheck
-         (id, contenu, source_originale, verdict, image_couverture_url, couleur_fond, pays_id, etat, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'publie', $8)",
+         (id, contenu, source_originale, verdict, image_couverture_url, couleur_fond, pays_id,
+          prejuge_titre, prejuge_description, realite_titre, realite_description, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'publie', $12)",
     )
     .bind(id)
     .bind(contenu)
@@ -325,6 +647,10 @@ pub async fn creer_factcheck_public(
     .bind(body.image_couverture_url.as_deref().map(|s| s.trim()))
     .bind(body.couleur_fond.as_deref().map(|s| s.trim()))
     .bind(body.pays_id)
+    .bind(nettoyer(&body.prejuge_titre))
+    .bind(nettoyer(&body.prejuge_description))
+    .bind(nettoyer(&body.realite_titre))
+    .bind(nettoyer(&body.realite_description))
     .bind(auteur_id)
     .execute(pool.get_ref())
     .await?;
