@@ -103,6 +103,14 @@ export const useAdminVidafrica = () => {
     return response.data
   }
 
+  const changerEtatPiste = async (pisteId: string, etat: string) => {
+    const response = await adminFetch<ApiResponse<{ id: string; etat: string }>>(
+      `/api/admin/vidafrica/pistes/${pisteId}/etat`,
+      { method: 'PATCH', body: { etat } },
+    )
+    return response.data
+  }
+
   const supprimerPiste = async (pisteId: string) => {
     await adminFetch<ApiResponse<null>>(`/api/admin/vidafrica/pistes/${pisteId}`, { method: 'DELETE' })
   }
@@ -169,7 +177,7 @@ export const useAdminVidafrica = () => {
     // Vidéos
     chargerListe, chargerDetail, creer, modifier, changerEtat, supprimer,
     // Pistes
-    chargerPistes, creerPiste, supprimerPiste,
+    chargerPistes, creerPiste, changerEtatPiste, supprimerPiste,
     // Segments
     chargerSegments, creerSegment, modifierSegment, supprimerSegment, reordonnerSegments,
     // Timings

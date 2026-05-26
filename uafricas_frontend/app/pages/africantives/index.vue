@@ -14,7 +14,7 @@
             Africantives
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Organiser un évenement mettant en valeur l’Afrique et son développement
+            Valoriser une initiative mettant en avant l’Afrique, les afrodescendants ou la diaspora africaine
           </p>
         </div>
       </div>
@@ -46,11 +46,12 @@
           </button>
         </div>
 
-        <!-- Filtres domaines -->
-        <div class="flex flex-wrap mt-2 gap-1.5">
+        <!-- Filtres domaines (ligne unique défilable, discrète) -->
+        <div class="flex flex-nowrap items-center mt-2 gap-1.5 overflow-x-auto scrollbar-none -mx-1 px-1">
           <label
             v-for="dom in domainesFiltre"
             :key="dom.value"
+            class="shrink-0"
           >
             <input
               type="radio"
@@ -60,11 +61,11 @@
               class="hidden"
             />
             <div
-              class="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all duration-200"
+              class="px-2.5 py-1 rounded-full text-[11px] whitespace-nowrap cursor-pointer transition-colors duration-200"
               :class="[
                 filtres.domaine === dom.value
                   ? 'bg-custom-chocolat text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                  : 'text-gray-500 hover:bg-gray-100',
               ]"
             >
               {{ dom.label }}
@@ -81,7 +82,7 @@
       <!-- Layout: Filtres + Grille -->
       <div class="flex flex-col lg:flex-row gap-8">
         <!-- Filtres lateraux (desktop) -->
-        <aside class="hidden lg:block w-72 flex-shrink-0">
+        <aside class="hidden lg:block w-72 shrink-0">
           <AfricantivesFilters
             v-model="filtres"
             @reset="resetFilters"

@@ -8,6 +8,8 @@ export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBaseUrl as string
   const { gererEvenement, listerConversations, obtenirNonLus } = useMessagerie()
+  const { gererEvenement: gererEvenementRdv } = useRendezVous()
+  const { compteurNonLues } = useNotifications()
 
   let source: EventSource | null = null
   let reconnexion: ReturnType<typeof setTimeout> | null = null
@@ -41,7 +43,15 @@ export default defineNuxtPlugin(() => {
 
     source.onmessage = (e) => {
       try {
-        gererEvenement(JSON.parse(e.data))
+        const evt = JSON.parse(e.data)
+        // Évènements rendez-vous : rafraîchir la liste RDV + le badge de la cloche.
+        if (typeof evt?.type === 'string' && evt.type.startsWith('rdv_')) {
+          gererEvenementRdv(evt)
+          compteurNonLues()
+        }
+        else {
+          gererEvenement(evt)
+        }
       }
       catch {
         // Trames commentaires (`: keep-alive`, `: connected`) ignorées.

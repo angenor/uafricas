@@ -22,10 +22,10 @@ const peutAfficherAmitie = computed(() => userStore.isAuthenticated && !estMoi.v
 // La messagerie n'est ouverte qu'entre amis (FR-022)
 const peutEnvoyerMessage = computed(() => peutAfficherAmitie.value && etatRelation.value === 'amis')
 
-/** Ouvre la fenêtre flottante de messagerie sur la conversation de ce profil. */
-const ouvrirMessagerie = () => {
-  if (!membre.value) return
-  const ami: MembreLightAPI = {
+/** MembreLight de ce profil (pour la messagerie et la proposition de RDV). */
+const membreLight = computed<MembreLightAPI | null>(() => {
+  if (!membre.value) return null
+  return {
     id: membre.value.id,
     nom: membre.value.nom,
     prenom: membre.value.prenom,
@@ -34,8 +34,15 @@ const ouvrirMessagerie = () => {
     fonction: membre.value.fonction,
     pays: membre.value.pays,
   }
-  demanderOuverture(ami)
+})
+
+/** Ouvre la fenêtre flottante de messagerie sur la conversation de ce profil. */
+const ouvrirMessagerie = () => {
+  if (membreLight.value) demanderOuverture(membreLight.value)
 }
+
+// Proposition de rendez-vous en visioconférence (entre amis, FR-001).
+const afficherModalRdv = ref(false)
 
 const chargement = ref(true)
 const membre = ref<MembreAPI | null>(null)
@@ -372,9 +379,29 @@ onMounted(async () => {
             <font-awesome-icon icon="fa-solid fa-envelope" />
             Envoyer un message
           </button>
+
+          <!-- Proposer un rendez-vous (entre amis uniquement) -->
+          <button
+            v-if="peutEnvoyerMessage"
+            type="button"
+            class="mt-3 inline-flex items-center gap-2 px-5 py-2.5 border border-custom-chocolat text-custom-chocolat font-semibold rounded-xl hover:bg-custom-chocolat hover:text-white transition"
+            @click="afficherModalRdv = true"
+          >
+            <font-awesome-icon icon="fa-solid fa-video" />
+            Proposer un rendez-vous
+          </button>
+
           <p v-if="!peutAfficherAmitie" class="text-xs text-gray-400 mt-3">Connectez-vous pour échanger avec ce membre.</p>
           <p v-else-if="!peutEnvoyerMessage" class="text-xs text-gray-400 mt-3">Vous devez être amis pour envoyer un message.</p>
         </div>
+
+        <!-- Modale de proposition de rendez-vous -->
+        <SocialRendezVousProposerModal
+          v-if="afficherModalRdv && membreLight"
+          :membre="membreLight"
+          @fermer="afficherModalRdv = false"
+          @propose="afficherModalRdv = false"
+        />
       </template>
     </div>
   </div>

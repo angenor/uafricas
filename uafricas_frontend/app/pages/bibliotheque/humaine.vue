@@ -95,12 +95,12 @@
             />
           </div>
 
-          <!-- Filtres -->
-          <div class="flex flex-wrap mt-2 gap-1.5">
+          <!-- Filtres (ligne unique défilable, discrète) -->
+          <div class="flex flex-nowrap items-center mt-2 gap-1.5 overflow-x-auto scrollbar-none -mx-1 px-1">
             <label
               v-for="type in filterTypes"
               :key="type"
-              class="filter-option"
+              class="filter-option shrink-0"
             >
               <input
                 type="radio"
@@ -110,11 +110,11 @@
                 class="hidden"
               />
               <div
-                class="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all duration-200"
+                class="px-2.5 py-1 rounded-full text-[11px] whitespace-nowrap cursor-pointer transition-colors duration-200"
                 :class="[
                   selectedFilter === type
                     ? 'bg-custom-chocolat text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                    : 'text-gray-500 hover:bg-gray-100',
                 ]"
               >
                 {{ type }}

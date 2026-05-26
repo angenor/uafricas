@@ -98,8 +98,10 @@
 \ir schemas/25_collaboration.sql
 \ir schemas/26_notifications.sql
 \ir schemas/27_vidafrica.sql
+\ir schemas/27b_vidafrica_contributions_membres.sql
 \ir schemas/29_social.sql
 \ir schemas/30_social_conversation_annonce.sql
+\ir schemas/31_social_rendez_vous.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

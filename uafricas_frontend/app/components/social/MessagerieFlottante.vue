@@ -2,14 +2,15 @@
 import type { MembreLightAPI } from '~/composables/useAmis'
 
 const { conversations, nonLusTotal, listerConversations, fermerConversation, demandeOuverture } = useMessagerie()
+const { nbAttenteMoi, compterAttenteMoi } = useRendezVous()
 
 const ouvert = ref(false)
 const amiSelectionne = ref<MembreLightAPI | null>(null)
 const verrouilleeSelection = ref(false)
 const chargee = ref(false)
 
-// Onglets : conversations existantes vs annuaire des inscrits.
-const ongletActif = ref<'discussions' | 'membres'>('discussions')
+// Onglets : conversations, annuaire des inscrits, rendez-vous visio.
+const ongletActif = ref<'discussions' | 'membres' | 'rendezvous'>('discussions')
 
 // Ouverture programmatique depuis l'extérieur (ex. /codi-moi → « Envoyer un message »).
 watch(demandeOuverture, async (ami) => {
@@ -30,9 +31,12 @@ const badge = computed(() => (nonLusTotal.value > 9 ? '9+' : String(nonLusTotal.
 
 const basculer = async () => {
   ouvert.value = !ouvert.value
-  if (ouvert.value && !chargee.value) {
-    await listerConversations()
-    chargee.value = true
+  if (ouvert.value) {
+    compterAttenteMoi()
+    if (!chargee.value) {
+      await listerConversations()
+      chargee.value = true
+    }
   }
 }
 
@@ -118,6 +122,19 @@ const fermerFenetre = () => {
               <font-awesome-icon icon="fa-solid fa-users" />
               Membres
             </button>
+            <button
+              type="button"
+              class="relative flex-1 py-2.5 text-xs font-semibold transition flex items-center justify-center gap-1.5"
+              :class="ongletActif === 'rendezvous' ? 'text-custom-chocolat border-b-2 border-custom-chocolat' : 'text-gray-400 hover:text-gray-600'"
+              @click="ongletActif = 'rendezvous'"
+            >
+              <font-awesome-icon icon="fa-solid fa-video" />
+              Rendez-vous
+              <span
+                v-if="nbAttenteMoi > 0"
+                class="absolute top-1.5 right-2 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
+              >{{ nbAttenteMoi > 9 ? '9+' : nbAttenteMoi }}</span>
+            </button>
           </div>
 
           <!-- Onglet Discussions -->
@@ -140,7 +157,10 @@ const fermerFenetre = () => {
           </div>
 
           <!-- Onglet Membres : annuaire des inscrits + demande d'amitié -->
-          <SocialAnnuaireMembres v-else class="flex-1" />
+          <SocialAnnuaireMembres v-else-if="ongletActif === 'membres'" class="flex-1" />
+
+          <!-- Onglet Rendez-vous : prise & gestion des entretiens vidéo -->
+          <SocialRendezVousListe v-else class="flex-1" />
         </div>
       </div>
     </Transition>

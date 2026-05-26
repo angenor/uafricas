@@ -22,6 +22,16 @@ export default defineNuxtConfig({
     ssrApiBaseUrl: process.env.NUXT_SSR_API_BASE_URL || '',
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8080',
+      // Visioconférence P2P (feature 001-rendez-vous-visio) — surchargeable via NUXT_PUBLIC_*.
+      // Hôte de signalisation PeerJS : vide = cloud public 0.peerjs.com.
+      peerjsHost: process.env.NUXT_PUBLIC_PEERJS_HOST || '',
+      peerjsPort: Number(process.env.NUXT_PUBLIC_PEERJS_PORT) || 443,
+      peerjsPath: process.env.NUXT_PUBLIC_PEERJS_PATH || '/',
+      peerjsSecure: process.env.NUXT_PUBLIC_PEERJS_SECURE !== 'false',
+      // Liste ICE (JSON) ; défaut STUN Google. Brancher un TURN ultérieurement si besoin.
+      iceServers: process.env.NUXT_PUBLIC_ICE_SERVERS
+        ? JSON.parse(process.env.NUXT_PUBLIC_ICE_SERVERS)
+        : [{ urls: 'stun:stun.l.google.com:19302' }],
     },
   },
 

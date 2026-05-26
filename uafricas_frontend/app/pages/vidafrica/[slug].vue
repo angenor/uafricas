@@ -6,12 +6,18 @@ const route = useRoute()
 const slug = route.params.slug as string
 
 const { chargerVideo, chargerSousTitres } = useVidafrica()
+const userStore = useUserStore()
+const estConnecte = computed(() => userStore.isAuthenticated)
 
 const video = ref<VideoAfrica | null>(null)
 const sousTitres = ref<SousTitres | null>(null)
 const langueActive = ref('')
 const chargement = ref(true)
 const erreur = ref('')
+
+// Contribution membre
+const showProposer = ref(false)
+const showContribution = ref(false)
 
 const segments = computed<SegmentKaraoke[]>(() => {
   return sousTitres.value?.segments || []
@@ -49,6 +55,18 @@ onMounted(() => charger())
 
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Hero compact (dégage la NavBar fixe + fil d'Ariane) -->
+    <section class="bg-gradient-to-r from-custom-chocolat to-custom-chocolat/80 text-white">
+      <div class="max-w-5xl mx-auto px-4 pt-20 pb-6">
+        <NuxtLink to="/vidafrica" class="inline-flex items-center gap-1 text-white/80 hover:text-white text-sm transition-colors mb-2">
+          <font-awesome-icon icon="arrow-left" /> Catalogue Vidafrica
+        </NuxtLink>
+        <h1 class="text-2xl md:text-3xl font-bold font-['Oswald'] leading-tight">
+          {{ video?.titre || 'Vidafrica' }}
+        </h1>
+      </div>
+    </section>
+
     <!-- Chargement -->
     <div v-if="chargement" class="flex justify-center items-center py-32">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-custom-chocolat" />
@@ -83,9 +101,7 @@ onMounted(() => charger())
 
       <!-- Infos vidéo -->
       <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h1 class="text-2xl font-bold text-gray-900 font-['Oswald']">{{ video.titre }}</h1>
-
-        <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
+        <div class="flex items-center gap-4 text-sm text-gray-500">
           <span v-if="video.dureeSecondes">
             <font-awesome-icon icon="clock" class="mr-1" />
             {{ formaterDuree(video.dureeSecondes) }}
@@ -102,6 +118,35 @@ onMounted(() => charger())
         <p v-if="video.description" class="mt-4 text-gray-700 leading-relaxed">
           {{ video.description }}
         </p>
+
+        <!-- Actions contributeur (utilisateur connecté) -->
+        <div v-if="estConnecte" class="mt-5 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
+          <button
+            class="px-4 py-2 rounded-lg text-sm font-medium border border-custom-chocolat text-custom-chocolat hover:bg-custom-chocolat/5 transition-colors"
+            @click="showContribution = !showContribution"
+          >
+            <font-awesome-icon icon="closed-captioning" class="mr-1" />
+            {{ showContribution ? 'Masquer le sous-titrage' : 'Contribuer des sous-titres' }}
+          </button>
+          <button
+            class="px-4 py-2 rounded-lg text-sm font-medium bg-custom-chocolat text-white hover:bg-custom-chocolat/90 transition-colors"
+            @click="showProposer = true"
+          >
+            <font-awesome-icon icon="plus" class="mr-1" /> Proposer une vidéo
+          </button>
+        </div>
+        <p v-else class="mt-5 pt-4 border-t border-gray-100 text-sm text-gray-500">
+          <NuxtLink to="/login" class="text-custom-chocolat hover:underline">Connectez-vous</NuxtLink>
+          pour proposer une vidéo ou contribuer des sous-titres.
+        </p>
+      </div>
+
+      <!-- Atelier de sous-titrage -->
+      <div v-if="estConnecte && showContribution && video.fichierVideoUrl" class="mt-6">
+        <VidafricaContribuerSousTitres
+          :video-id="video.id"
+          :video-url="video.fichierVideoUrl!"
+        />
       </div>
 
       <!-- Retour -->
@@ -111,5 +156,8 @@ onMounted(() => charger())
         </NuxtLink>
       </div>
     </div>
+
+    <!-- Modale : proposer une vidéo -->
+    <VidafricaProposerVideoModal v-model="showProposer" />
   </div>
 </template>

@@ -45,6 +45,9 @@ export interface PisteSousTitre {
   id: string
   langue: LangueSousTitre
   est_complete: boolean
+  etat?: string
+  cree_par?: string
+  cree_par_nom?: string | null
   nombre_segments: number
   created_at: string
 }

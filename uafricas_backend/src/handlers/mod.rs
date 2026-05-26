@@ -30,3 +30,5 @@ pub mod matching;
 pub mod collaboration;
 pub mod notification;
 pub mod vidafrica;
+pub mod vidafrica_contribution;
+pub mod rendez_vous;

@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, membres, messagerie, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, membres, messagerie, moocs, notification, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -379,6 +379,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // Vidafrica - Pistes de sous-titres
                     .route("/vidafrica/videos/{video_id}/pistes", web::get().to(admin::vidafrica::lister_pistes))
                     .route("/vidafrica/videos/{video_id}/pistes", web::post().to(admin::vidafrica::creer_piste))
+                    .route("/vidafrica/pistes/{id}/etat", web::patch().to(admin::vidafrica::changer_etat_piste))
                     .route("/vidafrica/pistes/{id}", web::delete().to(admin::vidafrica::supprimer_piste))
                     // Vidafrica - Segments
                     .route("/vidafrica/pistes/{piste_id}/segments", web::get().to(admin::vidafrica::lister_segments))
@@ -571,6 +572,18 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/conversations/{ami_id}/messages", web::post().to(messagerie::envoyer_message))
                     .route("/conversations/{ami_id}/lu", web::post().to(messagerie::marquer_conversation_lue))
                     .route("/messages/{id}", web::delete().to(messagerie::supprimer_message)),
+            )
+            // Routes des rendez-vous en visioconférence (feature 001-rendez-vous-visio)
+            .service(
+                web::scope("/rendez-vous")
+                    .route("", web::post().to(rendez_vous::proposer))
+                    .route("", web::get().to(rendez_vous::lister))
+                    .route("/{id}", web::get().to(rendez_vous::detail))
+                    .route("/{id}/salle", web::get().to(rendez_vous::salle))
+                    .route("/{id}/accepter", web::post().to(rendez_vous::accepter))
+                    .route("/{id}/refuser", web::post().to(rendez_vous::refuser))
+                    .route("/{id}/contre-proposer", web::post().to(rendez_vous::contre_proposer))
+                    .route("/{id}/annuler", web::post().to(rendez_vous::annuler)),
             )
             // Routes des formations (MOOC/CLOM)
             .service(
@@ -801,10 +814,23 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             // Routes Vidafrica (public)
             .service(
                 web::scope("/vidafrica")
+                    // Lecture publique
                     .route("/videos", web::get().to(vidafrica::lister_videos_publiques))
-                    .route("/videos/{slug}", web::get().to(vidafrica::obtenir_video_publique))
+                    // Proposition d'une vidéo par un membre (auth JWT dans le handler)
+                    .route("/videos", web::post().to(vidafrica_contribution::proposer_video))
+                    .route("/langues-sous-titres", web::get().to(vidafrica::lister_langues_disponibles))
+                    // Contribution membre — sous-titres (routes spécifiques AVANT /videos/{slug})
+                    .route("/videos/{video_id}/mes-pistes", web::get().to(vidafrica_contribution::mes_pistes))
+                    .route("/videos/{video_id}/pistes", web::post().to(vidafrica_contribution::creer_piste_membre))
                     .route("/videos/{video_id}/sous-titres/{langue}", web::get().to(vidafrica::obtenir_sous_titres))
-                    .route("/langues-sous-titres", web::get().to(vidafrica::lister_langues_disponibles)),
+                    .route("/videos/{slug}", web::get().to(vidafrica::obtenir_video_publique))
+                    .route("/pistes/{id}", web::delete().to(vidafrica_contribution::supprimer_piste_membre))
+                    .route("/pistes/{piste_id}/segments", web::get().to(vidafrica_contribution::lister_segments_membre))
+                    .route("/pistes/{piste_id}/segments", web::post().to(vidafrica_contribution::creer_segment_membre))
+                    .route("/segments/{id}", web::put().to(vidafrica_contribution::modifier_segment_membre))
+                    .route("/segments/{id}", web::delete().to(vidafrica_contribution::supprimer_segment_membre))
+                    .route("/segments/{segment_id}/timings-mot", web::post().to(vidafrica_contribution::enregistrer_timings_mot_membre))
+                    .route("/segments/{segment_id}/timings-mot", web::delete().to(vidafrica_contribution::supprimer_timings_mot_membre)),
             )
             // Routes de la télévision
             .service(

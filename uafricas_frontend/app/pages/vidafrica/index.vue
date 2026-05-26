@@ -2,7 +2,10 @@
 import type { VideoAfrica } from '~/composables/useVidafrica'
 
 const { listerVideos, chargerLanguesDisponibles } = useVidafrica()
+const userStore = useUserStore()
+const estConnecte = computed(() => userStore.isAuthenticated)
 
+const showProposer = ref(false)
 const videos = ref<VideoAfrica[]>([])
 const languesFiltre = ref<{ code: string; label: string; nombreVideos: number }[]>([])
 const chargement = ref(true)
@@ -81,9 +84,21 @@ onMounted(async () => {
               @input="rechercher"
             />
           </div>
+
+          <!-- Proposer une vidéo (utilisateur connecté) -->
+          <button
+            v-if="estConnecte"
+            class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-custom-chocolat text-sm font-medium hover:bg-white/90 transition-colors"
+            @click="showProposer = true"
+          >
+            <font-awesome-icon icon="plus" /> Proposer une vidéo
+          </button>
         </div>
       </div>
     </section>
+
+    <!-- Modale : proposer une vidéo -->
+    <VidafricaProposerVideoModal v-model="showProposer" />
 
     <!-- Filtres langues -->
     <section v-if="languesFiltre.length > 0" class="max-w-5xl mx-auto px-4 py-6">

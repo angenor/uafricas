@@ -45,7 +45,8 @@ pub async fn lister_videos_publiques(
         if !l.is_empty() {
             conditions.push(format!(
                 "EXISTS (SELECT 1 FROM media_content.piste_sous_titre p
-                 WHERE p.video_id = v.id AND p.langue::TEXT = ${} AND p.deleted_at IS NULL)",
+                 WHERE p.video_id = v.id AND p.langue::TEXT = ${}
+                 AND p.etat = 'publie' AND p.deleted_at IS NULL)",
                 bind_index
             ));
             bind_values.push(l.to_string());
@@ -82,7 +83,7 @@ pub async fn lister_videos_publiques(
     for row in &rows {
         let langues = sqlx::query_scalar::<_, String>(
             "SELECT langue::TEXT FROM media_content.piste_sous_titre
-             WHERE video_id = $1 AND deleted_at IS NULL ORDER BY langue"
+             WHERE video_id = $1 AND etat = 'publie' AND deleted_at IS NULL ORDER BY langue"
         )
         .bind(row.id)
         .fetch_all(pool.get_ref())
@@ -185,7 +186,7 @@ pub async fn obtenir_sous_titres(
     // Trouver la piste
     let piste_id = sqlx::query_scalar::<_, Uuid>(
         "SELECT id FROM media_content.piste_sous_titre
-         WHERE video_id = $1 AND langue::TEXT = $2 AND deleted_at IS NULL"
+         WHERE video_id = $1 AND langue::TEXT = $2 AND etat = 'publie' AND deleted_at IS NULL"
     )
     .bind(video_id)
     .bind(&langue)
@@ -244,7 +245,8 @@ pub async fn lister_langues_disponibles(
         "SELECT p.langue::TEXT AS code, COUNT(DISTINCT p.video_id) AS nombre_videos
          FROM media_content.piste_sous_titre p
          JOIN media_content.video v ON v.id = p.video_id
-         WHERE v.etat = 'publie' AND v.deleted_at IS NULL AND p.deleted_at IS NULL
+         WHERE v.etat = 'publie' AND v.deleted_at IS NULL
+           AND p.etat = 'publie' AND p.deleted_at IS NULL
          GROUP BY p.langue
          ORDER BY nombre_videos DESC"
     )

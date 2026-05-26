@@ -70,6 +70,10 @@ import {
   faQuoteLeft,
   faQuoteRight,
   faVideo,
+  faVideoSlash,
+  faMicrophone,
+  faMicrophoneSlash,
+  faPhoneSlash,
   faDoorOpen,
   faLock,
   faDisplay,
@@ -161,6 +165,12 @@ import {
   faUserXmark,
   faFilePdf,
   faRightLeft,
+  faStopwatch,
+  faHandPointer,
+  faRedo,
+  faCheckCircle,
+  faExclamationTriangle,
+  faClosedCaptioning,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -182,6 +192,12 @@ config.autoAddCss = false
 
 // Add icons to library
 library.add(
+  faStopwatch,
+  faHandPointer,
+  faRedo,
+  faCheckCircle,
+  faExclamationTriangle,
+  faClosedCaptioning,
   faArrowRight,
   faArrowDown,
   faTv,
@@ -251,6 +267,10 @@ library.add(
   faQuoteLeft,
   faQuoteRight,
   faVideo,
+  faVideoSlash,
+  faMicrophone,
+  faMicrophoneSlash,
+  faPhoneSlash,
   faDoorOpen,
   faLock,
   faDisplay,
