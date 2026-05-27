@@ -287,8 +287,20 @@ function construireUnionsEtLiens(
   for (const id of noeudsVisibles) {
     const noeud = graphe.get(id)
     if (!noeud) continue
-    const parentsVisibles = noeud.parents.filter(p => noeudsVisibles.has(p)).sort()
+    let parentsVisibles = noeud.parents.filter(p => noeudsVisibles.has(p)).sort()
     if (parentsVisibles.length === 0) continue
+
+    // Présomption de couple : un enfant rattaché à un seul parent dont le
+    // conjoint (unique) est visible est présumé issu du couple. Sa descendance
+    // part alors de la jonction du couple, et non d'un seul parent.
+    if (parentsVisibles.length === 1) {
+      const parent = graphe.get(parentsVisibles[0]!)
+      const conjointsVisibles = (parent?.conjoints ?? []).filter(c => noeudsVisibles.has(c))
+      if (conjointsVisibles.length === 1) {
+        parentsVisibles = [parentsVisibles[0]!, conjointsVisibles[0]!].sort()
+      }
+    }
+
     const cle = parentsVisibles.join('|')
     if (!groupes.has(cle)) groupes.set(cle, { parents: parentsVisibles, enfants: [] })
     groupes.get(cle)!.enfants.push(id)
