@@ -182,10 +182,11 @@ function filtrerNoeuds(
 
 // ─── Calcul du layout (positionnement) ──────────────────────────────────
 
-const NOEUD_LARGEUR = 200
-const NOEUD_HAUTEUR = 100
-const ESPACEMENT_H = 60
-const ESPACEMENT_V = 120
+// Médaillons en portrait (cercle photo + label) → plus étroits et plus hauts
+const NOEUD_LARGEUR = 150
+const NOEUD_HAUTEUR = 130
+const ESPACEMENT_H = 36
+const ESPACEMENT_V = 110
 
 function calculerPositions(
   graphe: Map<string, NoeudArbre>,
@@ -268,14 +269,16 @@ function convertirEnVueFlow(
       continue
     }
 
+    const estConjoint = lien.type_lien === 'conjoint'
     edges.push({
       id: lien.id,
       source: lien.rattachement_source_id,
       target: lien.rattachement_cible_id,
-      type: lien.type_lien === 'conjoint' ? 'straight' : 'smoothstep',
-      style: lien.type_lien === 'conjoint'
-        ? { stroke: '#A54A1C', strokeWidth: 2, strokeDasharray: '6 3' }
-        : { stroke: '#228B22', strokeWidth: 2 },
+      // Parenté = courbe « branche » (bezier) ; union conjugale = trait droit
+      type: estConjoint ? 'straight' : 'default',
+      style: estConjoint
+        ? { stroke: '#228B22', strokeWidth: 2, strokeDasharray: '5 4' }
+        : { stroke: '#8a5a2b', strokeWidth: 2.5 },
       animated: false,
     })
   }
