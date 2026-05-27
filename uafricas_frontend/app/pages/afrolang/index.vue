@@ -128,81 +128,80 @@
           <!-- Salles List -->
           <template v-else-if="salles.length > 0">
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-              <AfrolangSalleCard
-                v-for="salle in salles"
-                :key="salle.id"
-                :salle="salle"
-                :expanded="expandedSalleId === salle.id"
-                :chargement="salleEnCoursEntree === salle.id"
-                data-aos="fade-up"
-                @entrer="entrerDansSalle"
-                @toggle-privees="togglePrivees"
-              />
-            </div>
+              <template v-for="salle in salles" :key="salle.id">
+                <AfrolangSalleCard
+                  :salle="salle"
+                  :expanded="expandedSalleId === salle.id"
+                  :chargement="salleEnCoursEntree === salle.id"
+                  data-aos="fade-up"
+                  @entrer="entrerDansSalle"
+                  @toggle-privees="togglePrivees"
+                />
 
-            <!-- Widget Canal privé : dropdown des salles privées d'une salle publique -->
-            <Transition name="expand">
-              <div
-                v-if="expandedSalle"
-                :key="expandedSalleId!"
-                class="mb-8 bg-blue-50/50 border border-blue-100 rounded-2xl p-4 md:p-6"
-              >
-                <div v-if="loadingPrivees" class="flex items-center justify-center py-8">
-                  <div class="animate-spin rounded-full h-8 w-8 border-3 border-blue-500 border-t-transparent" />
-                  <span class="ml-3 text-gray-500 text-sm">Chargement des cours privés...</span>
-                </div>
-
-                <template v-else>
-                  <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
-                    <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4 text-blue-500" />
-                      {{ (sallesPriveesCache[expandedSalleId!]?.length ?? 0) }}
-                      cours privé{{ (sallesPriveesCache[expandedSalleId!]?.length ?? 0) > 1 ? 's' : '' }}
-                      — {{ expandedSalle.titre }}
-                    </h4>
-
-                    <!-- US4 : bouton Créer ma salle privée / Ouvrir ma salle privée -->
-                    <button
-                      v-if="userStore.isAuthenticated"
-                      type="button"
-                      class="px-3 py-1.5 text-xs rounded-lg font-semibold transition-all flex items-center gap-1.5"
-                      :class="maSallePriveeIciId
-                        ? 'bg-custom-chocolat text-white hover:bg-custom-chocolat/90'
-                        : 'bg-blue-500 text-white hover:bg-blue-600'"
-                      :disabled="sallePriveeEnCours === (maSallePriveeIciId || 'creation')"
-                      @click="maSallePriveeIciId ? ouvrirMaSallePrivee(maSallePriveeIciId) : ouvrirCreationModal(expandedSalleId!)"
-                    >
-                      <font-awesome-icon
-                        :icon="['fas', maSallePriveeIciId ? 'door-open' : 'plus']"
-                        class="w-3 h-3"
-                      />
-                      {{ maSallePriveeIciId ? 'Ouvrir ma salle privée' : 'Créer ma salle privée' }}
-                    </button>
-                  </div>
-
+                <!-- Widget Canal privé : dropdown des salles privées, déplié juste sous la carte cliquée (pleine largeur) -->
+                <Transition name="expand">
                   <div
-                    v-if="(sallesPriveesCache[expandedSalleId!]?.length ?? 0) > 0"
-                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+                    v-if="expandedSalleId === salle.id"
+                    class="col-span-full bg-blue-50/50 border border-blue-100 rounded-2xl p-4 md:p-6"
                   >
-                    <AfrolangSallePriveeCard
-                      v-for="sp in (sallesPriveesCache[expandedSalleId!] ?? [])"
-                      :key="sp.id"
-                      :salle-privee="sp"
-                      :chargement="sallePriveeEnCours === sp.id"
-                      @rejoindre="ouvrirJoinModal"
-                      @ouvrir="ouvrirMaSallePrivee"
-                      @modifier-code="ouvrirModifCodeModal"
-                      @archiver="confirmerArchivage"
-                    />
-                  </div>
+                    <div v-if="loadingPrivees" class="flex items-center justify-center py-8">
+                      <div class="animate-spin rounded-full h-8 w-8 border-3 border-blue-500 border-t-transparent" />
+                      <span class="ml-3 text-gray-500 text-sm">Chargement des cours privés...</span>
+                    </div>
 
-                  <div v-else class="text-center py-6">
-                    <font-awesome-icon :icon="['fas', 'door-open']" class="w-8 h-8 text-gray-300 mb-3" />
-                    <p class="text-gray-500 text-sm">Aucun cours privé dans cette salle</p>
+                    <template v-else>
+                      <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+                        <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                          <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4 text-blue-500" />
+                          {{ (sallesPriveesCache[salle.id]?.length ?? 0) }}
+                          cours privé{{ (sallesPriveesCache[salle.id]?.length ?? 0) > 1 ? 's' : '' }}
+                          — {{ salle.titre }}
+                        </h4>
+
+                        <!-- US4 : bouton Créer ma salle privée / Ouvrir ma salle privée -->
+                        <button
+                          v-if="userStore.isAuthenticated"
+                          type="button"
+                          class="px-3 py-1.5 text-xs rounded-lg font-semibold transition-all flex items-center gap-1.5"
+                          :class="maSallePriveeIciId
+                            ? 'bg-custom-chocolat text-white hover:bg-custom-chocolat/90'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'"
+                          :disabled="sallePriveeEnCours === (maSallePriveeIciId || 'creation')"
+                          @click="maSallePriveeIciId ? ouvrirMaSallePrivee(maSallePriveeIciId) : ouvrirCreationModal(salle.id)"
+                        >
+                          <font-awesome-icon
+                            :icon="['fas', maSallePriveeIciId ? 'door-open' : 'plus']"
+                            class="w-3 h-3"
+                          />
+                          {{ maSallePriveeIciId ? 'Ouvrir ma salle privée' : 'Créer ma salle privée' }}
+                        </button>
+                      </div>
+
+                      <div
+                        v-if="(sallesPriveesCache[salle.id]?.length ?? 0) > 0"
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+                      >
+                        <AfrolangSallePriveeCard
+                          v-for="sp in (sallesPriveesCache[salle.id] ?? [])"
+                          :key="sp.id"
+                          :salle-privee="sp"
+                          :chargement="sallePriveeEnCours === sp.id"
+                          @rejoindre="ouvrirJoinModal"
+                          @ouvrir="ouvrirMaSallePrivee"
+                          @modifier-code="ouvrirModifCodeModal"
+                          @archiver="confirmerArchivage"
+                        />
+                      </div>
+
+                      <div v-else class="text-center py-6">
+                        <font-awesome-icon :icon="['fas', 'door-open']" class="w-8 h-8 text-gray-300 mb-3" />
+                        <p class="text-gray-500 text-sm">Aucun cours privé dans cette salle</p>
+                      </div>
+                    </template>
                   </div>
-                </template>
-              </div>
-            </Transition>
+                </Transition>
+              </template>
+            </div>
 
             <!-- Erreur widget salle privée -->
             <div v-if="erreurSallePrivee" class="max-w-2xl mx-auto mb-6">
@@ -449,10 +448,6 @@ const paysDisponibles = computed(() => {
   }
   return Array.from(map.values()).sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
 })
-
-const expandedSalle = computed(() =>
-  salles.value.find(s => s.id === expandedSalleId.value) ?? null,
-)
 
 let rechercheTimer: ReturnType<typeof setTimeout> | null = null
 
