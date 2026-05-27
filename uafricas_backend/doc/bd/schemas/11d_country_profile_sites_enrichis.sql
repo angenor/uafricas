@@ -21,14 +21,20 @@
 -- SECTION A : NOUVEL ENUM sous-type de site (créé AVANT les ALTER)
 -- ════════════════════════════════════════════════════════════════════════════
 
-CREATE TYPE country_profile.sous_type_site AS ENUM (
-    -- Emblématiques (famille « emblematique »)
-    'plage', 'monument', 'relief_naturel', 'parc_naturel', 'mosquee', 'eglise',
-    'pont', 'route', 'service_public', 'immeuble_edifice', 'mer_riviere', 'site_naturel',
-    -- Privés (famille « prive »)
-    'hotel', 'plage_privee', 'espace_jeux', 'agriculture_touristique',
-    'residence_touristique', 'restaurant', 'discotheque', 'bar_maquis'
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sous_type_site'
+                   AND typnamespace = 'country_profile'::regnamespace) THEN
+        CREATE TYPE country_profile.sous_type_site AS ENUM (
+            -- Emblématiques (famille « emblematique »)
+            'plage', 'monument', 'relief_naturel', 'parc_naturel', 'mosquee', 'eglise',
+            'pont', 'route', 'service_public', 'immeuble_edifice', 'mer_riviere', 'site_naturel',
+            -- Privés (famille « prive »)
+            'hotel', 'plage_privee', 'espace_jeux', 'agriculture_touristique',
+            'residence_touristique', 'restaurant', 'discotheque', 'bar_maquis'
+        );
+    END IF;
+END $$;
 
 
 -- ════════════════════════════════════════════════════════════════════════════
@@ -61,13 +67,13 @@ ALTER TABLE country_profile.site_touristique
 ALTER TABLE country_profile.site_touristique
     ADD CONSTRAINT chk_site_images_max3 CHECK (cardinality(images) <= 3);
 
+-- NB : country_profile.site_touristique n'a pas de soft-delete (pas de colonne
+-- deleted_at) — donc pas de filtre partiel WHERE deleted_at IS NULL ici.
 CREATE INDEX IF NOT EXISTS idx_site_touristique_sous_type
-    ON country_profile.site_touristique (fiche_pays_id, sous_type)
-    WHERE deleted_at IS NULL;
+    ON country_profile.site_touristique (fiche_pays_id, sous_type);
 
 CREATE INDEX IF NOT EXISTS idx_site_touristique_verifie
-    ON country_profile.site_touristique (fiche_pays_id, verifie)
-    WHERE deleted_at IS NULL;
+    ON country_profile.site_touristique (fiche_pays_id, verifie);
 
 
 -- ════════════════════════════════════════════════════════════════════════════
@@ -76,7 +82,7 @@ CREATE INDEX IF NOT EXISTS idx_site_touristique_verifie
 -- Écriture directe (publication immédiate). Au plus un avis actif par
 -- (utilisateur, site). Modération admin = masquage (soft).
 
-CREATE TABLE country_profile.avis_site (
+CREATE TABLE IF NOT EXISTS country_profile.avis_site (
     id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     site_id          UUID NOT NULL REFERENCES country_profile.site_touristique(id) ON DELETE CASCADE,
     utilisateur_id   UUID NOT NULL,   -- [xref] iam.utilisateur
@@ -89,12 +95,12 @@ CREATE TABLE country_profile.avis_site (
 );
 
 -- Au plus UN avis actif par (utilisateur, site) (FR-015a)
-CREATE UNIQUE INDEX uniq_avis_site_actif
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_avis_site_actif
     ON country_profile.avis_site (utilisateur_id, site_id)
     WHERE deleted_at IS NULL;
 
 -- Lecture par site (moyenne + liste), exclut masqués/supprimés (FR-015b)
-CREATE INDEX idx_avis_site_visible
+CREATE INDEX IF NOT EXISTS idx_avis_site_visible
     ON country_profile.avis_site (site_id, created_at DESC)
     WHERE deleted_at IS NULL AND masque_par_admin = FALSE;
 
