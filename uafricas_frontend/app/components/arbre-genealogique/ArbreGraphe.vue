@@ -4,6 +4,7 @@ import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
 import type { Node, Edge } from '@vue-flow/core'
 import NoeudPersonne from './NoeudPersonne.vue'
+import NoeudUnion from './NoeudUnion.vue'
 
 const props = defineProps<{
   nodes: Node[]
@@ -19,6 +20,8 @@ const emit = defineEmits<{
 const { fitView, setCenter } = useVueFlow()
 
 const surClicNoeud = (_event: MouseEvent, node: Node) => {
+  // Les nœuds-jonction (union de couple) ne sont pas sélectionnables
+  if (node.type === 'union') return
   emit('node-click', node.id)
   // Recentrer la vue avec animation
   const { x, y } = node.position
@@ -76,6 +79,10 @@ defineExpose({ fitView, setCenter })
           :selected="data.id === props.selectedId"
           @click.stop="emit('node-click', data.id)"
         />
+      </template>
+
+      <template #node-union>
+        <NoeudUnion />
       </template>
 
       <Controls position="bottom-right" />

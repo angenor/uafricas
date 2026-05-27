@@ -110,10 +110,14 @@ const surClicBadge = (e: MouseEvent) => {
       <p v-if="anneesVie" class="truncate text-[10px] leading-tight text-stone-500">{{ anneesVie }}</p>
     </div>
 
-    <!-- Handles (connexions branches) -->
-    <Handle type="target" :position="Position.Top" class="!h-1.5 !w-1.5 !border-0 !bg-[#8a5a2b] !opacity-0" />
-    <Handle type="source" :position="Position.Bottom" class="!h-1.5 !w-1.5 !border-0 !bg-[#8a5a2b] !opacity-0" />
-    <Handle id="conjoint-left" type="target" :position="Position.Left" class="!h-1.5 !w-1.5 !border-0 !bg-[var(--color-custom-green)] !opacity-0" />
-    <Handle id="conjoint-right" type="source" :position="Position.Right" class="!h-1.5 !w-1.5 !border-0 !bg-[var(--color-custom-green)] !opacity-0" />
+    <!-- Handles (connexions branches) — IDs explicites pour un routage net -->
+    <!-- Parenté : entrée par le haut du médaillon, sortie par le bas du bloc -->
+    <Handle id="haut" type="target" :position="Position.Top" class="!h-1.5 !w-1.5 !border-0 !bg-[#8a5a2b] !opacity-0" />
+    <Handle id="bas" type="source" :position="Position.Bottom" class="!h-1.5 !w-1.5 !border-0 !bg-[#8a5a2b] !opacity-0" />
+    <!-- Conjoint : source + target sur chaque flanc, à hauteur du médaillon → barre horizontale -->
+    <Handle id="g-source" type="source" :position="Position.Left" :style="{ top: '41px' }" class="!h-1.5 !w-1.5 !border-0 !bg-[var(--color-custom-green)] !opacity-0" />
+    <Handle id="g-target" type="target" :position="Position.Left" :style="{ top: '41px' }" class="!h-1.5 !w-1.5 !border-0 !bg-[var(--color-custom-green)] !opacity-0" />
+    <Handle id="d-source" type="source" :position="Position.Right" :style="{ top: '41px' }" class="!h-1.5 !w-1.5 !border-0 !bg-[var(--color-custom-green)] !opacity-0" />
+    <Handle id="d-target" type="target" :position="Position.Right" :style="{ top: '41px' }" class="!h-1.5 !w-1.5 !border-0 !bg-[var(--color-custom-green)] !opacity-0" />
   </div>
 </template>

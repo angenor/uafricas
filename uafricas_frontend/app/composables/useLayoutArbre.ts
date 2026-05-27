@@ -242,7 +242,18 @@ function calculerPositions(
 
 // ─── Conversion en nodes/edges vue-flow ─────────────────────────────────
 
-function convertirEnVueFlow(
+// Petit nœud-jonction matérialisant l'union d'un couple parental
+const UNION_TAILLE = 10
+const COULEUR_BRANCHE = '#8a5a2b'
+const STYLE_BRANCHE = { stroke: COULEUR_BRANCHE, strokeWidth: 2.5 }
+
+// ─── Unions parentales + branches de descendance ─────────────────────────
+// La BDD ne stocke que des liens individuels (père→enfant, mère→enfant).
+// On dérive ici le « couple » : les enfants partageant le même ensemble de
+// parents descendent d'un nœud-jonction commun (point d'union), ce qui rend
+// visible qu'ils sont issus du couple — et non d'un seul parent.
+
+function construireUnionsEtLiens(
   graphe: Map<string, NoeudArbre>,
   noeudsVisibles: Set<string>,
   positions: Map<string, { x: number; y: number }>,
@@ -250,6 +261,116 @@ function convertirEnVueFlow(
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
+
+  // 1. Unions conjugales = barre horizontale au niveau des médaillons
+  for (const lien of liens) {
+    if (lien.type_lien !== 'conjoint') continue
+    const s = lien.rattachement_source_id
+    const t = lien.rattachement_cible_id
+    if (!noeudsVisibles.has(s) || !noeudsVisibles.has(t)) continue
+
+    const sourceAGauche = (positions.get(s)?.x ?? 0) <= (positions.get(t)?.x ?? 0)
+    edges.push({
+      id: lien.id,
+      source: s,
+      target: t,
+      sourceHandle: sourceAGauche ? 'd-source' : 'g-source',
+      targetHandle: sourceAGauche ? 'g-target' : 'd-target',
+      type: 'straight',
+      style: { stroke: '#228B22', strokeWidth: 2, strokeDasharray: '5 4' },
+      animated: false,
+    })
+  }
+
+  // 2. Regrouper les enfants par ensemble de parents visibles
+  const groupes = new Map<string, { parents: string[]; enfants: string[] }>()
+  for (const id of noeudsVisibles) {
+    const noeud = graphe.get(id)
+    if (!noeud) continue
+    const parentsVisibles = noeud.parents.filter(p => noeudsVisibles.has(p)).sort()
+    if (parentsVisibles.length === 0) continue
+    const cle = parentsVisibles.join('|')
+    if (!groupes.has(cle)) groupes.set(cle, { parents: parentsVisibles, enfants: [] })
+    groupes.get(cle)!.enfants.push(id)
+  }
+
+  // 3. Branches de descendance
+  for (const [cle, grp] of groupes) {
+    if (grp.parents.length >= 2) {
+      // Couple → nœud-jonction commun, centré sous les parents
+      const centresX = grp.parents.map(p => (positions.get(p)?.x ?? 0) + NOEUD_LARGEUR / 2)
+      const xMoy = centresX.reduce((a, b) => a + b, 0) / centresX.length
+      const yParent = Math.max(...grp.parents.map(p => positions.get(p)?.y ?? 0))
+      const unionId = `union-${cle}`
+
+      nodes.push({
+        id: unionId,
+        type: 'union',
+        position: { x: xMoy - UNION_TAILLE / 2, y: yParent + NOEUD_HAUTEUR + 28 },
+        data: {},
+        selectable: false,
+        draggable: false,
+        focusable: false,
+      })
+
+      // Chaque parent → jonction (les deux branches convergent)
+      for (const p of grp.parents) {
+        edges.push({
+          id: `br-${p}-${unionId}`,
+          source: p,
+          target: unionId,
+          sourceHandle: 'bas',
+          targetHandle: 'union-haut',
+          type: 'smoothstep',
+          style: STYLE_BRANCHE,
+          pathOptions: { borderRadius: 20 },
+          animated: false,
+        })
+      }
+
+      // Jonction → chaque enfant (les branches repartent du couple)
+      for (const e of grp.enfants) {
+        edges.push({
+          id: `br-${unionId}-${e}`,
+          source: unionId,
+          target: e,
+          sourceHandle: 'union-bas',
+          targetHandle: 'haut',
+          type: 'smoothstep',
+          style: STYLE_BRANCHE,
+          pathOptions: { borderRadius: 20 },
+          animated: false,
+        })
+      }
+    } else {
+      // Parent unique connu → branche directe
+      const p = grp.parents[0]
+      for (const e of grp.enfants) {
+        edges.push({
+          id: `br-${p}-${e}`,
+          source: p,
+          target: e,
+          sourceHandle: 'bas',
+          targetHandle: 'haut',
+          type: 'smoothstep',
+          style: STYLE_BRANCHE,
+          pathOptions: { borderRadius: 20 },
+          animated: false,
+        })
+      }
+    }
+  }
+
+  return { nodes, edges }
+}
+
+function convertirEnVueFlow(
+  graphe: Map<string, NoeudArbre>,
+  noeudsVisibles: Set<string>,
+  positions: Map<string, { x: number; y: number }>,
+  liens: LienArbreResponse[],
+): { nodes: Node[]; edges: Edge[] } {
+  const nodes: Node[] = []
 
   for (const id of noeudsVisibles) {
     const noeud = graphe.get(id)
@@ -264,24 +385,8 @@ function convertirEnVueFlow(
     })
   }
 
-  for (const lien of liens) {
-    if (!noeudsVisibles.has(lien.rattachement_source_id) || !noeudsVisibles.has(lien.rattachement_cible_id)) {
-      continue
-    }
-
-    const estConjoint = lien.type_lien === 'conjoint'
-    edges.push({
-      id: lien.id,
-      source: lien.rattachement_source_id,
-      target: lien.rattachement_cible_id,
-      // Parenté = courbe « branche » (bezier) ; union conjugale = trait droit
-      type: estConjoint ? 'straight' : 'default',
-      style: estConjoint
-        ? { stroke: '#228B22', strokeWidth: 2, strokeDasharray: '5 4' }
-        : { stroke: '#8a5a2b', strokeWidth: 2.5 },
-      animated: false,
-    })
-  }
+  const { nodes: unionNodes, edges } = construireUnionsEtLiens(graphe, noeudsVisibles, positions, liens)
+  nodes.push(...unionNodes)
 
   return { nodes, edges }
 }
