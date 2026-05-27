@@ -2,6 +2,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use crate::config::LivekitConfig;
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
 use crate::models::admin::evenement::{
@@ -390,6 +391,7 @@ pub async fn changer_etat_evenement(
     admin: AdminUtilisateur,
     req: HttpRequest,
     pool: web::Data<PgPool>,
+    livekit: web::Data<LivekitConfig>,
     path: web::Path<Uuid>,
     body: web::Json<ChangerEtatEvenementRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -409,6 +411,16 @@ pub async fn changer_etat_evenement(
 
     if result.rows_affected() == 0 {
         return Err(ApiErreur::NonTrouve("Evenement non trouve".into()));
+    }
+
+    // Cascade d'annulation (FR-016) : clôt immédiatement un direct en cours.
+    if etat == "annule" {
+        let _ = crate::handlers::evenement_streaming::forcer_cloture_session(
+            pool.get_ref(),
+            livekit.get_ref(),
+            id,
+        )
+        .await;
     }
 
     log::info!("Admin {} a change l'etat de l'evenement {} vers {}", admin.id, id, etat);

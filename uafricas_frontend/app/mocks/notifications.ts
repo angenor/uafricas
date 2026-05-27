@@ -2,7 +2,7 @@
 // Mock — Notifications et suggestions intelligentes
 // ════════════════════════════════════════════════════════════════════════════
 
-export type TypeNotification = 'matching' | 'collaboration' | 'invitation' | 'contact' | 'systeme'
+export type TypeNotification = 'matching' | 'collaboration' | 'invitation' | 'contact' | 'systeme' | 'evenement_direct_demarre'
 
 export interface Notification {
   id: string
@@ -47,6 +47,7 @@ export const iconeNotification = (type: TypeNotification): string => {
     invitation: 'envelope',
     contact: 'address-book',
     systeme: 'bell',
+    evenement_direct_demarre: 'video',
   }
   return icones[type] || 'bell'
 }
@@ -58,6 +59,7 @@ export const couleurNotification = (type: TypeNotification): string => {
     invitation: 'text-amber-600',
     contact: 'text-purple-600',
     systeme: 'text-stone-500',
+    evenement_direct_demarre: 'text-red-600',
   }
   return couleurs[type] || 'text-stone-500'
 }

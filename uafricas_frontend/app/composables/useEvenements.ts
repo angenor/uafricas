@@ -59,6 +59,53 @@ interface ApiResponse<T> {
   error: string | null
 }
 
+// ── Direct en streaming (feature 001-evenements-streaming) ──────
+
+export type StatutDirect = 'indisponible' | 'en_attente' | 'en_direct' | 'termine'
+export type RoleDirect = 'organisateur' | 'intervenant' | 'spectateur'
+
+/** Une demande de parole (vue organisateur). */
+export interface DemandeParole {
+  utilisateur_id: string
+  nom: string
+  main_levee_at: string | null
+}
+
+/** DTO correspondant a EtatDirectResponse du backend (GET …/direct). */
+export interface EtatDirect {
+  statut_direct: StatutDirect
+  peut_ouvrir: boolean
+  peut_rejoindre: boolean
+  est_organisateur: boolean
+  est_inscrit: boolean
+  session_id: string | null
+  nombre_participants: number
+  max_participants: number
+  fenetre_ouverture_at: string
+  demandes_parole: DemandeParole[]
+}
+
+/** DTO correspondant a TokenDirectResponse du backend (POST …/rejoindre). */
+export interface TokenDirect {
+  session_id: string
+  room_name: string
+  livekit_url: string
+  token: string
+  role: RoleDirect
+}
+
+/** Evenement SSE pousse a l'ouverture d'un direct (parite event_stream_*). */
+export interface EvenementStream {
+  type: string
+  evenement_id: string
+}
+
+/** Extrait un message d'erreur francais de l'enveloppe ApiResponse renvoyee par $fetch. */
+const extraireErreurDirect = (e: unknown, defaut: string): string => {
+  const data = (e as { data?: { error?: string } })?.data
+  return data?.error || (e as { message?: string })?.message || defaut
+}
+
 /** Parametres de filtre pour le listing */
 export interface EvenementFiltres {
   recherche?: string
@@ -344,6 +391,109 @@ export const useEvenements = () => {
     }
   }
 
+  // ── Direct en streaming ───────────────────────────────────────
+
+  // Signal SSE partagé (SSR-safe) : incrémenté à chaque event_stream_* reçu, observé
+  // par les pages événement/direct pour rafraîchir l'état du direct concerné.
+  const signalStream = useState<{ evenement_id: string, ts: number } | null>(
+    'event-stream:signal', () => null,
+  )
+
+  /** GET /api/evenements/{id}/direct — état dérivé (lecture, JWT recommandé). */
+  const obtenirEtatDirect = async (id: string): Promise<EtatDirect | null> => {
+    try {
+      const r = await $fetch<ApiResponse<EtatDirect>>(
+        `${apiBase}/api/evenements/${id}/direct`,
+        { headers: authHeaders() },
+      )
+      return r.success ? r.data : null
+    }
+    catch (e) {
+      console.error('Erreur obtenirEtatDirect:', e)
+      return null
+    }
+  }
+
+  /** POST …/rejoindre — ouvre (organisateur) ou rejoint l'active. Renvoie le token. */
+  const rejoindreDirect = async (id: string): Promise<TokenDirect> => {
+    try {
+      const r = await $fetch<ApiResponse<TokenDirect>>(
+        `${apiBase}/api/evenements/${id}/direct/rejoindre`,
+        { method: 'POST', headers: authHeaders() },
+      )
+      if (!r.success || !r.data) throw new Error(r.error || 'Impossible de rejoindre le direct')
+      return r.data
+    }
+    catch (e) {
+      throw new Error(extraireErreurDirect(e, 'Impossible de rejoindre le direct'))
+    }
+  }
+
+  /** Alias d'ouverture (côté organisateur) — la logique open-or-join est serveur. */
+  const ouvrirDirect = (id: string): Promise<TokenDirect> => rejoindreDirect(id)
+
+  /** POST …/quitter — marque l'appelant sorti (idempotent). */
+  const quitterDirect = async (id: string): Promise<boolean> => {
+    try {
+      const r = await $fetch<ApiResponse<unknown>>(
+        `${apiBase}/api/evenements/${id}/direct/quitter`,
+        { method: 'POST', headers: authHeaders() },
+      )
+      return r.success
+    }
+    catch (e) {
+      console.error('Erreur quitterDirect:', e)
+      return false
+    }
+  }
+
+  /** POST …/cloturer — organisateur uniquement. */
+  const cloturerDirect = async (id: string): Promise<boolean> => {
+    try {
+      const r = await $fetch<ApiResponse<unknown>>(
+        `${apiBase}/api/evenements/${id}/direct/cloturer`,
+        { method: 'POST', headers: authHeaders() },
+      )
+      return r.success
+    }
+    catch (e) {
+      throw new Error(extraireErreurDirect(e, 'Impossible de clôturer le direct'))
+    }
+  }
+
+  /** Action de modération générique (lever-main / promouvoir / …). */
+  const actionDirect = async (chemin: string, message: string): Promise<boolean> => {
+    try {
+      const r = await $fetch<ApiResponse<unknown>>(
+        `${apiBase}/api/evenements/${chemin}`,
+        { method: 'POST', headers: authHeaders() },
+      )
+      if (!r.success) throw new Error(r.error || message)
+      return true
+    }
+    catch (e) {
+      throw new Error(extraireErreurDirect(e, message))
+    }
+  }
+
+  const leverMain = (id: string): Promise<boolean> =>
+    actionDirect(`${id}/direct/lever-main`, 'Impossible de lever la main')
+
+  const promouvoir = (id: string, uid: string): Promise<boolean> =>
+    actionDirect(`${id}/direct/participants/${uid}/promouvoir`, 'Impossible de promouvoir')
+
+  const retrograder = (id: string, uid: string): Promise<boolean> =>
+    actionDirect(`${id}/direct/participants/${uid}/retrograder`, 'Impossible de rétrograder')
+
+  const retirer = (id: string, uid: string): Promise<boolean> =>
+    actionDirect(`${id}/direct/participants/${uid}/retirer`, 'Impossible de retirer le participant')
+
+  /** Sur un évènement SSE event_stream_*, publie un signal pour rafraîchir l'état du direct. */
+  const gererEvenementStream = (evt: EvenementStream): void => {
+    if (typeof evt?.type !== 'string' || !evt.type.startsWith('event_stream_')) return
+    signalStream.value = { evenement_id: evt.evenement_id, ts: Date.now() }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -351,5 +501,17 @@ export const useEvenements = () => {
     obtenirEvenement,
     creerEvenement,
     inscrireEvenement,
+    // Direct en streaming
+    signalStream,
+    obtenirEtatDirect,
+    rejoindreDirect,
+    ouvrirDirect,
+    quitterDirect,
+    cloturerDirect,
+    leverMain,
+    promouvoir,
+    retrograder,
+    retirer,
+    gererEvenementStream,
   }
 }

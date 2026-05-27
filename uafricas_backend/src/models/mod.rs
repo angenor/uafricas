@@ -9,6 +9,7 @@ pub mod centre_culturel;
 pub mod codimoi;
 pub mod contribution_fiche;
 pub mod evenement;
+pub mod evenement_streaming;
 pub mod expert;
 pub mod faculte;
 pub mod fiche_pays;

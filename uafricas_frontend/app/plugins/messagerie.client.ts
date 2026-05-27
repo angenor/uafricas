@@ -9,6 +9,7 @@ export default defineNuxtPlugin(() => {
   const apiBase = config.public.apiBaseUrl as string
   const { gererEvenement, listerConversations, obtenirNonLus } = useMessagerie()
   const { gererEvenement: gererEvenementRdv } = useRendezVous()
+  const { gererEvenementStream } = useEvenements()
   const { compteurNonLues } = useNotifications()
 
   let source: EventSource | null = null
@@ -47,6 +48,11 @@ export default defineNuxtPlugin(() => {
         // Évènements rendez-vous : rafraîchir la liste RDV + le badge de la cloche.
         if (typeof evt?.type === 'string' && evt.type.startsWith('rdv_')) {
           gererEvenementRdv(evt)
+          compteurNonLues()
+        }
+        // Évènements direct d'événement : rafraîchir l'état du direct + la cloche.
+        else if (typeof evt?.type === 'string' && evt.type.startsWith('event_stream_')) {
+          gererEvenementStream(evt)
           compteurNonLues()
         }
         else {

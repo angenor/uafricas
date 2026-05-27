@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, membres, messagerie, moocs, notification, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, gouvernance, livres, matching, membres, messagerie, moocs, notification, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -508,7 +508,16 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("", web::get().to(evenements::lister_evenements))
                     .route("", web::post().to(evenements::creer_evenement))
                     .route("/{id}", web::get().to(evenements::obtenir_evenement))
-                    .route("/{id}/inscription", web::post().to(evenements::inscrire_evenement)),
+                    .route("/{id}/inscription", web::post().to(evenements::inscrire_evenement))
+                    // Direct en streaming (feature 001-evenements-streaming)
+                    .route("/{id}/direct", web::get().to(evenement_streaming::etat_direct))
+                    .route("/{id}/direct/rejoindre", web::post().to(evenement_streaming::rejoindre))
+                    .route("/{id}/direct/quitter", web::post().to(evenement_streaming::quitter))
+                    .route("/{id}/direct/cloturer", web::post().to(evenement_streaming::cloturer))
+                    .route("/{id}/direct/lever-main", web::post().to(evenement_streaming::lever_main))
+                    .route("/{id}/direct/participants/{utilisateur_id}/promouvoir", web::post().to(evenement_streaming::promouvoir))
+                    .route("/{id}/direct/participants/{utilisateur_id}/retrograder", web::post().to(evenement_streaming::retrograder))
+                    .route("/{id}/direct/participants/{utilisateur_id}/retirer", web::post().to(evenement_streaming::retirer)),
             )
             // Routes des projets (financer un projet)
             .service(

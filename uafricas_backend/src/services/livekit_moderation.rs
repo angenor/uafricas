@@ -73,6 +73,67 @@ pub async fn update_participant_can_publish_data(
     Ok(())
 }
 
+/// Bascule la permission `can_publish` d'un participant (modèle webinaire — feature
+/// 001-evenements-streaming, D3). Sert à promouvoir un spectateur en intervenant
+/// (`autorise = true`) ou à le rétrograder (`autorise = false`). `can_subscribe` et
+/// `can_publish_data` restent `true` (le rétrogradé continue de regarder et d'envoyer
+/// chat/réactions). Changer une permission LiveKit exige la clé API serveur → ce
+/// toggle passe obligatoirement par le backend (le client ne peut pas s'auto-promouvoir).
+///
+/// Erreur LiveKit journalisée mais non bloquante (parité avec les autres wrappers) :
+/// Postgres reste la source de vérité (`role`) et la permission est réappliquée à la
+/// reconnexion via le token scopé.
+pub async fn update_participant_can_publish(
+    cfg: &LivekitConfig,
+    room_name: &str,
+    identity: &str,
+    autorise: bool,
+) -> Result<(), ApiErreur> {
+    let permission = proto::ParticipantPermission {
+        can_subscribe: true,
+        can_publish: autorise,
+        can_publish_data: true,
+        ..Default::default()
+    };
+
+    let options = UpdateParticipantOptions {
+        permission: Some(permission),
+        ..Default::default()
+    };
+
+    if let Err(err) = room_client(cfg)
+        .update_participant(room_name, identity, options)
+        .await
+    {
+        eprintln!(
+            "[livekit_moderation] update_participant({}, {}, can_publish={}) a échoué : {}",
+            room_name, identity, autorise, err
+        );
+    }
+    Ok(())
+}
+
+/// Retire (kick) un participant d'une room LiveKit via `RoomClient.remove_participant`
+/// (feature 001-evenements-streaming, D3). Déconnecte effectivement le participant du
+/// SFU. Erreur journalisée mais non bloquante — le `quitte_at` Postgres reste la source
+/// de vérité ; un participant déjà absent provoque une erreur ignorée.
+pub async fn retirer_participant(
+    cfg: &LivekitConfig,
+    room_name: &str,
+    identity: &str,
+) -> Result<(), ApiErreur> {
+    if let Err(err) = room_client(cfg)
+        .remove_participant(room_name, identity)
+        .await
+    {
+        eprintln!(
+            "[livekit_moderation] remove_participant({}, {}) a échoué : {}",
+            room_name, identity, err
+        );
+    }
+    Ok(())
+}
+
 /// Ferme administrativement une session : diffuse un DataPacket `RELIABLE`
 /// `{type:'admin', subtype:'session_fermee', motif_public}` à tous les
 /// participants, puis détruit la room LiveKit (kick effectif < 5 s, SC-005).

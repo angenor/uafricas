@@ -120,6 +120,78 @@
             </a>
           </div>
 
+          <!-- Direct en streaming (feature 001-evenements-streaming) -->
+          <div v-if="etatDirect && etatDirect.statut_direct !== 'indisponible'" class="mt-6">
+            <!-- En direct -->
+            <div
+              v-if="etatDirect.statut_direct === 'en_direct'"
+              class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500 text-white">
+                  <font-awesome-icon icon="fa-solid fa-circle" class="animate-pulse text-xs" />
+                </span>
+                <div>
+                  <div class="font-semibold text-red-700">Le direct est en cours</div>
+                  <div class="text-sm text-red-600/80">
+                    {{ etatDirect.nombre_participants }} participant(s) connecté(s)
+                  </div>
+                </div>
+              </div>
+              <button
+                v-if="etatDirect.peut_rejoindre"
+                @click="rejoindreLeDirect"
+                class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-2.5 font-semibold text-white shadow-md transition-all hover:brightness-110 hover:scale-[1.02]"
+              >
+                <font-awesome-icon icon="fa-solid fa-video" />
+                {{ etatDirect.est_organisateur ? 'Rejoindre mon direct' : 'Rejoindre le direct' }}
+              </button>
+              <NuxtLink
+                v-else-if="!isAuthenticated"
+                to="/login"
+                class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-2.5 font-semibold text-white shadow-md transition-all hover:brightness-110"
+              >
+                <font-awesome-icon icon="fa-solid fa-right-to-bracket" />
+                Connectez-vous pour rejoindre
+              </NuxtLink>
+              <span v-else-if="!etatDirect.est_inscrit" class="text-sm font-medium text-red-700">
+                Inscrivez-vous d'abord pour rejoindre
+              </span>
+              <span v-else class="text-sm font-medium text-red-700">
+                Capacité atteinte, réessayez plus tard
+              </span>
+            </div>
+
+            <!-- En attente : l'organisateur peut ouvrir -->
+            <div
+              v-else-if="etatDirect.statut_direct === 'en_attente' && etatDirect.peut_ouvrir"
+              class="flex flex-col gap-3 rounded-xl border border-custom-green/30 bg-green-50 p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-custom-green/15 text-custom-green">
+                  <font-awesome-icon icon="fa-solid fa-tower-broadcast" />
+                </span>
+                <div class="text-sm font-medium text-gray-700">Vous pouvez démarrer la diffusion de votre événement.</div>
+              </div>
+              <button
+                @click="rejoindreLeDirect"
+                class="inline-flex items-center justify-center gap-2 rounded-lg bg-custom-green px-6 py-2.5 font-semibold text-white shadow-md transition-all hover:brightness-110 hover:scale-[1.02]"
+              >
+                <font-awesome-icon icon="fa-solid fa-tower-broadcast" />
+                Ouvrir le direct
+              </button>
+            </div>
+
+            <!-- Terminé -->
+            <div
+              v-else-if="etatDirect.statut_direct === 'termine'"
+              class="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500"
+            >
+              <font-awesome-icon icon="fa-solid fa-circle-check" class="text-gray-400" />
+              Le direct de cet événement est terminé.
+            </div>
+          </div>
+
           <!-- Inscription -->
           <div class="mt-6 mb-6">
             <div v-if="isAuthenticated">
@@ -223,18 +295,30 @@
 </template>
 
 <script setup lang="ts">
-import { useEvenements, formatDateShort, getHeure, type EvenementDetailAPI } from '~/composables/useEvenements'
+import { useEvenements, formatDateShort, getHeure, type EvenementDetailAPI, type EtatDirect } from '~/composables/useEvenements'
 import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const evenementId = route.params.id as string
 const userStore = useUserStore()
 
-const { obtenirEvenement, inscrireEvenement, chargement, erreur } = useEvenements()
+const { obtenirEvenement, inscrireEvenement, obtenirEtatDirect, signalStream, chargement, erreur } = useEvenements()
 
 const evenement = ref<EvenementDetailAPI | null>(null)
 const isInscrit = ref(false)
 const isAuthenticated = computed(() => !!userStore.accessToken)
+
+// État du direct (feature 001-evenements-streaming) — rafraîchi via SSE.
+const etatDirect = ref<EtatDirect | null>(null)
+const chargerEtatDirect = async (): Promise<void> => {
+  etatDirect.value = await obtenirEtatDirect(evenementId)
+}
+const rejoindreLeDirect = (): Promise<unknown> => navigateTo(`/evenements/${evenementId}/direct`)
+
+// Rafraîchit l'état du direct quand un évènement SSE concerne cet événement.
+watch(signalStream, (s) => {
+  if (s && s.evenement_id === evenementId) void chargerEtatDirect()
+})
 
 onMounted(async () => {
   const data = await obtenirEvenement(evenementId)
@@ -242,6 +326,7 @@ onMounted(async () => {
     evenement.value = data
     isInscrit.value = data.est_inscrit
   }
+  await chargerEtatDirect()
 })
 
 const breadcrumbs = computed(() => [
