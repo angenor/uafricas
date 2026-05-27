@@ -255,12 +255,12 @@ watch(() => props.isOpen, (isOpen) => {
             <!-- Pays et Ville -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Pays</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Territoire</label>
                 <select
                   v-model="form.pays"
                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                 >
-                  <option value="">Sélectionnez un pays</option>
+                  <option value="">Sélectionnez un territoire</option>
                   <option v-for="p in pays" :key="p" :value="p">{{ p }}</option>
                 </select>
               </div>

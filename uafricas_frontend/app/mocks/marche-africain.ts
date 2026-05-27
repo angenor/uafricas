@@ -63,7 +63,7 @@ export const DEVISES: { value: Devise; label: string; symbol: string }[] = [
 ]
 
 export const PAYS_AFRICAINS: { value: string; label: string }[] = [
-  { value: '', label: 'Tous les pays' },
+  { value: '', label: 'Tous les territoires' },
   { value: 'Afrique du Sud', label: 'Afrique du Sud' },
   { value: 'Burkina Faso', label: 'Burkina Faso' },
   { value: 'Cap-Vert', label: 'Cap-Vert' },

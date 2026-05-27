@@ -137,7 +137,7 @@ export const radioCategories: RadioCategory[] = [
   {
     id: 2,
     title: 'Radios Nationales',
-    description: 'Écoutez les radios nationales de chaque pays africain avec des programmes locaux et des informations régionales.',
+    description: 'Écoutez les radios nationales de chaque territoire africain avec des programmes locaux et des informations régionales.',
     image: '/images/banners/radio-national.jpg',
     badge: 'Local',
     badgeColor: 'chocolat',
@@ -148,7 +148,7 @@ export const radioCategories: RadioCategory[] = [
 // Statistiques pour la page hub radios
 export const radioStats: RadioStats[] = [
   { value: '150+', label: 'Stations Radio' },
-  { value: '54', label: 'Pays Africains' },
+  { value: '54', label: 'Territoires Africains' },
   { value: '24/7', label: 'Diffusion Continue' },
   { value: 'HD', label: 'Qualité Audio' }
 ]
@@ -319,7 +319,7 @@ export const getRadioById = (id: string): RadioStation | undefined => {
 }
 
 export const getRadiosByCountry = (country: string): RadioStation[] => {
-  if (country === 'Tous les pays') return radioStations
+  if (country === 'Tous les territoires') return radioStations
   return radioStations.filter(station => station.country === country)
 }
 
@@ -335,7 +335,7 @@ export const getRadiosByType = (type: string): RadioStation[] => {
 
 export const filterRadios = (
   type: string = 'Tous les types',
-  country: string = 'Tous les pays',
+  country: string = 'Tous les territoires',
   genre: string = 'Tous les genres'
 ): RadioStation[] => {
   let filtered = [...radioStations]
@@ -344,7 +344,7 @@ export const filterRadios = (
     filtered = filtered.filter(station => station.programType === type)
   }
 
-  if (country !== 'Tous les pays') {
+  if (country !== 'Tous les territoires') {
     filtered = filtered.filter(station => station.country === country)
   }
 

@@ -10,7 +10,7 @@ use crate::middleware::admin::AdminUtilisateur;
 use crate::models::admin::vidafrica::{
     AdminPisteSousTitreResponse, AdminSegmentRow, AdminSegmentSousTitreResponse,
     AdminVideoDetailRow, AdminVideoListeResponse, AdminVideoQueryParams,
-    ChangerEtatVideoRequest, CreerPisteRequest, CreerSegmentRequest,
+    ChangerEtatPisteRequest, ChangerEtatVideoRequest, CreerPisteRequest, CreerSegmentRequest,
     EnregistrerTimingsMotRequest, ModifierSegmentRequest, ReordonnerSegmentsRequest,
     TimingMotResponse, ADMIN_VIDEO_DETAIL_COLONNES, ADMIN_VIDEO_LISTE_COLONNES,
     LANGUES_VALIDES, VIDEO_TRI_COLONNES,
@@ -22,6 +22,7 @@ use crate::ApiResponse;
 
 // ── Etats valides ────────────────────────────────────────────
 const ETATS_VALIDES: &[&str] = &["brouillon", "publie", "suspendu", "supprime"];
+const ETATS_PISTE_VALIDES: &[&str] = &["brouillon", "publie", "masque"];
 
 // ══════════════════════════════════════════════════════════════
 // VIDÉOS — CRUD
@@ -128,10 +129,12 @@ pub async fn obtenir_video(
     // Charger les pistes
     let pistes = sqlx::query_as::<_, AdminPisteSousTitreResponse>(
         "SELECT p.id, p.langue::TEXT AS langue, p.est_complete,
+                p.etat, p.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
                 (SELECT COUNT(*) FROM media_content.segment_sous_titre s
                  WHERE s.piste_id = p.id)::INTEGER AS nombre_segments,
                 p.created_at
          FROM media_content.piste_sous_titre p
+         JOIN iam.utilisateur u ON u.id = p.cree_par
          WHERE p.video_id = $1 AND p.deleted_at IS NULL
          ORDER BY p.created_at"
     )
@@ -543,10 +546,12 @@ pub async fn lister_pistes(
 
     let pistes = sqlx::query_as::<_, AdminPisteSousTitreResponse>(
         "SELECT p.id, p.langue::TEXT AS langue, p.est_complete,
+                p.etat, p.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
                 (SELECT COUNT(*) FROM media_content.segment_sous_titre s
                  WHERE s.piste_id = p.id)::INTEGER AS nombre_segments,
                 p.created_at
          FROM media_content.piste_sous_titre p
+         JOIN iam.utilisateur u ON u.id = p.cree_par
          WHERE p.video_id = $1 AND p.deleted_at IS NULL
          ORDER BY p.created_at"
     )
@@ -632,6 +637,55 @@ pub async fn creer_piste(
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": id, "langue": langue })),
+        error: None,
+    }))
+}
+
+/// PATCH /api/admin/vidafrica/pistes/{id}/etat
+/// Valide (publie) ou masque une piste — notamment celles proposées par les membres.
+pub async fn changer_etat_piste(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<ChangerEtatPisteRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media_content", "modifier");
+    let id = path.into_inner();
+
+    let etat = body.etat.trim();
+    if !ETATS_PISTE_VALIDES.contains(&etat) {
+        return Err(ApiErreur::Validation(format!(
+            "État invalide. Valeurs acceptées: {}",
+            ETATS_PISTE_VALIDES.join(", ")
+        )));
+    }
+
+    let result = sqlx::query(
+        "UPDATE media_content.piste_sous_titre SET etat = $1, updated_at = NOW()
+         WHERE id = $2 AND deleted_at IS NULL"
+    )
+    .bind(etat)
+    .bind(id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(ApiErreur::NonTrouve("Piste non trouvée".into()));
+    }
+
+    log::info!("Admin {} a changé l'état de la piste {} → {}", admin.id, id, etat);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(), Some(admin.id), "UPDATE", "media_content", "piste_sous_titre",
+        Some(id), None, None, ip.as_deref(), ua.as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "id": id, "etat": etat })),
         error: None,
     }))
 }

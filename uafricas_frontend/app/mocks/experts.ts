@@ -91,7 +91,7 @@ export const profiles: Profile[] = [
 
 // Liste des pays
 export const countries: Country[] = [
-  { value: '', label: 'Tous les pays' },
+  { value: '', label: 'Tous les territoires' },
   { value: 'Senegal', label: 'Sénégal' },
   { value: 'Cote_d_Ivoire', label: "Côte d'Ivoire" },
   { value: 'Cameroun', label: 'Cameroun' },

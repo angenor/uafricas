@@ -25,7 +25,7 @@ const paysDisponibles = ref<string[]>([])
 const categoriesDisponibles = ref<string[]>([])
 
 // Filtres
-const filtrePays = ref('Tous les pays')
+const filtrePays = ref('Tous les territoires')
 const filtreCategorie = ref('Toutes les catégories')
 const rechercheTexte = ref('')
 
@@ -39,7 +39,7 @@ const heroVideoUrl = computed(() => {
 const chainesFiltrees = computed(() => {
   let result = chaines.value
 
-  if (filtrePays.value && filtrePays.value !== 'Tous les pays') {
+  if (filtrePays.value && filtrePays.value !== 'Tous les territoires') {
     result = result.filter(c => c.country === filtrePays.value)
   }
   if (filtreCategorie.value && filtreCategorie.value !== 'Toutes les catégories') {
@@ -211,23 +211,29 @@ onMounted(() => {
         </div>
 
         <!-- Filtres -->
-        <div class="flex flex-wrap gap-4 mb-8">
-          <input
-            v-model="rechercheTexte"
-            type="text"
-            placeholder="Rechercher une chaîne..."
-            class="bg-gray-800 text-white rounded-lg px-4 py-2 flex-1 min-w-48 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          />
+        <div class="bg-gray-800/60 rounded-xl p-3 flex flex-wrap gap-3 mb-8">
+          <div class="relative flex-1 min-w-48">
+            <font-awesome-icon
+              :icon="['fas', 'magnifying-glass']"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"
+            />
+            <input
+              v-model="rechercheTexte"
+              type="text"
+              placeholder="Rechercher une chaîne..."
+              class="w-full bg-gray-800 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            />
+          </div>
           <select
             v-model="filtrePays"
-            class="bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            class="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
-            <option>Tous les pays</option>
+            <option>Tous les territoires</option>
             <option v-for="pays in paysDisponibles" :key="pays" :value="pays">{{ pays }}</option>
           </select>
           <select
             v-model="filtreCategorie"
-            class="bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            class="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
             <option>Toutes les catégories</option>
             <option v-for="cat in categoriesDisponibles" :key="cat" :value="cat">{{ cat }}</option>

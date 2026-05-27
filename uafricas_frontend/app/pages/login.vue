@@ -242,7 +242,17 @@ useHead({
 useAOS()
 
 const router = useRouter()
+const route = useRoute()
 const { login, loading, error } = useAuth()
+
+/** Cible de redirection apres connexion (chemin interne uniquement) */
+const cibleRedirection = computed(() => {
+  const redirect = route.query.redirect
+  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    return redirect
+  }
+  return '/'
+})
 
 const loginForm = reactive({
   email: '',
@@ -256,7 +266,7 @@ const estErreurVerification = computed(() => {
 const handleLogin = async () => {
   try {
     await login(loginForm.email, loginForm.password)
-    router.push('/')
+    router.push(cibleRedirection.value)
   } catch (err) {
     console.error('Erreur de connexion:', err)
   }

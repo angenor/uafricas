@@ -1,21 +1,22 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
-    <div class="relative bg-gradient-to-br from-custom-green via-emerald-600 to-teal-600 overflow-hidden">
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
+    <div class="group relative bg-gradient-to-br from-custom-green via-emerald-600 to-teal-600 overflow-hidden">
       <div class="absolute inset-0 opacity-10">
         <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;0.4&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');" />
       </div>
 
-      <div class="relative max-w-7xl mx-auto px-4 pt-24 pb-16 md:pt-32 md:pb-20">
-        <div class="text-center text-white">
-          <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-xs px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <font-awesome-icon :icon="['fas', 'circle-info']" class="w-4 h-4" />
-            Aide & Support
-          </div>
-          <h1 class="text-3xl md:text-5xl font-bold mb-4 font-display">
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-8 text-center text-white select-none">
+        <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-xs px-4 py-1.5 rounded-full text-sm font-medium mb-4">
+          <font-awesome-icon :icon="['fas', 'circle-info']" class="w-4 h-4" />
+          Aide & Support
+        </div>
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-2xl md:text-4xl font-bold font-display transition-opacity duration-300 group-hover:opacity-0">
             Foire Aux Questions
           </h1>
-          <p class="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             Retrouvez les réponses aux questions les plus fréquemment posées sur UAfricas.
           </p>
         </div>
@@ -108,11 +109,11 @@ const faqItems = [
   },
   {
     question: "Qu'est-ce que le programme d'échange sabbatique ?",
-    reponse: "Le programme d'échange sabbatique permet aux membres du réseau de participer à des échanges entre pays africains et la diaspora. Il vise à favoriser le partage de compétences, le transfert de savoir-faire et le renforcement des liens entre les communautés africaines à travers le monde."
+    reponse: "Le programme d'échange sabbatique permet aux membres du réseau de participer à des échanges entre territoires africains et la diaspora. Il vise à favoriser le partage de compétences, le transfert de savoir-faire et le renforcement des liens entre les communautés africaines à travers le monde."
   },
   {
     question: "Comment trouver un expert sur la plateforme ?",
-    reponse: "Accédez à la section « Experts » depuis le menu principal. Vous pouvez rechercher des experts par domaine de compétence, par pays ou par spécialité. Chaque profil d'expert détaille ses qualifications, son expérience et ses domaines d'intervention."
+    reponse: "Accédez à la section « Experts » depuis le menu principal. Vous pouvez rechercher des experts par domaine de compétence, par territoire ou par spécialité. Chaque profil d'expert détaille ses qualifications, son expérience et ses domaines d'intervention."
   },
   {
     question: "Comment contribuer à la gouvernance ?",

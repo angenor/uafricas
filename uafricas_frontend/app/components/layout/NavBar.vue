@@ -142,11 +142,19 @@
               <!-- Liens -->
               <div class="py-1">
                 <NuxtLink
-                  to="/profil"
+                  to="/mon-compte/profil"
                   class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
                 >
                   <font-awesome-icon icon="fa-solid fa-user" class="w-4 text-gray-400" />
                   Mon profil
+                </NuxtLink>
+
+                <NuxtLink
+                  to="/mon-compte/amis"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
+                >
+                  <font-awesome-icon icon="fa-solid fa-user-check" class="w-4 text-gray-400" />
+                  Mes amis
                 </NuxtLink>
 
                 <NuxtLink
@@ -155,6 +163,18 @@
                 >
                   <font-awesome-icon icon="fa-solid fa-clipboard-list" class="w-4 text-gray-400" />
                   Mes contributions
+                </NuxtLink>
+
+                <NuxtLink
+                  to="/mon-compte/recommandations-accompagnateur"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
+                >
+                  <font-awesome-icon icon="fa-solid fa-user-graduate" class="w-4 text-gray-400" />
+                  Recommandations
+                  <span v-if="recommandationsAccompagnateurEnAttente > 0"
+                        class="ml-auto bg-custom-chocolat text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                    {{ recommandationsAccompagnateurEnAttente }}
+                  </span>
                 </NuxtLink>
 
                 <NuxtLink
@@ -295,12 +315,21 @@
               </div>
 
               <NuxtLink
-                to="/profil"
+                to="/mon-compte/profil"
                 class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-custom-green transition-colors"
                 @click="mobileOpen = false"
               >
                 <font-awesome-icon icon="fa-solid fa-user" class="w-4 text-gray-400" />
                 Mon profil
+              </NuxtLink>
+
+              <NuxtLink
+                to="/mon-compte/amis"
+                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-custom-green transition-colors"
+                @click="mobileOpen = false"
+              >
+                <font-awesome-icon icon="fa-solid fa-user-check" class="w-4 text-gray-400" />
+                Mes amis
               </NuxtLink>
 
               <NuxtLink
@@ -376,6 +405,9 @@ const rechercheOuverte = ref(false)
 const { isAuthenticated, user, fullName, isAdmin, logout } = useAuth()
 const route = useRoute()
 
+// Feature 001-ressources-fermeture-session : badge recommandations accompagnateur
+const { mesRecommandationsEnAttente: recommandationsAccompagnateurEnAttente, rafraichirCompteur } = useAfrolangAccompagnateur()
+
 watch(() => route.path, () => {
   mobileOpen.value = false
   mobileSection.value = null
@@ -391,6 +423,12 @@ const handleRaccourciRecherche = (e: KeyboardEvent) => {
 
 onMounted(() => {
   document.addEventListener('keydown', handleRaccourciRecherche)
+  // Rafraîchit le badge recommandations accompagnateur (silencieux si non connecté)
+  rafraichirCompteur()
+})
+
+watch(() => isAuthenticated.value, () => {
+  rafraichirCompteur()
 })
 
 onUnmounted(() => {
@@ -413,7 +451,7 @@ const menus: NavMenu[] = [
     image: '/images/danse-afrique.jpg',
     items: [
       { label: 'Afrolang', to: '/afrolang', description: 'Sauvons nos langues', icon: 'fa-solid fa-language' },
-      { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Préservons nos cultures les meilleures', icon: 'fa-solid fa-book-open' },
+      { label: 'Codimoi', to: '/codi-moi', description: 'Préservons nos cultures les meilleures', icon: 'fa-solid fa-book-open' },
       { label: 'Afripulse', to: '/opportunite-afrique', description: 'Promouvons notre Afrique', icon: 'fa-solid fa-briefcase' },
       { label: 'Afroculture', to: '/centres', description: 'Enrichissons-nous ici et ailleurs de notre culture diversifiée', icon: 'fa-solid fa-earth-africa' },
     ]
@@ -430,7 +468,7 @@ const menus: NavMenu[] = [
       { label: 'Rootstree', to: '/arbre-genealogique', description: 'Tracer son arbre généalogique', icon: 'fa-solid fa-tree' },
       { label: 'Africonnect', to: '/retrouve-amis', description: 'Retrouver une personne perdue de vue', icon: 'fa-solid fa-users' },
       { label: 'Diapertise', to: '/experts', description: 'Mobiliser une expertise de pointe', icon: 'fa-solid fa-user-tie' },
-      { label: 'Sabbatique', to: '/echanges-sabbatiques', description: 'Offrir son expertise en volontariat et bénévolat', icon: 'fa-solid fa-plane' },
+      { label: 'Sabbafrica', to: '/echanges-sabbatiques', description: 'Offrir son expertise en volontariat et bénévolat', icon: 'fa-solid fa-plane' },
       { label: 'Afromarket', to: '/marche-africain', description: 'Place de marché panafricaine', icon: 'fa-solid fa-store' },
     ]
   },
@@ -460,7 +498,7 @@ const menus: NavMenu[] = [
       { label: 'Africalive', to: '/evenements/liste', description: 'Organiser un événement mettant en valeur l\'Afrique et son développement', icon: 'fa-solid fa-calendar-days' },
       { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Parler à une bibliothèque humaine', icon: 'fa-solid fa-chalkboard-user' },
       { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Permettre aux Africains et aux écoles de consulter vos publications', icon: 'fa-solid fa-display' },
-      { label: 'Muniversa', to: '/universite/inuda', description: 'Mindshift University of Africa — éduquer sur les enjeux prioritaires', icon: 'fa-solid fa-graduation-cap' },
+      { label: 'Muniversa', to: '/universite', description: 'Mindshift University of Africa — éduquer sur les enjeux prioritaires', icon: 'fa-solid fa-graduation-cap' },
     ]
   },
   {

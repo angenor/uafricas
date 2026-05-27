@@ -1,5 +1,6 @@
 // Composable pour les appels API Afrolang (salles, groupes ethniques, feature 005)
 import { useUserStore } from '~/stores/user'
+import type { Room } from 'livekit-client'
 
 // ──────────────────────────────────────────────────────────────
 // Types et interfaces
@@ -118,6 +119,13 @@ export interface SoumettrePropositionPayload {
   pays_origine_ids: string[]
 }
 
+/** Désactivation administrative d'une salle (feature 001-ressources-fermeture-session).
+ *  `motif` est `null` côté public, rempli côté admin uniquement. */
+export interface DesactivationAdminInfoAPI {
+  desactivee_at: string
+  motif: string | null
+}
+
 /** DTO salle publique (liste) — feature 005 */
 export interface SalleAPI {
   id: string
@@ -138,6 +146,7 @@ export interface SalleAPI {
   ressources_count: number
   pays_origine: PaysOrigineLight[]
   administrateurs: AdministrateurLight[]
+  desactivee_admin: DesactivationAdminInfoAPI | null
   created_at: string
   updated_at: string
 }
@@ -187,6 +196,10 @@ export interface SessionAPI {
 export interface SessionDetailAPI extends SessionAPI {
   moderateur: AfrolangUser | null
   participants: ParticipantAPI[]
+  /** Feature 001-session-moderation (FR-024) — état spotlight initial à la connexion. */
+  spotlight?: SpotlightInfoAPI | null
+  /** Feature 001-session-moderation — nombre de permissions tableau blanc actives. */
+  permissions_tableau_blanc_count?: number
 }
 
 /** DTO participant */
@@ -275,6 +288,67 @@ export interface SessionListeAPI extends PageMeta {
 
 export interface GroupeEthniqueListeAPI extends PageMeta {
   groupes: GroupeEthniqueResume[]
+}
+
+// ──────────────────────────────────────────────────────────────
+// Feature 001-session-moderation — permissions tableau blanc + spotlight
+// ──────────────────────────────────────────────────────────────
+
+/** Niveau de modérateur de session calculé côté serveur (FR-001/FR-001b). */
+export type NiveauModerateur =
+  | 'admin_plateforme'
+  | 'admin_salle'
+  | 'moderateur_attitre'
+  | 'createur_salle_privee'
+
+/** Modérateur d'office présent dans la session (lecture). */
+export interface ModerateurOfficeAPI {
+  utilisateur_id: string
+  nom_complet: string
+  avatar_url: string | null
+  niveau: NiveauModerateur
+}
+
+/** Permission individuelle d'écriture sur le tableau blanc. */
+export interface PermissionTableauBlancAPI {
+  utilisateur_id: string
+  nom_complet: string
+  avatar_url: string | null
+  accorde_par: string
+  accorde_at: string
+}
+
+/** Réponse complète GET /sessions/{id}/permissions-tableau-blanc. */
+export interface PermissionsTableauBlancListeAPI {
+  session_id: string
+  moderateurs_office: ModerateurOfficeAPI[]
+  permissions_individuelles: PermissionTableauBlancAPI[]
+  mon_niveau_moderateur: NiveauModerateur | null
+}
+
+/** Spotlight courant sur une session publique livestreamée. */
+export interface SpotlightInfoAPI {
+  utilisateur_id: string
+  nom_complet: string
+  avatar_url: string | null
+  mis_en_evidence_par: string
+  mis_en_evidence_at: string
+}
+
+/** DataPacket LiveKit `moderation.permission_update`. */
+export interface ModerationPermissionPayload {
+  session_id: string
+  utilisateur_id: string
+  action: 'accordee' | 'retiree'
+  accorde_par: string
+  accorde_at: string
+}
+
+/** Enveloppe générique des DataPacket de modération. */
+export interface ModerationDataPacket {
+  type: 'moderation'
+  subtype: 'permission_update' | 'spotlight'
+  payload: ModerationPermissionPayload | SpotlightInfoAPI | null
 }
 
 /** Reponse API standardisee */
@@ -456,6 +530,14 @@ export const useAfrolang = () => {
 
   const chargement = ref(false)
   const erreur = ref<string | null>(null)
+
+  // ── Feature 001-session-moderation : état partagé (singleton via useState) ──
+  // Nécessaire pour que AfrolangRoom et SalleModerationPanel partagent la même
+  // instance — sinon chaque appel à useAfrolang() crée des refs locales isolées.
+  const monNiveauModerateurSession = useState<NiveauModerateur | null>('afrolang.monNiveauModerateurSession', () => null)
+  const permissionsTableauBlanc = useState<PermissionTableauBlancAPI[]>('afrolang.permissionsTableauBlanc', () => [])
+  const moderateursOffice = useState<ModerateurOfficeAPI[]>('afrolang.moderateursOffice', () => [])
+  const spotlightActif = useState<SpotlightInfoAPI | null>('afrolang.spotlightActif', () => null)
 
   /** Headers d'authentification si l'utilisateur est connecte */
   const authHeaders = (): Record<string, string> => {
@@ -1477,9 +1559,257 @@ export const useAfrolang = () => {
     }
   }
 
+  // ──────────────────────────────────────────────────────────
+  // Feature 001-session-moderation — méthodes
+  // ──────────────────────────────────────────────────────────
+
+  /** Récupère l'état complet (modérateurs d'office + permissions individuelles + mon niveau). */
+  const listerPermissionsTableauBlanc = async (
+    sessionId: string,
+  ): Promise<PermissionsTableauBlancListeAPI | null> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<PermissionsTableauBlancListeAPI>>(
+        `${apiBase}/api/afrolang/sessions/${sessionId}/permissions-tableau-blanc`,
+        { headers: authHeaders() },
+      )
+      if (reponse.success && reponse.data) {
+        moderateursOffice.value = reponse.data.moderateurs_office
+        permissionsTableauBlanc.value = reponse.data.permissions_individuelles
+        monNiveauModerateurSession.value = reponse.data.mon_niveau_moderateur
+        return reponse.data
+      }
+      return null
+    }
+    catch (e: unknown) {
+      erreur.value = extraireMessage(e, 'Impossible de charger les permissions du tableau blanc.')
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Accorde la permission d'écriture sur le tableau blanc à un participant. */
+  const accorderPermissionTableauBlanc = async (
+    sessionId: string,
+    utilisateurId: string,
+  ): Promise<PermissionTableauBlancAPI | { erreur: 'conflit' | 'autre' }> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<PermissionTableauBlancAPI>>(
+        `${apiBase}/api/afrolang/sessions/${sessionId}/permissions-tableau-blanc`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: { utilisateur_id: utilisateurId },
+        },
+      )
+      if (reponse.success && reponse.data) {
+        // Patch local optimiste (la DataPacket de confirmation le réappliquera de toute façon)
+        const existant = permissionsTableauBlanc.value.find(p => p.utilisateur_id === utilisateurId)
+        if (!existant) permissionsTableauBlanc.value = [...permissionsTableauBlanc.value, reponse.data]
+        return reponse.data
+      }
+      return { erreur: 'autre' }
+    }
+    catch (e: unknown) {
+      const obj = e as { status?: number; statusCode?: number }
+      const code = obj.status ?? obj.statusCode
+      if (code === 409) return { erreur: 'conflit' }
+      erreur.value = extraireMessage(e, 'Impossible d\'accorder la permission.')
+      return { erreur: 'autre' }
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Retire la permission d'écriture précédemment accordée. */
+  const retirerPermissionTableauBlanc = async (
+    sessionId: string,
+    utilisateurId: string,
+  ): Promise<boolean | { erreur: 'conflit' | 'autre' }> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      await $fetch(
+        `${apiBase}/api/afrolang/sessions/${sessionId}/permissions-tableau-blanc/${utilisateurId}`,
+        { method: 'DELETE', headers: authHeaders() },
+      )
+      permissionsTableauBlanc.value = permissionsTableauBlanc.value.filter(
+        p => p.utilisateur_id !== utilisateurId,
+      )
+      return true
+    }
+    catch (e: unknown) {
+      const obj = e as { status?: number; statusCode?: number }
+      const code = obj.status ?? obj.statusCode
+      if (code === 409) return { erreur: 'conflit' }
+      erreur.value = extraireMessage(e, 'Impossible de retirer la permission.')
+      return { erreur: 'autre' }
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Met en évidence un participant (FR-020). Réservé admin plateforme / admin salle.
+   *  Renvoie l'info spotlight créée, ou un code d'erreur si refusé serveur. */
+  const mettreEnEvidence = async (
+    sessionId: string,
+    utilisateurId: string,
+  ): Promise<SpotlightInfoAPI | { erreur: 'interdit' | 'session_privee' | 'absent' | 'autre' }> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<SpotlightInfoAPI>>(
+        `${apiBase}/api/afrolang/sessions/${sessionId}/spotlight`,
+        {
+          method: 'POST',
+          headers: authHeaders(),
+          body: { utilisateur_id: utilisateurId },
+        },
+      )
+      if (reponse.success && reponse.data) {
+        spotlightActif.value = reponse.data
+        return reponse.data
+      }
+      erreur.value = reponse.error ?? 'Échec mise en évidence.'
+      return { erreur: 'autre' }
+    }
+    catch (e: unknown) {
+      const obj = e as { status?: number; statusCode?: number }
+      const code = obj.status ?? obj.statusCode
+      if (code === 403) return { erreur: 'interdit' }
+      if (code === 404) return { erreur: 'absent' }
+      if (code === 422) return { erreur: 'session_privee' }
+      erreur.value = extraireMessage(e, 'Impossible de mettre en évidence.')
+      return { erreur: 'autre' }
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Désactive la mise en évidence active (FR-022). */
+  const retirerMiseEnEvidence = async (
+    sessionId: string,
+  ): Promise<boolean | { erreur: 'interdit' | 'session_privee' | 'autre' }> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      await $fetch(`${apiBase}/api/afrolang/sessions/${sessionId}/spotlight`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      })
+      spotlightActif.value = null
+      return true
+    }
+    catch (e: unknown) {
+      const obj = e as { status?: number; statusCode?: number }
+      const code = obj.status ?? obj.statusCode
+      if (code === 403) return { erreur: 'interdit' }
+      if (code === 422) return { erreur: 'session_privee' }
+      erreur.value = extraireMessage(e, 'Impossible de retirer la mise en évidence.')
+      return { erreur: 'autre' }
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Indique si l'utilisateur courant peut écrire sur le tableau blanc :
+   *  - vrai s'il est modérateur de session,
+   *  - ou s'il figure dans `permissionsTableauBlanc`. */
+  const monEcritureAutorisee = computed<boolean>(() => {
+    if (monNiveauModerateurSession.value !== null) return true
+    const moi = userStore.user?.id
+    if (!moi) return false
+    return permissionsTableauBlanc.value.some(p => p.utilisateur_id === moi)
+  })
+
+  /** Callback appelé à réception d'un DataPacket `moderation.permission_update` (FR-014). */
+  const onPermissionUpdate = (payload: ModerationPermissionPayload) => {
+    if (payload.action === 'accordee') {
+      const existant = permissionsTableauBlanc.value.find(p => p.utilisateur_id === payload.utilisateur_id)
+      if (!existant) {
+        permissionsTableauBlanc.value = [
+          ...permissionsTableauBlanc.value,
+          {
+            utilisateur_id: payload.utilisateur_id,
+            nom_complet: '',
+            avatar_url: null,
+            accorde_par: payload.accorde_par,
+            accorde_at: payload.accorde_at,
+          },
+        ]
+      }
+    }
+    else if (payload.action === 'retiree') {
+      permissionsTableauBlanc.value = permissionsTableauBlanc.value.filter(
+        p => p.utilisateur_id !== payload.utilisateur_id,
+      )
+    }
+  }
+
+  /** Callback appelé à réception d'un DataPacket `moderation.spotlight` (FR-023). */
+  const onSpotlight = (payload: SpotlightInfoAPI | null) => {
+    spotlightActif.value = payload
+  }
+
+  /** Attache un listener `dataReceived` sur la `Room` LiveKit pour les évènements
+   *  `moderation.*`. Retourne une fonction de détachement à appeler au démontage. */
+  const attacherListenerModeration = (room: Room): (() => void) => {
+    const decoder = new TextDecoder()
+    const handler = (payload: Uint8Array) => {
+      try {
+        const texte = decoder.decode(payload)
+        const data = JSON.parse(texte) as ModerationDataPacket
+        if (data.type !== 'moderation') return
+        if (data.subtype === 'permission_update') {
+          onPermissionUpdate(data.payload as ModerationPermissionPayload)
+        }
+        else if (data.subtype === 'spotlight') {
+          onSpotlight(data.payload as SpotlightInfoAPI | null)
+        }
+      }
+      catch {
+        /* paquet ignoré */
+      }
+    }
+    room.on('dataReceived', handler)
+    return () => {
+      room.off('dataReceived', handler)
+    }
+  }
+
+  // ── Feature 001-ressources-fermeture-session : helpers d'autorisation ──
+
+  /** Indique si la salle est gelée par administration (lecture seule + bandeau). */
+  const salleDesactiveeAdmin = (salle: SalleAPI | null): DesactivationAdminInfoAPI | null => {
+    return salle?.desactivee_admin ?? null
+  }
+
+  /** Combine : compte connecté actif + salle vivante + accès salle privée si applicable.
+   *  Si `salle` n'est pas chargée (ex. depuis l'intérieur d'une session live),
+   *  on autorise — le backend re-valide tous les invariants. */
+  const peutContribuerRessource = (
+    salle: SalleAPI | null,
+    aAccesSallePriveeSiNecessaire: boolean = true,
+  ): boolean => {
+    if (!userStore.accessToken) return false
+    if (salle && salle.desactivee_admin !== null) return false
+    return aAccesSallePriveeSiNecessaire
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
+    salleDesactiveeAdmin,
+    peutContribuerRessource,
     // Annuaire (US1)
     listerGroupesEthniques,
     // Salles publiques
@@ -1525,6 +1855,18 @@ export const useAfrolang = () => {
     proposerSalle,
     listerMesPropositions,
     retirerProposition,
+    // Feature 001-session-moderation
+    monNiveauModerateurSession,
+    permissionsTableauBlanc,
+    moderateursOffice,
+    spotlightActif,
+    monEcritureAutorisee,
+    listerPermissionsTableauBlanc,
+    accorderPermissionTableauBlanc,
+    retirerPermissionTableauBlanc,
+    mettreEnEvidence,
+    retirerMiseEnEvidence,
+    attacherListenerModeration,
   }
 }
 

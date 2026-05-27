@@ -72,3 +72,12 @@
   --background-image-font-baniere-ethnie: url('/images/banniere-ethnie.png');
   --background-image-font-c-culturel: url('https://mediaculture.info/wp-content/uploads/2020/03/Patrimoine-culturel-africain-1-1024x850.jpg');
 }
+
+/* Masquer la barre de défilement tout en gardant le défilement actif */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

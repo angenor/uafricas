@@ -268,6 +268,75 @@ export const useAdminAfrolangSalles = () => {
     }
   }
 
+  // ── Modération admin (feature 001-ressources-fermeture-session, US2/US3) ──
+
+  /** État de désactivation administrative d'une salle. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface _DesactivationAdminInfoAPI {
+    desactivee_at: string
+    motif: string | null
+  }
+
+  interface EvenementModerationAPI {
+    id: string
+    salle_id: string
+    session_concernee_id: string | null
+    type_action: 'fermeture_admin' | 'reactivation_admin'
+    admin_id: string
+    admin_nom: string | null
+    admin_prenom: string | null
+    motif: string | null
+    created_at: string
+  }
+
+  const reactiverSalle = async (
+    salleId: string,
+    commentaire?: string,
+  ): Promise<{ salle_id: string; reactivee_at: string } | null> => {
+    try {
+      const response = await adminFetch<
+        ApiResponse<{ salle_id: string; reactivee_at: string }>
+      >(`/api/admin/afrolang/salles/${salleId}/reactiver`, {
+        method: 'POST',
+        body: { commentaire: commentaire ?? null },
+      })
+      return response.success && response.data ? response.data : null
+    }
+    catch (e) {
+      console.error('Erreur reactiverSalle:', e)
+      return null
+    }
+  }
+
+  const listerHistoriqueModeration = async (
+    salleId: string,
+    page = 1,
+    limit = 50,
+  ): Promise<{
+    data: EvenementModerationAPI[]
+    total: number
+    page: number
+    par_page: number
+  } | null> => {
+    try {
+      const response = await adminFetch<
+        ApiResponse<{
+          data: EvenementModerationAPI[]
+          total: number
+          page: number
+          par_page: number
+        }>
+      >(
+        `/api/admin/afrolang/salles/${salleId}/historique-moderation?page=${page}&limit=${limit}`,
+      )
+      return response.success && response.data ? response.data : null
+    }
+    catch (e) {
+      console.error('Erreur listerHistoriqueModeration:', e)
+      return null
+    }
+  }
+
   return {
     pagination,
     sort,
@@ -292,5 +361,8 @@ export const useAdminAfrolangSalles = () => {
     listerAdministrateurs,
     nommerAdministrateur,
     revoquerAdministrateur,
+    // Modération admin (feature 001-ressources-fermeture-session)
+    reactiverSalle,
+    listerHistoriqueModeration,
   }
 }

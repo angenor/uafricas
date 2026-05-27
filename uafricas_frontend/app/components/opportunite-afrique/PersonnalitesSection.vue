@@ -14,18 +14,20 @@ interface Props {
 
 const props = defineProps<Props>()
 
+type OpenContributionPayload = {
+  type_objet_contribution: TypeObjetContribution
+  section_afripulse: SectionAfripulse
+  type_contribution: 'ajout' | 'edition' | 'suppression'
+  target_id?: string
+  donnees_actuelles?: Record<string, unknown>
+  libelle?: string
+}
+
 const emit = defineEmits<{
-  (
-    e: 'open-contribution',
-    payload: {
-      type_objet_contribution: TypeObjetContribution
-      section_afripulse: SectionAfripulse
-      type_contribution: 'ajout'
-    }
-  ): void
+  (e: 'open-contribution', payload: OpenContributionPayload): void
 }>()
 
-const { listerPersonnalites } = useOpportuniteAfrique()
+const { listerPersonnalites, resoudreUrlImage } = useOpportuniteAfrique()
 
 const personnalites = ref<PersonnaliteConnueAPI[]>([])
 const chargement = ref(true)
@@ -68,7 +70,10 @@ watch(domaineFiltre, charger)
 
 const router = useRouter()
 
-const proposerPersonnalite = () => {
+const ouvrirContribution = (
+  type_contribution: 'ajout' | 'edition' | 'suppression',
+  personnalite?: PersonnaliteConnueAPI,
+) => {
   if (!props.estAuthentifie) {
     router.push('/login')
     return
@@ -76,8 +81,25 @@ const proposerPersonnalite = () => {
   emit('open-contribution', {
     type_objet_contribution: 'personnalite_connue',
     section_afripulse: 'personnalites',
-    type_contribution: 'ajout',
+    type_contribution,
+    target_id: personnalite?.id,
+    donnees_actuelles: personnalite
+      ? {
+          nom_complet: personnalite.nom_complet,
+          domaine: personnalite.domaine,
+          biographie_courte: personnalite.biographie_courte,
+          annee_naissance: personnalite.annee_naissance,
+          annee_deces: personnalite.annee_deces,
+          portrait_url: personnalite.portrait_url,
+          lien_reference: personnalite.lien_reference,
+        }
+      : undefined,
+    libelle: personnalite?.nom_complet,
   })
+}
+
+const proposerPersonnalite = () => {
+  ouvrirContribution('ajout')
 }
 </script>
 
@@ -135,7 +157,7 @@ const proposerPersonnalite = () => {
           <div class="aspect-square bg-gray-100 relative overflow-hidden">
             <img
               v-if="p.portrait_url"
-              :src="p.portrait_url"
+              :src="resoudreUrlImage(p.portrait_url)"
               :alt="p.nom_complet"
               class="w-full h-full object-cover"
             />
@@ -173,6 +195,28 @@ const proposerPersonnalite = () => {
             >
               En savoir plus
             </a>
+            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
+                @click="ouvrirContribution('edition', p)"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Modifier
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
+                @click="ouvrirContribution('suppression', p)"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Supprimer
+              </button>
+            </div>
           </div>
         </article>
       </div>

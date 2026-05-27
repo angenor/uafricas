@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, experts, facultes, fiches_pays, gouvernance, livres, matching, moocs, notification, projets, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, gouvernance, livres, matching, membres, messagerie, moocs, notification, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -205,6 +205,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/afrolang/salles-privees/archiver-batch-utilisateur", web::post().to(admin::sessions_afrolang::archiver_batch_utilisateur))
                     .route("/afrolang/salles-privees/{id}/archiver", web::post().to(admin::sessions_afrolang::archiver_salle_privee))
                     .route("/afrolang/salles/{id}/desactiver", web::post().to(admin::sessions_afrolang::desactiver_salle_publique_avec_cascade))
+                    // AfroLang - Modération admin (feature 001-ressources-fermeture-session)
+                    .route("/afrolang/sessions/{session_id}/fermer-admin", web::post().to(admin::sessions_moderation::fermer_session_admin))
+                    .route("/afrolang/salles/{salle_id}/reactiver", web::post().to(admin::sessions_moderation::reactiver_salle))
+                    .route("/afrolang/salles/{salle_id}/historique-moderation", web::get().to(admin::sessions_moderation::historique_moderation))
                     // AfroLang - Pays d'origine (feature 001-afrolang-pays-origine)
                     .route("/afrolang/salles/{id}/pays", web::post().to(admin::salles::ajouter_pays_origine_salle))
                     .route("/afrolang/salles/{id}/pays/{pays_id}", web::delete().to(admin::salles::retirer_pays_origine_salle))
@@ -334,6 +338,9 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/profils-pays/{id}/sites-touristiques", web::post().to(admin::profils_pays::creer_site_touristique))
                     .route("/profils-pays/{id}/sites-touristiques/{site_id}", web::put().to(admin::profils_pays::modifier_site_touristique))
                     .route("/profils-pays/{id}/sites-touristiques/{site_id}", web::delete().to(admin::profils_pays::supprimer_site_touristique))
+                    .route("/profils-pays/{id}/sites-touristiques/{site_id}/verification", web::patch().to(admin::profils_pays::definir_verification_site))
+                    // Moderation des avis de site (US5)
+                    .route("/sites-touristiques/avis/{avis_id}/masquer", web::patch().to(admin::profils_pays::masquer_avis_site))
                     // Profils Pays - Secteurs de developpement
                     .route("/profils-pays/{id}/secteurs", web::get().to(admin::profils_pays::lister_secteurs))
                     .route("/profils-pays/{id}/secteurs", web::post().to(admin::profils_pays::creer_secteur))
@@ -372,6 +379,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // Vidafrica - Pistes de sous-titres
                     .route("/vidafrica/videos/{video_id}/pistes", web::get().to(admin::vidafrica::lister_pistes))
                     .route("/vidafrica/videos/{video_id}/pistes", web::post().to(admin::vidafrica::creer_piste))
+                    .route("/vidafrica/pistes/{id}/etat", web::patch().to(admin::vidafrica::changer_etat_piste))
                     .route("/vidafrica/pistes/{id}", web::delete().to(admin::vidafrica::supprimer_piste))
                     // Vidafrica - Segments
                     .route("/vidafrica/pistes/{piste_id}/segments", web::get().to(admin::vidafrica::lister_segments))
@@ -386,7 +394,12 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/bibliotheques-humaines", web::get().to(admin::bibliotheques_humaines::lister_demandes))
                     .route("/bibliotheques-humaines/{id}", web::get().to(admin::bibliotheques_humaines::obtenir_demande))
                     .route("/bibliotheques-humaines/{id}/valider", web::patch().to(admin::bibliotheques_humaines::valider_demande))
-                    .route("/bibliotheques-humaines/{id}/rejeter", web::patch().to(admin::bibliotheques_humaines::rejeter_demande)),
+                    .route("/bibliotheques-humaines/{id}/rejeter", web::patch().to(admin::bibliotheques_humaines::rejeter_demande))
+                    // Demandes d'expertise admin (US2)
+                    .route("/experts", web::get().to(admin::expertise::lister_demandes))
+                    .route("/experts/{id}", web::get().to(admin::expertise::obtenir_demande))
+                    .route("/experts/{id}/valider", web::patch().to(admin::expertise::valider_demande))
+                    .route("/experts/{id}/rejeter", web::patch().to(admin::expertise::rejeter_demande)),
             )
             // Routes Retrouve Amis
             .service(
@@ -452,6 +465,8 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/stats", web::get().to(gouvernance::obtenir_stats))
                     .route("/contributions", web::get().to(gouvernance::lister_contributions))
                     .route("/factcheck", web::post().to(gouvernance::creer_factcheck_public))
+                    .route("/factcheck/{id}/reaction", web::post().to(gouvernance::reagir_factcheck))
+                    .route("/factcheck/{id}/signalement", web::post().to(gouvernance::signaler_factcheck))
                     .route("/bad-habits", web::post().to(gouvernance::creer_bad_habit_public))
                     .route("/idea-forces", web::post().to(gouvernance::creer_idea_force_public)),
             )
@@ -471,7 +486,21 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("/annonces")
                     .route("", web::get().to(annonces::lister_annonces))
-                    .route("/{id}", web::get().to(annonces::obtenir_annonce)),
+                    // Publication membre (auth via JWT dans le handler)
+                    .route("", web::post().to(annonces::creer_annonce_membre))
+                    // Routes statiques AVANT la route dynamique /{id} (D8)
+                    .route("/categories", web::get().to(annonces::lister_categories_annonce))
+                    .route("/mes-annonces", web::get().to(annonces::mes_annonces))
+                    .route("/favoris", web::get().to(annonces::mes_favoris))
+                    .route("/{id}", web::get().to(annonces::obtenir_annonce))
+                    .route("/{id}", web::put().to(annonces::modifier_annonce_membre))
+                    .route("/{id}", web::delete().to(annonces::supprimer_annonce_membre))
+                    .route("/{id}/conclure", web::patch().to(annonces::conclure_annonce))
+                    .route("/{id}/contacter", web::post().to(annonces::contacter_auteur))
+                    .route("/{id}/favori", web::post().to(annonces::ajouter_favori))
+                    .route("/{id}/favori", web::delete().to(annonces::retirer_favori))
+                    .route("/{id}/medias", web::post().to(annonces::ajouter_medias_membre))
+                    .route("/{id}/medias/{media_id}", web::delete().to(annonces::supprimer_media_membre)),
             )
             // Routes des evenements
             .service(
@@ -479,7 +508,16 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("", web::get().to(evenements::lister_evenements))
                     .route("", web::post().to(evenements::creer_evenement))
                     .route("/{id}", web::get().to(evenements::obtenir_evenement))
-                    .route("/{id}/inscription", web::post().to(evenements::inscrire_evenement)),
+                    .route("/{id}/inscription", web::post().to(evenements::inscrire_evenement))
+                    // Direct en streaming (feature 001-evenements-streaming)
+                    .route("/{id}/direct", web::get().to(evenement_streaming::etat_direct))
+                    .route("/{id}/direct/rejoindre", web::post().to(evenement_streaming::rejoindre))
+                    .route("/{id}/direct/quitter", web::post().to(evenement_streaming::quitter))
+                    .route("/{id}/direct/cloturer", web::post().to(evenement_streaming::cloturer))
+                    .route("/{id}/direct/lever-main", web::post().to(evenement_streaming::lever_main))
+                    .route("/{id}/direct/participants/{utilisateur_id}/promouvoir", web::post().to(evenement_streaming::promouvoir))
+                    .route("/{id}/direct/participants/{utilisateur_id}/retrograder", web::post().to(evenement_streaming::retrograder))
+                    .route("/{id}/direct/participants/{utilisateur_id}/retirer", web::post().to(evenement_streaming::retirer)),
             )
             // Routes des projets (financer un projet)
             .service(
@@ -493,8 +531,68 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("/experts")
                     .route("", web::get().to(experts::lister_experts))
+                    .route("/cv", web::post().to(experts::uploader_cv))
                     .route("/candidature", web::post().to(experts::creer_candidature))
+                    .route("/moi", web::get().to(experts::ma_candidature))
                     .route("/{id}", web::get().to(experts::obtenir_expert)),
+            )
+            // Routes annuaire des membres (profils publics)
+            .service(
+                web::scope("/utilisateurs")
+                    .route("", web::get().to(membres::lister_membres))
+                    .route("/{id}", web::get().to(membres::obtenir_membre)),
+            )
+            // Routes des amitiés & relations sociales (US1 + US2 + US4)
+            .service(
+                web::scope("/amities")
+                    // Demandes
+                    .route("/demandes", web::post().to(amitie::creer_demande))
+                    .route("/demandes/recues", web::get().to(amitie::lister_demandes_recues))
+                    .route("/demandes/envoyees", web::get().to(amitie::lister_demandes_envoyees))
+                    .route("/demandes/{id}/accepter", web::post().to(amitie::accepter_demande))
+                    .route("/demandes/{id}/refuser", web::post().to(amitie::refuser_demande))
+                    // Annulation d'une demande émise (US4, FR-010)
+                    .route("/demandes/{id}", web::delete().to(amitie::annuler_demande))
+                    // États de relation
+                    .route("/etat/{utilisateur_id}", web::get().to(amitie::etat_relation))
+                    .route("/etats", web::post().to(amitie::etats_relation_lot))
+                    // Notifications relationnelles
+                    .route("/notifications", web::get().to(amitie::lister_notifications))
+                    .route("/notifications/tout-lu", web::patch().to(amitie::marquer_tout_lu))
+                    .route("/notifications/{id}/lu", web::patch().to(amitie::marquer_notification_lue))
+                    // Liste des amis & retrait (US4, FR-011/FR-012)
+                    .route("", web::get().to(amitie::lister_amis))
+                    .route("/{utilisateur_id}", web::delete().to(amitie::retirer_ami)),
+            )
+            // Routes de blocage (US4, FR-013)
+            .service(
+                web::scope("/blocages")
+                    .route("", web::get().to(amitie::lister_blocages))
+                    .route("", web::post().to(amitie::bloquer))
+                    .route("/{utilisateur_id}", web::delete().to(amitie::debloquer)),
+            )
+            // Routes de la messagerie privée temps réel (US3)
+            .service(
+                web::scope("/messagerie")
+                    .route("/flux", web::get().to(messagerie::flux))
+                    .route("/non-lus", web::get().to(messagerie::compteur_non_lus))
+                    .route("/conversations", web::get().to(messagerie::lister_conversations))
+                    .route("/conversations/{ami_id}/messages", web::get().to(messagerie::lister_messages))
+                    .route("/conversations/{ami_id}/messages", web::post().to(messagerie::envoyer_message))
+                    .route("/conversations/{ami_id}/lu", web::post().to(messagerie::marquer_conversation_lue))
+                    .route("/messages/{id}", web::delete().to(messagerie::supprimer_message)),
+            )
+            // Routes des rendez-vous en visioconférence (feature 001-rendez-vous-visio)
+            .service(
+                web::scope("/rendez-vous")
+                    .route("", web::post().to(rendez_vous::proposer))
+                    .route("", web::get().to(rendez_vous::lister))
+                    .route("/{id}", web::get().to(rendez_vous::detail))
+                    .route("/{id}/salle", web::get().to(rendez_vous::salle))
+                    .route("/{id}/accepter", web::post().to(rendez_vous::accepter))
+                    .route("/{id}/refuser", web::post().to(rendez_vous::refuser))
+                    .route("/{id}/contre-proposer", web::post().to(rendez_vous::contre_proposer))
+                    .route("/{id}/annuler", web::post().to(rendez_vous::annuler)),
             )
             // Routes des formations (MOOC/CLOM)
             .service(
@@ -508,7 +606,23 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/sabbatiques")
                     .route("", web::get().to(sabbatiques::lister_programmes))
                     .route("", web::post().to(sabbatiques::creer_programme))
-                    .route("/{id}", web::get().to(sabbatiques::obtenir_programme)),
+                    .route(
+                        "/mes-programmes",
+                        web::get().to(sabbatiques::lister_mes_programmes),
+                    )
+                    .route("/{id}", web::get().to(sabbatiques::obtenir_programme))
+                    .route(
+                        "/{id}/candidatures",
+                        web::get().to(sabbatiques::lister_candidatures),
+                    )
+                    .route(
+                        "/{id}/candidatures",
+                        web::post().to(sabbatiques::candidater),
+                    )
+                    .route(
+                        "/{id}/candidatures/{candidature_id}/retenir",
+                        web::post().to(sabbatiques::selectionner_candidat),
+                    ),
             )
             // Routes des facultes INUDA
             .service(
@@ -534,9 +648,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/regions", web::get().to(fiches_pays::lister_regions))
                     // T071 — mes contributions (utilisateur connecte)
                     .route("/moi/contributions", web::get().to(afripulse_public::lister_mes_contributions))
-                    // Contributions (routes statiques avant parametrees)
-                    .route("/contributions/{id}/valider", web::put().to(contributions_fiche::valider_contribution))
-                    .route("/contributions/{id}/rejeter", web::put().to(contributions_fiche::rejeter_contribution))
+                    // Upload d'image isolée pour une contribution (site, personnalité)
+                    .route("/contributions/upload-image", web::post().to(contributions_fiche::uploader_image_contribution))
+                    // La modération des contributions (valider/rejeter) se fait via
+                    // /api/admin/profils-pays/contributions/{id}/etat (admin::profils_pays::moderer_contribution).
                     // Routes parametrees
                     .route("/{id}", web::get().to(fiches_pays::obtenir_fiche))
                     .route("/{id}/contributions", web::get().to(contributions_fiche::lister_contributions))
@@ -551,6 +666,12 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // US4 — galerie photos + recommandations
                     .route("/{id}/recommandations", web::get().to(afripulse_public::lister_recommandations))
                     .route("/{id}/galerie-photos", web::get().to(afripulse_public::lister_galerie_photos)),
+            )
+            // Avis de visiteurs sur un site touristique (US5 - ecriture directe)
+            .service(
+                web::scope("/sites-touristiques")
+                    .route("/{site_id}/avis", web::get().to(afripulse_public::lister_avis_site))
+                    .route("/{site_id}/avis", web::post().to(afripulse_public::soumettre_avis_site)),
             )
             // Routes des africantives (initiatives africaines)
             .service(
@@ -583,6 +704,15 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/salles-privees/{id}", web::get().to(afrolang::obtenir_salle_privee))
                     .route("/salles-privees/{id}", web::put().to(afrolang::modifier_salle_privee))
                     .route("/salles-privees/{id}", web::delete().to(afrolang::supprimer_salle_privee))
+                    // Ressources contribuées communauté (feature 001-ressources-fermeture-session, US1)
+                    .route("/salles/{salle_id}/ressources-contribuees", web::get().to(afrolang_ressources::lister_ressources_contribuees))
+                    .route("/salles/{salle_id}/ressources-contribuees", web::post().to(afrolang_ressources::ajouter_ressource_contribuee))
+                    .route("/ressources-contribuees/{id}", web::delete().to(afrolang_ressources::supprimer_ressource_contribuee))
+                    // Workflow accompagnateur
+                    .route("/accompagnateur/recommandations-recues", web::get().to(afrolang_ressources::lister_recommandations_recues))
+                    .route("/ressources-contribuees/{id}/accepter", web::post().to(afrolang_ressources::accepter_recommandation))
+                    .route("/ressources-contribuees/{id}/refuser", web::post().to(afrolang_ressources::refuser_recommandation))
+                    .route("/ressources-contribuees/{id}/retirer-consentement", web::post().to(afrolang_ressources::retirer_consentement))
                     // Ressources de salle publique (feature 005, US6)
                     .route("/salles/{salle_id}/ressources", web::get().to(afrolang::lister_ressources))
                     .route("/salles/{salle_id}/ressources/fichier", web::post().to(afrolang::uploader_ressource_fichier))
@@ -609,6 +739,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/sessions/{id}/terminer", web::put().to(afrolang::terminer_session))
                     .route("/sessions/{id}/rejoindre", web::post().to(afrolang::rejoindre_session))
                     .route("/sessions/{id}/quitter", web::post().to(afrolang::quitter_session))
+                    .route("/sessions/{id}/fermer-pour-abus", web::post().to(afrolang::fermer_session_pour_abus))
                     // Transfert de modération (feature 005, US3)
                     .route("/sessions/{id}/moderation/transferer", web::put().to(afrolang::transferer_moderation_session))
                     // Phase 3 : Token LiveKit
@@ -617,6 +748,28 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/sessions/{id}/tableau-blanc", web::get().to(afrolang::obtenir_tableau_blanc))
                     .route("/sessions/{id}/tableau-blanc", web::put().to(afrolang::sauvegarder_tableau_blanc))
                     .route("/sessions/{id}/tableau-blanc", web::delete().to(afrolang::effacer_tableau_blanc))
+                    // Feature 001-session-moderation : permissions tableau blanc
+                    .route(
+                        "/sessions/{id}/permissions-tableau-blanc",
+                        web::get().to(afrolang::lister_permissions_tableau_blanc),
+                    )
+                    .route(
+                        "/sessions/{id}/permissions-tableau-blanc",
+                        web::post().to(afrolang::accorder_permission_tableau_blanc),
+                    )
+                    .route(
+                        "/sessions/{id}/permissions-tableau-blanc/{user_id}",
+                        web::delete().to(afrolang::retirer_permission_tableau_blanc),
+                    )
+                    // Feature 001-session-moderation : spotlight (mise en évidence)
+                    .route(
+                        "/sessions/{id}/spotlight",
+                        web::post().to(afrolang::mettre_en_evidence),
+                    )
+                    .route(
+                        "/sessions/{id}/spotlight",
+                        web::delete().to(afrolang::retirer_mise_en_evidence),
+                    )
                     // Utilitaires
                     .route("/stats", web::get().to(afrolang::obtenir_stats))
                     .route("/langues", web::get().to(afrolang::lister_langues)),
@@ -670,10 +823,23 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             // Routes Vidafrica (public)
             .service(
                 web::scope("/vidafrica")
+                    // Lecture publique
                     .route("/videos", web::get().to(vidafrica::lister_videos_publiques))
-                    .route("/videos/{slug}", web::get().to(vidafrica::obtenir_video_publique))
+                    // Proposition d'une vidéo par un membre (auth JWT dans le handler)
+                    .route("/videos", web::post().to(vidafrica_contribution::proposer_video))
+                    .route("/langues-sous-titres", web::get().to(vidafrica::lister_langues_disponibles))
+                    // Contribution membre — sous-titres (routes spécifiques AVANT /videos/{slug})
+                    .route("/videos/{video_id}/mes-pistes", web::get().to(vidafrica_contribution::mes_pistes))
+                    .route("/videos/{video_id}/pistes", web::post().to(vidafrica_contribution::creer_piste_membre))
                     .route("/videos/{video_id}/sous-titres/{langue}", web::get().to(vidafrica::obtenir_sous_titres))
-                    .route("/langues-sous-titres", web::get().to(vidafrica::lister_langues_disponibles)),
+                    .route("/videos/{slug}", web::get().to(vidafrica::obtenir_video_publique))
+                    .route("/pistes/{id}", web::delete().to(vidafrica_contribution::supprimer_piste_membre))
+                    .route("/pistes/{piste_id}/segments", web::get().to(vidafrica_contribution::lister_segments_membre))
+                    .route("/pistes/{piste_id}/segments", web::post().to(vidafrica_contribution::creer_segment_membre))
+                    .route("/segments/{id}", web::put().to(vidafrica_contribution::modifier_segment_membre))
+                    .route("/segments/{id}", web::delete().to(vidafrica_contribution::supprimer_segment_membre))
+                    .route("/segments/{segment_id}/timings-mot", web::post().to(vidafrica_contribution::enregistrer_timings_mot_membre))
+                    .route("/segments/{segment_id}/timings-mot", web::delete().to(vidafrica_contribution::supprimer_timings_mot_membre)),
             )
             // Routes de la télévision
             .service(

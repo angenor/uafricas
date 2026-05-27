@@ -1,5 +1,5 @@
 use actix_multipart::Multipart;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, web};
 use futures_util::StreamExt;
 use serde_json::json;
 use sqlx::PgPool;
@@ -8,11 +8,10 @@ use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::jwt;
+use crate::models::afripulse::{CategorieSiteTouristique, sous_type_appartient_a};
 use crate::models::contribution_fiche::{
-    ContributionFicheRow, ContributionListeResponse, ContributionQueryParams,
-    ContributeurRow, CreerContributionBody, ModerationBody, TypeObjetContribution,
-    CONTRIBUTION_COLONNES, construire_contribution_response, construire_contributeur_response,
-    section_est_valide,
+    CONTRIBUTION_COLONNES, ContributionFicheRow, ContributionListeResponse,
+    ContributionQueryParams, CreerContributionBody, TypeObjetContribution, construire_contribution_response, section_est_valide,
 };
 use crate::services::{audit, image_validation, rate_limit_afripulse};
 
@@ -60,16 +59,20 @@ async fn obtenir_valeur_actuelle(
 ) -> Result<Option<String>, ApiErreur> {
     let valeur: Option<String> = match section {
         "population" => {
-            sqlx::query_scalar("SELECT population::text FROM country_profile.fiche_pays WHERE id = $1")
-                .bind(fiche_id)
-                .fetch_one(pool)
-                .await?
+            sqlx::query_scalar(
+                "SELECT population::text FROM country_profile.fiche_pays WHERE id = $1",
+            )
+            .bind(fiche_id)
+            .fetch_one(pool)
+            .await?
         }
         "superficie_km2" => {
-            sqlx::query_scalar("SELECT superficie_km2::text FROM country_profile.fiche_pays WHERE id = $1")
-                .bind(fiche_id)
-                .fetch_one(pool)
-                .await?
+            sqlx::query_scalar(
+                "SELECT superficie_km2::text FROM country_profile.fiche_pays WHERE id = $1",
+            )
+            .bind(fiche_id)
+            .fetch_one(pool)
+            .await?
         }
         "biographie" => {
             sqlx::query_scalar("SELECT biographie FROM country_profile.fiche_pays WHERE id = $1")
@@ -84,10 +87,12 @@ async fn obtenir_valeur_actuelle(
                 .await?
         }
         "contexte_historique" => {
-            sqlx::query_scalar("SELECT contexte_historique FROM country_profile.fiche_pays WHERE id = $1")
-                .bind(fiche_id)
-                .fetch_one(pool)
-                .await?
+            sqlx::query_scalar(
+                "SELECT contexte_historique FROM country_profile.fiche_pays WHERE id = $1",
+            )
+            .bind(fiche_id)
+            .fetch_one(pool)
+            .await?
         }
         "slogan" => {
             sqlx::query_scalar("SELECT slogan FROM country_profile.fiche_pays WHERE id = $1")
@@ -96,22 +101,28 @@ async fn obtenir_valeur_actuelle(
                 .await?
         }
         "hymne_national" => {
-            sqlx::query_scalar("SELECT hymne_national FROM country_profile.fiche_pays WHERE id = $1")
-                .bind(fiche_id)
-                .fetch_one(pool)
-                .await?
+            sqlx::query_scalar(
+                "SELECT hymne_national FROM country_profile.fiche_pays WHERE id = $1",
+            )
+            .bind(fiche_id)
+            .fetch_one(pool)
+            .await?
         }
         "langue_officielle" => {
-            sqlx::query_scalar("SELECT langue_officielle FROM country_profile.fiche_pays WHERE id = $1")
-                .bind(fiche_id)
-                .fetch_one(pool)
-                .await?
+            sqlx::query_scalar(
+                "SELECT langue_officielle FROM country_profile.fiche_pays WHERE id = $1",
+            )
+            .bind(fiche_id)
+            .fetch_one(pool)
+            .await?
         }
         "langues_populaires" => {
-            sqlx::query_scalar("SELECT langues_populaires FROM country_profile.fiche_pays WHERE id = $1")
-                .bind(fiche_id)
-                .fetch_one(pool)
-                .await?
+            sqlx::query_scalar(
+                "SELECT langues_populaires FROM country_profile.fiche_pays WHERE id = $1",
+            )
+            .bind(fiche_id)
+            .fetch_one(pool)
+            .await?
         }
         "monnaie" => {
             sqlx::query_scalar("SELECT monnaie FROM country_profile.fiche_pays WHERE id = $1")
@@ -120,7 +131,28 @@ async fn obtenir_valeur_actuelle(
                 .await?
         }
         "fuseau_horaire" => {
-            sqlx::query_scalar("SELECT fuseau_horaire FROM country_profile.fiche_pays WHERE id = $1")
+            sqlx::query_scalar(
+                "SELECT fuseau_horaire FROM country_profile.fiche_pays WHERE id = $1",
+            )
+            .bind(fiche_id)
+            .fetch_one(pool)
+            .await?
+        }
+        // Bloc « À savoir avant de voyager » — colonnes TEXT (liste fermée de littéraux)
+        s @ ("voyage_langue_internationale"
+        | "voyage_langue_locale"
+        | "voyage_infos_visa"
+        | "voyage_infos_sanitaires"
+        | "voyage_meteo"
+        | "voyage_prises_electriques"
+        | "voyage_contacts_tourisme"
+        | "voyage_recommandations_securite") => {
+            // `s` provient d'un motif littéral fermé → interpolation sûre (pas d'injection).
+            let requete = format!(
+                "SELECT {} FROM country_profile.fiche_pays WHERE id = $1",
+                s
+            );
+            sqlx::query_scalar(&requete)
                 .bind(fiche_id)
                 .fetch_one(pool)
                 .await?
@@ -129,152 +161,6 @@ async fn obtenir_valeur_actuelle(
         _ => None,
     };
     Ok(valeur)
-}
-
-/// Appliquer une contribution validee sur la fiche pays
-async fn appliquer_contribution(
-    pool: &PgPool,
-    fiche_id: Uuid,
-    section: &str,
-    type_contribution: &str,
-    nouvelle_valeur: &str,
-) -> Result<(), ApiErreur> {
-    match section {
-        "population" => {
-            sqlx::query(
-                "UPDATE country_profile.fiche_pays SET population = $1::bigint, updated_at = NOW() WHERE id = $2",
-            )
-            .bind(nouvelle_valeur)
-            .bind(fiche_id)
-            .execute(pool)
-            .await?;
-        }
-        "superficie_km2" => {
-            sqlx::query(
-                "UPDATE country_profile.fiche_pays SET superficie_km2 = $1::decimal, updated_at = NOW() WHERE id = $2",
-            )
-            .bind(nouvelle_valeur)
-            .bind(fiche_id)
-            .execute(pool)
-            .await?;
-        }
-        "biographie" => {
-            sqlx::query(
-                "UPDATE country_profile.fiche_pays SET biographie = $1, updated_at = NOW() WHERE id = $2",
-            )
-            .bind(nouvelle_valeur)
-            .bind(fiche_id)
-            .execute(pool)
-            .await?;
-        }
-        "contexte" => {
-            sqlx::query(
-                "UPDATE country_profile.fiche_pays SET contexte = $1, updated_at = NOW() WHERE id = $2",
-            )
-            .bind(nouvelle_valeur)
-            .bind(fiche_id)
-            .execute(pool)
-            .await?;
-        }
-        "contexte_historique" => {
-            sqlx::query(
-                "UPDATE country_profile.fiche_pays SET contexte_historique = $1, updated_at = NOW() WHERE id = $2",
-            )
-            .bind(nouvelle_valeur)
-            .bind(fiche_id)
-            .execute(pool)
-            .await?;
-        }
-        "slogan" => {
-            sqlx::query(
-                "UPDATE country_profile.fiche_pays SET slogan = $1, updated_at = NOW() WHERE id = $2",
-            )
-            .bind(nouvelle_valeur)
-            .bind(fiche_id)
-            .execute(pool)
-            .await?;
-        }
-        "hymne_national" => {
-            sqlx::query(
-                "UPDATE country_profile.fiche_pays SET hymne_national = $1, updated_at = NOW() WHERE id = $2",
-            )
-            .bind(nouvelle_valeur)
-            .bind(fiche_id)
-            .execute(pool)
-            .await?;
-        }
-        "langue_officielle" => {
-            sqlx::query(
-                "UPDATE country_profile.fiche_pays SET langue_officielle = $1, updated_at = NOW() WHERE id = $2",
-            )
-            .bind(nouvelle_valeur)
-            .bind(fiche_id)
-            .execute(pool)
-            .await?;
-        }
-        "langues_populaires" => {
-            sqlx::query(
-                "UPDATE country_profile.fiche_pays SET langues_populaires = $1, updated_at = NOW() WHERE id = $2",
-            )
-            .bind(nouvelle_valeur)
-            .bind(fiche_id)
-            .execute(pool)
-            .await?;
-        }
-        "monnaie" => {
-            sqlx::query(
-                "UPDATE country_profile.fiche_pays SET monnaie = $1, updated_at = NOW() WHERE id = $2",
-            )
-            .bind(nouvelle_valeur)
-            .bind(fiche_id)
-            .execute(pool)
-            .await?;
-        }
-        "fuseau_horaire" => {
-            sqlx::query(
-                "UPDATE country_profile.fiche_pays SET fuseau_horaire = $1, updated_at = NOW() WHERE id = $2",
-            )
-            .bind(nouvelle_valeur)
-            .bind(fiche_id)
-            .execute(pool)
-            .await?;
-        }
-        "groupe_ethnique" => {
-            if type_contribution == "ajout" {
-                sqlx::query(
-                    "INSERT INTO country_profile.groupe_ethnique (fiche_pays_id, nom) VALUES ($1, $2)",
-                )
-                .bind(fiche_id)
-                .bind(nouvelle_valeur)
-                .execute(pool)
-                .await?;
-            }
-        }
-        "site_touristique" => {
-            if type_contribution == "ajout" {
-                sqlx::query(
-                    "INSERT INTO country_profile.site_touristique (fiche_pays_id, nom) VALUES ($1, $2)",
-                )
-                .bind(fiche_id)
-                .bind(nouvelle_valeur)
-                .execute(pool)
-                .await?;
-            }
-        }
-        "secteur_developpement" => {
-            if type_contribution == "ajout" {
-                sqlx::query(
-                    "INSERT INTO country_profile.secteur_developpement (fiche_pays_id, nom) VALUES ($1, $2)",
-                )
-                .bind(fiche_id)
-                .bind(nouvelle_valeur)
-                .execute(pool)
-                .await?;
-            }
-        }
-        _ => {}
-    }
-    Ok(())
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -304,12 +190,11 @@ pub async fn soumettre_contribution(
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
 
     // Vérifier que la fiche existe
-    let fiche_existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM country_profile.fiche_pays WHERE id = $1)",
-    )
-    .bind(fiche_id)
-    .fetch_one(pool.get_ref())
-    .await?;
+    let fiche_existe: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM country_profile.fiche_pays WHERE id = $1)")
+            .bind(fiche_id)
+            .fetch_one(pool.get_ref())
+            .await?;
     if !fiche_existe {
         return Err(ApiErreur::NonTrouve("Fiche pays non trouvee".to_string()));
     }
@@ -327,7 +212,11 @@ pub async fn soumettre_contribution(
     let type_contribution = body
         .type_contribution
         .as_deref()
-        .unwrap_or(if mode_afripulse { "ajout" } else { "modification" })
+        .unwrap_or(if mode_afripulse {
+            "ajout"
+        } else {
+            "modification"
+        })
         .to_lowercase();
     if !["modification", "ajout", "suppression", "edition"].contains(&type_contribution.as_str()) {
         return Err(ApiErreur::Validation(
@@ -498,6 +387,13 @@ async fn soumettre_contribution_afripulse(
         ));
     }
 
+    // Validation enrichie des sites touristiques (US1/US2) — ajout & édition.
+    if matches!(type_objet, TypeObjetContribution::SiteTouristique)
+        && type_contribution_sql != "suppression"
+    {
+        valider_site_touristique(&nouvelle_valeur_jsonb)?;
+    }
+
     // T059 : si ajout de recommandation et l'utilisateur a deja une reco active,
     // auto-convertir en edition avec target_id = id de la reco active.
     let mut type_contribution_effectif = type_contribution_sql.to_string();
@@ -546,9 +442,8 @@ async fn soumettre_contribution_afripulse(
         .unwrap_or_else(|| type_objet_str.to_string());
 
     // INSERT + SELECT enrichi
-    let row = sqlx::query_as::<_, ContributionFicheRow>(
-        &format!(
-            "WITH inserted AS (
+    let row = sqlx::query_as::<_, ContributionFicheRow>(&format!(
+        "WITH inserted AS (
                 INSERT INTO country_profile.contribution_fiche (
                     fiche_pays_id, cree_par, section, type_contribution,
                     ancienne_valeur, nouvelle_valeur, justification,
@@ -564,9 +459,8 @@ async fn soumettre_contribution_afripulse(
                 RETURNING *
             )
             SELECT {} FROM inserted cf JOIN iam.utilisateur u ON u.id = cf.cree_par",
-            CONTRIBUTION_COLONNES
-        ),
-    )
+        CONTRIBUTION_COLONNES
+    ))
     .bind(fiche_id)
     .bind(utilisateur_id)
     .bind(&section_texte)
@@ -659,6 +553,95 @@ async fn obtenir_snapshot_afripulse(
     Ok(snapshot)
 }
 
+/// Valide le payload JSONB d'un site touristique (ajout / édition).
+/// Règles (FR-003/FR-005/FR-006) :
+///   • Requis : nom, gestionnaire, ville, info_pertinente, latitude, longitude, sous_type.
+///   • sous_type cohérent avec la famille `categorie`.
+///   • Si `categorie = prive` : au moins un contact (téléphone / courriel / adresse).
+fn valider_site_touristique(payload: &serde_json::Value) -> Result<(), ApiErreur> {
+    let texte_non_vide = |cle: &str| -> bool {
+        payload
+            .get(cle)
+            .and_then(|v| v.as_str())
+            .map(|s| !s.trim().is_empty())
+            .unwrap_or(false)
+    };
+    let nombre_present =
+        |cle: &str| -> bool { payload.get(cle).map(|v| v.is_number()).unwrap_or(false) };
+
+    let mut manquants: Vec<&str> = Vec::new();
+    if !texte_non_vide("nom") {
+        manquants.push("nom");
+    }
+    if !texte_non_vide("gestionnaire") {
+        manquants.push("gestionnaire");
+    }
+    if !texte_non_vide("ville") {
+        manquants.push("ville");
+    }
+    if !texte_non_vide("info_pertinente") {
+        manquants.push("info pertinente");
+    }
+    if !texte_non_vide("sous_type") {
+        manquants.push("sous-type");
+    }
+    if !nombre_present("latitude") {
+        manquants.push("latitude");
+    }
+    if !nombre_present("longitude") {
+        manquants.push("longitude");
+    }
+    if !manquants.is_empty() {
+        return Err(ApiErreur::Validation(format!(
+            "Champs requis manquants pour le site touristique : {}.",
+            manquants.join(", ")
+        )));
+    }
+
+    // Cohérence famille ↔ sous-type (FR-003).
+    let categorie_str = payload
+        .get("categorie")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let categorie = match categorie_str.as_str() {
+        "emblematique" => CategorieSiteTouristique::Emblematique,
+        "prive" => CategorieSiteTouristique::Prive,
+        _ => {
+            return Err(ApiErreur::Validation(
+                "Famille de site invalide (emblematique ou prive attendu).".to_string(),
+            ));
+        }
+    };
+    let sous_type = payload
+        .get("sous_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    if !sous_type_appartient_a(&categorie, &sous_type) {
+        return Err(ApiErreur::Validation(
+            "Sous-type incompatible avec la famille du site.".to_string(),
+        ));
+    }
+
+    // Contact requis pour un site privé (FR-006).
+    if matches!(categorie, CategorieSiteTouristique::Prive) {
+        let a_contact = texte_non_vide("contact_telephone")
+            || texte_non_vide("contact_courriel")
+            || texte_non_vide("contact_adresse");
+        if !a_contact {
+            return Err(ApiErreur::Validation(
+                "Contact gestionnaire requis pour un site privé (téléphone, courriel ou adresse)."
+                    .to_string(),
+            ));
+        }
+    }
+
+    Ok(())
+}
+
 /// GET /api/fiches-pays/{id}/contributions — Lister les contributions d'une fiche
 pub async fn lister_contributions(
     pool: web::Data<PgPool>,
@@ -731,7 +714,10 @@ pub async fn lister_contributions(
         "SELECT {} FROM country_profile.contribution_fiche cf
          JOIN iam.utilisateur u ON u.id = cf.cree_par
          WHERE {} ORDER BY cf.created_at DESC LIMIT ${} OFFSET ${}",
-        CONTRIBUTION_COLONNES, where_clause, bind_index, bind_index + 1
+        CONTRIBUTION_COLONNES,
+        where_clause,
+        bind_index,
+        bind_index + 1
     );
 
     let mut select_q = sqlx::query_as::<_, ContributionFicheRow>(&select_query).bind(fiche_id);
@@ -851,12 +837,11 @@ pub async fn soumettre_contribution_multipart(
     let fiche_id = Uuid::parse_str(&chemin.into_inner())
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".into()))?;
 
-    let fiche_existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM country_profile.fiche_pays WHERE id = $1)",
-    )
-    .bind(fiche_id)
-    .fetch_one(pool.get_ref())
-    .await?;
+    let fiche_existe: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM country_profile.fiche_pays WHERE id = $1)")
+            .bind(fiche_id)
+            .fetch_one(pool.get_ref())
+            .await?;
     if !fiche_existe {
         return Err(ApiErreur::NonTrouve("Fiche pays non trouvee".into()));
     }
@@ -870,8 +855,8 @@ pub async fn soumettre_contribution_multipart(
     let mut legendes: Vec<String> = Vec::new();
 
     while let Some(item) = payload.next().await {
-        let mut field = item
-            .map_err(|e| ApiErreur::Upload(format!("Erreur lecture multipart: {}", e)))?;
+        let mut field =
+            item.map_err(|e| ApiErreur::Upload(format!("Erreur lecture multipart: {}", e)))?;
         let cd = field.content_disposition().cloned();
         let nom = cd
             .as_ref()
@@ -886,8 +871,8 @@ pub async fn soumettre_contribution_multipart(
                 .unwrap_or_else(|| format!("{}.bin", Uuid::new_v4()));
             let mut buf: Vec<u8> = Vec::new();
             while let Some(chunk) = field.next().await {
-                let data = chunk
-                    .map_err(|e| ApiErreur::Upload(format!("Erreur lecture chunk: {}", e)))?;
+                let data =
+                    chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture chunk: {}", e)))?;
                 buf.extend_from_slice(&data);
                 // Defense en profondeur : aborter si depassement taille max
                 if buf.len() > image_validation::TAILLE_MAX_OCTETS + 1 {
@@ -901,8 +886,8 @@ pub async fn soumettre_contribution_multipart(
         } else if nom == "legendes" || nom == "legendes[]" {
             let mut s = String::new();
             while let Some(chunk) = field.next().await {
-                let data = chunk
-                    .map_err(|e| ApiErreur::Upload(format!("Erreur lecture chunk: {}", e)))?;
+                let data =
+                    chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture chunk: {}", e)))?;
                 s.push_str(&String::from_utf8_lossy(&data));
             }
             legendes.push(s.trim().to_string());
@@ -910,8 +895,8 @@ pub async fn soumettre_contribution_multipart(
             // Champ texte
             let mut s = String::new();
             while let Some(chunk) = field.next().await {
-                let data = chunk
-                    .map_err(|e| ApiErreur::Upload(format!("Erreur lecture chunk: {}", e)))?;
+                let data =
+                    chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture chunk: {}", e)))?;
                 s.push_str(&String::from_utf8_lossy(&data));
             }
             match nom.as_str() {
@@ -1016,10 +1001,7 @@ pub async fn soumettre_contribution_multipart(
             for f in &fichiers_ecrits {
                 let _ = std::fs::remove_file(f);
             }
-            return Err(ApiErreur::Upload(format!(
-                "Ecriture disque echouee: {}",
-                e
-            )));
+            return Err(ApiErreur::Upload(format!("Ecriture disque echouee: {}", e)));
         }
         fichiers_ecrits.push(chemin_complet);
 
@@ -1102,166 +1084,80 @@ pub async fn soumettre_contribution_multipart(
     }))
 }
 
-/// PUT /api/fiches-pays/contributions/{id}/valider — Valider une contribution (admin)
-pub async fn valider_contribution(
-    pool: web::Data<PgPool>,
-    chemin: web::Path<String>,
-    body: web::Json<ModerationBody>,
+/// POST /api/fiches-pays/contributions/upload-image
+///
+/// Upload d'une image isolée pour une contribution Afripulse (image de site
+/// touristique, portrait de personnalité). Valide en mémoire (JPEG/PNG, ≤ 2 Mo,
+/// ≤ 2048 px), stocke sous `opportunite-afrique/images/<uuid>.<ext>` et retourne
+/// l'URL relative. Cette URL est ensuite placée dans `nouvelle_valeur_jsonb`
+/// (`image_url` / `portrait_url`) lors de la soumission de la contribution.
+pub async fn uploader_image_contribution(
+    upload_dir: web::Data<String>,
     req: HttpRequest,
+    mut payload: Multipart,
 ) -> Result<HttpResponse, ApiErreur> {
-    let admin_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+    // Réservé aux utilisateurs connectés (comme toute contribution).
+    extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
 
-    if !verifier_admin(pool.get_ref(), admin_id).await? {
-        return Err(ApiErreur::NonAutorise(
-            "Droits administrateur requis".to_string(),
-        ));
-    }
-
-    let contribution_id_str = chemin.into_inner();
-    let contribution_id = Uuid::parse_str(&contribution_id_str)
-        .map_err(|_| ApiErreur::Validation("ID de contribution invalide".to_string()))?;
-
-    // Recuperer la contribution en attente
-    let contrib = sqlx::query_as::<_, ContributionFicheRow>(
-        &format!(
-            "SELECT {} FROM country_profile.contribution_fiche cf
-             JOIN iam.utilisateur u ON u.id = cf.cree_par
-             WHERE cf.id = $1 AND cf.deleted_at IS NULL",
-            CONTRIBUTION_COLONNES
-        ),
-    )
-    .bind(contribution_id)
-    .fetch_optional(pool.get_ref())
-    .await?
-    .ok_or_else(|| ApiErreur::NonTrouve("Contribution non trouvee".to_string()))?;
-
-    if contrib.etat != "en_attente" {
-        return Err(ApiErreur::Validation(format!(
-            "Seules les contributions en attente peuvent etre validees (etat actuel: {})",
-            contrib.etat
-        )));
-    }
-
-    // Appliquer la contribution sur la fiche
-    appliquer_contribution(
-        pool.get_ref(),
-        contrib.fiche_pays_id,
-        &contrib.section,
-        &contrib.type_contribution,
-        &contrib.nouvelle_valeur,
-    )
-    .await?;
-
-    // Mettre a jour l'etat de la contribution
-    let note = body.note_moderation.as_deref().map(|s| s.trim().to_string());
-
-    let row = sqlx::query_as::<_, ContributionFicheRow>(
-        &format!(
-            "WITH updated AS (
-                UPDATE country_profile.contribution_fiche
-                SET etat = 'approuvee'::country_profile.etat_contribution,
-                    traite_par = $1,
-                    note_moderation = $2,
-                    traite_at = NOW(),
-                    updated_at = NOW()
-                WHERE id = $3
-                RETURNING *
-            )
-            SELECT {} FROM updated cf
-            JOIN iam.utilisateur u ON u.id = cf.cree_par",
-            CONTRIBUTION_COLONNES
-        ),
-    )
-    .bind(admin_id)
-    .bind(&note)
-    .bind(contribution_id)
-    .fetch_one(pool.get_ref())
-    .await?;
-
-    let response = construire_contribution_response(&row);
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(response),
-        error: None,
-    }))
-}
-
-/// PUT /api/fiches-pays/contributions/{id}/rejeter — Rejeter une contribution (admin)
-pub async fn rejeter_contribution(
-    pool: web::Data<PgPool>,
-    chemin: web::Path<String>,
-    body: web::Json<ModerationBody>,
-    req: HttpRequest,
-) -> Result<HttpResponse, ApiErreur> {
-    let admin_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
-
-    if !verifier_admin(pool.get_ref(), admin_id).await? {
-        return Err(ApiErreur::NonAutorise(
-            "Droits administrateur requis".to_string(),
-        ));
-    }
-
-    let contribution_id_str = chemin.into_inner();
-    let contribution_id = Uuid::parse_str(&contribution_id_str)
-        .map_err(|_| ApiErreur::Validation("ID de contribution invalide".to_string()))?;
-
-    // Verifier que la contribution existe et est en attente
-    let etat_actuel: Option<String> = sqlx::query_scalar(
-        "SELECT etat::text FROM country_profile.contribution_fiche WHERE id = $1 AND deleted_at IS NULL",
-    )
-    .bind(contribution_id)
-    .fetch_optional(pool.get_ref())
-    .await?
-    .flatten();
-
-    match etat_actuel.as_deref() {
-        None => {
-            return Err(ApiErreur::NonTrouve(
-                "Contribution non trouvee".to_string(),
-            ))
+    // Lire le champ fichier `image` (un seul attendu), avec garde-fou de taille.
+    let mut bytes: Option<Vec<u8>> = None;
+    while let Some(item) = payload.next().await {
+        let mut field =
+            item.map_err(|e| ApiErreur::Upload(format!("Erreur lecture multipart: {}", e)))?;
+        let nom = field
+            .content_disposition()
+            .and_then(|c| c.get_name().map(|s| s.to_string()))
+            .unwrap_or_default();
+        if nom == "image" {
+            let mut buf: Vec<u8> = Vec::new();
+            while let Some(chunk) = field.next().await {
+                let data =
+                    chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture chunk: {}", e)))?;
+                buf.extend_from_slice(&data);
+                if buf.len() > image_validation::TAILLE_MAX_OCTETS + 1 {
+                    return Err(ApiErreur::LimiteAtteinte(format!(
+                        "Image trop volumineuse (>{} octets)",
+                        image_validation::TAILLE_MAX_OCTETS
+                    )));
+                }
+            }
+            bytes = Some(buf);
         }
-        Some(etat) if etat != "en_attente" => {
-            return Err(ApiErreur::Validation(format!(
-                "Seules les contributions en attente peuvent etre rejetees (etat actuel: {})",
-                etat
-            )))
-        }
-        _ => {}
     }
 
-    let note = body.note_moderation.as_deref().map(|s| s.trim().to_string());
+    let bytes =
+        bytes.ok_or_else(|| ApiErreur::Validation("Aucune image reçue (champ `image`).".into()))?;
 
-    let row = sqlx::query_as::<_, ContributionFicheRow>(
-        &format!(
-            "WITH updated AS (
-                UPDATE country_profile.contribution_fiche
-                SET etat = 'rejetee'::country_profile.etat_contribution,
-                    traite_par = $1,
-                    note_moderation = $2,
-                    traite_at = NOW(),
-                    updated_at = NOW()
-                WHERE id = $3
-                RETURNING *
-            )
-            SELECT {} FROM updated cf
-            JOIN iam.utilisateur u ON u.id = cf.cree_par",
-            CONTRIBUTION_COLONNES
-        ),
-    )
-    .bind(admin_id)
-    .bind(&note)
-    .bind(contribution_id)
-    .fetch_one(pool.get_ref())
-    .await?;
+    // Validation en mémoire AVANT toute écriture disque.
+    let dim = image_validation::valider_photo_contribution(&bytes)
+        .map_err(|err| ApiErreur::Validation(err.message()))?;
 
-    let response = construire_contribution_response(&row);
+    let dossier = format!("{}/opportunite-afrique/images", upload_dir.get_ref());
+    std::fs::create_dir_all(&dossier)
+        .map_err(|e| ApiErreur::Upload(format!("Impossible de creer le dossier images: {}", e)))?;
 
-    Ok(HttpResponse::Ok().json(ApiResponse {
+    let nom_fichier = format!("{}.{}", Uuid::new_v4(), dim.format.extension());
+    let chemin_complet = format!("{}/{}", dossier, nom_fichier);
+    let chemin_relatif = format!("/uploads/opportunite-afrique/images/{}", nom_fichier);
+
+    let res = (|| -> std::io::Result<()> {
+        let mut f = std::fs::File::create(&chemin_complet)?;
+        f.write_all(&bytes)?;
+        Ok(())
+    })();
+    if let Err(e) = res {
+        return Err(ApiErreur::Upload(format!("Ecriture disque echouee: {}", e)));
+    }
+
+    Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
-        data: Some(response),
+        data: Some(json!({
+            "url": chemin_relatif,
+            "format": dim.format.as_str(),
+            "largeur": dim.largeur as i64,
+            "hauteur": dim.hauteur as i64,
+        })),
         error: None,
     }))
 }

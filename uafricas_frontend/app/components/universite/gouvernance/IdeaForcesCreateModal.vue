@@ -155,14 +155,14 @@
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Localisation</p>
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
-                Pays <span class="text-red-500">*</span>
+                Territoire <span class="text-red-500">*</span>
               </label>
               <select
                 v-model="form.pays_id"
                 required
                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm bg-white"
               >
-                <option value="" disabled>Sélectionnez un pays</option>
+                <option value="" disabled>Sélectionnez un territoire</option>
                 <option v-for="p in paysListe" :key="p.id" :value="p.id">{{ p.nom }}</option>
               </select>
             </div>
@@ -233,7 +233,7 @@
           </button>
           <button
             type="button"
-            :disabled="!estValide || enCours"
+            :disabled="enCours"
             class="px-5 py-2.5 rounded-lg bg-linear-to-r from-amber-500 to-orange-600 text-white text-sm font-semibold hover:from-amber-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2 shadow-md"
             @click="soumettre"
           >
@@ -298,13 +298,15 @@ const urgences = [
   { value: 'critique' as const, label: 'Critique', icon: ['fas', 'fire'], activeClass: 'bg-red-50 text-red-700' },
 ]
 
-const estValide = computed(() =>
-  form.titre.trim().length >= 5
-  && form.description_generale.trim().length >= 10
-  && form.details_proposition.trim().length >= 10
-  && !!form.categorie_proposition
-  && !!form.pays_id,
-)
+/** Retourne un message d'erreur si le formulaire est invalide, sinon null. */
+function premiereErreurValidation(): string | null {
+  if (form.titre.trim().length < 5) return 'Le titre doit contenir au moins 5 caractères.'
+  if (form.description_generale.trim().length < 10) return 'La description générale doit contenir au moins 10 caractères.'
+  if (form.details_proposition.trim().length < 10) return 'Les détails de la proposition doivent contenir au moins 10 caractères.'
+  if (!form.categorie_proposition) return 'Veuillez sélectionner une catégorie.'
+  if (!form.pays_id) return 'Veuillez sélectionner un territoire.'
+  return null
+}
 
 function ajouterMedia() {
   if (mediasUrls.value.length < 5) mediasUrls.value.push('')
@@ -337,7 +339,12 @@ function fermer() {
 }
 
 async function soumettre() {
-  if (!estValide.value || enCours.value) return
+  if (enCours.value) return
+  const erreur = premiereErreurValidation()
+  if (erreur) {
+    erreurMessage.value = erreur
+    return
+  }
   enCours.value = true
   erreurMessage.value = null
   try {
@@ -378,7 +385,7 @@ watch(() => props.open, async (v) => {
     try {
       paysListe.value = await getPays()
     } catch (err) {
-      erreurMessage.value = err instanceof Error ? err.message : 'Erreur chargement pays'
+      erreurMessage.value = err instanceof Error ? err.message : 'Erreur chargement territoires'
     }
   }
 })

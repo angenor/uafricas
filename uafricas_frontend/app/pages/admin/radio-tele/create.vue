@@ -216,8 +216,8 @@ const soumettre = async () => {
             <h3 class="text-lg font-semibold border-b pb-2">Localisation</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="form-control">
-                <label class="label"><span class="label-text">Pays</span></label>
-                <input v-model="stationForm.pays_id" type="text" class="input input-bordered" placeholder="UUID du pays">
+                <label class="label"><span class="label-text">Territoire</span></label>
+                <input v-model="stationForm.pays_id" type="text" class="input input-bordered" placeholder="UUID du territoire">
               </div>
               <div class="form-control">
                 <label class="label"><span class="label-text">Ville</span></label>
@@ -281,8 +281,8 @@ const soumettre = async () => {
           <div class="space-y-4">
             <h3 class="text-lg font-semibold border-b pb-2">Localisation & diffusion</h3>
             <div class="form-control">
-              <label class="label"><span class="label-text">Pays</span></label>
-              <input v-model="chaineForm.pays_id" type="text" class="input input-bordered" placeholder="UUID du pays">
+              <label class="label"><span class="label-text">Territoire</span></label>
+              <input v-model="chaineForm.pays_id" type="text" class="input input-bordered" placeholder="UUID du territoire">
             </div>
             <div class="form-control">
               <label class="label cursor-pointer justify-start gap-3">
@@ -353,8 +353,8 @@ const soumettre = async () => {
             <h3 class="text-lg font-semibold border-b pb-2">Classification & localisation</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="form-control">
-                <label class="label"><span class="label-text">Pays</span></label>
-                <input v-model="programmeForm.pays_id" type="text" class="input input-bordered" placeholder="UUID du pays">
+                <label class="label"><span class="label-text">Territoire</span></label>
+                <input v-model="programmeForm.pays_id" type="text" class="input input-bordered" placeholder="UUID du territoire">
               </div>
               <div class="form-control">
                 <label class="label"><span class="label-text">Langue</span></label>

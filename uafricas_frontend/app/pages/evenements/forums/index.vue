@@ -1,9 +1,16 @@
 <template>
   <div class="min-h-screen z-0">
-    <!-- Hero -->
-    <div class="h-64 w-full flex relative bg-linear-to-r from-custom-chocolat to-black/90">
-      <div class="absolute bottom-16 left-0 text-white w-screen text-center font-semibold text-3xl py-2">
-        Préservons nos cultures les meilleures
+    <!-- Hero (compact, titre ↔ description au survol) -->
+    <div class="group relative bg-linear-to-r from-custom-chocolat to-black/90">
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Forum
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Préservons nos cultures les meilleures
+          </p>
+        </div>
       </div>
     </div>
 

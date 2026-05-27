@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
     <div
-      class="relative h-96 overflow-hidden transition-colors duration-500"
+      class="group relative overflow-hidden transition-colors duration-500"
       :class="vueActive === 'bonne'
         ? 'bg-linear-to-br from-emerald-900 via-emerald-700 to-green-600'
         : 'bg-linear-to-br from-red-900 via-red-700 to-orange-600'"
@@ -17,25 +17,24 @@
       <div class="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-white/5 animate-pulse"></div>
       <div class="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5 animate-pulse" style="animation-delay: 1s;"></div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center px-4">
-        <h1 class="text-white text-5xl md:text-6xl font-display font-bold mb-4 animate-fadeInUp tracking-tight">
-          BadGoodhabits
-        </h1>
-        <div class="h-1 w-24 rounded-full mb-4 animate-expandWidth"
-             :class="vueActive === 'bonne'
-               ? 'bg-linear-to-r from-lime-300 to-yellow-200'
-               : 'bg-linear-to-r from-orange-400 to-yellow-300'"></div>
-        <p class="text-white/80 text-lg md:text-xl text-center max-w-2xl animate-fadeInUp animation-delay-200">
-          Dénoncer les mauvaises pratiques et féliciter les bonnes actions.
-        </p>
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-display font-bold tracking-tight transition-opacity duration-300 group-hover:opacity-0">
+            BadGoodhabits
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Dénoncer les mauvaises pratiques et féliciter les bonnes actions.
+          </p>
+        </div>
       </div>
     </div>
 
     <!-- Contenu -->
-    <div class="max-w-7xl mx-auto px-4 py-8 -mt-16 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 py-8 relative z-10">
       <!-- Barre de navigation -->
       <div class="bg-white rounded-xl shadow-lg p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <CommonBreadcrumbNav />
+        <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
         <div class="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -88,24 +87,24 @@
         <!-- Filtres -->
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-lg overflow-hidden sticky top-4">
-            <div class="px-6 py-4 transition-colors duration-300"
+            <div class="px-4 py-3 transition-colors duration-300"
                  :class="vueActive === 'bonne'
                    ? 'bg-linear-to-r from-emerald-600 to-emerald-700'
                    : 'bg-linear-to-r from-red-600 to-red-700'">
-              <h3 class="text-white font-bold flex items-center gap-2">
+              <h3 class="text-white font-bold text-sm flex items-center gap-2">
                 <font-awesome-icon :icon="['fas', 'filter']" />
                 Filtres
               </h3>
             </div>
 
-            <div class="p-6 space-y-5">
+            <div class="p-4 space-y-4">
               <!-- Recherche -->
               <div class="relative">
                 <font-awesome-icon :icon="['fas', 'search']" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
                 <input v-model="recherche"
                        type="text"
                        placeholder="Rechercher..."
-                       class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg transition"
+                       class="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg transition"
                        :class="vueActive === 'bonne'
                          ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
                          : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'">
@@ -113,13 +112,13 @@
 
               <!-- Pays -->
               <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pays</label>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Territoire</label>
                 <select v-model="paysSelectionne"
-                        class="w-full px-3 py-2.5 border border-gray-200 rounded-lg transition bg-white"
+                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg transition bg-white"
                         :class="vueActive === 'bonne'
                           ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
                           : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'">
-                  <option value="">Tous les pays</option>
+                  <option value="">Tous les territoires</option>
                   <option v-for="pays in paysDisponibles" :key="pays" :value="pays">{{ pays }}</option>
                 </select>
               </div>
@@ -130,7 +129,7 @@
                 <div class="space-y-2">
                   <button v-for="g in niveauxGravite" :key="g.valeur"
                           @click="graviteSelectionnee = graviteSelectionnee === g.valeur ? '' : g.valeur"
-                          class="w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-sm"
+                          class="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-all text-sm"
                           :class="graviteSelectionnee === g.valeur
                             ? 'border-red-500 bg-red-50 text-red-700 shadow-sm'
                             : 'border-gray-200 hover:border-gray-300 text-gray-600 hover:bg-gray-50'">
@@ -149,7 +148,7 @@
                 <div class="space-y-2">
                   <button v-for="i in niveauxImpact" :key="i.valeur"
                           @click="impactSelectionne = impactSelectionne === i.valeur ? '' : i.valeur"
-                          class="w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-sm"
+                          class="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-all text-sm"
                           :class="impactSelectionne === i.valeur
                             ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
                             : 'border-gray-200 hover:border-gray-300 text-gray-600 hover:bg-gray-50'">
@@ -163,7 +162,7 @@
               </div>
 
               <button @click="reinitialiser"
-                      class="w-full py-2.5 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition flex items-center justify-center gap-2">
+                      class="w-full py-2 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition flex items-center justify-center gap-2">
                 <font-awesome-icon :icon="['fas', 'undo']" class="text-xs" />
                 Réinitialiser
               </button>
@@ -214,9 +213,10 @@
           <!-- Cartes -->
           <div v-else class="space-y-5">
             <div v-for="(contribution, index) in contributionsFiltrees" :key="contribution.id"
-                 class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-gray-200"
-                 :style="{ animationDelay: `${index * 80}ms` }"
-                 @click="voirDetail(contribution)">
+                 :id="`contrib-${contribution.id}`"
+                 class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border scroll-mt-24"
+                 :class="pubCible === contribution.id ? 'border-amber-400 ring-2 ring-amber-400 ring-offset-2' : 'border-gray-100 hover:border-gray-200'"
+                 :style="{ animationDelay: `${index * 80}ms` }">
               <!-- Bande de gravité / impact -->
               <div class="h-1.5" :class="getBandeClass(contribution)"></div>
 
@@ -281,20 +281,6 @@
                       </span>
                     </div>
                   </div>
-
-                  <!-- Flèche -->
-                  <div class="shrink-0 hidden sm:flex items-center">
-                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-all group-hover:translate-x-1"
-                         :class="contribution.typePratique === 'bonne'
-                           ? 'group-hover:bg-emerald-100'
-                           : 'group-hover:bg-red-100'">
-                      <font-awesome-icon :icon="['fas', 'chevron-right']"
-                                         class="text-gray-400 text-xs transition-colors"
-                                         :class="contribution.typePratique === 'bonne'
-                                           ? 'group-hover:text-emerald-600'
-                                           : 'group-hover:text-red-600'" />
-                    </div>
-                  </div>
                 </div>
 
                 <!-- Stats footer -->
@@ -311,6 +297,12 @@
                     {{ contribution.stats.soutiens || 0 }}
                     {{ contribution.typePratique === 'bonne' ? 'félicitations' : 'soutiens' }}
                   </span>
+                  <UniversiteGouvernancePartagePublication
+                    class="ml-auto"
+                    path="/universite/gouvernance/bad-good-habits"
+                    :id="contribution.id"
+                    :titre="contribution.titre"
+                  />
                 </div>
               </div>
             </div>
@@ -322,16 +314,23 @@
 </template>
 
 <script setup lang="ts">
-import type { ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne } from '~/types/gouvernance'
 import type { TypePratique } from '~/composables/useGouvernance'
 
 const { getContributions } = useGouvernance()
+const { pubCible, cibler } = usePartagePublication()
 const chargement = ref(false)
 const erreurChargement = ref<string | null>(null)
 
 useHead({
   title: 'BadGoodhabits - Gouvernance Citoyenne'
 })
+
+const breadcrumbs = [
+  { label: 'Université', to: '/universite' },
+  { label: 'Gouvernance', to: '/universite/gouvernance' },
+  { label: 'BadGoodhabits', to: undefined }
+]
 
 const userStore = useUserStore()
 
@@ -439,10 +438,6 @@ const contributionsFiltrees = computed(() => {
   })
 })
 
-const voirDetail = (contribution: ContributionCitoyenne) => {
-  navigateTo(`/universite/gouvernance/${contribution.id}`)
-}
-
 const reinitialiser = () => {
   recherche.value = ''
   paysSelectionne.value = ''
@@ -543,6 +538,7 @@ async function chargerContributions() {
   try {
     const resultat = await getContributions({ type: 'badhabits', parPage: 50 })
     contributions.value = resultat.contributions
+    cibler(resultat.contributions.map(c => c.id))
   } catch (e: unknown) {
     erreurChargement.value = e instanceof Error ? e.message : 'Erreur inconnue'
     contributions.value = []

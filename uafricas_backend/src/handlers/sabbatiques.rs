@@ -8,11 +8,13 @@ use uuid::Uuid;
 use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::sabbatique::{
-    OrganisateurInfo, OrganisateurResponse, SabbatiqueDetailResponse,
-    SabbatiqueListeResponse, SabbatiqueQueryParams, SabbatiqueResponse,
-    SabbatiqueRow, PROGRAMME_COLONNES, calculer_statut, duree_label,
-    generer_slug, prises_en_charge,
+    CandidatRetenuResponse, CandidatureResponse, CandidatureRow, OrganisateurInfo,
+    OrganisateurResponse, SabbatiqueDetailResponse, SabbatiqueListeResponse,
+    SabbatiqueQueryParams, SabbatiqueResponse, SabbatiqueRow, PROGRAMME_COLONNES,
+    calculer_statut, duree_label, generer_slug, prises_en_charge,
+    statut_emploi_label, type_organisation_label,
 };
+use crate::services::audit;
 
 /// Reponse API generique
 #[derive(serde::Serialize)]
@@ -90,6 +92,29 @@ async fn compter_candidatures(
     Ok(count)
 }
 
+/// Charger le candidat retenu (selection finale, affichage public)
+async fn charger_candidat_retenu(
+    pool: &PgPool,
+    row: &SabbatiqueRow,
+) -> Result<Option<CandidatRetenuResponse>, ApiErreur> {
+    let Some(candidat_id) = row.candidat_retenu_id else {
+        return Ok(None);
+    };
+    let info = sqlx::query_as::<_, OrganisateurInfo>(
+        "SELECT id, nom, prenom, email, photo_url FROM iam.utilisateur WHERE id = $1",
+    )
+    .bind(candidat_id)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(info.map(|u| CandidatRetenuResponse {
+        uid: u.id,
+        nom: u.nom,
+        prenom: u.prenom,
+        retenu_at: row.candidat_retenu_at,
+    }))
+}
+
 /// Construire un SabbatiqueResponse a partir d'un SabbatiqueRow
 async fn construire_response(
     pool: &PgPool,
@@ -99,6 +124,7 @@ async fn construire_response(
     let pays_nom = charger_nom_pays(pool, row.pays_id).await?;
     let domaine_nom = charger_nom_domaine(pool, row.domaine_id).await?;
     let nombre_candidatures = compter_candidatures(pool, row.id).await?;
+    let candidat_retenu = charger_candidat_retenu(pool, row).await?;
 
     Ok(SabbatiqueResponse {
         id: row.id,
@@ -121,6 +147,12 @@ async fn construire_response(
         ),
         nombre_places: row.nombre_places,
         nombre_candidatures,
+        type_organisation: row.type_organisation.clone(),
+        type_organisation_label: row
+            .type_organisation
+            .as_deref()
+            .map(type_organisation_label),
+        candidat_retenu,
         user: OrganisateurResponse {
             uid: organisateur.id,
             nom: organisateur.nom,
@@ -257,8 +289,10 @@ pub async fn lister_programmes(
 pub async fn obtenir_programme(
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiErreur> {
     let id = chemin.into_inner();
+    let utilisateur_id = extraire_utilisateur_id(&req);
 
     let query = format!(
         "SELECT {} FROM exchange.programme p
@@ -278,6 +312,22 @@ pub async fn obtenir_programme(
     let pays_nom = charger_nom_pays(pool.get_ref(), row.pays_id).await?;
     let domaine_nom = charger_nom_domaine(pool.get_ref(), row.domaine_id).await?;
     let nombre_candidatures = compter_candidatures(pool.get_ref(), row.id).await?;
+    let candidat_retenu = charger_candidat_retenu(pool.get_ref(), &row).await?;
+
+    let est_organisateur = utilisateur_id == Some(row.cree_par);
+    let a_deja_candidate = if let Some(uid) = utilisateur_id {
+        sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM exchange.candidature
+             WHERE programme_id = $1 AND candidat_id = $2 AND statut != 'retiree'",
+        )
+        .bind(row.id)
+        .bind(uid)
+        .fetch_one(pool.get_ref())
+        .await?
+            > 0
+    } else {
+        false
+    };
 
     let reponse = SabbatiqueDetailResponse {
         id: row.id,
@@ -306,6 +356,14 @@ pub async fn obtenir_programme(
         nombre_candidatures,
         prerequis: row.prerequis.clone(),
         langues_requises: row.langues_requises.clone(),
+        type_organisation: row.type_organisation.clone(),
+        type_organisation_label: row
+            .type_organisation
+            .as_deref()
+            .map(type_organisation_label),
+        candidat_retenu,
+        est_organisateur,
+        a_deja_candidate,
         user: OrganisateurResponse {
             uid: organisateur.id,
             nom: organisateur.nom,
@@ -342,6 +400,7 @@ pub async fn creer_programme(
     let mut duree: Option<String> = None;
     let mut date_debut: Option<String> = None;
     let mut date_fin: Option<String> = None;
+    let mut type_organisation: Option<String> = None;
     let mut prise_billet = false;
     let mut prise_hebergement = false;
     let mut prise_subsistance = false;
@@ -371,6 +430,9 @@ pub async fn creer_programme(
             "ville" => ville = Some(lire_champ_texte(&mut field).await?),
             "domaine" => domaine = Some(lire_champ_texte(&mut field).await?),
             "duree" => duree = Some(lire_champ_texte(&mut field).await?),
+            "type_organisation" | "typeOrganisation" => {
+                type_organisation = Some(lire_champ_texte(&mut field).await?)
+            }
             "date_debut" | "dateDebut" => {
                 date_debut = Some(lire_champ_texte(&mut field).await?)
             }
@@ -468,6 +530,20 @@ pub async fn creer_programme(
 
     let interafricain = type_programme == "interafricain";
 
+    // Type d'organisation soumettante (association / entreprise / service public)
+    let type_organisation = type_organisation
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            ApiErreur::Validation("Le type d'organisation est obligatoire".into())
+        })?;
+    if !["association", "entreprise", "service_public"]
+        .contains(&type_organisation.as_str())
+    {
+        return Err(ApiErreur::Validation(
+            "Type d'organisation invalide".into(),
+        ));
+    }
+
     // Parser les dates (format YYYY-MM-DD ou YYYY-MM-DDTHH:MM)
     let date_part = date_debut_str.split('T').next().unwrap_or(&date_debut_str);
     let date_debut_parsed = chrono::NaiveDate::parse_from_str(date_part, "%Y-%m-%d")
@@ -538,12 +614,12 @@ pub async fn creer_programme(
              pays_id, ville,
              prise_en_charge_billet, prise_en_charge_hebergement, prise_en_charge_subsistance,
              duree, domaine_id, date_debut, date_fin,
-             interafricain, etat, cree_par)
+             interafricain, type_organisation, etat, cree_par)
          VALUES ($1, $2, $3, $4, $5,
                  $6, $7,
                  $8, $9, $10,
                  $11::exchange.duree_programme, $12, $13, $14,
-                 $15, 'publie', $16)
+                 $15, $16::exchange.type_organisation_soumettante, 'publie', $17)
          RETURNING {}",
         PROGRAMME_COLONNES.replace("p.", "")
     );
@@ -564,6 +640,7 @@ pub async fn creer_programme(
         .bind(date_debut_parsed)
         .bind(date_fin_parsed)
         .bind(interafricain)
+        .bind(&type_organisation)
         .bind(utilisateur_id)
         .fetch_one(pool.get_ref())
         .await?;
@@ -601,6 +678,14 @@ pub async fn creer_programme(
         nombre_candidatures: 0,
         prerequis: row.prerequis.clone(),
         langues_requises: row.langues_requises.clone(),
+        type_organisation: row.type_organisation.clone(),
+        type_organisation_label: row
+            .type_organisation
+            .as_deref()
+            .map(type_organisation_label),
+        candidat_retenu: None,
+        est_organisateur: true,
+        a_deja_candidate: false,
         user: OrganisateurResponse {
             uid: organisateur.id,
             nom: organisateur.nom,
@@ -615,6 +700,402 @@ pub async fn creer_programme(
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(reponse),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// GET /api/sabbatiques/mes-programmes — Programmes créés par l'utilisateur
+// ──────────────────────────────────────────────────────────────
+pub async fn lister_mes_programmes(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req).ok_or_else(|| {
+        ApiErreur::NonAutorise("Authentification requise".into())
+    })?;
+
+    let query = format!(
+        "SELECT {} FROM exchange.programme p
+         WHERE p.cree_par = $1 AND p.deleted_at IS NULL
+         ORDER BY p.created_at DESC",
+        PROGRAMME_COLONNES
+    );
+
+    let rows = sqlx::query_as::<_, SabbatiqueRow>(&query)
+        .bind(utilisateur_id)
+        .fetch_all(pool.get_ref())
+        .await?;
+
+    let mut programmes = Vec::with_capacity(rows.len());
+    for row in &rows {
+        programmes.push(construire_response(pool.get_ref(), row).await?);
+    }
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(programmes),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// POST /api/sabbatiques/{id}/candidatures — Candidater a un programme
+// ──────────────────────────────────────────────────────────────
+pub async fn candidater(
+    pool: web::Data<PgPool>,
+    upload_dir: web::Data<String>,
+    chemin: web::Path<Uuid>,
+    req: HttpRequest,
+    mut payload: Multipart,
+) -> Result<HttpResponse, ApiErreur> {
+    let programme_id = chemin.into_inner();
+
+    let candidat_id = extraire_utilisateur_id(&req).ok_or_else(|| {
+        ApiErreur::NonAutorise("Vous devez être connecté pour candidater".into())
+    })?;
+
+    // Le programme doit exister, etre publie et non supprime
+    let createur: Option<Uuid> = sqlx::query_scalar(
+        "SELECT cree_par FROM exchange.programme
+         WHERE id = $1 AND deleted_at IS NULL
+           AND etat IN ('publie','en_cours')",
+    )
+    .bind(programme_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let createur = createur.ok_or_else(|| {
+        ApiErreur::NonTrouve("Programme introuvable ou clôturé".into())
+    })?;
+
+    if createur == candidat_id {
+        return Err(ApiErreur::Validation(
+            "Vous ne pouvez pas candidater à votre propre programme".into(),
+        ));
+    }
+
+    let mut nom_etat_civil: Option<String> = None;
+    let mut fonction_actuelle: Option<String> = None;
+    let mut lieu_residence: Option<String> = None;
+    let mut statut_emploi: Option<String> = None;
+    let mut repond_profil = false;
+    let mut lettre_motivation: Option<String> = None;
+    let mut lien_expertise: Option<String> = None;
+    let mut cv_url: Option<String> = None;
+
+    while let Some(item) = payload.next().await {
+        let mut field = item.map_err(|e| {
+            ApiErreur::Upload(format!("Erreur lecture multipart: {}", e))
+        })?;
+
+        let content_disposition = field.content_disposition().cloned();
+        let nom_champ = content_disposition
+            .as_ref()
+            .and_then(|cd| cd.get_name().map(|s| s.to_string()))
+            .unwrap_or_default();
+
+        match nom_champ.as_str() {
+            "nom_etat_civil" | "nomEtatCivil" => {
+                nom_etat_civil = Some(lire_champ_texte(&mut field).await?)
+            }
+            "fonction_actuelle" | "fonctionActuelle" => {
+                fonction_actuelle = Some(lire_champ_texte(&mut field).await?)
+            }
+            "lieu_residence" | "lieuResidence" => {
+                lieu_residence = Some(lire_champ_texte(&mut field).await?)
+            }
+            "statut_emploi" | "statutEmploi" => {
+                statut_emploi = Some(lire_champ_texte(&mut field).await?)
+            }
+            "repond_profil" | "repondProfil" => {
+                let val = lire_champ_texte(&mut field).await?;
+                repond_profil =
+                    val == "true" || val == "1" || val.eq_ignore_ascii_case("oui");
+            }
+            "lettre_motivation" | "lettreMotivation" => {
+                lettre_motivation = Some(lire_champ_texte(&mut field).await?)
+            }
+            "lien_expertise" | "lienExpertise" => {
+                lien_expertise = Some(lire_champ_texte(&mut field).await?)
+            }
+            "cv" | "cvFile" => {
+                let nom_original = content_disposition
+                    .as_ref()
+                    .and_then(|cd| {
+                        cd.get_filename().map(|f| sanitize_filename::sanitize(f))
+                    })
+                    .unwrap_or_else(|| format!("{}.pdf", Uuid::new_v4()));
+
+                let nom_fichier = format!("{}_{}", Uuid::new_v4(), nom_original);
+                let chemin = format!(
+                    "{}/documents/{}",
+                    upload_dir.get_ref(),
+                    nom_fichier
+                );
+
+                sauvegarder_fichier(&mut field, &chemin).await?;
+                cv_url = Some(format!("/uploads/documents/{}", nom_fichier));
+            }
+            _ => {
+                log::warn!("Champ multipart candidature inconnu ignore: {}", nom_champ);
+            }
+        }
+    }
+
+    // Validation
+    let nom_etat_civil = nom_etat_civil
+        .filter(|s| !s.trim().is_empty())
+        .ok_or_else(|| {
+            ApiErreur::Validation("Le nom et prénoms à l'état civil sont obligatoires".into())
+        })?;
+    let fonction_actuelle = fonction_actuelle
+        .filter(|s| !s.trim().is_empty())
+        .ok_or_else(|| ApiErreur::Validation("La fonction actuelle est obligatoire".into()))?;
+    let lieu_residence = lieu_residence
+        .filter(|s| !s.trim().is_empty())
+        .ok_or_else(|| {
+            ApiErreur::Validation("Le lieu de résidence ou de fonction est obligatoire".into())
+        })?;
+    let statut_emploi = statut_emploi
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            ApiErreur::Validation(
+                "Vous devez être en emploi ou retraité pour candidater".into(),
+            )
+        })?;
+    // Condition d'éligibilité : seuls « en_emploi » et « retraite » sont admis
+    if !["en_emploi", "retraite"].contains(&statut_emploi.as_str()) {
+        return Err(ApiErreur::Validation(
+            "Candidature réservée aux personnes en emploi ou retraitées".into(),
+        ));
+    }
+    // Au moins un justificatif : CV téléversé ou lien vers le compte expertise
+    let lien_expertise = lien_expertise.filter(|s| !s.trim().is_empty());
+    if cv_url.is_none() && lien_expertise.is_none() {
+        return Err(ApiErreur::Validation(
+            "Veuillez joindre un CV ou le lien de votre compte expertise".into(),
+        ));
+    }
+
+    // Upsert (re-candidature = mise à jour, remise à l'état « soumise »)
+    let candidature_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO exchange.candidature
+            (programme_id, candidat_id, lettre_motivation, cv_url, lien_expertise,
+             nom_etat_civil, fonction_actuelle, lieu_residence,
+             statut_emploi, repond_profil, statut)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
+                 $9::exchange.statut_emploi_candidat, $10, 'soumise')
+         ON CONFLICT (programme_id, candidat_id) DO UPDATE SET
+             lettre_motivation = EXCLUDED.lettre_motivation,
+             cv_url            = COALESCE(EXCLUDED.cv_url, exchange.candidature.cv_url),
+             lien_expertise    = EXCLUDED.lien_expertise,
+             nom_etat_civil    = EXCLUDED.nom_etat_civil,
+             fonction_actuelle = EXCLUDED.fonction_actuelle,
+             lieu_residence    = EXCLUDED.lieu_residence,
+             statut_emploi     = EXCLUDED.statut_emploi,
+             repond_profil     = EXCLUDED.repond_profil,
+             statut            = 'soumise',
+             updated_at        = NOW()
+         RETURNING id",
+    )
+    .bind(programme_id)
+    .bind(candidat_id)
+    .bind(&lettre_motivation)
+    .bind(&cv_url)
+    .bind(&lien_expertise)
+    .bind(&nom_etat_civil)
+    .bind(&fonction_actuelle)
+    .bind(&lieu_residence)
+    .bind(&statut_emploi)
+    .bind(repond_profil)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(candidat_id),
+        "candidature_soumise",
+        "exchange",
+        "candidature",
+        Some(candidature_id),
+        None,
+        None,
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "id": candidature_id })),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// GET /api/sabbatiques/{id}/candidatures — Lister (organisateur uniquement)
+// ──────────────────────────────────────────────────────────────
+pub async fn lister_candidatures(
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    let programme_id = chemin.into_inner();
+
+    let utilisateur_id = extraire_utilisateur_id(&req).ok_or_else(|| {
+        ApiErreur::NonAutorise("Authentification requise".into())
+    })?;
+
+    // Verifier que l'utilisateur est bien l'organisateur + recuperer le candidat retenu
+    let infos: Option<(Uuid, Option<Uuid>)> = sqlx::query_as(
+        "SELECT cree_par, candidat_retenu_id FROM exchange.programme
+         WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(programme_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let (cree_par, candidat_retenu_id) =
+        infos.ok_or_else(|| ApiErreur::NonTrouve("Programme introuvable".into()))?;
+
+    if cree_par != utilisateur_id {
+        return Err(ApiErreur::NonAutorise(
+            "Seul l'organisateur peut consulter les candidatures".into(),
+        ));
+    }
+
+    let rows = sqlx::query_as::<_, CandidatureRow>(
+        "SELECT id, candidat_id, lettre_motivation, cv_url, lien_expertise,
+                nom_etat_civil, fonction_actuelle, lieu_residence,
+                statut_emploi::text AS statut_emploi, repond_profil,
+                statut::text AS statut, created_at
+         FROM exchange.candidature
+         WHERE programme_id = $1 AND statut != 'retiree'
+         ORDER BY created_at DESC",
+    )
+    .bind(programme_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let mut candidatures = Vec::with_capacity(rows.len());
+    for row in &rows {
+        let candidat = charger_organisateur(pool.get_ref(), row.candidat_id).await?;
+        candidatures.push(CandidatureResponse {
+            id: row.id,
+            candidat: OrganisateurResponse {
+                uid: candidat.id,
+                nom: candidat.nom,
+                prenom: candidat.prenom,
+                email: candidat.email,
+                photo_url: candidat.photo_url,
+            },
+            nom_etat_civil: row.nom_etat_civil.clone(),
+            fonction_actuelle: row.fonction_actuelle.clone(),
+            lieu_residence: row.lieu_residence.clone(),
+            statut_emploi: row.statut_emploi.clone(),
+            statut_emploi_label: row.statut_emploi.as_deref().map(statut_emploi_label),
+            repond_profil: row.repond_profil,
+            lettre_motivation: row.lettre_motivation.clone(),
+            cv_url: row.cv_url.clone(),
+            lien_expertise: row.lien_expertise.clone(),
+            statut: row.statut.clone(),
+            est_retenu: candidat_retenu_id == Some(row.candidat_id),
+            created_at: row.created_at,
+        });
+    }
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(candidatures),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// POST /api/sabbatiques/{id}/candidatures/{candidature_id}/retenir
+// Selection du candidat final par l'organisateur (affichage public)
+// ──────────────────────────────────────────────────────────────
+pub async fn selectionner_candidat(
+    pool: web::Data<PgPool>,
+    chemin: web::Path<(Uuid, Uuid)>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    let (programme_id, candidature_id) = chemin.into_inner();
+
+    let utilisateur_id = extraire_utilisateur_id(&req).ok_or_else(|| {
+        ApiErreur::NonAutorise("Authentification requise".into())
+    })?;
+
+    let cree_par: Option<Uuid> = sqlx::query_scalar(
+        "SELECT cree_par FROM exchange.programme WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(programme_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let cree_par =
+        cree_par.ok_or_else(|| ApiErreur::NonTrouve("Programme introuvable".into()))?;
+
+    if cree_par != utilisateur_id {
+        return Err(ApiErreur::NonAutorise(
+            "Seul l'organisateur peut sélectionner le candidat final".into(),
+        ));
+    }
+
+    // La candidature doit appartenir au programme
+    let candidat_id: Option<Uuid> = sqlx::query_scalar(
+        "SELECT candidat_id FROM exchange.candidature
+         WHERE id = $1 AND programme_id = $2",
+    )
+    .bind(candidature_id)
+    .bind(programme_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let candidat_id = candidat_id
+        .ok_or_else(|| ApiErreur::NonTrouve("Candidature introuvable".into()))?;
+
+    let mut tx = pool.begin().await?;
+
+    sqlx::query(
+        "UPDATE exchange.programme
+         SET candidat_retenu_id = $1, candidat_retenu_at = NOW(), updated_at = NOW()
+         WHERE id = $2",
+    )
+    .bind(candidat_id)
+    .bind(programme_id)
+    .execute(&mut *tx)
+    .await?;
+
+    // La candidature retenue passe a « acceptee »
+    sqlx::query(
+        "UPDATE exchange.candidature SET statut = 'acceptee', updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(candidature_id)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "candidat_retenu",
+        "exchange",
+        "programme",
+        Some(programme_id),
+        None,
+        Some(serde_json::json!({ "candidat_id": candidat_id })),
+        audit::extraire_ip(&req).as_deref(),
+        audit::extraire_user_agent(&req).as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "candidat_retenu_id": candidat_id })),
         error: None,
     }))
 }

@@ -72,7 +72,7 @@ const soumettre = async () => {
   horsPerimetre.value = false
 
   if (!form.code_iso2) {
-    erreurGlobale.value = 'Veuillez sélectionner un pays.'
+    erreurGlobale.value = 'Veuillez sélectionner un territoire.'
     return
   }
   if (form.biographie && form.biographie.length > 5000) {
@@ -135,7 +135,7 @@ const soumettre = async () => {
         <!-- En-tête -->
         <div class="flex items-center justify-between p-5 border-b border-gray-200">
           <h2 class="text-xl font-bold text-gray-900">
-            Proposer une nouvelle fiche pays
+            Proposer une nouvelle fiche territoire
           </h2>
           <button
             type="button"
@@ -150,7 +150,7 @@ const soumettre = async () => {
 
         <!-- Messages d'erreur UX -->
         <div v-if="conflit" class="m-5 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-          <p class="font-semibold mb-1">Cette fiche pays existe déjà</p>
+          <p class="font-semibold mb-1">Cette fiche territoire existe déjà</p>
           <p class="mb-2">{{ conflit.message }}</p>
           <NuxtLink
             v-if="conflit.fiche_pays_id"
@@ -160,13 +160,13 @@ const soumettre = async () => {
             Voir la fiche existante &rarr;
           </NuxtLink>
           <p class="mt-2 text-xs text-amber-700">
-            Proposez plutôt une modification depuis la page du pays.
+            Proposez plutôt une modification depuis la page du territoire.
           </p>
         </div>
 
         <div v-if="horsPerimetre" class="m-5 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
-          <p class="font-semibold mb-1">Pays hors périmètre Afripulse</p>
-          <p>Afripulse couvre uniquement les 54 pays africains (codes ISO 2).</p>
+          <p class="font-semibold mb-1">Territoire hors périmètre Afripulse</p>
+          <p>Afripulse couvre uniquement les 54 territoires africains (codes ISO 2).</p>
         </div>
 
         <div v-if="erreurGlobale" class="m-5 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
@@ -179,14 +179,14 @@ const soumettre = async () => {
             <!-- Pays -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
-                Pays <span class="text-red-500">*</span>
+                Territoire <span class="text-red-500">*</span>
               </label>
               <select
                 v-model="form.code_iso2"
                 required
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-green"
               >
-                <option value="">— Sélectionnez un pays africain —</option>
+                <option value="">— Sélectionnez un territoire africain —</option>
                 <option
                   v-for="p in paysOrdonnes"
                   :key="p.code"

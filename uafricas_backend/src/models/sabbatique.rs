@@ -15,6 +15,8 @@ pub const PROGRAMME_COLONNES: &str =
      p.date_debut, p.date_fin,
      p.nombre_places, p.prerequis, p.langues_requises,
      p.etat::text AS etat, p.interafricain,
+     p.type_organisation::text AS type_organisation,
+     p.candidat_retenu_id, p.candidat_retenu_at,
      p.cree_par, p.created_at, p.updated_at";
 
 /// Representation d'un programme en base de donnees
@@ -42,6 +44,9 @@ pub struct SabbatiqueRow {
     pub langues_requises: Option<String>,
     pub etat: String,
     pub interafricain: bool,
+    pub type_organisation: Option<String>,
+    pub candidat_retenu_id: Option<Uuid>,
+    pub candidat_retenu_at: Option<DateTime<Utc>>,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -80,6 +85,9 @@ pub struct SabbatiqueResponse {
     pub prise_en_charge: Vec<String>,
     pub nombre_places: Option<i32>,
     pub nombre_candidatures: i64,
+    pub type_organisation: Option<String>,
+    pub type_organisation_label: Option<String>,
+    pub candidat_retenu: Option<CandidatRetenuResponse>,
     pub user: OrganisateurResponse,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -110,6 +118,13 @@ pub struct SabbatiqueDetailResponse {
     pub nombre_candidatures: i64,
     pub prerequis: Option<String>,
     pub langues_requises: Option<String>,
+    pub type_organisation: Option<String>,
+    pub type_organisation_label: Option<String>,
+    pub candidat_retenu: Option<CandidatRetenuResponse>,
+    /// Vrai si l'utilisateur connecte est l'organisateur du programme
+    pub est_organisateur: bool,
+    /// Vrai si l'utilisateur connecte a deja candidate
+    pub a_deja_candidate: bool,
     pub user: OrganisateurResponse,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -123,6 +138,51 @@ pub struct OrganisateurResponse {
     pub prenom: Option<String>,
     pub email: String,
     pub photo_url: Option<String>,
+}
+
+/// DTO public du candidat retenu (selection finale, affichee a tous)
+#[derive(Debug, Serialize)]
+pub struct CandidatRetenuResponse {
+    pub uid: Uuid,
+    pub nom: String,
+    pub prenom: Option<String>,
+    pub retenu_at: Option<DateTime<Utc>>,
+}
+
+/// Ligne de candidature en base
+#[derive(Debug, FromRow)]
+pub struct CandidatureRow {
+    pub id: Uuid,
+    pub candidat_id: Uuid,
+    pub lettre_motivation: Option<String>,
+    pub cv_url: Option<String>,
+    pub lien_expertise: Option<String>,
+    pub nom_etat_civil: Option<String>,
+    pub fonction_actuelle: Option<String>,
+    pub lieu_residence: Option<String>,
+    pub statut_emploi: Option<String>,
+    pub repond_profil: bool,
+    pub statut: String,
+    pub created_at: DateTime<Utc>,
+}
+
+/// DTO de candidature (vue organisateur)
+#[derive(Debug, Serialize)]
+pub struct CandidatureResponse {
+    pub id: Uuid,
+    pub candidat: OrganisateurResponse,
+    pub nom_etat_civil: Option<String>,
+    pub fonction_actuelle: Option<String>,
+    pub lieu_residence: Option<String>,
+    pub statut_emploi: Option<String>,
+    pub statut_emploi_label: Option<String>,
+    pub repond_profil: bool,
+    pub lettre_motivation: Option<String>,
+    pub cv_url: Option<String>,
+    pub lien_expertise: Option<String>,
+    pub statut: String,
+    pub est_retenu: bool,
+    pub created_at: DateTime<Utc>,
 }
 
 /// Reponse paginee pour le listing
@@ -204,6 +264,25 @@ pub fn prises_en_charge(billet: bool, hebergement: bool, subsistance: bool) -> V
         liste.push("Frais de subsistance".to_string());
     }
     liste
+}
+
+/// Label lisible pour le type d'organisation soumettante
+pub fn type_organisation_label(valeur: &str) -> String {
+    match valeur {
+        "association" => "Association".to_string(),
+        "entreprise" => "Entreprise".to_string(),
+        "service_public" => "Service public".to_string(),
+        autre => autre.to_string(),
+    }
+}
+
+/// Label lisible pour le statut d'emploi du candidat
+pub fn statut_emploi_label(valeur: &str) -> String {
+    match valeur {
+        "en_emploi" => "En emploi".to_string(),
+        "retraite" => "Retraité".to_string(),
+        autre => autre.to_string(),
+    }
 }
 
 /// Generer un slug URL-safe a partir du titre

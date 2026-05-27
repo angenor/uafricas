@@ -12,7 +12,7 @@ CREATE TYPE iam.statut_expertise AS ENUM (
 
 CREATE TYPE iam.domaine_expertise AS ENUM (
     'agriculture', 'informatique', 'electronique', 'immobilier',
-    'mecanique', 'sante', 'education', 'finance'
+    'mecanique', 'sante', 'education', 'finance', 'autre'
 );
 
 CREATE TYPE iam.situation_professionnelle AS ENUM (
@@ -20,23 +20,40 @@ CREATE TYPE iam.situation_professionnelle AS ENUM (
     'volontariat_expertise', 'recherche_nouvelles_opportunites'
 );
 
+-- Objectifs actuels du candidat (multi-sélection, distinct des situations professionnelles)
+CREATE TYPE iam.objectif_expertise AS ENUM (
+    'reseautage', 'consultance', 'recherche_emploi',
+    'offre_services_court_terme', 'travail_vacances', 'volontariat', 'benevolat'
+);
+
 
 -- ── Table expertise (1-to-1 avec utilisateur) ────────────────────────────
 
 CREATE TABLE iam.expertise (
     id                          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    utilisateur_id              UUID         NOT NULL UNIQUE
+    -- NOT NULL sans UNIQUE total : l'unicite "une seule demande active" est
+    -- garantie par l'index partiel idx_expertise_utilisateur_actif ci-dessous,
+    -- ce qui autorise l'archivage (soft-delete) + re-soumission apres refus.
+    utilisateur_id              UUID         NOT NULL
                                 REFERENCES iam.utilisateur(id) ON DELETE CASCADE,
     domaine                     iam.domaine_expertise NOT NULL,
+    -- Précision libre quand domaine = 'autre' (NULL sinon)
+    domaine_autre               VARCHAR(120),
     biographie                  TEXT         NOT NULL,
     nb_annees_experience        INT          NOT NULL CHECK (nb_annees_experience >= 0),
     rating                      NUMERIC(2,1) NOT NULL DEFAULT 0.0
                                 CHECK (rating >= 0 AND rating <= 5),
     portfolio                   VARCHAR(500),
+    linkedin_url                VARCHAR(255),
+    cv_url                      VARCHAR(500),
+    specialites                 TEXT[]       NOT NULL DEFAULT '{}',
+    objectifs                   iam.objectif_expertise[] NOT NULL DEFAULT '{}',
+    realisations                TEXT[]       NOT NULL DEFAULT '{}',
     situations_professionnelles iam.situation_professionnelle[] NOT NULL DEFAULT '{}',
     statut                      iam.statut_expertise NOT NULL DEFAULT 'en_attente',
     valide_par                  UUID         REFERENCES iam.utilisateur(id) ON DELETE SET NULL,
     date_validation             TIMESTAMPTZ,
+    commentaire_admin           TEXT,         -- motif obligatoire en cas de refus (NULL sinon)
     created_at                  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at                  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     deleted_at                  TIMESTAMPTZ
@@ -54,6 +71,11 @@ CREATE INDEX idx_expertise_domaine
     WHERE deleted_at IS NULL;
 
 CREATE INDEX idx_expertise_utilisateur
+    ON iam.expertise(utilisateur_id)
+    WHERE deleted_at IS NULL;
+
+-- Unicite "une seule demande active" par membre (autorise l'historique archive)
+CREATE UNIQUE INDEX idx_expertise_utilisateur_actif
     ON iam.expertise(utilisateur_id)
     WHERE deleted_at IS NULL;
 

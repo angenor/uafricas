@@ -7,6 +7,9 @@
     :livekit-url="tokenData.livekit_url"
     :session="session"
     :est-moderateur="tokenData.is_moderator"
+    :salle-id="salleParenteId"
+    :salle-nom="salleParenteNom"
+    :sous-titre="sallePriveeTitre"
     @quitter="handleQuitterVisio"
     @terminer="handleTerminerVisio"
   />
@@ -52,6 +55,8 @@ const {
   demarrerOuRejoindreSallePrivee,
   recupererAccesJeton,
   obtenirSession,
+  obtenirSallePrivee,
+  obtenirSalle,
   quitterSession,
   terminerSession,
 } = useAfrolang()
@@ -62,6 +67,9 @@ const loading = ref(true)
 const erreur = ref<string | null>(null)
 const session = ref<SessionDetailAPI | null>(null)
 const tokenData = ref<TokenResponse | null>(null)
+const salleParenteId = ref<string | null>(null)
+const salleParenteNom = ref<string | null>(null)
+const sallePriveeTitre = ref<string | null>(null)
 
 useHead({ title: 'Salle privée Afrolang - UAfricas' })
 
@@ -115,6 +123,17 @@ onMounted(async () => {
     return
   }
   session.value = detail
+
+  // Récupérer la salle publique parente pour activer le panneau « Ressources contribuées »
+  // (feature 001-ressources-fermeture-session, US1) et afficher le nom dans le header.
+  const sp = await obtenirSallePrivee(sallePriveeId.value)
+  salleParenteId.value = sp?.salle_id ?? null
+  sallePriveeTitre.value = sp?.titre ?? null
+  if (salleParenteId.value) {
+    obtenirSalle(salleParenteId.value).then((s) => {
+      salleParenteNom.value = s?.titre ?? null
+    })
+  }
 
   tokenData.value = {
     token: resultat.livekit_token,

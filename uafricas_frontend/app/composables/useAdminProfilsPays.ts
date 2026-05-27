@@ -160,6 +160,15 @@ export const useAdminProfilsPays = () => {
     await adminFetch<ApiResponse<null>>(`/api/admin/profils-pays/${ficheId}/sites-touristiques/${siteId}`, { method: 'DELETE' })
   }
 
+  /** Active ou retire le badge « Vérifié » d'un site (US3 — réservé admin). */
+  const definirVerificationSite = async (ficheId: string, siteId: string, verifie: boolean) => {
+    const response = await adminFetch<ApiResponse<{ id: string, verifie: boolean, verifie_at: string | null }>>(
+      `/api/admin/profils-pays/${ficheId}/sites-touristiques/${siteId}/verification`,
+      { method: 'PATCH', body: { verifie } },
+    )
+    return response.data
+  }
+
   // ── Secteurs de developpement ─────────────────────────────
 
   const chargerSecteurs = async (ficheId: string) => {
@@ -232,7 +241,7 @@ export const useAdminProfilsPays = () => {
     chargerGroupesEthniques, creerGroupeEthnique, modifierGroupeEthnique, supprimerGroupeEthnique,
     chargerAlliances, creerAlliance, modifierAlliance, supprimerAlliance,
     chargerContes, creerConte, modifierConte, supprimerConte,
-    chargerSitesTouristiques, creerSiteTouristique, modifierSiteTouristique, supprimerSiteTouristique,
+    chargerSitesTouristiques, creerSiteTouristique, modifierSiteTouristique, supprimerSiteTouristique, definirVerificationSite,
     chargerSecteurs, creerSecteur, modifierSecteur, supprimerSecteur,
     chargerSaisons, creerSaison, modifierSaison, supprimerSaison,
     chargerLiensInterethniques, creerLienInterethnique, modifierLienInterethnique, supprimerLienInterethnique,

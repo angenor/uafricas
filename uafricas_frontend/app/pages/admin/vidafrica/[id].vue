@@ -11,7 +11,7 @@ const id = route.params.id as string
 const {
   videoDetail, loading, error,
   chargerDetail, modifier, changerEtat, supprimer,
-  chargerPistes, creerPiste, supprimerPiste,
+  chargerPistes, creerPiste, changerEtatPiste, supprimerPiste,
   chargerSegments, creerSegment, modifierSegment, supprimerSegment,
   enregistrerTimingsMot, supprimerTimingsMot,
 } = useAdminVidafrica()
@@ -150,6 +150,15 @@ const ajouterPiste = async () => {
     erreurLocale.value = e?.data?.error || e?.message || 'Erreur'
   } finally {
     pisteLoading.value = false
+  }
+}
+
+const changerEtatPisteAction = async (pisteId: string, etat: string) => {
+  try {
+    await changerEtatPiste(pisteId, etat)
+    await rechargerPistes()
+  } catch (e: any) {
+    erreurLocale.value = e?.data?.error || e?.message || 'Erreur'
   }
 }
 
@@ -415,13 +424,41 @@ onMounted(() => charger())
               @click="selectionnerPiste(piste)"
             >
               <span class="font-medium">{{ LANGUES_LABELS[piste.langue] || piste.langue }}</span>
-              <span class="badge badge-sm" :class="piste.est_complete ? 'badge-success' : 'badge-warning'">
+              <span class="badge badge-sm" :class="{
+                'badge-success': piste.etat === 'publie',
+                'badge-warning': piste.etat === 'brouillon',
+                'badge-ghost': piste.etat === 'masque',
+              }">
+                {{ piste.etat === 'publie' ? 'Publiée' : piste.etat === 'masque' ? 'Masquée' : 'En attente' }}
+              </span>
+              <span class="badge badge-sm" :class="piste.est_complete ? 'badge-success badge-outline' : 'badge-warning badge-outline'">
                 {{ piste.est_complete ? 'Complet' : 'Incomplet' }}
               </span>
               <span class="text-xs text-base-content/50">{{ piste.nombre_segments }} segments</span>
-              <button class="btn btn-ghost btn-xs text-error ml-auto" @click.stop="supprimerPisteAction(piste.id)">
-                <font-awesome-icon icon="trash" />
-              </button>
+              <span v-if="piste.cree_par_nom" class="text-xs text-base-content/50" title="Auteur">
+                <font-awesome-icon icon="user" class="mr-0.5" />{{ piste.cree_par_nom }}
+              </span>
+              <div class="ml-auto flex gap-1" @click.stop>
+                <button
+                  v-if="piste.etat !== 'publie'"
+                  class="btn btn-success btn-xs"
+                  title="Valider et publier la piste"
+                  @click="changerEtatPisteAction(piste.id, 'publie')"
+                >
+                  <font-awesome-icon icon="eye" class="mr-1" /> Publier
+                </button>
+                <button
+                  v-if="piste.etat === 'publie'"
+                  class="btn btn-ghost btn-xs"
+                  title="Masquer la piste"
+                  @click="changerEtatPisteAction(piste.id, 'masque')"
+                >
+                  Masquer
+                </button>
+                <button class="btn btn-ghost btn-xs text-error" @click="supprimerPisteAction(piste.id)">
+                  <font-awesome-icon icon="trash" />
+                </button>
+              </div>
             </div>
           </div>
 

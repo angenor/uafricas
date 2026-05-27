@@ -249,7 +249,7 @@ onMounted(() => charger())
           <font-awesome-icon icon="circle-info" class="mr-1" /> Informations
         </button>
         <button role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'pays' }" @click="ongletActif = 'pays'">
-          <font-awesome-icon icon="earth-africa" class="mr-1" /> Pays cibles ({{ annonceDetail.pays.length }})
+          <font-awesome-icon icon="earth-africa" class="mr-1" /> Territoires cibles ({{ annonceDetail.pays.length }})
         </button>
         <button role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'medias' }" @click="ongletActif = 'medias'">
           <font-awesome-icon icon="image" class="mr-1" /> Medias ({{ annonceDetail.medias.length }})
@@ -373,7 +373,7 @@ onMounted(() => charger())
       <!-- Onglet Pays cibles -->
       <div v-show="ongletActif === 'pays'" class="card bg-base-100 shadow-sm">
         <div class="card-body">
-          <h3 class="font-semibold mb-4">Pays cibles</h3>
+          <h3 class="font-semibold mb-4">Territoires cibles</h3>
 
           <!-- Ajouter un pays -->
           <div class="flex gap-2 mb-4">
@@ -381,7 +381,7 @@ onMounted(() => charger())
               v-model="nouveauPaysId"
               type="text"
               class="input input-bordered input-sm flex-1"
-              placeholder="UUID du pays a ajouter"
+              placeholder="UUID du territoire a ajouter"
             />
             <button
               class="btn btn-primary btn-sm"
@@ -396,7 +396,7 @@ onMounted(() => charger())
           <!-- Liste des pays -->
           <div v-if="annonceDetail.pays.length === 0" class="text-center py-8 text-base-content/50">
             <font-awesome-icon icon="earth-africa" class="text-3xl mb-2" />
-            <p>Aucun pays cible</p>
+            <p>Aucun territoire cible</p>
           </div>
           <div v-else class="space-y-2">
             <div

@@ -19,10 +19,17 @@
         {{ annonce.type_echange }}
       </span>
 
+      <!-- Bouton favori -->
+      <MarcheFavoriBouton
+        :annonce-id="annonce.id"
+        :favori-initial="estFavori"
+        class="absolute top-3 right-3 z-10"
+      />
+
       <!-- Badge quantité minimum -->
       <span
         v-if="annonce.quantite && annonce.quantite > 1"
-        class="absolute top-3 right-3 px-2 py-1 bg-amber-100/90 text-amber-700 rounded-full text-xs font-medium"
+        class="absolute bottom-3 left-3 px-2 py-1 bg-amber-100/90 text-amber-700 rounded-full text-xs font-medium"
       >
         Min. {{ annonce.quantite }} unités
       </span>
@@ -72,9 +79,13 @@
 import { computed } from 'vue'
 import { formatPrix, formatDateCourte, type AnnonceAPI, type TypeEchange } from '~/composables/useMarcheAfricain'
 
-const props = defineProps<{
-  annonce: AnnonceAPI
-}>()
+const props = withDefaults(
+  defineProps<{
+    annonce: AnnonceAPI
+    estFavori?: boolean
+  }>(),
+  { estFavori: false },
+)
 
 const prixFormate = computed(() => {
   return formatPrix(props.annonce.prix, props.annonce.devise)

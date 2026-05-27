@@ -1,12 +1,16 @@
+use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse};
+use futures_util::StreamExt;
 use sqlx::PgPool;
+use std::io::Write;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::expert::{
     CandidatureExpertBody, ExpertListeResponse, ExpertQueryParams,
-    ExpertRow, EXPERT_COLONNES, mapper_domaine_db,
+    ExpertRow, MaCandidatureRow, EXPERT_COLONNES, mapper_domaine_db,
+    OBJECTIFS_VALIDES,
 };
 
 #[derive(serde::Serialize)]
@@ -210,40 +214,114 @@ pub async fn creer_candidature(
         ));
     }
 
-    // Verifier qu'il n'a pas deja de candidature
-    let deja_candidat: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM iam.expertise WHERE utilisateur_id = $1 AND deleted_at IS NULL)",
+    // Etat de la candidature active eventuelle (FR-006 + FR-015)
+    let statut_actif: Option<String> = sqlx::query_scalar(
+        "SELECT statut::text FROM iam.expertise
+         WHERE utilisateur_id = $1 AND deleted_at IS NULL",
     )
     .bind(utilisateur_id)
-    .fetch_one(pool.get_ref())
+    .fetch_optional(pool.get_ref())
     .await?;
 
-    if deja_candidat {
-        return Err(ApiErreur::Conflit(
-            "Vous avez deja soumis une candidature expert".to_string(),
-        ));
+    // Bloquer si une demande active en_attente ou valide existe deja
+    if let Some(ref statut) = statut_actif {
+        if statut == "en_attente" || statut == "valide" {
+            return Err(ApiErreur::Conflit(
+                "Vous avez deja une demande d'expertise active".to_string(),
+            ));
+        }
     }
 
     // Mapper le domaine
     let domaine_db = mapper_domaine_db(&body.domaine);
 
-    // Inserer la candidature
+    // Précision libre obligatoire (et conservée) uniquement quand domaine = "autre"
+    let domaine_autre: Option<String> = if domaine_db == "autre" {
+        let precision = body
+            .domaine_autre
+            .as_deref()
+            .map(str::trim)
+            .filter(|p| !p.is_empty());
+        match precision {
+            Some(p) => Some(p.to_string()),
+            None => {
+                return Err(ApiErreur::Validation(
+                    "Veuillez préciser votre domaine d'expertise".to_string(),
+                ))
+            }
+        }
+    } else {
+        None
+    };
+
+    // Nettoyer / valider les champs additionnels
+    let nettoyer_liste = |valeurs: &[String]| -> Vec<String> {
+        valeurs
+            .iter()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect()
+    };
+    let specialites = nettoyer_liste(&body.specialites);
+    let realisations = nettoyer_liste(&body.realisations);
+    let objectifs: Vec<String> = body
+        .objectifs
+        .iter()
+        .map(|o| o.trim().to_lowercase())
+        .filter(|o| OBJECTIFS_VALIDES.contains(&o.as_str()))
+        .collect();
+    let linkedin_url = body
+        .linkedin_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from);
+    let cv_url = body
+        .cv_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from);
+
+    // Transaction : archiver une eventuelle demande refusee puis inserer la nouvelle
+    let mut tx = pool.begin().await?;
+
+    if statut_actif.as_deref() == Some("refuse") {
+        sqlx::query(
+            "UPDATE iam.expertise SET deleted_at = NOW(), updated_at = NOW()
+             WHERE utilisateur_id = $1 AND deleted_at IS NULL",
+        )
+        .bind(utilisateur_id)
+        .execute(&mut *tx)
+        .await?;
+    }
+
     let expertise_id: Uuid = sqlx::query_scalar(
         "INSERT INTO iam.expertise
-            (utilisateur_id, domaine, biographie, nb_annees_experience,
-             portfolio, situations_professionnelles, statut)
+            (utilisateur_id, domaine, domaine_autre, biographie, nb_annees_experience,
+             portfolio, linkedin_url, cv_url, specialites, objectifs, realisations,
+             situations_professionnelles, statut)
          VALUES ($1, $2::iam.domaine_expertise, $3, $4, $5,
-                 $6::iam.situation_professionnelle[], 'en_attente')
+                 $6, $7, $8, $9, $10::iam.objectif_expertise[], $11,
+                 $12::iam.situation_professionnelle[], 'en_attente')
          RETURNING id",
     )
     .bind(utilisateur_id)
     .bind(&domaine_db)
+    .bind(&domaine_autre)
     .bind(&body.biographie)
     .bind(body.nb_annees_experience)
     .bind(&body.portfolio)
+    .bind(&linkedin_url)
+    .bind(&cv_url)
+    .bind(&specialites)
+    .bind(&objectifs)
+    .bind(&realisations)
     .bind(&body.situations_professionnelles)
-    .fetch_one(pool.get_ref())
+    .fetch_one(&mut *tx)
     .await?;
+
+    tx.commit().await?;
 
     log::info!(
         "Candidature expert creee: {} pour utilisateur {}",
@@ -268,6 +346,117 @@ pub async fn creer_candidature(
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
         data: Some(row.to_response()),
+        error: None,
+    }))
+}
+
+/// GET /api/experts/moi — Candidature active du membre connecte (suivi US3)
+pub async fn ma_candidature(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+
+    let row = sqlx::query_as::<_, MaCandidatureRow>(
+        "SELECT id, domaine::text AS domaine, domaine_autre, biographie, nb_annees_experience,
+                portfolio, linkedin_url, cv_url, specialites,
+                objectifs::text[] AS objectifs, realisations,
+                situations_professionnelles::text[] AS situations_professionnelles,
+                statut::text AS statut, commentaire_admin, date_validation, created_at
+         FROM iam.expertise
+         WHERE utilisateur_id = $1 AND deleted_at IS NULL",
+    )
+    .bind(utilisateur_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: row.map(|r| r.to_response()),
+        error: None,
+    }))
+}
+
+/// POST /api/experts/cv — Uploader un CV (PDF) pour une candidature d'expertise.
+/// Retourne l'URL à inclure dans le corps de `creer_candidature`.
+pub async fn uploader_cv(
+    req: HttpRequest,
+    upload_dir: web::Data<String>,
+    mut payload: Multipart,
+) -> Result<HttpResponse, ApiErreur> {
+    extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+
+    let mut cv_url: Option<String> = None;
+
+    while let Some(item) = payload.next().await {
+        let mut field =
+            item.map_err(|e| ApiErreur::Upload(format!("Erreur lecture multipart: {}", e)))?;
+
+        let content_disposition = field.content_disposition().cloned();
+        let nom_champ = content_disposition
+            .as_ref()
+            .and_then(|cd| cd.get_name().map(|s| s.to_string()))
+            .unwrap_or_default();
+
+        if nom_champ != "cv" && nom_champ != "fichier" && nom_champ != "file" {
+            continue;
+        }
+
+        let nom_original = content_disposition
+            .as_ref()
+            .and_then(|cd| cd.get_filename().map(sanitize_filename::sanitize))
+            .unwrap_or_else(|| format!("{}.pdf", Uuid::new_v4()));
+        let extension = nom_original.rsplit('.').next().unwrap_or("pdf").to_lowercase();
+        if extension != "pdf" {
+            return Err(ApiErreur::Validation(
+                "Le CV doit être un fichier PDF".into(),
+            ));
+        }
+
+        let nom_fichier = format!("{}.pdf", Uuid::new_v4());
+        let dossier = format!("{}/cv-experts", upload_dir.get_ref());
+        std::fs::create_dir_all(&dossier)
+            .map_err(|e| ApiErreur::Upload(format!("Impossible de creer le repertoire: {}", e)))?;
+        let chemin_complet = format!("{}/{}", dossier, nom_fichier);
+        let mut fichier = std::fs::File::create(&chemin_complet)
+            .map_err(|e| ApiErreur::Upload(format!("Impossible de creer le fichier: {}", e)))?;
+
+        let mut taille_totale: usize = 0;
+        let mut premier_chunk = true;
+        while let Some(chunk) = field.next().await {
+            let data = chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture: {}", e)))?;
+            // Vérifier la signature PDF (%PDF) sur le premier morceau
+            if premier_chunk {
+                premier_chunk = false;
+                if data.len() < 4 || &data[0..4] != b"%PDF" {
+                    let _ = std::fs::remove_file(&chemin_complet);
+                    return Err(ApiErreur::Validation(
+                        "Le fichier n'est pas un PDF valide".into(),
+                    ));
+                }
+            }
+            taille_totale += data.len();
+            if taille_totale > 10 * 1024 * 1024 {
+                let _ = std::fs::remove_file(&chemin_complet);
+                return Err(ApiErreur::Validation(
+                    "Le CV ne doit pas depasser 10 Mo".into(),
+                ));
+            }
+            fichier
+                .write_all(&data)
+                .map_err(|e| ApiErreur::Upload(format!("Erreur ecriture: {}", e)))?;
+        }
+
+        cv_url = Some(format!("/uploads/cv-experts/{}", nom_fichier));
+    }
+
+    let url = cv_url.ok_or_else(|| ApiErreur::Validation("Aucun fichier CV recu".into()))?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "cv_url": url })),
         error: None,
     }))
 }

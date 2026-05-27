@@ -186,9 +186,9 @@ watch(() => props.isOpen, (isOpen) => {
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Pays *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Territoire *</label>
               <select v-model="programForm.pays" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all">
-                <option value="">Sélectionnez un pays</option>
+                <option value="">Sélectionnez un territoire</option>
                 <option v-for="country in availableCountries" :key="country" :value="country">{{ country }}</option>
               </select>
             </div>

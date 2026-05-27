@@ -20,7 +20,7 @@ const colonnes: TableColumn[] = [
   { key: 'etat', label: 'Etat', width: 'w-28' },
   { key: 'prix', label: 'Prix', sortable: true, width: 'w-28', align: 'right', format: (v: number, row: any) => v ? `${v.toLocaleString('fr-FR')} ${row.devise || 'XOF'}` : '—' },
   { key: 'categorie_nom', label: 'Categorie', width: 'w-28' },
-  { key: 'pays_nom', label: 'Pays', width: 'w-24' },
+  { key: 'pays_nom', label: 'Territoire', width: 'w-24' },
   { key: 'auteur_nom', label: 'Auteur', width: 'w-28', format: (_v: string, row: any) => `${row.auteur_prenom} ${row.auteur_nom}` },
   { key: 'nombre_vues', label: 'Vues', sortable: true, width: 'w-16', align: 'center' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28', format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },

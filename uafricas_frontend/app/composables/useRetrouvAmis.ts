@@ -760,7 +760,7 @@ export const useRetrouvAmis = () => {
         `${apiBase}/api/retrouve-amis/correspondances/${id}/accepter`,
         {
           method: 'POST',
-          body: coordonnees,
+          body: { coordonnees },
         },
       )
 

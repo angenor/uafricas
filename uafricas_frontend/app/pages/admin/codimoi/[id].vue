@@ -242,8 +242,8 @@ onMounted(() => charger())
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="form-control">
-                <label class="label"><span class="label-text">Pays (UUID)</span></label>
-                <input v-model="form.pays_id" type="text" class="input input-bordered" placeholder="ID du pays d'origine">
+                <label class="label"><span class="label-text">Territoire (UUID)</span></label>
+                <input v-model="form.pays_id" type="text" class="input input-bordered" placeholder="ID du territoire d'origine">
               </div>
               <div class="form-control">
                 <label class="label"><span class="label-text">Groupe ethnique</span></label>

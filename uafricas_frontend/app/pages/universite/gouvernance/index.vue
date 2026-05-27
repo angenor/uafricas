@@ -1,21 +1,24 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section avec image de fond -->
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
     <div
-      class="relative h-80 bg-cover bg-center"
+      class="group relative bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');">
       <div class="absolute inset-0 bg-gradient-to-r from-custom-green/90 to-black/70"></div>
 
-      <!-- Texte avec animation d'entrée -->
-      <div class="absolute inset-0 flex flex-col items-center justify-center pt-28">
-        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-fadeInUp">
-          Novagouv
-        </h1>
-        <div class="h-1 w-32 bg-white rounded animate-expandWidth"></div>
-        <p class="text-white text-xl md:text-2xl mt-4 text-center px-4 animate-fadeInUp animation-delay-200">
-          Contribuez à l'amélioration de notre société
-        </p>
-        <div class="flex items-center space-x-6 my-6 text-white animate-fadeInUp animation-delay-400">
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-8 text-center select-none">
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Novagouv
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Contribuez à l'amélioration de notre société
+          </p>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="flex flex-wrap items-center justify-center gap-4 mt-5 text-white">
           <div class="flex items-center bg-white/20 backdrop-blur-xs px-4 py-2 rounded-full">
             <font-awesome-icon :icon="['fas', 'eye']" class="mr-2" />
             <span class="font-semibold">{{ stats.factcheck }}</span>
@@ -32,14 +35,14 @@
             <span class="ml-1 text-sm">BadHabits</span>
           </div>
         </div>
-        <p class="text-white/80 text-sm md:text-base mt-2 max-w-3xl text-center px-4 animate-fadeInUp animation-delay-400">
+        <p class="text-white/80 text-sm mt-4 max-w-3xl mx-auto px-4">
           Engager les citoyens africains et afro-descendants ainsi que la diaspora dans l'amélioration de gouvernance politique, sociale et économique de l'Afrique.
         </p>
       </div>
     </div>
 
     <!-- Contenu principal -->
-    <div class="max-w-7xl mx-auto -mt-16 relative z-20 px-4 py-8">
+    <div class="max-w-7xl mx-auto relative z-20 px-4 py-8">
       <!-- Navigation vers les pages spécialisées -->
       <div class="bg-white rounded-xl shadow-lg overflow-hidden">
         <div class="p-8">
@@ -112,7 +115,6 @@
             v-for="contribution in dernieresContributions"
             :key="contribution.id"
             :contribution="contribution"
-            @click="voirContribution"
           />
         </div>
       </div>
@@ -121,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 useHead({
   title: 'Novagouv - Gouvernance Citoyenne | UAfricas'
@@ -131,10 +133,6 @@ const { getStats, getContributions } = useGouvernance()
 
 const stats = ref({ total: 0, factcheck: 0, badhabits: 0, ideaforces: 0, totalLikes: 0 })
 const dernieresContributions = ref<ContributionCitoyenne[]>([])
-
-const voirContribution = (contribution: ContributionCitoyenne) => {
-  navigateTo(`/universite/gouvernance/${contribution.id}`)
-}
 
 onMounted(async () => {
   try {
@@ -149,42 +147,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-<style scoped>
-/* Animations personnalisées */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes expandWidth {
-  from {
-    width: 0;
-  }
-  to {
-    width: 8rem;
-  }
-}
-
-.animate-fadeInUp {
-  animation: fadeInUp 0.6s ease-out forwards;
-}
-
-.animate-expandWidth {
-  animation: expandWidth 0.8s ease-out forwards;
-}
-
-.animation-delay-200 {
-  animation-delay: 200ms;
-}
-
-.animation-delay-400 {
-  animation-delay: 400ms;
-}
-</style>

@@ -152,6 +152,11 @@ pub struct CreerPisteRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct ChangerEtatPisteRequest {
+    pub etat: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct CreerSegmentRequest {
     pub texte: String,
     pub debut_ms: i32,
@@ -190,6 +195,9 @@ pub struct AdminPisteSousTitreResponse {
     pub id: Uuid,
     pub langue: String,
     pub est_complete: bool,
+    pub etat: String,
+    pub cree_par: Uuid,
+    pub cree_par_nom: Option<String>,
     pub nombre_segments: Option<i32>,
     pub created_at: DateTime<Utc>,
 }

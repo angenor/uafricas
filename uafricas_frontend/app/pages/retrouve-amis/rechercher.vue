@@ -110,55 +110,56 @@ chargerAvis()
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero -->
+    <!-- Hero (compact, titre ↔ description au survol) -->
     <div
-      class="relative h-56 bg-cover bg-center"
+      class="group relative bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
     >
       <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-10">
-        <h1 class="text-white text-2xl md:text-3xl font-bold mb-2">
-          Rechercher un avis de recherche
-        </h1>
-        <p class="text-white/80 text-sm md:text-base max-w-xl text-center px-4">
-          Parcourez les avis publics et aidez des personnes a retrouver leurs amis perdus de vue
-        </p>
-        <div class="h-1 w-16 bg-custom-green rounded mt-4" />
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Rechercher un avis de recherche
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Parcourez les avis publics et aidez des personnes a retrouver leurs amis perdus de vue.
+          </p>
+        </div>
       </div>
     </div>
 
     <div class="max-w-6xl mx-auto px-4 py-8">
       <!-- Filtres -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <form @submit.prevent="soumettreRecherche" class="space-y-4">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 mb-8">
+        <form @submit.prevent="soumettreRecherche" class="space-y-3">
           <!-- Barre de recherche -->
           <div class="relative">
             <font-awesome-icon
               :icon="['fas', 'magnifying-glass']"
-              class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
             />
             <input
               v-model="recherche"
               type="text"
               placeholder="Rechercher par nom, prenom, ecole, ville..."
-              class="w-full pl-11 pr-4 py-3 rounded-lg border border-gray-300 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
+              class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
             />
           </div>
 
           <!-- Filtres avances -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <!-- Pays -->
             <div>
               <label for="filtre-pays" class="block text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">
-                Pays
+                Territoire
               </label>
               <select
                 id="filtre-pays"
                 v-model="paysId"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors bg-white"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors bg-white"
               >
                 <option value="">
-                  Tous les pays
+                  Tous les territoires
                 </option>
                 <option v-for="p in paysListe" :key="p.id" :value="p.id">
                   {{ p.nom }}
@@ -176,7 +177,7 @@ chargerAvis()
                 v-model="ville"
                 type="text"
                 placeholder="Ville..."
-                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
               />
             </div>
 
@@ -190,7 +191,7 @@ chargerAvis()
                 v-model="ecole"
                 type="text"
                 placeholder="Ecole..."
-                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
               />
             </div>
 
@@ -202,7 +203,7 @@ chargerAvis()
               <select
                 id="filtre-tri"
                 v-model="tri"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors bg-white"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors bg-white"
               >
                 <option value="created_at">
                   Plus recents
@@ -218,7 +219,7 @@ chargerAvis()
           <div class="flex items-center gap-3">
             <button
               type="submit"
-              class="px-6 py-2.5 bg-amber-700 text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors flex items-center gap-2"
+              class="px-5 py-2 bg-amber-700 text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors flex items-center gap-2"
               :disabled="chargement"
             >
               <font-awesome-icon v-if="chargement" :icon="['fas', 'spinner']" class="animate-spin" />
@@ -228,7 +229,7 @@ chargerAvis()
             <button
               v-if="aFiltresActifs"
               type="button"
-              class="px-4 py-2.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+              class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
               @click="reinitialiser"
             >
               Reinitialiser

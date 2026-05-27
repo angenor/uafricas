@@ -1,25 +1,24 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
-    <div class="relative h-96 overflow-hidden bg-linear-to-br from-custom-chocolat via-amber-700 to-custom-green">
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
+    <div class="group relative overflow-hidden bg-linear-to-br from-custom-chocolat via-amber-700 to-custom-green">
       <div class="absolute inset-0 opacity-10"
            style="background-image: repeating-linear-gradient(135deg, transparent, transparent 35px, rgba(255,255,255,0.1) 35px, rgba(255,255,255,0.1) 70px);"></div>
-      <div class="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-white/5 animate-pulse"></div>
-      <div class="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5 animate-pulse" style="animation-delay: 1s;"></div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center px-4">
-        <h1 class="text-white text-5xl md:text-6xl font-display font-bold mb-4 animate-fadeInUp tracking-tight">
-          Publications
-        </h1>
-        <div class="h-1 w-24 bg-linear-to-r from-amber-300 to-custom-green rounded-full mb-4 animate-expandWidth"></div>
-        <p class="text-white/85 text-lg md:text-xl text-center max-w-2xl animate-fadeInUp animation-delay-200">
-          Un flux unique pour toutes les voix d'Afrique
-        </p>
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-display font-bold tracking-tight transition-opacity duration-300 group-hover:opacity-0">
+            Publications
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Un flux unique pour toutes les voix d'Afrique
+          </p>
+        </div>
       </div>
     </div>
 
     <!-- Contenu -->
-    <div class="max-w-7xl mx-auto px-4 py-8 -mt-16 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 py-8 relative z-10">
       <!-- Barre de navigation -->
       <div class="bg-white rounded-xl shadow-lg p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
@@ -85,9 +84,9 @@
 
               <!-- Pays -->
               <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pays</label>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Territoire</label>
                 <select v-model="paysSelectionne" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-custom-green/30 focus:border-custom-green transition bg-white text-sm">
-                  <option value="">Tous les pays</option>
+                  <option value="">Tous les territoires</option>
                   <option v-for="pays in paysDisponibles" :key="pays" :value="pays">{{ pays }}</option>
                 </select>
               </div>
@@ -151,7 +150,8 @@
               <div
                 v-for="pub in publicationsFiltrees"
                 :key="pub.key"
-                class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-gray-200"
+                class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-gray-200"
+                :class="{ 'cursor-pointer': pub.source === 'codimoi' }"
                 @click="ouvrirPublication(pub)"
               >
                 <!-- Bande colorée -->
@@ -342,7 +342,7 @@
 
 <script setup lang="ts">
 import { getCategoryLabel, type CodiMoiPostAPI, type CategoriePost, type CommentaireAPI } from '~/composables/useCodiMoi'
-import type { ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 useHead({
   title: 'Publications de la Communauté | UAfricas',
@@ -382,7 +382,6 @@ interface PublicationGouvernance {
 type Publication = PublicationCodimoi | PublicationGouvernance
 
 const breadcrumbs = [
-  { label: 'Accueil', to: '/' },
   { label: 'Publications', to: undefined },
 ]
 
@@ -627,11 +626,10 @@ const reinitialiser = () => {
 
 // Clic sur une publication
 const ouvrirPublication = async (pub: Publication) => {
+  // Seules les publications Codimoi ouvrent une vue détaillée (modale).
+  // Les contributions de gouvernance n'ont pas de page détail.
   if (pub.source === 'codimoi') {
     await ouvrirPostCodimoi(pub.data)
-  }
-  else {
-    navigateTo(`/universite/gouvernance/${pub.data.id}`)
   }
 }
 
@@ -696,7 +694,7 @@ const commenterModalCodimoi = async (contenu: string) => {
 const partagerModalCodimoi = () => {
   if (!selectedPost.value) return
   if (import.meta.client && navigator.clipboard) {
-    navigator.clipboard.writeText(`${window.location.origin}/evenements/codi-moi/${selectedPost.value.id}`)
+    navigator.clipboard.writeText(`${window.location.origin}/codi-moi/${selectedPost.value.id}`)
     notifier('Lien copié dans le presse-papiers !')
   }
 }
@@ -709,20 +707,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes expandWidth {
-  from { width: 0; }
-  to { width: 6rem; }
-}
-
-.animate-fadeInUp { animation: fadeInUp 0.6s ease-out forwards; }
-.animate-expandWidth { animation: expandWidth 0.8s ease-out forwards; }
-.animation-delay-200 { animation-delay: 200ms; }
-
 .feed-enter-active,
 .feed-leave-active {
   transition: all 0.35s ease;

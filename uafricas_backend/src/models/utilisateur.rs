@@ -102,6 +102,7 @@ pub struct ModifierProfilRequest {
     pub ville: Option<String>,
     pub biographie: Option<String>,
     pub langue_preferee: Option<String>,
+    pub pays_residence_id: Option<Uuid>,
 }
 
 /// Corps de la requete POST /api/auth/changer-mot-de-passe

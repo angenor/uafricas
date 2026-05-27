@@ -146,7 +146,7 @@ onMounted(charger)
             <input
               v-model="filtreRecherche"
               type="text"
-              placeholder="Nom, fonction, pays…"
+              placeholder="Nom, fonction, territoire…"
               class="input input-bordered input-sm w-full"
             />
           </div>
@@ -185,7 +185,7 @@ onMounted(charger)
                 <tr>
                   <th>Candidat</th>
                   <th>Fonction</th>
-                  <th>Pays</th>
+                  <th>Territoire</th>
                   <th>Spécialités</th>
                   <th class="text-center">Statut</th>
                   <th>Soumis le</th>

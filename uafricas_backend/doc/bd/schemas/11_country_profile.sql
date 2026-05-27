@@ -23,6 +23,16 @@ CREATE TABLE country_profile.fiche_pays (
     langues_populaires   TEXT,                        -- liste séparée par virgules ou JSON
     monnaie              VARCHAR(120),
     fuseau_horaire       VARCHAR(60),
+    -- Bloc « À savoir avant de voyager » (infos pratiques uniques par territoire,
+    -- contribuables par tous via le canal de contribution scalaire fiche_pays)
+    voyage_langue_internationale     TEXT,
+    voyage_langue_locale             TEXT,
+    voyage_infos_visa                TEXT,
+    voyage_infos_sanitaires          TEXT,
+    voyage_meteo                     TEXT,
+    voyage_prises_electriques        TEXT,
+    voyage_contacts_tourisme         TEXT,
+    voyage_recommandations_securite  TEXT,
     cree_par             UUID         NOT NULL,      -- [xref] iam.utilisateur
     created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW()

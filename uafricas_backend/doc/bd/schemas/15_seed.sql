@@ -86,7 +86,10 @@ INSERT INTO iam.permission (nom, slug, type_ressource, action) VALUES
     ('Modérer les BadHabits',          'bad_habit.moderer',     'bad_habit',   'moderer'),
     ('Modérer les IdeaForces',         'idea_force.moderer',    'idea_force',  'moderer'),
     -- Fiches pays
-    ('Gérer les fiches pays',          'fiche_pays.gerer',      'fiche_pays',  'gerer');
+    ('Gérer les fiches pays',          'fiche_pays.gerer',      'fiche_pays',  'gerer'),
+    -- Expertise (demandes pour devenir expert)
+    ('Voir les demandes d''expertise',  'expertise.voir',       'expertise',   'voir'),
+    ('Valider une demande d''expertise','expertise.valider',    'expertise',   'valider');
 
 
 -- Attribution des permissions au rôle super_admin

@@ -16,6 +16,14 @@ const saving = ref(false)
 const erreurLocale = ref<string | null>(null)
 const successMsg = ref<string | null>(null)
 
+// Modération admin (feature 001-ressources-fermeture-session, US2)
+const modalReactivation = ref(false)
+const rechargerSalleApresReactivation = async () => {
+  await chargerDetail(id)
+  successMsg.value = 'Salle réactivée avec succès'
+  setTimeout(() => { successMsg.value = null }, 3000)
+}
+
 const form = reactive({
   titre: '',
   description: '',
@@ -99,11 +107,11 @@ const ajouterPays = async () => {
   erreurPays.value = null
   try {
     const ok = await ajouterPaysOrigine(id, paysSelectionne.value)
-    if (!ok) throw new Error('Échec de l\'ajout du pays')
+    if (!ok) throw new Error('Échec de l\'ajout du territoire')
     paysSelectionne.value = ''
     await chargerDetail(id)
   } catch (e: any) {
-    erreurPays.value = e?.data?.error || e?.message || 'Erreur lors de l\'ajout du pays'
+    erreurPays.value = e?.data?.error || e?.message || 'Erreur lors de l\'ajout du territoire'
   } finally {
     sauvegardePays.value = false
   }
@@ -114,10 +122,10 @@ const retirerPays = async (paysId: string) => {
   erreurPays.value = null
   try {
     const ok = await retirerPaysOrigine(id, paysId)
-    if (!ok) throw new Error('Échec du retrait du pays')
+    if (!ok) throw new Error('Échec du retrait du territoire')
     await chargerDetail(id)
   } catch (e: any) {
-    erreurPays.value = e?.data?.error || e?.message || 'Erreur lors du retrait du pays'
+    erreurPays.value = e?.data?.error || e?.message || 'Erreur lors du retrait du territoire'
   } finally {
     sauvegardePays.value = false
   }
@@ -211,10 +219,34 @@ onMounted(() => {
           <font-awesome-icon icon="video" class="mr-1" /> Sessions
         </button>
         <button role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'pays' }" @click="ongletActif = 'pays'">
-          <font-awesome-icon icon="globe" class="mr-1" /> Pays d'origine
+          <font-awesome-icon icon="globe" class="mr-1" /> Territoire d'origine
         </button>
         <button role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'administrateurs' }" @click="ongletActif = 'administrateurs'">
           <font-awesome-icon icon="user-shield" class="mr-1" /> Administrateurs de salle
+        </button>
+        <button role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'historique-moderation' }" @click="ongletActif = 'historique-moderation'">
+          <font-awesome-icon icon="gavel" class="mr-1" /> Historique de modération
+        </button>
+      </div>
+
+      <!-- Bandeau désactivation administrative (feature 001-ressources-fermeture-session, US2) -->
+      <div
+        v-if="salleDetail.desactivee_admin"
+        class="alert alert-error mb-4 flex items-center justify-between"
+      >
+        <div>
+          <font-awesome-icon icon="ban" class="mr-2" />
+          <span class="font-semibold">Salle désactivée par administration</span>
+          <p v-if="salleDetail.desactivee_admin.motif" class="text-sm mt-1">
+            Motif : {{ salleDetail.desactivee_admin.motif }}
+          </p>
+          <p class="text-xs opacity-75">
+            Désactivée le {{ new Date(salleDetail.desactivee_admin.desactivee_at).toLocaleString('fr-FR') }}
+          </p>
+        </div>
+        <button class="btn btn-success btn-sm" @click="modalReactivation = true">
+          <font-awesome-icon icon="circle-check" class="mr-1" />
+          Réactiver
         </button>
       </div>
 
@@ -306,12 +338,12 @@ onMounted(() => {
       <div v-if="ongletActif === 'pays'" class="card bg-base-100 shadow-sm">
         <div class="card-body">
           <h3 class="font-semibold mb-4">
-            Pays d'origine de la langue
+            Territoire d'origine de la langue
             <span class="badge badge-outline badge-sm ml-2">{{ salleDetail.pays_origine?.length ?? 0 }}</span>
           </h3>
 
           <p class="text-sm text-base-content/60 mb-4">
-            Associe à cette salle les pays où la langue cible est parlée à l'origine. Visible côté public sur la carte de la salle. Les pays archivés sont affichés en gris et peuvent être retirés.
+            Associe à cette salle les territoires où la langue cible est parlée à l'origine. Visible côté public sur la carte de la salle. Les territoires archivés sont affichés en gris et peuvent être retirés.
           </p>
 
           <div v-if="erreurPays" class="alert alert-error mb-4">
@@ -326,7 +358,7 @@ onMounted(() => {
               :key="p.id"
               class="badge badge-lg gap-2"
               :class="paysListe.find(pl => pl.id === p.id && !pl.actif) ? 'badge-ghost opacity-60' : 'badge-primary'"
-              :title="paysListe.find(pl => pl.id === p.id && !pl.actif) ? 'Pays archivé — masqué côté public' : ''"
+              :title="paysListe.find(pl => pl.id === p.id && !pl.actif) ? 'Territoire archivé — masqué côté public' : ''"
             >
               <span v-if="p.code_iso2">{{ p.code_iso2 }}</span>
               <span>{{ p.nom }}</span>
@@ -335,22 +367,22 @@ onMounted(() => {
                 class="btn btn-ghost btn-xs btn-circle"
                 :disabled="sauvegardePays"
                 @click="retirerPays(p.id)"
-                aria-label="Retirer ce pays"
+                aria-label="Retirer ce territoire"
               >
                 <font-awesome-icon icon="xmark" />
               </button>
             </span>
             <span v-if="!salleDetail.pays_origine?.length" class="text-sm text-base-content/50 italic">
-              Aucun pays d'origine associé
+              Aucun territoire d'origine associé
             </span>
           </div>
 
           <!-- Sélecteur d'ajout -->
           <div class="flex items-end gap-2">
             <div class="form-control flex-1">
-              <label class="label"><span class="label-text">Ajouter un pays</span></label>
+              <label class="label"><span class="label-text">Ajouter un territoire</span></label>
               <select v-model="paysSelectionne" class="select select-bordered" :disabled="sauvegardePays">
-                <option value="" disabled>Sélectionner un pays</option>
+                <option value="" disabled>Sélectionner un territoire</option>
                 <option v-for="p in paysDisponibles" :key="p.id" :value="p.id">
                   {{ p.code_iso2 ? `${p.code_iso2} — ` : '' }}{{ p.nom }}
                 </option>
@@ -382,6 +414,20 @@ onMounted(() => {
           <AdminAfrolangSalleAdministrateursPanel :salle-id="id" />
         </div>
       </div>
+
+      <!-- Onglet Historique de modération (feature 001-ressources-fermeture-session, US3) -->
+      <div v-if="ongletActif === 'historique-moderation'">
+        <AdminAfrolangSalleHistoriqueModerationPanel :salle-id="id" />
+      </div>
+
+      <!-- Modal de réactivation (feature 001-ressources-fermeture-session, US2) -->
+      <AdminAfrolangSalleReactivationModal
+        :open="modalReactivation"
+        :salle-id="id"
+        :salle-titre="salleDetail?.titre"
+        @close="modalReactivation = false"
+        @success="rechargerSalleApresReactivation"
+      />
 
       <!-- Onglet Sessions -->
       <div v-if="ongletActif === 'sessions'" class="card bg-base-100 shadow-sm">

@@ -1,32 +1,31 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
-    <div class="relative h-96 overflow-hidden bg-linear-to-br from-amber-700 via-orange-500 to-yellow-400">
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
+    <div class="group relative overflow-hidden bg-linear-to-br from-amber-700 via-orange-500 to-yellow-400">
       <!-- Motif décoratif -->
       <div class="absolute inset-0 opacity-10"
            style="background-image: repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(255,255,255,0.1) 35px, rgba(255,255,255,0.1) 70px);"></div>
       <div class="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-white/5 animate-pulse"></div>
       <div class="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5 animate-pulse" style="animation-delay: 1s;"></div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center px-4">
-        
-        <h1 class="text-white text-5xl md:text-6xl font-display font-bold mb-4 animate-fadeInUp tracking-tight">
-          IdeaForces
-        </h1>
-        <div class="h-1 w-24 bg-linear-to-r from-yellow-200 to-white rounded-full mb-4 animate-expandWidth"></div>
-        <p class="text-white/80 text-lg md:text-xl text-center max-w-2xl animate-fadeInUp animation-delay-200">
-          Partager des idées et des orientations sur des enjeux de développement
-        </p>
-
-      
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-display font-bold tracking-tight transition-opacity duration-300 group-hover:opacity-0">
+            IdeaForces
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Partager des idées et des orientations sur des enjeux de développement
+          </p>
+        </div>
       </div>
     </div>
 
     <!-- Contenu -->
-    <div class="max-w-7xl mx-auto px-4 py-8 -mt-16 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 py-8 relative z-10">
       <!-- Barre de navigation -->
       <div class="bg-white rounded-xl shadow-lg p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <CommonBreadcrumbNav />
+        <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
         <div class="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -54,34 +53,34 @@
         <!-- Filtres -->
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-lg overflow-hidden sticky top-4">
-            <div class="bg-linear-to-r from-orange-500 to-amber-500 px-6 py-4">
-              <h3 class="text-white font-bold flex items-center gap-2">
+            <div class="bg-linear-to-r from-orange-500 to-amber-500 px-4 py-3">
+              <h3 class="text-white font-bold text-sm flex items-center gap-2">
                 <font-awesome-icon :icon="['fas', 'filter']" />
                 Filtres
               </h3>
             </div>
 
-            <div class="p-6 space-y-5">
+            <div class="p-4 space-y-4">
               <!-- Recherche -->
               <div class="relative">
                 <font-awesome-icon :icon="['fas', 'search']" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
                 <input v-model="recherche"
                        type="text"
                        placeholder="Rechercher..."
-                       class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition">
+                       class="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition">
               </div>
 
               <!-- Pays -->
               <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pays</label>
-                <select v-model="paysSelectionne" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition bg-white">
-                  <option value="">Tous les pays</option>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Territoire</label>
+                <select v-model="paysSelectionne" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition bg-white">
+                  <option value="">Tous les territoires</option>
                   <option v-for="pays in paysDisponibles" :key="pays" :value="pays">{{ pays }}</option>
                 </select>
               </div>
 
               <button @click="reinitialiser"
-                      class="w-full py-2.5 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition flex items-center justify-center gap-2">
+                      class="w-full py-2 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition flex items-center justify-center gap-2">
                 <font-awesome-icon :icon="['fas', 'undo']" class="text-xs" />
                 Réinitialiser
               </button>
@@ -112,8 +111,9 @@
           <!-- Cartes -->
           <div v-else class="space-y-5">
             <div v-for="contribution in contributionsFiltrees" :key="contribution.id"
-                 class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-gray-200"
-                 @click="voirDetail(contribution)">
+                 :id="`contrib-${contribution.id}`"
+                 class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border scroll-mt-24"
+                 :class="pubCible === contribution.id ? 'border-orange-400 ring-2 ring-orange-400 ring-offset-2' : 'border-gray-100 hover:border-gray-200'">
               <!-- Bande orange -->
               <div class="h-1.5 bg-linear-to-r from-amber-400 to-orange-500"></div>
 
@@ -125,13 +125,6 @@
                   </div>
 
                   <div class="flex-1 min-w-0">
-                    <!-- Badge -->
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                      <span class="px-2.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-bold uppercase tracking-wide">
-                        IdeaForces
-                      </span>
-                    </div>
-
                     <!-- Titre -->
                     <h3 class="text-lg font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors line-clamp-2">
                       {{ contribution.titre }}
@@ -175,12 +168,6 @@
                     </div>
                   </div>
 
-                  <!-- Flèche -->
-                  <div class="shrink-0 hidden sm:flex items-center">
-                    <div class="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-orange-100 flex items-center justify-center transition-all group-hover:translate-x-1">
-                      <font-awesome-icon :icon="['fas', 'chevron-right']" class="text-gray-400 group-hover:text-orange-600 text-xs transition-colors" />
-                    </div>
-                  </div>
                 </div>
 
                 <!-- Stats footer -->
@@ -197,6 +184,12 @@
                     <font-awesome-icon :icon="['fas', 'hand-fist']" />
                     {{ contribution.stats.soutiens || 0 }} soutiens
                   </span>
+                  <UniversiteGouvernancePartagePublication
+                    class="ml-auto"
+                    path="/universite/gouvernance/ideaforces"
+                    :id="contribution.id"
+                    :titre="contribution.titre"
+                  />
                 </div>
               </div>
             </div>
@@ -208,15 +201,25 @@
 </template>
 
 <script setup lang="ts">
-import { getContributionsByType, type ContributionCitoyenne } from '~/mocks/gouvernance/contributions'
+import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 useHead({
   title: 'IdeaForces - Gouvernance Citoyenne'
 })
 
+const breadcrumbs = [
+  { label: 'Université', to: '/universite' },
+  { label: 'Gouvernance', to: '/universite/gouvernance' },
+  { label: 'IdeaForces', to: undefined }
+]
+
 const userStore = useUserStore()
+const { getContributions } = useGouvernance()
+const { pubCible, cibler } = usePartagePublication()
 
 const contributions = ref<ContributionCitoyenne[]>([])
+const chargement = ref(false)
+const erreurChargement = ref<string | null>(null)
 const recherche = ref('')
 const paysSelectionne = ref('')
 const modalOuvert = ref(false)
@@ -231,16 +234,13 @@ function ouvrirModalPublication() {
 
 function apresPublication(_id: string) {
   modalOuvert.value = false
+  chargerContributions()
 }
 
 const paysDisponibles = computed(() => {
   const pays = new Set(contributions.value.map(c => c.localisation.pays))
   return Array.from(pays).sort()
 })
-
-const totalSoutiens = computed(() =>
-  contributions.value.reduce((acc, c) => acc + (c.stats.soutiens || 0), 0)
-)
 
 const contributionsFiltrees = computed(() => {
   return contributions.value.filter(c => {
@@ -257,10 +257,6 @@ const contributionsFiltrees = computed(() => {
   })
 })
 
-const voirDetail = (contribution: ContributionCitoyenne) => {
-  navigateTo(`/universite/gouvernance/${contribution.id}`)
-}
-
 const reinitialiser = () => {
   recherche.value = ''
   paysSelectionne.value = ''
@@ -270,7 +266,19 @@ const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(date))
 }
 
-onMounted(() => {
-  contributions.value = getContributionsByType('ideaforces')
-})
+async function chargerContributions() {
+  chargement.value = true
+  erreurChargement.value = null
+  try {
+    const { contributions: liste } = await getContributions({ type: 'ideaforces', parPage: 50 })
+    contributions.value = liste
+    cibler(liste.map(c => c.id))
+  } catch (err) {
+    erreurChargement.value = err instanceof Error ? err.message : 'Erreur lors du chargement'
+  } finally {
+    chargement.value = false
+  }
+}
+
+onMounted(chargerContributions)
 </script>

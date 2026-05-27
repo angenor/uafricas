@@ -227,7 +227,7 @@ const menuItems: MenuItem[] = [
     gradient: 'bg-linear-to-br from-amber-700 to-orange-900',
     image: '/images/danse-afrique.jpg',
     links: [
-      { label: 'Codimoi', to: '/evenements/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
+      { label: 'Codimoi', to: '/codi-moi', description: 'Contes et récits traditionnels', icon: 'fa-solid fa-book-open' },
       { label: 'Afrolang', to: '/afrolang', description: 'Apprenez les langues du continent', icon: 'fa-solid fa-language' },
       { label: 'Africalive', to: '/evenements/liste', description: 'Événements et rencontres en direct', icon: 'fa-solid fa-calendar-days' },
       { label: 'Afroculture', to: '/centres', description: 'Échanges culturels Afrique-diaspora', icon: 'fa-solid fa-earth-africa' },
@@ -236,7 +236,7 @@ const menuItems: MenuItem[] = [
       { label: 'Afripulse', to: '/opportunite-afrique', description: 'Offres d\'emploi et opportunités', icon: 'fa-solid fa-briefcase' },
       { label: 'Sabbafrica', to: '/echanges-sabbatiques', description: 'Programmes d\'échanges sabbatiques', icon: 'fa-solid fa-plane' },
       { label: 'Librafrica', to: '/bibliotheque/numerique', description: 'Ressources numériques et technologies', icon: 'fa-solid fa-display' },
-      { label: 'Mindshiftlab', to: '/universite/inuda', description: 'Institut numérique universitaire', icon: 'fa-solid fa-graduation-cap' },
+      { label: 'Mindshiftlab', to: '/universite', description: 'Institut numérique universitaire', icon: 'fa-solid fa-graduation-cap' },
       { label: 'Novagouv', to: '/universite/gouvernance', description: 'Gouvernance transparente et responsable', icon: 'fa-solid fa-scale-balanced' },
       { label: 'Africamood', to: '/medias', description: 'Médias et actualités du continent', icon: 'fa-solid fa-tv' },
       { label: 'Africantives', to: '/africantives', description: 'Innovations et startups africaines', icon: 'fa-solid fa-rocket' },
@@ -253,7 +253,7 @@ const menuItems: MenuItem[] = [
     gradient: 'bg-linear-to-br from-teal-600 to-cyan-800',
     image: '/images/fiche-opportunite.jpg',
     links: [
-      { label: 'Apporter mon expertise', to: '/experts', description: 'Partagez vos compétences avec le continent', icon: 'fa-solid fa-hand-holding-heart' },
+      { label: 'Apporter mon expertise', to: '/devenir-expert', description: 'Partagez vos compétences avec le continent', icon: 'fa-solid fa-hand-holding-heart' },
       { label: 'Financer un projet', to: '/financer-projet', description: 'Soutenez des initiatives prometteuses', icon: 'fa-solid fa-coins' },
       { label: 'Partager une innovation', to: '/partager-innovation', description: 'Faites connaître vos idées novatrices', icon: 'fa-solid fa-lightbulb' },
       { label: 'Devenir partenaire', to: '/devenir-partenaire', description: 'Rejoignez notre réseau de partenaires', icon: 'fa-solid fa-handshake' },

@@ -1,17 +1,17 @@
 <template>
-  <div class="relative bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 py-16 lg:py-24">
+  <div class="group relative bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 pt-16 pb-6">
     <!-- Pattern overlay -->
     <div class="absolute inset-0 opacity-10">
       <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%222%22 fill=%22white%22/></svg>'); background-size: 40px 40px;"></div>
     </div>
 
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- Titre -->
-      <div class="text-center mb-10">
-        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
-          Marché <span class="text-yellow-300">Africain</span>
+      <!-- Titre ↔ sous-titre en crossfade au survol -->
+      <div class="relative flex items-center justify-center min-h-10 md:min-h-12 mb-8 select-none">
+        <h1 class="absolute inset-0 flex items-center justify-center text-2xl md:text-4xl font-bold text-white transition-opacity duration-300 group-hover:opacity-0">
+          Marché <span class="text-yellow-300">&nbsp;Africain</span>
         </h1>
-        <p class="text-lg md:text-xl text-emerald-100 max-w-2xl mx-auto">
+        <p class="absolute inset-0 flex items-center justify-center text-sm md:text-base text-emerald-100 max-w-2xl mx-auto px-2 text-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           Découvrez des trésors à travers toute l'Afrique. Achetez, vendez, échangez.
         </p>
       </div>
@@ -20,7 +20,7 @@
       <div class="max-w-4xl mx-auto">
         <div class="bg-white rounded-2xl shadow-2xl p-2 flex flex-col md:flex-row gap-2">
           <!-- Dropdown catégorie -->
-          <div class="relative group">
+          <div class="relative">
             <button
               @click="showCategories = !showCategories"
               class="flex items-center justify-between w-full md:w-48 px-4 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"

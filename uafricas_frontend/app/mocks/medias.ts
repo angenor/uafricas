@@ -40,7 +40,7 @@ export const mediaCards: MediaCard[] = [
 
 export const mediaStats: MediaStat[] = [
   { value: '150+', label: 'Médias Disponibles' },
-  { value: '54', label: 'Pays Couverts' },
+  { value: '54', label: 'Territoires Couverts' },
   { value: '24/7', label: 'En Continue' },
   { value: 'HD+', label: 'Qualité Audio & Vidéo' },
 ]

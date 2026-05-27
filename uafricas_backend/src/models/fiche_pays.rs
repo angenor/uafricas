@@ -10,6 +10,10 @@ pub const FICHE_PAYS_COLONNES: &str =
      fp.image_drapeau_url, fp.image_embleme_url, fp.image_devise_url,
      fp.hymne_national, fp.langue_officielle, fp.langues_populaires,
      fp.monnaie, fp.fuseau_horaire,
+     fp.voyage_langue_internationale, fp.voyage_langue_locale,
+     fp.voyage_infos_visa, fp.voyage_infos_sanitaires, fp.voyage_meteo,
+     fp.voyage_prises_electriques, fp.voyage_contacts_tourisme,
+     fp.voyage_recommandations_securite,
      fp.cree_par, fp.created_at, fp.updated_at,
      p.nom AS pays_nom, p.code_iso2 AS pays_code, p.capitale AS pays_capitale";
 
@@ -32,6 +36,15 @@ pub struct FichePaysRow {
     pub langues_populaires: Option<String>,
     pub monnaie: Option<String>,
     pub fuseau_horaire: Option<String>,
+    // Bloc « À savoir avant de voyager »
+    pub voyage_langue_internationale: Option<String>,
+    pub voyage_langue_locale: Option<String>,
+    pub voyage_infos_visa: Option<String>,
+    pub voyage_infos_sanitaires: Option<String>,
+    pub voyage_meteo: Option<String>,
+    pub voyage_prises_electriques: Option<String>,
+    pub voyage_contacts_tourisme: Option<String>,
+    pub voyage_recommandations_securite: Option<String>,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -96,6 +109,15 @@ pub struct FichePaysDetailResponse {
     pub biographie: Option<String>,
     pub contexte: Option<String>,
     pub fuseau_horaire: Option<String>,
+    // Bloc « À savoir avant de voyager »
+    pub voyage_langue_internationale: Option<String>,
+    pub voyage_langue_locale: Option<String>,
+    pub voyage_infos_visa: Option<String>,
+    pub voyage_infos_sanitaires: Option<String>,
+    pub voyage_meteo: Option<String>,
+    pub voyage_prises_electriques: Option<String>,
+    pub voyage_contacts_tourisme: Option<String>,
+    pub voyage_recommandations_securite: Option<String>,
     pub nombre_contributions: i64,
     pub updated_at: DateTime<Utc>,
 }

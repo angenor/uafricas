@@ -1,0 +1,133 @@
+// Composable pour l'annuaire public des membres de la plateforme
+
+// ──────────────────────────────────────────────────────────────
+// Types et interfaces
+// ──────────────────────────────────────────────────────────────
+
+/** DTO correspondant a MembreResponse du backend */
+export interface MembreAPI {
+  id: string
+  nom: string
+  prenom: string
+  slug: string | null
+  photoUrl: string | null
+  fonction: string | null
+  pays: string | null
+  ville: string | null
+  biographie: string | null
+  roles: string[]
+  dateInscription: string
+  estExpert: boolean
+  estBiblio: boolean
+}
+
+/** Reponse paginee */
+export interface MembreListeAPI {
+  membres: MembreAPI[]
+  total: number
+  page: number
+  par_page: number
+  total_pages: number
+}
+
+/** Reponse API standardisee */
+interface ApiResponse<T> {
+  success: boolean
+  data: T | null
+  error: string | null
+}
+
+/** Parametres de filtre pour le listing */
+export interface MembreFiltres {
+  recherche?: string
+  /** "expert" | "biblio" */
+  type?: string
+  pays?: string
+  page?: number
+  par_page?: number
+}
+
+// ──────────────────────────────────────────────────────────────
+// Composable
+// ──────────────────────────────────────────────────────────────
+
+export const useMembres = () => {
+  const config = useRuntimeConfig()
+  const apiBase = config.public.apiBaseUrl as string
+
+  const chargement = ref(false)
+  const erreur = ref<string | null>(null)
+
+  /**
+   * Lister les membres avec filtres et pagination
+   */
+  const listerMembres = async (filtres: MembreFiltres = {}): Promise<MembreListeAPI | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const params = new URLSearchParams()
+      if (filtres.recherche) params.set('recherche', filtres.recherche)
+      if (filtres.type) params.set('type', filtres.type)
+      if (filtres.pays) params.set('pays', filtres.pays)
+      if (filtres.page) params.set('page', String(filtres.page))
+      if (filtres.par_page) params.set('par_page', String(filtres.par_page))
+
+      const queryString = params.toString()
+      const url = `${apiBase}/api/utilisateurs${queryString ? `?${queryString}` : ''}`
+
+      const reponse = await $fetch<ApiResponse<MembreListeAPI>>(url)
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement des membres')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur listerMembres:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /**
+   * Obtenir un membre par son ID
+   */
+  const obtenirMembre = async (id: string): Promise<MembreAPI | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<MembreAPI>>(
+        `${apiBase}/api/utilisateurs/${id}`,
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Membre non trouve')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur obtenirMembre:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  return {
+    chargement: readonly(chargement),
+    erreur: readonly(erreur),
+    listerMembres,
+    obtenirMembre,
+  }
+}

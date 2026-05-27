@@ -24,6 +24,7 @@ export interface Profil {
   ville: string | null
   biographie: string | null
   langue_preferee: string
+  pays_residence_id: string | null
   etat: string
   email_verifie: boolean
   roles: string[]
@@ -43,6 +44,7 @@ export interface ModifierProfilForm {
   ville?: string
   biographie?: string
   langue_preferee?: string
+  pays_residence_id?: string
 }
 
 /** Donnees pour changer le mot de passe */

@@ -182,7 +182,7 @@ export const centresCulturelsMock: CentreCulturel[] = [
       {
         id: 'prog-abj-1',
         titre: 'Journée de la Diversité Culturelle',
-        description: 'Célébration de la richesse culturelle ivoirienne avec des représentations de toutes les ethnies du pays. Danse, musique, gastronomie et artisanat traditionnel seront au rendez-vous.',
+        description: 'Célébration de la richesse culturelle ivoirienne avec des représentations de toutes les ethnies du territoire. Danse, musique, gastronomie et artisanat traditionnel seront au rendez-vous.',
         adress: 'Palais de la Culture, Treichville, Abidjan',
         type: 'presentiel',
         couvertureUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&h=400&fit=crop',

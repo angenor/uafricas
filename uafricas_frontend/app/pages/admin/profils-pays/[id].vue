@@ -15,7 +15,7 @@ const {
   chargerGroupesEthniques, creerGroupeEthnique, modifierGroupeEthnique, supprimerGroupeEthnique,
   chargerAlliances, creerAlliance, modifierAlliance, supprimerAlliance,
   chargerContes, creerConte, modifierConte, supprimerConte,
-  chargerSitesTouristiques, creerSiteTouristique, modifierSiteTouristique, supprimerSiteTouristique,
+  chargerSitesTouristiques, creerSiteTouristique, modifierSiteTouristique, supprimerSiteTouristique, definirVerificationSite,
   chargerSecteurs, creerSecteur, modifierSecteur, supprimerSecteur,
   chargerSaisons, creerSaison, modifierSaison, supprimerSaison,
   chargerLiensInterethniques, creerLienInterethnique, modifierLienInterethnique, supprimerLienInterethnique,
@@ -112,7 +112,7 @@ const sauvegarderGeneral = async () => {
     if (form.fuseau_horaire.trim()) body.fuseau_horaire = form.fuseau_horaire.trim()
 
     await modifier(id, body)
-    successMsg.value = 'Fiche pays mise a jour'
+    successMsg.value = 'Fiche territoire mise a jour'
     setTimeout(() => { successMsg.value = null }, 3000)
     await chargerDetail(id)
   } catch (e: any) {
@@ -339,6 +339,13 @@ const statsCards = computed<StatsCardData[]>(() => {
   ]
 })
 
+// ── Badge « Vérifié » des sites (US3) ───────────────────────
+
+const basculerVerification = async (site: { id: string, verifie: boolean }) => {
+  await definirVerificationSite(id, site.id, !site.verifie)
+  await chargerSitesTouristiques(id)
+}
+
 // ── Chargement par onglet ───────────────────────────────────
 
 const tabDataLoaded = reactive<Record<string, boolean>>({})
@@ -372,7 +379,7 @@ onMounted(async () => {
 
 <template>
   <div>
-    <AdminPageHeader :titre="ficheDetail?.pays_nom || 'Chargement...'" sous-titre="Modifier la fiche pays">
+    <AdminPageHeader :titre="ficheDetail?.pays_nom || 'Chargement...'" sous-titre="Modifier la fiche territoire">
       <template #actions>
         <NuxtLink to="/admin/profils-pays" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour
@@ -508,7 +515,7 @@ onMounted(async () => {
             <div class="flex items-center justify-between pt-4">
               <div class="text-sm text-base-content/50">
                 <span v-if="ficheDetail.cree_par_nom">Cree par {{ ficheDetail.cree_par_nom }}</span>
-                <br>Pays: {{ ficheDetail.pays_nom }} ({{ ficheDetail.pays_code }})
+                <br>Territoire: {{ ficheDetail.pays_nom }} ({{ ficheDetail.pays_code }})
               </div>
               <button type="submit" class="btn btn-primary" :class="{ loading: saving }" :disabled="saving">
                 <font-awesome-icon v-if="!saving" icon="floppy-disk" class="mr-1" /> Enregistrer
@@ -683,7 +690,7 @@ onMounted(async () => {
             </div>
             <div v-else class="overflow-x-auto">
               <table class="table table-zebra">
-                <thead><tr><th>Nom</th><th>Region</th><th>Coordonnees</th><th class="w-24">Actions</th></tr></thead>
+                <thead><tr><th>Nom</th><th>Region</th><th>Coordonnees</th><th>Verifie</th><th class="w-24">Actions</th></tr></thead>
                 <tbody>
                   <tr v-for="s in sitesTouristiques" :key="s.id">
                     <td>{{ s.nom }}</td>
@@ -691,6 +698,19 @@ onMounted(async () => {
                     <td>
                       <span v-if="s.latitude && s.longitude" class="text-sm">{{ s.latitude?.toFixed(4) }}, {{ s.longitude?.toFixed(4) }}</span>
                       <span v-else>-</span>
+                    </td>
+                    <td>
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          class="toggle toggle-success toggle-sm"
+                          :checked="s.verifie"
+                          @change="basculerVerification(s)"
+                        />
+                        <span v-if="s.verifie" class="badge badge-success badge-sm gap-1">
+                          <font-awesome-icon icon="circle-check" /> Verifie
+                        </span>
+                      </label>
                     </td>
                     <td>
                       <div class="flex gap-1">
@@ -791,7 +811,7 @@ onMounted(async () => {
             </div>
             <div v-else class="overflow-x-auto">
               <table class="table table-zebra">
-                <thead><tr><th>Pays lie</th><th>Type</th><th>Description</th><th class="w-24">Actions</th></tr></thead>
+                <thead><tr><th>Territoire lie</th><th>Type</th><th>Description</th><th class="w-24">Actions</th></tr></thead>
                 <tbody>
                   <tr v-for="l in liensInterethniques" :key="l.id">
                     <td>{{ l.pays_lie_nom || '-' }}</td>
@@ -998,8 +1018,8 @@ onMounted(async () => {
             <template v-if="ongletActif === 'liens'">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="form-control">
-                  <label class="label"><span class="label-text">Pays lie (UUID)</span></label>
-                  <input v-model="formLien.pays_lie_id" type="text" class="input input-bordered" placeholder="UUID du pays lie">
+                  <label class="label"><span class="label-text">Territoire lie (UUID)</span></label>
+                  <input v-model="formLien.pays_lie_id" type="text" class="input input-bordered" placeholder="UUID du territoire lie">
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text">Type de lien</span></label>

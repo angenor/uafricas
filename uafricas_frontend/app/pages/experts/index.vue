@@ -64,8 +64,8 @@
 
           <!-- Main Content Area -->
           <div class="flex-1 min-w-0">
-            <!-- Bouton Expert sur mesure moderne -->
-            <div class="flex justify-center mb-10">
+            <!-- Boutons d'action : trouver un expert sur mesure + devenir expert -->
+            <div class="flex flex-wrap justify-center items-center gap-4 mb-10">
               <NuxtLink
                 to="/filtre-expert"
                 class="inline-flex items-center gap-3 bg-white px-8 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all group"
@@ -82,7 +82,7 @@
                     />
                   </svg>
                 </div>
-                <span class="font-semibold text-gray-900">Trouver un expert sur mesure</span>
+                <span class="font-semibold text-gray-900">Trouver un(e) expert(e) sur mesure</span>
                 <svg
                   class="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform"
                   fill="none"
@@ -97,14 +97,32 @@
                   />
                 </svg>
               </NuxtLink>
+
+              <!-- CTA : soumettre sa demande pour devenir expert -->
+              <NuxtLink
+                to="/devenir-expert"
+                class="inline-flex items-center gap-3 bg-linear-to-r from-emerald-500 to-teal-500 text-white px-8 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all group"
+              >
+                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                    />
+                  </svg>
+                </div>
+                <span class="font-semibold">Faire connaître mon expertise</span>
+              </NuxtLink>
             </div>
 
-            <!-- Filtres modernises -->
-            <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
-              <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <!-- Filtres modernises (compacts) -->
+            <div class="bg-white rounded-2xl shadow-xl p-3 mb-8">
+              <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <!-- Filtres par tags -->
                 <div class="flex-1">
-                  <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+                  <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
                     Domaines d'expertise
                   </h3>
                   <div class="flex flex-wrap gap-2">
@@ -115,7 +133,7 @@
                         'bg-gray-100 text-gray-700 hover:bg-gray-200':
                           categorySelected !== 'Tout',
                       }"
-                      class="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                      class="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                       @click="filterByCategory('Tout')"
                     >
                       Tout
@@ -129,14 +147,14 @@
                         'bg-gray-100 text-gray-700 hover:bg-gray-200':
                           categorySelected !== category,
                       }"
-                      class="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                      class="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                       @click="filterByCategory(category)"
                     >
                       {{ category }}
                     </button>
                     <div v-if="categories.length > 5" class="relative">
                       <button
-                        class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all flex items-center gap-1"
+                        class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all flex items-center gap-1"
                         @click="showMoreCategories = !showMoreCategories"
                       >
                         Plus
@@ -168,11 +186,11 @@
                 </div>
 
                 <!-- Controles de tri et filtre pays -->
-                <div class="flex flex-col sm:flex-row gap-4">
+                <div class="flex flex-col sm:flex-row gap-3">
                   <!-- Filtre pays -->
                   <select
                     v-model="selectedCountry"
-                    class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                    class="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                   >
                     <option v-for="country in countries" :key="country.value" :value="country.value">
                       {{ country.label }}
@@ -242,7 +260,7 @@
                   />
                 </svg>
               </div>
-              <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun expert trouve</h3>
+              <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun(e) expert(e) trouvé(e)</h3>
               <p class="text-gray-500 max-w-md mx-auto">
                 Essayez de modifier vos criteres de recherche ou explorez d'autres domaines
                 d'expertise.

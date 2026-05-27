@@ -1,25 +1,27 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
     <div
-      class="relative h-80 bg-cover bg-center"
+      class="group relative bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
     >
       <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
-        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
-          Actions
-        </h1>
-        <div class="h-1 w-24 bg-custom-green rounded animate-line"></div>
-        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
-          Initiatives pour l'Afrique
-        </p>
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Actions
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Initiatives pour l'Afrique
+          </p>
+        </div>
       </div>
     </div>
 
     <!-- Section des cartes avec animation -->
-    <div class="relative -mt-24 z-40 px-4 py-16">
+    <div class="relative z-40 px-4 py-16">
       <TransitionGroup
         name="stagger-fade"
         tag="div"
@@ -161,30 +163,5 @@ div:hover .card-title::after {
 /* Duration for image scale transition */
 .duration-1500 {
   transition-duration: 1500ms;
-}
-
-/* Hero animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes expandLine {
-  from { width: 0; }
-  to { width: 6rem; }
-}
-
-.animate-title {
-  animation: fadeIn 1s ease-out forwards;
-}
-
-.animate-subtitle {
-  animation: fadeIn 1s ease-out 0.3s forwards;
-  opacity: 0;
-}
-
-.animate-line {
-  animation: expandLine 1.2s ease-out 0.1s forwards;
-  width: 0;
 }
 </style>

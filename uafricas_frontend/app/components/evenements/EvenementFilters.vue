@@ -32,7 +32,7 @@
         @change="emit('update:filtrePays', ($event.target as HTMLSelectElement).value)"
         class="rounded-md border border-custom-chocolat bg-white px-3 py-1 text-sm focus:outline-hidden focus:ring-2 focus:ring-custom-chocolat"
       >
-        <option value="">Tous les pays</option>
+        <option value="">Tous les territoires</option>
         <option v-for="pays in PAYS_AFRICAINS" :key="pays" :value="pays">
           {{ pays }}
         </option>

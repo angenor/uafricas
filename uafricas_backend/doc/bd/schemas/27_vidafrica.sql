@@ -57,6 +57,8 @@ CREATE TABLE media_content.piste_sous_titre (
     video_id             UUID NOT NULL REFERENCES media_content.video(id),
     langue               media_content.langue_sous_titre NOT NULL,
     est_complete         BOOLEAN NOT NULL DEFAULT false,
+    etat                 VARCHAR(50) NOT NULL DEFAULT 'publie'
+                         CHECK (etat IN ('brouillon', 'publie', 'masque')),
     cree_par             UUID NOT NULL,  -- [xref] iam.utilisateur
     created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),

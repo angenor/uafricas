@@ -48,7 +48,7 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
             <font-awesome-icon :icon="['fas', 'globe-africa']" class="w-4 h-4 mr-2 text-gray-400" />
-            Pays
+            Territoire
           </label>
           <select
             v-model="localFiltres.pays"

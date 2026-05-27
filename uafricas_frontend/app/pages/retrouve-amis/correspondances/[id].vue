@@ -40,7 +40,7 @@ const charger = async () => {
 const onAccepter = async (id: string, coordonnees: CoordonneesChoix) => {
   const res = await accepterCorrespondance(id, coordonnees)
   if (res) {
-    messageSucces.value = 'Correspondance acceptee avec succes !'
+    messageSucces.value = 'Correspondance acceptée avec succès !'
     setTimeout(() => { messageSucces.value = '' }, 4000)
     await charger()
   }
@@ -49,7 +49,7 @@ const onAccepter = async (id: string, coordonnees: CoordonneesChoix) => {
 // Refuser la correspondance
 const onRefuser = async (id: string) => {
   const confirmer = window.confirm(
-    'Etes-vous sur de vouloir refuser cette correspondance ? Cette action est irreversible.'
+    'Êtes-vous sûr de vouloir refuser cette correspondance ? Cette action est irréversible.'
   )
   if (!confirmer) return
 
@@ -63,7 +63,7 @@ const onRefuser = async (id: string) => {
 const onSignaler = async (avisId: string, motif: MotifSignalement, description: string) => {
   const res = await signalerAvis(avisId, { motif, description: description || undefined })
   if (res) {
-    messageSucces.value = 'Signalement envoye. Merci pour votre contribution.'
+    messageSucces.value = 'Signalement envoyé. Merci pour votre contribution.'
     setTimeout(() => { messageSucces.value = '' }, 4000)
   }
 }
@@ -79,23 +79,21 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
     <div
-      class="relative h-80 bg-cover bg-center"
+      class="group relative bg-cover bg-center"
       style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
     >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
-      <div class="absolute inset-0 flex flex-col items-center justify-center mt-14">
-        <h1 class="text-white text-4xl md:text-5xl font-bold mb-4 animate-title">
-          Correspondance
-        </h1>
-        <div class="h-1 w-24 bg-custom-green rounded animate-line" />
-        <p class="text-white text-xl md:text-2xl mt-4 animate-subtitle">
-          Detail du contact
-        </p>
-        <p class="text-white/80 text-sm md:text-base mt-3 max-w-3xl text-center px-4 animate-subtitle">
-          Examinez les details et decidez d'accepter ou de refuser le contact.
-        </p>
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70" />
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Correspondance
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Examinez les détails et décidez d'accepter ou de refuser le contact.
+          </p>
+        </div>
       </div>
     </div>
 
@@ -143,7 +141,7 @@ onMounted(() => {
         <font-awesome-icon :icon="['fas', 'circle-question']" class="text-5xl text-gray-300 mb-4" />
         <p class="text-gray-600 text-lg mb-2">Correspondance introuvable</p>
         <p class="text-gray-400 text-sm mb-6">
-          Cette correspondance n'existe pas ou vous n'avez pas les droits pour y acceder.
+          Cette correspondance n'existe pas ou vous n'avez pas les droits pour y accéder.
         </p>
         <button
           class="px-6 py-2.5 bg-amber-700 text-white font-medium rounded-lg hover:bg-amber-800 transition-colors cursor-pointer"

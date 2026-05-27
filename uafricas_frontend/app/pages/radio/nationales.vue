@@ -6,7 +6,7 @@ const { listerStations, listerPays, listerGenres, chargement } = useStationsRadi
 useHead({
   title: 'Radios Nationales | UAfricas',
   meta: [
-    { name: 'description', content: 'Écoutez les radios nationales africaines de chaque pays. Programmes locaux et informations régionales.' }
+    { name: 'description', content: 'Écoutez les radios nationales africaines de chaque territoire. Programmes locaux et informations régionales.' }
   ]
 })
 
@@ -26,7 +26,7 @@ const availableGenres = ref<string[]>([])
 
 // Filtres - Prédéfini sur les nationales
 const selectedProgramType = ref('Nationales')
-const selectedCountry = ref('Tous les pays')
+const selectedCountry = ref('Tous les territoires')
 const selectedGenre = ref('Tous les genres')
 
 // Computed
@@ -139,7 +139,7 @@ const handleVolumeChange = (newVolume: number) => {
 
 const resetFilters = () => {
   selectedProgramType.value = 'Nationales'
-  selectedCountry.value = 'Tous les pays'
+  selectedCountry.value = 'Tous les territoires'
   selectedGenre.value = 'Tous les genres'
 }
 
@@ -227,7 +227,7 @@ onMounted(async () => {
             </svg>
             {{ filteredStations.length }} Stations
             <span v-if="selectedProgramType !== 'Tous les types'">&nbsp;{{ selectedProgramType.toLowerCase() }}s</span>
-            <span v-if="selectedCountry !== 'Tous les pays'">&nbsp;en {{ selectedCountry }}</span>
+            <span v-if="selectedCountry !== 'Tous les territoires'">&nbsp;en {{ selectedCountry }}</span>
             <span v-if="selectedGenre !== 'Tous les genres'">&nbsp;genre {{ selectedGenre }}</span>
           </h2>
 

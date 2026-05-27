@@ -207,6 +207,135 @@ pub struct AnnonceListeResponse {
     pub total_pages: i64,
 }
 
+// ── DTOs membre (feature 001-marche-achat-vente-troc-don) ────
+
+/// Corps JSON pour contacter l'auteur d'une annonce via la messagerie.
+#[derive(Debug, Deserialize)]
+pub struct ContacterAuteurRequest {
+    pub message: String,
+}
+
+/// Colonnes SELECT pour « Mes annonces » (inclut `etat`, vue propriétaire).
+pub const MES_ANNONCES_COLONNES: &str =
+    "a.id, a.titre, a.slug, a.description,
+     a.type_operation::text AS type_operation,
+     a.condition_article::text AS condition_article,
+     a.prix::float8 AS prix, a.devise,
+     a.prix_negociable, a.ville, a.adresse,
+     a.type_contact::text AS type_contact, a.contact_info,
+     a.quantite, a.nombre_vues, a.cree_par,
+     a.etat::text AS etat,
+     a.created_at, a.updated_at,
+     c.nom AS categorie_nom,
+     u.nom AS auteur_nom, u.prenom AS auteur_prenom, u.email AS auteur_email,
+     (SELECT am.media_url FROM marketplace.annonce_media am
+      WHERE am.annonce_id = a.id AND am.est_principale = TRUE
+      LIMIT 1) AS photo_url,
+     (SELECT p.nom FROM marketplace.annonce_pays ap
+      JOIN shared.pays p ON p.id = ap.pays_id
+      WHERE ap.annonce_id = a.id LIMIT 1) AS pays_nom,
+     (SELECT COUNT(*) FROM marketplace.annonce_media am WHERE am.annonce_id = a.id) AS nombre_medias";
+
+/// Row pour « Mes annonces » (listing propriétaire avec état).
+#[derive(Debug, FromRow)]
+pub struct MesAnnonceRow {
+    pub id: Uuid,
+    pub titre: String,
+    pub slug: Option<String>,
+    pub description: String,
+    pub type_operation: String,
+    pub condition_article: Option<String>,
+    pub prix: Option<f64>,
+    pub devise: Option<String>,
+    pub prix_negociable: Option<bool>,
+    pub ville: Option<String>,
+    pub adresse: Option<String>,
+    pub type_contact: Option<String>,
+    pub contact_info: Option<String>,
+    pub quantite: Option<i32>,
+    pub nombre_vues: i32,
+    pub cree_par: Uuid,
+    pub etat: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub categorie_nom: Option<String>,
+    pub auteur_nom: String,
+    pub auteur_prenom: String,
+    pub auteur_email: String,
+    pub photo_url: Option<String>,
+    pub pays_nom: Option<String>,
+    pub nombre_medias: i64,
+}
+
+/// DTO d'un item « Mes annonces » (étend la réponse de liste avec `etat`).
+#[derive(Debug, Serialize)]
+pub struct MesAnnoncesItemResponse {
+    pub id: Uuid,
+    pub titre: String,
+    pub slug: Option<String>,
+    pub description: String,
+    pub type_echange: String,
+    pub categorie: String,
+    pub condition_article: String,
+    pub prix: f64,
+    pub devise: String,
+    pub prix_negociable: bool,
+    pub pays: String,
+    pub ville: Option<String>,
+    pub photo_url: Option<String>,
+    pub quantite: Option<i32>,
+    pub nombre_vues: i32,
+    pub nombre_medias: i64,
+    pub etat: String,
+    pub user: AnnonceAuteurResponse,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl MesAnnonceRow {
+    pub fn to_response(&self) -> MesAnnoncesItemResponse {
+        MesAnnoncesItemResponse {
+            id: self.id,
+            titre: self.titre.clone(),
+            slug: self.slug.clone(),
+            description: self.description.clone(),
+            type_echange: mapper_type_operation(&self.type_operation),
+            categorie: self.categorie_nom.clone().unwrap_or_else(|| "Autre".to_string()),
+            condition_article: mapper_condition(
+                self.condition_article.as_deref().unwrap_or("non_applicable"),
+            ),
+            prix: self.prix.unwrap_or(0.0),
+            devise: self.devise.clone().unwrap_or_else(|| "XOF".to_string()),
+            prix_negociable: self.prix_negociable.unwrap_or(false),
+            pays: self.pays_nom.clone().unwrap_or_else(|| "Non spécifié".to_string()),
+            ville: self.ville.clone(),
+            photo_url: self.photo_url.clone(),
+            quantite: self.quantite,
+            nombre_vues: self.nombre_vues,
+            nombre_medias: self.nombre_medias,
+            etat: self.etat.clone(),
+            user: AnnonceAuteurResponse {
+                uid: self.cree_par,
+                nom: self.auteur_nom.clone(),
+                prenom: self.auteur_prenom.clone(),
+                email: self.auteur_email.clone(),
+            },
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+}
+
+/// Réponse paginée pour « Mes annonces ».
+#[derive(Debug, Serialize)]
+pub struct MesAnnoncesResponse {
+    pub annonces: Vec<MesAnnoncesItemResponse>,
+    pub total: i64,
+    pub page: i64,
+    pub par_page: i64,
+    pub total_pages: i64,
+}
+
 // ── Parametres de requete ────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
@@ -219,6 +348,14 @@ pub struct AnnonceQueryParams {
     pub tri: Option<String>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,
+}
+
+/// Pagination des listings membre (« Mes annonces », favoris).
+#[derive(Debug, Deserialize)]
+pub struct MembreListeParams {
+    pub page: Option<i64>,
+    pub par_page: Option<i64>,
+    pub etat: Option<String>,
 }
 
 // ── Conversions ──────────────────────────────────────────────

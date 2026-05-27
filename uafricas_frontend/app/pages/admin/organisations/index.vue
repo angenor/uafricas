@@ -12,7 +12,7 @@ const deleteLoading = ref(false)
 const colonnes: TableColumn[] = [
   { key: 'denomination', label: 'Denomination', sortable: true },
   { key: 'type_organisation', label: 'Type', width: 'w-32' },
-  { key: 'pays_nom', label: 'Pays', width: 'w-28' },
+  { key: 'pays_nom', label: 'Territoire', width: 'w-28' },
   { key: 'etat', label: 'Etat', sortable: true, width: 'w-28' },
   { key: 'nombre_membres', label: 'Membres', width: 'w-24', align: 'center' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28', format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },

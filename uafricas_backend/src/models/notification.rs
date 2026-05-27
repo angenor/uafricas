@@ -28,6 +28,18 @@ pub mod afrolang {
     // Feature 001-admin-salles-publiques (US3)
     pub const ADMIN_SALLE_NOMME: &str = "afrolang.admin_salle_nomme";
     pub const ADMIN_SALLE_REVOQUE: &str = "afrolang.admin_salle_revoque";
+
+    // Feature 001-ressources-fermeture-session
+    // ── Workflow accompagnateur (US1) ──
+    pub const ACCOMPAGNATEUR_RECOMMANDATION_RECUE: &str =
+        "afrolang.accompagnateur.recommandation_recue";
+    pub const ACCOMPAGNATEUR_ACCEPTEE: &str = "afrolang.accompagnateur.acceptee";
+    pub const ACCOMPAGNATEUR_REFUSEE: &str = "afrolang.accompagnateur.refusee";
+    pub const ACCOMPAGNATEUR_RETIREE: &str = "afrolang.accompagnateur.retiree";
+    // ── Fermeture / réactivation administrative (US2) ──
+    pub const SESSION_FERMEE_ADMIN: &str = "afrolang.session.fermee_admin";
+    pub const SALLE_DESACTIVEE_ADMIN: &str = "afrolang.salle.desactivee_admin";
+    pub const SALLE_REACTIVEE_ADMIN: &str = "afrolang.salle.reactivee_admin";
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow)]

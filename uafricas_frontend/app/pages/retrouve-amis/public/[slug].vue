@@ -105,17 +105,21 @@ useHead({
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero compact -->
+    <!-- Hero compact (titre ↔ description au survol) -->
     <div
-      class="relative h-56 bg-cover bg-center"
+      class="group relative bg-cover bg-center pb-10"
       style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
     >
       <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
-      <div class="absolute inset-0 flex flex-col items-center justify-center pt-14">
-        <h1 class="text-white text-2xl md:text-3xl font-bold mb-2">
-          Avis de recherche
-        </h1>
-        <div class="h-1 w-16 bg-custom-green rounded" />
+      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Avis de recherche
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Aidez a retrouver une personne perdue de vue.
+          </p>
+        </div>
       </div>
     </div>
 

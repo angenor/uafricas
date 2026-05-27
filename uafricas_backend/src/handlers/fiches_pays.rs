@@ -96,6 +96,14 @@ async fn construire_detail_response(pool: &PgPool, row: &FichePaysRow) -> Result
         biographie: row.biographie.clone(),
         contexte: row.contexte.clone(),
         fuseau_horaire: row.fuseau_horaire.clone(),
+        voyage_langue_internationale: row.voyage_langue_internationale.clone(),
+        voyage_langue_locale: row.voyage_langue_locale.clone(),
+        voyage_infos_visa: row.voyage_infos_visa.clone(),
+        voyage_infos_sanitaires: row.voyage_infos_sanitaires.clone(),
+        voyage_meteo: row.voyage_meteo.clone(),
+        voyage_prises_electriques: row.voyage_prises_electriques.clone(),
+        voyage_contacts_tourisme: row.voyage_contacts_tourisme.clone(),
+        voyage_recommandations_securite: row.voyage_recommandations_securite.clone(),
         nombre_contributions,
         updated_at: row.updated_at,
     })
@@ -111,7 +119,8 @@ pub async fn lister_fiches(
     params: web::Query<FichePaysQueryParams>,
 ) -> Result<HttpResponse, ApiErreur> {
     let page = params.page.unwrap_or(1).max(1);
-    let par_page = params.par_page.unwrap_or(20).clamp(1, 54);
+    // Plafond = périmètre Afripulse complet (54 États + Sahara occidental).
+    let par_page = params.par_page.unwrap_or(20).clamp(1, 60);
     let offset = (page - 1) * par_page;
 
     // Construction dynamique du WHERE

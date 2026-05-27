@@ -31,6 +31,14 @@
       <div class="absolute bottom-0 left-0 right-0 px-3 pb-2 text-white">
         <h3 class="text-sm font-bold line-clamp-2 leading-tight">{{ salle.titre }}</h3>
       </div>
+
+      <!-- Badge désactivation administrative (feature 001-ressources-fermeture-session) -->
+      <div
+        v-if="salle.desactivee_admin"
+        class="absolute top-2 right-2"
+      >
+        <AfrolangSalleDesactiveeBadge :desactivation="salle.desactivee_admin" compact />
+      </div>
     </div>
 
     <!-- Contenu de la carte -->
@@ -44,10 +52,10 @@
       <div
         v-if="paysAffiches.length > 0"
         class="mb-3"
-        :aria-label="`Pays d'origine : ${tooltipPays}`"
+        :aria-label="`Territoire d'origine : ${tooltipPays}`"
       >
         <div class="text-[10px] uppercase tracking-wide text-gray-400 mb-1">
-          Pays d'origine
+          Territoire d'origine
         </div>
         <div
           v-if="modeCompact"
@@ -92,14 +100,24 @@
 
       <!-- Boutons d'action -->
       <div class="flex flex-col gap-1.5 pt-3 border-t border-gray-100">
+        <!-- Bandeau désactivation administrative (feature 001-ressources-fermeture-session) -->
+        <div
+          v-if="salle.desactivee_admin"
+          class="text-xs text-red-700 bg-red-50 border-2 border-red-700/30 rounded-md px-2 py-1.5 flex items-center gap-1.5"
+        >
+          <font-awesome-icon :icon="['fas', 'ban']" class="w-3 h-3" />
+          <span>Salle désactivée par l'administration</span>
+        </div>
         <!-- Bouton principal : démarrer / rejoindre la visioconférence -->
         <button
           class="w-full px-3 py-2 text-white text-xs rounded-lg font-semibold hover:shadow-md transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-wait"
-          :class="salle.sessions_en_cours > 0
-            ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
-            : 'bg-gradient-to-r from-blue-500 to-cyan-500'"
-          :disabled="chargement"
-          @click="$emit('entrer', salle.id)"
+          :class="salle.desactivee_admin
+            ? 'bg-gray-400 cursor-not-allowed'
+            : salle.sessions_en_cours > 0
+              ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+              : 'bg-gradient-to-r from-blue-500 to-cyan-500'"
+          :disabled="chargement || !!salle.desactivee_admin"
+          @click="!salle.desactivee_admin && $emit('entrer', salle.id)"
         >
           <font-awesome-icon
             :icon="['fas', chargement ? 'spinner' : (salle.sessions_en_cours > 0 ? 'video' : 'right-to-bracket')]"

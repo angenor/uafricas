@@ -68,8 +68,8 @@ const soumettre = async () => {
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="form-control">
-              <label class="label"><span class="label-text">Pays (UUID)</span></label>
-              <input v-model="form.pays_id" type="text" class="input input-bordered" placeholder="UUID du pays">
+              <label class="label"><span class="label-text">Territoire (UUID)</span></label>
+              <input v-model="form.pays_id" type="text" class="input input-bordered" placeholder="UUID du territoire">
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Ville</span></label>

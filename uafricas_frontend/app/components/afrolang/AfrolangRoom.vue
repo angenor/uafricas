@@ -5,7 +5,15 @@
       <!-- Header -->
       <div class="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
         <div class="flex items-center gap-3 min-w-0">
-          <h2 class="text-lg font-bold truncate">{{ session.titre || 'Session Afrolang' }}</h2>
+          <div class="min-w-0 flex flex-col leading-tight">
+            <h2 class="text-base sm:text-lg font-bold truncate">
+              {{ salleNom || session.titre || 'Session Afrolang' }}
+            </h2>
+            <span
+              v-if="sousTitre"
+              class="text-xs text-gray-400 truncate"
+            >{{ sousTitre }}</span>
+          </div>
           <span
             v-if="connectionState === 'connected'"
             class="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 animate-pulse shrink-0"
@@ -22,6 +30,39 @@
             @click="sidebarOuverte = !sidebarOuverte"
           >
             <font-awesome-icon :icon="['fas', 'users']" class="w-4 h-4" />
+          </button>
+          <button
+            v-if="monNiveauModerateurSession"
+            class="px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
+            :class="moderationPanelOuvert ? 'bg-amber-500 text-white' : 'bg-gray-700/60 text-amber-300'"
+            aria-label="Ouvrir le panneau de modération"
+            title="Permissions tableau blanc & mise en évidence"
+            @click="moderationPanelOuvert = !moderationPanelOuvert"
+          >
+            <font-awesome-icon :icon="['fas', 'shield-halved']" class="w-4 h-4" />
+            <span class="hidden sm:inline">Modération</span>
+          </button>
+          <!-- Fermeture pour abus (admin plateforme OU admin de salle) — FR-019 -->
+          <button
+            v-if="peutFermerPourAbus"
+            class="px-3 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2 text-sm font-medium bg-red-700/70 text-red-50"
+            aria-label="Fermer la session pour abus et désactiver la salle"
+            title="Fermer pour abus (désactive la salle)"
+            @click="fermetureModaleOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'ban']" class="w-4 h-4" />
+            <span class="hidden sm:inline">Fermer la salle</span>
+          </button>
+          <!-- Ressources contribuées (feature 001-ressources-fermeture-session, US1) -->
+          <button
+            class="px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
+            :class="ressourcesOuvertes ? 'bg-emerald-500 text-white' : 'bg-gray-700/60 text-emerald-300'"
+            aria-label="Ouvrir le panneau des ressources contribuées"
+            title="Partager un document, une vidéo YouTube, un lien ou recommander un accompagnateur"
+            @click="ressourcesOuvertes = !ressourcesOuvertes"
+          >
+            <font-awesome-icon :icon="['fas', 'share-nodes']" class="w-4 h-4" />
+            <span class="hidden sm:inline">Ressources</span>
           </button>
         </div>
       </div>
@@ -61,10 +102,46 @@
           v-if="tableauBlancOuvert && session.tableau_blanc_actif"
           :session-id="session.id"
           :est-moderateur="estModerateur"
+          :ecriture-autorisee="monEcritureAutorisee"
           :room="room"
           class="w-1/2 border-l border-gray-700"
           @fermer="tableauBlancOuvert = false"
         />
+
+        <!-- Panneau modération (visible uniquement pour les modérateurs de session) -->
+        <AfrolangSalleModerationPanel
+          v-if="moderationPanelOuvert && monNiveauModerateurSession"
+          :session-id="session.id"
+          :participants="allParticipants"
+          :est-session-publique="!session.salle_privee_id"
+          @fermer="moderationPanelOuvert = false"
+        />
+
+        <!-- Ressources contribuées (feature 001-ressources-fermeture-session, US1) -->
+        <aside
+          v-if="ressourcesOuvertes && salleIdPourRessources"
+          class="w-full max-w-md lg:max-w-lg xl:max-w-xl border-l border-gray-700 bg-gray-50 text-gray-900 overflow-y-auto"
+        >
+          <div class="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 sticky top-0">
+            <span class="font-semibold text-sm flex items-center gap-2">
+              <font-awesome-icon :icon="['fas', 'share-nodes']" class="w-4 h-4 text-emerald-600" />
+              Ressources contribuées
+            </span>
+            <button
+              class="text-gray-500 hover:text-gray-800"
+              aria-label="Fermer"
+              @click="ressourcesOuvertes = false"
+            >
+              <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
+            </button>
+          </div>
+          <div class="p-3">
+            <AfrolangRessourcesContribueesPanel
+              :salle-id="salleIdPourRessources"
+              :session-id="session.id"
+            />
+          </div>
+        </aside>
       </div>
 
       <!-- Controles -->
@@ -82,10 +159,21 @@
         @quitter="handleQuitter"
         @terminer="handleTerminer"
       >
+        <template #reactions>
+          <AfrolangReactionPicker
+            :room="room"
+            :identite="localParticipant?.name ?? null"
+            :connected="connectionState === 'connected'"
+            @envoye="onReactionLocale"
+          />
+        </template>
         <template #apres-actions>
           <slot name="apres-actions" />
         </template>
       </AfrolangControls>
+
+      <!-- Overlay des réactions emoji flottantes (s'envolent à la Meet) -->
+      <AfrolangReactionsOverlay ref="reactionsOverlayRef" />
     </div>
 
     <!-- Sidebar participants -->
@@ -94,6 +182,15 @@
       :participants="allParticipants"
       :session-id="session.id"
       :dominant-speaker="dominantSpeaker"
+    />
+
+    <!-- Modale fermeture pour abus (feature 001-ressources-fermeture-session, FR-019) -->
+    <AfrolangFermerSessionModal
+      v-if="peutFermerPourAbus"
+      :ouvert="fermetureModaleOuverte"
+      :session-id="session.id"
+      @fermer="fermetureModaleOuverte = false"
+      @success="onSessionFermee"
     />
   </div>
 </template>
@@ -105,7 +202,6 @@ import {
   ConnectionState,
   Track,
   type RemoteParticipant,
-  type LocalParticipant,
   type Participant,
   type RemoteTrackPublication,
   type RemoteTrack,
@@ -131,18 +227,82 @@ const props = defineProps<{
   livekitUrl: string
   session: SessionDetailAPI
   estModerateur: boolean
+  /** ID de la salle publique parente — requis pour le panneau « Ressources contribuées »
+   *  (feature 001-ressources-fermeture-session, US1). Pour une session privée, le
+   *  parent doit résoudre `salle_privee.salle_id` et le passer ici. */
+  salleId?: string | null
+  /** Nom de la salle (langue / groupe ethnique) à afficher dans le header. */
+  salleNom?: string | null
+  /** Sous-titre du header (ex. nom de la salle privée ou titre de la session). */
+  sousTitre?: string | null
 }>()
+
+const salleIdPourRessources = computed(() => props.salleId ?? null)
+
+/** Fermeture pour abus (feature 001-ressources-fermeture-session, FR-019).
+ *  Accessible aux admins plateforme ET admins de salle (pas les modérateurs
+ *  attitrés ni les créateurs de salle privée). */
+const fermetureModaleOuverte = ref(false)
+const peutFermerPourAbus = computed(() => {
+  const n = monNiveauModerateurSession.value
+  return n === 'admin_plateforme' || n === 'admin_salle'
+})
+
+const onSessionFermee = () => {
+  fermetureModaleOuverte.value = false
+  // Sortie propre — la salle est désactivée, on quitte la session.
+  emit('quitter')
+}
 
 const emit = defineEmits<{
   quitter: []
   terminer: []
 }>()
 
+// Feature 001-session-moderation : composable partagé
+const {
+  monNiveauModerateurSession,
+  monEcritureAutorisee,
+  spotlightActif,
+  listerPermissionsTableauBlanc,
+  attacherListenerModeration,
+} = useAfrolang()
+let detacherListenerModeration: (() => void) | null = null
+
+// Réactions emoji flottantes (à la Google Meet)
+interface ReactionDataPacket {
+  type: 'reaction'
+  emoji: string
+  identite: string | null
+  ts: number
+}
+const reactionsOverlayRef = ref<{ jouer: (emoji: string, identite?: string | null) => void } | null>(null)
+const decoderReactions = new TextDecoder()
+
+const onReactionLocale = (emoji: string): void => {
+  reactionsOverlayRef.value?.jouer(emoji, localParticipant.value?.name ?? null)
+}
+
+const handleReactionData = (payload: Uint8Array, participant?: { identity?: string } | null): void => {
+  try {
+    // Ignorer ses propres paquets (déjà joués localement à l'envoi)
+    if (participant?.identity && room.value?.localParticipant?.identity === participant.identity) return
+    const data = JSON.parse(decoderReactions.decode(payload)) as Partial<ReactionDataPacket>
+    if (data?.type !== 'reaction' || typeof data.emoji !== 'string') return
+    reactionsOverlayRef.value?.jouer(data.emoji, data.identite ?? null)
+  }
+  catch {
+    /* paquet ignoré */
+  }
+}
+
 // State
 const room = shallowRef<Room | null>(null)
 const connectionState = ref<string>('connecting')
 const wasConnected = ref(false)
 const sidebarOuverte = ref(false)
+const moderationPanelOuvert = ref(false)
+const ressourcesOuvertes = ref(false)
 const tableauBlancOuvert = ref(false)
 const microActif = ref(true)
 const cameraActive = ref(true)
@@ -351,6 +511,11 @@ const connectToRoom = async () => {
     }
   })
 
+  // Réactions emoji (DataPacket `type:'reaction'`)
+  newRoom.on(RoomEvent.DataReceived, (payload: Uint8Array, participant?: RemoteParticipant) => {
+    handleReactionData(payload, participant)
+  })
+
   newRoom.on(RoomEvent.LocalTrackUnpublished, (publication) => {
     updateLocalParticipant()
     if (publication.source === Track.Source.ScreenShare) {
@@ -379,6 +544,12 @@ const connectToRoom = async () => {
     }, 1000)
 
     connectionState.value = 'connected'
+
+    // Feature 001-session-moderation : état initial + listener temps réel
+    await listerPermissionsTableauBlanc(props.session.id)
+    // FR-024 : initialiser spotlight depuis le GET /sessions/{id} (transmis en prop)
+    spotlightActif.value = props.session.spotlight ?? null
+    detacherListenerModeration = attacherListenerModeration(newRoom)
   }
   catch (e) {
     console.error('Erreur connexion LiveKit:', e)
@@ -392,6 +563,10 @@ onMounted(() => {
 
 onBeforeUnmount(async () => {
   if (dureeInterval) clearInterval(dureeInterval)
+  if (detacherListenerModeration) {
+    detacherListenerModeration()
+    detacherListenerModeration = null
+  }
   if (room.value) {
     await room.value.disconnect()
   }

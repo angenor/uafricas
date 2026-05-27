@@ -47,7 +47,13 @@
       <!-- Contenu principal -->
       <div class="bg-white mx-4 md:mx-16 lg:mx-72 -mt-16 relative z-10 rounded-t-lg shadow-xl">
         <!-- Breadcrumb -->
-        <CommonBreadcrumbNav class="px-7 pt-6" />
+        <CommonBreadcrumbNav
+          class="px-7 pt-6"
+          :custom-breadcrumbs="[
+            { label: 'Échanges Sabbatiques', to: '/echanges-sabbatiques' },
+            { label: programme.titre },
+          ]"
+        />
 
         <!-- Info bar -->
         <div
@@ -92,23 +98,68 @@
           />
         </div>
 
-        <!-- Bouton intérêt -->
+        <!-- Candidat retenu (affichage public, transparence) -->
+        <div v-if="programme.candidat_retenu" class="px-7 pt-6">
+          <div class="bg-custom-green/10 border border-custom-green rounded-lg p-4 flex items-center gap-3">
+            <font-awesome-icon :icon="['fas', 'award']" class="text-2xl text-custom-green" />
+            <div>
+              <p class="text-sm text-gray-500">Candidat retenu pour ce programme</p>
+              <p class="font-semibold text-custom-chocolat">
+                {{ programme.candidat_retenu.prenom ? `${programme.candidat_retenu.prenom} ` : '' }}{{ programme.candidat_retenu.nom }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action candidature -->
         <div class="px-7 pt-6">
-          <div v-if="isAuthenticated" class="bg-gray-50 p-4 rounded-lg">
+          <!-- Organisateur : gestion des candidatures -->
+          <div v-if="programme.est_organisateur" class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-gray-700 mb-3 flex items-center gap-2">
+              <font-awesome-icon :icon="['fas', 'user-tie']" class="text-custom-green" />
+              Vous êtes l'organisateur de ce programme.
+            </p>
+            <button
+              class="bg-custom-chocolat text-white px-5 py-2.5 rounded-lg font-medium hover:bg-custom-chocolat/90 transition-all flex items-center gap-2"
+              @click="ouvrirCandidatures"
+            >
+              <font-awesome-icon :icon="['fas', 'users']" />
+              Gérer les candidatures ({{ programme.nombre_candidatures }})
+            </button>
+          </div>
+
+          <!-- Candidat déjà inscrit -->
+          <div v-else-if="programme.a_deja_candidate" class="bg-green-50 border border-green-200 p-4 rounded-lg">
+            <p class="text-green-700 flex items-center gap-2">
+              <font-awesome-icon :icon="['fas', 'circle-check']" />
+              Vous avez déjà candidaté à ce programme.
+            </p>
+            <button
+              class="mt-3 text-sm text-custom-green hover:underline"
+              @click="modaleCandidature = true"
+            >
+              Modifier ma candidature
+            </button>
+          </div>
+
+          <!-- Bouton candidater -->
+          <div v-else-if="isAuthenticated" class="bg-gray-50 p-4 rounded-lg">
             <button
               class="w-full lg:w-auto bg-custom-green text-white px-6 py-3 rounded-lg font-medium hover:bg-custom-green/90 transition-all flex items-center justify-center gap-2"
-              @click="envoyerInteret"
+              @click="modaleCandidature = true"
             >
-              <font-awesome-icon :icon="['fas', 'heart']" />
-              Je suis intéressé(e) par ce programme
+              <font-awesome-icon :icon="['fas', 'paper-plane']" />
+              Je candidate
             </button>
             <p class="text-sm text-gray-500 mt-2">
-              Vous serez contacté(e) par l'organisateur pour plus d'informations.
+              Réservé aux personnes en emploi ou retraitées.
             </p>
           </div>
+
+          <!-- Non connecté -->
           <div v-else class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
             <p class="text-gray-700 mb-3">
-              Connectez-vous pour manifester votre intérêt pour ce programme.
+              Connectez-vous pour candidater à ce programme.
             </p>
             <NuxtLink
               to="/login"
@@ -126,9 +177,11 @@
             <font-awesome-icon :icon="['fas', 'info-circle']" class="text-custom-green" />
             Description du programme
           </h2>
-          <p class="text-gray-700 leading-relaxed whitespace-pre-line">
-            {{ programme.description }}
-          </p>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div
+            class="text-gray-700 leading-relaxed prose prose-sm max-w-none"
+            v-html="programme.description"
+          />
         </section>
 
         <!-- Informations détaillées -->
@@ -232,6 +285,103 @@
           </NuxtLink>
         </div>
       </div>
+
+      <!-- Modale de candidature -->
+      <SabbatiqueCandidatureModal
+        :programme-id="programme.id"
+        :open="modaleCandidature"
+        @close="modaleCandidature = false"
+        @success="onCandidatureSuccess"
+      />
+
+      <!-- Modale gestion des candidatures (organisateur) -->
+      <Teleport to="body">
+        <div
+          v-if="modaleGestion"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-8 overflow-y-auto"
+          @click.self="modaleGestion = false"
+        >
+          <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full my-auto">
+            <div class="flex items-center justify-between px-6 py-4 border-b">
+              <h2 class="text-lg font-bold text-custom-chocolat">
+                Candidatures reçues
+              </h2>
+              <button type="button" class="text-gray-400 hover:text-gray-600" @click="modaleGestion = false">
+                <font-awesome-icon :icon="['fas', 'xmark']" class="text-xl" />
+              </button>
+            </div>
+
+            <div class="px-6 py-5 max-h-[70vh] overflow-y-auto">
+              <p v-if="!candidatures.length" class="text-gray-500 text-sm text-center py-8">
+                Aucune candidature pour le moment.
+              </p>
+
+              <div
+                v-for="c in candidatures"
+                :key="c.id"
+                class="border rounded-lg p-4 mb-3"
+                :class="c.est_retenu ? 'border-custom-green bg-custom-green/5' : 'border-gray-200'"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="font-semibold text-gray-900">
+                      {{ c.nom_etat_civil || `${c.candidat.prenom || ''} ${c.candidat.nom}`.trim() }}
+                    </p>
+                    <p class="text-sm text-gray-600">{{ c.fonction_actuelle }}</p>
+                    <p class="text-xs text-gray-400">{{ c.lieu_residence }}</p>
+                    <div class="flex flex-wrap gap-2 mt-2 text-xs">
+                      <span v-if="c.statut_emploi_label" class="px-2 py-0.5 bg-gray-100 rounded-full text-gray-600">
+                        {{ c.statut_emploi_label }}
+                      </span>
+                      <span
+                        class="px-2 py-0.5 rounded-full"
+                        :class="c.repond_profil ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'"
+                      >
+                        {{ c.repond_profil ? 'Répond au profil' : 'Profil partiel' }}
+                      </span>
+                    </div>
+                    <div class="flex flex-wrap gap-3 mt-2 text-sm">
+                      <a v-if="c.cv_url" :href="c.cv_url" target="_blank" class="text-custom-green hover:underline">
+                        <font-awesome-icon :icon="['fas', 'file-pdf']" class="mr-1" />CV
+                      </a>
+                      <a v-if="c.lien_expertise" :href="c.lien_expertise" target="_blank" class="text-custom-green hover:underline">
+                        <font-awesome-icon :icon="['fas', 'link']" class="mr-1" />Compte expertise
+                      </a>
+                    </div>
+                    <p v-if="c.lettre_motivation" class="text-sm text-gray-600 mt-2 italic">
+                      « {{ c.lettre_motivation }} »
+                    </p>
+                  </div>
+                  <div class="shrink-0">
+                    <span v-if="c.est_retenu" class="inline-flex items-center gap-1 text-custom-green font-medium text-sm">
+                      <font-awesome-icon :icon="['fas', 'award']" /> Retenu
+                    </span>
+                    <button
+                      v-else
+                      class="bg-custom-green text-white px-3 py-1.5 rounded-md text-sm hover:bg-custom-green/90 transition-colors disabled:opacity-50"
+                      :disabled="selectionEnCours"
+                      @click="retenir(c.id)"
+                    >
+                      Retenir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+
+      <!-- Toast succès candidature -->
+      <Teleport to="body">
+        <div
+          v-if="toastSucces"
+          class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-custom-green text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2"
+        >
+          <font-awesome-icon :icon="['fas', 'circle-check']" />
+          Votre candidature a bien été envoyée !
+        </div>
+      </Teleport>
     </template>
   </div>
 </template>
@@ -244,16 +394,29 @@ import {
   formatDateCourte,
   PRISES_EN_CHARGE,
   type SabbatiqueDetailAPI,
+  type CandidatureAPI,
 } from '~/composables/useSabbatiques'
 import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const userStore = useUserStore()
-const { obtenirProgramme, chargement } = useSabbatiques()
+const {
+  obtenirProgramme,
+  chargement,
+  listerCandidatures,
+  selectionnerCandidat,
+} = useSabbatiques()
 
 const programme = ref<SabbatiqueDetailAPI | null>(null)
 
 const isAuthenticated = computed(() => userStore.isAuthenticated)
+
+// État des modales et candidatures (organisateur)
+const modaleCandidature = ref(false)
+const modaleGestion = ref(false)
+const toastSucces = ref(false)
+const candidatures = ref<CandidatureAPI[]>([])
+const selectionEnCours = ref(false)
 
 const getStatutLabel = (statut: string) => {
   const labels: Record<string, string> = {
@@ -280,8 +443,34 @@ const getPriseLabel = (value: string) => {
   return found ? found.label : value
 }
 
-const envoyerInteret = () => {
-  alert('Votre intérêt a été enregistré ! L\'organisateur vous contactera prochainement.')
+const rechargerProgramme = async () => {
+  const id = route.params.id as string
+  const result = await obtenirProgramme(id)
+  if (result) programme.value = result
+}
+
+const onCandidatureSuccess = async () => {
+  modaleCandidature.value = false
+  toastSucces.value = true
+  setTimeout(() => { toastSucces.value = false }, 4000)
+  await rechargerProgramme()
+}
+
+const ouvrirCandidatures = async () => {
+  if (!programme.value) return
+  const liste = await listerCandidatures(programme.value.id)
+  candidatures.value = liste || []
+  modaleGestion.value = true
+}
+
+const retenir = async (candidatureId: string) => {
+  if (!programme.value) return
+  selectionEnCours.value = true
+  const ok = await selectionnerCandidat(programme.value.id, candidatureId)
+  selectionEnCours.value = false
+  if (ok) {
+    await Promise.all([rechargerProgramme(), ouvrirCandidatures()])
+  }
 }
 
 onMounted(async () => {

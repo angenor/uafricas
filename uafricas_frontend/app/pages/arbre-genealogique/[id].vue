@@ -161,14 +161,21 @@ async function supprimerUnLien(lienId: string) {
 
 <template>
   <div class="mt-28">
-    <!-- Hero Section -->
-    <div class="bg-gradient-to-br from-[var(--color-custom-green)]/10 via-white to-[var(--color-custom-chocolat)]/5 px-4 py-10 text-center">
+    <!-- Hero Section (compact, titre ↔ description au survol) -->
+    <div class="group bg-gradient-to-br from-[var(--color-custom-green)]/10 via-white to-[var(--color-custom-chocolat)]/5 px-4 pt-6 pb-6 text-center select-none">
       <div class="mx-auto max-w-2xl">
         <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-custom-green)]/20">
           <font-awesome-icon :icon="['fas', 'user']" class="text-xl text-[var(--color-custom-green)]" />
         </div>
-        <h1 class="mb-1 text-2xl font-bold text-stone-800">Fiche personne</h1>
-        <p class="text-sm text-stone-500">Consultez et modifiez les informations de cette personne</p>
+        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
+        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
+          <h1 class="absolute inset-0 flex items-center justify-center text-stone-800 text-2xl font-bold transition-opacity duration-300 group-hover:opacity-0">
+            Fiche personne
+          </h1>
+          <p class="absolute inset-0 flex items-center justify-center text-stone-500 text-sm px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            Consultez et modifiez les informations de cette personne
+          </p>
+        </div>
       </div>
     </div>
 

@@ -7,7 +7,7 @@
           <span class="font-bold">C</span>onnaissez-vous l'histoire de l'Afrique ?
         </h2>
         <p class="mt-3 px-2 sm:px-5 text-lg sm:text-xl lg:text-2xl font-bold text-custom-chocolat">
-          Découvrez toute la richesse culturelle de l'Afrique, les pays,
+          Découvrez toute la richesse culturelle de l'Afrique, les territoires,
           cultures, les ethnies, les contes et histoires ainsi que le lien entre
           chaque culture
         </p>

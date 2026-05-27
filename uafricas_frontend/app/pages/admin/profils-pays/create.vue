@@ -28,7 +28,7 @@ const erreurLocale = ref<string | null>(null)
 const soumettre = async () => {
   erreurLocale.value = null
   if (!form.pays_id.trim()) {
-    erreurLocale.value = 'L\'identifiant du pays est requis'
+    erreurLocale.value = 'L\'identifiant du territoire est requis'
     return
   }
   try {
@@ -61,7 +61,7 @@ const soumettre = async () => {
 
 <template>
   <div>
-    <AdminPageHeader titre="Nouveau profil pays" sous-titre="Creer un profil pays">
+    <AdminPageHeader titre="Nouveau profil territoire" sous-titre="Creer un profil territoire">
       <template #actions>
         <NuxtLink to="/admin/profils-pays" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour
@@ -79,9 +79,9 @@ const soumettre = async () => {
         <form @submit.prevent="soumettre" class="space-y-6">
           <!-- Pays -->
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold border-b pb-2">Pays</h3>
+            <h3 class="text-lg font-semibold border-b pb-2">Territoire</h3>
             <div class="form-control">
-              <label class="label"><span class="label-text">Identifiant du pays (UUID) *</span></label>
+              <label class="label"><span class="label-text">Identifiant du territoire (UUID) *</span></label>
               <input v-model="form.pays_id" type="text" class="input input-bordered" required placeholder="Ex: 550e8400-e29b-41d4-a716-446655440000">
             </div>
           </div>
@@ -110,15 +110,15 @@ const soumettre = async () => {
             <h3 class="text-lg font-semibold border-b pb-2">Description</h3>
             <div class="form-control">
               <label class="label"><span class="label-text">Biographie</span></label>
-              <textarea v-model="form.biographie" class="textarea textarea-bordered h-32" placeholder="Presentation generale du pays..." />
+              <textarea v-model="form.biographie" class="textarea textarea-bordered h-32" placeholder="Presentation generale du territoire..." />
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Contexte</span></label>
-              <textarea v-model="form.contexte" class="textarea textarea-bordered h-24" placeholder="Contexte actuel du pays..." />
+              <textarea v-model="form.contexte" class="textarea textarea-bordered h-24" placeholder="Contexte actuel du territoire..." />
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Contexte historique</span></label>
-              <textarea v-model="form.contexte_historique" class="textarea textarea-bordered h-24" placeholder="Histoire et contexte historique du pays..." />
+              <textarea v-model="form.contexte_historique" class="textarea textarea-bordered h-24" placeholder="Histoire et contexte historique du territoire..." />
             </div>
           </div>
 

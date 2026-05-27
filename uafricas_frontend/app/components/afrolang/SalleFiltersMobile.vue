@@ -66,14 +66,14 @@
         <div v-if="pays.length > 0">
           <label class="block text-sm font-medium text-gray-700 mb-2">
             <font-awesome-icon :icon="['fas', 'globe']" class="w-4 h-4 mr-2 text-gray-400" />
-            Pays d'origine
+            Territoire d'origine
           </label>
           <select
             v-model="localFiltres.pays_id"
             class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             @change="emitChange"
           >
-            <option value="">Tous les pays</option>
+            <option value="">Tous les territoires</option>
             <option v-for="p in pays" :key="p.id" :value="p.id">
               {{ p.nom }}
             </option>

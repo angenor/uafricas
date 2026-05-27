@@ -191,7 +191,7 @@ onMounted(() => chargerDetailAvis(id))
               <p class="text-sm">{{ avisDetail.ecole || '--' }}</p>
             </div>
             <div>
-              <p class="text-xs text-base-content/50 uppercase font-semibold">Ville / Pays</p>
+              <p class="text-xs text-base-content/50 uppercase font-semibold">Ville / Territoire</p>
               <p class="text-sm">{{ avisDetail.ville || '--' }} {{ avisDetail.pays ? `, ${avisDetail.pays.nom}` : '' }}</p>
             </div>
             <div>

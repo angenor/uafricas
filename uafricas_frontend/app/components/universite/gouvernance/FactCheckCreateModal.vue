@@ -72,6 +72,44 @@
             </div>
           </div>
 
+          <!-- Volets préjugé / réalité -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-3 bg-red-50 rounded-lg border-l-4 border-red-400 space-y-2">
+              <p class="text-xs font-bold text-red-600 uppercase tracking-wide">
+                <font-awesome-icon :icon="['fas', 'xmark']" class="mr-1" />Préjugé
+              </p>
+              <input
+                v-model="form.prejuge_titre"
+                type="text"
+                placeholder="Titre du préjugé"
+                class="w-full px-3 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
+              />
+              <textarea
+                v-model="form.prejuge_description"
+                rows="2"
+                placeholder="Description du préjugé (optionnel)"
+                class="w-full px-3 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
+              />
+            </div>
+            <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-400 space-y-2">
+              <p class="text-xs font-bold text-green-600 uppercase tracking-wide">
+                <font-awesome-icon :icon="['fas', 'check']" class="mr-1" />Réalité
+              </p>
+              <input
+                v-model="form.realite_titre"
+                type="text"
+                placeholder="Titre de la réalité"
+                class="w-full px-3 py-2 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition text-sm bg-white"
+              />
+              <textarea
+                v-model="form.realite_description"
+                rows="2"
+                placeholder="Description de la réalité (optionnel)"
+                class="w-full px-3 py-2 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition text-sm bg-white"
+              />
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">Source</label>
@@ -144,6 +182,10 @@ const form = reactive<CreerFactcheckPayload>({
   source_originale: undefined,
   verdict: undefined,
   image_couverture_url: undefined,
+  prejuge_titre: undefined,
+  prejuge_description: undefined,
+  realite_titre: undefined,
+  realite_description: undefined,
 })
 
 const enCours = ref(false)
@@ -164,6 +206,10 @@ function reinitialiser() {
   form.source_originale = undefined
   form.verdict = undefined
   form.image_couverture_url = undefined
+  form.prejuge_titre = undefined
+  form.prejuge_description = undefined
+  form.realite_titre = undefined
+  form.realite_description = undefined
   erreurMessage.value = null
 }
 
@@ -183,6 +229,10 @@ async function soumettre() {
     if (form.source_originale?.trim()) payload.source_originale = form.source_originale.trim()
     if (form.verdict) payload.verdict = form.verdict
     if (form.image_couverture_url?.trim()) payload.image_couverture_url = form.image_couverture_url.trim()
+    if (form.prejuge_titre?.trim()) payload.prejuge_titre = form.prejuge_titre.trim()
+    if (form.prejuge_description?.trim()) payload.prejuge_description = form.prejuge_description.trim()
+    if (form.realite_titre?.trim()) payload.realite_titre = form.realite_titre.trim()
+    if (form.realite_description?.trim()) payload.realite_description = form.realite_description.trim()
 
     const id = await creerFactcheck(payload)
     emit('created', id)

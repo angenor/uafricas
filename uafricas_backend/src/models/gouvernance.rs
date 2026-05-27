@@ -35,6 +35,23 @@ pub struct ContributionRow {
     pub ville: Option<String>,
     pub categorie: Option<String>,
     pub gravite: Option<String>,
+    // Volets factcheck (préjugé / réalité) — NULL pour badhabits/ideaforces
+    pub prejuge_titre: Option<String>,
+    pub prejuge_description: Option<String>,
+    pub prejuge_likes: i32,
+    pub realite_titre: Option<String>,
+    pub realite_description: Option<String>,
+    pub realite_likes: i32,
+    // Compteurs de réaction globale (emojis)
+    pub nombre_coeur: i32,
+    pub nombre_pouce: i32,
+    pub nombre_rire: i32,
+    pub nombre_jaime_pas: i32,
+    // État de réaction de l'utilisateur courant (NULL/false si anonyme ou non-factcheck)
+    pub ma_reaction_general: Option<String>,
+    pub a_like_prejuge: bool,
+    pub a_like_realite: bool,
+    pub a_signale: bool,
     pub total_count: i64,
 }
 
@@ -61,6 +78,38 @@ pub struct ContributionStatsResponse {
     pub soutiens: i32,
 }
 
+/// Un volet d'un factcheck (préjugé ou réalité) avec son compteur de cœurs
+#[derive(Debug, Serialize)]
+pub struct FactcheckVoletResponse {
+    pub titre: String,
+    pub description: String,
+    pub likes: i32,
+}
+
+/// Compteurs de réaction globale (emojis) d'un factcheck
+#[derive(Debug, Serialize)]
+pub struct FactcheckReactionsResponse {
+    pub coeur: i32,
+    pub pouce: i32,
+    pub rire: i32,
+    pub jaime_pas: i32,
+    /// Réaction de l'utilisateur courant ('coeur'|'pouce'|'rire'|'jaime_pas') ou null
+    pub ma_reaction: Option<String>,
+}
+
+/// Détail factcheck : volets préjugé/réalité + réactions globales + état utilisateur
+#[derive(Debug, Serialize)]
+pub struct FactcheckDetailResponse {
+    pub prejuge: FactcheckVoletResponse,
+    #[serde(rename = "contrePrejuge")]
+    pub contre_prejuge: FactcheckVoletResponse,
+    pub reactions: FactcheckReactionsResponse,
+    pub a_like_prejuge: bool,
+    pub a_like_realite: bool,
+    /// L'utilisateur courant a déjà signalé ce factcheck
+    pub a_signale: bool,
+}
+
 #[derive(Debug, Serialize)]
 pub struct ContributionResponse {
     pub id: Uuid,
@@ -76,6 +125,47 @@ pub struct ContributionResponse {
     pub categorie: Option<String>,
     pub gravite: Option<String>,
     pub type_pratique: Option<String>,
+    /// Présent uniquement pour les contributions de type factcheck
+    pub factcheck: Option<FactcheckDetailResponse>,
+}
+
+/// Corps de requête pour réagir à un factcheck
+#[derive(Debug, Deserialize)]
+pub struct ReactionFactcheckRequest {
+    /// 'general' | 'prejuge' | 'realite'
+    pub cible: String,
+    /// pour general : 'coeur'|'pouce'|'rire'|'jaime_pas' ; pour prejuge/realite : 'coeur'
+    pub type_reaction: Option<String>,
+}
+
+/// État de réaction renvoyé après un toggle
+#[derive(Debug, Serialize, FromRow)]
+pub struct FactcheckReactionEtat {
+    pub nombre_coeur: i32,
+    pub nombre_pouce: i32,
+    pub nombre_rire: i32,
+    pub nombre_jaime_pas: i32,
+    pub prejuge_nombre_likes: i32,
+    pub realite_nombre_likes: i32,
+    pub ma_reaction_general: Option<String>,
+    pub a_like_prejuge: bool,
+    pub a_like_realite: bool,
+}
+
+/// Corps de requête pour signaler un factcheck
+#[derive(Debug, Deserialize)]
+pub struct SignalementRequest {
+    pub motif: Option<String>,
+    pub commentaire: Option<String>,
+}
+
+/// État renvoyé après un signalement
+#[derive(Debug, Serialize)]
+pub struct SignalementEtat {
+    pub nombre_signalements: i32,
+    pub etat: String,
+    pub deja_signale: bool,
+    pub suspendu: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -96,6 +186,35 @@ impl ContributionRow {
             "badhabits" => Some("mauvaise".to_string()),
             _ => None,
         };
+
+        // Détail factcheck (volets + réactions) uniquement pour les factchecks
+        let factcheck = if self.type_contribution == "factcheck" {
+            Some(FactcheckDetailResponse {
+                prejuge: FactcheckVoletResponse {
+                    titre: self.prejuge_titre.clone().unwrap_or_default(),
+                    description: self.prejuge_description.clone().unwrap_or_default(),
+                    likes: self.prejuge_likes,
+                },
+                contre_prejuge: FactcheckVoletResponse {
+                    titre: self.realite_titre.clone().unwrap_or_default(),
+                    description: self.realite_description.clone().unwrap_or_default(),
+                    likes: self.realite_likes,
+                },
+                reactions: FactcheckReactionsResponse {
+                    coeur: self.nombre_coeur,
+                    pouce: self.nombre_pouce,
+                    rire: self.nombre_rire,
+                    jaime_pas: self.nombre_jaime_pas,
+                    ma_reaction: self.ma_reaction_general.clone(),
+                },
+                a_like_prejuge: self.a_like_prejuge,
+                a_like_realite: self.a_like_realite,
+                a_signale: self.a_signale,
+            })
+        } else {
+            None
+        };
+
         ContributionResponse {
             id: self.id,
             type_contribution: self.type_contribution.clone(),
@@ -121,6 +240,7 @@ impl ContributionRow {
             categorie: self.categorie.clone(),
             gravite: self.gravite.clone(),
             type_pratique,
+            factcheck,
         }
     }
 }

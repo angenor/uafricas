@@ -449,3 +449,208 @@ CREATE INDEX idx_salle_admin_par_user
 
 COMMENT ON TABLE afrolang.salle_administrateur IS
     'Administrateurs scopés à une salle publique Afrolang (feature 001-admin-salles-publiques).';
+
+
+-- ============================================================================
+-- Feature 001-session-moderation
+-- ============================================================================
+-- 1) Permissions tableau blanc — état session-scoped (FR-010/FR-011/FR-012)
+--    Modérateurs d'office (admin plateforme, admin salle, modérateur attitré,
+--    créateur de salle privée) ne sont PAS stockés ici : leur droit est calculé
+--    par le helper Rust `est_moderateur_session()`.
+-- 2) Spotlight de session — 3 colonnes ajoutées à `session` (FR-020/FR-021/FR-022).
+
+-- ── Permissions tableau blanc (FR-010) ──
+CREATE TABLE afrolang.session_permission_tableau_blanc (
+    session_id      UUID         NOT NULL REFERENCES afrolang.session(id) ON DELETE CASCADE,
+    utilisateur_id  UUID         NOT NULL,                 -- [xref] iam.utilisateur
+    accorde_par     UUID         NOT NULL,                 -- [xref] iam.utilisateur (modérateur)
+    accorde_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (session_id, utilisateur_id)
+);
+
+CREATE INDEX idx_afrolang_perm_tb_session
+    ON afrolang.session_permission_tableau_blanc(session_id);
+CREATE INDEX idx_afrolang_perm_tb_user
+    ON afrolang.session_permission_tableau_blanc(utilisateur_id);
+
+COMMENT ON TABLE afrolang.session_permission_tableau_blanc IS
+    'Permissions d''écriture sur le tableau blanc d''une session Afrolang (feature 001-session-moderation).';
+
+
+-- ── Spotlight / mise en évidence (FR-020) ──
+ALTER TABLE afrolang.session
+    ADD COLUMN participant_mis_en_evidence_id UUID         NULL,  -- [xref] iam.utilisateur
+    ADD COLUMN mis_en_evidence_par            UUID         NULL,  -- [xref] iam.utilisateur (admin)
+    ADD COLUMN mis_en_evidence_at             TIMESTAMPTZ  NULL;
+
+ALTER TABLE afrolang.session
+    ADD CONSTRAINT ck_session_spotlight_coherent CHECK (
+        (participant_mis_en_evidence_id IS NULL AND mis_en_evidence_par IS NULL AND mis_en_evidence_at IS NULL)
+        OR
+        (participant_mis_en_evidence_id IS NOT NULL AND mis_en_evidence_par IS NOT NULL AND mis_en_evidence_at IS NOT NULL)
+    );
+
+
+-- ============================================================================
+-- Feature 001-ressources-fermeture-session
+-- ============================================================================
+-- 1) Ressources contribuées par la communauté au niveau salle (4 variants)
+-- 2) Mémorisation des accès aux salles privées (post code-acces validé)
+-- 3) Fermeture/réactivation administrative d'une salle + historique
+-- ============================================================================
+
+-- ── Types (feature 001-ressources-fermeture-session) ──
+
+CREATE TYPE afrolang.type_ressource_contribuee AS ENUM (
+    'document',         -- PDF / DOC / DOCX / ODT téléversé
+    'video_youtube',    -- URL YouTube + ID extrait
+    'accompagnateur',   -- Recommandation d'un membre tiers
+    'lien_web'          -- Lien web complémentaire
+);
+
+CREATE TYPE afrolang.statut_accompagnateur AS ENUM (
+    'en_attente',
+    'acceptee',
+    'refusee',
+    'retiree'
+);
+
+CREATE TYPE afrolang.type_evenement_moderation AS ENUM (
+    'fermeture_admin',
+    'reactivation_admin'
+);
+
+
+-- ── Extension afrolang.salle : désactivation administrative ──
+ALTER TABLE afrolang.salle
+    ADD COLUMN desactivee_admin_at      TIMESTAMPTZ,
+    ADD COLUMN desactivee_par           UUID,           -- [xref] iam.utilisateur
+    ADD COLUMN motif_desactivation      TEXT,
+    ADD COLUMN reactivee_at             TIMESTAMPTZ,
+    ADD COLUMN reactivee_par            UUID,           -- [xref] iam.utilisateur
+    ADD COLUMN commentaire_reactivation TEXT;
+
+ALTER TABLE afrolang.salle
+    ADD CONSTRAINT ck_salle_desactivation_coherente CHECK (
+        (desactivee_admin_at IS NULL AND desactivee_par IS NULL AND motif_desactivation IS NULL)
+        OR
+        (desactivee_admin_at IS NOT NULL AND desactivee_par IS NOT NULL AND motif_desactivation IS NOT NULL)
+    );
+
+CREATE INDEX idx_afrolang_salle_active
+    ON afrolang.salle(id)
+    WHERE desactivee_admin_at IS NULL AND deleted_at IS NULL;
+
+
+-- ── Table : ressource contribuée (par la communauté) ──
+CREATE TABLE afrolang.ressource_contribuee (
+    id                       UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    salle_id                 UUID         NOT NULL REFERENCES afrolang.salle(id) ON DELETE CASCADE,
+    session_origine_id       UUID         REFERENCES afrolang.session(id) ON DELETE SET NULL,
+    auteur_id                UUID         NOT NULL,           -- [xref] iam.utilisateur
+
+    type                     afrolang.type_ressource_contribuee NOT NULL,
+    titre                    VARCHAR(120) NOT NULL,
+    description              VARCHAR(500),
+
+    -- Variant : document
+    fichier_url              VARCHAR(500),
+    fichier_taille_octets    BIGINT,
+    fichier_mime             VARCHAR(120),
+
+    -- Variant : video_youtube
+    video_url                VARCHAR(500),
+    video_id_youtube         VARCHAR(20),
+
+    -- Variant : lien_web
+    lien_url                 VARCHAR(1000),
+
+    -- Variant : accompagnateur
+    membre_recommande_id     UUID,                           -- [xref] iam.utilisateur
+    motif_recommandation     VARCHAR(2000),
+    statut_accompagnateur    afrolang.statut_accompagnateur,
+    motif_refus              TEXT,
+    reponse_at               TIMESTAMPTZ,
+
+    created_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at               TIMESTAMPTZ,
+    supprime_par             UUID,                           -- [xref] iam.utilisateur
+
+    CONSTRAINT ck_ressource_contribuee_type CHECK (
+        (type = 'document'        AND fichier_url IS NOT NULL AND video_url IS NULL AND lien_url IS NULL AND membre_recommande_id IS NULL)
+     OR (type = 'video_youtube'   AND video_url IS NOT NULL AND video_id_youtube IS NOT NULL AND fichier_url IS NULL AND lien_url IS NULL AND membre_recommande_id IS NULL)
+     OR (type = 'lien_web'        AND lien_url IS NOT NULL AND fichier_url IS NULL AND video_url IS NULL AND membre_recommande_id IS NULL)
+     OR (type = 'accompagnateur'  AND membre_recommande_id IS NOT NULL AND statut_accompagnateur IS NOT NULL
+                                  AND motif_recommandation IS NOT NULL AND char_length(motif_recommandation) >= 20
+                                  AND fichier_url IS NULL AND video_url IS NULL AND lien_url IS NULL)
+    ),
+    CONSTRAINT ck_ressource_accompagnateur_pas_soi CHECK (
+        type <> 'accompagnateur' OR membre_recommande_id <> auteur_id
+    )
+);
+
+CREATE INDEX idx_afrolang_ressource_contribuee_salle
+    ON afrolang.ressource_contribuee(salle_id, created_at DESC)
+    WHERE deleted_at IS NULL;
+
+CREATE INDEX idx_afrolang_ressource_contribuee_rate_limit
+    ON afrolang.ressource_contribuee(auteur_id, salle_id, created_at)
+    WHERE deleted_at IS NULL;
+
+CREATE INDEX idx_afrolang_ressource_recommandations_recues
+    ON afrolang.ressource_contribuee(membre_recommande_id, statut_accompagnateur)
+    WHERE type = 'accompagnateur' AND deleted_at IS NULL;
+
+CREATE INDEX idx_afrolang_ressource_contribuee_session_origine
+    ON afrolang.ressource_contribuee(session_origine_id)
+    WHERE session_origine_id IS NOT NULL;
+
+COMMENT ON TABLE afrolang.ressource_contribuee IS
+    'Ressources contribuées par la communauté au niveau salle (feature 001-ressources-fermeture-session).';
+
+
+-- ── Table : mémorisation des accès aux salles privées (post code-acces) ──
+CREATE TABLE afrolang.acces_salle_privee (
+    id              UUID         PRIMARY KEY DEFAULT uuid_generate_v4(),
+    salle_privee_id UUID         NOT NULL REFERENCES afrolang.salle_privee(id) ON DELETE CASCADE,
+    utilisateur_id  UUID         NOT NULL,
+    valide_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    revoque_at      TIMESTAMPTZ
+);
+
+CREATE UNIQUE INDEX idx_afrolang_acces_unique_actif
+    ON afrolang.acces_salle_privee(salle_privee_id, utilisateur_id)
+    WHERE revoque_at IS NULL;
+
+CREATE INDEX idx_afrolang_acces_lookup
+    ON afrolang.acces_salle_privee(utilisateur_id, salle_privee_id)
+    WHERE revoque_at IS NULL;
+
+COMMENT ON TABLE afrolang.acces_salle_privee IS
+    'Mémorise les utilisateurs ayant validé le code d''accès d''une salle privée (feature 001-ressources-fermeture-session).';
+
+
+-- ── Table : historique de modération administrative d'une salle ──
+CREATE TABLE afrolang.evenement_moderation_salle (
+    id                   UUID         PRIMARY KEY DEFAULT uuid_generate_v4(),
+    salle_id             UUID         NOT NULL REFERENCES afrolang.salle(id) ON DELETE CASCADE,
+    session_concernee_id UUID         REFERENCES afrolang.session(id) ON DELETE SET NULL,
+    type_action          afrolang.type_evenement_moderation NOT NULL,
+    admin_id             UUID         NOT NULL,
+    motif                TEXT,
+    created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT ck_moderation_motif_fermeture CHECK (
+        (type_action = 'fermeture_admin'    AND motif IS NOT NULL AND char_length(motif) BETWEEN 10 AND 1000)
+     OR (type_action = 'reactivation_admin' AND (motif IS NULL OR char_length(motif) <= 1000))
+    )
+);
+
+CREATE INDEX idx_afrolang_moderation_salle_chrono
+    ON afrolang.evenement_moderation_salle(salle_id, created_at DESC);
+
+COMMENT ON TABLE afrolang.evenement_moderation_salle IS
+    'Historique append-only des fermetures et réactivations administratives d''une salle (feature 001-ressources-fermeture-session).';

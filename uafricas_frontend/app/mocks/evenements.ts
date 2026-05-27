@@ -148,7 +148,7 @@ export const evenementsMock: Evenement[] = [
   {
     id: 'evt-004',
     titre: 'Conférence: Économie circulaire en Afrique',
-    description: 'Table ronde sur les modèles économiques durables inspirés des pratiques traditionnelles africaines. Intervenants de 10 pays africains.',
+    description: 'Table ronde sur les modèles économiques durables inspirés des pratiques traditionnelles africaines. Intervenants de 10 territoires africains.',
     type: 'Hybride',
     pays: 'Kenya',
     ville: 'Nairobi',

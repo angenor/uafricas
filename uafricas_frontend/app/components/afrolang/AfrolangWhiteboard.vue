@@ -23,12 +23,24 @@
       </button>
     </div>
 
-    <iframe
-      ref="whiteboardFrame"
-      src="/whiteboard/index.html"
-      class="flex-1 w-full border-0"
-      allow="clipboard-read; clipboard-write"
-    />
+    <div class="relative flex-1 w-full">
+      <iframe
+        ref="whiteboardFrame"
+        src="/whiteboard/index.html"
+        class="w-full h-full border-0"
+        :class="{ 'pointer-events-none opacity-60': !ecritureAutorisee }"
+        allow="clipboard-read; clipboard-write"
+      />
+      <div
+        v-if="!ecritureAutorisee"
+        class="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none px-3 py-1 rounded-full bg-gray-900/80 text-white text-xs font-medium flex items-center gap-2 shadow"
+        role="status"
+        aria-live="polite"
+      >
+        <font-awesome-icon :icon="['fas', 'eye']" class="w-3 h-3" />
+        Lecture seule
+      </div>
+    </div>
 
     <Transition
       enter-active-class="transition ease-out duration-200"
@@ -53,11 +65,14 @@
 <script setup lang="ts">
 import type { Room } from 'livekit-client'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   sessionId: string
   estModerateur: boolean
   room: Room | null
-}>()
+  ecritureAutorisee?: boolean
+}>(), {
+  ecritureAutorisee: true,
+})
 
 defineEmits<{
   fermer: []
@@ -124,6 +139,7 @@ async function handleIframeMessage(event: MessageEvent): Promise<void> {
   switch (data.type) {
     case 'excalidraw-ready': {
       await chargerSnapshotDepuisBackend()
+      envoyerAIframe({ type: 'set-readonly', value: !props.ecritureAutorisee })
       break
     }
 
@@ -219,6 +235,21 @@ watch(
       await chargerSnapshotDepuisBackend()
     }
   },
+)
+
+// FR-018 : propager le mode lecture seule à Excalidraw (iframe) à chaque
+// changement de la prop `ecritureAutorisee`.
+// `immediate: true` couvre le cas où la prop passe à true via listerPermissions
+// AVANT que le composant Whiteboard soit monté (l'iframe sera notifiée dès qu'elle
+// répondra excalidraw-ready, mais le watch garantit aussi une notification en cas
+// de changement ultérieur — y compris si l'iframe n'est pas encore prête, le
+// message sera mis en file via postMessage et délivré dès qu'elle l'est).
+watch(
+  () => props.ecritureAutorisee,
+  (value) => {
+    envoyerAIframe({ type: 'set-readonly', value: !value })
+  },
+  { immediate: true },
 )
 
 function handleBeforeUnload(): void {

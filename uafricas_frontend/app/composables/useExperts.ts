@@ -11,6 +11,12 @@ export interface ExpertiseInfoAPI {
   nbAnneesExperience: number
   rating: number
   portfolio: string | null
+  linkedinUrl: string | null
+  cvUrl: string | null
+  specialites: string[]
+  /** Objectifs avec libellés lisibles */
+  objectifs: string[]
+  realisations: string[]
   statut: 'valide' | 'en_attente' | 'refuse'
 }
 
@@ -59,11 +65,56 @@ export interface ExpertFiltres {
 /** Body pour creer une candidature */
 export interface CandidatureExpertBody {
   domaine: string
+  /** Précision libre lorsque `domaine` vaut "autre" */
+  domaine_autre?: string
   biographie: string
   nb_annees_experience: number
   portfolio?: string
+  linkedin_url?: string
+  /** URL du CV déjà uploadé via POST /api/experts/cv */
+  cv_url?: string
+  specialites?: string[]
+  /** Objectifs actuels (valeurs DB, ex: "reseautage") */
+  objectifs?: string[]
+  realisations?: string[]
   situations_professionnelles: string[]
 }
+
+/** Suivi de la candidature active du membre (US3) */
+export interface MaCandidatureAPI {
+  id: string
+  domaine: string
+  biographie: string
+  nbAnneesExperience: number
+  portfolio: string | null
+  linkedinUrl: string | null
+  cvUrl: string | null
+  specialites: string[]
+  objectifs: string[]
+  realisations: string[]
+  situationsProfessionnelles: string[]
+  statut: 'en_attente' | 'valide' | 'refuse'
+  commentaireAdmin: string | null
+  dateValidation: string | null
+  createdAt: string
+}
+
+/** Option d'objectif actuel (valeur DB + libellé) */
+export interface ObjectifOption {
+  value: string
+  label: string
+}
+
+/** Objectifs actuels proposés au candidat (valeur DB ↔ libellé affiché) */
+export const OBJECTIFS_EXPERTISE: ObjectifOption[] = [
+  { value: 'reseautage', label: 'Réseautage' },
+  { value: 'consultance', label: 'Consultance' },
+  { value: 'recherche_emploi', label: 'Recherche d\'emploi' },
+  { value: 'offre_services_court_terme', label: 'Offre de services court terme' },
+  { value: 'travail_vacances', label: 'Travail de vacances (Sabbafrica)' },
+  { value: 'volontariat', label: 'Volontariat' },
+  { value: 'benevolat', label: 'Bénévolat' },
+]
 
 // ──────────────────────────────────────────────────────────────
 // Constantes
@@ -103,7 +154,7 @@ export interface PaysOption {
 }
 
 export const PAYS_EXPERTS: PaysOption[] = [
-  { value: '', label: 'Tous les pays' },
+  { value: '', label: 'Tous les territoires' },
   { value: 'Sénégal', label: 'Sénégal' },
   { value: 'Côte d\'Ivoire', label: 'Côte d\'Ivoire' },
   { value: 'Cameroun', label: 'Cameroun' },
@@ -255,11 +306,76 @@ export const useExperts = () => {
     }
   }
 
+  /**
+   * Uploader un CV (PDF) et récupérer son URL (JWT requis).
+   */
+  const uploaderCV = async (fichier: File): Promise<string | null> => {
+    erreur.value = null
+    try {
+      const formData = new FormData()
+      formData.append('cv', fichier)
+
+      const reponse = await $fetch<ApiResponse<{ cv_url: string }>>(
+        `${apiBase}/api/experts/cv`,
+        {
+          method: 'POST',
+          headers: authHeaders(),
+          body: formData,
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de l\'upload du CV')
+      }
+
+      return reponse.data.cv_url
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur uploaderCV:', e)
+      throw new Error(message)
+    }
+  }
+
+  /**
+   * Obtenir la candidature active du membre connecte (suivi US3).
+   * Renvoie null si aucune candidature active.
+   */
+  const obtenirMaCandidature = async (): Promise<MaCandidatureAPI | null> => {
+    chargement.value = true
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<MaCandidatureAPI | null>>(
+        `${apiBase}/api/experts/moi`,
+        { headers: authHeaders() },
+      )
+
+      if (!reponse.success) {
+        throw new Error(reponse.error || 'Erreur lors du chargement de la candidature')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur obtenirMaCandidature:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
     listerExperts,
     obtenirExpert,
     creerCandidature,
+    uploaderCV,
+    obtenirMaCandidature,
   }
 }

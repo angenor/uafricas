@@ -79,20 +79,30 @@
 \ir schemas/04c_iam_verification_email.sql
 \ir schemas/05_marketplace.sql
 \ir schemas/06_exchange.sql
+\ir schemas/06b_exchange_candidatures.sql
 \ir schemas/07_innovation.sql
 \ir schemas/08_culture.sql
 \ir schemas/08b_afrolang.sql
 \ir schemas/09_media_content.sql
+\ir schemas/09b_media_content_evenements_streaming.sql
 \ir schemas/10_governance.sql
+\ir schemas/10f_governance_factcheck_volets_reactions.sql
+\ir schemas/10g_governance_factcheck_signalement.sql
 \ir schemas/11_country_profile.sql
 \ir schemas/11b_country_profile_contributions.sql
 \ir schemas/11c_country_profile_afripulse.sql
+\ir schemas/11d_country_profile_sites_enrichis.sql
+\ir schemas/11e_country_profile_infos_voyage.sql
 \ir schemas/16_retrouve_amis.sql
 \ir schemas/23_arbre_genealogique.sql
 \ir schemas/24_matching.sql
 \ir schemas/25_collaboration.sql
 \ir schemas/26_notifications.sql
 \ir schemas/27_vidafrica.sql
+\ir schemas/27b_vidafrica_contributions_membres.sql
+\ir schemas/29_social.sql
+\ir schemas/30_social_conversation_annonce.sql
+\ir schemas/31_social_rendez_vous.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════
@@ -125,6 +135,7 @@
 \ir schemas/20_seed_fiches_pays.sql
 \ir schemas/21_seed_facultes.sql
 \ir schemas/22_seed_experts.sql
+\ir schemas/30_seed_pays_africains.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

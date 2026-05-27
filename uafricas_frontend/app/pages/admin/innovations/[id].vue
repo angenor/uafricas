@@ -208,7 +208,7 @@ onMounted(() => charger())
                 {{ innovationDetail.organisation_nom || 'Non definie' }}
               </div>
               <div class="text-sm">
-                <span class="font-semibold">Pays :</span>
+                <span class="font-semibold">Territoire :</span>
                 {{ innovationDetail.pays_nom || 'Non defini' }}
               </div>
             </div>

@@ -1,933 +1,328 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 pt-28 pb-16">
-    <div class="max-w-4xl mx-auto px-4">
+  <div class="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 pt-28 pb-16">
+    <div class="max-w-7xl mx-auto px-4">
+
+      <!-- En-tête -->
+      <div class="text-center mb-10" data-aos="fade-up">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 font-display">
+          Annuaire des membres
+        </h1>
+        <p class="text-gray-500 mt-3 max-w-2xl mx-auto">
+          Découvrez les membres de la communauté UAfricas : experts, bibliothèques humaines et passionnés du développement durable africain.
+        </p>
+        <p v-if="total > 0" class="text-sm text-custom-chocolat font-medium mt-2">
+          {{ total }} membre{{ total > 1 ? 's' : '' }} inscrit{{ total > 1 ? 's' : '' }}
+        </p>
+      </div>
+
+      <!-- Barre de recherche + filtres -->
+      <div class="bg-white rounded-2xl shadow-lg p-5 mb-8" data-aos="fade-up" data-aos-delay="100">
+        <div class="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
+          <!-- Recherche -->
+          <div class="relative flex-1 max-w-md">
+            <font-awesome-icon
+              icon="fa-solid fa-magnifying-glass"
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
+            />
+            <input
+              v-model="recherche"
+              type="text"
+              placeholder="Rechercher par nom, fonction, ville..."
+              class="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all"
+              @keyup.enter="appliquerRecherche"
+            />
+          </div>
+
+          <!-- Filtres par type -->
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="t in typesMembres"
+              :key="t.value"
+              class="px-4 py-2 rounded-full text-sm font-medium transition-all"
+              :class="typeActif === t.value
+                ? 'bg-linear-to-r from-custom-chocolat to-custom-green text-white shadow'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+              @click="typeActif = t.value"
+            >
+              <font-awesome-icon :icon="t.icon" class="mr-1.5 text-xs" />
+              {{ t.label }}
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Chargement -->
-      <div v-if="chargement" class="flex items-center justify-center py-32">
+      <div v-if="chargement" class="flex justify-center py-24">
         <font-awesome-icon icon="fa-solid fa-spinner" class="text-4xl text-custom-chocolat animate-spin" />
       </div>
 
-      <template v-else-if="profil">
-        <!-- ═══ Header Profil ═══ -->
-        <div
-          class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6"
-          data-aos="fade-up"
+      <!-- Grille de membres -->
+      <div
+        v-else-if="membres.length > 0"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+      >
+        <NuxtLink
+          v-for="membre in membres"
+          :key="membre.id"
+          :to="`/profil/${membre.id}`"
+          class="group bg-white rounded-2xl shadow-md hover:shadow-xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
         >
-          <!-- Banniere -->
-          <div class="h-32 bg-gradient-to-r from-custom-chocolat via-amber-700 to-custom-green relative">
-            <div class="absolute inset-0 bg-gradient-to-r from-custom-green/10 to-custom-chocolat/10"></div>
-          </div>
+          <!-- Bandeau -->
+          <div class="h-20 bg-linear-to-r from-custom-chocolat via-amber-700 to-custom-green relative"></div>
 
-          <!-- Avatar + Infos -->
-          <div class="px-6 pb-6 -mt-16 relative">
-            <div class="flex flex-col sm:flex-row items-center sm:items-end gap-4">
-              <!-- Avatar -->
-              <div class="relative group">
-                <img
-                  v-if="profil.photo_url"
-                  :src="photoComplete"
-                  :alt="nomComplet"
-                  class="w-28 h-28 rounded-full object-cover border-4 border-white shadow-lg"
-                />
-                <div
-                  v-else
-                  class="w-28 h-28 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-3xl font-bold border-4 border-white shadow-lg"
-                >
-                  {{ initiaux }}
-                </div>
-                <!-- Bouton changer photo -->
-                <label
-                  class="absolute bottom-1 right-1 w-8 h-8 bg-custom-green text-white rounded-full flex items-center justify-center cursor-pointer shadow-md hover:bg-emerald-600 transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <font-awesome-icon icon="fa-solid fa-image" class="text-xs" />
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    class="hidden"
-                    @change="onPhotoChange"
-                  />
-                </label>
-              </div>
-
-              <!-- Nom et infos -->
-              <div class="text-center sm:text-left flex-1">
-                <h1 class="text-2xl font-bold text-gray-800 font-display">{{ nomComplet }}</h1>
-                <p class="text-gray-500 text-sm">{{ profil.email }}</p>
-                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
-                  <!-- Badge etat -->
-                  <span
-                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium"
-                    :class="badgeEtatClasses"
-                  >
-                    <span class="w-2 h-2 rounded-full" :class="pointEtatClasses"></span>
-                    {{ etatLabel }}
-                  </span>
-                  <!-- Roles -->
-                  <span
-                    v-for="role in profil.roles"
-                    :key="role"
-                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700"
-                  >
-                    <font-awesome-icon icon="fa-solid fa-user-tag" class="text-[10px]" />
-                    {{ role }}
-                  </span>
-                  <!-- Date inscription -->
-                  <span class="text-xs text-gray-400">
-                    <font-awesome-icon icon="fa-solid fa-calendar" class="mr-1" />
-                    Membre depuis {{ dateInscription }}
-                  </span>
-                </div>
+          <div class="px-5 pb-5 -mt-10">
+            <!-- Avatar -->
+            <div class="flex justify-center">
+              <img
+                v-if="photoComplete(membre.photoUrl)"
+                :src="photoComplete(membre.photoUrl)!"
+                :alt="`${membre.prenom} ${membre.nom}`"
+                class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
+              />
+              <div
+                v-else
+                class="w-20 h-20 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-2xl font-bold border-4 border-white shadow-md"
+              >
+                {{ initiaux(membre) }}
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- ═══ Messages succes/erreur ═══ -->
-        <Transition
-          enter-active-class="transition-all duration-300 ease-out"
-          enter-from-class="opacity-0 -translate-y-2"
-          enter-to-class="opacity-100 translate-y-0"
-          leave-active-class="transition-all duration-200 ease-in"
-          leave-from-class="opacity-100 translate-y-0"
-          leave-to-class="opacity-0 -translate-y-2"
-        >
-          <div
-            v-if="profilComposable.success.value"
-            class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2"
-          >
-            <font-awesome-icon icon="fa-solid fa-circle-check" />
-            {{ profilComposable.success.value }}
-          </div>
-        </Transition>
+            <!-- Nom -->
+            <div class="text-center mt-3">
+              <h3 class="font-semibold text-gray-800 group-hover:text-custom-chocolat transition-colors truncate">
+                {{ membre.prenom }} {{ membre.nom }}
+              </h3>
+              <p v-if="membre.fonction" class="text-sm text-gray-500 mt-0.5 truncate">
+                {{ membre.fonction }}
+              </p>
+            </div>
 
-        <Transition
-          enter-active-class="transition-all duration-300 ease-out"
-          enter-from-class="opacity-0 -translate-y-2"
-          enter-to-class="opacity-100 translate-y-0"
-          leave-active-class="transition-all duration-200 ease-in"
-          leave-from-class="opacity-100 translate-y-0"
-          leave-to-class="opacity-0 -translate-y-2"
-        >
-          <div
-            v-if="profilComposable.error.value"
-            class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-center gap-2"
-          >
-            <font-awesome-icon icon="fa-solid fa-circle-exclamation" />
-            {{ profilComposable.error.value }}
-          </div>
-        </Transition>
+            <!-- Badges -->
+            <div class="flex flex-wrap justify-center gap-1.5 mt-3 min-h-6">
+              <span
+                v-if="membre.estExpert"
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full"
+              >
+                <font-awesome-icon icon="fa-solid fa-briefcase" class="text-[10px]" />
+                Expert
+              </span>
+              <span
+                v-if="membre.estBiblio"
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-custom-chocolat/10 text-custom-chocolat text-xs font-medium rounded-full"
+              >
+                <font-awesome-icon icon="fa-solid fa-book-open" class="text-[10px]" />
+                Bibliothèque
+              </span>
+            </div>
 
-        <!-- ═══ Onglets ═══ -->
-        <div
-          class="bg-white rounded-2xl shadow-lg overflow-hidden"
-          data-aos="fade-up"
-          data-aos-delay="100"
-        >
-          <!-- Tab Headers -->
-          <div class="flex border-b border-gray-200">
-            <button
-              v-for="tab in onglets"
-              :key="tab.id"
-              class="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-all duration-200 relative"
-              :class="ongletActif === tab.id
-                ? 'text-custom-chocolat'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
-              @click="ongletActif = tab.id"
+            <!-- Localisation -->
+            <div
+              v-if="membre.ville || membre.pays"
+              class="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-3"
             >
-              <font-awesome-icon :icon="tab.icon" />
-              <span class="hidden sm:inline">{{ tab.label }}</span>
-              <!-- Indicateur actif -->
-              <div
-                v-if="ongletActif === tab.id"
-                class="absolute bottom-0 left-0 right-0 h-0.5 bg-custom-chocolat"
-              ></div>
+              <font-awesome-icon icon="fa-solid fa-location-dot" />
+              <span class="truncate">
+                {{ [membre.ville, membre.pays].filter(Boolean).join(', ') }}
+              </span>
+            </div>
+
+            <!-- Bouton d'amitié (membres connectés, masqué sur sa propre carte) -->
+            <div
+              v-if="estConnecte"
+              class="flex justify-center mt-4"
+              @click.stop.prevent
+            >
+              <SocialBoutonAmitie
+                :utilisateur-id="membre.id"
+                :etat="etats[membre.id] || 'aucune'"
+                taille="sm"
+                @update="(e) => etats[membre.id] = e"
+              />
+            </div>
+          </div>
+        </NuxtLink>
+      </div>
+
+      <!-- État vide -->
+      <div v-else class="bg-white rounded-2xl shadow-lg p-12 text-center">
+        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
+          <font-awesome-icon icon="fa-solid fa-users-slash" class="text-3xl text-gray-400" />
+        </div>
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">Aucun membre trouvé</h3>
+        <p class="text-gray-500 text-sm max-w-md mx-auto">
+          Essayez de modifier votre recherche ou vos filtres.
+        </p>
+        <button
+          class="mt-5 px-5 py-2.5 bg-linear-to-r from-custom-chocolat to-custom-green text-white text-sm rounded-xl font-medium hover:shadow-lg transition-all"
+          @click="reinitialiser"
+        >
+          Réinitialiser
+        </button>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="!chargement && membres.length > 0 && totalPages > 1" class="flex justify-center mt-10">
+        <nav class="flex items-center gap-2">
+          <button
+            :disabled="page === 1"
+            class="p-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            @click="page--"
+          >
+            <font-awesome-icon icon="fa-solid fa-chevron-left" class="text-sm" />
+          </button>
+
+          <div class="flex gap-1">
+            <button
+              v-for="p in pagesVisibles"
+              :key="p"
+              class="w-10 h-10 rounded-xl font-medium text-sm transition-all"
+              :class="p === page
+                ? 'bg-linear-to-r from-custom-chocolat to-custom-green text-white'
+                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'"
+              @click="page = p"
+            >
+              {{ p }}
             </button>
           </div>
 
-          <!-- Tab Content -->
-          <div class="p-6">
-
-            <!-- ─── Onglet Informations ─── -->
-            <div v-if="ongletActif === 'informations'" class="space-y-6">
-              <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-gray-800">Informations personnelles</h2>
-                <button
-                  v-if="!modeEdition"
-                  class="flex items-center gap-2 px-4 py-2 text-sm text-custom-chocolat hover:bg-orange-50 rounded-lg transition-colors"
-                  @click="activerEdition"
-                >
-                  <font-awesome-icon icon="fa-solid fa-pen-to-square" />
-                  Modifier
-                </button>
-              </div>
-
-              <!-- Mode Lecture -->
-              <div v-if="!modeEdition" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ProfilChampLecture label="Prenom" :valeur="profil.prenom" icon="fa-solid fa-user" />
-                <ProfilChampLecture label="Nom" :valeur="profil.nom" icon="fa-solid fa-user" />
-                <ProfilChampLecture label="Email" :valeur="profil.email" icon="fa-solid fa-envelope" />
-                <ProfilChampLecture label="Telephone" :valeur="profil.telephone" icon="fa-solid fa-phone" />
-                <ProfilChampLecture label="Genre" :valeur="genreLabel" icon="fa-solid fa-user" />
-                <ProfilChampLecture label="Date de naissance" :valeur="dateNaissanceFormatee" icon="fa-solid fa-calendar" />
-                <ProfilChampLecture label="Fonction" :valeur="profil.fonction" icon="fa-solid fa-briefcase" />
-                <div class="md:col-span-2">
-                  <ProfilChampLecture label="Biographie" :valeur="profil.biographie" icon="fa-solid fa-align-left" />
-                </div>
-              </div>
-
-              <!-- Mode Edition -->
-              <form v-else @submit.prevent="sauvegarderProfil" class="space-y-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Prenom</label>
-                    <input
-                      v-model="formulaire.prenom"
-                      type="text"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Nom</label>
-                    <input
-                      v-model="formulaire.nom"
-                      type="text"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Telephone</label>
-                    <input
-                      v-model="formulaire.telephone"
-                      type="tel"
-                      placeholder="+225 00 00 00 00"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Genre</label>
-                    <select
-                      v-model="formulaire.genre"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                    >
-                      <option value="non_precise">Non precise</option>
-                      <option value="homme">Homme</option>
-                      <option value="femme">Femme</option>
-                    </select>
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Date de naissance</label>
-                    <input
-                      v-model="formulaire.date_naissance"
-                      type="date"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Fonction</label>
-                    <input
-                      v-model="formulaire.fonction"
-                      type="text"
-                      placeholder="Ex: Developpeur, Enseignant..."
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                    />
-                  </div>
-                </div>
-                <div class="space-y-2">
-                  <label class="text-sm font-medium text-gray-700 block">Biographie</label>
-                  <textarea
-                    v-model="formulaire.biographie"
-                    rows="4"
-                    placeholder="Parlez de vous..."
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white resize-none"
-                  ></textarea>
-                </div>
-
-                <!-- Boutons actions -->
-                <div class="flex items-center justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    class="px-5 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                    @click="annulerEdition"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    class="flex items-center gap-2 px-5 py-2.5 text-sm bg-gradient-to-r from-custom-chocolat to-custom-green text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50"
-                    :disabled="profilComposable.loading.value"
-                  >
-                    <font-awesome-icon
-                      :icon="profilComposable.loading.value ? 'fa-solid fa-spinner' : 'fa-solid fa-floppy-disk'"
-                      :class="{ 'animate-spin': profilComposable.loading.value }"
-                    />
-                    Enregistrer
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            <!-- ─── Onglet Localisation ─── -->
-            <div v-if="ongletActif === 'localisation'" class="space-y-6">
-              <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-gray-800">Localisation et preferences</h2>
-                <button
-                  v-if="!modeEditionLocalisation"
-                  class="flex items-center gap-2 px-4 py-2 text-sm text-custom-chocolat hover:bg-orange-50 rounded-lg transition-colors"
-                  @click="activerEditionLocalisation"
-                >
-                  <font-awesome-icon icon="fa-solid fa-pen-to-square" />
-                  Modifier
-                </button>
-              </div>
-
-              <!-- Mode Lecture -->
-              <div v-if="!modeEditionLocalisation" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ProfilChampLecture label="Ville" :valeur="profil.ville" icon="fa-solid fa-location-dot" />
-                <ProfilChampLecture label="Localite / Quartier" :valeur="profil.localite" icon="fa-solid fa-map-pin" />
-                <ProfilChampLecture label="Langue preferee" :valeur="langueLabel" icon="fa-solid fa-language" />
-              </div>
-
-              <!-- Mode Edition -->
-              <form v-else @submit.prevent="sauvegarderLocalisation" class="space-y-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Ville</label>
-                    <input
-                      v-model="formulaireLocalisation.ville"
-                      type="text"
-                      placeholder="Ex: Abidjan, Dakar..."
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Localite / Quartier</label>
-                    <input
-                      v-model="formulaireLocalisation.localite"
-                      type="text"
-                      placeholder="Ex: Cocody, Plateau..."
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Langue preferee</label>
-                    <select
-                      v-model="formulaireLocalisation.langue_preferee"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                    >
-                      <option value="fr">Francais</option>
-                      <option value="en">Anglais</option>
-                      <option value="pt">Portugais</option>
-                      <option value="ar">Arabe</option>
-                      <option value="sw">Swahili</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    class="px-5 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                    @click="modeEditionLocalisation = false"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    class="flex items-center gap-2 px-5 py-2.5 text-sm bg-gradient-to-r from-custom-chocolat to-custom-green text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50"
-                    :disabled="profilComposable.loading.value"
-                  >
-                    <font-awesome-icon
-                      :icon="profilComposable.loading.value ? 'fa-solid fa-spinner' : 'fa-solid fa-floppy-disk'"
-                      :class="{ 'animate-spin': profilComposable.loading.value }"
-                    />
-                    Enregistrer
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            <!-- ─── Onglet Retrouve Amis ─── -->
-            <div v-if="ongletActif === 'retrouve-amis'" class="space-y-6">
-              <h2 class="text-lg font-semibold text-gray-800 mb-2">Retrouve Amis</h2>
-
-              <!-- Statut trouvable -->
-              <div class="bg-gray-50 rounded-xl p-5">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div
-                      class="w-9 h-9 rounded-lg flex items-center justify-center"
-                      :class="profil.est_trouvable ? 'bg-custom-green/10 text-custom-green' : 'bg-gray-200 text-gray-400'"
-                    >
-                      <font-awesome-icon icon="fa-solid fa-eye" class="text-sm" />
-                    </div>
-                    <div>
-                      <p class="text-sm font-medium text-gray-800">Profil trouvable</p>
-                      <p class="text-xs text-gray-500">
-                        {{ profil.est_trouvable ? 'Votre profil est visible pour le matching' : 'Votre profil est masque' }}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium"
-                    :class="profil.est_trouvable ? 'bg-custom-green/10 text-custom-green' : 'bg-gray-100 text-gray-500'"
-                  >
-                    {{ profil.est_trouvable ? 'Actif' : 'Inactif' }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Parcours -->
-              <div class="border border-gray-200 rounded-xl p-5">
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="w-9 h-9 rounded-lg bg-custom-chocolat/10 text-custom-chocolat flex items-center justify-center">
-                    <font-awesome-icon icon="fa-solid fa-route" class="text-sm" />
-                  </div>
-                  <div>
-                    <h3 class="text-sm font-semibold text-gray-800">Mon parcours</h3>
-                    <p class="text-xs text-gray-500">{{ parcoursRetrouvAmis.length }} entree(s) de parcours</p>
-                  </div>
-                </div>
-
-                <!-- Liste parcours -->
-                <div v-if="parcoursRetrouvAmis.length > 0" class="space-y-2 mb-4">
-                  <div
-                    v-for="p in parcoursRetrouvAmis"
-                    :key="p.id"
-                    class="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg text-sm"
-                  >
-                    <font-awesome-icon
-                      :icon="p.type_entree === 'ecole' ? 'fa-solid fa-graduation-cap' : p.type_entree === 'ville_residence' ? 'fa-solid fa-building' : 'fa-solid fa-briefcase'"
-                      class="text-gray-400 w-4"
-                    />
-                    <span class="font-medium text-gray-700">{{ p.nom }}</span>
-                    <span v-if="p.ville" class="text-gray-400">- {{ p.ville }}</span>
-                    <span v-if="p.periode_debut" class="text-gray-400 ml-auto text-xs">
-                      {{ p.periode_debut }}{{ p.periode_fin ? ` - ${p.periode_fin}` : '' }}
-                    </span>
-                  </div>
-                </div>
-
-                <NuxtLink
-                  to="/retrouve-amis"
-                  class="inline-flex items-center gap-2 px-4 py-2 text-sm text-custom-chocolat hover:bg-orange-50 rounded-lg transition-colors"
-                >
-                  <font-awesome-icon icon="fa-solid fa-arrow-right" class="text-xs" />
-                  Gerer dans Retrouve Amis
-                </NuxtLink>
-              </div>
-            </div>
-
-            <!-- ─── Onglet Securite ─── -->
-            <div v-if="ongletActif === 'securite'" class="space-y-6">
-              <h2 class="text-lg font-semibold text-gray-800 mb-2">Securite du compte</h2>
-
-              <!-- Infos compte -->
-              <div class="bg-gray-50 rounded-xl p-5 space-y-4">
-                <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Informations du compte</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                      <font-awesome-icon icon="fa-solid fa-envelope" class="text-sm" />
-                    </div>
-                    <div>
-                      <p class="text-xs text-gray-500">Email verifie</p>
-                      <p class="text-sm font-medium" :class="profil.email_verifie ? 'text-emerald-600' : 'text-red-500'">
-                        {{ profil.email_verifie ? 'Oui' : 'Non' }}
-                      </p>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                      <font-awesome-icon icon="fa-solid fa-calendar" class="text-sm" />
-                    </div>
-                    <div>
-                      <p class="text-xs text-gray-500">Date d'inscription</p>
-                      <p class="text-sm font-medium text-gray-700">{{ dateInscriptionComplete }}</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
-                      <font-awesome-icon icon="fa-solid fa-clock-rotate-left" class="text-sm" />
-                    </div>
-                    <div>
-                      <p class="text-xs text-gray-500">Derniere connexion</p>
-                      <p class="text-sm font-medium text-gray-700">{{ derniereConnexionFormatee }}</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg flex items-center justify-center"
-                      :class="profil.etat === 'actif' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'"
-                    >
-                      <font-awesome-icon icon="fa-solid fa-circle-check" class="text-sm" />
-                    </div>
-                    <div>
-                      <p class="text-xs text-gray-500">Etat du compte</p>
-                      <p class="text-sm font-medium" :class="profil.etat === 'actif' ? 'text-emerald-600' : 'text-orange-600'">
-                        {{ etatLabel }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Changer mot de passe -->
-              <div class="border border-gray-200 rounded-xl p-5">
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
-                    <font-awesome-icon icon="fa-solid fa-lock" class="text-sm" />
-                  </div>
-                  <h3 class="text-sm font-semibold text-gray-800">Changer le mot de passe</h3>
-                </div>
-
-                <form @submit.prevent="handleChangerMotDePasse" class="space-y-4">
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Mot de passe actuel</label>
-                    <input
-                      v-model="formulaireMdp.ancien_mot_de_passe"
-                      type="password"
-                      required
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                    />
-                  </div>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                      <label class="text-sm font-medium text-gray-700 block">Nouveau mot de passe</label>
-                      <input
-                        v-model="formulaireMdp.nouveau_mot_de_passe"
-                        type="password"
-                        required
-                        minlength="6"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                      />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-sm font-medium text-gray-700 block">Confirmer le mot de passe</label>
-                      <input
-                        v-model="formulaireMdp.confirmation_mot_de_passe"
-                        type="password"
-                        required
-                        minlength="6"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                      />
-                    </div>
-                  </div>
-                  <div class="flex justify-end">
-                    <button
-                      type="submit"
-                      class="flex items-center gap-2 px-5 py-2.5 text-sm bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
-                      :disabled="profilComposable.loading.value"
-                    >
-                      <font-awesome-icon
-                        :icon="profilComposable.loading.value ? 'fa-solid fa-spinner' : 'fa-solid fa-lock'"
-                        :class="{ 'animate-spin': profilComposable.loading.value }"
-                      />
-                      Changer le mot de passe
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-
-            <!-- ─── Onglet Bibliothèque Humaine ─── -->
-            <div v-if="ongletActif === 'bibliotheque-humaine'" class="space-y-6">
-              <h2 class="text-lg font-semibold text-gray-800">Bibliothèque Humaine</h2>
-
-              <div v-if="chargementDemande" class="flex justify-center py-8">
-                <font-awesome-icon icon="fa-solid fa-spinner" class="text-2xl text-custom-chocolat animate-spin" />
-              </div>
-
-              <div v-else-if="!maDemande" class="text-center py-10">
-                <font-awesome-icon icon="fa-solid fa-book-open" class="text-4xl text-gray-300 mb-3" />
-                <p class="text-gray-500 text-sm mb-4">Vous n'avez pas encore soumis de demande pour rejoindre la Bibliothèque Humaine.</p>
-                <NuxtLink
-                  to="/bibliotheque/humaine"
-                  class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-linear-to-r from-custom-chocolat to-custom-green text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300"
-                >
-                  <font-awesome-icon icon="fa-solid fa-plus" />
-                  Soumettre une demande
-                </NuxtLink>
-              </div>
-
-              <div v-else class="space-y-4">
-                <!-- Badge statut -->
-                <div
-                  class="flex items-center gap-3 p-4 rounded-xl border"
-                  :class="{
-                    'bg-amber-50 border-amber-200': maDemande.statut === 'en_attente',
-                    'bg-green-50 border-green-200': maDemande.statut === 'valide',
-                    'bg-red-50 border-red-200': maDemande.statut === 'rejete',
-                  }"
-                >
-                  <font-awesome-icon
-                    :icon="maDemande.statut === 'valide' ? 'fa-solid fa-circle-check' : maDemande.statut === 'rejete' ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-clock'"
-                    class="text-xl"
-                    :class="{
-                      'text-amber-500': maDemande.statut === 'en_attente',
-                      'text-green-600': maDemande.statut === 'valide',
-                      'text-red-600': maDemande.statut === 'rejete',
-                    }"
-                  />
-                  <div class="flex-1">
-                    <p
-                      class="font-semibold text-sm"
-                      :class="{
-                        'text-amber-700': maDemande.statut === 'en_attente',
-                        'text-green-700': maDemande.statut === 'valide',
-                        'text-red-700': maDemande.statut === 'rejete',
-                      }"
-                    >
-                      {{
-                        maDemande.statut === 'en_attente' ? 'En attente de validation'
-                        : maDemande.statut === 'valide' ? 'Demande validée'
-                        : 'Demande rejetée'
-                      }}
-                    </p>
-                    <p class="text-xs text-gray-500 mt-0.5">
-                      Soumis le {{ new Date(maDemande.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) }}
-                    </p>
-                  </div>
-                </div>
-
-                <!-- Commentaire admin si rejeté -->
-                <div v-if="maDemande.statut === 'rejete' && maDemande.commentaireAdmin" class="p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <p class="text-xs font-semibold text-red-600 uppercase tracking-wide mb-1">Motif du rejet</p>
-                  <p class="text-sm text-red-700">{{ maDemande.commentaireAdmin }}</p>
-                </div>
-
-                <!-- Re-soumettre si rejeté -->
-                <div v-if="maDemande.statut === 'rejete'" class="text-center pt-2">
-                  <NuxtLink
-                    to="/bibliotheque/humaine"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-linear-to-r from-custom-chocolat to-custom-green text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300"
-                  >
-                    <font-awesome-icon icon="fa-solid fa-rotate-right" />
-                    Soumettre une nouvelle demande
-                  </NuxtLink>
-                </div>
-
-                <!-- Résumé -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Fonction déclarée</p>
-                    <p class="text-sm text-gray-700">{{ maDemande.fonction }}</p>
-                  </div>
-                  <div v-if="maDemande.pays">
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Pays</p>
-                    <p class="text-sm text-gray-700">{{ maDemande.pays }}</p>
-                  </div>
-                  <div v-if="maDemande.specialites.length > 0" class="md:col-span-2">
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Spécialités</p>
-                    <div class="flex flex-wrap gap-1">
-                      <span
-                        v-for="s in maDemande.specialites"
-                        :key="s"
-                        class="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full"
-                      >{{ s }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </template>
+          <button
+            :disabled="page === totalPages"
+            class="p-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            @click="page++"
+          >
+            <font-awesome-icon icon="fa-solid fa-chevron-right" class="text-sm" />
+          </button>
+        </nav>
+      </div>
 
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Profil, ModifierProfilForm } from '~/composables/useProfil'
-import type { MaDemandeAPI } from '~/composables/useBibliothequeHumaine'
+import type { MembreAPI } from '~/composables/useMembres'
+import type { EtatRelation } from '~/composables/useAmis'
+import { useUserStore } from '~/stores/user'
 
 useHead({
-  title: 'Mon profil - UAfricas',
+  title: 'Annuaire des membres - UAfricas',
+  meta: [
+    {
+      name: 'description',
+      content: 'Découvrez tous les membres inscrits sur la plateforme UAfricas.',
+    },
+  ],
 })
 
 useAOS()
 
-const router = useRouter()
-const { isAuthenticated } = useAuth()
-const profilComposable = useProfil()
-
-const profil = ref<Profil | null>(null)
-const chargement = ref(true)
-const ongletActif = ref('informations')
-const modeEdition = ref(false)
-const modeEditionLocalisation = ref(false)
-
-// Retrouve Amis
-const retrouvAmis = useRetrouvAmis()
-const parcoursRetrouvAmis = ref<any[]>([])
-
-// Bibliothèque Humaine
-const { obtenirMaDemande } = useBibliothequeHumaine()
-const maDemande = ref<MaDemandeAPI | null>(null)
-const chargementDemande = ref(false)
-
-// ── Onglets ──
-const onglets = [
-  { id: 'informations', label: 'Informations', icon: 'fa-solid fa-user' },
-  { id: 'localisation', label: 'Localisation', icon: 'fa-solid fa-location-dot' },
-  { id: 'retrouve-amis', label: 'Retrouve Amis', icon: 'fa-solid fa-users' },
-  { id: 'securite', label: 'Securite', icon: 'fa-solid fa-lock' },
-  { id: 'bibliotheque-humaine', label: 'Bibliothèque', icon: 'fa-solid fa-book-open' },
-]
-
-// ── Formulaires ──
-const formulaire = reactive<ModifierProfilForm>({
-  prenom: '',
-  nom: '',
-  telephone: '',
-  genre: 'non_precise',
-  date_naissance: null,
-  fonction: '',
-  biographie: '',
-})
-
-const formulaireLocalisation = reactive({
-  ville: '',
-  localite: '',
-  langue_preferee: 'fr',
-})
-
-const formulaireMdp = reactive({
-  ancien_mot_de_passe: '',
-  nouveau_mot_de_passe: '',
-  confirmation_mot_de_passe: '',
-})
-
-// ── Computed ──
+const { listerMembres, chargement } = useMembres()
+const { obtenirEtatsRelationLot } = useAmis()
+const userStore = useUserStore()
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBaseUrl as string
 
-const nomComplet = computed(() => {
-  if (!profil.value) return ''
-  return `${profil.value.prenom} ${profil.value.nom}`
-})
+const estConnecte = computed(() => userStore.isAuthenticated)
 
-const initiaux = computed(() => {
-  if (!profil.value) return ''
-  return `${profil.value.prenom?.charAt(0)?.toUpperCase() || ''}${profil.value.nom?.charAt(0)?.toUpperCase() || ''}`
-})
+// ── État ──
+const membres = ref<MembreAPI[]>([])
+const etats = ref<Record<string, EtatRelation>>({})
+const total = ref(0)
+const totalPages = ref(1)
+const page = ref(1)
+const recherche = ref('')
+const rechercheActive = ref('')
+const typeActif = ref('')
+const parPage = 12
 
-const photoComplete = computed(() => {
-  if (!profil.value?.photo_url) return ''
-  if (profil.value.photo_url.startsWith('http')) return profil.value.photo_url
-  return `${apiBase}${profil.value.photo_url}`
-})
+const typesMembres = [
+  { value: '', label: 'Tous', icon: 'fa-solid fa-users' },
+  { value: 'expert', label: 'Experts', icon: 'fa-solid fa-briefcase' },
+  { value: 'biblio', label: 'Bibliothèque', icon: 'fa-solid fa-book-open' },
+]
 
-const etatLabel = computed(() => {
-  const etats: Record<string, string> = {
-    actif: 'Actif',
-    en_attente: 'En attente',
-    bloque: 'Bloque',
-    suspendu: 'Suspendu',
+// ── Helpers ──
+const photoComplete = (url: string | null): string | null => {
+  if (!url) return null
+  return url.startsWith('http') ? url : `${apiBase}${url}`
+}
+
+const initiaux = (membre: MembreAPI): string => {
+  return `${membre.prenom?.charAt(0)?.toUpperCase() || ''}${membre.nom?.charAt(0)?.toUpperCase() || ''}`
+}
+
+const pagesVisibles = computed(() => {
+  const pages: number[] = []
+  const t = totalPages.value
+  const c = page.value
+  if (t <= 5) {
+    for (let i = 1; i <= t; i++) pages.push(i)
+  } else if (c <= 3) {
+    pages.push(1, 2, 3, 4, 5)
+  } else if (c >= t - 2) {
+    pages.push(t - 4, t - 3, t - 2, t - 1, t)
+  } else {
+    pages.push(c - 2, c - 1, c, c + 1, c + 2)
   }
-  return etats[profil.value?.etat || ''] || profil.value?.etat || ''
+  return pages.filter((p) => p >= 1 && p <= t)
 })
 
-const badgeEtatClasses = computed(() => {
-  switch (profil.value?.etat) {
-    case 'actif': return 'bg-emerald-50 text-emerald-700'
-    case 'en_attente': return 'bg-orange-50 text-orange-700'
-    case 'bloque': return 'bg-red-50 text-red-700'
-    default: return 'bg-gray-50 text-gray-700'
-  }
-})
-
-const pointEtatClasses = computed(() => {
-  switch (profil.value?.etat) {
-    case 'actif': return 'bg-emerald-500'
-    case 'en_attente': return 'bg-orange-500 animate-pulse'
-    case 'bloque': return 'bg-red-500'
-    default: return 'bg-gray-500'
-  }
-})
-
-const genreLabel = computed(() => {
-  const genres: Record<string, string> = {
-    homme: 'Homme',
-    femme: 'Femme',
-    non_precise: 'Non precise',
-  }
-  return genres[profil.value?.genre || ''] || profil.value?.genre || 'Non precise'
-})
-
-const langueLabel = computed(() => {
-  const langues: Record<string, string> = {
-    fr: 'Francais',
-    en: 'Anglais',
-    pt: 'Portugais',
-    ar: 'Arabe',
-    sw: 'Swahili',
-  }
-  return langues[profil.value?.langue_preferee || ''] || profil.value?.langue_preferee || 'Francais'
-})
-
-const dateInscription = computed(() => {
-  if (!profil.value?.created_at) return ''
-  const date = new Date(profil.value.created_at)
-  return date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })
-})
-
-const dateInscriptionComplete = computed(() => {
-  if (!profil.value?.created_at) return ''
-  return new Date(profil.value.created_at).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+// ── Chargement ──
+const charger = async () => {
+  const result = await listerMembres({
+    recherche: rechercheActive.value || undefined,
+    type: typeActif.value || undefined,
+    page: page.value,
+    par_page: parPage,
   })
-})
-
-const dateNaissanceFormatee = computed(() => {
-  if (!profil.value?.date_naissance) return null
-  return new Date(profil.value.date_naissance).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-})
-
-const derniereConnexionFormatee = computed(() => {
-  if (!profil.value?.derniere_connexion) return 'Jamais'
-  return new Date(profil.value.derniere_connexion).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-})
-
-// ── Methodes ──
-const activerEdition = () => {
-  if (!profil.value) return
-  profilComposable.effacerMessages()
-  formulaire.prenom = profil.value.prenom
-  formulaire.nom = profil.value.nom
-  formulaire.telephone = profil.value.telephone || ''
-  formulaire.genre = profil.value.genre
-  formulaire.date_naissance = profil.value.date_naissance || null
-  formulaire.fonction = profil.value.fonction || ''
-  formulaire.biographie = profil.value.biographie || ''
-  modeEdition.value = true
-}
-
-const annulerEdition = () => {
-  profilComposable.effacerMessages()
-  modeEdition.value = false
-}
-
-const activerEditionLocalisation = () => {
-  if (!profil.value) return
-  profilComposable.effacerMessages()
-  formulaireLocalisation.ville = profil.value.ville || ''
-  formulaireLocalisation.localite = profil.value.localite || ''
-  formulaireLocalisation.langue_preferee = profil.value.langue_preferee || 'fr'
-  modeEditionLocalisation.value = true
-}
-
-const sauvegarderProfil = async () => {
-  try {
-    const resultat = await profilComposable.modifierProfil(formulaire)
-    profil.value = resultat
-    modeEdition.value = false
-  }
-  catch {
-    // erreur geree par le composable
+  if (result) {
+    membres.value = result.membres
+    total.value = result.total
+    totalPages.value = result.total_pages
+    await chargerEtats()
   }
 }
 
-const sauvegarderLocalisation = async () => {
-  try {
-    const resultat = await profilComposable.modifierProfil(formulaireLocalisation)
-    profil.value = resultat
-    modeEditionLocalisation.value = false
-  }
-  catch {
-    // erreur geree par le composable
-  }
-}
-
-const onPhotoChange = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const fichier = input.files?.[0]
-  if (!fichier) return
-
-  try {
-    await profilComposable.changerPhoto(fichier)
-    // Recharger le profil pour avoir la nouvelle URL
-    const p = await profilComposable.chargerProfil()
-    profil.value = p
-  }
-  catch {
-    // erreur geree par le composable
-  }
-
-  // Reset input
-  input.value = ''
-}
-
-const handleChangerMotDePasse = async () => {
-  try {
-    await profilComposable.changerMotDePasse({
-      ancien_mot_de_passe: formulaireMdp.ancien_mot_de_passe,
-      nouveau_mot_de_passe: formulaireMdp.nouveau_mot_de_passe,
-      confirmation_mot_de_passe: formulaireMdp.confirmation_mot_de_passe,
-    })
-    // Reset formulaire
-    formulaireMdp.ancien_mot_de_passe = ''
-    formulaireMdp.nouveau_mot_de_passe = ''
-    formulaireMdp.confirmation_mot_de_passe = ''
-  }
-  catch {
-    // erreur geree par le composable
-  }
-}
-
-// ── Init ──
-onMounted(async () => {
-  if (!isAuthenticated.value) {
-    router.push('/login')
+// Charger les états de relation des cartes visibles en un seul appel (anti N+1)
+const chargerEtats = async () => {
+  if (!estConnecte.value || membres.value.length === 0) {
+    etats.value = {}
     return
   }
+  const ids = membres.value
+    .map(m => m.id)
+    .filter(id => id !== userStore.user?.id)
+  etats.value = await obtenirEtatsRelationLot(ids)
+}
 
-  try {
-    profil.value = await profilComposable.chargerProfil()
-    // Charger le parcours Retrouve Amis
-    try {
-      const parcours = await retrouvAmis.listerParcours()
-      parcoursRetrouvAmis.value = parcours || []
-    } catch {
-      // non bloquant
-    }
-    // Charger le statut de la demande Bibliothèque Humaine
-    try {
-      chargementDemande.value = true
-      maDemande.value = await obtenirMaDemande()
-    } catch {
-      // non bloquant
-    } finally {
-      chargementDemande.value = false
-    }
-  }
-  catch {
-    // erreur affichee via le composable
-  }
-  finally {
-    chargement.value = false
-  }
+const appliquerRecherche = () => {
+  rechercheActive.value = recherche.value.trim()
+  page.value = 1
+}
+
+const reinitialiser = () => {
+  recherche.value = ''
+  rechercheActive.value = ''
+  typeActif.value = ''
+  page.value = 1
+}
+
+// Recharger quand filtres/recherche changent (reset page)
+watch([rechercheActive, typeActif], () => {
+  page.value = 1
+  charger()
 })
+
+// Recharger quand la page change
+watch(page, charger)
+
+onMounted(charger)
 </script>
 
 <style scoped>
 @reference "~/assets/css/main.css";
 
-input:focus,
-select:focus,
-textarea:focus {
+input:focus {
   box-shadow: 0 0 0 3px rgba(34, 139, 34, 0.1);
 }
 </style>

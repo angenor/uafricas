@@ -5,7 +5,7 @@
       <div class="mb-8" data-aos="fade-up">
         <h1 class="text-3xl font-bold text-gray-800 font-display">Mes contributions</h1>
         <p class="mt-2 text-gray-600 text-sm">
-          Suivez l'état de vos propositions sur les fiches pays Afripulse.
+          Suivez l'état de vos propositions sur les fiches territoire Afripulse.
         </p>
       </div>
 
@@ -36,7 +36,7 @@
             @change="rafraichir"
           >
             <option value="">Tous</option>
-            <option value="fiche_pays">Nouvelle fiche pays</option>
+            <option value="fiche_pays">Nouvelle fiche territoire</option>
             <option value="site_touristique">Site touristique</option>
             <option value="secteur_developpement">Secteur d'opportunité</option>
             <option value="personnalite_connue">Personnalité connue</option>
@@ -75,7 +75,7 @@
           to="/opportunite-afrique"
           class="inline-block mt-4 px-5 py-2 bg-custom-chocolat text-white rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          Découvrir les fiches pays
+          Découvrir les fiches territoire
         </NuxtLink>
       </div>
 
@@ -112,7 +112,7 @@
               >
                 {{ c.pays_nom }}
               </NuxtLink>
-              <span v-else class="font-semibold text-gray-800">Nouvelle fiche pays</span>
+              <span v-else class="font-semibold text-gray-800">Nouvelle fiche territoire</span>
 
               <div
                 v-if="(c.etat === 'refusee' || c.etat === 'obsolete') && c.note_moderation"
@@ -280,7 +280,7 @@ const iconeEtat = (e: string): string => {
 
 const libelleTypeObjet = (t: string): string => {
   const m: Record<string, string> = {
-    fiche_pays: 'Nouvelle fiche pays',
+    fiche_pays: 'Nouvelle fiche territoire',
     site_touristique: 'Site touristique',
     secteur_developpement: 'Secteur d\'opportunité',
     personnalite_connue: 'Personnalité connue',

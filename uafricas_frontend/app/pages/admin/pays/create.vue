@@ -20,7 +20,7 @@ const erreurLocale = ref<string | null>(null)
 const soumettre = async () => {
   erreurLocale.value = null
   if (!form.nom.trim()) {
-    erreurLocale.value = 'Le nom du pays est requis'
+    erreurLocale.value = 'Le nom du territoire est requis'
     return
   }
   try {
@@ -42,7 +42,7 @@ const soumettre = async () => {
 
 <template>
   <div>
-    <AdminPageHeader titre="Nouveau pays" sous-titre="Ajouter un pays de reference">
+    <AdminPageHeader titre="Nouveau territoire" sous-titre="Ajouter un territoire de reference">
       <template #actions>
         <NuxtLink to="/admin/pays" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour
@@ -59,7 +59,7 @@ const soumettre = async () => {
 
         <form @submit.prevent="soumettre" class="space-y-4">
           <div class="form-control">
-            <label class="label"><span class="label-text">Nom du pays *</span></label>
+            <label class="label"><span class="label-text">Nom du territoire *</span></label>
             <input v-model="form.nom" type="text" class="input input-bordered" required>
           </div>
 

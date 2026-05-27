@@ -19,12 +19,12 @@ use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::models::matching::{
-    anonymiser_membre, DecouvertesResponse, DemandeContactResponse, DetailsScoreResponse,
+    anonymiser_membre, DecouvertesResponse, DetailsScoreResponse,
     PersonneResumeResponse, ProfilPublicResponse, SectionDecouvertes,
     SuggestionAvecPersonnesRow, SuggestionResponse,
 };
 use crate::models::arbre_genealogique::{
-    LienArbreResponse, PersonneNoeud, PersonneNoeudResponse, ArbreCompletResponse,
+    LienArbreResponse, PersonneNoeud, PersonneNoeudResponse,
 };
 use crate::services::audit;
 use crate::ApiResponse;

@@ -1,14 +1,51 @@
 <script setup lang="ts">
 import type { BiblioHumaineAPI } from '~/composables/useBibliothequeHumaine'
 import type { ExpertAPI } from '~/composables/useExperts'
+import type { MembreAPI } from '~/composables/useMembres'
+import type { EtatRelation, MembreLightAPI } from '~/composables/useAmis'
+import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const id = route.params.id as string
 
 const { obtenirBiblio } = useBibliothequeHumaine()
 const { obtenirExpert } = useExperts()
+const { obtenirMembre } = useMembres()
+const { obtenirEtatRelation } = useAmis()
+const { demanderOuverture } = useMessagerie()
+const userStore = useUserStore()
+
+// État de la relation avec ce membre (FR-016)
+const etatRelation = ref<EtatRelation>('aucune')
+const estMoi = computed(() => userStore.user?.id === id)
+const peutAfficherAmitie = computed(() => userStore.isAuthenticated && !estMoi.value)
+// La messagerie n'est ouverte qu'entre amis (FR-022)
+const peutEnvoyerMessage = computed(() => peutAfficherAmitie.value && etatRelation.value === 'amis')
+
+/** MembreLight de ce profil (pour la messagerie et la proposition de RDV). */
+const membreLight = computed<MembreLightAPI | null>(() => {
+  if (!membre.value) return null
+  return {
+    id: membre.value.id,
+    nom: membre.value.nom,
+    prenom: membre.value.prenom,
+    slug: membre.value.slug,
+    photoUrl: membre.value.photoUrl,
+    fonction: membre.value.fonction,
+    pays: membre.value.pays,
+  }
+})
+
+/** Ouvre la fenêtre flottante de messagerie sur la conversation de ce profil. */
+const ouvrirMessagerie = () => {
+  if (membreLight.value) demanderOuverture(membreLight.value)
+}
+
+// Proposition de rendez-vous en visioconférence (entre amis, FR-001).
+const afficherModalRdv = ref(false)
 
 const chargement = ref(true)
+const membre = ref<MembreAPI | null>(null)
 const biblio = ref<BiblioHumaineAPI | null>(null)
 const expert = ref<ExpertAPI | null>(null)
 
@@ -19,6 +56,20 @@ const estBiblio = computed(() => biblio.value !== null)
 const estExpert = computed(() => expert.value !== null && expert.value.expertiseInfo.statut === 'valide')
 
 const profil = computed(() => {
+  // Base : profil membre (present pour tout compte actif), enrichi par biblio/expert
+  if (membre.value) {
+    return {
+      id: membre.value.id,
+      nom: membre.value.nom,
+      prenom: membre.value.prenom,
+      photoUrl: membre.value.photoUrl,
+      fonction: membre.value.fonction || biblio.value?.fonction || expert.value?.expertiseInfo.domaine || null,
+      pays: membre.value.pays || biblio.value?.pays || expert.value?.pays || null,
+      ville: membre.value.ville || biblio.value?.ville || expert.value?.ville || null,
+      dateInscription: membre.value.dateInscription,
+    }
+  }
+  // Fallback si l'endpoint membre echoue mais biblio/expert disponible
   if (biblio.value) {
     return {
       id: biblio.value.userId,
@@ -86,10 +137,12 @@ const dateInscriptionFormatee = computed(() => {
 
 onMounted(async () => {
   chargement.value = true
-  const [b, e] = await Promise.all([
+  const [m, b, e] = await Promise.all([
+    obtenirMembre(id).catch(() => null),
     obtenirBiblio(id).catch(() => null),
     obtenirExpert(id).catch(() => null),
   ])
+  membre.value = m
   biblio.value = b
   expert.value = e
 
@@ -97,6 +150,12 @@ onMounted(async () => {
   else if (estExpert.value) ongletActif.value = 'expert'
 
   chargement.value = false
+
+  // Charger l'état de relation (membre connecté, hors propre profil)
+  if (peutAfficherAmitie.value) {
+    const rel = await obtenirEtatRelation(id)
+    if (rel) etatRelation.value = rel.etat
+  }
 })
 </script>
 
@@ -214,7 +273,7 @@ onMounted(async () => {
             <div v-if="ongletActif === 'apropos'" class="space-y-4">
               <h2 class="text-lg font-semibold text-gray-800">À propos</h2>
               <p class="text-gray-700 leading-relaxed whitespace-pre-line">
-                {{ biblio?.biographie || expert?.expertiseInfo.biographie || 'Aucune biographie disponible.' }}
+                {{ membre?.biographie || biblio?.biographie || expert?.expertiseInfo.biographie || 'Aucune biographie disponible.' }}
               </p>
             </div>
 
@@ -301,15 +360,48 @@ onMounted(async () => {
         <!-- Carte contact -->
         <div class="mt-6 bg-white rounded-2xl shadow-lg p-6 text-center">
           <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Entrer en contact</h3>
+
+          <!-- Bouton d'amitié (membre connecté, hors propre profil) -->
+          <div v-if="peutAfficherAmitie" class="flex justify-center mb-4">
+            <SocialBoutonAmitie
+              :utilisateur-id="id"
+              :etat="etatRelation"
+              @update="(e) => etatRelation = e"
+            />
+          </div>
+
           <button
-            class="inline-flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-custom-chocolat to-custom-green text-white font-semibold rounded-xl hover:shadow-lg transition disabled:opacity-60"
-            disabled
+            type="button"
+            class="inline-flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-custom-chocolat to-custom-green text-white font-semibold rounded-xl hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
+            :disabled="!peutEnvoyerMessage"
+            @click="ouvrirMessagerie"
           >
             <font-awesome-icon icon="fa-solid fa-envelope" />
             Envoyer un message
           </button>
-          <p class="text-xs text-gray-400 mt-3">La messagerie directe sera bientôt disponible.</p>
+
+          <!-- Proposer un rendez-vous (entre amis uniquement) -->
+          <button
+            v-if="peutEnvoyerMessage"
+            type="button"
+            class="mt-3 inline-flex items-center gap-2 px-5 py-2.5 border border-custom-chocolat text-custom-chocolat font-semibold rounded-xl hover:bg-custom-chocolat hover:text-white transition"
+            @click="afficherModalRdv = true"
+          >
+            <font-awesome-icon icon="fa-solid fa-video" />
+            Proposer un rendez-vous
+          </button>
+
+          <p v-if="!peutAfficherAmitie" class="text-xs text-gray-400 mt-3">Connectez-vous pour échanger avec ce membre.</p>
+          <p v-else-if="!peutEnvoyerMessage" class="text-xs text-gray-400 mt-3">Vous devez être amis pour envoyer un message.</p>
         </div>
+
+        <!-- Modale de proposition de rendez-vous -->
+        <SocialRendezVousProposerModal
+          v-if="afficherModalRdv && membreLight"
+          :membre="membreLight"
+          @fermer="afficherModalRdv = false"
+          @propose="afficherModalRdv = false"
+        />
       </template>
     </div>
   </div>

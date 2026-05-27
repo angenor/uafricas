@@ -357,10 +357,24 @@ pub struct AdminSiteTouristiqueResponse {
     pub id: Uuid,
     pub fiche_pays_id: Uuid,
     pub nom: String,
+    pub categorie: Option<String>,
+    pub sous_type: Option<String>,
     pub description: Option<String>,
+    pub info_pertinente: Option<String>,
     pub image_url: Option<String>,
+    pub images: Vec<String>,
+    pub gestionnaire: Option<String>,
+    pub ville: Option<String>,
+    pub village: Option<String>,
     pub longitude: Option<f64>,
     pub latitude: Option<f64>,
+    pub contact_telephone: Option<String>,
+    pub contact_courriel: Option<String>,
+    pub contact_adresse: Option<String>,
+    pub constitution_statut_juridique: Option<String>,
+    pub constitution_numero: Option<String>,
+    pub constitution_document_url: Option<String>,
+    pub verifie: bool,
     pub region_id: Option<Uuid>,
     pub region_nom: Option<String>,
     pub created_at: DateTime<Utc>,
@@ -370,21 +384,59 @@ pub struct AdminSiteTouristiqueResponse {
 #[derive(Debug, Deserialize)]
 pub struct CreerSiteTouristiqueRequest {
     pub nom: String,
+    pub categorie: Option<String>,
+    pub sous_type: Option<String>,
     pub description: Option<String>,
+    pub info_pertinente: Option<String>,
     pub image_url: Option<String>,
+    pub images: Option<Vec<String>>,
+    pub gestionnaire: Option<String>,
+    pub ville: Option<String>,
+    pub village: Option<String>,
     pub longitude: Option<f64>,
     pub latitude: Option<f64>,
+    pub contact_telephone: Option<String>,
+    pub contact_courriel: Option<String>,
+    pub contact_adresse: Option<String>,
+    pub constitution_statut_juridique: Option<String>,
+    pub constitution_numero: Option<String>,
+    pub constitution_document_url: Option<String>,
     pub region_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ModifierSiteTouristiqueRequest {
     pub nom: Option<String>,
+    pub categorie: Option<String>,
+    pub sous_type: Option<String>,
     pub description: Option<String>,
+    pub info_pertinente: Option<String>,
     pub image_url: Option<String>,
+    pub images: Option<Vec<String>>,
+    pub gestionnaire: Option<String>,
+    pub ville: Option<String>,
+    pub village: Option<String>,
     pub longitude: Option<f64>,
     pub latitude: Option<f64>,
+    pub contact_telephone: Option<String>,
+    pub contact_courriel: Option<String>,
+    pub contact_adresse: Option<String>,
+    pub constitution_statut_juridique: Option<String>,
+    pub constitution_numero: Option<String>,
+    pub constitution_document_url: Option<String>,
     pub region_id: Option<Uuid>,
+}
+
+/// Body du toggle admin du badge « Vérifié » (US3).
+#[derive(Debug, Deserialize)]
+pub struct VerificationSiteBody {
+    pub verifie: bool,
+}
+
+/// Body de modération d'un avis de site (US5 — masquage admin).
+#[derive(Debug, Deserialize)]
+pub struct MasquerAvisBody {
+    pub masque: bool,
 }
 
 // ══════════════════════════════════════════════════════════════
