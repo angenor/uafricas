@@ -413,7 +413,7 @@ const AFRICA_VIEWBOX = '401 347 239 267'
 // Couleurs par region
 const REGION_COLORS: Record<string, string> = {
   "Afrique de l'Ouest": '#228B22',
-  'Afrique Centrale': '#0E7C4A',
+  'Afrique Centrale': '#C2185B',
   "Afrique de l'Est": '#1565C0',
   'Afrique du Nord': '#E65100',
   'Afrique Australe': '#7B1FA2',
