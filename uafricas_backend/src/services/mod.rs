@@ -1,4 +1,5 @@
 pub mod afrolang_rate_limit;
+pub mod appels;
 pub mod audit;
 pub mod livekit_moderation;
 pub mod image_validation;

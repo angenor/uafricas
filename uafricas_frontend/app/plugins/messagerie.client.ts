@@ -10,6 +10,7 @@ export default defineNuxtPlugin(() => {
   const { gererEvenement, listerConversations, obtenirNonLus } = useMessagerie()
   const { gererEvenement: gererEvenementRdv } = useRendezVous()
   const { gererEvenementStream } = useEvenements()
+  const { gererEvenement: gererEvenementAppel } = useAppels()
   const { compteurNonLues } = useNotifications()
 
   let source: EventSource | null = null
@@ -54,6 +55,10 @@ export default defineNuxtPlugin(() => {
         else if (typeof evt?.type === 'string' && evt.type.startsWith('event_stream_')) {
           gererEvenementStream(evt)
           compteurNonLues()
+        }
+        // Évènements d'appel direct : sonnerie entrante, acceptation, refus, annulation.
+        else if (typeof evt?.type === 'string' && evt.type.startsWith('appel_')) {
+          gererEvenementAppel(evt)
         }
         else {
           gererEvenement(evt)

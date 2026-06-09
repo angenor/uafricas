@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type { MembreAPI } from '~/composables/useMembres'
-import type { EtatRelation } from '~/composables/useAmis'
+import type { AmiAPI, EtatRelation, MembreLightAPI } from '~/composables/useAmis'
 import { useUserStore } from '~/stores/user'
 
 // Annuaire compact des inscrits pour la messagerie flottante.
-// Réutilise la logique de la page /profil : listerMembres + états de relation en lot.
+// Les amis sont énumérés en tête (avec appel direct + message) ; l'annuaire
+// général suit, sans les amis (déjà listés au-dessus).
 const { listerMembres, chargement } = useMembres()
-const { obtenirEtatsRelationLot } = useAmis()
+const { obtenirEtatsRelationLot, listerAmis } = useAmis()
+const { appeler, erreurAppel } = useAppels()
+const { demanderOuverture } = useMessagerie()
 const userStore = useUserStore()
 
 const config = useRuntimeConfig()
@@ -16,10 +19,32 @@ const PAR_PAGE = 10
 
 const membres = ref<MembreAPI[]>([])
 const etats = ref<Record<string, EtatRelation>>({})
+const amis = ref<AmiAPI[]>([])
 const recherche = ref('')
 const rechercheActive = ref('')
 const page = ref(1)
 const totalPages = ref(1)
+
+// Ensemble des ids amis : sert à les exclure de l'annuaire général.
+const amiIds = computed(() => new Set(amis.value.map(a => a.utilisateur.id)))
+
+// Amis filtrés par la recherche (côté client : liste complète déjà chargée).
+const amisFiltres = computed<MembreLightAPI[]>(() => {
+  const q = rechercheActive.value.toLowerCase()
+  const liste = amis.value.map(a => a.utilisateur)
+  const filtres = q
+    ? liste.filter(u => `${u.prenom} ${u.nom}`.toLowerCase().includes(q))
+    : liste
+  return [...filtres].sort((a, b) =>
+    `${a.prenom} ${a.nom}`.localeCompare(`${b.prenom} ${b.nom}`, 'fr'))
+})
+
+// Annuaire général sans les amis (ils figurent déjà dans « Mes amis »).
+const membresAffiches = computed(() => membres.value.filter(m => !amiIds.value.has(m.id)))
+
+const chargerAmis = async (): Promise<void> => {
+  amis.value = await listerAmis()
+}
 
 const charger = async (): Promise<void> => {
   const res = await listerMembres({
@@ -34,7 +59,6 @@ const charger = async (): Promise<void> => {
   totalPages.value = res.total_pages
 
   // Charger les états de relation en lot (anti N+1), comme dans /profil.
-  // L'id courant est déjà exclu ci-dessus : sinon le backend rejette le lot entier.
   const ids = membres.value.map(m => m.id)
   etats.value = ids.length > 0 ? await obtenirEtatsRelationLot(ids) : {}
 }
@@ -55,21 +79,35 @@ watch([rechercheActive], () => {
 
 watch(page, charger)
 
-onMounted(charger)
+onMounted(() => {
+  erreurAppel.value = null
+  charger()
+  chargerAmis()
+})
 
 const photoComplete = (url: string | null): string | null => {
   if (!url) return null
   return url.startsWith('http') ? url : `${apiBase}${url}`
 }
 
-const initiaux = (m: MembreAPI): string =>
-  `${m.prenom?.charAt(0)?.toUpperCase() || ''}${m.nom?.charAt(0)?.toUpperCase() || ''}`
+const initiaux = (prenom: string, nom: string): string =>
+  `${prenom?.charAt(0)?.toUpperCase() || ''}${nom?.charAt(0)?.toUpperCase() || ''}`
 
 const localisation = (m: MembreAPI): string =>
   [m.ville, m.pays].filter(Boolean).join(', ')
 
 const majEtat = (id: string, etat: EtatRelation): void => {
   etats.value = { ...etats.value, [id]: etat }
+  // Une nouvelle amitié (ou rupture) modifie la section « Mes amis ».
+  if (etat === 'amis') chargerAmis()
+}
+
+const lancerAppel = (membre: MembreLightAPI): void => {
+  void appeler(membre.id)
+}
+
+const ouvrirMessage = (membre: MembreLightAPI): void => {
+  demanderOuverture(membre)
 }
 
 const pagePrecedente = (): void => {
@@ -99,23 +137,94 @@ const pageSuivante = (): void => {
       </div>
     </div>
 
-    <!-- Liste des membres -->
+    <!-- Erreur d'appel éventuelle -->
+    <div
+      v-if="erreurAppel"
+      class="mx-3 mt-2 px-3 py-2 text-xs text-red-700 bg-red-50 border border-red-100 rounded-lg shrink-0"
+    >
+      {{ erreurAppel }}
+    </div>
+
+    <!-- Contenu défilant : amis puis annuaire -->
     <div class="flex-1 min-h-0 overflow-y-auto">
+      <!-- Section « Mes amis » -->
+      <div v-if="amisFiltres.length > 0">
+        <p class="px-3 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-custom-chocolat">
+          Mes amis
+        </p>
+        <ul class="divide-y divide-gray-100">
+          <li
+            v-for="u in amisFiltres"
+            :key="u.id"
+            class="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition"
+          >
+            <NuxtLink :to="`/profil/${u.id}`" class="shrink-0">
+              <img
+                v-if="photoComplete(u.photoUrl)"
+                :src="photoComplete(u.photoUrl)!"
+                :alt="`${u.prenom} ${u.nom}`"
+                class="w-10 h-10 rounded-full object-cover border border-gray-200"
+              >
+              <div
+                v-else
+                class="w-10 h-10 rounded-full bg-custom-green text-white flex items-center justify-center text-xs font-bold"
+              >
+                {{ initiaux(u.prenom, u.nom) }}
+              </div>
+            </NuxtLink>
+
+            <NuxtLink :to="`/profil/${u.id}`" class="flex-1 min-w-0">
+              <p class="font-semibold text-gray-800 text-sm truncate">{{ u.prenom }} {{ u.nom }}</p>
+              <p v-if="u.fonction" class="text-xs text-gray-500 truncate">{{ u.fonction }}</p>
+            </NuxtLink>
+
+            <!-- Message -->
+            <button
+              type="button"
+              class="shrink-0 w-9 h-9 rounded-full text-gray-500 hover:text-custom-chocolat hover:bg-custom-chocolat/10 flex items-center justify-center transition"
+              :aria-label="`Envoyer un message à ${u.prenom}`"
+              :title="`Message à ${u.prenom}`"
+              @click="ouvrirMessage(u)"
+            >
+              <font-awesome-icon icon="fa-solid fa-comment-dots" />
+            </button>
+            <!-- Appel direct -->
+            <button
+              type="button"
+              class="shrink-0 w-9 h-9 rounded-full bg-custom-green text-white hover:brightness-110 flex items-center justify-center transition shadow-sm"
+              :aria-label="`Appeler ${u.prenom}`"
+              :title="`Appeler ${u.prenom} en visio`"
+              @click="lancerAppel(u)"
+            >
+              <font-awesome-icon icon="fa-solid fa-video" />
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section annuaire général -->
+      <p
+        v-if="amisFiltres.length > 0 && membresAffiches.length > 0"
+        class="px-3 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-gray-400"
+      >
+        Tous les membres
+      </p>
+
       <div v-if="chargement && membres.length === 0" class="flex items-center justify-center py-10 text-gray-400">
         <font-awesome-icon icon="fa-solid fa-spinner" class="animate-spin text-xl" />
       </div>
 
       <div
-        v-else-if="membres.length === 0"
+        v-else-if="membresAffiches.length === 0 && amisFiltres.length === 0"
         class="flex flex-col items-center justify-center text-center px-6 py-10"
       >
         <font-awesome-icon icon="fa-solid fa-user-slash" class="text-2xl text-gray-300 mb-3" />
         <p class="text-sm text-gray-500">Aucun membre trouvé.</p>
       </div>
 
-      <ul v-else class="divide-y divide-gray-100">
+      <ul v-else-if="membresAffiches.length > 0" class="divide-y divide-gray-100">
         <li
-          v-for="m in membres"
+          v-for="m in membresAffiches"
           :key="m.id"
           class="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition"
         >
@@ -130,7 +239,7 @@ const pageSuivante = (): void => {
               v-else
               class="w-10 h-10 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-xs font-bold"
             >
-              {{ initiaux(m) }}
+              {{ initiaux(m.prenom, m.nom) }}
             </div>
           </NuxtLink>
 

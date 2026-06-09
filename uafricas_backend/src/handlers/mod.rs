@@ -6,6 +6,7 @@ pub mod afrolang;
 pub mod afrolang_ressources;
 pub mod amitie;
 pub mod annonces;
+pub mod appels;
 pub mod auth;
 pub mod bibliotheques_humaines;
 pub mod centres_culturels;

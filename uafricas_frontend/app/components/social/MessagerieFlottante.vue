@@ -3,6 +3,20 @@ import type { MembreLightAPI } from '~/composables/useAmis'
 
 const { conversations, nonLusTotal, listerConversations, fermerConversation, demandeOuverture } = useMessagerie()
 const { nbAttenteMoi, compterAttenteMoi } = useRendezVous()
+// Appels directs : sonnerie entrante + salle visio (montés globalement, ci-dessous).
+const { appelEntrant, appelActif, accepterAppel, refuserAppel } = useAppels()
+
+// Fenêtre déplaçable + redimensionnable (position/taille persistées).
+const {
+  style: styleFenetre,
+  deplace,
+  demarrerDeplacement,
+  surDeplacement,
+  finDeplacement,
+  demarrerRedimensionnement,
+  surRedimensionnement,
+  finRedimensionnement,
+} = useFenetreFlottante({ cle: 'messagerie:fenetre', largeurDefaut: 352, hauteurDefaut: 480 })
 
 const ouvert = ref(false)
 const amiSelectionne = ref<MembreLightAPI | null>(null)
@@ -60,6 +74,17 @@ const fermerFenetre = () => {
 
 <template>
   <div>
+    <!-- Sonnerie d'appel entrant (au-dessus du panneau, priorité visuelle) -->
+    <SocialAppelEntrantPrompt
+      v-if="appelEntrant"
+      :appel="appelEntrant"
+      @accepter="accepterAppel"
+      @refuser="refuserAppel"
+    />
+
+    <!-- Salle visio d'un appel direct en cours (plein écran) -->
+    <SocialAppelDirectSalle v-if="appelActif" :salle="appelActif" />
+
     <!-- Bouton flottant -->
     <button
       type="button"
@@ -78,10 +103,20 @@ const fermerFenetre = () => {
     <Transition name="fade-slide">
       <div
         v-if="ouvert"
-        class="fixed bottom-24 right-6 z-50 w-[22rem] max-w-[calc(100vw-3rem)] h-[30rem] max-h-[calc(100vh-8rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden"
+        :style="styleFenetre"
+        class="fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden"
+        :class="deplace ? 'select-none' : ''"
       >
-        <!-- En-tête -->
-        <header class="flex items-center justify-between px-4 py-3 bg-linear-to-r from-custom-chocolat to-custom-green text-white shrink-0">
+        <!-- En-tête (zone de déplacement) -->
+        <header
+          class="flex items-center justify-between px-4 py-3 bg-linear-to-r from-custom-chocolat to-custom-green text-white shrink-0 touch-none select-none"
+          :class="deplace ? 'cursor-grabbing' : 'cursor-grab'"
+          title="Glissez pour déplacer la fenêtre"
+          @pointerdown="demarrerDeplacement"
+          @pointermove="surDeplacement"
+          @pointerup="finDeplacement"
+          @pointercancel="finDeplacement"
+        >
           <h2 class="font-semibold text-sm flex items-center gap-2">
             <font-awesome-icon icon="fa-solid fa-comments" />
             Messagerie
@@ -161,6 +196,20 @@ const fermerFenetre = () => {
 
           <!-- Onglet Rendez-vous : prise & gestion des entretiens vidéo -->
           <SocialRendezVousListe v-else class="flex-1" />
+        </div>
+
+        <!-- Poignée de redimensionnement (coin bas-droit) -->
+        <div
+          class="absolute bottom-0 right-0 w-5 h-5 flex items-end justify-end p-0.5 cursor-nwse-resize touch-none z-10 text-gray-400 hover:text-custom-chocolat"
+          title="Glissez pour redimensionner"
+          @pointerdown="demarrerRedimensionnement"
+          @pointermove="surRedimensionnement"
+          @pointerup="finRedimensionnement"
+          @pointercancel="finRedimensionnement"
+        >
+          <svg viewBox="0 0 10 10" class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+            <path d="M9 2 L2 9 M9 5 L5 9 M9 8 L8 9" />
+          </svg>
         </div>
       </div>
     </Transition>

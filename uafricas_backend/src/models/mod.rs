@@ -1,5 +1,6 @@
 pub mod afripulse;
 pub mod amitie;
+pub mod appel;
 pub mod arbre_genealogique;
 pub mod africantive;
 pub mod afrolang;

@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, gouvernance, livres, matching, membres, messagerie, moocs, notification, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, gouvernance, livres, matching, membres, messagerie, moocs, notification, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -593,6 +593,14 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{id}/refuser", web::post().to(rendez_vous::refuser))
                     .route("/{id}/contre-proposer", web::post().to(rendez_vous::contre_proposer))
                     .route("/{id}/annuler", web::post().to(rendez_vous::annuler)),
+            )
+            // Routes des appels directs en visioconférence (sans rendez-vous)
+            .service(
+                web::scope("/appels")
+                    .route("", web::post().to(appels::appeler))
+                    .route("/{id}/salle", web::get().to(appels::salle))
+                    .route("/{id}/refuser", web::post().to(appels::refuser))
+                    .route("/{id}/annuler", web::post().to(appels::annuler)),
             )
             // Routes des formations (MOOC/CLOM)
             .service(
