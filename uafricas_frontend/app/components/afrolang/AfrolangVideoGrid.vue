@@ -1,13 +1,25 @@
 <template>
   <div class="flex-1 p-2 sm:p-4 overflow-hidden flex flex-col gap-2 sm:gap-4">
-    <!-- Partage d'écran proéminent -->
-    <div v-if="ecranPartageActif" class="flex-1 min-h-0">
-      <AfrolangParticipantTile
-        :participant="ecranPartageActif"
-        :is-dominant="false"
-        :is-screen-share="true"
-      />
-    </div>
+    <!-- Partage d'écran proéminent + pellicule des participants (pour qu'ils
+         restent visibles ; l'audio, lui, est rendu indépendamment dans AfrolangRoom). -->
+    <template v-if="ecranPartageActif">
+      <div class="flex-1 min-h-0">
+        <AfrolangParticipantTile
+          :participant="ecranPartageActif"
+          :is-dominant="false"
+          :is-screen-share="true"
+        />
+      </div>
+      <div class="h-24 sm:h-32 shrink-0 flex gap-2 overflow-x-auto">
+        <AfrolangParticipantTile
+          v-for="participant in participants"
+          :key="participant.identity"
+          :participant="participant"
+          :is-dominant="participant.identity === dominantSpeaker"
+          class="w-28 sm:w-36 shrink-0 rounded-lg"
+        />
+      </div>
+    </template>
 
     <!-- Spotlight (FR-023) : participant mis en évidence agrandi au centre. -->
     <template v-else-if="participantSpotlight">
@@ -38,17 +50,13 @@
     <!-- Grille des participants -->
     <div
       v-else
-      :class="[
-        ecranPartageActif ? 'h-32 sm:h-40 shrink-0 flex gap-2 overflow-x-auto' : gridClass,
-        'transition-all duration-300 ease-in-out',
-      ]"
+      :class="[gridClass, 'transition-all duration-300 ease-in-out']"
     >
       <AfrolangParticipantTile
         v-for="participant in participants"
         :key="participant.identity"
         :participant="participant"
         :is-dominant="participant.identity === dominantSpeaker"
-        :class="ecranPartageActif ? 'w-32 sm:w-40 shrink-0 rounded-lg' : ''"
       />
     </div>
 

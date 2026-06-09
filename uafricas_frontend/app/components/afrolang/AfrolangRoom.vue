@@ -212,6 +212,17 @@
     <!-- Passation de modération (refonte multi-modérateurs) : prompt au démarreur
          « placeholder » + bannière de promotion au modérateur désigné entrant. -->
     <AfrolangPassationModerationPrompt :session-id="session.id" />
+
+    <!-- Audio des participants distants — conteneur STABLE (toujours monté) :
+         découplé de la grille vidéo pour que le son ne se coupe pas lors des
+         changements de layout (partage d'écran, spotlight…). -->
+    <div class="hidden" aria-hidden="true">
+      <AfrolangParticipantAudio
+        v-for="p in participantsAvecAudio"
+        :key="p.identity"
+        :track="p.audioTrack"
+      />
+    </div>
   </div>
 </template>
 
@@ -432,6 +443,13 @@ const allParticipants = computed<RoomParticipant[]>(() => {
   }
   return list
 })
+
+// Participants DISTANTS dont l'audio doit être joué, rendus dans un conteneur
+// stable (cf. <audio> ci-dessous) pour que le son ne se coupe jamais lors des
+// changements de layout (partage d'écran, spotlight, ré-agencement de la grille).
+const participantsAvecAudio = computed<RoomParticipant[]>(() =>
+  allParticipants.value.filter(p => !p.isLocal && p.audioTrack),
+)
 
 // Extraire les tracks d'un participant
 const extractParticipantInfo = (participant: Participant, isLocal: boolean): RoomParticipant => {

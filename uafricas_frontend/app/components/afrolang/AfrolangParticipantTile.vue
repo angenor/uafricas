@@ -40,12 +40,8 @@
       </div>
     </div>
 
-    <!-- Audio (pour les participants distants) -->
-    <audio
-      v-if="participant.audioTrack && !participant.isLocal"
-      ref="audioRef"
-      autoplay
-    />
+    <!-- Audio distant : géré dans AfrolangRoom (conteneur stable) pour ne pas se
+         couper lors des changements de layout (partage d'écran, spotlight…). -->
 
     <!-- Overlay bottom -->
     <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-2 sm:p-3">
@@ -112,7 +108,6 @@ const props = defineProps<{
 }>()
 
 const videoRef = ref<HTMLVideoElement | null>(null)
-const audioRef = ref<HTMLAudioElement | null>(null)
 const screenRef = ref<HTMLVideoElement | null>(null)
 
 const initiales = computed(() => {
@@ -132,13 +127,6 @@ const attachVideoTrack = () => {
   }
 }
 
-const attachAudioTrack = () => {
-  if (audioRef.value && props.participant.audioTrack) {
-    const stream = new MediaStream([props.participant.audioTrack])
-    audioRef.value.srcObject = stream
-  }
-}
-
 const attachScreenTrack = () => {
   if (screenRef.value && props.participant.screenTrack) {
     const stream = new MediaStream([props.participant.screenTrack])
@@ -147,13 +135,11 @@ const attachScreenTrack = () => {
 }
 
 watch(() => props.participant.videoTrack, () => nextTick(attachVideoTrack))
-watch(() => props.participant.audioTrack, () => nextTick(attachAudioTrack))
 watch(() => props.participant.screenTrack, () => nextTick(attachScreenTrack))
 
 onMounted(() => {
   nextTick(() => {
     attachVideoTrack()
-    attachAudioTrack()
     attachScreenTrack()
   })
 })
