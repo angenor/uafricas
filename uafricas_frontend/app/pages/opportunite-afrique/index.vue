@@ -208,7 +208,7 @@
               <div class="flex flex-col lg:flex-row gap-6">
                 <!-- Carte SVG d'Afrique -->
                 <div class="flex-1 bg-white rounded-lg shadow-md overflow-hidden">
-                  <div class="map-container relative p-1 sm:p-2" @mousemove="handleMapMouseMove">
+                  <div class="map-container relative p-0 sm:p-1" @mousemove="handleMapMouseMove">
                     <svg
                       :viewBox="AFRICA_VIEWBOX"
                       class="africa-map w-full h-auto"
@@ -407,8 +407,8 @@ const nomsPaysFr: Record<string, string> = {
   ug: 'Ouganda', zm: 'Zambie', zw: 'Zimbabwe', eh: 'Sahara occidental',
 }
 
-// ViewBox calé au plus près du continent (bbox réelle ~404,350 233×261 + marge)
-const AFRICA_VIEWBOX = '396 342 249 277'
+// ViewBox calé au plus près du continent (bbox réelle ~404,350 233×261 + marge mini)
+const AFRICA_VIEWBOX = '401 347 239 267'
 
 // Couleurs par region
 const REGION_COLORS: Record<string, string> = {
@@ -516,7 +516,7 @@ onMounted(async () => {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 85vh;
+  max-height: 92vh;
   margin: 0 auto;
 }
 
