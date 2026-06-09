@@ -1309,6 +1309,23 @@ export const useAfrolang = () => {
     }
   }
 
+  /** Liste des pays d'origine effectivement utilisés par au moins une salle
+   *  publique active. Indépendant de la pagination/des filtres (contrairement à
+   *  une dérivation depuis la page courante). */
+  const listerPaysDisponibles = async (): Promise<PaysOrigineLight[]> => {
+    try {
+      const reponse = await $fetch<ApiResponse<PaysOrigineLight[]>>(
+        `${apiBase}/api/afrolang/pays-disponibles`,
+      )
+      if (!reponse.success || !reponse.data) return []
+      return reponse.data
+    }
+    catch (e: unknown) {
+      console.error('Erreur listerPaysDisponibles:', e)
+      return []
+    }
+  }
+
   // ── Phase 4 : Tableau blanc ──
 
   const obtenirTableauBlanc = async (sessionId: string): Promise<TableauBlancData> => {
@@ -1968,6 +1985,7 @@ export const useAfrolang = () => {
     // Stats
     obtenirStats,
     listerLangues,
+    listerPaysDisponibles,
     // Ressources et messagerie (US6)
     listerRessources,
     uploaderRessourceFichier,

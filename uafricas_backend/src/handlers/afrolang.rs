@@ -4822,10 +4822,16 @@ fn proposition_select_query(where_clause: &str, order_limit: &str) -> String {
 pub async fn lister_pays_disponibles(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ApiErreur> {
+    // Uniquement les pays effectivement référencés par au moins une salle
+    // publique active (alignement sur `lister_langues`). Évite d'exposer dans le
+    // filtre des territoires sans aucune salle associée.
     let rows: Vec<(Uuid, String, Option<String>)> = sqlx::query_as(
-        "SELECT id, nom, code_iso2 FROM shared.pays
-         WHERE actif = TRUE
-         ORDER BY nom ASC",
+        "SELECT DISTINCT p.id, p.nom, p.code_iso2
+         FROM shared.pays p
+         JOIN afrolang.salle_pays_origine spo ON spo.pays_id = p.id
+         JOIN afrolang.salle s ON s.id = spo.salle_id
+         WHERE p.actif = TRUE AND s.actif = TRUE
+         ORDER BY p.nom ASC",
     )
     .fetch_all(pool.get_ref())
     .await?;

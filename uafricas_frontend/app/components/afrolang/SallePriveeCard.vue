@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { getInitiales, type SallePriveeAPI } from '~/composables/useAfrolang'
 
 const props = defineProps<{
@@ -15,11 +15,9 @@ const emit = defineEmits<{
   (e: 'ouvrir', sallePriveeId: string): void
   /** Modifier le code secret (auteur). */
   (e: 'modifier-code', sallePriveeId: string): void
-  /** Archiver la salle (auteur). */
+  /** Supprimer la salle (auteur). */
   (e: 'archiver', sallePriveeId: string): void
 }>()
-
-const menuOuvert = ref(false)
 
 const initiales = computed(() =>
   getInitiales(
@@ -38,12 +36,10 @@ const handleAction = () => {
 }
 
 const handleModifierCode = () => {
-  menuOuvert.value = false
   emit('modifier-code', props.sallePrivee.id)
 }
 
 const handleArchiver = () => {
-  menuOuvert.value = false
   emit('archiver', props.sallePrivee.id)
 }
 </script>
@@ -71,38 +67,27 @@ const handleArchiver = () => {
           <font-awesome-icon :icon="['fas', 'lock']" class="w-3 h-3" />
         </span>
 
-        <!-- Menu auteur -->
-        <div v-if="sallePrivee.est_auteur" class="relative">
+        <!-- Actions auteur : icônes directes (modifier le code / supprimer) -->
+        <template v-if="sallePrivee.est_auteur">
           <button
             type="button"
             class="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded"
-            aria-label="Actions"
-            @click="menuOuvert = !menuOuvert"
+            aria-label="Modifier le code secret"
+            title="Modifier le code secret"
+            @click="handleModifierCode"
           >
-            <font-awesome-icon :icon="['fas', 'ellipsis-vertical']" class="w-3 h-3" />
+            <font-awesome-icon :icon="['fas', 'key']" class="w-3 h-3" />
           </button>
-          <div
-            v-if="menuOuvert"
-            class="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20"
+          <button
+            type="button"
+            class="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+            aria-label="Supprimer ma salle privée"
+            title="Supprimer ma salle privée"
+            @click="handleArchiver"
           >
-            <button
-              type="button"
-              class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-              @click="handleModifierCode"
-            >
-              <font-awesome-icon :icon="['fas', 'key']" class="w-3 h-3 text-gray-400" />
-              Modifier le code secret
-            </button>
-            <button
-              type="button"
-              class="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-gray-100"
-              @click="handleArchiver"
-            >
-              <font-awesome-icon :icon="['fas', 'box-archive']" class="w-3 h-3" />
-              Archiver ma salle
-            </button>
-          </div>
-        </div>
+            <font-awesome-icon :icon="['fas', 'trash']" class="w-3 h-3" />
+          </button>
+        </template>
       </div>
     </div>
 

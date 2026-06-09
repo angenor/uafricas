@@ -367,6 +367,7 @@ import {
   type SallePriveeAPI,
   type SalleFiltres,
   type AfrolangStats,
+  type PaysOrigineLight,
 } from '~/composables/useAfrolang'
 import { useUserStore } from '~/stores/user'
 
@@ -403,6 +404,7 @@ const {
   memoriserAccesJeton,
   obtenirStats,
   listerLangues,
+  listerPaysDisponibles,
 } = useAfrolang()
 
 // State
@@ -438,16 +440,11 @@ const filtres = ref<SalleFiltres>({
   pays_id: '',
 })
 
-// Pays d'origine disponibles, dérivés des salles affichées (feature 001-afrolang-pays-origine)
-const paysDisponibles = computed(() => {
-  const map = new Map<string, { id: string; nom: string; code_iso2: string | null }>()
-  for (const salle of salles.value) {
-    for (const p of salle.pays_origine ?? []) {
-      if (!map.has(p.id)) map.set(p.id, p)
-    }
-  }
-  return Array.from(map.values()).sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
-})
+// Pays d'origine disponibles (feature 001-afrolang-pays-origine).
+// Source = endpoint dédié `/pays-disponibles` (tous les territoires de toutes
+// les salles), indépendant de la pagination et des filtres en cours — sinon la
+// liste se restreindrait aux seules salles de la page courante.
+const paysDisponibles = ref<PaysOrigineLight[]>([])
 
 let rechercheTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -660,14 +657,14 @@ const soumettreNouveauCode = async () => {
 }
 
 const confirmerArchivage = async (sallePriveeId: string) => {
-  if (!confirm('Archiver définitivement cette salle privée ? La session en cours sera terminée.')) {
+  if (!confirm('Supprimer définitivement cette salle privée ? La session en cours sera terminée.')) {
     return
   }
   sallePriveeEnCours.value = sallePriveeId
   const ok = await archiverSallePriveeParAuteur(sallePriveeId)
   sallePriveeEnCours.value = null
   if (!ok) {
-    erreurSallePrivee.value = 'Échec de l\'archivage.'
+    erreurSallePrivee.value = 'Échec de la suppression.'
     return
   }
   if (expandedSalleId.value) {
@@ -769,9 +766,10 @@ const goToPage = (page: number) => {
 }
 
 onMounted(async () => {
-  const [statsResult, languesResult] = await Promise.all([
+  const [statsResult, languesResult, paysResult] = await Promise.all([
     obtenirStats(),
     listerLangues(),
+    listerPaysDisponibles(),
   ])
 
   if (statsResult) {
@@ -779,6 +777,7 @@ onMounted(async () => {
     totalSalles.value = statsResult.total_salles
   }
   languesDisponibles.value = languesResult
+  paysDisponibles.value = paysResult
 
   await chargerSalles()
   initialLoading.value = false
