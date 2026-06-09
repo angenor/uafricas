@@ -96,9 +96,9 @@ const choixTypes: { code: TypeRessourceContribuee | null; libelle: string }[] = 
       <div>
         <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
           <font-awesome-icon icon="fa-solid fa-users" class="text-custom-chocolat" />
-          Ressources contribuées par la communauté
+          Ressources pertinentes pour apprendre la langue ajoutées par la communauté.
         </h3>
-        <p class="text-xs text-gray-600 mt-1">Apports cumulatifs des participants à toutes les sessions de cette salle.</p>
+        <p class="text-xs text-gray-600 mt-1">Dictionnaire, alphabet, vocabulaire, phonétique, cours, vidéos, etc.</p>
       </div>
       <button v-if="peutContribuer"
               type="button"
