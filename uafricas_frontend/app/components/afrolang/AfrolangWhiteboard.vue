@@ -5,6 +5,15 @@
       <span class="font-semibold text-sm text-gray-800">Tableau blanc</span>
       <div class="flex-1" />
       <button
+        type="button"
+        class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition"
+        title="Recadrer pour voir tout le contenu"
+        @click="recadrer"
+      >
+        <font-awesome-icon :icon="['fas', 'expand']" class="w-3 h-3" />
+        Recadrer
+      </button>
+      <button
         v-if="estModerateur"
         type="button"
         class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 transition"
@@ -23,7 +32,7 @@
       </button>
     </div>
 
-    <div class="relative flex-1 w-full">
+    <div ref="whiteboardContainer" class="relative flex-1 w-full">
       <iframe
         ref="whiteboardFrame"
         src="/whiteboard/index.html"
@@ -81,9 +90,12 @@ defineEmits<{
 const { obtenirTableauBlanc, sauvegarderTableauBlanc, effacerTableauBlanc } = useAfrolang()
 
 const whiteboardFrame = ref<HTMLIFrameElement | null>(null)
+const whiteboardContainer = ref<HTMLElement | null>(null)
 const toastMessage = ref<string>('')
 let snapshotInterval: ReturnType<typeof setInterval> | null = null
 let toastTimer: ReturnType<typeof setTimeout> | null = null
+let resizeObserver: ResizeObserver | null = null
+let recadrerTimer: ReturnType<typeof setTimeout> | null = null
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
@@ -207,6 +219,17 @@ async function effacerTout(): Promise<void> {
   await effacerTableauBlanc(props.sessionId)
 }
 
+/** Recadre le tableau pour rendre tout le contenu visible (canvas partagé). */
+function recadrer(): void {
+  envoyerAIframe({ type: 'fit-content' })
+}
+
+/** Demande un recadrage différé (au redimensionnement du panneau). */
+function recadrerDebounce(): void {
+  if (recadrerTimer) clearTimeout(recadrerTimer)
+  recadrerTimer = setTimeout(() => envoyerAIframe({ type: 'fit-content' }), 180)
+}
+
 function declencherSnapshotModerateur(): void {
   if (!props.estModerateur) return
   envoyerAIframe({ type: 'get-snapshot' })
@@ -266,6 +289,13 @@ onMounted(() => {
     props.room.on('dataReceived', handleDataReceived)
   }
 
+  // Recadrer le contenu quand le panneau (donc l'iframe) change de largeur —
+  // garantit que chacun voit tout le contenu quelle que soit sa largeur.
+  if (whiteboardContainer.value && typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => recadrerDebounce())
+    resizeObserver.observe(whiteboardContainer.value)
+  }
+
   demarrerIntervalleSnapshot()
 })
 
@@ -281,6 +311,14 @@ onBeforeUnmount(() => {
   }
 
   arreterIntervalleSnapshot()
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
+  if (recadrerTimer) {
+    clearTimeout(recadrerTimer)
+    recadrerTimer = null
+  }
   if (toastTimer) {
     clearTimeout(toastTimer)
     toastTimer = null

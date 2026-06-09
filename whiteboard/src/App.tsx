@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Excalidraw } from '@excalidraw/excalidraw'
 import type {
   ExcalidrawImperativeAPI,
@@ -16,6 +16,9 @@ type MessageFromParent =
   | { type: 'load-snapshot'; snapshot: unknown }
   | { type: 'get-snapshot' }
   | { type: 'clear' }
+  // Recadrer le contenu à la vue (canvas partagé : tout le monde voit tout,
+  // quelle que soit la largeur de son panneau — cf. tableau blanc redimensionnable).
+  | { type: 'fit-content' }
 
 interface SnapshotSortie {
   elements: readonly ExcalidrawElement[]
@@ -35,6 +38,11 @@ function estSnapshotExcalidrawValide(donnees: unknown): boolean {
 }
 
 // ─── Filtre des champs volatils d'appState (data-model.md) ───────────────────
+//
+// Inclut désormais les champs de VIEWPORT (scrollX/scrollY/zoom/width/height…) :
+// le cadrage est géré localement par fitToView() pour que chaque client voie tout
+// le contenu indépendamment de la largeur de son panneau. Synchroniser le viewport
+// entre clients de largeurs différentes provoquait justement le débordement signalé.
 
 const CHAMPS_VOLATILS = new Set([
   'collaborators',
@@ -54,6 +62,14 @@ const CHAMPS_VOLATILS = new Set([
   'errorMessage',
   'showHyperlinkPopup',
   'showWelcomeScreen',
+  // Viewport — propre à chaque client (largeur de panneau différente).
+  'scrollX',
+  'scrollY',
+  'zoom',
+  'width',
+  'height',
+  'offsetTop',
+  'offsetLeft',
 ])
 
 function filterAppState(appState: Record<string, unknown>): Record<string, unknown> {
@@ -102,6 +118,9 @@ export default function WhiteboardApp() {
   const remoteRef = useRef<boolean>(false)
   const fichiersConnusRef = useRef<Set<string>>(new Set())
   const fichiersRejetesRef = useRef<Set<string>>(new Set())
+  // Horodatage de la dernière édition LOCALE : évite de recadrer (et donc de
+  // « bouger la vue ») pendant que l'utilisateur est en train de dessiner.
+  const dernierEditLocalRef = useRef<number>(0)
 
   useEffect(() => {
     apiRef.current = excalidrawAPI
@@ -111,6 +130,58 @@ export default function WhiteboardApp() {
     if (!excalidrawAPI) return
     window.parent.postMessage({ type: 'excalidraw-ready' }, '*')
   }, [excalidrawAPI])
+
+  // ── Cadrage « tout le contenu visible » (canvas partagé) ───────────────────
+  // Calcule la boîte englobante de tous les éléments et ajuste scroll + zoom pour
+  // que tout tienne dans le viewport, SANS jamais zoomer au-delà de 100 %.
+  const recadrerSurContenu = useCallback((force: boolean) => {
+    const api = apiRef.current
+    if (!api) return
+    if (!force && Date.now() - dernierEditLocalRef.current < 1500) return
+
+    const elements = api.getSceneElements().filter((e) => !e.isDeleted)
+    if (elements.length === 0) return
+
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    for (const el of elements) {
+      minX = Math.min(minX, el.x)
+      minY = Math.min(minY, el.y)
+      maxX = Math.max(maxX, el.x + el.width)
+      maxY = Math.max(maxY, el.y + el.height)
+    }
+    if (!Number.isFinite(minX) || !Number.isFinite(maxX)) return
+
+    const marge = 48
+    const contenuL = (maxX - minX) + marge * 2
+    const contenuH = (maxY - minY) + marge * 2
+
+    const etat = api.getAppState() as unknown as { width: number; height: number }
+    const vw = etat.width
+    const vh = etat.height
+    if (!vw || !vh) return
+
+    // Zoom = ajuster pour tout voir, mais jamais au-delà de 100 %.
+    const zoom = Math.max(0.1, Math.min(vw / contenuL, vh / contenuH, 1))
+    const centreX = (minX + maxX) / 2
+    const centreY = (minY + maxY) / 2
+    // Convention Excalidraw : screen = (scene + scroll) * zoom (offset 0).
+    const scrollX = vw / (2 * zoom) - centreX
+    const scrollY = vh / (2 * zoom) - centreY
+
+    // remoteRef évite que ce changement de viewport ne soit rediffusé en boucle.
+    remoteRef.current = true
+    api.updateScene({
+      appState: { scrollX, scrollY, zoom: { value: zoom } } as never,
+    })
+  }, [])
+
+  // Recadrage « doux » (arrivée d'un dessin distant — respecte l'édition locale)
+  // et « ferme » (redimensionnement / chargement / bouton — force le recadrage).
+  const recadrerDoux = useMemo(() => debounce(() => recadrerSurContenu(false), 250), [recadrerSurContenu])
+  const recadrerFerme = useMemo(() => debounce(() => recadrerSurContenu(true), 180), [recadrerSurContenu])
 
   const diffuserOperation = useRef(
     debounce((elements: readonly ExcalidrawElement[], appState: Record<string, unknown>) => {
@@ -174,6 +245,8 @@ export default function WhiteboardApp() {
         return
       }
 
+      // Édition locale : mémoriser l'instant (pour ne pas recadrer pendant le dessin).
+      dernierEditLocalRef.current = Date.now()
       diffuserOperation(elements, appState as unknown as Record<string, unknown>)
     },
     [diffuserOperation],
@@ -195,6 +268,9 @@ export default function WhiteboardApp() {
             elements: elements as ExcalidrawElement[],
             ...(appState ? { appState: appState as never } : {}),
           })
+          // Le contenu distant peut sortir du champ de vision (panneaux de
+          // largeurs différentes) → recadrer pour tout garder visible.
+          recadrerDoux()
           break
         }
 
@@ -221,6 +297,8 @@ export default function WhiteboardApp() {
               for (const f of fichiers) fichiersConnusRef.current.add(f.id)
             }
           }
+          // Recadrer après chargement initial (laisser la scène se poser).
+          setTimeout(() => recadrerSurContenu(true), 60)
           break
         }
 
@@ -242,6 +320,11 @@ export default function WhiteboardApp() {
           break
         }
 
+        case 'fit-content': {
+          recadrerSurContenu(true)
+          break
+        }
+
         default:
           break
       }
@@ -249,7 +332,15 @@ export default function WhiteboardApp() {
 
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
-  }, [])
+  }, [recadrerDoux, recadrerSurContenu])
+
+  // Redimensionnement de l'iframe (le panneau du tableau blanc est redimensionnable) :
+  // recadrer pour que le contenu reste entièrement visible dans la nouvelle largeur.
+  useEffect(() => {
+    const onResize = () => recadrerFerme()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [recadrerFerme])
 
   return (
     <div style={{ width: '100%', height: '100vh' }}>

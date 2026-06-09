@@ -1,5 +1,8 @@
 <template>
-  <div class="fixed inset-0 z-9999 flex h-screen bg-gray-900 text-white">
+  <div
+    class="fixed inset-0 z-9999 flex h-screen bg-gray-900 text-white"
+    :class="{ 'select-none cursor-col-resize': redimensionneTableauBlanc }"
+  >
     <!-- Zone video principale -->
     <div class="flex-1 flex flex-col min-w-0">
       <!-- Header -->
@@ -88,23 +91,36 @@
         </button>
       </div>
 
-      <!-- Zone principale : video + tableau blanc en split-screen -->
-      <div class="flex-1 flex min-h-0">
+      <!-- Zone principale : video + tableau blanc en split-screen redimensionnable -->
+      <div ref="zonePrincipaleRef" class="flex-1 flex min-h-0">
         <!-- Grille video -->
         <AfrolangVideoGrid
           :participants="allParticipants"
           :dominant-speaker="dominantSpeaker"
-          class="flex-1"
+          class="flex-1 min-w-0"
         />
 
-        <!-- Tableau blanc (split-screen droite) -->
+        <!-- Poignée de redimensionnement horizontal du tableau blanc (glisser-déposer) -->
+        <div
+          v-if="tableauBlancOuvert && session.tableau_blanc_actif"
+          class="w-1.5 shrink-0 cursor-col-resize bg-gray-700 hover:bg-blue-500/70 transition-colors touch-none"
+          :class="{ 'bg-blue-500/70': redimensionneTableauBlanc }"
+          title="Glisser pour redimensionner le tableau blanc"
+          @pointerdown="demarrerRedimTableauBlanc"
+          @pointermove="surRedimTableauBlanc"
+          @pointerup="finRedimTableauBlanc"
+          @pointercancel="finRedimTableauBlanc"
+        />
+
+        <!-- Tableau blanc (split-screen droite, largeur ajustable) -->
         <AfrolangWhiteboard
           v-if="tableauBlancOuvert && session.tableau_blanc_actif"
           :session-id="session.id"
           :est-moderateur="estModerateurEffectif"
           :ecriture-autorisee="monEcritureAutorisee"
           :room="room"
-          class="w-1/2 border-l border-gray-700"
+          class="shrink-0 min-w-0"
+          :style="{ width: largeurTableauBlanc + 'px' }"
           @fermer="tableauBlancOuvert = false"
         />
 
@@ -324,6 +340,70 @@ const moderationPanelOuvert = ref(false)
 const ressourcesOuvertes = ref(false)
 const tableauBlancOuvert = ref(false)
 const microActif = ref(true)
+
+// ── Tableau blanc redimensionnable horizontalement (glisser-déposer) ──
+/** Largeur courante du tableau blanc en px (split-screen droite). */
+const largeurTableauBlanc = ref(480)
+/** Vrai pendant un glissement de la poignée (retour visuel + garde). */
+const redimensionneTableauBlanc = ref(false)
+/** Conteneur de la zone vidéo + tableau blanc (sert au calcul des bornes). */
+const zonePrincipaleRef = ref<HTMLElement | null>(null)
+/** Largeur min/réserve pour la grille vidéo. */
+const TABLEAU_BLANC_MIN = 280
+const ZONE_VIDEO_MIN = 300
+/** L'utilisateur a-t-il déjà ajusté la largeur manuellement ? (sinon défaut = moitié). */
+const tableauBlancLargeurManuelle = ref(false)
+let _redimDepartX = 0
+let _redimDepartLargeur = 0
+
+const bornerLargeurTableauBlanc = (valeur: number): number => {
+  const zone = zonePrincipaleRef.value
+  const max = zone ? Math.max(TABLEAU_BLANC_MIN, zone.clientWidth - ZONE_VIDEO_MIN) : 1600
+  return Math.min(Math.max(valeur, TABLEAU_BLANC_MIN), max)
+}
+
+const demarrerRedimTableauBlanc = (e: PointerEvent) => {
+  redimensionneTableauBlanc.value = true
+  tableauBlancLargeurManuelle.value = true
+  _redimDepartX = e.clientX
+  _redimDepartLargeur = largeurTableauBlanc.value
+  // Capture du pointeur : garde le drag même quand le curseur passe au-dessus
+  // de l'iframe Excalidraw (qui sinon avalerait les évènements pointer).
+  ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+  e.preventDefault()
+}
+const surRedimTableauBlanc = (e: PointerEvent) => {
+  if (!redimensionneTableauBlanc.value) return
+  // Le tableau blanc est à droite : glisser vers la gauche l'élargit.
+  largeurTableauBlanc.value = bornerLargeurTableauBlanc(
+    _redimDepartLargeur + (_redimDepartX - e.clientX),
+  )
+}
+const finRedimTableauBlanc = (e: PointerEvent) => {
+  if (!redimensionneTableauBlanc.value) return
+  redimensionneTableauBlanc.value = false
+  try {
+    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
+  }
+  catch {
+    /* pointeur déjà relâché */
+  }
+}
+
+// Défaut « moitié de l'écran » à la 1ʳᵉ ouverture tant que l'utilisateur n'a pas
+// ajusté ; re-borne aussi à l'ouverture (en cas de redimensionnement de fenêtre).
+watch(tableauBlancOuvert, async (ouvert) => {
+  if (!ouvert) return
+  await nextTick()
+  if (!tableauBlancLargeurManuelle.value && zonePrincipaleRef.value) {
+    largeurTableauBlanc.value = bornerLargeurTableauBlanc(
+      Math.round(zonePrincipaleRef.value.clientWidth / 2),
+    )
+  }
+  else {
+    largeurTableauBlanc.value = bornerLargeurTableauBlanc(largeurTableauBlanc.value)
+  }
+})
 const cameraActive = ref(true)
 const ecranPartage = ref(false)
 const dominantSpeaker = ref<string | null>(null)
@@ -588,8 +668,17 @@ const connectToRoom = async () => {
   }
 }
 
+// Re-borne la largeur du tableau blanc si la fenêtre rétrécit (la grille vidéo
+// garde toujours sa réserve minimale).
+const reBornerLargeurTableauBlanc = () => {
+  if (tableauBlancOuvert.value) {
+    largeurTableauBlanc.value = bornerLargeurTableauBlanc(largeurTableauBlanc.value)
+  }
+}
+
 onMounted(() => {
   connectToRoom()
+  window.addEventListener('resize', reBornerLargeurTableauBlanc)
 })
 
 // Rafraîchir les badges « modérateur » quand le set de modérateurs change.
@@ -603,6 +692,7 @@ watch(moderateursOffice, () => {
 
 onBeforeUnmount(async () => {
   if (dureeInterval) clearInterval(dureeInterval)
+  window.removeEventListener('resize', reBornerLargeurTableauBlanc)
   if (detacherListenerModeration) {
     detacherListenerModeration()
     detacherListenerModeration = null
