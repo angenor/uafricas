@@ -127,7 +127,7 @@ BEGIN
         pays_senegal_id,
         'https://images.unsplash.com/photo-1589556264800-08ae9e129a8c?w=800',
         'Un Peuple, Un But, Une Foi',
-        196722.00, 17700000,
+        196722.00, 18380000,
         'https://flagcdn.com/w160/sn.png',
         'Un Peuple, Un But, Une Foi',
         'Français',
@@ -138,6 +138,13 @@ BEGIN
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_senegal_id;
 
@@ -150,7 +157,7 @@ BEGIN
         pays_civ_id,
         'https://images.unsplash.com/photo-1591117207239-788bf8de6c3b?w=800',
         'Union, Discipline, Travail',
-        322463.00, 29400000,
+        322463.00, 31170000,
         'https://flagcdn.com/w160/ci.png',
         'Union, Discipline, Travail',
         'Français',
@@ -161,6 +168,13 @@ BEGIN
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_civ_id;
 
@@ -173,7 +187,7 @@ BEGIN
         pays_cameroun_id,
         'https://images.unsplash.com/photo-1596005554384-d293674c91d7?w=800',
         'Paix, Travail, Patrie',
-        475442.00, 28600000,
+        475442.00, 29120000,
         'https://flagcdn.com/w160/cm.png',
         'Paix, Travail, Patrie',
         'Français, Anglais',
@@ -184,6 +198,13 @@ BEGIN
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_cameroun_id;
 
@@ -196,7 +217,7 @@ BEGIN
         pays_rdc_id,
         'https://images.unsplash.com/photo-1580746738099-78d6833b3471?w=800',
         'Justice, Paix, Travail',
-        2345409.00, 99000000,
+        2345409.00, 105800000,
         'https://flagcdn.com/w160/cd.png',
         'Justice, Paix, Travail',
         'Français',
@@ -207,6 +228,13 @@ BEGIN
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_rdc_id;
 
@@ -219,7 +247,7 @@ BEGIN
         pays_kenya_id,
         'https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?w=800',
         'Harambee (Travaillons ensemble)',
-        580367.00, 54000000,
+        580367.00, 56430000,
         'https://flagcdn.com/w160/ke.png',
         'Harambee',
         'Swahili, Anglais',
@@ -230,6 +258,13 @@ BEGIN
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_kenya_id;
 
@@ -242,7 +277,7 @@ BEGIN
         pays_ethiopie_id,
         'https://images.unsplash.com/photo-1523805009345-7448845a9e53?w=800',
         'L''Éthiopie d''abord',
-        1104300.00, 126500000,
+        1104300.00, 128700000,
         'https://flagcdn.com/w160/et.png',
         'L''Éthiopie d''abord',
         'Amharique',
@@ -253,6 +288,13 @@ BEGIN
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_ethiopie_id;
 
@@ -265,7 +307,7 @@ BEGIN
         pays_egypte_id,
         'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=800',
         'Liberté, Socialisme, Unité',
-        1001449.00, 109300000,
+        1001449.00, 114500000,
         'https://flagcdn.com/w160/eg.png',
         'Liberté, Socialisme, Unité',
         'Arabe',
@@ -276,6 +318,13 @@ BEGIN
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_egypte_id;
 
@@ -288,17 +337,24 @@ BEGIN
         pays_maroc_id,
         'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=800',
         'Dieu, la Patrie, le Roi',
-        446550.00, 37800000,
+        446550.00, 37840000,
         'https://flagcdn.com/w160/ma.png',
         'Dieu, la Patrie, le Roi',
         'Arabe, Amazigh',
-        'Français',
+        'Darija (arabe marocain), Tamazight, Français',
         'Dirham marocain (MAD)',
         u_createur_id
     )
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_maroc_id;
 
@@ -311,17 +367,24 @@ BEGIN
         pays_za_id,
         'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=800',
         '!ke e: /xarra //ke (L''unité dans la diversité)',
-        1221037.00, 60000000,
+        1221037.00, 63210000,
         'https://flagcdn.com/w160/za.png',
         '!ke e: /xarra //ke',
-        'Zoulou, Xhosa, Afrikaans, Anglais, Pedi, Tswana, Sotho, Tsonga, Swati, Venda, Ndebele',
-        '',
+        'Anglais, Afrikaans, Zoulou, Xhosa, Sotho, Tswana, Pedi, Tsonga, Swati, Venda, Ndebele',
+        'Zoulou, Xhosa, Afrikaans, Sotho du Nord',
         'Rand sud-africain (ZAR)',
         u_createur_id
     )
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_za_id;
 
@@ -334,7 +397,7 @@ BEGIN
         pays_nigeria_id,
         'https://images.unsplash.com/photo-1618828665011-0abd973f7bb8?w=800',
         'Unité et Foi, Paix et Progrès',
-        923768.00, 223800000,
+        923768.00, 229150000,
         'https://flagcdn.com/w160/ng.png',
         'Unité et Foi, Paix et Progrès',
         'Anglais',
@@ -345,6 +408,13 @@ BEGIN
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_nigeria_id;
 
@@ -357,7 +427,7 @@ BEGIN
         pays_ghana_id,
         'https://images.unsplash.com/photo-1577948000111-9c970dfe3743?w=800',
         'Liberté et Justice',
-        238535.00, 33500000,
+        238535.00, 34120000,
         'https://flagcdn.com/w160/gh.png',
         'Liberté et Justice',
         'Anglais',
@@ -368,6 +438,13 @@ BEGIN
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_ghana_id;
 
@@ -380,7 +457,7 @@ BEGIN
         pays_tanzanie_id,
         'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=800',
         'Uhuru na Umoja (Liberté et Unité)',
-        945087.00, 65500000,
+        945087.00, 67440000,
         'https://flagcdn.com/w160/tz.png',
         'Uhuru na Umoja',
         'Swahili, Anglais',
@@ -391,6 +468,13 @@ BEGIN
     ON CONFLICT (pays_id) DO UPDATE SET
         image_couverture_url = EXCLUDED.image_couverture_url,
         slogan = EXCLUDED.slogan,
+        superficie_km2 = EXCLUDED.superficie_km2,
+        population = EXCLUDED.population,
+        image_drapeau_url = EXCLUDED.image_drapeau_url,
+        image_devise_url = EXCLUDED.image_devise_url,
+        langue_officielle = EXCLUDED.langue_officielle,
+        langues_populaires = EXCLUDED.langues_populaires,
+        monnaie = EXCLUDED.monnaie,
         updated_at = NOW()
     RETURNING id INTO fiche_tanzanie_id;
 

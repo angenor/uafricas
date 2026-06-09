@@ -139,4 +139,74 @@ BEGIN
     RAISE NOTICE 'Seed pays africains : 55 codes référencés, % nouvelles fiches créées', nb_creees;
 END $$;
 
+-- ── 3. Enrichissement : population, superficie, langues populaires, devise ──
+--   Renseigne ces champs pour TOUTE fiche dont population IS NULL (donc les
+--   coquilles créées ci-dessus), sans jamais écraser les fiches détaillées du
+--   seed 20 (qui ont déjà une population). Idempotent. Données ~2024.
+CREATE TEMP TABLE tmp_pays_enrichissement (
+    iso2          CHAR(2),
+    population    BIGINT,
+    superficie    NUMERIC(12,2),
+    langues_pop   TEXT,
+    devise        TEXT
+);
+
+INSERT INTO tmp_pays_enrichissement (iso2, population, superficie, langues_pop, devise) VALUES
+    ('dz',  46000000, 2381741.00, 'Arabe algérien (Darija), Kabyle, Français', 'Par le peuple et pour le peuple'),
+    ('ao',  36700000, 1246700.00, 'Umbundu, Kimbundu, Kikongo',                'Virtus Unita Fortior'),
+    ('bj',  13700000,  114763.00, 'Fon, Yoruba, Bariba',                       'Fraternité, Justice, Travail'),
+    ('bw',   2680000,  581730.00, 'Tswana, Kalanga',                           'Pula'),
+    ('bf',  23250000,  272967.00, 'Mooré, Dioula, Fulfulde',                   'Unité, Progrès, Justice'),
+    ('bi',  13200000,   27834.00, 'Kirundi, Swahili',                          'Unité, Travail, Progrès'),
+    ('cv',    600000,    4033.00, 'Créole capverdien (Kriolu)',                'Unidade, Trabalho, Progresso'),
+    ('cf',   5550000,  622984.00, 'Sango, Gbaya, Banda',                       'Unité, Dignité, Travail'),
+    ('km',    870000,    1861.00, 'Comorien (Shikomori)',                      'Unité, Solidarité, Développement'),
+    ('cg',   6100000,  342000.00, 'Lingala, Kituba',                           'Unité, Travail, Progrès'),
+    ('dj',   1140000,   23200.00, 'Somali, Afar',                              'Unité, Égalité, Paix'),
+    ('gq',   1700000,   28051.00, 'Fang, Bubi',                                'Unidad, Paz, Justicia'),
+    ('er',   3680000,  117600.00, 'Tigré, Afar',                               NULL),
+    ('sz',   1230000,   17364.00, 'SiSwati',                                   'Siyinqaba'),
+    ('ga',   2470000,  267668.00, 'Fang, Myènè, Punu',                         'Union, Travail, Justice'),
+    ('gm',   2770000,   11295.00, 'Mandingue, Wolof, Peul',                    'Progress, Peace, Prosperity'),
+    ('gn',  14200000,  245857.00, 'Soussou, Malinké, Peul',                    'Travail, Justice, Solidarité'),
+    ('gw',   2150000,   36125.00, 'Créole bissau-guinéen (Kriol), Balante',    'Unidade, Luta, Progresso'),
+    ('ls',   2330000,   30355.00, 'Sesotho',                                   'Khotso, Pula, Nala'),
+    ('lr',   5400000,  111369.00, 'Kpellé, Bassa',                             'The love of liberty brought us here'),
+    ('ly',   6990000, 1759540.00, 'Arabe libyen, Amazigh',                     'Liberté, Justice, Unité'),
+    ('mg',  30300000,  587041.00, 'Malgache',                                  'Fitiavana, Tanindrazana, Fandrosoana'),
+    ('mw',  21200000,  118484.00, 'Chichewa, Chiyao',                          'Unity and Freedom'),
+    ('ml',  23300000, 1240192.00, 'Bambara, Peul, Songhaï',                    'Un Peuple, Un But, Une Foi'),
+    ('mr',   4900000, 1030700.00, 'Hassanya, Pular, Soninké, Wolof',           'Honneur, Fraternité, Justice'),
+    ('mu',   1260000,    2040.00, 'Créole mauricien, Bhojpuri',                'Stella Clavisque Maris Indici'),
+    ('mz',  33900000,  801590.00, 'Makhuwa, Sena, Tsonga',                     NULL),
+    ('na',   2600000,  825615.00, 'Oshiwambo, Afrikaans, Khoekhoe',            'Unity, Liberty, Justice'),
+    ('ne',  26200000, 1267000.00, 'Haoussa, Zarma, Tamasheq',                  'Fraternité, Travail, Progrès'),
+    ('ug',  48600000,  241550.00, 'Luganda, Swahili',                          'For God and My Country'),
+    ('rw',  13800000,   26338.00, 'Kinyarwanda',                               'Ubumwe, Umurimo, Gukunda Igihugu'),
+    ('st',    230000,     964.00, 'Forro, Créole',                             'Unidade, Disciplina, Trabalho'),
+    ('sc',    130000,     459.00, 'Créole seychellois',                        'Finis coronat opus'),
+    ('sl',   8900000,   71740.00, 'Krio, Temné, Mendé',                        'Unity, Freedom, Justice'),
+    ('so',  18100000,  637657.00, 'Somali',                                    NULL),
+    ('sd',  48100000, 1886068.00, 'Arabe soudanais, Bedja',                    'Victoire à nous'),
+    ('ss',  11500000,  619745.00, 'Dinka, Nuer, Arabe de Juba',                'Justice, Liberty, Prosperity'),
+    ('td',  18700000, 1284000.00, 'Arabe tchadien, Sara',                      'Unité, Travail, Progrès'),
+    ('tg',   9100000,   56785.00, 'Éwé, Kabyè',                                'Travail, Liberté, Patrie'),
+    ('tn',  12200000,  163610.00, 'Arabe tunisien (Derja), Français',          'Liberté, Ordre, Justice'),
+    ('zm',  20600000,  752612.00, 'Bemba, Nyanja, Tonga',                      'One Zambia, One Nation'),
+    ('zw',  16600000,  390757.00, 'Shona, Ndébélé',                            'Unity, Freedom, Work'),
+    ('eh',    580000,  266000.00, 'Hassanya',                                  NULL);
+
+UPDATE country_profile.fiche_pays fp
+SET population         = e.population,
+    superficie_km2     = e.superficie,
+    langues_populaires = e.langues_pop,
+    slogan             = COALESCE(fp.slogan, e.devise),
+    image_devise_url   = COALESCE(NULLIF(fp.image_devise_url, ''), e.devise),
+    updated_at         = NOW()
+FROM shared.pays p
+JOIN tmp_pays_enrichissement e ON LOWER(p.code_iso2) = e.iso2
+WHERE fp.pays_id = p.id
+  AND fp.population IS NULL;
+
+DROP TABLE IF EXISTS tmp_pays_enrichissement;
 DROP TABLE IF EXISTS tmp_pays_afrique;

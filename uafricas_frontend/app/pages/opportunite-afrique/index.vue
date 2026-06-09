@@ -37,29 +37,27 @@
               <div class="flex items-center bg-gray-100 rounded-lg p-1">
                 <button
                   @click="viewMode = 'grille'"
-                  class="p-2 rounded-md transition-colors"
+                  class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   :class="viewMode === 'grille' ? 'bg-custom-green text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                   title="Vue grille"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
+                  <span>Grille</span>
                 </button>
                 <button
                   @click="viewMode = 'carte'"
-                  class="p-2 rounded-md transition-colors"
+                  class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   :class="viewMode === 'carte' ? 'bg-custom-green text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                   title="Vue carte"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
+                  <span>Carte</span>
                 </button>
               </div>
-              <NuxtLink to="/africa-culture"
-                        class="text-custom-chocolat hover:text-custom-green font-medium hidden sm:inline">
-                &#8592; AfricaCulture
-              </NuxtLink>
             </div>
           </div>
         </div>
