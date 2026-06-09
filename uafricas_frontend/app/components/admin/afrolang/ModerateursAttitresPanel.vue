@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useAdminAfrolangSalles } from '~/composables/useAdminAfrolangSalles'
+import { useAdminUtilisateurs } from '~/composables/useAdminUtilisateurs'
 import type { ModerateurAttitre } from '~/composables/useAfrolang'
 import { formatDate } from '~/composables/useAfrolang'
 
@@ -16,13 +17,28 @@ const {
   retirerModerateur,
 } = useAdminAfrolangSalles()
 
+// Recherche utilisateur (réutilise useAdminUtilisateurs, comme SalleAdministrateursPanel).
+const {
+  utilisateurs,
+  filtres: filtresUsers,
+  chargerListe: chargerUtilisateurs,
+} = useAdminUtilisateurs()
+
 const moderateurs = ref<ModerateurAttitre[]>([])
 const chargement = ref(false)
 const messageRetour = ref<string | null>(null)
+const saving = ref(false)
 
-const form = ref({
-  utilisateur_id: '',
-  disponibilite: '',
+const recherche = ref('')
+const utilisateurChoisi = ref('')
+const disponibilite = ref('')
+
+// Exclure les attitrés DÉJÀ actifs sur cette salle (évite le doublon UNIQUE).
+const utilisateursDisponibles = computed(() => {
+  const actifs = new Set(
+    moderateurs.value.filter(m => m.actif).map(m => m.utilisateur_id),
+  )
+  return utilisateurs.value.filter(u => !actifs.has(u.id))
 })
 
 const charger = async () => {
@@ -35,19 +51,28 @@ const charger = async () => {
   chargement.value = false
 }
 
+const rechercherUtilisateurs = async () => {
+  filtresUsers.recherche = recherche.value
+  await chargerUtilisateurs()
+}
+
 const designer = async () => {
-  if (!props.salleId || !form.value.utilisateur_id.trim()) return
+  if (!props.salleId || !utilisateurChoisi.value) return
+  saving.value = true
   messageRetour.value = null
   const ok = await designerModerateur(props.salleId, {
-    utilisateur_id: form.value.utilisateur_id.trim(),
-    disponibilite: form.value.disponibilite.trim() || undefined,
+    utilisateur_id: utilisateurChoisi.value,
+    disponibilite: disponibilite.value.trim() || undefined,
   })
+  saving.value = false
   if (ok) {
     messageRetour.value = 'Modérateur désigné.'
-    form.value.utilisateur_id = ''
-    form.value.disponibilite = ''
+    utilisateurChoisi.value = ''
+    disponibilite.value = ''
+    recherche.value = ''
     await charger()
-  } else {
+  }
+  else {
     messageRetour.value = 'Échec de la désignation.'
   }
 }
@@ -59,7 +84,8 @@ const retirer = async (utilisateurId: string) => {
   if (ok) {
     messageRetour.value = 'Modérateur retiré.'
     await charger()
-  } else {
+  }
+  else {
     messageRetour.value = 'Échec du retrait.'
   }
 }
@@ -78,26 +104,54 @@ onMounted(() => charger())
       <div class="card bg-base-100 shadow-sm mb-4">
         <div class="card-body">
           <h3 class="card-title text-base mb-2">Désigner un modérateur</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <div class="form-control md:col-span-1">
-              <label class="label py-1"><span class="label-text text-xs">UUID utilisateur</span></label>
-              <input v-model="form.utilisateur_id" type="text" class="input input-bordered input-sm" />
+          <p class="text-xs text-base-content/60 mb-2">
+            Le modérateur désigné prendra la modération des sessions de cette salle
+            (passation par consentement du démarreur, ou automatique après 60 s).
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div class="form-control md:col-span-2">
+              <label class="label py-1"><span class="label-text text-xs">Rechercher un utilisateur (nom / e-mail)</span></label>
+              <div class="join">
+                <input
+                  v-model="recherche"
+                  type="text"
+                  class="input input-bordered input-sm join-item w-full"
+                  placeholder="Rechercher…"
+                  @keyup.enter="rechercherUtilisateurs"
+                />
+                <button class="btn btn-primary btn-sm join-item" @click="rechercherUtilisateurs">
+                  <font-awesome-icon icon="magnifying-glass" />
+                </button>
+              </div>
             </div>
-            <div class="form-control md:col-span-1">
-              <label class="label py-1"><span class="label-text text-xs">Disponibilité</span></label>
-              <input v-model="form.disponibilite" type="text" class="input input-bordered input-sm" placeholder="Ex : lun-ven 18h-20h" />
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs">Utilisateur</span></label>
+              <select v-model="utilisateurChoisi" class="select select-bordered select-sm">
+                <option value="" disabled>Sélectionner…</option>
+                <option v-for="u in utilisateursDisponibles" :key="u.id" :value="u.id">
+                  {{ u.prenom }} {{ u.nom }} — {{ u.email }}
+                </option>
+              </select>
             </div>
-            <div class="flex items-end">
-              <button
-                class="btn btn-primary btn-sm w-full"
-                :disabled="!form.utilisateur_id.trim()"
-                @click="designer"
-              >
-                Désigner
-              </button>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs">Disponibilité (facultatif)</span></label>
+              <input v-model="disponibilite" type="text" class="input input-bordered input-sm" placeholder="Ex : lun-ven 18h-20h" />
             </div>
           </div>
-          <p v-if="messageRetour" class="text-xs mt-2 opacity-70">{{ messageRetour }}</p>
+          <div class="flex items-center justify-between mt-3">
+            <p v-if="messageRetour" class="text-xs opacity-70">{{ messageRetour }}</p>
+            <p v-else class="text-xs opacity-50">
+              L'utilisateur n'apparaît pas ? Affinez la recherche.
+            </p>
+            <button
+              class="btn btn-primary btn-sm"
+              :disabled="!utilisateurChoisi || saving"
+              :class="{ loading: saving }"
+              @click="designer"
+            >
+              <font-awesome-icon icon="user-plus" class="mr-1" /> Désigner
+            </button>
+          </div>
         </div>
       </div>
 

@@ -70,7 +70,8 @@ pub const SESSION_COLONNES: &str =
      ses.moderateur_id, ses.date_debut_prevue, ses.demarre_at,
      ses.termine_at, ses.duree_secondes, ses.max_participants,
      ses.nombre_participants_pic, ses.tableau_blanc_actif,
-     ses.noeud_id, ses.cree_par, ses.created_at, ses.updated_at";
+     ses.noeud_id, ses.cree_par, ses.created_at, ses.updated_at,
+     ses.demande_passation_at, ses.demande_passation_par";
 
 /// Colonnes de base pour afrolang.salle_moderateur
 pub const SALLE_MODERATEUR_COLONNES: &str =
@@ -220,6 +221,12 @@ pub struct SessionRow {
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    // Passation de modération (placeholder → modérateur attitré) :
+    // instant STABLE d'ouverture de la demande (insensible aux reconnexions,
+    // contrairement à session_participant.rejoint_at) + premier attitré demandeur.
+    // NULL hors demande en cours. Échéance auto = demande_passation_at + 60 s.
+    pub demande_passation_at: Option<DateTime<Utc>>,
+    pub demande_passation_par: Option<Uuid>,
 }
 
 #[derive(Debug, FromRow)]
@@ -426,7 +433,7 @@ pub struct SalleDetailResponse {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct ModerateurResponse {
     pub id: Uuid,
     pub nom: String,
@@ -554,6 +561,22 @@ pub struct SessionDetailResponse {
     pub updated_at: DateTime<Utc>,
     pub spotlight: Option<SpotlightInfo>,
     pub permissions_tableau_blanc_count: i64,
+    /// Demande de passation de modération en cours (filet de lecture si le
+    /// DataPacket LiveKit `passation_demande` a été perdu — FR temps réel).
+    /// Non-NULL uniquement pour une session publique avec placeholder présent
+    /// et ≥ 1 modérateur attitré présent en attente d'activation.
+    pub passation_en_attente: Option<PassationEnAttenteResponse>,
+}
+
+/// État dérivé d'une demande de passation de modération (lecture).
+#[derive(Debug, Serialize, Clone)]
+pub struct PassationEnAttenteResponse {
+    /// Premier modérateur attitré entrant ayant déclenché la demande.
+    pub demandeur: ModerateurResponse,
+    /// Placeholder courant qui doit accepter (= session.moderateur_id).
+    pub cible_id: Uuid,
+    /// Échéance d'auto-promotion : demande_passation_at + 60 s (UTC).
+    pub expire_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize)]
@@ -760,7 +783,13 @@ pub struct DemarrerRejoindreResponse {
     pub session_id: Uuid,
     pub livekit_url: String,
     pub livekit_token: String,
+    /// Placeholder courant (non-office) ou NULL. Pour savoir si MOI je suis
+    /// modérateur, utiliser `suis_je_moderateur` (set multi-modérateurs).
     pub moderateur_id: Option<Uuid>,
+    /// Suis-je modérateur effectif de cette session (office, attitré activé ou placeholder) ?
+    pub suis_je_moderateur: bool,
+    /// Demande de passation en cours (si je suis le placeholder ciblé ou un attitré entrant).
+    pub passation_en_attente: Option<PassationEnAttenteResponse>,
 }
 
 // ── US6 : Messagerie et ressources ───────────────────────────────────────
@@ -1408,6 +1437,10 @@ pub enum NiveauModerateur {
     AdminSalle,
     ModerateurAttitre,
     CreateurSallePrivee,
+    /// Démarreur « placeholder » : utilisateur lambda qui a ouvert la session et
+    /// la modère en attendant qu'un modérateur attitré/admin prenne la main.
+    /// Capacités minimales (ni spotlight, ni fermeture pour abus).
+    Demarreur,
 }
 
 impl NiveauModerateur {

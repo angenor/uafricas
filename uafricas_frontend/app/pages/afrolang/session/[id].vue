@@ -209,7 +209,10 @@ onMounted(async () => {
     token: resultat.livekit_token,
     room_name: `afrolang-${resultat.session_id}`,
     livekit_url: resultat.livekit_url,
-    is_moderator: resultat.moderateur_id === userStore.user?.id,
+    // Refonte multi-modérateurs : valeur initiale optimiste (le statut effectif est
+    // ensuite dérivé du set de modérateurs côté AfrolangRoom). `suis_je_moderateur`
+    // couvre office/attitré activé/placeholder ; repli sur l'ancien calcul.
+    is_moderator: resultat.suis_je_moderateur ?? (resultat.moderateur_id === userStore.user?.id),
   }
   loading.value = false
 })

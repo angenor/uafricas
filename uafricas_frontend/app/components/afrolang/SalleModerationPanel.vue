@@ -265,6 +265,7 @@ function libelleNiveau(n: NiveauModerateur | null | undefined): string {
     case 'admin_salle': return 'Admin salle'
     case 'moderateur_attitre': return 'Modérateur attitré'
     case 'createur_salle_privee': return 'Créateur de salle'
+    case 'demarreur': return 'Démarreur'
     default: return 'Non modérateur'
   }
 }

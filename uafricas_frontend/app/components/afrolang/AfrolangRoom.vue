@@ -101,7 +101,7 @@
         <AfrolangWhiteboard
           v-if="tableauBlancOuvert && session.tableau_blanc_actif"
           :session-id="session.id"
-          :est-moderateur="estModerateur"
+          :est-moderateur="estModerateurEffectif"
           :ecriture-autorisee="monEcritureAutorisee"
           :room="room"
           class="w-1/2 border-l border-gray-700"
@@ -150,7 +150,7 @@
         :camera-active="cameraActive"
         :ecran-partage="ecranPartage"
         :tableau-blanc-ouvert="tableauBlancOuvert"
-        :est-moderateur="estModerateur"
+        :est-moderateur="estModerateurEffectif"
         :connected="connectionState === 'connected'"
         @toggle-micro="toggleMicro"
         @toggle-camera="toggleCamera"
@@ -192,6 +192,10 @@
       @fermer="fermetureModaleOuverte = false"
       @success="onSessionFermee"
     />
+
+    <!-- Passation de modération (refonte multi-modérateurs) : prompt au démarreur
+         « placeholder » + bannière de promotion au modérateur désigné entrant. -->
+    <AfrolangPassationModerationPrompt :session-id="session.id" />
   </div>
 </template>
 
@@ -259,15 +263,30 @@ const emit = defineEmits<{
   terminer: []
 }>()
 
-// Feature 001-session-moderation : composable partagé
+// Feature 001-session-moderation + refonte multi-modérateurs : composable partagé
 const {
   monNiveauModerateurSession,
   monEcritureAutorisee,
+  moderateursOffice,
   spotlightActif,
+  suisJeModerateur,
+  demandePassation,
   listerPermissionsTableauBlanc,
   attacherListenerModeration,
+  reinitialiserEtatModeration,
 } = useAfrolang()
 let detacherListenerModeration: (() => void) | null = null
+
+/** Vrai dès que le niveau modérateur autoritaire (serveur) a été chargé au moins
+ *  une fois. Avant cela, on retombe sur la prop optimiste fournie à la jointure. */
+const niveauCharge = ref(false)
+
+/** Statut modérateur EFFECTIF (set multi-modérateurs), dérivé du niveau serveur —
+ *  remplace la prop figée `estModerateur`. Tant que le 1ᵉʳ fetch n'a pas eu lieu,
+ *  on utilise la valeur optimiste de la prop (évite un flash non-modérateur). */
+const estModerateurEffectif = computed(() =>
+  niveauCharge.value ? suisJeModerateur.value : props.estModerateur,
+)
 
 // Réactions emoji flottantes (à la Google Meet)
 interface ReactionDataPacket {
@@ -361,12 +380,17 @@ const extractParticipantInfo = (participant: Participant, isLocal: boolean): Roo
     isMuted: !participant.isMicrophoneEnabled,
     isCameraOff: !participant.isCameraEnabled,
     isLocal,
-    isModerator: props.session.moderateur?.id === participant.identity,
+    isModerator: estModerateurParId(participant.identity),
     videoTrack,
     audioTrack,
     screenTrack,
   }
 }
+
+/** Un participant est modérateur s'il figure dans le set de modérateurs actifs
+ *  (multi-modérateurs) renvoyé par le serveur — plus de mono `session.moderateur`. */
+const estModerateurParId = (identity: string): boolean =>
+  moderateursOffice.value.some(m => m.utilisateur_id === identity)
 
 // Mettre a jour le participant local
 const updateLocalParticipant = () => {
@@ -545,11 +569,18 @@ const connectToRoom = async () => {
 
     connectionState.value = 'connected'
 
+    // Refonte multi-modérateurs : repartir d'un état propre (useState partagé) AVANT
+    // le 1ᵉʳ fetch, pour ne pas hériter de la modération d'une salle précédente.
+    reinitialiserEtatModeration()
+    // Seed de la demande de passation depuis le GET /sessions (filet si DataPacket perdu).
+    demandePassation.value = props.session.passation_en_attente ?? null
+
     // Feature 001-session-moderation : état initial + listener temps réel
     await listerPermissionsTableauBlanc(props.session.id)
+    niveauCharge.value = true
     // FR-024 : initialiser spotlight depuis le GET /sessions/{id} (transmis en prop)
     spotlightActif.value = props.session.spotlight ?? null
-    detacherListenerModeration = attacherListenerModeration(newRoom)
+    detacherListenerModeration = attacherListenerModeration(newRoom, props.session.id)
   }
   catch (e) {
     console.error('Erreur connexion LiveKit:', e)
@@ -561,12 +592,23 @@ onMounted(() => {
   connectToRoom()
 })
 
+// Rafraîchir les badges « modérateur » quand le set de modérateurs change.
+watch(moderateursOffice, () => {
+  if (!room.value) return
+  updateLocalParticipant()
+  for (const [, p] of room.value.remoteParticipants) {
+    updateRemoteParticipant(p)
+  }
+}, { deep: true })
+
 onBeforeUnmount(async () => {
   if (dureeInterval) clearInterval(dureeInterval)
   if (detacherListenerModeration) {
     detacherListenerModeration()
     detacherListenerModeration = null
   }
+  // Nettoyer l'état modération partagé pour la prochaine salle.
+  reinitialiserEtatModeration()
   if (room.value) {
     await room.value.disconnect()
   }

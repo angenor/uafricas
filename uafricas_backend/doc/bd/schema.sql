@@ -83,6 +83,7 @@
 \ir schemas/07_innovation.sql
 \ir schemas/08_culture.sql
 \ir schemas/08b_afrolang.sql
+\ir schemas/08c_afrolang_passation_moderation.sql
 \ir schemas/09_media_content.sql
 \ir schemas/09b_media_content_evenements_streaming.sql
 \ir schemas/10_governance.sql

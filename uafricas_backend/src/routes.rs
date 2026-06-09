@@ -742,6 +742,9 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/sessions/{id}/fermer-pour-abus", web::post().to(afrolang::fermer_session_pour_abus))
                     // Transfert de modération (feature 005, US3)
                     .route("/sessions/{id}/moderation/transferer", web::put().to(afrolang::transferer_moderation_session))
+                    // Passation de modération multi-modérateurs (refonte 2026-06)
+                    .route("/sessions/{id}/passation/accepter", web::post().to(afrolang::accepter_passation))
+                    .route("/sessions/{id}/passation/finaliser", web::post().to(afrolang::finaliser_passation))
                     // Phase 3 : Token LiveKit
                     .route("/sessions/{id}/token", web::post().to(afrolang::generer_token_session))
                     // Phase 4 : Tableau blanc

@@ -159,42 +159,30 @@ pub async fn est_administrateur_salle(
     .await
 }
 
-/// Identifie le niveau de modérateur d'un utilisateur pour une session donnée
-/// (feature 001-session-moderation, FR-001/FR-001b — R6 research).
+/// Identifie le niveau de modérateur EFFECTIF d'un utilisateur pour une session
+/// (refonte modération multi-modérateurs, 2026-06).
 ///
-/// Hiérarchie testée dans l'ordre :
-/// 1. Rôle global plateforme `admin` → `AdminPlateforme`.
-/// 2. Si la session a `salle_id` :
-///    - actif dans `salle_administrateur` → `AdminSalle`
-///    - actif dans `salle_moderateur` → `ModerateurAttitre`
-/// 3. Si la session a `salle_privee_id` :
-///    - `salle_privee.cree_par = utilisateur_id` → `CreateurSallePrivee`
-/// 4. Sinon → `None`.
+/// Ordre :
+/// 1. Admin plateforme (`iam.role.slug='admin'`) → `AdminPlateforme` (« quoi qu'il arrive »).
+/// 2. Salle publique : admin de salle actif → `AdminSalle`.
+/// 3. Salle privée : créateur → `CreateurSallePrivee`.
+/// 4. Sinon, GATING par présence effective : une ligne `session_participant`
+///    avec `role_session='moderateur'` → `ModerateurAttitre` si l'utilisateur est
+///    aussi un attitré actif de la salle, sinon `Demarreur` (placeholder).
+/// 5. Sinon → `None`.
 ///
-/// Aucun cache : recalcul à chaque appel (FR-003).
-pub async fn est_moderateur_session(
+/// Différence clé avec l'ancienne version (`est_moderateur_session`) : un
+/// modérateur attitré n'est reconnu comme modérateur de SESSION qu'une fois
+/// ACTIVÉ (`role_session='moderateur'`). Tant qu'une demande de passation est en
+/// attente, il reste `participant` et cette fonction renvoie `None` pour lui
+/// (c'est le gating du consentement). Aucun cache : recalcul à chaque appel.
+pub async fn est_moderateur_actif(
     pool: &PgPool,
     session_id: Uuid,
     utilisateur_id: Uuid,
 ) -> Result<Option<crate::models::afrolang::NiveauModerateur>, ApiErreur> {
     use crate::models::afrolang::NiveauModerateur;
 
-    // 1) Admin plateforme
-    let est_admin_plateforme: bool = sqlx::query_scalar(
-        "SELECT EXISTS(
-            SELECT 1 FROM iam.utilisateur_role ur
-            JOIN iam.role r ON ur.role_id = r.id
-            WHERE ur.utilisateur_id = $1 AND r.slug = 'admin'
-        )",
-    )
-    .bind(utilisateur_id)
-    .fetch_one(pool)
-    .await?;
-    if est_admin_plateforme {
-        return Ok(Some(NiveauModerateur::AdminPlateforme));
-    }
-
-    // Lire le contexte de session (salle_id XOR salle_privee_id)
     let ctx: Option<(Option<Uuid>, Option<Uuid>)> = sqlx::query_as(
         "SELECT salle_id, salle_privee_id FROM afrolang.session WHERE id = $1",
     )
@@ -205,46 +193,69 @@ pub async fn est_moderateur_session(
         return Ok(None);
     };
 
-    // 2) Contexte salle publique
-    if let Some(salle_id) = salle_id {
+    // 1/2/3 — rôles « office » (indépendants de la présence / role_session)
+    if let Some(n) = niveau_office_ctx(pool, salle_id, salle_privee_id, utilisateur_id).await? {
+        return Ok(Some(n));
+    }
+
+    // 4 — gating par role_session effectif
+    let est_mod_role: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM afrolang.session_participant
+            WHERE session_id = $1 AND utilisateur_id = $2 AND role_session = 'moderateur'
+        )",
+    )
+    .bind(session_id)
+    .bind(utilisateur_id)
+    .fetch_one(pool)
+    .await?;
+    if est_mod_role {
+        if let Some(sid) = salle_id {
+            if est_attitre_actif(pool, sid, utilisateur_id).await? {
+                return Ok(Some(NiveauModerateur::ModerateurAttitre));
+            }
+        }
+        return Ok(Some(NiveauModerateur::Demarreur));
+    }
+
+    Ok(None)
+}
+
+/// Niveaux « office » (admin plateforme / admin de salle / créateur de salle
+/// privée) — modérateurs « quoi qu'il arrive », jamais soumis à la passation.
+async fn niveau_office_ctx(
+    pool: &PgPool,
+    salle_id: Option<Uuid>,
+    salle_privee_id: Option<Uuid>,
+    utilisateur_id: Uuid,
+) -> Result<Option<crate::models::afrolang::NiveauModerateur>, ApiErreur> {
+    use crate::models::afrolang::NiveauModerateur;
+
+    if verifier_admin(pool, utilisateur_id).await? {
+        return Ok(Some(NiveauModerateur::AdminPlateforme));
+    }
+    if let Some(sid) = salle_id {
         let est_admin_salle: bool = sqlx::query_scalar(
             "SELECT EXISTS(
                 SELECT 1 FROM afrolang.salle_administrateur
                 WHERE salle_id = $1 AND utilisateur_id = $2 AND actif = TRUE
             )",
         )
-        .bind(salle_id)
+        .bind(sid)
         .bind(utilisateur_id)
         .fetch_one(pool)
         .await?;
         if est_admin_salle {
             return Ok(Some(NiveauModerateur::AdminSalle));
         }
-
-        let est_moderateur: bool = sqlx::query_scalar(
-            "SELECT EXISTS(
-                SELECT 1 FROM afrolang.salle_moderateur
-                WHERE salle_id = $1 AND utilisateur_id = $2 AND actif = TRUE
-            )",
-        )
-        .bind(salle_id)
-        .bind(utilisateur_id)
-        .fetch_one(pool)
-        .await?;
-        if est_moderateur {
-            return Ok(Some(NiveauModerateur::ModerateurAttitre));
-        }
     }
-
-    // 3) Contexte salle privée
-    if let Some(salle_privee_id) = salle_privee_id {
+    if let Some(sp_id) = salle_privee_id {
         let est_createur: bool = sqlx::query_scalar(
             "SELECT EXISTS(
-                SELECT 1 FROM afrolang.salle_privee
-                WHERE id = $1 AND cree_par = $2
+                SELECT 1 FROM afrolang.salle_privee WHERE id = $1 AND cree_par = $2
             )",
         )
-        .bind(salle_privee_id)
+        .bind(sp_id)
         .bind(utilisateur_id)
         .fetch_one(pool)
         .await?;
@@ -252,8 +263,443 @@ pub async fn est_moderateur_session(
             return Ok(Some(NiveauModerateur::CreateurSallePrivee));
         }
     }
-
     Ok(None)
+}
+
+/// Vrai si `utilisateur_id` est un modérateur attitré ACTIF de la salle publique.
+async fn est_attitre_actif(
+    pool: &PgPool,
+    salle_id: Uuid,
+    utilisateur_id: Uuid,
+) -> Result<bool, ApiErreur> {
+    Ok(sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM afrolang.salle_moderateur
+            WHERE salle_id = $1 AND utilisateur_id = $2 AND actif = TRUE
+        )",
+    )
+    .bind(salle_id)
+    .bind(utilisateur_id)
+    .fetch_one(pool)
+    .await?)
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Passation de modération (placeholder → modérateur attitré)
+// ══════════════════════════════════════════════════════════════════════════
+
+/// Effet d'arrivée à exécuter APRÈS commit (LiveKit + diffusion temps réel).
+enum EffetArrivee {
+    Aucun,
+    /// Un modérateur (office ou attitré) vient d'être activé immédiatement.
+    ModerateurAjoute(Uuid),
+    /// Une demande de passation est ouverte (ou déjà ouverte) — prévenir le placeholder.
+    DemandeOuverte,
+}
+
+/// Effet de résolution de passation à exécuter APRÈS commit.
+enum EffetResolution {
+    /// Passation réalisée : placeholder démis, attitrés présents promus.
+    Resolue { ancien_placeholder: Uuid, promus: Vec<Uuid> },
+    /// Demande annulée (plus aucun attitré présent) : placeholder conservé.
+    Annulee,
+}
+
+/// Règles d'arrivée d'un participant dans une session PUBLIQUE en cours.
+/// À appeler DANS une tx ayant verrouillé la ligne session (FOR UPDATE), après
+/// l'INSERT du participant. `moderateur_id_courant`/`demande_at_courant` = état
+/// lu sous verrou avant cet appel. Les office-holders coexistent (n'évincent pas
+/// le placeholder) ; seul le flux attitré (consentement / délai) le démet.
+async fn appliquer_arrivee_moderation_publique_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    session_id: Uuid,
+    salle_pub_id: Uuid,
+    moderateur_id_courant: Option<Uuid>,
+    demande_at_courant: Option<chrono::DateTime<chrono::Utc>>,
+    utilisateur_id: Uuid,
+) -> Result<EffetArrivee, ApiErreur> {
+    // Office ? (admin plateforme OU admin de salle) — modérateur immédiat.
+    let est_admin: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM iam.utilisateur_role ur JOIN iam.role r ON ur.role_id=r.id
+                       WHERE ur.utilisateur_id=$1 AND r.slug='admin')",
+    )
+    .bind(utilisateur_id)
+    .fetch_one(&mut **tx)
+    .await?;
+    let est_admin_salle: bool = if est_admin {
+        false
+    } else {
+        sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM afrolang.salle_administrateur
+                           WHERE salle_id=$1 AND utilisateur_id=$2 AND actif=TRUE)",
+        )
+        .bind(salle_pub_id)
+        .bind(utilisateur_id)
+        .fetch_one(&mut **tx)
+        .await?
+    };
+    if est_admin || est_admin_salle {
+        sqlx::query(
+            "UPDATE afrolang.session_participant SET role_session='moderateur'
+             WHERE session_id=$1 AND utilisateur_id=$2",
+        )
+        .bind(session_id)
+        .bind(utilisateur_id)
+        .execute(&mut **tx)
+        .await?;
+        return Ok(EffetArrivee::ModerateurAjoute(utilisateur_id));
+    }
+
+    // Attitré ?
+    let est_attitre: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM afrolang.salle_moderateur
+                       WHERE salle_id=$1 AND utilisateur_id=$2 AND actif=TRUE)",
+    )
+    .bind(salle_pub_id)
+    .bind(utilisateur_id)
+    .fetch_one(&mut **tx)
+    .await?;
+    if est_attitre {
+        if moderateur_id_courant.is_some() {
+            // Placeholder présent → demande de passation (consentement + délai 60 s).
+            if demande_at_courant.is_none() {
+                sqlx::query(
+                    "UPDATE afrolang.session
+                     SET demande_passation_at=NOW(), demande_passation_par=$2, updated_at=NOW()
+                     WHERE id=$1 AND demande_passation_at IS NULL",
+                )
+                .bind(session_id)
+                .bind(utilisateur_id)
+                .execute(&mut **tx)
+                .await?;
+            }
+            return Ok(EffetArrivee::DemandeOuverte);
+        }
+        // Pas de placeholder → co-modérateur immédiat.
+        sqlx::query(
+            "UPDATE afrolang.session_participant SET role_session='moderateur'
+             WHERE session_id=$1 AND utilisateur_id=$2",
+        )
+        .bind(session_id)
+        .bind(utilisateur_id)
+        .execute(&mut **tx)
+        .await?;
+        return Ok(EffetArrivee::ModerateurAjoute(utilisateur_id));
+    }
+
+    Ok(EffetArrivee::Aucun)
+}
+
+/// Résolution (acceptation OU promotion auto) DANS une tx. Verrou FOR UPDATE en
+/// tête → anti-race (le perdant relit `moderateur_id=NULL` et ne fait rien).
+/// `exige_placeholder=Some(caller)` pour l'acceptation (le caller doit être le
+/// placeholder courant) ; `exige_delai=true` pour la promotion auto (≥ 60 s).
+async fn resoudre_passation_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    session_id: Uuid,
+    salle_pub_id: Uuid,
+    exige_placeholder: Option<Uuid>,
+    exige_delai: bool,
+) -> Result<Option<EffetResolution>, ApiErreur> {
+    let etat: Option<(Option<Uuid>, Option<chrono::DateTime<chrono::Utc>>)> = sqlx::query_as(
+        "SELECT moderateur_id, demande_passation_at FROM afrolang.session WHERE id=$1 FOR UPDATE",
+    )
+    .bind(session_id)
+    .fetch_optional(&mut **tx)
+    .await?;
+    // Il faut un placeholder ET une demande ouverte.
+    let Some((Some(placeholder), Some(_))) = etat else {
+        return Ok(None);
+    };
+    if let Some(c) = exige_placeholder {
+        if c != placeholder {
+            return Ok(None);
+        }
+    }
+    if exige_delai {
+        let echue: bool = sqlx::query_scalar(
+            "SELECT (demande_passation_at + interval '60 seconds') <= NOW()
+             FROM afrolang.session WHERE id=$1",
+        )
+        .bind(session_id)
+        .fetch_one(&mut **tx)
+        .await?;
+        if !echue {
+            return Ok(None);
+        }
+    }
+
+    // Promouvoir TOUS les attitrés présents (multi-modérateurs).
+    let promus: Vec<Uuid> = sqlx::query_scalar(
+        "UPDATE afrolang.session_participant sp SET role_session='moderateur'
+         WHERE sp.session_id=$1 AND sp.quitte_at IS NULL
+           AND EXISTS (SELECT 1 FROM afrolang.salle_moderateur sm
+                       WHERE sm.salle_id=$2 AND sm.utilisateur_id=sp.utilisateur_id AND sm.actif=TRUE)
+         RETURNING sp.utilisateur_id",
+    )
+    .bind(session_id)
+    .bind(salle_pub_id)
+    .fetch_all(&mut **tx)
+    .await?;
+
+    if promus.is_empty() {
+        // Demandeur(s) parti(s) : on annule la demande, le placeholder reste modérateur.
+        sqlx::query(
+            "UPDATE afrolang.session
+             SET demande_passation_at=NULL, demande_passation_par=NULL, updated_at=NOW()
+             WHERE id=$1",
+        )
+        .bind(session_id)
+        .execute(&mut **tx)
+        .await?;
+        return Ok(Some(EffetResolution::Annulee));
+    }
+
+    // Démettre le placeholder, clore la demande, NULLer moderateur_id (plus de placeholder).
+    sqlx::query(
+        "UPDATE afrolang.session
+         SET moderateur_id=NULL, demande_passation_at=NULL, demande_passation_par=NULL, updated_at=NOW()
+         WHERE id=$1",
+    )
+    .bind(session_id)
+    .execute(&mut **tx)
+    .await?;
+    sqlx::query(
+        "UPDATE afrolang.session_participant SET role_session='participant'
+         WHERE session_id=$1 AND utilisateur_id=$2",
+    )
+    .bind(session_id)
+    .bind(placeholder)
+    .execute(&mut **tx)
+    .await?;
+    // Nettoyer d'éventuelles permissions tableau blanc individuelles devenues redondantes.
+    sqlx::query(
+        "DELETE FROM afrolang.session_permission_tableau_blanc
+         WHERE session_id=$1 AND utilisateur_id = ANY($2)",
+    )
+    .bind(session_id)
+    .bind(&promus)
+    .execute(&mut **tx)
+    .await?;
+
+    Ok(Some(EffetResolution::Resolue {
+        ancien_placeholder: placeholder,
+        promus,
+    }))
+}
+
+/// Diffuse un DataPacket `moderation.<subtype>` à toute la room (best-effort).
+async fn diffuser_moderation(
+    livekit: &LivekitConfig,
+    session_id: Uuid,
+    subtype: &str,
+    payload: serde_json::Value,
+) {
+    let env = serde_json::json!({ "type": "moderation", "subtype": subtype, "payload": payload });
+    if let Err(e) =
+        livekit_moderation::publier_evenement_moderation(livekit, &room_name_session(session_id), &env)
+            .await
+    {
+        log::warn!("diffuser_moderation({}) échec: {}", subtype, e);
+    }
+}
+
+/// État dérivé d'une demande de passation en attente (None hors demande).
+async fn charger_passation_en_attente(
+    pool: &PgPool,
+    session_id: Uuid,
+) -> Result<Option<crate::models::afrolang::PassationEnAttenteResponse>, ApiErreur> {
+    use crate::models::afrolang::{ModerateurResponse, PassationEnAttenteResponse};
+    let row: Option<(Uuid, Uuid, String, Option<String>, Option<String>, chrono::DateTime<chrono::Utc>)> =
+        sqlx::query_as(
+            "SELECT s.moderateur_id, s.demande_passation_par,
+                    u.nom, u.prenom, u.photo_url,
+                    (s.demande_passation_at + interval '60 seconds') AS expire_at
+             FROM afrolang.session s
+             JOIN iam.utilisateur u ON u.id = s.demande_passation_par
+             WHERE s.id = $1
+               AND s.demande_passation_at IS NOT NULL
+               AND s.demande_passation_par IS NOT NULL
+               AND s.moderateur_id IS NOT NULL",
+        )
+        .bind(session_id)
+        .fetch_optional(pool)
+        .await?;
+    Ok(row.map(
+        |(cible_id, demandeur_id, nom, prenom, photo, expire_at)| PassationEnAttenteResponse {
+            demandeur: ModerateurResponse {
+                id: demandeur_id,
+                nom,
+                prenom,
+                photo_url: photo,
+            },
+            cible_id,
+            expire_at,
+        },
+    ))
+}
+
+/// Exécute l'effet d'arrivée APRÈS commit (LiveKit + diffusion + notif).
+async fn executer_effet_arrivee(
+    pool: &PgPool,
+    livekit: &LivekitConfig,
+    session_id: Uuid,
+    effet: EffetArrivee,
+) {
+    match effet {
+        EffetArrivee::Aucun => {}
+        EffetArrivee::ModerateurAjoute(uid) => {
+            let _ = livekit_moderation::update_participant_can_publish_data(
+                livekit,
+                &room_name_session(session_id),
+                &uid.to_string(),
+                true,
+            )
+            .await;
+            diffuser_moderation(
+                livekit,
+                session_id,
+                "moderateur_ajoute",
+                serde_json::json!({ "session_id": session_id, "utilisateur_id": uid }),
+            )
+            .await;
+        }
+        EffetArrivee::DemandeOuverte => {
+            if let Ok(Some(p)) = charger_passation_en_attente(pool, session_id).await {
+                diffuser_moderation(
+                    livekit,
+                    session_id,
+                    "passation_demande",
+                    serde_json::json!({
+                        "session_id": session_id,
+                        "demandeur": p.demandeur,
+                        "cible_id": p.cible_id,
+                        "expire_at": p.expire_at,
+                    }),
+                )
+                .await;
+                let lien = format!("/afrolang/session/{}", session_id);
+                notification::creer_notification(
+                    pool,
+                    p.cible_id,
+                    notification::afrolang::MODERATION_DEMANDE_PASSATION,
+                    "Un modérateur désigné vient d'entrer. Acceptez de lui passer la modération.",
+                    Some(&lien),
+                )
+                .await;
+            }
+        }
+    }
+}
+
+/// Exécute l'effet de résolution APRÈS commit (LiveKit + diffusion + notif + audit).
+async fn executer_effet_resolution(
+    pool: &PgPool,
+    livekit: &LivekitConfig,
+    session_id: Uuid,
+    auteur: Option<Uuid>,
+    effet: EffetResolution,
+) {
+    match effet {
+        EffetResolution::Annulee => {
+            diffuser_moderation(
+                livekit,
+                session_id,
+                "passation_resolue",
+                serde_json::json!({ "session_id": session_id, "promus": Vec::<Uuid>::new() }),
+            )
+            .await;
+        }
+        EffetResolution::Resolue {
+            ancien_placeholder,
+            promus,
+        } => {
+            let room = room_name_session(session_id);
+            let _ = livekit_moderation::update_participant_can_publish_data(
+                livekit,
+                &room,
+                &ancien_placeholder.to_string(),
+                false,
+            )
+            .await;
+            for u in &promus {
+                let _ = livekit_moderation::update_participant_can_publish_data(
+                    livekit,
+                    &room,
+                    &u.to_string(),
+                    true,
+                )
+                .await;
+            }
+            diffuser_moderation(
+                livekit,
+                session_id,
+                "passation_resolue",
+                serde_json::json!({ "session_id": session_id, "promus": promus }),
+            )
+            .await;
+            let lien = format!("/afrolang/session/{}", session_id);
+            notification::creer_notification(
+                pool,
+                ancien_placeholder,
+                notification::afrolang::MODERATION_REPRISE,
+                "Un modérateur désigné a pris la modération de la session.",
+                Some(&lien),
+            )
+            .await;
+            for u in &promus {
+                notification::creer_notification(
+                    pool,
+                    *u,
+                    notification::afrolang::MODERATION_REPRISE,
+                    "Vous êtes désormais modérateur de cette session.",
+                    Some(&lien),
+                )
+                .await;
+            }
+            audit::log_action(
+                pool,
+                auteur,
+                "PASSATION_MODERATION",
+                "afrolang",
+                "session",
+                Some(session_id),
+                Some(serde_json::json!({ "ancien_moderateur_id": ancien_placeholder })),
+                Some(serde_json::json!({ "promus": promus, "auto": auteur.is_none() })),
+                None,
+                None,
+            )
+            .await;
+        }
+    }
+}
+
+/// Résolution paresseuse : promeut automatiquement si la demande est échue (≥ 60 s)
+/// — modèle « cloturer_si_necessaire », sans cron. Best-effort, appelée en tête
+/// des lectures/arrivées/départs pour ne pas dépendre du seul timer client.
+async fn resoudre_passation_si_due(
+    pool: &PgPool,
+    livekit: &LivekitConfig,
+    session_id: Uuid,
+) -> Result<(), ApiErreur> {
+    let due: Option<Option<Uuid>> = sqlx::query_scalar(
+        "SELECT salle_id FROM afrolang.session
+         WHERE id=$1 AND moderateur_id IS NOT NULL AND demande_passation_at IS NOT NULL
+           AND (demande_passation_at + interval '60 seconds') <= NOW()",
+    )
+    .bind(session_id)
+    .fetch_optional(pool)
+    .await?;
+    let Some(Some(salle_pub_id)) = due else {
+        return Ok(());
+    };
+    let mut tx = pool.begin().await?;
+    let effet = resoudre_passation_tx(&mut tx, session_id, salle_pub_id, None, true).await?;
+    tx.commit().await?;
+    if let Some(e) = effet {
+        executer_effet_resolution(pool, livekit, session_id, None, e).await;
+    }
+    Ok(())
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1328,13 +1774,21 @@ pub async fn supprimer_salle_privee(
 
 /// Vérifie que l'utilisateur peut démarrer/terminer une session.
 /// Règle :
-///   - Salle privée : seul le créateur de la salle privée.
+///   - Tout modérateur effectif de la session (office, attitré activé, placeholder).
+///   - Salle privée : créateur de la salle privée.
 ///   - Salle publique : créateur de la session OU modérateur attitré actif.
 async fn peut_gerer_cycle_session(
     pool: &PgPool,
     session: &SessionRow,
     utilisateur_id: Uuid,
 ) -> Result<bool, ApiErreur> {
+    // Tout modérateur effectif (multi-modérateurs) peut gérer le cycle.
+    if est_moderateur_actif(pool, session.id, utilisateur_id)
+        .await?
+        .is_some()
+    {
+        return Ok(true);
+    }
     if let Some(sp_id) = session.salle_privee_id {
         let createur: Uuid = sqlx::query_scalar(
             "SELECT cree_par FROM afrolang.salle_privee WHERE id = $1",
@@ -1569,9 +2023,13 @@ pub async fn lister_sessions(
 /// GET /api/afrolang/sessions/{id} — Detail d'une session avec participants
 pub async fn obtenir_session(
     pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
     chemin: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
     let id = chemin.into_inner();
+
+    // Résolution paresseuse d'une demande de passation échue (≥ 60 s) avant lecture.
+    let _ = resoudre_passation_si_due(pool.get_ref(), livekit_config.get_ref(), id).await;
 
     let query = format!(
         "SELECT {}
@@ -1627,6 +2085,9 @@ pub async fn obtenir_session(
     .fetch_one(pool.get_ref())
     .await?;
 
+    // Demande de passation en attente (filet de lecture si le DataPacket a été perdu).
+    let passation_en_attente = charger_passation_en_attente(pool.get_ref(), id).await?;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(SessionDetailResponse {
@@ -1648,6 +2109,7 @@ pub async fn obtenir_session(
             updated_at: session.updated_at,
             spotlight,
             permissions_tableau_blanc_count,
+            passation_en_attente,
         }),
         error: None,
     }))
@@ -1898,6 +2360,7 @@ pub async fn terminer_session(
 /// POST /api/afrolang/sessions/{id}/rejoindre — Rejoindre une session [JWT]
 pub async fn rejoindre_session(
     pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
     req: HttpRequest,
     chemin: web::Path<Uuid>,
     body: web::Json<RejoindreRequest>,
@@ -1949,17 +2412,73 @@ pub async fn rejoindre_session(
         }
     }
 
-    // Insérer le participant (ON CONFLICT pour gérer les re-connexions)
-    sqlx::query(
-        "INSERT INTO afrolang.session_participant (session_id, utilisateur_id, role_session)
-         VALUES ($1, $2, 'participant')
-         ON CONFLICT (session_id, utilisateur_id)
-         DO UPDATE SET quitte_at = NULL, rejoint_at = NOW()",
-    )
-    .bind(id)
-    .bind(utilisateur_id)
-    .execute(pool.get_ref())
-    .await?;
+    // ── Règles de modération multi-modérateurs (refonte 2026-06) ──
+    // Le passage d'un modérateur attitré n'est PLUS une reprise automatique
+    // immédiate (ancienne FR-011) : il déclenche une demande de passation
+    // (consentement du placeholder OU promotion auto après 60 s). La logique
+    // est partagée avec `demarrer-ou-rejoindre` via le helper transactionnel.
+    if let Some(salle_pub_id) = session.salle_id {
+        let mut tx = pool.begin().await?;
+
+        let etat: (Option<Uuid>, Option<chrono::DateTime<chrono::Utc>>) = sqlx::query_as(
+            "SELECT moderateur_id, demande_passation_at FROM afrolang.session WHERE id = $1 FOR UPDATE",
+        )
+        .bind(id)
+        .fetch_one(&mut *tx)
+        .await?;
+
+        let mut effet_resolution: Option<EffetResolution> = None;
+        let (mod_id, dem_at) = if etat.1.is_some() {
+            effet_resolution = resoudre_passation_tx(&mut tx, id, salle_pub_id, None, true).await?;
+            if effet_resolution.is_some() {
+                sqlx::query_as::<_, (Option<Uuid>, Option<chrono::DateTime<chrono::Utc>>)>(
+                    "SELECT moderateur_id, demande_passation_at FROM afrolang.session WHERE id=$1",
+                )
+                .bind(id)
+                .fetch_one(&mut *tx)
+                .await?
+            } else {
+                etat
+            }
+        } else {
+            etat
+        };
+
+        sqlx::query(
+            "INSERT INTO afrolang.session_participant (session_id, utilisateur_id, role_session)
+             VALUES ($1, $2, 'participant')
+             ON CONFLICT (session_id, utilisateur_id)
+             DO UPDATE SET quitte_at = NULL, rejoint_at = NOW()",
+        )
+        .bind(id)
+        .bind(utilisateur_id)
+        .execute(&mut *tx)
+        .await?;
+
+        let effet_arrivee = appliquer_arrivee_moderation_publique_tx(
+            &mut tx, id, salle_pub_id, mod_id, dem_at, utilisateur_id,
+        )
+        .await?;
+
+        tx.commit().await?;
+
+        if let Some(e) = effet_resolution {
+            executer_effet_resolution(pool.get_ref(), livekit_config.get_ref(), id, None, e).await;
+        }
+        executer_effet_arrivee(pool.get_ref(), livekit_config.get_ref(), id, effet_arrivee).await;
+    } else {
+        // Session privée : pas de passation (le créateur est le seul modérateur d'office).
+        sqlx::query(
+            "INSERT INTO afrolang.session_participant (session_id, utilisateur_id, role_session)
+             VALUES ($1, $2, 'participant')
+             ON CONFLICT (session_id, utilisateur_id)
+             DO UPDATE SET quitte_at = NULL, rejoint_at = NOW()",
+        )
+        .bind(id)
+        .bind(utilisateur_id)
+        .execute(pool.get_ref())
+        .await?;
+    }
 
     // Mettre à jour le pic de participants
     sqlx::query(
@@ -1972,108 +2491,6 @@ pub async fn rejoindre_session(
     .bind(id)
     .execute(pool.get_ref())
     .await?;
-
-    // ── Règles de modération dynamique (feature 005 US3) ──
-    // La salle publique est soit directement session.salle_id,
-    // soit dérivée de session.salle_privee_id → salle_privee.salle_id
-    let salle_publique_id: Option<Uuid> = if let Some(sid) = session.salle_id {
-        Some(sid)
-    } else if let Some(sp_id) = session.salle_privee_id {
-        sqlx::query_scalar(
-            "SELECT sp.salle_id FROM afrolang.salle_privee sp WHERE sp.id = $1",
-        )
-        .bind(sp_id)
-        .fetch_optional(pool.get_ref())
-        .await?
-    } else {
-        None
-    };
-
-    if let Some(salle_pub_id) = salle_publique_id {
-        let arrivant_est_attitre: bool = sqlx::query_scalar(
-            "SELECT EXISTS(
-                SELECT 1 FROM afrolang.salle_moderateur
-                WHERE salle_id = $1 AND utilisateur_id = $2 AND actif = TRUE
-            )",
-        )
-        .bind(salle_pub_id)
-        .bind(utilisateur_id)
-        .fetch_one(pool.get_ref())
-        .await?;
-
-        let ancien_mod = session.moderateur_id;
-        let mut nouveau_mod: Option<Uuid> = None;
-
-        if ancien_mod.is_none() {
-            // FR-009 : premier arrivé devient modérateur
-            nouveau_mod = Some(utilisateur_id);
-        } else if arrivant_est_attitre {
-            // FR-011 : reprise automatique si l'actuel n'est pas attitré
-            let actuel = ancien_mod.unwrap();
-            if actuel != utilisateur_id {
-                let actuel_est_attitre: bool = sqlx::query_scalar(
-                    "SELECT EXISTS(
-                        SELECT 1 FROM afrolang.salle_moderateur
-                        WHERE salle_id = $1 AND utilisateur_id = $2 AND actif = TRUE
-                    )",
-                )
-                .bind(salle_pub_id)
-                .bind(actuel)
-                .fetch_one(pool.get_ref())
-                .await?;
-                if !actuel_est_attitre {
-                    nouveau_mod = Some(utilisateur_id);
-                }
-            }
-        }
-
-        if let Some(nouveau_id) = nouveau_mod {
-            sqlx::query(
-                "UPDATE afrolang.session SET moderateur_id = $2, updated_at = NOW() WHERE id = $1",
-            )
-            .bind(id)
-            .bind(nouveau_id)
-            .execute(pool.get_ref())
-            .await?;
-
-            // Mettre à jour les rôles des participants
-            sqlx::query(
-                "UPDATE afrolang.session_participant
-                 SET role_session = CASE
-                    WHEN utilisateur_id = $2 THEN 'moderateur'
-                    ELSE 'participant'
-                 END
-                 WHERE session_id = $1
-                   AND utilisateur_id IN ($2, COALESCE($3, '00000000-0000-0000-0000-000000000000'::uuid))",
-            )
-            .bind(id)
-            .bind(nouveau_id)
-            .bind(ancien_mod)
-            .execute(pool.get_ref())
-            .await?;
-
-            // Notifications aux concernés
-            let lien = format!("/afrolang/session/{}", id);
-            if let Some(ancien) = ancien_mod {
-                notification::creer_notification(
-                    pool.get_ref(),
-                    ancien,
-                    notification::afrolang::MODERATION_REPRISE,
-                    "Un modérateur attitré a rejoint la session et a pris la modération.",
-                    Some(&lien),
-                )
-                .await;
-            }
-            notification::creer_notification(
-                pool.get_ref(),
-                nouveau_id,
-                notification::afrolang::MODERATION_REPRISE,
-                "Vous êtes désormais modérateur de cette session.",
-                Some(&lien),
-            )
-            .await;
-        }
-    }
 
     log::info!("Utilisateur {} a rejoint la session {}", utilisateur_id, id);
 
@@ -2209,91 +2626,141 @@ pub async fn quitter_session(
         } else {
             false
         }
-    } else if session.moderateur_id == Some(utilisateur_id) && session.etat == "en_cours" {
-        // FR-012 : réattribuer au plus ancien participant actif, en priorisant un attitré
-        // La salle publique = session.salle_id OU salle_privee.salle_id
-        let salle_pub_id: Option<Uuid> = if let Some(sid) = session.salle_id {
-            Some(sid)
-        } else if let Some(sp_id) = session.salle_privee_id {
-            sqlx::query_scalar(
-                "SELECT sp.salle_id FROM afrolang.salle_privee sp WHERE sp.id = $1",
-            )
-            .bind(sp_id)
-            .fetch_optional(pool.get_ref())
-            .await?
-        } else {
-            None
-        };
+    } else if session.salle_id.is_some()
+        && session.moderateur_id == Some(utilisateur_id)
+        && session.etat == "en_cours"
+    {
+        // Le placeholder quitte (session publique). Refonte multi-modérateurs :
+        // si des attitrés sont présents → on les active (co-modérateurs) et
+        // moderateur_id passe à NULL ; sinon nouveau placeholder = plus ancien
+        // participant NON-office présent. On ne pointe JAMAIS moderateur_id vers
+        // un attitré/office (invariant placeholder non-office).
+        let salle_pub_id = session.salle_id.unwrap();
 
-        let successeur: Option<Uuid> = if let Some(sp_id) = salle_pub_id {
-            // 1. Chercher un attitré actif présent dans la session
-            let attitre: Option<Uuid> = sqlx::query_scalar(
-                "SELECT sp.utilisateur_id
-                 FROM afrolang.session_participant sp
-                 JOIN afrolang.salle_moderateur sm
-                   ON sm.utilisateur_id = sp.utilisateur_id
-                  AND sm.salle_id = $2
-                  AND sm.actif = TRUE
-                 WHERE sp.session_id = $1
-                   AND sp.quitte_at IS NULL
-                 ORDER BY sp.rejoint_at ASC, sm.designe_at ASC
-                 LIMIT 1",
+        let mut tx = pool.begin().await?;
+        let mod_courant: Option<Uuid> = sqlx::query_scalar(
+            "SELECT moderateur_id FROM afrolang.session WHERE id = $1 FOR UPDATE",
+        )
+        .bind(id)
+        .fetch_one(&mut *tx)
+        .await?;
+
+        let mut promus: Vec<Uuid> = Vec::new();
+        let mut nouveau_placeholder: Option<Uuid> = None;
+
+        if mod_courant == Some(utilisateur_id) {
+            promus = sqlx::query_scalar(
+                "UPDATE afrolang.session_participant sp SET role_session='moderateur'
+                 WHERE sp.session_id=$1 AND sp.quitte_at IS NULL
+                   AND EXISTS (SELECT 1 FROM afrolang.salle_moderateur sm
+                               WHERE sm.salle_id=$2 AND sm.utilisateur_id=sp.utilisateur_id AND sm.actif=TRUE)
+                 RETURNING sp.utilisateur_id",
             )
             .bind(id)
-            .bind(sp_id)
-            .fetch_optional(pool.get_ref())
+            .bind(salle_pub_id)
+            .fetch_all(&mut *tx)
             .await?;
 
-            if attitre.is_some() {
-                attitre
-            } else {
-                // 2. Sinon le plus ancien participant actif
-                sqlx::query_scalar(
-                    "SELECT utilisateur_id FROM afrolang.session_participant
-                     WHERE session_id = $1 AND quitte_at IS NULL
-                     ORDER BY rejoint_at ASC LIMIT 1",
+            if !promus.is_empty() {
+                sqlx::query(
+                    "UPDATE afrolang.session SET moderateur_id=NULL, demande_passation_at=NULL,
+                            demande_passation_par=NULL, updated_at=NOW() WHERE id=$1",
                 )
                 .bind(id)
-                .fetch_optional(pool.get_ref())
-                .await?
+                .execute(&mut *tx)
+                .await?;
+            } else {
+                let succ: Option<Uuid> = sqlx::query_scalar(
+                    "SELECT sp.utilisateur_id FROM afrolang.session_participant sp
+                     WHERE sp.session_id=$1 AND sp.quitte_at IS NULL
+                       AND NOT EXISTS (SELECT 1 FROM iam.utilisateur_role ur JOIN iam.role r ON ur.role_id=r.id
+                                       WHERE ur.utilisateur_id=sp.utilisateur_id AND r.slug='admin')
+                       AND NOT EXISTS (SELECT 1 FROM afrolang.salle_administrateur sa
+                                       WHERE sa.salle_id=$2 AND sa.utilisateur_id=sp.utilisateur_id AND sa.actif=TRUE)
+                       AND NOT EXISTS (SELECT 1 FROM afrolang.salle_moderateur sm
+                                       WHERE sm.salle_id=$2 AND sm.utilisateur_id=sp.utilisateur_id AND sm.actif=TRUE)
+                     ORDER BY sp.rejoint_at ASC LIMIT 1",
+                )
+                .bind(id)
+                .bind(salle_pub_id)
+                .fetch_optional(&mut *tx)
+                .await?;
+                if let Some(n) = succ {
+                    sqlx::query(
+                        "UPDATE afrolang.session SET moderateur_id=$2, demande_passation_at=NULL,
+                                demande_passation_par=NULL, updated_at=NOW() WHERE id=$1",
+                    )
+                    .bind(id)
+                    .bind(n)
+                    .execute(&mut *tx)
+                    .await?;
+                    sqlx::query(
+                        "UPDATE afrolang.session_participant SET role_session='moderateur'
+                         WHERE session_id=$1 AND utilisateur_id=$2",
+                    )
+                    .bind(id)
+                    .bind(n)
+                    .execute(&mut *tx)
+                    .await?;
+                    nouveau_placeholder = Some(n);
+                } else {
+                    // Aucun successeur non-office (il reste éventuellement des office présents).
+                    sqlx::query(
+                        "UPDATE afrolang.session SET moderateur_id=NULL, demande_passation_at=NULL,
+                                demande_passation_par=NULL, updated_at=NOW() WHERE id=$1",
+                    )
+                    .bind(id)
+                    .execute(&mut *tx)
+                    .await?;
+                }
             }
-        } else {
-            sqlx::query_scalar(
-                "SELECT utilisateur_id FROM afrolang.session_participant
-                 WHERE session_id = $1 AND quitte_at IS NULL
-                 ORDER BY rejoint_at ASC LIMIT 1",
-            )
-            .bind(id)
-            .fetch_optional(pool.get_ref())
-            .await?
-        };
+        }
 
-        if let Some(nouveau_id) = successeur {
-            sqlx::query(
-                "UPDATE afrolang.session SET moderateur_id = $2, updated_at = NOW() WHERE id = $1",
-            )
-            .bind(id)
-            .bind(nouveau_id)
-            .execute(pool.get_ref())
-            .await?;
+        tx.commit().await?;
 
-            sqlx::query(
-                "UPDATE afrolang.session_participant
-                 SET role_session = 'moderateur'
-                 WHERE session_id = $1 AND utilisateur_id = $2",
+        // Effets temps réel post-commit.
+        let lk = livekit_config.get_ref();
+        let lien = format!("/afrolang/session/{}", id);
+        if !promus.is_empty() {
+            let room = room_name_session(id);
+            for u in &promus {
+                let _ = livekit_moderation::update_participant_can_publish_data(
+                    lk, &room, &u.to_string(), true,
+                )
+                .await;
+            }
+            diffuser_moderation(
+                lk, id, "passation_resolue",
+                serde_json::json!({ "session_id": id, "promus": promus }),
             )
-            .bind(id)
-            .bind(nouveau_id)
-            .execute(pool.get_ref())
-            .await?;
-
-            let lien = format!("/afrolang/session/{}", id);
+            .await;
+            for u in &promus {
+                notification::creer_notification(
+                    pool.get_ref(), *u, notification::afrolang::MODERATION_REPRISE,
+                    "Vous êtes désormais modérateur de cette session.", Some(&lien),
+                )
+                .await;
+            }
+        } else if let Some(n) = nouveau_placeholder {
+            let _ = livekit_moderation::update_participant_can_publish_data(
+                lk, &room_name_session(id), &n.to_string(), true,
+            )
+            .await;
+            diffuser_moderation(
+                lk, id, "moderateur_ajoute",
+                serde_json::json!({ "session_id": id, "utilisateur_id": n }),
+            )
+            .await;
             notification::creer_notification(
-                pool.get_ref(),
-                nouveau_id,
-                notification::afrolang::MODERATION_REPRISE,
-                "Vous êtes désormais modérateur de cette session.",
-                Some(&lien),
+                pool.get_ref(), n, notification::afrolang::MODERATION_REPRISE,
+                "Vous êtes désormais modérateur de cette session.", Some(&lien),
+            )
+            .await;
+        } else if mod_courant == Some(utilisateur_id) {
+            // Placeholder parti sans successeur : éteindre une éventuelle demande côté clients.
+            diffuser_moderation(
+                lk, id, "passation_resolue",
+                serde_json::json!({ "session_id": id, "promus": Vec::<Uuid>::new() }),
             )
             .await;
         }
@@ -2373,21 +2840,25 @@ pub async fn generer_token_session(
     .fetch_one(pool.get_ref())
     .await?;
 
+    // Résolution paresseuse d'une demande de passation échue avant de calculer le rôle.
+    let _ = resoudre_passation_si_due(pool.get_ref(), livekit_config.get_ref(), session_id).await;
+
     let room_name = format!("afrolang-{}", session_id);
-    let is_moderator = session.moderateur_id == Some(utilisateur_id);
     let display_name = format!(
         "{} {}",
         user_prenom.as_deref().unwrap_or(""),
         user_nom
     ).trim().to_string();
 
-    // 5b. Feature 001-session-moderation — droit initial d'écriture sur le tableau blanc :
+    // 5b. Refonte multi-modérateurs — droit d'écriture tableau blanc + statut modérateur :
+    //     is_moderator dérive du SET de modérateurs (est_moderateur_actif), PAS de
+    //     session.moderateur_id (qui ne désigne que le placeholder, NULL en multi-mod).
     //     (1) modérateur de session → autorisé ;
-    //     (2) sinon, permission individuelle déjà accordée → autorisé (FR edge-case
-    //         « permission différée appliquée à la jointure ») ;
+    //     (2) sinon, permission individuelle déjà accordée → autorisé ;
     //     (3) sinon → refusé (le SFU LiveKit rejettera les DataPacket).
-    let niveau_moderateur = est_moderateur_session(pool.get_ref(), session_id, utilisateur_id).await?;
-    let can_publish_data = if niveau_moderateur.is_some() {
+    let niveau_moderateur = est_moderateur_actif(pool.get_ref(), session_id, utilisateur_id).await?;
+    let is_moderator = niveau_moderateur.is_some();
+    let can_publish_data = if is_moderator {
         true
     } else {
         sqlx::query_scalar::<_, bool>(
@@ -2515,8 +2986,8 @@ pub async fn sauvegarder_tableau_blanc(
     let utilisateur_id = extraire_utilisateur_id(&req)
         .ok_or_else(|| ApiErreur::NonAutorise("Token invalide ou manquant".into()))?;
 
-    // Verifier que la session existe et que l'utilisateur est moderateur
-    let session = sqlx::query_as::<_, SessionRow>(&format!(
+    // Vérifier l'existence de la session (404 sinon) ; autorisation faite ci-dessous.
+    let _session = sqlx::query_as::<_, SessionRow>(&format!(
         "SELECT {} FROM afrolang.session ses WHERE ses.id = $1",
         SESSION_COLONNES
     ))
@@ -2525,9 +2996,12 @@ pub async fn sauvegarder_tableau_blanc(
     .await?
     .ok_or_else(|| ApiErreur::NonTrouve(format!("Session {} non trouvee", session_id)))?;
 
-    if session.moderateur_id != Some(utilisateur_id) {
+    if est_moderateur_actif(pool.get_ref(), session_id, utilisateur_id)
+        .await?
+        .is_none()
+    {
         return Err(ApiErreur::NonAutorise(
-            "Seul le moderateur peut sauvegarder le tableau blanc".into(),
+            "Seul un modérateur peut sauvegarder le tableau blanc".into(),
         ));
     }
 
@@ -2560,8 +3034,8 @@ pub async fn effacer_tableau_blanc(
     let utilisateur_id = extraire_utilisateur_id(&req)
         .ok_or_else(|| ApiErreur::NonAutorise("Token invalide ou manquant".into()))?;
 
-    // Verifier que la session existe et que l'utilisateur est moderateur
-    let session = sqlx::query_as::<_, SessionRow>(&format!(
+    // Vérifier l'existence de la session (404 sinon) ; autorisation faite ci-dessous.
+    let _session = sqlx::query_as::<_, SessionRow>(&format!(
         "SELECT {} FROM afrolang.session ses WHERE ses.id = $1",
         SESSION_COLONNES
     ))
@@ -2570,9 +3044,12 @@ pub async fn effacer_tableau_blanc(
     .await?
     .ok_or_else(|| ApiErreur::NonTrouve(format!("Session {} non trouvee", session_id)))?;
 
-    if session.moderateur_id != Some(utilisateur_id) {
+    if est_moderateur_actif(pool.get_ref(), session_id, utilisateur_id)
+        .await?
+        .is_none()
+    {
         return Err(ApiErreur::NonAutorise(
-            "Seul le moderateur peut effacer le tableau blanc".into(),
+            "Seul un modérateur peut effacer le tableau blanc".into(),
         ));
     }
 
@@ -2676,9 +3153,16 @@ pub async fn lister_langues(
 // Feature 005 — Transfert de modération de session (US3)
 // ══════════════════════════════════════════════════════════════════════════
 
-/// PUT /api/afrolang/sessions/{id}/moderation/transferer — Transfert manuel [JWT modérateur actuel]
+/// PUT /api/afrolang/sessions/{id}/moderation/transferer — Promotion d'un
+/// participant en CO-modérateur [JWT modérateur].
+///
+/// Refonte multi-modérateurs : un transfert n'évince plus l'appelant. N'importe
+/// quel modérateur effectif (office, attitré activé ou placeholder) peut promouvoir
+/// un participant présent au rang de co-modérateur. `moderateur_id` (placeholder)
+/// reste inchangé.
 pub async fn transferer_moderation_session(
     pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
     req: HttpRequest,
     chemin: web::Path<Uuid>,
     body: web::Json<TransfererModerationRequest>,
@@ -2709,10 +3193,13 @@ pub async fn transferer_moderation_session(
         return Err(ApiErreur::Validation("La session n'est pas en cours".into()));
     }
 
-    // Vérifier que l'appelant est le modérateur actif
-    if session.moderateur_id != Some(utilisateur_id) {
+    // L'appelant doit être un modérateur effectif de la session.
+    if est_moderateur_actif(pool.get_ref(), session_id, utilisateur_id)
+        .await?
+        .is_none()
+    {
         return Err(ApiErreur::NonAutorise(
-            "Seul le modérateur actuel peut transférer la modération".into(),
+            "Seul un modérateur peut promouvoir un participant".into(),
         ));
     }
 
@@ -2733,35 +3220,32 @@ pub async fn transferer_moderation_session(
         ));
     }
 
-    // Transfert
+    // Promotion en co-modérateur (placeholder inchangé).
     sqlx::query(
-        "UPDATE afrolang.session
-         SET moderateur_id = $2, updated_at = NOW()
-         WHERE id = $1",
+        "UPDATE afrolang.session_participant SET role_session = 'moderateur'
+         WHERE session_id = $1 AND utilisateur_id = $2",
     )
     .bind(session_id)
     .bind(destinataire_id)
     .execute(pool.get_ref())
     .await?;
 
-    // Mettre à jour les rôles côté participants
-    sqlx::query(
-        "UPDATE afrolang.session_participant
-         SET role_session = CASE
-            WHEN utilisateur_id = $2 THEN 'moderateur'
-            WHEN utilisateur_id = $3 THEN 'participant'
-            ELSE role_session
-         END
-         WHERE session_id = $1 AND utilisateur_id IN ($2, $3)",
+    // LiveKit : autoriser l'écriture data + diffuser l'ajout.
+    let _ = livekit_moderation::update_participant_can_publish_data(
+        livekit_config.get_ref(),
+        &room_name_session(session_id),
+        &destinataire_id.to_string(),
+        true,
     )
-    .bind(session_id)
-    .bind(destinataire_id)
-    .bind(utilisateur_id)
-    .execute(pool.get_ref())
-    .await?;
+    .await;
+    diffuser_moderation(
+        livekit_config.get_ref(),
+        session_id,
+        "moderateur_ajoute",
+        serde_json::json!({ "session_id": session_id, "utilisateur_id": destinataire_id }),
+    )
+    .await;
 
-    // Notifications aux deux parties
-    let salle_privee_id = session.salle_privee_id;
     let lien = format!("/afrolang/session/{}", session_id);
     notification::creer_notification(
         pool.get_ref(),
@@ -2771,21 +3255,10 @@ pub async fn transferer_moderation_session(
         Some(&lien),
     )
     .await;
-    notification::creer_notification(
-        pool.get_ref(),
-        utilisateur_id,
-        notification::afrolang::MODERATION_REPRISE,
-        "Vous avez transféré la modération de cette session.",
-        Some(&lien),
-    )
-    .await;
 
     log::info!(
-        "Session {} ({:?}) : modération transférée {} → {}",
-        session_id,
-        salle_privee_id,
-        utilisateur_id,
-        destinataire_id
+        "Session {} : {} a promu {} en co-modérateur",
+        session_id, utilisateur_id, destinataire_id
     );
 
     Ok(HttpResponse::Ok().json(ApiResponse {
@@ -2794,6 +3267,132 @@ pub async fn transferer_moderation_session(
             "session_id": session_id,
             "moderateur_id": destinataire_id,
         })),
+        error: None,
+    }))
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Passation de modération — endpoints (refonte multi-modérateurs, 2026-06)
+// ══════════════════════════════════════════════════════════════════════════
+
+/// POST /api/afrolang/sessions/{id}/passation/accepter — Le placeholder accepte
+/// de céder la modération au(x) modérateur(s) attitré(s) présent(s) [JWT placeholder].
+pub async fn accepter_passation(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let session_id = chemin.into_inner();
+
+    let salle_pub_id: Option<Uuid> = sqlx::query_scalar(
+        "SELECT salle_id FROM afrolang.session WHERE id = $1",
+    )
+    .bind(session_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve(format!("Session {} non trouvée", session_id)))?;
+    let Some(salle_pub_id) = salle_pub_id else {
+        return Err(ApiErreur::Validation(
+            "Passation indisponible pour cette session".into(),
+        ));
+    };
+
+    // Garde : seul le placeholder courant (exige_placeholder=Some(caller)).
+    let mut tx = pool.begin().await?;
+    let effet =
+        resoudre_passation_tx(&mut tx, session_id, salle_pub_id, Some(utilisateur_id), false).await?;
+    tx.commit().await?;
+
+    match effet {
+        Some(e) => {
+            executer_effet_resolution(
+                pool.get_ref(),
+                livekit_config.get_ref(),
+                session_id,
+                Some(utilisateur_id),
+                e,
+            )
+            .await;
+            Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+                success: true,
+                data: None,
+                error: None,
+            }))
+        }
+        None => Err(ApiErreur::Validation(
+            "Aucune passation à accepter (vous n'êtes pas le démarreur, ou la demande est déjà résolue).".into(),
+        )),
+    }
+}
+
+/// POST /api/afrolang/sessions/{id}/passation/finaliser — Promotion automatique
+/// après le délai (≥ 60 s) : un modérateur attitré présent réclame la modération
+/// si le placeholder n'a pas répondu [JWT attitré présent]. Idempotent.
+pub async fn finaliser_passation(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let session_id = chemin.into_inner();
+
+    let salle_pub_id: Option<Uuid> = sqlx::query_scalar(
+        "SELECT salle_id FROM afrolang.session WHERE id = $1",
+    )
+    .bind(session_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve(format!("Session {} non trouvée", session_id)))?;
+    let Some(salle_pub_id) = salle_pub_id else {
+        return Err(ApiErreur::Validation(
+            "Passation indisponible pour cette session".into(),
+        ));
+    };
+
+    // L'appelant doit être un modérateur désigné présent.
+    let appelant_attitre_present: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM afrolang.session_participant sp
+            JOIN afrolang.salle_moderateur sm
+              ON sm.utilisateur_id=sp.utilisateur_id AND sm.salle_id=$2 AND sm.actif=TRUE
+            WHERE sp.session_id=$1 AND sp.utilisateur_id=$3 AND sp.quitte_at IS NULL
+        )",
+    )
+    .bind(session_id)
+    .bind(salle_pub_id)
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if !appelant_attitre_present {
+        return Err(ApiErreur::AccesInterdit(
+            "Seul un modérateur désigné présent peut finaliser la passation.".into(),
+        ));
+    }
+
+    // Garde : exige_delai=true → ne promeut que si la demande a ≥ 60 s.
+    let mut tx = pool.begin().await?;
+    let effet = resoudre_passation_tx(&mut tx, session_id, salle_pub_id, None, true).await?;
+    tx.commit().await?;
+
+    let resolu = effet.is_some();
+    if let Some(e) = effet {
+        executer_effet_resolution(
+            pool.get_ref(),
+            livekit_config.get_ref(),
+            session_id,
+            Some(utilisateur_id),
+            e,
+        )
+        .await;
+    }
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "resolu": resolu })),
         error: None,
     }))
 }
@@ -3735,6 +4334,9 @@ pub async fn demarrer_ou_rejoindre_session_salle_privee(
             livekit_url: livekit_config.url.clone(),
             livekit_token,
             moderateur_id: Some(moderateur_id),
+            // Salle privée : le créateur est le modérateur d'office ; pas de passation.
+            suis_je_moderateur: utilisateur_id == moderateur_id,
+            passation_en_attente: None,
         }),
         error: None,
     }))
@@ -3789,55 +4391,113 @@ pub async fn demarrer_ou_rejoindre_session_salle_publique(
     // Transaction : garantir au plus UNE session en_cours par salle publique.
     let mut tx = pool.begin().await?;
 
-    let session_existante: Option<(Uuid, Option<Uuid>)> = sqlx::query_as(
-        "SELECT id, moderateur_id FROM afrolang.session
-         WHERE salle_id = $1 AND etat = 'en_cours'
-         FOR UPDATE",
-    )
-    .bind(salle_id)
-    .fetch_optional(&mut *tx)
-    .await?;
+    let session_existante: Option<(Uuid, Option<Uuid>, Option<chrono::DateTime<chrono::Utc>>)> =
+        sqlx::query_as(
+            "SELECT id, moderateur_id, demande_passation_at FROM afrolang.session
+             WHERE salle_id = $1 AND etat = 'en_cours'
+             FOR UPDATE",
+        )
+        .bind(salle_id)
+        .fetch_optional(&mut *tx)
+        .await?;
 
-    let (session_id, moderateur_effectif_id, est_nouveau) = match session_existante {
-        Some((id, m)) => (id, m, false),
+    // Effets à diffuser APRÈS commit (LiveKit + temps réel).
+    let mut effet_resolution: Option<EffetResolution> = None;
+    let mut effet_arrivee = EffetArrivee::Aucun;
+
+    let (session_id, est_nouveau) = match session_existante {
         None => {
-            // Aucun live en cours : créer et démarrer immédiatement. Le
-            // créateur = modérateur initial (FR-005b).
+            // Aucun live en cours : créer et démarrer immédiatement. Le créateur
+            // démarre modérateur ; s'il est office/attitré, PAS de placeholder
+            // (moderateur_id=NULL), sinon il EST le placeholder (moderateur_id=lui).
+            let createur_mod_legitime: bool = sqlx::query_scalar(
+                "SELECT EXISTS(SELECT 1 FROM iam.utilisateur_role ur JOIN iam.role r ON ur.role_id=r.id
+                               WHERE ur.utilisateur_id=$1 AND r.slug='admin')
+                     OR EXISTS(SELECT 1 FROM afrolang.salle_administrateur
+                               WHERE salle_id=$2 AND utilisateur_id=$1 AND actif=TRUE)
+                     OR EXISTS(SELECT 1 FROM afrolang.salle_moderateur
+                               WHERE salle_id=$2 AND utilisateur_id=$1 AND actif=TRUE)",
+            )
+            .bind(utilisateur_id)
+            .bind(salle_id)
+            .fetch_one(&mut *tx)
+            .await?;
+            let moderateur_initial: Option<Uuid> =
+                if createur_mod_legitime { None } else { Some(utilisateur_id) };
+
             let nouvelle_id: Uuid = sqlx::query_scalar(
                 "INSERT INTO afrolang.session
                     (salle_id, etat, moderateur_id, demarre_at,
                      max_participants, tableau_blanc_actif, cree_par)
-                 VALUES ($1, 'en_cours', $2, NOW(), $3, TRUE, $2)
+                 VALUES ($1, 'en_cours', $2, NOW(), $3, TRUE, $4)
                  RETURNING id",
             )
             .bind(salle_id)
-            .bind(utilisateur_id)
+            .bind(moderateur_initial)
             .bind(50_i32)
+            .bind(utilisateur_id)
             .fetch_one(&mut *tx)
             .await?;
-            (nouvelle_id, Some(utilisateur_id), true)
+
+            sqlx::query(
+                "INSERT INTO afrolang.session_participant (session_id, utilisateur_id, role_session)
+                 VALUES ($1, $2, 'moderateur')
+                 ON CONFLICT (session_id, utilisateur_id)
+                 DO UPDATE SET quitte_at = NULL, rejoint_at = NOW(), role_session = 'moderateur'",
+            )
+            .bind(nouvelle_id)
+            .bind(utilisateur_id)
+            .execute(&mut *tx)
+            .await?;
+
+            (nouvelle_id, true)
+        }
+        Some((id, moderateur_courant, demande_courante)) => {
+            // Résolution paresseuse d'une éventuelle demande échue, DANS la tx.
+            let (mod_id, dem_at) = if demande_courante.is_some() {
+                effet_resolution = resoudre_passation_tx(&mut tx, id, salle_id, None, true).await?;
+                if effet_resolution.is_some() {
+                    sqlx::query_as::<_, (Option<Uuid>, Option<chrono::DateTime<chrono::Utc>>)>(
+                        "SELECT moderateur_id, demande_passation_at FROM afrolang.session WHERE id=$1",
+                    )
+                    .bind(id)
+                    .fetch_one(&mut *tx)
+                    .await?
+                } else {
+                    (moderateur_courant, demande_courante)
+                }
+            } else {
+                (moderateur_courant, demande_courante)
+            };
+
+            // INSERT participant (rôle 'participant' par défaut ; le helper promeut si besoin).
+            sqlx::query(
+                "INSERT INTO afrolang.session_participant (session_id, utilisateur_id, role_session)
+                 VALUES ($1, $2, 'participant')
+                 ON CONFLICT (session_id, utilisateur_id)
+                 DO UPDATE SET quitte_at = NULL, rejoint_at = NOW()",
+            )
+            .bind(id)
+            .bind(utilisateur_id)
+            .execute(&mut *tx)
+            .await?;
+
+            effet_arrivee = appliquer_arrivee_moderation_publique_tx(
+                &mut tx, id, salle_id, mod_id, dem_at, utilisateur_id,
+            )
+            .await?;
+
+            (id, false)
         }
     };
 
-    // INSERT participant (idempotent).
-    let role = if moderateur_effectif_id == Some(utilisateur_id) {
-        "moderateur"
-    } else {
-        "participant"
-    };
-    sqlx::query(
-        "INSERT INTO afrolang.session_participant (session_id, utilisateur_id, role_session)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (session_id, utilisateur_id)
-         DO UPDATE SET quitte_at = NULL, rejoint_at = NOW()",
-    )
-    .bind(session_id)
-    .bind(utilisateur_id)
-    .bind(role)
-    .execute(&mut *tx)
-    .await?;
-
     tx.commit().await?;
+
+    // Effets temps réel post-commit (LiveKit + diffusion).
+    if let Some(e) = effet_resolution {
+        executer_effet_resolution(pool.get_ref(), livekit_config.get_ref(), session_id, None, e).await;
+    }
+    executer_effet_arrivee(pool.get_ref(), livekit_config.get_ref(), session_id, effet_arrivee).await;
 
     // Pic de participants (hors transaction).
     sqlx::query(
@@ -3853,6 +4513,22 @@ pub async fn demarrer_ou_rejoindre_session_salle_publique(
     .execute(pool.get_ref())
     .await?;
 
+    // Niveau effectif → token + réponse (post-effets).
+    let niveau = est_moderateur_actif(pool.get_ref(), session_id, utilisateur_id).await?;
+    let is_moderator = niveau.is_some();
+    let can_publish_data = if is_moderator {
+        true
+    } else {
+        sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM afrolang.session_permission_tableau_blanc
+                           WHERE session_id=$1 AND utilisateur_id=$2)",
+        )
+        .bind(session_id)
+        .bind(utilisateur_id)
+        .fetch_one(pool.get_ref())
+        .await?
+    };
+
     // Générer le token LiveKit.
     let (user_nom, user_prenom): (String, Option<String>) = sqlx::query_as(
         "SELECT nom, prenom FROM iam.utilisateur WHERE id = $1",
@@ -3860,13 +4536,9 @@ pub async fn demarrer_ou_rejoindre_session_salle_publique(
     .bind(utilisateur_id)
     .fetch_one(pool.get_ref())
     .await?;
-    let display_name = format!(
-        "{} {}",
-        user_prenom.as_deref().unwrap_or(""),
-        user_nom
-    )
-    .trim()
-    .to_string();
+    let display_name = format!("{} {}", user_prenom.as_deref().unwrap_or(""), user_nom)
+        .trim()
+        .to_string();
     let room_name = format!("afrolang-{}", session_id);
 
     let livekit_token = livekit_api::access_token::AccessToken::with_api_key(
@@ -3880,7 +4552,7 @@ pub async fn demarrer_ou_rejoindre_session_salle_publique(
         room: room_name.clone(),
         can_publish: true,
         can_subscribe: true,
-        can_publish_data: true,
+        can_publish_data,
         ..Default::default()
     })
     .to_jwt()
@@ -3901,12 +4573,21 @@ pub async fn demarrer_ou_rejoindre_session_salle_publique(
         None,
         Some(serde_json::json!({
             "salle_id": salle_id,
-            "role": role,
+            "role": if is_moderator { "moderateur" } else { "participant" },
         })),
         audit::extraire_ip(&req).as_deref(),
         audit::extraire_user_agent(&req).as_deref(),
     )
     .await;
+
+    // moderateur_id (placeholder courant) + état de passation pour la réponse.
+    let moderateur_id_actuel: Option<Uuid> = sqlx::query_scalar(
+        "SELECT moderateur_id FROM afrolang.session WHERE id = $1",
+    )
+    .bind(session_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    let passation = charger_passation_en_attente(pool.get_ref(), session_id).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -3914,7 +4595,9 @@ pub async fn demarrer_ou_rejoindre_session_salle_publique(
             session_id,
             livekit_url: livekit_config.url.clone(),
             livekit_token,
-            moderateur_id: moderateur_effectif_id,
+            moderateur_id: moderateur_id_actuel,
+            suis_je_moderateur: is_moderator,
+            passation_en_attente: passation,
         }),
         error: None,
     }))
@@ -4526,72 +5209,35 @@ async fn charger_contexte_salle(
 /// - créateur de la salle privée (`CreateurSallePrivee`)
 async fn lister_moderateurs_office(
     pool: &PgPool,
-    salle_id: Option<Uuid>,
-    salle_privee_id: Option<Uuid>,
+    session_id: Uuid,
 ) -> Result<Vec<ModerateurOfficeResponse>, ApiErreur> {
-    let mut resultats: Vec<ModerateurOfficeResponse> = Vec::new();
+    // Refonte multi-modérateurs : on liste les modérateurs RÉELLEMENT actifs et
+    // présents (role_session='moderateur'), pas tous les attitrés de la salle —
+    // un attitré entré mais en attente de passation (role 'participant') ne doit
+    // PAS apparaître ici (cohérence avec le gating de est_moderateur_actif).
+    let rows = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>)>(
+        "SELECT sp.utilisateur_id, u.nom, u.prenom, u.photo_url
+         FROM afrolang.session_participant sp
+         JOIN iam.utilisateur u ON u.id = sp.utilisateur_id
+         WHERE sp.session_id = $1 AND sp.quitte_at IS NULL AND sp.role_session = 'moderateur'
+         ORDER BY sp.rejoint_at ASC",
+    )
+    .bind(session_id)
+    .fetch_all(pool)
+    .await?;
 
-    if let Some(salle_id) = salle_id {
-        let admins = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>)>(
-            "SELECT sa.utilisateur_id, u.nom, u.prenom, u.photo_url
-             FROM afrolang.salle_administrateur sa
-             JOIN iam.utilisateur u ON u.id = sa.utilisateur_id
-             WHERE sa.salle_id = $1 AND sa.actif = TRUE",
-        )
-        .bind(salle_id)
-        .fetch_all(pool)
-        .await?;
-        for (uid, nom, prenom, photo) in admins {
-            resultats.push(ModerateurOfficeResponse {
-                utilisateur_id: uid,
-                nom_complet: format!("{} {}", prenom.unwrap_or_default(), nom).trim().to_string(),
-                avatar_url: photo,
-                niveau: NiveauModerateur::AdminSalle,
-            });
-        }
-
-        let mods = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>)>(
-            "SELECT sm.utilisateur_id, u.nom, u.prenom, u.photo_url
-             FROM afrolang.salle_moderateur sm
-             JOIN iam.utilisateur u ON u.id = sm.utilisateur_id
-             WHERE sm.salle_id = $1 AND sm.actif = TRUE",
-        )
-        .bind(salle_id)
-        .fetch_all(pool)
-        .await?;
-        for (uid, nom, prenom, photo) in mods {
-            if resultats.iter().any(|m| m.utilisateur_id == uid) { continue; }
-            resultats.push(ModerateurOfficeResponse {
-                utilisateur_id: uid,
-                nom_complet: format!("{} {}", prenom.unwrap_or_default(), nom).trim().to_string(),
-                avatar_url: photo,
-                niveau: NiveauModerateur::ModerateurAttitre,
-            });
-        }
+    let mut resultats: Vec<ModerateurOfficeResponse> = Vec::with_capacity(rows.len());
+    for (uid, nom, prenom, photo) in rows {
+        let niveau = est_moderateur_actif(pool, session_id, uid)
+            .await?
+            .unwrap_or(NiveauModerateur::Demarreur);
+        resultats.push(ModerateurOfficeResponse {
+            utilisateur_id: uid,
+            nom_complet: format!("{} {}", prenom.unwrap_or_default(), nom).trim().to_string(),
+            avatar_url: photo,
+            niveau,
+        });
     }
-
-    if let Some(salle_privee_id) = salle_privee_id {
-        if let Some((uid, nom, prenom, photo)) = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>)>(
-            "SELECT sp.cree_par, u.nom, u.prenom, u.photo_url
-             FROM afrolang.salle_privee sp
-             JOIN iam.utilisateur u ON u.id = sp.cree_par
-             WHERE sp.id = $1",
-        )
-        .bind(salle_privee_id)
-        .fetch_optional(pool)
-        .await?
-        {
-            if !resultats.iter().any(|m| m.utilisateur_id == uid) {
-                resultats.push(ModerateurOfficeResponse {
-                    utilisateur_id: uid,
-                    nom_complet: format!("{} {}", prenom.unwrap_or_default(), nom).trim().to_string(),
-                    avatar_url: photo,
-                    niveau: NiveauModerateur::CreateurSallePrivee,
-                });
-            }
-        }
-    }
-
     Ok(resultats)
 }
 
@@ -4629,9 +5275,7 @@ pub async fn lister_permissions_tableau_blanc(
         .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
     let session_id = chemin.into_inner();
 
-    let (salle_id, salle_privee_id) = charger_contexte_salle(pool.get_ref(), session_id).await?;
-
-    let moderateurs_office = lister_moderateurs_office(pool.get_ref(), salle_id, salle_privee_id).await?;
+    let moderateurs_office = lister_moderateurs_office(pool.get_ref(), session_id).await?;
 
     let perms = sqlx::query_as::<_, (Uuid, Uuid, chrono::DateTime<chrono::Utc>, String, Option<String>, Option<String>)>(
         "SELECT sptb.utilisateur_id, sptb.accorde_par, sptb.accorde_at,
@@ -4656,7 +5300,7 @@ pub async fn lister_permissions_tableau_blanc(
         })
         .collect();
 
-    let mon_niveau = est_moderateur_session(pool.get_ref(), session_id, utilisateur_id).await?;
+    let mon_niveau = est_moderateur_actif(pool.get_ref(), session_id, utilisateur_id).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -4684,7 +5328,7 @@ pub async fn accorder_permission_tableau_blanc(
     let cible_id = body.utilisateur_id;
 
     // 1) Auteur doit être modérateur de session
-    let niveau = est_moderateur_session(pool.get_ref(), session_id, auteur_id).await?;
+    let niveau = est_moderateur_actif(pool.get_ref(), session_id, auteur_id).await?;
     if niveau.is_none() {
         return Err(ApiErreur::AccesInterdit(
             "Seul un modérateur de session peut accorder cette permission.".into(),
@@ -4692,7 +5336,7 @@ pub async fn accorder_permission_tableau_blanc(
     }
 
     // 2) Refuser si cible est déjà modérateur de session
-    let niveau_cible = est_moderateur_session(pool.get_ref(), session_id, cible_id).await?;
+    let niveau_cible = est_moderateur_actif(pool.get_ref(), session_id, cible_id).await?;
     if niveau_cible.is_some() {
         return Err(ApiErreur::Conflit(
             "L'utilisateur est déjà modérateur de session.".into(),
@@ -4796,7 +5440,7 @@ pub async fn retirer_permission_tableau_blanc(
         .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
     let (session_id, cible_id) = chemin.into_inner();
 
-    let niveau = est_moderateur_session(pool.get_ref(), session_id, auteur_id).await?;
+    let niveau = est_moderateur_actif(pool.get_ref(), session_id, auteur_id).await?;
     if niveau.is_none() {
         return Err(ApiErreur::AccesInterdit(
             "Seul un modérateur de session peut retirer cette permission.".into(),
@@ -4804,7 +5448,7 @@ pub async fn retirer_permission_tableau_blanc(
     }
 
     // FR-013 : refuser de retirer la permission d'un modérateur de session
-    let niveau_cible = est_moderateur_session(pool.get_ref(), session_id, cible_id).await?;
+    let niveau_cible = est_moderateur_actif(pool.get_ref(), session_id, cible_id).await?;
     if niveau_cible.is_some() {
         return Err(ApiErreur::Conflit(
             "Cette permission ne peut pas être retirée à un modérateur.".into(),
@@ -4885,7 +5529,7 @@ pub async fn mettre_en_evidence(
     let session_id = chemin.into_inner();
     let cible_id = body.utilisateur_id;
 
-    let niveau = est_moderateur_session(pool.get_ref(), session_id, auteur_id).await?;
+    let niveau = est_moderateur_actif(pool.get_ref(), session_id, auteur_id).await?;
     let Some(n) = niveau else {
         return Err(ApiErreur::AccesInterdit(
             "Modérateur de session requis.".into(),
@@ -4988,7 +5632,7 @@ pub async fn retirer_mise_en_evidence(
         .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
     let session_id = chemin.into_inner();
 
-    let niveau = est_moderateur_session(pool.get_ref(), session_id, auteur_id).await?;
+    let niveau = est_moderateur_actif(pool.get_ref(), session_id, auteur_id).await?;
     let Some(n) = niveau else {
         return Err(ApiErreur::AccesInterdit("Modérateur de session requis.".into()));
     };
@@ -5074,7 +5718,7 @@ pub async fn fermer_session_pour_abus(
         .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
     let session_id = chemin.into_inner();
 
-    let niveau = est_moderateur_session(pool.get_ref(), session_id, utilisateur_id).await?;
+    let niveau = est_moderateur_actif(pool.get_ref(), session_id, utilisateur_id).await?;
     let niveau = niveau.ok_or_else(|| {
         ApiErreur::AccesInterdit(
             "Réservé aux administrateurs de salle ou de la plateforme".into(),

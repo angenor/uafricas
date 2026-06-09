@@ -200,6 +200,8 @@ export interface SessionDetailAPI extends SessionAPI {
   spotlight?: SpotlightInfoAPI | null
   /** Feature 001-session-moderation — nombre de permissions tableau blanc actives. */
   permissions_tableau_blanc_count?: number
+  /** Refonte multi-modérateurs — demande de passation en attente (filet si DataPacket perdu). */
+  passation_en_attente?: PassationEnAttenteAPI | null
 }
 
 /** DTO participant */
@@ -294,12 +296,23 @@ export interface GroupeEthniqueListeAPI extends PageMeta {
 // Feature 001-session-moderation — permissions tableau blanc + spotlight
 // ──────────────────────────────────────────────────────────────
 
-/** Niveau de modérateur de session calculé côté serveur (FR-001/FR-001b). */
+/** Niveau de modérateur de session calculé côté serveur (FR-001/FR-001b).
+ *  `demarreur` = placeholder (utilisateur lambda ayant démarré la session). */
 export type NiveauModerateur =
   | 'admin_plateforme'
   | 'admin_salle'
   | 'moderateur_attitre'
   | 'createur_salle_privee'
+  | 'demarreur'
+
+/** Demande de passation de modération en cours (placeholder → modérateur désigné). */
+export interface PassationEnAttenteAPI {
+  demandeur: AfrolangUser
+  /** Placeholder courant qui doit accepter. */
+  cible_id: string
+  /** Échéance d'auto-promotion (ISO UTC) = ouverture + 60 s. */
+  expire_at: string
+}
 
 /** Modérateur d'office présent dans la session (lecture). */
 export interface ModerateurOfficeAPI {
@@ -344,11 +357,43 @@ export interface ModerationPermissionPayload {
   accorde_at: string
 }
 
+/** DataPacket `moderation.passation_demande` (refonte multi-modérateurs). */
+export interface PassationDemandePayload {
+  session_id: string
+  demandeur: AfrolangUser
+  cible_id: string
+  expire_at: string
+}
+
+/** DataPacket `moderation.passation_resolue` : liste des utilisateurs promus. */
+export interface PassationResoluePayload {
+  session_id: string
+  promus: string[]
+}
+
+/** DataPacket `moderation.moderateur_ajoute` / `moderateur_retire`. */
+export interface ModerateurChangePayload {
+  session_id: string
+  utilisateur_id: string
+}
+
 /** Enveloppe générique des DataPacket de modération. */
 export interface ModerationDataPacket {
   type: 'moderation'
-  subtype: 'permission_update' | 'spotlight'
-  payload: ModerationPermissionPayload | SpotlightInfoAPI | null
+  subtype:
+    | 'permission_update'
+    | 'spotlight'
+    | 'passation_demande'
+    | 'passation_resolue'
+    | 'moderateur_ajoute'
+    | 'moderateur_retire'
+  payload:
+    | ModerationPermissionPayload
+    | SpotlightInfoAPI
+    | PassationDemandePayload
+    | PassationResoluePayload
+    | ModerateurChangePayload
+    | null
 }
 
 /** Reponse API standardisee */
@@ -405,6 +450,10 @@ export interface DemarrerRejoindrePriveeResponse {
   livekit_url: string
   livekit_token: string
   moderateur_id: string | null
+  /** Refonte multi-modérateurs : suis-je modérateur effectif (valeur initiale optimiste). */
+  suis_je_moderateur?: boolean
+  /** Demande de passation en attente au moment de la jointure. */
+  passation_en_attente?: PassationEnAttenteAPI | null
 }
 
 /** Formulaire creation session */
@@ -538,6 +587,21 @@ export const useAfrolang = () => {
   const permissionsTableauBlanc = useState<PermissionTableauBlancAPI[]>('afrolang.permissionsTableauBlanc', () => [])
   const moderateursOffice = useState<ModerateurOfficeAPI[]>('afrolang.moderateursOffice', () => [])
   const spotlightActif = useState<SpotlightInfoAPI | null>('afrolang.spotlightActif', () => null)
+  /** Refonte multi-modérateurs : demande de passation en cours dans la session active. */
+  const demandePassation = useState<PassationEnAttenteAPI | null>('afrolang.demandePassation', () => null)
+
+  /** Suis-je modérateur effectif de la session active (dérivé du niveau serveur) ? */
+  const suisJeModerateur = computed<boolean>(() => monNiveauModerateurSession.value !== null)
+
+  /** Réinitialise tout l'état de modération partagé (à appeler à l'entrée ET la
+   *  sortie d'une session pour éviter toute fuite entre salles — useState global). */
+  const reinitialiserEtatModeration = () => {
+    monNiveauModerateurSession.value = null
+    permissionsTableauBlanc.value = []
+    moderateursOffice.value = []
+    spotlightActif.value = null
+    demandePassation.value = null
+  }
 
   /** Headers d'authentification si l'utilisateur est connecte */
   const authHeaders = (): Record<string, string> => {
@@ -1761,19 +1825,44 @@ export const useAfrolang = () => {
   }
 
   /** Attache un listener `dataReceived` sur la `Room` LiveKit pour les évènements
-   *  `moderation.*`. Retourne une fonction de détachement à appeler au démontage. */
-  const attacherListenerModeration = (room: Room): (() => void) => {
+   *  `moderation.*`. `sessionId` sert à re-synchroniser l'état modérateur de façon
+   *  AUTORITAIRE (re-fetch serveur) sur les évènements de passation — on ne fait
+   *  jamais confiance au seul contenu du DataPacket pour une décision d'autorisation.
+   *  Retourne une fonction de détachement à appeler au démontage. */
+  const attacherListenerModeration = (room: Room, sessionId: string): (() => void) => {
     const decoder = new TextDecoder()
     const handler = (payload: Uint8Array) => {
       try {
         const texte = decoder.decode(payload)
         const data = JSON.parse(texte) as ModerationDataPacket
         if (data.type !== 'moderation') return
-        if (data.subtype === 'permission_update') {
-          onPermissionUpdate(data.payload as ModerationPermissionPayload)
-        }
-        else if (data.subtype === 'spotlight') {
-          onSpotlight(data.payload as SpotlightInfoAPI | null)
+        switch (data.subtype) {
+          case 'permission_update':
+            onPermissionUpdate(data.payload as ModerationPermissionPayload)
+            break
+          case 'spotlight':
+            onSpotlight(data.payload as SpotlightInfoAPI | null)
+            break
+          case 'passation_demande': {
+            const p = data.payload as PassationDemandePayload
+            demandePassation.value = {
+              demandeur: p.demandeur,
+              cible_id: p.cible_id,
+              expire_at: p.expire_at,
+            }
+            break
+          }
+          case 'passation_resolue':
+            // Demande close : on efface le signal et on ré-hydrate le niveau
+            // (le démarreur perd la modération, les attitrés la gagnent).
+            demandePassation.value = null
+            void listerPermissionsTableauBlanc(sessionId)
+            break
+          case 'moderateur_ajoute':
+          case 'moderateur_retire':
+            // Le SET de modérateurs a changé : re-fetch autoritaire.
+            void listerPermissionsTableauBlanc(sessionId)
+            break
         }
       }
       catch {
@@ -1783,6 +1872,41 @@ export const useAfrolang = () => {
     room.on('dataReceived', handler)
     return () => {
       room.off('dataReceived', handler)
+    }
+  }
+
+  /** POST passation/accepter — le placeholder cède la modération (consentement). */
+  const accepterPassation = async (sessionId: string): Promise<boolean> => {
+    try {
+      const r = await $fetch<ApiResponse<unknown>>(
+        `${apiBase}/api/afrolang/sessions/${sessionId}/passation/accepter`,
+        { method: 'POST', headers: authHeaders() },
+      )
+      if (r.success) void listerPermissionsTableauBlanc(sessionId)
+      return r.success
+    }
+    catch (e) {
+      console.error('Erreur accepterPassation:', e)
+      return false
+    }
+  }
+
+  /** POST passation/finaliser — promotion auto après délai (appelé par le timer
+   *  client du modérateur désigné entrant). `resolu` indique si le délai serveur
+   *  était bien échu. */
+  const finaliserPassation = async (sessionId: string): Promise<boolean> => {
+    try {
+      const r = await $fetch<ApiResponse<{ resolu: boolean }>>(
+        `${apiBase}/api/afrolang/sessions/${sessionId}/passation/finaliser`,
+        { method: 'POST', headers: authHeaders() },
+      )
+      const resolu = !!r.data?.resolu
+      if (resolu) void listerPermissionsTableauBlanc(sessionId)
+      return resolu
+    }
+    catch (e) {
+      console.error('Erreur finaliserPassation:', e)
+      return false
     }
   }
 
@@ -1867,6 +1991,12 @@ export const useAfrolang = () => {
     mettreEnEvidence,
     retirerMiseEnEvidence,
     attacherListenerModeration,
+    // Refonte multi-modérateurs (passation)
+    demandePassation,
+    suisJeModerateur,
+    reinitialiserEtatModeration,
+    accepterPassation,
+    finaliserPassation,
   }
 }
 

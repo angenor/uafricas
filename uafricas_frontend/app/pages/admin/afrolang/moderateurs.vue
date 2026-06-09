@@ -32,14 +32,16 @@ const chargerSalles = async () => {
   try {
     const resp = await adminFetch<{
       success: boolean
-      data?: { items: SalleAdminListe[] }
+      // Réponse paginée standard : les éléments sont sous `data.data`
+      // (PaginatedResponse), pas `data.items`.
+      data?: { data: SalleAdminListe[] }
     }>('/api/admin/salles', {
       params: {
         par_page: 100,
         recherche: recherche.value.trim() || undefined,
       },
     })
-    salles.value = resp?.data?.items ?? []
+    salles.value = resp?.data?.data ?? []
   } finally {
     chargement.value = false
   }

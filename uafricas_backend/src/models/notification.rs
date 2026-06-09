@@ -16,6 +16,9 @@ pub mod afrolang {
     pub const PROPOSITION_VALIDEE: &str = "afrolang.proposition_validee";
     pub const PROPOSITION_REFUSEE: &str = "afrolang.proposition_refusee";
     pub const MODERATION_REPRISE: &str = "afrolang.moderation_reprise";
+    /// Une demande de passation de modération a été ouverte (un modérateur
+    /// désigné est entré ; le démarreur « placeholder » est invité à céder).
+    pub const MODERATION_DEMANDE_PASSATION: &str = "afrolang.moderation_demande_passation";
     pub const ADHESION_DEMANDEE: &str = "afrolang.adhesion_demandee";
     pub const ADHESION_ACCEPTEE: &str = "afrolang.adhesion_acceptee";
     pub const ADHESION_REFUSEE: &str = "afrolang.adhesion_refusee";
