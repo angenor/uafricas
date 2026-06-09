@@ -453,7 +453,7 @@ const getMapColor = (id: string): string => {
   const fiche = getFicheByCode(id)
 
   if (fiche) {
-    const regionColor = REGION_COLORS[fiche.region] || '#228B22'
+    const regionColor = REGION_COLORS[fiche.region] || '#9ca3af'
     if (isSelected) return '#FFD700'
     if (isHovered) return adjustBrightness(regionColor, -15)
     return regionColor

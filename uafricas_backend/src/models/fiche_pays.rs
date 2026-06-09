@@ -145,17 +145,31 @@ pub struct FichePaysQueryParams {
 // Fonctions utilitaires
 // ────────────────────────────────────────────────────────────────
 
-/// Determine la region a partir du pays_id en interrogeant les donnees existantes
-/// Pour simplifier, on utilise une classification statique basee sur le code ISO
+/// Determine la region africaine a partir du code ISO 3166-1 alpha-2 (majuscules).
+/// Classification couvrant les 55 pays africains, alignee sur les 5 regions de
+/// la legende (Nord, Ouest, Centrale, Est, Australe).
 pub fn region_depuis_code(code: Option<&str>) -> String {
-    match code {
-        Some("SN") | Some("CI") | Some("NG") | Some("GH") => "Afrique de l'Ouest".to_string(),
-        Some("CM") | Some("CD") => "Afrique Centrale".to_string(),
-        Some("KE") | Some("ET") | Some("TZ") => "Afrique de l'Est".to_string(),
-        Some("EG") | Some("MA") | Some("DZ") | Some("TN") | Some("LY") => "Afrique du Nord".to_string(),
-        Some("ZA") | Some("BW") | Some("MZ") | Some("ZW") | Some("NA") => "Afrique Australe".to_string(),
-        _ => "Autre".to_string(),
-    }
+    let r = match code.map(|c| c.to_uppercase()).as_deref() {
+        // Afrique du Nord
+        Some("DZ") | Some("EG") | Some("LY") | Some("MA") | Some("TN") | Some("SD")
+        | Some("EH") => "Afrique du Nord",
+        // Afrique de l'Ouest
+        Some("BJ") | Some("BF") | Some("CV") | Some("CI") | Some("GM") | Some("GH")
+        | Some("GN") | Some("GW") | Some("LR") | Some("ML") | Some("MR") | Some("NE")
+        | Some("NG") | Some("SN") | Some("SL") | Some("TG") => "Afrique de l'Ouest",
+        // Afrique Centrale
+        Some("AO") | Some("CM") | Some("CF") | Some("TD") | Some("CG") | Some("CD")
+        | Some("GQ") | Some("GA") | Some("ST") => "Afrique Centrale",
+        // Afrique de l'Est
+        Some("BI") | Some("KM") | Some("DJ") | Some("ER") | Some("ET") | Some("KE")
+        | Some("MG") | Some("MU") | Some("RW") | Some("SC") | Some("SO") | Some("SS")
+        | Some("TZ") | Some("UG") => "Afrique de l'Est",
+        // Afrique Australe
+        Some("BW") | Some("SZ") | Some("LS") | Some("MW") | Some("MZ") | Some("NA")
+        | Some("ZA") | Some("ZM") | Some("ZW") => "Afrique Australe",
+        _ => "Autre",
+    };
+    r.to_string()
 }
 
 /// Formate la population en texte lisible
