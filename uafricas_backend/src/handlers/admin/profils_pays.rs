@@ -1141,7 +1141,7 @@ pub async fn lister_sites_touristiques(
                 st.longitude::float8 AS longitude, st.latitude::float8 AS latitude,
                 st.contact_telephone, st.contact_courriel, st.contact_adresse,
                 st.constitution_statut_juridique, st.constitution_numero, st.constitution_document_url,
-                st.verifie,
+                st.site_web_url, st.verifie,
                 st.region_id, r.nom AS region_nom,
                 st.created_at, st.updated_at
          FROM country_profile.site_touristique st
@@ -1173,7 +1173,7 @@ pub async fn creer_site_touristique(
     }
 
     let categorie = body.categorie.as_deref().unwrap_or("emblematique");
-    // Galerie (≤3) + couverture image_url = 1re image (rétrocompat).
+    // Galerie (≤5) + couverture image_url = 1re image (rétrocompat).
     let images: Vec<String> = body
         .images
         .clone()
@@ -1181,7 +1181,7 @@ pub async fn creer_site_touristique(
         .into_iter()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
-        .take(3)
+        .take(5)
         .collect();
     let cover = images
         .first()
@@ -1193,10 +1193,11 @@ pub async fn creer_site_touristique(
          (id, fiche_pays_id, nom, categorie, sous_type, description, info_pertinente, image_url,
           gestionnaire, ville, village, longitude, latitude,
           contact_telephone, contact_courriel, contact_adresse,
-          constitution_statut_juridique, constitution_numero, constitution_document_url, region_id, images)
+          constitution_statut_juridique, constitution_numero, constitution_document_url, region_id, images,
+          site_web_url)
          VALUES ($1, $2, $3, $4::country_profile.categorie_site_touristique,
                  $5::country_profile.sous_type_site, $6, $7, $8,
-                 $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)",
+                 $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)",
     )
     .bind(id)
     .bind(fiche_id)
@@ -1228,6 +1229,12 @@ pub async fn creer_site_touristique(
     .bind(body.constitution_document_url.as_deref().map(|s| s.trim()))
     .bind(body.region_id)
     .bind(&images)
+    .bind(
+        body.site_web_url
+            .as_deref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty()),
+    )
     .execute(pool.get_ref())
     .await?;
 
@@ -1306,6 +1313,7 @@ pub async fn modifier_site_touristique(
     );
     champ_str!(body.constitution_numero, "constitution_numero");
     champ_str!(body.constitution_document_url, "constitution_document_url");
+    champ_str!(body.site_web_url, "site_web_url");
 
     if let Some(v) = body.longitude {
         sets.push(format!("longitude = {}", v));
@@ -1317,13 +1325,13 @@ pub async fn modifier_site_touristique(
         sets.push(format!("region_id = '{}'", region_id));
     }
 
-    // Galerie (≤3) : si fournie, on remplace `images` et la couverture `image_url`
+    // Galerie (≤5) : si fournie, on remplace `images` et la couverture `image_url`
     // (sauf si image_url explicitement fourni ci-dessus).
     let images_vec: Option<Vec<String>> = body.images.as_ref().map(|v| {
         v.iter()
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())
-            .take(3)
+            .take(5)
             .collect()
     });
     if let Some(ref imgs) = images_vec {
@@ -2767,11 +2775,11 @@ async fn appliquer_contribution_afripulse(
                      gestionnaire, ville, village, info_pertinente, latitude, longitude,
                      contact_telephone, contact_courriel, contact_adresse,
                      constitution_statut_juridique, constitution_numero, constitution_document_url,
-                     images)
+                     images, site_web_url)
                  VALUES ($1, $2, $3::country_profile.categorie_site_touristique,
                          $4::country_profile.sous_type_site, $5, $6,
                          $7, $8, $9, $10, $11::numeric, $12::numeric,
-                         $13, $14, $15, $16, $17, $18, $19)
+                         $13, $14, $15, $16, $17, $18, $19, $20)
                  RETURNING id",
             )
             .bind(fiche_pays_id)
@@ -2793,6 +2801,7 @@ async fn appliquer_contribution_afripulse(
             .bind(opt_str_field(payload, "constitution_numero"))
             .bind(opt_str_field(payload, "constitution_document_url"))
             .bind(&images)
+            .bind(opt_str_field(payload, "site_web_url"))
             .fetch_one(&mut **tx)
             .await?;
             Ok(Some(nouvel_id))
@@ -2826,7 +2835,8 @@ async fn appliquer_contribution_afripulse(
                     constitution_statut_juridique = COALESCE($16, constitution_statut_juridique),
                     constitution_numero = COALESCE($17, constitution_numero),
                     constitution_document_url = COALESCE($18, constitution_document_url),
-                    images = COALESCE($19::text[], images)
+                    images = COALESCE($19::text[], images),
+                    site_web_url = COALESCE($20, site_web_url)
                  WHERE id = $1 AND deleted_at IS NULL",
             )
             .bind(tid)
@@ -2848,6 +2858,7 @@ async fn appliquer_contribution_afripulse(
             .bind(opt_str_field(payload, "constitution_numero"))
             .bind(opt_str_field(payload, "constitution_document_url"))
             .bind(images_opt.as_ref())
+            .bind(opt_str_field(payload, "site_web_url"))
             .execute(&mut **tx)
             .await?;
             Ok(Some(tid))
@@ -3173,7 +3184,7 @@ fn opt_f64_field(value: &Value, key: &str) -> Option<f64> {
     value.get(key).and_then(|v| v.as_f64())
 }
 
-/// Extrait la galerie d'images d'un payload de site (clé `images`), plafonnée à 3.
+/// Extrait la galerie d'images d'un payload de site (clé `images`), plafonnée à 5.
 /// Repli sur `image_url` (legacy) si `images` absent. `None` => rien fourni
 /// (permet de conserver l'existant en édition via COALESCE).
 fn images_site_field(value: &Value) -> Option<Vec<String>> {
@@ -3183,7 +3194,7 @@ fn images_site_field(value: &Value) -> Option<Vec<String>> {
             .filter_map(|x| x.as_str())
             .map(|s| s.trim())
             .filter(|s| !s.is_empty())
-            .take(3)
+            .take(5)
             .map(String::from)
             .collect();
         return Some(images);

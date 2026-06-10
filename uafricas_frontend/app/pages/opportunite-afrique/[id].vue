@@ -171,13 +171,13 @@
             </div>
 
             <!-- Afripulse — sections enrichies (US1) -->
-            <OpportuniteAfriqueSitesTouristiquesSection
+            <OpportuniteAfriqueSecteursOpportunitesSection
               :fiche-id="pays.id"
               :est-authentifie="userStore.isAuthenticated"
               @open-contribution="onOpenContribution"
               @require-login="onRequireLogin"
             />
-            <OpportuniteAfriqueSecteursOpportunitesSection
+            <OpportuniteAfriqueSitesTouristiquesSection
               :fiche-id="pays.id"
               :est-authentifie="userStore.isAuthenticated"
               @open-contribution="onOpenContribution"

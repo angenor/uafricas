@@ -286,6 +286,8 @@ export interface SiteTouristiqueAPI {
   constitution_statut_juridique: string | null
   constitution_numero: string | null
   constitution_document_url: string | null
+  // Lien officiel du site (facultatif, http/https)
+  site_web_url: string | null
   // Fiabilité
   verifie: boolean
   // Agrégats avis

@@ -514,7 +514,7 @@ async fn obtenir_snapshot_afripulse(
     let table_colonnes = match type_objet {
         TypeObjetContribution::SiteTouristique => (
             "country_profile.site_touristique",
-            "jsonb_build_object('id', id, 'nom', nom, 'categorie', categorie::text, 'fiche_pays_id', fiche_pays_id)",
+            "jsonb_build_object('id', id, 'nom', nom, 'categorie', categorie::text, 'site_web_url', site_web_url, 'fiche_pays_id', fiche_pays_id)",
         ),
         TypeObjetContribution::SecteurDeveloppement => (
             "country_profile.secteur_developpement",
@@ -635,6 +635,16 @@ fn valider_site_touristique(payload: &serde_json::Value) -> Result<(), ApiErreur
             return Err(ApiErreur::Validation(
                 "Contact gestionnaire requis pour un site privé (téléphone, courriel ou adresse)."
                     .to_string(),
+            ));
+        }
+    }
+
+    // Lien de site web (facultatif) : schéma http/https uniquement (sécurité).
+    if let Some(url) = payload.get("site_web_url").and_then(|v| v.as_str()) {
+        let url = url.trim();
+        if !url.is_empty() && !(url.starts_with("http://") || url.starts_with("https://")) {
+            return Err(ApiErreur::Validation(
+                "Le lien du site web doit commencer par http:// ou https://.".to_string(),
             ));
         }
     }

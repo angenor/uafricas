@@ -55,6 +55,7 @@ pub struct SiteTouristiqueResponse {
     pub constitution_statut_juridique: Option<String>,
     pub constitution_numero: Option<String>,
     pub constitution_document_url: Option<String>,
+    pub site_web_url: Option<String>,
     pub verifie: bool,
     pub note_moyenne: Option<f64>,
     pub nombre_avis: i64,
@@ -75,7 +76,7 @@ const SITE_TOURISTIQUE_SELECT: &str = "SELECT st.id, st.fiche_pays_id, st.nom,
         st.latitude::float8 AS latitude, st.longitude::float8 AS longitude,
         st.contact_telephone, st.contact_courriel, st.contact_adresse,
         st.constitution_statut_juridique, st.constitution_numero, st.constitution_document_url,
-        st.verifie, av.note_moyenne, av.nombre_avis, st.created_at
+        st.site_web_url, st.verifie, av.note_moyenne, av.nombre_avis, st.created_at
      FROM country_profile.site_touristique st
      LEFT JOIN LATERAL (
         SELECT AVG(a.note)::float8 AS note_moyenne, COUNT(*)::bigint AS nombre_avis

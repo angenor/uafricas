@@ -120,6 +120,7 @@ const formAfripulse = reactive({
   constitution_statut_juridique: '',
   constitution_numero: '',
   constitution_document_url: '',
+  site_web_url: '',
   nom_complet: '',
   domaine: 'autre' as DomainePersonnalite,
   biographie_courte: '',
@@ -208,6 +209,7 @@ const resetForm = () => {
   formAfripulse.constitution_statut_juridique = ''
   formAfripulse.constitution_numero = ''
   formAfripulse.constitution_document_url = ''
+  formAfripulse.site_web_url = ''
   formAfripulse.nom_complet = ''
   formAfripulse.domaine = 'autre'
   formAfripulse.biographie_courte = ''
@@ -251,6 +253,7 @@ const prefillAfripulse = (ctx: AfripulseContext | null) => {
   if (typeof d.constitution_statut_juridique === 'string') formAfripulse.constitution_statut_juridique = d.constitution_statut_juridique
   if (typeof d.constitution_numero === 'string') formAfripulse.constitution_numero = d.constitution_numero
   if (typeof d.constitution_document_url === 'string') formAfripulse.constitution_document_url = d.constitution_document_url
+  if (typeof d.site_web_url === 'string') formAfripulse.site_web_url = d.site_web_url
   if (typeof d.nom_complet === 'string') formAfripulse.nom_complet = d.nom_complet
   if (typeof d.domaine === 'string') formAfripulse.domaine = d.domaine as DomainePersonnalite
   if (typeof d.biographie_courte === 'string') formAfripulse.biographie_courte = d.biographie_courte
@@ -306,6 +309,7 @@ const construirePayloadAfripulse = (): Record<string, unknown> | null => {
       constitution_statut_juridique: formAfripulse.constitution_statut_juridique.trim() || null,
       constitution_numero: formAfripulse.constitution_numero.trim() || null,
       constitution_document_url: formAfripulse.constitution_document_url.trim() || null,
+      site_web_url: formAfripulse.site_web_url.trim() || null,
     }
   }
   if (type === 'secteur_developpement') {
@@ -624,9 +628,23 @@ watch(() => props.legacyContext, (ctx) => {
                 </div>
               </fieldset>
 
+              <!-- Lien officiel du site web (facultatif) -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Site web (optionnel)</label>
+                <input
+                  v-model="formAfripulse.site_web_url"
+                  type="url"
+                  inputmode="url"
+                  placeholder="https://exemple.com"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                />
+                <p class="text-xs text-gray-400 mt-1">Doit commencer par http:// ou https://</p>
+              </div>
+
               <OpportuniteAfriqueMultiImageUploadField
                 v-model="formAfripulse.images"
-                label="Images du site (3 max) — la 1re sert de couverture"
+                :max="5"
+                label="Images du site (5 max) — la 1re sert de couverture"
               />
 
               <!-- Constitution légale (facultatif — US4) -->

@@ -91,6 +91,7 @@ const snapshotSite = (site: SiteTouristiqueAPI): Record<string, unknown> => ({
   constitution_statut_juridique: site.constitution_statut_juridique,
   constitution_numero: site.constitution_numero,
   constitution_document_url: site.constitution_document_url,
+  site_web_url: site.site_web_url,
 })
 
 const ouvrirContribution = (

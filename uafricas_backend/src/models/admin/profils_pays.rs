@@ -374,6 +374,7 @@ pub struct AdminSiteTouristiqueResponse {
     pub constitution_statut_juridique: Option<String>,
     pub constitution_numero: Option<String>,
     pub constitution_document_url: Option<String>,
+    pub site_web_url: Option<String>,
     pub verifie: bool,
     pub region_id: Option<Uuid>,
     pub region_nom: Option<String>,
@@ -401,6 +402,7 @@ pub struct CreerSiteTouristiqueRequest {
     pub constitution_statut_juridique: Option<String>,
     pub constitution_numero: Option<String>,
     pub constitution_document_url: Option<String>,
+    pub site_web_url: Option<String>,
     pub region_id: Option<Uuid>,
 }
 
@@ -424,6 +426,7 @@ pub struct ModifierSiteTouristiqueRequest {
     pub constitution_statut_juridique: Option<String>,
     pub constitution_numero: Option<String>,
     pub constitution_document_url: Option<String>,
+    pub site_web_url: Option<String>,
     pub region_id: Option<Uuid>,
 }
 

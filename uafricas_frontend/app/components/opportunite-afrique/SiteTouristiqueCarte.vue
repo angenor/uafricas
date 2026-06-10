@@ -16,276 +16,119 @@ const emit = defineEmits<{
 
 const { resoudreUrlImage } = useOpportuniteAfrique()
 
-// Panneau détails (GPS, constitution, avis) replié par défaut.
-const ouvert = ref(false)
+// Modal de détails (galerie complète, contacts, lien web, GPS, constitution, avis).
+const detailsOuvert = ref(false)
 
-// Galerie : `images` (≤3) avec repli sur `image_url` (sites legacy).
+// Galerie : `images` (≤5) avec repli sur `image_url` (sites legacy).
 const galerie = computed<string[]>(() => {
   if (props.site.images && props.site.images.length) return props.site.images
   return props.site.image_url ? [props.site.image_url] : []
 })
 const couverture = computed(() => galerie.value[0] ?? null)
 
-// Visionneuse plein écran (lightbox)
-const lightboxOuvert = ref(false)
-const lightboxIndex = ref(0)
-const imageLightbox = computed(() => galerie.value[lightboxIndex.value] ?? null)
-
-const ouvrirLightbox = (i: number) => {
-  lightboxIndex.value = i
-  lightboxOuvert.value = true
-}
-const fermerLightbox = () => { lightboxOuvert.value = false }
-const naviguer = (delta: number) => {
-  const n = galerie.value.length
-  if (n > 0) lightboxIndex.value = (lightboxIndex.value + delta + n) % n
-}
-
-const onCleLightbox = (e: KeyboardEvent) => {
-  if (!lightboxOuvert.value) return
-  if (e.key === 'Escape') fermerLightbox()
-  else if (e.key === 'ArrowRight') naviguer(1)
-  else if (e.key === 'ArrowLeft') naviguer(-1)
-}
-onMounted(() => window.addEventListener('keydown', onCleLightbox))
-onBeforeUnmount(() => window.removeEventListener('keydown', onCleLightbox))
-
 const libelleSousType = computed(() =>
   props.site.sous_type ? LIBELLES_SOUS_TYPE[props.site.sous_type] : null,
 )
-const estPrive = computed(() => props.site.categorie === 'prive')
-const aContact = computed(() =>
-  !!(props.site.contact_telephone || props.site.contact_courriel || props.site.contact_adresse),
-)
-const aConstitution = computed(() =>
-  !!(props.site.constitution_statut_juridique || props.site.constitution_numero || props.site.constitution_document_url),
-)
-const aGps = computed(() => props.site.latitude !== null && props.site.longitude !== null)
 const localisation = computed(() =>
   [props.site.ville, props.site.village].filter(Boolean).join(', ') || null,
 )
 </script>
 
 <template>
-  <article class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
-    <!-- Image de couverture (clic = agrandir) + miniatures -->
-    <div class="aspect-video relative overflow-hidden shrink-0">
-      <button
+  <article class="flex flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md">
+    <!-- Couverture (clic = ouvrir les détails) -->
+    <button
+      type="button"
+      class="group relative block aspect-video w-full shrink-0 cursor-pointer overflow-hidden"
+      :aria-label="`Voir les détails de ${site.nom}`"
+      @click="detailsOuvert = true"
+    >
+      <img
         v-if="couverture"
-        type="button"
-        class="block w-full h-full cursor-zoom-in group"
-        aria-label="Agrandir l'image"
-        @click="ouvrirLightbox(0)"
-      >
-        <img
-          :src="resoudreUrlImage(couverture)"
-          :alt="site.nom"
-          class="w-full h-full object-cover transition-transform group-hover:scale-[1.02]"
-        />
-      </button>
-      <div v-else class="w-full h-full bg-gradient-to-br from-custom-chocolat to-custom-green" />
+        :src="resoudreUrlImage(couverture)"
+        :alt="site.nom"
+        class="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
+      />
+      <span v-else class="block h-full w-full bg-gradient-to-br from-custom-chocolat to-custom-green" />
       <span
         v-if="galerie.length > 1"
-        class="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-1 rounded bg-black/55 text-white text-xs font-medium pointer-events-none"
+        class="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded bg-black/55 px-2 py-1 text-xs font-medium text-white"
       >
-        <font-awesome-icon :icon="['fas', 'images']" class="w-3.5 h-3.5" />
+        <font-awesome-icon :icon="['fas', 'images']" class="h-3.5 w-3.5" />
         {{ galerie.length }}
       </span>
       <span
         v-if="site.verifie"
-        class="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/90 text-custom-green text-xs font-medium shadow-sm"
+        class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-custom-green shadow-sm"
       >
-        <font-awesome-icon :icon="['fas', 'circle-check']" class="w-3.5 h-3.5" />
+        <font-awesome-icon :icon="['fas', 'circle-check']" class="h-3.5 w-3.5" />
         Vérifié
       </span>
       <span
         v-if="libelleSousType"
-        class="absolute bottom-2 left-2 px-2 py-1 rounded bg-black/55 text-white text-xs font-medium"
+        class="absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-xs font-medium text-white"
       >
         {{ libelleSousType }}
       </span>
-    </div>
-    <div v-if="galerie.length > 1" class="flex gap-1.5 px-3 pt-3">
-      <button
-        v-for="(url, i) in galerie"
-        :key="url"
-        type="button"
-        class="h-12 w-16 rounded overflow-hidden border border-gray-200 opacity-80 hover:opacity-100 transition-opacity cursor-zoom-in"
-        :aria-label="`Agrandir l'image ${i + 1}`"
-        @click="ouvrirLightbox(i)"
-      >
-        <img :src="resoudreUrlImage(url)" :alt="`${site.nom} ${i + 1}`" class="h-full w-full object-cover" />
-      </button>
-    </div>
+    </button>
 
-    <div class="p-4 flex flex-col flex-1">
-      <div class="flex items-start justify-between gap-2 mb-1">
-        <h4 class="font-oswald text-lg font-semibold text-gray-900 leading-tight">{{ site.nom }}</h4>
+    <div class="flex flex-1 flex-col p-4">
+      <div class="mb-1 flex items-start justify-between gap-2">
+        <h4 class="font-oswald text-lg font-semibold leading-tight text-gray-900">{{ site.nom }}</h4>
         <span
           v-if="site.nombre_avis > 0 && site.note_moyenne !== null"
-          class="shrink-0 inline-flex items-center gap-1 text-sm"
+          class="inline-flex shrink-0 items-center gap-1 text-sm"
           :title="`${site.nombre_avis} avis`"
         >
-          <font-awesome-icon :icon="['fas', 'star']" class="w-3.5 h-3.5 text-amber-400" />
+          <font-awesome-icon :icon="['fas', 'star']" class="h-3.5 w-3.5 text-amber-400" />
           <span class="font-semibold text-gray-900">{{ site.note_moyenne.toFixed(1) }}</span>
-          <span class="text-gray-400 text-xs">({{ site.nombre_avis }})</span>
+          <span class="text-xs text-gray-400">({{ site.nombre_avis }})</span>
         </span>
       </div>
 
-      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mb-2">
+      <div class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
         <span v-if="localisation" class="inline-flex items-center gap-1">
-          <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3 h-3 text-custom-chocolat" />
+          <font-awesome-icon :icon="['fas', 'location-dot']" class="h-3 w-3 text-custom-chocolat" />
           {{ localisation }}
         </span>
         <span v-if="site.gestionnaire" class="inline-flex items-center gap-1">
-          <font-awesome-icon :icon="['fas', 'user']" class="w-3 h-3 text-gray-400" />
+          <font-awesome-icon :icon="['fas', 'user']" class="h-3 w-3 text-gray-400" />
           {{ site.gestionnaire }}
         </span>
       </div>
 
-      <p v-if="site.info_pertinente" class="text-sm text-gray-700 line-clamp-2 mb-2">{{ site.info_pertinente }}</p>
-      <p v-else-if="site.description" class="text-sm text-gray-600 line-clamp-2 mb-2">{{ site.description }}</p>
-
-      <!-- Contacts — toujours visibles (publics, l'intérêt principal) -->
-      <div v-if="aContact" class="flex flex-col gap-1 text-sm mb-2 rounded-md bg-gray-50 px-3 py-2">
-        <a
-          v-if="site.contact_telephone"
-          :href="`tel:${site.contact_telephone}`"
-          class="inline-flex items-center gap-2 text-gray-700 hover:text-custom-green"
-        >
-          <font-awesome-icon :icon="['fas', 'phone']" class="w-3.5 h-3.5 text-custom-green" />
-          {{ site.contact_telephone }}
-        </a>
-        <a
-          v-if="site.contact_courriel"
-          :href="`mailto:${site.contact_courriel}`"
-          class="inline-flex items-center gap-2 text-gray-700 hover:text-custom-green break-all"
-        >
-          <font-awesome-icon :icon="['fas', 'envelope']" class="w-3.5 h-3.5 text-custom-green" />
-          {{ site.contact_courriel }}
-        </a>
-        <span v-if="site.contact_adresse" class="inline-flex items-center gap-2 text-gray-700">
-          <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3.5 h-3.5 text-custom-green" />
-          {{ site.contact_adresse }}
-        </span>
-      </div>
+      <p v-if="site.info_pertinente" class="mb-3 line-clamp-2 text-sm text-gray-700">{{ site.info_pertinente }}</p>
+      <p v-else-if="site.description" class="mb-3 line-clamp-2 text-sm text-gray-600">{{ site.description }}</p>
 
       <!-- Barre d'actions compacte -->
-      <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mt-auto pt-3 border-t border-gray-100 text-xs font-medium">
+      <div class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-gray-100 pt-3 text-xs font-medium">
         <button
           type="button"
           class="inline-flex items-center gap-1 text-gray-700 hover:text-custom-chocolat"
-          :aria-expanded="ouvert"
-          @click="ouvert = !ouvert"
+          @click="detailsOuvert = true"
         >
-          <font-awesome-icon :icon="['fas', 'star']" class="w-3.5 h-3.5 text-amber-400" />
-          {{ site.nombre_avis > 0 ? `Avis (${site.nombre_avis})` : 'Donner un avis' }}
-          <font-awesome-icon :icon="['fas', ouvert ? 'chevron-up' : 'chevron-down']" class="w-3 h-3" />
+          <font-awesome-icon :icon="['fas', 'circle-info']" class="h-3.5 w-3.5 text-custom-chocolat" />
+          Détails<span v-if="site.nombre_avis > 0"> &amp; avis ({{ site.nombre_avis }})</span>
         </button>
         <span class="ml-auto flex items-center gap-3">
           <button type="button" class="inline-flex items-center gap-1 text-custom-chocolat hover:underline" @click="emit('edit', site)">
-            <font-awesome-icon :icon="['fas', 'pen-to-square']" class="w-3.5 h-3.5" />
+            <font-awesome-icon :icon="['fas', 'pen-to-square']" class="h-3.5 w-3.5" />
             Modifier
           </button>
           <button type="button" class="inline-flex items-center gap-1 text-red-600 hover:underline" @click="emit('delete', site)">
-            <font-awesome-icon :icon="['fas', 'trash']" class="w-3.5 h-3.5" />
+            <font-awesome-icon :icon="['fas', 'trash']" class="h-3.5 w-3.5" />
             Supprimer
           </button>
         </span>
       </div>
-
-      <!-- Panneau détails & avis (replié par défaut) -->
-      <div v-if="ouvert" class="mt-3 pt-3 border-t border-gray-100 space-y-3 text-sm">
-        <p v-if="aGps" class="flex items-center gap-1.5 text-xs text-gray-500">
-          <font-awesome-icon :icon="['fas', 'map-pin']" class="w-3.5 h-3.5 text-gray-400" />
-          {{ site.latitude!.toFixed(4) }}, {{ site.longitude!.toFixed(4) }}
-        </p>
-
-        <div v-if="aConstitution" class="text-gray-600">
-          <p class="font-medium text-gray-700 text-xs uppercase tracking-wide mb-1">Constitution légale</p>
-          <p v-if="site.constitution_statut_juridique">Statut : {{ site.constitution_statut_juridique }}</p>
-          <p v-if="site.constitution_numero">N° : {{ site.constitution_numero }}</p>
-          <a
-            v-if="site.constitution_document_url"
-            :href="resoudreUrlImage(site.constitution_document_url)"
-            target="_blank"
-            rel="noopener"
-            class="text-custom-chocolat hover:underline text-xs"
-          >
-            Voir le document
-          </a>
-        </div>
-
-        <OpportuniteAfriqueSiteAvisListe :site-id="site.id" :est-authentifie="estAuthentifie" />
-      </div>
     </div>
 
-    <!-- Lightbox plein écran -->
-    <Teleport to="body">
-      <Transition name="lightbox-fade">
-        <div
-          v-if="lightboxOuvert && imageLightbox"
-          class="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4"
-          @click.self="fermerLightbox"
-        >
-          <button
-            type="button"
-            class="absolute top-4 right-4 text-white/80 hover:text-white"
-            aria-label="Fermer"
-            @click="fermerLightbox"
-          >
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-          <button
-            v-if="galerie.length > 1"
-            type="button"
-            class="absolute left-4 text-white/80 hover:text-white p-2"
-            aria-label="Image précédente"
-            @click.stop="naviguer(-1)"
-          >
-            <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          <figure class="max-w-5xl max-h-[88vh] flex flex-col items-center">
-            <img
-              :src="resoudreUrlImage(imageLightbox)"
-              :alt="site.nom"
-              class="max-w-full max-h-[80vh] object-contain rounded-md shadow-2xl"
-            />
-            <figcaption class="mt-3 text-white/80 text-sm">
-              {{ site.nom }}<span v-if="galerie.length > 1"> — {{ lightboxIndex + 1 }} / {{ galerie.length }}</span>
-            </figcaption>
-          </figure>
-
-          <button
-            v-if="galerie.length > 1"
-            type="button"
-            class="absolute right-4 text-white/80 hover:text-white p-2"
-            aria-label="Image suivante"
-            @click.stop="naviguer(1)"
-          >
-            <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-      </Transition>
-    </Teleport>
+    <!-- Modal détails -->
+    <OpportuniteAfriqueSiteTouristiqueDetailModal
+      :site="site"
+      :est-authentifie="estAuthentifie"
+      :ouvert="detailsOuvert"
+      @fermer="detailsOuvert = false"
+    />
   </article>
 </template>
-
-<style scoped>
-.lightbox-fade-enter-active,
-.lightbox-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.lightbox-fade-enter-from,
-.lightbox-fade-leave-to {
-  opacity: 0;
-}
-</style>
