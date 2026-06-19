@@ -2880,16 +2880,23 @@ async fn appliquer_contribution_afripulse(
             let payload = nouvelle_jsonb.ok_or_else(|| {
                 ApiErreur::Validation("nouvelle_valeur_jsonb requise pour secteur".into())
             })?;
-            let nom = str_field(payload, "nom");
-            let description = opt_str_field(payload, "description");
             let nouvel_id: Uuid = sqlx::query_scalar(
                 "INSERT INTO country_profile.secteur_developpement
-                    (fiche_pays_id, nom, description)
-                 VALUES ($1, $2, $3) RETURNING id",
+                    (fiche_pays_id, nom, description, localite,
+                     contact_telephone, contact_courriel, contact_adresse,
+                     references_utiles, site_web_url, image_url)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
             )
             .bind(fiche_pays_id)
-            .bind(nom)
-            .bind(description)
+            .bind(str_field(payload, "nom"))
+            .bind(opt_str_field(payload, "description"))
+            .bind(opt_str_field(payload, "localite"))
+            .bind(opt_str_field(payload, "contact_telephone"))
+            .bind(opt_str_field(payload, "contact_courriel"))
+            .bind(opt_str_field(payload, "contact_adresse"))
+            .bind(opt_str_field(payload, "references_utiles"))
+            .bind(opt_str_field(payload, "site_web_url"))
+            .bind(opt_str_field(payload, "image_url"))
             .fetch_one(&mut **tx)
             .await?;
             Ok(Some(nouvel_id))
@@ -2900,12 +2907,26 @@ async fn appliquer_contribution_afripulse(
             sqlx::query(
                 "UPDATE country_profile.secteur_developpement SET
                     nom = COALESCE($2, nom),
-                    description = COALESCE($3, description)
+                    description = COALESCE($3, description),
+                    localite = COALESCE($4, localite),
+                    contact_telephone = COALESCE($5, contact_telephone),
+                    contact_courriel = COALESCE($6, contact_courriel),
+                    contact_adresse = COALESCE($7, contact_adresse),
+                    references_utiles = COALESCE($8, references_utiles),
+                    site_web_url = COALESCE($9, site_web_url),
+                    image_url = COALESCE($10, image_url)
                  WHERE id = $1",
             )
             .bind(tid)
             .bind(opt_str_field(payload, "nom"))
             .bind(opt_str_field(payload, "description"))
+            .bind(opt_str_field(payload, "localite"))
+            .bind(opt_str_field(payload, "contact_telephone"))
+            .bind(opt_str_field(payload, "contact_courriel"))
+            .bind(opt_str_field(payload, "contact_adresse"))
+            .bind(opt_str_field(payload, "references_utiles"))
+            .bind(opt_str_field(payload, "site_web_url"))
+            .bind(opt_str_field(payload, "image_url"))
             .execute(&mut **tx)
             .await?;
             Ok(Some(tid))

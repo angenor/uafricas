@@ -318,6 +318,13 @@ export interface SecteurOpportuniteAPI {
   fiche_pays_id: string
   nom: string
   description: string | null
+  localite: string | null
+  contact_telephone: string | null
+  contact_courriel: string | null
+  contact_adresse: string | null
+  references_utiles: string | null
+  site_web_url: string | null
+  image_url: string | null
   pictogramme: string | null
   created_at: string
 }

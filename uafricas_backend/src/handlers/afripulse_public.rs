@@ -145,6 +145,13 @@ pub struct SecteurOpportuniteResponse {
     pub fiche_pays_id: Uuid,
     pub nom: String,
     pub description: Option<String>,
+    pub localite: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_courriel: Option<String>,
+    pub contact_adresse: Option<String>,
+    pub references_utiles: Option<String>,
+    pub site_web_url: Option<String>,
+    pub image_url: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -156,7 +163,9 @@ pub async fn lister_secteurs_opportunites(
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
 
     let rows: Vec<SecteurOpportuniteResponse> = sqlx::query_as(
-        "SELECT id, fiche_pays_id, nom, description, created_at
+        "SELECT id, fiche_pays_id, nom, description, localite,
+                contact_telephone, contact_courriel, contact_adresse,
+                references_utiles, site_web_url, image_url, created_at
          FROM country_profile.secteur_developpement
          WHERE fiche_pays_id = $1
          ORDER BY nom ASC",

@@ -121,6 +121,9 @@ const formAfripulse = reactive({
   constitution_numero: '',
   constitution_document_url: '',
   site_web_url: '',
+  // Secteur d'opportunité enrichi
+  localite: '',
+  references_utiles: '',
   nom_complet: '',
   domaine: 'autre' as DomainePersonnalite,
   biographie_courte: '',
@@ -210,6 +213,8 @@ const resetForm = () => {
   formAfripulse.constitution_numero = ''
   formAfripulse.constitution_document_url = ''
   formAfripulse.site_web_url = ''
+  formAfripulse.localite = ''
+  formAfripulse.references_utiles = ''
   formAfripulse.nom_complet = ''
   formAfripulse.domaine = 'autre'
   formAfripulse.biographie_courte = ''
@@ -254,6 +259,8 @@ const prefillAfripulse = (ctx: AfripulseContext | null) => {
   if (typeof d.constitution_numero === 'string') formAfripulse.constitution_numero = d.constitution_numero
   if (typeof d.constitution_document_url === 'string') formAfripulse.constitution_document_url = d.constitution_document_url
   if (typeof d.site_web_url === 'string') formAfripulse.site_web_url = d.site_web_url
+  if (typeof d.localite === 'string') formAfripulse.localite = d.localite
+  if (typeof d.references_utiles === 'string') formAfripulse.references_utiles = d.references_utiles
   if (typeof d.nom_complet === 'string') formAfripulse.nom_complet = d.nom_complet
   if (typeof d.domaine === 'string') formAfripulse.domaine = d.domaine as DomainePersonnalite
   if (typeof d.biographie_courte === 'string') formAfripulse.biographie_courte = d.biographie_courte
@@ -317,6 +324,13 @@ const construirePayloadAfripulse = (): Record<string, unknown> | null => {
     return {
       nom: formAfripulse.nom.trim(),
       description: formAfripulse.description.trim(),
+      localite: formAfripulse.localite.trim() || null,
+      contact_telephone: formAfripulse.contact_telephone.trim() || null,
+      contact_courriel: formAfripulse.contact_courriel.trim() || null,
+      contact_adresse: formAfripulse.contact_adresse.trim() || null,
+      references_utiles: formAfripulse.references_utiles.trim() || null,
+      site_web_url: formAfripulse.site_web_url.trim() || null,
+      image_url: formAfripulse.image_url.trim() || null,
     }
   }
   if (type === 'personnalite_connue') {
@@ -690,6 +704,67 @@ watch(() => props.legacyContext, (ctx) => {
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
                 />
               </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Localité (optionnel)</label>
+                <input
+                  v-model="formAfripulse.localite"
+                  type="text"
+                  placeholder="Ville, région ou zone concernée"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                />
+              </div>
+
+              <!-- Contacts (optionnels) -->
+              <fieldset class="border border-gray-200 rounded-md p-4">
+                <legend class="text-sm font-medium text-gray-700 px-2">Contacts (optionnel)</legend>
+                <div class="space-y-3">
+                  <input
+                    v-model="formAfripulse.contact_telephone"
+                    type="tel"
+                    placeholder="Téléphone"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  />
+                  <input
+                    v-model="formAfripulse.contact_courriel"
+                    type="email"
+                    placeholder="Courriel"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  />
+                  <input
+                    v-model="formAfripulse.contact_adresse"
+                    type="text"
+                    placeholder="Adresse"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  />
+                </div>
+              </fieldset>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Références (optionnel)</label>
+                <textarea
+                  v-model="formAfripulse.references_utiles"
+                  rows="2"
+                  placeholder="Sources, rapports, organismes de référence…"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Site web (optionnel)</label>
+                <input
+                  v-model="formAfripulse.site_web_url"
+                  type="url"
+                  inputmode="url"
+                  placeholder="https://exemple.com"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                />
+                <p class="text-xs text-gray-400 mt-1">Doit commencer par http:// ou https://</p>
+              </div>
+
+              <OpportuniteAfriqueImageUploadField
+                v-model="formAfripulse.image_url"
+                label="Image illustrative (optionnel)"
+              />
             </template>
 
             <template v-else-if="contexteAfripulse.type_objet_contribution === 'personnalite_connue'">

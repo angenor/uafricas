@@ -394,6 +394,13 @@ async fn soumettre_contribution_afripulse(
         valider_site_touristique(&nouvelle_valeur_jsonb)?;
     }
 
+    // Secteur d'opportunité : nom requis + lien web http(s) si fourni.
+    if matches!(type_objet, TypeObjetContribution::SecteurDeveloppement)
+        && type_contribution_sql != "suppression"
+    {
+        valider_secteur(&nouvelle_valeur_jsonb)?;
+    }
+
     // T059 : si ajout de recommandation et l'utilisateur a deja une reco active,
     // auto-convertir en edition avec target_id = id de la reco active.
     let mut type_contribution_effectif = type_contribution_sql.to_string();
@@ -511,38 +518,44 @@ async fn obtenir_snapshot_afripulse(
     type_objet: &TypeObjetContribution,
     target_id: Uuid,
 ) -> Result<Option<serde_json::Value>, ApiErreur> {
-    let table_colonnes = match type_objet {
+    // 3ᵉ élément = la table possède une colonne `deleted_at` (filtre soft-delete).
+    // `secteur_developpement` n'en a pas (table historique, DELETE physique).
+    let (table, colonnes_json, a_deleted_at) = match type_objet {
         TypeObjetContribution::SiteTouristique => (
             "country_profile.site_touristique",
             "jsonb_build_object('id', id, 'nom', nom, 'categorie', categorie::text, 'site_web_url', site_web_url, 'fiche_pays_id', fiche_pays_id)",
+            true,
         ),
         TypeObjetContribution::SecteurDeveloppement => (
             "country_profile.secteur_developpement",
-            "jsonb_build_object('id', id, 'nom', nom, 'fiche_pays_id', fiche_pays_id)",
+            "jsonb_build_object('id', id, 'nom', nom, 'description', description, 'localite', localite, 'contact_telephone', contact_telephone, 'contact_courriel', contact_courriel, 'contact_adresse', contact_adresse, 'references_utiles', references_utiles, 'site_web_url', site_web_url, 'image_url', image_url, 'fiche_pays_id', fiche_pays_id)",
+            false,
         ),
         TypeObjetContribution::PersonnaliteConnue => (
             "country_profile.personnalite_connue",
             "jsonb_build_object('id', id, 'nom_complet', nom_complet, 'domaine', domaine::text, 'biographie_courte', biographie_courte, 'annee_naissance', annee_naissance, 'annee_deces', annee_deces, 'portrait_url', portrait_url, 'lien_reference', lien_reference, 'fiche_pays_id', fiche_pays_id)",
+            true,
         ),
         TypeObjetContribution::SavoirPratique => (
             "country_profile.savoir_pratique",
             "jsonb_build_object('id', id, 'titre', titre, 'categorie', categorie::text, 'explication', explication, 'exemple', exemple, 'fiche_pays_id', fiche_pays_id)",
+            true,
         ),
         TypeObjetContribution::RecommandationVisiteur => (
             "country_profile.recommandation_visiteur",
             "jsonb_build_object('id', id, 'note', note, 'commentaire', commentaire, 'active', active, 'utilisateur_id', utilisateur_id, 'fiche_pays_id', fiche_pays_id)",
+            true,
         ),
         TypeObjetContribution::PhotoVisiteur => (
             "country_profile.photo_visiteur",
             "jsonb_build_object('id', id, 'chemin_fichier', chemin_fichier, 'legende', legende, 'format', format, 'taille_octets', taille_octets, 'largeur_px', largeur_px, 'hauteur_px', hauteur_px, 'fiche_pays_id', fiche_pays_id)",
+            true,
         ),
         TypeObjetContribution::FichePays => return Ok(None),
     };
 
-    let query = format!(
-        "SELECT {} FROM {} WHERE id = $1 AND deleted_at IS NULL",
-        table_colonnes.1, table_colonnes.0
-    );
+    let filtre = if a_deleted_at { " AND deleted_at IS NULL" } else { "" };
+    let query = format!("SELECT {colonnes_json} FROM {table} WHERE id = $1{filtre}");
 
     let snapshot: Option<serde_json::Value> = sqlx::query_scalar(&query)
         .bind(target_id)
@@ -640,6 +653,31 @@ fn valider_site_touristique(payload: &serde_json::Value) -> Result<(), ApiErreur
     }
 
     // Lien de site web (facultatif) : schéma http/https uniquement (sécurité).
+    valider_lien_web(payload)?;
+
+    Ok(())
+}
+
+/// Valide le payload JSONB d'un secteur d'opportunité (ajout / édition).
+///   • Requis : nom.
+///   • `site_web_url` (facultatif) : schéma http/https uniquement.
+fn valider_secteur(payload: &serde_json::Value) -> Result<(), ApiErreur> {
+    let nom_ok = payload
+        .get("nom")
+        .and_then(|v| v.as_str())
+        .map(|s| !s.trim().is_empty())
+        .unwrap_or(false);
+    if !nom_ok {
+        return Err(ApiErreur::Validation(
+            "Le nom du secteur est requis.".to_string(),
+        ));
+    }
+    valider_lien_web(payload)?;
+    Ok(())
+}
+
+/// Vérifie qu'un éventuel champ `site_web_url` commence par http:// ou https://.
+fn valider_lien_web(payload: &serde_json::Value) -> Result<(), ApiErreur> {
     if let Some(url) = payload.get("site_web_url").and_then(|v| v.as_str()) {
         let url = url.trim();
         if !url.is_empty() && !(url.starts_with("http://") || url.starts_with("https://")) {
@@ -648,7 +686,6 @@ fn valider_site_touristique(payload: &serde_json::Value) -> Result<(), ApiErreur
             ));
         }
     }
-
     Ok(())
 }
 

@@ -26,7 +26,7 @@ const emit = defineEmits<{
   (e: 'open-contribution', payload: OpenContributionPayload): void
 }>()
 
-const { listerSecteursOpportunites } = useOpportuniteAfrique()
+const { listerSecteursOpportunites, resoudreUrlImage } = useOpportuniteAfrique()
 
 const secteurs = ref<SecteurOpportuniteAPI[]>([])
 const chargement = ref(true)
@@ -53,7 +53,17 @@ const ouvrirContribution = (
     type_contribution,
     target_id: secteur?.id,
     donnees_actuelles: secteur
-      ? { nom: secteur.nom, description: secteur.description }
+      ? {
+          nom: secteur.nom,
+          description: secteur.description,
+          localite: secteur.localite,
+          contact_telephone: secteur.contact_telephone,
+          contact_courriel: secteur.contact_courriel,
+          contact_adresse: secteur.contact_adresse,
+          references_utiles: secteur.references_utiles,
+          site_web_url: secteur.site_web_url,
+          image_url: secteur.image_url,
+        }
       : undefined,
     libelle: secteur?.nom,
   })
@@ -102,14 +112,70 @@ const proposerSecteur = () => {
         <li
           v-for="secteur in secteurs"
           :key="secteur.id"
-          class="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow border-l-4 border-custom-green"
+          class="flex flex-col sm:flex-row gap-5 bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow border-l-4 border-custom-green"
         >
-          <h3 class="font-oswald text-xl font-semibold text-gray-900 mb-2">
-            {{ secteur.nom }}
-          </h3>
-          <p v-if="secteur.description" class="text-gray-600 leading-relaxed">
-            {{ secteur.description }}
-          </p>
+          <!-- Image illustrative (optionnelle) -->
+          <img
+            v-if="secteur.image_url"
+            :src="resoudreUrlImage(secteur.image_url)"
+            :alt="secteur.nom"
+            class="w-full sm:w-44 h-40 sm:h-auto sm:max-h-44 shrink-0 rounded-lg object-cover"
+          />
+
+          <div class="min-w-0 flex-1">
+            <h3 class="font-oswald text-xl font-semibold text-gray-900 mb-1">
+              {{ secteur.nom }}
+            </h3>
+            <p v-if="secteur.localite" class="inline-flex items-center gap-1.5 text-sm text-gray-500 mb-2">
+              <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3.5 h-3.5 text-custom-chocolat" />
+              {{ secteur.localite }}
+            </p>
+            <p v-if="secteur.description" class="text-gray-600 leading-relaxed">
+              {{ secteur.description }}
+            </p>
+
+            <!-- Références -->
+            <p v-if="secteur.references_utiles" class="mt-3 text-sm text-gray-500">
+              <span class="font-medium text-gray-600">Références : </span>{{ secteur.references_utiles }}
+            </p>
+
+            <!-- Contacts + site web -->
+            <div
+              v-if="secteur.contact_telephone || secteur.contact_courriel || secteur.contact_adresse || secteur.site_web_url"
+              class="mt-3 flex flex-col gap-1.5 text-sm rounded-md bg-gray-50 px-4 py-3"
+            >
+              <a
+                v-if="secteur.contact_telephone"
+                :href="`tel:${secteur.contact_telephone}`"
+                class="inline-flex items-center gap-2 text-gray-700 hover:text-custom-green"
+              >
+                <font-awesome-icon :icon="['fas', 'phone']" class="w-3.5 h-3.5 text-custom-green" />
+                {{ secteur.contact_telephone }}
+              </a>
+              <a
+                v-if="secteur.contact_courriel"
+                :href="`mailto:${secteur.contact_courriel}`"
+                class="inline-flex items-center gap-2 text-gray-700 hover:text-custom-green break-all"
+              >
+                <font-awesome-icon :icon="['fas', 'envelope']" class="w-3.5 h-3.5 text-custom-green" />
+                {{ secteur.contact_courriel }}
+              </a>
+              <span v-if="secteur.contact_adresse" class="inline-flex items-center gap-2 text-gray-700">
+                <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3.5 h-3.5 text-custom-green" />
+                {{ secteur.contact_adresse }}
+              </span>
+              <a
+                v-if="secteur.site_web_url"
+                :href="secteur.site_web_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 font-medium text-custom-chocolat hover:underline"
+              >
+                <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="w-3.5 h-3.5" />
+                Visiter le site web
+              </a>
+            </div>
+
           <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
             <button
               type="button"
@@ -131,6 +197,7 @@ const proposerSecteur = () => {
               </svg>
               Supprimer
             </button>
+          </div>
           </div>
         </li>
       </ul>
