@@ -195,6 +195,12 @@
               @open-contribution="onOpenContribution"
               @require-login="onRequireLogin"
             />
+            <OpportuniteAfriqueRecettesCulinairesSection
+              :fiche-id="pays.id"
+              :est-authentifie="userStore.isAuthenticated"
+              @open-contribution="onOpenContribution"
+              @require-login="onRequireLogin"
+            />
             <OpportuniteAfriqueSitesTouristiquesSection
               :fiche-id="pays.id"
               :est-authentifie="userStore.isAuthenticated"

@@ -10,7 +10,7 @@ const {
   ficheDetail,
   regions, groupesEthniques, alliances, contes,
   sitesTouristiques, secteurs, saisons, liensInterethniques,
-  chargerDetail, modifier,
+  chargerDetail, modifier, debloquer,
   chargerRegions, creerRegion, modifierRegion, supprimerRegion,
   chargerGroupesEthniques, creerGroupeEthnique, modifierGroupeEthnique, supprimerGroupeEthnique,
   chargerAlliances, creerAlliance, modifierAlliance, supprimerAlliance,
@@ -118,6 +118,23 @@ const sauvegarderGeneral = async () => {
   } catch (e: any) {
     erreurLocale.value = e?.data?.error || e?.message || 'Erreur'
   } finally { saving.value = false }
+}
+
+// ── Déblocage (modération communautaire) ────────────────────
+const debloquage = ref(false)
+
+const debloquerFiche = async () => {
+  if (!ficheDetail.value?.bloquee) return
+  if (!confirm('Débloquer ce territoire ? Les signalements seront purgés et le compteur remis à zéro.')) return
+  debloquage.value = true
+  erreurLocale.value = null
+  try {
+    await debloquer(id)
+    successMsg.value = 'Territoire débloqué : il est de nouveau visible publiquement.'
+    setTimeout(() => { successMsg.value = null }, 3000)
+  } catch (e: any) {
+    erreurLocale.value = e?.data?.error || e?.message || 'Erreur lors du déblocage'
+  } finally { debloquage.value = false }
 }
 
 // ── Sous-entites : Etat partage ─────────────────────────────
@@ -392,6 +409,31 @@ onMounted(async () => {
     </div>
 
     <template v-else-if="ficheDetail">
+      <!-- Bannière de modération : fiche bloquée par signalements -->
+      <div v-if="ficheDetail.bloquee" class="alert alert-error mb-4 flex-col sm:flex-row items-start sm:items-center">
+        <div class="flex items-start gap-3 flex-1">
+          <font-awesome-icon icon="ban" class="text-xl mt-0.5" />
+          <div>
+            <h3 class="font-bold">Territoire bloqué (retiré du public)</h3>
+            <div class="text-sm opacity-90">
+              Cette fiche a atteint le seuil de signalements ({{ ficheDetail.nombre_signalements }}). Elle n'est plus visible publiquement.
+              Débloquez-la pour la rendre de nouveau accessible (les signalements seront purgés).
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-neutral" :disabled="debloquage" @click="debloquerFiche">
+          <span v-if="debloquage" class="loading loading-spinner loading-xs" />
+          <font-awesome-icon v-else icon="unlock" class="mr-1" />
+          Débloquer
+        </button>
+      </div>
+
+      <!-- Indicateur de signalements (non bloquée mais signalée) -->
+      <div v-else-if="ficheDetail.nombre_signalements > 0" class="alert alert-warning mb-4">
+        <font-awesome-icon icon="flag" />
+        <span class="text-sm">Ce territoire a reçu {{ ficheDetail.nombre_signalements }} signalement(s) (seuil de blocage : 10).</span>
+      </div>
+
       <!-- Stats cards -->
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 mb-4">
         <AdminStatsCard v-for="(stat, index) in statsCards" :key="index" :stat="stat" />

@@ -1711,6 +1711,8 @@ export interface AdminFichePayDetail {
   langues_populaires: string | null
   monnaie: string | null
   fuseau_horaire: string | null
+  bloquee: boolean
+  nombre_signalements: number
   cree_par: string
   cree_par_nom: string | null
   nb_regions: number

@@ -347,6 +347,7 @@ async fn soumettre_contribution_afripulse(
         "savoir_pratique" => TypeObjetContribution::SavoirPratique,
         "recommandation_visiteur" => TypeObjetContribution::RecommandationVisiteur,
         "photo_visiteur" => TypeObjetContribution::PhotoVisiteur,
+        "recette_culinaire" => TypeObjetContribution::RecetteCulinaire,
         "fiche_pays" => TypeObjetContribution::FichePays,
         autre => {
             return Err(ApiErreur::Validation(format!(
@@ -399,6 +400,13 @@ async fn soumettre_contribution_afripulse(
         && type_contribution_sql != "suppression"
     {
         valider_secteur(&nouvelle_valeur_jsonb)?;
+    }
+
+    // Recette culinaire : titre requis (ajout & édition).
+    if matches!(type_objet, TypeObjetContribution::RecetteCulinaire)
+        && type_contribution_sql != "suppression"
+    {
+        valider_recette_culinaire(&nouvelle_valeur_jsonb)?;
     }
 
     // T059 : si ajout de recommandation et l'utilisateur a deja une reco active,
@@ -551,7 +559,12 @@ async fn obtenir_snapshot_afripulse(
             "jsonb_build_object('id', id, 'chemin_fichier', chemin_fichier, 'legende', legende, 'format', format, 'taille_octets', taille_octets, 'largeur_px', largeur_px, 'hauteur_px', hauteur_px, 'fiche_pays_id', fiche_pays_id)",
             true,
         ),
-        TypeObjetContribution::FichePays => return Ok(None),
+        TypeObjetContribution::RecetteCulinaire => (
+        "country_profile.recette_culinaire",
+        "jsonb_build_object('id', id, 'titre', titre, 'territoires_consommation', territoires_consommation, 'histoire', histoire, 'ingredients', ingredients, 'etapes_preparation', etapes_preparation, 'images', images, 'fiche_pays_id', fiche_pays_id)",
+        true,
+    ),
+    TypeObjetContribution::FichePays => return Ok(None),
     };
 
     let filtre = if a_deleted_at { " AND deleted_at IS NULL" } else { "" };
@@ -673,6 +686,21 @@ fn valider_secteur(payload: &serde_json::Value) -> Result<(), ApiErreur> {
         ));
     }
     valider_lien_web(payload)?;
+    Ok(())
+}
+
+/// Recette culinaire : le titre est requis (ajout & édition).
+fn valider_recette_culinaire(payload: &serde_json::Value) -> Result<(), ApiErreur> {
+    let titre_ok = payload
+        .get("titre")
+        .and_then(|v| v.as_str())
+        .map(|s| !s.trim().is_empty())
+        .unwrap_or(false);
+    if !titre_ok {
+        return Err(ApiErreur::Validation(
+            "Le titre de la recette est requis.".to_string(),
+        ));
+    }
     Ok(())
 }
 

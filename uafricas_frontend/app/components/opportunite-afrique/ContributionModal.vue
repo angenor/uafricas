@@ -135,6 +135,11 @@ const formAfripulse = reactive({
   categorie: 'autre' as CategorieSavoir,
   explication: '',
   exemple: '',
+  // Recette culinaire
+  territoires_consommation: '',
+  histoire: '',
+  ingredients: [] as string[],
+  etapes_preparation: [] as string[],
 })
 
 const domaines: { value: DomainePersonnalite, label: string }[] = [
@@ -172,6 +177,7 @@ const titreModal = computed(() => {
     savoir_pratique: 'un savoir pratique',
     recommandation_visiteur: 'une recommandation',
     photo_visiteur: 'une photo',
+    recette_culinaire: 'une recette culinaire',
   }
   const cible = cibles[ctx.type_objet_contribution] ?? 'un élément'
   if (ctx.type_contribution === 'edition') return `Modifier ${cible}`
@@ -226,6 +232,10 @@ const resetForm = () => {
   formAfripulse.categorie = 'autre'
   formAfripulse.explication = ''
   formAfripulse.exemple = ''
+  formAfripulse.territoires_consommation = ''
+  formAfripulse.histoire = ''
+  formAfripulse.ingredients = []
+  formAfripulse.etapes_preparation = []
 }
 
 /** Pré-remplit le formulaire legacy pour une contribution sur un champ ciblé */
@@ -272,6 +282,10 @@ const prefillAfripulse = (ctx: AfripulseContext | null) => {
   if (typeof d.categorie === 'string') formAfripulse.categorie = d.categorie as CategorieSavoir
   if (typeof d.explication === 'string') formAfripulse.explication = d.explication
   if (typeof d.exemple === 'string') formAfripulse.exemple = d.exemple
+  if (typeof d.territoires_consommation === 'string') formAfripulse.territoires_consommation = d.territoires_consommation
+  if (typeof d.histoire === 'string') formAfripulse.histoire = d.histoire
+  if (Array.isArray(d.ingredients)) formAfripulse.ingredients = (d.ingredients as unknown[]).filter((x): x is string => typeof x === 'string')
+  if (Array.isArray(d.etapes_preparation)) formAfripulse.etapes_preparation = (d.etapes_preparation as unknown[]).filter((x): x is string => typeof x === 'string')
 }
 
 const construirePayloadAfripulse = (): Record<string, unknown> | null => {
@@ -352,6 +366,17 @@ const construirePayloadAfripulse = (): Record<string, unknown> | null => {
       categorie: formAfripulse.categorie,
       explication: formAfripulse.explication.trim(),
       exemple: formAfripulse.exemple.trim() || null,
+    }
+  }
+  if (type === 'recette_culinaire') {
+    if (!formAfripulse.titre.trim()) return null
+    return {
+      titre: formAfripulse.titre.trim(),
+      territoires_consommation: formAfripulse.territoires_consommation.trim() || null,
+      histoire: formAfripulse.histoire.trim() || null,
+      ingredients: formAfripulse.ingredients.map(i => i.trim()).filter(i => i),
+      etapes_preparation: formAfripulse.etapes_preparation.map(e => e.trim()).filter(e => e),
+      images: formAfripulse.images,
     }
   }
   return null
@@ -864,6 +889,107 @@ watch(() => props.legacyContext, (ctx) => {
                 />
               </div>
             </template>
+
+            <template v-else-if="contexteAfripulse.type_objet_contribution === 'recette_culinaire'">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Titre de la recette *</label>
+                <input
+                  v-model="formAfripulse.titre"
+                  type="text"
+                  required
+                  placeholder="Ex. : Thiéboudienne, Mafé, Ndolé…"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Zone (ville) de consommation</label>
+                <input
+                  v-model="formAfripulse.territoires_consommation"
+                  type="text"
+                  placeholder="Ex. : Dakar, Bamako, Abidjan…"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Petite histoire ou présentation</label>
+                <textarea
+                  v-model="formAfripulse.histoire"
+                  rows="3"
+                  placeholder="Origine, occasion, anecdotes…"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                />
+              </div>
+
+              <!-- Ingrédients nécessaires -->
+              <fieldset class="border border-gray-200 rounded-md p-4">
+                <legend class="text-sm font-medium text-gray-700 px-2">Ingrédients nécessaires</legend>
+                <div class="space-y-2">
+                  <div v-for="(ing, i) in formAfripulse.ingredients" :key="i" class="flex gap-2 items-center">
+                    <span class="text-xs text-gray-400 w-5 shrink-0">{{ i + 1 }}.</span>
+                    <input
+                      v-model="formAfripulse.ingredients[i]"
+                      type="text"
+                      placeholder="Ex. : 500 g de riz brisé"
+                      class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      class="px-2 py-1 text-red-600 hover:text-red-700 text-sm cursor-pointer"
+                      @click="formAfripulse.ingredients.splice(i, 1)"
+                    >
+                      <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    class="mt-1 px-3 py-1.5 text-xs font-medium text-custom-chocolat border border-custom-chocolat/40 rounded-md hover:bg-custom-chocolat/5 cursor-pointer"
+                    @click="formAfripulse.ingredients.push('')"
+                  >
+                    + Ajouter un ingrédient
+                  </button>
+                </div>
+              </fieldset>
+
+              <!-- Mode de préparation (étapes 1 à 10) -->
+              <fieldset class="border border-gray-200 rounded-md p-4">
+                <legend class="text-sm font-medium text-gray-700 px-2">Mode de préparation (étapes 1 à 10)</legend>
+                <div class="space-y-2">
+                  <div v-for="(etape, i) in formAfripulse.etapes_preparation" :key="i" class="flex gap-2 items-start">
+                    <span class="text-xs font-semibold text-custom-chocolat w-6 shrink-0 mt-2.5">{{ i + 1 }}</span>
+                    <textarea
+                      v-model="formAfripulse.etapes_preparation[i]"
+                      rows="2"
+                      placeholder="Décrivez cette étape…"
+                      class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                    />
+                    <button
+                      type="button"
+                      class="px-2 py-1 text-red-600 hover:text-red-700 text-sm cursor-pointer mt-1.5"
+                      @click="formAfripulse.etapes_preparation.splice(i, 1)"
+                    >
+                      <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
+                    </button>
+                  </div>
+                  <button
+                    v-if="formAfripulse.etapes_preparation.length < 10"
+                    type="button"
+                    class="mt-1 px-3 py-1.5 text-xs font-medium text-custom-chocolat border border-custom-chocolat/40 rounded-md hover:bg-custom-chocolat/5 cursor-pointer"
+                    @click="formAfripulse.etapes_preparation.push('')"
+                  >
+                    + Ajouter une étape
+                  </button>
+                  <p v-else class="text-xs text-gray-400">Maximum 10 étapes atteint.</p>
+                </div>
+              </fieldset>
+
+              <OpportuniteAfriqueMultiImageUploadField
+                v-model="formAfripulse.images"
+                :max="5"
+                label="Images illustratives (5 max)"
+              />
+            </template>
           </template>
 
           <template v-else>
@@ -928,12 +1054,14 @@ watch(() => props.legacyContext, (ctx) => {
           </template>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Justification (optionnel)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              {{ contexteAfripulse?.type_objet_contribution === 'recette_culinaire' ? 'Lien (optionnel)' : 'Justification (optionnel)' }}
+            </label>
             <textarea
               v-model="form.justification"
               rows="2"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
-              placeholder="Source, contexte, raison..."
+              :placeholder="contexteAfripulse?.type_objet_contribution === 'recette_culinaire' ? 'Lien vers la recette complète, une vidéo, la source…' : 'Source, contexte, raison...'"
             />
           </div>
         </form>

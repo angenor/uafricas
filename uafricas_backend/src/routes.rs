@@ -313,6 +313,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/profils-pays/{id}", web::get().to(admin::profils_pays::obtenir_fiche_pays))
                     .route("/profils-pays/{id}", web::put().to(admin::profils_pays::modifier_fiche_pays))
                     .route("/profils-pays/{id}", web::delete().to(admin::profils_pays::supprimer_fiche_pays))
+                    .route("/profils-pays/{id}/debloquer", web::patch().to(admin::profils_pays::debloquer_fiche_pays))
                     // Profils Pays - Regions
                     .route("/profils-pays/{id}/regions", web::get().to(admin::profils_pays::lister_regions))
                     .route("/profils-pays/{id}/regions", web::post().to(admin::profils_pays::creer_region))
@@ -675,6 +676,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // Sections Afripulse enrichies (US1)
                     .route("/{id}/sites-touristiques", web::get().to(afripulse_public::lister_sites_touristiques))
                     .route("/{id}/secteurs-opportunites", web::get().to(afripulse_public::lister_secteurs_opportunites))
+                    .route("/{id}/recettes-culinaires", web::get().to(afripulse_public::lister_recettes_culinaires))
                     .route("/{id}/personnalites", web::get().to(afripulse_public::lister_personnalites))
                     .route("/{id}/savoirs-pratiques", web::get().to(afripulse_public::lister_savoirs_pratiques))
                     // US4 — galerie photos + recommandations

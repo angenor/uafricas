@@ -403,6 +403,67 @@ pub async fn supprimer_fiche_pays(
     }))
 }
 
+/// PATCH /api/admin/profils-pays/{id}/debloquer
+/// Débloque une fiche bloquée par signalements communautaires (seuil atteint) :
+/// remet `bloquee=false`, purge les signalements et remet le compteur à zéro
+/// (ardoise vierge — sinon un seul nouveau signalement la re-bloquerait aussitôt).
+pub async fn debloquer_fiche_pays(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "profil_pays", "modifier");
+    let id = path.into_inner();
+
+    // État courant (pour l'audit + 404 si inexistante).
+    let avant: Option<(bool, i32)> = sqlx::query_as(
+        "SELECT bloquee, nombre_signalements FROM country_profile.fiche_pays WHERE id = $1",
+    )
+    .bind(id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+    let (etait_bloquee, nb_avant) =
+        avant.ok_or_else(|| ApiErreur::NonTrouve("Fiche pays non trouvee".into()))?;
+
+    // Purge des signalements + déblocage (ardoise vierge).
+    sqlx::query("DELETE FROM country_profile.signalement_fiche WHERE fiche_pays_id = $1")
+        .bind(id)
+        .execute(pool.get_ref())
+        .await?;
+    sqlx::query(
+        "UPDATE country_profile.fiche_pays
+         SET bloquee = FALSE, nombre_signalements = 0 WHERE id = $1",
+    )
+    .bind(id)
+    .execute(pool.get_ref())
+    .await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "DEBLOCAGE",
+        "country_profile",
+        "fiche_pays",
+        Some(id),
+        Some(json!({ "bloquee": etait_bloquee, "nombre_signalements": nb_avant })),
+        Some(json!({ "bloquee": false, "nombre_signalements": 0 })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    log::info!("Admin {} a debloque la fiche pays {}", admin.id, id);
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(json!({ "id": id, "bloquee": false, "nombre_signalements": 0 })),
+        error: None,
+    }))
+}
+
 // ══════════════════════════════════════════════════════════════
 // ── Regions ──────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════
@@ -2941,6 +3002,71 @@ async fn appliquer_contribution_afripulse(
             Ok(Some(tid))
         }
 
+        // ── Recette culinaire ───────────────────────────────────
+        ("recette_culinaire", "ajout") => {
+            let payload = nouvelle_jsonb.ok_or_else(|| {
+                ApiErreur::Validation("nouvelle_valeur_jsonb requise pour recette".into())
+            })?;
+            let ingredients = str_array_field(payload, "ingredients", 50).unwrap_or_default();
+            let etapes = str_array_field(payload, "etapes_preparation", 10).unwrap_or_default();
+            let images = str_array_field(payload, "images", 5).unwrap_or_default();
+            let nouvel_id: Uuid = sqlx::query_scalar(
+                "INSERT INTO country_profile.recette_culinaire
+                    (fiche_pays_id, titre, territoires_consommation, histoire,
+                     ingredients, etapes_preparation, images, cree_par)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+            )
+            .bind(fiche_pays_id)
+            .bind(str_field(payload, "titre"))
+            .bind(opt_str_field(payload, "territoires_consommation"))
+            .bind(opt_str_field(payload, "histoire"))
+            .bind(&ingredients)
+            .bind(&etapes)
+            .bind(&images)
+            .bind(auteur_id)
+            .fetch_one(&mut **tx)
+            .await?;
+            Ok(Some(nouvel_id))
+        }
+        ("recette_culinaire", "edition") => {
+            let payload = nouvelle_jsonb.unwrap();
+            let tid = target_id.unwrap();
+            let ingredients = str_array_field(payload, "ingredients", 50);
+            let etapes = str_array_field(payload, "etapes_preparation", 10);
+            let images = str_array_field(payload, "images", 5);
+            sqlx::query(
+                "UPDATE country_profile.recette_culinaire SET
+                    titre = COALESCE($2, titre),
+                    territoires_consommation = COALESCE($3, territoires_consommation),
+                    histoire = COALESCE($4, histoire),
+                    ingredients = COALESCE($5::text[], ingredients),
+                    etapes_preparation = COALESCE($6::text[], etapes_preparation),
+                    images = COALESCE($7::text[], images)
+                 WHERE id = $1 AND deleted_at IS NULL",
+            )
+            .bind(tid)
+            .bind(opt_str_field(payload, "titre"))
+            .bind(opt_str_field(payload, "territoires_consommation"))
+            .bind(opt_str_field(payload, "histoire"))
+            .bind(ingredients.as_ref())
+            .bind(etapes.as_ref())
+            .bind(images.as_ref())
+            .execute(&mut **tx)
+            .await?;
+            Ok(Some(tid))
+        }
+        ("recette_culinaire", "suppression") => {
+            let tid = target_id.unwrap();
+            sqlx::query(
+                "UPDATE country_profile.recette_culinaire SET deleted_at = NOW()
+                 WHERE id = $1 AND deleted_at IS NULL",
+            )
+            .bind(tid)
+            .execute(&mut **tx)
+            .await?;
+            Ok(Some(tid))
+        }
+
         // ── Personnalite connue ─────────────────────────────────
         ("personnalite_connue", "ajout") => {
             let payload = nouvelle_jsonb.ok_or_else(|| {
@@ -3221,6 +3347,20 @@ fn images_site_field(value: &Value) -> Option<Vec<String>> {
         return Some(images);
     }
     opt_str_field(value, "image_url").map(|s| vec![s.to_string()])
+}
+
+/// Extrait un tableau de chaînes d'un payload JSONB (clé `key`), plafonné à `max`.
+/// `None` => clé absente (permet de conserver l'existant en édition via COALESCE).
+fn str_array_field(value: &Value, key: &str, max: usize) -> Option<Vec<String>> {
+    value.get(key).and_then(|v| v.as_array()).map(|arr| {
+        arr.iter()
+            .filter_map(|x| x.as_str())
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .take(max)
+            .map(String::from)
+            .collect()
+    })
 }
 
 fn construire_message_notification(

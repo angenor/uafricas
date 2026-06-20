@@ -182,6 +182,48 @@ pub async fn lister_secteurs_opportunites(
 }
 
 // ────────────────────────────────────────────────────────────────
+// Recette culinaire populaire
+// ────────────────────────────────────────────────────────────────
+
+#[derive(Debug, FromRow, Serialize)]
+pub struct RecetteCulinaireResponse {
+    pub id: Uuid,
+    pub fiche_pays_id: Uuid,
+    pub titre: String,
+    pub territoires_consommation: Option<String>,
+    pub histoire: Option<String>,
+    pub ingredients: Vec<String>,
+    pub etapes_preparation: Vec<String>,
+    pub images: Vec<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+pub async fn lister_recettes_culinaires(
+    pool: web::Data<PgPool>,
+    chemin: web::Path<String>,
+) -> Result<HttpResponse, ApiErreur> {
+    let fiche_id = Uuid::parse_str(&chemin.into_inner())
+        .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
+
+    let rows: Vec<RecetteCulinaireResponse> = sqlx::query_as(
+        "SELECT id, fiche_pays_id, titre, territoires_consommation, histoire,
+                ingredients, etapes_preparation, images, created_at
+         FROM country_profile.recette_culinaire
+         WHERE fiche_pays_id = $1 AND deleted_at IS NULL
+         ORDER BY created_at DESC",
+    )
+    .bind(fiche_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(rows),
+        error: None,
+    }))
+}
+
+// ────────────────────────────────────────────────────────────────
 // Personnalité connue
 // ────────────────────────────────────────────────────────────────
 

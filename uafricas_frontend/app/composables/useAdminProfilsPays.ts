@@ -53,6 +53,19 @@ export const useAdminProfilsPays = () => {
     await adminFetch<ApiResponse<null>>(`/api/admin/profils-pays/${id}`, { method: 'DELETE' })
   }
 
+  /** Débloque une fiche bloquée par signalements (purge les signalements + remet le compteur à 0). */
+  const debloquer = async (id: string) => {
+    const response = await adminFetch<ApiResponse<{ id: string, bloquee: boolean, nombre_signalements: number }>>(
+      `/api/admin/profils-pays/${id}/debloquer`,
+      { method: 'PATCH' },
+    )
+    if (response.success && ficheDetail.value && ficheDetail.value.id === id) {
+      ficheDetail.value.bloquee = false
+      ficheDetail.value.nombre_signalements = 0
+    }
+    return response.data
+  }
+
   // ── Regions ───────────────────────────────────────────────
 
   const chargerRegions = async (ficheId: string) => {
@@ -236,7 +249,7 @@ export const useAdminProfilsPays = () => {
     fichesPays, ficheDetail, filtres,
     regions, groupesEthniques, alliances, contes, sitesTouristiques, secteurs, saisons, liensInterethniques,
     pagination, sort, loading, error,
-    chargerListe, chargerDetail, creer, modifier, supprimer,
+    chargerListe, chargerDetail, creer, modifier, supprimer, debloquer,
     chargerRegions, creerRegion, modifierRegion, supprimerRegion,
     chargerGroupesEthniques, creerGroupeEthnique, modifierGroupeEthnique, supprimerGroupeEthnique,
     chargerAlliances, creerAlliance, modifierAlliance, supprimerAlliance,

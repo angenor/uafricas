@@ -205,6 +205,7 @@ export type TypeObjetContribution =
   | 'savoir_pratique'
   | 'recommandation_visiteur'
   | 'photo_visiteur'
+  | 'recette_culinaire'
 
 /** Section UI Afripulse de rattachement d'une contribution */
 export type SectionAfripulse =
@@ -215,6 +216,7 @@ export type SectionAfripulse =
   | 'savoir_avant_voyager'
   | 'recommandations'
   | 'galerie_photos'
+  | 'recettes_culinaires'
 
 /** Catégorie d'un site touristique */
 export type CategorieSiteTouristique = 'emblematique' | 'prive'
@@ -386,6 +388,19 @@ export interface SecteurOpportuniteAPI {
   site_web_url: string | null
   image_url: string | null
   pictogramme: string | null
+  created_at: string
+}
+
+/** Recette culinaire populaire (objet Afripulse contribué/modéré) */
+export interface RecetteCulinaireAPI {
+  id: string
+  fiche_pays_id: string
+  titre: string
+  territoires_consommation: string | null
+  histoire: string | null
+  ingredients: string[]
+  etapes_preparation: string[]
+  images: string[]
   created_at: string
 }
 
@@ -843,6 +858,22 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
+  /** Lister les recettes culinaires populaires d'une fiche */
+  const listerRecettesCulinaires = async (
+    ficheId: string,
+  ): Promise<RecetteCulinaireAPI[]> => {
+    try {
+      const reponse = await $fetch<ApiResponse<RecetteCulinaireAPI[]>>(
+        `${apiBase}/api/fiches-pays/${ficheId}/recettes-culinaires`,
+      )
+      return reponse.data ?? []
+    }
+    catch (e) {
+      console.error('Erreur listerRecettesCulinaires:', e)
+      return []
+    }
+  }
+
   /** Lister les personnalités connues d'une fiche (filtre domaine optionnel) */
   const listerPersonnalites = async (
     ficheId: string,
@@ -1263,6 +1294,7 @@ export const useOpportuniteAfrique = () => {
     resoudreUrlImage,
     listerSitesTouristiques,
     listerSecteursOpportunites,
+    listerRecettesCulinaires,
     listerPersonnalites,
     listerSavoirsPratiques,
     // US3 / US4

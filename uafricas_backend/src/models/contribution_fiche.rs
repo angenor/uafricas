@@ -19,6 +19,7 @@ pub enum TypeObjetContribution {
     SavoirPratique,
     RecommandationVisiteur,
     PhotoVisiteur,
+    RecetteCulinaire,
 }
 
 #[derive(sqlx::Type, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -32,6 +33,7 @@ pub enum SectionAfripulse {
     SavoirAvantVoyager,
     Recommandations,
     GaleriePhotos,
+    RecettesCulinaires,
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -78,6 +80,7 @@ pub const SECTIONS_VALIDES: &[&str] = &[
     "groupe_ethnique",
     "site_touristique",
     "secteur_developpement",
+    "recette_culinaire",
 ];
 
 pub fn section_est_valide(section: &str) -> bool {
