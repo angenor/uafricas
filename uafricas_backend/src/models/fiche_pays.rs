@@ -14,6 +14,7 @@ pub const FICHE_PAYS_COLONNES: &str =
      fp.voyage_infos_visa, fp.voyage_infos_sanitaires, fp.voyage_meteo,
      fp.voyage_prises_electriques, fp.voyage_contacts_tourisme,
      fp.voyage_recommandations_securite,
+     fp.nombre_likes, fp.nombre_dislikes, fp.nombre_signalements, fp.bloquee,
      fp.cree_par, fp.created_at, fp.updated_at,
      p.nom AS pays_nom, p.code_iso2 AS pays_code, p.capitale AS pays_capitale";
 
@@ -45,6 +46,11 @@ pub struct FichePaysRow {
     pub voyage_prises_electriques: Option<String>,
     pub voyage_contacts_tourisme: Option<String>,
     pub voyage_recommandations_securite: Option<String>,
+    // Réactions / modération communautaire (schéma 11h)
+    pub nombre_likes: i32,
+    pub nombre_dislikes: i32,
+    pub nombre_signalements: i32,
+    pub bloquee: bool,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -119,6 +125,15 @@ pub struct FichePaysDetailResponse {
     pub voyage_contacts_tourisme: Option<String>,
     pub voyage_recommandations_securite: Option<String>,
     pub nombre_contributions: i64,
+    // Réactions / modération communautaire (schéma 11h)
+    pub nombre_likes: i32,
+    pub nombre_dislikes: i32,
+    pub nombre_signalements: i32,
+    pub bloquee: bool,
+    /// Réaction de l'utilisateur courant : "like" | "dislike" | null
+    pub ma_reaction: Option<String>,
+    /// L'utilisateur courant a-t-il déjà signalé cette fiche ?
+    pub a_signale: bool,
     pub updated_at: DateTime<Utc>,
 }
 

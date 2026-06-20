@@ -145,11 +145,18 @@
               <p class="text-gray-500 text-sm">Essayez de modifier vos filtres de recherche</p>
             </div>
 
-            <!-- Cartes unifiées -->
+            <!-- Cartes unifiées (flux trié par date, toutes sources confondues) -->
             <TransitionGroup v-else name="feed" tag="div" class="space-y-5">
+              <template v-for="pub in publicationsFiltrees" :key="pub.key">
+              <!-- Carte « Territoire partagé » (composant dédié) -->
+              <PublicationsTerritoirePartageCard
+                v-if="pub.source === 'territoire_partage'"
+                :partage="pub.data"
+              />
+
+              <!-- Cartes Codimoi / Gouvernance (markup inline) -->
               <div
-                v-for="pub in publicationsFiltrees"
-                :key="pub.key"
+                v-else
                 class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-gray-200"
                 :class="{ 'cursor-pointer': pub.source === 'codimoi' }"
                 @click="ouvrirPublication(pub)"
@@ -309,6 +316,7 @@
                   </div>
                 </div>
               </div>
+              </template>
             </TransitionGroup>
           </template>
         </div>
@@ -342,13 +350,14 @@
 
 <script setup lang="ts">
 import { getCategoryLabel, type CodiMoiPostAPI, type CategoriePost, type CommentaireAPI } from '~/composables/useCodiMoi'
+import type { PartageFicheAPI } from '~/composables/useOpportuniteAfrique'
 import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 useHead({
   title: 'Publications de la Communauté | UAfricas',
 })
 
-type FiltreValue = 'tous' | 'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits'
+type FiltreValue = 'tous' | 'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits' | 'territoire_partage'
 
 interface TypeStyle {
   label: string
@@ -379,7 +388,16 @@ interface PublicationGouvernance {
   typeStyle: TypeStyle
 }
 
-type Publication = PublicationCodimoi | PublicationGouvernance
+interface PublicationTerritoirePartage {
+  key: string
+  source: 'territoire_partage'
+  data: PartageFicheAPI
+  date: Date
+  typeFiltre: 'territoire_partage'
+  typeStyle: TypeStyle
+}
+
+type Publication = PublicationCodimoi | PublicationGouvernance | PublicationTerritoirePartage
 
 const breadcrumbs = [
   { label: 'Publications', to: undefined },
@@ -391,9 +409,10 @@ const filtres: { value: FiltreValue; label: string; icon: string[]; activeClasse
   { value: 'factcheck', label: 'FactCheck', icon: ['fas', 'magnifying-glass'], activeClasses: 'bg-blue-600 text-white border-blue-600' },
   { value: 'ideaforces', label: 'IdeaForces', icon: ['fas', 'lightbulb'], activeClasses: 'bg-amber-500 text-white border-amber-500' },
   { value: 'badhabits', label: 'BadHabits', icon: ['fas', 'triangle-exclamation'], activeClasses: 'bg-red-600 text-white border-red-600' },
+  { value: 'territoire_partage', label: 'Territoires partagés', icon: ['fas', 'earth-africa'], activeClasses: 'bg-custom-green text-white border-custom-green' },
 ]
 
-const STYLES_PAR_TYPE: Record<'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits', TypeStyle> = {
+const STYLES_PAR_TYPE: Record<'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits' | 'territoire_partage', TypeStyle> = {
   codimoi: {
     label: 'Codimoi',
     icone: ['fas', 'quote-left'],
@@ -434,6 +453,16 @@ const STYLES_PAR_TYPE: Record<'codimoi' | 'factcheck' | 'ideaforces' | 'badhabit
     flecheHoverBg: 'group-hover:bg-red-100',
     flecheHoverColor: 'group-hover:text-red-600',
   },
+  territoire_partage: {
+    label: 'Territoire',
+    icone: ['fas', 'earth-africa'],
+    iconeBg: 'bg-green-100 text-custom-green',
+    badge: 'bg-green-100 text-custom-green',
+    bande: 'bg-linear-to-r from-custom-green to-emerald-600',
+    titreHover: 'group-hover:text-custom-green',
+    flecheHoverBg: 'group-hover:bg-green-100',
+    flecheHoverColor: 'group-hover:text-custom-green',
+  },
 }
 
 const activeFilter = ref<FiltreValue>('tous')
@@ -446,6 +475,7 @@ const erreurChargement = ref<string | null>(null)
 // APIs
 const { erreur: erreurCodimoi, listerPosts, reagir, listerCommentaires, creerCommentaire } = useCodiMoi()
 const { getContributions } = useGouvernance()
+const { listerPartagesFiches } = useOpportuniteAfrique()
 
 // Toast
 const showToast = ref(false)
@@ -470,6 +500,7 @@ const compteurs = computed<Record<FiltreValue, number>>(() => {
     factcheck: 0,
     ideaforces: 0,
     badhabits: 0,
+    territoire_partage: 0,
   }
   for (const p of publications.value) {
     c[p.typeFiltre]++
@@ -498,8 +529,20 @@ const publicationsFiltrees = computed<Publication[]>(() => {
     // Filtre par recherche
     if (recherche.value) {
       const q = recherche.value.toLowerCase()
-      const titre = p.source === 'codimoi' ? titreCodimoi(p.data).toLowerCase() : p.data.titre.toLowerCase()
-      const desc = p.source === 'codimoi' ? (p.data.explication || p.data.contenu).toLowerCase() : p.data.description.toLowerCase()
+      let titre: string
+      let desc: string
+      if (p.source === 'codimoi') {
+        titre = titreCodimoi(p.data).toLowerCase()
+        desc = (p.data.explication || p.data.contenu).toLowerCase()
+      }
+      else if (p.source === 'territoire_partage') {
+        titre = p.data.fiche.nom.toLowerCase()
+        desc = `${p.data.legende ?? ''} ${p.data.fiche.slogan ?? ''} ${p.data.fiche.region ?? ''} ${p.data.fiche.capitale ?? ''}`.toLowerCase()
+      }
+      else {
+        titre = p.data.titre.toLowerCase()
+        desc = p.data.description.toLowerCase()
+      }
       if (!titre.includes(q) && !desc.includes(q)) return false
     }
 
@@ -527,24 +570,35 @@ function nomAuteur(pub: Publication): string {
     const { prenom, nom } = pub.data.auteur
     return `${prenom ?? ''} ${nom}`.trim() || 'Anonyme'
   }
+  if (pub.source === 'territoire_partage') {
+    const { prenom, nom } = pub.data.auteur
+    return `${prenom ?? ''} ${nom ?? ''}`.trim() || 'Anonyme'
+  }
   return `${pub.data.auteur.prenom} ${pub.data.auteur.nom}`
 }
 
 function paysPub(pub: Publication): string | null {
   if (pub.source === 'codimoi') return pub.data.pays || null
+  if (pub.source === 'territoire_partage') return pub.data.fiche.nom || null
   return pub.data.localisation.pays || null
 }
 
 function statsVues(pub: Publication): number {
-  return pub.source === 'codimoi' ? pub.data.nombre_vues : pub.data.stats.vues
+  if (pub.source === 'codimoi') return pub.data.nombre_vues
+  if (pub.source === 'territoire_partage') return 0
+  return pub.data.stats.vues
 }
 
 function statsLikes(pub: Publication): number {
-  return pub.source === 'codimoi' ? pub.data.nombre_likes : pub.data.stats.likes
+  if (pub.source === 'codimoi') return pub.data.nombre_likes
+  if (pub.source === 'territoire_partage') return 0
+  return pub.data.stats.likes
 }
 
 function statsCommentaires(pub: Publication): number {
-  return pub.source === 'codimoi' ? pub.data.nombre_commentaires : pub.data.stats.commentaires
+  if (pub.source === 'codimoi') return pub.data.nombre_commentaires
+  if (pub.source === 'territoire_partage') return 0
+  return pub.data.stats.commentaires
 }
 
 function formatDate(date: Date): string {
@@ -569,9 +623,10 @@ const chargerTout = async () => {
   loading.value = true
   erreurChargement.value = null
 
-  const [resCodimoi, resGouv] = await Promise.allSettled([
+  const [resCodimoi, resGouv, resPartages] = await Promise.allSettled([
     listerPosts({ page: 1, par_page: 30 }),
     getContributions({ page: 1, parPage: 30 }),
+    listerPartagesFiches(1, 30),
   ])
 
   const items: Publication[] = []
@@ -606,6 +661,22 @@ const chargerTout = async () => {
   }
   else if (resGouv.status === 'rejected') {
     console.error('Erreur chargement Gouvernance:', resGouv.reason)
+  }
+
+  if (resPartages.status === 'fulfilled' && resPartages.value?.partages) {
+    for (const partage of resPartages.value.partages) {
+      items.push({
+        key: `partage-${partage.id}`,
+        source: 'territoire_partage',
+        data: partage,
+        date: new Date(partage.created_at),
+        typeFiltre: 'territoire_partage',
+        typeStyle: STYLES_PAR_TYPE.territoire_partage,
+      })
+    }
+  }
+  else if (resPartages.status === 'rejected') {
+    console.error('Erreur chargement Partages:', resPartages.reason)
   }
 
   items.sort((a, b) => b.date.getTime() - a.date.getTime())

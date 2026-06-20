@@ -14,6 +14,7 @@ pub mod evenement_streaming;
 pub mod expert;
 pub mod faculte;
 pub mod fiche_pays;
+pub mod fiche_pays_social;
 pub mod gouvernance;
 pub mod livre;
 pub mod membre;

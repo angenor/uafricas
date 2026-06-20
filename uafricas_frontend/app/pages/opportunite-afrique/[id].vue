@@ -263,6 +263,37 @@
               </div>
             </div>
 
+            <!-- Réactions (like / dislike) -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+              <h3 class="text-lg font-bold mb-4">Cette fiche vous plaît ?</h3>
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  :disabled="reactionEnCours"
+                  class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-60 border"
+                  :class="pays.ma_reaction === 'like'
+                    ? 'bg-custom-green text-white border-custom-green'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+                  @click="basculerReaction('like')"
+                >
+                  <font-awesome-icon :icon="['fas', 'thumbs-up']" class="w-4 h-4" />
+                  <span>{{ pays.nombre_likes }}</span>
+                </button>
+                <button
+                  type="button"
+                  :disabled="reactionEnCours"
+                  class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-60 border"
+                  :class="pays.ma_reaction === 'dislike'
+                    ? 'bg-red-500 text-white border-red-500'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+                  @click="basculerReaction('dislike')"
+                >
+                  <font-awesome-icon :icon="['fas', 'thumbs-down']" class="w-4 h-4" />
+                  <span>{{ pays.nombre_dislikes }}</span>
+                </button>
+              </div>
+            </div>
+
             <!-- Contributeurs -->
             <OpportuniteAfriqueContributeursSection :contributeurs="contributeurs" />
 
@@ -278,7 +309,13 @@
                   Proposer une modification
                 </button>
 
-                <button @click="signalerProbleme"
+                <button @click="ouvrirPartage"
+                        class="w-full py-2 px-4 bg-custom-green text-white rounded-lg font-medium hover:bg-custom-green/90 transition flex items-center justify-center cursor-pointer">
+                  <font-awesome-icon :icon="['fas', 'share-nodes']" class="w-5 h-5 mr-2" />
+                  Partager dans la communauté
+                </button>
+
+                <button @click="signalerProbleme" :disabled="signalementEnCours"
                         class="w-full py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition flex items-center justify-center">
                   <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
@@ -311,6 +348,15 @@
       @close="fermerContributionModal"
       @submit="handleContributionSubmit"
     />
+
+    <!-- Modal partage communautaire -->
+    <OpportuniteAfriquePartagerFicheModal
+      ref="partageModalRef"
+      :is-open="showPartageModal"
+      :pays-nom="pays?.nom || ''"
+      @close="showPartageModal = false"
+      @submit="handlePartageSubmit"
+    />
   </div>
 </template>
 
@@ -333,6 +379,9 @@ const {
   soumettreContribution,
   soumettreContributionEnrichie,
   listerContributeurs,
+  reagirFiche,
+  signalerFiche,
+  partagerFiche,
 } = useOpportuniteAfrique()
 
 interface AfripulseContext {
@@ -398,8 +447,84 @@ const fermerContributionModal = () => {
   legacyFieldContext.value = null
 }
 
-const signalerProbleme = () => {
-  alert('Cette fonctionnalité sera disponible prochainement. Vous pourrez signaler des erreurs ou des problèmes.')
+// ── Réactions like / dislike ────────────────────────────────────
+const reactionEnCours = ref(false)
+
+const basculerReaction = async (type: 'like' | 'dislike') => {
+  if (!pays.value) return
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  if (reactionEnCours.value) return
+  reactionEnCours.value = true
+  const etat = await reagirFiche(pays.value.id, type)
+  if (etat) {
+    pays.value.nombre_likes = etat.nombre_likes
+    pays.value.nombre_dislikes = etat.nombre_dislikes
+    pays.value.ma_reaction = etat.ma_reaction
+  }
+  reactionEnCours.value = false
+}
+
+// ── Signalement (blocage au seuil) ──────────────────────────────
+const signalementEnCours = ref(false)
+
+const signalerProbleme = async () => {
+  if (!pays.value) return
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  if (pays.value.a_signale) {
+    alert('Vous avez déjà signalé ce territoire. Merci !')
+    return
+  }
+  const motif = window.prompt(
+    'Signaler ce territoire — précisez le problème (facultatif) :',
+    '',
+  )
+  // L'utilisateur a annulé la fenêtre
+  if (motif === null) return
+
+  signalementEnCours.value = true
+  const etat = await signalerFiche(pays.value.id, motif || undefined)
+  signalementEnCours.value = false
+  if (etat) {
+    pays.value.nombre_signalements = etat.nombre_signalements
+    pays.value.a_signale = etat.a_signale
+    if (etat.bloquee) {
+      alert('Ce territoire a atteint le seuil de signalements et a été retiré. Vous allez être redirigé.')
+      navigateTo('/opportunite-afrique')
+    } else {
+      alert('Merci, votre signalement a été pris en compte.')
+    }
+  } else {
+    alert('Une erreur est survenue lors du signalement. Veuillez réessayer.')
+  }
+}
+
+// ── Partage vers le mur communautaire /publications ─────────────
+const showPartageModal = ref(false)
+const partageModalRef = ref<{ setLoading: (v: boolean) => void; setError: (m: string) => void; setSuccess: () => void } | null>(null)
+
+const ouvrirPartage = () => {
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  showPartageModal.value = true
+}
+
+const handlePartageSubmit = async (legende: string) => {
+  if (!pays.value) return
+  partageModalRef.value?.setLoading(true)
+  const res = await partagerFiche(pays.value.id, legende || undefined)
+  if (res) {
+    partageModalRef.value?.setSuccess()
+  } else {
+    partageModalRef.value?.setError('Erreur lors du partage. Veuillez réessayer.')
+  }
 }
 
 type SubmitLegacy = {

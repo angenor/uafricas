@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -64,10 +64,17 @@ async fn construire_response(pool: &PgPool, row: &FichePaysRow) -> Result<FicheP
     })
 }
 
-/// Construit un FichePaysDetailResponse a partir d'une row
-async fn construire_detail_response(pool: &PgPool, row: &FichePaysRow) -> Result<FichePaysDetailResponse, ApiErreur> {
+/// Construit un FichePaysDetailResponse a partir d'une row.
+/// `utilisateur_id` (optionnel) sert à renseigner l'état personnel (réaction, signalement).
+async fn construire_detail_response(
+    pool: &PgPool,
+    row: &FichePaysRow,
+    utilisateur_id: Option<Uuid>,
+) -> Result<FichePaysDetailResponse, ApiErreur> {
     let nombre_contributions = compter_contributions(pool, row.id).await?;
     let ethnies = charger_ethnies(pool, row.id).await?;
+    let (ma_reaction, a_signale) =
+        crate::handlers::fiche_pays_social::charger_etat_perso(pool, row.id, utilisateur_id).await?;
     let langues = parser_langues(
         row.langue_officielle.as_deref(),
         row.langues_populaires.as_deref(),
@@ -105,6 +112,12 @@ async fn construire_detail_response(pool: &PgPool, row: &FichePaysRow) -> Result
         voyage_contacts_tourisme: row.voyage_contacts_tourisme.clone(),
         voyage_recommandations_securite: row.voyage_recommandations_securite.clone(),
         nombre_contributions,
+        nombre_likes: row.nombre_likes,
+        nombre_dislikes: row.nombre_dislikes,
+        nombre_signalements: row.nombre_signalements,
+        bloquee: row.bloquee,
+        ma_reaction,
+        a_signale,
         updated_at: row.updated_at,
     })
 }
@@ -123,8 +136,8 @@ pub async fn lister_fiches(
     let par_page = params.par_page.unwrap_or(20).clamp(1, 60);
     let offset = (page - 1) * par_page;
 
-    // Construction dynamique du WHERE
-    let mut conditions: Vec<String> = Vec::new();
+    // Construction dynamique du WHERE — exclut toujours les fiches bloquées
+    let mut conditions: Vec<String> = vec!["fp.bloquee = FALSE".to_string()];
     let mut bind_index = 1u32;
     let mut bind_values: Vec<String> = Vec::new();
 
@@ -217,10 +230,12 @@ pub async fn lister_fiches(
 
 /// GET /api/fiches-pays/{id} — Detail d'une fiche pays (par UUID ou code ISO)
 pub async fn obtenir_fiche(
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<String>,
 ) -> Result<HttpResponse, ApiErreur> {
     let identifiant = chemin.into_inner();
+    let utilisateur_id = crate::handlers::fiche_pays_social::extraire_utilisateur_id(&req);
 
     // Essayer d'abord par UUID, sinon par code ISO ou slug
     let query = format!(
@@ -236,7 +251,15 @@ pub async fn obtenir_fiche(
         .await?
         .ok_or_else(|| ApiErreur::NonTrouve(format!("Fiche pays '{}' non trouvee", identifiant)))?;
 
-    let detail = construire_detail_response(pool.get_ref(), &row).await?;
+    // Fiche bloquée (≥ seuil de signalements) → retirée du public
+    if row.bloquee {
+        return Err(ApiErreur::NonTrouve(format!(
+            "Fiche pays '{}' non disponible",
+            identifiant
+        )));
+    }
+
+    let detail = construire_detail_response(pool.get_ref(), &row, utilisateur_id).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,

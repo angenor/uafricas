@@ -51,6 +51,66 @@ export interface FichePaysDetailAPI extends FichePaysAPI {
   voyage_prises_electriques: string | null
   voyage_contacts_tourisme: string | null
   voyage_recommandations_securite: string | null
+  // Réactions / modération communautaire
+  nombre_likes: number
+  nombre_dislikes: number
+  nombre_signalements: number
+  bloquee: boolean
+  /** Réaction du membre courant : 'like' | 'dislike' | null */
+  ma_reaction: 'like' | 'dislike' | null
+  /** Le membre courant a-t-il déjà signalé cette fiche ? */
+  a_signale: boolean
+}
+
+/** État renvoyé après un like/dislike */
+export interface ReactionFicheEtat {
+  nombre_likes: number
+  nombre_dislikes: number
+  ma_reaction: 'like' | 'dislike' | null
+}
+
+/** État renvoyé après un signalement */
+export interface SignalementFicheEtat {
+  nombre_signalements: number
+  bloquee: boolean
+  a_signale: boolean
+}
+
+/** Auteur d'un partage communautaire */
+export interface PartageAuteurAPI {
+  id: string
+  nom: string
+  prenom: string
+  photo_url: string | null
+}
+
+/** Aperçu de la fiche pays partagée */
+export interface PartageApercuAPI {
+  id: string
+  nom: string
+  capitale: string | null
+  slogan: string | null
+  image_couverture: string | null
+  drapeau_url: string | null
+  region: string
+}
+
+/** Partage d'une fiche pays dans le mur communautaire */
+export interface PartageFicheAPI {
+  id: string
+  legende: string | null
+  created_at: string
+  fiche: PartageApercuAPI
+  auteur: PartageAuteurAPI
+}
+
+/** Réponse paginée des partages */
+export interface PartageFicheListeAPI {
+  partages: PartageFicheAPI[]
+  total: number
+  page: number
+  par_page: number
+  total_pages: number
 }
 
 /** Reponse paginee */
@@ -1098,12 +1158,101 @@ export const useOpportuniteAfrique = () => {
     return `${apiBase}${url}`
   }
 
+  // ────────────────────────────────────────────────────────────
+  // Réactions, signalement, partage communautaire
+  // ────────────────────────────────────────────────────────────
+
+  /** Like/dislike (toggle) sur une fiche pays. Authentification requise. */
+  const reagirFiche = async (
+    ficheId: string,
+    typeReaction: 'like' | 'dislike',
+  ): Promise<ReactionFicheEtat | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<ReactionFicheEtat>>(
+        `${apiBase}/api/fiches-pays/${encodeURIComponent(ficheId)}/reaction`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: { type_reaction: typeReaction },
+        },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur reagirFiche:', e)
+      return null
+    }
+  }
+
+  /** Signaler une fiche pays. Au-delà du seuil, la fiche est bloquée. */
+  const signalerFiche = async (
+    ficheId: string,
+    motif?: string,
+  ): Promise<SignalementFicheEtat | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<SignalementFicheEtat>>(
+        `${apiBase}/api/fiches-pays/${encodeURIComponent(ficheId)}/signalement`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: { motif: motif || undefined },
+        },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur signalerFiche:', e)
+      return null
+    }
+  }
+
+  /** Partager une fiche dans le mur communautaire (légende facultative). */
+  const partagerFiche = async (
+    ficheId: string,
+    legende?: string,
+  ): Promise<PartageFicheAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<PartageFicheAPI>>(
+        `${apiBase}/api/fiches-pays/${encodeURIComponent(ficheId)}/partages`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: { legende: legende || undefined },
+        },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur partagerFiche:', e)
+      return null
+    }
+  }
+
+  /** Liste paginée des fiches partagées (mur communautaire, public). */
+  const listerPartagesFiches = async (
+    page = 1,
+    parPage = 20,
+  ): Promise<PartageFicheListeAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<PartageFicheListeAPI>>(
+        `${apiBase}/api/fiches-pays/partages?page=${page}&par_page=${parPage}`,
+        { headers: authHeaders() },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur listerPartagesFiches:', e)
+      return null
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
     listerFiches,
     obtenirFiche,
     listerRegions,
+    // Réactions / signalement / partage
+    reagirFiche,
+    signalerFiche,
+    partagerFiche,
+    listerPartagesFiches,
     // Contributions
     soumettreContribution,
     listerContributions,

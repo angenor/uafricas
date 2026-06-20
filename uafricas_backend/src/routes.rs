@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, gouvernance, livres, matching, membres, messagerie, moocs, notification, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -654,6 +654,8 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // US3 — creation d'une nouvelle fiche pays (soumission)
                     .route("", web::post().to(afripulse_public::creer_fiche_pays))
                     .route("/regions", web::get().to(fiches_pays::lister_regions))
+                    // Mur communautaire : fiches partagées (public, paginé)
+                    .route("/partages", web::get().to(fiche_pays_social::lister_partages))
                     // T071 — mes contributions (utilisateur connecte)
                     .route("/moi/contributions", web::get().to(afripulse_public::lister_mes_contributions))
                     // Upload d'image isolée pour une contribution (site, personnalité)
@@ -666,6 +668,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{id}/contributions", web::post().to(contributions_fiche::soumettre_contribution))
                     .route("/{id}/contributions/multipart", web::post().to(contributions_fiche::soumettre_contribution_multipart))
                     .route("/{id}/contributeurs", web::get().to(contributions_fiche::lister_contributeurs))
+                    // Réactions, signalement (blocage au seuil) et partage communautaire
+                    .route("/{id}/reaction", web::post().to(fiche_pays_social::reagir_fiche))
+                    .route("/{id}/signalement", web::post().to(fiche_pays_social::signaler_fiche))
+                    .route("/{id}/partages", web::post().to(fiche_pays_social::partager_fiche))
                     // Sections Afripulse enrichies (US1)
                     .route("/{id}/sites-touristiques", web::get().to(afripulse_public::lister_sites_touristiques))
                     .route("/{id}/secteurs-opportunites", web::get().to(afripulse_public::lister_secteurs_opportunites))
