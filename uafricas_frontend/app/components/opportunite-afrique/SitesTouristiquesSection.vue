@@ -16,6 +16,9 @@ interface Props {
 
 const props = defineProps<Props>()
 
+// Section rétractable — repliée par défaut
+const replie = ref(true)
+
 type OpenContributionPayload = {
   type_objet_contribution: TypeObjetContribution
   section_afripulse: SectionAfripulse
@@ -125,13 +128,26 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
 </script>
 
 <template>
-  <section class="py-12">
+  <section class="transition-all" :class="replie ? 'py-5' : 'py-12'">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="font-oswald text-3xl md:text-4xl font-bold text-gray-900 mb-8">
-        Sites touristiques
-      </h2>
+      <button
+        type="button"
+        class="flex items-center gap-3 text-left min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+        :class="replie ? '' : 'mb-8'"
+        :aria-expanded="!replie"
+        @click="replie = !replie"
+      >
+        <font-awesome-icon
+          :icon="['fas', 'chevron-down']"
+          class="w-5 h-5 shrink-0 text-custom-chocolat transition-transform duration-200"
+          :class="replie ? '-rotate-90' : ''"
+        />
+        <h2 class="font-oswald text-3xl md:text-4xl font-bold text-gray-900">
+          Sites touristiques
+        </h2>
+      </button>
 
-      <div class="space-y-12">
+      <div v-show="!replie" class="space-y-12">
         <!-- Sites emblématiques -->
         <div>
           <div class="flex flex-wrap items-center justify-between gap-3 mb-6">

@@ -65,14 +65,23 @@
 
             <!-- Informations générales -->
             <div class="bg-white rounded-lg shadow-md p-6">
-              <h2 class="text-2xl font-bold mb-6 flex items-center">
+              <button
+                type="button"
+                class="w-full flex items-center text-left text-2xl font-bold cursor-pointer hover:opacity-80 transition-opacity"
+                :class="infosReplie ? '' : 'mb-6'"
+                :aria-expanded="!infosReplie"
+                @click="infosReplie = !infosReplie"
+              >
                 <svg class="w-6 h-6 mr-2 text-custom-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
                 Informations générales
-              </h2>
+                <svg class="w-5 h-5 ml-auto text-gray-400 transition-transform duration-200" :class="infosReplie ? '-rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div v-show="!infosReplie" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="flex items-start space-x-3">
                   <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                     <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,14 +147,23 @@
 
             <!-- Culture et Langues -->
             <div class="bg-white rounded-lg shadow-md p-6">
-              <h2 class="text-2xl font-bold mb-6 flex items-center">
+              <button
+                type="button"
+                class="w-full flex items-center text-left text-2xl font-bold cursor-pointer hover:opacity-80 transition-opacity"
+                :class="cultureReplie ? '' : 'mb-6'"
+                :aria-expanded="!cultureReplie"
+                @click="cultureReplie = !cultureReplie"
+              >
                 <svg class="w-6 h-6 mr-2 text-custom-chocolat" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
                 </svg>
                 Culture et Langues
-              </h2>
+                <svg class="w-5 h-5 ml-auto text-gray-400 transition-transform duration-200" :class="cultureReplie ? '-rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
 
-              <div class="space-y-6">
+              <div v-show="!cultureReplie" class="space-y-6">
                 <!-- Langues -->
                 <div>
                   <h3 class="text-sm font-medium text-gray-500 mb-3">Langues parlées</h3>
@@ -333,6 +351,10 @@ interface LegacyFieldContext {
 }
 
 const pays = ref<FichePaysDetailAPI | null>(null)
+
+// État rétractable des sections (repliées par défaut pour faciliter la lecture)
+const infosReplie = ref(false)
+const cultureReplie = ref(true)
 
 const breadcrumbs = computed(() => [
   { label: 'Opportunités en Afrique', to: '/opportunite-afrique' },

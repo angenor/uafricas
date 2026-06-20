@@ -13,6 +13,9 @@ interface Props {
 
 const props = defineProps<Props>()
 
+// Section rétractable — repliée par défaut
+const replie = ref(true)
+
 type OpenContributionPayload = {
   type_objet_contribution: TypeObjetContribution
   section_afripulse: SectionAfripulse
@@ -75,13 +78,26 @@ const proposerSecteur = () => {
 </script>
 
 <template>
-  <section class="py-12 bg-gray-50">
+  <section class="bg-gray-50 transition-all" :class="replie ? 'py-5' : 'py-12'">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between mb-8">
-        <h2 class="font-oswald text-3xl md:text-4xl font-bold text-gray-900">
-          Secteurs d'opportunités
-        </h2>
+      <div class="flex items-center justify-between gap-4" :class="replie ? '' : 'mb-8'">
         <button
+          type="button"
+          class="flex items-center gap-3 text-left min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+          :aria-expanded="!replie"
+          @click="replie = !replie"
+        >
+          <font-awesome-icon
+            :icon="['fas', 'chevron-down']"
+            class="w-5 h-5 shrink-0 text-custom-green transition-transform duration-200"
+            :class="replie ? '-rotate-90' : ''"
+          />
+          <h2 class="font-oswald text-3xl md:text-4xl font-bold text-gray-900">
+            Secteurs d'opportunités
+          </h2>
+        </button>
+        <button
+          v-show="!replie"
           type="button"
           class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors text-sm font-medium"
           @click="proposerSecteur"
@@ -89,6 +105,8 @@ const proposerSecteur = () => {
           Proposer un secteur
         </button>
       </div>
+
+      <div v-show="!replie">
 
       <div v-if="chargement" class="space-y-4">
         <div v-for="n in 3" :key="n" class="bg-gray-200 rounded-lg h-24 animate-pulse" />
@@ -201,6 +219,7 @@ const proposerSecteur = () => {
           </div>
         </li>
       </ul>
+      </div>
     </div>
   </section>
 </template>
