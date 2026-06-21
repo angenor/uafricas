@@ -41,6 +41,42 @@ export interface EvenementDetailAPI extends EvenementAPI {
   adresse: string | null
   lien_en_ligne: string | null
   est_inscrit: boolean
+  /** Etat brut du cycle de vie (brouillon/publie/annule/termine/suspendu) */
+  etat: string
+  type_organisateur: 'personnel' | 'organisation'
+  contact_nom: string | null
+  contact_email: string | null
+  contact_telephone: string | null
+  contact_site_web: string | null
+}
+
+/** Un inscrit a un evenement (vue organisateur) */
+export interface InscritEvenement {
+  utilisateur_id: string
+  nom: string
+  prenom: string | null
+  email: string
+  statut: string
+  created_at: string
+}
+
+/** Payload de modification d'un evenement par son organisateur */
+export interface ModifierMonEvenementPayload {
+  titre?: string
+  description?: string
+  type?: string
+  pays?: string
+  ville?: string
+  adresse?: string
+  date_heure_debut?: string
+  date_heure_fin?: string
+  lien_en_ligne?: string
+  nombre_places?: number | null
+  type_organisateur?: 'personnel' | 'organisation'
+  contact_nom?: string
+  contact_email?: string
+  contact_telephone?: string
+  contact_site_web?: string
 }
 
 /** Reponse paginee */
@@ -317,6 +353,14 @@ export const useEvenements = () => {
       ville: string
       date_heure_debut: string
       date_heure_fin: string
+      adresse?: string
+      lien_en_ligne?: string
+      nombre_places?: number | null
+      type_organisateur?: 'personnel' | 'organisation'
+      contact_nom?: string
+      contact_email?: string
+      contact_telephone?: string
+      contact_site_web?: string
     },
     couvertureFile: File | null,
   ): Promise<EvenementDetailAPI | null> => {
@@ -332,6 +376,14 @@ export const useEvenements = () => {
       data.append('ville', formData.ville)
       data.append('date_heure_debut', formData.date_heure_debut)
       data.append('date_heure_fin', formData.date_heure_fin)
+      if (formData.adresse) data.append('adresse', formData.adresse)
+      if (formData.lien_en_ligne) data.append('lien_en_ligne', formData.lien_en_ligne)
+      if (formData.nombre_places != null) data.append('nombre_places', String(formData.nombre_places))
+      data.append('type_organisateur', formData.type_organisateur || 'personnel')
+      if (formData.contact_nom) data.append('contact_nom', formData.contact_nom)
+      if (formData.contact_email) data.append('contact_email', formData.contact_email)
+      if (formData.contact_telephone) data.append('contact_telephone', formData.contact_telephone)
+      if (formData.contact_site_web) data.append('contact_site_web', formData.contact_site_web)
       if (couvertureFile) {
         data.append('couverture', couvertureFile)
       }
@@ -388,6 +440,115 @@ export const useEvenements = () => {
       erreur.value = message
       console.error('Erreur inscrireEvenement:', e)
       return false
+    }
+  }
+
+  // ── Gestion par l'organisateur (« Mes evenements ») ───────────
+
+  /** Lister les evenements creees par le membre connecte (tous etats). */
+  const listerMesEvenements = async (): Promise<EvenementDetailAPI[]> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<EvenementDetailAPI[]>>(
+        `${apiBase}/api/evenements/mes-evenements`,
+        { headers: authHeaders() },
+      )
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement de vos evenements')
+      }
+      return reponse.data
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur reseau'
+      console.error('Erreur listerMesEvenements:', e)
+      return []
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Modifier un evenement dont on est l'organisateur. */
+  const modifierMonEvenement = async (
+    id: string,
+    payload: ModifierMonEvenementPayload,
+  ): Promise<EvenementDetailAPI | null> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<EvenementDetailAPI>>(
+        `${apiBase}/api/evenements/${id}`,
+        { method: 'PUT', headers: authHeaders(), body: payload },
+      )
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de la modification')
+      }
+      return reponse.data
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur reseau'
+      console.error('Erreur modifierMonEvenement:', e)
+      return null
+    }
+  }
+
+  /** Supprimer (soft) un evenement dont on est l'organisateur. */
+  const supprimerMonEvenement = async (id: string): Promise<boolean> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<null>>(
+        `${apiBase}/api/evenements/${id}`,
+        { method: 'DELETE', headers: authHeaders() },
+      )
+      if (!reponse.success) throw new Error(reponse.error || 'Erreur lors de la suppression')
+      return true
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur reseau'
+      console.error('Erreur supprimerMonEvenement:', e)
+      return false
+    }
+  }
+
+  /** Remplacer l'image de couverture d'un de ses evenements. Renvoie la nouvelle URL. */
+  const changerCouvertureMonEvenement = async (
+    id: string,
+    fichier: File,
+  ): Promise<string | null> => {
+    erreur.value = null
+    try {
+      const data = new FormData()
+      data.append('couverture', fichier)
+      const reponse = await $fetch<ApiResponse<{ couverture_url: string }>>(
+        `${apiBase}/api/evenements/${id}/couverture`,
+        { method: 'POST', headers: authHeaders(), body: data },
+      )
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du changement de couverture')
+      }
+      return reponse.data.couverture_url
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur reseau'
+      console.error('Erreur changerCouvertureMonEvenement:', e)
+      return null
+    }
+  }
+
+  /** Lister les inscrits a un de ses evenements. */
+  const listerInscritsMonEvenement = async (id: string): Promise<InscritEvenement[]> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<InscritEvenement[]>>(
+        `${apiBase}/api/evenements/${id}/inscrits`,
+        { headers: authHeaders() },
+      )
+      if (!reponse.success || !reponse.data) return []
+      return reponse.data
+    }
+    catch (e: any) {
+      console.error('Erreur listerInscritsMonEvenement:', e)
+      return []
     }
   }
 
@@ -501,6 +662,12 @@ export const useEvenements = () => {
     obtenirEvenement,
     creerEvenement,
     inscrireEvenement,
+    // Gestion organisateur
+    listerMesEvenements,
+    modifierMonEvenement,
+    supprimerMonEvenement,
+    changerCouvertureMonEvenement,
+    listerInscritsMonEvenement,
     // Direct en streaming
     signalStream,
     obtenirEtatDirect,

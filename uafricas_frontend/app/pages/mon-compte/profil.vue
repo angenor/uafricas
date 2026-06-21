@@ -123,25 +123,53 @@
           data-aos="fade-up"
           data-aos-delay="100"
         >
-          <!-- Tab Headers -->
-          <div class="flex border-b border-gray-200">
+          <!-- Tab Header (dropdown : la liste d'onglets etant longue) -->
+          <div class="border-b border-gray-200 p-3 relative">
             <button
-              v-for="tab in onglets"
-              :key="tab.id"
-              class="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-all duration-200 relative"
-              :class="ongletActif === tab.id
-                ? 'text-custom-chocolat'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
-              @click="ongletActif = tab.id"
+              class="w-full flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+              @click="tabMenuOuvert = !tabMenuOuvert"
             >
-              <font-awesome-icon :icon="tab.icon" />
-              <span class="hidden sm:inline">{{ tab.label }}</span>
-              <!-- Indicateur actif -->
-              <div
-                v-if="ongletActif === tab.id"
-                class="absolute bottom-0 left-0 right-0 h-0.5 bg-custom-chocolat"
-              ></div>
+              <span class="flex items-center gap-2 text-sm font-semibold text-custom-chocolat">
+                <font-awesome-icon :icon="ongletCourant.icon" />
+                {{ ongletCourant.label }}
+              </span>
+              <font-awesome-icon
+                icon="fa-solid fa-chevron-down"
+                class="text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': tabMenuOuvert }"
+              />
             </button>
+
+            <!-- Menu deroulant -->
+            <Transition
+              enter-active-class="transition-all duration-150 ease-out"
+              enter-from-class="opacity-0 -translate-y-1"
+              enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition-all duration-100 ease-in"
+              leave-from-class="opacity-100 translate-y-0"
+              leave-to-class="opacity-0 -translate-y-1"
+            >
+              <div
+                v-if="tabMenuOuvert"
+                class="absolute left-3 right-3 top-full mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1"
+              >
+                <button
+                  v-for="tab in onglets"
+                  :key="tab.id"
+                  class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors"
+                  :class="ongletActif === tab.id
+                    ? 'bg-orange-50 text-custom-chocolat font-medium'
+                    : 'text-gray-600 hover:bg-gray-50'"
+                  @click="selectionnerOnglet(tab.id)"
+                >
+                  <font-awesome-icon :icon="tab.icon" class="w-4 text-center" />
+                  {{ tab.label }}
+                </button>
+              </div>
+            </Transition>
+
+            <!-- Zone de fermeture -->
+            <div v-if="tabMenuOuvert" class="fixed inset-0 z-10" @click="tabMenuOuvert = false"></div>
           </div>
 
           <!-- Tab Content -->
@@ -749,6 +777,24 @@
               <SabbatiqueMesEchanges />
             </div>
 
+            <!-- ─── Onglet Mes événements ─── -->
+            <div v-if="ongletActif === 'mes-evenements'" class="space-y-6">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-800">Mes événements</h2>
+                <NuxtLink
+                  to="/evenements/liste"
+                  class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-custom-green text-white font-medium rounded-xl hover:bg-custom-green/90 transition-all"
+                >
+                  <font-awesome-icon icon="fa-solid fa-plus" />
+                  <span class="hidden sm:inline">Proposer</span>
+                </NuxtLink>
+              </div>
+              <p class="text-sm text-gray-500 -mt-3">
+                Gérez vos événements : modifiez, supprimez, consultez les inscrits et démarrez vos diffusions en direct.
+              </p>
+              <EvenementsMesEvenements />
+            </div>
+
           </div>
         </div>
       </template>
@@ -775,6 +821,7 @@ const profilComposable = useProfil()
 const profil = ref<Profil | null>(null)
 const chargement = ref(true)
 const ongletActif = ref('informations')
+const tabMenuOuvert = ref(false)
 const modeEdition = ref(false)
 const modeEditionLocalisation = ref(false)
 
@@ -801,7 +848,15 @@ const onglets = [
   { id: 'bibliotheque-humaine', label: 'Bibliothèque', icon: 'fa-solid fa-book-open' },
   { id: 'expertise', label: 'Expertise', icon: 'fa-solid fa-user-tie' },
   { id: 'mes-echanges', label: 'Mes échanges', icon: 'fa-solid fa-right-left' },
+  { id: 'mes-evenements', label: 'Mes événements', icon: 'fa-solid fa-calendar-day' },
 ]
+
+const ongletCourant = computed(() => onglets.find(t => t.id === ongletActif.value) || onglets[0]!)
+
+const selectionnerOnglet = (id: string) => {
+  ongletActif.value = id
+  tabMenuOuvert.value = false
+}
 
 // ── Formulaires ──
 const formulaire = reactive<ModifierProfilForm>({

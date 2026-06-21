@@ -512,7 +512,13 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/evenements")
                     .route("", web::get().to(evenements::lister_evenements))
                     .route("", web::post().to(evenements::creer_evenement))
+                    // Gestion par l'organisateur (membre) — declare avant /{id}
+                    .route("/mes-evenements", web::get().to(evenements::lister_mes_evenements))
                     .route("/{id}", web::get().to(evenements::obtenir_evenement))
+                    .route("/{id}", web::put().to(evenements::modifier_mon_evenement))
+                    .route("/{id}", web::delete().to(evenements::supprimer_mon_evenement))
+                    .route("/{id}/couverture", web::post().to(evenements::changer_couverture_mon_evenement))
+                    .route("/{id}/inscrits", web::get().to(evenements::lister_inscrits_mon_evenement))
                     .route("/{id}/inscription", web::post().to(evenements::inscrire_evenement))
                     // Direct en streaming (feature 001-evenements-streaming)
                     .route("/{id}/direct", web::get().to(evenement_streaming::etat_direct))

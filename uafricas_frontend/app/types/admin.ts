@@ -1509,6 +1509,11 @@ export interface AdminEvenementDetail {
   lien_en_ligne: string | null
   langue: string
   nombre_places: number | null
+  type_organisateur: 'personnel' | 'organisation'
+  contact_nom: string | null
+  contact_email: string | null
+  contact_telephone: string | null
+  contact_site_web: string | null
   etat: string
   cree_par: string
   cree_par_nom: string | null
@@ -1531,6 +1536,11 @@ export interface CreerEvenementAdminForm {
   lien_en_ligne: string
   langue: string
   nombre_places: number | null
+  type_organisateur: 'personnel' | 'organisation'
+  contact_nom: string
+  contact_email: string
+  contact_telephone: string
+  contact_site_web: string
 }
 
 export interface AdminEvenementInscription {

@@ -21,6 +21,7 @@ use crate::ApiResponse;
 
 const ETATS_VALIDES: &[&str] = &["brouillon", "publie", "annule", "termine", "suspendu"];
 const FORMATS_VALIDES: &[&str] = &["presentiel", "en_ligne", "hybride"];
+const TYPES_ORGANISATEUR_VALIDES: &[&str] = &["personnel", "organisation"];
 const STATUTS_INSCRIPTION_VALIDES: &[&str] = &["inscrit", "confirme", "annule", "present", "absent"];
 
 /// GET /api/admin/evenements
@@ -191,6 +192,30 @@ pub async fn creer_evenement(
         }
     }
 
+    // Type d'organisateur (nom propre vs organisation) — important pour les stats.
+    let type_organisateur = body.type_organisateur.as_deref().unwrap_or("personnel");
+    if !TYPES_ORGANISATEUR_VALIDES.contains(&type_organisateur) {
+        return Err(ApiErreur::Validation(
+            "Type d'organisateur invalide (personnel ou organisation)".into(),
+        ));
+    }
+    let nettoyer = |o: &Option<String>| {
+        o.as_deref()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+    };
+    let contact_nom = nettoyer(&body.contact_nom);
+    if type_organisateur == "organisation" && contact_nom.is_none() {
+        return Err(ApiErreur::Validation(
+            "Le nom de l'organisation est requis".into(),
+        ));
+    }
+    // En nom propre : le nom d'organisation n'a pas de sens.
+    let contact_nom = if type_organisateur == "organisation" { contact_nom } else { None };
+    let contact_email = nettoyer(&body.contact_email);
+    let contact_telephone = nettoyer(&body.contact_telephone);
+    let contact_site_web = nettoyer(&body.contact_site_web);
+
     let date_debut = chrono::DateTime::parse_from_rfc3339(&body.date_heure_debut)
         .map(|d| d.with_timezone(&chrono::Utc))
         .or_else(|_| {
@@ -220,9 +245,13 @@ pub async fn creer_evenement(
         "INSERT INTO media_content.evenement
          (id, titre, slug, description, type, pays_id, ville, adresse,
           date_heure_debut, date_heure_fin, image_couverture_url,
-          format, lien_en_ligne, langue, nombre_places, etat, cree_par)
+          format, lien_en_ligne, langue, nombre_places,
+          type_organisateur, contact_nom, contact_email, contact_telephone, contact_site_web,
+          etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-                 $12::media_content.format_evenement, $13, $14, $15, 'brouillon', $16)"
+                 $12::media_content.format_evenement, $13, $14, $15,
+                 $16::media_content.type_organisateur, $17, $18, $19, $20,
+                 'brouillon', $21)"
     )
     .bind(id)
     .bind(titre)
@@ -239,6 +268,11 @@ pub async fn creer_evenement(
     .bind(body.lien_en_ligne.as_deref().map(|s| s.trim()))
     .bind(langue)
     .bind(body.nombre_places)
+    .bind(type_organisateur)
+    .bind(&contact_nom)
+    .bind(&contact_email)
+    .bind(&contact_telephone)
+    .bind(&contact_site_web)
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -307,6 +341,9 @@ pub async fn modifier_evenement(
     champ_str!(body.image_couverture_url, "image_couverture_url");
     champ_str!(body.lien_en_ligne, "lien_en_ligne");
     champ_str!(body.langue, "langue");
+    champ_str!(body.contact_email, "contact_email");
+    champ_str!(body.contact_telephone, "contact_telephone");
+    champ_str!(body.contact_site_web, "contact_site_web");
 
     if let Some(ref fmt) = body.format {
         if !FORMATS_VALIDES.contains(&fmt.as_str()) {
@@ -315,6 +352,45 @@ pub async fn modifier_evenement(
         sets.push(format!("format = ${}::media_content.format_evenement", bind_index));
         bind_strings.push(fmt.clone());
         bind_index += 1;
+    }
+
+    // Type d'organisateur : nom propre vs organisation (important pour les stats).
+    if let Some(ref t) = body.type_organisateur {
+        if !TYPES_ORGANISATEUR_VALIDES.contains(&t.as_str()) {
+            return Err(ApiErreur::Validation(
+                "Type d'organisateur invalide (personnel ou organisation)".into(),
+            ));
+        }
+        sets.push(format!("type_organisateur = ${}::media_content.type_organisateur", bind_index));
+        bind_strings.push(t.clone());
+        bind_index += 1;
+
+        if t == "personnel" {
+            // En nom propre : on efface le nom d'organisation.
+            sets.push("contact_nom = NULL".to_string());
+        } else {
+            // Au nom d'une organisation : le nom est requis.
+            let nom = body
+                .contact_nom
+                .as_deref()
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty());
+            match nom {
+                Some(n) => {
+                    sets.push(format!("contact_nom = ${}", bind_index));
+                    bind_strings.push(n.to_string());
+                    bind_index += 1;
+                }
+                None => {
+                    return Err(ApiErreur::Validation(
+                        "Le nom de l'organisation est requis".into(),
+                    ));
+                }
+            }
+        }
+    } else {
+        // Type inchangé : on met à jour le nom d'organisation s'il est fourni.
+        champ_str!(body.contact_nom, "contact_nom");
     }
 
     if let Some(pays_id) = body.pays_id {

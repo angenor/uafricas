@@ -31,6 +31,11 @@ const form = reactive({
   adresse: '',
   lien_en_ligne: '',
   image_couverture_url: '',
+  type_organisateur: 'personnel' as 'personnel' | 'organisation',
+  contact_nom: '',
+  contact_email: '',
+  contact_telephone: '',
+  contact_site_web: '',
 })
 
 const afficherLienEnLigne = computed(() => form.format === 'en_ligne' || form.format === 'hybride')
@@ -122,12 +127,21 @@ const charger = async () => {
     form.adresse = e.adresse || ''
     form.lien_en_ligne = e.lien_en_ligne || ''
     form.image_couverture_url = e.image_couverture_url || ''
+    form.type_organisateur = e.type_organisateur || 'personnel'
+    form.contact_nom = e.contact_nom || ''
+    form.contact_email = e.contact_email || ''
+    form.contact_telephone = e.contact_telephone || ''
+    form.contact_site_web = e.contact_site_web || ''
   }
 }
 
 const sauvegarder = async () => {
-  saving.value = true
   erreurLocale.value = null
+  if (form.type_organisateur === 'organisation' && !form.contact_nom.trim()) {
+    erreurLocale.value = 'Le nom de l\'organisation est requis'
+    return
+  }
+  saving.value = true
   successMsg.value = null
   try {
     const body: any = {
@@ -145,6 +159,11 @@ const sauvegarder = async () => {
     if (form.adresse.trim()) body.adresse = form.adresse.trim()
     if (form.lien_en_ligne.trim()) body.lien_en_ligne = form.lien_en_ligne.trim()
     if (form.image_couverture_url.trim()) body.image_couverture_url = form.image_couverture_url.trim()
+    body.type_organisateur = form.type_organisateur
+    body.contact_nom = form.type_organisateur === 'organisation' ? form.contact_nom.trim() : ''
+    body.contact_email = form.contact_email.trim()
+    body.contact_telephone = form.contact_telephone.trim()
+    body.contact_site_web = form.contact_site_web.trim()
 
     await modifier(id, body)
     successMsg.value = 'Evenement mis a jour'
@@ -322,6 +341,42 @@ onMounted(async () => {
               <div v-if="afficherLienEnLigne" class="form-control">
                 <label class="label"><span class="label-text">Lien en ligne</span></label>
                 <input v-model="form.lien_en_ligne" type="url" class="input input-bordered" placeholder="https://zoom.us/j/...">
+              </div>
+            </div>
+
+            <!-- Organisateur & contact -->
+            <div class="space-y-4">
+              <h3 class="text-lg font-semibold border-b pb-2">Organisateur & contact</h3>
+              <div class="form-control">
+                <label class="label"><span class="label-text">Publication *</span></label>
+                <div class="flex flex-wrap gap-4">
+                  <label class="label cursor-pointer gap-2">
+                    <input v-model="form.type_organisateur" type="radio" value="personnel" class="radio radio-primary">
+                    <span class="label-text">En nom propre</span>
+                  </label>
+                  <label class="label cursor-pointer gap-2">
+                    <input v-model="form.type_organisateur" type="radio" value="organisation" class="radio radio-primary">
+                    <span class="label-text">Au nom d'une organisation</span>
+                  </label>
+                </div>
+              </div>
+              <div v-if="form.type_organisateur === 'organisation'" class="form-control">
+                <label class="label"><span class="label-text">Nom de l'organisation *</span></label>
+                <input v-model="form.contact_nom" type="text" class="input input-bordered" placeholder="Ex: Fondation UAfricas">
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Email de contact</span></label>
+                  <input v-model="form.contact_email" type="email" class="input input-bordered" placeholder="contact@exemple.org">
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Téléphone</span></label>
+                  <input v-model="form.contact_telephone" type="tel" class="input input-bordered" placeholder="+221 ...">
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Site web</span></label>
+                  <input v-model="form.contact_site_web" type="url" class="input input-bordered" placeholder="https://...">
+                </div>
               </div>
             </div>
 

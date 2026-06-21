@@ -259,6 +259,49 @@
                   {{ evenement.user.prenom }} {{ evenement.user.nom }}
                 </div>
                 <div class="text-sm text-gray-500">{{ evenement.user.email }}</div>
+                <div
+                  v-if="evenement.type_organisateur === 'organisation' && evenement.contact_nom"
+                  class="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-custom-chocolat"
+                >
+                  <font-awesome-icon icon="fa-solid fa-building" />
+                  Au nom de {{ evenement.contact_nom }}
+                </div>
+                <div
+                  v-else
+                  class="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-gray-400"
+                >
+                  <font-awesome-icon icon="fa-solid fa-user" />
+                  Publié en nom propre
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact de l'organisateur -->
+          <div v-if="aContact" class="border-t border-gray-100 mt-8 pt-6">
+            <h2 class="flex items-center gap-2 text-xl font-bold text-gray-800 mb-4">
+              <font-awesome-icon icon="fa-solid fa-address-book" class="text-custom-green text-base" />
+              Contact de l'organisateur
+            </h2>
+            <div class="p-4 bg-gray-50 rounded-xl space-y-3">
+              <div v-if="evenement.contact_email" class="flex items-center gap-3">
+                <font-awesome-icon icon="fa-solid fa-envelope" class="text-custom-chocolat w-5 text-center shrink-0" />
+                <a :href="`mailto:${evenement.contact_email}`" class="text-sm text-custom-green hover:underline">
+                  {{ evenement.contact_email }}
+                </a>
+              </div>
+              <div v-if="evenement.contact_telephone" class="flex items-center gap-3">
+                <font-awesome-icon icon="fa-solid fa-phone" class="text-custom-chocolat w-5 text-center shrink-0" />
+                <a :href="`tel:${evenement.contact_telephone}`" class="text-sm text-custom-green hover:underline">
+                  {{ evenement.contact_telephone }}
+                </a>
+              </div>
+              <div v-if="evenement.contact_site_web" class="flex items-center gap-3">
+                <font-awesome-icon icon="fa-solid fa-globe" class="text-custom-chocolat w-5 text-center shrink-0" />
+                <a :href="evenement.contact_site_web" target="_blank" rel="noopener noreferrer" class="text-sm text-custom-green hover:underline">
+                  {{ evenement.contact_site_web }}
+                  <font-awesome-icon icon="fa-solid fa-arrow-up-right-from-square" class="ml-1 text-xs" />
+                </a>
               </div>
             </div>
           </div>
@@ -372,6 +415,11 @@ const labelStatut = computed(() => {
     case 'annule': return 'Annulé'
     default: return evenement.value?.statut || ''
   }
+})
+
+const aContact = computed(() => {
+  const e = evenement.value
+  return !!(e?.contact_email || e?.contact_telephone || e?.contact_site_web)
 })
 
 const handleInscription = async () => {

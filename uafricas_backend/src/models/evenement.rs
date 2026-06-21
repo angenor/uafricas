@@ -11,6 +11,8 @@ pub const EVENEMENT_COLONNES: &str =
      e.date_heure_debut, e.date_heure_fin,
      e.image_couverture_url, e.format::text AS format,
      e.lien_en_ligne, e.langue, e.nombre_places,
+     e.type_organisateur::text AS type_organisateur,
+     e.contact_nom, e.contact_email, e.contact_telephone, e.contact_site_web,
      e.etat, e.cree_par, e.created_at, e.updated_at";
 
 /// Representation d'un evenement en base de donnees
@@ -31,6 +33,11 @@ pub struct EvenementRow {
     pub lien_en_ligne: Option<String>,
     pub langue: String,
     pub nombre_places: Option<i32>,
+    pub type_organisateur: String,
+    pub contact_nom: Option<String>,
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_site_web: Option<String>,
     pub etat: String,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
@@ -89,9 +96,16 @@ pub struct EvenementDetailResponse {
     pub couverture_url: Option<String>,
     pub lien_en_ligne: Option<String>,
     pub statut: String,
+    /// Etat brut du cycle de vie (brouillon/publie/annule/termine/suspendu) — utile a l'organisateur.
+    pub etat: String,
     pub nombre_places: Option<i32>,
     pub nombre_inscrits: i64,
     pub est_inscrit: bool,
+    pub type_organisateur: String,
+    pub contact_nom: Option<String>,
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_site_web: Option<String>,
     pub user: OrganisateurResponse,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -115,6 +129,41 @@ pub struct EvenementListeResponse {
     pub page: i64,
     pub par_page: i64,
     pub total_pages: i64,
+}
+
+/// Corps de modification d'un evenement par son organisateur (membre).
+/// Tous les champs sont optionnels : seuls les champs fournis (Some) sont mis a jour.
+#[derive(Debug, Deserialize)]
+pub struct ModifierMonEvenementRequest {
+    pub titre: Option<String>,
+    pub description: Option<String>,
+    /// Format au format frontend ("En ligne"/"En présentiel"/"Hybride") ou DB.
+    #[serde(rename = "type")]
+    pub type_format: Option<String>,
+    /// Nom du territoire (resolu en pays_id).
+    pub pays: Option<String>,
+    pub ville: Option<String>,
+    pub adresse: Option<String>,
+    pub date_heure_debut: Option<String>,
+    pub date_heure_fin: Option<String>,
+    pub lien_en_ligne: Option<String>,
+    pub nombre_places: Option<i32>,
+    pub type_organisateur: Option<String>,
+    pub contact_nom: Option<String>,
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_site_web: Option<String>,
+}
+
+/// DTO inscrit a un evenement (vue organisateur).
+#[derive(Debug, Serialize, FromRow)]
+pub struct InscritEvenementResponse {
+    pub utilisateur_id: Uuid,
+    pub nom: String,
+    pub prenom: Option<String>,
+    pub email: String,
+    pub statut: String,
+    pub created_at: DateTime<Utc>,
 }
 
 /// Parametres de requete pour le listing
