@@ -23,7 +23,8 @@ pub const ADMIN_UTILISATEUR_DETAIL_COLONNES: &str =
      u.genre::text AS genre, u.date_naissance, u.fonction, u.localite, u.ville,
      u.pays_origine_id, u.pays_residence_id, u.organisation_id,
      u.biographie, u.etat::text AS etat, u.email_verifie, u.telephone_verifie,
-     u.double_facteur_active, u.documents_verifie, u.bibliotheque_humain,
+     u.double_facteur_active, u.documents_verifie, u.compte_verifie_admin,
+     u.bibliotheque_humain,
      u.langue_preferee, u.derniere_connexion,
      u.created_at, u.updated_at";
 
@@ -72,6 +73,7 @@ pub struct AdminUtilisateurDetailRow {
     pub telephone_verifie: bool,
     pub double_facteur_active: bool,
     pub documents_verifie: bool,
+    pub compte_verifie_admin: bool,
     pub bibliotheque_humain: bool,
     pub langue_preferee: String,
     pub derniere_connexion: Option<DateTime<Utc>>,
@@ -118,6 +120,7 @@ pub struct AdminUtilisateurDetailResponse {
     pub telephone_verifie: bool,
     pub double_facteur_active: bool,
     pub documents_verifie: bool,
+    pub compte_verifie_admin: bool,
     pub bibliotheque_humain: bool,
     pub langue_preferee: String,
     pub derniere_connexion: Option<DateTime<Utc>>,
@@ -197,6 +200,11 @@ pub struct ModifierUtilisateurRequest {
 #[derive(Debug, Deserialize)]
 pub struct ChangerEtatRequest {
     pub etat: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ValiderCompteAdminRequest {
+    pub compte_verifie_admin: bool,
 }
 
 #[derive(Debug, Deserialize)]

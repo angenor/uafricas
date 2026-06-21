@@ -205,6 +205,7 @@ export interface AdminUtilisateurDetail {
   telephone_verifie: boolean
   double_facteur_active: boolean
   documents_verifie: boolean
+  compte_verifie_admin: boolean
   bibliotheque_humain: boolean
   langue_preferee: string
   derniere_connexion: string | null

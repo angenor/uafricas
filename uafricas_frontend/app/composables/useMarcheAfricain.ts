@@ -9,6 +9,12 @@ export interface AnnonceAuteurAPI {
   nom: string
   prenom: string
   email: string
+  /** Numero de telephone verifie par OTP */
+  telephone_verifie?: boolean
+  /** Piece d'identite verifiee */
+  documents_verifie?: boolean
+  /** Compte valide/actif par l'administration */
+  compte_valide?: boolean
 }
 
 /** Media d'une annonce */
@@ -62,6 +68,12 @@ export interface AnnonceDetailAPI {
   latitude: number | null
   type_contact: string
   contact_info: string | null
+  type_annonceur: string
+  nom_entreprise: string | null
+  contact_telephone: string | null
+  contact_email: string | null
+  contact_adresse: string | null
+  site_web_url: string | null
   quantite: number | null
   nombre_vues: number
   medias: AnnonceMediaAPI[]
@@ -127,6 +139,7 @@ export interface PaysAPI {
   nom: string
   code_iso2?: string | null
   code_iso3?: string | null
+  continent?: string | null
 }
 
 /** Résultat d'un contact d'annonce */
@@ -160,6 +173,12 @@ export interface CreerAnnonceForm {
   quantite?: number
   paysIds: string[]
   photos: File[]
+  typeAnnonceur?: 'particulier' | 'entreprise'
+  nomEntreprise?: string
+  contactTelephone?: string
+  contactEmail?: string
+  contactAdresse?: string
+  siteWebUrl?: string
 }
 
 /** Reponse API standardisee */
@@ -319,6 +338,12 @@ export const useMarcheAfricain = () => {
     if (form.latitude != null) fd.set('latitude', String(form.latitude))
     if (form.quantite != null) fd.set('quantite', String(form.quantite))
     if (form.paysIds && form.paysIds.length > 0) fd.set('pays_ids', form.paysIds.join(','))
+    if (form.typeAnnonceur) fd.set('type_annonceur', form.typeAnnonceur)
+    if (form.nomEntreprise) fd.set('nom_entreprise', form.nomEntreprise)
+    if (form.contactTelephone) fd.set('contact_telephone', form.contactTelephone)
+    if (form.contactEmail) fd.set('contact_email', form.contactEmail)
+    if (form.contactAdresse) fd.set('contact_adresse', form.contactAdresse)
+    if (form.siteWebUrl) fd.set('site_web_url', form.siteWebUrl)
     if (form.photos) {
       for (const photo of form.photos) fd.append('photos', photo)
     }

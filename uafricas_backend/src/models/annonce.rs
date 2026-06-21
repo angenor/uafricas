@@ -20,6 +20,9 @@ pub const ANNONCE_LISTE_COLONNES: &str =
      a.created_at, a.updated_at,
      c.nom AS categorie_nom,
      u.nom AS auteur_nom, u.prenom AS auteur_prenom, u.email AS auteur_email,
+     u.telephone_verifie AS auteur_telephone_verifie,
+     u.documents_verifie AS auteur_documents_verifie,
+     u.compte_verifie_admin AS auteur_compte_verifie_admin,
      (SELECT am.media_url FROM marketplace.annonce_media am
       WHERE am.annonce_id = a.id AND am.est_principale = TRUE
       LIMIT 1) AS photo_url,
@@ -55,6 +58,9 @@ pub struct AnnonceListeRow {
     pub auteur_nom: String,
     pub auteur_prenom: String,
     pub auteur_email: String,
+    pub auteur_telephone_verifie: Option<bool>,
+    pub auteur_documents_verifie: Option<bool>,
+    pub auteur_compte_verifie_admin: Option<bool>,
     pub photo_url: Option<String>,
     pub pays_nom: Option<String>,
 }
@@ -79,6 +85,12 @@ pub struct AnnonceDetailRow {
     pub latitude: Option<f64>,
     pub type_contact: Option<String>,
     pub contact_info: Option<String>,
+    pub type_annonceur: Option<String>,
+    pub nom_entreprise: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_email: Option<String>,
+    pub contact_adresse: Option<String>,
+    pub site_web_url: Option<String>,
     pub quantite: Option<i32>,
     pub nombre_vues: i32,
     pub cree_par: Uuid,
@@ -89,6 +101,9 @@ pub struct AnnonceDetailRow {
     pub auteur_nom: String,
     pub auteur_prenom: String,
     pub auteur_email: String,
+    pub auteur_telephone_verifie: Option<bool>,
+    pub auteur_documents_verifie: Option<bool>,
+    pub auteur_compte_verifie_admin: Option<bool>,
 }
 
 /// Colonnes SELECT pour le detail d'une annonce
@@ -100,10 +115,15 @@ pub const ANNONCE_DETAIL_COLONNES: &str =
      a.prix_negociable, a.ville, a.adresse,
      a.longitude::float8 AS longitude, a.latitude::float8 AS latitude,
      a.type_contact::text AS type_contact, a.contact_info,
+     a.type_annonceur::text AS type_annonceur, a.nom_entreprise,
+     a.contact_telephone, a.contact_email, a.contact_adresse, a.site_web_url,
      a.quantite, a.nombre_vues, a.cree_par,
      a.created_at, a.updated_at,
      c.nom AS categorie_nom,
-     u.nom AS auteur_nom, u.prenom AS auteur_prenom, u.email AS auteur_email";
+     u.nom AS auteur_nom, u.prenom AS auteur_prenom, u.email AS auteur_email,
+     u.telephone_verifie AS auteur_telephone_verifie,
+     u.documents_verifie AS auteur_documents_verifie,
+     u.compte_verifie_admin AS auteur_compte_verifie_admin";
 
 // ── Rows pour les relations ──────────────────────────────────
 
@@ -132,6 +152,12 @@ pub struct AnnonceAuteurResponse {
     pub nom: String,
     pub prenom: String,
     pub email: String,
+    /// Numero de telephone verifie par OTP
+    pub telephone_verifie: bool,
+    /// Piece d'identite verifiee
+    pub documents_verifie: bool,
+    /// Compte valide/actif par l'administration
+    pub compte_valide: bool,
 }
 
 /// DTO media dans la reponse detail
@@ -188,6 +214,16 @@ pub struct AnnonceDetailResponse {
     pub latitude: Option<f64>,
     pub type_contact: String,
     pub contact_info: Option<String>,
+    /// 'particulier' ou 'entreprise'
+    pub type_annonceur: String,
+    /// Nom de l'entreprise (si type_annonceur = entreprise)
+    pub nom_entreprise: Option<String>,
+    /// Coordonnées publiques — renseignées uniquement pour une entreprise
+    pub contact_telephone: Option<String>,
+    pub contact_email: Option<String>,
+    pub contact_adresse: Option<String>,
+    /// Site web ou page réseau social (facultatif)
+    pub site_web_url: Option<String>,
     pub quantite: Option<i32>,
     pub nombre_vues: i32,
     pub medias: Vec<AnnonceMediaResponse>,
@@ -228,6 +264,9 @@ pub const MES_ANNONCES_COLONNES: &str =
      a.created_at, a.updated_at,
      c.nom AS categorie_nom,
      u.nom AS auteur_nom, u.prenom AS auteur_prenom, u.email AS auteur_email,
+     u.telephone_verifie AS auteur_telephone_verifie,
+     u.documents_verifie AS auteur_documents_verifie,
+     u.compte_verifie_admin AS auteur_compte_verifie_admin,
      (SELECT am.media_url FROM marketplace.annonce_media am
       WHERE am.annonce_id = a.id AND am.est_principale = TRUE
       LIMIT 1) AS photo_url,
@@ -262,6 +301,9 @@ pub struct MesAnnonceRow {
     pub auteur_nom: String,
     pub auteur_prenom: String,
     pub auteur_email: String,
+    pub auteur_telephone_verifie: Option<bool>,
+    pub auteur_documents_verifie: Option<bool>,
+    pub auteur_compte_verifie_admin: Option<bool>,
     pub photo_url: Option<String>,
     pub pays_nom: Option<String>,
     pub nombre_medias: i64,
@@ -319,6 +361,9 @@ impl MesAnnonceRow {
                 nom: self.auteur_nom.clone(),
                 prenom: self.auteur_prenom.clone(),
                 email: self.auteur_email.clone(),
+                telephone_verifie: self.auteur_telephone_verifie.unwrap_or(false),
+                documents_verifie: self.auteur_documents_verifie.unwrap_or(false),
+                compte_valide: self.auteur_compte_verifie_admin.unwrap_or(false),
             },
             created_at: self.created_at,
             updated_at: self.updated_at,
@@ -410,6 +455,9 @@ impl AnnonceListeRow {
                 nom: self.auteur_nom.clone(),
                 prenom: self.auteur_prenom.clone(),
                 email: self.auteur_email.clone(),
+                telephone_verifie: self.auteur_telephone_verifie.unwrap_or(false),
+                documents_verifie: self.auteur_documents_verifie.unwrap_or(false),
+                compte_valide: self.auteur_compte_verifie_admin.unwrap_or(false),
             },
             created_at: self.created_at,
             updated_at: self.updated_at,
@@ -429,6 +477,8 @@ impl AnnonceDetailRow {
             .find(|m| m.est_principale)
             .map(|m| m.media_url.clone())
             .or_else(|| medias.first().map(|m| m.media_url.clone()));
+
+        let est_entreprise = self.type_annonceur.as_deref() == Some("entreprise");
 
         AnnonceDetailResponse {
             id: self.id,
@@ -450,6 +500,16 @@ impl AnnonceDetailRow {
             latitude: self.latitude,
             type_contact: self.type_contact.clone().unwrap_or_else(|| "email".to_string()),
             contact_info: self.contact_info.clone(),
+            type_annonceur: self
+                .type_annonceur
+                .clone()
+                .unwrap_or_else(|| "particulier".to_string()),
+            nom_entreprise: self.nom_entreprise.clone(),
+            // Confidentialité : coordonnées publiques exposées uniquement pour une entreprise.
+            contact_telephone: if est_entreprise { self.contact_telephone.clone() } else { None },
+            contact_email: if est_entreprise { self.contact_email.clone() } else { None },
+            contact_adresse: if est_entreprise { self.contact_adresse.clone() } else { None },
+            site_web_url: self.site_web_url.clone(),
             quantite: self.quantite,
             nombre_vues: self.nombre_vues,
             medias,
@@ -459,6 +519,9 @@ impl AnnonceDetailRow {
                 nom: self.auteur_nom.clone(),
                 prenom: self.auteur_prenom.clone(),
                 email: self.auteur_email.clone(),
+                telephone_verifie: self.auteur_telephone_verifie.unwrap_or(false),
+                documents_verifie: self.auteur_documents_verifie.unwrap_or(false),
+                compte_valide: self.auteur_compte_verifie_admin.unwrap_or(false),
             },
             created_at: self.created_at,
             updated_at: self.updated_at,

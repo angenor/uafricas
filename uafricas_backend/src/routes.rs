@@ -39,6 +39,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/utilisateurs/{id}", web::put().to(admin::utilisateurs::modifier_utilisateur))
                     .route("/utilisateurs/{id}", web::delete().to(admin::utilisateurs::supprimer_utilisateur))
                     .route("/utilisateurs/{id}/etat", web::patch().to(admin::utilisateurs::changer_etat_utilisateur))
+                    .route("/utilisateurs/{id}/compte-verifie-admin", web::patch().to(admin::utilisateurs::valider_compte_admin))
                     .route("/utilisateurs/{id}/roles", web::post().to(admin::utilisateurs::assigner_role))
                     .route("/utilisateurs/{id}/roles/{role_id}", web::delete().to(admin::utilisateurs::retirer_role))
                     .route("/utilisateurs/{id}/specialites", web::post().to(admin::utilisateurs::assigner_specialite))

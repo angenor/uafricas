@@ -139,21 +139,133 @@
       />
     </div>
 
+    <!-- Type d'annonceur -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-2">Vous publiez en tant que</label>
+      <div class="grid grid-cols-2 gap-3">
+        <label
+          class="flex items-start gap-2 p-3 rounded-xl border cursor-pointer transition-all"
+          :class="form.typeAnnonceur === 'particulier'
+            ? 'border-custom-green bg-custom-green/5'
+            : 'border-gray-200 hover:bg-gray-50'"
+        >
+          <input type="radio" value="particulier" v-model="form.typeAnnonceur" class="mt-0.5 accent-custom-green" />
+          <span>
+            <span class="block text-sm font-medium text-gray-800">En mon nom propre</span>
+            <span class="block text-xs text-gray-500">Contact révélé sur demande</span>
+          </span>
+        </label>
+        <label
+          class="flex items-start gap-2 p-3 rounded-xl border cursor-pointer transition-all"
+          :class="form.typeAnnonceur === 'entreprise'
+            ? 'border-custom-green bg-custom-green/5'
+            : 'border-gray-200 hover:bg-gray-50'"
+        >
+          <input type="radio" value="entreprise" v-model="form.typeAnnonceur" class="mt-0.5 accent-custom-green" />
+          <span>
+            <span class="block text-sm font-medium text-gray-800">Au nom d'une entreprise</span>
+            <span class="block text-xs text-gray-500">Coordonnées affichées publiquement</span>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Coordonnées de l'entreprise (affichées publiquement) -->
+    <div v-if="form.typeAnnonceur === 'entreprise'" class="space-y-3 p-4 rounded-xl border border-gray-200 bg-gray-50">
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Nom de l'entreprise <span class="text-red-500">*</span></label>
+        <input
+          v-model="form.nomEntreprise"
+          type="text"
+          maxlength="200"
+          placeholder="Ex : Sahel Distribution SARL"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+        />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Téléphone</label>
+          <input
+            v-model="form.contactTelephone"
+            type="tel"
+            maxlength="30"
+            placeholder="+221 ..."
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">E-mail</label>
+          <input
+            v-model="form.contactEmail"
+            type="email"
+            maxlength="255"
+            placeholder="contact@entreprise.com"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+          />
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Adresse</label>
+        <input
+          v-model="form.contactAdresse"
+          type="text"
+          maxlength="300"
+          placeholder="Adresse de l'entreprise"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+        />
+      </div>
+    </div>
+
+    <!-- Site web ou page réseau social (facultatif) -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-2">Site web ou page réseau social <span class="text-gray-400 font-normal">(facultatif)</span></label>
+      <input
+        v-model="form.siteWebUrl"
+        type="url"
+        maxlength="500"
+        placeholder="https://..."
+        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+      />
+    </div>
+
     <!-- Territoires ciblés -->
     <div>
       <label class="block text-sm font-semibold text-gray-700 mb-2">Territoires ciblés</label>
-      <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 border border-gray-200 rounded-xl">
-        <label
-          v-for="terr in territoires"
-          :key="terr.id"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
-          :class="form.paysIds.includes(terr.id)
-            ? 'bg-custom-green text-white'
-            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-        >
-          <input type="checkbox" class="hidden" :value="terr.id" v-model="form.paysIds" />
-          {{ terr.nom }}
-        </label>
+      <div class="space-y-3 max-h-72 overflow-y-auto p-3 border border-gray-200 rounded-xl">
+        <!-- Bloc Afrique -->
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-custom-green mb-2">Afrique</p>
+          <div class="flex flex-wrap gap-2">
+            <label
+              v-for="terr in territoiresAfrique"
+              :key="terr.id"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
+              :class="form.paysIds.includes(terr.id)
+                ? 'bg-custom-green text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            >
+              <input type="checkbox" class="hidden" :value="terr.id" v-model="form.paysIds" />
+              {{ terr.nom }}
+            </label>
+          </div>
+        </div>
+        <!-- Bloc hors Afrique -->
+        <div class="pt-2 border-t border-gray-100">
+          <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Hors Afrique</p>
+          <div class="flex flex-wrap gap-2">
+            <label
+              v-for="terr in territoiresHorsAfrique"
+              :key="terr.id"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
+              :class="form.paysIds.includes(terr.id)
+                ? 'bg-custom-green text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            >
+              <input type="checkbox" class="hidden" :value="terr.id" v-model="form.paysIds" />
+              {{ terr.nom }}
+            </label>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -269,6 +381,8 @@ const { listerCategories, listerTerritoires, creerAnnonce, modifierAnnonce, supp
 
 const categories = ref<CategorieAnnonceAPI[]>([])
 const territoires = ref<PaysAPI[]>([])
+const territoiresAfrique = computed(() => territoires.value.filter(t => t.continent === 'Afrique'))
+const territoiresHorsAfrique = computed(() => territoires.value.filter(t => t.continent !== 'Afrique'))
 const photosExistantes = ref<AnnonceMediaAPI[]>([])
 const apercus = ref<string[]>([])
 const nouvellesPhotos = ref<File[]>([])
@@ -298,6 +412,12 @@ const form = reactive<CreerAnnonceForm>({
   quantite: props.annonce?.quantite ?? 1,
   paysIds: [],
   photos: [],
+  typeAnnonceur: (props.annonce?.type_annonceur as 'particulier' | 'entreprise') ?? 'particulier',
+  nomEntreprise: props.annonce?.nom_entreprise ?? '',
+  contactTelephone: props.annonce?.contact_telephone ?? '',
+  contactEmail: props.annonce?.contact_email ?? '',
+  contactAdresse: props.annonce?.contact_adresse ?? '',
+  siteWebUrl: props.annonce?.site_web_url ?? '',
 })
 
 const totalPhotos = computed(() => photosExistantes.value.length + nouvellesPhotos.value.length)
@@ -361,6 +481,14 @@ const valider = (): boolean => {
   }
   if (props.mode === 'creation' && nouvellesPhotos.value.length === 0) {
     erreurForm.value = 'Au moins une photo est requise.'
+    return false
+  }
+  if (form.typeAnnonceur === 'entreprise' && !form.nomEntreprise?.trim()) {
+    erreurForm.value = "Le nom de l'entreprise est requis."
+    return false
+  }
+  if (form.siteWebUrl?.trim() && !/^https?:\/\//i.test(form.siteWebUrl.trim())) {
+    erreurForm.value = 'Le lien doit commencer par http:// ou https://.'
     return false
   }
   return true

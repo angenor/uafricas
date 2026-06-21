@@ -35,6 +35,7 @@ const CONTENU_MESSAGE_MAX: usize = 2000;
 const MAX_PHOTOS_ANNONCE: usize = 5;
 const TYPES_OPERATION_MEMBRE: &[&str] = &["vente", "troc", "don"];
 const CONDITIONS_VALIDES: &[&str] = &["neuf", "occasion", "reconditionne", "non_applicable"];
+const TYPES_ANNONCEUR_VALIDES: &[&str] = &["particulier", "entreprise"];
 
 /// Extraire l'utilisateur connecté depuis le header Authorization (JWT Bearer).
 /// Un JWT n'est émis qu'aux comptes `actif` → garantit FR-007 (D1).
@@ -52,6 +53,27 @@ fn utilisateur_courant(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
 }
 
 /// Génère un slug à partir d'un titre (même logique que l'admin).
+/// Trim une chaîne optionnelle et renvoie None si vide.
+fn nettoyer_opt(valeur: &Option<String>) -> Option<String> {
+    valeur
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+}
+
+/// Valide un lien web optionnel : doit commencer par http:// ou https://.
+fn valider_lien_web_opt(url: Option<&str>) -> Result<(), ApiErreur> {
+    if let Some(u) = url {
+        if !(u.starts_with("http://") || u.starts_with("https://")) {
+            return Err(ApiErreur::Validation(
+                "Le lien (site web ou réseau social) doit commencer par http:// ou https://".to_string(),
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn generer_slug(titre: &str) -> String {
     titre
         .trim()
@@ -379,6 +401,12 @@ struct ChampsAnnonce {
     latitude: Option<f64>,
     quantite: Option<i32>,
     pays_ids: Vec<Uuid>,
+    type_annonceur: Option<String>,
+    nom_entreprise: Option<String>,
+    contact_telephone: Option<String>,
+    contact_email: Option<String>,
+    contact_adresse: Option<String>,
+    site_web_url: Option<String>,
 }
 
 /// Parse un multipart d'annonce : champs texte + fichiers `photos[]`.
@@ -440,6 +468,12 @@ async fn parser_multipart_annonce(
             "longitude" => champs.longitude = valeur.parse::<f64>().ok(),
             "latitude" => champs.latitude = valeur.parse::<f64>().ok(),
             "quantite" => champs.quantite = valeur.parse::<i32>().ok(),
+            "type_annonceur" => champs.type_annonceur = Some(valeur.to_lowercase()),
+            "nom_entreprise" => champs.nom_entreprise = Some(valeur),
+            "contact_telephone" => champs.contact_telephone = Some(valeur),
+            "contact_email" => champs.contact_email = Some(valeur),
+            "contact_adresse" => champs.contact_adresse = Some(valeur),
+            "site_web_url" => champs.site_web_url = Some(valeur),
             "pays_ids" | "pays_ids[]" => {
                 for part in valeur.split(',') {
                     if let Ok(id) = Uuid::parse_str(part.trim()) {
@@ -689,6 +723,33 @@ pub async fn creer_annonce_membre(
         return Err(ApiErreur::Validation("Catégorie inconnue".to_string()));
     }
 
+    // Type d'annonceur (nom propre vs entreprise) + coordonnées publiques
+    let type_annonceur = champs.type_annonceur.as_deref().unwrap_or("particulier");
+    if !TYPES_ANNONCEUR_VALIDES.contains(&type_annonceur) {
+        return Err(ApiErreur::Validation(
+            "Type d'annonceur invalide (particulier ou entreprise)".to_string(),
+        ));
+    }
+    let est_entreprise = type_annonceur == "entreprise";
+    let nom_entreprise = nettoyer_opt(&champs.nom_entreprise);
+    if est_entreprise && nom_entreprise.is_none() {
+        return Err(ApiErreur::Validation(
+            "Le nom de l'entreprise est requis".to_string(),
+        ));
+    }
+    // Coordonnées publiques uniquement pour une entreprise
+    let (contact_tel, contact_email, contact_adresse) = if est_entreprise {
+        (
+            nettoyer_opt(&champs.contact_telephone),
+            nettoyer_opt(&champs.contact_email),
+            nettoyer_opt(&champs.contact_adresse),
+        )
+    } else {
+        (None, None, None)
+    };
+    let site_web_url = nettoyer_opt(&champs.site_web_url);
+    valider_lien_web_opt(site_web_url.as_deref())?;
+
     let slug = format!("{}-{}", generer_slug(titre), &Uuid::new_v4().to_string()[..8]);
     let id = Uuid::new_v4();
     let prix = if type_op == "vente" { champs.prix } else { None };
@@ -697,11 +758,14 @@ pub async fn creer_annonce_membre(
         "INSERT INTO marketplace.annonce
          (id, titre, slug, description, type_operation, categorie_id, condition_article,
           prix, devise, prix_negociable, ville, adresse, longitude, latitude,
-          type_contact, quantite, etat, cree_par)
+          type_contact, quantite, etat, cree_par,
+          type_annonceur, nom_entreprise, contact_telephone, contact_email,
+          contact_adresse, site_web_url)
          VALUES ($1, $2, $3, $4, $5::marketplace.type_operation, $6,
                  $7::marketplace.condition_article, $8, $9, $10, $11, $12, $13, $14,
                  'messagerie_plateforme'::marketplace.type_contact, $15,
-                 'publiee'::marketplace.etat_annonce, $16)",
+                 'publiee'::marketplace.etat_annonce, $16,
+                 $17::marketplace.type_annonceur, $18, $19, $20, $21, $22)",
     )
     .bind(id)
     .bind(titre)
@@ -719,6 +783,12 @@ pub async fn creer_annonce_membre(
     .bind(champs.latitude)
     .bind(champs.quantite.unwrap_or(1).max(1))
     .bind(moi)
+    .bind(type_annonceur)
+    .bind(nom_entreprise.as_deref())
+    .bind(contact_tel.as_deref())
+    .bind(contact_email.as_deref())
+    .bind(contact_adresse.as_deref())
+    .bind(site_web_url.as_deref())
     .execute(pool.get_ref())
     .await?;
 
@@ -1007,6 +1077,52 @@ pub async fn modifier_annonce_membre(
     if let Some(ref adresse) = champs.adresse {
         sets.push(format!("adresse = ${}", idx));
         binds_str.push(adresse.trim().to_string());
+        idx += 1;
+    }
+    // Type d'annonceur + coordonnées publiques (binds chaîne → avant le bind UUID)
+    let bascule_particulier = champs.type_annonceur.as_deref() == Some("particulier");
+    if let Some(ref ta) = champs.type_annonceur {
+        if !TYPES_ANNONCEUR_VALIDES.contains(&ta.as_str()) {
+            return Err(ApiErreur::Validation(
+                "Type d'annonceur invalide (particulier ou entreprise)".to_string(),
+            ));
+        }
+        sets.push(format!("type_annonceur = ${}::marketplace.type_annonceur", idx));
+        binds_str.push(ta.clone());
+        idx += 1;
+    }
+    if bascule_particulier {
+        // En nom propre : on efface le nom d'entreprise et les coordonnées publiques.
+        sets.push("nom_entreprise = NULL".to_string());
+        sets.push("contact_telephone = NULL".to_string());
+        sets.push("contact_email = NULL".to_string());
+        sets.push("contact_adresse = NULL".to_string());
+    } else {
+        if let Some(v) = nettoyer_opt(&champs.nom_entreprise) {
+            sets.push(format!("nom_entreprise = ${}", idx));
+            binds_str.push(v);
+            idx += 1;
+        }
+        if let Some(v) = nettoyer_opt(&champs.contact_telephone) {
+            sets.push(format!("contact_telephone = ${}", idx));
+            binds_str.push(v);
+            idx += 1;
+        }
+        if let Some(v) = nettoyer_opt(&champs.contact_email) {
+            sets.push(format!("contact_email = ${}", idx));
+            binds_str.push(v);
+            idx += 1;
+        }
+        if let Some(v) = nettoyer_opt(&champs.contact_adresse) {
+            sets.push(format!("contact_adresse = ${}", idx));
+            binds_str.push(v);
+            idx += 1;
+        }
+    }
+    if let Some(v) = nettoyer_opt(&champs.site_web_url) {
+        valider_lien_web_opt(Some(&v))?;
+        sets.push(format!("site_web_url = ${}", idx));
+        binds_str.push(v);
         idx += 1;
     }
     if let Some(cat_id) = champs.categorie_id {

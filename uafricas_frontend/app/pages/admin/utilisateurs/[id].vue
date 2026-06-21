@@ -7,7 +7,7 @@ const id = route.params.id as string
 
 const {
   utilisateurDetail, loading, error,
-  chargerDetail, modifier, changerEtat,
+  chargerDetail, modifier, changerEtat, validerCompteAdmin,
   assignerRole, retirerRole,
   assignerSpecialite, retirerSpecialite,
   ajouterPermission, retirerPermission,
@@ -85,6 +85,18 @@ const executerChangementEtat = async () => {
   try {
     await changerEtat(id, nouvelEtat.value)
     showEtatModal.value = false
+    await charger()
+  }
+  catch (e: any) {
+    erreurLocale.value = e?.data?.error || e?.message || 'Erreur'
+  }
+}
+
+const basculerValidationCompte = async () => {
+  if (!utilisateurDetail.value) return
+  erreurLocale.value = null
+  try {
+    await validerCompteAdmin(id, !utilisateurDetail.value.compte_verifie_admin)
     await charger()
   }
   catch (e: any) {
@@ -175,6 +187,14 @@ onMounted(() => charger())
             <font-awesome-icon icon="check" class="mr-1" />
             Activer
           </button>
+          <button
+            class="btn btn-sm"
+            :class="utilisateurDetail.compte_verifie_admin ? 'btn-outline btn-error' : 'btn-success'"
+            @click="basculerValidationCompte"
+          >
+            <font-awesome-icon :icon="utilisateurDetail.compte_verifie_admin ? 'xmark' : 'user-shield'" class="mr-1" />
+            {{ utilisateurDetail.compte_verifie_admin ? 'Retirer la validation' : 'Valider le compte' }}
+          </button>
         </template>
       </template>
     </AdminPageHeader>
@@ -196,6 +216,10 @@ onMounted(() => charger())
           <p class="text-sm text-base-content/60">{{ utilisateurDetail.email }}</p>
           <div class="flex gap-2 mt-1">
             <AdminStatusBadge :statut="utilisateurDetail.etat" />
+            <span v-if="utilisateurDetail.compte_verifie_admin" class="badge badge-xs badge-success gap-1">
+              <font-awesome-icon icon="user-shield" />
+              Compte validé
+            </span>
             <span v-for="r in utilisateurDetail.roles" :key="r.id" class="badge badge-xs badge-outline">{{ r.slug }}</span>
           </div>
         </div>

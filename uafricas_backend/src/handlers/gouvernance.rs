@@ -469,11 +469,12 @@ pub struct PaysPublicRow {
     pub nom: String,
     pub code_iso2: Option<String>,
     pub code_iso3: Option<String>,
+    pub continent: String,
 }
 
 pub async fn lister_pays_public(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
     let rows = sqlx::query_as::<_, PaysPublicRow>(
-        "SELECT id, nom, code_iso2, code_iso3
+        "SELECT id, nom, code_iso2, code_iso3, continent
          FROM shared.pays
          WHERE actif = TRUE
          ORDER BY nom ASC",

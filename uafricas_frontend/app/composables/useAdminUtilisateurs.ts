@@ -63,6 +63,14 @@ export const useAdminUtilisateurs = () => {
     return response.data
   }
 
+  const validerCompteAdmin = async (id: string, compteVerifieAdmin: boolean) => {
+    const response = await adminFetch<ApiResponse<{ id: string; compte_verifie_admin: boolean }>>(
+      `/api/admin/utilisateurs/${id}/compte-verifie-admin`,
+      { method: 'PATCH', body: { compte_verifie_admin: compteVerifieAdmin } },
+    )
+    return response.data
+  }
+
   const supprimer = async (id: string) => {
     await adminFetch<ApiResponse<null>>(
       `/api/admin/utilisateurs/${id}`,
@@ -125,6 +133,7 @@ export const useAdminUtilisateurs = () => {
     creer,
     modifier,
     changerEtat,
+    validerCompteAdmin,
     supprimer,
     assignerRole,
     retirerRole,

@@ -141,6 +141,61 @@
                 <p class="text-sm text-gray-500">{{ annonce.user.email }}</p>
               </div>
             </div>
+
+            <!-- Badges de credibilite de l'annonceur -->
+            <div class="mt-4 flex flex-wrap gap-2">
+              <span
+                v-for="badge in badgesCredibilite"
+                :key="badge.cle"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border"
+                :class="badge.valide
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-red-50 text-red-600 border-red-200'"
+                :title="badge.valide ? badge.libelleValide : badge.libelleInvalide"
+              >
+                <font-awesome-icon :icon="['fas', badge.icone]" class="w-3.5 h-3.5" />
+                {{ badge.libelle }}
+                <font-awesome-icon
+                  :icon="['fas', badge.valide ? 'circle-check' : 'circle-xmark']"
+                  class="w-3.5 h-3.5"
+                />
+              </span>
+            </div>
+
+            <!-- Coordonnées publiques (annonceur entreprise) -->
+            <div
+              v-if="annonce.type_annonceur === 'entreprise'"
+              class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-2"
+            >
+              <p v-if="annonce.nom_entreprise" class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                <font-awesome-icon :icon="['fas', 'building']" class="w-4 h-4 text-custom-green" />
+                {{ annonce.nom_entreprise }}
+              </p>
+              <p v-if="annonce.contact_telephone" class="flex items-center gap-2 text-sm text-gray-600">
+                <font-awesome-icon :icon="['fas', 'phone']" class="w-4 h-4 text-gray-400" />
+                <a :href="`tel:${annonce.contact_telephone}`" class="hover:text-custom-green">{{ annonce.contact_telephone }}</a>
+              </p>
+              <p v-if="annonce.contact_email" class="flex items-center gap-2 text-sm text-gray-600">
+                <font-awesome-icon :icon="['fas', 'envelope']" class="w-4 h-4 text-gray-400" />
+                <a :href="`mailto:${annonce.contact_email}`" class="hover:text-custom-green">{{ annonce.contact_email }}</a>
+              </p>
+              <p v-if="annonce.contact_adresse" class="flex items-center gap-2 text-sm text-gray-600">
+                <font-awesome-icon :icon="['fas', 'location-dot']" class="w-4 h-4 text-gray-400" />
+                {{ annonce.contact_adresse }}
+              </p>
+            </div>
+
+            <!-- Site web ou page réseau social -->
+            <a
+              v-if="annonce.site_web_url"
+              :href="annonce.site_web_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-custom-green hover:underline"
+            >
+              <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="w-4 h-4" />
+              Site web / réseau social
+            </a>
           </div>
 
           <!-- Actions -->
@@ -312,6 +367,37 @@ const breadcrumbs = computed(() => [
   { label: 'Marché Africain', to: '/marche-africain' },
   { label: annonce.value?.titre || 'Détail', to: undefined },
 ])
+
+// Badges de credibilite de l'annonceur (vert = verifie, rouge = non verifie)
+const badgesCredibilite = computed(() => {
+  const u = annonce.value?.user
+  return [
+    {
+      cle: 'telephone',
+      icone: 'phone',
+      libelle: 'Téléphone',
+      valide: !!u?.telephone_verifie,
+      libelleValide: 'Numéro de téléphone validé par OTP',
+      libelleInvalide: 'Numéro de téléphone non validé',
+    },
+    {
+      cle: 'identite',
+      icone: 'id-card',
+      libelle: 'Identité',
+      valide: !!u?.documents_verifie,
+      libelleValide: "Pièce d'identité vérifiée",
+      libelleInvalide: "Pièce d'identité non vérifiée",
+    },
+    {
+      cle: 'compte',
+      icone: 'user-shield',
+      libelle: 'Compte validé',
+      valide: !!u?.compte_valide,
+      libelleValide: "Compte validé par l'administration",
+      libelleInvalide: "Compte non validé par l'administration",
+    },
+  ]
+})
 
 const paysAffiche = computed(() => {
   if (!annonce.value) return ''

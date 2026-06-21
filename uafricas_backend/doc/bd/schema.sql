@@ -79,7 +79,9 @@
 \ir schemas/04c_iam_verification_email.sql
 \ir schemas/04d_iam_note_expertise.sql
 \ir schemas/04e_iam_signalement_profil.sql
+\ir schemas/04f_iam_compte_verifie_admin.sql
 \ir schemas/05_marketplace.sql
+\ir schemas/05b_marketplace_annonceur.sql
 \ir schemas/06_exchange.sql
 \ir schemas/06b_exchange_candidatures.sql
 \ir schemas/06c_exchange_programme_champs_libres.sql
@@ -149,6 +151,7 @@
 \ir schemas/21_seed_facultes.sql
 \ir schemas/22_seed_experts.sql
 \ir schemas/30_seed_pays_africains.sql
+\ir schemas/33_seed_pays_monde.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

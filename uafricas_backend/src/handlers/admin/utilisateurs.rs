@@ -252,6 +252,7 @@ pub async fn obtenir_utilisateur(
         telephone_verifie: row.telephone_verifie,
         double_facteur_active: row.double_facteur_active,
         documents_verifie: row.documents_verifie,
+        compte_verifie_admin: row.compte_verifie_admin,
         bibliotheque_humain: row.bibliotheque_humain,
         langue_preferee: row.langue_preferee,
         derniere_connexion: row.derniere_connexion,
@@ -583,6 +584,71 @@ pub async fn changer_etat_utilisateur(
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "id": utilisateur_id, "etat": etat })),
+        error: None,
+    }))
+}
+
+/// PATCH /api/admin/utilisateurs/{id}/compte-verifie-admin
+/// Validation manuelle d'un compte par un administrateur (badge de crédibilité).
+pub async fn valider_compte_admin(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    body: web::Json<ValiderCompteAdminRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "utilisateur", "modifier");
+
+    let utilisateur_id = chemin.into_inner();
+    let verifie = body.compte_verifie_admin;
+
+    let result = sqlx::query(
+        "UPDATE iam.utilisateur
+         SET compte_verifie_admin = $1,
+             compte_verifie_admin_par = CASE WHEN $1 THEN $2 ELSE NULL END,
+             compte_verifie_admin_at  = CASE WHEN $1 THEN NOW() ELSE NULL END,
+             updated_at = NOW()
+         WHERE id = $3 AND deleted_at IS NULL",
+    )
+    .bind(verifie)
+    .bind(admin.id)
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(ApiErreur::NonTrouve("Utilisateur non trouve".into()));
+    }
+
+    log::info!(
+        "Admin {} a {} la validation du compte {}",
+        admin.id,
+        if verifie { "accordé" } else { "retiré" },
+        utilisateur_id
+    );
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "UPDATE",
+        "iam",
+        "utilisateur",
+        Some(utilisateur_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({
+            "id": utilisateur_id,
+            "compte_verifie_admin": verifie
+        })),
         error: None,
     }))
 }
