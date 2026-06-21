@@ -115,6 +115,15 @@
                   {{ domaine.label }}
                 </option>
               </select>
+
+              <!-- Précision du domaine si "Autre" -->
+              <input
+                v-if="form.domaine === 'autre'"
+                v-model="form.domainePrecision"
+                type="text"
+                class="w-full border-2 rounded-md p-2 mt-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
+                placeholder="Précisez le domaine d'intervention"
+              />
             </div>
 
             <!-- Pays & Ville -->
@@ -289,6 +298,20 @@
                 </div>
               </div>
 
+              <!-- Statut légal de l'organisation -->
+              <div class="mb-4">
+                <label for="statut-legal" class="block text-sm font-medium text-gray-700 mb-1">
+                  Statut légal de l'organisation
+                </label>
+                <input
+                  id="statut-legal"
+                  v-model="form.statutLegal"
+                  type="text"
+                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
+                  placeholder="Ex: SARL, Association loi 1901, ONG, Établissement public…"
+                />
+              </div>
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label for="org-nom" class="block text-sm font-medium text-gray-700 mb-1">
@@ -426,8 +449,11 @@ const TYPES_SELECTION = [
   { value: 'hors_afrique', label: 'Hors Afrique vers Afrique', icon: 'plane-arrival' }
 ]
 
-// Constantes sans l'option "Tous" pour le formulaire
-const DOMAINES_FORM = DOMAINES.filter(d => d.value !== '')
+// Constantes sans l'option "Tous" pour le formulaire, + option "Autre" à préciser
+const DOMAINES_FORM = [
+  ...DOMAINES.filter(d => d.value !== ''),
+  { value: 'autre', label: 'Autre' },
+]
 const PAYS_FORM = PAYS_AFRICAINS.filter(p => p.value !== '')
 
 const editorRef = ref<{ save: () => Promise<EditorJsData | null>; clear: () => Promise<void> } | null>(null)
@@ -435,9 +461,11 @@ const editorRef = ref<{ save: () => Promise<EditorJsData | null>; clear: () => P
 const form = reactive({
   type: typeInitial as string,
   typeOrganisation: '' as string,
+  statutLegal: '',
   titre: '',
   descriptionData: undefined as EditorJsData | undefined,
   domaine: '' as string,
+  domainePrecision: '',
   pays: '' as string,
   ville: '',
   duree: '' as string,
@@ -465,6 +493,7 @@ const isFormValid = computed(() => {
     form.titre.trim() &&
     hasDescription.value &&
     form.domaine &&
+    (form.domaine !== 'autre' || form.domainePrecision.trim()) &&
     form.pays &&
     form.duree &&
     form.dateDebut &&
@@ -488,9 +517,11 @@ const handleDocumentChange = (event: Event) => {
 const resetForm = async () => {
   form.type = ''
   form.typeOrganisation = ''
+  form.statutLegal = ''
   form.titre = ''
   form.descriptionData = undefined
   form.domaine = ''
+  form.domainePrecision = ''
   form.pays = ''
   form.ville = ''
   form.duree = ''
@@ -528,9 +559,11 @@ const handleSubmit = async () => {
       {
         type: form.type,
         typeOrganisation: form.typeOrganisation,
+        statutLegal: form.statutLegal.trim() || undefined,
         titre: form.titre,
         description: descriptionHtml,
         domaine: form.domaine,
+        domainePrecision: form.domaine === 'autre' ? form.domainePrecision.trim() : undefined,
         pays: form.pays,
         ville: form.ville || undefined,
         duree: form.duree,

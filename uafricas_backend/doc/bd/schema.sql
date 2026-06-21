@@ -82,6 +82,7 @@
 \ir schemas/05_marketplace.sql
 \ir schemas/06_exchange.sql
 \ir schemas/06b_exchange_candidatures.sql
+\ir schemas/06c_exchange_programme_champs_libres.sql
 \ir schemas/07_innovation.sql
 \ir schemas/08_culture.sql
 \ir schemas/08b_afrolang.sql

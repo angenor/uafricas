@@ -16,6 +16,7 @@ pub const PROGRAMME_COLONNES: &str =
      p.nombre_places, p.prerequis, p.langues_requises,
      p.etat::text AS etat, p.interafricain,
      p.type_organisation::text AS type_organisation,
+     p.domaine_libre, p.statut_legal,
      p.candidat_retenu_id, p.candidat_retenu_at,
      p.cree_par, p.created_at, p.updated_at";
 
@@ -45,6 +46,8 @@ pub struct SabbatiqueRow {
     pub etat: String,
     pub interafricain: bool,
     pub type_organisation: Option<String>,
+    pub domaine_libre: Option<String>,
+    pub statut_legal: Option<String>,
     pub candidat_retenu_id: Option<Uuid>,
     pub candidat_retenu_at: Option<DateTime<Utc>>,
     pub cree_par: Uuid,
@@ -87,6 +90,7 @@ pub struct SabbatiqueResponse {
     pub nombre_candidatures: i64,
     pub type_organisation: Option<String>,
     pub type_organisation_label: Option<String>,
+    pub statut_legal: Option<String>,
     pub candidat_retenu: Option<CandidatRetenuResponse>,
     pub user: OrganisateurResponse,
     pub created_at: DateTime<Utc>,
@@ -120,6 +124,7 @@ pub struct SabbatiqueDetailResponse {
     pub langues_requises: Option<String>,
     pub type_organisation: Option<String>,
     pub type_organisation_label: Option<String>,
+    pub statut_legal: Option<String>,
     pub candidat_retenu: Option<CandidatRetenuResponse>,
     /// Vrai si l'utilisateur connecte est l'organisateur du programme
     pub est_organisateur: bool,

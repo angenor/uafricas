@@ -133,7 +133,7 @@ async fn construire_response(
         couverture_url: row.image_couverture_url.clone(),
         pays: pays_nom,
         ville: row.ville.clone(),
-        domaine: domaine_nom,
+        domaine: row.domaine_libre.clone().or(domaine_nom),
         duree: row.duree.clone(),
         duree_label: duree_label(&row.duree),
         date_debut: row.date_debut,
@@ -152,6 +152,7 @@ async fn construire_response(
             .type_organisation
             .as_deref()
             .map(type_organisation_label),
+        statut_legal: row.statut_legal.clone(),
         candidat_retenu,
         user: OrganisateurResponse {
             uid: organisateur.id,
@@ -339,7 +340,7 @@ pub async fn obtenir_programme(
         pays: pays_nom,
         ville: row.ville.clone(),
         adresse: row.adresse.clone(),
-        domaine: domaine_nom,
+        domaine: row.domaine_libre.clone().or(domaine_nom),
         duree: row.duree.clone(),
         duree_label: duree_label(&row.duree),
         date_debut: row.date_debut,
@@ -361,6 +362,7 @@ pub async fn obtenir_programme(
             .type_organisation
             .as_deref()
             .map(type_organisation_label),
+        statut_legal: row.statut_legal.clone(),
         candidat_retenu,
         est_organisateur,
         a_deja_candidate,
@@ -397,6 +399,8 @@ pub async fn creer_programme(
     let mut pays: Option<String> = None;
     let mut ville: Option<String> = None;
     let mut domaine: Option<String> = None;
+    let mut domaine_precision: Option<String> = None;
+    let mut statut_legal: Option<String> = None;
     let mut duree: Option<String> = None;
     let mut date_debut: Option<String> = None;
     let mut date_fin: Option<String> = None;
@@ -429,6 +433,12 @@ pub async fn creer_programme(
             "pays" => pays = Some(lire_champ_texte(&mut field).await?),
             "ville" => ville = Some(lire_champ_texte(&mut field).await?),
             "domaine" => domaine = Some(lire_champ_texte(&mut field).await?),
+            "domaine_precision" | "domainePrecision" => {
+                domaine_precision = Some(lire_champ_texte(&mut field).await?)
+            }
+            "statut_legal" | "statutLegal" => {
+                statut_legal = Some(lire_champ_texte(&mut field).await?)
+            }
             "duree" => duree = Some(lire_champ_texte(&mut field).await?),
             "type_organisation" | "typeOrganisation" => {
                 type_organisation = Some(lire_champ_texte(&mut field).await?)
@@ -591,6 +601,25 @@ pub async fn creer_programme(
         None
     };
 
+    // Domaine libre : précision saisie quand le domaine choisi est « Autre »
+    // (dans ce cas domaine_id reste NULL, le texte libre prend le relais)
+    let domaine_libre: Option<String> = if domaine.as_deref() == Some("autre") {
+        domaine_precision
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(String::from)
+    } else {
+        None
+    };
+
+    // Statut légal de l'organisation soumettante (texte libre facultatif)
+    let statut_legal: Option<String> = statut_legal
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from);
+
     // Utilisateur connecte via JWT, sinon premier en BDD
     let utilisateur_id = if let Some(uid) = extraire_utilisateur_id(&req) {
         uid
@@ -614,12 +643,12 @@ pub async fn creer_programme(
              pays_id, ville,
              prise_en_charge_billet, prise_en_charge_hebergement, prise_en_charge_subsistance,
              duree, domaine_id, date_debut, date_fin,
-             interafricain, type_organisation, etat, cree_par)
+             interafricain, type_organisation, domaine_libre, statut_legal, etat, cree_par)
          VALUES ($1, $2, $3, $4, $5,
                  $6, $7,
                  $8, $9, $10,
                  $11::exchange.duree_programme, $12, $13, $14,
-                 $15, $16::exchange.type_organisation_soumettante, 'publie', $17)
+                 $15, $16::exchange.type_organisation_soumettante, $17, $18, 'publie', $19)
          RETURNING {}",
         PROGRAMME_COLONNES.replace("p.", "")
     );
@@ -641,6 +670,8 @@ pub async fn creer_programme(
         .bind(date_fin_parsed)
         .bind(interafricain)
         .bind(&type_organisation)
+        .bind(&domaine_libre)
+        .bind(&statut_legal)
         .bind(utilisateur_id)
         .fetch_one(pool.get_ref())
         .await?;
@@ -661,7 +692,7 @@ pub async fn creer_programme(
         pays: pays_nom,
         ville: row.ville.clone(),
         adresse: row.adresse.clone(),
-        domaine: domaine_nom,
+        domaine: row.domaine_libre.clone().or(domaine_nom),
         duree: row.duree.clone(),
         duree_label: duree_label(&row.duree),
         date_debut: row.date_debut,
@@ -683,6 +714,7 @@ pub async fn creer_programme(
             .type_organisation
             .as_deref()
             .map(type_organisation_label),
+        statut_legal: row.statut_legal.clone(),
         candidat_retenu: None,
         est_organisateur: true,
         a_deja_candidate: false,
@@ -870,6 +902,12 @@ pub async fn candidater(
             "Candidature réservée aux personnes en emploi ou retraitées".into(),
         ));
     }
+    // Lettre de motivation obligatoire
+    let lettre_motivation = lettre_motivation
+        .filter(|s| !s.trim().is_empty())
+        .ok_or_else(|| {
+            ApiErreur::Validation("La lettre de motivation est obligatoire".into())
+        })?;
     // Au moins un justificatif : CV téléversé ou lien vers le compte expertise
     let lien_expertise = lien_expertise.filter(|s| !s.trim().is_empty());
     if cv_url.is_none() && lien_expertise.is_none() {

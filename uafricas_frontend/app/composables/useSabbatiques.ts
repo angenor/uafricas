@@ -36,6 +36,7 @@ export interface SabbatiqueAPI {
   nombre_candidatures: number
   type_organisation: string | null
   type_organisation_label: string | null
+  statut_legal: string | null
   candidat_retenu: CandidatRetenu | null
   user: SabbatiqueOrganisateur
   created_at: string
@@ -342,9 +343,11 @@ export const useSabbatiques = () => {
     formData: {
       type: string
       typeOrganisation: string
+      statutLegal?: string
       titre: string
       description: string
       domaine: string
+      domainePrecision?: string
       pays: string
       ville?: string
       duree: string
@@ -364,9 +367,11 @@ export const useSabbatiques = () => {
       const data = new FormData()
       data.append('type_programme', formData.type)
       data.append('type_organisation', formData.typeOrganisation)
+      if (formData.statutLegal) data.append('statut_legal', formData.statutLegal)
       data.append('titre', formData.titre)
       data.append('description', formData.description)
       data.append('domaine', formData.domaine)
+      if (formData.domainePrecision) data.append('domaine_precision', formData.domainePrecision)
       data.append('pays', formData.pays)
       if (formData.ville) data.append('ville', formData.ville)
       data.append('duree', formData.duree)

@@ -163,17 +163,17 @@
             </div>
           </div>
 
-          <!-- Lettre de motivation (facultatif) -->
+          <!-- Lettre de motivation (obligatoire) -->
           <div>
             <label for="cand-lettre" class="block text-sm font-medium text-gray-700 mb-1">
-              Message / lettre de motivation
+              Lettre de motivation <span class="text-red-500">*</span>
             </label>
             <textarea
               id="cand-lettre"
               v-model="form.lettreMotivation"
-              rows="3"
+              rows="4"
               class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green text-sm"
-              placeholder="Présentez en quelques lignes votre motivation..."
+              placeholder="Présentez votre motivation pour ce programme..."
             ></textarea>
           </div>
 
@@ -211,12 +211,14 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import {
   useSabbatiques,
   STATUTS_EMPLOI,
   type CandidatureForm,
 } from '~/composables/useSabbatiques'
+import { useExperts } from '~/composables/useExperts'
+import { useUserStore } from '~/stores/user'
 
 const props = defineProps<{
   programmeId: string
@@ -229,6 +231,8 @@ const emit = defineEmits<{
 }>()
 
 const { candidater } = useSabbatiques()
+const { obtenirMaCandidature } = useExperts()
+const userStore = useUserStore()
 
 const form = reactive<Omit<CandidatureForm, 'repondProfil'>>({
   nomEtatCivil: '',
@@ -248,11 +252,35 @@ const handleCvChange = (event: Event) => {
   cvFile.value = target.files && target.files[0] ? target.files[0] : null
 }
 
+// Pré-remplir le lien d'expertise si l'utilisateur connecté possède un
+// compte d'expertise validé (lien vers son profil unifié).
+const prechargerLienExpertise = async () => {
+  if (!userStore.isAuthenticated || !userStore.user) return
+  // Ne pas écraser une saisie manuelle existante
+  if (form.lienExpertise?.trim()) return
+
+  const candidature = await obtenirMaCandidature()
+  if (candidature?.statut === 'valide') {
+    const origine = import.meta.client ? window.location.origin : ''
+    form.lienExpertise = `${origine}/profil/${userStore.user.id}`
+  }
+}
+
+// Charger automatiquement à l'ouverture de la modale
+watch(
+  () => props.open,
+  (ouvert) => {
+    if (ouvert) prechargerLienExpertise()
+  },
+  { immediate: true },
+)
+
 const isValid = computed(() => {
   return !!form.statutEmploi &&
     form.nomEtatCivil.trim() &&
     form.fonctionActuelle.trim() &&
     form.lieuResidence.trim() &&
+    !!form.lettreMotivation?.trim() &&
     repondProfil.value !== null &&
     (cvFile.value !== null || !!form.lienExpertise?.trim())
 })

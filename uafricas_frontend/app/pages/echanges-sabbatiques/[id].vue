@@ -250,6 +250,18 @@
               <p class="font-medium text-gray-900">{{ programme.langues_requises }}</p>
             </div>
 
+            <!-- Type d'organisation -->
+            <div v-if="programme.type_organisation_label" class="bg-gray-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-500 mb-1">Type d'organisation</p>
+              <p class="font-medium text-gray-900">{{ programme.type_organisation_label }}</p>
+            </div>
+
+            <!-- Statut légal -->
+            <div v-if="programme.statut_legal" class="bg-gray-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-500 mb-1">Statut légal de l'organisation</p>
+              <p class="font-medium text-gray-900">{{ programme.statut_legal }}</p>
+            </div>
+
             <!-- Organisateur -->
             <div v-if="programme.user" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
               <p class="text-sm text-gray-500 mb-1">Organisateur</p>
