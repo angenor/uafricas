@@ -9,6 +9,7 @@ const route = useRoute()
 const userStore = useUserStore()
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBaseUrl as string
+const { obtenirProgrammation, inscrireProgrammation, desinscrireProgrammation } = useCentresCulturels()
 
 interface ApiResponse<T> {
   success: boolean
@@ -30,7 +31,16 @@ const { data: detail, status, error: fetchError } = await useAsyncData(
     if (!reponse.success || !reponse.data) {
       throw createError({ message: reponse.error || 'Programmation non trouvée' })
     }
-    return reponse.data
+    const url = reponse.data.programmation.image_couverture_url
+    return {
+      ...reponse.data,
+      programmation: {
+        ...reponse.data.programmation,
+        image_couverture_url: url
+          ? (url.startsWith('http') ? url : `${apiBase}${url}`)
+          : null,
+      },
+    }
   },
 )
 
@@ -38,6 +48,82 @@ const chargement = computed(() => status.value === 'pending')
 const erreur = computed(() => fetchError.value?.message ?? null)
 const programmation = computed(() => detail.value?.programmation ?? null)
 const centreNom = computed(() => detail.value?.centre.nom ?? '')
+
+// État d'inscription (est_inscrit nécessite le JWT, indisponible en SSR → rafraîchi côté client)
+const estInscrit = ref(false)
+const nombreInscrits = ref(0)
+const inscriptionEnCours = ref(false)
+const messageInscription = ref<string | null>(null)
+
+watchEffect(() => {
+  if (detail.value?.programmation) {
+    estInscrit.value = detail.value.programmation.est_inscrit
+    nombreInscrits.value = detail.value.programmation.nombre_inscrits
+  }
+})
+
+const placesRestantes = computed(() => {
+  const places = programmation.value?.nombre_places
+  if (places === null || places === undefined) return null
+  return Math.max(0, places - nombreInscrits.value)
+})
+const complet = computed(() => placesRestantes.value !== null && placesRestantes.value <= 0 && !estInscrit.value)
+
+// Rafraîchir le statut d'inscription côté client (le token n'existe pas au rendu SSR)
+const rafraichirStatut = async () => {
+  if (!userStore.isAuthenticated) return
+  const maj = await obtenirProgrammation(centreId.value, programmationId.value)
+  if (maj) {
+    estInscrit.value = maj.programmation.est_inscrit
+    nombreInscrits.value = maj.programmation.nombre_inscrits
+  }
+}
+
+const showInscriptionModal = ref(false)
+
+// Désinscription = un clic ; inscription = ouvre le formulaire
+const basculerInscription = async () => {
+  messageInscription.value = null
+  if (estInscrit.value) {
+    inscriptionEnCours.value = true
+    try {
+      const ok = await desinscrireProgrammation(centreId.value, programmationId.value)
+      if (ok) {
+        estInscrit.value = false
+        nombreInscrits.value = Math.max(0, nombreInscrits.value - 1)
+        messageInscription.value = 'Votre inscription a été annulée.'
+      }
+    }
+    finally {
+      inscriptionEnCours.value = false
+    }
+  }
+  else {
+    showInscriptionModal.value = true
+  }
+}
+
+const confirmerInscription = async (payload: import('~/composables/useCentresCulturels').InscriptionProgPayload) => {
+  messageInscription.value = null
+  inscriptionEnCours.value = true
+  try {
+    const ok = await inscrireProgrammation(centreId.value, programmationId.value, payload)
+    if (ok) {
+      estInscrit.value = true
+      nombreInscrits.value = nombreInscrits.value + 1
+      messageInscription.value = 'Inscription confirmée. À bientôt !'
+      showInscriptionModal.value = false
+    }
+    else {
+      messageInscription.value = 'Inscription impossible (programmation complète ou erreur).'
+    }
+  }
+  finally {
+    inscriptionEnCours.value = false
+  }
+}
+
+onMounted(() => rafraichirStatut())
 
 useHead(() => ({
   title: programmation.value
@@ -51,13 +137,21 @@ useHead(() => ({
   ],
 }))
 
-const handleInterest = () => {
-  alert('Votre intérêt a été enregistré! (Mode mock)')
-}
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-100">
+    <!-- Modal d'inscription -->
+    <CentresCulturelsInscriptionProgrammationModal
+      :is-open="showInscriptionModal"
+      :loading="inscriptionEnCours"
+      :titre-programmation="programmation?.titre"
+      :defaut-nom="userStore.user?.nom"
+      :defaut-prenom="userStore.user?.prenom"
+      @close="showInscriptionModal = false"
+      @submit="confirmerInscription"
+    />
+
     <!-- Loading state -->
     <div v-if="chargement" class="flex justify-center items-center min-h-screen">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-green"></div>
@@ -90,6 +184,16 @@ const handleInterest = () => {
             { label: centreNom, to: `/centres/${centreId}` },
             { label: programmation.titre },
           ]"
+        />
+
+        <!-- Image de couverture -->
+        <img
+          v-if="programmation.image_couverture_url"
+          class="w-full rounded-xl h-48 md:h-80 object-cover mt-3"
+          :src="programmation.image_couverture_url"
+          :alt="programmation.titre"
+          data-aos="fade-up"
+          data-aos-duration="600"
         />
 
         <!-- Info bar -->
@@ -156,20 +260,57 @@ const handleInterest = () => {
           {{ programmation.titre }}
         </h1>
 
-        <!-- Bouton intérêt -->
+        <!-- Inscription -->
         <div
           v-if="isAuthenticated"
           class="mb-4"
           data-aos="fade-up"
           data-aos-duration="600"
         >
-          <button
-            class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-all hover:scale-105"
-            @click="handleInterest"
-          >
-            <font-awesome-icon :icon="['fas', 'star']" class="mr-2" />
-            Je suis intéressé(e)
-          </button>
+          <div class="flex flex-wrap items-center gap-3">
+            <button
+              v-if="!estInscrit"
+              class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+              :disabled="inscriptionEnCours || complet"
+              @click="basculerInscription"
+            >
+              <font-awesome-icon
+                :icon="['fas', inscriptionEnCours ? 'spinner' : 'user-plus']"
+                :class="{ 'animate-spin': inscriptionEnCours }"
+                class="mr-2"
+              />
+              {{ complet ? 'Complet' : "S'inscrire à cette programmation" }}
+            </button>
+
+            <template v-else>
+              <span class="inline-flex items-center px-3 py-2 bg-custom-green/10 text-custom-green rounded-md font-medium">
+                <font-awesome-icon :icon="['fas', 'circle-check']" class="mr-2" />
+                Vous êtes inscrit(e)
+              </span>
+              <button
+                class="px-3 py-2 text-red-600 border border-red-600 rounded-md hover:bg-red-600/10 transition-colors disabled:opacity-50"
+                :disabled="inscriptionEnCours"
+                @click="basculerInscription"
+              >
+                <font-awesome-icon
+                  :icon="['fas', inscriptionEnCours ? 'spinner' : 'user-minus']"
+                  :class="{ 'animate-spin': inscriptionEnCours }"
+                  class="mr-2"
+                />
+                Se désinscrire
+              </button>
+            </template>
+          </div>
+
+          <p v-if="placesRestantes !== null" class="mt-2 text-sm text-gray-600">
+            <font-awesome-icon :icon="['fas', 'users']" class="mr-1" />
+            {{ placesRestantes }} place(s) restante(s) sur {{ programmation.nombre_places }}
+          </p>
+          <p v-else class="mt-2 text-sm text-gray-600">
+            <font-awesome-icon :icon="['fas', 'users']" class="mr-1" />
+            {{ nombreInscrits }} inscrit(s)
+          </p>
+          <p v-if="messageInscription" class="mt-1 text-sm text-custom-chocolat">{{ messageInscription }}</p>
         </div>
         <div
           v-else

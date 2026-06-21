@@ -156,9 +156,9 @@ BEGIN
 
     -- ── 5. Centres culturels ───────────────────────────────────────────────
 
-    INSERT INTO culture.centre_culturel (nom, slug, description, pays_id, ville, adresse, latitude, longitude, cree_par)
+    INSERT INTO culture.centre_culturel (nom, slug, type_centre, description, pays_id, ville, adresse, latitude, longitude, cree_par)
     VALUES (
-        'Montréal', 'montreal',
+        'Montréal', 'montreal', 'international',
         'Le Centre Culturel Africain et Afro-Descendant de Montréal est un espace de rassemblement et de promotion des cultures africaines au Canada. Il organise des événements culturels, des ateliers et des conférences.',
         pays_canada_id, 'Montréal', '1234 Rue Saint-Denis, Montréal, QC H2X 3J6, Canada',
         45.5152559, -73.5611381,
@@ -167,9 +167,9 @@ BEGIN
     ON CONFLICT (slug) DO UPDATE SET nom = EXCLUDED.nom
     RETURNING id INTO centre_montreal_id;
 
-    INSERT INTO culture.centre_culturel (nom, slug, description, pays_id, ville, adresse, latitude, longitude, cree_par)
+    INSERT INTO culture.centre_culturel (nom, slug, type_centre, description, pays_id, ville, adresse, latitude, longitude, cree_par)
     VALUES (
-        'Paris', 'paris',
+        'Paris', 'paris', 'international',
         'Le Centre Culturel Africain et Afro-Descendant de Paris est un lieu de référence pour la diaspora africaine en France. Il propose des expositions, des spectacles et des rencontres interculturelles.',
         pays_france_id, 'Paris', '45 Rue de Rivoli, 75004 Paris, France',
         48.8566, 2.3522,
@@ -178,9 +178,9 @@ BEGIN
     ON CONFLICT (slug) DO UPDATE SET nom = EXCLUDED.nom
     RETURNING id INTO centre_paris_id;
 
-    INSERT INTO culture.centre_culturel (nom, slug, description, pays_id, ville, adresse, latitude, longitude, cree_par)
+    INSERT INTO culture.centre_culturel (nom, slug, type_centre, description, pays_id, ville, adresse, latitude, longitude, cree_par)
     VALUES (
-        'Abidjan', 'abidjan',
+        'Abidjan', 'abidjan', 'local',
         'Le Centre Culturel Africain et Afro-Descendant d''Abidjan célèbre la richesse culturelle ivoirienne et panafricaine. Il accueille des artistes, des conteurs et des chercheurs.',
         pays_civ_id, 'Abidjan', 'Boulevard de la République, Plateau, Abidjan, Côte d''Ivoire',
         5.3599517, -4.0082563,
@@ -189,9 +189,9 @@ BEGIN
     ON CONFLICT (slug) DO UPDATE SET nom = EXCLUDED.nom
     RETURNING id INTO centre_abidjan_id;
 
-    INSERT INTO culture.centre_culturel (nom, slug, description, pays_id, ville, adresse, latitude, longitude, cree_par)
+    INSERT INTO culture.centre_culturel (nom, slug, type_centre, description, pays_id, ville, adresse, latitude, longitude, cree_par)
     VALUES (
-        'Dakar', 'dakar',
+        'Dakar', 'dakar', 'local',
         'Le Centre Culturel Africain et Afro-Descendant de Dakar est un carrefour des cultures ouest-africaines. Il met en avant la tradition orale, la musique et les arts visuels du Sénégal.',
         pays_senegal_id, 'Dakar', 'Avenue Léopold Sédar Senghor, Dakar, Sénégal',
         14.6928, -17.4467,

@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
 use crate::models::admin::programmation::{
-    AdminProgDetailRow, AdminProgListeResponse, AdminProgQueryParams,
+    AdminProgDetailRow, AdminProgInscriptionResponse, AdminProgListeResponse, AdminProgQueryParams,
     CreerProgRequest, ModifierProgRequest,
     ADMIN_PROG_DETAIL_COLONNES, ADMIN_PROG_LISTE_COLONNES, PROG_TRI_COLONNES,
 };
@@ -164,14 +164,15 @@ pub async fn creer_programmation(
 
     sqlx::query(
         "INSERT INTO culture.programmation_centre
-         (id, centre_culturel_id, titre, description, lieu, mode, lien_en_ligne,
+         (id, centre_culturel_id, titre, description, image_couverture_url, lieu, mode, lien_en_ligne,
           date_heure_debut, date_heure_fin, nombre_places, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6::culture.mode_evenement, $7, $8, $9, $10, $11)"
+         VALUES ($1, $2, $3, $4, $5, $6, $7::culture.mode_evenement, $8, $9, $10, $11, $12)"
     )
     .bind(id)
     .bind(body.centre_culturel_id)
     .bind(titre)
     .bind(body.description.as_deref().map(|s| s.trim()))
+    .bind(body.image_couverture_url.as_deref().map(|s| s.trim()))
     .bind(body.lieu.as_deref().map(|s| s.trim()))
     .bind(mode)
     .bind(body.lien_en_ligne.as_deref().map(|s| s.trim()))
@@ -243,6 +244,7 @@ pub async fn modifier_programmation(
 
     ajouter_champ_str!(body.titre, "titre");
     ajouter_champ_str!(body.description, "description");
+    ajouter_champ_str!(body.image_couverture_url, "image_couverture_url");
     ajouter_champ_str!(body.lieu, "lieu");
     ajouter_champ_str!(body.lien_en_ligne, "lien_en_ligne");
 
@@ -261,7 +263,7 @@ pub async fn modifier_programmation(
     if let Some(ref date_str) = body.date_heure_debut {
         let dt = DateTime::parse_from_rfc3339(date_str)
             .map_err(|_| ApiErreur::Validation("Format de date invalide pour date_heure_debut".into()))?;
-        sets.push(format!("date_heure_debut = ${}", bind_index));
+        sets.push(format!("date_heure_debut = ${}::timestamptz", bind_index));
         bind_strings.push(dt.with_timezone(&chrono::Utc).to_rfc3339());
         bind_index += 1;
     }
@@ -269,7 +271,7 @@ pub async fn modifier_programmation(
     if let Some(ref date_str) = body.date_heure_fin {
         let dt = DateTime::parse_from_rfc3339(date_str)
             .map_err(|_| ApiErreur::Validation("Format de date invalide pour date_heure_fin".into()))?;
-        sets.push(format!("date_heure_fin = ${}", bind_index));
+        sets.push(format!("date_heure_fin = ${}::timestamptz", bind_index));
         bind_strings.push(dt.with_timezone(&chrono::Utc).to_rfc3339());
         bind_index += 1;
     }
@@ -362,6 +364,38 @@ pub async fn supprimer_programmation(
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
+        error: None,
+    }))
+}
+
+/// GET /api/admin/programmations/:id/inscriptions
+pub async fn lister_inscriptions(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "culture", "voir");
+    let id = path.into_inner();
+
+    let inscriptions = sqlx::query_as::<_, AdminProgInscriptionResponse>(
+        "SELECT pi.id, pi.utilisateur_id,
+                COALESCE(pi.nom, u.nom) AS nom,
+                COALESCE(pi.prenom, u.prenom) AS prenom,
+                u.email, u.telephone,
+                pi.pays, pi.lieu_residence, pi.titre,
+                pi.statut, pi.created_at
+         FROM culture.programmation_inscription pi
+         JOIN iam.utilisateur u ON u.id = pi.utilisateur_id
+         WHERE pi.programmation_id = $1 AND pi.statut != 'annule'
+         ORDER BY pi.created_at DESC",
+    )
+    .bind(id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(inscriptions),
         error: None,
     }))
 }

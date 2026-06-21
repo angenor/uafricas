@@ -5,13 +5,13 @@ use uuid::Uuid;
 
 // ── Colonnes SQL ──────────────────────────────────────────
 pub const ADMIN_CENTRE_LISTE_COLONNES: &str =
-    "cc.id, cc.nom, cc.ville, cc.actif, cc.created_at,
+    "cc.id, cc.nom, cc.type_centre::text AS type_centre, cc.ville, cc.actif, cc.created_at,
      p.nom AS pays_nom,
      (SELECT COUNT(*) FROM culture.membre_centre mc WHERE mc.centre_culturel_id = cc.id) AS nombre_membres,
      (SELECT COUNT(*) FROM culture.programmation_centre pc WHERE pc.centre_culturel_id = cc.id) AS nombre_programmations";
 
 pub const ADMIN_CENTRE_DETAIL_COLONNES: &str =
-    "cc.id, cc.nom, cc.slug, cc.description, cc.image_couverture_url,
+    "cc.id, cc.nom, cc.slug, cc.type_centre::text AS type_centre, cc.description, cc.image_couverture_url,
      cc.pays_id, cc.ville, cc.adresse,
      cc.longitude::float8 AS longitude, cc.latitude::float8 AS latitude, cc.actif,
      cc.cree_par, cc.created_at, cc.updated_at,
@@ -27,6 +27,7 @@ pub const CENTRE_TRI_COLONNES: &[&str] = &[
 pub struct AdminCentreListeResponse {
     pub id: Uuid,
     pub nom: String,
+    pub type_centre: String,
     pub ville: Option<String>,
     pub pays_nom: Option<String>,
     pub actif: bool,
@@ -40,6 +41,7 @@ pub struct AdminCentreDetailRow {
     pub id: Uuid,
     pub nom: String,
     pub slug: Option<String>,
+    pub type_centre: String,
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub pays_id: Option<Uuid>,
@@ -61,6 +63,7 @@ pub struct AdminCentreDetailResponse {
     pub id: Uuid,
     pub nom: String,
     pub slug: Option<String>,
+    pub type_centre: String,
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub pays_id: Option<Uuid>,
@@ -83,6 +86,7 @@ impl AdminCentreDetailRow {
             id: self.id,
             nom: self.nom.clone(),
             slug: self.slug.clone(),
+            type_centre: self.type_centre.clone(),
             description: self.description.clone(),
             image_couverture_url: self.image_couverture_url.clone(),
             pays_id: self.pays_id,
@@ -116,6 +120,7 @@ pub struct AdminMembreCentreResponse {
 #[derive(Debug, Deserialize)]
 pub struct CreerCentreRequest {
     pub nom: String,
+    pub type_centre: Option<String>,
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub pays_id: Option<Uuid>,
@@ -128,6 +133,7 @@ pub struct CreerCentreRequest {
 #[derive(Debug, Deserialize)]
 pub struct ModifierCentreRequest {
     pub nom: Option<String>,
+    pub type_centre: Option<String>,
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub pays_id: Option<Uuid>,

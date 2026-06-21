@@ -6,6 +6,8 @@ const router = useRouter()
 
 const form = reactive({
   nom: '',
+  type_centre: 'local' as 'international' | 'local',
+  image_couverture_url: '',
   description: '',
   pays_id: '',
   ville: '',
@@ -23,7 +25,8 @@ const soumettre = async () => {
     return
   }
   try {
-    const body: any = { nom: form.nom.trim() }
+    const body: any = { nom: form.nom.trim(), type_centre: form.type_centre }
+    if (form.image_couverture_url.trim()) body.image_couverture_url = form.image_couverture_url.trim()
     if (form.description.trim()) body.description = form.description.trim()
     if (form.pays_id.trim()) body.pays_id = form.pays_id.trim()
     if (form.ville.trim()) body.ville = form.ville.trim()
@@ -59,6 +62,22 @@ const soumettre = async () => {
           <div class="form-control">
             <label class="label"><span class="label-text">Nom du centre *</span></label>
             <input v-model="form.nom" type="text" class="input input-bordered" required>
+          </div>
+
+          <div class="form-control">
+            <label class="label"><span class="label-text">Type de centre *</span></label>
+            <select v-model="form.type_centre" class="select select-bordered">
+              <option value="international">International</option>
+              <option value="local">Local</option>
+            </select>
+          </div>
+
+          <div class="form-control">
+            <label class="label"><span class="label-text">Image illustrative (couverture)</span></label>
+            <OpportuniteAfriqueImageUploadField
+              v-model="form.image_couverture_url"
+              label=""
+            />
           </div>
 
           <div class="form-control">

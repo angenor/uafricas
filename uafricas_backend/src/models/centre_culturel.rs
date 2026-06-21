@@ -6,14 +6,15 @@ use uuid::Uuid;
 /// Colonnes a selectionner pour le mapping centre_culturel
 /// Les casts ::float8 convertissent les DECIMAL PostgreSQL en f64 pour sqlx
 pub const CENTRE_CULTUREL_COLONNES: &str =
-    "id, nom, slug, description, image_couverture_url, pays_id, ville, adresse,
+    "id, nom, slug, type_centre::text AS type_centre, description, image_couverture_url,
+     pays_id, ville, adresse,
      longitude::float8 AS longitude, latitude::float8 AS latitude,
      actif, cree_par, created_at, updated_at";
 
 /// Colonnes a selectionner pour le mapping programmation_centre
 /// Le cast mode::text convertit l'enum PostgreSQL en texte pour sqlx
 pub const PROGRAMMATION_COLONNES: &str =
-    "id, centre_culturel_id, titre, description, lieu, mode::text AS mode,
+    "id, centre_culturel_id, titre, description, image_couverture_url, lieu, mode::text AS mode,
      lien_en_ligne, date_heure_debut, date_heure_fin, nombre_places,
      cree_par, created_at, updated_at";
 
@@ -23,6 +24,7 @@ pub struct CentreCulturel {
     pub id: Uuid,
     pub nom: String,
     pub slug: Option<String>,
+    pub type_centre: String,
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub pays_id: Option<Uuid>,
@@ -43,6 +45,7 @@ pub struct ProgrammationCentre {
     pub centre_culturel_id: Uuid,
     pub titre: String,
     pub description: Option<String>,
+    pub image_couverture_url: Option<String>,
     pub lieu: Option<String>,
     pub mode: String,
     pub lien_en_ligne: Option<String>,
@@ -64,6 +67,7 @@ pub struct CentreCulturelResponse {
     pub id: Uuid,
     pub nom: String,
     pub slug: Option<String>,
+    pub type_centre: String,
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub ville: Option<String>,
@@ -81,6 +85,7 @@ pub struct CentreCulturelDetailResponse {
     pub id: Uuid,
     pub nom: String,
     pub slug: Option<String>,
+    pub type_centre: String,
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub ville: Option<String>,
@@ -100,6 +105,7 @@ pub struct ProgrammationResponse {
     pub centre_culturel_id: Uuid,
     pub titre: String,
     pub description: Option<String>,
+    pub image_couverture_url: Option<String>,
     pub lieu: Option<String>,
     pub mode: String,
     pub lien_en_ligne: Option<String>,
@@ -107,6 +113,8 @@ pub struct ProgrammationResponse {
     pub date_heure_fin: Option<DateTime<Utc>>,
     pub nombre_places: Option<i32>,
     pub statut: String,
+    pub nombre_inscrits: i64,
+    pub est_inscrit: bool,
     pub created_at: DateTime<Utc>,
 }
 
@@ -153,6 +161,16 @@ pub struct CentreCulturelQueryParams {
     pub recherche: Option<String>,
 }
 
+/// Corps de requete pour s'inscrire a une programmation
+#[derive(Debug, Deserialize)]
+pub struct InscriptionProgRequest {
+    pub nom: Option<String>,
+    pub prenom: Option<String>,
+    pub pays: Option<String>,
+    pub lieu_residence: Option<String>,
+    pub titre: Option<String>,
+}
+
 // ──────────────────────────────────────────────────────────────
 // Conversions
 // ──────────────────────────────────────────────────────────────
@@ -188,6 +206,7 @@ impl ProgrammationCentre {
             centre_culturel_id: self.centre_culturel_id,
             titre: self.titre.clone(),
             description: self.description.clone(),
+            image_couverture_url: self.image_couverture_url.clone(),
             lieu: self.lieu.clone(),
             mode: self.mapper_mode(),
             lien_en_ligne: self.lien_en_ligne.clone(),
@@ -195,6 +214,8 @@ impl ProgrammationCentre {
             date_heure_fin: self.date_heure_fin,
             nombre_places: self.nombre_places,
             statut: self.calculer_statut(),
+            nombre_inscrits: 0,
+            est_inscrit: false,
             created_at: self.created_at,
         }
     }
@@ -234,6 +255,7 @@ impl CentreCulturel {
             id: self.id,
             nom: self.nom.clone(),
             slug: self.slug.clone(),
+            type_centre: self.type_centre.clone(),
             description: self.description.clone(),
             image_couverture_url: self.image_couverture_url.clone(),
             ville: self.ville.clone(),

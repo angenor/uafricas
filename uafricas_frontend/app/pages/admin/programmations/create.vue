@@ -9,6 +9,7 @@ const form = reactive({
   centre_culturel_id: (route.query.centre as string) || '',
   titre: '',
   description: '',
+  image_couverture_url: '',
   lieu: '',
   mode: 'presentiel',
   lien_en_ligne: '',
@@ -46,6 +47,7 @@ const soumettre = async () => {
       date_heure_debut: toRFC3339(form.date_heure_debut),
     }
     if (form.description.trim()) body.description = form.description.trim()
+    if (form.image_couverture_url.trim()) body.image_couverture_url = form.image_couverture_url.trim()
     if (form.lieu.trim()) body.lieu = form.lieu.trim()
     if ((form.mode === 'en_ligne' || form.mode === 'hybride') && form.lien_en_ligne.trim()) {
       body.lien_en_ligne = form.lien_en_ligne.trim()
@@ -91,6 +93,14 @@ const soumettre = async () => {
           <div class="form-control">
             <label class="label"><span class="label-text">Description</span></label>
             <textarea v-model="form.description" class="textarea textarea-bordered" rows="3" />
+          </div>
+
+          <div class="form-control">
+            <label class="label"><span class="label-text">Image illustrative (couverture)</span></label>
+            <OpportuniteAfriqueImageUploadField
+              v-model="form.image_couverture_url"
+              label=""
+            />
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

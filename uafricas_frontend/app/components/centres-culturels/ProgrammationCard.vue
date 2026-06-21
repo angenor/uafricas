@@ -26,8 +26,14 @@ const getRandomColor = (id: string) => {
       data-aos-duration="600"
     >
       <div class="p-2">
-        <div class="rounded-xl h-40 bg-gray-200/50 w-full flex items-center justify-center">
-          <font-awesome-icon class="text-gray-500 text-4xl" :icon="['fas', 'calendar-days']" />
+        <div class="rounded-xl h-40 bg-gray-200/50 w-full overflow-hidden flex items-center justify-center">
+          <img
+            v-if="programmation.image_couverture_url"
+            :src="programmation.image_couverture_url"
+            :alt="programmation.titre"
+            class="w-full h-full object-cover"
+          />
+          <font-awesome-icon v-else class="text-gray-500 text-4xl" :icon="['fas', 'calendar-days']" />
         </div>
       </div>
       <div class="rounded-r-full text-white bg-black inline-flex px-4 py-0.5 text-sm">

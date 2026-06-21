@@ -68,6 +68,7 @@ const formulaire = reactive({
   localite_rencontre: '',
   ecole_rencontre: '',
   ville_rencontre: '',
+  pays_id: '',
   rencontre_reseaux_sociaux: false,
   reseaux_sociaux: [] as string[],
   // Etape 5 : Photo & apparence
@@ -285,6 +286,7 @@ const soumettre = () => {
   if (formulaire.localite_rencontre.trim()) fd.append('localite_rencontre', formulaire.localite_rencontre.trim())
   if (formulaire.ecole_rencontre.trim()) fd.append('ecole_rencontre', formulaire.ecole_rencontre.trim())
   if (formulaire.ville_rencontre.trim()) fd.append('ville_rencontre', formulaire.ville_rencontre.trim())
+  if (formulaire.pays_id) fd.append('pays_id', formulaire.pays_id)
   if (formulaire.rencontre_reseaux_sociaux) {
     fd.append('rencontre_reseaux_sociaux', 'true')
     if (formulaire.reseaux_sociaux.length > 0) {
@@ -330,6 +332,10 @@ const lignesRecap = computed(() => {
   if (formulaire.localite_rencontre.trim()) lignes.push({ label: 'Localite de rencontre', valeur: formulaire.localite_rencontre })
   if (formulaire.ecole_rencontre.trim()) lignes.push({ label: 'Ecole de rencontre', valeur: formulaire.ecole_rencontre })
   if (formulaire.ville_rencontre.trim()) lignes.push({ label: 'Ville de rencontre', valeur: formulaire.ville_rencontre })
+  if (formulaire.pays_id) {
+    const nomPays = listePays.value.find(p => p.id === formulaire.pays_id)?.nom
+    if (nomPays) lignes.push({ label: 'Territoire', valeur: nomPays })
+  }
   if (formulaire.rencontre_reseaux_sociaux) {
     const labels = formulaire.reseaux_sociaux
       .map(r => RESEAUX_SOCIAUX.find(rs => rs.value === r)?.label ?? r)
@@ -382,7 +388,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
     </div>
 
     <h2 class="mb-1 text-center font-display text-xl font-bold text-gray-800">
-      {{ etapes[etapeCourante - 1].titre }}
+      {{ etapes[etapeCourante - 1]?.titre }}
     </h2>
     <p class="mb-6 text-center text-sm text-gray-500">
       Etape {{ etapeCourante }} sur {{ etapes.length }}
@@ -590,7 +596,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
             type="checkbox"
             class="h-5 w-5 rounded border-gray-300 accent-custom-chocolat"
           >
-          <span class="text-sm font-medium text-gray-700">J'ai rencontre cette personne sur les reseaux sociaux</span>
+          <span class="text-sm font-medium text-gray-700">J'ai rencontré cette personne sur les reseaux sociaux</span>
         </label>
 
         <!-- Choix des reseaux sociaux -->
@@ -643,6 +649,19 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
             placeholder="Ex : Dakar"
             :class="inputClass"
           >
+        </div>
+
+        <div>
+          <label :class="labelClass">Territoire</label>
+          <select
+            v-model="formulaire.pays_id"
+            :class="inputClass"
+          >
+            <option value="">Selectionnez un territoire</option>
+            <option v-for="pays in listePays" :key="pays.id" :value="pays.id">
+              {{ pays.nom }}
+            </option>
+          </select>
         </div>
       </template>
     </div>

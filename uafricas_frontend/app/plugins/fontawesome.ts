@@ -110,6 +110,7 @@ import {
   faMapPin,
   faArrowUpRightFromSquare,
   faUserPlus,
+  faUserMinus,
   faUserTie,
   faUserShield,
   faPlaneArrival,
@@ -176,6 +177,7 @@ import {
   faUserXmark,
   faFilePdf,
   faRightLeft,
+  faSeedling,
   faStopwatch,
   faHandPointer,
   faRedo,
@@ -318,6 +320,7 @@ library.add(
   faMapPin,
   faArrowUpRightFromSquare,
   faUserPlus,
+  faUserMinus,
   faUserTie,
   faUserShield,
   faPlaneArrival,
@@ -394,6 +397,7 @@ library.add(
   faUserXmark,
   faFilePdf,
   faRightLeft,
+  faSeedling,
 )
 
 export default defineNuxtPlugin((nuxtApp) => {

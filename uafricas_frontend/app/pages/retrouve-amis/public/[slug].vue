@@ -180,19 +180,11 @@ useHead({
 
       <!-- Avis actif : contenu complet -->
       <template v-else-if="estActif">
-        <RetrouveAmisPagePublique :avis="(avis as AvisPublicDetail)" />
-
-        <RetrouveAmisBoutonsPartage
-          :slug="slug"
-          :compteur-partages="(avis as AvisPublicDetail).compteur_partages"
-          :nom-recherche="(avis as AvisPublicDetail).nom_recherche"
-          :prenom-recherche="(avis as AvisPublicDetail).prenom_recherche"
-        />
-
+        <!-- Repondre a cet avis (place en haut) -->
         <!-- CTA connexion pour visiteurs non connectes -->
         <div
           v-if="!userStore.isAuthenticated"
-          class="mt-6 rounded-2xl bg-linear-to-br from-amber-50 to-orange-50 p-8 text-center ring-1 ring-amber-200/60"
+          class="mb-6 rounded-2xl bg-linear-to-br from-amber-50 to-orange-50 p-8 text-center ring-1 ring-amber-200/60"
         >
           <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
             <font-awesome-icon :icon="['fas', 'user-lock']" class="text-xl text-amber-600" />
@@ -214,9 +206,20 @@ useHead({
 
         <RetrouveAmisFormulaireReponse
           v-else-if="userStore.user?.id !== (avis as AvisPublicDetail).auteur_id"
+          class="mt-0! mb-6"
           :slug="slug"
           :auteur-id="(avis as AvisPublicDetail).auteur_id"
         />
+
+        <RetrouveAmisPagePublique :avis="(avis as AvisPublicDetail)" />
+
+        <RetrouveAmisBoutonsPartage
+          :slug="slug"
+          :compteur-partages="(avis as AvisPublicDetail).compteur_partages"
+          :nom-recherche="(avis as AvisPublicDetail).nom_recherche"
+          :prenom-recherche="(avis as AvisPublicDetail).prenom_recherche"
+        />
+
         <RetrouveAmisDemandeRetrait
           v-if="userStore.isAuthenticated && userStore.user?.id !== (avis as AvisPublicDetail).auteur_id"
           :slug="slug"

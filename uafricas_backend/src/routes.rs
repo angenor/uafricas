@@ -168,6 +168,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/programmations/{id}", web::get().to(admin::programmations::obtenir_programmation))
                     .route("/programmations/{id}", web::put().to(admin::programmations::modifier_programmation))
                     .route("/programmations/{id}", web::delete().to(admin::programmations::supprimer_programmation))
+                    .route("/programmations/{id}/inscriptions", web::get().to(admin::programmations::lister_inscriptions))
                     // Culture - Codi-Moi
                     .route("/codimoi", web::get().to(admin::codimoi_admin::lister_codimoi))
                     .route("/codimoi", web::post().to(admin::codimoi_admin::creer_codimoi))
@@ -458,7 +459,9 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/centres-culturels")
                     .route("", web::get().to(centres_culturels::lister_centres))
                     .route("/{id}", web::get().to(centres_culturels::obtenir_centre))
-                    .route("/{centre_id}/programmations/{id}", web::get().to(centres_culturels::obtenir_programmation)),
+                    .route("/{centre_id}/programmations/{id}", web::get().to(centres_culturels::obtenir_programmation))
+                    .route("/{centre_id}/programmations/{id}/inscription", web::post().to(centres_culturels::inscrire_programmation))
+                    .route("/{centre_id}/programmations/{id}/inscription", web::delete().to(centres_culturels::desinscrire_programmation)),
             )
             // Routes de gouvernance citoyenne
             .service(

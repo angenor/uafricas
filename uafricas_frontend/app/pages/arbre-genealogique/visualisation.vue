@@ -3,12 +3,13 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useArbreGenealogique } from '~/composables/useArbreGenealogique'
 import { useLayoutArbre, type NoeudArbre, type InfoIncompletude } from '~/composables/useLayoutArbre'
 import { suggererTypeLien } from '~/mocks/arbre-genealogique'
-import type { PersonneNoeud, LienArbreResponse, ModeVue, ModePanneau, ContexteAjout, CreerPersonneForm, TypeLien } from '~/mocks/arbre-genealogique'
+import type { PersonneNoeud, LienArbreResponse, ModeVue, ModePanneau, ContexteAjout, CreerPersonneForm, TypeLien, Genre } from '~/mocks/arbre-genealogique'
 import type { Node, Edge } from '@vue-flow/core'
 import ArbreGraphe from '~/components/arbre-genealogique/ArbreGraphe.vue'
 import BarreOutils from '~/components/arbre-genealogique/BarreOutils.vue'
 import PanneauPersonne from '~/components/arbre-genealogique/PanneauPersonne.vue'
 import AssistantAjoutPersonne from '~/components/arbre-genealogique/AssistantAjoutPersonne.vue'
+import AssistantConversationnel from '~/components/arbre-genealogique/AssistantConversationnel.vue'
 
 definePageMeta({
   middleware: 'auth',
@@ -53,6 +54,24 @@ const nbBranchesIncompletes = ref(0)
 const arbreGrapheRef = ref<{ fitView: (opts?: object) => void; setCenter: (x: number, y: number, opts?: object) => void } | null>(null)
 
 const estVide = computed(() => personnes.value.length === 0 && !chargement.value)
+
+// ─── Assistant conversationnel ───────────────────────────────────────────
+
+const assistantOuvert = ref(false)
+const clicSeq = ref(0)
+const cibleAssistant = ref<{ rattId: string; label: string; genre: Genre; seq: number } | null>(null)
+
+// Ouvre automatiquement l'assistant lorsque l'arbre est vide (première visite).
+watch(estVide, (vide) => {
+  if (vide) assistantOuvert.value = true
+})
+
+// La largeur du canevas change quand l'assistant s'ouvre/se ferme : on recadre.
+watch(assistantOuvert, () => {
+  nextTick(() => {
+    setTimeout(() => arbreGrapheRef.value?.fitView({ duration: 400 }), 100)
+  })
+})
 
 // ─── Chargement ──────────────────────────────────────────────────────
 
@@ -124,12 +143,17 @@ const reessayer = () => charger()
 const surClicNoeud = (nodeId: string) => {
   selectedId.value = nodeId
   centreId.value = nodeId
-  personneCourante.value = graphe.value.get(nodeId) || null
-  panneauOuvert.value = true
-  modePanneau.value = 'fiche'
-  contexteAjout.value = null
-  erreurMutation.value = null
+  const noeud = graphe.value.get(nodeId) || null
+  personneCourante.value = noeud
   recalculer()
+
+  // Clic sur une personne ⇒ interaction contextuelle dans l'assistant (chat).
+  if (noeud) {
+    const label = noeud.prenoms ? `${noeud.prenoms} ${noeud.nom}` : noeud.nom
+    assistantOuvert.value = true
+    clicSeq.value++
+    cibleAssistant.value = { rattId: noeud.id, label, genre: noeud.genre as Genre, seq: clicSeq.value }
+  }
 }
 
 const surClicFond = () => {
@@ -391,7 +415,7 @@ onMounted(charger)
 </script>
 
 <template>
-  <div class="mt-28 flex h-[calc(100vh-7rem)] flex-col">
+  <div class="relative mt-28 flex h-[calc(100vh-7rem)] flex-col">
     <!-- Barre d'outils -->
     <BarreOutils
       v-if="!estVide && !chargement"
@@ -403,6 +427,10 @@ onMounted(charger)
       @recherche-selectionne="surClicNoeud"
     />
 
+    <!-- Zone principale : arbre (gauche) + assistant conversationnel (droite) -->
+    <div class="relative flex flex-1 overflow-hidden">
+      <!-- Colonne arbre / états -->
+      <div class="relative flex flex-1 flex-col">
     <!-- État de chargement -->
     <div v-if="chargement" class="flex flex-1 items-center justify-center">
       <div class="text-center">
@@ -431,13 +459,14 @@ onMounted(charger)
           <font-awesome-icon :icon="['fas', 'tree']" class="text-3xl text-stone-400" />
         </div>
         <h2 class="mb-2 text-xl font-semibold text-stone-700">Votre arbre est vide</h2>
-        <p class="mb-6 text-stone-500">Commencez par ajouter votre première personne</p>
-        <NuxtLink
-          to="/arbre-genealogique"
-          class="rounded-lg bg-[var(--color-custom-chocolat)] px-6 py-2 text-white transition-colors hover:bg-[var(--color-custom-chocolat)]/90"
+        <p class="mb-6 text-stone-500">Laissez-vous guider par l'assistant pour le construire pas à pas.</p>
+        <button
+          class="inline-flex items-center gap-2 rounded-lg bg-[var(--color-custom-green)] px-6 py-2.5 font-semibold text-white transition-opacity hover:opacity-90"
+          @click="assistantOuvert = true"
         >
-          Ajouter ma première personne
-        </NuxtLink>
+          <font-awesome-icon :icon="['fas', 'seedling']" />
+          Construire mon arbre avec l'assistant
+        </button>
       </div>
     </div>
 
@@ -487,6 +516,28 @@ onMounted(charger)
         @personne-modifiee="surPersonneModifiee"
         @retour-fiche="surRetourFiche"
       />
+      </div>
+      <!-- /Arbre graphique -->
+      </div>
+      <!-- /Colonne arbre -->
+
+      <!-- Colonne assistant conversationnel -->
+      <AssistantConversationnel
+        v-if="assistantOuvert"
+        :cible="cibleAssistant"
+        @fermer="assistantOuvert = false"
+        @arbre-modifie="rechargerArbre"
+      />
     </div>
+
+    <!-- Bouton flottant pour rouvrir l'assistant -->
+    <button
+      v-if="!assistantOuvert && !chargement && !erreur"
+      class="absolute bottom-6 right-6 z-30 flex items-center gap-2 rounded-full bg-[var(--color-custom-green)] px-5 py-3 font-semibold text-white shadow-lg transition-opacity hover:opacity-90"
+      @click="assistantOuvert = true"
+    >
+      <font-awesome-icon :icon="['fas', 'seedling']" />
+      Assistant
+    </button>
   </div>
 </template>

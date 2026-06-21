@@ -49,6 +49,14 @@ const { data: centresData, status, error: fetchError, refresh } = await useAsync
 const centres = computed(() => centresData.value ?? [])
 const chargement = computed(() => status.value === 'pending')
 const erreur = computed(() => fetchError.value?.message ?? null)
+
+// Répartition par type : internationaux d'abord, puis locaux.
+const centresInternationaux = computed(() =>
+  centres.value.filter(c => c.type_centre === 'international'),
+)
+const centresLocaux = computed(() =>
+  centres.value.filter(c => c.type_centre !== 'international'),
+)
 </script>
 
 <template>
@@ -79,16 +87,51 @@ const erreur = computed(() => fetchError.value?.message ?? null)
 
       <!-- Liste des centres -->
       <div v-else>
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          <NuxtLink
-            v-for="centre in centres"
-            :key="centre.id"
-            :to="`/centres/${centre.id}`"
-            class="block"
-          >
-            <CentresCulturelsCentreCulturelCard :centre="centre" />
-          </NuxtLink>
-        </div>
+        <!-- Section : Centres culturels internationaux -->
+        <section v-if="centresInternationaux.length" class="mt-8">
+          <div class="flex items-center gap-3 mb-4">
+            <font-awesome-icon :icon="['fas', 'earth-africa']" class="text-custom-chocolat text-xl" />
+            <h2 class="text-xl md:text-2xl font-bold text-custom-chocolat">
+              African International
+            </h2>
+            <span class="text-sm font-medium text-custom-green border border-custom-chocolat rounded-md px-2.5 py-0.5">
+              {{ centresInternationaux.length }}
+            </span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <NuxtLink
+              v-for="centre in centresInternationaux"
+              :key="centre.id"
+              :to="`/centres/${centre.id}`"
+              class="block"
+            >
+              <CentresCulturelsCentreCulturelCard :centre="centre" />
+            </NuxtLink>
+          </div>
+        </section>
+
+        <!-- Section : Centres culturels locaux -->
+        <section v-if="centresLocaux.length" class="mt-10">
+          <div class="flex items-center gap-3 mb-4">
+            <font-awesome-icon :icon="['fas', 'location-dot']" class="text-custom-chocolat text-xl" />
+            <h2 class="text-xl md:text-2xl font-bold text-custom-chocolat">
+              Centres culturels locaux
+            </h2>
+            <span class="text-sm font-medium text-custom-green border border-custom-chocolat rounded-md px-2.5 py-0.5">
+              {{ centresLocaux.length }}
+            </span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <NuxtLink
+              v-for="centre in centresLocaux"
+              :key="centre.id"
+              :to="`/centres/${centre.id}`"
+              class="block"
+            >
+              <CentresCulturelsCentreCulturelCard :centre="centre" />
+            </NuxtLink>
+          </div>
+        </section>
 
         <!-- Aucun centre -->
         <div v-if="centres.length === 0" class="text-center py-16">

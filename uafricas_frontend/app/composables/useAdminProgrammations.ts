@@ -2,6 +2,7 @@ import type {
   ApiResponse,
   AdminProgrammation,
   AdminProgrammationDetail,
+  AdminProgrammationInscription,
   CreerProgrammationForm,
 } from '~/types/admin'
 
@@ -51,10 +52,17 @@ export const useAdminProgrammations = () => {
     await adminFetch<ApiResponse<null>>(`/api/admin/programmations/${id}`, { method: 'DELETE' })
   }
 
+  const listerInscriptions = async (id: string) => {
+    const response = await adminFetch<ApiResponse<AdminProgrammationInscription[]>>(
+      `/api/admin/programmations/${id}/inscriptions`,
+    )
+    return response.success && response.data ? response.data : []
+  }
+
   return {
     programmations, programmationDetail, filtres,
     pagination, sort, loading, error,
-    chargerListe, chargerDetail, creer, modifier, supprimer,
+    chargerListe, chargerDetail, creer, modifier, supprimer, listerInscriptions,
     allerPage, changerTri, reinitialiserPagination,
   }
 }
