@@ -6,8 +6,10 @@ use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::bibliotheque_humaine::{
     BiblioHumaineListeResponse, BiblioHumaineQueryParams, BiblioHumaineRow,
-    DemandeCreeeResponse, InscriptionBiblioBody, MaDemandeResponse, SpecialiteRow,
-    BIBLIO_HUMAINE_COLONNES,
+    CommentaireBiblioRequest, CommentaireBiblioResponse, DemandeCreeeResponse,
+    InscriptionBiblioBody, MaDemandeResponse, ReactionBiblioRequest, ReactionBiblioResponse,
+    RecommandationBiblioRequest, RecommandationBiblioResponse, RecommandationEtatResponse,
+    SpecialiteRow, BIBLIO_HUMAINE_COLONNES,
 };
 
 #[derive(serde::Serialize)]
@@ -24,6 +26,38 @@ fn extraire_utilisateur_id(req: &HttpRequest) -> Option<Uuid> {
     let secret = std::env::var("JWT_SECRET").ok()?;
     let claims = jwt::valider_token(token, &secret).ok()?;
     Uuid::parse_str(&claims.sub).ok()
+}
+
+/// Exiger l'utilisateur connecte (sinon 401)
+fn exiger_utilisateur_id(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
+    extraire_utilisateur_id(req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))
+}
+
+/// Verifier que la cible est bien une bibliotheque humaine valide et active
+async fn verifier_biblio_valide(pool: &PgPool, biblio_id: Uuid) -> Result<(), ApiErreur> {
+    let existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM iam.utilisateur u
+            WHERE u.id = $1
+              AND u.deleted_at IS NULL
+              AND u.etat = 'actif'
+              AND EXISTS (
+                  SELECT 1 FROM iam.demande_biblio_humaine d
+                  WHERE d.utilisateur_id = u.id AND d.statut = 'valide' AND d.deleted_at IS NULL
+              )
+         )",
+    )
+    .bind(biblio_id)
+    .fetch_one(pool)
+    .await?;
+
+    if !existe {
+        return Err(ApiErreur::NonTrouve(
+            "Bibliotheque humaine non trouvee".to_string(),
+        ));
+    }
+    Ok(())
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -152,6 +186,7 @@ pub async fn lister_biblios(
 /// GET /api/bibliotheques-humaines/{id} — Detail d'une bibliotheque humaine
 pub async fn obtenir_biblio(
     pool: web::Data<PgPool>,
+    req: HttpRequest,
     chemin: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
     let utilisateur_id = chemin.into_inner();
@@ -179,9 +214,59 @@ pub async fn obtenir_biblio(
             ))
         })?;
 
+    let mut reponse = row.to_response();
+
+    // Compteurs d'interactions (calcules a la lecture)
+    let (nb_likes, nb_dislikes): (i64, i64) = sqlx::query_as(
+        "SELECT
+            COUNT(*) FILTER (WHERE type_reaction = 'like'),
+            COUNT(*) FILTER (WHERE type_reaction = 'dislike')
+         FROM iam.biblio_reaction WHERE utilisateur_id = $1",
+    )
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    reponse.nombre_likes = nb_likes;
+    reponse.nombre_dislikes = nb_dislikes;
+
+    reponse.nombre_recommandations = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM iam.biblio_recommandation WHERE utilisateur_id = $1",
+    )
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    reponse.nombre_commentaires = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM iam.biblio_commentaire WHERE utilisateur_id = $1 AND deleted_at IS NULL",
+    )
+    .bind(utilisateur_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    // Etat du membre connecte (si present)
+    if let Some(auteur_id) = extraire_utilisateur_id(&req) {
+        reponse.ma_reaction = sqlx::query_scalar(
+            "SELECT type_reaction FROM iam.biblio_reaction
+             WHERE utilisateur_id = $1 AND auteur_id = $2",
+        )
+        .bind(utilisateur_id)
+        .bind(auteur_id)
+        .fetch_optional(pool.get_ref())
+        .await?;
+
+        reponse.a_recommande = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM iam.biblio_recommandation
+             WHERE utilisateur_id = $1 AND auteur_id = $2)",
+        )
+        .bind(utilisateur_id)
+        .bind(auteur_id)
+        .fetch_one(pool.get_ref())
+        .await?;
+    }
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(row.to_response()),
+        data: Some(reponse),
         error: None,
     }))
 }
@@ -414,6 +499,357 @@ pub async fn lister_specialites(
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(specialites),
+        error: None,
+    }))
+}
+
+// ────────────────────────────────────────────────────────────────
+// Interactions : réactions, commentaires, recommandations
+// La cible {id} est l'utilisateur-biblio (cf. obtenir_biblio)
+// ────────────────────────────────────────────────────────────────
+
+/// Compter les likes / dislikes d'une biblio
+async fn compter_reactions(pool: &PgPool, biblio_id: Uuid) -> Result<(i64, i64), ApiErreur> {
+    let counts: (i64, i64) = sqlx::query_as(
+        "SELECT
+            COUNT(*) FILTER (WHERE type_reaction = 'like'),
+            COUNT(*) FILTER (WHERE type_reaction = 'dislike')
+         FROM iam.biblio_reaction WHERE utilisateur_id = $1",
+    )
+    .bind(biblio_id)
+    .fetch_one(pool)
+    .await?;
+    Ok(counts)
+}
+
+/// POST /api/bibliotheques-humaines/{id}/reaction — Aimer / ne pas aimer (toggle)
+pub async fn reagir_biblio(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<ReactionBiblioRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = exiger_utilisateur_id(&req)?;
+    let biblio_id = chemin.into_inner();
+
+    if auteur_id == biblio_id {
+        return Err(ApiErreur::Validation(
+            "Vous ne pouvez pas reagir a votre propre profil".to_string(),
+        ));
+    }
+
+    let type_reaction = body.type_reaction.trim().to_lowercase();
+    if type_reaction != "like" && type_reaction != "dislike" {
+        return Err(ApiErreur::Validation(
+            "Type de reaction invalide (like ou dislike)".to_string(),
+        ));
+    }
+
+    verifier_biblio_valide(pool.get_ref(), biblio_id).await?;
+
+    let reaction_existante: Option<String> = sqlx::query_scalar(
+        "SELECT type_reaction FROM iam.biblio_reaction
+         WHERE utilisateur_id = $1 AND auteur_id = $2",
+    )
+    .bind(biblio_id)
+    .bind(auteur_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let ma_reaction: Option<String> = match reaction_existante {
+        Some(ancien) if ancien == type_reaction => {
+            // Bascule : retirer la reaction
+            sqlx::query(
+                "DELETE FROM iam.biblio_reaction WHERE utilisateur_id = $1 AND auteur_id = $2",
+            )
+            .bind(biblio_id)
+            .bind(auteur_id)
+            .execute(pool.get_ref())
+            .await?;
+            None
+        }
+        Some(_) => {
+            // Changer le type
+            sqlx::query(
+                "UPDATE iam.biblio_reaction SET type_reaction = $1, updated_at = NOW()
+                 WHERE utilisateur_id = $2 AND auteur_id = $3",
+            )
+            .bind(&type_reaction)
+            .bind(biblio_id)
+            .bind(auteur_id)
+            .execute(pool.get_ref())
+            .await?;
+            Some(type_reaction.clone())
+        }
+        None => {
+            // Nouvelle reaction
+            sqlx::query(
+                "INSERT INTO iam.biblio_reaction (utilisateur_id, auteur_id, type_reaction)
+                 VALUES ($1, $2, $3)",
+            )
+            .bind(biblio_id)
+            .bind(auteur_id)
+            .bind(&type_reaction)
+            .execute(pool.get_ref())
+            .await?;
+            Some(type_reaction.clone())
+        }
+    };
+
+    let (nombre_likes, nombre_dislikes) = compter_reactions(pool.get_ref(), biblio_id).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(ReactionBiblioResponse {
+            nombre_likes,
+            nombre_dislikes,
+            ma_reaction,
+        }),
+        error: None,
+    }))
+}
+
+/// GET /api/bibliotheques-humaines/{id}/commentaires — Liste plate
+pub async fn lister_commentaires_biblio(
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let biblio_id = chemin.into_inner();
+
+    let commentaires = sqlx::query_as::<_, CommentaireBiblioResponse>(
+        "SELECT c.id,
+                c.auteur_id,
+                a.nom        AS auteur_nom,
+                a.prenom     AS auteur_prenom,
+                a.photo_url  AS auteur_photo_url,
+                c.contenu,
+                c.created_at
+         FROM iam.biblio_commentaire c
+         JOIN iam.utilisateur a ON a.id = c.auteur_id
+         WHERE c.utilisateur_id = $1 AND c.deleted_at IS NULL
+         ORDER BY c.created_at DESC",
+    )
+    .bind(biblio_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(commentaires),
+        error: None,
+    }))
+}
+
+/// POST /api/bibliotheques-humaines/{id}/commentaires — Commenter
+pub async fn creer_commentaire_biblio(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<CommentaireBiblioRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = exiger_utilisateur_id(&req)?;
+    let biblio_id = chemin.into_inner();
+
+    let contenu = body.contenu.trim().to_string();
+    if contenu.is_empty() {
+        return Err(ApiErreur::Validation(
+            "Le commentaire ne peut pas etre vide".to_string(),
+        ));
+    }
+    if contenu.chars().count() > 2000 {
+        return Err(ApiErreur::Validation(
+            "Le commentaire ne peut pas depasser 2000 caracteres".to_string(),
+        ));
+    }
+
+    verifier_biblio_valide(pool.get_ref(), biblio_id).await?;
+
+    let nouvel_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO iam.biblio_commentaire (utilisateur_id, auteur_id, contenu)
+         VALUES ($1, $2, $3) RETURNING id",
+    )
+    .bind(biblio_id)
+    .bind(auteur_id)
+    .bind(&contenu)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let commentaire = sqlx::query_as::<_, CommentaireBiblioResponse>(
+        "SELECT c.id,
+                c.auteur_id,
+                a.nom        AS auteur_nom,
+                a.prenom     AS auteur_prenom,
+                a.photo_url  AS auteur_photo_url,
+                c.contenu,
+                c.created_at
+         FROM iam.biblio_commentaire c
+         JOIN iam.utilisateur a ON a.id = c.auteur_id
+         WHERE c.id = $1",
+    )
+    .bind(nouvel_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(commentaire),
+        error: None,
+    }))
+}
+
+/// DELETE /api/bibliotheques-humaines/{id}/commentaires/{commentaire_id} — Supprimer (son propre)
+pub async fn supprimer_commentaire_biblio(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<(Uuid, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = exiger_utilisateur_id(&req)?;
+    let (_biblio_id, commentaire_id) = chemin.into_inner();
+
+    let resultat = sqlx::query(
+        "UPDATE iam.biblio_commentaire
+         SET deleted_at = NOW()
+         WHERE id = $1 AND auteur_id = $2 AND deleted_at IS NULL",
+    )
+    .bind(commentaire_id)
+    .bind(auteur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    if resultat.rows_affected() == 0 {
+        return Err(ApiErreur::NonTrouve(
+            "Commentaire introuvable ou non autorise".to_string(),
+        ));
+    }
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "id": commentaire_id })),
+        error: None,
+    }))
+}
+
+/// POST /api/bibliotheques-humaines/{id}/recommandation — Recommander (upsert)
+pub async fn recommander_biblio(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<RecommandationBiblioRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = exiger_utilisateur_id(&req)?;
+    let biblio_id = chemin.into_inner();
+
+    if auteur_id == biblio_id {
+        return Err(ApiErreur::Validation(
+            "Vous ne pouvez pas recommander votre propre profil".to_string(),
+        ));
+    }
+
+    let message: Option<String> = match body.message.as_deref().map(str::trim) {
+        Some(m) if !m.is_empty() => {
+            if m.chars().count() > 1000 {
+                return Err(ApiErreur::Validation(
+                    "Le temoignage ne peut pas depasser 1000 caracteres".to_string(),
+                ));
+            }
+            Some(m.to_string())
+        }
+        _ => None,
+    };
+
+    verifier_biblio_valide(pool.get_ref(), biblio_id).await?;
+
+    sqlx::query(
+        "INSERT INTO iam.biblio_recommandation (utilisateur_id, auteur_id, message)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (utilisateur_id, auteur_id)
+         DO UPDATE SET message = EXCLUDED.message, updated_at = NOW()",
+    )
+    .bind(biblio_id)
+    .bind(auteur_id)
+    .bind(&message)
+    .execute(pool.get_ref())
+    .await?;
+
+    let nombre_recommandations = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM iam.biblio_recommandation WHERE utilisateur_id = $1",
+    )
+    .bind(biblio_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(RecommandationEtatResponse {
+            nombre_recommandations,
+            a_recommande: true,
+        }),
+        error: None,
+    }))
+}
+
+/// DELETE /api/bibliotheques-humaines/{id}/recommandation — Retirer sa recommandation
+pub async fn retirer_recommandation_biblio(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = exiger_utilisateur_id(&req)?;
+    let biblio_id = chemin.into_inner();
+
+    sqlx::query(
+        "DELETE FROM iam.biblio_recommandation WHERE utilisateur_id = $1 AND auteur_id = $2",
+    )
+    .bind(biblio_id)
+    .bind(auteur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    let nombre_recommandations = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM iam.biblio_recommandation WHERE utilisateur_id = $1",
+    )
+    .bind(biblio_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(RecommandationEtatResponse {
+            nombre_recommandations,
+            a_recommande: false,
+        }),
+        error: None,
+    }))
+}
+
+/// GET /api/bibliotheques-humaines/{id}/recommandations — Liste des témoignages
+pub async fn lister_recommandations_biblio(
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let biblio_id = chemin.into_inner();
+
+    let recommandations = sqlx::query_as::<_, RecommandationBiblioResponse>(
+        "SELECT r.id,
+                r.auteur_id,
+                a.nom        AS auteur_nom,
+                a.prenom     AS auteur_prenom,
+                a.photo_url  AS auteur_photo_url,
+                a.fonction   AS auteur_fonction,
+                r.message,
+                r.created_at
+         FROM iam.biblio_recommandation r
+         JOIN iam.utilisateur a ON a.id = r.auteur_id
+         WHERE r.utilisateur_id = $1
+         ORDER BY r.created_at DESC",
+    )
+    .bind(biblio_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(recommandations),
         error: None,
     }))
 }

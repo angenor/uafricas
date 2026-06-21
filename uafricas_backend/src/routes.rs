@@ -453,7 +453,14 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/specialites", web::get().to(bibliotheques_humaines::lister_specialites))
                     .route("/inscription", web::post().to(bibliotheques_humaines::inscrire_biblio))
                     .route("/moi/demande", web::get().to(bibliotheques_humaines::ma_demande))
-                    .route("/{id}", web::get().to(bibliotheques_humaines::obtenir_biblio)),
+                    .route("/{id}", web::get().to(bibliotheques_humaines::obtenir_biblio))
+                    .route("/{id}/reaction", web::post().to(bibliotheques_humaines::reagir_biblio))
+                    .route("/{id}/commentaires", web::get().to(bibliotheques_humaines::lister_commentaires_biblio))
+                    .route("/{id}/commentaires", web::post().to(bibliotheques_humaines::creer_commentaire_biblio))
+                    .route("/{id}/commentaires/{commentaire_id}", web::delete().to(bibliotheques_humaines::supprimer_commentaire_biblio))
+                    .route("/{id}/recommandation", web::post().to(bibliotheques_humaines::recommander_biblio))
+                    .route("/{id}/recommandation", web::delete().to(bibliotheques_humaines::retirer_recommandation_biblio))
+                    .route("/{id}/recommandations", web::get().to(bibliotheques_humaines::lister_recommandations_biblio)),
             )
             // Routes des centres culturels
             .service(

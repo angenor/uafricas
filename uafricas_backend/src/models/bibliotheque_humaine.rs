@@ -76,6 +76,21 @@ pub struct BiblioHumaineResponse {
     pub ville: Option<String>,
     #[serde(rename = "dateInscription")]
     pub date_inscription: DateTime<Utc>,
+    // Interactions (renseignées sur le détail uniquement — cf. obtenir_biblio)
+    #[serde(rename = "nombreLikes")]
+    pub nombre_likes: i64,
+    #[serde(rename = "nombreDislikes")]
+    pub nombre_dislikes: i64,
+    #[serde(rename = "nombreRecommandations")]
+    pub nombre_recommandations: i64,
+    #[serde(rename = "nombreCommentaires")]
+    pub nombre_commentaires: i64,
+    /// Réaction du membre connecté : "like" | "dislike" | null
+    #[serde(rename = "maReaction")]
+    pub ma_reaction: Option<String>,
+    /// Le membre connecté a-t-il recommandé cette biblio ?
+    #[serde(rename = "aRecommande")]
+    pub a_recommande: bool,
 }
 
 /// Reponse paginee pour la liste
@@ -150,6 +165,84 @@ pub struct MaDemandeResponse {
 }
 
 // ────────────────────────────────────────────────────────────────
+// Interactions : réactions, commentaires, recommandations
+// ────────────────────────────────────────────────────────────────
+
+/// Body pour aimer / ne pas aimer une biblio humaine
+#[derive(Debug, Deserialize)]
+pub struct ReactionBiblioRequest {
+    pub type_reaction: String, // "like" | "dislike"
+}
+
+/// État des réactions après bascule
+#[derive(Debug, Serialize)]
+pub struct ReactionBiblioResponse {
+    #[serde(rename = "nombreLikes")]
+    pub nombre_likes: i64,
+    #[serde(rename = "nombreDislikes")]
+    pub nombre_dislikes: i64,
+    #[serde(rename = "maReaction")]
+    pub ma_reaction: Option<String>,
+}
+
+/// Body pour commenter
+#[derive(Debug, Deserialize)]
+pub struct CommentaireBiblioRequest {
+    pub contenu: String,
+}
+
+/// Commentaire avec son auteur
+#[derive(Debug, Serialize, FromRow)]
+pub struct CommentaireBiblioResponse {
+    pub id: Uuid,
+    #[serde(rename = "auteurId")]
+    pub auteur_id: Uuid,
+    #[serde(rename = "auteurNom")]
+    pub auteur_nom: String,
+    #[serde(rename = "auteurPrenom")]
+    pub auteur_prenom: String,
+    #[serde(rename = "auteurPhotoUrl")]
+    pub auteur_photo_url: Option<String>,
+    pub contenu: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: DateTime<Utc>,
+}
+
+/// Body pour recommander (témoignage facultatif)
+#[derive(Debug, Deserialize)]
+pub struct RecommandationBiblioRequest {
+    pub message: Option<String>,
+}
+
+/// État des recommandations après bascule
+#[derive(Debug, Serialize)]
+pub struct RecommandationEtatResponse {
+    #[serde(rename = "nombreRecommandations")]
+    pub nombre_recommandations: i64,
+    #[serde(rename = "aRecommande")]
+    pub a_recommande: bool,
+}
+
+/// Recommandation (endossement) avec son auteur
+#[derive(Debug, Serialize, FromRow)]
+pub struct RecommandationBiblioResponse {
+    pub id: Uuid,
+    #[serde(rename = "auteurId")]
+    pub auteur_id: Uuid,
+    #[serde(rename = "auteurNom")]
+    pub auteur_nom: String,
+    #[serde(rename = "auteurPrenom")]
+    pub auteur_prenom: String,
+    #[serde(rename = "auteurPhotoUrl")]
+    pub auteur_photo_url: Option<String>,
+    #[serde(rename = "auteurFonction")]
+    pub auteur_fonction: Option<String>,
+    pub message: Option<String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: DateTime<Utc>,
+}
+
+// ────────────────────────────────────────────────────────────────
 // Conversions Row → Response
 // ────────────────────────────────────────────────────────────────
 
@@ -181,6 +274,12 @@ impl BiblioHumaineRow {
             biographie: self.biographie.clone().unwrap_or_default(),
             ville: self.ville.clone(),
             date_inscription: self.created_at,
+            nombre_likes: 0,
+            nombre_dislikes: 0,
+            nombre_recommandations: 0,
+            nombre_commentaires: 0,
+            ma_reaction: None,
+            a_recommande: false,
         }
     }
 }

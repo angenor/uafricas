@@ -80,6 +80,7 @@
 \ir schemas/04d_iam_note_expertise.sql
 \ir schemas/04e_iam_signalement_profil.sql
 \ir schemas/04f_iam_compte_verifie_admin.sql
+\ir schemas/04g_iam_biblio_interactions.sql
 \ir schemas/05_marketplace.sql
 \ir schemas/05b_marketplace_annonceur.sql
 \ir schemas/06_exchange.sql

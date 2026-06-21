@@ -396,6 +396,8 @@ export interface CreerIdeaForcePayload {
 export function useGouvernance() {
   const config = useRuntimeConfig()
   const apiBase = `${config.public.apiBaseUrl as string}/api`
+  // Les fichiers (uploads) sont servis à la racine (`/uploads/...`), PAS sous `/api`.
+  const assetBase = config.public.apiBaseUrl as string
   const userStore = useUserStore()
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -449,7 +451,7 @@ export function useGouvernance() {
     }
 
     return {
-      contributions: reponse.data.contributions.map(c => mapperContribution(c, apiBase)),
+      contributions: reponse.data.contributions.map(c => mapperContribution(c, assetBase)),
       total: reponse.data.total,
       totalPages: reponse.data.total_pages,
     }
