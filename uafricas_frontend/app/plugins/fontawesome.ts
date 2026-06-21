@@ -177,6 +177,7 @@ import {
   faUserXmark,
   faFilePdf,
   faRightLeft,
+  faSeedling,
   faStopwatch,
   faHandPointer,
   faRedo,
@@ -396,6 +397,7 @@ library.add(
   faUserXmark,
   faFilePdf,
   faRightLeft,
+  faSeedling,
 )
 
 export default defineNuxtPlugin((nuxtApp) => {
