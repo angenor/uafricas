@@ -151,6 +151,46 @@
             />
           </div>
 
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-sm font-semibold text-gray-700">
+                Modalités opérationnelles concrètes proposées
+                <span class="text-gray-400 font-normal">(10 étapes maximum)</span>
+              </label>
+              <button
+                v-if="modalites.length < 10"
+                type="button"
+                class="text-xs text-orange-600 hover:text-orange-700 font-medium"
+                @click="ajouterModalite"
+              >
+                <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
+                Ajouter une étape
+              </button>
+            </div>
+            <div v-if="modalites.length === 0" class="text-xs text-gray-400 italic">
+              Aucune étape. Décrivez les étapes concrètes de mise en œuvre (facultatif).
+            </div>
+            <div v-for="(_, idx) in modalites" :key="idx" class="flex items-center gap-2 mb-2">
+              <span class="shrink-0 w-7 h-7 rounded-full bg-orange-100 text-orange-700 text-xs font-bold flex items-center justify-center">
+                {{ idx + 1 }}
+              </span>
+              <input
+                v-model="modalites[idx]"
+                type="text"
+                maxlength="500"
+                :placeholder="`Étape ${idx + 1}...`"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
+              />
+              <button
+                type="button"
+                class="w-10 h-10 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition"
+                @click="retirerModalite(idx)"
+              >
+                <font-awesome-icon :icon="['fas', 'trash']" class="text-xs" />
+              </button>
+            </div>
+          </div>
+
           <div class="bg-gray-50 rounded-lg p-4 space-y-3">
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Localisation</p>
             <div>
@@ -278,6 +318,7 @@ const form = reactive<CreerIdeaForcePayload>({
 })
 
 const mediasUrls = ref<string[]>([])
+const modalites = ref<string[]>([])
 const paysListe = ref<PaysPublic[]>([])
 const enCours = ref(false)
 const erreurMessage = ref<string | null>(null)
@@ -289,6 +330,13 @@ const categories = [
   { value: 'emploi_jeunes' as const, label: 'Emploi des jeunes' },
   { value: 'environnement' as const, label: 'Environnement' },
   { value: 'transport' as const, label: 'Transport' },
+  { value: 'union_africains' as const, label: 'Union des africains' },
+  { value: 'infrastructures' as const, label: 'Infrastructures' },
+  { value: 'retour_cerveaux' as const, label: 'Retour des cerveaux' },
+  { value: 'union_diaspora' as const, label: 'Union de la diaspora' },
+  { value: 'lutte_corruption' as const, label: 'Lutte contre la corruption' },
+  { value: 'urbanisation_durable' as const, label: 'Urbanisation durable' },
+  { value: 'acces_energie' as const, label: "Accès à l'énergie" },
   { value: 'autre' as const, label: 'Autre' },
 ]
 
@@ -316,6 +364,14 @@ function retirerMedia(idx: number) {
   mediasUrls.value.splice(idx, 1)
 }
 
+function ajouterModalite() {
+  if (modalites.value.length < 10) modalites.value.push('')
+}
+
+function retirerModalite(idx: number) {
+  modalites.value.splice(idx, 1)
+}
+
 function reinitialiser() {
   form.titre = ''
   form.description_generale = ''
@@ -330,6 +386,7 @@ function reinitialiser() {
   form.region = undefined
   form.ville_quartier_zone = undefined
   mediasUrls.value = []
+  modalites.value = []
   erreurMessage.value = null
 }
 
@@ -367,6 +424,9 @@ async function soumettre() {
 
     const urlsValides = mediasUrls.value.map(u => u.trim()).filter(u => u.length > 0)
     if (urlsValides.length > 0) payload.medias_urls = urlsValides
+
+    const etapesValides = modalites.value.map(e => e.trim()).filter(e => e.length > 0).slice(0, 10)
+    if (etapesValides.length > 0) payload.modalites_operationnelles = etapesValides
 
     const id = await creerIdeaForce(payload)
     emit('created', id)

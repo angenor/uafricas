@@ -2,8 +2,16 @@ import type {
   ContributionCitoyenne,
   ContributionStats,
   ReactionsGlobales,
+  TypePreuve,
+  TypePublicationFactcheck,
   TypeReactionGlobale,
 } from '~/types/gouvernance'
+
+/** Transformer une URL relative (`/uploads/...`) en URL absolue */
+function mapperUrlAbsolue(url: string | null | undefined, apiBase: string): string | undefined {
+  if (!url) return undefined
+  return url.startsWith('http') ? url : `${apiBase}${url}`
+}
 
 interface ApiGouvernanceStats {
   total: number
@@ -67,6 +75,11 @@ interface ApiContribution {
   categorie?: string | null
   gravite?: string | null
   type_pratique?: string | null
+  type_publication?: string | null
+  preuve_url?: string | null
+  preuve_type?: string | null
+  image_couverture_url?: string | null
+  images?: string[] | null
   factcheck?: ApiFactcheckDetail | null
 }
 
@@ -124,6 +137,13 @@ const LIBELLES_CATEGORIE_PROPOSITION: Record<string, string> = {
   emploi_jeunes: 'Emploi jeunes',
   environnement: 'Environnement',
   transport: 'Transport',
+  union_africains: 'Union des africains',
+  infrastructures: 'Infrastructures',
+  retour_cerveaux: 'Retour des cerveaux',
+  union_diaspora: 'Union de la diaspora',
+  lutte_corruption: 'Lutte contre la corruption',
+  urbanisation_durable: 'Urbanisation durable',
+  acces_energie: "Accès à l'énergie",
   autre: 'Autre',
 }
 
@@ -151,7 +171,7 @@ interface ApiResponse<T> {
 }
 
 /** Mapper une contribution API vers l'interface frontend ContributionCitoyenne */
-function mapperContribution(api: ApiContribution): ContributionCitoyenne {
+function mapperContribution(api: ApiContribution, apiBase: string): ContributionCitoyenne {
   const typePratique = api.type_pratique === 'mauvaise' || api.type_pratique === 'bonne'
     ? (api.type_pratique as TypePratique)
     : undefined
@@ -184,6 +204,9 @@ function mapperContribution(api: ApiContribution): ContributionCitoyenne {
     },
     tags: [],
     typePratique,
+    images: (api.images ?? [])
+      .map(u => mapperUrlAbsolue(u, apiBase))
+      .filter((u): u is string => !!u),
   }
 
   if (api.type === 'factcheck' && api.factcheck) {
@@ -202,6 +225,10 @@ function mapperContribution(api: ApiContribution): ContributionCitoyenne {
     base.aLikePrejuge = fc.a_like_prejuge
     base.aLikeRealite = fc.a_like_realite
     base.aSignale = fc.a_signale
+    base.typePublication = (api.type_publication as TypePublicationFactcheck | null) ?? undefined
+    base.preuveUrl = mapperUrlAbsolue(api.preuve_url, apiBase)
+    base.preuveType = (api.preuve_type as TypePreuve | null) ?? undefined
+    base.imageUrl = mapperUrlAbsolue(api.image_couverture_url, apiBase)
   } else if (api.type === 'badhabits') {
     const categorieLabel = api.categorie
       ? (LIBELLES_CATEGORIE_PROBLEME[api.categorie] ?? api.categorie)
@@ -236,6 +263,43 @@ export interface CreerFactcheckPayload {
   prejuge_description?: string
   realite_titre?: string
   realite_description?: string
+  type_publication?: TypePublicationFactcheck
+  preuve_url?: string
+  preuve_type?: TypePreuve
+}
+
+// ── Partage de contribution vers /publications ──────────────────
+
+export interface PartageContributionAuteurAPI {
+  id: string
+  prenom: string
+  nom: string
+  photo_url: string | null
+}
+
+export interface PartageContributionApercuAPI {
+  id: string
+  type_contribution: 'factcheck' | 'badhabits' | 'ideaforces'
+  titre: string
+  description: string | null
+  categorie: string | null
+  image_couverture_url: string | null
+}
+
+export interface PartageContributionAPI {
+  id: string
+  legende: string | null
+  created_at: string
+  contribution: PartageContributionApercuAPI
+  auteur: PartageContributionAuteurAPI
+}
+
+export interface PartageContributionListeAPI {
+  partages: PartageContributionAPI[]
+  total: number
+  page: number
+  par_page: number
+  total_pages: number
 }
 
 export type TypePratique = 'mauvaise' | 'bonne'
@@ -279,6 +343,15 @@ export interface CreerBadHabitPayload {
   region?: string
   ville_quartier_zone?: string
   medias_urls?: string[]
+  /** Preuves (photos) — URLs relatives uploadées (mauvaise pratique) */
+  preuves_photos?: string[]
+  /** Solutions proposées (10 propositions maximum) */
+  solutions_propositions?: string[]
+  /** Identité réelle de l'auteur (obligatoire pour une mauvaise pratique) */
+  identite_nom?: string
+  identite_prenom?: string
+  identite_courriel?: string
+  identite_contact?: string
 }
 
 export interface PaysPublic {
@@ -299,12 +372,21 @@ export interface CreerIdeaForcePayload {
     | 'emploi_jeunes'
     | 'environnement'
     | 'transport'
+    | 'union_africains'
+    | 'infrastructures'
+    | 'retour_cerveaux'
+    | 'union_diaspora'
+    | 'lutte_corruption'
+    | 'urbanisation_durable'
+    | 'acces_energie'
     | 'autre'
   categorie_proposition_detail?: string
   urgence?: 'faible' | 'elevee' | 'critique'
   plan_implementation?: string
   ressources_necessaires?: string
   impact_attendu?: string
+  /** Modalités opérationnelles concrètes proposées (10 étapes maximum) */
+  modalites_operationnelles?: string[]
   pays_id?: string
   region?: string
   ville_quartier_zone?: string
@@ -367,7 +449,7 @@ export function useGouvernance() {
     }
 
     return {
-      contributions: reponse.data.contributions.map(mapperContribution),
+      contributions: reponse.data.contributions.map(c => mapperContribution(c, apiBase)),
       total: reponse.data.total,
       totalPages: reponse.data.total_pages,
     }
@@ -409,6 +491,30 @@ export function useGouvernance() {
     } finally {
       loading.value = false
     }
+  }
+
+  /**
+   * Uploader une preuve (photo ou PDF) pour un fait vécu.
+   * Retourne l'URL relative et le type détecté par le backend.
+   */
+  async function uploaderPreuve(fichier: File): Promise<{ url: string; preuveType: TypePreuve }> {
+    if (!userStore.accessToken) {
+      throw new Error('Authentification requise pour téléverser une preuve')
+    }
+    const formData = new FormData()
+    formData.append('fichier', fichier)
+    const reponse = await $fetch<ApiResponse<{ url: string; preuve_type: TypePreuve }>>(
+      `${apiBase}/gouvernance/factcheck/upload-preuve`,
+      {
+        method: 'POST',
+        headers: authHeaders(),
+        body: formData,
+      },
+    )
+    if (!reponse.success || !reponse.data) {
+      throw new Error(reponse.error || 'Erreur lors du téléversement de la preuve')
+    }
+    return { url: reponse.data.url, preuveType: reponse.data.preuve_type }
   }
 
   /** Publier une mauvaise pratique (BadHabit) */
@@ -509,6 +615,55 @@ export function useGouvernance() {
   }
 
   /**
+   * Partager une contribution (factcheck/badhabits/ideaforces) sur le mur
+   * /publications, avec une légende facultative. JWT requis.
+   */
+  async function partagerContribution(
+    typeContribution: 'factcheck' | 'badhabits' | 'ideaforces',
+    contributionId: string,
+    legende?: string,
+  ): Promise<PartageContributionAPI> {
+    if (!userStore.accessToken) {
+      throw new Error('Authentification requise pour partager')
+    }
+    const reponse = await $fetch<ApiResponse<PartageContributionAPI>>(
+      `${apiBase}/gouvernance/partages`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: {
+          type_contribution: typeContribution,
+          contribution_id: contributionId,
+          legende: legende || undefined,
+        },
+      },
+    )
+    if (!reponse.success || !reponse.data) {
+      throw new Error(reponse.error || 'Erreur lors du partage')
+    }
+    return reponse.data
+  }
+
+  /** Liste paginée des contributions partagées (mur public). */
+  async function listerPartagesContributions(
+    page = 1,
+    parPage = 20,
+  ): Promise<PartageContributionListeAPI | null> {
+    try {
+      const reponse = await $fetch<ApiResponse<PartageContributionListeAPI>>(
+        `${apiBase}/gouvernance/partages?page=${page}&par_page=${parPage}`,
+      )
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement des partages')
+      }
+      return reponse.data
+    } catch (err) {
+      console.error('Erreur listerPartagesContributions:', err)
+      return null
+    }
+  }
+
+  /**
    * Signaler un factcheck. Au-delà de 20 signalements distincts, le backend
    * suspend la publication (etat='suspendu') et elle quitte la liste publique.
    */
@@ -546,6 +701,9 @@ export function useGouvernance() {
     getContributions,
     getPays,
     creerFactcheck,
+    uploaderPreuve,
+    partagerContribution,
+    listerPartagesContributions,
     creerBadHabit,
     creerIdeaForce,
     reagir,

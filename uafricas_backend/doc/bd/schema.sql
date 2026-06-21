@@ -99,6 +99,11 @@
 \ir schemas/10_governance.sql
 \ir schemas/10f_governance_factcheck_volets_reactions.sql
 \ir schemas/10g_governance_factcheck_signalement.sql
+\ir schemas/10h_governance_factcheck_type_preuve.sql
+\ir schemas/10i_governance_ideaforces_categories.sql
+\ir schemas/10j_governance_ideaforces_modalites.sql
+\ir schemas/10k_governance_partage_contribution.sql
+\ir schemas/10l_governance_badhabit_preuves_identite.sql
 \ir schemas/11_country_profile.sql
 \ir schemas/11b_country_profile_contributions.sql
 \ir schemas/11c_country_profile_afripulse.sql

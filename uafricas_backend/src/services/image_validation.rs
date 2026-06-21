@@ -9,9 +9,15 @@
 //! invalide ne touche jamais `./uploads/`.
 
 use image::GenericImageView;
+use std::io::Cursor;
 
 pub const TAILLE_MAX_OCTETS: usize = 2_097_152; // 2 Mo
 pub const DIMENSION_MAX: u32 = 2048;
+
+/// Taille maximale acceptée EN ENTRÉE avant normalisation (15 Mo).
+pub const TAILLE_MAX_ENTREE: usize = 15 * 1024 * 1024;
+/// Dimension cible après normalisation (le plus grand côté).
+pub const DIMENSION_CIBLE: u32 = 2000;
 
 /// Limite de taille des photos d'annonce du Marché Africain (3 Mo, spec).
 pub const TAILLE_MAX_OCTETS_ANNONCE: usize = 3_145_728; // 3 Mo
@@ -175,6 +181,77 @@ pub fn valider_photo_annonce(bytes: &[u8]) -> Result<DimensionsValides, ErreurVa
         largeur,
         hauteur,
     })
+}
+
+/// Normalise une image fournie par l'usager (image illustrative, preuve photo) :
+/// accepte JPEG/PNG/WebP, redimensionne si un côté dépasse `DIMENSION_CIBLE`, et
+/// ré-encode pour borner le poids. Ne rejette jamais sur la taille/dimensions
+/// (sauf entrée absurde > `TAILLE_MAX_ENTREE` ou fichier illisible).
+/// Retourne (octets normalisés, format de sortie, largeur, hauteur).
+pub fn normaliser_photo(
+    bytes: &[u8],
+) -> Result<(Vec<u8>, FormatPhoto, u32, u32), ErreurValidationPhoto> {
+    if bytes.len() > TAILLE_MAX_ENTREE {
+        return Err(ErreurValidationPhoto::TailleTropGrande {
+            taille_octets: bytes.len(),
+            max_octets: TAILLE_MAX_ENTREE,
+        });
+    }
+
+    let format_detecte = image::guess_format(bytes)
+        .map_err(|_| ErreurValidationPhoto::FormatNonAutorise { format_detecte: None })?;
+    let format_entree = match format_detecte {
+        image::ImageFormat::Jpeg => FormatPhoto::Jpeg,
+        image::ImageFormat::Png => FormatPhoto::Png,
+        image::ImageFormat::WebP => FormatPhoto::Webp,
+        autre => {
+            return Err(ErreurValidationPhoto::FormatNonAutorise {
+                format_detecte: Some(format!("{:?}", autre).to_lowercase()),
+            });
+        }
+    };
+
+    let img =
+        image::load_from_memory(bytes).map_err(|_| ErreurValidationPhoto::DecodageImpossible)?;
+    let (largeur, hauteur) = img.dimensions();
+
+    let doit_redim = largeur > DIMENSION_CIBLE || hauteur > DIMENSION_CIBLE;
+    let doit_reencoder = doit_redim || bytes.len() > TAILLE_MAX_OCTETS;
+
+    // Image déjà raisonnable : on conserve les octets d'origine.
+    if !doit_reencoder {
+        return Ok((bytes.to_vec(), format_entree, largeur, hauteur));
+    }
+
+    let img = if doit_redim {
+        img.resize(
+            DIMENSION_CIBLE,
+            DIMENSION_CIBLE,
+            image::imageops::FilterType::Lanczos3,
+        )
+    } else {
+        img
+    };
+    let (nl, nh) = img.dimensions();
+
+    let mut out = Vec::new();
+    // PNG conservé (transparence) ; JPEG/WebP ré-encodés en JPEG.
+    let format_sortie = match format_entree {
+        FormatPhoto::Png => {
+            img.write_to(&mut Cursor::new(&mut out), image::ImageFormat::Png)
+                .map_err(|_| ErreurValidationPhoto::DecodageImpossible)?;
+            FormatPhoto::Png
+        }
+        _ => {
+            // JPEG ne supporte pas l'alpha → conversion RGB explicite.
+            image::DynamicImage::ImageRgb8(img.to_rgb8())
+                .write_to(&mut Cursor::new(&mut out), image::ImageFormat::Jpeg)
+                .map_err(|_| ErreurValidationPhoto::DecodageImpossible)?;
+            FormatPhoto::Jpeg
+        }
+    };
+
+    Ok((out, format_sortie, nl, nh))
 }
 
 #[cfg(test)]

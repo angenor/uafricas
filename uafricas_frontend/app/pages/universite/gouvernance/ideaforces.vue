@@ -49,6 +49,14 @@
         @created="apresPublication"
       />
 
+      <UniversiteGouvernancePartagerContributionModal
+        ref="modalPartageRef"
+        :is-open="modalPartageOuvert"
+        :titre="contribAPartager?.titre ?? ''"
+        @close="modalPartageOuvert = false"
+        @submit="soumettrePartage"
+      />
+
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Filtres -->
         <div class="lg:col-span-1">
@@ -184,8 +192,16 @@
                     <font-awesome-icon :icon="['fas', 'hand-fist']" />
                     {{ contribution.stats.soutiens || 0 }} soutiens
                   </span>
+                  <button
+                    type="button"
+                    title="Partager sur le mur /publications"
+                    class="ml-auto flex items-center gap-1.5 hover:text-custom-green transition"
+                    @click.stop="ouvrirPartage(contribution)"
+                  >
+                    <font-awesome-icon :icon="['fas', 'share-nodes']" />
+                    <span class="hidden sm:inline">Partager sur le mur</span>
+                  </button>
                   <UniversiteGouvernancePartagePublication
-                    class="ml-auto"
                     path="/universite/gouvernance/ideaforces"
                     :id="contribution.id"
                     :titre="contribution.titre"
@@ -214,8 +230,33 @@ const breadcrumbs = [
 ]
 
 const userStore = useUserStore()
-const { getContributions } = useGouvernance()
+const { getContributions, partagerContribution } = useGouvernance()
 const { pubCible, cibler } = usePartagePublication()
+
+// Partage vers le mur /publications
+const modalPartageOuvert = ref(false)
+const contribAPartager = ref<ContributionCitoyenne | null>(null)
+const modalPartageRef = ref<{ setLoading: (v: boolean) => void; setError: (m: string) => void; setSuccess: () => void } | null>(null)
+
+function ouvrirPartage(c: ContributionCitoyenne) {
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  contribAPartager.value = c
+  modalPartageOuvert.value = true
+}
+
+async function soumettrePartage(legende: string) {
+  if (!contribAPartager.value) return
+  modalPartageRef.value?.setLoading(true)
+  try {
+    await partagerContribution('ideaforces', contribAPartager.value.id, legende || undefined)
+    modalPartageRef.value?.setSuccess()
+  } catch (e) {
+    modalPartageRef.value?.setError(e instanceof Error ? e.message : 'Erreur lors du partage.')
+  }
+}
 
 const contributions = ref<ContributionCitoyenne[]>([])
 const chargement = ref(false)

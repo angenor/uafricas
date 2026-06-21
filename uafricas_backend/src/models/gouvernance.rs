@@ -35,6 +35,15 @@ pub struct ContributionRow {
     pub ville: Option<String>,
     pub categorie: Option<String>,
     pub gravite: Option<String>,
+    // Type de publication factcheck (on_dit | adage_legende | fait_vecu) + preuve
+    // — NULL pour badhabits/ideaforces
+    pub type_publication: Option<String>,
+    pub preuve_url: Option<String>,
+    pub preuve_type: Option<String>,
+    // Image illustrative (couverture) — factcheck uniquement
+    pub image_couverture_url: Option<String>,
+    // Images additionnelles à visualiser (preuves photos d'une mauvaise pratique)
+    pub images: Option<Vec<String>>,
     // Volets factcheck (préjugé / réalité) — NULL pour badhabits/ideaforces
     pub prejuge_titre: Option<String>,
     pub prejuge_description: Option<String>,
@@ -125,6 +134,16 @@ pub struct ContributionResponse {
     pub categorie: Option<String>,
     pub gravite: Option<String>,
     pub type_pratique: Option<String>,
+    /// Type de publication factcheck : 'on_dit' | 'adage_legende' | 'fait_vecu'
+    pub type_publication: Option<String>,
+    /// URL de la preuve jointe (photo ou PDF) pour un fait vécu
+    pub preuve_url: Option<String>,
+    /// Type de preuve : 'image' | 'pdf'
+    pub preuve_type: Option<String>,
+    /// Image illustrative (couverture) — factcheck uniquement
+    pub image_couverture_url: Option<String>,
+    /// Images à visualiser (preuves photos d'une mauvaise pratique)
+    pub images: Option<Vec<String>>,
     /// Présent uniquement pour les contributions de type factcheck
     pub factcheck: Option<FactcheckDetailResponse>,
 }
@@ -240,9 +259,111 @@ impl ContributionRow {
             categorie: self.categorie.clone(),
             gravite: self.gravite.clone(),
             type_pratique,
+            type_publication: if self.type_contribution == "factcheck" {
+                self.type_publication.clone()
+            } else {
+                None
+            },
+            preuve_url: self.preuve_url.clone(),
+            preuve_type: self.preuve_type.clone(),
+            image_couverture_url: if self.type_contribution == "factcheck" {
+                self.image_couverture_url.clone()
+            } else {
+                None
+            },
+            images: self.images.clone().filter(|v| !v.is_empty()),
             factcheck,
         }
     }
+}
+
+// ── Partage de contribution vers /publications ────────────────
+
+/// Corps de requête pour partager une contribution
+#[derive(Debug, Deserialize)]
+pub struct PartageContributionRequest {
+    /// 'factcheck' | 'badhabits' | 'ideaforces'
+    pub type_contribution: String,
+    pub contribution_id: Uuid,
+    pub legende: Option<String>,
+}
+
+/// Ligne SQL d'un partage enrichi (aperçu de la contribution + auteur du partage)
+#[derive(Debug, FromRow)]
+pub struct PartageContributionRow {
+    pub id: Uuid,
+    pub legende: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub type_contribution: String,
+    pub contribution_id: Uuid,
+    pub titre: String,
+    pub description: Option<String>,
+    pub categorie: Option<String>,
+    pub image_couverture_url: Option<String>,
+    pub auteur_id: Uuid,
+    pub auteur_nom: String,
+    pub auteur_prenom: String,
+    pub auteur_photo_url: Option<String>,
+}
+
+/// Aperçu de la contribution partagée
+#[derive(Debug, Serialize)]
+pub struct PartageContributionApercu {
+    pub id: Uuid,
+    pub type_contribution: String,
+    pub titre: String,
+    pub description: Option<String>,
+    pub categorie: Option<String>,
+    pub image_couverture_url: Option<String>,
+}
+
+/// Un partage de contribution affiché sur le mur /publications
+#[derive(Debug, Serialize)]
+pub struct PartageContributionResponse {
+    pub id: Uuid,
+    pub legende: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub contribution: PartageContributionApercu,
+    pub auteur: ContributionAuteurResponse,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PartageContributionListeResponse {
+    pub partages: Vec<PartageContributionResponse>,
+    pub total: i64,
+    pub page: i64,
+    pub par_page: i64,
+    pub total_pages: i64,
+}
+
+impl From<PartageContributionRow> for PartageContributionResponse {
+    fn from(r: PartageContributionRow) -> Self {
+        PartageContributionResponse {
+            id: r.id,
+            legende: r.legende,
+            created_at: r.created_at,
+            contribution: PartageContributionApercu {
+                id: r.contribution_id,
+                type_contribution: r.type_contribution,
+                titre: r.titre,
+                description: r.description,
+                categorie: r.categorie,
+                image_couverture_url: r.image_couverture_url,
+            },
+            auteur: ContributionAuteurResponse {
+                id: r.auteur_id,
+                prenom: r.auteur_prenom,
+                nom: r.auteur_nom,
+                photo_url: r.auteur_photo_url,
+            },
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PartageQueryParams {
+    pub page: Option<i64>,
+    pub par_page: Option<i64>,
 }
 
 // ── Parametres de requete ─────────────────────────────────────

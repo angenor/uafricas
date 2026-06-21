@@ -49,6 +49,20 @@
         @created="apresPublicationRecharger"
       />
 
+      <UniversiteGouvernancePartagerContributionModal
+        ref="modalPartageRef"
+        :is-open="modalPartageOuvert"
+        :titre="contribAPartager?.titre ?? ''"
+        @close="modalPartageOuvert = false"
+        @submit="soumettrePartage"
+      />
+
+      <CommonImageViewer
+        :images="viewerImages"
+        :open="viewerOuvert"
+        @close="viewerOuvert = false"
+      />
+
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Filtres -->
         <div class="lg:col-span-1">
@@ -153,6 +167,15 @@
               <!-- Bande bleue -->
               <div class="h-1.5 bg-linear-to-r from-blue-500 to-indigo-500"></div>
 
+              <!-- Image illustrative (cliquable pour agrandir) -->
+              <img
+                v-if="contribution.imageUrl"
+                :src="contribution.imageUrl"
+                alt=""
+                class="w-full h-44 object-cover cursor-zoom-in"
+                @click.stop="ouvrirViewer([contribution.imageUrl!])"
+              >
+
               <div class="p-6">
                 <div class="flex items-start gap-4">
                   <!-- Icône -->
@@ -171,6 +194,49 @@
                     <p class="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">
                       {{ contribution.description }}
                     </p>
+
+                    <!-- Type de publication + preuve (fait vécu) -->
+                    <div v-if="contribution.typePublication" class="flex flex-wrap items-center gap-2 mb-4">
+                      <span
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                        :class="typeBadge(contribution.typePublication).class"
+                      >
+                        <font-awesome-icon :icon="typeBadge(contribution.typePublication).icon" class="text-[10px]" />
+                        {{ typeBadge(contribution.typePublication).label }}
+                      </span>
+
+                      <template v-if="contribution.typePublication === 'fait_vecu'">
+                        <!-- Preuve image : ouvrable dans la visionneuse -->
+                        <button
+                          v-if="contribution.preuveUrl && contribution.preuveType === 'image'"
+                          type="button"
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium hover:bg-green-100 transition"
+                          @click.stop="ouvrirViewer([contribution.preuveUrl!])"
+                        >
+                          <font-awesome-icon :icon="['fas', 'image']" class="text-[10px]" />
+                          Voir la preuve (photo)
+                        </button>
+                        <!-- Preuve PDF : lien -->
+                        <a
+                          v-else-if="contribution.preuveUrl"
+                          :href="contribution.preuveUrl"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium hover:bg-green-100 transition"
+                          @click.stop
+                        >
+                          <font-awesome-icon :icon="['fas', 'file-pdf']" class="text-[10px]" />
+                          Preuve (PDF)
+                        </a>
+                        <span
+                          v-else
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 text-gray-500 border border-gray-200 rounded-full text-xs font-medium"
+                        >
+                          <font-awesome-icon :icon="['fas', 'ban']" class="text-[10px]" />
+                          Pas de preuve
+                        </span>
+                      </template>
+                    </div>
 
                     <!-- FactCheck préjugé vs réalité -->
                     <div v-if="contribution.factcheck" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
@@ -281,6 +347,16 @@
                     {{ contribution.aSignale ? 'Signalé' : 'Signaler' }}
                   </button>
 
+                  <button
+                    type="button"
+                    title="Partager sur le mur /publications"
+                    class="flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:bg-green-50 hover:text-custom-green transition"
+                    @click.stop="ouvrirPartage(contribution)"
+                  >
+                    <font-awesome-icon :icon="['fas', 'share-nodes']" />
+                    <span class="hidden sm:inline">Partager sur le mur</span>
+                  </button>
+
                   <UniversiteGouvernancePartagePublication
                     class="px-2.5 py-1"
                     path="/universite/gouvernance/factcheck"
@@ -298,14 +374,52 @@
 </template>
 
 <script setup lang="ts">
-import type { ContributionCitoyenne, TypeReactionGlobale } from '~/types/gouvernance'
+import type { ContributionCitoyenne, TypePublicationFactcheck, TypeReactionGlobale } from '~/types/gouvernance'
+
+/** Badge d'affichage pour le type de publication */
+function typeBadge(type: TypePublicationFactcheck | undefined): { label: string; icon: [string, string]; class: string } {
+  switch (type) {
+    case 'adage_legende':
+      return { label: 'Adage / Légende', icon: ['fas', 'book-open'], class: 'bg-purple-50 text-purple-700 border border-purple-200' }
+    case 'fait_vecu':
+      return { label: 'Fait vécu ou observé', icon: ['fas', 'location-dot'], class: 'bg-amber-50 text-amber-700 border border-amber-200' }
+    case 'on_dit':
+    default:
+      return { label: 'On dit / entendu', icon: ['fas', 'comments'], class: 'bg-blue-50 text-blue-700 border border-blue-200' }
+  }
+}
 
 useHead({
   title: 'FactCheck - Gouvernance Citoyenne'
 })
 
-const { getContributions, reagir, signaler } = useGouvernance()
+const { getContributions, reagir, signaler, partagerContribution } = useGouvernance()
 const { pubCible, cibler } = usePartagePublication()
+
+// Partage vers le mur /publications
+const modalPartageOuvert = ref(false)
+const contribAPartager = ref<ContributionCitoyenne | null>(null)
+const modalPartageRef = ref<{ setLoading: (v: boolean) => void; setError: (m: string) => void; setSuccess: () => void } | null>(null)
+
+function ouvrirPartage(c: ContributionCitoyenne) {
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  contribAPartager.value = c
+  modalPartageOuvert.value = true
+}
+
+async function soumettrePartage(legende: string) {
+  if (!contribAPartager.value) return
+  modalPartageRef.value?.setLoading(true)
+  try {
+    await partagerContribution('factcheck', contribAPartager.value.id, legende || undefined)
+    modalPartageRef.value?.setSuccess()
+  } catch (e) {
+    modalPartageRef.value?.setError(e instanceof Error ? e.message : 'Erreur lors du partage.')
+  }
+}
 
 const breadcrumbs = [
   { label: 'Université', to: '/universite' },
@@ -314,6 +428,14 @@ const breadcrumbs = [
 ]
 
 const userStore = useUserStore()
+
+// Visionneuse d'images
+const viewerOuvert = ref(false)
+const viewerImages = ref<string[]>([])
+function ouvrirViewer(images: string[]) {
+  viewerImages.value = images
+  viewerOuvert.value = true
+}
 
 const contributions = ref<ContributionCitoyenne[]>([])
 const recherche = ref('')

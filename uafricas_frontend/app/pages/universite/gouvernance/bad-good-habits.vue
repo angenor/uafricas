@@ -83,6 +83,21 @@
         @created="apresPublication"
       />
 
+      <UniversiteGouvernancePartagerContributionModal
+        ref="modalPartageRef"
+        :is-open="modalPartageOuvert"
+        :titre="contribAPartager?.titre ?? ''"
+        @close="modalPartageOuvert = false"
+        @submit="soumettrePartage"
+      />
+
+      <CommonImageViewer
+        :images="viewerImages"
+        :open="viewerOuvert"
+        :index="viewerIndex"
+        @close="viewerOuvert = false"
+      />
+
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Filtres -->
         <div class="lg:col-span-1">
@@ -265,6 +280,19 @@
                       {{ contribution.description }}
                     </p>
 
+                    <!-- Preuves (photos) -->
+                    <div v-if="contribution.images?.length" class="flex flex-wrap gap-2 mb-4">
+                      <button
+                        v-for="(img, idx) in contribution.images"
+                        :key="img"
+                        type="button"
+                        class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 cursor-zoom-in group/img"
+                        @click.stop="ouvrirViewer(contribution.images!, idx)"
+                      >
+                        <img :src="img" alt="Preuve" class="w-full h-full object-cover transition group-hover/img:scale-105">
+                      </button>
+                    </div>
+
                     <!-- Métadonnées -->
                     <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-400">
                       <span class="flex items-center gap-1.5">
@@ -297,8 +325,16 @@
                     {{ contribution.stats.soutiens || 0 }}
                     {{ contribution.typePratique === 'bonne' ? 'félicitations' : 'soutiens' }}
                   </span>
+                  <button
+                    type="button"
+                    title="Partager sur le mur /publications"
+                    class="ml-auto flex items-center gap-1.5 hover:text-custom-green transition"
+                    @click.stop="ouvrirPartage(contribution)"
+                  >
+                    <font-awesome-icon :icon="['fas', 'share-nodes']" />
+                    <span class="hidden sm:inline">Partager sur le mur</span>
+                  </button>
                   <UniversiteGouvernancePartagePublication
-                    class="ml-auto"
                     path="/universite/gouvernance/bad-good-habits"
                     :id="contribution.id"
                     :titre="contribution.titre"
@@ -317,7 +353,7 @@
 import type { ContributionCitoyenne } from '~/types/gouvernance'
 import type { TypePratique } from '~/composables/useGouvernance'
 
-const { getContributions } = useGouvernance()
+const { getContributions, partagerContribution } = useGouvernance()
 const { pubCible, cibler } = usePartagePublication()
 const chargement = ref(false)
 const erreurChargement = ref<string | null>(null)
@@ -333,6 +369,41 @@ const breadcrumbs = [
 ]
 
 const userStore = useUserStore()
+
+// Visionneuse d'images (preuves photos)
+const viewerOuvert = ref(false)
+const viewerImages = ref<string[]>([])
+const viewerIndex = ref(0)
+function ouvrirViewer(images: string[], index = 0) {
+  viewerImages.value = images
+  viewerIndex.value = index
+  viewerOuvert.value = true
+}
+
+// Partage vers le mur /publications
+const modalPartageOuvert = ref(false)
+const contribAPartager = ref<ContributionCitoyenne | null>(null)
+const modalPartageRef = ref<{ setLoading: (v: boolean) => void; setError: (m: string) => void; setSuccess: () => void } | null>(null)
+
+function ouvrirPartage(c: ContributionCitoyenne) {
+  if (!userStore.isAuthenticated) {
+    navigateTo('/login')
+    return
+  }
+  contribAPartager.value = c
+  modalPartageOuvert.value = true
+}
+
+async function soumettrePartage(legende: string) {
+  if (!contribAPartager.value) return
+  modalPartageRef.value?.setLoading(true)
+  try {
+    await partagerContribution('badhabits', contribAPartager.value.id, legende || undefined)
+    modalPartageRef.value?.setSuccess()
+  } catch (e) {
+    modalPartageRef.value?.setError(e instanceof Error ? e.message : 'Erreur lors du partage.')
+  }
+}
 
 type VueActive = 'toutes' | 'mauvaise' | 'bonne'
 

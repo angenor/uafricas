@@ -1,15 +1,20 @@
+use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse};
+use futures_util::StreamExt;
 use serde::Deserialize;
 use sqlx::PgPool;
+use std::io::Write;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::gouvernance::{
     ContributionListeResponse, ContributionQueryParams, ContributionRow, FactcheckReactionEtat,
-    GouvernanceStats, ReactionFactcheckRequest, SignalementEtat, SignalementRequest,
+    GouvernanceStats, PartageContributionListeResponse, PartageContributionRequest,
+    PartageContributionRow, PartageQueryParams, ReactionFactcheckRequest, SignalementEtat,
+    SignalementRequest,
 };
-use crate::services::audit;
+use crate::services::{audit, image_validation};
 
 /// Seuil de signalements distincts au-delà duquel un factcheck est suspendu
 const SEUIL_SIGNALEMENTS_SUSPENSION: i64 = 20;
@@ -182,6 +187,8 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                     f.cree_par, f.pays_id, f.created_at,
                     NULL::VARCHAR AS region, NULL::VARCHAR AS ville,
                     NULL::TEXT AS categorie, NULL::TEXT AS gravite,
+                    f.type_publication, f.preuve_url, f.preuve_type, f.image_couverture_url,
+                    NULL::TEXT[] AS images,
                     f.prejuge_titre, f.prejuge_description, f.prejuge_nombre_likes AS prejuge_likes,
                     f.realite_titre, f.realite_description, f.realite_nombre_likes AS realite_likes,
                     f.nombre_coeur, f.nombre_pouce, f.nombre_rire, f.nombre_jaime_pas
@@ -202,6 +209,8 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                     b.region, b.ville_quartier_zone AS ville,
                     b.categorie_probleme::TEXT AS categorie,
                     b.gravite::TEXT AS gravite,
+                    NULL::VARCHAR AS type_publication, NULL::VARCHAR AS preuve_url, NULL::VARCHAR AS preuve_type, NULL::VARCHAR AS image_couverture_url,
+                    b.preuves_photos AS images,
                     NULL::VARCHAR AS prejuge_titre, NULL::TEXT AS prejuge_description, 0 AS prejuge_likes,
                     NULL::VARCHAR AS realite_titre, NULL::TEXT AS realite_description, 0 AS realite_likes,
                     0 AS nombre_coeur, 0 AS nombre_pouce, 0 AS nombre_rire, 0 AS nombre_jaime_pas
@@ -222,6 +231,8 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                     i.region, i.ville_quartier_zone AS ville,
                     i.categorie_proposition::TEXT AS categorie,
                     i.urgence::TEXT AS gravite,
+                    NULL::VARCHAR AS type_publication, NULL::VARCHAR AS preuve_url, NULL::VARCHAR AS preuve_type, NULL::VARCHAR AS image_couverture_url,
+                    NULL::TEXT[] AS images,
                     NULL::VARCHAR AS prejuge_titre, NULL::TEXT AS prejuge_description, 0 AS prejuge_likes,
                     NULL::VARCHAR AS realite_titre, NULL::TEXT AS realite_description, 0 AS realite_likes,
                     0 AS nombre_coeur, 0 AS nombre_pouce, 0 AS nombre_rire, 0 AS nombre_jaime_pas
@@ -246,6 +257,8 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                        NULL::VARCHAR AS ville,
                        NULL::TEXT AS categorie,
                        NULL::TEXT AS gravite,
+                       NULL::VARCHAR AS type_publication, NULL::VARCHAR AS preuve_url, NULL::VARCHAR AS preuve_type, NULL::VARCHAR AS image_couverture_url,
+                       NULL::TEXT[] AS images,
                        NULL::VARCHAR AS prejuge_titre, NULL::TEXT AS prejuge_description, 0 AS prejuge_likes,
                        NULL::VARCHAR AS realite_titre, NULL::TEXT AS realite_description, 0 AS realite_likes,
                        0 AS nombre_coeur, 0 AS nombre_pouce, 0 AS nombre_rire, 0 AS nombre_jaime_pas,
@@ -268,6 +281,8 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
                 p.nom AS pays_nom,
                 c.region, c.ville,
                 c.categorie, c.gravite,
+                c.type_publication, c.preuve_url, c.preuve_type, c.image_couverture_url,
+                c.images,
                 c.prejuge_titre, c.prejuge_description, c.prejuge_likes,
                 c.realite_titre, c.realite_description, c.realite_likes,
                 c.nombre_coeur, c.nombre_pouce, c.nombre_rire, c.nombre_jaime_pas,
@@ -287,6 +302,196 @@ fn build_contributions_query(filtre_type: Option<&str>) -> String {
          LIMIT $1 OFFSET $2",
         union
     )
+}
+
+// ──────────────────────────────────────────────────────────────
+// Partage de contribution vers le mur /publications
+// ──────────────────────────────────────────────────────────────
+
+/// SELECT enrichi : aperçu de la contribution (titre, description, catégorie,
+/// image) + auteur du partage. Les LEFT JOIN par type filtrent les contributions
+/// supprimées ou non publiées ; le partage est exclu si sa cible n'est plus visible.
+const PARTAGE_CONTRIBUTION_SELECT: &str = "SELECT
+        pc.id, pc.legende, pc.created_at, pc.type_contribution, pc.contribution_id,
+        COALESCE(LEFT(f.contenu, 200), b.titre, i.titre) AS titre,
+        COALESCE(f.contenu, b.description_generale, i.description_generale) AS description,
+        COALESCE(b.categorie_probleme::TEXT, i.categorie_proposition::TEXT) AS categorie,
+        f.image_couverture_url AS image_couverture_url,
+        u.id AS auteur_id,
+        CASE WHEN u.deleted_at IS NULL THEN u.nom ELSE 'Membre' END AS auteur_nom,
+        CASE WHEN u.deleted_at IS NULL THEN u.prenom ELSE 'retiré' END AS auteur_prenom,
+        CASE WHEN u.deleted_at IS NULL THEN u.photo_url ELSE NULL END AS auteur_photo_url
+     FROM governance.partage_contribution pc
+     LEFT JOIN governance.factcheck f
+         ON pc.type_contribution = 'factcheck' AND f.id = pc.contribution_id
+            AND f.deleted_at IS NULL AND f.etat = 'publie'
+     LEFT JOIN governance.bad_habit b
+         ON pc.type_contribution = 'badhabits' AND b.id = pc.contribution_id
+            AND b.deleted_at IS NULL AND b.etat = 'publie'
+     LEFT JOIN governance.idea_force i
+         ON pc.type_contribution = 'ideaforces' AND i.id = pc.contribution_id
+            AND i.deleted_at IS NULL AND i.etat = 'publie'
+     JOIN iam.utilisateur u ON u.id = pc.utilisateur_id
+     WHERE pc.deleted_at IS NULL AND COALESCE(f.id, b.id, i.id) IS NOT NULL";
+
+/// Vérifie qu'une contribution existe et est publiée selon son type
+async fn contribution_publiee_existe(
+    pool: &PgPool,
+    type_contribution: &str,
+    contribution_id: Uuid,
+) -> Result<bool, ApiErreur> {
+    let table = match type_contribution {
+        "factcheck" => "governance.factcheck",
+        "badhabits" => "governance.bad_habit",
+        "ideaforces" => "governance.idea_force",
+        _ => return Ok(false),
+    };
+    let existe: bool = sqlx::query_scalar(&format!(
+        "SELECT EXISTS(SELECT 1 FROM {} WHERE id = $1 AND etat = 'publie' AND deleted_at IS NULL)",
+        table
+    ))
+    .bind(contribution_id)
+    .fetch_one(pool)
+    .await?;
+    Ok(existe)
+}
+
+// POST /api/gouvernance/partages — Partager une contribution
+pub async fn partager_contribution(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    body: web::Json<PartageContributionRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = exiger_utilisateur_id(&req)?;
+
+    let type_contribution = body.type_contribution.trim();
+    let types_valides = ["factcheck", "badhabits", "ideaforces"];
+    if !types_valides.contains(&type_contribution) {
+        return Err(ApiErreur::Validation(format!(
+            "type_contribution invalide. Valeurs acceptees: {}",
+            types_valides.join(", ")
+        )));
+    }
+
+    if !contribution_publiee_existe(pool.get_ref(), type_contribution, body.contribution_id).await? {
+        return Err(ApiErreur::NonTrouve("Contribution non trouvée".into()));
+    }
+
+    let legende = body
+        .legende
+        .as_deref()
+        .map(|l| l.trim())
+        .filter(|l| !l.is_empty())
+        .map(|l| l.to_string());
+    if let Some(ref l) = legende {
+        if l.chars().count() > 500 {
+            return Err(ApiErreur::Validation(
+                "La légende ne doit pas dépasser 500 caractères".into(),
+            ));
+        }
+    }
+
+    let partage_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO governance.partage_contribution
+         (type_contribution, contribution_id, utilisateur_id, legende)
+         VALUES ($1, $2, $3, $4) RETURNING id",
+    )
+    .bind(type_contribution)
+    .bind(body.contribution_id)
+    .bind(utilisateur_id)
+    .bind(&legende)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let row = sqlx::query_as::<_, PartageContributionRow>(&format!(
+        "{} AND pc.id = $1",
+        PARTAGE_CONTRIBUTION_SELECT
+    ))
+    .bind(partage_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Partage non trouvé".into()))?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(utilisateur_id),
+        "PARTAGE",
+        "governance",
+        "partage_contribution",
+        Some(partage_id),
+        None,
+        None,
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(crate::models::gouvernance::PartageContributionResponse::from(row)),
+        error: None,
+    }))
+}
+
+// GET /api/gouvernance/partages — Lister les partages (mur public, paginé)
+pub async fn lister_partages_contributions(
+    pool: web::Data<PgPool>,
+    params: web::Query<PartageQueryParams>,
+) -> Result<HttpResponse, ApiErreur> {
+    let page = params.page.unwrap_or(1).max(1);
+    let par_page = params.par_page.unwrap_or(20).clamp(1, 50);
+    let offset = (page - 1) * par_page;
+
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*)
+         FROM governance.partage_contribution pc
+         LEFT JOIN governance.factcheck f
+             ON pc.type_contribution = 'factcheck' AND f.id = pc.contribution_id
+                AND f.deleted_at IS NULL AND f.etat = 'publie'
+         LEFT JOIN governance.bad_habit b
+             ON pc.type_contribution = 'badhabits' AND b.id = pc.contribution_id
+                AND b.deleted_at IS NULL AND b.etat = 'publie'
+         LEFT JOIN governance.idea_force i
+             ON pc.type_contribution = 'ideaforces' AND i.id = pc.contribution_id
+                AND i.deleted_at IS NULL AND i.etat = 'publie'
+         WHERE pc.deleted_at IS NULL AND COALESCE(f.id, b.id, i.id) IS NOT NULL",
+    )
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let rows = sqlx::query_as::<_, PartageContributionRow>(&format!(
+        "{} ORDER BY pc.created_at DESC LIMIT $1 OFFSET $2",
+        PARTAGE_CONTRIBUTION_SELECT
+    ))
+    .bind(par_page)
+    .bind(offset)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let partages: Vec<_> = rows
+        .into_iter()
+        .map(crate::models::gouvernance::PartageContributionResponse::from)
+        .collect();
+
+    let total_pages = if total == 0 {
+        1
+    } else {
+        (total as f64 / par_page as f64).ceil() as i64
+    };
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(PartageContributionListeResponse {
+            partages,
+            total,
+            page,
+            par_page,
+            total_pages,
+        }),
+        error: None,
+    }))
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -354,6 +559,33 @@ pub async fn reagir_factcheck(
         "realite" => "realite_nombre_likes",
         _ => colonne_compteur_general(&type_reaction).unwrap(),
     };
+
+    // Exclusivite prejuge/realite : voter pour l'un retire le vote sur l'autre.
+    if cible == "prejuge" || cible == "realite" {
+        let (cible_opposee, colonne_opposee) = if cible == "prejuge" {
+            ("realite", "realite_nombre_likes")
+        } else {
+            ("prejuge", "prejuge_nombre_likes")
+        };
+        let retire = sqlx::query(
+            "DELETE FROM governance.factcheck_reaction
+             WHERE factcheck_id = $1 AND utilisateur_id = $2 AND cible = $3",
+        )
+        .bind(factcheck_id)
+        .bind(utilisateur_id)
+        .bind(cible_opposee)
+        .execute(pool.get_ref())
+        .await?;
+        if retire.rows_affected() > 0 {
+            sqlx::query(&format!(
+                "UPDATE governance.factcheck SET {0} = GREATEST({0} - 1, 0) WHERE id = $1",
+                colonne_opposee
+            ))
+            .bind(factcheck_id)
+            .execute(pool.get_ref())
+            .await?;
+        }
+    }
 
     // Reaction existante pour (factcheck, utilisateur, cible)
     let reaction_existante: Option<String> = sqlx::query_scalar(
@@ -604,6 +836,12 @@ pub struct CreerFactcheckPublicRequest {
     pub prejuge_description: Option<String>,
     pub realite_titre: Option<String>,
     pub realite_description: Option<String>,
+    /// Type de publication : 'on_dit' | 'adage_legende' | 'fait_vecu'
+    pub type_publication: Option<String>,
+    /// URL relative de la preuve (photo/PDF) — fait vécu uniquement
+    pub preuve_url: Option<String>,
+    /// Type de preuve : 'image' | 'pdf'
+    pub preuve_type: Option<String>,
 }
 
 pub async fn creer_factcheck_public(
@@ -628,6 +866,47 @@ pub async fn creer_factcheck_public(
         }
     }
 
+    // Type de publication (défaut 'on_dit')
+    let type_publication = body
+        .type_publication
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("on_dit");
+    let types_valides = ["on_dit", "adage_legende", "fait_vecu"];
+    if !types_valides.contains(&type_publication) {
+        return Err(ApiErreur::Validation(format!(
+            "Type de publication invalide. Valeurs acceptees: {}",
+            types_valides.join(", ")
+        )));
+    }
+
+    // Preuve : pertinente uniquement pour un fait vécu
+    let preuve_type = body
+        .preuve_type
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    if let Some(pt) = preuve_type {
+        if pt != "image" && pt != "pdf" {
+            return Err(ApiErreur::Validation(
+                "Type de preuve invalide. Valeurs acceptees: image, pdf".into(),
+            ));
+        }
+    }
+    // La preuve n'est conservée que pour un fait vécu
+    let (preuve_url, preuve_type) = if type_publication == "fait_vecu" {
+        (
+            body.preuve_url
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty()),
+            preuve_type,
+        )
+    } else {
+        (None, None)
+    };
+
     let id = Uuid::new_v4();
 
     // Nettoyage des volets optionnels (chaine vide => NULL)
@@ -638,8 +917,9 @@ pub async fn creer_factcheck_public(
     sqlx::query(
         "INSERT INTO governance.factcheck
          (id, contenu, source_originale, verdict, image_couverture_url, couleur_fond, pays_id,
-          prejuge_titre, prejuge_description, realite_titre, realite_description, etat, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'publie', $12)",
+          prejuge_titre, prejuge_description, realite_titre, realite_description,
+          type_publication, preuve_url, preuve_type, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'publie', $15)",
     )
     .bind(id)
     .bind(contenu)
@@ -652,6 +932,9 @@ pub async fn creer_factcheck_public(
     .bind(nettoyer(&body.prejuge_description))
     .bind(nettoyer(&body.realite_titre))
     .bind(nettoyer(&body.realite_description))
+    .bind(type_publication)
+    .bind(preuve_url)
+    .bind(preuve_type)
     .bind(auteur_id)
     .execute(pool.get_ref())
     .await?;
@@ -691,6 +974,101 @@ pub async fn creer_factcheck_public(
 }
 
 // ──────────────────────────────────────────────────────────────
+// POST /api/gouvernance/factcheck/upload-preuve — Upload d'une preuve
+// (photo ou PDF) pour un factcheck de type « fait vécu ». Retourne
+// l'URL relative et le type ('image'|'pdf') à placer dans la requête
+// de création du factcheck.
+// ──────────────────────────────────────────────────────────────
+
+/// Taille maximale d'un PDF de preuve (10 Mo)
+const TAILLE_MAX_PREUVE_PDF: usize = 10 * 1024 * 1024;
+
+pub async fn uploader_preuve_factcheck(
+    upload_dir: web::Data<String>,
+    req: HttpRequest,
+    mut payload: Multipart,
+) -> Result<HttpResponse, ApiErreur> {
+    // Réservé aux utilisateurs connectés.
+    exiger_utilisateur_id(&req)?;
+
+    // Lire le champ fichier `fichier` (un seul attendu), avec garde-fou de taille.
+    let mut bytes: Option<Vec<u8>> = None;
+    while let Some(item) = payload.next().await {
+        let mut field =
+            item.map_err(|e| ApiErreur::Upload(format!("Erreur lecture multipart: {}", e)))?;
+        let nom = field
+            .content_disposition()
+            .and_then(|c| c.get_name().map(|s| s.to_string()))
+            .unwrap_or_default();
+        if nom == "fichier" || nom == "image" || nom == "file" {
+            let mut buf: Vec<u8> = Vec::new();
+            while let Some(chunk) = field.next().await {
+                let data =
+                    chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture chunk: {}", e)))?;
+                buf.extend_from_slice(&data);
+                if buf.len() > image_validation::TAILLE_MAX_ENTREE {
+                    return Err(ApiErreur::LimiteAtteinte(format!(
+                        "Fichier trop volumineux (>{} octets)",
+                        image_validation::TAILLE_MAX_ENTREE
+                    )));
+                }
+            }
+            bytes = Some(buf);
+        }
+    }
+
+    let bytes = bytes
+        .ok_or_else(|| ApiErreur::Validation("Aucun fichier reçu (champ `fichier`).".into()))?;
+
+    // Détection PDF par signature %PDF ; sinon, normalisation comme image
+    // (redimensionnement + ré-encodage → aucune image raisonnable n'est rejetée).
+    let est_pdf = bytes.len() >= 4 && &bytes[0..4] == b"%PDF";
+
+    let (octets, nom_fichier, preuve_type) = if est_pdf {
+        if bytes.len() > TAILLE_MAX_PREUVE_PDF {
+            return Err(ApiErreur::LimiteAtteinte(format!(
+                "PDF trop volumineux (>{} octets)",
+                TAILLE_MAX_PREUVE_PDF
+            )));
+        }
+        (bytes, format!("{}.pdf", Uuid::new_v4()), "pdf")
+    } else {
+        let (norm, format, _, _) = image_validation::normaliser_photo(&bytes)
+            .map_err(|err| ApiErreur::Validation(err.message()))?;
+        (
+            norm,
+            format!("{}.{}", Uuid::new_v4(), format.extension()),
+            "image",
+        )
+    };
+
+    let dossier = format!("{}/governance/preuves", upload_dir.get_ref());
+    std::fs::create_dir_all(&dossier)
+        .map_err(|e| ApiErreur::Upload(format!("Impossible de creer le dossier preuves: {}", e)))?;
+
+    let chemin_complet = format!("{}/{}", dossier, nom_fichier);
+    let chemin_relatif = format!("/uploads/governance/preuves/{}", nom_fichier);
+
+    let res = (|| -> std::io::Result<()> {
+        let mut f = std::fs::File::create(&chemin_complet)?;
+        f.write_all(&octets)?;
+        Ok(())
+    })();
+    if let Err(e) = res {
+        return Err(ApiErreur::Upload(format!("Ecriture disque echouee: {}", e)));
+    }
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({
+            "url": chemin_relatif,
+            "preuve_type": preuve_type,
+        })),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
 // POST /api/gouvernance/bad-habits — Publier une mauvaise pratique
 // ──────────────────────────────────────────────────────────────
 
@@ -712,6 +1090,17 @@ pub struct CreerBadHabitPublicRequest {
     pub region: Option<String>,
     pub ville_quartier_zone: Option<String>,
     pub medias_urls: Option<Vec<String>>,
+    /// 'mauvaise' | 'bonne' — pour une mauvaise pratique, l'identité est obligatoire
+    pub type_pratique: Option<String>,
+    /// Preuves (photos) — URLs relatives uploadées
+    pub preuves_photos: Option<Vec<String>>,
+    /// Solutions proposées (10 propositions maximum)
+    pub solutions_propositions: Option<Vec<String>>,
+    /// Identité réelle de l'auteur (obligatoire pour une mauvaise pratique)
+    pub identite_nom: Option<String>,
+    pub identite_prenom: Option<String>,
+    pub identite_courriel: Option<String>,
+    pub identite_contact: Option<String>,
 }
 
 pub async fn creer_bad_habit_public(
@@ -764,6 +1153,59 @@ pub async fn creer_bad_habit_public(
     }
 
     let gravite = body.gravite.as_deref().unwrap_or("faible");
+
+    // Helpers de nettoyage
+    let nettoyer = |o: &Option<String>| -> Option<String> {
+        o.as_deref().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string)
+    };
+    let nettoyer_liste = |o: &Option<Vec<String>>, max: usize| -> Option<Vec<String>> {
+        o.as_ref()
+            .map(|v| {
+                v.iter()
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .take(max)
+                    .collect::<Vec<_>>()
+            })
+            .filter(|v| !v.is_empty())
+    };
+
+    // Pour une mauvaise pratique : anonymat impossible + identité réelle obligatoire
+    let est_bonne = body.type_pratique.as_deref() == Some("bonne");
+    let publication_anonyme = if est_bonne {
+        body.publication_anonyme.unwrap_or(false)
+    } else {
+        false
+    };
+
+    let identite_nom = nettoyer(&body.identite_nom);
+    let identite_prenom = nettoyer(&body.identite_prenom);
+    let identite_courriel = nettoyer(&body.identite_courriel);
+    let identite_contact = nettoyer(&body.identite_contact);
+    if !est_bonne {
+        if identite_nom.is_none() || identite_prenom.is_none() {
+            return Err(ApiErreur::Validation(
+                "Vos nom et prénom à l'état civil sont requis pour un signalement".into(),
+            ));
+        }
+        match identite_courriel {
+            Some(ref c) if c.contains('@') && c.contains('.') => {}
+            _ => {
+                return Err(ApiErreur::Validation(
+                    "Un courriel valide est requis pour un signalement".into(),
+                ));
+            }
+        }
+        if identite_contact.is_none() {
+            return Err(ApiErreur::Validation(
+                "Un contact (téléphone) est requis pour un signalement".into(),
+            ));
+        }
+    }
+
+    let preuves_photos = nettoyer_liste(&body.preuves_photos, 5);
+    let solutions_propositions = nettoyer_liste(&body.solutions_propositions, 10);
+
     let id = Uuid::new_v4();
     let slug = format!("{}-{}", generer_slug(titre), &id.to_string()[..8]);
 
@@ -773,9 +1215,12 @@ pub async fn creer_bad_habit_public(
           categorie_probleme, categorie_probleme_detail, gravite,
           preuves_temoignages, solutions_proposees,
           publication_anonyme, geolocalisation_autorisee, longitude, latitude,
-          pays_id, region, ville_quartier_zone, etat, cree_par)
+          pays_id, region, ville_quartier_zone,
+          preuves_photos, solutions_propositions,
+          identite_nom, identite_prenom, identite_courriel, identite_contact,
+          etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8::governance.niveau_gravite, $9, $10,
-                 $11, $12, $13, $14, $15, $16, $17, 'publie', $18)",
+                 $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, 'publie', $24)",
     )
     .bind(id)
     .bind(titre)
@@ -787,13 +1232,19 @@ pub async fn creer_bad_habit_public(
     .bind(gravite)
     .bind(body.preuves_temoignages.as_deref().map(|s| s.trim()))
     .bind(body.solutions_proposees.as_deref().map(|s| s.trim()))
-    .bind(body.publication_anonyme.unwrap_or(false))
+    .bind(publication_anonyme)
     .bind(body.geolocalisation_autorisee.unwrap_or(false))
     .bind(body.longitude)
     .bind(body.latitude)
     .bind(body.pays_id)
     .bind(body.region.as_deref().map(|s| s.trim()))
     .bind(body.ville_quartier_zone.as_deref().map(|s| s.trim()))
+    .bind(preuves_photos.as_deref())
+    .bind(solutions_propositions.as_deref())
+    .bind(&identite_nom)
+    .bind(&identite_prenom)
+    .bind(&identite_courriel)
+    .bind(&identite_contact)
     .bind(auteur_id)
     .execute(pool.get_ref())
     .await?;
@@ -858,6 +1309,8 @@ pub struct CreerIdeaForcePublicRequest {
     pub plan_implementation: Option<String>,
     pub ressources_necessaires: Option<String>,
     pub impact_attendu: Option<String>,
+    /// Modalités opérationnelles concrètes proposées (10 étapes maximum)
+    pub modalites_operationnelles: Option<Vec<String>>,
     pub pays_id: Option<Uuid>,
     pub region: Option<String>,
     pub ville_quartier_zone: Option<String>,
@@ -894,6 +1347,13 @@ pub async fn creer_idea_force_public(
         "emploi_jeunes",
         "environnement",
         "transport",
+        "union_africains",
+        "infrastructures",
+        "retour_cerveaux",
+        "union_diaspora",
+        "lutte_corruption",
+        "urbanisation_durable",
+        "acces_energie",
         "autre",
     ];
     if !categories_valides.contains(&body.categorie_proposition.as_str()) {
@@ -917,14 +1377,27 @@ pub async fn creer_idea_force_public(
     let id = Uuid::new_v4();
     let slug = format!("{}-{}", generer_slug(titre), &id.to_string()[..8]);
 
+    // Modalités opérationnelles : nettoyage (trim, retrait des vides), plafond 10
+    let modalites: Option<Vec<String>> = body
+        .modalites_operationnelles
+        .as_ref()
+        .map(|v| {
+            v.iter()
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .take(10)
+                .collect::<Vec<_>>()
+        })
+        .filter(|v| !v.is_empty());
+
     sqlx::query(
         "INSERT INTO governance.idea_force
          (id, titre, slug, description_generale, details_proposition,
           categorie_proposition, categorie_proposition_detail, urgence,
           plan_implementation, ressources_necessaires, impact_attendu,
-          pays_id, region, ville_quartier_zone, etat, cree_par)
+          modalites_operationnelles, pays_id, region, ville_quartier_zone, etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8::governance.niveau_gravite, $9, $10,
-                 $11, $12, $13, $14, 'publie', $15)",
+                 $11, $12, $13, $14, $15, 'publie', $16)",
     )
     .bind(id)
     .bind(titre)
@@ -937,6 +1410,7 @@ pub async fn creer_idea_force_public(
     .bind(body.plan_implementation.as_deref().map(|s| s.trim()))
     .bind(body.ressources_necessaires.as_deref().map(|s| s.trim()))
     .bind(body.impact_attendu.as_deref().map(|s| s.trim()))
+    .bind(modalites.as_deref())
     .bind(body.pays_id)
     .bind(body.region.as_deref().map(|s| s.trim()))
     .bind(body.ville_quartier_zone.as_deref().map(|s| s.trim()))

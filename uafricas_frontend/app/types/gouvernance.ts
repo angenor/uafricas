@@ -55,6 +55,12 @@ export interface ContributionMedias {
 
 export type TypeReactionGlobale = 'coeur' | 'pouce' | 'rire' | 'jaime_pas'
 
+/** Type d'une publication factcheck */
+export type TypePublicationFactcheck = 'on_dit' | 'adage_legende' | 'fait_vecu'
+
+/** Type d'une preuve jointe à un fait vécu */
+export type TypePreuve = 'image' | 'pdf'
+
 export interface ReactionsGlobales {
   coeur: number
   pouce: number
@@ -81,6 +87,16 @@ export interface ContributionCitoyenne {
     prejuge: Prejudice
     contrePrejuge: Prejudice
   }
+  /** Type de publication (factcheck uniquement) */
+  typePublication?: TypePublicationFactcheck
+  /** URL absolue de la preuve jointe (fait vécu) */
+  preuveUrl?: string
+  /** Type de preuve : 'image' | 'pdf' */
+  preuveType?: TypePreuve
+  /** URL absolue de l'image illustrative (couverture) */
+  imageUrl?: string
+  /** URLs absolues des images à visualiser (preuves photos d'une mauvaise pratique) */
+  images?: string[]
   proposition?: {
     objectif: string
     moyens: string[]

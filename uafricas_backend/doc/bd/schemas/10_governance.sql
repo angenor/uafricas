@@ -142,6 +142,13 @@ CREATE TABLE governance.idea_force (
                                 'emploi_jeunes',
                                 'environnement',
                                 'transport',
+                                'union_africains',
+                                'infrastructures',
+                                'retour_cerveaux',
+                                'union_diaspora',
+                                'lutte_corruption',
+                                'urbanisation_durable',
+                                'acces_energie',
                                 'autre'
                             )),
     categorie_proposition_detail VARCHAR(200),        -- précision si "autre"
@@ -149,6 +156,10 @@ CREATE TABLE governance.idea_force (
     plan_implementation     TEXT,
     ressources_necessaires  TEXT,
     impact_attendu          TEXT,
+    -- Modalités opérationnelles concrètes proposées (10 étapes maximum)
+    modalites_operationnelles TEXT[]
+                            CHECK (modalites_operationnelles IS NULL
+                                   OR cardinality(modalites_operationnelles) <= 10),
     -- Statut
     etat                    VARCHAR(50) NOT NULL DEFAULT 'en_attente'
                             CHECK (etat IN ('en_attente','publie','suspendu','supprime')),

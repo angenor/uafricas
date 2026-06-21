@@ -160,6 +160,12 @@
                 :partage="pub.data"
               />
 
+              <!-- Carte « Contribution partagée » (composant dédié) -->
+              <PublicationsContributionPartageCard
+                v-else-if="pub.source === 'contribution_partage'"
+                :partage="pub.data"
+              />
+
               <!-- Cartes Codimoi / Gouvernance (markup inline) -->
               <div
                 v-else
@@ -358,6 +364,7 @@
 import { getCategoryLabel, type CodiMoiPostAPI, type CategoriePost, type CommentaireAPI } from '~/composables/useCodiMoi'
 import type { PartageFicheAPI } from '~/composables/useOpportuniteAfrique'
 import type { PartageProfilAPI } from '~/composables/useMembres'
+import type { PartageContributionAPI } from '~/composables/useGouvernance'
 import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 useHead({
@@ -413,7 +420,16 @@ interface PublicationProfilPartage {
   typeStyle: TypeStyle
 }
 
-type Publication = PublicationCodimoi | PublicationGouvernance | PublicationTerritoirePartage | PublicationProfilPartage
+interface PublicationContributionPartage {
+  key: string
+  source: 'contribution_partage'
+  data: PartageContributionAPI
+  date: Date
+  typeFiltre: 'factcheck' | 'ideaforces' | 'badhabits'
+  typeStyle: TypeStyle
+}
+
+type Publication = PublicationCodimoi | PublicationGouvernance | PublicationTerritoirePartage | PublicationProfilPartage | PublicationContributionPartage
 
 const breadcrumbs = [
   { label: 'Publications', to: undefined },
@@ -501,7 +517,7 @@ const erreurChargement = ref<string | null>(null)
 
 // APIs
 const { erreur: erreurCodimoi, listerPosts, reagir, listerCommentaires, creerCommentaire } = useCodiMoi()
-const { getContributions } = useGouvernance()
+const { getContributions, listerPartagesContributions } = useGouvernance()
 const { listerPartagesFiches } = useOpportuniteAfrique()
 const { listerPartagesProfils } = useMembres()
 
@@ -572,6 +588,10 @@ const publicationsFiltrees = computed<Publication[]>(() => {
         titre = `${p.data.profil.prenom} ${p.data.profil.nom}`.toLowerCase()
         desc = `${p.data.legende ?? ''} ${p.data.profil.fonction ?? ''} ${p.data.profil.pays ?? ''} ${p.data.profil.ville ?? ''}`.toLowerCase()
       }
+      else if (p.source === 'contribution_partage') {
+        titre = p.data.contribution.titre.toLowerCase()
+        desc = `${p.data.legende ?? ''} ${p.data.contribution.description ?? ''} ${p.data.contribution.categorie ?? ''}`.toLowerCase()
+      }
       else {
         titre = p.data.titre.toLowerCase()
         desc = p.data.description.toLowerCase()
@@ -603,7 +623,7 @@ function nomAuteur(pub: Publication): string {
     const { prenom, nom } = pub.data.auteur
     return `${prenom ?? ''} ${nom}`.trim() || 'Anonyme'
   }
-  if (pub.source === 'territoire_partage' || pub.source === 'profil_partage') {
+  if (pub.source === 'territoire_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage') {
     const { prenom, nom } = pub.data.auteur
     return `${prenom ?? ''} ${nom ?? ''}`.trim() || 'Anonyme'
   }
@@ -614,24 +634,25 @@ function paysPub(pub: Publication): string | null {
   if (pub.source === 'codimoi') return pub.data.pays || null
   if (pub.source === 'territoire_partage') return pub.data.fiche.nom || null
   if (pub.source === 'profil_partage') return pub.data.profil.pays || null
+  if (pub.source === 'contribution_partage') return null
   return pub.data.localisation.pays || null
 }
 
 function statsVues(pub: Publication): number {
   if (pub.source === 'codimoi') return pub.data.nombre_vues
-  if (pub.source === 'territoire_partage' || pub.source === 'profil_partage') return 0
+  if (pub.source === 'territoire_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage') return 0
   return pub.data.stats.vues
 }
 
 function statsLikes(pub: Publication): number {
   if (pub.source === 'codimoi') return pub.data.nombre_likes
-  if (pub.source === 'territoire_partage' || pub.source === 'profil_partage') return 0
+  if (pub.source === 'territoire_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage') return 0
   return pub.data.stats.likes
 }
 
 function statsCommentaires(pub: Publication): number {
   if (pub.source === 'codimoi') return pub.data.nombre_commentaires
-  if (pub.source === 'territoire_partage' || pub.source === 'profil_partage') return 0
+  if (pub.source === 'territoire_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage') return 0
   return pub.data.stats.commentaires
 }
 
@@ -657,11 +678,12 @@ const chargerTout = async () => {
   loading.value = true
   erreurChargement.value = null
 
-  const [resCodimoi, resGouv, resPartages, resPartagesProfils] = await Promise.allSettled([
+  const [resCodimoi, resGouv, resPartages, resPartagesProfils, resPartagesContrib] = await Promise.allSettled([
     listerPosts({ page: 1, par_page: 30 }),
     getContributions({ page: 1, parPage: 30 }),
     listerPartagesFiches(1, 30),
     listerPartagesProfils(1, 30),
+    listerPartagesContributions(1, 30),
   ])
 
   const items: Publication[] = []
@@ -728,6 +750,22 @@ const chargerTout = async () => {
   }
   else if (resPartagesProfils.status === 'rejected') {
     console.error('Erreur chargement Partages profils:', resPartagesProfils.reason)
+  }
+
+  if (resPartagesContrib.status === 'fulfilled' && resPartagesContrib.value?.partages) {
+    for (const partage of resPartagesContrib.value.partages) {
+      items.push({
+        key: `partage-contrib-${partage.id}`,
+        source: 'contribution_partage',
+        data: partage,
+        date: new Date(partage.created_at),
+        typeFiltre: partage.contribution.type_contribution,
+        typeStyle: STYLES_PAR_TYPE[partage.contribution.type_contribution],
+      })
+    }
+  }
+  else if (resPartagesContrib.status === 'rejected') {
+    console.error('Erreur chargement Partages contributions:', resPartagesContrib.reason)
   }
 
   items.sort((a, b) => b.date.getTime() - a.date.getTime())

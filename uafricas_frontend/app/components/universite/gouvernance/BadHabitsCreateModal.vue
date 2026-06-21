@@ -171,7 +171,7 @@
 
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
-              {{ estBonne ? 'Détails de la pratique' : 'Détails de la problématique' }}
+              {{ estBonne ? 'Modalités pratiques de reproductibilité' : 'Détails de la problématique' }}
               <span class="text-red-500">*</span>
             </label>
             <textarea
@@ -179,7 +179,7 @@
               rows="5"
               required
               :placeholder="estBonne
-                ? 'Expliquez en détail l\'action, son contexte, ses résultats...'
+                ? 'Décrivez les modalités pratiques pour reproduire cette bonne pratique : étapes, conditions, moyens...'
                 : 'Expliquez en détail le problème, son contexte, ses conséquences...'"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg transition text-sm"
               :class="estBonne
@@ -188,38 +188,155 @@
             />
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
-                {{ estBonne ? 'Témoignages / Preuves' : 'Preuves / Témoignages' }}
+          <!-- Témoignages (texte) — distinct des preuves -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              {{ estBonne ? 'Témoignages / Preuves' : 'Témoignages' }}
+            </label>
+            <textarea
+              v-model="form.preuves_temoignages"
+              rows="3"
+              :placeholder="estBonne
+                ? 'Témoignages, chiffres, médias...'
+                : 'Témoignages de personnes affectées ou ayant constaté les faits...'"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg transition text-sm"
+              :class="estBonne
+                ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
+                : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
+            />
+          </div>
+
+          <!-- Bonne pratique : reproductibilité (texte) -->
+          <div v-if="estBonne">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Reproductibilité / Transposition</label>
+            <textarea
+              v-model="form.solutions_proposees"
+              rows="3"
+              placeholder="Comment d'autres communautés peuvent reproduire cette action ?"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg transition text-sm focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+            />
+          </div>
+
+          <!-- Mauvaise pratique : preuves (photos) -->
+          <div v-else>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Preuves (photos)</label>
+            <div class="flex flex-wrap items-center gap-3">
+              <div
+                v-for="(photo, idx) in preuvesPhotos"
+                :key="photo"
+                class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200"
+              >
+                <img :src="urlAbsolue(photo)" alt="" class="w-full h-full object-cover">
+                <button
+                  type="button"
+                  class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition"
+                  @click="retirerPhoto(idx)"
+                >
+                  <font-awesome-icon :icon="['fas', 'xmark']" class="text-[10px]" />
+                </button>
+              </div>
+              <label
+                v-if="preuvesPhotos.length < 5"
+                class="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-red-400 hover:text-red-500 cursor-pointer transition text-xs gap-1"
+                :class="{ 'opacity-50 cursor-not-allowed': photoEnCours }"
+              >
+                <font-awesome-icon
+                  :icon="photoEnCours ? ['fas', 'spinner'] : ['fas', 'image']"
+                  :class="{ 'animate-spin': photoEnCours }"
+                />
+                <span>Ajouter</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  class="sr-only"
+                  :disabled="photoEnCours"
+                  @change="onPhotosSelectionnees"
+                >
               </label>
-              <textarea
-                v-model="form.preuves_temoignages"
-                rows="3"
-                :placeholder="estBonne
-                  ? 'Témoignages, chiffres, médias...'
-                  : 'Références, dates, témoignages...'"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg transition text-sm"
-                :class="estBonne
-                  ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                  : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
-              />
             </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
-                {{ estBonne ? 'Reproductibilité / Transposition' : 'Solutions proposées' }}
+            <p class="text-xs text-gray-400 mt-1">Jusqu'à 5 photos (JPEG, PNG, WebP).</p>
+            <p v-if="erreurPhoto" class="text-xs text-red-600 mt-1">{{ erreurPhoto }}</p>
+          </div>
+
+          <!-- Mauvaise pratique : solutions proposées (liste, 10 max) -->
+          <div v-if="!estBonne">
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-sm font-semibold text-gray-700">
+                Solutions proposées <span class="text-gray-400 font-normal">(10 propositions maximum)</span>
               </label>
-              <textarea
-                v-model="form.solutions_proposees"
-                rows="3"
-                :placeholder="estBonne
-                  ? 'Comment d\'autres communautés peuvent reproduire cette action ?'
-                  : 'Vos suggestions pour résoudre ce problème...'"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg transition text-sm"
-                :class="estBonne
-                  ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                  : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
-              />
+              <button
+                v-if="solutions.length < 10"
+                type="button"
+                class="text-xs text-red-600 hover:text-red-700 font-medium"
+                @click="ajouterSolution"
+              >
+                <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
+                Ajouter une proposition
+              </button>
+            </div>
+            <div v-if="solutions.length === 0" class="text-xs text-gray-400 italic">
+              Aucune proposition. Suggérez des solutions concrètes (facultatif).
+            </div>
+            <div v-for="(_, idx) in solutions" :key="idx" class="flex items-center gap-2 mb-2">
+              <span class="shrink-0 w-7 h-7 rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center justify-center">
+                {{ idx + 1 }}
+              </span>
+              <input
+                v-model="solutions[idx]"
+                type="text"
+                maxlength="500"
+                :placeholder="`Proposition ${idx + 1}...`"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm"
+              >
+              <button
+                type="button"
+                class="w-10 h-10 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition"
+                @click="retirerSolution(idx)"
+              >
+                <font-awesome-icon :icon="['fas', 'trash']" class="text-xs" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Mauvaise pratique : identité réelle obligatoire (jamais anonyme) -->
+          <div v-if="!estBonne" class="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
+            <p class="text-xs font-semibold text-red-700 uppercase tracking-wide flex items-center gap-1.5">
+              <font-awesome-icon :icon="['fas', 'id-card']" />
+              Vos informations d'identité <span class="text-red-500">*</span>
+            </p>
+            <p class="text-xs text-red-700/80">
+              Un signalement ne peut pas être anonyme : vous devez partager votre identité réelle et vos coordonnées.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                v-model="form.identite_nom"
+                type="text"
+                maxlength="150"
+                placeholder="Nom (état civil) *"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
+              >
+              <input
+                v-model="form.identite_prenom"
+                type="text"
+                maxlength="150"
+                placeholder="Prénom (état civil) *"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
+              >
+              <input
+                v-model="form.identite_courriel"
+                type="email"
+                maxlength="255"
+                placeholder="Courriel *"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
+              >
+              <input
+                v-model="form.identite_contact"
+                type="text"
+                maxlength="50"
+                placeholder="Contact (téléphone) *"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
+              >
             </div>
           </div>
 
@@ -305,11 +422,10 @@
           </div>
 
           <label
+            v-if="estBonne"
             class="flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all"
             :class="form.publication_anonyme
-              ? (estBonne
-                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                : 'border-red-500 bg-red-50 text-red-700')
+              ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
               : 'border-gray-200 hover:border-gray-300 text-gray-600'"
           >
             <input v-model="form.publication_anonyme" type="checkbox" class="sr-only" />
@@ -385,7 +501,8 @@ const emit = defineEmits<{
   created: [id: string]
 }>()
 
-const { creerBadHabit, getPays } = useGouvernance()
+const { creerBadHabit, getPays, uploaderPreuve } = useGouvernance()
+const userStore = useUserStore()
 
 const form = reactive<CreerBadHabitPayload>({
   type_pratique: props.typePratiqueInitial,
@@ -403,6 +520,10 @@ const form = reactive<CreerBadHabitPayload>({
   pays_id: '',
   region: undefined,
   ville_quartier_zone: undefined,
+  identite_nom: undefined,
+  identite_prenom: undefined,
+  identite_courriel: undefined,
+  identite_contact: undefined,
 })
 
 const mediasUrls = ref<string[]>([])
@@ -410,7 +531,63 @@ const paysListe = ref<PaysPublic[]>([])
 const enCours = ref(false)
 const erreurMessage = ref<string | null>(null)
 
+// Solutions proposées (mauvaise pratique) — liste de 10 propositions max
+const solutions = ref<string[]>([])
+
+// Preuves photos (mauvaise pratique) — URLs relatives uploadées (max 5)
+const preuvesPhotos = ref<string[]>([])
+const photoEnCours = ref(false)
+const erreurPhoto = ref<string | null>(null)
+
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBaseUrl as string
+const urlAbsolue = (url: string) => (url.startsWith('http') ? url : `${apiBase}${url}`)
+
 const estBonne = computed(() => form.type_pratique === 'bonne')
+
+/** Préremplit l'identité réelle depuis le compte connecté (signalement non anonyme). */
+function prefillIdentite() {
+  const u = userStore.user
+  if (!u) return
+  if (!form.identite_nom) form.identite_nom = u.nom
+  if (!form.identite_prenom) form.identite_prenom = u.prenom
+  if (!form.identite_courriel) form.identite_courriel = u.email
+}
+
+function ajouterSolution() {
+  if (solutions.value.length < 10) solutions.value.push('')
+}
+function retirerSolution(idx: number) {
+  solutions.value.splice(idx, 1)
+}
+
+async function onPhotosSelectionnees(evt: Event) {
+  const input = evt.target as HTMLInputElement
+  const fichiers = Array.from(input.files ?? [])
+  if (!fichiers.length) return
+  erreurPhoto.value = null
+  photoEnCours.value = true
+  try {
+    for (const fichier of fichiers) {
+      if (preuvesPhotos.value.length >= 5) break
+      const { url, preuveType } = await uploaderPreuve(fichier)
+      if (preuveType !== 'image') {
+        erreurPhoto.value = 'Seules les images sont acceptées comme preuve photo.'
+        continue
+      }
+      preuvesPhotos.value.push(url)
+    }
+  } catch (err) {
+    erreurPhoto.value = err instanceof Error ? err.message : 'Téléversement impossible'
+  } finally {
+    photoEnCours.value = false
+    input.value = ''
+  }
+}
+
+function retirerPhoto(idx: number) {
+  preuvesPhotos.value.splice(idx, 1)
+}
 
 const categoriesMauvaise = [
   { value: 'corruption' as const, label: 'Corruption' },
@@ -470,16 +647,28 @@ function changerMode(mode: TypePratique) {
   } else {
     form.impact = undefined
     form.gravite = 'faible'
+    // Signalement : jamais anonyme, identité réelle préremplie
+    form.publication_anonyme = false
+    prefillIdentite()
   }
 }
 
-const estValide = computed(() =>
-  form.titre.trim().length >= 5
-  && form.description_generale.trim().length >= 10
-  && form.details_problematique.trim().length >= 10
-  && !!form.categorie_probleme
-  && !!form.pays_id,
-)
+const courrielValide = (c?: string) => !!c && c.includes('@') && c.includes('.')
+
+const estValide = computed(() => {
+  const base = form.titre.trim().length >= 5
+    && form.description_generale.trim().length >= 10
+    && form.details_problematique.trim().length >= 10
+    && !!form.categorie_probleme
+    && !!form.pays_id
+  if (estBonne.value) return base
+  // Mauvaise pratique : identité réelle obligatoire
+  return base
+    && !!form.identite_nom?.trim()
+    && !!form.identite_prenom?.trim()
+    && courrielValide(form.identite_courriel?.trim())
+    && !!form.identite_contact?.trim()
+})
 
 function ajouterMedia() {
   if (mediasUrls.value.length < 5) mediasUrls.value.push('')
@@ -505,7 +694,14 @@ function reinitialiser() {
   form.pays_id = ''
   form.region = undefined
   form.ville_quartier_zone = undefined
+  form.identite_nom = undefined
+  form.identite_prenom = undefined
+  form.identite_courriel = undefined
+  form.identite_contact = undefined
   mediasUrls.value = []
+  solutions.value = []
+  preuvesPhotos.value = []
+  erreurPhoto.value = null
   erreurMessage.value = null
 }
 
@@ -532,8 +728,16 @@ async function soumettre() {
       if (form.impact) payload.impact = form.impact
       if (form.solutions_proposees?.trim()) payload.reproductibilite = form.solutions_proposees.trim()
     } else {
+      // Mauvaise pratique : jamais anonyme + identité réelle obligatoire
+      payload.publication_anonyme = false
+      payload.identite_nom = form.identite_nom?.trim()
+      payload.identite_prenom = form.identite_prenom?.trim()
+      payload.identite_courriel = form.identite_courriel?.trim()
+      payload.identite_contact = form.identite_contact?.trim()
       if (form.gravite) payload.gravite = form.gravite
-      if (form.solutions_proposees?.trim()) payload.solutions_proposees = form.solutions_proposees.trim()
+      const sols = solutions.value.map(s => s.trim()).filter(s => s.length > 0).slice(0, 10)
+      if (sols.length > 0) payload.solutions_propositions = sols
+      if (preuvesPhotos.value.length > 0) payload.preuves_photos = preuvesPhotos.value.slice(0, 5)
     }
     if (form.categorie_probleme === 'autre' && form.categorie_probleme_detail?.trim()) {
       payload.categorie_probleme_detail = form.categorie_probleme_detail.trim()
@@ -558,7 +762,10 @@ async function soumettre() {
 watch(() => props.open, async (v) => {
   if (!v) {
     reinitialiser()
-  } else if (paysListe.value.length === 0) {
+    return
+  }
+  if (!estBonne.value) prefillIdentite()
+  if (paysListe.value.length === 0) {
     try {
       paysListe.value = await getPays()
     } catch (err) {
