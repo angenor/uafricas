@@ -156,7 +156,7 @@ const handleInscriptionSubmit = (options: { prioritaires: boolean, toutes: boole
       </div>
 
       <!-- Localisation + Équipe -->
-      <div class="flex flex-col md:flex-row gap-2 mt-3">
+      <!-- <div class="flex flex-col md:flex-row gap-2 mt-3">
         <div
           class="rounded-xl bg-white p-4"
           :class="centre.membres.length > 0 ? 'w-full md:w-1/2' : 'w-full'"
@@ -184,14 +184,14 @@ const handleInscriptionSubmit = (options: { prioritaires: boolean, toutes: boole
           v-if="centre.membres.length > 0"
           :membres="centre.membres"
         />
-      </div>
+      </div> -->
 
       <!-- Section Programmation -->
       <div class="bg-white rounded-xl mt-3 p-4">
         <div class="text-2xl md:text-3xl text-center font-bold text-gray-800">
           Programmation
         </div>
-      </div>
+      </div> 
 
       <!-- Grille des programmations triées (à venir puis passées) -->
       <div
