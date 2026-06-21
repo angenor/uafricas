@@ -60,12 +60,6 @@ const erreur = computed(() => fetchError.value?.message ?? null)
       <!-- Hero section -->
       <CentresCulturelsCentreCulturelHero :total="centres.length" />
 
-      <!-- Description Africans International -->
-      <div class="mt-4 p-4 bg-linear-to-r from-custom-chocolat/5 to-custom-green/5 border-l-4 border-custom-green rounded-r-lg">
-        <p class="text-gray-700 text-sm md:text-base leading-relaxed">
-          <span class="font-semibold text-custom-chocolat">Africans International</span> — Enrichissons nous ici et ailleurs de notre culture diversifiée
-        </p>
-      </div>
 
       <!-- Chargement -->
       <div v-if="chargement" class="flex justify-center items-center py-16">
