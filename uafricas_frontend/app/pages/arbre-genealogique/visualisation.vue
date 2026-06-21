@@ -3,7 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useArbreGenealogique } from '~/composables/useArbreGenealogique'
 import { useLayoutArbre, type NoeudArbre, type InfoIncompletude } from '~/composables/useLayoutArbre'
 import { suggererTypeLien } from '~/mocks/arbre-genealogique'
-import type { PersonneNoeud, LienArbreResponse, ModeVue, ModePanneau, ContexteAjout, CreerPersonneForm, TypeLien } from '~/mocks/arbre-genealogique'
+import type { PersonneNoeud, LienArbreResponse, ModeVue, ModePanneau, ContexteAjout, CreerPersonneForm, TypeLien, Genre } from '~/mocks/arbre-genealogique'
 import type { Node, Edge } from '@vue-flow/core'
 import ArbreGraphe from '~/components/arbre-genealogique/ArbreGraphe.vue'
 import BarreOutils from '~/components/arbre-genealogique/BarreOutils.vue'
@@ -58,6 +58,8 @@ const estVide = computed(() => personnes.value.length === 0 && !chargement.value
 // ─── Assistant conversationnel ───────────────────────────────────────────
 
 const assistantOuvert = ref(false)
+const clicSeq = ref(0)
+const cibleAssistant = ref<{ rattId: string; label: string; genre: Genre; seq: number } | null>(null)
 
 // Ouvre automatiquement l'assistant lorsque l'arbre est vide (première visite).
 watch(estVide, (vide) => {
@@ -141,12 +143,17 @@ const reessayer = () => charger()
 const surClicNoeud = (nodeId: string) => {
   selectedId.value = nodeId
   centreId.value = nodeId
-  personneCourante.value = graphe.value.get(nodeId) || null
-  panneauOuvert.value = true
-  modePanneau.value = 'fiche'
-  contexteAjout.value = null
-  erreurMutation.value = null
+  const noeud = graphe.value.get(nodeId) || null
+  personneCourante.value = noeud
   recalculer()
+
+  // Clic sur une personne ⇒ interaction contextuelle dans l'assistant (chat).
+  if (noeud) {
+    const label = noeud.prenoms ? `${noeud.prenoms} ${noeud.nom}` : noeud.nom
+    assistantOuvert.value = true
+    clicSeq.value++
+    cibleAssistant.value = { rattId: noeud.id, label, genre: noeud.genre as Genre, seq: clicSeq.value }
+  }
 }
 
 const surClicFond = () => {
@@ -517,6 +524,7 @@ onMounted(charger)
       <!-- Colonne assistant conversationnel -->
       <AssistantConversationnel
         v-if="assistantOuvert"
+        :cible="cibleAssistant"
         @fermer="assistantOuvert = false"
         @arbre-modifie="rechargerArbre"
       />

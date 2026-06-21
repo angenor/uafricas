@@ -3,6 +3,11 @@ import { ref, reactive, watch, computed, nextTick, onMounted } from 'vue'
 import { useAssistantArbre } from '~/composables/useAssistantArbre'
 import type { CreerPersonneForm, Genre } from '~/mocks/arbre-genealogique'
 
+const props = defineProps<{
+  /** Personne ciblée par un clic dans l'arbre (incrémenter `seq` à chaque clic). */
+  cible?: { rattId: string; label: string; genre: Genre; seq: number } | null
+}>()
+
 const emit = defineEmits<{
   fermer: []
   'arbre-modifie': []
@@ -21,7 +26,16 @@ const {
   soumettrePersonne,
   passer,
   repondre,
+  demarrerContexte,
+  choisirAction,
 } = useAssistantArbre({ onArbreModifie: () => emit('arbre-modifie') })
+
+// Clic sur une personne de l'arbre ⇒ interaction contextuelle dans le chat.
+watch(() => props.cible?.seq, (seq) => {
+  if (seq != null && props.cible) {
+    demarrerContexte({ rattId: props.cible.rattId, label: props.cible.label, genre: props.cible.genre })
+  }
+})
 
 // ─── Formulaire de saisie (réinitialisé à chaque nouvelle question) ─────────
 
@@ -118,8 +132,18 @@ const relancer = () => {
 
 const estSaisie = computed(() => promptActif.value?.type === 'saisie')
 const estQuestion = computed(() => promptActif.value?.type === 'question')
+const estMenu = computed(() => promptActif.value?.type === 'menu')
+const estIdle = computed(() => promptActif.value === null && !enCours.value)
 
-onMounted(demarrer)
+onMounted(() => {
+  // Si on est ouvert par un clic sur une personne, on démarre l'interaction
+  // contextuelle ; sinon on lance la construction guidée.
+  if (props.cible?.seq != null) {
+    demarrerContexte({ rattId: props.cible.rattId, label: props.cible.label, genre: props.cible.genre })
+  } else {
+    demarrer()
+  }
+})
 </script>
 
 <template>
@@ -313,6 +337,28 @@ onMounted(demarrer)
           <font-awesome-icon :icon="['fas', 'xmark']" class="text-xs" />
           {{ promptActif.nonLabel }}
         </button>
+      </div>
+
+      <!-- MENU contextuel (clic sur une personne) -->
+      <div v-else-if="estMenu && promptActif && promptActif.type === 'menu'" class="grid grid-cols-2 gap-2">
+        <button
+          v-for="opt in promptActif.options"
+          :key="opt.valeur"
+          class="flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-semibold transition-all"
+          :class="opt.valeur === 'fin'
+            ? 'border-stone-300 text-stone-500 hover:bg-stone-50'
+            : 'border-[var(--color-custom-chocolat)]/40 text-[var(--color-custom-chocolat)] hover:bg-[var(--color-custom-chocolat)]/10'"
+          @click="choisirAction(opt.valeur)"
+        >
+          <font-awesome-icon :icon="['fas', opt.icone]" class="text-xs" />
+          {{ opt.label }}
+        </button>
+      </div>
+
+      <!-- IDLE : invite à cliquer sur l'arbre -->
+      <div v-else-if="estIdle" class="text-center text-xs text-stone-400">
+        <font-awesome-icon :icon="['fas', 'hand-pointer']" class="mr-1" />
+        Cliquez sur une personne de l'arbre pour l'enrichir.
       </div>
 
       <!-- FIN -->

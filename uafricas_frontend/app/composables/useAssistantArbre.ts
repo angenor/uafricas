@@ -20,6 +20,9 @@ export type RoleSaisie =
   | 'gp_mere'
   | 'enfant'
   | 'petit_enfant'
+  | 'ctx_parent'
+  | 'ctx_enfant'
+  | 'ctx_conjoint'
 
 export type CleQuestion =
   | 'asc_gate'
@@ -27,6 +30,14 @@ export type CleQuestion =
   | 'enfants_encore'
   | 'desc_gate'
   | 'desc_encore'
+
+export type ActionContexte = 'parent' | 'enfant' | 'conjoint' | 'fin'
+
+export interface CiblePersonne {
+  rattId: string
+  label: string
+  genre: Genre
+}
 
 export interface MessageChat {
   id: number
@@ -51,13 +62,20 @@ export interface PromptQuestion {
   nonLabel: string
 }
 
+export interface PromptMenu {
+  type: 'menu'
+  cle: 'ctx_menu'
+  texte: string
+  options: { valeur: ActionContexte; label: string; icone: string }[]
+}
+
 export interface PromptFin {
   type: 'fin'
   cle: 'fin'
   texte: string
 }
 
-export type PromptActif = PromptSaisie | PromptQuestion | PromptFin | null
+export type PromptActif = PromptSaisie | PromptQuestion | PromptMenu | PromptFin | null
 
 interface EntreeFile {
   rattId: string
@@ -106,6 +124,11 @@ export const useAssistantArbre = (options: OptionsAssistant = {}) => {
   const enCours = ref(false)
   const erreur = ref<string | null>(null)
   const termine = ref(false)
+
+  // Flux courant : construction guidée vs interaction contextuelle (clic sur un nœud)
+  let flux: 'onboarding' | 'contexte' | 'idle' = 'onboarding'
+  let cibleCtx: CiblePersonne | null = null
+  let repriseOnboarding = false
 
   // État interne de la machine
   type Phase = 'moi' | 'parents' | 'ascendants' | 'enfants' | 'descendants' | 'fin'
@@ -179,6 +202,29 @@ export const useAssistantArbre = (options: OptionsAssistant = {}) => {
   ) => {
     pousserBot(texte, 'circle-info')
     promptActif.value = { type: 'question', cle, texte, ouiLabel, nonLabel }
+    promptSeq.value++
+  }
+
+  const definirMenu = (texte: string) => {
+    pousserBot(texte, 'circle-info')
+    promptActif.value = {
+      type: 'menu',
+      cle: 'ctx_menu',
+      texte,
+      options: [
+        { valeur: 'parent', label: 'Un parent', icone: 'arrow-up' },
+        { valeur: 'enfant', label: 'Un enfant', icone: 'arrow-down' },
+        { valeur: 'conjoint', label: 'Un(e) conjoint(e)', icone: 'heart' },
+        { valeur: 'fin', label: 'Non, c’est tout', icone: 'check' },
+      ],
+    }
+    promptSeq.value++
+  }
+
+  const definirIdle = () => {
+    flux = 'idle'
+    promptActif.value = null
+    pousserBot('Très bien. Cliquez sur une personne de l’arbre pour l’enrichir.', 'hand-pointer')
     promptSeq.value++
   }
 
@@ -280,6 +326,62 @@ export const useAssistantArbre = (options: OptionsAssistant = {}) => {
     definirFin()
   }
 
+  // ── Flux contextuel (clic sur une personne de l'arbre) ─────────────────
+
+  const libelleAction = (a: ActionContexte): string => {
+    switch (a) {
+      case 'parent': return 'Ajouter un parent'
+      case 'enfant': return 'Ajouter un enfant'
+      case 'conjoint': return 'Ajouter un(e) conjoint(e)'
+      case 'fin': return 'Non, c’est tout'
+    }
+  }
+
+  /** Démarre une interaction contextuelle ciblant une personne cliquée dans l'arbre. */
+  const demarrerContexte = (cible: CiblePersonne) => {
+    if (enCours.value) return
+    // Si une construction guidée est en cours, on la reprendra après l'interaction.
+    if (flux === 'onboarding' && promptActif.value && promptActif.value.type !== 'fin') {
+      repriseOnboarding = true
+    }
+    flux = 'contexte'
+    cibleCtx = cible
+    erreur.value = null
+    definirMenu(`Que souhaitez-vous ajouter à ${cible.label} ?`)
+  }
+
+  const terminerContexte = () => {
+    cibleCtx = null
+    if (repriseOnboarding && !termine.value) {
+      repriseOnboarding = false
+      flux = 'onboarding'
+      avancer()
+    } else {
+      definirIdle()
+    }
+  }
+
+  /** Choix d'une action dans le menu contextuel. */
+  const choisirAction = (action: ActionContexte) => {
+    if (enCours.value || !promptActif.value || promptActif.value.type !== 'menu' || !cibleCtx) return
+    pousserUser(libelleAction(action))
+    erreur.value = null
+    switch (action) {
+      case 'parent':
+        definirSaisie('ctx_parent', `Qui est le parent de ${cibleCtx.label} ?`)
+        break
+      case 'enfant':
+        definirSaisie('ctx_enfant', `Parlez-nous d’un enfant de ${cibleCtx.label}.`)
+        break
+      case 'conjoint':
+        definirSaisie('ctx_conjoint', `Qui est le/la conjoint(e) de ${cibleCtx.label} ?`)
+        break
+      case 'fin':
+        terminerContexte()
+        break
+    }
+  }
+
   // ── Appels API ─────────────────────────────────────────────────────────
 
   const creerPersonneInterne = async (
@@ -367,6 +469,15 @@ export const useAssistantArbre = (options: OptionsAssistant = {}) => {
         ok = await lier(descCourant!.rattId, res.rattId, genreVersTypeLien(descCourant!.genre))
         if (ok) { descSousEtape = 'encore' }
         break
+      case 'ctx_parent':
+        ok = await lier(res.rattId, cibleCtx!.rattId, genreVersTypeLien(form.genre))
+        break
+      case 'ctx_enfant':
+        ok = await lier(cibleCtx!.rattId, res.rattId, genreVersTypeLien(cibleCtx!.genre))
+        break
+      case 'ctx_conjoint':
+        ok = await lier(cibleCtx!.rattId, res.rattId, 'conjoint')
+        break
     }
 
     if (!ok) {
@@ -380,7 +491,13 @@ export const useAssistantArbre = (options: OptionsAssistant = {}) => {
     pousserBot(`${labelDe(form)} a rejoint l’arbre.`, 'circle-check')
     options.onArbreModifie?.()
     enCours.value = false
-    avancer()
+
+    // En mode contextuel, on repropose le menu pour la même personne ; sinon onboarding.
+    if (cle === 'ctx_parent' || cle === 'ctx_enfant' || cle === 'ctx_conjoint') {
+      definirMenu(`Souhaitez-vous ajouter autre chose à ${cibleCtx?.label ?? 'cette personne'} ?`)
+    } else {
+      avancer()
+    }
   }
 
   /** L'utilisateur passe une saisie facultative (« Je ne sais pas »). */
@@ -448,6 +565,9 @@ export const useAssistantArbre = (options: OptionsAssistant = {}) => {
     descCourant = null
     descSousEtape = 'gate'
     compteurMessage = 0
+    flux = 'onboarding'
+    cibleCtx = null
+    repriseOnboarding = false
   }
 
   /** Démarre la conversation (idempotent : ne relance pas si déjà commencée). */
@@ -471,5 +591,8 @@ export const useAssistantArbre = (options: OptionsAssistant = {}) => {
     soumettrePersonne,
     passer,
     repondre,
+    // flux contextuel
+    demarrerContexte,
+    choisirAction,
   }
 }
