@@ -207,9 +207,10 @@
             <div v-else class="flex flex-col gap-6">
               <div class="flex flex-col lg:flex-row gap-6">
                 <!-- Carte SVG d'Afrique -->
-                <div class="flex-1 bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="flex-1 bg-white rounded-lg shadow-md">
                   <div class="map-container relative p-0 sm:p-1" @mousemove="handleMapMouseMove">
                     <svg
+                      ref="svgRef"
                       :viewBox="AFRICA_VIEWBOX"
                       class="africa-map w-full h-auto"
                       xmlns="http://www.w3.org/2000/svg"
@@ -217,12 +218,14 @@
                       <path
                         v-for="location in africaLocations"
                         :key="location.id"
+                        :data-id="location.id"
                         :d="location.path"
                         :fill="getMapColor(location.id)"
                         stroke="#fff"
-                        stroke-width="0.5"
+                        :stroke-width="PETITES_ILES[location.id] ? 0.5 / PETITES_ILES[location.id] : 0.5"
                         class="map-path"
                         :class="{ 'cursor-pointer': getFicheByCode(location.id) }"
+                        :transform="mapTransforms[location.id]"
                         @mouseenter="hoveredCountry = location"
                         @mouseleave="hoveredCountry = null"
                         @click="handleMapClick(location)"
@@ -344,7 +347,7 @@ const searchTerm = ref('')
 const selectedRegion = ref('')
 const regions = ref<string[]>([])
 const totalPays = ref(0)
-const viewMode = ref<'grille' | 'carte'>('grille')
+const viewMode = ref<'grille' | 'carte'>('carte')
 
 // Debounce search
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
@@ -424,6 +427,43 @@ const africaLocations = computed(() => {
   return World.locations.filter(loc => PAYS_AFRICAINS.has(loc.id.toLowerCase()))
 })
 
+// Petites îles trop petites pour être visibles : facteur d'agrandissement par code ISO
+const PETITES_ILES: Record<string, number> = {
+  cv: 5,  // Cap-Vert
+  st: 6,  // Sao Tome-et-Principe
+  km: 5,  // Comores
+  mu: 6,  // Maurice
+  sc: 7,  // Seychelles
+}
+
+// Carte SVG : transforms d'agrandissement appliqués aux petites îles (autour de leur centre)
+const svgRef = ref<SVGSVGElement | null>(null)
+const mapTransforms = ref<Record<string, string>>({})
+
+// Calcule un scale centré sur le centroïde de chaque petite île
+const calculerTransformsIles = () => {
+  const svg = svgRef.value
+  if (!svg) return
+  const transforms: Record<string, string> = {}
+  for (const [id, facteur] of Object.entries(PETITES_ILES)) {
+    const path = svg.querySelector<SVGPathElement>(`path[data-id="${id}"]`)
+    if (!path) continue
+    const bbox = path.getBBox()
+    const cx = bbox.x + bbox.width / 2
+    const cy = bbox.y + bbox.height / 2
+    transforms[id] = `translate(${cx} ${cy}) scale(${facteur}) translate(${-cx} ${-cy})`
+  }
+  mapTransforms.value = transforms
+}
+
+// Recalculer quand on passe en vue carte ou quand les locations changent
+watch([viewMode, africaLocations], async () => {
+  if (viewMode.value === 'carte') {
+    await nextTick()
+    calculerTransformsIles()
+  }
+})
+
 // Etat du survol
 const hoveredCountry = ref<{ id: string; name: string } | null>(null)
 const mousePos = ref({ x: 0, y: 0 })
@@ -495,6 +535,12 @@ onMounted(async () => {
     regions.value = regionsResult
   }
   await chargerFiches()
+
+  // Vue carte par défaut : calculer les agrandissements des petites îles
+  if (viewMode.value === 'carte') {
+    await nextTick()
+    calculerTransformsIles()
+  }
 })
 </script>
 
