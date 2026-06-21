@@ -22,6 +22,7 @@ pub const EXPERT_COLONNES: &str =
      e.realisations,
      e.situations_professionnelles::text[] AS situations_professionnelles,
      e.statut::text AS statut,
+     (SELECT COUNT(*) FROM iam.note_expertise ne WHERE ne.expertise_id = e.id) AS nombre_notes,
      e.created_at AS expertise_created_at,
      e.updated_at AS expertise_updated_at,
      u.nom, u.prenom, u.email, u.photo_url, u.ville,
@@ -49,6 +50,7 @@ pub struct ExpertRow {
     pub realisations: Vec<String>,
     pub situations_professionnelles: Vec<String>,
     pub statut: String,
+    pub nombre_notes: i64,
     pub expertise_created_at: DateTime<Utc>,
     pub expertise_updated_at: DateTime<Utc>,
     // Champs du JOIN iam.utilisateur
@@ -74,6 +76,12 @@ pub struct ExpertiseInfoResponse {
     #[serde(rename = "nbAnneesExperience")]
     pub nb_annees_experience: i32,
     pub rating: f64,
+    /// Nombre de notes reçues (sert à afficher « (n avis) »)
+    #[serde(rename = "nombreNotes")]
+    pub nombre_notes: i64,
+    /// Note attribuée par le membre connecté (1–5), ou None s'il n'a pas noté / non connecté
+    #[serde(rename = "maNote")]
+    pub ma_note: Option<i16>,
     pub portfolio: Option<String>,
     #[serde(rename = "linkedinUrl")]
     pub linkedin_url: Option<String>,
@@ -149,6 +157,22 @@ pub struct CandidatureExpertBody {
     #[serde(default)]
     pub realisations: Vec<String>,
     pub situations_professionnelles: Vec<String>,
+}
+
+/// Body pour noter un expert (1–5)
+#[derive(Debug, Deserialize)]
+pub struct NoterExpertBody {
+    pub note: i16,
+}
+
+/// Réponse après notation : nouvelle moyenne + nombre de notes + note de l'auteur
+#[derive(Debug, Serialize)]
+pub struct NoteExpertResponse {
+    pub rating: f64,
+    #[serde(rename = "nombreNotes")]
+    pub nombre_notes: i64,
+    #[serde(rename = "maNote")]
+    pub ma_note: i16,
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -311,6 +335,8 @@ impl ExpertRow {
                 biographie: self.biographie.clone(),
                 nb_annees_experience: self.nb_annees_experience,
                 rating: self.rating,
+                nombre_notes: self.nombre_notes,
+                ma_note: None,
                 portfolio: self.portfolio.clone(),
                 linkedin_url: self.linkedin_url.clone(),
                 cv_url: self.cv_url.clone(),

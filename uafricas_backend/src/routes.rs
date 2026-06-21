@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -538,13 +538,18 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/cv", web::post().to(experts::uploader_cv))
                     .route("/candidature", web::post().to(experts::creer_candidature))
                     .route("/moi", web::get().to(experts::ma_candidature))
-                    .route("/{id}", web::get().to(experts::obtenir_expert)),
+                    .route("/{id}", web::get().to(experts::obtenir_expert))
+                    .route("/{id}/note", web::post().to(experts::noter_expert)),
             )
             // Routes annuaire des membres (profils publics)
             .service(
                 web::scope("/utilisateurs")
                     .route("", web::get().to(membres::lister_membres))
-                    .route("/{id}", web::get().to(membres::obtenir_membre)),
+                    // Mur communautaire des profils partagés (avant /{id})
+                    .route("/partages", web::get().to(profil_social::lister_partages_profils))
+                    .route("/{id}", web::get().to(membres::obtenir_membre))
+                    .route("/{id}/partages", web::post().to(profil_social::partager_profil))
+                    .route("/{id}/signalement", web::post().to(profil_social::signaler_profil)),
             )
             // Routes des amitiés & relations sociales (US1 + US2 + US4)
             .service(

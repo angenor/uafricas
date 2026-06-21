@@ -19,6 +19,7 @@ pub mod gouvernance;
 pub mod livre;
 pub mod membre;
 pub mod messagerie;
+pub mod profil_social;
 pub mod mooc;
 pub mod projet;
 pub mod sabbatique;

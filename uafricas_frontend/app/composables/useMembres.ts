@@ -1,4 +1,5 @@
 // Composable pour l'annuaire public des membres de la plateforme
+import { useUserStore } from '~/stores/user'
 
 // ──────────────────────────────────────────────────────────────
 // Types et interfaces
@@ -47,6 +48,52 @@ export interface MembreFiltres {
   par_page?: number
 }
 
+// ── Partage de profil ───────────────────────────────────────────
+
+export interface PartageProfilAuteurAPI {
+  id: string
+  nom: string
+  prenom: string
+  photo_url: string | null
+}
+
+export interface PartageProfilApercuAPI {
+  id: string
+  nom: string
+  prenom: string
+  photo_url: string | null
+  fonction: string | null
+  pays: string | null
+  ville: string | null
+  est_expert: boolean
+  est_biblio: boolean
+}
+
+export interface PartageProfilAPI {
+  id: string
+  legende: string | null
+  created_at: string
+  profil: PartageProfilApercuAPI
+  auteur: PartageProfilAuteurAPI
+}
+
+export interface PartageProfilListeAPI {
+  partages: PartageProfilAPI[]
+  total: number
+  page: number
+  par_page: number
+  total_pages: number
+}
+
+// ── Signalement de profil ───────────────────────────────────────
+
+export interface SignalementProfilEtatAPI {
+  nombre_signalements: number
+  etat: string
+  deja_signale: boolean
+  suspendu: boolean
+}
+
 // ──────────────────────────────────────────────────────────────
 // Composable
 // ──────────────────────────────────────────────────────────────
@@ -54,9 +101,18 @@ export interface MembreFiltres {
 export const useMembres = () => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBaseUrl as string
+  const userStore = useUserStore()
 
   const chargement = ref(false)
   const erreur = ref<string | null>(null)
+
+  /** Headers d'authentification si l'utilisateur est connecte */
+  const authHeaders = (): Record<string, string> => {
+    if (userStore.accessToken) {
+      return { Authorization: `Bearer ${userStore.accessToken}` }
+    }
+    return {}
+  }
 
   /**
    * Lister les membres avec filtres et pagination
@@ -124,10 +180,99 @@ export const useMembres = () => {
     }
   }
 
+  /**
+   * Partager un profil sur le mur communautaire (/publications). JWT requis.
+   */
+  const partagerProfil = async (
+    profilId: string,
+    legende?: string,
+  ): Promise<PartageProfilAPI | null> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<PartageProfilAPI>>(
+        `${apiBase}/api/utilisateurs/${profilId}/partages`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: { legende: legende || undefined },
+        },
+      )
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du partage')
+      }
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur partagerProfil:', e)
+      throw new Error(message)
+    }
+  }
+
+  /**
+   * Liste paginée des profils partagés (mur communautaire, public).
+   */
+  const listerPartagesProfils = async (
+    page = 1,
+    parPage = 20,
+  ): Promise<PartageProfilListeAPI | null> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<PartageProfilListeAPI>>(
+        `${apiBase}/api/utilisateurs/partages?page=${page}&par_page=${parPage}`,
+      )
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement des partages')
+      }
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur listerPartagesProfils:', e)
+      return null
+    }
+  }
+
+  /**
+   * Signaler un profil (faux profil / arnaque). JWT requis.
+   */
+  const signalerProfil = async (
+    profilId: string,
+    motif?: string,
+    description?: string,
+  ): Promise<SignalementProfilEtatAPI | null> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<SignalementProfilEtatAPI>>(
+        `${apiBase}/api/utilisateurs/${profilId}/signalement`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: { motif: motif || undefined, description: description || undefined },
+        },
+      )
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du signalement')
+      }
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur signalerProfil:', e)
+      throw new Error(message)
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
     listerMembres,
     obtenirMembre,
+    partagerProfil,
+    listerPartagesProfils,
+    signalerProfil,
   }
 }

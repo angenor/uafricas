@@ -10,6 +10,10 @@ export interface ExpertiseInfoAPI {
   biographie: string
   nbAnneesExperience: number
   rating: number
+  /** Nombre de notes reçues */
+  nombreNotes: number
+  /** Note attribuée par le membre connecté (1–5), null sinon */
+  maNote: number | null
   portfolio: string | null
   linkedinUrl: string | null
   cvUrl: string | null
@@ -97,6 +101,13 @@ export interface MaCandidatureAPI {
   commentaireAdmin: string | null
   dateValidation: string | null
   createdAt: string
+}
+
+/** Réponse après notation d'un expert */
+export interface NoteExpertAPI {
+  rating: number
+  nombreNotes: number
+  maNote: number
 }
 
 /** Option d'objectif actuel (valeur DB + libellé) */
@@ -250,6 +261,7 @@ export const useExperts = () => {
     try {
       const reponse = await $fetch<ApiResponse<ExpertAPI>>(
         `${apiBase}/api/experts/${id}`,
+        { headers: authHeaders() },
       )
 
       if (!reponse.success || !reponse.data) {
@@ -369,6 +381,38 @@ export const useExperts = () => {
     }
   }
 
+  /**
+   * Noter un expert (1–5, JWT requis). Renvoie la nouvelle moyenne.
+   */
+  const noterExpert = async (id: string, note: number): Promise<NoteExpertAPI | null> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<NoteExpertAPI>>(
+        `${apiBase}/api/experts/${id}/note`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders(),
+          },
+          body: { note },
+        },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors de la notation')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur noterExpert:', e)
+      throw new Error(message)
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -377,5 +421,6 @@ export const useExperts = () => {
     creerCandidature,
     uploaderCV,
     obtenirMaCandidature,
+    noterExpert,
   }
 }

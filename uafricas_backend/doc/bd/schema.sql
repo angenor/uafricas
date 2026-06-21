@@ -77,6 +77,8 @@
 \ir schemas/04b_iam_expertise.sql
 \ir schemas/04b_iam_biblio_demande.sql
 \ir schemas/04c_iam_verification_email.sql
+\ir schemas/04d_iam_note_expertise.sql
+\ir schemas/04e_iam_signalement_profil.sql
 \ir schemas/05_marketplace.sql
 \ir schemas/06_exchange.sql
 \ir schemas/06b_exchange_candidatures.sql
@@ -112,6 +114,7 @@
 \ir schemas/29_social.sql
 \ir schemas/30_social_conversation_annonce.sql
 \ir schemas/31_social_rendez_vous.sql
+\ir schemas/32_social_partage_profil.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

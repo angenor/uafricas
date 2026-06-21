@@ -9,8 +9,8 @@ use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::expert::{
     CandidatureExpertBody, ExpertListeResponse, ExpertQueryParams,
-    ExpertRow, MaCandidatureRow, EXPERT_COLONNES, mapper_domaine_db,
-    OBJECTIFS_VALIDES,
+    ExpertRow, MaCandidatureRow, NoterExpertBody, NoteExpertResponse,
+    EXPERT_COLONNES, mapper_domaine_db, OBJECTIFS_VALIDES,
 };
 
 #[derive(serde::Serialize)]
@@ -161,9 +161,11 @@ pub async fn lister_experts(
     }))
 }
 
-/// GET /api/experts/{id} — Detail d'un expert par son utilisateur_id
+/// GET /api/experts/{id} — Detail d'un expert par son utilisateur_id.
+/// Le JWT est optionnel : s'il est présent, `maNote` reflète la note de l'appelant.
 pub async fn obtenir_expert(
     pool: web::Data<PgPool>,
+    req: HttpRequest,
     chemin: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiErreur> {
     let utilisateur_id = chemin.into_inner();
@@ -184,9 +186,107 @@ pub async fn obtenir_expert(
             ApiErreur::NonTrouve(format!("Expert avec id {} non trouve", utilisateur_id))
         })?;
 
+    let mut response = row.to_response();
+
+    // Note du membre connecté (le cas échéant)
+    if let Some(auteur_id) = extraire_utilisateur_id(&req) {
+        let ma_note: Option<i16> = sqlx::query_scalar(
+            "SELECT note FROM iam.note_expertise WHERE expertise_id = $1 AND auteur_id = $2",
+        )
+        .bind(row.expertise_id)
+        .bind(auteur_id)
+        .fetch_optional(pool.get_ref())
+        .await?;
+        response.expertise_info.ma_note = ma_note;
+    }
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(row.to_response()),
+        data: Some(response),
+        error: None,
+    }))
+}
+
+/// POST /api/experts/{id}/note — Noter un expert (1–5, JWT requis).
+/// Upsert d'une note par membre, recalcule la moyenne `iam.expertise.rating`.
+pub async fn noter_expert(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<NoterExpertBody>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+    let utilisateur_id = chemin.into_inner();
+
+    if !(1..=5).contains(&body.note) {
+        return Err(ApiErreur::Validation(
+            "La note doit être comprise entre 1 et 5".to_string(),
+        ));
+    }
+
+    if auteur_id == utilisateur_id {
+        return Err(ApiErreur::Validation(
+            "Vous ne pouvez pas noter votre propre profil".to_string(),
+        ));
+    }
+
+    // L'expertise doit exister et être validée
+    let expertise_id: Uuid = sqlx::query_scalar(
+        "SELECT id FROM iam.expertise
+         WHERE utilisateur_id = $1 AND deleted_at IS NULL AND statut = 'valide'",
+    )
+    .bind(utilisateur_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Expert non trouvé".to_string()))?;
+
+    let mut tx = pool.begin().await?;
+
+    // Upsert de la note
+    sqlx::query(
+        "INSERT INTO iam.note_expertise (expertise_id, auteur_id, note)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (expertise_id, auteur_id)
+         DO UPDATE SET note = EXCLUDED.note, updated_at = NOW()",
+    )
+    .bind(expertise_id)
+    .bind(auteur_id)
+    .bind(body.note)
+    .execute(&mut *tx)
+    .await?;
+
+    // Recalcul de la moyenne (arrondie au dixième, contrainte rating 0–5)
+    let rating: f64 = sqlx::query_scalar(
+        "UPDATE iam.expertise
+         SET rating = COALESCE(
+                 (SELECT ROUND(AVG(note)::numeric, 1)
+                  FROM iam.note_expertise WHERE expertise_id = $1),
+                 0.0),
+             updated_at = NOW()
+         WHERE id = $1
+         RETURNING rating::float8",
+    )
+    .bind(expertise_id)
+    .fetch_one(&mut *tx)
+    .await?;
+
+    let nombre_notes: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM iam.note_expertise WHERE expertise_id = $1",
+    )
+    .bind(expertise_id)
+    .fetch_one(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(NoteExpertResponse {
+            rating,
+            nombre_notes,
+            ma_note: body.note,
+        }),
         error: None,
     }))
 }

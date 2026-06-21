@@ -10,7 +10,7 @@ const id = route.params.id as string
 
 const { obtenirBiblio } = useBibliothequeHumaine()
 const { obtenirExpert } = useExperts()
-const { obtenirMembre } = useMembres()
+const { obtenirMembre, partagerProfil, signalerProfil } = useMembres()
 const { obtenirEtatRelation } = useAmis()
 const { demanderOuverture } = useMessagerie()
 const userStore = useUserStore()
@@ -21,6 +21,16 @@ const estMoi = computed(() => userStore.user?.id === id)
 const peutAfficherAmitie = computed(() => userStore.isAuthenticated && !estMoi.value)
 // La messagerie n'est ouverte qu'entre amis (FR-022)
 const peutEnvoyerMessage = computed(() => peutAfficherAmitie.value && etatRelation.value === 'amis')
+// Tout membre connecté peut noter un expert, hors son propre profil
+const peutNoter = computed(() => userStore.isAuthenticated && !estMoi.value)
+
+/** Met à jour la note moyenne / sa note après notation. */
+const surNote = (payload: { rating: number, nombreNotes: number, maNote: number }) => {
+  if (!expert.value) return
+  expert.value.expertiseInfo.rating = payload.rating
+  expert.value.expertiseInfo.nombreNotes = payload.nombreNotes
+  expert.value.expertiseInfo.maNote = payload.maNote
+}
 
 /** MembreLight de ce profil (pour la messagerie et la proposition de RDV). */
 const membreLight = computed<MembreLightAPI | null>(() => {
@@ -43,6 +53,47 @@ const ouvrirMessagerie = () => {
 
 // Proposition de rendez-vous en visioconférence (entre amis, FR-001).
 const afficherModalRdv = ref(false)
+
+// Partage & signalement du profil
+const afficherModalPartage = ref(false)
+const afficherModalSignalement = ref(false)
+const profilSignale = ref(false)
+const modalPartageRef = ref<{ setLoading: (v: boolean) => void, setError: (m: string) => void, setSuccess: () => void } | null>(null)
+const modalSignalementRef = ref<{ setLoading: (v: boolean) => void, setError: (m: string) => void, setSuccess: (m: string) => void } | null>(null)
+
+/** Partage le profil sur le mur communautaire (/publications). */
+const soumettrePartage = async (legende: string) => {
+  modalPartageRef.value?.setLoading(true)
+  try {
+    const res = await partagerProfil(id, legende || undefined)
+    if (res) modalPartageRef.value?.setSuccess()
+    else modalPartageRef.value?.setError('Erreur lors du partage. Veuillez réessayer.')
+  }
+  catch (e: any) {
+    modalPartageRef.value?.setError(e?.message || 'Erreur lors du partage.')
+  }
+}
+
+/** Signale le profil (faux profil / arnaque). */
+const soumettreSignalement = async (payload: { motif: string, description: string }) => {
+  modalSignalementRef.value?.setLoading(true)
+  try {
+    const etat = await signalerProfil(id, payload.motif, payload.description || undefined)
+    if (etat) {
+      profilSignale.value = true
+      const message = etat.deja_signale
+        ? 'Vous aviez déjà signalé ce profil.'
+        : 'Merci, votre signalement a été pris en compte.'
+      modalSignalementRef.value?.setSuccess(message)
+    }
+    else {
+      modalSignalementRef.value?.setError('Erreur lors du signalement. Veuillez réessayer.')
+    }
+  }
+  catch (e: any) {
+    modalSignalementRef.value?.setError(e?.message || 'Erreur lors du signalement.')
+  }
+}
 
 const chargement = ref(true)
 const membre = ref<MembreAPI | null>(null)
@@ -316,13 +367,14 @@ onMounted(async () => {
                   <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Expérience</p>
                   <p class="text-sm font-semibold text-gray-800">{{ expert.expertiseInfo.nbAnneesExperience }} ans</p>
                 </div>
-                <div class="bg-gray-50 rounded-xl p-4">
-                  <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Note</p>
-                  <p class="text-sm font-semibold text-gray-800 flex items-center gap-1">
-                    <font-awesome-icon icon="fa-solid fa-star" class="text-amber-500" />
-                    {{ expert.expertiseInfo.rating.toFixed(1) }}/5
-                  </p>
-                </div>
+                <ExpertsNotationExpert
+                  :utilisateur-id="expert.id"
+                  :rating="expert.expertiseInfo.rating"
+                  :nombre-notes="expert.expertiseInfo.nombreNotes"
+                  :ma-note="expert.expertiseInfo.maNote"
+                  :peut-noter="peutNoter"
+                  @note="surNote"
+                />
               </div>
 
               <div>
@@ -393,6 +445,30 @@ onMounted(async () => {
 
           <p v-if="!peutAfficherAmitie" class="text-xs text-gray-400 mt-3">Connectez-vous pour échanger avec ce membre.</p>
           <p v-else-if="!peutEnvoyerMessage" class="text-xs text-gray-400 mt-3">Vous devez être amis pour envoyer un message.</p>
+
+          <!-- Partager / Signaler (membre connecté, hors propre profil) -->
+          <div v-if="peutNoter" class="mt-5 pt-4 border-t border-gray-100 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-custom-green text-custom-green font-semibold rounded-xl hover:bg-custom-green hover:text-white transition"
+              @click="afficherModalPartage = true"
+            >
+              <font-awesome-icon icon="fa-solid fa-share-nodes" />
+              Partager ce profil
+            </button>
+            <button
+              type="button"
+              :disabled="profilSignale"
+              class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition"
+              :class="profilSignale
+                ? 'text-orange-600 cursor-default'
+                : 'border border-gray-200 text-gray-500 hover:border-orange-300 hover:text-orange-600'"
+              @click="afficherModalSignalement = true"
+            >
+              <font-awesome-icon icon="fa-solid fa-flag" />
+              {{ profilSignale ? 'Profil signalé' : 'Signaler ce profil' }}
+            </button>
+          </div>
         </div>
 
         <!-- Modale de proposition de rendez-vous -->
@@ -401,6 +477,26 @@ onMounted(async () => {
           :membre="membreLight"
           @fermer="afficherModalRdv = false"
           @propose="afficherModalRdv = false"
+        />
+
+        <!-- Modale de partage du profil -->
+        <ProfilPartagerProfilModal
+          ref="modalPartageRef"
+          :is-open="afficherModalPartage"
+          :profil-nom="profil.nom"
+          :profil-prenom="profil.prenom"
+          @close="afficherModalPartage = false"
+          @submit="soumettrePartage"
+        />
+
+        <!-- Modale de signalement du profil -->
+        <ProfilSignalerProfilModal
+          ref="modalSignalementRef"
+          :is-open="afficherModalSignalement"
+          :profil-nom="profil.nom"
+          :profil-prenom="profil.prenom"
+          @close="afficherModalSignalement = false"
+          @submit="soumettreSignalement"
         />
       </template>
     </div>
