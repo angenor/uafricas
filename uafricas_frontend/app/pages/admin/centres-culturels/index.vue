@@ -11,6 +11,7 @@ const deleteLoading = ref(false)
 
 const colonnes: TableColumn[] = [
   { key: 'nom', label: 'Nom', sortable: true },
+  { key: 'type_centre', label: 'Type', width: 'w-28', align: 'center' },
   { key: 'ville', label: 'Ville', width: 'w-32' },
   { key: 'pays_nom', label: 'Territoire', width: 'w-32' },
   { key: 'nombre_membres', label: 'Membres', width: 'w-24', align: 'center' },
@@ -76,6 +77,11 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
       @trier="changerTri"
       @aller-page="allerPage"
     >
+      <template #cell-type_centre="{ value }">
+        <span :class="value === 'international' ? 'badge badge-info badge-sm' : 'badge badge-ghost badge-sm'">
+          {{ value === 'international' ? 'International' : 'Local' }}
+        </span>
+      </template>
       <template #cell-actif="{ value }">
         <span :class="value ? 'badge badge-success badge-sm' : 'badge badge-neutral badge-sm'">
           {{ value ? 'Oui' : 'Non' }}

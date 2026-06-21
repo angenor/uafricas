@@ -28,11 +28,15 @@ const { data: centre, status, error: fetchError } = await useAsyncData(
     if (!reponse.success || !reponse.data) {
       throw createError({ message: reponse.error || 'Centre culturel non trouvé' })
     }
+    const toAbsolu = (url: string | null) =>
+      url ? (url.startsWith('http') ? url : `${apiBase}${url}`) : null
     return {
       ...reponse.data,
-      image_couverture_url: reponse.data.image_couverture_url
-        ? `${apiBase}${reponse.data.image_couverture_url}`
-        : null,
+      image_couverture_url: toAbsolu(reponse.data.image_couverture_url),
+      programmations: reponse.data.programmations.map(p => ({
+        ...p,
+        image_couverture_url: toAbsolu(p.image_couverture_url),
+      })),
     }
   },
 )

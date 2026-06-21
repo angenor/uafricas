@@ -84,6 +84,10 @@
 \ir schemas/08_culture.sql
 \ir schemas/08b_afrolang.sql
 \ir schemas/08c_afrolang_passation_moderation.sql
+\ir schemas/08d_culture_type_centre.sql
+\ir schemas/08e_culture_programmation_image.sql
+\ir schemas/08f_culture_programmation_inscription.sql
+\ir schemas/08g_culture_inscription_infos.sql
 \ir schemas/09_media_content.sql
 \ir schemas/09b_media_content_evenements_streaming.sql
 \ir schemas/10_governance.sql

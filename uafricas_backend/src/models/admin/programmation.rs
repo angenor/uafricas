@@ -5,12 +5,12 @@ use uuid::Uuid;
 
 // ── Colonnes SQL ──────────────────────────────────────────
 pub const ADMIN_PROG_LISTE_COLONNES: &str =
-    "pc.id, pc.titre, pc.lieu, pc.mode::text, pc.date_heure_debut, pc.date_heure_fin,
+    "pc.id, pc.titre, pc.image_couverture_url, pc.lieu, pc.mode::text, pc.date_heure_debut, pc.date_heure_fin,
      pc.nombre_places, pc.created_at,
      cc.nom AS centre_nom";
 
 pub const ADMIN_PROG_DETAIL_COLONNES: &str =
-    "pc.id, pc.centre_culturel_id, pc.titre, pc.description, pc.lieu,
+    "pc.id, pc.centre_culturel_id, pc.titre, pc.description, pc.image_couverture_url, pc.lieu,
      pc.mode::text, pc.lien_en_ligne, pc.date_heure_debut, pc.date_heure_fin,
      pc.nombre_places, pc.cree_par, pc.created_at, pc.updated_at,
      cc.nom AS centre_nom,
@@ -25,6 +25,7 @@ pub const PROG_TRI_COLONNES: &[&str] = &[
 pub struct AdminProgListeResponse {
     pub id: Uuid,
     pub titre: String,
+    pub image_couverture_url: Option<String>,
     pub lieu: Option<String>,
     pub mode: Option<String>,
     pub date_heure_debut: DateTime<Utc>,
@@ -40,6 +41,7 @@ pub struct AdminProgDetailRow {
     pub centre_culturel_id: Uuid,
     pub titre: String,
     pub description: Option<String>,
+    pub image_couverture_url: Option<String>,
     pub lieu: Option<String>,
     pub mode: Option<String>,
     pub lien_en_ligne: Option<String>,
@@ -60,6 +62,7 @@ pub struct AdminProgDetailResponse {
     pub centre_culturel_id: Uuid,
     pub titre: String,
     pub description: Option<String>,
+    pub image_couverture_url: Option<String>,
     pub lieu: Option<String>,
     pub mode: Option<String>,
     pub lien_en_ligne: Option<String>,
@@ -80,6 +83,7 @@ impl AdminProgDetailRow {
             centre_culturel_id: self.centre_culturel_id,
             titre: self.titre.clone(),
             description: self.description.clone(),
+            image_couverture_url: self.image_couverture_url.clone(),
             lieu: self.lieu.clone(),
             mode: self.mode.clone(),
             lien_en_ligne: self.lien_en_ligne.clone(),
@@ -101,6 +105,7 @@ pub struct CreerProgRequest {
     pub centre_culturel_id: Uuid,
     pub titre: String,
     pub description: Option<String>,
+    pub image_couverture_url: Option<String>,
     pub lieu: Option<String>,
     pub mode: Option<String>,
     pub lien_en_ligne: Option<String>,
@@ -114,12 +119,29 @@ pub struct ModifierProgRequest {
     pub centre_culturel_id: Option<Uuid>,
     pub titre: Option<String>,
     pub description: Option<String>,
+    pub image_couverture_url: Option<String>,
     pub lieu: Option<String>,
     pub mode: Option<String>,
     pub lien_en_ligne: Option<String>,
     pub date_heure_debut: Option<String>,
     pub date_heure_fin: Option<String>,
     pub nombre_places: Option<i32>,
+}
+
+// ── Inscriptions ──────────────────────────────────────────
+#[derive(Debug, Serialize, FromRow)]
+pub struct AdminProgInscriptionResponse {
+    pub id: Uuid,
+    pub utilisateur_id: Uuid,
+    pub nom: Option<String>,
+    pub prenom: Option<String>,
+    pub email: String,
+    pub telephone: Option<String>,
+    pub pays: Option<String>,
+    pub lieu_residence: Option<String>,
+    pub titre: Option<String>,
+    pub statut: String,
+    pub created_at: DateTime<Utc>,
 }
 
 // ── Query Params ──────────────────────────────────────────

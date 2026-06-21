@@ -146,17 +146,20 @@ pub async fn creer_centre(
         return Err(ApiErreur::Validation("Le nom du centre culturel est requis".into()));
     }
 
+    let type_centre = valider_type_centre(body.type_centre.as_deref())?;
+
     let id = Uuid::new_v4();
     let slug = generer_slug(nom);
 
     sqlx::query(
         "INSERT INTO culture.centre_culturel
-         (id, nom, slug, description, image_couverture_url, pays_id, ville, adresse, longitude, latitude, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+         (id, nom, slug, type_centre, description, image_couverture_url, pays_id, ville, adresse, longitude, latitude, cree_par)
+         VALUES ($1, $2, $3, $4::culture.type_centre_culturel, $5, $6, $7, $8, $9, $10, $11, $12)"
     )
     .bind(id)
     .bind(nom)
     .bind(&slug)
+    .bind(type_centre)
     .bind(body.description.as_deref().map(|s| s.trim()))
     .bind(body.image_couverture_url.as_deref().map(|s| s.trim()))
     .bind(body.pays_id)
@@ -228,6 +231,14 @@ pub async fn modifier_centre(
     }
 
     ajouter_champ_str!(body.nom, "nom");
+
+    if body.type_centre.is_some() {
+        let type_centre = valider_type_centre(body.type_centre.as_deref())?;
+        sets.push(format!("type_centre = ${}::culture.type_centre_culturel", bind_index));
+        bind_strings.push(type_centre.to_string());
+        bind_index += 1;
+    }
+
     ajouter_champ_str!(body.description, "description");
     ajouter_champ_str!(body.image_couverture_url, "image_couverture_url");
     ajouter_champ_str!(body.ville, "ville");
@@ -533,6 +544,17 @@ pub async fn retirer_membre(
         data: None,
         error: None,
     }))
+}
+
+/// Valider le type de centre (international/local). Defaut: "local".
+fn valider_type_centre(valeur: Option<&str>) -> Result<&'static str, ApiErreur> {
+    match valeur.map(|s| s.trim()) {
+        None | Some("") | Some("local") => Ok("local"),
+        Some("international") => Ok("international"),
+        Some(_) => Err(ApiErreur::Validation(
+            "Type de centre invalide. Valeurs acceptees: international, local".into(),
+        )),
+    }
 }
 
 /// Generer un slug URL-safe a partir du titre

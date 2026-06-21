@@ -12,6 +12,9 @@ CREATE TYPE culture.type_codimoi AS ENUM (
     'proverbe_adage', 'citation', 'ressource_historique', 'bonne_pratique'
 );
 
+-- Type de centre culturel : international (rayonnement mondial) ou local (ancré dans un territoire)
+CREATE TYPE culture.type_centre_culturel AS ENUM ('international', 'local');
+
 
 -- ── Centre Culturel Africain et Afro-Descendant (CCAD) ──────────────────
 
@@ -19,6 +22,7 @@ CREATE TABLE culture.centre_culturel (
     id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nom                  VARCHAR(350) NOT NULL,
     slug                 VARCHAR(400) UNIQUE,
+    type_centre          culture.type_centre_culturel NOT NULL DEFAULT 'local',
     description          TEXT,
     image_couverture_url VARCHAR(500),
     pays_id              UUID,                       -- [xref] shared.pays
@@ -42,6 +46,7 @@ CREATE TABLE culture.programmation_centre (
     centre_culturel_id  UUID NOT NULL REFERENCES culture.centre_culturel(id) ON DELETE CASCADE,
     titre               VARCHAR(350) NOT NULL,
     description         TEXT,
+    image_couverture_url VARCHAR(500),
     lieu                VARCHAR(350),
     mode                culture.mode_evenement NOT NULL DEFAULT 'presentiel',
     lien_en_ligne       VARCHAR(500),
@@ -55,6 +60,29 @@ CREATE TABLE culture.programmation_centre (
 
 CREATE INDEX idx_prog_centre_centre ON culture.programmation_centre(centre_culturel_id);
 CREATE INDEX idx_prog_centre_date   ON culture.programmation_centre(date_heure_debut);
+
+
+-- ── Inscription d'un utilisateur à une programmation ────────────────────
+
+CREATE TABLE culture.programmation_inscription (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    programmation_id    UUID NOT NULL REFERENCES culture.programmation_centre(id) ON DELETE CASCADE,
+    utilisateur_id      UUID NOT NULL,                   -- [xref] iam.utilisateur
+    -- Informations fournies au moment de l'inscription
+    nom                 VARCHAR(200),
+    prenom              VARCHAR(200),
+    pays                VARCHAR(150),
+    lieu_residence      VARCHAR(250),
+    titre               VARCHAR(200),
+    statut              VARCHAR(30)  NOT NULL DEFAULT 'inscrit'
+                        CHECK (statut IN ('inscrit','confirme','annule','present','absent')),
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    UNIQUE (programmation_id, utilisateur_id)
+);
+
+CREATE INDEX idx_prog_inscription_prog ON culture.programmation_inscription(programmation_id);
+CREATE INDEX idx_prog_inscription_user ON culture.programmation_inscription(utilisateur_id);
 
 
 -- ── Membres d'un Centre Culturel (équipe dirigeante) ─────────────────

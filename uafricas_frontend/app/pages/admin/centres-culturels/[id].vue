@@ -22,6 +22,8 @@ const successMsg = ref<string | null>(null)
 // Formulaire infos
 const form = reactive({
   nom: '',
+  type_centre: 'local' as 'international' | 'local',
+  image_couverture_url: '',
   description: '',
   pays_id: '',
   ville: '',
@@ -55,6 +57,8 @@ const charger = async () => {
   if (centreDetail.value) {
     const c = centreDetail.value
     form.nom = c.nom
+    form.type_centre = c.type_centre || 'local'
+    form.image_couverture_url = c.image_couverture_url || ''
     form.description = c.description || ''
     form.pays_id = c.pays_id || ''
     form.ville = c.ville || ''
@@ -222,6 +226,22 @@ onMounted(() => charger())
             <div class="form-control">
               <label class="label"><span class="label-text">Nom du centre *</span></label>
               <input v-model="form.nom" type="text" class="input input-bordered" required>
+            </div>
+
+            <div class="form-control">
+              <label class="label"><span class="label-text">Type de centre *</span></label>
+              <select v-model="form.type_centre" class="select select-bordered">
+                <option value="international">International</option>
+                <option value="local">Local</option>
+              </select>
+            </div>
+
+            <div class="form-control">
+              <label class="label"><span class="label-text">Image illustrative (couverture)</span></label>
+              <OpportuniteAfriqueImageUploadField
+                v-model="form.image_couverture_url"
+                label=""
+              />
             </div>
 
             <div class="form-control">

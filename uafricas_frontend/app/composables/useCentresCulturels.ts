@@ -1,10 +1,12 @@
 // Composable pour les appels API des centres culturels
+import { useUserStore } from '~/stores/user'
 
 /** Interface correspondant au DTO CentreCulturelResponse du backend */
 export interface CentreCulturelAPI {
   id: string
   nom: string
   slug: string | null
+  type_centre: 'international' | 'local'
   description: string | null
   image_couverture_url: string | null
   ville: string | null
@@ -32,6 +34,7 @@ export interface ProgrammationAPI {
   centre_culturel_id: string
   titre: string
   description: string | null
+  image_couverture_url: string | null
   lieu: string | null
   mode: string
   lien_en_ligne: string | null
@@ -39,6 +42,8 @@ export interface ProgrammationAPI {
   date_heure_fin: string | null
   nombre_places: number | null
   statut: string
+  nombre_inscrits: number
+  est_inscrit: boolean
   created_at: string
 }
 
@@ -47,6 +52,7 @@ export interface CentreCulturelDetailAPI {
   id: string
   nom: string
   slug: string | null
+  type_centre: 'international' | 'local'
   description: string | null
   image_couverture_url: string | null
   ville: string | null
@@ -81,6 +87,15 @@ export interface CentreCulturelFiltres {
   recherche?: string
 }
 
+/** Informations fournies lors de l'inscription a une programmation */
+export interface InscriptionProgPayload {
+  nom: string
+  prenom: string
+  pays: string
+  lieu_residence: string
+  titre: string
+}
+
 /** Generer un lien Google Maps a partir des coordonnees */
 function genererLienGoogleMaps(latitude: number | null, longitude: number | null): string | null {
   if (latitude && longitude) {
@@ -99,13 +114,21 @@ function mapperUrlsCentre(centre: CentreCulturelAPI, apiBase: string): CentreCul
   }
 }
 
+/** Transformer une URL relative (`/uploads/...`) en URL absolue */
+function mapperUrlImage(url: string | null, apiBase: string): string | null {
+  if (!url) return null
+  return url.startsWith('http') ? url : `${apiBase}${url}`
+}
+
 /** Transformer les URLs relatives en URLs absolues pour le detail */
 function mapperUrlsCentreDetail(centre: CentreCulturelDetailAPI, apiBase: string): CentreCulturelDetailAPI {
   return {
     ...centre,
-    image_couverture_url: centre.image_couverture_url
-      ? `${apiBase}${centre.image_couverture_url}`
-      : null,
+    image_couverture_url: mapperUrlImage(centre.image_couverture_url, apiBase),
+    programmations: centre.programmations.map(p => ({
+      ...p,
+      image_couverture_url: mapperUrlImage(p.image_couverture_url, apiBase),
+    })),
   }
 }
 
@@ -185,9 +208,15 @@ export function getModeLabel(mode: string): string {
 export const useCentresCulturels = () => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBaseUrl as string
+  const userStore = useUserStore()
 
   const chargement = ref(false)
   const erreur = ref<string | null>(null)
+
+  /** En-têtes d'authentification (JWT) si l'utilisateur est connecté */
+  const authHeaders = (): Record<string, string> => {
+    return userStore.accessToken ? { Authorization: `Bearer ${userStore.accessToken}` } : {}
+  }
 
   /**
    * Recuperer la liste des centres culturels
@@ -261,13 +290,20 @@ export const useCentresCulturels = () => {
     try {
       const reponse = await $fetch<ApiResponse<ProgrammationDetailAPI>>(
         `${apiBase}/api/centres-culturels/${centreId}/programmations/${programmationId}`,
+        { headers: authHeaders() },
       )
 
       if (!reponse.success || !reponse.data) {
         throw new Error(reponse.error || 'Programmation non trouvee')
       }
 
-      return reponse.data
+      return {
+        ...reponse.data,
+        programmation: {
+          ...reponse.data.programmation,
+          image_couverture_url: mapperUrlImage(reponse.data.programmation.image_couverture_url, apiBase),
+        },
+      }
     }
     catch (e: any) {
       const message = e?.data?.error || e?.message || 'Erreur reseau'
@@ -280,12 +316,74 @@ export const useCentresCulturels = () => {
     }
   }
 
+  /**
+   * S'inscrire a une programmation (utilisateur connecte).
+   * Les informations (nom, prenom, pays, lieu de residence, titre) sont collectees au moment de l'inscription.
+   */
+  const inscrireProgrammation = async (
+    centreId: string,
+    programmationId: string,
+    infos: InscriptionProgPayload,
+  ): Promise<boolean> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<null>>(
+        `${apiBase}/api/centres-culturels/${centreId}/programmations/${programmationId}/inscription`,
+        { method: 'POST', headers: authHeaders(), body: infos },
+      )
+      if (!reponse.success) throw new Error(reponse.error || "Erreur lors de l'inscription")
+      return true
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur reseau'
+      console.error('Erreur inscrireProgrammation:', e)
+      return false
+    }
+  }
+
+  /**
+   * Lister les pays (territoires) actifs pour le selecteur d'inscription
+   */
+  const listerPays = async (): Promise<{ id: string, nom: string }[]> => {
+    try {
+      const reponse = await $fetch<ApiResponse<{ id: string, nom: string }[]>>(`${apiBase}/api/pays`)
+      return reponse.success && reponse.data ? reponse.data : []
+    }
+    catch (e) {
+      console.error('Erreur listerPays:', e)
+      return []
+    }
+  }
+
+  /**
+   * Se desinscrire d'une programmation (utilisateur connecte)
+   */
+  const desinscrireProgrammation = async (centreId: string, programmationId: string): Promise<boolean> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<null>>(
+        `${apiBase}/api/centres-culturels/${centreId}/programmations/${programmationId}/inscription`,
+        { method: 'DELETE', headers: authHeaders() },
+      )
+      if (!reponse.success) throw new Error(reponse.error || 'Erreur lors de la desinscription')
+      return true
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur reseau'
+      console.error('Erreur desinscrireProgrammation:', e)
+      return false
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
     listerCentres,
     obtenirCentre,
     obtenirProgrammation,
+    inscrireProgrammation,
+    desinscrireProgrammation,
+    listerPays,
     // Utilitaires exportes
     genererLienGoogleMaps,
     formatDateFrancais,

@@ -962,6 +962,7 @@ export interface CreerAfricantiveForm {
 export interface AdminCentreCulturel {
   id: string
   nom: string
+  type_centre: 'international' | 'local'
   ville: string | null
   pays_nom: string | null
   actif: boolean
@@ -983,6 +984,7 @@ export interface AdminCentreCulturelDetail {
   id: string
   nom: string
   slug: string | null
+  type_centre: 'international' | 'local'
   description: string | null
   image_couverture_url: string | null
   pays_id: string | null
@@ -1001,6 +1003,7 @@ export interface AdminCentreCulturelDetail {
 
 export interface CreerCentreCulturelForm {
   nom: string
+  type_centre: 'international' | 'local'
   description: string
   image_couverture_url: string
   pays_id: string
@@ -1015,6 +1018,7 @@ export interface CreerCentreCulturelForm {
 export interface AdminProgrammation {
   id: string
   titre: string
+  image_couverture_url: string | null
   lieu: string | null
   mode: string | null
   date_heure_debut: string
@@ -1029,6 +1033,7 @@ export interface AdminProgrammationDetail {
   centre_culturel_id: string
   titre: string
   description: string | null
+  image_couverture_url: string | null
   lieu: string | null
   mode: string | null
   lien_en_ligne: string | null
@@ -1042,10 +1047,25 @@ export interface AdminProgrammationDetail {
   updated_at: string
 }
 
+export interface AdminProgrammationInscription {
+  id: string
+  utilisateur_id: string
+  nom: string | null
+  prenom: string | null
+  email: string
+  telephone: string | null
+  pays: string | null
+  lieu_residence: string | null
+  titre: string | null
+  statut: string
+  created_at: string
+}
+
 export interface CreerProgrammationForm {
   centre_culturel_id: string
   titre: string
   description: string
+  image_couverture_url: string
   lieu: string
   mode: string
   lien_en_ligne: string
