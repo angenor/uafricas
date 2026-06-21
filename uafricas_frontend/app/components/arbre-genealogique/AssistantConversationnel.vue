@@ -115,7 +115,7 @@ const zoneMessages = ref<HTMLElement | null>(null)
 const defilerEnBas = () => {
   nextTick(() => {
     if (zoneMessages.value) {
-      zoneMessages.value.scrollTop = zoneMessages.value.scrollHeight
+      zoneMessages.value.scrollTo({ top: zoneMessages.value.scrollHeight, behavior: 'smooth' })
     }
   })
 }
@@ -203,36 +203,38 @@ onMounted(() => {
     </div>
 
     <!-- Fil de discussion -->
-    <div ref="zoneMessages" class="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-      <div
-        v-for="msg in messages"
-        :key="msg.id"
-        class="flex"
-        :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
-      >
-        <!-- Bot -->
-        <div v-if="msg.role === 'bot'" class="flex max-w-[85%] items-start gap-2">
-          <div class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-custom-green)]/15">
-            <font-awesome-icon :icon="['fas', msg.icone || 'comment-dots']" class="text-xs text-[var(--color-custom-green)]" />
+    <div ref="zoneMessages" class="flex-1 overflow-y-auto px-4 py-4">
+      <TransitionGroup tag="div" name="msg" class="space-y-3">
+        <div
+          v-for="msg in messages"
+          :key="msg.id"
+          class="flex"
+          :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
+        >
+          <!-- Bot -->
+          <div v-if="msg.role === 'bot'" class="flex max-w-[85%] items-start gap-2">
+            <div class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-custom-green)]/15">
+              <font-awesome-icon :icon="['fas', msg.icone || 'comment-dots']" class="text-xs text-[var(--color-custom-green)]" />
+            </div>
+            <div class="rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-sm leading-relaxed text-stone-700 shadow-sm">
+              {{ msg.texte }}
+            </div>
           </div>
-          <div class="rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-sm leading-relaxed text-stone-700 shadow-sm">
+          <!-- Utilisateur -->
+          <div
+            v-else
+            class="max-w-[85%] rounded-2xl rounded-tr-sm bg-[var(--color-custom-chocolat)] px-3 py-2 text-sm text-white shadow-sm"
+          >
             {{ msg.texte }}
           </div>
         </div>
-        <!-- Utilisateur -->
-        <div
-          v-else
-          class="max-w-[85%] rounded-2xl rounded-tr-sm bg-[var(--color-custom-chocolat)] px-3 py-2 text-sm text-white shadow-sm"
-        >
-          {{ msg.texte }}
-        </div>
-      </div>
 
-      <!-- Indicateur de traitement -->
-      <div v-if="enCours" class="flex items-center gap-2 pl-9 text-xs text-stone-400">
-        <font-awesome-icon :icon="['fas', 'spinner']" class="animate-spin" />
-        Enregistrement…
-      </div>
+        <!-- Indicateur de traitement -->
+        <div v-if="enCours" key="__typing" class="flex items-center gap-2 pl-9 text-xs text-stone-400">
+          <font-awesome-icon :icon="['fas', 'spinner']" class="animate-spin" />
+          Enregistrement…
+        </div>
+      </TransitionGroup>
     </div>
 
     <!-- Zone d'interaction -->
@@ -242,6 +244,8 @@ onMounted(() => {
         {{ erreur }}
       </div>
 
+      <Transition name="prompt" mode="out-in">
+      <div :key="promptSeq">
       <!-- SAISIE : mini-formulaire personne -->
       <form v-if="estSaisie" class="space-y-2.5" @submit.prevent="valider">
         <div class="grid grid-cols-2 gap-2">
@@ -377,6 +381,54 @@ onMounted(() => {
           Recommencer
         </button>
       </div>
+      </div>
+      </Transition>
     </footer>
   </aside>
 </template>
+
+<style scoped>
+/* Apparition des bulles de message (fade + glissement) */
+.msg-enter-from {
+  opacity: 0;
+  transform: translateY(10px) scale(0.97);
+}
+.msg-enter-active {
+  transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.msg-leave-active {
+  transition: opacity 0.2s ease;
+}
+.msg-leave-to {
+  opacity: 0;
+}
+.msg-move {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Swap animé de la zone d'interaction (à chaque nouvelle question) */
+.prompt-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.prompt-enter-active {
+  transition: opacity 0.28s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.prompt-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+.prompt-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-enter-active,
+  .msg-leave-active,
+  .msg-move,
+  .prompt-enter-active,
+  .prompt-leave-active {
+    transition: none;
+  }
+}
+</style>
