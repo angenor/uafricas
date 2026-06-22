@@ -98,6 +98,7 @@
 \ir schemas/09_media_content.sql
 \ir schemas/09b_media_content_evenements_streaming.sql
 \ir schemas/09c_media_content_evenement_contact.sql
+\ir schemas/09d_media_content_programme_chaine.sql
 \ir schemas/10_governance.sql
 \ir schemas/10f_governance_factcheck_volets_reactions.sql
 \ir schemas/10g_governance_factcheck_signalement.sql
@@ -124,6 +125,7 @@
 \ir schemas/27b_vidafrica_contributions_membres.sql
 \ir schemas/27c_vidafrica_proposition_infos.sql
 \ir schemas/27d_vidafrica_reactions_partages.sql
+\ir schemas/27e_vidafrica_pistes_collaboratif.sql
 \ir schemas/29_social.sql
 \ir schemas/30_social_conversation_annonce.sql
 \ir schemas/31_social_rendez_vous.sql

@@ -801,7 +801,8 @@ pub async fn lister_programmes_media(
     let par_page = pagination.par_page();
     let offset = pagination.offset();
 
-    let joins = "LEFT JOIN shared.pays ON p.pays_id = pays.id";
+    let joins = "LEFT JOIN shared.pays ON p.pays_id = pays.id
+                 LEFT JOIN media_content.chaine_tv ch ON p.chaine_id = ch.id";
 
     let count_sql = format!(
         "SELECT COUNT(*) FROM media_content.programme_radio_tele p {} WHERE {}",
@@ -836,6 +837,7 @@ pub async fn obtenir_programme_media(
     let id = path.into_inner();
 
     let joins = "LEFT JOIN shared.pays ON p.pays_id = pays.id
+                 LEFT JOIN media_content.chaine_tv ch ON p.chaine_id = ch.id
                  LEFT JOIN iam.utilisateur u ON p.cree_par = u.id";
 
     let sql = format!(
@@ -875,15 +877,29 @@ pub async fn creer_programme_media(
     let id = Uuid::new_v4();
     let slug = generer_slug(nom);
     let langue = body.langue.as_deref().unwrap_or("Français");
+    let a_la_une = body.a_la_une.unwrap_or(false);
+
+    // Un seul programme « à la une » par chaîne : on retire le marqueur des autres
+    if a_la_une {
+        if let Some(chaine_id) = body.chaine_id {
+            sqlx::query(
+                "UPDATE media_content.programme_radio_tele SET a_la_une = FALSE, updated_at = NOW()
+                 WHERE chaine_id = $1 AND a_la_une = TRUE AND type = 'tele' AND deleted_at IS NULL"
+            )
+            .bind(chaine_id)
+            .execute(pool.get_ref())
+            .await?;
+        }
+    }
 
     sqlx::query(
         "INSERT INTO media_content.programme_radio_tele
          (id, nom_emission, slug, type, description, image_couverture_url, video_url,
           info_animateur, info_producteur, pays_id, est_international, langue,
-          categorie_radio, etat, cree_par)
+          categorie_radio, chaine_id, a_la_une, etat, cree_par)
          VALUES ($1, $2, $3, $4::media_content.type_programme_media, $5, $6, $7,
                  $8, $9, $10, $11, $12,
-                 $13::media_content.categorie_radio, 'brouillon', $14)"
+                 $13::media_content.categorie_radio, $14, $15, 'brouillon', $16)"
     )
     .bind(id)
     .bind(nom)
@@ -898,6 +914,8 @@ pub async fn creer_programme_media(
     .bind(body.est_international.unwrap_or(false))
     .bind(langue)
     .bind(body.categorie_radio.as_deref())
+    .bind(body.chaine_id)
+    .bind(a_la_une)
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -986,6 +1004,31 @@ pub async fn modifier_programme_media(
     }
     if let Some(v) = body.est_international {
         sets.push(format!("est_international = {}", v));
+    }
+
+    // Rattachement à une chaîne (télé)
+    if let Some(chaine_id) = body.chaine_id {
+        sets.push(format!("chaine_id = '{}'", chaine_id));
+    }
+
+    // Programme « à la une » : un seul par chaîne
+    if let Some(a_la_une) = body.a_la_une {
+        if a_la_une {
+            // Chaîne effective = celle du corps, sinon celle déjà enregistrée
+            let chaine_eff: Option<Uuid> = match body.chaine_id {
+                Some(c) => Some(c),
+                None => sqlx::query_scalar(
+                    "SELECT chaine_id FROM media_content.programme_radio_tele WHERE id = $1"
+                ).bind(id).fetch_one(pool.get_ref()).await?,
+            };
+            if let Some(ch) = chaine_eff {
+                sqlx::query(
+                    "UPDATE media_content.programme_radio_tele SET a_la_une = FALSE, updated_at = NOW()
+                     WHERE chaine_id = $1 AND id <> $2 AND a_la_une = TRUE AND type = 'tele' AND deleted_at IS NULL"
+                ).bind(ch).bind(id).execute(pool.get_ref()).await?;
+            }
+        }
+        sets.push(format!("a_la_une = {}", a_la_une));
     }
 
     if body.nom_emission.is_some() {

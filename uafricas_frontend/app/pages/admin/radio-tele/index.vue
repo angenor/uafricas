@@ -30,6 +30,7 @@ const colonnesChaines: TableColumn[] = [
 const colonnesProgrammes: TableColumn[] = [
   { key: 'nom_emission', label: 'Emission', sortable: true },
   { key: 'type_programme', label: 'Type', sortable: true, width: 'w-24', align: 'center' },
+  { key: 'chaine_nom', label: 'Télé / À la une' },
   { key: 'etat', label: 'Etat', sortable: true, width: 'w-24', align: 'center' },
   { key: 'categorie_radio', label: 'Categorie radio' },
   { key: 'langue', label: 'Langue' },
@@ -207,6 +208,16 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], chargerD
         <span :class="['badge badge-sm', value === 'radio' ? 'badge-info' : 'badge-accent']">
           {{ value === 'radio' ? 'Radio' : 'Tele' }}
         </span>
+      </template>
+
+      <template #cell-chaine_nom="{ item }">
+        <div class="flex items-center gap-1">
+          <span v-if="item.chaine_nom" class="text-sm">{{ item.chaine_nom }}</span>
+          <span v-else class="text-base-content/40 text-sm">—</span>
+          <span v-if="item.a_la_une" class="badge badge-sm badge-warning gap-1">
+            <font-awesome-icon icon="star" /> À la une
+          </span>
+        </div>
       </template>
 
       <template #actions="{ item }">

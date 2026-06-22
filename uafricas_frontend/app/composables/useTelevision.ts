@@ -37,6 +37,9 @@ export interface ProgrammeTeleAPI {
   pays: string | null
   est_international: boolean
   langue: string
+  chaine_id: string | null
+  chaine_nom: string | null
+  a_la_une: boolean
   created_at: string
 }
 
@@ -81,6 +84,9 @@ export interface TvProgram {
   producer: string
   country: string
   language: string
+  chaineId: string | null
+  chaineNom: string | null
+  aLaUne: boolean
 }
 
 /** Stats frontend */
@@ -109,6 +115,7 @@ export interface ChaineTvFiltres {
 export interface ProgrammeTeleFiltres {
   recherche?: string
   pays?: string
+  chaine?: string
   page?: number
   par_page?: number
 }
@@ -169,6 +176,9 @@ function mapperProgrammeApiVersTv(programme: ProgrammeTeleAPI, apiBase: string):
     producer: programme.info_producteur || '',
     country: programme.pays || '',
     language: programme.langue,
+    chaineId: programme.chaine_id,
+    chaineNom: programme.chaine_nom,
+    aLaUne: programme.a_la_une,
   }
 }
 
@@ -277,6 +287,7 @@ export const useTelevision = () => {
       const params = new URLSearchParams()
       if (filtres.recherche) params.set('recherche', filtres.recherche)
       if (filtres.pays && filtres.pays !== 'Tous les territoires') params.set('pays', filtres.pays)
+      if (filtres.chaine) params.set('chaine', filtres.chaine)
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))
 

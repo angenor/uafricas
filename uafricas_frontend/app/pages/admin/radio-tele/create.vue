@@ -6,8 +6,16 @@ const router = useRouter()
 const type = computed(() => (route.query.type as string) || 'stations')
 
 const { creerStation, creerChaine, creerProgramme, loading, error } = useAdminRadioTele()
+const { listerChaines } = useTelevision()
 
 const erreurLocale = ref<string | null>(null)
+
+// Liste des chaînes (télés) pour rattacher un programme télé
+const chainesDisponibles = ref<{ id: string; name: string }[]>([])
+onMounted(async () => {
+  const result = await listerChaines({ par_page: 200 })
+  if (result) chainesDisponibles.value = result.chaines.map(c => ({ id: c.id, name: c.name }))
+})
 
 // Station Radio form
 const stationForm = reactive({
@@ -61,6 +69,8 @@ const programmeForm = reactive({
   est_international: false,
   langue: '',
   categorie_radio: '',
+  chaine_id: '',
+  a_la_une: false,
 })
 
 const titrePageMap: Record<string, string> = {
@@ -130,6 +140,11 @@ const soumettre = async () => {
       if (programmeForm.pays_id) body.pays_id = programmeForm.pays_id
       if (programmeForm.langue.trim()) body.langue = programmeForm.langue.trim()
       if (programmeForm.categorie_radio) body.categorie_radio = programmeForm.categorie_radio
+      // Rattachement à une télé (chaîne) + à la une, réservés aux programmes télé
+      if (programmeForm.type_programme === 'tele') {
+        if (programmeForm.chaine_id) body.chaine_id = programmeForm.chaine_id
+        body.a_la_une = programmeForm.a_la_une
+      }
 
       await creerProgramme(body)
     }
@@ -332,6 +347,26 @@ const soumettre = async () => {
                 <label class="label"><span class="label-text">URL video</span></label>
                 <input v-model="programmeForm.video_url" type="text" class="input input-bordered" placeholder="https://...">
               </div>
+            </div>
+          </div>
+
+          <!-- Rattachement télé (uniquement pour les programmes télé) -->
+          <div v-if="programmeForm.type_programme === 'tele'" class="space-y-4">
+            <h3 class="text-lg font-semibold border-b pb-2">Télé & écran principal</h3>
+            <div class="form-control">
+              <label class="label"><span class="label-text">Télé (chaine) de rattachement</span></label>
+              <select v-model="programmeForm.chaine_id" class="select select-bordered">
+                <option value="">Aucune (programme libre)</option>
+                <option v-for="ch in chainesDisponibles" :key="ch.id" :value="ch.id">{{ ch.name }}</option>
+              </select>
+              <label class="label"><span class="label-text-alt">Regroupe la vidéo sous cette télé sur la page publique /tele.</span></label>
+            </div>
+            <div class="form-control">
+              <label class="label cursor-pointer justify-start gap-3">
+                <input v-model="programmeForm.a_la_une" type="checkbox" class="checkbox checkbox-primary" :disabled="!programmeForm.chaine_id" />
+                <span class="label-text">Programme à la une (joue en boucle sur l'écran principal de la télé)</span>
+              </label>
+              <label v-if="!programmeForm.chaine_id" class="label"><span class="label-text-alt text-warning">Sélectionnez d'abord une télé pour la mettre à la une.</span></label>
             </div>
           </div>
 

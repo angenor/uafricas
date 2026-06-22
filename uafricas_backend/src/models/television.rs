@@ -158,7 +158,7 @@ pub const PROGRAMME_TELE_COLONNES: &str =
     "prt.id, prt.nom_emission, prt.slug, prt.description, prt.image_couverture_url,
      prt.video_url, prt.info_animateur, prt.info_producteur, prt.pays_id,
      prt.est_international, prt.langue, prt.etat, prt.cree_par,
-     prt.created_at, prt.updated_at";
+     prt.chaine_id, prt.a_la_une, prt.created_at, prt.updated_at";
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct ProgrammeTeleRow {
@@ -175,11 +175,15 @@ pub struct ProgrammeTeleRow {
     pub langue: String,
     pub etat: String,
     pub cree_par: Uuid,
+    pub chaine_id: Option<Uuid>,
+    pub a_la_une: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     // Champs jointures optionnels
     #[sqlx(default)]
     pub pays_nom: Option<String>,
+    #[sqlx(default)]
+    pub chaine_nom: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -195,6 +199,9 @@ pub struct ProgrammeTeleResponse {
     pub pays: Option<String>,
     pub est_international: bool,
     pub langue: String,
+    pub chaine_id: Option<Uuid>,
+    pub chaine_nom: Option<String>,
+    pub a_la_une: bool,
     pub created_at: DateTime<Utc>,
 }
 
@@ -211,6 +218,7 @@ pub struct ProgrammeTeleListeResponse {
 pub struct ProgrammeTeleQueryParams {
     pub recherche: Option<String>,
     pub pays: Option<String>,
+    pub chaine: Option<Uuid>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,
 }
@@ -226,6 +234,7 @@ pub struct CreerProgrammeTeleForm {
     pub pays: Option<String>,
     pub est_international: Option<bool>,
     pub langue: Option<String>,
+    pub chaine_id: Option<Uuid>,
 }
 
 // ── Stats Télévision ──────────────────────────────────────────────────
@@ -254,6 +263,9 @@ impl ProgrammeTeleRow {
             pays: self.pays_nom.clone(),
             est_international: self.est_international,
             langue: self.langue.clone(),
+            chaine_id: self.chaine_id,
+            chaine_nom: self.chaine_nom.clone(),
+            a_la_une: self.a_la_une,
             created_at: self.created_at,
         }
     }

@@ -1437,6 +1437,8 @@ export interface AdminProgrammeMedia {
   categorie_radio: string | null
   langue: string
   pays_nom: string | null
+  chaine_nom: string | null
+  a_la_une: boolean
   created_at: string
 }
 
@@ -1455,6 +1457,9 @@ export interface AdminProgrammeMediaDetail {
   est_international: boolean
   langue: string
   categorie_radio: string | null
+  chaine_id: string | null
+  chaine_nom: string | null
+  a_la_une: boolean
   etat: string
   cree_par: string
   cree_par_nom: string | null
@@ -1474,6 +1479,8 @@ export interface CreerProgrammeMediaForm {
   est_international: boolean
   langue: string
   categorie_radio: string
+  chaine_id: string
+  a_la_une: boolean
 }
 
 // ── Médias & Contenus — Événements ───────────────────────────

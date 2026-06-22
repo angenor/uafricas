@@ -42,7 +42,7 @@ pub const CHAINE_TV_TRI_COLONNES: &[&str] = &[
 pub const ADMIN_PROGRAMME_MEDIA_LISTE_COLONNES: &str =
     "p.id, p.nom_emission, p.type::TEXT as type_programme, p.etat,
      p.categorie_radio::TEXT as categorie_radio, p.langue,
-     pays.nom AS pays_nom, p.created_at";
+     pays.nom AS pays_nom, ch.nom AS chaine_nom, p.a_la_une, p.created_at";
 
 pub const ADMIN_PROGRAMME_MEDIA_DETAIL_COLONNES: &str =
     "p.id, p.nom_emission, p.slug, p.type::TEXT as type_programme,
@@ -50,6 +50,7 @@ pub const ADMIN_PROGRAMME_MEDIA_DETAIL_COLONNES: &str =
      p.info_animateur, p.info_producteur,
      p.pays_id, pays.nom AS pays_nom, p.est_international, p.langue,
      p.categorie_radio::TEXT as categorie_radio,
+     p.chaine_id, ch.nom AS chaine_nom, p.a_la_une,
      p.etat, p.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      p.created_at, p.updated_at";
 
@@ -225,6 +226,8 @@ pub struct AdminProgrammeMediaListeResponse {
     pub categorie_radio: Option<String>,
     pub langue: String,
     pub pays_nom: Option<String>,
+    pub chaine_nom: Option<String>,
+    pub a_la_une: bool,
     pub created_at: DateTime<Utc>,
 }
 
@@ -244,6 +247,9 @@ pub struct AdminProgrammeMediaDetailRow {
     pub est_international: bool,
     pub langue: String,
     pub categorie_radio: Option<String>,
+    pub chaine_id: Option<Uuid>,
+    pub chaine_nom: Option<String>,
+    pub a_la_une: bool,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -267,6 +273,9 @@ pub struct AdminProgrammeMediaDetailResponse {
     pub est_international: bool,
     pub langue: String,
     pub categorie_radio: Option<String>,
+    pub chaine_id: Option<Uuid>,
+    pub chaine_nom: Option<String>,
+    pub a_la_une: bool,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -291,6 +300,9 @@ impl AdminProgrammeMediaDetailRow {
             est_international: self.est_international,
             langue: self.langue.clone(),
             categorie_radio: self.categorie_radio.clone(),
+            chaine_id: self.chaine_id,
+            chaine_nom: self.chaine_nom.clone(),
+            a_la_une: self.a_la_une,
             etat: self.etat.clone(),
             cree_par: self.cree_par,
             cree_par_nom: self.cree_par_nom.clone(),
@@ -365,6 +377,8 @@ pub struct CreerProgrammeMediaRequest {
     pub est_international: Option<bool>,
     pub langue: Option<String>,
     pub categorie_radio: Option<String>,
+    pub chaine_id: Option<Uuid>,
+    pub a_la_une: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -380,6 +394,8 @@ pub struct ModifierProgrammeMediaRequest {
     pub est_international: Option<bool>,
     pub langue: Option<String>,
     pub categorie_radio: Option<String>,
+    pub chaine_id: Option<Uuid>,
+    pub a_la_une: Option<bool>,
 }
 
 // ── Query Params ─────────────────────────────────────────────

@@ -7,54 +7,129 @@ const { listerChaines, listerProgrammesVedettes, obtenirStats, listerPays, liste
 useHead({
   title: 'Télévision Africaine | UAfricas',
   meta: [
-    { name: 'description', content: 'Regardez les chaînes de télévision africaines en direct. Programmes culturels, actualités et divertissement.' }
+    { name: 'description', content: 'Regardez les télés africaines : chaque télé regroupe ses programmes, avec un programme à la une qui joue en boucle.' }
   ]
 })
+
+// ── Une « télé » = une chaîne regroupant ses vidéos (programmes) ──────────
+interface TeleGroupe {
+  id: string
+  nom: string
+  cover: string
+  country: string
+  category: string
+  isLive: boolean
+  description: string
+  programmes: TvProgram[]
+  aLaUne: TvProgram | null
+}
+
+const ORPHELINS_ID = '__autres__'
 
 // State
 const videoRef = ref<HTMLVideoElement | null>(null)
 const audioMuted = ref(true)
-const currentProgramIndex = ref(0)
 const isMobile = ref(false)
 
 // Données chargées depuis l'API
 const chaines = ref<TvChannel[]>([])
-const programmesVedettes = ref<TvProgram[]>([])
+const programmes = ref<TvProgram[]>([])
 const stats = ref<TvStat[]>([])
 const paysDisponibles = ref<string[]>([])
 const categoriesDisponibles = ref<string[]>([])
+
+// Sélection courante
+const teleActiveId = ref<string | null>(null)
+const programmeActifId = ref<string | null>(null)
 
 // Filtres
 const filtrePays = ref('Tous les territoires')
 const filtreCategorie = ref('Toutes les catégories')
 const rechercheTexte = ref('')
 
-// Computed
-const currentProgram = computed(() => programmesVedettes.value[currentProgramIndex.value])
-const heroVideoUrl = computed(() => {
-  if (currentProgram.value?.videoUrl) return currentProgram.value.videoUrl
-  return defaultCoverVideoUrl
+// ── Regroupement des programmes par télé ─────────────────────────────────
+const teles = computed<TeleGroupe[]>(() => {
+  const parChaine = new Map<string, TvProgram[]>()
+  const orphelins: TvProgram[] = []
+  for (const p of programmes.value) {
+    if (p.chaineId) {
+      if (!parChaine.has(p.chaineId)) parChaine.set(p.chaineId, [])
+      parChaine.get(p.chaineId)!.push(p)
+    }
+    else {
+      orphelins.push(p)
+    }
+  }
+
+  const groupes: TeleGroupe[] = chaines.value.map((c) => {
+    const progs = parChaine.get(c.id) || []
+    return {
+      id: c.id,
+      nom: c.name,
+      cover: c.cover,
+      country: c.country,
+      category: c.category,
+      isLive: c.isLive,
+      description: c.description,
+      programmes: progs,
+      aLaUne: progs.find(p => p.aLaUne) || progs[0] || null,
+    }
+  })
+
+  if (orphelins.length) {
+    groupes.push({
+      id: ORPHELINS_ID,
+      nom: 'Autres programmes',
+      cover: orphelins[0]?.banner || '/images/tv-default.jpg',
+      country: '',
+      category: '',
+      isLive: false,
+      description: 'Programmes non rattachés à une télé.',
+      programmes: orphelins,
+      aLaUne: orphelins.find(p => p.aLaUne) || orphelins[0] || null,
+    })
+  }
+
+  return groupes
 })
 
-const chainesFiltrees = computed(() => {
-  let result = chaines.value
-
+const telesFiltrees = computed(() => {
+  let result = teles.value
   if (filtrePays.value && filtrePays.value !== 'Tous les territoires') {
-    result = result.filter(c => c.country === filtrePays.value)
+    result = result.filter(t => t.country === filtrePays.value)
   }
   if (filtreCategorie.value && filtreCategorie.value !== 'Toutes les catégories') {
-    result = result.filter(c => c.category === filtreCategorie.value)
+    result = result.filter(t => t.category === filtreCategorie.value)
   }
   if (rechercheTexte.value.trim()) {
     const terme = rechercheTexte.value.toLowerCase().trim()
-    result = result.filter(c =>
-      c.name.toLowerCase().includes(terme) ||
-      c.description.toLowerCase().includes(terme)
+    result = result.filter(t =>
+      t.nom.toLowerCase().includes(terme) ||
+      t.description.toLowerCase().includes(terme)
     )
   }
-
   return result
 })
+
+const teleActive = computed<TeleGroupe | null>(() => {
+  if (teleActiveId.value) {
+    const trouve = teles.value.find(t => t.id === teleActiveId.value)
+    if (trouve) return trouve
+  }
+  return telesFiltrees.value[0] || teles.value[0] || null
+})
+
+const programmeActif = computed<TvProgram | null>(() => {
+  const t = teleActive.value
+  if (!t) return null
+  if (programmeActifId.value) {
+    const trouve = t.programmes.find(p => p.id === programmeActifId.value)
+    if (trouve) return trouve
+  }
+  return t.aLaUne
+})
+
+const heroVideoUrl = computed(() => programmeActif.value?.videoUrl || defaultCoverVideoUrl)
 
 // Methods
 const toggleMute = () => {
@@ -64,57 +139,69 @@ const toggleMute = () => {
   }
 }
 
-const selectProgram = (index: number) => {
-  currentProgramIndex.value = index
-  if (videoRef.value && programmesVedettes.value[index]?.videoUrl) {
-    videoRef.value.src = programmesVedettes.value[index].videoUrl
-    videoRef.value.play()
-    if (videoRef.value.muted) {
-      toggleMute()
-    }
-  }
+const selectionnerTele = (id: string) => {
+  teleActiveId.value = id
+  programmeActifId.value = null // revient au programme à la une de la télé
+  if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' })
 }
+
+const selectionnerProgramme = (programme: TvProgram) => {
+  programmeActifId.value = programme.id
+  if (videoRef.value?.muted) toggleMute()
+}
+
+// Recharge la vidéo de l'écran principal quand la source change (boucle conservée)
+watch(heroVideoUrl, async () => {
+  await nextTick()
+  const v = videoRef.value
+  if (!v) return
+  v.load()
+  v.play().catch(() => {})
+})
 
 const chargerDonnees = async () => {
   const [chainesResult, programmesResult, statsResult, paysResult, categoriesResult] = await Promise.all([
     listerChaines({ par_page: 100 }),
-    listerProgrammesVedettes({ par_page: 10 }),
+    listerProgrammesVedettes({ par_page: 100 }),
     obtenirStats(),
     listerPays(),
     listerCategories(),
   ])
 
   if (chainesResult) chaines.value = chainesResult.chaines
-  if (programmesResult) programmesVedettes.value = programmesResult.programmes
+  if (programmesResult) programmes.value = programmesResult.programmes
   if (statsResult) stats.value = statsResult
   if (paysResult) paysDisponibles.value = paysResult
   if (categoriesResult) categoriesDisponibles.value = categoriesResult
+
+  // Sélection par défaut : la première télé qui possède des programmes
+  const premiere = teles.value.find(t => t.programmes.length > 0) || teles.value[0]
+  if (premiere) teleActiveId.value = premiere.id
 }
 
 // Lifecycle
 onMounted(() => {
   isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-  currentProgramIndex.value = 0
   chargerDonnees()
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-900">
-    <!-- Section Vidéo Hero -->
+    <!-- Section Vidéo Hero : écran principal (programme à la une, en boucle) -->
     <div class="relative">
       <div class="flex absolute">
         <div v-if="!isMobile" class="w-screen h-screen relative">
           <video
             ref="videoRef"
+            :src="heroVideoUrl"
             class="z-0 relative h-[86vh] mt-24 w-screen rounded-md shadow-md object-cover"
             autoplay
             loop
             muted
+            playsinline
             preload="none"
-          >
-            <source :src="heroVideoUrl" type="video/mp4" />
-          </video>
+          />
         </div>
       </div>
 
@@ -145,59 +232,78 @@ onMounted(() => {
           ></div>
         </button>
 
-        <!-- Contenu inférieur -->
-        <div v-if="!isMobile && programmesVedettes.length > 0" class="absolute bottom-14 left-10 w-120 text-white">
+        <!-- Contenu inférieur : télé active + ses programmes -->
+        <div v-if="!isMobile && teleActive" class="absolute bottom-14 left-10 w-[40rem] max-w-[80vw] text-white">
+          <!-- Nom de la télé + badge à la une -->
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-sm uppercase tracking-wide text-yellow-400 font-semibold">{{ teleActive.nom }}</span>
+            <span
+              v-if="programmeActif && programmeActif.id === teleActive.aLaUne?.id"
+              class="rounded-full px-3 py-0.5 text-xs bg-yellow-400/20 border border-yellow-400 text-yellow-400 uppercase"
+            >
+              À la une
+            </span>
+          </div>
+
           <a
-            v-if="currentProgram?.videoUrl"
+            v-if="programmeActif?.videoUrl"
             target="_blank"
-            :href="currentProgram.videoUrl"
-            class="rounded-full ml-5 mb-2 text-base inline-flex px-4 border border-yellow-400 bg-yellow-400/10 text-yellow-400"
+            :href="programmeActif.videoUrl"
+            class="rounded-full mb-2 text-base inline-flex px-4 py-1 border border-yellow-400 bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20 transition-colors"
           >
             <div>Voir ce programme</div>
             <div class="pl-2">
-              <svg class="h-7 w-7" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                 <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
               </svg>
             </div>
           </a>
 
-          <!-- Timeline des programmes vedettes -->
-          <div class="flex p-3 uppercase">
-            <div
-              v-for="(programme, index) in programmesVedettes"
+          <!-- Timeline des programmes de la télé active -->
+          <div v-if="teleActive.programmes.length" class="flex flex-wrap p-1">
+            <button
+              v-for="programme in teleActive.programmes"
               :key="programme.id"
-              @click="selectProgram(index)"
-              :class="currentProgramIndex === index ? 'bg-yellow-400/30 border border-yellow-400' : ''"
-              class="relative cursor-pointer ml-2 p-1 rounded-md"
+              type="button"
+              @click="selectionnerProgramme(programme)"
+              :class="programmeActif?.id === programme.id ? 'bg-yellow-400/30 border border-yellow-400' : 'border border-transparent'"
+              class="relative cursor-pointer ml-2 mb-2 p-1 rounded-md transition-colors"
+              :title="programme.title"
             >
               <img
                 class="object-cover h-16 w-24 z-0 rounded-md shadow-md overflow-hidden"
                 :src="programme.banner"
                 :alt="programme.title"
               />
-              <button
-                v-if="currentProgramIndex === index"
+              <span
+                v-if="programme.aLaUne"
+                class="absolute top-1 right-1 z-10 rounded bg-yellow-400 text-black text-[9px] font-bold px-1"
+              >
+                ★
+              </span>
+              <span
+                v-if="programmeActif?.id === programme.id"
                 class="rounded-full h-7 w-7 flex absolute top-7 left-11 z-10"
               >
-                <div class="w-1 h-4 bg-yellow-400 rounded-md"></div>
-                <div class="ml-1 w-1 h-4 bg-yellow-400 rounded-md"></div>
-              </button>
-            </div>
+                <span class="w-1 h-4 bg-yellow-400 rounded-md"></span>
+                <span class="ml-1 w-1 h-4 bg-yellow-400 rounded-md"></span>
+              </span>
+            </button>
           </div>
 
-          <div class="sm:text-2xl sm:w-full w-1/2 text-xl uppercase">
-            {{ currentProgram?.title }}
+          <div class="text-xl sm:text-2xl uppercase mt-1">
+            {{ programmeActif?.title }}
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Section Chaînes TV -->
+    <!-- Section Télés -->
     <div class="bg-gray-900 px-4 py-12">
       <div class="max-w-6xl mx-auto">
         <h2 class="text-3xl font-bold text-white mb-8 text-center">
-          Chaînes TV <span class="text-yellow-400">Africaines</span>
+          Nos télés <span class="text-yellow-400">Africaines</span>
         </h2>
 
         <!-- Statistiques -->
@@ -220,7 +326,7 @@ onMounted(() => {
             <input
               v-model="rechercheTexte"
               type="text"
-              placeholder="Rechercher une chaîne..."
+              placeholder="Rechercher une télé..."
               class="w-full bg-gray-800 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
           </div>
@@ -245,45 +351,78 @@ onMounted(() => {
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400"></div>
         </div>
 
-        <!-- Grille des chaînes -->
-        <div v-else-if="chainesFiltrees.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div
-            v-for="channel in chainesFiltrees"
-            :key="channel.id"
-            class="bg-gray-800 rounded-xl overflow-hidden transform transition-all hover:scale-105 cursor-pointer"
+        <!-- Grille des télés -->
+        <div v-else-if="telesFiltrees.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <button
+            v-for="tele in telesFiltrees"
+            :key="tele.id"
+            type="button"
+            @click="selectionnerTele(tele.id)"
+            :class="teleActive?.id === tele.id ? 'ring-2 ring-yellow-400' : ''"
+            class="text-left bg-gray-800 rounded-xl overflow-hidden transform transition-all hover:scale-105 cursor-pointer"
           >
             <div class="relative aspect-video">
               <img
-                :src="channel.cover"
-                :alt="channel.name"
+                :src="tele.cover"
+                :alt="tele.nom"
                 class="w-full h-full object-cover"
               />
               <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <div v-if="channel.isLive" class="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
+                <div v-if="tele.isLive" class="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
                   <span class="text-white text-xs font-bold">LIVE</span>
                 </div>
               </div>
+              <!-- Compteur de programmes -->
+              <span class="absolute bottom-2 right-2 rounded-full bg-black/70 text-white text-xs px-2 py-0.5">
+                {{ tele.programmes.length }} programme{{ tele.programmes.length > 1 ? 's' : '' }}
+              </span>
             </div>
             <div class="p-4">
-              <h3 class="font-bold text-white text-lg">{{ channel.name }}</h3>
-              <p class="text-gray-400 text-sm line-clamp-2">{{ channel.description }}</p>
+              <h3 class="font-bold text-white text-lg">{{ tele.nom }}</h3>
+              <p class="text-gray-400 text-sm line-clamp-2">{{ tele.description }}</p>
               <div class="flex items-center justify-between mt-3">
-                <span class="text-xs text-gray-500">{{ channel.country }}</span>
-                <span class="text-xs text-custom-green">{{ channel.category }}</span>
+                <span class="text-xs text-gray-500">{{ tele.country }}</span>
+                <span class="text-xs text-custom-green">{{ tele.category }}</span>
               </div>
             </div>
-          </div>
+          </button>
         </div>
 
         <!-- Aucun résultat -->
         <div v-else-if="!chargement" class="text-center py-12">
-          <p class="text-gray-400 text-lg">Aucune chaîne trouvée</p>
+          <p class="text-gray-400 text-lg">Aucune télé trouvée</p>
           <p class="text-gray-500 text-sm mt-2">Essayez de modifier vos filtres de recherche</p>
         </div>
 
-        <!-- Message pour mobile -->
-        <div v-if="isMobile" class="mt-12 text-center text-gray-400">
-          <p>Pour une meilleure expérience, nous vous recommandons de regarder sur un écran plus grand.</p>
+        <!-- Programmes de la télé active (vue mobile / liste détaillée) -->
+        <div v-if="teleActive && teleActive.programmes.length" class="mt-12">
+          <h3 class="text-xl font-bold text-white mb-4">
+            Programmes de <span class="text-yellow-400">{{ teleActive.nom }}</span>
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <button
+              v-for="programme in teleActive.programmes"
+              :key="programme.id"
+              type="button"
+              @click="selectionnerProgramme(programme)"
+              :class="programmeActif?.id === programme.id ? 'ring-2 ring-yellow-400' : ''"
+              class="text-left bg-gray-800 rounded-lg overflow-hidden flex gap-3 hover:bg-gray-700 transition-colors"
+            >
+              <div class="relative w-32 shrink-0 aspect-video">
+                <img :src="programme.banner" :alt="programme.title" class="w-full h-full object-cover" />
+                <span
+                  v-if="programme.aLaUne"
+                  class="absolute top-1 left-1 rounded bg-yellow-400 text-black text-[10px] font-bold px-1"
+                >
+                  À la une
+                </span>
+              </div>
+              <div class="py-2 pr-2 min-w-0">
+                <p class="text-white text-sm font-semibold truncate">{{ programme.title }}</p>
+                <p class="text-gray-400 text-xs line-clamp-2">{{ programme.description }}</p>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
     </div>

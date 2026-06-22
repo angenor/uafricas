@@ -276,6 +276,13 @@ pub async fn lister_programmes_vedettes(
         }
     }
 
+    // Filtre par chaîne (télé)
+    if let Some(chaine_id) = params.chaine {
+        conditions.push(format!("prt.chaine_id = ${}::uuid", bind_index));
+        bind_values.push(chaine_id.to_string());
+        bind_index += 1;
+    }
+
     // Recherche textuelle
     if let Some(ref recherche) = params.recherche {
         if !recherche.trim().is_empty() {
@@ -302,13 +309,14 @@ pub async fn lister_programmes_vedettes(
     let total: i64 = count_q.fetch_one(pool.get_ref()).await
         .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage programmes TV: {}", e)))?;
 
-    // Récupérer les programmes avec jointure pays
+    // Récupérer les programmes avec jointure pays + chaîne (télé de rattachement)
     let query = format!(
-        "SELECT {}, p.nom AS pays_nom
+        "SELECT {}, p.nom AS pays_nom, c.nom AS chaine_nom
          FROM media_content.programme_radio_tele prt
          LEFT JOIN shared.pays p ON p.id = prt.pays_id
+         LEFT JOIN media_content.chaine_tv c ON c.id = prt.chaine_id
          WHERE {}
-         ORDER BY prt.created_at DESC
+         ORDER BY prt.a_la_une DESC, prt.created_at DESC
          LIMIT ${} OFFSET ${}",
         PROGRAMME_TELE_COLONNES,
         where_clause,
@@ -353,9 +361,10 @@ pub async fn obtenir_programme_vedette(
         .map_err(|_| ApiErreur::Validation("ID de programme invalide".into()))?;
 
     let query = format!(
-        "SELECT {}, p.nom AS pays_nom
+        "SELECT {}, p.nom AS pays_nom, c.nom AS chaine_nom
          FROM media_content.programme_radio_tele prt
          LEFT JOIN shared.pays p ON p.id = prt.pays_id
+         LEFT JOIN media_content.chaine_tv c ON c.id = prt.chaine_id
          WHERE prt.id = $1 AND prt.type = 'tele' AND prt.etat = 'publie' AND prt.deleted_at IS NULL",
         PROGRAMME_TELE_COLONNES
     );
@@ -417,8 +426,8 @@ pub async fn creer_programme_vedette(
     sqlx::query(
         "INSERT INTO media_content.programme_radio_tele
             (id, nom_emission, slug, type, description, video_url, image_couverture_url,
-             info_animateur, info_producteur, pays_id, est_international, langue, etat, cree_par)
-         VALUES ($1, $2, $3, 'tele'::media_content.type_programme_media, $4, $5, $6, $7, $8, $9, $10, $11, 'publie', $12)"
+             info_animateur, info_producteur, pays_id, est_international, langue, chaine_id, etat, cree_par)
+         VALUES ($1, $2, $3, 'tele'::media_content.type_programme_media, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'publie', $13)"
     )
     .bind(programme_id)
     .bind(body.nom_emission.trim())
@@ -431,16 +440,18 @@ pub async fn creer_programme_vedette(
     .bind(pays_id)
     .bind(est_international)
     .bind(langue)
+    .bind(body.chaine_id)
     .bind(utilisateur_id)
     .execute(pool.get_ref())
     .await
     .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur création programme TV: {}", e)))?;
 
-    // Récupérer le programme créé avec jointure pays
+    // Récupérer le programme créé avec jointure pays + chaîne
     let query = format!(
-        "SELECT {}, p.nom AS pays_nom
+        "SELECT {}, p.nom AS pays_nom, c.nom AS chaine_nom
          FROM media_content.programme_radio_tele prt
          LEFT JOIN shared.pays p ON p.id = prt.pays_id
+         LEFT JOIN media_content.chaine_tv c ON c.id = prt.chaine_id
          WHERE prt.id = $1",
         PROGRAMME_TELE_COLONNES
     );
