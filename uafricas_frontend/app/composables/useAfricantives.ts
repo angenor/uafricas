@@ -42,6 +42,14 @@ export interface AfricantiveDetailAPI {
   domaine_slug: string | null
   pays: string | null
   ville: string | null
+  site_web_url: string | null
+  lien_reseau_social: string | null
+  contact1_courriel: string | null
+  contact1_telephone: string | null
+  contact1_adresse: string | null
+  contact2_courriel: string | null
+  contact2_telephone: string | null
+  contact2_adresse: string | null
   user: AfricantiveAuteurDetail
   created_at: string
   updated_at: string
@@ -97,6 +105,8 @@ export const DOMAINES_AFRICANTIVES: { value: string; label: string }[] = [
   { value: 'Associations de solidarité et de développement en Afrique', label: 'Associations de solidarité et de développement en Afrique' },
   { value: 'Innovations', label: 'Innovations' },
   { value: 'Entrepreneuriat', label: 'Entrepreneuriat' },
+  { value: 'Union des africains', label: 'Union des africains' },
+  { value: 'Autre', label: 'Autre' },
 ]
 
 export const PAYS_AFRICAINS = [
@@ -274,8 +284,17 @@ export const useAfricantives = () => {
       titre: string
       description: string
       domaine?: string
+      domaine_autre?: string
       pays?: string
       ville?: string
+      site_web_url?: string
+      lien_reseau_social?: string
+      contact1_courriel?: string
+      contact1_telephone?: string
+      contact1_adresse?: string
+      contact2_courriel?: string
+      contact2_telephone?: string
+      contact2_adresse?: string
     },
     couvertureFile: File | null,
   ): Promise<AfricantiveDetailAPI | null> => {
@@ -287,8 +306,17 @@ export const useAfricantives = () => {
       data.append('titre', formData.titre)
       data.append('description', formData.description)
       if (formData.domaine) data.append('domaine', formData.domaine)
+      if (formData.domaine_autre) data.append('domaine_autre', formData.domaine_autre)
       if (formData.pays) data.append('pays', formData.pays)
       if (formData.ville) data.append('ville', formData.ville)
+      if (formData.site_web_url) data.append('site_web_url', formData.site_web_url)
+      if (formData.lien_reseau_social) data.append('lien_reseau_social', formData.lien_reseau_social)
+      if (formData.contact1_courriel) data.append('contact1_courriel', formData.contact1_courriel)
+      if (formData.contact1_telephone) data.append('contact1_telephone', formData.contact1_telephone)
+      if (formData.contact1_adresse) data.append('contact1_adresse', formData.contact1_adresse)
+      if (formData.contact2_courriel) data.append('contact2_courriel', formData.contact2_courriel)
+      if (formData.contact2_telephone) data.append('contact2_telephone', formData.contact2_telephone)
+      if (formData.contact2_adresse) data.append('contact2_adresse', formData.contact2_adresse)
       if (couvertureFile) data.append('couverture', couvertureFile)
 
       const reponse = await $fetch<ApiResponse<AfricantiveDetailAPI>>(

@@ -186,11 +186,8 @@ pub async fn creer_africantive(
     let utilisateur_id = extraire_utilisateur_id(&req)
         .ok_or_else(|| ApiErreur::NonAutorise("Token invalide ou manquant".into()))?;
 
-    let mut titre: Option<String> = None;
-    let mut description: Option<String> = None;
-    let mut domaine: Option<String> = None;
-    let mut pays: Option<String> = None;
-    let mut ville: Option<String> = None;
+    // Champs texte collectes generiquement (vides ignores)
+    let mut champs: std::collections::HashMap<String, String> = std::collections::HashMap::new();
     let mut image_url: Option<String> = None;
 
     let upload_dir = std::env::var("UPLOAD_DIR").unwrap_or_else(|_| "./uploads".to_string());
@@ -202,50 +199,6 @@ pub async fn creer_africantive(
         let field_name = field.name().map(|n| n.to_string()).unwrap_or_default();
 
         match field_name.as_str() {
-            "titre" => {
-                let mut data = Vec::new();
-                while let Some(Ok(chunk)) = field.next().await {
-                    data.extend_from_slice(&chunk);
-                }
-                titre = Some(String::from_utf8_lossy(&data).trim().to_string());
-            }
-            "description" => {
-                let mut data = Vec::new();
-                while let Some(Ok(chunk)) = field.next().await {
-                    data.extend_from_slice(&chunk);
-                }
-                description = Some(String::from_utf8_lossy(&data).trim().to_string());
-            }
-            "domaine" => {
-                let mut data = Vec::new();
-                while let Some(Ok(chunk)) = field.next().await {
-                    data.extend_from_slice(&chunk);
-                }
-                let val = String::from_utf8_lossy(&data).trim().to_string();
-                if !val.is_empty() {
-                    domaine = Some(val);
-                }
-            }
-            "pays" => {
-                let mut data = Vec::new();
-                while let Some(Ok(chunk)) = field.next().await {
-                    data.extend_from_slice(&chunk);
-                }
-                let val = String::from_utf8_lossy(&data).trim().to_string();
-                if !val.is_empty() {
-                    pays = Some(val);
-                }
-            }
-            "ville" => {
-                let mut data = Vec::new();
-                while let Some(Ok(chunk)) = field.next().await {
-                    data.extend_from_slice(&chunk);
-                }
-                let val = String::from_utf8_lossy(&data).trim().to_string();
-                if !val.is_empty() {
-                    ville = Some(val);
-                }
-            }
             "couverture" => {
                 let filename = field
                     .content_disposition()
@@ -270,17 +223,45 @@ pub async fn creer_africantive(
                 image_url = Some(format!("/uploads/couvertures/{}", safe_name));
             }
             _ => {
-                while let Some(Ok(_)) = field.next().await {}
+                let mut data = Vec::new();
+                while let Some(Ok(chunk)) = field.next().await {
+                    data.extend_from_slice(&chunk);
+                }
+                let val = String::from_utf8_lossy(&data).trim().to_string();
+                if !val.is_empty() {
+                    champs.insert(field_name, val);
+                }
             }
         }
     }
 
-    let titre = titre
+    // Helper : recuperer un champ texte optionnel
+    let champ = |cle: &str| champs.get(cle).cloned();
+
+    let titre = champ("titre")
         .filter(|t| !t.is_empty())
         .ok_or_else(|| ApiErreur::Validation("Le titre est requis".into()))?;
-    let description = description
+    let description = champ("description")
         .filter(|d| !d.is_empty())
         .ok_or_else(|| ApiErreur::Validation("La description est requise".into()))?;
+
+    let domaine = champ("domaine");
+    let pays = champ("pays");
+    let ville = champ("ville");
+    let site_web_url = champ("site_web_url");
+    let lien_reseau_social = champ("lien_reseau_social");
+    // Precision conservee uniquement si le domaine choisi est « Autre »
+    let domaine_autre = if domaine.as_deref() == Some("Autre") {
+        champ("domaine_autre")
+    } else {
+        None
+    };
+    let contact1_courriel = champ("contact1_courriel");
+    let contact1_telephone = champ("contact1_telephone");
+    let contact1_adresse = champ("contact1_adresse");
+    let contact2_courriel = champ("contact2_courriel");
+    let contact2_telephone = champ("contact2_telephone");
+    let contact2_adresse = champ("contact2_adresse");
 
     let slug = generer_slug(&titre);
 
@@ -309,8 +290,12 @@ pub async fn creer_africantive(
     // Inserer
     let id: Uuid = sqlx::query_scalar(
         "INSERT INTO innovation.africantive
-            (titre, slug, description, image_couverture_url, domaine_id, pays_id, ville, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            (titre, slug, description, image_couverture_url, domaine_id, domaine_autre,
+             pays_id, ville, site_web_url, lien_reseau_social,
+             contact1_courriel, contact1_telephone, contact1_adresse,
+             contact2_courriel, contact2_telephone, contact2_adresse, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+                 $11, $12, $13, $14, $15, $16, $17)
          RETURNING id",
     )
     .bind(&titre)
@@ -318,8 +303,17 @@ pub async fn creer_africantive(
     .bind(&description)
     .bind(&image_url)
     .bind(domaine_id)
+    .bind(&domaine_autre)
     .bind(pays_id)
     .bind(&ville)
+    .bind(&site_web_url)
+    .bind(&lien_reseau_social)
+    .bind(&contact1_courriel)
+    .bind(&contact1_telephone)
+    .bind(&contact1_adresse)
+    .bind(&contact2_courriel)
+    .bind(&contact2_telephone)
+    .bind(&contact2_adresse)
     .bind(utilisateur_id)
     .fetch_one(pool.get_ref())
     .await?;

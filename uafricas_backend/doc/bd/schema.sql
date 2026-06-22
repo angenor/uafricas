@@ -87,6 +87,7 @@
 \ir schemas/06b_exchange_candidatures.sql
 \ir schemas/06c_exchange_programme_champs_libres.sql
 \ir schemas/07_innovation.sql
+\ir schemas/07b_innovation_africantive_contacts.sql
 \ir schemas/08_culture.sql
 \ir schemas/08b_afrolang.sql
 \ir schemas/08c_afrolang_passation_moderation.sql

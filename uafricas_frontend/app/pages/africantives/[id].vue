@@ -135,6 +135,84 @@
             </div>
           </div>
 
+          <!-- Liens -->
+          <div
+            v-if="initiative.site_web_url || initiative.lien_reseau_social"
+            class="p-6 md:p-8 border-b border-gray-100"
+          >
+            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <font-awesome-icon :icon="['fas', 'link']" class="w-4 h-4 text-custom-chocolat" />
+              Liens
+            </h2>
+            <div class="flex flex-wrap gap-3">
+              <a
+                v-if="initiative.site_web_url"
+                :href="initiative.site_web_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+              >
+                <font-awesome-icon :icon="['fas', 'globe']" class="w-4 h-4 text-custom-green" />
+                Site web
+                <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="w-3 h-3 text-gray-400" />
+              </a>
+              <a
+                v-if="initiative.lien_reseau_social"
+                :href="initiative.lien_reseau_social"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+              >
+                <font-awesome-icon :icon="['fas', 'share-nodes']" class="w-4 h-4 text-custom-green" />
+                Réseau social
+                <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="w-3 h-3 text-gray-400" />
+              </a>
+            </div>
+          </div>
+
+          <!-- Contacts de l'initiateur -->
+          <div
+            v-if="aContacts"
+            class="p-6 md:p-8 border-b border-gray-100"
+          >
+            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <font-awesome-icon :icon="['fas', 'address-book']" class="w-4 h-4 text-custom-chocolat" />
+              Contacts de l'initiateur
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div
+                v-for="(contact, idx) in contacts"
+                :key="idx"
+                class="bg-gray-50 rounded-xl p-4 space-y-2"
+              >
+                <p class="text-sm font-medium text-gray-500">Contact {{ idx + 1 }}</p>
+                <a
+                  v-if="contact.courriel"
+                  :href="`mailto:${contact.courriel}`"
+                  class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 transition-colors break-all"
+                >
+                  <font-awesome-icon :icon="['fas', 'envelope']" class="w-4 h-4 text-gray-400 shrink-0" />
+                  {{ contact.courriel }}
+                </a>
+                <a
+                  v-if="contact.telephone"
+                  :href="`tel:${contact.telephone}`"
+                  class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 transition-colors"
+                >
+                  <font-awesome-icon :icon="['fas', 'phone']" class="w-4 h-4 text-gray-400 shrink-0" />
+                  {{ contact.telephone }}
+                </a>
+                <p
+                  v-if="contact.adresse"
+                  class="flex items-center gap-2 text-sm text-gray-700"
+                >
+                  <font-awesome-icon :icon="['fas', 'location-dot']" class="w-4 h-4 text-gray-400 shrink-0" />
+                  {{ contact.adresse }}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <!-- Actions -->
           <div class="p-6 md:p-8">
             <div v-if="isAuthenticated" class="space-y-4">
@@ -222,6 +300,18 @@ const dateFormatee = computed(() => {
   if (!initiative.value) return ''
   return formatDate(initiative.value.created_at)
 })
+
+// Contacts de l'initiateur (filtrer ceux entierement vides)
+const contacts = computed(() => {
+  const i = initiative.value
+  if (!i) return []
+  return [
+    { courriel: i.contact1_courriel, telephone: i.contact1_telephone, adresse: i.contact1_adresse },
+    { courriel: i.contact2_courriel, telephone: i.contact2_telephone, adresse: i.contact2_adresse },
+  ].filter(c => c.courriel || c.telephone || c.adresse)
+})
+
+const aContacts = computed(() => contacts.value.length > 0)
 
 // Methods
 const contacterPorteur = () => {

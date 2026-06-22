@@ -487,8 +487,17 @@ const handleSubmitInitiative = async (data: {
   titre: string
   description: string
   domaine: string
+  domaine_autre: string
   pays: string
   ville: string
+  site_web_url: string
+  lien_reseau_social: string
+  contact1_courriel: string
+  contact1_telephone: string
+  contact1_adresse: string
+  contact2_courriel: string
+  contact2_telephone: string
+  contact2_adresse: string
   couvertureFile: File | null
 }) => {
   publishModalRef.value?.setLoading(true)
@@ -498,8 +507,17 @@ const handleSubmitInitiative = async (data: {
       titre: data.titre,
       description: data.description,
       domaine: data.domaine || undefined,
+      domaine_autre: data.domaine_autre || undefined,
       pays: data.pays || undefined,
       ville: data.ville || undefined,
+      site_web_url: data.site_web_url || undefined,
+      lien_reseau_social: data.lien_reseau_social || undefined,
+      contact1_courriel: data.contact1_courriel || undefined,
+      contact1_telephone: data.contact1_telephone || undefined,
+      contact1_adresse: data.contact1_adresse || undefined,
+      contact2_courriel: data.contact2_courriel || undefined,
+      contact2_telephone: data.contact2_telephone || undefined,
+      contact2_adresse: data.contact2_adresse || undefined,
     },
     data.couvertureFile,
   )

@@ -13,8 +13,17 @@ const emit = defineEmits<{
     titre: string
     description: string
     domaine: string
+    domaine_autre: string
     pays: string
     ville: string
+    site_web_url: string
+    lien_reseau_social: string
+    contact1_courriel: string
+    contact1_telephone: string
+    contact1_adresse: string
+    contact2_courriel: string
+    contact2_telephone: string
+    contact2_adresse: string
     couvertureFile: File | null
   }): void
 }>()
@@ -23,8 +32,17 @@ const form = reactive({
   titre: '',
   description: '',
   domaine: '',
+  domaine_autre: '',
   pays: '',
   ville: '',
+  site_web_url: '',
+  lien_reseau_social: '',
+  contact1_courriel: '',
+  contact1_telephone: '',
+  contact1_adresse: '',
+  contact2_courriel: '',
+  contact2_telephone: '',
+  contact2_adresse: '',
   couvertureFile: null as File | null,
   couverturePreview: '' as string,
   loading: false,
@@ -44,8 +62,17 @@ const resetForm = () => {
   form.titre = ''
   form.description = ''
   form.domaine = ''
+  form.domaine_autre = ''
   form.pays = ''
   form.ville = ''
+  form.site_web_url = ''
+  form.lien_reseau_social = ''
+  form.contact1_courriel = ''
+  form.contact1_telephone = ''
+  form.contact1_adresse = ''
+  form.contact2_courriel = ''
+  form.contact2_telephone = ''
+  form.contact2_adresse = ''
   form.couvertureFile = null
   form.couverturePreview = ''
   form.loading = false
@@ -119,12 +146,27 @@ const handleSubmit = async () => {
     return
   }
 
+  if (form.domaine === 'Autre' && !form.domaine_autre.trim()) {
+    form.error = true
+    form.errorMessage = 'Veuillez préciser le domaine d\'activité.'
+    return
+  }
+
   emit('submit', {
     titre: form.titre.trim(),
     description: form.description.trim(),
     domaine: form.domaine,
+    domaine_autre: form.domaine === 'Autre' ? form.domaine_autre.trim() : '',
     pays: form.pays,
     ville: form.ville.trim(),
+    site_web_url: form.site_web_url.trim(),
+    lien_reseau_social: form.lien_reseau_social.trim(),
+    contact1_courriel: form.contact1_courriel.trim(),
+    contact1_telephone: form.contact1_telephone.trim(),
+    contact1_adresse: form.contact1_adresse.trim(),
+    contact2_courriel: form.contact2_courriel.trim(),
+    contact2_telephone: form.contact2_telephone.trim(),
+    contact2_adresse: form.contact2_adresse.trim(),
     couvertureFile: form.couvertureFile,
   })
 }
@@ -252,6 +294,18 @@ watch(() => props.isOpen, (isOpen) => {
               </select>
             </div>
 
+            <!-- Precision si domaine "Autre" -->
+            <div v-if="form.domaine === 'Autre'">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Précisez le domaine *</label>
+              <input
+                v-model="form.domaine_autre"
+                type="text"
+                maxlength="200"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                placeholder="Ex: Diplomatie panafricaine"
+              />
+            </div>
+
             <!-- Pays et Ville -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -275,6 +329,103 @@ watch(() => props.isOpen, (isOpen) => {
                   placeholder="Ex: Dakar"
                 />
               </div>
+            </div>
+          </div>
+
+          <!-- Section: Liens -->
+          <div class="space-y-4 bg-gray-50 p-4 rounded-xl">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+              <font-awesome-icon :icon="['fas', 'link']" class="w-4 h-4 text-orange-500 mr-2" />
+              Liens
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Site web</label>
+                <input
+                  v-model="form.site_web_url"
+                  type="url"
+                  maxlength="500"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  placeholder="https://exemple.org"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Lien réseau social</label>
+                <input
+                  v-model="form.lien_reseau_social"
+                  type="url"
+                  maxlength="500"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  placeholder="https://facebook.com/..."
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Contacts de l'initiateur -->
+          <div class="space-y-4 bg-gray-50 p-4 rounded-xl">
+            <h3 class="text-lg font-semibold text-gray-800 mb-1">
+              <font-awesome-icon :icon="['fas', 'address-book']" class="w-4 h-4 text-orange-500 mr-2" />
+              Contacts de l'initiateur
+            </h3>
+            <p class="text-xs text-gray-400 mb-3">Jusqu'à deux contacts (facultatif).</p>
+
+            <!-- Contact 1 -->
+            <div class="space-y-3 bg-white p-3 rounded-lg border border-gray-100">
+              <p class="text-sm font-medium text-gray-600">Contact 1</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input
+                  v-model="form.contact1_courriel"
+                  type="email"
+                  maxlength="255"
+                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  placeholder="Courriel"
+                />
+                <input
+                  v-model="form.contact1_telephone"
+                  type="tel"
+                  maxlength="50"
+                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  placeholder="Téléphone"
+                />
+              </div>
+              <input
+                v-model="form.contact1_adresse"
+                type="text"
+                maxlength="350"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                placeholder="Adresse géographique"
+              />
+            </div>
+
+            <!-- Contact 2 -->
+            <div class="space-y-3 bg-white p-3 rounded-lg border border-gray-100">
+              <p class="text-sm font-medium text-gray-600">Contact 2</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input
+                  v-model="form.contact2_courriel"
+                  type="email"
+                  maxlength="255"
+                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  placeholder="Courriel"
+                />
+                <input
+                  v-model="form.contact2_telephone"
+                  type="tel"
+                  maxlength="50"
+                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  placeholder="Téléphone"
+                />
+              </div>
+              <input
+                v-model="form.contact2_adresse"
+                type="text"
+                maxlength="350"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                placeholder="Adresse géographique"
+              />
             </div>
           </div>
 
