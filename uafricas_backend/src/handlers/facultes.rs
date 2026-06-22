@@ -222,6 +222,82 @@ pub async fn lister_facultes(
 }
 
 // ──────────────────────────────────────────────────────────────
+// GET /api/universite/stats — Statistiques agregees (bande d'accueil)
+// ──────────────────────────────────────────────────────────────
+#[derive(serde::Serialize)]
+pub struct UniversiteStatsResponse {
+    pub nombre_facultes: i64,
+    pub nombre_formations: i64,
+    pub nombre_inscrits: i64,
+    pub nombre_pays: i64,
+}
+
+pub async fn stats_universite(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
+    let pool = pool.get_ref();
+
+    // Facultes actives
+    let nombre_facultes: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM exchange.faculte
+         WHERE statut = 'active' AND deleted_at IS NULL",
+    )
+    .fetch_one(pool)
+    .await?;
+
+    // Formations disponibles (memes etats que le listing public)
+    let nombre_formations: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM media_content.mooc
+         WHERE etat IN ('publie','en_cours','termine') AND deleted_at IS NULL",
+    )
+    .fetch_one(pool)
+    .await?;
+
+    // Apprenants : inscriptions reelles aux formations + effectifs declares des facultes
+    let inscrits_moocs: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM media_content.mooc_inscription i
+         JOIN media_content.mooc m ON m.id = i.mooc_id
+         WHERE i.statut != 'abandonne' AND m.deleted_at IS NULL",
+    )
+    .fetch_one(pool)
+    .await?;
+
+    let inscrits_facultes: i64 = sqlx::query_scalar(
+        "SELECT COALESCE(SUM(nombre_inscrits_total), 0) FROM exchange.faculte
+         WHERE statut = 'active' AND deleted_at IS NULL",
+    )
+    .fetch_one(pool)
+    .await?;
+
+    // Territoires representes (facultes via ecole + formations)
+    let nombre_pays: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM (
+            SELECT e.pays_id AS pays_id
+            FROM exchange.faculte f
+            JOIN exchange.ecole_partenaire e ON e.id = f.ecole_partenaire_id
+            WHERE f.statut = 'active' AND f.deleted_at IS NULL
+            UNION
+            SELECT m.pays_id AS pays_id
+            FROM media_content.mooc m
+            WHERE m.pays_id IS NOT NULL
+              AND m.etat IN ('publie','en_cours','termine') AND m.deleted_at IS NULL
+         ) AS territoires
+         WHERE pays_id IS NOT NULL",
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(UniversiteStatsResponse {
+            nombre_facultes,
+            nombre_formations,
+            nombre_inscrits: inscrits_moocs + inscrits_facultes,
+            nombre_pays,
+        }),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
 // GET /api/facultes/{id} — Obtenir le detail d'une faculte
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_faculte(

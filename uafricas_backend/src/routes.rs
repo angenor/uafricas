@@ -676,6 +676,11 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("", web::get().to(facultes::lister_facultes))
                     .route("/{id}", web::get().to(facultes::obtenir_faculte)),
             )
+            // Statistiques agregees Muniversa (bande d'accueil /universite)
+            .service(
+                web::scope("/universite")
+                    .route("/stats", web::get().to(facultes::stats_universite)),
+            )
             // Routes des stations radio
             .service(
                 web::scope("/stations-radio")

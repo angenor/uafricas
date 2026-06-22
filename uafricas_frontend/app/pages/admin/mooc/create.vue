@@ -34,6 +34,7 @@ const typesFormation = [
   { label: 'Seminaire', value: 'seminaire' },
   { label: 'Conference', value: 'conference' },
   { label: 'Certification', value: 'certification' },
+  { label: 'Formations grand public', value: 'grand_public' },
 ]
 
 const soumettre = async () => {

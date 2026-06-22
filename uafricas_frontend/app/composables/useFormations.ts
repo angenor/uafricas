@@ -5,7 +5,7 @@ import { useUserStore } from '~/stores/user'
 // Types et interfaces (conformes au schema media_content.mooc)
 // ──────────────────────────────────────────────────────────────
 
-export type TypeFormation = 'mooc' | 'clom' | 'atelier' | 'concertation'
+export type TypeFormation = 'mooc' | 'clom' | 'atelier' | 'concertation' | 'grand_public'
 export type StatutFormation = 'inscriptions_ouvertes' | 'complet' | 'en_cours' | 'termine' | 'annule' | 'programme' | 'suspendu'
 
 export interface FormateurInfo {
@@ -45,6 +45,14 @@ export interface FormationDetailAPI extends FormationAPI {
   est_inscrit: boolean
 }
 
+/** DTO des statistiques agregees de la page d'accueil universite */
+export interface UniversiteStatsAPI {
+  nombre_facultes: number
+  nombre_formations: number
+  nombre_inscrits: number
+  nombre_pays: number
+}
+
 /** Reponse paginee */
 export interface FormationListeAPI {
   formations: FormationAPI[]
@@ -78,6 +86,7 @@ export const TYPES_FORMATION: { value: string; label: string }[] = [
   { value: 'clom', label: 'CLOM' },
   { value: 'atelier', label: 'Atelier' },
   { value: 'concertation', label: 'Concertation' },
+  { value: 'grand_public', label: 'Formations grand public' },
 ]
 
 export const STATUTS_FORMATION: { value: string; label: string }[] = [
@@ -98,6 +107,7 @@ export const getTypeLabel = (type: string | null): string => {
     clom: 'CLOM',
     atelier: 'Atelier',
     concertation: 'Concertation',
+    grand_public: 'Formations grand public',
   }
   return type ? (labels[type] || type.toUpperCase()) : 'Formation'
 }
@@ -109,6 +119,7 @@ export const getTypeClasses = (type: string | null): string => {
     clom: 'bg-purple-100 text-purple-800',
     atelier: 'bg-green-100 text-green-800',
     concertation: 'bg-orange-100 text-orange-800',
+    grand_public: 'bg-custom-chocolat/10 text-custom-chocolat',
   }
   return type ? (classes[type] || 'bg-gray-100 text-gray-800') : 'bg-gray-100 text-gray-800'
 }
@@ -147,6 +158,7 @@ export const getTypeGradient = (type: string | null): string => {
     clom: 'from-purple-600 to-purple-800',
     atelier: 'from-green-600 to-green-800',
     concertation: 'from-orange-600 to-orange-800',
+    grand_public: 'from-custom-chocolat to-amber-800',
   }
   return type ? (gradients[type] || 'from-gray-600 to-gray-800') : 'from-gray-600 to-gray-800'
 }
@@ -322,11 +334,33 @@ export const useFormations = () => {
     }
   }
 
+  /**
+   * Recuperer les statistiques agregees de la page d'accueil universite
+   */
+  const obtenirStatsUniversite = async (): Promise<UniversiteStatsAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<UniversiteStatsAPI>>(
+        `${apiBase}/api/universite/stats`,
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement des statistiques')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      console.error('Erreur obtenirStatsUniversite:', e)
+      return null
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
     listerFormations,
     obtenirFormation,
     inscrireFormation,
+    obtenirStatsUniversite,
   }
 }

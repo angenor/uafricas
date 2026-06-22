@@ -218,8 +218,7 @@ useHead({
   title: 'Mindshiftlab - Institut universitaire pour le développement de l\'Afrique'
 })
 
-const { listerFacultes } = useFacultes()
-const { listerFormations } = useFormations()
+const { listerFormations, obtenirStatsUniversite } = useFormations()
 
 const loading = ref(true)
 const afficherAPropos = ref(false)
@@ -243,22 +242,21 @@ const voirFormation = (formationId: string) => {
 const chargerDonnees = async () => {
   loading.value = true
   try {
-    // Charger facultés et formations en parallèle
-    const [resFacultes, resFormations] = await Promise.all([
-      listerFacultes({ parPage: 50 }),
+    // Charger les statistiques agrégées et les formations récentes en parallèle
+    const [resStats, resFormations] = await Promise.all([
+      obtenirStatsUniversite(),
       listerFormations({ par_page: 3 }),
     ])
 
-    // Stats depuis les données réelles
-    if (resFacultes) {
-      const paysUniques = new Set(resFacultes.facultes.map(f => f.ecolePartenaire.pays))
-      stats.value.nombreFacultes = resFacultes.total
-      stats.value.nombreInscritsTotal = resFacultes.facultes.reduce((sum, f) => sum + f.stats.nombreInscritsTotal, 0)
-      stats.value.nombrePays = paysUniques.size
+    // Stats depuis l'endpoint dédié (données réelles agrégées côté backend)
+    if (resStats) {
+      stats.value.nombreFacultes = resStats.nombre_facultes
+      stats.value.nombreFormationsOuvertes = resStats.nombre_formations
+      stats.value.nombreInscritsTotal = resStats.nombre_inscrits
+      stats.value.nombrePays = resStats.nombre_pays
     }
 
     if (resFormations) {
-      stats.value.nombreFormationsOuvertes = resFormations.total
       formationsRecentes.value = resFormations.formations
     }
   } catch (error) {
