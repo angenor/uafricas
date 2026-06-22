@@ -2118,3 +2118,116 @@ export interface DashboardTendances {
   evenements: DashboardTendancePoint[]
   contributions_pays: DashboardTendancePoint[]
 }
+
+// ── INUDA — Écoles partenaires ──────────────────────────────
+
+export interface AdminEcolePartenaire {
+  id: string
+  nom: string
+  ville: string
+  pays_id: string
+  type: 'publique' | 'privee'
+  pays_nom: string | null
+  actif: boolean
+  nombre_facultes: number | null
+  created_at: string
+}
+
+export interface AdminEcolePartenaireDetail {
+  id: string
+  nom: string
+  ville: string
+  pays_id: string
+  type: 'publique' | 'privee'
+  site_web: string | null
+  email_contact: string
+  telephone_contact: string | null
+  whatsapp_contact: string | null
+  actif: boolean
+  created_at: string
+  updated_at: string
+  pays_nom: string | null
+}
+
+export interface CreerEcolePartenaireForm {
+  nom: string
+  ville: string
+  pays_id: string
+  type: 'publique' | 'privee'
+  site_web: string
+  email_contact: string
+  telephone_contact: string
+  whatsapp_contact: string
+  actif?: boolean
+}
+
+// ── INUDA — Facultés ────────────────────────────────────────
+
+export interface AdminFaculte {
+  id: string
+  titre: string
+  acronyme: string
+  statut: 'active' | 'inactive'
+  accepte_nouveaux_inscrits: boolean
+  nombre_inscrits_total: number
+  ecole_nom: string | null
+  pays_nom: string | null
+  created_at: string
+}
+
+export interface AdminFaculteDetail {
+  id: string
+  titre: string
+  acronyme: string
+  slug: string | null
+  description: string
+  image_couverture_url: string | null
+  logo_url: string | null
+  ecole_partenaire_id: string
+  domaines_etudes: string[]
+  programmes_licence: string[]
+  programmes_master: string[]
+  programmes_doctorat: string[]
+  programmes_certificats: string[]
+  diplome_minimum: string | null
+  langues_enseignement: string[]
+  frais_scolarite_min: number | null
+  frais_scolarite_max: number | null
+  bourses_possibles: boolean
+  periodes_inscription: string | null
+  points_forts: string[]
+  accepte_nouveaux_inscrits: boolean
+  statut: 'active' | 'inactive'
+  referent_id: string | null
+  nombre_inscrits_total: number
+  nombre_inscrits_annee: number
+  created_at: string
+  updated_at: string
+  ecole_nom: string | null
+}
+
+export interface CreerFaculteForm {
+  titre: string
+  acronyme: string
+  description: string
+  image_couverture_url: string
+  logo_url: string
+  ecole_partenaire_id: string
+  domaines_etudes: string[]
+  programmes_licence: string[]
+  programmes_master: string[]
+  programmes_doctorat: string[]
+  programmes_certificats: string[]
+  diplome_minimum: string
+  langues_enseignement: string[]
+  frais_scolarite_min: number | null
+  frais_scolarite_max: number | null
+  bourses_possibles: boolean
+  periodes_inscription: string
+  points_forts: string[]
+  accepte_nouveaux_inscrits: boolean
+  statut: 'active' | 'inactive'
+  referent_id: string | null
+  nombre_inscrits_total?: number
+  nombre_inscrits_annee?: number
+}

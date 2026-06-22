@@ -35,3 +35,4 @@ pub mod vidafrica;
 pub mod biblio_humaine;
 pub mod sessions_moderation;
 pub mod expertise;
+pub mod faculte;

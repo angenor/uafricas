@@ -155,6 +155,8 @@ const sidebarSections: SidebarSection[] = [
     children: [
       { label: 'Programmes', faIcon: 'calendar-check', route: '/admin/programmes' },
       { label: 'Candidatures', faIcon: 'file-lines', route: '/admin/candidatures' },
+      { label: 'Facultés (INUDA)', faIcon: 'building-columns', route: '/admin/facultes' },
+      { label: 'Écoles partenaires', faIcon: 'school', route: '/admin/ecoles-partenaires' },
     ],
   },
   {
