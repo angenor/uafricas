@@ -22,6 +22,49 @@ export interface BiblioHumaineAPI {
   biographie: string
   ville: string | null
   dateInscription: string
+  // Interactions (renseignées sur le détail)
+  nombreLikes?: number
+  nombreDislikes?: number
+  nombreRecommandations?: number
+  nombreCommentaires?: number
+  maReaction?: 'like' | 'dislike' | null
+  aRecommande?: boolean
+}
+
+/** Réaction (like / dislike) — état après bascule */
+export interface ReactionEtatAPI {
+  nombreLikes: number
+  nombreDislikes: number
+  maReaction: 'like' | 'dislike' | null
+}
+
+/** Commentaire sur une biblio humaine */
+export interface CommentaireBiblioAPI {
+  id: string
+  auteurId: string
+  auteurNom: string
+  auteurPrenom: string
+  auteurPhotoUrl: string | null
+  contenu: string
+  createdAt: string
+}
+
+/** Recommandation (endossement avec témoignage) */
+export interface RecommandationBiblioAPI {
+  id: string
+  auteurId: string
+  auteurNom: string
+  auteurPrenom: string
+  auteurPhotoUrl: string | null
+  auteurFonction: string | null
+  message: string | null
+  createdAt: string
+}
+
+/** Recommandation — état après bascule */
+export interface RecommandationEtatAPI {
+  nombreRecommandations: number
+  aRecommande: boolean
 }
 
 /** Reponse paginee */
@@ -145,6 +188,7 @@ export const useBibliothequeHumaine = () => {
     try {
       const reponse = await $fetch<ApiResponse<BiblioHumaineAPI>>(
         `${apiBase}/api/bibliotheques-humaines/${id}`,
+        { headers: authHeaders() },
       )
 
       if (!reponse.success || !reponse.data) {
@@ -306,6 +350,146 @@ export const useBibliothequeHumaine = () => {
     }
   }
 
+  // ──────────────────────────────────────────────────────────────
+  // Interactions : réactions, commentaires, recommandations
+  // ──────────────────────────────────────────────────────────────
+
+  /** Aimer / ne pas aimer (toggle) — JWT requis */
+  const reagirBiblio = async (
+    id: string,
+    typeReaction: 'like' | 'dislike',
+  ): Promise<ReactionEtatAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<ReactionEtatAPI>>(
+        `${apiBase}/api/bibliotheques-humaines/${id}/reaction`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: { type_reaction: typeReaction },
+        },
+      )
+      if (!reponse.success || !reponse.data) throw new Error(reponse.error || 'Erreur')
+      return reponse.data
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
+      console.error('Erreur reagirBiblio:', e)
+      return null
+    }
+  }
+
+  /** Lister les commentaires d'une biblio humaine */
+  const listerCommentairesBiblio = async (id: string): Promise<CommentaireBiblioAPI[]> => {
+    try {
+      const reponse = await $fetch<ApiResponse<CommentaireBiblioAPI[]>>(
+        `${apiBase}/api/bibliotheques-humaines/${id}/commentaires`,
+      )
+      return reponse.success && reponse.data ? reponse.data : []
+    }
+    catch (e: any) {
+      console.error('Erreur listerCommentairesBiblio:', e)
+      return []
+    }
+  }
+
+  /** Ajouter un commentaire — JWT requis */
+  const ajouterCommentaireBiblio = async (
+    id: string,
+    contenu: string,
+  ): Promise<CommentaireBiblioAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<CommentaireBiblioAPI>>(
+        `${apiBase}/api/bibliotheques-humaines/${id}/commentaires`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: { contenu },
+        },
+      )
+      if (!reponse.success || !reponse.data) throw new Error(reponse.error || 'Erreur')
+      return reponse.data
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
+      console.error('Erreur ajouterCommentaireBiblio:', e)
+      return null
+    }
+  }
+
+  /** Supprimer son propre commentaire — JWT requis */
+  const supprimerCommentaireBiblio = async (
+    id: string,
+    commentaireId: string,
+  ): Promise<boolean> => {
+    try {
+      const reponse = await $fetch<ApiResponse<unknown>>(
+        `${apiBase}/api/bibliotheques-humaines/${id}/commentaires/${commentaireId}`,
+        { method: 'DELETE', headers: authHeaders() },
+      )
+      return reponse.success
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
+      console.error('Erreur supprimerCommentaireBiblio:', e)
+      return false
+    }
+  }
+
+  /** Recommander (upsert avec témoignage facultatif) — JWT requis */
+  const recommanderBiblio = async (
+    id: string,
+    message?: string,
+  ): Promise<RecommandationEtatAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<RecommandationEtatAPI>>(
+        `${apiBase}/api/bibliotheques-humaines/${id}/recommandation`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: { message: message ?? null },
+        },
+      )
+      if (!reponse.success || !reponse.data) throw new Error(reponse.error || 'Erreur')
+      return reponse.data
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
+      console.error('Erreur recommanderBiblio:', e)
+      return null
+    }
+  }
+
+  /** Retirer sa recommandation — JWT requis */
+  const retirerRecommandationBiblio = async (id: string): Promise<RecommandationEtatAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<RecommandationEtatAPI>>(
+        `${apiBase}/api/bibliotheques-humaines/${id}/recommandation`,
+        { method: 'DELETE', headers: authHeaders() },
+      )
+      if (!reponse.success || !reponse.data) throw new Error(reponse.error || 'Erreur')
+      return reponse.data
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
+      console.error('Erreur retirerRecommandationBiblio:', e)
+      return null
+    }
+  }
+
+  /** Lister les recommandations (témoignages) */
+  const listerRecommandationsBiblio = async (id: string): Promise<RecommandationBiblioAPI[]> => {
+    try {
+      const reponse = await $fetch<ApiResponse<RecommandationBiblioAPI[]>>(
+        `${apiBase}/api/bibliotheques-humaines/${id}/recommandations`,
+      )
+      return reponse.success && reponse.data ? reponse.data : []
+    }
+    catch (e: any) {
+      console.error('Erreur listerRecommandationsBiblio:', e)
+      return []
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -314,5 +498,12 @@ export const useBibliothequeHumaine = () => {
     inscrireBiblioHumaine,
     listerSpecialites,
     obtenirMaDemande,
+    reagirBiblio,
+    listerCommentairesBiblio,
+    ajouterCommentaireBiblio,
+    supprimerCommentaireBiblio,
+    recommanderBiblio,
+    retirerRecommandationBiblio,
+    listerRecommandationsBiblio,
   }
 }

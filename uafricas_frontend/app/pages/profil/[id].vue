@@ -349,6 +349,9 @@ onMounted(async () => {
                   </span>
                 </div>
               </div>
+
+              <!-- Interactions : aimer, commenter, recommander -->
+              <BibliothequeInteractions :biblio="biblio" :peut-interagir="peutNoter" />
             </div>
 
             <!-- Onglet Expertise -->
