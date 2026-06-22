@@ -24,6 +24,13 @@ const props = defineProps<{
         <font-awesome-icon icon="video" class="text-4xl text-gray-300" />
       </div>
 
+      <!-- Icône lecture (indique qu'il s'agit d'une vidéo) -->
+      <div class="absolute inset-0 flex items-center justify-center">
+        <span class="w-14 h-14 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center group-hover:bg-custom-chocolat/80 transition-colors">
+          <font-awesome-icon icon="play" class="text-white text-lg ml-0.5" />
+        </span>
+      </div>
+
       <!-- Durée -->
       <span v-if="video.dureeSecondes" class="absolute bottom-2 right-2 bg-black/75 text-white text-xs px-2 py-1 rounded">
         {{ formaterDuree(video.dureeSecondes) }}

@@ -1,15 +1,40 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
+use crate::jwt;
 use crate::models::admin::vidafrica::label_langue;
 use crate::models::vidafrica::{
-    LangueDisponibleResponse, MotTimingResponse, SegmentPubliqueResponse, SousTitresResponse,
+    LangueDisponibleResponse, MotTimingResponse, PartageVideoListeResponse, PartageVideoQueryParams,
+    PartageVideoResponse, PartageVideoRow, SegmentPubliqueResponse, SousTitresResponse,
     VideoPubliqueDetailRow, VideoPubliqueDetailResponse, VideoPubliqueListeRow,
     VideoPubliqueListeResponse, VideoPubliqueQueryParams,
 };
 use crate::ApiResponse;
+
+/// SELECT du mur des partages de vidéos (JOIN vidéo publiée + auteur).
+pub const PARTAGE_VIDEO_SELECT: &str = "SELECT
+        pv.id, pv.legende, pv.created_at,
+        v.id AS video_id, v.titre AS video_titre, v.slug AS video_slug,
+        v.vignette_url AS video_vignette_url, v.duree_secondes AS video_duree_secondes,
+        ua.id AS auteur_id,
+        CASE WHEN ua.deleted_at IS NULL THEN ua.nom ELSE 'Membre' END AS auteur_nom,
+        CASE WHEN ua.deleted_at IS NULL THEN ua.prenom ELSE 'retiré' END AS auteur_prenom,
+        CASE WHEN ua.deleted_at IS NULL THEN ua.photo_url ELSE NULL END AS auteur_photo_url
+     FROM media_content.partage_video pv
+     JOIN media_content.video v ON v.id = pv.video_id
+     JOIN iam.utilisateur ua ON ua.id = pv.utilisateur_id
+     WHERE pv.deleted_at IS NULL AND v.deleted_at IS NULL AND v.etat = 'publie'";
+
+/// Extraire l'utilisateur connecté depuis le header Authorization (OPTIONNEL).
+fn extraire_utilisateur_id(req: &HttpRequest) -> Option<Uuid> {
+    let header = req.headers().get("Authorization")?.to_str().ok()?;
+    let token = header.strip_prefix("Bearer ")?;
+    let secret = std::env::var("JWT_SECRET").ok()?;
+    let claims = jwt::valider_token(token, &secret).ok()?;
+    Uuid::parse_str(&claims.sub).ok()
+}
 
 // ══════════════════════════════════════════════════════════════
 // VIDÉOS PUBLIQUES
@@ -120,13 +145,15 @@ pub async fn lister_videos_publiques(
 
 /// GET /api/vidafrica/videos/{slug}
 pub async fn obtenir_video_publique(
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<String>,
 ) -> Result<HttpResponse, ApiErreur> {
     let slug = path.into_inner();
 
     let row = sqlx::query_as::<_, VideoPubliqueDetailRow>(
-        "SELECT id, titre, slug, description, fichier_video_url, vignette_url, duree_secondes, created_at
+        "SELECT id, titre, slug, description, fichier_video_url, vignette_url, duree_secondes,
+                territoires, auteur_reel, created_at
          FROM media_content.video
          WHERE slug = $1 AND etat = 'publie' AND deleted_at IS NULL"
     )
@@ -143,6 +170,38 @@ pub async fn obtenir_video_publique(
     .fetch_all(pool.get_ref())
     .await?;
 
+    // ── Compteurs d'interactions (calculés à la lecture) ──
+    let (nombre_likes, nombre_dislikes): (i64, i64) = sqlx::query_as(
+        "SELECT
+            COUNT(*) FILTER (WHERE type_reaction = 'like'),
+            COUNT(*) FILTER (WHERE type_reaction = 'dislike')
+         FROM media_content.video_reaction WHERE video_id = $1",
+    )
+    .bind(row.id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let nombre_partages: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM media_content.partage_video
+         WHERE video_id = $1 AND deleted_at IS NULL",
+    )
+    .bind(row.id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    // ── Réaction du membre connecté (JWT optionnel) ──
+    let ma_reaction: Option<String> = match extraire_utilisateur_id(&req) {
+        Some(uid) => sqlx::query_scalar(
+            "SELECT type_reaction FROM media_content.video_reaction
+             WHERE video_id = $1 AND utilisateur_id = $2",
+        )
+        .bind(row.id)
+        .bind(uid)
+        .fetch_optional(pool.get_ref())
+        .await?,
+        None => None,
+    };
+
     let reponse = VideoPubliqueDetailResponse {
         id: row.id,
         titre: row.titre,
@@ -151,7 +210,13 @@ pub async fn obtenir_video_publique(
         fichier_video_url: row.fichier_video_url,
         vignette_url: row.vignette_url,
         duree_secondes: row.duree_secondes,
+        territoires: row.territoires,
+        auteur_reel: row.auteur_reel,
         langues_disponibles: langues,
+        nombre_likes,
+        nombre_dislikes,
+        nombre_partages,
+        ma_reaction,
         created_at: row.created_at,
     };
 
@@ -269,6 +334,55 @@ pub async fn lister_langues_disponibles(
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(langues),
+        error: None,
+    }))
+}
+
+/// GET /api/vidafrica/videos/partages — mur communautaire des vidéos (public, paginé).
+pub async fn lister_partages_videos(
+    pool: web::Data<PgPool>,
+    params: web::Query<PartageVideoQueryParams>,
+) -> Result<HttpResponse, ApiErreur> {
+    let page = params.page.unwrap_or(1).max(1);
+    let par_page = params.par_page.unwrap_or(20).clamp(1, 50);
+    let offset = (page - 1) * par_page;
+
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*)
+         FROM media_content.partage_video pv
+         JOIN media_content.video v ON v.id = pv.video_id
+         WHERE pv.deleted_at IS NULL AND v.deleted_at IS NULL AND v.etat = 'publie'",
+    )
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let rows = sqlx::query_as::<_, PartageVideoRow>(&format!(
+        "{} ORDER BY pv.created_at DESC LIMIT $1 OFFSET $2",
+        PARTAGE_VIDEO_SELECT
+    ))
+    .bind(par_page)
+    .bind(offset)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let partages: Vec<PartageVideoResponse> =
+        rows.into_iter().map(PartageVideoResponse::from).collect();
+
+    let total_pages = if total == 0 {
+        1
+    } else {
+        (total as f64 / par_page as f64).ceil() as i64
+    };
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(PartageVideoListeResponse {
+            partages,
+            total,
+            page,
+            par_page,
+            total_pages,
+        }),
         error: None,
     }))
 }

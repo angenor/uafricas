@@ -165,6 +165,9 @@ pub async fn creer_video(
     let mut vignette_url: Option<String> = None;
     let mut taille_octets: Option<i64> = None;
     let mut format_video: Option<String> = None;
+    let mut territoires: Vec<String> = Vec::new();
+    let mut auteur_reel: Option<String> = None;
+    let mut decharge_droits = false;
 
     while let Some(item) = payload.next().await {
         let mut field = item.map_err(|e| {
@@ -184,6 +187,19 @@ pub async fn creer_video(
             }
             "description" => {
                 description = Some(lire_champ_texte(&mut field).await?);
+            }
+            "auteur_reel" => {
+                auteur_reel = Some(lire_champ_texte(&mut field).await?);
+            }
+            "decharge_droits" => {
+                let v = lire_champ_texte(&mut field).await?;
+                decharge_droits = matches!(v.trim(), "true" | "1" | "on");
+            }
+            "territoires" => {
+                let t = lire_champ_texte(&mut field).await?.trim().to_string();
+                if !t.is_empty() {
+                    territoires.push(t);
+                }
             }
             "fichier_video" => {
                 let filename = content_disposition
@@ -268,12 +284,13 @@ pub async fn creer_video(
     let id = Uuid::new_v4();
     let slug = crate::models::admin::vidafrica::generer_slug(&titre);
     let description = description.map(|d| d.trim().to_string()).filter(|d| !d.is_empty());
+    let auteur_reel = auteur_reel.map(|a| a.trim().to_string()).filter(|a| !a.is_empty());
 
     sqlx::query(
         "INSERT INTO media_content.video
          (id, titre, slug, description, fichier_video_url, vignette_url,
-          taille_octets, format_video, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+          taille_octets, format_video, territoires, decharge_droits, auteur_reel, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"
     )
     .bind(id)
     .bind(&titre)
@@ -283,6 +300,9 @@ pub async fn creer_video(
     .bind(&vignette_url)
     .bind(taille_octets)
     .bind(&format_video)
+    .bind(&territoires)
+    .bind(decharge_droits)
+    .bind(&auteur_reel)
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -343,6 +363,10 @@ pub async fn modifier_video(
     let mut bind_values: Vec<String> = Vec::new();
     let mut bind_index: u32 = 1;
     let mut nouvelle_vignette_url: Option<String> = None;
+    // Champs typés (hors builder dynamique String) — appliqués séparément.
+    let mut nouveaux_territoires: Vec<String> = Vec::new();
+    let mut territoires_modifies = false;
+    let mut nouvelle_decharge: Option<bool> = None;
 
     while let Some(item) = payload.next().await {
         let mut field = item.map_err(|e| {
@@ -375,6 +399,28 @@ pub async fn modifier_video(
                 set_clauses.push(format!("description = ${}", bind_index));
                 bind_values.push(val.trim().to_string());
                 bind_index += 1;
+            }
+            "auteur_reel" => {
+                let val = lire_champ_texte(&mut field).await?;
+                set_clauses.push(format!("auteur_reel = ${}", bind_index));
+                bind_values.push(val.trim().to_string());
+                bind_index += 1;
+            }
+            // Marqueur de présence : permet de vider entièrement la liste.
+            "territoires_modifies" => {
+                let _ = lire_champ_texte(&mut field).await?;
+                territoires_modifies = true;
+            }
+            "territoires" => {
+                let t = lire_champ_texte(&mut field).await?.trim().to_string();
+                territoires_modifies = true;
+                if !t.is_empty() {
+                    nouveaux_territoires.push(t);
+                }
+            }
+            "decharge_droits" => {
+                let v = lire_champ_texte(&mut field).await?;
+                nouvelle_decharge = Some(matches!(v.trim(), "true" | "1" | "on"));
             }
             "vignette" => {
                 let filename = content_disposition
@@ -411,24 +457,46 @@ pub async fn modifier_video(
         bind_index += 1;
     }
 
-    if set_clauses.is_empty() {
+    if set_clauses.is_empty() && !territoires_modifies && nouvelle_decharge.is_none() {
         return Err(ApiErreur::Validation("Aucun champ à modifier".into()));
     }
 
-    set_clauses.push("updated_at = NOW()".to_string());
+    // Update des champs String (builder dynamique).
+    if !set_clauses.is_empty() {
+        set_clauses.push("updated_at = NOW()".to_string());
+        let sql = format!(
+            "UPDATE media_content.video SET {} WHERE id = ${}",
+            set_clauses.join(", "),
+            bind_values.len() + 1
+        );
+        let mut query = sqlx::query(&sql);
+        for v in &bind_values {
+            query = query.bind(v);
+        }
+        query = query.bind(id);
+        query.execute(pool.get_ref()).await?;
+    }
     let _ = bind_index;
 
-    let sql = format!(
-        "UPDATE media_content.video SET {} WHERE id = ${}",
-        set_clauses.join(", "),
-        bind_values.len() + 1
-    );
-    let mut query = sqlx::query(&sql);
-    for v in &bind_values {
-        query = query.bind(v);
+    // Updates typés (TEXT[] / BOOLEAN) hors builder String.
+    if territoires_modifies {
+        sqlx::query(
+            "UPDATE media_content.video SET territoires = $1, updated_at = NOW() WHERE id = $2",
+        )
+        .bind(&nouveaux_territoires)
+        .bind(id)
+        .execute(pool.get_ref())
+        .await?;
     }
-    query = query.bind(id);
-    query.execute(pool.get_ref()).await?;
+    if let Some(decharge) = nouvelle_decharge {
+        sqlx::query(
+            "UPDATE media_content.video SET decharge_droits = $1, updated_at = NOW() WHERE id = $2",
+        )
+        .bind(decharge)
+        .bind(id)
+        .execute(pool.get_ref())
+        .await?;
+    }
 
     log::info!("Admin {} a modifié la vidéo {}", admin.id, id);
 

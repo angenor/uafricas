@@ -24,6 +24,10 @@ use crate::models::admin::vidafrica::{
     CreerPisteRequest, CreerSegmentRequest, EnregistrerTimingsMotRequest, ModifierSegmentRequest,
     TimingMotResponse, LANGUES_VALIDES,
 };
+use crate::models::vidafrica::{
+    PartageVideoRequest, PartageVideoResponse, PartageVideoRow, VideoReactionRequest,
+    VideoReactionResponse,
+};
 use crate::services::audit;
 use crate::ApiResponse;
 
@@ -112,6 +116,9 @@ pub async fn proposer_video(
     let mut vignette_url: Option<String> = None;
     let mut taille_octets: Option<i64> = None;
     let mut format_video: Option<String> = None;
+    let mut territoires: Vec<String> = Vec::new();
+    let mut auteur_reel: Option<String> = None;
+    let mut decharge_droits = false;
 
     while let Some(item) = payload.next().await {
         let mut field =
@@ -127,6 +134,19 @@ pub async fn proposer_video(
         match nom_champ.as_str() {
             "titre" => titre = Some(lire_champ_texte(&mut field).await?),
             "description" => description = Some(lire_champ_texte(&mut field).await?),
+            "auteur_reel" => auteur_reel = Some(lire_champ_texte(&mut field).await?),
+            // Décharge : « Je ne suis pas l'auteur de cette chanson… » — accepté si "true".
+            "decharge_droits" => {
+                let v = lire_champ_texte(&mut field).await?;
+                decharge_droits = matches!(v.trim(), "true" | "1" | "on");
+            }
+            // Territoires : champ multipart répété (une entrée par territoire).
+            "territoires" => {
+                let t = lire_champ_texte(&mut field).await?.trim().to_string();
+                if !t.is_empty() {
+                    territoires.push(t);
+                }
+            }
             "fichier_video" => {
                 let filename = content_disposition
                     .as_ref()
@@ -197,18 +217,31 @@ pub async fn proposer_video(
     let fichier_video_url = fichier_video_url
         .ok_or_else(|| ApiErreur::Validation("Le fichier vidéo est requis".into()))?;
 
+    // La décharge de droits doit être acceptée pour proposer une vidéo.
+    if !decharge_droits {
+        return Err(ApiErreur::Validation(
+            "Vous devez accepter la mention « Je ne suis pas l'auteur de cette chanson et ne \
+             revendique aucun droit à ce sujet »"
+                .into(),
+        ));
+    }
+
     let id = Uuid::new_v4();
     let slug = generer_slug(&titre);
     let description = description
         .map(|d| d.trim().to_string())
         .filter(|d| !d.is_empty());
+    let auteur_reel = auteur_reel
+        .map(|a| a.trim().to_string())
+        .filter(|a| !a.is_empty());
 
     // État explicite 'brouillon' → file de modération admin.
     sqlx::query(
         "INSERT INTO media_content.video
          (id, titre, slug, description, fichier_video_url, vignette_url,
-          taille_octets, format_video, etat, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'brouillon', $9)",
+          taille_octets, format_video, territoires, decharge_droits, auteur_reel,
+          etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'brouillon', $12)",
     )
     .bind(id)
     .bind(&titre)
@@ -218,6 +251,9 @@ pub async fn proposer_video(
     .bind(&vignette_url)
     .bind(taille_octets)
     .bind(&format_video)
+    .bind(&territoires)
+    .bind(decharge_droits)
+    .bind(&auteur_reel)
     .bind(user_id)
     .execute(pool.get_ref())
     .await?;
@@ -240,6 +276,183 @@ pub async fn proposer_video(
             "titre": titre,
             "etat": "brouillon",
         })),
+        error: None,
+    }))
+}
+
+// ══════════════════════════════════════════════════════════════
+// RÉACTIONS (like / dislike) & PARTAGE
+// ══════════════════════════════════════════════════════════════
+
+/// Vérifie qu'une vidéo existe et est publiée. Retourne une erreur sinon.
+async fn verifier_video_publiee(pool: &PgPool, video_id: Uuid) -> Result<(), ApiErreur> {
+    let existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM media_content.video
+            WHERE id = $1 AND etat = 'publie' AND deleted_at IS NULL
+         )",
+    )
+    .bind(video_id)
+    .fetch_one(pool)
+    .await?;
+
+    if !existe {
+        return Err(ApiErreur::NonTrouve("Vidéo non trouvée".into()));
+    }
+    Ok(())
+}
+
+/// Compte les likes/dislikes d'une vidéo (calculés à la lecture).
+async fn compter_reactions_video(pool: &PgPool, video_id: Uuid) -> Result<(i64, i64), ApiErreur> {
+    let counts: (i64, i64) = sqlx::query_as(
+        "SELECT
+            COUNT(*) FILTER (WHERE type_reaction = 'like'),
+            COUNT(*) FILTER (WHERE type_reaction = 'dislike')
+         FROM media_content.video_reaction WHERE video_id = $1",
+    )
+    .bind(video_id)
+    .fetch_one(pool)
+    .await?;
+    Ok(counts)
+}
+
+/// POST /api/vidafrica/videos/{id}/reaction — aimer / ne pas aimer (toggle).
+pub async fn reagir_video(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<VideoReactionRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let user_id = utilisateur_courant(&req)?;
+    let video_id = path.into_inner();
+
+    let type_reaction = body.type_reaction.trim().to_lowercase();
+    if type_reaction != "like" && type_reaction != "dislike" {
+        return Err(ApiErreur::Validation(
+            "Type de réaction invalide (like ou dislike)".into(),
+        ));
+    }
+
+    verifier_video_publiee(pool.get_ref(), video_id).await?;
+
+    let reaction_existante: Option<String> = sqlx::query_scalar(
+        "SELECT type_reaction FROM media_content.video_reaction
+         WHERE video_id = $1 AND utilisateur_id = $2",
+    )
+    .bind(video_id)
+    .bind(user_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let ma_reaction: Option<String> = match reaction_existante {
+        Some(ancien) if ancien == type_reaction => {
+            // Bascule : retirer la réaction (même type).
+            sqlx::query(
+                "DELETE FROM media_content.video_reaction
+                 WHERE video_id = $1 AND utilisateur_id = $2",
+            )
+            .bind(video_id)
+            .bind(user_id)
+            .execute(pool.get_ref())
+            .await?;
+            None
+        }
+        Some(_) => {
+            // Changer le type (like ↔ dislike).
+            sqlx::query(
+                "UPDATE media_content.video_reaction
+                 SET type_reaction = $1, updated_at = NOW()
+                 WHERE video_id = $2 AND utilisateur_id = $3",
+            )
+            .bind(&type_reaction)
+            .bind(video_id)
+            .bind(user_id)
+            .execute(pool.get_ref())
+            .await?;
+            Some(type_reaction.clone())
+        }
+        None => {
+            // Nouvelle réaction.
+            sqlx::query(
+                "INSERT INTO media_content.video_reaction (video_id, utilisateur_id, type_reaction)
+                 VALUES ($1, $2, $3)",
+            )
+            .bind(video_id)
+            .bind(user_id)
+            .bind(&type_reaction)
+            .execute(pool.get_ref())
+            .await?;
+            Some(type_reaction.clone())
+        }
+    };
+
+    let (nombre_likes, nombre_dislikes) = compter_reactions_video(pool.get_ref(), video_id).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(VideoReactionResponse {
+            nombre_likes,
+            nombre_dislikes,
+            ma_reaction,
+        }),
+        error: None,
+    }))
+}
+
+/// POST /api/vidafrica/videos/{id}/partage — partager une vidéo sur le mur.
+pub async fn partager_video(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<PartageVideoRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let user_id = utilisateur_courant(&req)?;
+    let video_id = path.into_inner();
+
+    verifier_video_publiee(pool.get_ref(), video_id).await?;
+
+    let legende = body
+        .legende
+        .as_deref()
+        .map(|l| l.trim())
+        .filter(|l| !l.is_empty())
+        .map(|l| l.to_string());
+
+    if let Some(ref l) = legende {
+        if l.chars().count() > 500 {
+            return Err(ApiErreur::Validation(
+                "La légende ne doit pas dépasser 500 caractères".into(),
+            ));
+        }
+    }
+
+    let partage_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO media_content.partage_video (video_id, utilisateur_id, legende)
+         VALUES ($1, $2, $3) RETURNING id",
+    )
+    .bind(video_id)
+    .bind(user_id)
+    .bind(&legende)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let row = sqlx::query_as::<_, PartageVideoRow>(&format!(
+        "{} AND pv.id = $1",
+        crate::handlers::vidafrica::PARTAGE_VIDEO_SELECT
+    ))
+    .bind(partage_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Partage non trouvé".into()))?;
+
+    log::info!(
+        "Membre {} a partagé la vidéo {} (partage {})",
+        user_id, video_id, partage_id
+    );
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(PartageVideoResponse::from(row)),
         error: None,
     }))
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { VideoAfrica, SousTitres, SegmentKaraoke } from '~/composables/useVidafrica'
-import { formaterDuree } from '~/mocks/vidafrica'
+import { formaterDuree, LANGUES_LABELS } from '~/mocks/vidafrica'
 
 const route = useRoute()
 const slug = route.params.slug as string
@@ -110,14 +110,77 @@ onMounted(() => charger())
             <font-awesome-icon icon="language" class="mr-1" />
             {{ video.languesDisponibles.length }} langue{{ video.languesDisponibles.length > 1 ? 's' : '' }}
           </span>
-          <span>
-            {{ new Date(video.createdAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) }}
-          </span>
         </div>
 
         <p v-if="video.description" class="mt-4 text-gray-700 leading-relaxed">
           {{ video.description }}
         </p>
+
+        <!-- Informations détaillées de la vidéo -->
+        <dl class="mt-5 pt-4 border-t border-gray-100 space-y-3 text-sm">
+          <!-- Territoires -->
+          <div v-if="video.territoires.length" class="flex flex-wrap items-center gap-2">
+            <dt class="flex items-center gap-1.5 text-gray-500 font-medium min-w-32">
+              <font-awesome-icon icon="location-dot" class="text-gray-400" /> Territoires
+            </dt>
+            <dd class="flex flex-wrap gap-2">
+              <span
+                v-for="t in video.territoires" :key="t"
+                class="inline-block px-2.5 py-1 rounded-full bg-custom-chocolat/10 text-custom-chocolat text-xs font-medium"
+              >
+                {{ t }}
+              </span>
+            </dd>
+          </div>
+
+          <!-- Auteur réel -->
+          <div v-if="video.auteurReel" class="flex flex-wrap items-center gap-2">
+            <dt class="flex items-center gap-1.5 text-gray-500 font-medium min-w-32">
+              <font-awesome-icon icon="user" class="text-gray-400" /> Auteur
+            </dt>
+            <dd class="font-medium text-gray-800">{{ video.auteurReel }}</dd>
+          </div>
+
+          <!-- Langues de sous-titrage -->
+          <div v-if="video.languesDisponibles.length" class="flex flex-wrap items-center gap-2">
+            <dt class="flex items-center gap-1.5 text-gray-500 font-medium min-w-32">
+              <font-awesome-icon icon="language" class="text-gray-400" /> Sous-titres
+            </dt>
+            <dd class="flex flex-wrap gap-2">
+              <span
+                v-for="lang in video.languesDisponibles" :key="lang"
+                class="inline-block px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium"
+              >
+                {{ LANGUES_LABELS[lang] || lang }}
+              </span>
+            </dd>
+          </div>
+
+          <!-- Date d'ajout -->
+          <div class="flex flex-wrap items-center gap-2">
+            <dt class="flex items-center gap-1.5 text-gray-500 font-medium min-w-32">
+              <font-awesome-icon icon="calendar-days" class="text-gray-400" /> Ajoutée le
+            </dt>
+            <dd class="text-gray-700">
+              {{ new Date(video.createdAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) }}
+            </dd>
+          </div>
+        </dl>
+
+        <!-- Mentions -->
+        <div class="mt-4 space-y-1">
+          <p class="text-xs italic text-gray-400">
+            Le contributeur déclare ne pas être l'auteur de cette œuvre et ne revendiquer aucun droit à ce sujet.
+          </p>
+          <p class="text-xs italic text-gray-400">
+            Les sous-titrage réalisé est une courtoisie et n'est aucunement professionnel.
+          </p>
+        </div>
+
+        <!-- Réactions : aimer / ne pas aimer / partager -->
+        <div class="mt-5 pt-4 border-t border-gray-100">
+          <VidafricaReactionsBar :video="video" :peut-interagir="estConnecte" />
+        </div>
 
         <!-- Actions contributeur (utilisateur connecté) -->
         <div v-if="estConnecte" class="mt-5 pt-4 border-t border-gray-100 flex flex-wrap gap-2">

@@ -14,6 +14,7 @@ pub const ADMIN_VIDEO_LISTE_COLONNES: &str =
 pub const ADMIN_VIDEO_DETAIL_COLONNES: &str =
     "v.id, v.titre, v.slug, v.description, v.fichier_video_url,
      v.vignette_url, v.duree_secondes, v.taille_octets, v.format_video,
+     v.territoires, v.decharge_droits, v.auteur_reel,
      v.etat, v.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      v.created_at, v.updated_at";
 
@@ -79,6 +80,9 @@ pub struct AdminVideoDetailRow {
     pub duree_secondes: Option<i32>,
     pub taille_octets: Option<i64>,
     pub format_video: Option<String>,
+    pub territoires: Vec<String>,
+    pub decharge_droits: bool,
+    pub auteur_reel: Option<String>,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -97,6 +101,9 @@ pub struct AdminVideoDetailResponse {
     pub duree_secondes: Option<i32>,
     pub taille_octets: Option<i64>,
     pub format_video: Option<String>,
+    pub territoires: Vec<String>,
+    pub decharge_droits: bool,
+    pub auteur_reel: Option<String>,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -117,6 +124,9 @@ impl AdminVideoDetailRow {
             duree_secondes: self.duree_secondes,
             taille_octets: self.taille_octets,
             format_video: self.format_video.clone(),
+            territoires: self.territoires.clone(),
+            decharge_droits: self.decharge_droits,
+            auteur_reel: self.auteur_reel.clone(),
             etat: self.etat.clone(),
             cree_par: self.cree_par,
             cree_par_nom: self.cree_par_nom.clone(),

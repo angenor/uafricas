@@ -62,6 +62,9 @@ export interface Video {
   duree_secondes: number | null
   taille_octets: number | null
   format_video: string | null
+  territoires: string[]
+  decharge_droits: boolean
+  auteur_reel: string | null
   etat: string
   cree_par: string
   cree_par_nom: string | null

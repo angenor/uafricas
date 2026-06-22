@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { PAYS_AFRICAINS } from '~/composables/useEvenements'
+
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
 const router = useRouter()
@@ -7,12 +9,30 @@ const { creer, loading, error } = useAdminVidafrica()
 const form = reactive({
   titre: '',
   description: '',
+  auteur_reel: '',
 })
 
+const territoires = ref<string[]>([])
+const territoireAAjouter = ref('')
+const dechargeDroits = ref(false)
 const fichierVideo = ref<File | null>(null)
 const vignette = ref<File | null>(null)
 const erreurLocale = ref('')
 const soumettreLoading = ref(false)
+
+const territoiresDisponibles = computed(() =>
+  PAYS_AFRICAINS.filter(p => !territoires.value.includes(p)),
+)
+
+const ajouterTerritoire = () => {
+  const t = territoireAAjouter.value
+  if (t && !territoires.value.includes(t)) territoires.value.push(t)
+  territoireAAjouter.value = ''
+}
+
+const retirerTerritoire = (t: string) => {
+  territoires.value = territoires.value.filter(x => x !== t)
+}
 
 const onFichierVideoChange = (e: Event) => {
   const input = e.target as HTMLInputElement
@@ -73,6 +93,11 @@ const soumettre = async () => {
     if (form.description.trim()) {
       formData.append('description', form.description.trim())
     }
+    territoires.value.forEach(t => formData.append('territoires', t))
+    if (form.auteur_reel.trim()) {
+      formData.append('auteur_reel', form.auteur_reel.trim())
+    }
+    formData.append('decharge_droits', dechargeDroits.value ? 'true' : 'false')
     formData.append('fichier_video', fichierVideo.value)
     if (vignette.value) {
       formData.append('vignette', vignette.value)
@@ -125,6 +150,44 @@ const soumettre = async () => {
             class="textarea textarea-bordered h-24"
             placeholder="Description de la vidéo (optionnel)"
           />
+        </div>
+
+        <div class="form-control mb-4">
+          <label class="label"><span class="label-text font-medium">Territoires</span></label>
+          <select
+            v-model="territoireAAjouter"
+            class="select select-bordered"
+            @change="ajouterTerritoire"
+          >
+            <option value="">Ajouter un territoire…</option>
+            <option v-for="p in territoiresDisponibles" :key="p" :value="p">{{ p }}</option>
+          </select>
+          <div v-if="territoires.length" class="flex flex-wrap gap-2 mt-2">
+            <span v-for="t in territoires" :key="t" class="badge badge-primary gap-1">
+              {{ t }}
+              <button type="button" class="hover:text-error" @click="retirerTerritoire(t)">
+                <font-awesome-icon icon="xmark" />
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <div class="form-control mb-4">
+          <label class="label"><span class="label-text font-medium">Auteur réel</span></label>
+          <input
+            v-model="form.auteur_reel"
+            type="text"
+            class="input input-bordered"
+            placeholder="Nom de l'auteur réel de la chanson (le cas échéant)"
+            maxlength="300"
+          />
+        </div>
+
+        <div class="form-control mb-4">
+          <label class="label cursor-pointer justify-start gap-3">
+            <input v-model="dechargeDroits" type="checkbox" class="checkbox checkbox-primary" />
+            <span class="label-text">Le contributeur ne revendique aucun droit sur cette œuvre (décharge de droits)</span>
+          </label>
         </div>
 
         <div class="divider">Fichiers</div>

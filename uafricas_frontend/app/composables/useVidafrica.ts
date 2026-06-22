@@ -10,7 +10,13 @@ interface VideoAfricaAPI {
   fichier_video_url?: string
   vignette_url: string | null
   duree_secondes: number | null
+  territoires?: string[]
+  auteur_reel?: string | null
   langues_disponibles: string[]
+  nombre_likes?: number
+  nombre_dislikes?: number
+  nombre_partages?: number
+  ma_reaction?: 'like' | 'dislike' | null
   created_at: string
 }
 
@@ -66,8 +72,54 @@ export interface VideoAfrica {
   fichierVideoUrl?: string
   vignetteUrl: string | null
   dureeSecondes: number | null
+  territoires: string[]
+  auteurReel: string | null
   languesDisponibles: string[]
+  nombreLikes: number
+  nombreDislikes: number
+  nombrePartages: number
+  maReaction: 'like' | 'dislike' | null
   createdAt: string
+}
+
+// État renvoyé après une réaction (toggle)
+export interface ReactionVideoEtat {
+  nombreLikes: number
+  nombreDislikes: number
+  maReaction: 'like' | 'dislike' | null
+}
+
+// ── Partage de vidéo (mur /publications) ─────────────────────
+
+export interface PartageVideoApercuAPI {
+  id: string
+  titre: string
+  slug: string
+  vignette_url: string | null
+  duree_secondes: number | null
+}
+
+export interface PartageVideoAuteurAPI {
+  id: string
+  nom: string
+  prenom: string
+  photo_url: string | null
+}
+
+export interface PartageVideoAPI {
+  id: string
+  legende: string | null
+  created_at: string
+  video: PartageVideoApercuAPI
+  auteur: PartageVideoAuteurAPI
+}
+
+export interface PartageVideoListeAPI {
+  partages: PartageVideoAPI[]
+  total: number
+  page: number
+  par_page: number
+  total_pages: number
 }
 
 export interface SegmentKaraoke {
@@ -100,7 +152,13 @@ const mapperVideo = (api: VideoAfricaAPI, apiBase: string): VideoAfrica => ({
   fichierVideoUrl: api.fichier_video_url ? resoudreUrl(api.fichier_video_url, apiBase) : undefined,
   vignetteUrl: api.vignette_url ? resoudreUrl(api.vignette_url, apiBase) : null,
   dureeSecondes: api.duree_secondes,
+  territoires: api.territoires ?? [],
+  auteurReel: api.auteur_reel ?? null,
   languesDisponibles: api.langues_disponibles,
+  nombreLikes: api.nombre_likes ?? 0,
+  nombreDislikes: api.nombre_dislikes ?? 0,
+  nombrePartages: api.nombre_partages ?? 0,
+  maReaction: api.ma_reaction ?? null,
   createdAt: api.created_at,
 })
 
@@ -114,15 +172,81 @@ const resoudreUrl = (url: string, apiBase: string): string => {
 export const useVidafrica = () => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBaseUrl as string
+  const userStore = useUserStore()
+
+  // En-têtes d'auth (optionnels : la lecture publique fonctionne sans JWT,
+  // mais le JWT permet de renseigner `maReaction`).
+  const authHeaders = (): Record<string, string> => {
+    if (userStore.accessToken) return { Authorization: `Bearer ${userStore.accessToken}` }
+    return {}
+  }
 
   const chargerVideo = async (slug: string): Promise<VideoAfrica | null> => {
     try {
       const reponse = await $fetch<ApiResponse<VideoAfricaAPI>>(
         `${apiBase}/api/vidafrica/videos/${slug}`,
+        { headers: authHeaders() },
       )
       if (!reponse.success || !reponse.data) return null
       return mapperVideo(reponse.data, apiBase)
     } catch {
+      return null
+    }
+  }
+
+  // Aimer / ne pas aimer une vidéo (toggle) — JWT requis.
+  const reagirVideo = async (
+    videoId: string,
+    typeReaction: 'like' | 'dislike',
+  ): Promise<ReactionVideoEtat | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<{ nombre_likes: number; nombre_dislikes: number; ma_reaction: 'like' | 'dislike' | null }>>(
+        `${apiBase}/api/vidafrica/videos/${videoId}/reaction`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: { type_reaction: typeReaction },
+        },
+      )
+      if (!reponse.success || !reponse.data) return null
+      return {
+        nombreLikes: reponse.data.nombre_likes,
+        nombreDislikes: reponse.data.nombre_dislikes,
+        maReaction: reponse.data.ma_reaction,
+      }
+    } catch {
+      return null
+    }
+  }
+
+  // Partager une vidéo sur le mur communautaire — JWT requis.
+  const partagerVideo = async (
+    videoId: string,
+    legende?: string,
+  ): Promise<PartageVideoAPI | null> => {
+    const reponse = await $fetch<ApiResponse<PartageVideoAPI>>(
+      `${apiBase}/api/vidafrica/videos/${videoId}/partage`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: { legende: legende || undefined },
+      },
+    )
+    return reponse.success ? reponse.data : null
+  }
+
+  // Lister les partages de vidéos (public, paginé) — pour le mur /publications.
+  const listerPartagesVideos = async (
+    page = 1,
+    parPage = 20,
+  ): Promise<PartageVideoListeAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<PartageVideoListeAPI>>(
+        `${apiBase}/api/vidafrica/videos/partages?page=${page}&par_page=${parPage}`,
+      )
+      return reponse.success ? reponse.data : null
+    } catch (e) {
+      console.error('Erreur listerPartagesVideos:', e)
       return null
     }
   }
@@ -204,5 +328,8 @@ export const useVidafrica = () => {
     chargerSousTitres,
     chargerLanguesDisponibles,
     listerVideos,
+    reagirVideo,
+    partagerVideo,
+    listerPartagesVideos,
   }
 }
