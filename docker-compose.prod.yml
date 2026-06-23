@@ -71,6 +71,13 @@ services:
       NUXT_PUBLIC_API_BASE_URL: ""
       # URL interne pour les appels SSR (Docker → backend directement, sans passer par nginx/internet)
       NUXT_SSR_API_BASE_URL: "http://uafricas_backend:8080"
+      # ICE servers pour les appels P2P (PeerJS/WebRTC) : STUN public + TURN auto-heberge
+      # (coturn ci-dessous). Le TURN est INDISPENSABLE en prod pour les pairs derriere
+      # un NAT symetrique (sinon video distante noire). Lu au runtime par Nuxt SSR.
+      NUXT_PUBLIC_ICE_SERVERS: >-
+        [{"urls":"stun:stun.l.google.com:19302"},
+        {"urls":"turn:${TURN_PUBLIC_IP}:3479?transport=udp","username":"${TURN_USERNAME:-uafricas}","credential":"${TURN_PASSWORD}"},
+        {"urls":"turn:${TURN_PUBLIC_IP}:3479?transport=tcp","username":"${TURN_USERNAME:-uafricas}","credential":"${TURN_PASSWORD}"}]
     depends_on:
       - backend
     networks:
@@ -113,6 +120,27 @@ services:
     command: --config /livekit.yaml
     networks:
       - uafricas_net
+
+  # --- coturn (serveur TURN/STUN pour les appels P2P PeerJS) ---
+  # Relais media indispensable en prod : sans lui, deux pairs derriere des NAT
+  # symetriques ne peuvent pas echanger leur flux video (video distante noire).
+  # network_mode: host requis (TURN a besoin des vrais ports/IP, pas du NAT Docker).
+  # Port 3479 (3478/udp est deja pris par LiveKit). Plage de relais 49160-49200/udp.
+  coturn:
+    image: coturn/coturn:latest
+    container_name: uafricas_coturn
+    restart: unless-stopped
+    network_mode: host
+    command: >
+      -n
+      --realm=africans-world.org
+      --listening-port=3479
+      --min-port=49160 --max-port=49200
+      --fingerprint
+      --lt-cred-mech
+      --user=${TURN_USERNAME:-uafricas}:${TURN_PASSWORD}
+      --external-ip=${TURN_PUBLIC_IP}
+      --no-tls --no-dtls --no-cli
 
   # --- Adminer (acces BDD, optionnel) ---
   adminer:
