@@ -164,7 +164,7 @@ pub async fn obtenir_video_publique(
 
     let langues = sqlx::query_scalar::<_, String>(
         "SELECT langue::TEXT FROM media_content.piste_sous_titre
-         WHERE video_id = $1 AND deleted_at IS NULL ORDER BY langue"
+         WHERE video_id = $1 AND etat = 'publie' AND deleted_at IS NULL ORDER BY langue"
     )
     .bind(row.id)
     .fetch_all(pool.get_ref())
@@ -248,10 +248,12 @@ pub async fn obtenir_sous_titres(
         return Err(ApiErreur::NonTrouve("Vidéo non trouvée".into()));
     }
 
-    // Trouver la piste
-    let piste_id = sqlx::query_scalar::<_, Uuid>(
-        "SELECT id FROM media_content.piste_sous_titre
-         WHERE video_id = $1 AND langue::TEXT = $2 AND etat = 'publie' AND deleted_at IS NULL"
+    // Trouver la piste publiée (une seule par langue) + son auteur.
+    let (piste_id, auteur) = sqlx::query_as::<_, (Uuid, Option<String>)>(
+        "SELECT p.id, NULLIF(TRIM(COALESCE(u.prenom, '') || ' ' || COALESCE(u.nom, '')), '')
+         FROM media_content.piste_sous_titre p
+         LEFT JOIN iam.utilisateur u ON u.id = p.cree_par
+         WHERE p.video_id = $1 AND p.langue::TEXT = $2 AND p.etat = 'publie' AND p.deleted_at IS NULL"
     )
     .bind(video_id)
     .bind(&langue)
@@ -292,6 +294,7 @@ pub async fn obtenir_sous_titres(
 
     let reponse = SousTitresResponse {
         langue: langue.clone(),
+        auteur,
         segments,
     };
 

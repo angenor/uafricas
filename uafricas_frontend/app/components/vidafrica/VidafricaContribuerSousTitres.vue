@@ -45,7 +45,9 @@ const languesDisponibles = computed(() =>
     .map(([code, label]) => ({ code, label })),
 )
 
-const pisteEditable = computed(() => pisteSelectionnee.value?.etat === 'brouillon')
+// L'auteur peut éditer sa piste en brouillon ET après publication (modif en direct) ;
+// seule une piste masquée par un admin est gelée.
+const pisteEditable = computed(() => !!pisteSelectionnee.value && pisteSelectionnee.value.etat !== 'masque')
 
 const labelEtat = (etat?: string): string => {
   if (etat === 'publie') return 'Publiée'
@@ -209,7 +211,8 @@ onMounted(() => charger())
     <h2 class="text-lg font-bold text-gray-900 font-['Oswald'] mb-1">Contribuer des sous-titres</h2>
     <p class="text-sm text-gray-500 mb-4">
       Ajoutez une langue, saisissez les segments puis marquez le timing mot par mot.
-      Votre piste sera publiée après validation par un administrateur.
+      Votre piste sera publiée après validation par un administrateur ; une fois publiée,
+      vous pouvez toujours la corriger — vos modifications sont prises en compte immédiatement.
     </p>
 
     <div v-if="erreur" class="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 mb-4">
@@ -249,7 +252,7 @@ onMounted(() => charger())
           </span>
           <span class="text-xs text-gray-400">{{ piste.nombre_segments }} segment{{ piste.nombre_segments > 1 ? 's' : '' }}</span>
           <button
-            v-if="piste.etat === 'brouillon'"
+            v-if="piste.etat !== 'masque'"
             class="ml-auto text-gray-400 hover:text-red-500 transition-colors"
             title="Supprimer la piste"
             @click.stop="supprimerPisteAction(piste.id)"

@@ -729,6 +729,45 @@ pub async fn changer_etat_piste(
         )));
     }
 
+    if etat == "publie" {
+        // Une piste sans aucun segment n'a rien à afficher : interdire sa publication.
+        let nombre_segments = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM media_content.segment_sous_titre WHERE piste_id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool.get_ref())
+        .await?;
+        if nombre_segments == 0 {
+            return Err(ApiErreur::Validation(
+                "Impossible de publier une piste sans aucun segment de sous-titre.".into(),
+            ));
+        }
+
+        // Une seule piste publiée par langue (l'admin arbitre) : refuser s'il en existe
+        // déjà une autre publiée dans la même langue pour cette vidéo.
+        let conflit = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(
+                SELECT 1 FROM media_content.piste_sous_titre autre
+                JOIN media_content.piste_sous_titre cible ON cible.id = $1
+                WHERE autre.id <> cible.id
+                  AND autre.video_id = cible.video_id
+                  AND autre.langue = cible.langue
+                  AND autre.etat = 'publie'
+                  AND autre.deleted_at IS NULL
+             )",
+        )
+        .bind(id)
+        .fetch_one(pool.get_ref())
+        .await?;
+        if conflit {
+            return Err(ApiErreur::Conflit(
+                "Une autre piste est déjà publiée dans cette langue pour cette vidéo. \
+                 Masquez-la d'abord avant d'en publier une nouvelle."
+                    .into(),
+            ));
+        }
+    }
+
     let result = sqlx::query(
         "UPDATE media_content.piste_sous_titre SET etat = $1, updated_at = NOW()
          WHERE id = $2 AND deleted_at IS NULL"

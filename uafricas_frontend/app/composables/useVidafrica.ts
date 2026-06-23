@@ -37,6 +37,7 @@ interface SegmentAPI {
 
 interface SousTitresAPI {
   langue: string
+  auteur: string | null
   segments: SegmentAPI[]
 }
 
@@ -139,6 +140,7 @@ export interface MotKaraoke {
 
 export interface SousTitres {
   langue: string
+  auteur: string | null
   segments: SegmentKaraoke[]
 }
 
@@ -259,6 +261,7 @@ export const useVidafrica = () => {
       if (!reponse.success || !reponse.data) return null
       return {
         langue: reponse.data.langue,
+        auteur: reponse.data.auteur ?? null,
         segments: reponse.data.segments.map(s => ({
           position: s.position,
           texte: s.texte,

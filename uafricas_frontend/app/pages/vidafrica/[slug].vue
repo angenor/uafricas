@@ -88,6 +88,14 @@ onMounted(() => charger())
           :video-url="video.fichierVideoUrl!"
           :segments="segments"
         />
+        <!-- Auteur du sous-titrage (déresponsabilisation de la plateforme) -->
+        <p v-if="sousTitres?.auteur" class="mt-2 text-xs text-gray-500 text-center">
+          <font-awesome-icon icon="closed-captioning" class="mr-1" />
+          Sous-titres
+          <template v-if="langueActive">en {{ LANGUES_LABELS[langueActive] || langueActive }} </template>
+          proposés par <span class="font-medium text-gray-700">{{ sousTitres.auteur }}</span>.
+          La plateforme n'est pas responsable de l'exactitude de la traduction.
+        </p>
       </div>
 
       <!-- Sélecteur de langue -->

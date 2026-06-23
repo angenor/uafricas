@@ -69,6 +69,8 @@ pub struct VideoPubliqueDetailRow {
 #[derive(Debug, Serialize)]
 pub struct SousTitresResponse {
     pub langue: String,
+    /// Auteur de la piste publiée (déresponsabilisation : affiché sous la vidéo).
+    pub auteur: Option<String>,
     pub segments: Vec<SegmentPubliqueResponse>,
 }
 

@@ -49,8 +49,10 @@ fn utilisateur_courant(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
         .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))
 }
 
-/// Vérifie qu'une piste appartient à l'utilisateur courant et est éditable (`brouillon`).
-/// Retourne le `video_id` de la piste si OK.
+/// Vérifie qu'une piste appartient à l'utilisateur courant et est éditable.
+/// L'auteur peut éditer sa piste en `brouillon` comme en `publie` (modifications en
+/// direct, sans nouvelle validation) ; seules les pistes `masque` (masquées par un
+/// administrateur) sont gelées. Retourne le `video_id` de la piste si OK.
 async fn verifier_piste_modifiable(
     pool: &PgPool,
     piste_id: Uuid,
@@ -71,9 +73,9 @@ async fn verifier_piste_modifiable(
             "Vous n'êtes pas l'auteur de cette piste".into(),
         ));
     }
-    if etat != "brouillon" {
+    if etat == "masque" {
         return Err(ApiErreur::AccesInterdit(
-            "Cette piste a été validée et n'est plus modifiable".into(),
+            "Cette piste a été masquée par un administrateur et n'est plus modifiable.".into(),
         ));
     }
     Ok(video_id)
@@ -472,11 +474,14 @@ pub async fn mes_pistes(
     let user_id = utilisateur_courant(&req)?;
     let video_id = path.into_inner();
 
+    // Langues déjà prises par CE membre (un membre = une piste par langue ; d'autres
+    // membres peuvent proposer la même langue de leur côté).
     let langues_prises = sqlx::query_scalar::<_, String>(
         "SELECT langue::TEXT FROM media_content.piste_sous_titre
-         WHERE video_id = $1 AND deleted_at IS NULL",
+         WHERE video_id = $1 AND cree_par = $2 AND deleted_at IS NULL",
     )
     .bind(video_id)
+    .bind(user_id)
     .fetch_all(pool.get_ref())
     .await?;
 
@@ -535,18 +540,21 @@ pub async fn creer_piste_membre(
         return Err(ApiErreur::NonTrouve("Vidéo non trouvée".into()));
     }
 
-    // Unicité de la langue (une seule piste par langue, tous états confondus).
+    // Un même membre ne peut avoir qu'une seule piste par langue ; d'autres membres
+    // peuvent proposer leur propre version dans cette langue (l'admin arbitre laquelle
+    // est publiée — une seule piste publiée par langue).
     let doublon = sqlx::query_scalar::<_, bool>(
         "SELECT EXISTS(SELECT 1 FROM media_content.piste_sous_titre
-         WHERE video_id = $1 AND langue::TEXT = $2 AND deleted_at IS NULL)",
+         WHERE video_id = $1 AND langue::TEXT = $2 AND cree_par = $3 AND deleted_at IS NULL)",
     )
     .bind(video_id)
     .bind(langue)
+    .bind(user_id)
     .fetch_one(pool.get_ref())
     .await?;
     if doublon {
         return Err(ApiErreur::Conflit(format!(
-            "Une piste en {} existe déjà pour cette vidéo",
+            "Vous avez déjà une piste en {} pour cette vidéo",
             langue
         )));
     }
