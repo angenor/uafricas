@@ -71,7 +71,8 @@ Conventions BDD: UUID v4 PKs, soft deletion (`deleted_at`), TIMESTAMPTZ, snake_c
 ## Infrastructure
 
 - **Docker Dev** : `docker-compose.yml` — postgres, adminer, livekit + volume pgdata. LiveKit: 7880 (WS), 7881 (HTTP), 7882 (TCP), 50000-50100/udp. Config `livekit.yaml`. `.env` gitignored.
-- **Docker Prod** : `docker-compose.prod.yml` — 6 services (postgres, backend, frontend, nginx, livekit, adminer optionnel) + 2 volumes (pgdata, uploads_data). Nginx HTTPS Let's Encrypt, reverse proxy frontend:3000 + backend:8080, rate limit API 30r/s + auth 5r/s, gzip, HSTS. Domaine `www.africans-world.org`.
+- **Docker Prod** : `docker-compose.prod.yml` — 7 services (postgres, backend, frontend, nginx, livekit, **coturn**, adminer optionnel) + 2 volumes (pgdata, uploads_data). Nginx HTTPS Let's Encrypt, reverse proxy frontend:3000 + backend:8080, rate limit API 30r/s + auth 5r/s, gzip, HSTS. Domaine `www.africans-world.org`.
+- **TURN (appels P2P PeerJS)** : service **coturn** (`network_mode: host`, port **3479** UDP/TCP — 3478 réservé à LiveKit, relais `49160-49200/udp`, credentials long-terme `TURN_USERNAME`/`TURN_PASSWORD`). **Indispensable en prod** : sans relais TURN, deux pairs derrière des NAT symétriques n'échangent pas leur flux vidéo (vidéo distante noire). Le frontend reçoit `NUXT_PUBLIC_ICE_SERVERS` (STUN public + TURN udp/tcp) **au runtime** (aucun rebuild Nuxt requis). Variables dans le `.env` prod (gitignored) : `TURN_PUBLIC_IP` (IP publique VPS, partagée par `--external-ip` coturn et l'URL ICE frontend), `TURN_USERNAME`, `TURN_PASSWORD`. Voir `.env.production.example`.
 - **Déploiement** : `deploy.sh` → VPS `root@161.97.92.63:/opt/uafricas` via SSH+Docker. Commandes: `setup`, `deploy`, `update`, `rebuild`, `status`, `logs [svc]`, `restart [svc]`, `stop`, `ssl`, `backup`, `connect`. Migrations BD manuelles via SSH+psql.
 
 ## LSP & Diagnostics
