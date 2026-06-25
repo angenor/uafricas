@@ -19,10 +19,27 @@ const props = defineProps<{
   segments: SegmentKaraoke[]
 }>()
 
+const emit = defineEmits<{
+  'segment-change': [position: number | null]
+}>()
+
 const videoRef = ref<HTMLVideoElement | null>(null)
 const segmentCourant = ref<SegmentKaraoke | null>(null)
 const motCourantIndex = ref(-1)
 const animationId = ref<number | null>(null)
+
+// Signale le segment courant au parent (surbrillance dans la transcription latérale)
+watch(segmentCourant, seg => emit('segment-change', seg ? seg.position : null))
+
+// Permet à un panneau externe (transcription) de déplacer la lecture
+const seek = (ms: number) => {
+  const video = videoRef.value
+  if (!video) return
+  video.currentTime = ms / 1000
+  video.play().catch(() => {})
+}
+
+defineExpose({ seek })
 
 // Recherche binaire pour trouver le segment courant
 const trouverSegment = (timeMs: number): SegmentKaraoke | null => {
@@ -119,7 +136,7 @@ onUnmounted(() => {
     <video
       ref="videoRef"
       :src="videoUrl"
-      class="w-full rounded-lg"
+      class="w-full max-h-[78vh] object-contain rounded-lg bg-black"
       controls
       preload="metadata"
       @play="onPlay"
