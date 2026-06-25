@@ -92,7 +92,7 @@ const centresLocaux = computed(() =>
           <div class="flex items-center gap-3 mb-4">
             <font-awesome-icon :icon="['fas', 'earth-africa']" class="text-custom-chocolat text-xl" />
             <h2 class="text-xl md:text-2xl font-bold text-custom-chocolat">
-              African International
+              Africans International
             </h2>
             <span class="text-sm font-medium text-custom-green border border-custom-chocolat rounded-md px-2.5 py-0.5">
               {{ centresInternationaux.length }}

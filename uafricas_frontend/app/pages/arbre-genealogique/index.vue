@@ -168,12 +168,12 @@ const infoPagination = computed(() => {
           <font-awesome-icon :icon="['fas', 'project-diagram']" class="text-sm" />
           Voir mon arbre
         </NuxtLink>
-        <button
+        <!-- <button
           class="px-5 py-2.5 bg-custom-chocolat text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
           @click="modeAjout = 'wizard'"
         >
           + Ajouter une personne
-        </button>
+        </button> -->
       </div>
     </div>
 
