@@ -21,6 +21,10 @@ COPY . .
 # On met une valeur vide pour eviter le doublement /api/api/
 ENV NUXT_PUBLIC_API_BASE_URL=
 
+# Relever le tas Node : le build Nuxt depasse le plafond par defaut (~2 Go)
+# et plantait en "JavaScript heap out of memory" (VPS a 11 Go de RAM)
+ENV NODE_OPTIONS=--max-old-space-size=4096
+
 RUN pnpm build
 
 # Stage 2: Runtime minimal
