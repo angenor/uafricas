@@ -105,7 +105,7 @@ const choixTypes: { code: TypeRessourceContribuee | null; libelle: string }[] = 
               class="inline-flex items-center gap-2 px-3 py-2 bg-custom-chocolat text-white text-sm rounded-md hover:bg-custom-chocolat/90 transition-colors shrink-0"
               @click="formOuvert = true">
         <font-awesome-icon icon="fa-solid fa-plus" class="text-xs" />
-        <span class="hidden sm:inline">Contribuer</span>
+        <span class="hidden sm:inline">Ajouter une ressource</span>
       </button>
       <div v-else-if="motifBlocage"
            class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 max-w-xs">
