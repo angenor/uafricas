@@ -95,7 +95,10 @@ const confirmerRejet = () => {
         </div>
         <div>
           <h3 class="font-semibold text-sm uppercase text-base-content/70">Groupe ethnique</h3>
-          <p>{{ proposition.groupe_ethnique.nom }}</p>
+          <p>
+            {{ proposition.groupe_ethnique?.nom ?? proposition.groupe_ethnique_libre }}
+            <span v-if="!proposition.groupe_ethnique && proposition.groupe_ethnique_libre" class="badge badge-ghost badge-sm ml-1">Autre (texte libre)</span>
+          </p>
         </div>
         <div>
           <h3 class="font-semibold text-sm uppercase text-base-content/70">Territoire d'origine</h3>
@@ -174,7 +177,7 @@ const confirmerRejet = () => {
         <h3 class="font-bold text-lg">Valider la proposition</h3>
         <p class="py-2 text-sm">
           Cette action crée une salle publique pour le groupe ethnique
-          « {{ proposition.groupe_ethnique.nom }} ». L'auteur sera notifié.
+          « {{ proposition.groupe_ethnique?.nom ?? proposition.groupe_ethnique_libre }} ». L'auteur sera notifié.
         </p>
         <div class="form-control">
           <label class="label">

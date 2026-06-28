@@ -11,7 +11,7 @@ use crate::models::afrolang::{AdministrateurLight, DesactivationAdminInfo, PaysO
 
 pub const ADMIN_SALLE_LISTE_COLONNES: &str =
     "s.id, s.titre, s.slug, s.langue_cible, s.langue_code, s.actif,
-     s.desactivee_admin_at, s.created_at,
+     s.desactivee_admin_at, s.created_at, s.groupe_ethnique_libre,
      ge.nom AS groupe_ethnique_nom,
      (SELECT COUNT(*) FROM afrolang.salle_privee sp
         WHERE sp.salle_id = s.id AND sp.actif = true
@@ -26,7 +26,7 @@ pub const ADMIN_SALLE_LISTE_COLONNES: &str =
 pub const ADMIN_SALLE_DETAIL_COLONNES: &str =
     "s.id, s.titre, s.slug, s.description, s.image_couverture_url,
      s.langue_cible, s.langue_code, s.alphabet, s.dictionnaire_url,
-     s.groupe_ethnique_id, s.actif,
+     s.groupe_ethnique_id, s.groupe_ethnique_libre, s.actif,
      s.cree_par, s.created_at, s.updated_at,
      s.desactivee_admin_at, s.motif_desactivation,
      ge.nom AS groupe_ethnique_nom,
@@ -97,7 +97,8 @@ pub struct AdminSalleDetailRow {
     pub langue_code: Option<String>,
     pub alphabet: Option<String>,
     pub dictionnaire_url: Option<String>,
-    pub groupe_ethnique_id: Uuid,
+    pub groupe_ethnique_id: Option<Uuid>,
+    pub groupe_ethnique_libre: Option<String>,
     pub actif: bool,
     pub cree_par: Option<Uuid>,
     pub created_at: DateTime<Utc>,
@@ -128,7 +129,8 @@ pub struct AdminSalleDetailResponse {
     pub langue_code: Option<String>,
     pub alphabet: Option<String>,
     pub dictionnaire_url: Option<String>,
-    pub groupe_ethnique_id: Uuid,
+    pub groupe_ethnique_id: Option<Uuid>,
+    pub groupe_ethnique_libre: Option<String>,
     pub groupe_ethnique_nom: Option<String>,
     pub actif: bool,
     pub cree_par_nom: Option<String>,
@@ -169,6 +171,7 @@ impl AdminSalleDetailRow {
             alphabet: self.alphabet,
             dictionnaire_url: self.dictionnaire_url,
             groupe_ethnique_id: self.groupe_ethnique_id,
+            groupe_ethnique_libre: self.groupe_ethnique_libre,
             groupe_ethnique_nom: self.groupe_ethnique_nom,
             actif: self.actif,
             cree_par_nom,

@@ -7,7 +7,7 @@
         <h3 class="text-base font-semibold text-gray-900 line-clamp-2">{{ proposition.titre }}</h3>
         <p class="mt-1 text-xs text-gray-500">
           {{ proposition.langue_cible }}<span v-if="proposition.langue_code"> · {{ proposition.langue_code }}</span>
-          · {{ proposition.groupe_ethnique.nom }}
+          · {{ proposition.groupe_ethnique?.nom ?? proposition.groupe_ethnique_libre }}
         </p>
       </div>
       <span

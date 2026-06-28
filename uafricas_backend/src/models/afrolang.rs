@@ -51,7 +51,8 @@ pub const SALLE_COLONNES: &str =
      s.groupe_ethnique_id, s.actif, s.cree_par,
      s.created_at, s.updated_at, s.deleted_at,
      s.desactivee_admin_at, s.desactivee_par, s.motif_desactivation,
-     s.reactivee_at, s.reactivee_par, s.commentaire_reactivation";
+     s.reactivee_at, s.reactivee_par, s.commentaire_reactivation,
+     s.groupe_ethnique_libre";
 
 /// Colonnes de base pour afrolang.salle_privee (refonte 2026-04)
 ///
@@ -98,7 +99,7 @@ pub const COLONNES_PROPOSITION: &str =
     "ps.id, ps.auteur_id, ps.titre, ps.description, ps.justification,
      ps.langue_cible, ps.langue_code, ps.groupe_ethnique_id, ps.pays_origine_ids,
      ps.statut, ps.decideur, ps.decide_at, ps.commentaire_decision,
-     ps.salle_id_creee, ps.created_at, ps.updated_at";
+     ps.salle_id_creee, ps.created_at, ps.updated_at, ps.groupe_ethnique_libre";
 
 /// Colonnes de base pour afrolang.salle_administrateur
 /// (feature 001-admin-salles-publiques)
@@ -122,7 +123,8 @@ pub struct SalleRow {
     pub langue_code: Option<String>,
     pub alphabet: Option<String>,
     pub dictionnaire_url: Option<String>,
-    pub groupe_ethnique_id: Uuid,
+    pub groupe_ethnique_id: Option<Uuid>,
+    pub groupe_ethnique_libre: Option<String>,
     pub actif: bool,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
@@ -393,7 +395,8 @@ pub struct SalleResponse {
     pub langue_code: Option<String>,
     pub alphabet: Option<String>,
     pub dictionnaire_url: Option<String>,
-    pub groupe_ethnique_id: Uuid,
+    pub groupe_ethnique_id: Option<Uuid>,
+    pub groupe_ethnique_libre: Option<String>,
     pub groupe_ethnique: Option<GroupeEthniqueLightResponse>,
     pub actif: bool,
     pub nombre_salles_privees: i64,
@@ -418,7 +421,8 @@ pub struct SalleDetailResponse {
     pub langue_code: Option<String>,
     pub alphabet: Option<String>,
     pub dictionnaire_url: Option<String>,
-    pub groupe_ethnique_id: Uuid,
+    pub groupe_ethnique_id: Option<Uuid>,
+    pub groupe_ethnique_libre: Option<String>,
     pub groupe_ethnique: Option<GroupeEthniqueLightResponse>,
     pub actif: bool,
     pub moderateurs_attitres: Vec<ModerateurAttitreResponse>,
@@ -827,14 +831,15 @@ pub struct RefuserLienRequest {
 
 impl SalleRow {
     pub fn to_groupe_ethnique_light(&self) -> Option<GroupeEthniqueLightResponse> {
-        self.groupe_ethnique_nom
-            .as_ref()
-            .map(|nom| GroupeEthniqueLightResponse {
-                id: self.groupe_ethnique_id,
+        match (self.groupe_ethnique_id, self.groupe_ethnique_nom.as_ref()) {
+            (Some(id), Some(nom)) => Some(GroupeEthniqueLightResponse {
+                id,
                 nom: nom.clone(),
                 fiche_pays_id: self.fiche_pays_id,
                 pays_nom: self.pays_nom.clone(),
-            })
+            }),
+            _ => None,
+        }
     }
 
     pub fn to_pays_origine(&self) -> Vec<PaysOrigineLight> {
@@ -882,6 +887,7 @@ impl SalleRow {
             alphabet: self.alphabet.clone(),
             dictionnaire_url: self.dictionnaire_url.clone(),
             groupe_ethnique_id: self.groupe_ethnique_id,
+            groupe_ethnique_libre: self.groupe_ethnique_libre.clone(),
             groupe_ethnique: self.to_groupe_ethnique_light(),
             actif: self.actif,
             nombre_salles_privees: self.nombre_salles_privees.unwrap_or(0),
@@ -1079,7 +1085,8 @@ pub struct PropositionSalleRow {
     pub justification: String,
     pub langue_cible: String,
     pub langue_code: Option<String>,
-    pub groupe_ethnique_id: Uuid,
+    pub groupe_ethnique_id: Option<Uuid>,
+    pub groupe_ethnique_libre: Option<String>,
     pub pays_origine_ids: Vec<Uuid>,
     pub statut: PropositionStatut,
     pub decideur: Option<Uuid>,
@@ -1129,7 +1136,8 @@ pub struct PropositionResponse {
     pub justification: String,
     pub langue_cible: String,
     pub langue_code: Option<String>,
-    pub groupe_ethnique: GroupeEthniqueLight,
+    pub groupe_ethnique: Option<GroupeEthniqueLight>,
+    pub groupe_ethnique_libre: Option<String>,
     pub pays_origine: Vec<PaysOrigineLight>,
     pub statut: PropositionStatut,
     pub decideur: Option<UtilisateurLight>,
@@ -1169,10 +1177,11 @@ impl PropositionSalleRow {
             justification: self.justification.clone(),
             langue_cible: self.langue_cible.clone(),
             langue_code: self.langue_code.clone(),
-            groupe_ethnique: GroupeEthniqueLight {
-                id: self.groupe_ethnique_id,
-                nom: self.groupe_ethnique_nom.clone().unwrap_or_default(),
+            groupe_ethnique: match (self.groupe_ethnique_id, self.groupe_ethnique_nom.as_ref()) {
+                (Some(id), Some(nom)) => Some(GroupeEthniqueLight { id, nom: nom.clone() }),
+                _ => None,
             },
+            groupe_ethnique_libre: self.groupe_ethnique_libre.clone(),
             pays_origine,
             statut: self.statut.clone(),
             decideur,
@@ -1308,13 +1317,32 @@ pub struct SoumettrePropositionRequest {
     pub justification: String,
     pub langue_cible: String,
     pub langue_code: Option<String>,
-    pub groupe_ethnique_id: Uuid,
+    pub groupe_ethnique_id: Option<Uuid>,
+    pub groupe_ethnique_libre: Option<String>,
     pub pays_origine_ids: Vec<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct DecisionRequest {
     pub commentaire: Option<String>,
+}
+
+/// Territoire (pays) renvoyé au formulaire de proposition Afrolang.
+/// Tous les territoires actifs sont exposés (Afrique d'abord, puis diaspora).
+#[derive(Debug, FromRow)]
+pub struct TerritoireRow {
+    pub id: Uuid,
+    pub nom: String,
+    pub code_iso2: Option<String>,
+    pub continent: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TerritoireResponse {
+    pub id: Uuid,
+    pub nom: String,
+    pub code_iso2: Option<String>,
+    pub continent: String,
 }
 
 #[derive(Debug, Deserialize)]

@@ -91,6 +91,7 @@
 \ir schemas/08_culture.sql
 \ir schemas/08b_afrolang.sql
 \ir schemas/08c_afrolang_passation_moderation.sql
+\ir schemas/08h_afrolang_groupe_ethnique_libre.sql
 \ir schemas/08d_culture_type_centre.sql
 \ir schemas/08e_culture_programmation_image.sql
 \ir schemas/08f_culture_programmation_inscription.sql
@@ -164,6 +165,7 @@
 \ir schemas/22_seed_experts.sql
 \ir schemas/30_seed_pays_africains.sql
 \ir schemas/33_seed_pays_monde.sql
+\ir schemas/34_seed_afrolang_salles_diaspora.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

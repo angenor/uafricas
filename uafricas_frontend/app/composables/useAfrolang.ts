@@ -63,6 +63,17 @@ export interface PaysOrigineLight {
   code_iso2: string | null
 }
 
+/** Territoire sélectionnable dans le formulaire de proposition de salle.
+ *  Contrairement à `PaysOrigineLight` (pays déjà utilisés par une salle), couvre
+ *  TOUS les territoires actifs — Afrique d'abord, puis les autres continents
+ *  (diaspora où des langues africaines ont essaimé : Amériques, Europe…). */
+export interface TerritoireAPI {
+  id: string
+  nom: string
+  code_iso2: string | null
+  continent: string
+}
+
 /** Administrateur d'une salle publique (vue allégée publique).
  *  Feature 001-admin-salles-publiques. */
 export interface AdministrateurLight {
@@ -85,7 +96,11 @@ export interface PropositionSalle {
   justification: string
   langue_cible: string
   langue_code: string | null
-  groupe_ethnique: { id: string; nom: string }
+  /** Groupe ethnique référencé ; `null` si l'auteur a saisi un groupe « Autre »
+   *  en texte libre (voir `groupe_ethnique_libre`). */
+  groupe_ethnique: { id: string; nom: string } | null
+  /** Nom du groupe ethnique saisi en texte libre (option « Autre »). */
+  groupe_ethnique_libre: string | null
   pays_origine: PaysOrigineLight[]
   statut: StatutProposition
   decideur: { id: string; nom: string; prenom: string } | null
@@ -115,7 +130,11 @@ export interface SoumettrePropositionPayload {
   justification: string
   langue_cible: string
   langue_code?: string | null
-  groupe_ethnique_id: string
+  /** UUID d'un groupe référencé, ou `null` si option « Autre » (texte libre). */
+  groupe_ethnique_id: string | null
+  /** Nom du groupe ethnique saisi librement (option « Autre »). Exclusif avec
+   *  `groupe_ethnique_id`. */
+  groupe_ethnique_libre?: string | null
   pays_origine_ids: string[]
 }
 
@@ -137,8 +156,11 @@ export interface SalleAPI {
   langue_code: string | null
   alphabet: string | null
   dictionnaire_url: string | null
-  groupe_ethnique_id: string
+  groupe_ethnique_id: string | null
   groupe_ethnique: GroupeEthniqueLight | null
+  /** Nom du groupe ethnique en texte libre quand la salle ne cible pas un groupe
+   *  référencé (salle issue d'une proposition « Autre »). */
+  groupe_ethnique_libre: string | null
   actif: boolean
   nombre_salles_privees: number
   sessions_en_cours: number
@@ -1326,6 +1348,24 @@ export const useAfrolang = () => {
     }
   }
 
+  /** Liste de TOUS les territoires actifs (Afrique d'abord, puis autres
+   *  continents) pour le formulaire de proposition de salle. Distinct de
+   *  `listerPaysDisponibles` qui ne renvoie que les pays déjà rattachés à une
+   *  salle active. */
+  const listerTerritoires = async (): Promise<TerritoireAPI[]> => {
+    try {
+      const reponse = await $fetch<ApiResponse<TerritoireAPI[]>>(
+        `${apiBase}/api/afrolang/territoires`,
+      )
+      if (!reponse.success || !reponse.data) return []
+      return reponse.data
+    }
+    catch (e: unknown) {
+      console.error('Erreur listerTerritoires:', e)
+      return []
+    }
+  }
+
   // ── Phase 4 : Tableau blanc ──
 
   const obtenirTableauBlanc = async (sessionId: string): Promise<TableauBlancData> => {
@@ -1986,6 +2026,7 @@ export const useAfrolang = () => {
     obtenirStats,
     listerLangues,
     listerPaysDisponibles,
+    listerTerritoires,
     // Ressources et messagerie (US6)
     listerRessources,
     uploaderRessourceFichier,

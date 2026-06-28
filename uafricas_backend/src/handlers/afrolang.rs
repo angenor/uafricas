@@ -19,7 +19,8 @@ use crate::models::afrolang::{
     RessourceSalleRow, SalleDetailResponse, SalleFiltres, SalleListeResponse, SallePriveeAPI,
     SallePriveeDetailResponse, SallePriveeRow,
     SalleRow, SessionDetailResponse, SessionFiltres, SessionListeResponse, SessionParticipantRow,
-    SessionRow, SoumettrePropositionRequest, TransfererModerationRequest, VerifierCodeAccesRequest,
+    SessionRow, SoumettrePropositionRequest, TerritoireResponse, TerritoireRow,
+    TransfererModerationRequest, VerifierCodeAccesRequest,
     VerifierCodeAccesResponse,
     COLONNES_PROPOSITION, GROUPE_ETHNIQUE_RESUME_COLONNES, MESSAGE_SESSION_COLONNES,
     RESSOURCE_SALLE_COLONNES, SALLE_COLONNES, SALLE_PRIVEE_COLONNES, SESSION_COLONNES,
@@ -1108,6 +1109,7 @@ pub async fn obtenir_salle(
             alphabet: salle.alphabet.clone(),
             dictionnaire_url: salle.dictionnaire_url.clone(),
             groupe_ethnique_id: salle.groupe_ethnique_id,
+            groupe_ethnique_libre: salle.groupe_ethnique_libre.clone(),
             groupe_ethnique: salle.to_groupe_ethnique_light(),
             actif: salle.actif,
             moderateurs_attitres: moderateurs_attitres
@@ -4852,6 +4854,38 @@ pub async fn lister_pays_disponibles(
     }))
 }
 
+/// GET /api/afrolang/territoires
+/// Tous les territoires actifs pour le formulaire de proposition (Afrique d'abord,
+/// puis autres continents — diaspora où des langues africaines ont essaimé).
+pub async fn lister_territoires(
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let rows = sqlx::query_as::<_, TerritoireRow>(
+        "SELECT id, nom, code_iso2, continent
+         FROM shared.pays
+         WHERE actif = TRUE
+         ORDER BY (continent = 'Afrique') DESC, continent ASC, nom ASC",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let data: Vec<TerritoireResponse> = rows
+        .into_iter()
+        .map(|r| TerritoireResponse {
+            id: r.id,
+            nom: r.nom,
+            code_iso2: r.code_iso2,
+            continent: r.continent,
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(data),
+        error: None,
+    }))
+}
+
 /// Helper interne : recharge une proposition avec ses jointures.
 async fn charger_proposition_par_id(
     pool: &PgPool,
@@ -4912,6 +4946,35 @@ pub async fn soumettre_proposition(
         ));
     }
 
+    // Groupe ethnique : SOIT un groupe référencé (groupe_ethnique_id),
+    // SOIT un nom libre « Autre » (groupe_ethnique_libre) — jamais les deux,
+    // jamais aucun.
+    let groupe_libre = body
+        .groupe_ethnique_libre
+        .as_ref()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    match (body.groupe_ethnique_id, &groupe_libre) {
+        (Some(_), Some(_)) => {
+            return Err(ApiErreur::Validation(
+                "Choisissez un groupe ethnique existant OU précisez « Autre », pas les deux".into(),
+            ));
+        }
+        (None, None) => {
+            return Err(ApiErreur::Validation(
+                "Le groupe ethnique est requis (sélectionnez-en un ou précisez « Autre »)".into(),
+            ));
+        }
+        _ => {}
+    }
+    if let Some(ref libre) = groupe_libre {
+        if libre.chars().count() > 250 {
+            return Err(ApiErreur::Validation(
+                "Le nom du groupe ethnique ne peut excéder 250 caractères".into(),
+            ));
+        }
+    }
+
     let auteur_actif: bool = sqlx::query_scalar(
         "SELECT EXISTS(
             SELECT 1 FROM iam.utilisateur
@@ -4927,14 +4990,49 @@ pub async fn soumettre_proposition(
         ));
     }
 
-    let groupe_existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM country_profile.groupe_ethnique WHERE id = $1)",
-    )
-    .bind(body.groupe_ethnique_id)
-    .fetch_one(pool.get_ref())
-    .await?;
-    if !groupe_existe {
-        return Err(ApiErreur::Validation("Groupe ethnique introuvable".into()));
+    // Les vérifications liées à un groupe référencé ne s'appliquent que si un
+    // identifiant est fourni (cas « Autre » = texte libre, aucun id).
+    if let Some(groupe_id) = body.groupe_ethnique_id {
+        let groupe_existe: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM country_profile.groupe_ethnique WHERE id = $1)",
+        )
+        .bind(groupe_id)
+        .fetch_one(pool.get_ref())
+        .await?;
+        if !groupe_existe {
+            return Err(ApiErreur::Validation("Groupe ethnique introuvable".into()));
+        }
+
+        let salle_existe: bool = sqlx::query_scalar(
+            "SELECT EXISTS(
+                SELECT 1 FROM afrolang.salle
+                WHERE groupe_ethnique_id = $1 AND actif = TRUE AND deleted_at IS NULL
+            )",
+        )
+        .bind(groupe_id)
+        .fetch_one(pool.get_ref())
+        .await?;
+        if salle_existe {
+            return Err(ApiErreur::Conflit(
+                "Une salle publique existe déjà pour ce groupe ethnique".into(),
+            ));
+        }
+
+        let proposition_existe: bool = sqlx::query_scalar(
+            "SELECT EXISTS(
+                SELECT 1 FROM afrolang.proposition_salle
+                WHERE auteur_id = $1 AND groupe_ethnique_id = $2 AND statut = 'en_attente'
+            )",
+        )
+        .bind(auteur_id)
+        .bind(groupe_id)
+        .fetch_one(pool.get_ref())
+        .await?;
+        if proposition_existe {
+            return Err(ApiErreur::Conflit(
+                "Vous avez déjà une proposition en attente pour ce groupe ethnique".into(),
+            ));
+        }
     }
 
     let pays_count: i64 = sqlx::query_scalar(
@@ -4947,37 +5045,6 @@ pub async fn soumettre_proposition(
     if pays_count != body.pays_origine_ids.len() as i64 {
         return Err(ApiErreur::Validation(
             "Un ou plusieurs pays d'origine sont introuvables ou inactifs".into(),
-        ));
-    }
-
-    let salle_existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(
-            SELECT 1 FROM afrolang.salle
-            WHERE groupe_ethnique_id = $1 AND actif = TRUE AND deleted_at IS NULL
-        )",
-    )
-    .bind(body.groupe_ethnique_id)
-    .fetch_one(pool.get_ref())
-    .await?;
-    if salle_existe {
-        return Err(ApiErreur::Conflit(
-            "Une salle publique existe déjà pour ce groupe ethnique".into(),
-        ));
-    }
-
-    let proposition_existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(
-            SELECT 1 FROM afrolang.proposition_salle
-            WHERE auteur_id = $1 AND groupe_ethnique_id = $2 AND statut = 'en_attente'
-        )",
-    )
-    .bind(auteur_id)
-    .bind(body.groupe_ethnique_id)
-    .fetch_one(pool.get_ref())
-    .await?;
-    if proposition_existe {
-        return Err(ApiErreur::Conflit(
-            "Vous avez déjà une proposition en attente pour ce groupe ethnique".into(),
         ));
     }
 
@@ -5005,8 +5072,8 @@ pub async fn soumettre_proposition(
     let proposition_id: Uuid = sqlx::query_scalar(
         "INSERT INTO afrolang.proposition_salle
             (auteur_id, titre, description, justification,
-             langue_cible, langue_code, groupe_ethnique_id, pays_origine_ids)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             langue_cible, langue_code, groupe_ethnique_id, groupe_ethnique_libre, pays_origine_ids)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          RETURNING id",
     )
     .bind(auteur_id)
@@ -5016,6 +5083,7 @@ pub async fn soumettre_proposition(
     .bind(langue_cible)
     .bind(langue_code_clean.as_deref())
     .bind(body.groupe_ethnique_id)
+    .bind(groupe_libre.as_deref())
     .bind(&body.pays_origine_ids)
     .fetch_one(pool.get_ref())
     .await?;
@@ -5033,6 +5101,7 @@ pub async fn soumettre_proposition(
         Some(serde_json::json!({
             "titre": titre,
             "groupe_ethnique_id": body.groupe_ethnique_id,
+            "groupe_ethnique_libre": groupe_libre,
             "langue_cible": langue_cible,
         })),
         ip.as_deref(),

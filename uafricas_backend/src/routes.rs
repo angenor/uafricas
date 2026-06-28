@@ -784,6 +784,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/propositions/moi", web::get().to(afrolang::lister_mes_propositions))
                     .route("/propositions/{id}/retirer", web::patch().to(afrolang::retirer_ma_proposition))
                     .route("/pays-disponibles", web::get().to(afrolang::lister_pays_disponibles))
+                    .route("/territoires", web::get().to(afrolang::lister_territoires))
                     // Sessions - salles publiques (feature 005 Option A)
                     .route("/salles/{salle_id}/sessions", web::get().to(afrolang::lister_sessions_salle_publique))
                     .route("/salles/{salle_id}/sessions", web::post().to(afrolang::creer_session_salle_publique))

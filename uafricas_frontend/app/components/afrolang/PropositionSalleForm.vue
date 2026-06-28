@@ -74,7 +74,7 @@
         </label>
         <select
           id="prop-groupe"
-          v-model="form.groupe_ethnique_id"
+          v-model="groupeSelection"
           required
           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
         >
@@ -86,38 +86,75 @@
           >
             {{ g.nom }}<span v-if="g.pays_nom"> · {{ g.pays_nom }}</span>
           </option>
+          <option :value="AUTRE">Autre (préciser)…</option>
         </select>
         <p class="text-xs text-gray-500 mt-1">
-          Seuls les groupes ethniques sans salle active sont proposés.
+          Liste non exhaustive : si votre groupe n'y figure pas, choisissez
+          « Autre » et indiquez son nom.
         </p>
+
+        <!-- Champ texte libre quand « Autre » est sélectionné -->
+        <div v-if="groupeSelection === AUTRE" class="mt-3">
+          <label for="prop-groupe-libre" class="block text-sm font-medium text-gray-700 mb-1">
+            Nom du groupe ethnique <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="prop-groupe-libre"
+            v-model="form.groupe_ethnique_libre"
+            type="text"
+            maxlength="250"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+            placeholder="Ex. Bassa, Sérère, Créole haïtien…"
+          >
+        </div>
       </div>
 
       <div class="md:col-span-2">
         <label class="block text-sm font-medium text-gray-700 mb-1">
           Territoire d'origine <span class="text-red-500">*</span>
         </label>
-        <div class="rounded-lg border border-gray-300 p-3 max-h-48 overflow-y-auto bg-gray-50">
-          <div v-if="!paysDisponibles.length" class="text-sm text-gray-500">
-            Chargement des territoires africains…
+        <input
+          v-model="rechercheTerritoire"
+          type="text"
+          class="w-full mb-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+          placeholder="Rechercher un territoire…"
+        >
+        <div class="rounded-lg border border-gray-300 p-3 max-h-64 overflow-y-auto bg-gray-50 space-y-4">
+          <div v-if="!territoires.length" class="text-sm text-gray-500">
+            Chargement des territoires…
           </div>
-          <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <label
-              v-for="p in paysDisponibles"
-              :key="p.id"
-              class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900"
-            >
-              <input
-                v-model="form.pays_origine_ids"
-                type="checkbox"
-                :value="p.id"
-                class="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+          <div v-else-if="!territoiresParContinent.length" class="text-sm text-gray-500">
+            Aucun territoire ne correspond à votre recherche.
+          </div>
+          <fieldset
+            v-for="bloc in territoiresParContinent"
+            v-else
+            :key="bloc.continent"
+          >
+            <legend class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
+              {{ bloc.continent }}
+            </legend>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <label
+                v-for="p in bloc.territoires"
+                :key="p.id"
+                class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900"
               >
-              <span>{{ p.nom }}</span>
-            </label>
-          </div>
+                <input
+                  v-model="form.pays_origine_ids"
+                  type="checkbox"
+                  :value="p.id"
+                  class="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                >
+                <span>{{ p.nom }}</span>
+              </label>
+            </div>
+          </fieldset>
         </div>
         <p class="text-xs text-gray-500 mt-1">
-          Sélectionnez au moins un territoire où la langue cible est parlée à l'origine.
+          Sélectionnez au moins un territoire où la langue cible est parlée — y
+          compris hors d'Afrique (diaspora, créoles, langues afro-descendantes).
+          {{ form.pays_origine_ids.length }} sélectionné(s).
         </p>
       </div>
 
@@ -174,9 +211,9 @@
 import { computed, reactive, ref } from 'vue'
 import type {
   GroupeEthniqueResume,
-  PaysOrigineLight,
   PropositionSalle,
   SoumettrePropositionPayload,
+  TerritoireAPI,
 } from '~/composables/useAfrolang'
 
 interface GroupeOption {
@@ -187,7 +224,7 @@ interface GroupeOption {
 
 const props = defineProps<{
   groupesDisponibles: GroupeOption[]
-  paysDisponibles: PaysOrigineLight[]
+  territoires: TerritoireAPI[]
 }>()
 
 const emit = defineEmits<{
@@ -196,26 +233,53 @@ const emit = defineEmits<{
 
 const { proposerSalle } = useAfrolang()
 
+/** Valeur sentinelle du sélecteur de groupe pour l'option « Autre ». */
+const AUTRE = '__autre__'
+
 const enCours = ref(false)
 const messageErreur = ref<string | null>(null)
 const messageSucces = ref<string | null>(null)
 
-const form = reactive<SoumettrePropositionPayload>({
+/** Sélection du groupe ethnique : '' (aucun), un UUID de groupe, ou AUTRE. */
+const groupeSelection = ref<string>('')
+
+const form = reactive({
   titre: '',
   description: '',
   justification: '',
   langue_cible: '',
   langue_code: '',
-  groupe_ethnique_id: '',
-  pays_origine_ids: [],
+  groupe_ethnique_libre: '',
+  pays_origine_ids: [] as string[],
 })
+
+// ── Territoires groupés par continent (Afrique en tête, ordre fourni par l'API) ──
+const rechercheTerritoire = ref('')
+
+const territoiresParContinent = computed(() => {
+  const filtre = rechercheTerritoire.value.trim().toLowerCase()
+  const groupes = new Map<string, TerritoireAPI[]>()
+  for (const t of props.territoires) {
+    if (filtre && !t.nom.toLowerCase().includes(filtre)) continue
+    const cle = t.continent || 'Autres'
+    if (!groupes.has(cle)) groupes.set(cle, [])
+    groupes.get(cle)!.push(t)
+  }
+  return Array.from(groupes, ([continent, territoires]) => ({ continent, territoires }))
+})
+
+const groupeValide = computed(() =>
+  groupeSelection.value === AUTRE
+    ? form.groupe_ethnique_libre.trim().length > 0
+    : groupeSelection.value.length > 0,
+)
 
 const formulaireValide = computed(() =>
   form.titre.trim().length > 0
   && form.description.trim().length > 0
   && form.justification.trim().length > 0
   && form.langue_cible.trim().length > 0
-  && form.groupe_ethnique_id.length > 0
+  && groupeValide.value
   && form.pays_origine_ids.length > 0,
 )
 
@@ -225,8 +289,10 @@ const reinitialiser = () => {
   form.justification = ''
   form.langue_cible = ''
   form.langue_code = ''
-  form.groupe_ethnique_id = ''
+  form.groupe_ethnique_libre = ''
   form.pays_origine_ids = []
+  groupeSelection.value = ''
+  rechercheTerritoire.value = ''
 }
 
 const soumettre = async () => {
@@ -235,13 +301,15 @@ const soumettre = async () => {
   if (!formulaireValide.value) return
   enCours.value = true
   try {
+    const estAutre = groupeSelection.value === AUTRE
     const payload: SoumettrePropositionPayload = {
       titre: form.titre.trim(),
       description: form.description.trim(),
       justification: form.justification.trim(),
       langue_cible: form.langue_cible.trim(),
       langue_code: form.langue_code?.trim() || null,
-      groupe_ethnique_id: form.groupe_ethnique_id,
+      groupe_ethnique_id: estAutre ? null : groupeSelection.value,
+      groupe_ethnique_libre: estAutre ? form.groupe_ethnique_libre.trim() : null,
       pays_origine_ids: [...form.pays_origine_ids],
     }
     const proposition = await proposerSalle(payload)

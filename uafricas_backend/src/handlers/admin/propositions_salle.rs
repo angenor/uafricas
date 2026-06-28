@@ -227,12 +227,13 @@ pub async fn valider_proposition(
         String,
         String,
         Option<String>,
-        Uuid,
+        Option<Uuid>,
+        Option<String>,
         Vec<Uuid>,
         PropositionStatut,
     )> = sqlx::query_as(
         "SELECT id, auteur_id, titre, description, langue_cible, langue_code,
-                groupe_ethnique_id, pays_origine_ids, statut
+                groupe_ethnique_id, groupe_ethnique_libre, pays_origine_ids, statut
          FROM afrolang.proposition_salle
          WHERE id = $1 FOR UPDATE",
     )
@@ -248,6 +249,7 @@ pub async fn valider_proposition(
         langue_cible,
         langue_code,
         groupe_ethnique_id,
+        groupe_ethnique_libre,
         pays_origine_ids,
         statut,
     ) = row.ok_or_else(|| ApiErreur::NonTrouve("Proposition introuvable".into()))?;
@@ -277,8 +279,8 @@ pub async fn valider_proposition(
     let salle_id: Uuid = sqlx::query_scalar(
         "INSERT INTO afrolang.salle
             (titre, slug, description, langue_cible, langue_code,
-             groupe_ethnique_id, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+             groupe_ethnique_id, groupe_ethnique_libre, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING id",
     )
     .bind(&titre)
@@ -287,6 +289,7 @@ pub async fn valider_proposition(
     .bind(&langue_cible)
     .bind(langue_code.as_deref())
     .bind(groupe_ethnique_id)
+    .bind(groupe_ethnique_libre.as_deref())
     .bind(auteur_id)
     .fetch_one(&mut *tx)
     .await?;

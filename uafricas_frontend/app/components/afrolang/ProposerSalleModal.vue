@@ -2,9 +2,9 @@
 // Modale « Proposer une salle » + suivi de mes propositions.
 // Feature 001-admin-salles-publiques, US1 — refactor en modale (UX choix).
 import type {
-  PaysOrigineLight,
   PropositionSalle,
   StatutProposition,
+  TerritoireAPI,
 } from '~/composables/useAfrolang'
 
 const props = defineProps<{
@@ -15,11 +15,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const config = useRuntimeConfig()
-const apiBase = config.public.apiBaseUrl as string
-const userStore = useUserStore()
-
-const { listerGroupesEthniques, listerMesPropositions } = useAfrolang()
+const { listerGroupesEthniques, listerMesPropositions, listerTerritoires } = useAfrolang()
 
 interface GroupeOption {
   id: string
@@ -29,7 +25,7 @@ interface GroupeOption {
 
 const onglet = ref<'proposer' | 'mes-propositions'>('proposer')
 const groupesDisponibles = ref<GroupeOption[]>([])
-const paysDisponibles = ref<PaysOrigineLight[]>([])
+const territoiresDisponibles = ref<TerritoireAPI[]>([])
 const propositions = ref<PropositionSalle[]>([])
 const chargementListe = ref(false)
 const filtreStatut = ref<StatutProposition | ''>('')
@@ -50,20 +46,8 @@ const chargerGroupes = async () => {
     }))
 }
 
-const chargerPays = async () => {
-  try {
-    const headers = userStore.accessToken
-      ? { Authorization: `Bearer ${userStore.accessToken}` }
-      : undefined
-    const reponse = await $fetch<{ success: boolean; data: PaysOrigineLight[] }>(
-      `${apiBase}/api/afrolang/pays-disponibles`,
-      { headers },
-    )
-    if (reponse.success) paysDisponibles.value = reponse.data
-  }
-  catch (e) {
-    console.error('Erreur chargerPays:', e)
-  }
+const chargerTerritoires = async () => {
+  territoiresDisponibles.value = await listerTerritoires()
 }
 
 const rechargerListe = async () => {
@@ -106,7 +90,7 @@ let dejaCharge = false
 const chargerSiBesoin = async () => {
   if (dejaCharge) return
   dejaCharge = true
-  await Promise.all([chargerGroupes(), chargerPays(), rechargerListe()])
+  await Promise.all([chargerGroupes(), chargerTerritoires(), rechargerListe()])
 }
 
 watch(() => props.open, (val) => {
@@ -180,7 +164,7 @@ onMounted(() => {
           <section v-if="onglet === 'proposer'">
             <AfrolangPropositionSalleForm
               :groupes-disponibles="groupesDisponibles"
-              :pays-disponibles="paysDisponibles"
+              :territoires="territoiresDisponibles"
               @soumis="ajouterProposition"
             />
           </section>

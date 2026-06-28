@@ -43,7 +43,7 @@ const statutLibelle = (statut: string) => {
       </NuxtLink>
     </td>
     <td>{{ proposition.auteur.prenom }} {{ proposition.auteur.nom }}</td>
-    <td>{{ proposition.groupe_ethnique.nom }}</td>
+    <td>{{ proposition.groupe_ethnique?.nom ?? proposition.groupe_ethnique_libre }}</td>
     <td>{{ proposition.langue_cible }}</td>
     <td><span :class="badgeClass(proposition.statut)">{{ statutLibelle(proposition.statut) }}</span></td>
     <td class="text-sm text-base-content/70">{{ formatDate(proposition.created_at) }}</td>
