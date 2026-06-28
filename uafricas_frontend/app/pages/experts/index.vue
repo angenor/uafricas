@@ -66,9 +66,10 @@
           <div class="flex-1 min-w-0">
             <!-- Boutons d'action : trouver un expert sur mesure + devenir expert -->
             <div class="flex flex-wrap justify-center items-center gap-4 mb-10">
-              <NuxtLink
-                to="/filtre-expert"
-                class="inline-flex items-center gap-3 bg-white px-8 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all group"
+              <button
+                type="button"
+                class="inline-flex items-center gap-3 bg-white px-8 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all group cursor-pointer"
+                @click="filtreSurMesureOuvert = true"
               >
                 <div
                   class="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform"
@@ -96,7 +97,7 @@
                     d="M17 8l4 4m0 0l-4 4m4-4H3"
                   />
                 </svg>
-              </NuxtLink>
+              </button>
 
               <!-- CTA : soumettre sa demande pour devenir expert -->
               <NuxtLink
@@ -326,6 +327,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Modale timeline : trouver un(e) expert(e) sur mesure -->
+    <ExpertsExpertFiltreSurMesureModal
+      :is-open="filtreSurMesureOuvert"
+      @close="filtreSurMesureOuvert = false"
+      @apply="appliquerFiltreSurMesure"
+    />
   </div>
 </template>
 
@@ -363,6 +371,7 @@ const showMoreCategories = ref(false)
 const sidebarOpen = ref(false)
 const currentPage = ref(1)
 const parPage = 12
+const filtreSurMesureOuvert = ref(false)
 
 // Sort options
 const sortOptions = [
@@ -450,6 +459,22 @@ const resetFilters = () => {
 
 const handleSearch = () => {
   currentPage.value = 1
+  chargerExperts()
+}
+
+// Appliquer les critères choisis dans la modale timeline
+const appliquerFiltreSurMesure = (filtres: {
+  domaine: string
+  pays: string
+  situation: string
+  recherche: string
+}) => {
+  categorySelected.value = filtres.domaine || 'Tout'
+  selectedCountry.value = filtres.pays
+  selectedProfile.value = filtres.situation
+  searchTerm.value = filtres.recherche
+  currentPage.value = 1
+  filtreSurMesureOuvert.value = false
   chargerExperts()
 }
 

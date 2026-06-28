@@ -192,6 +192,28 @@ export const PAYS_EXPERTS: PaysOption[] = [
   { value: 'États-Unis', label: 'États-Unis' },
 ]
 
+/**
+ * Liste complète des territoires pour le filtre « sur mesure » :
+ * les 54 pays d'Afrique + principaux territoires de la diaspora.
+ */
+export const TERRITOIRES_EXPERTS: string[] = [
+  // Afrique (54)
+  'Afrique du Sud', 'Algérie', 'Angola', 'Bénin', 'Botswana', 'Burkina Faso',
+  'Burundi', 'Cameroun', 'Cap-Vert', 'Centrafrique', 'Comores', 'Congo',
+  'Côte d\'Ivoire', 'Djibouti', 'Égypte', 'Érythrée', 'Eswatini', 'Éthiopie',
+  'Gabon', 'Gambie', 'Ghana', 'Guinée', 'Guinée-Bissau', 'Guinée équatoriale',
+  'Kenya', 'Lesotho', 'Liberia', 'Libye', 'Madagascar', 'Malawi', 'Mali',
+  'Maroc', 'Maurice', 'Mauritanie', 'Mozambique', 'Namibie', 'Niger',
+  'Nigeria', 'Ouganda', 'RD Congo', 'Rwanda', 'São Tomé-et-Príncipe',
+  'Sénégal', 'Seychelles', 'Sierra Leone', 'Somalie', 'Soudan',
+  'Soudan du Sud', 'Tanzanie', 'Tchad', 'Togo', 'Tunisie', 'Zambie', 'Zimbabwe',
+  // Diaspora
+  'France', 'Belgique', 'Suisse', 'Luxembourg', 'Royaume-Uni', 'Allemagne',
+  'Espagne', 'Italie', 'Portugal', 'Pays-Bas', 'Canada', 'États-Unis',
+  'Brésil', 'Haïti', 'Jamaïque', 'Émirats arabes unis', 'Arabie saoudite',
+  'Qatar', 'Chine', 'Inde', 'Australie',
+]
+
 // ──────────────────────────────────────────────────────────────
 // Composable
 // ──────────────────────────────────────────────────────────────
