@@ -36,6 +36,9 @@ const personnalites = ref<PersonnaliteConnueAPI[]>([])
 const chargement = ref(true)
 const domaineFiltre = ref<DomainePersonnalite | 'tous'>('tous')
 
+// Pagination locale (grille jusqu'à 4 colonnes → 8 par page)
+const { page, totalPages, pageItems: personnalitesPage } = usePaginationLocale(personnalites, 8)
+
 const domaines: { value: DomainePersonnalite | 'tous', label: string }[] = [
   { value: 'tous', label: 'Tous' },
   { value: 'politique', label: 'Politique' },
@@ -167,7 +170,7 @@ const proposerPersonnalite = () => {
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
       >
         <article
-          v-for="p in personnalites"
+          v-for="p in personnalitesPage"
           :key="p.id"
           class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col"
         >
@@ -212,31 +215,58 @@ const proposerPersonnalite = () => {
             >
               En savoir plus
             </a>
+            <!-- Bandeau de suspension (>10 signalements) -->
+            <div
+              v-if="p.suspendu"
+              class="mt-3 flex items-start gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-800"
+            >
+              <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span>Contribution suspendue — en cours de vérification.</span>
+            </div>
+
             <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
-              <button
-                type="button"
-                class="inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
-                @click="ouvrirContribution('edition', p)"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Modifier
-              </button>
-              <button
-                type="button"
-                class="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
-                @click="ouvrirContribution('suppression', p)"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Supprimer
-              </button>
+              <template v-if="!p.suspendu">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
+                  @click="ouvrirContribution('edition', p)"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Modifier
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
+                  @click="ouvrirContribution('suppression', p)"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Supprimer
+                </button>
+              </template>
+              <OpportuniteAfriqueContributionSignalerBouton
+                type-objet="personnalite_connue"
+                :objet-id="p.id"
+                :libelle="p.nom_complet"
+                :a-signale="p.a_signale"
+                :est-authentifie="estAuthentifie"
+                @require-login="emit('require-login')"
+                @suspendu="p.suspendu = true"
+              />
             </div>
           </div>
         </article>
       </div>
+
+      <OpportuniteAfriquePaginationLocale
+        v-if="!chargement && personnalites.length"
+        v-model:page="page"
+        :total-pages="totalPages"
+        accent-class="bg-custom-chocolat border-custom-chocolat text-white"
+      />
       </div>
     </div>
   </section>

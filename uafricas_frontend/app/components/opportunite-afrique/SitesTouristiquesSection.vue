@@ -80,6 +80,18 @@ const privesFiltres = computed(() =>
   ),
 )
 
+// Pagination locale par famille (grille 3 colonnes → 9 par page)
+const {
+  page: pageEmblematique,
+  totalPages: totalPagesEmblematique,
+  pageItems: emblematiquesPage,
+} = usePaginationLocale(emblematiquesFiltres, 9)
+const {
+  page: pagePrive,
+  totalPages: totalPagesPrive,
+  pageItems: privesPage,
+} = usePaginationLocale(privesFiltres, 9)
+
 const chargerEmblematiques = async () => {
   chargementEmblematiques.value = true
   sitesEmblematiques.value = await listerSitesTouristiques(props.ficheId, 'emblematique')
@@ -233,7 +245,7 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
 
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <OpportuniteAfriqueSiteTouristiqueCarte
-              v-for="site in emblematiquesFiltres"
+              v-for="site in emblematiquesPage"
               :key="site.id"
               :site="site"
               :est-authentifie="estAuthentifie"
@@ -243,6 +255,12 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
               @suspendu="(s) => (s.suspendu = true)"
             />
           </div>
+
+          <OpportuniteAfriquePaginationLocale
+            v-model:page="pageEmblematique"
+            :total-pages="totalPagesEmblematique"
+            accent-class="bg-custom-chocolat border-custom-chocolat text-white"
+          />
         </div>
 
         <!-- Sites privés -->
@@ -307,7 +325,7 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
 
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <OpportuniteAfriqueSiteTouristiqueCarte
-              v-for="site in privesFiltres"
+              v-for="site in privesPage"
               :key="site.id"
               :site="site"
               :est-authentifie="estAuthentifie"
@@ -317,6 +335,12 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
               @suspendu="(s) => (s.suspendu = true)"
             />
           </div>
+
+          <OpportuniteAfriquePaginationLocale
+            v-model:page="pagePrive"
+            :total-pages="totalPagesPrive"
+            accent-class="bg-custom-green border-custom-green text-white"
+          />
         </div>
       </div>
     </div>

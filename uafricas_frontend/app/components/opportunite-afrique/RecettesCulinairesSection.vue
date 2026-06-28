@@ -35,6 +35,35 @@ const { listerRecettesCulinaires, resoudreUrlImage } = useOpportuniteAfrique()
 const recettes = ref<RecetteCulinaireAPI[]>([])
 const chargement = ref(true)
 
+// Filtre par zone (ville) de consommation
+const zoneSelectionnee = ref('')
+
+// Liste des zones distinctes (les territoires peuvent être séparés par des virgules)
+const zonesDisponibles = computed(() => {
+  const ensemble = new Set<string>()
+  for (const recette of recettes.value) {
+    if (!recette.territoires_consommation) continue
+    for (const zone of recette.territoires_consommation.split(',')) {
+      const valeur = zone.trim()
+      if (valeur) ensemble.add(valeur)
+    }
+  }
+  return Array.from(ensemble).sort((a, b) => a.localeCompare(b, 'fr'))
+})
+
+const recettesFiltrees = computed(() => {
+  if (!zoneSelectionnee.value) return recettes.value
+  return recettes.value.filter((recette) =>
+    (recette.territoires_consommation || '')
+      .split(',')
+      .map((z) => z.trim())
+      .includes(zoneSelectionnee.value),
+  )
+})
+
+// Pagination locale (grille 3 colonnes → 9 par page)
+const { page, totalPages, pageItems: recettesPage } = usePaginationLocale(recettesFiltrees, 9)
+
 // Modale de détail
 const recetteSelectionnee = ref<RecetteCulinaireAPI | null>(null)
 const showDetail = ref(false)
@@ -131,9 +160,41 @@ const proposerRecette = () => ouvrirContribution('ajout')
           </button>
         </div>
 
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <template v-else>
+          <!-- Filtre : zone (ville) de consommation -->
+          <div v-if="zonesDisponibles.length" class="mb-6 flex flex-wrap items-center gap-3">
+            <label for="filtre-zone-recette" class="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+              <font-awesome-icon :icon="['fas', 'location-dot']" class="w-4 h-4 text-amber-700" />
+              Zone (ville) de consommation
+            </label>
+            <select
+              id="filtre-zone-recette"
+              v-model="zoneSelectionnee"
+              class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-600"
+            >
+              <option value="">Toutes les zones</option>
+              <option v-for="zone in zonesDisponibles" :key="zone" :value="zone">{{ zone }}</option>
+            </select>
+            <button
+              v-if="zoneSelectionnee"
+              type="button"
+              class="text-sm font-medium text-amber-700 hover:underline cursor-pointer"
+              @click="zoneSelectionnee = ''"
+            >
+              Réinitialiser
+            </button>
+          </div>
+
+          <div
+            v-if="recettesFiltrees.length === 0"
+            class="text-center py-12 bg-white rounded-lg"
+          >
+            <p class="text-gray-600">Aucune recette pour cette zone.</p>
+          </div>
+
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <article
-            v-for="recette in recettes"
+            v-for="recette in recettesPage"
             :key="recette.id"
             class="group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col"
           >
@@ -197,6 +258,15 @@ const proposerRecette = () => ouvrirContribution('ajout')
                 </span>
               </div>
 
+              <!-- Bandeau de suspension (>10 signalements) -->
+              <div
+                v-if="recette.suspendu"
+                class="mt-3 flex items-start gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-800"
+              >
+                <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span>Contribution suspendue — en cours de vérification par la modération.</span>
+              </div>
+
               <!-- Actions -->
               <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-auto pt-3 border-t border-gray-100 text-xs">
                 <button
@@ -207,26 +277,44 @@ const proposerRecette = () => ouvrirContribution('ajout')
                   <font-awesome-icon :icon="['fas', 'eye']" class="w-3.5 h-3.5" />
                   Détails
                 </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1 font-medium text-custom-chocolat hover:underline cursor-pointer"
-                  @click="ouvrirContribution('edition', recette)"
-                >
-                  <font-awesome-icon :icon="['fas', 'pen']" class="w-3 h-3" />
-                  Modifier
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1 font-medium text-red-600 hover:underline cursor-pointer"
-                  @click="ouvrirContribution('suppression', recette)"
-                >
-                  <font-awesome-icon :icon="['fas', 'trash']" class="w-3 h-3" />
-                  Supprimer
-                </button>
+                <template v-if="!recette.suspendu">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 font-medium text-custom-chocolat hover:underline cursor-pointer"
+                    @click="ouvrirContribution('edition', recette)"
+                  >
+                    <font-awesome-icon :icon="['fas', 'pen']" class="w-3 h-3" />
+                    Modifier
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 font-medium text-red-600 hover:underline cursor-pointer"
+                    @click="ouvrirContribution('suppression', recette)"
+                  >
+                    <font-awesome-icon :icon="['fas', 'trash']" class="w-3 h-3" />
+                    Supprimer
+                  </button>
+                </template>
+                <OpportuniteAfriqueContributionSignalerBouton
+                  type-objet="recette_culinaire"
+                  :objet-id="recette.id"
+                  :libelle="recette.titre"
+                  :a-signale="recette.a_signale"
+                  :est-authentifie="estAuthentifie"
+                  @require-login="emit('require-login')"
+                  @suspendu="recette.suspendu = true"
+                />
               </div>
             </div>
           </article>
-        </div>
+          </div>
+
+          <OpportuniteAfriquePaginationLocale
+            v-model:page="page"
+            :total-pages="totalPages"
+            accent-class="bg-amber-700 border-amber-700 text-white"
+          />
+        </template>
       </div>
     </div>
 
