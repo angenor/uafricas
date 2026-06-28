@@ -8,7 +8,7 @@ import type { SalleAppelAPI } from '~/composables/useAppels'
 const props = defineProps<{ salle: SalleAppelAPI }>()
 
 const { finAppel, appelRepondu, raccrocher } = useAppels()
-const { demanderOuverture } = useMessagerie()
+const { demanderOuverture, conversations, listerConversations } = useMessagerie()
 const config = useRuntimeConfig()
 
 // Fenêtre flottante déplaçable + redimensionnable (position/taille persistées).
@@ -30,6 +30,11 @@ const microActif = ref(true)
 const cameraActive = ref(true)
 const partageEcran = ref(false)
 
+// Plein écran (API native) + panneau de discussion intégré à la fenêtre d'appel.
+const racine = ref<HTMLElement | null>(null)
+const plein = ref(false)
+const chatOuvert = ref(false)
+
 const videoLocal = ref<HTMLVideoElement | null>(null)
 const videoDistant = ref<HTMLVideoElement | null>(null)
 
@@ -45,6 +50,10 @@ const nomComplet = computed(() => `${autre.value.prenom} ${autre.value.nom}`.tri
 const estConnecte = computed(() => etat.value === 'connecte')
 // Affiche le repli messagerie après un échec, un départ ou un refus/annulation.
 const enRepli = computed(() => ['echec', 'parti', 'refuse', 'annule'].includes(etat.value))
+// Pastille de messages non lus sur le bouton de discussion (0 si le panneau est ouvert).
+const nonLusChat = computed(() =>
+  chatOuvert.value ? 0 : (conversations.value.find(c => c.ami.id === autre.value.id)?.non_lus ?? 0),
+)
 
 const arreterRelance = () => {
   if (relanceAppel) { clearInterval(relanceAppel); relanceAppel = null }
@@ -255,15 +264,38 @@ const ouvrirMessagerie = () => {
   demanderOuverture(cible)
 }
 
+// ── Plein écran (API native sur la fenêtre d'appel) ─────────────
+const surChangementPleinEcran = () => {
+  plein.value = !!document.fullscreenElement && document.fullscreenElement === racine.value
+}
+const basculerPleinEcran = async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen()
+    else await racine.value?.requestFullscreen()
+  }
+  catch {
+    // Plein écran refusé ou non supporté : la fenêtre flottante reste utilisable.
+  }
+}
+
 onMounted(demarrer)
-onBeforeUnmount(nettoyer)
+onMounted(() => {
+  document.addEventListener('fullscreenchange', surChangementPleinEcran)
+  // Charge les conversations pour alimenter la pastille de non-lus du panneau.
+  if (conversations.value.length === 0) void listerConversations()
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('fullscreenchange', surChangementPleinEcran)
+  nettoyer()
+})
 </script>
 
 <template>
   <div
+    ref="racine"
     :style="styleFenetre"
-    class="fixed z-[80] bg-gray-900 flex flex-col rounded-2xl overflow-hidden shadow-2xl border border-white/10"
-    :class="deplace ? 'select-none' : ''"
+    class="fixed z-[80] bg-gray-900 flex flex-col overflow-hidden shadow-2xl border border-white/10"
+    :class="[deplace ? 'select-none' : '', plein ? 'rounded-none' : 'rounded-2xl']"
   >
     <!-- En-tête (zone de déplacement) -->
     <header
@@ -279,9 +311,20 @@ onBeforeUnmount(nettoyer)
         <p class="font-semibold truncate">Appel · {{ nomComplet }}</p>
         <p class="text-xs text-white/60 truncate">Visioconférence directe</p>
       </div>
-      <button type="button" class="p-2 hover:bg-white/10 rounded-lg transition" aria-label="Fermer" @click="quitter">
-        <font-awesome-icon icon="fa-solid fa-xmark" class="text-xl" />
-      </button>
+      <div class="flex items-center gap-1 shrink-0">
+        <button
+          type="button"
+          class="p-2 hover:bg-white/10 rounded-lg transition"
+          :aria-label="plein ? 'Quitter le plein écran' : 'Plein écran'"
+          :title="plein ? 'Quitter le plein écran' : 'Plein écran'"
+          @click="basculerPleinEcran"
+        >
+          <font-awesome-icon :icon="plein ? 'fa-solid fa-compress' : 'fa-solid fa-expand'" class="text-lg" />
+        </button>
+        <button type="button" class="p-2 hover:bg-white/10 rounded-lg transition" aria-label="Fermer" @click="quitter">
+          <font-awesome-icon icon="fa-solid fa-xmark" class="text-xl" />
+        </button>
+      </div>
     </header>
 
     <!-- Scène vidéo -->
@@ -348,8 +391,11 @@ onBeforeUnmount(nettoyer)
         </button>
       </div>
 
-      <!-- Flux local (vignette) -->
-      <div class="absolute bottom-4 right-4 w-32 h-44 sm:w-40 sm:h-28 rounded-xl overflow-hidden border-2 border-white/30 shadow-lg bg-black">
+      <!-- Flux local (vignette) — bascule à gauche quand la discussion est ouverte -->
+      <div
+        class="absolute bottom-4 w-32 h-44 sm:w-40 sm:h-28 rounded-xl overflow-hidden border-2 border-white/30 shadow-lg bg-black transition-all"
+        :class="chatOuvert ? 'left-4' : 'right-4'"
+      >
         <video ref="videoLocal" autoplay playsinline muted class="w-full h-full" :class="partageEcran ? 'object-contain' : 'object-cover'" />
         <div v-if="!cameraActive && !partageEcran" class="absolute inset-0 flex items-center justify-center bg-gray-800 text-white/50">
           <font-awesome-icon icon="fa-solid fa-video-slash" />
@@ -359,6 +405,16 @@ onBeforeUnmount(nettoyer)
           Votre écran
         </div>
       </div>
+
+      <!-- Panneau de discussion intégré (tiroir latéral droit) -->
+      <Transition name="slide-chat">
+        <div
+          v-if="chatOuvert"
+          class="absolute inset-y-0 right-0 w-full max-w-[22rem] bg-white flex flex-col shadow-2xl border-l border-gray-200 z-30"
+        >
+          <SocialFenetreConversation :ami="autre" @retour="chatOuvert = false" />
+        </div>
+      </Transition>
     </div>
 
     <!-- Contrôles -->
@@ -383,6 +439,20 @@ onBeforeUnmount(nettoyer)
       </button>
       <button
         type="button"
+        class="relative w-12 h-12 rounded-full flex items-center justify-center transition"
+        :class="chatOuvert ? 'bg-custom-chocolat text-white' : 'bg-white/15 text-white hover:bg-white/25'"
+        :aria-label="chatOuvert ? 'Fermer la discussion' : 'Ouvrir la discussion'"
+        :title="chatOuvert ? 'Fermer la discussion' : 'Discuter avec ' + autre.prenom"
+        @click="chatOuvert = !chatOuvert"
+      >
+        <font-awesome-icon icon="fa-solid fa-comments" />
+        <span
+          v-if="nonLusChat > 0"
+          class="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border border-gray-900"
+        >{{ nonLusChat > 9 ? '9+' : nonLusChat }}</span>
+      </button>
+      <button
+        type="button"
         class="w-12 h-12 rounded-full flex items-center justify-center transition disabled:opacity-40 disabled:cursor-not-allowed"
         :class="partageEcran ? 'bg-custom-green text-white' : 'bg-white/15 text-white hover:bg-white/25'"
         :disabled="!estConnecte"
@@ -402,8 +472,9 @@ onBeforeUnmount(nettoyer)
       </button>
     </footer>
 
-    <!-- Poignée de redimensionnement (coin bas-droit) -->
+    <!-- Poignée de redimensionnement (coin bas-droit) — masquée en plein écran -->
     <div
+      v-show="!plein"
       class="absolute bottom-0 right-0 w-5 h-5 flex items-end justify-end p-0.5 cursor-nwse-resize touch-none z-10 text-white/40 hover:text-white"
       title="Glissez pour redimensionner"
       @pointerdown="demarrerRedimensionnement"
@@ -417,3 +488,17 @@ onBeforeUnmount(nettoyer)
     </div>
   </div>
 </template>
+
+<style scoped>
+@reference "~/assets/css/main.css";
+
+.slide-chat-enter-active,
+.slide-chat-leave-active {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.slide-chat-enter-from,
+.slide-chat-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}
+</style>
