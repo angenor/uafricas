@@ -4,7 +4,7 @@
 
 
 CREATE TYPE marketplace.type_operation AS ENUM (
-    'vente', 'troc', 'don', 'association', 'opportunite'
+    'vente', 'troc', 'don', 'association', 'opportunite', 'opportunite_investissement'
 );
 
 CREATE TYPE marketplace.etat_annonce AS ENUM (
@@ -29,6 +29,8 @@ CREATE TABLE marketplace.annonce (
     description         TEXT         NOT NULL,
     type_operation      marketplace.type_operation      NOT NULL,
     categorie_id        UUID,                            -- [xref] shared.categorie
+    secteur_id          UUID,                            -- [xref] shared.domaine_secteur
+    secteur_autre       VARCHAR(200),                    -- libellé libre si « Autre »
     condition_article   marketplace.condition_article    NOT NULL DEFAULT 'non_applicable',
     prix                DECIMAL(15,2),
     devise              VARCHAR(5)   DEFAULT 'XOF',
@@ -52,6 +54,7 @@ CREATE TABLE marketplace.annonce (
 CREATE INDEX idx_annonce_etat        ON marketplace.annonce(etat)           WHERE deleted_at IS NULL;
 CREATE INDEX idx_annonce_type_op     ON marketplace.annonce(type_operation)  WHERE deleted_at IS NULL;
 CREATE INDEX idx_annonce_categorie   ON marketplace.annonce(categorie_id)    WHERE deleted_at IS NULL;
+CREATE INDEX idx_annonce_secteur     ON marketplace.annonce(secteur_id)      WHERE deleted_at IS NULL;
 CREATE INDEX idx_annonce_cree_par    ON marketplace.annonce(cree_par);
 CREATE INDEX idx_annonce_expire      ON marketplace.annonce(expire_at)       WHERE etat = 'publiee';
 

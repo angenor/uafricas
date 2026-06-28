@@ -33,7 +33,8 @@ struct ApiResponse<T: serde::Serialize> {
 
 const CONTENU_MESSAGE_MAX: usize = 2000;
 const MAX_PHOTOS_ANNONCE: usize = 5;
-const TYPES_OPERATION_MEMBRE: &[&str] = &["vente", "troc", "don"];
+const TYPES_OPERATION_MEMBRE: &[&str] =
+    &["vente", "troc", "don", "opportunite_investissement"];
 const CONDITIONS_VALIDES: &[&str] = &["neuf", "occasion", "reconditionne", "non_applicable"];
 const TYPES_ANNONCEUR_VALIDES: &[&str] = &["particulier", "entreprise"];
 
@@ -72,6 +73,29 @@ fn valider_lien_web_opt(url: Option<&str>) -> Result<(), ApiErreur> {
         }
     }
     Ok(())
+}
+
+/// Résout le secteur d'une annonce : un identifiant de référentiel (vérifié)
+/// l'emporte sur le libellé libre ; sinon le libellé libre (« Autre ») est retenu.
+async fn resoudre_secteur_annonce(
+    pool: &PgPool,
+    secteur_id: Option<Uuid>,
+    secteur_autre: &Option<String>,
+) -> Result<(Option<Uuid>, Option<String>), ApiErreur> {
+    if let Some(sid) = secteur_id {
+        let existe: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM shared.domaine_secteur WHERE id = $1 AND actif = TRUE)",
+        )
+        .bind(sid)
+        .fetch_one(pool)
+        .await?;
+        if !existe {
+            return Err(ApiErreur::Validation("Secteur inconnu".to_string()));
+        }
+        Ok((Some(sid), None))
+    } else {
+        Ok((None, nettoyer_opt(secteur_autre)))
+    }
 }
 
 fn generer_slug(titre: &str) -> String {
@@ -221,6 +245,7 @@ pub async fn lister_annonces(
         "SELECT {colonnes}
          FROM marketplace.annonce a
          LEFT JOIN shared.categorie c ON c.id = a.categorie_id
+         LEFT JOIN shared.domaine_secteur ds ON ds.id = a.secteur_id
          JOIN iam.utilisateur u ON u.id = a.cree_par
          WHERE a.deleted_at IS NULL
            AND a.etat = 'publiee'
@@ -286,6 +311,7 @@ pub async fn obtenir_annonce(
         "SELECT {}
          FROM marketplace.annonce a
          LEFT JOIN shared.categorie c ON c.id = a.categorie_id
+         LEFT JOIN shared.domaine_secteur ds ON ds.id = a.secteur_id
          JOIN iam.utilisateur u ON u.id = a.cree_par
          WHERE a.id = $1 AND a.deleted_at IS NULL",
         ANNONCE_DETAIL_COLONNES
@@ -380,6 +406,28 @@ pub async fn lister_categories_annonce(
     }))
 }
 
+// ──────────────────────────────────────────────────────────────
+// GET /api/annonces/secteurs — Secteurs d'activité (référentiel partagé)
+// ──────────────────────────────────────────────────────────────
+pub async fn lister_secteurs_annonce(
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let rows = sqlx::query_as::<_, CategorieAnnonceResponse>(
+        "SELECT id, nom, slug, icone
+         FROM shared.domaine_secteur
+         WHERE actif = TRUE
+         ORDER BY nom ASC",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(rows),
+        error: None,
+    }))
+}
+
 // ════════════════════════════════════════════════════════════════
 // Endpoints MEMBRE — feature 001-marche-achat-vente-troc-don
 // ════════════════════════════════════════════════════════════════
@@ -391,6 +439,10 @@ struct ChampsAnnonce {
     description: Option<String>,
     type_operation: Option<String>,
     categorie_id: Option<Uuid>,
+    secteur_id: Option<Uuid>,
+    secteur_autre: Option<String>,
+    /// Vrai si le champ secteur figure dans le multipart (permet de vider en édition).
+    secteur_modifie: bool,
     condition_article: Option<String>,
     prix: Option<f64>,
     devise: Option<String>,
@@ -453,6 +505,14 @@ async fn parser_multipart_annonce(
             "description" => champs.description = Some(valeur),
             "type_operation" => champs.type_operation = Some(valeur.to_lowercase()),
             "categorie_id" => champs.categorie_id = Uuid::parse_str(&valeur).ok(),
+            "secteur_id" => {
+                champs.secteur_modifie = true;
+                champs.secteur_id = Uuid::parse_str(valeur.trim()).ok();
+            }
+            "secteur_autre" => {
+                champs.secteur_modifie = true;
+                champs.secteur_autre = Some(valeur);
+            }
             "condition_article" => champs.condition_article = Some(valeur.to_lowercase()),
             "prix" => champs.prix = valeur.parse::<f64>().ok(),
             "devise" => {
@@ -570,6 +630,7 @@ async fn charger_detail_response(
         "SELECT {}
          FROM marketplace.annonce a
          LEFT JOIN shared.categorie c ON c.id = a.categorie_id
+         LEFT JOIN shared.domaine_secteur ds ON ds.id = a.secteur_id
          JOIN iam.utilisateur u ON u.id = a.cree_par
          WHERE a.id = $1 AND a.deleted_at IS NULL",
         ANNONCE_DETAIL_COLONNES
@@ -678,7 +739,7 @@ pub async fn creer_annonce_membre(
         .unwrap_or("");
     if !TYPES_OPERATION_MEMBRE.contains(&type_op) {
         return Err(ApiErreur::Validation(
-            "Type d'opération invalide (vente, troc ou don)".to_string(),
+            "Type d'opération invalide (vente, troc, don ou opportunité d'investissement)".to_string(),
         ));
     }
     let categorie_id = champs
@@ -750,6 +811,10 @@ pub async fn creer_annonce_membre(
     let site_web_url = nettoyer_opt(&champs.site_web_url);
     valider_lien_web_opt(site_web_url.as_deref())?;
 
+    // Secteur d'activité (référentiel ou libellé libre « Autre »), facultatif.
+    let (secteur_id, secteur_autre) =
+        resoudre_secteur_annonce(pool.get_ref(), champs.secteur_id, &champs.secteur_autre).await?;
+
     let slug = format!("{}-{}", generer_slug(titre), &Uuid::new_v4().to_string()[..8]);
     let id = Uuid::new_v4();
     let prix = if type_op == "vente" { champs.prix } else { None };
@@ -760,12 +825,12 @@ pub async fn creer_annonce_membre(
           prix, devise, prix_negociable, ville, adresse, longitude, latitude,
           type_contact, quantite, etat, cree_par,
           type_annonceur, nom_entreprise, contact_telephone, contact_email,
-          contact_adresse, site_web_url)
+          contact_adresse, site_web_url, secteur_id, secteur_autre)
          VALUES ($1, $2, $3, $4, $5::marketplace.type_operation, $6,
                  $7::marketplace.condition_article, $8, $9, $10, $11, $12, $13, $14,
                  'messagerie_plateforme'::marketplace.type_contact, $15,
                  'publiee'::marketplace.etat_annonce, $16,
-                 $17::marketplace.type_annonceur, $18, $19, $20, $21, $22)",
+                 $17::marketplace.type_annonceur, $18, $19, $20, $21, $22, $23, $24)",
     )
     .bind(id)
     .bind(titre)
@@ -789,6 +854,8 @@ pub async fn creer_annonce_membre(
     .bind(contact_email.as_deref())
     .bind(contact_adresse.as_deref())
     .bind(site_web_url.as_deref())
+    .bind(secteur_id)
+    .bind(secteur_autre.as_deref())
     .execute(pool.get_ref())
     .await?;
 
@@ -1049,7 +1116,7 @@ pub async fn modifier_annonce_membre(
     if let Some(ref type_op) = champs.type_operation {
         if !TYPES_OPERATION_MEMBRE.contains(&type_op.as_str()) {
             return Err(ApiErreur::Validation(
-                "Type d'opération invalide (vente, troc ou don)".to_string(),
+                "Type d'opération invalide (vente, troc, don ou opportunité d'investissement)".to_string(),
             ));
         }
         sets.push(format!("type_operation = ${}::marketplace.type_operation", idx));
@@ -1163,6 +1230,25 @@ pub async fn modifier_annonce_membre(
         }
         q = q.bind(id);
         q.execute(pool.get_ref()).await?;
+    }
+
+    // Secteur (référentiel ou libellé libre) — UPDATE typé séparé (UUID + texte
+    // ne passent pas par le builder dynamique). Appliqué seulement si le champ
+    // figure dans le formulaire, ce qui autorise aussi le vidage (les deux NULL).
+    if champs.secteur_modifie {
+        let (secteur_id, secteur_autre) =
+            resoudre_secteur_annonce(pool.get_ref(), champs.secteur_id, &champs.secteur_autre)
+                .await?;
+        sqlx::query(
+            "UPDATE marketplace.annonce
+             SET secteur_id = $1, secteur_autre = $2, updated_at = NOW()
+             WHERE id = $3 AND deleted_at IS NULL",
+        )
+        .bind(secteur_id)
+        .bind(secteur_autre.as_deref())
+        .bind(id)
+        .execute(pool.get_ref())
+        .await?;
     }
 
     // Remplacement des territoires si fournis

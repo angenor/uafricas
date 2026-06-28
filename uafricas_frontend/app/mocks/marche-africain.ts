@@ -1,6 +1,6 @@
 // Données mock pour le Marché Africain
 
-export type TypeEchange = 'Vente' | 'Troc' | 'Don'
+export type TypeEchange = 'Vente' | 'Troc' | 'Don' | "Opportunité d'investissement"
 export type Categorie = 'Agriculture' | 'Informatique' | 'Immobilier' | 'Voitures' | 'Electronique' | 'Formation'
 export type Devise = 'XOF' | 'EUR' | 'NGN' | 'USD'
 
@@ -52,7 +52,8 @@ export const CATEGORIES: { key: Categorie | 'Tout'; label: string }[] = [
 export const TYPES_ECHANGE: { value: TypeEchange; label: string; color: string }[] = [
   { value: 'Vente', label: 'Vente', color: 'bg-white/90 text-gray-700' },
   { value: 'Troc', label: 'Troc', color: 'bg-purple-100/90 text-purple-700' },
-  { value: 'Don', label: 'Don', color: 'bg-blue-100/90 text-blue-700' }
+  { value: 'Don', label: 'Don', color: 'bg-blue-100/90 text-blue-700' },
+  { value: "Opportunité d'investissement", label: "Opportunité d'investissement", color: 'bg-amber-100/90 text-amber-700' }
 ]
 
 export const DEVISES: { value: Devise; label: string; symbol: string }[] = [

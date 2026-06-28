@@ -19,7 +19,8 @@ use crate::ApiResponse;
 
 // ── Etats valides pour les enums PostgreSQL ─────────────────
 const ETATS_VALIDES: &[&str] = &["brouillon", "publiee", "en_attente", "expiree", "suspendue", "supprimee"];
-const TYPES_OPERATION_VALIDES: &[&str] = &["vente", "troc", "don", "association", "opportunite"];
+const TYPES_OPERATION_VALIDES: &[&str] =
+    &["vente", "troc", "don", "association", "opportunite", "opportunite_investissement"];
 const CONDITIONS_VALIDES: &[&str] = &["neuf", "occasion", "reconditionne", "non_applicable"];
 const TYPES_CONTACT_VALIDES: &[&str] = &["email", "telephone", "messagerie_plateforme"];
 

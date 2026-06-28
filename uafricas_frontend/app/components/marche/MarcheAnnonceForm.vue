@@ -72,6 +72,35 @@
       </div>
     </div>
 
+    <!-- Secteur d'activité (facultatif) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2" for="secteur">
+          Secteur d'activité <span class="text-gray-400 font-normal">(facultatif)</span>
+        </label>
+        <select
+          id="secteur"
+          v-model="form.secteurId"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green bg-white"
+        >
+          <option value="">Aucun secteur</option>
+          <option v-for="s in secteurs" :key="s.id" :value="s.id">{{ s.nom }}</option>
+          <option value="autre">Autre (préciser)…</option>
+        </select>
+      </div>
+      <div v-if="form.secteurId === 'autre'">
+        <label class="block text-sm font-semibold text-gray-700 mb-2" for="secteur-autre">Préciser le secteur</label>
+        <input
+          id="secteur-autre"
+          v-model="form.secteurAutre"
+          type="text"
+          maxlength="200"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+          placeholder="Ex. : Mines, Tourisme…"
+        />
+      </div>
+    </div>
+
     <!-- Prix (vente uniquement) -->
     <div v-if="form.typeEchange === 'Vente'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="md:col-span-1">
@@ -368,6 +397,7 @@ import {
   type AnnonceDetailAPI,
   type AnnonceMediaAPI,
   type CategorieAnnonceAPI,
+  type SecteurAnnonceAPI,
   type PaysAPI,
   type CreerAnnonceForm,
   type TypeEchange,
@@ -394,10 +424,11 @@ const TYPES_MIME = ['image/jpeg', 'image/png', 'image/webp']
 const typesEchange = TYPES_ECHANGE
 const devises = DEVISES
 
-const { listerCategories, listerTerritoires, creerAnnonce, modifierAnnonce, supprimerMedia, erreur } =
+const { listerCategories, listerSecteurs, listerTerritoires, creerAnnonce, modifierAnnonce, supprimerMedia, erreur } =
   useMarcheAfricain()
 
 const categories = ref<CategorieAnnonceAPI[]>([])
+const secteurs = ref<SecteurAnnonceAPI[]>([])
 const territoires = ref<PaysAPI[]>([])
 const territoiresAfrique = computed(() => territoires.value.filter(t => t.continent === 'Afrique'))
 const territoiresHorsAfrique = computed(() => territoires.value.filter(t => t.continent !== 'Afrique'))
@@ -430,7 +461,7 @@ const erreurForm = ref<string | null>(null)
 
 const typeEchangeInitial = (): TypeEchange => {
   const t = props.annonce?.type_echange
-  if (t === 'Vente' || t === 'Troc' || t === 'Don') return t
+  if (t === 'Vente' || t === 'Troc' || t === 'Don' || t === "Opportunité d'investissement") return t
   return 'Vente'
 }
 
@@ -439,6 +470,8 @@ const form = reactive<CreerAnnonceForm>({
   description: props.annonce?.description ?? '',
   typeEchange: typeEchangeInitial(),
   categorieId: '',
+  secteurId: '',
+  secteurAutre: '',
   conditionArticle: 'non_applicable',
   prix: props.annonce?.prix ?? null,
   devise: (props.annonce?.devise as Devise) ?? 'XOF',
@@ -551,8 +584,13 @@ const soumettre = async () => {
 }
 
 onMounted(async () => {
-  const [cats, terrs] = await Promise.all([listerCategories(), listerTerritoires()])
+  const [cats, secs, terrs] = await Promise.all([
+    listerCategories(),
+    listerSecteurs(),
+    listerTerritoires(),
+  ])
   categories.value = cats
+  secteurs.value = secs
   territoires.value = terrs
 
   if (props.annonce) {
@@ -560,6 +598,13 @@ onMounted(async () => {
     // Pré-sélectionner la catégorie par son nom (le détail public expose le nom)
     const cat = cats.find(c => c.nom === props.annonce?.categorie)
     if (cat) form.categorieId = cat.id
+    // Pré-sélectionner le secteur (référentiel via secteur_id, sinon « Autre »)
+    if (props.annonce.secteur_id) {
+      form.secteurId = props.annonce.secteur_id
+    } else if (props.annonce.secteur_autre) {
+      form.secteurId = 'autre'
+      form.secteurAutre = props.annonce.secteur_autre
+    }
     // Pré-sélectionner les territoires par leur nom
     form.paysIds = terrs.filter(t => props.annonce?.pays.includes(t.nom)).map(t => t.id)
   }

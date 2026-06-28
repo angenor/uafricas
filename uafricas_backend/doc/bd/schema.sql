@@ -83,6 +83,7 @@
 \ir schemas/04g_iam_biblio_interactions.sql
 \ir schemas/05_marketplace.sql
 \ir schemas/05b_marketplace_annonceur.sql
+\ir schemas/05c_marketplace_secteur_opportunite.sql
 \ir schemas/06_exchange.sql
 \ir schemas/06b_exchange_candidatures.sql
 \ir schemas/06c_exchange_programme_champs_libres.sql

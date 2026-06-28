@@ -76,6 +76,10 @@
                 <font-awesome-icon :icon="['fas', 'tag']" class="w-4 h-4 text-gray-400" />
                 <span>{{ annonce.categorie }}</span>
               </div>
+              <div v-if="annonce.secteur" class="flex items-center gap-1.5">
+                <font-awesome-icon :icon="['fas', 'briefcase']" class="w-4 h-4 text-gray-400" />
+                <span>{{ annonce.secteur }}</span>
+              </div>
             </div>
 
             <!-- Prix -->
@@ -416,6 +420,8 @@ const getTypeColor = (type: string): string => {
       return 'bg-purple-100 text-purple-700'
     case 'Don':
       return 'bg-blue-100 text-blue-700'
+    case "Opportunité d'investissement":
+      return 'bg-amber-100 text-amber-700'
     default:
       return 'bg-gray-100 text-gray-700'
   }

@@ -34,6 +34,8 @@ export interface AnnonceAPI {
   description: string
   type_echange: string
   categorie: string
+  /** Secteur d'activité résolu (référentiel ou libellé libre), si renseigné */
+  secteur?: string | null
   condition_article: string
   prix: number
   devise: string
@@ -57,6 +59,12 @@ export interface AnnonceDetailAPI {
   description: string
   type_echange: string
   categorie: string
+  /** Secteur d'activité résolu (référentiel ou libellé libre), si renseigné */
+  secteur?: string | null
+  /** Identifiant du secteur de référence (null si « Autre ») */
+  secteur_id?: string | null
+  /** Libellé libre saisi quand l'auteur a choisi « Autre » */
+  secteur_autre?: string | null
   condition_article: string
   prix: number
   devise: string
@@ -133,6 +141,14 @@ export interface CategorieAnnonceAPI {
   icone: string | null
 }
 
+/** Secteur d'activité (référentiel shared.domaine_secteur) */
+export interface SecteurAnnonceAPI {
+  id: string
+  nom: string
+  slug: string
+  icone: string | null
+}
+
 /** Territoire (pays) pour le sélecteur */
 export interface PaysAPI {
   id: string
@@ -162,6 +178,10 @@ export interface CreerAnnonceForm {
   description: string
   typeEchange: TypeEchange
   categorieId: string
+  /** UUID du secteur de référence, ou 'autre' pour saisir un libellé libre, ou '' si aucun */
+  secteurId?: string
+  /** Libellé libre du secteur lorsque secteurId === 'autre' */
+  secteurAutre?: string
   conditionArticle?: string
   prix?: number | null
   devise?: Devise
@@ -202,7 +222,7 @@ export interface AnnonceFiltres {
 
 // ── Types frontend ────────────────────────────────────────────
 
-export type TypeEchange = 'Vente' | 'Troc' | 'Don'
+export type TypeEchange = 'Vente' | 'Troc' | 'Don' | "Opportunité d'investissement"
 export type Categorie = 'Agriculture' | 'Informatique' | 'Immobilier' | 'Voitures' | 'Electronique' | 'Formation'
 export type Devise = 'XOF' | 'EUR' | 'NGN' | 'USD'
 
@@ -232,6 +252,7 @@ export const TYPES_ECHANGE: { value: TypeEchange; label: string; color: string }
   { value: 'Vente', label: 'Vente', color: 'bg-white/90 text-gray-700' },
   { value: 'Troc', label: 'Troc', color: 'bg-purple-100/90 text-purple-700' },
   { value: 'Don', label: 'Don', color: 'bg-blue-100/90 text-blue-700' },
+  { value: "Opportunité d'investissement", label: "Opportunité d'investissement", color: 'bg-amber-100/90 text-amber-700' },
 ]
 
 export const DEVISES: { value: Devise; label: string; symbol: string }[] = [
@@ -289,22 +310,20 @@ export function getCountByType(type: TypeEchange, annonces: AnnonceAPI[]): numbe
 
 /** Mapper type_echange frontend vers valeur(s) DB pour les filtres */
 export function mapperTypesVersDb(types: TypeEchange[]): string {
-  const mapping: Record<TypeEchange, string> = {
-    Vente: 'vente',
-    Troc: 'troc',
-    Don: 'don',
-  }
-  return types.map(t => mapping[t] || t.toLowerCase()).join(',')
+  return types.map(t => MAPPING_TYPE_DB[t] || t.toLowerCase()).join(',')
 }
 
 /** Mapper un type d'echange unique vers sa valeur DB (snake_case) */
 export function mapperTypeVersDb(type: TypeEchange): string {
-  const mapping: Record<TypeEchange, string> = {
-    Vente: 'vente',
-    Troc: 'troc',
-    Don: 'don',
-  }
-  return mapping[type] || type.toLowerCase()
+  return MAPPING_TYPE_DB[type] || type.toLowerCase()
+}
+
+/** Correspondance label frontend → valeur enum DB (marketplace.type_operation) */
+const MAPPING_TYPE_DB: Record<TypeEchange, string> = {
+  Vente: 'vente',
+  Troc: 'troc',
+  Don: 'don',
+  "Opportunité d'investissement": 'opportunite_investissement',
 }
 
 // ── Composable ────────────────────────────────────────────────
@@ -328,6 +347,13 @@ export const useMarcheAfricain = () => {
     if (form.description != null) fd.set('description', form.description)
     if (form.typeEchange != null) fd.set('type_operation', mapperTypeVersDb(form.typeEchange))
     if (form.categorieId) fd.set('categorie_id', form.categorieId)
+    // Secteur : on envoie toujours les deux champs (même vides) pour permettre
+    // le vidage en édition. 'autre' => libellé libre ; UUID => référentiel.
+    if (form.secteurId !== undefined || form.secteurAutre !== undefined) {
+      const estAutre = form.secteurId === 'autre'
+      fd.set('secteur_id', estAutre || !form.secteurId ? '' : form.secteurId)
+      fd.set('secteur_autre', estAutre ? (form.secteurAutre ?? '') : '')
+    }
     if (form.conditionArticle) fd.set('condition_article', form.conditionArticle)
     if (form.prix != null) fd.set('prix', String(form.prix))
     if (form.devise) fd.set('devise', form.devise)
@@ -438,6 +464,19 @@ export const useMarcheAfricain = () => {
       return r.success && r.data ? r.data : []
     } catch (e) {
       console.error('Erreur listerCategories:', e)
+      return []
+    }
+  }
+
+  /** Lister les secteurs d'activité (référentiel partagé). */
+  const listerSecteurs = async (): Promise<SecteurAnnonceAPI[]> => {
+    try {
+      const r = await $fetch<ApiResponse<SecteurAnnonceAPI[]>>(
+        `${apiBase}/api/annonces/secteurs`,
+      )
+      return r.success && r.data ? r.data : []
+    } catch (e) {
+      console.error('Erreur listerSecteurs:', e)
       return []
     }
   }
@@ -667,6 +706,7 @@ export const useMarcheAfricain = () => {
     listerAnnonces,
     obtenirAnnonce,
     listerCategories,
+    listerSecteurs,
     listerTerritoires,
     creerAnnonce,
     contacterAuteur,

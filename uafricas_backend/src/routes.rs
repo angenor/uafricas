@@ -520,6 +520,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("", web::post().to(annonces::creer_annonce_membre))
                     // Routes statiques AVANT la route dynamique /{id} (D8)
                     .route("/categories", web::get().to(annonces::lister_categories_annonce))
+                    .route("/secteurs", web::get().to(annonces::lister_secteurs_annonce))
                     .route("/mes-annonces", web::get().to(annonces::mes_annonces))
                     .route("/favoris", web::get().to(annonces::mes_favoris))
                     .route("/{id}", web::get().to(annonces::obtenir_annonce))

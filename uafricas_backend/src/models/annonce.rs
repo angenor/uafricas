@@ -19,6 +19,7 @@ pub const ANNONCE_LISTE_COLONNES: &str =
      a.quantite, a.nombre_vues, a.cree_par,
      a.created_at, a.updated_at,
      c.nom AS categorie_nom,
+     a.secteur_id, ds.nom AS secteur_nom, a.secteur_autre,
      u.nom AS auteur_nom, u.prenom AS auteur_prenom, u.email AS auteur_email,
      u.telephone_verifie AS auteur_telephone_verifie,
      u.documents_verifie AS auteur_documents_verifie,
@@ -55,6 +56,9 @@ pub struct AnnonceListeRow {
     pub updated_at: DateTime<Utc>,
     // Champs joints
     pub categorie_nom: Option<String>,
+    pub secteur_id: Option<Uuid>,
+    pub secteur_nom: Option<String>,
+    pub secteur_autre: Option<String>,
     pub auteur_nom: String,
     pub auteur_prenom: String,
     pub auteur_email: String,
@@ -98,6 +102,9 @@ pub struct AnnonceDetailRow {
     pub updated_at: DateTime<Utc>,
     // Jointures
     pub categorie_nom: Option<String>,
+    pub secteur_id: Option<Uuid>,
+    pub secteur_nom: Option<String>,
+    pub secteur_autre: Option<String>,
     pub auteur_nom: String,
     pub auteur_prenom: String,
     pub auteur_email: String,
@@ -120,6 +127,7 @@ pub const ANNONCE_DETAIL_COLONNES: &str =
      a.quantite, a.nombre_vues, a.cree_par,
      a.created_at, a.updated_at,
      c.nom AS categorie_nom,
+     a.secteur_id, ds.nom AS secteur_nom, a.secteur_autre,
      u.nom AS auteur_nom, u.prenom AS auteur_prenom, u.email AS auteur_email,
      u.telephone_verifie AS auteur_telephone_verifie,
      u.documents_verifie AS auteur_documents_verifie,
@@ -179,6 +187,8 @@ pub struct AnnonceResponse {
     pub description: String,
     pub type_echange: String,
     pub categorie: String,
+    /// Secteur d'activité résolu (référentiel ou libellé libre), si renseigné.
+    pub secteur: Option<String>,
     pub condition_article: String,
     pub prix: f64,
     pub devise: String,
@@ -203,6 +213,12 @@ pub struct AnnonceDetailResponse {
     pub description: String,
     pub type_echange: String,
     pub categorie: String,
+    /// Secteur d'activité résolu (référentiel ou libellé libre), si renseigné.
+    pub secteur: Option<String>,
+    /// Identifiant du secteur de référence (null si « Autre »).
+    pub secteur_id: Option<Uuid>,
+    /// Libellé libre saisi quand l'auteur a choisi « Autre ».
+    pub secteur_autre: Option<String>,
     pub condition_article: String,
     pub prix: f64,
     pub devise: String,
@@ -413,8 +429,17 @@ pub fn mapper_type_operation(db_val: &str) -> String {
         "don" => "Don".to_string(),
         "association" => "Association".to_string(),
         "opportunite" => "Opportunité".to_string(),
+        "opportunite_investissement" => "Opportunité d'investissement".to_string(),
         autre => autre.to_string(),
     }
+}
+
+/// Résout le libellé du secteur : nom du référentiel si présent, sinon libellé libre.
+pub fn resoudre_secteur(secteur_nom: &Option<String>, secteur_autre: &Option<String>) -> Option<String> {
+    secteur_nom
+        .clone()
+        .or_else(|| secteur_autre.clone())
+        .filter(|s| !s.trim().is_empty())
 }
 
 /// Mapper condition_article DB vers label frontend
@@ -438,6 +463,7 @@ impl AnnonceListeRow {
             description: self.description.clone(),
             type_echange: mapper_type_operation(&self.type_operation),
             categorie: self.categorie_nom.clone().unwrap_or_else(|| "Autre".to_string()),
+            secteur: resoudre_secteur(&self.secteur_nom, &self.secteur_autre),
             condition_article: mapper_condition(
                 self.condition_article.as_deref().unwrap_or("non_applicable"),
             ),
@@ -487,6 +513,9 @@ impl AnnonceDetailRow {
             description: self.description.clone(),
             type_echange: mapper_type_operation(&self.type_operation),
             categorie: self.categorie_nom.clone().unwrap_or_else(|| "Autre".to_string()),
+            secteur: resoudre_secteur(&self.secteur_nom, &self.secteur_autre),
+            secteur_id: self.secteur_id,
+            secteur_autre: self.secteur_autre.clone(),
             condition_article: mapper_condition(
                 self.condition_article.as_deref().unwrap_or("non_applicable"),
             ),

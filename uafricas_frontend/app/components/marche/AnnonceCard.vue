@@ -103,6 +103,8 @@ const getTypeColor = (type: string): string => {
       return 'bg-purple-100/95 text-purple-700'
     case 'Don':
       return 'bg-blue-100/95 text-blue-700'
+    case "Opportunité d'investissement":
+      return 'bg-amber-100/95 text-amber-700'
     default:
       return 'bg-gray-100 text-gray-700'
   }
