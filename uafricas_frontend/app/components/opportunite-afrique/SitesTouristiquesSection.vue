@@ -39,22 +39,45 @@ const sitesPrives = ref<SiteTouristiqueAPI[]>([])
 const chargementEmblematiques = ref(true)
 const chargementPrives = ref(true)
 
-// Filtres par sous-type (client-side) par famille
+// Filtres par sous-type / ville / village (client-side) par famille
 const filtreEmblematique = ref<SousTypeSite | ''>('')
+const filtreVilleEmblematique = ref('')
+const filtreVillageEmblematique = ref('')
 const filtrePrive = ref<SousTypeSite | ''>('')
+const filtreVillePrive = ref('')
+const filtreVillagePrive = ref('')
 
 const optionsEmblematiques = SOUS_TYPES_PAR_CATEGORIE.emblematique.map(v => ({ value: v, label: LIBELLES_SOUS_TYPE[v] }))
 const optionsPrives = SOUS_TYPES_PAR_CATEGORIE.prive.map(v => ({ value: v, label: LIBELLES_SOUS_TYPE[v] }))
 
+// Listes distinctes (triées) de villes / villages présentes dans chaque famille
+const valeursDistinctes = (sites: SiteTouristiqueAPI[], champ: 'ville' | 'village') => {
+  const ensemble = new Set<string>()
+  for (const site of sites) {
+    const valeur = (site[champ] || '').trim()
+    if (valeur) ensemble.add(valeur)
+  }
+  return Array.from(ensemble).sort((a, b) => a.localeCompare(b, 'fr'))
+}
+
+const villesEmblematiques = computed(() => valeursDistinctes(sitesEmblematiques.value, 'ville'))
+const villagesEmblematiques = computed(() => valeursDistinctes(sitesEmblematiques.value, 'village'))
+const villesPrives = computed(() => valeursDistinctes(sitesPrives.value, 'ville'))
+const villagesPrives = computed(() => valeursDistinctes(sitesPrives.value, 'village'))
+
 const emblematiquesFiltres = computed(() =>
-  filtreEmblematique.value
-    ? sitesEmblematiques.value.filter(s => s.sous_type === filtreEmblematique.value)
-    : sitesEmblematiques.value,
+  sitesEmblematiques.value.filter(s =>
+    (!filtreEmblematique.value || s.sous_type === filtreEmblematique.value) &&
+    (!filtreVilleEmblematique.value || (s.ville || '').trim() === filtreVilleEmblematique.value) &&
+    (!filtreVillageEmblematique.value || (s.village || '').trim() === filtreVillageEmblematique.value),
+  ),
 )
 const privesFiltres = computed(() =>
-  filtrePrive.value
-    ? sitesPrives.value.filter(s => s.sous_type === filtrePrive.value)
-    : sitesPrives.value,
+  sitesPrives.value.filter(s =>
+    (!filtrePrive.value || s.sous_type === filtrePrive.value) &&
+    (!filtreVillePrive.value || (s.ville || '').trim() === filtreVillePrive.value) &&
+    (!filtreVillagePrive.value || (s.village || '').trim() === filtreVillagePrive.value),
+  ),
 )
 
 const chargerEmblematiques = async () => {
@@ -154,13 +177,29 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
             <h3 class="font-oswald text-2xl font-semibold text-custom-chocolat">
               Sites emblématiques
             </h3>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
               <select
                 v-model="filtreEmblematique"
                 class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
               >
                 <option value="">Tous les types</option>
                 <option v-for="o in optionsEmblematiques" :key="o.value" :value="o.value">{{ o.label }}</option>
+              </select>
+              <select
+                v-if="villesEmblematiques.length"
+                v-model="filtreVilleEmblematique"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+              >
+                <option value="">Toutes les villes</option>
+                <option v-for="v in villesEmblematiques" :key="v" :value="v">{{ v }}</option>
+              </select>
+              <select
+                v-if="villagesEmblematiques.length"
+                v-model="filtreVillageEmblematique"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+              >
+                <option value="">Tous les villages</option>
+                <option v-for="v in villagesEmblematiques" :key="v" :value="v">{{ v }}</option>
               </select>
               <button
                 type="button"
@@ -200,6 +239,8 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
               :est-authentifie="estAuthentifie"
               @edit="onEdit"
               @delete="onDelete"
+              @require-login="emit('require-login')"
+              @suspendu="(s) => (s.suspendu = true)"
             />
           </div>
         </div>
@@ -210,13 +251,29 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
             <h3 class="font-oswald text-2xl font-semibold text-custom-green">
               Sites privés
             </h3>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
               <select
                 v-model="filtrePrive"
                 class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-green focus:border-transparent"
               >
                 <option value="">Tous les types</option>
                 <option v-for="o in optionsPrives" :key="o.value" :value="o.value">{{ o.label }}</option>
+              </select>
+              <select
+                v-if="villesPrives.length"
+                v-model="filtreVillePrive"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-green focus:border-transparent"
+              >
+                <option value="">Toutes les villes</option>
+                <option v-for="v in villesPrives" :key="v" :value="v">{{ v }}</option>
+              </select>
+              <select
+                v-if="villagesPrives.length"
+                v-model="filtreVillagePrive"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-green focus:border-transparent"
+              >
+                <option value="">Tous les villages</option>
+                <option v-for="v in villagesPrives" :key="v" :value="v">{{ v }}</option>
               </select>
               <button
                 type="button"
@@ -256,6 +313,8 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
               :est-authentifie="estAuthentifie"
               @edit="onEdit"
               @delete="onDelete"
+              @require-login="emit('require-login')"
+              @suspendu="(s) => (s.suspendu = true)"
             />
           </div>
         </div>
