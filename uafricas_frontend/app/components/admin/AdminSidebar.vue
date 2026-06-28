@@ -223,6 +223,7 @@ const sidebarSections: SidebarSection[] = [
     children: [
       { label: 'Fiches territoires', faIcon: 'earth-africa', route: '/admin/profils-pays' },
       { label: 'Contributions', faIcon: 'clipboard-list', route: '/admin/profils-pays/contributions' },
+      { label: 'Contributions signalées', faIcon: 'flag', route: '/admin/profils-pays/contributions-suspendues' },
     ],
   },
   {

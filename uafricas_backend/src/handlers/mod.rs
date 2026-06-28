@@ -11,6 +11,7 @@ pub mod auth;
 pub mod bibliotheques_humaines;
 pub mod centres_culturels;
 pub mod codimoi;
+pub mod contribution_signalement;
 pub mod contributions_fiche;
 pub mod evenements;
 pub mod evenement_streaming;

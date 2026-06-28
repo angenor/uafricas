@@ -318,15 +318,7 @@
                 <button @click="ouvrirPartage"
                         class="w-full py-2 px-4 bg-custom-green text-white rounded-lg font-medium hover:bg-custom-green/90 transition flex items-center justify-center cursor-pointer">
                   <font-awesome-icon :icon="['fas', 'share-nodes']" class="w-5 h-5 mr-2" />
-                  Partager dans la communauté
-                </button>
-
-                <button @click="signalerProbleme" :disabled="signalementEnCours"
-                        class="w-full py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition flex items-center justify-center">
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                  </svg>
-                  Signaler un problème
+                  Partager
                 </button>
 
                 <NuxtLink to="/opportunite-afrique"
@@ -360,6 +352,7 @@
       ref="partageModalRef"
       :is-open="showPartageModal"
       :pays-nom="pays?.nom || ''"
+      :est-connecte="userStore.isAuthenticated"
       @close="showPartageModal = false"
       @submit="handlePartageSubmit"
     />
@@ -386,8 +379,8 @@ const {
   soumettreContributionEnrichie,
   listerContributeurs,
   reagirFiche,
-  signalerFiche,
   partagerFiche,
+  resoudreUrlImage,
 } = useOpportuniteAfrique()
 
 interface AfripulseContext {
@@ -405,7 +398,53 @@ interface LegacyFieldContext {
   valeurActuelle?: string
 }
 
-const pays = ref<FichePaysDetailAPI | null>(null)
+const idFiche = route.params.id as string
+
+// Chargement côté serveur (SSR) — indispensable pour que les balises Open Graph
+// soient présentes dans le HTML lu par les robots des réseaux sociaux (aperçu de partage).
+const { data: ficheChargee } = await useAsyncData(
+  `fiche-pays-${idFiche}`,
+  () => obtenirFiche(idFiche),
+)
+const pays = ref<FichePaysDetailAPI | null>(ficheChargee.value)
+
+// ── SEO / Open Graph (aperçu lors du partage sur les réseaux sociaux) ──
+const requete = useRequestURL()
+const origineSite = `${requete.protocol}//${requete.host}`
+const urlCanonique = `${origineSite}/opportunite-afrique/${idFiche}`
+const imageOg = computed(() => {
+  const img = pays.value?.image_couverture || pays.value?.drapeau_url
+  return img ? resoudreUrlImage(img) : ''
+})
+const descriptionOg = computed(() =>
+  pays.value
+    ? `Découvrez ${pays.value.nom} : capitale ${pays.value.capitale}, population ${pays.value.population}, culture, langues et opportunités sur UAfricas.`
+    : 'Opportunités en Afrique — UAfricas',
+)
+
+useHead(() => {
+  if (!pays.value) return {}
+  const titre = `${pays.value.nom} - Opportunités en Afrique - UAfricas`
+  return {
+    title: titre,
+    meta: [
+      { name: 'description', content: descriptionOg.value },
+      // Open Graph
+      { property: 'og:type', content: 'article' },
+      { property: 'og:title', content: titre },
+      { property: 'og:description', content: descriptionOg.value },
+      { property: 'og:url', content: urlCanonique },
+      { property: 'og:site_name', content: 'UAfricas' },
+      ...(imageOg.value ? [{ property: 'og:image', content: imageOg.value }] : []),
+      // Twitter Card
+      { name: 'twitter:card', content: imageOg.value ? 'summary_large_image' : 'summary' },
+      { name: 'twitter:title', content: titre },
+      { name: 'twitter:description', content: descriptionOg.value },
+      ...(imageOg.value ? [{ name: 'twitter:image', content: imageOg.value }] : []),
+    ],
+    link: [{ rel: 'canonical', href: urlCanonique }],
+  }
+})
 
 // État rétractable des sections (repliées par défaut pour faciliter la lecture)
 const infosReplie = ref(false)
@@ -473,52 +512,13 @@ const basculerReaction = async (type: 'like' | 'dislike') => {
   reactionEnCours.value = false
 }
 
-// ── Signalement (blocage au seuil) ──────────────────────────────
-const signalementEnCours = ref(false)
-
-const signalerProbleme = async () => {
-  if (!pays.value) return
-  if (!userStore.isAuthenticated) {
-    navigateTo('/login')
-    return
-  }
-  if (pays.value.a_signale) {
-    alert('Vous avez déjà signalé ce territoire. Merci !')
-    return
-  }
-  const motif = window.prompt(
-    'Signaler ce territoire — précisez le problème (facultatif) :',
-    '',
-  )
-  // L'utilisateur a annulé la fenêtre
-  if (motif === null) return
-
-  signalementEnCours.value = true
-  const etat = await signalerFiche(pays.value.id, motif || undefined)
-  signalementEnCours.value = false
-  if (etat) {
-    pays.value.nombre_signalements = etat.nombre_signalements
-    pays.value.a_signale = etat.a_signale
-    if (etat.bloquee) {
-      alert('Ce territoire a atteint le seuil de signalements et a été retiré. Vous allez être redirigé.')
-      navigateTo('/opportunite-afrique')
-    } else {
-      alert('Merci, votre signalement a été pris en compte.')
-    }
-  } else {
-    alert('Une erreur est survenue lors du signalement. Veuillez réessayer.')
-  }
-}
-
 // ── Partage vers le mur communautaire /publications ─────────────
 const showPartageModal = ref(false)
 const partageModalRef = ref<{ setLoading: (v: boolean) => void; setError: (m: string) => void; setSuccess: () => void } | null>(null)
 
 const ouvrirPartage = () => {
-  if (!userStore.isAuthenticated) {
-    navigateTo('/login')
-    return
-  }
+  // Le partage réseaux sociaux est ouvert à tous ; seule la publication
+  // sur le mur communautaire requiert une connexion (gérée dans la modale).
   showPartageModal.value = true
 }
 
@@ -585,19 +585,9 @@ const handleContributionSubmit = async (data: SubmitLegacy | SubmitAfripulse) =>
 }
 
 onMounted(async () => {
-  const id = route.params.id as string
-  pays.value = await obtenirFiche(id)
-
+  // La fiche est déjà chargée côté serveur ; on complète avec les contributeurs.
   if (pays.value) {
-    // Charger les contributeurs
     contributeurs.value = await listerContributeurs(pays.value.id)
-
-    useHead({
-      title: `${pays.value.nom} - Opportunités en Afrique - UAfricas`,
-      meta: [
-        { name: 'description', content: `Découvrez le ${pays.value.nom} : capitale ${pays.value.capitale}, population ${pays.value.population}, langues et culture.` }
-      ]
-    })
   }
 })
 </script>

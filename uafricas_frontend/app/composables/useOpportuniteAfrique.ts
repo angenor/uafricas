@@ -76,6 +76,13 @@ export interface SignalementFicheEtat {
   a_signale: boolean
 }
 
+/** État renvoyé après le signalement d'une contribution individuelle */
+export interface SignalementContributionEtat {
+  nombre_signalements: number
+  suspendu: boolean
+  deja_signale: boolean
+}
+
 /** Auteur d'un partage communautaire */
 export interface PartageAuteurAPI {
   id: string
@@ -287,6 +294,9 @@ export interface PersonnaliteConnueAPI {
   portrait_url: string | null
   lien_reference: string | null
   cree_par: string
+  nombre_signalements: number
+  suspendu: boolean
+  a_signale: boolean
   created_at: string
 }
 
@@ -299,6 +309,9 @@ export interface SavoirPratiqueAPI {
   explication: string
   exemple: string | null
   cree_par: string
+  nombre_signalements: number
+  suspendu: boolean
+  a_signale: boolean
   created_at: string
 }
 
@@ -355,6 +368,10 @@ export interface SiteTouristiqueAPI {
   // Agrégats avis
   note_moyenne: number | null
   nombre_avis: number
+  // Signalement communautaire
+  nombre_signalements: number
+  suspendu: boolean
+  a_signale: boolean
   created_at: string
 }
 
@@ -388,6 +405,9 @@ export interface SecteurOpportuniteAPI {
   site_web_url: string | null
   image_url: string | null
   pictogramme: string | null
+  nombre_signalements: number
+  suspendu: boolean
+  a_signale: boolean
   created_at: string
 }
 
@@ -401,6 +421,9 @@ export interface RecetteCulinaireAPI {
   ingredients: string[]
   etapes_preparation: string[]
   images: string[]
+  nombre_signalements: number
+  suspendu: boolean
+  a_signale: boolean
   created_at: string
 }
 
@@ -833,7 +856,7 @@ export const useOpportuniteAfrique = () => {
       const url = categorie
         ? `${apiBase}/api/fiches-pays/${ficheId}/sites-touristiques?categorie=${categorie}`
         : `${apiBase}/api/fiches-pays/${ficheId}/sites-touristiques`
-      const reponse = await $fetch<ApiResponse<SiteTouristiqueAPI[]>>(url)
+      const reponse = await $fetch<ApiResponse<SiteTouristiqueAPI[]>>(url, { headers: authHeaders() })
       return reponse.data ?? []
     }
     catch (e) {
@@ -849,6 +872,7 @@ export const useOpportuniteAfrique = () => {
     try {
       const reponse = await $fetch<ApiResponse<SecteurOpportuniteAPI[]>>(
         `${apiBase}/api/fiches-pays/${ficheId}/secteurs-opportunites`,
+        { headers: authHeaders() },
       )
       return reponse.data ?? []
     }
@@ -865,6 +889,7 @@ export const useOpportuniteAfrique = () => {
     try {
       const reponse = await $fetch<ApiResponse<RecetteCulinaireAPI[]>>(
         `${apiBase}/api/fiches-pays/${ficheId}/recettes-culinaires`,
+        { headers: authHeaders() },
       )
       return reponse.data ?? []
     }
@@ -883,7 +908,7 @@ export const useOpportuniteAfrique = () => {
       const url = domaine
         ? `${apiBase}/api/fiches-pays/${ficheId}/personnalites?domaine=${domaine}`
         : `${apiBase}/api/fiches-pays/${ficheId}/personnalites`
-      const reponse = await $fetch<ApiResponse<PersonnaliteConnueAPI[]>>(url)
+      const reponse = await $fetch<ApiResponse<PersonnaliteConnueAPI[]>>(url, { headers: authHeaders() })
       return reponse.data ?? []
     }
     catch (e) {
@@ -901,7 +926,7 @@ export const useOpportuniteAfrique = () => {
       const url = categorie
         ? `${apiBase}/api/fiches-pays/${ficheId}/savoirs-pratiques?categorie=${categorie}`
         : `${apiBase}/api/fiches-pays/${ficheId}/savoirs-pratiques`
-      const reponse = await $fetch<ApiResponse<SavoirPratiqueAPI[]>>(url)
+      const reponse = await $fetch<ApiResponse<SavoirPratiqueAPI[]>>(url, { headers: authHeaders() })
       return reponse.data ?? []
     }
     catch (e) {
@@ -1235,6 +1260,34 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
+  /**
+   * Signaler une CONTRIBUTION individuelle (recette, site, personnalité, secteur,
+   * savoir). Au-delà de 10 signalements distincts, la contribution est suspendue.
+   */
+  const signalerContribution = async (
+    typeObjet: TypeObjetContribution,
+    objetId: string,
+    payload?: { motif?: string, description?: string },
+  ): Promise<SignalementContributionEtat | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<SignalementContributionEtat>>(
+        `${apiBase}/api/fiches-pays/contributions/${encodeURIComponent(typeObjet)}/${encodeURIComponent(objetId)}/signalement`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: {
+            motif: payload?.motif || undefined,
+            description: payload?.description || undefined,
+          },
+        },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur signalerContribution:', e)
+      return null
+    }
+  }
+
   /** Partager une fiche dans le mur communautaire (légende facultative). */
   const partagerFiche = async (
     ficheId: string,
@@ -1282,6 +1335,7 @@ export const useOpportuniteAfrique = () => {
     // Réactions / signalement / partage
     reagirFiche,
     signalerFiche,
+    signalerContribution,
     partagerFiche,
     listerPartagesFiches,
     // Contributions

@@ -3,6 +3,7 @@ import type {
   AdminFichePay, AdminFichePayDetail, CreerFichePayForm,
   AdminRegion, AdminGroupeEthnique, AdminAlliance, AdminConte,
   AdminSiteTouristique, AdminSecteur, AdminSaison, AdminLienInterethnique,
+  AdminContributionSuspendue,
 } from '~/types/admin'
 
 export const useAdminProfilsPays = () => {
@@ -245,6 +246,32 @@ export const useAdminProfilsPays = () => {
     await adminFetch<ApiResponse<null>>(`/api/admin/profils-pays/${ficheId}/liens-interethniques/${lienId}`, { method: 'DELETE' })
   }
 
+  // ── Contributions suspendues (signalement communautaire) ──────
+
+  const contributionsSuspendues = ref<AdminContributionSuspendue[]>([])
+
+  const chargerContributionsSuspendues = async () => {
+    const response = await adminFetch<ApiResponse<AdminContributionSuspendue[]>>(
+      '/api/admin/profils-pays/contributions-suspendues',
+    )
+    if (response.success) contributionsSuspendues.value = response.data ?? []
+    return contributionsSuspendues.value
+  }
+
+  /** Lève la suspension d'une contribution + purge ses signalements. */
+  const reactiverContribution = async (typeObjet: string, objetId: string) => {
+    const response = await adminFetch<ApiResponse<{ suspendu: boolean }>>(
+      `/api/admin/profils-pays/contributions-suspendues/${encodeURIComponent(typeObjet)}/${encodeURIComponent(objetId)}/reactiver`,
+      { method: 'POST' },
+    )
+    if (response.success) {
+      contributionsSuspendues.value = contributionsSuspendues.value.filter(
+        (c) => !(c.type_objet === typeObjet && c.objet_id === objetId),
+      )
+    }
+    return response.data
+  }
+
   return {
     fichesPays, ficheDetail, filtres,
     regions, groupesEthniques, alliances, contes, sitesTouristiques, secteurs, saisons, liensInterethniques,
@@ -258,6 +285,7 @@ export const useAdminProfilsPays = () => {
     chargerSecteurs, creerSecteur, modifierSecteur, supprimerSecteur,
     chargerSaisons, creerSaison, modifierSaison, supprimerSaison,
     chargerLiensInterethniques, creerLienInterethnique, modifierLienInterethnique, supprimerLienInterethnique,
+    contributionsSuspendues, chargerContributionsSuspendues, reactiverContribution,
     allerPage, changerTri, reinitialiserPagination,
   }
 }

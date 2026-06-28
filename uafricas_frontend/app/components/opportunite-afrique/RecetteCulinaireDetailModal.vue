@@ -155,8 +155,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
               </div>
             </div>
 
+            <!-- Bandeau de suspension (>10 signalements) -->
+            <div
+              v-if="recette.suspendu"
+              class="mt-6 flex items-start gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-sm text-orange-800"
+            >
+              <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="w-4 h-4 mt-0.5 shrink-0" />
+              <span>Contribution suspendue — en cours de vérification par la modération. Modification temporairement indisponible.</span>
+            </div>
+
             <!-- Actions -->
-            <div class="flex items-center gap-4 mt-6 pt-4 border-t border-gray-100">
+            <div v-else class="flex items-center gap-4 mt-6 pt-4 border-t border-gray-100">
               <button
                 type="button"
                 class="inline-flex items-center gap-1.5 text-sm font-medium text-custom-chocolat hover:underline cursor-pointer"

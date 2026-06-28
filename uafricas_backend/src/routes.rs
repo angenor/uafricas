@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -323,6 +323,9 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/profils-pays/contributions/{contrib_id}", web::get().to(admin::profils_pays::obtenir_contribution))
                     .route("/profils-pays/contributions/{contrib_id}/etat", web::patch().to(admin::profils_pays::moderer_contribution))
                     .route("/profils-pays/contributions/{contrib_id}/retirer", web::post().to(admin::profils_pays::retirer_contribution_approuvee))
+                    // Contributions suspendues par signalement communautaire (réactivation)
+                    .route("/profils-pays/contributions-suspendues", web::get().to(admin::profils_pays::lister_contributions_suspendues))
+                    .route("/profils-pays/contributions-suspendues/{type_objet}/{objet_id}/reactiver", web::post().to(admin::profils_pays::reactiver_contribution))
                     // Profils Pays - Routes parametrees
                     .route("/profils-pays/{id}", web::get().to(admin::profils_pays::obtenir_fiche_pays))
                     .route("/profils-pays/{id}", web::put().to(admin::profils_pays::modifier_fiche_pays))
@@ -703,6 +706,8 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/moi/contributions", web::get().to(afripulse_public::lister_mes_contributions))
                     // Upload d'image isolée pour une contribution (site, personnalité)
                     .route("/contributions/upload-image", web::post().to(contributions_fiche::uploader_image_contribution))
+                    // Signalement d'une contribution individuelle (suspension au seuil)
+                    .route("/contributions/{type_objet}/{objet_id}/signalement", web::post().to(contribution_signalement::signaler_contribution))
                     // La modération des contributions (valider/rejeter) se fait via
                     // /api/admin/profils-pays/contributions/{id}/etat (admin::profils_pays::moderer_contribution).
                     // Routes parametrees

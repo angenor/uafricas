@@ -12,6 +12,8 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: 'edit', site: SiteTouristiqueAPI): void
   (e: 'delete', site: SiteTouristiqueAPI): void
+  (e: 'suspendu', site: SiteTouristiqueAPI): void
+  (e: 'require-login'): void
 }>()
 
 const { resoudreUrlImage } = useOpportuniteAfrique()
@@ -100,6 +102,15 @@ const localisation = computed(() =>
       <p v-if="site.info_pertinente" class="mb-3 line-clamp-2 text-sm text-gray-700">{{ site.info_pertinente }}</p>
       <p v-else-if="site.description" class="mb-3 line-clamp-2 text-sm text-gray-600">{{ site.description }}</p>
 
+      <!-- Bandeau de suspension (>10 signalements) -->
+      <div
+        v-if="site.suspendu"
+        class="mb-3 flex items-start gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-800"
+      >
+        <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="h-3.5 w-3.5 mt-0.5 shrink-0" />
+        <span>Contribution suspendue — en cours de vérification.</span>
+      </div>
+
       <!-- Barre d'actions compacte -->
       <div class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-gray-100 pt-3 text-xs font-medium">
         <button
@@ -111,14 +122,25 @@ const localisation = computed(() =>
           Détails<span v-if="site.nombre_avis > 0"> &amp; avis ({{ site.nombre_avis }})</span>
         </button>
         <span class="ml-auto flex items-center gap-3">
-          <button type="button" class="inline-flex items-center gap-1 text-custom-chocolat hover:underline" @click="emit('edit', site)">
-            <font-awesome-icon :icon="['fas', 'pen-to-square']" class="h-3.5 w-3.5" />
-            Modifier
-          </button>
-          <button type="button" class="inline-flex items-center gap-1 text-red-600 hover:underline" @click="emit('delete', site)">
-            <font-awesome-icon :icon="['fas', 'trash']" class="h-3.5 w-3.5" />
-            Supprimer
-          </button>
+          <template v-if="!site.suspendu">
+            <button type="button" class="inline-flex items-center gap-1 text-custom-chocolat hover:underline" @click="emit('edit', site)">
+              <font-awesome-icon :icon="['fas', 'pen-to-square']" class="h-3.5 w-3.5" />
+              Modifier
+            </button>
+            <button type="button" class="inline-flex items-center gap-1 text-red-600 hover:underline" @click="emit('delete', site)">
+              <font-awesome-icon :icon="['fas', 'trash']" class="h-3.5 w-3.5" />
+              Supprimer
+            </button>
+          </template>
+          <OpportuniteAfriqueContributionSignalerBouton
+            type-objet="site_touristique"
+            :objet-id="site.id"
+            :libelle="site.nom"
+            :a-signale="site.a_signale"
+            :est-authentifie="estAuthentifie"
+            @require-login="emit('require-login')"
+            @suspendu="emit('suspendu', site)"
+          />
         </span>
       </div>
     </div>

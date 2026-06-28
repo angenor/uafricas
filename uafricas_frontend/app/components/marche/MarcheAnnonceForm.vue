@@ -234,7 +234,16 @@
       <div class="space-y-3 max-h-72 overflow-y-auto p-3 border border-gray-200 rounded-xl">
         <!-- Bloc Afrique -->
         <div>
-          <p class="text-xs font-semibold uppercase tracking-wide text-custom-green mb-2">Afrique</p>
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-semibold uppercase tracking-wide text-custom-green">Afrique</p>
+            <button
+              type="button"
+              class="text-xs font-medium text-custom-green hover:underline"
+              @click="basculerTousAfrique"
+            >
+              {{ toutAfriqueSelectionne ? 'Tout désélectionner' : "Toute l'Afrique" }}
+            </button>
+          </div>
           <div class="flex flex-wrap gap-2">
             <label
               v-for="terr in territoiresAfrique"
@@ -251,7 +260,16 @@
         </div>
         <!-- Bloc hors Afrique -->
         <div class="pt-2 border-t border-gray-100">
-          <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Hors Afrique</p>
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Hors Afrique</p>
+            <button
+              type="button"
+              class="text-xs font-medium text-custom-green hover:underline"
+              @click="basculerTousHorsAfrique"
+            >
+              {{ toutHorsAfriqueSelectionne ? 'Tout désélectionner' : 'Tout Hors Afrique' }}
+            </button>
+          </div>
           <div class="flex flex-wrap gap-2">
             <label
               v-for="terr in territoiresHorsAfrique"
@@ -383,6 +401,26 @@ const categories = ref<CategorieAnnonceAPI[]>([])
 const territoires = ref<PaysAPI[]>([])
 const territoiresAfrique = computed(() => territoires.value.filter(t => t.continent === 'Afrique'))
 const territoiresHorsAfrique = computed(() => territoires.value.filter(t => t.continent !== 'Afrique'))
+
+// Sélection rapide des territoires (un seul clic par bloc)
+const toutAfriqueSelectionne = computed(
+  () => territoiresAfrique.value.length > 0 && territoiresAfrique.value.every(t => form.paysIds.includes(t.id)),
+)
+const toutHorsAfriqueSelectionne = computed(
+  () => territoiresHorsAfrique.value.length > 0 && territoiresHorsAfrique.value.every(t => form.paysIds.includes(t.id)),
+)
+
+const basculerBloc = (terrs: PaysAPI[], toutSelectionne: boolean) => {
+  const ids = terrs.map(t => t.id)
+  if (toutSelectionne) {
+    form.paysIds = form.paysIds.filter(id => !ids.includes(id))
+  } else {
+    form.paysIds = Array.from(new Set([...form.paysIds, ...ids]))
+  }
+}
+
+const basculerTousAfrique = () => basculerBloc(territoiresAfrique.value, toutAfriqueSelectionne.value)
+const basculerTousHorsAfrique = () => basculerBloc(territoiresHorsAfrique.value, toutHorsAfriqueSelectionne.value)
 const photosExistantes = ref<AnnonceMediaAPI[]>([])
 const apercus = ref<string[]>([])
 const nouvellesPhotos = ref<File[]>([])

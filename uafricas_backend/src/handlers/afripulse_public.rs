@@ -59,6 +59,9 @@ pub struct SiteTouristiqueResponse {
     pub verifie: bool,
     pub note_moyenne: Option<f64>,
     pub nombre_avis: i64,
+    pub nombre_signalements: i32,
+    pub suspendu: bool,
+    pub a_signale: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -69,6 +72,7 @@ pub struct SiteTouristiqueQuery {
 }
 
 /// Colonnes + agrégat avis communs aux requêtes de lecture des sites.
+// $1 = utilisateur courant (optionnel) pour calculer `a_signale`.
 const SITE_TOURISTIQUE_SELECT: &str = "SELECT st.id, st.fiche_pays_id, st.nom,
         st.categorie::text AS categorie, st.sous_type::text AS sous_type,
         st.description, st.info_pertinente, st.image_url, st.images,
@@ -76,7 +80,12 @@ const SITE_TOURISTIQUE_SELECT: &str = "SELECT st.id, st.fiche_pays_id, st.nom,
         st.latitude::float8 AS latitude, st.longitude::float8 AS longitude,
         st.contact_telephone, st.contact_courriel, st.contact_adresse,
         st.constitution_statut_juridique, st.constitution_numero, st.constitution_document_url,
-        st.site_web_url, st.verifie, av.note_moyenne, av.nombre_avis, st.created_at
+        st.site_web_url, st.verifie, av.note_moyenne, av.nombre_avis,
+        st.nombre_signalements, st.suspendu,
+        EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
+               WHERE sc.type_objet = 'site_touristique'::country_profile.type_objet_contribution
+                 AND sc.objet_id = st.id AND sc.signale_par = $1) AS a_signale,
+        st.created_at
      FROM country_profile.site_touristique st
      LEFT JOIN LATERAL (
         SELECT AVG(a.note)::float8 AS note_moyenne, COUNT(*)::bigint AS nombre_avis
@@ -85,10 +94,12 @@ const SITE_TOURISTIQUE_SELECT: &str = "SELECT st.id, st.fiche_pays_id, st.nom,
      ) av ON TRUE";
 
 pub async fn lister_sites_touristiques(
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<String>,
     params: web::Query<SiteTouristiqueQuery>,
 ) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req);
     let fiche_id = Uuid::parse_str(&chemin.into_inner())
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
 
@@ -104,9 +115,9 @@ pub async fn lister_sites_touristiques(
         .map(|s| s.trim().to_lowercase())
         .filter(|s| crate::models::afripulse::sous_type_site_valide(s));
 
-    // Construction dynamique des conditions (binds $2, $3 selon présence).
-    let mut conditions = String::from(" WHERE st.fiche_pays_id = $1 AND st.deleted_at IS NULL");
-    let mut bind_index = 2u32;
+    // $1 = utilisateur (a_signale), $2 = fiche, filtres à partir de $3.
+    let mut conditions = String::from(" WHERE st.fiche_pays_id = $2 AND st.deleted_at IS NULL");
+    let mut bind_index = 3u32;
     if categorie_filtre.is_some() {
         conditions.push_str(&format!(
             " AND st.categorie = ${}::country_profile.categorie_site_touristique",
@@ -119,7 +130,9 @@ pub async fn lister_sites_touristiques(
     }
 
     let sql = format!("{SITE_TOURISTIQUE_SELECT}{conditions} ORDER BY st.created_at DESC");
-    let mut query = sqlx::query_as::<_, SiteTouristiqueResponse>(&sql).bind(fiche_id);
+    let mut query = sqlx::query_as::<_, SiteTouristiqueResponse>(&sql)
+        .bind(utilisateur_id)
+        .bind(fiche_id);
     if let Some(cat) = &categorie_filtre {
         query = query.bind(cat);
     }
@@ -152,25 +165,36 @@ pub struct SecteurOpportuniteResponse {
     pub references_utiles: Option<String>,
     pub site_web_url: Option<String>,
     pub image_url: Option<String>,
+    pub nombre_signalements: i32,
+    pub suspendu: bool,
+    pub a_signale: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 pub async fn lister_secteurs_opportunites(
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<String>,
 ) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req);
     let fiche_id = Uuid::parse_str(&chemin.into_inner())
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
 
     let rows: Vec<SecteurOpportuniteResponse> = sqlx::query_as(
-        "SELECT id, fiche_pays_id, nom, description, localite,
-                contact_telephone, contact_courriel, contact_adresse,
-                references_utiles, site_web_url, image_url, created_at
-         FROM country_profile.secteur_developpement
-         WHERE fiche_pays_id = $1
-         ORDER BY nom ASC",
+        "SELECT sd.id, sd.fiche_pays_id, sd.nom, sd.description, sd.localite,
+                sd.contact_telephone, sd.contact_courriel, sd.contact_adresse,
+                sd.references_utiles, sd.site_web_url, sd.image_url,
+                sd.nombre_signalements, sd.suspendu,
+                EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
+                       WHERE sc.type_objet = 'secteur_developpement'::country_profile.type_objet_contribution
+                         AND sc.objet_id = sd.id AND sc.signale_par = $2) AS a_signale,
+                sd.created_at
+         FROM country_profile.secteur_developpement sd
+         WHERE sd.fiche_pays_id = $1
+         ORDER BY sd.nom ASC",
     )
     .bind(fiche_id)
+    .bind(utilisateur_id)
     .fetch_all(pool.get_ref())
     .await?;
 
@@ -195,24 +219,35 @@ pub struct RecetteCulinaireResponse {
     pub ingredients: Vec<String>,
     pub etapes_preparation: Vec<String>,
     pub images: Vec<String>,
+    pub nombre_signalements: i32,
+    pub suspendu: bool,
+    pub a_signale: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 pub async fn lister_recettes_culinaires(
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<String>,
 ) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req);
     let fiche_id = Uuid::parse_str(&chemin.into_inner())
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
 
     let rows: Vec<RecetteCulinaireResponse> = sqlx::query_as(
-        "SELECT id, fiche_pays_id, titre, territoires_consommation, histoire,
-                ingredients, etapes_preparation, images, created_at
-         FROM country_profile.recette_culinaire
-         WHERE fiche_pays_id = $1 AND deleted_at IS NULL
-         ORDER BY created_at DESC",
+        "SELECT rc.id, rc.fiche_pays_id, rc.titre, rc.territoires_consommation, rc.histoire,
+                rc.ingredients, rc.etapes_preparation, rc.images,
+                rc.nombre_signalements, rc.suspendu,
+                EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
+                       WHERE sc.type_objet = 'recette_culinaire'::country_profile.type_objet_contribution
+                         AND sc.objet_id = rc.id AND sc.signale_par = $2) AS a_signale,
+                rc.created_at
+         FROM country_profile.recette_culinaire rc
+         WHERE rc.fiche_pays_id = $1 AND rc.deleted_at IS NULL
+         ORDER BY rc.created_at DESC",
     )
     .bind(fiche_id)
+    .bind(utilisateur_id)
     .fetch_all(pool.get_ref())
     .await?;
 
@@ -239,6 +274,9 @@ pub struct PersonnaliteResponse {
     pub portrait_url: Option<String>,
     pub lien_reference: Option<String>,
     pub cree_par: Uuid,
+    pub nombre_signalements: i32,
+    pub suspendu: bool,
+    pub a_signale: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -248,10 +286,12 @@ pub struct PersonnaliteQuery {
 }
 
 pub async fn lister_personnalites(
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<String>,
     params: web::Query<PersonnaliteQuery>,
 ) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req);
     let fiche_id = Uuid::parse_str(&chemin.into_inner())
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
 
@@ -272,30 +312,43 @@ pub async fn lister_personnalites(
         .map(|d| d.trim().to_lowercase())
         .filter(|d| domaines_valides.contains(&d.as_str()));
 
+    // Sous-requête a_signale commune (le n° de bind diffère selon la branche).
     let rows: Vec<PersonnaliteResponse> = if let Some(dom) = domaine_filtre {
         sqlx::query_as(
-            "SELECT id, fiche_pays_id, nom_complet, domaine::text AS domaine,
-                    biographie_courte, annee_naissance, annee_deces,
-                    portrait_url, lien_reference, cree_par, created_at
-             FROM country_profile.personnalite_connue
-             WHERE fiche_pays_id = $1 AND deleted_at IS NULL
-               AND domaine = $2::country_profile.domaine_personnalite
-             ORDER BY nom_complet ASC",
+            "SELECT pc.id, pc.fiche_pays_id, pc.nom_complet, pc.domaine::text AS domaine,
+                    pc.biographie_courte, pc.annee_naissance, pc.annee_deces,
+                    pc.portrait_url, pc.lien_reference, pc.cree_par,
+                    pc.nombre_signalements, pc.suspendu,
+                    EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
+                           WHERE sc.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                             AND sc.objet_id = pc.id AND sc.signale_par = $3) AS a_signale,
+                    pc.created_at
+             FROM country_profile.personnalite_connue pc
+             WHERE pc.fiche_pays_id = $1 AND pc.deleted_at IS NULL
+               AND pc.domaine = $2::country_profile.domaine_personnalite
+             ORDER BY pc.nom_complet ASC",
         )
         .bind(fiche_id)
         .bind(dom)
+        .bind(utilisateur_id)
         .fetch_all(pool.get_ref())
         .await?
     } else {
         sqlx::query_as(
-            "SELECT id, fiche_pays_id, nom_complet, domaine::text AS domaine,
-                    biographie_courte, annee_naissance, annee_deces,
-                    portrait_url, lien_reference, cree_par, created_at
-             FROM country_profile.personnalite_connue
-             WHERE fiche_pays_id = $1 AND deleted_at IS NULL
-             ORDER BY nom_complet ASC",
+            "SELECT pc.id, pc.fiche_pays_id, pc.nom_complet, pc.domaine::text AS domaine,
+                    pc.biographie_courte, pc.annee_naissance, pc.annee_deces,
+                    pc.portrait_url, pc.lien_reference, pc.cree_par,
+                    pc.nombre_signalements, pc.suspendu,
+                    EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
+                           WHERE sc.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                             AND sc.objet_id = pc.id AND sc.signale_par = $2) AS a_signale,
+                    pc.created_at
+             FROM country_profile.personnalite_connue pc
+             WHERE pc.fiche_pays_id = $1 AND pc.deleted_at IS NULL
+             ORDER BY pc.nom_complet ASC",
         )
         .bind(fiche_id)
+        .bind(utilisateur_id)
         .fetch_all(pool.get_ref())
         .await?
     };
@@ -320,6 +373,9 @@ pub struct SavoirPratiqueResponse {
     pub explication: String,
     pub exemple: Option<String>,
     pub cree_par: Uuid,
+    pub nombre_signalements: i32,
+    pub suspendu: bool,
+    pub a_signale: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -329,10 +385,12 @@ pub struct SavoirPratiqueQuery {
 }
 
 pub async fn lister_savoirs_pratiques(
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<String>,
     params: web::Query<SavoirPratiqueQuery>,
 ) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req);
     let fiche_id = Uuid::parse_str(&chemin.into_inner())
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
 
@@ -354,26 +412,38 @@ pub async fn lister_savoirs_pratiques(
 
     let rows: Vec<SavoirPratiqueResponse> = if let Some(cat) = categorie_filtre {
         sqlx::query_as(
-            "SELECT id, fiche_pays_id, titre, categorie::text AS categorie,
-                    explication, exemple, cree_par, created_at
-             FROM country_profile.savoir_pratique
-             WHERE fiche_pays_id = $1 AND deleted_at IS NULL
-               AND categorie = $2::country_profile.categorie_savoir
-             ORDER BY titre ASC",
+            "SELECT sp.id, sp.fiche_pays_id, sp.titre, sp.categorie::text AS categorie,
+                    sp.explication, sp.exemple, sp.cree_par,
+                    sp.nombre_signalements, sp.suspendu,
+                    EXISTS(SELECT 1 FROM country_profile.signalement_contribution s
+                           WHERE s.type_objet = 'savoir_pratique'::country_profile.type_objet_contribution
+                             AND s.objet_id = sp.id AND s.signale_par = $3) AS a_signale,
+                    sp.created_at
+             FROM country_profile.savoir_pratique sp
+             WHERE sp.fiche_pays_id = $1 AND sp.deleted_at IS NULL
+               AND sp.categorie = $2::country_profile.categorie_savoir
+             ORDER BY sp.titre ASC",
         )
         .bind(fiche_id)
         .bind(cat)
+        .bind(utilisateur_id)
         .fetch_all(pool.get_ref())
         .await?
     } else {
         sqlx::query_as(
-            "SELECT id, fiche_pays_id, titre, categorie::text AS categorie,
-                    explication, exemple, cree_par, created_at
-             FROM country_profile.savoir_pratique
-             WHERE fiche_pays_id = $1 AND deleted_at IS NULL
-             ORDER BY titre ASC",
+            "SELECT sp.id, sp.fiche_pays_id, sp.titre, sp.categorie::text AS categorie,
+                    sp.explication, sp.exemple, sp.cree_par,
+                    sp.nombre_signalements, sp.suspendu,
+                    EXISTS(SELECT 1 FROM country_profile.signalement_contribution s
+                           WHERE s.type_objet = 'savoir_pratique'::country_profile.type_objet_contribution
+                             AND s.objet_id = sp.id AND s.signale_par = $2) AS a_signale,
+                    sp.created_at
+             FROM country_profile.savoir_pratique sp
+             WHERE sp.fiche_pays_id = $1 AND sp.deleted_at IS NULL
+             ORDER BY sp.titre ASC",
         )
         .bind(fiche_id)
+        .bind(utilisateur_id)
         .fetch_all(pool.get_ref())
         .await?
     };

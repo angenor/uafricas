@@ -1893,6 +1893,17 @@ export interface AdminLienInterethnique {
 
 // ── Profils Pays — Contributions ────────────────────────────
 
+/** Contribution individuelle suspendue par signalement communautaire (>10 signalements). */
+export interface AdminContributionSuspendue {
+  type_objet: string
+  objet_id: string
+  libelle: string
+  fiche_pays_id: string
+  pays_nom: string | null
+  nombre_signalements: number
+  created_at: string
+}
+
 export interface AdminContribution {
   id: string
   fiche_pays_id: string

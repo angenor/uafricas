@@ -3399,3 +3399,138 @@ fn construire_message_notification(
     };
     (type_.to_string(), message)
 }
+
+// ══════════════════════════════════════════════════════════════
+// ── Contributions suspendues (signalement communautaire) ──────
+// ══════════════════════════════════════════════════════════════
+
+#[derive(Debug, sqlx::FromRow, serde::Serialize)]
+pub struct ContributionSuspendueRow {
+    pub type_objet: String,
+    pub objet_id: Uuid,
+    pub libelle: String,
+    pub fiche_pays_id: Uuid,
+    pub pays_nom: Option<String>,
+    pub nombre_signalements: i32,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// GET /api/admin/profils-pays/contributions-suspendues
+/// Liste toutes les contributions suspendues (>10 signalements), tous types confondus.
+pub async fn lister_contributions_suspendues(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "profil_pays", "voir");
+
+    // UNION ALL des 5 objets signalables ; libellé = colonne nom/titre propre à chaque table.
+    let rows: Vec<ContributionSuspendueRow> = sqlx::query_as(
+        "SELECT 'site_touristique' AS type_objet, st.id AS objet_id, st.nom AS libelle,
+                st.fiche_pays_id, p.nom AS pays_nom, st.nombre_signalements, st.created_at
+           FROM country_profile.site_touristique st
+           JOIN country_profile.fiche_pays fp ON fp.id = st.fiche_pays_id
+           LEFT JOIN shared.pays p ON p.id = fp.pays_id
+          WHERE st.suspendu = TRUE AND st.deleted_at IS NULL
+         UNION ALL
+         SELECT 'secteur_developpement', sd.id, sd.nom,
+                sd.fiche_pays_id, p.nom, sd.nombre_signalements, sd.created_at
+           FROM country_profile.secteur_developpement sd
+           JOIN country_profile.fiche_pays fp ON fp.id = sd.fiche_pays_id
+           LEFT JOIN shared.pays p ON p.id = fp.pays_id
+          WHERE sd.suspendu = TRUE
+         UNION ALL
+         SELECT 'recette_culinaire', rc.id, rc.titre,
+                rc.fiche_pays_id, p.nom, rc.nombre_signalements, rc.created_at
+           FROM country_profile.recette_culinaire rc
+           JOIN country_profile.fiche_pays fp ON fp.id = rc.fiche_pays_id
+           LEFT JOIN shared.pays p ON p.id = fp.pays_id
+          WHERE rc.suspendu = TRUE AND rc.deleted_at IS NULL
+         UNION ALL
+         SELECT 'personnalite_connue', pc.id, pc.nom_complet,
+                pc.fiche_pays_id, p.nom, pc.nombre_signalements, pc.created_at
+           FROM country_profile.personnalite_connue pc
+           JOIN country_profile.fiche_pays fp ON fp.id = pc.fiche_pays_id
+           LEFT JOIN shared.pays p ON p.id = fp.pays_id
+          WHERE pc.suspendu = TRUE AND pc.deleted_at IS NULL
+         UNION ALL
+         SELECT 'savoir_pratique', sp.id, sp.titre,
+                sp.fiche_pays_id, p.nom, sp.nombre_signalements, sp.created_at
+           FROM country_profile.savoir_pratique sp
+           JOIN country_profile.fiche_pays fp ON fp.id = sp.fiche_pays_id
+           LEFT JOIN shared.pays p ON p.id = fp.pays_id
+          WHERE sp.suspendu = TRUE AND sp.deleted_at IS NULL
+         ORDER BY nombre_signalements DESC, created_at DESC",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(rows),
+        error: None,
+    }))
+}
+
+/// POST /api/admin/profils-pays/contributions-suspendues/{type_objet}/{objet_id}/reactiver
+/// Lève la suspension d'une contribution + purge ses signalements (ardoise vierge).
+pub async fn reactiver_contribution(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    path: web::Path<(String, Uuid)>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "profil_pays", "modifier");
+    let (type_objet, objet_id) = path.into_inner();
+
+    let (table, _) = crate::handlers::contribution_signalement::table_et_softdelete(&type_objet)
+        .ok_or_else(|| ApiErreur::Validation("Type de contribution invalide".into()))?;
+
+    // Lève la suspension + remet le compteur à zéro.
+    let maj: Option<Uuid> = sqlx::query_scalar(&format!(
+        "UPDATE {table} SET suspendu = FALSE, nombre_signalements = 0
+         WHERE id = $1 RETURNING id"
+    ))
+    .bind(objet_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+    if maj.is_none() {
+        return Err(ApiErreur::NonTrouve("Contribution introuvable".into()));
+    }
+
+    // Purge les signalements de cet objet (évite une re-suspension immédiate).
+    sqlx::query(
+        "DELETE FROM country_profile.signalement_contribution
+         WHERE type_objet = $1::country_profile.type_objet_contribution AND objet_id = $2",
+    )
+    .bind(&type_objet)
+    .bind(objet_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "REACTIVATION",
+        "country_profile",
+        &type_objet,
+        Some(objet_id),
+        Some(json!({ "suspendu": true })),
+        Some(json!({ "suspendu": false, "nombre_signalements": 0 })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    log::info!(
+        "Admin {} a reactive la contribution {}/{}",
+        admin.id, type_objet, objet_id
+    );
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(json!({ "type_objet": type_objet, "objet_id": objet_id, "suspendu": false })),
+        error: None,
+    }))
+}
