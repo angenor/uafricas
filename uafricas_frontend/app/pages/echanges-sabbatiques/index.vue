@@ -282,7 +282,12 @@
                 <!-- Invite par défaut -->
                 <div v-else class="lg:w-80 shrink-0">
                   <div class="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
-                    <font-awesome-icon :icon="['fas', 'hand-pointer']" class="h-8 mb-3 text-gray-300" />
+                    <span class="block lg:hidden">
+                      <font-awesome-icon :icon="['fas', 'hand-point-up']" class="h-8 mb-3 text-gray-300" />
+                    </span>
+                    <span class="hidden lg:block">
+                      <font-awesome-icon :icon="['fas', 'hand-point-left']" class="h-8 mb-3 text-gray-300" />
+                    </span>
                     <p class="text-sm">Cliquez sur un territoire mis en évidence pour voir ses programmes d'échange.</p>
                   </div>
                 </div>
@@ -321,7 +326,7 @@ useHead({
   ]
 })
 
-const viewMode = ref<'grille' | 'carte'>('grille')
+const viewMode = ref<'grille' | 'carte'>('carte')
 
 const filtres = ref<SabbatiqueFiltres>({
   type: 'tous',
