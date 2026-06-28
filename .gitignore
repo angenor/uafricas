@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 !.env.production.example
+DEPLOY.md
+deploy.sh
+note.md
 
 # OS
 .DS_Store
