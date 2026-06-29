@@ -24,7 +24,7 @@
             </div>
             <div>
               <h2 class="text-xl font-bold">
-                {{ estBonne ? 'Féliciter une bonne pratique' : 'Signaler une mauvaise pratique' }}
+                {{ estBonne ? 'Goodhabits' : 'Badhabits' }}
               </h2>
               <p class="text-xs text-white/80">
                 {{ estBonne
@@ -62,7 +62,7 @@
               @click="changerMode('mauvaise')"
             >
               <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="text-xs" />
-              Mauvaise pratique
+              Badhabits
             </button>
             <button
               type="button"
@@ -73,7 +73,7 @@
               @click="changerMode('bonne')"
             >
               <font-awesome-icon :icon="['fas', 'thumbs-up']" class="text-xs" />
-              Bonne pratique
+              Goodhabits
             </button>
           </div>
 
@@ -169,23 +169,63 @@
             />
           </div>
 
-          <div>
+          <!-- Mauvaise pratique : détails (texte libre) -->
+          <div v-if="!estBonne">
             <label class="block text-sm font-semibold text-gray-700 mb-2">
-              {{ estBonne ? 'Modalités pratiques de reproductibilité' : 'Détails de la problématique' }}
+              Détails de la problématique
               <span class="text-red-500">*</span>
             </label>
             <textarea
               v-model="form.details_problematique"
               rows="5"
               required
-              :placeholder="estBonne
-                ? 'Décrivez les modalités pratiques pour reproduire cette bonne pratique : étapes, conditions, moyens...'
-                : 'Expliquez en détail le problème, son contexte, ses conséquences...'"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg transition text-sm"
-              :class="estBonne
-                ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
+              placeholder="Expliquez en détail le problème, son contexte, ses conséquences..."
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg transition text-sm focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
             />
+          </div>
+
+          <!-- Bonne pratique : modalités pratiques de reproductibilité (liste, 10 max) -->
+          <div v-else>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-sm font-semibold text-gray-700">
+                Modalités pratiques de reproductibilité <span class="text-red-500">*</span>
+                <span class="text-gray-400 font-normal">(10 modalités maximum)</span>
+              </label>
+              <button
+                v-if="modalitesReproductibilite.length < 10"
+                type="button"
+                class="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                @click="ajouterModalite"
+              >
+                <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
+                Ajouter une modalité
+              </button>
+            </div>
+            <p class="text-xs text-gray-400 mb-2">
+              Décrivez les modalités pratiques pour reproduire cette bonne pratique : étapes, conditions, moyens...
+            </p>
+            <div v-if="modalitesReproductibilite.length === 0" class="text-xs text-gray-400 italic">
+              Aucune modalité. Ajoutez au moins une modalité concrète.
+            </div>
+            <div v-for="(_, idx) in modalitesReproductibilite" :key="idx" class="flex items-center gap-2 mb-2">
+              <span class="shrink-0 w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center">
+                {{ idx + 1 }}
+              </span>
+              <input
+                v-model="modalitesReproductibilite[idx]"
+                type="text"
+                maxlength="500"
+                :placeholder="`Modalité ${idx + 1}...`"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition text-sm"
+              >
+              <button
+                type="button"
+                class="w-10 h-10 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition"
+                @click="retirerModalite(idx)"
+              >
+                <font-awesome-icon :icon="['fas', 'trash']" class="text-xs" />
+              </button>
+            </div>
           </div>
 
           <!-- Témoignages (texte) — distinct des preuves -->
@@ -217,16 +257,31 @@
             />
           </div>
 
-          <!-- Mauvaise pratique : preuves (photos) -->
-          <div v-else>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Preuves (photos)</label>
+          <!-- Preuves (images ou PDF) — partagé Goodhabits / Badhabits -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Preuves (images ou PDF)</label>
             <div class="flex flex-wrap items-center gap-3">
               <div
-                v-for="(photo, idx) in preuvesPhotos"
-                :key="photo"
-                class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200"
+                v-for="(preuve, idx) in preuvesFichiers"
+                :key="preuve.url"
+                class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-50"
               >
-                <img :src="urlAbsolue(photo)" alt="" class="w-full h-full object-cover">
+                <img
+                  v-if="preuve.type === 'image'"
+                  :src="urlAbsolue(preuve.url)"
+                  alt=""
+                  class="w-full h-full object-cover"
+                >
+                <a
+                  v-else
+                  :href="urlAbsolue(preuve.url)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="w-full h-full flex flex-col items-center justify-center gap-1 text-red-500 hover:text-red-600 transition"
+                >
+                  <font-awesome-icon :icon="['fas', 'file-pdf']" class="text-2xl" />
+                  <span class="text-[10px] font-semibold">PDF</span>
+                </a>
                 <button
                   type="button"
                   class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition"
@@ -236,18 +291,21 @@
                 </button>
               </div>
               <label
-                v-if="preuvesPhotos.length < 5"
-                class="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-red-400 hover:text-red-500 cursor-pointer transition text-xs gap-1"
-                :class="{ 'opacity-50 cursor-not-allowed': photoEnCours }"
+                v-if="preuvesFichiers.length < 5"
+                class="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 cursor-pointer transition text-xs gap-1"
+                :class="[
+                  estBonne ? 'hover:border-emerald-400 hover:text-emerald-500' : 'hover:border-red-400 hover:text-red-500',
+                  { 'opacity-50 cursor-not-allowed': photoEnCours },
+                ]"
               >
                 <font-awesome-icon
-                  :icon="photoEnCours ? ['fas', 'spinner'] : ['fas', 'image']"
+                  :icon="photoEnCours ? ['fas', 'spinner'] : ['fas', 'paperclip']"
                   :class="{ 'animate-spin': photoEnCours }"
                 />
                 <span>Ajouter</span>
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
                   multiple
                   class="sr-only"
                   :disabled="photoEnCours"
@@ -255,7 +313,7 @@
                 >
               </label>
             </div>
-            <p class="text-xs text-gray-400 mt-1">Jusqu'à 5 photos (JPEG, PNG, WebP).</p>
+            <p class="text-xs text-gray-400 mt-1">Jusqu'à 5 fichiers (images JPEG, PNG, WebP ou PDF).</p>
             <p v-if="erreurPhoto" class="text-xs text-red-600 mt-1">{{ erreurPhoto }}</p>
           </div>
 
@@ -487,6 +545,7 @@
 
 <script setup lang="ts">
 import type { CreerBadHabitPayload, PaysPublic, TypePratique } from '~/composables/useGouvernance'
+import type { TypePreuve } from '~/types/gouvernance'
 
 interface Props {
   open: boolean
@@ -534,8 +593,11 @@ const erreurMessage = ref<string | null>(null)
 // Solutions proposées (mauvaise pratique) — liste de 10 propositions max
 const solutions = ref<string[]>([])
 
-// Preuves photos (mauvaise pratique) — URLs relatives uploadées (max 5)
-const preuvesPhotos = ref<string[]>([])
+// Modalités pratiques de reproductibilité (bonne pratique) — liste de 10 modalités max
+const modalitesReproductibilite = ref<string[]>([])
+
+// Preuves (Goodhabits & Badhabits) — fichiers uploadés (images ou PDF), max 5
+const preuvesFichiers = ref<{ url: string; type: TypePreuve }[]>([])
 const photoEnCours = ref(false)
 const erreurPhoto = ref<string | null>(null)
 
@@ -561,6 +623,18 @@ function retirerSolution(idx: number) {
   solutions.value.splice(idx, 1)
 }
 
+function ajouterModalite() {
+  if (modalitesReproductibilite.value.length < 10) modalitesReproductibilite.value.push('')
+}
+function retirerModalite(idx: number) {
+  modalitesReproductibilite.value.splice(idx, 1)
+}
+
+/** Modalités non vides (bonne pratique), limitées à 10. */
+const modalitesValides = computed(() =>
+  modalitesReproductibilite.value.map(m => m.trim()).filter(m => m.length > 0).slice(0, 10),
+)
+
 async function onPhotosSelectionnees(evt: Event) {
   const input = evt.target as HTMLInputElement
   const fichiers = Array.from(input.files ?? [])
@@ -569,13 +643,9 @@ async function onPhotosSelectionnees(evt: Event) {
   photoEnCours.value = true
   try {
     for (const fichier of fichiers) {
-      if (preuvesPhotos.value.length >= 5) break
+      if (preuvesFichiers.value.length >= 5) break
       const { url, preuveType } = await uploaderPreuve(fichier)
-      if (preuveType !== 'image') {
-        erreurPhoto.value = 'Seules les images sont acceptées comme preuve photo.'
-        continue
-      }
-      preuvesPhotos.value.push(url)
+      preuvesFichiers.value.push({ url, type: preuveType })
     }
   } catch (err) {
     erreurPhoto.value = err instanceof Error ? err.message : 'Téléversement impossible'
@@ -586,7 +656,7 @@ async function onPhotosSelectionnees(evt: Event) {
 }
 
 function retirerPhoto(idx: number) {
-  preuvesPhotos.value.splice(idx, 1)
+  preuvesFichiers.value.splice(idx, 1)
 }
 
 const categoriesMauvaise = [
@@ -644,6 +714,8 @@ function changerMode(mode: TypePratique) {
   if (mode === 'bonne') {
     form.gravite = undefined
     form.impact = 'fort'
+    // Amorcer une première modalité de reproductibilité si la liste est vide
+    if (modalitesReproductibilite.value.length === 0) modalitesReproductibilite.value = ['']
   } else {
     form.impact = undefined
     form.gravite = 'faible'
@@ -658,12 +730,15 @@ const courrielValide = (c?: string) => !!c && c.includes('@') && c.includes('.')
 const estValide = computed(() => {
   const base = form.titre.trim().length >= 5
     && form.description_generale.trim().length >= 10
-    && form.details_problematique.trim().length >= 10
     && !!form.categorie_probleme
     && !!form.pays_id
-  if (estBonne.value) return base
-  // Mauvaise pratique : identité réelle obligatoire
+  if (estBonne.value) {
+    // Bonne pratique : au moins une modalité de reproductibilité
+    return base && modalitesValides.value.length > 0
+  }
+  // Mauvaise pratique : détails requis + identité réelle obligatoire
   return base
+    && form.details_problematique.trim().length >= 10
     && !!form.identite_nom?.trim()
     && !!form.identite_prenom?.trim()
     && courrielValide(form.identite_courriel?.trim())
@@ -700,7 +775,8 @@ function reinitialiser() {
   form.identite_contact = undefined
   mediasUrls.value = []
   solutions.value = []
-  preuvesPhotos.value = []
+  modalitesReproductibilite.value = props.typePratiqueInitial === 'bonne' ? [''] : []
+  preuvesFichiers.value = []
   erreurPhoto.value = null
   erreurMessage.value = null
 }
@@ -715,11 +791,16 @@ async function soumettre() {
   enCours.value = true
   erreurMessage.value = null
   try {
+    // Bonne pratique : les modalités (liste) sont enregistrées dans `details_problematique`
+    const details = estBonne.value
+      ? modalitesValides.value.join('\n')
+      : form.details_problematique.trim()
+
     const payload: CreerBadHabitPayload = {
       type_pratique: form.type_pratique,
       titre: form.titre.trim(),
       description_generale: form.description_generale.trim(),
-      details_problematique: form.details_problematique.trim(),
+      details_problematique: details,
       categorie_probleme: form.categorie_probleme,
       publication_anonyme: form.publication_anonyme,
       pays_id: form.pays_id,
@@ -737,7 +818,10 @@ async function soumettre() {
       if (form.gravite) payload.gravite = form.gravite
       const sols = solutions.value.map(s => s.trim()).filter(s => s.length > 0).slice(0, 10)
       if (sols.length > 0) payload.solutions_propositions = sols
-      if (preuvesPhotos.value.length > 0) payload.preuves_photos = preuvesPhotos.value.slice(0, 5)
+    }
+    // Preuves (images ou PDF) — partagées Goodhabits / Badhabits
+    if (preuvesFichiers.value.length > 0) {
+      payload.preuves_photos = preuvesFichiers.value.map(p => p.url).slice(0, 5)
     }
     if (form.categorie_probleme === 'autre' && form.categorie_probleme_detail?.trim()) {
       payload.categorie_probleme_detail = form.categorie_probleme_detail.trim()
@@ -765,6 +849,7 @@ watch(() => props.open, async (v) => {
     return
   }
   if (!estBonne.value) prefillIdentite()
+  else if (modalitesReproductibilite.value.length === 0) modalitesReproductibilite.value = ['']
   if (paysListe.value.length === 0) {
     try {
       paysListe.value = await getPays()

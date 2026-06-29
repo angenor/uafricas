@@ -21,10 +21,10 @@
         <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
         <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
           <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-display font-bold tracking-tight transition-opacity duration-300 group-hover:opacity-0">
-            BadGoodhabits
+            {{ heroTitre }}
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Dénoncer les mauvaises pratiques et féliciter les bonnes actions.
+            {{ heroDescription }}
           </p>
         </div>
       </div>
@@ -45,7 +45,7 @@
             @click="ouvrirModalPublication(vueActive === 'bonne' ? 'bonne' : 'mauvaise')"
           >
             <font-awesome-icon :icon="['fas', 'plus']" class="text-xs" />
-            {{ vueActive === 'bonne' ? 'Féliciter une bonne pratique' : 'Signaler une mauvaise pratique' }}
+            {{ vueActive === 'bonne' ? 'Ajouter un Goodhabits' : 'Signaler un Badhabits' }}
           </button>
           <NuxtLink to="/universite/gouvernance"
                      class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition font-medium text-sm">
@@ -249,7 +249,7 @@
                       <span v-if="contribution.typePratique === 'bonne'"
                             class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide bg-emerald-100 text-emerald-700">
                         <font-awesome-icon :icon="['fas', 'thumbs-up']" class="text-xs mr-1" />
-                        Bonne pratique
+                        Goodhabits
                       </span>
                       <span v-if="contribution.typePratique !== 'bonne' && contribution.problematique?.gravite"
                             class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide"
@@ -280,17 +280,29 @@
                       {{ contribution.description }}
                     </p>
 
-                    <!-- Preuves (photos) -->
+                    <!-- Preuves (images + PDF) -->
                     <div v-if="contribution.images?.length" class="flex flex-wrap gap-2 mb-4">
                       <button
-                        v-for="(img, idx) in contribution.images"
+                        v-for="(img, idx) in imagesPreuves(contribution)"
                         :key="img"
                         type="button"
                         class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 cursor-zoom-in group/img"
-                        @click.stop="ouvrirViewer(contribution.images!, idx)"
+                        @click.stop="ouvrirViewer(imagesPreuves(contribution), idx)"
                       >
                         <img :src="img" alt="Preuve" class="w-full h-full object-cover transition group-hover/img:scale-105">
                       </button>
+                      <a
+                        v-for="pdf in pdfsPreuves(contribution)"
+                        :key="pdf"
+                        :href="pdf"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="relative w-20 h-20 rounded-lg border border-gray-200 bg-gray-50 flex flex-col items-center justify-center gap-1 text-red-500 hover:text-red-600 hover:bg-red-50 transition"
+                        @click.stop
+                      >
+                        <font-awesome-icon :icon="['fas', 'file-pdf']" class="text-2xl" />
+                        <span class="text-[10px] font-semibold">PDF</span>
+                      </a>
                     </div>
 
                     <!-- Métadonnées -->
@@ -380,6 +392,11 @@ function ouvrirViewer(images: string[], index = 0) {
   viewerOuvert.value = true
 }
 
+// Séparation des preuves : images (visionneuse) vs documents PDF (lien)
+const estPdf = (url: string) => /\.pdf(\?|#|$)/i.test(url)
+const imagesPreuves = (c: ContributionCitoyenne) => (c.images ?? []).filter(u => !estPdf(u))
+const pdfsPreuves = (c: ContributionCitoyenne) => (c.images ?? []).filter(estPdf)
+
 // Partage vers le mur /publications
 const modalPartageOuvert = ref(false)
 const contribAPartager = ref<ContributionCitoyenne | null>(null)
@@ -406,6 +423,18 @@ async function soumettrePartage(legende: string) {
 }
 
 type VueActive = 'toutes' | 'mauvaise' | 'bonne'
+
+// Hero adaptatif selon la vue active
+const heroTitre = computed(() => {
+  if (vueActive.value === 'bonne') return 'Goodhabits'
+  if (vueActive.value === 'mauvaise') return 'Badhabits'
+  return 'BadGoodhabits'
+})
+const heroDescription = computed(() => {
+  if (vueActive.value === 'bonne') return 'Féliciter les bonnes actions et pratiques exemplaires.'
+  if (vueActive.value === 'mauvaise') return 'Dénoncer les mauvaises pratiques de gouvernance.'
+  return 'Dénoncer les mauvaises pratiques et féliciter les bonnes actions.'
+})
 
 const contributions = ref<ContributionCitoyenne[]>([])
 const vueActive = ref<VueActive>('toutes')
@@ -460,14 +489,14 @@ const onglets = computed(() => [
   },
   {
     value: 'mauvaise' as VueActive,
-    label: 'Mauvaises pratiques',
+    label: 'Badhabits',
     icon: ['fas', 'triangle-exclamation'],
     compte: contributionsMauvaises.value.length,
     activeClass: 'bg-linear-to-r from-red-600 to-orange-600 text-white shadow-sm',
   },
   {
     value: 'bonne' as VueActive,
-    label: 'Bonnes pratiques',
+    label: 'Goodhabits',
     icon: ['fas', 'thumbs-up'],
     compte: contributionsBonnes.value.length,
     activeClass: 'bg-linear-to-r from-emerald-600 to-green-600 text-white shadow-sm',
