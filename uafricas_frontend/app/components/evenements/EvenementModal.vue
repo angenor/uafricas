@@ -42,6 +42,23 @@
               />
             </div>
 
+            <!-- Thématique -->
+            <div>
+              <label for="thematique" class="block text-sm font-medium text-gray-700 mb-1">
+                Thématique *
+              </label>
+              <select
+                id="thematique"
+                v-model="form.thematique"
+                class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden"
+              >
+                <option value="" disabled>Choisir une thématique</option>
+                <option v-for="theme in THEMATIQUES_EVENEMENT" :key="theme" :value="theme">
+                  {{ theme }}
+                </option>
+              </select>
+            </div>
+
             <!-- Type et Pays -->
             <div class="grid grid-cols-2 gap-4">
               <div>
@@ -300,7 +317,7 @@
 </template>
 
 <script setup lang="ts">
-import { PAYS_AFRICAINS } from '~/composables/useEvenements'
+import { PAYS_AFRICAINS, THEMATIQUES_EVENEMENT } from '~/composables/useEvenements'
 import { editorJsToHtml, type EditorJsData } from '~/composables/useEditorJs'
 
 defineProps<{
@@ -313,6 +330,7 @@ const emit = defineEmits<{
     titre: string
     description: string
     type: string
+    thematique: string
     pays: string
     ville: string
     date_heure_debut: string
@@ -335,6 +353,7 @@ const form = reactive({
   titre: '',
   descriptionData: undefined as EditorJsData | undefined,
   type: '',
+  thematique: '',
   pays: '',
   ville: '',
   date_heure_debut: '',
@@ -367,6 +386,7 @@ const isFormValid = computed(() => {
   return form.titre &&
     hasDescription.value &&
     form.type &&
+    form.thematique &&
     form.pays &&
     form.ville &&
     form.date_heure_debut &&
@@ -399,6 +419,7 @@ const handleSubmit = async () => {
     titre: form.titre,
     description: descriptionHtml,
     type: form.type,
+    thematique: form.thematique,
     pays: form.pays,
     ville: form.ville,
     date_heure_debut: form.date_heure_debut,
@@ -418,6 +439,7 @@ const handleSubmit = async () => {
   form.titre = ''
   form.descriptionData = undefined
   form.type = ''
+  form.thematique = ''
   form.pays = ''
   form.ville = ''
   form.date_heure_debut = ''

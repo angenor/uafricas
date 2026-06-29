@@ -30,6 +30,7 @@ const form = reactive({
   ville: '',
   adresse: '',
   lien_en_ligne: '',
+  enregistrement_url: '',
   image_couverture_url: '',
   type_organisateur: 'personnel' as 'personnel' | 'organisation',
   contact_nom: '',
@@ -126,6 +127,7 @@ const charger = async () => {
     form.ville = e.ville || ''
     form.adresse = e.adresse || ''
     form.lien_en_ligne = e.lien_en_ligne || ''
+    form.enregistrement_url = e.enregistrement_url || ''
     form.image_couverture_url = e.image_couverture_url || ''
     form.type_organisateur = e.type_organisateur || 'personnel'
     form.contact_nom = e.contact_nom || ''
@@ -158,6 +160,7 @@ const sauvegarder = async () => {
     if (form.ville.trim()) body.ville = form.ville.trim()
     if (form.adresse.trim()) body.adresse = form.adresse.trim()
     if (form.lien_en_ligne.trim()) body.lien_en_ligne = form.lien_en_ligne.trim()
+    body.enregistrement_url = form.enregistrement_url.trim()
     if (form.image_couverture_url.trim()) body.image_couverture_url = form.image_couverture_url.trim()
     body.type_organisateur = form.type_organisateur
     body.contact_nom = form.type_organisateur === 'organisation' ? form.contact_nom.trim() : ''
@@ -341,6 +344,16 @@ onMounted(async () => {
               <div v-if="afficherLienEnLigne" class="form-control">
                 <label class="label"><span class="label-text">Lien en ligne</span></label>
                 <input v-model="form.lien_en_ligne" type="url" class="input input-bordered" placeholder="https://zoom.us/j/...">
+              </div>
+              <div class="form-control">
+                <label class="label">
+                  <span class="label-text">
+                    <font-awesome-icon icon="fa-brands fa-youtube" class="text-red-600 mr-1" />
+                    Enregistrement vidéo (YouTube)
+                  </span>
+                </label>
+                <input v-model="form.enregistrement_url" type="url" class="input input-bordered" placeholder="https://www.youtube.com/watch?v=...">
+                <label class="label"><span class="label-text-alt text-base-content/60">Affiché en lecteur intégré quand l'événement est terminé.</span></label>
               </div>
             </div>
 

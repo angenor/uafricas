@@ -17,6 +17,12 @@
       <h3 class="text-xl font-bold text-custom-chocolat mb-2 line-clamp-2">
         {{ evenement.titre }}
       </h3>
+      <span
+        v-if="evenement.thematique"
+        class="inline-block bg-custom-green/10 text-custom-green text-xs font-medium px-2 py-1 rounded-full mb-2"
+      >
+        {{ evenement.thematique }}
+      </span>
       <p class="text-sm text-gray-600 mb-3 line-clamp-2">
         {{ evenement.description }}
       </p>

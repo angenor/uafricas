@@ -198,6 +198,16 @@
                 <input v-model="formEdit.lien_en_ligne" type="url" class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden" placeholder="https://…" />
               </div>
 
+              <!-- Enregistrement vidéo (rediffusion) -->
+              <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+                <label class="flex items-center gap-2 text-sm font-medium text-red-700 mb-1">
+                  <font-awesome-icon icon="fa-brands fa-youtube" class="text-red-600" />
+                  Lien de l'enregistrement vidéo (YouTube)
+                </label>
+                <input v-model="formEdit.enregistrement_url" type="url" class="w-full border-2 rounded-md p-2 border-red-200 focus:outline-hidden focus:border-red-400" placeholder="https://www.youtube.com/watch?v=…" />
+                <p class="text-xs text-gray-500 mt-1">Affiché en lecteur intégré sur la page une fois l'événement terminé.</p>
+              </div>
+
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Date & heure de début *</label>
@@ -397,6 +407,7 @@ const formEdit = reactive({
   date_heure_debut: '',
   date_heure_fin: '',
   lien_en_ligne: '',
+  enregistrement_url: '',
   nombre_places: null as number | null,
   type_organisateur: 'personnel' as 'personnel' | 'organisation',
   contact_nom: '',
@@ -446,6 +457,7 @@ const ouvrirEdition = (ev: EvenementDetailAPI) => {
   formEdit.date_heure_debut = toLocalInput(ev.date_heure_debut)
   formEdit.date_heure_fin = toLocalInput(ev.date_heure_fin)
   formEdit.lien_en_ligne = ev.lien_en_ligne || ''
+  formEdit.enregistrement_url = ev.enregistrement_url || ''
   formEdit.nombre_places = ev.nombre_places
   formEdit.type_organisateur = ev.type_organisateur || 'personnel'
   formEdit.contact_nom = ev.contact_nom || ''
@@ -480,6 +492,7 @@ const enregistrerEdition = async () => {
     date_heure_debut: formEdit.date_heure_debut,
     date_heure_fin: formEdit.date_heure_fin,
     lien_en_ligne: afficheLienEdit.value ? formEdit.lien_en_ligne : '',
+    enregistrement_url: formEdit.enregistrement_url,
     nombre_places: formEdit.nombre_places,
     type_organisateur: formEdit.type_organisateur,
     contact_nom: formEdit.type_organisateur === 'organisation' ? formEdit.contact_nom : '',

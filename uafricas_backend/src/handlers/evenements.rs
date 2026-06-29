@@ -99,6 +99,7 @@ async fn construire_response(
         titre: row.titre.clone(),
         description: row.description.clone(),
         type_format: mapper_format_frontend(&row.format),
+        thematique: row.type_categorie.clone(),
         pays: pays_nom,
         ville: row.ville.clone(),
         date_heure_debut: row.date_heure_debut,
@@ -261,6 +262,7 @@ pub async fn obtenir_evenement(
         slug: row.slug.clone(),
         description: row.description.clone(),
         type_format: mapper_format_frontend(&row.format),
+        thematique: row.type_categorie.clone(),
         pays: pays_nom,
         ville: row.ville.clone(),
         adresse: row.adresse.clone(),
@@ -278,6 +280,7 @@ pub async fn obtenir_evenement(
         contact_email: row.contact_email.clone(),
         contact_telephone: row.contact_telephone.clone(),
         contact_site_web: row.contact_site_web.clone(),
+        enregistrement_url: row.enregistrement_url.clone(),
         user: OrganisateurResponse {
             uid: organisateur.id,
             nom: organisateur.nom,
@@ -308,6 +311,7 @@ pub async fn creer_evenement(
     let mut titre: Option<String> = None;
     let mut description: Option<String> = None;
     let mut format_evt: Option<String> = None;
+    let mut thematique: Option<String> = None;
     let mut pays: Option<String> = None;
     let mut ville: Option<String> = None;
     let mut date_heure_debut: Option<String> = None;
@@ -320,6 +324,7 @@ pub async fn creer_evenement(
     let mut contact_email: Option<String> = None;
     let mut contact_telephone: Option<String> = None;
     let mut contact_site_web: Option<String> = None;
+    let mut enregistrement_url: Option<String> = None;
     let mut image_couverture_url: Option<String> = None;
 
     while let Some(item) = payload.next().await {
@@ -340,6 +345,7 @@ pub async fn creer_evenement(
                 let valeur = lire_champ_texte(&mut field).await?;
                 format_evt = Some(mapper_format_db(&valeur));
             }
+            "thematique" => thematique = texte_optionnel(lire_champ_texte(&mut field).await?),
             "pays" => pays = Some(lire_champ_texte(&mut field).await?),
             "ville" => ville = Some(lire_champ_texte(&mut field).await?),
             "date_heure_debut" => date_heure_debut = Some(lire_champ_texte(&mut field).await?),
@@ -358,6 +364,7 @@ pub async fn creer_evenement(
             "contact_email" => contact_email = texte_optionnel(lire_champ_texte(&mut field).await?),
             "contact_telephone" => contact_telephone = texte_optionnel(lire_champ_texte(&mut field).await?),
             "contact_site_web" => contact_site_web = texte_optionnel(lire_champ_texte(&mut field).await?),
+            "enregistrement_url" => enregistrement_url = texte_optionnel(lire_champ_texte(&mut field).await?),
             "couverture" | "image" => {
                 let nom_original = content_disposition
                     .as_ref()
@@ -448,15 +455,15 @@ pub async fn creer_evenement(
     // Inserer l'evenement
     let query = format!(
         "INSERT INTO media_content.evenement
-            (titre, slug, description, format, pays_id, ville, adresse,
+            (titre, slug, description, type, format, pays_id, ville, adresse,
              date_heure_debut, date_heure_fin, image_couverture_url,
              lien_en_ligne, nombre_places, type_organisateur,
              contact_nom, contact_email, contact_telephone, contact_site_web,
-             etat, cree_par)
-         VALUES ($1, $2, $3, $4::media_content.format_evenement, $5, $6, $7,
-                 $8, $9, $10, $11, $12, $13::media_content.type_organisateur,
-                 $14, $15, $16, $17,
-                 'publie', $18)
+             enregistrement_url, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5::media_content.format_evenement, $6, $7, $8,
+                 $9, $10, $11, $12, $13, $14::media_content.type_organisateur,
+                 $15, $16, $17, $18,
+                 $19, 'publie', $20)
          RETURNING {}",
         EVENEMENT_COLONNES.replace("e.", "")
     );
@@ -465,6 +472,7 @@ pub async fn creer_evenement(
         .bind(&titre)
         .bind(&slug)
         .bind(&description)
+        .bind(&thematique)
         .bind(&format_evt)
         .bind(pays_id)
         .bind(&ville)
@@ -479,6 +487,7 @@ pub async fn creer_evenement(
         .bind(&contact_email)
         .bind(&contact_telephone)
         .bind(&contact_site_web)
+        .bind(&enregistrement_url)
         .bind(utilisateur_id)
         .fetch_one(pool.get_ref())
         .await?;
@@ -495,6 +504,7 @@ pub async fn creer_evenement(
         slug: row.slug.clone(),
         description: row.description.clone(),
         type_format: mapper_format_frontend(&row.format),
+        thematique: row.type_categorie.clone(),
         pays: pays_nom,
         ville: row.ville.clone(),
         adresse: row.adresse.clone(),
@@ -512,6 +522,7 @@ pub async fn creer_evenement(
         contact_email: row.contact_email.clone(),
         contact_telephone: row.contact_telephone.clone(),
         contact_site_web: row.contact_site_web.clone(),
+        enregistrement_url: row.enregistrement_url.clone(),
         user: OrganisateurResponse {
             uid: organisateur.id,
             nom: organisateur.nom,
@@ -598,6 +609,7 @@ async fn construire_detail(
         slug: row.slug.clone(),
         description: row.description.clone(),
         type_format: mapper_format_frontend(&row.format),
+        thematique: row.type_categorie.clone(),
         pays: pays_nom,
         ville: row.ville.clone(),
         adresse: row.adresse.clone(),
@@ -615,6 +627,7 @@ async fn construire_detail(
         contact_email: row.contact_email.clone(),
         contact_telephone: row.contact_telephone.clone(),
         contact_site_web: row.contact_site_web.clone(),
+        enregistrement_url: row.enregistrement_url.clone(),
         user: OrganisateurResponse {
             uid: organisateur.id,
             nom: organisateur.nom,
@@ -758,6 +771,7 @@ pub async fn modifier_mon_evenement(
     set_str_opt!(body.contact_email, "contact_email");
     set_str_opt!(body.contact_telephone, "contact_telephone");
     set_str_opt!(body.contact_site_web, "contact_site_web");
+    set_str_opt!(body.enregistrement_url, "enregistrement_url");
 
     // Territoire -> pays_id.
     if let Some(ref pays_nom) = body.pays {

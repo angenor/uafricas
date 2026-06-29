@@ -1521,6 +1521,7 @@ export interface AdminEvenementDetail {
   contact_email: string | null
   contact_telephone: string | null
   contact_site_web: string | null
+  enregistrement_url: string | null
   etat: string
   cree_par: string
   cree_par_nom: string | null
@@ -1548,6 +1549,7 @@ export interface CreerEvenementAdminForm {
   contact_email: string
   contact_telephone: string
   contact_site_web: string
+  enregistrement_url: string
 }
 
 export interface AdminEvenementInscription {

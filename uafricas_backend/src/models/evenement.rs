@@ -13,6 +13,7 @@ pub const EVENEMENT_COLONNES: &str =
      e.lien_en_ligne, e.langue, e.nombre_places,
      e.type_organisateur::text AS type_organisateur,
      e.contact_nom, e.contact_email, e.contact_telephone, e.contact_site_web,
+     e.enregistrement_url,
      e.etat, e.cree_par, e.created_at, e.updated_at";
 
 /// Representation d'un evenement en base de donnees
@@ -38,6 +39,7 @@ pub struct EvenementRow {
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
     pub contact_site_web: Option<String>,
+    pub enregistrement_url: Option<String>,
     pub etat: String,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
@@ -66,6 +68,8 @@ pub struct EvenementResponse {
     pub description: String,
     #[serde(rename = "type")]
     pub type_format: String,
+    /// Thématique de l'événement (colonne `type` en base)
+    pub thematique: Option<String>,
     pub pays: Option<String>,
     pub ville: Option<String>,
     pub date_heure_debut: DateTime<Utc>,
@@ -88,6 +92,8 @@ pub struct EvenementDetailResponse {
     pub description: String,
     #[serde(rename = "type")]
     pub type_format: String,
+    /// Thématique de l'événement (colonne `type` en base)
+    pub thematique: Option<String>,
     pub pays: Option<String>,
     pub ville: Option<String>,
     pub adresse: Option<String>,
@@ -106,6 +112,8 @@ pub struct EvenementDetailResponse {
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
     pub contact_site_web: Option<String>,
+    /// Lien d'enregistrement video (rediffusion YouTube) — affiche quand l'evenement est termine.
+    pub enregistrement_url: Option<String>,
     pub user: OrganisateurResponse,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -153,6 +161,7 @@ pub struct ModifierMonEvenementRequest {
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
     pub contact_site_web: Option<String>,
+    pub enregistrement_url: Option<String>,
 }
 
 /// DTO inscrit a un evenement (vue organisateur).

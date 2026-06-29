@@ -102,6 +102,7 @@
 \ir schemas/09b_media_content_evenements_streaming.sql
 \ir schemas/09c_media_content_evenement_contact.sql
 \ir schemas/09d_media_content_programme_chaine.sql
+\ir schemas/09e_media_content_evenement_enregistrement.sql
 \ir schemas/10_governance.sql
 \ir schemas/10f_governance_factcheck_volets_reactions.sql
 \ir schemas/10g_governance_factcheck_signalement.sql

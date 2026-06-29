@@ -247,11 +247,11 @@ pub async fn creer_evenement(
           date_heure_debut, date_heure_fin, image_couverture_url,
           format, lien_en_ligne, langue, nombre_places,
           type_organisateur, contact_nom, contact_email, contact_telephone, contact_site_web,
-          etat, cree_par)
+          enregistrement_url, etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
                  $12::media_content.format_evenement, $13, $14, $15,
                  $16::media_content.type_organisateur, $17, $18, $19, $20,
-                 'brouillon', $21)"
+                 $21, 'brouillon', $22)"
     )
     .bind(id)
     .bind(titre)
@@ -273,6 +273,7 @@ pub async fn creer_evenement(
     .bind(&contact_email)
     .bind(&contact_telephone)
     .bind(&contact_site_web)
+    .bind(body.enregistrement_url.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()))
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -344,6 +345,7 @@ pub async fn modifier_evenement(
     champ_str!(body.contact_email, "contact_email");
     champ_str!(body.contact_telephone, "contact_telephone");
     champ_str!(body.contact_site_web, "contact_site_web");
+    champ_str!(body.enregistrement_url, "enregistrement_url");
 
     if let Some(ref fmt) = body.format {
         if !FORMATS_VALIDES.contains(&fmt.as_str()) {

@@ -137,6 +137,7 @@ const handleSubmit = async (data: any) => {
       titre: data.titre,
       description: data.description,
       type: data.type,
+      thematique: data.thematique,
       pays: data.pays,
       ville: data.ville,
       date_heure_debut: data.date_heure_debut,

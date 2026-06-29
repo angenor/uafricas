@@ -22,6 +22,8 @@ export interface EvenementAPI {
   titre: string
   description: string
   type: string
+  /** Thématique de l'événement (colonne `type` en base) */
+  thematique: string | null
   pays: string | null
   ville: string | null
   date_heure_debut: string
@@ -48,6 +50,8 @@ export interface EvenementDetailAPI extends EvenementAPI {
   contact_email: string | null
   contact_telephone: string | null
   contact_site_web: string | null
+  /** Lien d'enregistrement vidéo (rediffusion YouTube), affiché quand l'événement est terminé */
+  enregistrement_url: string | null
 }
 
 /** Un inscrit a un evenement (vue organisateur) */
@@ -77,6 +81,7 @@ export interface ModifierMonEvenementPayload {
   contact_email?: string
   contact_telephone?: string
   contact_site_web?: string
+  enregistrement_url?: string
 }
 
 /** Reponse paginee */
@@ -165,6 +170,26 @@ export const TYPES_EVENEMENT: { value: string; label: string }[] = [
 
 export const ANNEES = ['2026', '2027', '2028', '2029']
 
+/** Thématiques proposées pour un événement (panafricain / développement durable) */
+export const THEMATIQUES_EVENEMENT = [
+  'Développement durable',
+  'Environnement & Climat',
+  'Entrepreneuriat',
+  'Éducation & Formation',
+  'Santé & Bien-être',
+  'Agriculture & Agroalimentaire',
+  'Technologie & Numérique',
+  'Culture & Arts',
+  'Gouvernance & Société civile',
+  'Énergie',
+  'Économie & Finance',
+  'Genre & Inclusion',
+  'Jeunesse & Leadership',
+  'Tourisme & Patrimoine',
+  'Sport',
+  'Autre',
+]
+
 export const PAYS_AFRICAINS = [
   'Afrique du Sud',
   'Algérie',
@@ -251,6 +276,27 @@ export const getHeure = (dateStr: string | null): string => {
     minute: '2-digit',
     hour12: false,
   })
+}
+
+/**
+ * Convertit une URL YouTube (watch, youtu.be, shorts, live, embed) en URL d'iframe embed.
+ * Renvoie null si l'URL n'est pas reconnue comme une vidéo YouTube.
+ */
+export const youtubeEmbedUrl = (url: string | null | undefined): string | null => {
+  if (!url) return null
+  const u = url.trim()
+  const patterns = [
+    /(?:youtube\.com\/watch\?(?:.*&)?v=)([\w-]{11})/,
+    /(?:youtu\.be\/)([\w-]{11})/,
+    /(?:youtube\.com\/embed\/)([\w-]{11})/,
+    /(?:youtube\.com\/live\/)([\w-]{11})/,
+    /(?:youtube\.com\/shorts\/)([\w-]{11})/,
+  ]
+  for (const p of patterns) {
+    const m = u.match(p)
+    if (m) return `https://www.youtube.com/embed/${m[1]}`
+  }
+  return null
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -349,6 +395,7 @@ export const useEvenements = () => {
       titre: string
       description: string
       type: string
+      thematique?: string
       pays: string
       ville: string
       date_heure_debut: string
@@ -361,6 +408,7 @@ export const useEvenements = () => {
       contact_email?: string
       contact_telephone?: string
       contact_site_web?: string
+      enregistrement_url?: string
     },
     couvertureFile: File | null,
   ): Promise<EvenementDetailAPI | null> => {
@@ -372,6 +420,7 @@ export const useEvenements = () => {
       data.append('titre', formData.titre)
       data.append('description', formData.description)
       data.append('format', mapperFormatDb(formData.type))
+      if (formData.thematique) data.append('thematique', formData.thematique)
       data.append('pays', formData.pays)
       data.append('ville', formData.ville)
       data.append('date_heure_debut', formData.date_heure_debut)
@@ -384,6 +433,7 @@ export const useEvenements = () => {
       if (formData.contact_email) data.append('contact_email', formData.contact_email)
       if (formData.contact_telephone) data.append('contact_telephone', formData.contact_telephone)
       if (formData.contact_site_web) data.append('contact_site_web', formData.contact_site_web)
+      if (formData.enregistrement_url) data.append('enregistrement_url', formData.enregistrement_url)
       if (couvertureFile) {
         data.append('couverture', couvertureFile)
       }

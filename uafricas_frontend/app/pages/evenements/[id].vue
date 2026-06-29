@@ -30,6 +30,12 @@
           <span class="px-3 py-1 text-sm font-semibold rounded-full" :class="badgeStatutClasses">
             {{ labelStatut }}
           </span>
+          <span
+            v-if="evenement.thematique"
+            class="px-3 py-1 text-sm font-semibold rounded-full bg-white/90 text-custom-green"
+          >
+            {{ evenement.thematique }}
+          </span>
         </div>
 
         <!-- Titre sur le hero (pb-14 pour rester visible au-dessus de la carte -mt-10) -->
@@ -225,6 +231,38 @@
             </div>
           </div>
 
+          <!-- Enregistrement vidéo (rediffusion) — affiché une fois l'événement terminé -->
+          <div v-if="estTermine && enregistrementUrl" class="border-t border-gray-100 mt-2 pt-6">
+            <h2 class="flex items-center gap-2 text-xl font-bold text-gray-800 mb-3">
+              <font-awesome-icon icon="fa-brands fa-youtube" class="text-red-600 text-base" />
+              Revoir l'événement
+            </h2>
+            <!-- Lecteur YouTube embarqué -->
+            <div v-if="enregistrementEmbed" class="relative w-full overflow-hidden rounded-xl bg-black shadow-md" style="aspect-ratio: 16 / 9;">
+              <iframe
+                :src="enregistrementEmbed"
+                class="absolute inset-0 h-full w-full"
+                title="Enregistrement de l'événement"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              />
+            </div>
+            <!-- Repli : lien externe si l'URL n'est pas une vidéo YouTube reconnue -->
+            <a
+              v-else
+              :href="enregistrementUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 font-semibold text-white shadow-md transition-all hover:brightness-110"
+            >
+              <font-awesome-icon icon="fa-solid fa-play" />
+              Voir l'enregistrement
+              <font-awesome-icon icon="fa-solid fa-arrow-up-right-from-square" class="text-xs" />
+            </a>
+          </div>
+
           <!-- Description -->
           <div class="border-t border-gray-100 pt-6">
             <h2 class="flex items-center gap-2 text-xl font-bold text-gray-800 mb-3">
@@ -338,7 +376,7 @@
 </template>
 
 <script setup lang="ts">
-import { useEvenements, formatDateShort, getHeure, type EvenementDetailAPI, type EtatDirect } from '~/composables/useEvenements'
+import { useEvenements, formatDateShort, getHeure, youtubeEmbedUrl, type EvenementDetailAPI, type EtatDirect } from '~/composables/useEvenements'
 import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
@@ -421,6 +459,11 @@ const aContact = computed(() => {
   const e = evenement.value
   return !!(e?.contact_email || e?.contact_telephone || e?.contact_site_web)
 })
+
+// Enregistrement vidéo : affiché une fois l'événement terminé.
+const estTermine = computed(() => evenement.value?.statut === 'termine')
+const enregistrementUrl = computed(() => evenement.value?.enregistrement_url || null)
+const enregistrementEmbed = computed(() => youtubeEmbedUrl(enregistrementUrl.value))
 
 const handleInscription = async () => {
   const success = await inscrireEvenement(evenementId)

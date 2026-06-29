@@ -20,6 +20,7 @@ pub const ADMIN_EVENEMENT_DETAIL_COLONNES: &str =
      e.lien_en_ligne, e.langue, e.nombre_places,
      e.type_organisateur::TEXT AS type_organisateur,
      e.contact_nom, e.contact_email, e.contact_telephone, e.contact_site_web,
+     e.enregistrement_url,
      e.etat, e.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      e.created_at, e.updated_at";
 
@@ -67,6 +68,7 @@ pub struct AdminEvenementDetailRow {
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
     pub contact_site_web: Option<String>,
+    pub enregistrement_url: Option<String>,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -97,6 +99,7 @@ pub struct AdminEvenementDetailResponse {
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
     pub contact_site_web: Option<String>,
+    pub enregistrement_url: Option<String>,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -129,6 +132,7 @@ impl AdminEvenementDetailRow {
             contact_email: self.contact_email.clone(),
             contact_telephone: self.contact_telephone.clone(),
             contact_site_web: self.contact_site_web.clone(),
+            enregistrement_url: self.enregistrement_url.clone(),
             etat: self.etat.clone(),
             cree_par: self.cree_par,
             cree_par_nom: self.cree_par_nom.clone(),
@@ -184,6 +188,7 @@ pub struct CreerEvenementRequest {
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
     pub contact_site_web: Option<String>,
+    pub enregistrement_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -206,6 +211,7 @@ pub struct ModifierEvenementRequest {
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
     pub contact_site_web: Option<String>,
+    pub enregistrement_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
