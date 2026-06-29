@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -805,6 +805,8 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/sessions/{id}/rejoindre", web::post().to(afrolang::rejoindre_session))
                     .route("/sessions/{id}/quitter", web::post().to(afrolang::quitter_session))
                     .route("/sessions/{id}/fermer-pour-abus", web::post().to(afrolang::fermer_session_pour_abus))
+                    // Signalement communautaire de la salle hôte (suspension au seuil)
+                    .route("/sessions/{id}/signalement", web::post().to(session_signalement::signaler_session))
                     // Transfert de modération (feature 005, US3)
                     .route("/sessions/{id}/moderation/transferer", web::put().to(afrolang::transferer_moderation_session))
                     // Passation de modération multi-modérateurs (refonte 2026-06)

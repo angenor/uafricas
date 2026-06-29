@@ -93,6 +93,7 @@
 \ir schemas/08b_afrolang.sql
 \ir schemas/08c_afrolang_passation_moderation.sql
 \ir schemas/08h_afrolang_groupe_ethnique_libre.sql
+\ir schemas/08i_afrolang_signalement_salle.sql
 \ir schemas/08d_culture_type_centre.sql
 \ir schemas/08e_culture_programmation_image.sql
 \ir schemas/08f_culture_programmation_inscription.sql

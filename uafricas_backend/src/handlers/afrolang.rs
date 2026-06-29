@@ -835,7 +835,12 @@ pub async fn lister_salles(
     let par_page = params.par_page.unwrap_or(20).clamp(1, 100);
     let offset = (page - 1) * par_page;
 
-    let mut conditions: Vec<String> = vec!["s.actif = true".to_string(), "s.deleted_at IS NULL".to_string()];
+    let mut conditions: Vec<String> = vec![
+        "s.actif = true".to_string(),
+        "s.deleted_at IS NULL".to_string(),
+        // Masque les salles suspendues par signalements communautaires (> seuil).
+        "s.suspendu = false".to_string(),
+    ];
     let mut bind_index = 1u32;
     let mut str_binds: Vec<String> = Vec::new();
     let mut uuid_binds: Vec<Uuid> = Vec::new();
@@ -4387,6 +4392,20 @@ pub async fn demarrer_ou_rejoindre_session_salle_publique(
     if desactivee_admin {
         return Err(ApiErreur::AccesInterdit(
             "Salle désactivée par l'administration".into(),
+        ));
+    }
+
+    // Suspension communautaire (signalements > seuil) : jointure bloquée jusqu'à
+    // réactivation par un administrateur.
+    let suspendue: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM afrolang.salle WHERE id = $1 AND suspendu = TRUE)",
+    )
+    .bind(salle_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if suspendue {
+        return Err(ApiErreur::AccesInterdit(
+            "Salle suspendue suite à des signalements".into(),
         ));
     }
 

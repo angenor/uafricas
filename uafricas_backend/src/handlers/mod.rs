@@ -24,6 +24,7 @@ pub mod livres;
 pub mod membres;
 pub mod messagerie;
 pub mod profil_social;
+pub mod session_signalement;
 pub mod moocs;
 pub mod projets;
 pub mod sabbatiques;

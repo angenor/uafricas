@@ -56,6 +56,22 @@
             <font-awesome-icon :icon="['fas', 'ban']" class="w-4 h-4" />
             <span class="hidden sm:inline">Fermer la salle</span>
           </button>
+          <!-- Signalement communautaire de la salle — visible aux membres ordinaires
+               (ceux qui n'ont pas le pouvoir admin de « Fermer la salle »). -->
+          <button
+            v-if="!peutFermerPourAbus"
+            :disabled="aSignaleSession"
+            class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+            :class="aSignaleSession
+              ? 'bg-gray-700/40 text-gray-400 cursor-default'
+              : 'bg-gray-700/60 text-orange-300 hover:bg-orange-600 hover:text-white'"
+            :aria-label="aSignaleSession ? 'Vous avez déjà signalé cette salle' : 'Signaler cette salle'"
+            :title="aSignaleSession ? 'Vous avez déjà signalé cette salle' : 'Signaler un abus dans cette salle'"
+            @click="signalementModaleOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'flag']" class="w-4 h-4" />
+            <span class="hidden sm:inline">{{ aSignaleSession ? 'Signalé' : 'Signaler' }}</span>
+          </button>
           <!-- Ressources contribuées (feature 001-ressources-fermeture-session, US1) -->
           <button
             class="px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
@@ -209,6 +225,15 @@
       @success="onSessionFermee"
     />
 
+    <!-- Signalement communautaire de la salle (membres ordinaires) -->
+    <AfrolangSignalerSessionModal
+      ref="signalementModalRef"
+      :is-open="signalementModaleOuverte"
+      :libelle="salleNom || session.titre || 'cette salle'"
+      @close="signalementModaleOuverte = false"
+      @submit="soumettreSignalement"
+    />
+
     <!-- Passation de modération (refonte multi-modérateurs) : prompt au démarreur
          « placeholder » + bannière de promotion au modérateur désigné entrant. -->
     <AfrolangPassationModerationPrompt :session-id="session.id" />
@@ -285,6 +310,30 @@ const onSessionFermee = () => {
   emit('quitter')
 }
 
+/** Signalement communautaire de la salle — accessible aux membres ordinaires. */
+const signalementModaleOuverte = ref(false)
+const aSignaleSession = ref(false)
+const signalementModalRef = ref<{
+  setLoading: (v: boolean) => void
+  setError: (m: string) => void
+  setSuccess: (m: string) => void
+} | null>(null)
+
+const soumettreSignalement = async (payload: { motif: string, description: string }) => {
+  signalementModalRef.value?.setLoading(true)
+  const etat = await signalerSession(props.session.id, payload)
+  if (!etat) {
+    signalementModalRef.value?.setError('Une erreur est survenue. Veuillez réessayer.')
+    return
+  }
+  aSignaleSession.value = true
+  signalementModalRef.value?.setSuccess(
+    etat.deja_signale
+      ? 'Vous aviez déjà signalé cette salle.'
+      : 'Merci, votre signalement a été pris en compte.',
+  )
+}
+
 const emit = defineEmits<{
   quitter: []
   terminer: []
@@ -301,6 +350,7 @@ const {
   listerPermissionsTableauBlanc,
   attacherListenerModeration,
   reinitialiserEtatModeration,
+  signalerSession,
 } = useAfrolang()
 let detacherListenerModeration: (() => void) | null = null
 

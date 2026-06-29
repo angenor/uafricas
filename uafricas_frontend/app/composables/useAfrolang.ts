@@ -226,6 +226,13 @@ export interface SessionDetailAPI extends SessionAPI {
   passation_en_attente?: PassationEnAttenteAPI | null
 }
 
+/** État renvoyé après le signalement communautaire de la salle d'une session. */
+export interface SignalementSessionEtat {
+  nombre_signalements: number
+  suspendu: boolean
+  deja_signale: boolean
+}
+
 /** DTO participant */
 export interface ParticipantAPI {
   id: string
@@ -1262,6 +1269,35 @@ export const useAfrolang = () => {
     }
   }
 
+  /**
+   * Signaler la salle hôte d'une session (signalement communautaire). Tout
+   * membre connecté peut signaler ; au-delà de 10 signalements distincts la
+   * salle est automatiquement suspendue jusqu'à réactivation par un admin.
+   */
+  const signalerSession = async (
+    sessionId: string,
+    payload?: { motif?: string, description?: string },
+  ): Promise<SignalementSessionEtat | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<SignalementSessionEtat>>(
+        `${apiBase}/api/afrolang/sessions/${sessionId}/signalement`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: {
+            motif: payload?.motif || undefined,
+            description: payload?.description || undefined,
+          },
+        },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    }
+    catch (e) {
+      console.error('Erreur signalerSession:', e)
+      return null
+    }
+  }
+
   // ── Phase 3 : Token LiveKit ──────────────────────────────
 
   const genererTokenSession = async (
@@ -2016,6 +2052,7 @@ export const useAfrolang = () => {
     terminerSession,
     rejoindreSession,
     quitterSession,
+    signalerSession,
     genererTokenSession,
     transfererModerationSession,
     // Tableau blanc
