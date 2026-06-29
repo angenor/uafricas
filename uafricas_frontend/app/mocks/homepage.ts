@@ -115,8 +115,8 @@ export const navigationItems: NavItem[] = [
     label: 'Africamood',
     to: '/medias',
     children: [
-      { label: 'Télé', to: '/tele' },
-      { label: 'Radio', to: '/radios' },
+      { label: 'Télé', to: '/medias/tele' },
+      { label: 'Radio', to: '/medias/radios' },
       { label: 'Africantives', to: '/africantives' },
     ],
   },

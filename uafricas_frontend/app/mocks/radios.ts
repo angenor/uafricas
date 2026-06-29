@@ -132,7 +132,7 @@ export const radioCategories: RadioCategory[] = [
     image: '/images/banners/radio-africans.avif',
     badge: 'International',
     badgeColor: 'green',
-    link: '/radio/africans'
+    link: '/medias/radio/africans'
   },
   {
     id: 2,
@@ -141,7 +141,7 @@ export const radioCategories: RadioCategory[] = [
     image: '/images/banners/radio-national.jpg',
     badge: 'Local',
     badgeColor: 'chocolat',
-    link: '/radio/nationales'
+    link: '/medias/radio/nationales'
   }
 ]
 

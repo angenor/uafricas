@@ -121,7 +121,7 @@ const definirSources = (): SourceRecherche[] => [
         sousTexte: `${c.categorie || ''} · ${c.pays || ''}`,
         categorie: 'Télévision',
         icone: 'fa-solid fa-tv',
-        lien: '/tele',
+        lien: '/medias/tele',
       })),
   },
   {
@@ -135,7 +135,7 @@ const definirSources = (): SourceRecherche[] => [
         sousTexte: `${r.genre || ''} · ${r.pays || ''}`,
         categorie: 'Radios',
         icone: 'fa-solid fa-radio',
-        lien: '/radios',
+        lien: '/medias/radios',
       })),
   },
   {

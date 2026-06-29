@@ -521,8 +521,8 @@ const menus: NavMenu[] = [
     colorClass: 'text-custom-green',
     items: [
       { label: 'Vidafrica', to: '/vidafrica', description: 'Votre musique et des vidéos spéciales sur l\'Afrique à votre portée', icon: 'fa-solid fa-video' },
-      { label: 'Télé', to: '/tele', description: 'La télé au service de l\'union et du développement de l\'Afrique', icon: 'fa-solid fa-tv' },
-      { label: 'Radio', to: '/radios', description: 'La radio au service de l\'union et du développement de l\'Afrique', icon: 'fa-solid fa-radio' },
+      { label: 'Télé', to: '/medias/tele', description: 'La télé au service de l\'union et du développement de l\'Afrique', icon: 'fa-solid fa-tv' },
+      { label: 'Radio', to: '/medias/radios', description: 'La radio au service de l\'union et du développement de l\'Afrique', icon: 'fa-solid fa-radio' },
     ]
   },
 ]

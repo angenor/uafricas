@@ -260,7 +260,7 @@ const raccourcisRapides = [
   { label: 'Bibliothèque', to: '/bibliotheque/numerique', icone: 'fa-solid fa-book' },
   { label: 'Experts', to: '/experts', icone: 'fa-solid fa-users' },
   { label: 'Projets', to: '/financer-projet', icone: 'fa-solid fa-rocket' },
-  { label: 'Radios', to: '/radios', icone: 'fa-solid fa-radio' },
+  { label: 'Radios', to: '/medias/radios', icone: 'fa-solid fa-radio' },
 ]
 
 // Navigation clavier

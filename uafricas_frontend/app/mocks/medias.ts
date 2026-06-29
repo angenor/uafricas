@@ -24,7 +24,7 @@ export const mediaCards: MediaCard[] = [
     image: '/images/banners/regarde-tele.jpg',
     badge: 'Télé',
     badgeColor: 'green',
-    link: '/tele',
+    link: '/medias/tele',
   },
   {
     id: 2,
@@ -34,7 +34,7 @@ export const mediaCards: MediaCard[] = [
     image: '/images/banners/radio-national.jpg',
     badge: 'Radio',
     badgeColor: 'chocolat',
-    link: '/radios',
+    link: '/medias/radios',
   },
 ]
 
