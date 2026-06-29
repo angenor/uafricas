@@ -174,6 +174,10 @@
                       </button>
                     </div>
                   </div>
+                  <img v-if="formation.couverture_url"
+                       :src="formation.couverture_url"
+                       :alt="formation.titre"
+                       class="hidden sm:block ml-4 w-32 h-24 rounded-lg object-cover shrink-0">
                 </div>
               </div>
             </div>

@@ -20,8 +20,9 @@
     <!-- Contenu -->
     <template v-else>
       <!-- Hero Section -->
-      <div class="relative bg-gradient-to-r"
-           :class="getTypeGradient(formation.type)">
+      <div class="relative bg-gradient-to-r bg-cover bg-center"
+           :class="getTypeGradient(formation.type)"
+           :style="formation.couverture_url ? { backgroundImage: `url(${formation.couverture_url})` } : undefined">
         <div class="absolute inset-0 bg-black/30"></div>
         <div class="relative px-4 md:px-8 pt-16 pb-6">
           <div class="max-w-6xl mx-auto w-full">

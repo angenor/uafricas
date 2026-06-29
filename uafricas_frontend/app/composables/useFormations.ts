@@ -219,6 +219,12 @@ export const mapperFormatFrontend = (format: string): string => {
   return map[format] || format
 }
 
+/** Transformer une URL relative (`/uploads/...`) en URL absolue */
+const mapperUrlImage = (url: string | null | undefined, apiBase: string): string | null => {
+  if (!url) return null
+  return url.startsWith('http') ? url : `${apiBase}${url}`
+}
+
 // ──────────────────────────────────────────────────────────────
 // Composable
 // ──────────────────────────────────────────────────────────────
@@ -262,6 +268,12 @@ export const useFormations = () => {
         throw new Error(reponse.error || 'Erreur lors du chargement des formations')
       }
 
+      // Le backend renvoie des URLs de couverture relatives (`/uploads/...`) : les rendre absolues
+      reponse.data.formations = reponse.data.formations.map(f => ({
+        ...f,
+        couverture_url: mapperUrlImage(f.couverture_url, apiBase),
+      }))
+
       return reponse.data
     }
     catch (e: any) {
@@ -292,7 +304,10 @@ export const useFormations = () => {
         throw new Error(reponse.error || 'Formation non trouvee')
       }
 
-      return reponse.data
+      return {
+        ...reponse.data,
+        couverture_url: mapperUrlImage(reponse.data.couverture_url, apiBase),
+      }
     }
     catch (e: any) {
       const message = e?.data?.error || e?.message || 'Erreur reseau'

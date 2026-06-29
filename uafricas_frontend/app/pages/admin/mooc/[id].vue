@@ -308,8 +308,8 @@ onMounted(async () => {
             <div class="space-y-4">
               <h3 class="text-lg font-semibold border-b pb-2">Medias</h3>
               <div class="form-control">
-                <label class="label"><span class="label-text">URL de l'image de couverture</span></label>
-                <input v-model="form.image_couverture_url" type="url" class="input input-bordered" placeholder="https://...">
+                <label class="label"><span class="label-text">Image de couverture</span></label>
+                <OpportuniteAfriqueImageUploadField v-model="form.image_couverture_url" label="" />
               </div>
             </div>
 
