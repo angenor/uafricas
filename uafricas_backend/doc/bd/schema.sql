@@ -105,6 +105,7 @@
 \ir schemas/09e_media_content_evenement_enregistrement.sql
 \ir schemas/09f_media_content_medias_fichiers.sql
 \ir schemas/09g_media_content_split_programmes.sql
+\ir schemas/09h_media_content_formation_chapitres_lecons.sql
 \ir schemas/10_governance.sql
 \ir schemas/10f_governance_factcheck_volets_reactions.sql
 \ir schemas/10g_governance_factcheck_signalement.sql
@@ -166,6 +167,7 @@
 \ir schemas/17_seed_evenements.sql
 \ir schemas/18_seed_sabbatiques.sql
 \ir schemas/19_seed_moocs.sql
+\ir schemas/19b_seed_formations_programmes.sql
 \ir schemas/20_seed_fiches_pays.sql
 \ir schemas/21_seed_facultes.sql
 \ir schemas/22_seed_experts.sql

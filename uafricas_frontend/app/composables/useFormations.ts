@@ -45,6 +45,50 @@ export interface FormationDetailAPI extends FormationAPI {
   est_inscrit: boolean
 }
 
+// ── Programme : chapitres & leçons ─────────────────────────────
+
+/** Une leçon publique (contenu présent seulement si `accessible`) */
+export interface LeconPublic {
+  id: string
+  titre: string
+  duree_minutes: number | null
+  ordre: number
+  accessible: boolean
+  a_video: boolean
+  a_document: boolean
+  contenu: string | null
+  video_url: string | null
+  document_url: string | null
+  terminee: boolean
+}
+
+/** Un chapitre avec ses leçons */
+export interface ChapitrePublic {
+  id: string
+  titre: string
+  description: string | null
+  ordre: number
+  lecons: LeconPublic[]
+}
+
+/** Le programme complet d'une formation */
+export interface FormationContenu {
+  est_inscrit: boolean
+  accessible: boolean
+  nombre_lecons: number
+  nombre_lecons_terminees: number
+  progression: number
+  chapitres: ChapitrePublic[]
+}
+
+/** Résultat d'un (dé)marquage de leçon */
+export interface ProgressionResult {
+  progression: number
+  nombre_lecons: number
+  nombre_lecons_terminees: number
+  terminee: boolean
+}
+
 /** DTO des statistiques agregees de la page d'accueil universite */
 export interface UniversiteStatsAPI {
   nombre_facultes: number
@@ -350,6 +394,81 @@ export const useFormations = () => {
   }
 
   /**
+   * Récupérer le programme (chapitres + leçons) d'une formation.
+   * Le contenu des leçons n'est renseigné que si l'utilisateur est inscrit.
+   */
+  const obtenirContenuFormation = async (id: string): Promise<FormationContenu | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<FormationContenu>>(
+        `${apiBase}/api/moocs/${id}/contenu`,
+        { headers: authHeaders() },
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement du programme')
+      }
+
+      // Rendre les URLs de fichiers absolues (les liens externes/YouTube restent intacts)
+      reponse.data.chapitres = reponse.data.chapitres.map(ch => ({
+        ...ch,
+        lecons: ch.lecons.map(l => ({
+          ...l,
+          video_url: mapperUrlImage(l.video_url, apiBase),
+          document_url: mapperUrlImage(l.document_url, apiBase),
+        })),
+      }))
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur obtenirContenuFormation:', e)
+      return null
+    }
+  }
+
+  /** Marquer une leçon comme terminée (inscrit requis) */
+  const marquerLeconTerminee = async (
+    formationId: string,
+    leconId: string,
+  ): Promise<ProgressionResult | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<ProgressionResult>>(
+        `${apiBase}/api/moocs/${formationId}/lecons/${leconId}/completion`,
+        { method: 'POST', headers: authHeaders() },
+      )
+      if (!reponse.success || !reponse.data) throw new Error(reponse.error || 'Erreur')
+      return reponse.data
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur reseau'
+      console.error('Erreur marquerLeconTerminee:', e)
+      return null
+    }
+  }
+
+  /** Annuler le marquage « terminée » d'une leçon */
+  const annulerLeconTerminee = async (
+    formationId: string,
+    leconId: string,
+  ): Promise<ProgressionResult | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<ProgressionResult>>(
+        `${apiBase}/api/moocs/${formationId}/lecons/${leconId}/completion`,
+        { method: 'DELETE', headers: authHeaders() },
+      )
+      if (!reponse.success || !reponse.data) throw new Error(reponse.error || 'Erreur')
+      return reponse.data
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur reseau'
+      console.error('Erreur annulerLeconTerminee:', e)
+      return null
+    }
+  }
+
+  /**
    * Recuperer les statistiques agregees de la page d'accueil universite
    */
   const obtenirStatsUniversite = async (): Promise<UniversiteStatsAPI | null> => {
@@ -376,6 +495,9 @@ export const useFormations = () => {
     listerFormations,
     obtenirFormation,
     inscrireFormation,
+    obtenirContenuFormation,
+    marquerLeconTerminee,
+    annulerLeconTerminee,
     obtenirStatsUniversite,
   }
 }

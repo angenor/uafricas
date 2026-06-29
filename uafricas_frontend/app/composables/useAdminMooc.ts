@@ -2,10 +2,15 @@ import type {
   ApiResponse,
   AdminMooc, AdminMoocDetail, CreerMoocForm,
   AdminMoocInscription, AdminMoocInscriptionStats,
+  AdminChapitre, CreerChapitreForm, CreerLeconForm,
 } from '~/types/admin'
+import { useUserStore } from '~/stores/user'
 
 export const useAdminMooc = () => {
   const { adminFetch, listerPagine, pagination, sort, loading, error, allerPage, changerTri, reinitialiserPagination } = useAdmin()
+  const config = useRuntimeConfig()
+  const apiBase = config.public.apiBaseUrl as string
+  const userStore = useUserStore()
 
   const moocs = ref<AdminMooc[]>([])
   const moocDetail = ref<AdminMoocDetail | null>(null)
@@ -67,11 +72,92 @@ export const useAdminMooc = () => {
     return response.data
   }
 
+  // ── Programme : chapitres & leçons ─────────────────────────
+
+  const chargerChapitres = async (moocId: string): Promise<AdminChapitre[]> => {
+    const response = await adminFetch<ApiResponse<AdminChapitre[]>>(`/api/admin/mooc/${moocId}/chapitres`)
+    return response.data ?? []
+  }
+
+  const creerChapitre = async (moocId: string, form: CreerChapitreForm) => {
+    const response = await adminFetch<ApiResponse<{ id: string }>>(
+      `/api/admin/mooc/${moocId}/chapitres`,
+      { method: 'POST', body: form },
+    )
+    return response.data
+  }
+
+  const modifierChapitre = async (chapitreId: string, form: CreerChapitreForm) => {
+    const response = await adminFetch<ApiResponse<{ id: string }>>(
+      `/api/admin/chapitres/${chapitreId}`,
+      { method: 'PUT', body: form },
+    )
+    return response.data
+  }
+
+  const supprimerChapitre = async (chapitreId: string) => {
+    await adminFetch<ApiResponse<null>>(`/api/admin/chapitres/${chapitreId}`, { method: 'DELETE' })
+  }
+
+  const reordonnerChapitres = async (moocId: string, ids: string[]) => {
+    await adminFetch<ApiResponse<null>>(
+      `/api/admin/mooc/${moocId}/chapitres/reordonner`,
+      { method: 'PUT', body: { ids } },
+    )
+  }
+
+  const creerLecon = async (chapitreId: string, form: CreerLeconForm) => {
+    const response = await adminFetch<ApiResponse<{ id: string }>>(
+      `/api/admin/chapitres/${chapitreId}/lecons`,
+      { method: 'POST', body: form },
+    )
+    return response.data
+  }
+
+  const modifierLecon = async (leconId: string, form: CreerLeconForm) => {
+    const response = await adminFetch<ApiResponse<{ id: string }>>(
+      `/api/admin/lecons/${leconId}`,
+      { method: 'PUT', body: form },
+    )
+    return response.data
+  }
+
+  const supprimerLecon = async (leconId: string) => {
+    await adminFetch<ApiResponse<null>>(`/api/admin/lecons/${leconId}`, { method: 'DELETE' })
+  }
+
+  const reordonnerLecons = async (chapitreId: string, ids: string[]) => {
+    await adminFetch<ApiResponse<null>>(
+      `/api/admin/chapitres/${chapitreId}/lecons/reordonner`,
+      { method: 'PUT', body: { ids } },
+    )
+  }
+
+  // Téléverser une vidéo ou un PDF de leçon → renvoie l'URL relative stockée
+  const uploaderFichierFormation = async (fichier: File): Promise<string | null> => {
+    const formData = new FormData()
+    formData.append('fichier', fichier)
+    try {
+      const reponse = await $fetch<ApiResponse<{ url: string }>>(`${apiBase}/api/admin/mooc/upload`, {
+        method: 'POST',
+        body: formData,
+        headers: { Authorization: `Bearer ${userStore.accessToken}` },
+      })
+      return reponse.data?.url ?? null
+    }
+    catch (e: any) {
+      error.value = e?.data?.error || 'Échec du téléversement du fichier'
+      return null
+    }
+  }
+
   return {
     moocs, moocDetail, inscriptions, inscriptionStats, filtres,
     pagination, sort, loading, error,
     chargerListe, chargerDetail, creer, modifier, changerEtat, supprimer,
     chargerInscriptions, chargerStatsInscriptions,
+    chargerChapitres, creerChapitre, modifierChapitre, supprimerChapitre, reordonnerChapitres,
+    creerLecon, modifierLecon, supprimerLecon, reordonnerLecons, uploaderFichierFormation,
     allerPage, changerTri, reinitialiserPagination,
   }
 }

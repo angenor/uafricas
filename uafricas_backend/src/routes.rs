@@ -300,12 +300,24 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // Medias & Contenus - MOOC
                     .route("/mooc", web::get().to(admin::mooc::lister_moocs))
                     .route("/mooc", web::post().to(admin::mooc::creer_mooc))
+                    // Programme (chapitres/leçons) — /mooc/upload AVANT /mooc/{id} pour ne pas être capturé par {id}
+                    .route("/mooc/upload", web::post().to(admin::formation_contenu::uploader_fichier_formation))
+                    .route("/mooc/{id}/chapitres", web::get().to(admin::formation_contenu::lister_contenu))
+                    .route("/mooc/{id}/chapitres", web::post().to(admin::formation_contenu::creer_chapitre))
+                    .route("/mooc/{id}/chapitres/reordonner", web::put().to(admin::formation_contenu::reordonner_chapitres))
                     .route("/mooc/{id}", web::get().to(admin::mooc::obtenir_mooc))
                     .route("/mooc/{id}", web::put().to(admin::mooc::modifier_mooc))
                     .route("/mooc/{id}", web::delete().to(admin::mooc::supprimer_mooc))
                     .route("/mooc/{id}/etat", web::patch().to(admin::mooc::changer_etat_mooc))
                     .route("/mooc/{id}/inscriptions", web::get().to(admin::mooc::lister_inscriptions))
                     .route("/mooc/{id}/inscriptions/stats", web::get().to(admin::mooc::stats_inscriptions))
+                    // Programme (chapitres/leçons) — édition directe par id
+                    .route("/chapitres/{chapitre_id}", web::put().to(admin::formation_contenu::modifier_chapitre))
+                    .route("/chapitres/{chapitre_id}", web::delete().to(admin::formation_contenu::supprimer_chapitre))
+                    .route("/chapitres/{chapitre_id}/lecons", web::post().to(admin::formation_contenu::creer_lecon))
+                    .route("/chapitres/{chapitre_id}/lecons/reordonner", web::put().to(admin::formation_contenu::reordonner_lecons))
+                    .route("/lecons/{lecon_id}", web::put().to(admin::formation_contenu::modifier_lecon))
+                    .route("/lecons/{lecon_id}", web::delete().to(admin::formation_contenu::supprimer_lecon))
                     // Medias & Contenus - Livres (Bibliotheque)
                     .route("/livres", web::get().to(admin::livres::lister_livres))
                     .route("/livres", web::post().to(admin::livres::creer_livre))
@@ -656,7 +668,16 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/moocs")
                     .route("", web::get().to(moocs::lister_moocs))
                     .route("/{id}", web::get().to(moocs::obtenir_mooc))
-                    .route("/{id}/inscription", web::post().to(moocs::inscrire_mooc)),
+                    .route("/{id}/contenu", web::get().to(moocs::obtenir_contenu_mooc))
+                    .route("/{id}/inscription", web::post().to(moocs::inscrire_mooc))
+                    .route(
+                        "/{id}/lecons/{lecon_id}/completion",
+                        web::post().to(moocs::marquer_lecon_terminee),
+                    )
+                    .route(
+                        "/{id}/lecons/{lecon_id}/completion",
+                        web::delete().to(moocs::annuler_lecon_terminee),
+                    ),
             )
             // Routes des programmes sabbatiques
             .service(

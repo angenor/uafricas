@@ -26,6 +26,7 @@ pub mod gouvernance;
 pub mod radio_tele;
 pub mod evenement;
 pub mod mooc;
+pub mod formation_contenu;
 pub mod livre;
 pub mod audit;
 pub mod profils_pays;

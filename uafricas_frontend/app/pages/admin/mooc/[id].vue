@@ -14,7 +14,7 @@ const {
 const saving = ref(false)
 const erreurLocale = ref<string | null>(null)
 const successMsg = ref<string | null>(null)
-const ongletActif = ref<'infos' | 'inscriptions'>('infos')
+const ongletActif = ref<'infos' | 'programme' | 'inscriptions'>('infos')
 
 const form = reactive({
   titre: '',
@@ -199,6 +199,9 @@ onMounted(async () => {
         <button :class="['tab', { 'tab-active': ongletActif === 'infos' }]" @click="ongletActif = 'infos'">
           <font-awesome-icon icon="info-circle" class="mr-1" /> Informations
         </button>
+        <button :class="['tab', { 'tab-active': ongletActif === 'programme' }]" @click="ongletActif = 'programme'">
+          <font-awesome-icon icon="layer-group" class="mr-1" /> Programme
+        </button>
         <button :class="['tab', { 'tab-active': ongletActif === 'inscriptions' }]" @click="ongletActif = 'inscriptions'">
           <font-awesome-icon icon="users" class="mr-1" /> Inscriptions
           <span v-if="moocDetail.nombre_inscriptions" class="badge badge-sm ml-1">{{ moocDetail.nombre_inscriptions }}</span>
@@ -324,6 +327,18 @@ onMounted(async () => {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- Onglet Programme -->
+      <div v-else-if="ongletActif === 'programme'" class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+          <h3 class="text-lg font-semibold border-b pb-2 mb-2">Programme — chapitres & leçons</h3>
+          <p class="text-sm text-base-content/60 mb-4">
+            Structurez la formation en chapitres et leçons. Le contenu des leçons (vidéo, support, document)
+            n'est accessible qu'aux membres inscrits ; sa structure reste visible publiquement.
+          </p>
+          <AdminFormationCurriculum :mooc-id="id" />
         </div>
       </div>
 

@@ -1699,6 +1699,40 @@ export interface AdminMoocInscriptionStats {
   progression_moyenne: number
 }
 
+// ── Médias & Contenus — Formation : chapitres & leçons ───────
+
+export interface AdminLecon {
+  id: string
+  chapitre_id: string
+  titre: string
+  contenu: string | null
+  video_url: string | null
+  document_url: string | null
+  duree_minutes: number | null
+  ordre: number
+}
+
+export interface AdminChapitre {
+  id: string
+  titre: string
+  description: string | null
+  ordre: number
+  lecons: AdminLecon[]
+}
+
+export interface CreerChapitreForm {
+  titre: string
+  description: string
+}
+
+export interface CreerLeconForm {
+  titre: string
+  contenu: string
+  video_url: string
+  document_url: string
+  duree_minutes: number | null
+}
+
 // ── Médias & Contenus — Bibliothèque (Livres) ───────────────
 
 export interface AdminLivre {

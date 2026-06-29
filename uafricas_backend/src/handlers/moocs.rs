@@ -1,9 +1,14 @@
 use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
+use std::collections::HashSet;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::jwt;
+use crate::models::formation_contenu::{
+    ChapitrePublicResponse, ChapitreRow, FormationContenuResponse, LeconPublicResponse,
+    LeconRow, ProgressionResponse,
+};
 use crate::models::mooc::{
     FormateurInfo, FormateurResponse, MoocDetailResponse, MoocListeResponse,
     MoocQueryParams, MoocResponse, MoocRow, MOOC_COLONNES, calculer_statut_mooc,
@@ -340,6 +345,319 @@ pub async fn inscrire_mooc(
     Ok(HttpResponse::Ok().json(ApiResponse::<()> {
         success: true,
         data: None,
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// Programme : chapitres & leçons
+// ──────────────────────────────────────────────────────────────
+
+/// Recalculer la progression d'un inscrit et la persister sur son inscription.
+/// Renvoie (progression %, nombre_lecons_total, nombre_lecons_terminees).
+async fn recalculer_progression(
+    pool: &PgPool,
+    mooc_id: Uuid,
+    utilisateur_id: Uuid,
+) -> Result<(f64, i64, i64), ApiErreur> {
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM media_content.formation_lecon l
+         JOIN media_content.formation_chapitre c ON l.chapitre_id = c.id
+         WHERE c.mooc_id = $1 AND c.deleted_at IS NULL AND l.deleted_at IS NULL",
+    )
+    .bind(mooc_id)
+    .fetch_one(pool)
+    .await?;
+
+    let done: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM media_content.formation_lecon_completion lc
+         JOIN media_content.formation_lecon l ON lc.lecon_id = l.id
+         JOIN media_content.formation_chapitre c ON l.chapitre_id = c.id
+         WHERE c.mooc_id = $1 AND lc.utilisateur_id = $2
+           AND c.deleted_at IS NULL AND l.deleted_at IS NULL",
+    )
+    .bind(mooc_id)
+    .bind(utilisateur_id)
+    .fetch_one(pool)
+    .await?;
+
+    let progression = if total > 0 {
+        ((done as f64 / total as f64) * 10000.0).round() / 100.0
+    } else {
+        0.0
+    };
+
+    // La progression est une colonne DECIMAL(5,2) : on l'inscrit comme littéral
+    // numérique formaté (valeur calculée par nos soins, aucune injection possible)
+    // pour éviter les soucis d'encodage f64 -> NUMERIC.
+    let sql = format!(
+        "UPDATE media_content.mooc_inscription
+         SET progression = {p:.2},
+             statut = CASE WHEN {p:.2} >= 100 THEN 'complete'
+                           WHEN $1 > 0 THEN 'en_cours'
+                           ELSE 'inscrit' END,
+             updated_at = NOW()
+         WHERE mooc_id = $2 AND utilisateur_id = $3 AND statut <> 'abandonne'",
+        p = progression
+    );
+    sqlx::query(&sql)
+        .bind(done)
+        .bind(mooc_id)
+        .bind(utilisateur_id)
+        .execute(pool)
+        .await?;
+
+    Ok((progression, total, done))
+}
+
+/// Vérifier qu'une leçon appartient bien à une formation (et n'est pas supprimée).
+async fn lecon_appartient_au_mooc(
+    pool: &PgPool,
+    lecon_id: Uuid,
+    mooc_id: Uuid,
+) -> Result<bool, ApiErreur> {
+    Ok(sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM media_content.formation_lecon l
+            JOIN media_content.formation_chapitre c ON l.chapitre_id = c.id
+            WHERE l.id = $1 AND c.mooc_id = $2
+              AND l.deleted_at IS NULL AND c.deleted_at IS NULL
+        )",
+    )
+    .bind(lecon_id)
+    .bind(mooc_id)
+    .fetch_one(pool)
+    .await?)
+}
+
+// ──────────────────────────────────────────────────────────────
+// GET /api/moocs/{id}/contenu — Programme (chapitres + leçons)
+// La structure est publique ; le contenu des leçons n'est servi qu'aux inscrits
+// (ou au créateur de la formation).
+// ──────────────────────────────────────────────────────────────
+pub async fn obtenir_contenu_mooc(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let current_user = extraire_utilisateur_id(&req);
+    let mooc_id = chemin.into_inner();
+
+    // Récupérer le créateur + l'état (et vérifier l'existence)
+    let (cree_par, etat): (Uuid, String) = sqlx::query_as(
+        "SELECT cree_par, etat FROM media_content.mooc WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(mooc_id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Formation non trouvee".to_string()))?;
+
+    // La structure n'est publique que pour les formations publiées ; brouillon/annulée/
+    // suspendue restent réservées à leur créateur (renvoie NonTrouve aux tiers — ne
+    // révèle pas l'existence).
+    let etat_public = matches!(etat.as_str(), "publie" | "en_cours" | "termine");
+    if !etat_public && current_user != Some(cree_par) {
+        return Err(ApiErreur::NonTrouve("Formation non trouvee".to_string()));
+    }
+
+    let inscrit = if let Some(uid) = current_user {
+        est_inscrit(pool.get_ref(), mooc_id, uid).await?
+    } else {
+        false
+    };
+    let accessible = inscrit || current_user == Some(cree_par);
+
+    // Chapitres
+    let chapitres = sqlx::query_as::<_, ChapitreRow>(
+        "SELECT id, titre, description, ordre FROM media_content.formation_chapitre
+         WHERE mooc_id = $1 AND deleted_at IS NULL
+         ORDER BY ordre ASC, created_at ASC",
+    )
+    .bind(mooc_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    // Leçons (toutes celles des chapitres non supprimés)
+    let lecons = sqlx::query_as::<_, LeconRow>(
+        "SELECT l.id, l.chapitre_id, l.titre, l.contenu, l.video_url,
+                l.document_url, l.duree_minutes, l.ordre
+         FROM media_content.formation_lecon l
+         JOIN media_content.formation_chapitre c ON l.chapitre_id = c.id
+         WHERE c.mooc_id = $1 AND c.deleted_at IS NULL AND l.deleted_at IS NULL
+         ORDER BY l.ordre ASC, l.created_at ASC",
+    )
+    .bind(mooc_id)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    // Leçons terminées par l'utilisateur courant
+    let terminees: HashSet<Uuid> = if let Some(uid) = current_user {
+        let rows: Vec<Uuid> = sqlx::query_scalar(
+            "SELECT lc.lecon_id FROM media_content.formation_lecon_completion lc
+             JOIN media_content.formation_lecon l ON lc.lecon_id = l.id
+             JOIN media_content.formation_chapitre c ON l.chapitre_id = c.id
+             WHERE c.mooc_id = $1 AND lc.utilisateur_id = $2",
+        )
+        .bind(mooc_id)
+        .bind(uid)
+        .fetch_all(pool.get_ref())
+        .await?;
+        rows.into_iter().collect()
+    } else {
+        HashSet::new()
+    };
+
+    let nombre_lecons = lecons.len() as i64;
+    let nombre_lecons_terminees =
+        lecons.iter().filter(|l| terminees.contains(&l.id)).count() as i64;
+    let progression = if nombre_lecons > 0 {
+        ((nombre_lecons_terminees as f64 / nombre_lecons as f64) * 10000.0).round() / 100.0
+    } else {
+        0.0
+    };
+
+    // NB gel d'accès : on masque ici l'URL du contenu (contenu/video_url/document_url)
+    // aux non-inscrits. Pour les fichiers UPLOADÉS, ils restent servis par actix-files
+    // sous /uploads/ sans authentification : le gel ne protège donc que la DÉCOUVERTE de
+    // l'URL (UUID aléatoire), pas le fichier lui-même. Suffisant pour le MVP (les vidéos
+    // sont principalement des liens YouTube/externes, publics par nature). Pour un vrai
+    // huis clos : stocker hors du dossier statique + servir via un endpoint authentifié
+    // à jeton signé (les balises <video>/<embed> n'envoient pas d'en-tête Authorization).
+    let chapitres_resp: Vec<ChapitrePublicResponse> = chapitres
+        .iter()
+        .map(|ch| {
+            let lecons_resp: Vec<LeconPublicResponse> = lecons
+                .iter()
+                .filter(|l| l.chapitre_id == ch.id)
+                .map(|l| {
+                    let a_video = l.video_url.as_deref().map(|s| !s.is_empty()).unwrap_or(false);
+                    let a_document =
+                        l.document_url.as_deref().map(|s| !s.is_empty()).unwrap_or(false);
+                    LeconPublicResponse {
+                        id: l.id,
+                        titre: l.titre.clone(),
+                        duree_minutes: l.duree_minutes,
+                        ordre: l.ordre,
+                        accessible,
+                        a_video,
+                        a_document,
+                        contenu: if accessible { l.contenu.clone() } else { None },
+                        video_url: if accessible { l.video_url.clone() } else { None },
+                        document_url: if accessible { l.document_url.clone() } else { None },
+                        terminee: terminees.contains(&l.id),
+                    }
+                })
+                .collect();
+            ChapitrePublicResponse {
+                id: ch.id,
+                titre: ch.titre.clone(),
+                description: ch.description.clone(),
+                ordre: ch.ordre,
+                lecons: lecons_resp,
+            }
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(FormationContenuResponse {
+            est_inscrit: inscrit,
+            accessible,
+            nombre_lecons,
+            nombre_lecons_terminees,
+            progression,
+            chapitres: chapitres_resp,
+        }),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// POST /api/moocs/{id}/lecons/{lecon_id}/completion — Marquer terminée
+// ──────────────────────────────────────────────────────────────
+pub async fn marquer_lecon_terminee(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<(Uuid, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    let (mooc_id, lecon_id) = chemin.into_inner();
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+
+    if !est_inscrit(pool.get_ref(), mooc_id, utilisateur_id).await? {
+        return Err(ApiErreur::NonAutorise(
+            "Vous devez être inscrit à cette formation".to_string(),
+        ));
+    }
+    if !lecon_appartient_au_mooc(pool.get_ref(), lecon_id, mooc_id).await? {
+        return Err(ApiErreur::NonTrouve("Leçon non trouvée".to_string()));
+    }
+
+    sqlx::query(
+        "INSERT INTO media_content.formation_lecon_completion (lecon_id, utilisateur_id)
+         VALUES ($1, $2) ON CONFLICT (lecon_id, utilisateur_id) DO NOTHING",
+    )
+    .bind(lecon_id)
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    let (progression, total, done) =
+        recalculer_progression(pool.get_ref(), mooc_id, utilisateur_id).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(ProgressionResponse {
+            progression,
+            nombre_lecons: total,
+            nombre_lecons_terminees: done,
+            terminee: true,
+        }),
+        error: None,
+    }))
+}
+
+// ──────────────────────────────────────────────────────────────
+// DELETE /api/moocs/{id}/lecons/{lecon_id}/completion — Annuler
+// ──────────────────────────────────────────────────────────────
+pub async fn annuler_lecon_terminee(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+    chemin: web::Path<(Uuid, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    let (mooc_id, lecon_id) = chemin.into_inner();
+    let utilisateur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+
+    if !est_inscrit(pool.get_ref(), mooc_id, utilisateur_id).await? {
+        return Err(ApiErreur::NonAutorise(
+            "Vous devez être inscrit à cette formation".to_string(),
+        ));
+    }
+    if !lecon_appartient_au_mooc(pool.get_ref(), lecon_id, mooc_id).await? {
+        return Err(ApiErreur::NonTrouve("Leçon non trouvée".to_string()));
+    }
+
+    sqlx::query(
+        "DELETE FROM media_content.formation_lecon_completion
+         WHERE lecon_id = $1 AND utilisateur_id = $2",
+    )
+    .bind(lecon_id)
+    .bind(utilisateur_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    let (progression, total, done) =
+        recalculer_progression(pool.get_ref(), mooc_id, utilisateur_id).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(ProgressionResponse {
+            progression,
+            nombre_lecons: total,
+            nombre_lecons_terminees: done,
+            terminee: false,
+        }),
         error: None,
     }))
 }

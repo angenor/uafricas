@@ -51,6 +51,12 @@
               <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ formation.description }}</p>
             </div>
 
+            <!-- Programme : chapitres & leçons -->
+            <UniversiteInudaFormationCurriculum
+              :formation-id="formation.id"
+              :refresh-token="refreshContenu"
+              @require-inscription="surRequireInscription" />
+
             <!-- Formateur -->
             <div class="bg-white rounded-lg shadow-md p-6">
               <h2 class="text-2xl font-bold mb-4">Votre formateur</h2>
@@ -86,7 +92,7 @@
           <!-- Sidebar -->
           <div class="space-y-6">
             <!-- Carte principale -->
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div ref="inscriptionCard" class="bg-white rounded-lg shadow-md p-6 scroll-mt-24">
               <!-- Infos cles -->
               <div class="space-y-4 text-sm">
                 <div class="flex justify-between py-2 border-b">
@@ -167,6 +173,12 @@ const route = useRoute()
 const { chargement, obtenirFormation, inscrireFormation } = useFormations()
 
 const formation = ref<FormationDetailAPI | null>(null)
+const refreshContenu = ref(0)
+const inscriptionCard = ref<HTMLElement | null>(null)
+
+const surRequireInscription = () => {
+  inscriptionCard.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
 
 const breadcrumbs = computed(() => [
   { label: 'Université', to: '/universite' },
@@ -192,6 +204,8 @@ const sInscrire = async () => {
     // Recharger pour mettre a jour est_inscrit et le compteur
     const updated = await obtenirFormation(formation.value.id)
     if (updated) formation.value = updated
+    // Rafraîchir le programme : le contenu des leçons devient accessible
+    refreshContenu.value++
   } else {
     alert('Erreur lors de l\'inscription. Vérifiez que vous êtes connecté.')
   }

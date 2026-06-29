@@ -30,6 +30,7 @@ pub mod retrouve_amis;
 pub mod evenements;
 pub mod bibliotheques_humaines;
 pub mod mooc;
+pub mod formation_contenu;
 pub mod livres;
 pub mod audit;
 pub mod profils_pays;
