@@ -275,11 +275,18 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/chaines-tv/{id}", web::put().to(admin::radio_tele::modifier_chaine_tv))
                     .route("/chaines-tv/{id}", web::delete().to(admin::radio_tele::supprimer_chaine_tv))
                     // Medias & Contenus - Programmes Radio/Tele
-                    .route("/programmes-media", web::get().to(admin::radio_tele::lister_programmes_media))
-                    .route("/programmes-media", web::post().to(admin::radio_tele::creer_programme_media))
-                    .route("/programmes-media/{id}", web::get().to(admin::radio_tele::obtenir_programme_media))
-                    .route("/programmes-media/{id}", web::put().to(admin::radio_tele::modifier_programme_media))
-                    .route("/programmes-media/{id}", web::delete().to(admin::radio_tele::supprimer_programme_media))
+                    .route("/programmes-radio", web::get().to(admin::radio_tele::lister_programmes_radio))
+                    .route("/programmes-radio", web::post().to(admin::radio_tele::creer_programme_radio))
+                    .route("/programmes-radio/{id}", web::get().to(admin::radio_tele::obtenir_programme_radio))
+                    .route("/programmes-radio/{id}", web::put().to(admin::radio_tele::modifier_programme_radio))
+                    .route("/programmes-radio/{id}", web::delete().to(admin::radio_tele::supprimer_programme_radio))
+
+                    .route("/programmes-tele", web::get().to(admin::radio_tele::lister_programmes_tele))
+                    .route("/programmes-tele", web::post().to(admin::radio_tele::creer_programme_tele))
+                    .route("/programmes-tele/{id}", web::get().to(admin::radio_tele::obtenir_programme_tele))
+                    .route("/programmes-tele/{id}", web::put().to(admin::radio_tele::modifier_programme_tele))
+                    .route("/programmes-tele/{id}", web::delete().to(admin::radio_tele::supprimer_programme_tele))
+                    .route("/medias/upload", web::post().to(admin::radio_tele::uploader_media))
                     // Medias & Contenus - Evenements
                     .route("/evenements", web::get().to(admin::evenements::lister_evenements))
                     .route("/evenements", web::post().to(admin::evenements::creer_evenement))

@@ -1361,7 +1361,8 @@ export interface AdminStationRadioDetail {
   nom: string
   slug: string | null
   description: string | null
-  stream_url: string
+  stream_url: string | null
+  audio_url: string | null
   image_couverture_url: string | null
   genre: string | null
   genres_liste: string[]
@@ -1369,6 +1370,7 @@ export interface AdminStationRadioDetail {
   pays_nom: string | null
   ville: string | null
   type_station: string
+  a_la_une: boolean
   etat: string
   cree_par: string
   cree_par_nom: string | null
@@ -1380,12 +1382,14 @@ export interface CreerStationRadioForm {
   nom: string
   description: string
   stream_url: string
+  audio_url: string
   image_couverture_url: string
   genre: string
   genres_liste: string[]
   pays_id: string
   ville: string
   type_station: string
+  a_la_une: boolean
 }
 
 export interface AdminChaineTv {
@@ -1404,7 +1408,7 @@ export interface AdminChaineTvDetail {
   nom: string
   slug: string | null
   description: string | null
-  stream_url: string
+  stream_url: string | null
   image_couverture_url: string | null
   categorie: string
   pays_id: string | null
@@ -1429,12 +1433,63 @@ export interface CreerChaineTvForm {
   est_en_direct: boolean
 }
 
-export interface AdminProgrammeMedia {
+// ── Programmes RADIO (émissions) ──────────────────────────────
+export interface AdminProgrammeRadio {
   id: string
   nom_emission: string
-  type_programme: string
   etat: string
   categorie_radio: string | null
+  langue: string
+  pays_nom: string | null
+  station_nom: string | null
+  a_la_une: boolean
+  created_at: string
+}
+
+export interface AdminProgrammeRadioDetail {
+  id: string
+  nom_emission: string
+  slug: string | null
+  description: string
+  image_couverture_url: string | null
+  audio_url: string | null
+  info_animateur: string | null
+  info_producteur: string | null
+  pays_id: string | null
+  pays_nom: string | null
+  est_international: boolean
+  langue: string
+  categorie_radio: string | null
+  station_id: string | null
+  station_nom: string | null
+  a_la_une: boolean
+  etat: string
+  cree_par: string
+  cree_par_nom: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreerProgrammeRadioForm {
+  nom_emission: string
+  description: string
+  image_couverture_url: string
+  audio_url: string
+  info_animateur: string
+  info_producteur: string
+  pays_id: string
+  est_international: boolean
+  langue: string
+  categorie_radio: string
+  station_id: string
+  a_la_une: boolean
+}
+
+// ── Programmes TÉLÉ ───────────────────────────────────────────
+export interface AdminProgrammeTele {
+  id: string
+  nom_emission: string
+  etat: string
   langue: string
   pays_nom: string | null
   chaine_nom: string | null
@@ -1442,11 +1497,10 @@ export interface AdminProgrammeMedia {
   created_at: string
 }
 
-export interface AdminProgrammeMediaDetail {
+export interface AdminProgrammeTeleDetail {
   id: string
   nom_emission: string
   slug: string | null
-  type_programme: string
   description: string
   image_couverture_url: string | null
   video_url: string | null
@@ -1456,7 +1510,6 @@ export interface AdminProgrammeMediaDetail {
   pays_nom: string | null
   est_international: boolean
   langue: string
-  categorie_radio: string | null
   chaine_id: string | null
   chaine_nom: string | null
   a_la_une: boolean
@@ -1467,9 +1520,8 @@ export interface AdminProgrammeMediaDetail {
   updated_at: string
 }
 
-export interface CreerProgrammeMediaForm {
+export interface CreerProgrammeTeleForm {
   nom_emission: string
-  type_programme: string
   description: string
   image_couverture_url: string
   video_url: string
@@ -1478,7 +1530,6 @@ export interface CreerProgrammeMediaForm {
   pays_id: string
   est_international: boolean
   langue: string
-  categorie_radio: string
   chaine_id: string
   a_la_une: boolean
 }

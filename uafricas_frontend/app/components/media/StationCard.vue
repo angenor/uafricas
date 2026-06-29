@@ -28,6 +28,12 @@ const emit = defineEmits<{
         :alt="station.name"
         class="w-full h-full object-cover"
       />
+      <span
+        v-if="station.aLaUne"
+        class="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-yellow-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-black shadow"
+      >
+        ★ À la une
+      </span>
       <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
         <div
           v-if="isActive && isPlaying"

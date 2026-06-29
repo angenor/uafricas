@@ -177,9 +177,8 @@ pub async fn creer_chaine(
     if body.nom.trim().is_empty() {
         return Err(ApiErreur::Validation("Le nom de la chaîne est requis".into()));
     }
-    if body.stream_url.trim().is_empty() {
-        return Err(ApiErreur::Validation("L'URL de streaming est requise".into()));
-    }
+    // Flux live optionnel — le cœur de la télé = les programmes (vidéos fichier/lien).
+    let stream_url = body.stream_url.as_deref().map(str::trim).filter(|s| !s.is_empty());
 
     let slug = generer_slug(&body.nom);
     let categorie = body.categorie.as_deref()
@@ -211,7 +210,7 @@ pub async fn creer_chaine(
     .bind(body.nom.trim())
     .bind(&slug)
     .bind(body.description.as_deref().map(str::trim))
-    .bind(body.stream_url.trim())
+    .bind(stream_url)
     .bind(&categorie)
     .bind(pays_id)
     .bind(langue)
@@ -257,7 +256,6 @@ pub async fn lister_programmes_vedettes(
     let offset = (page - 1) * par_page;
 
     let mut conditions: Vec<String> = vec![
-        "prt.type = 'tele'".to_string(),
         "prt.etat = 'publie'".to_string(),
         "prt.deleted_at IS NULL".to_string(),
     ];
@@ -299,7 +297,7 @@ pub async fn lister_programmes_vedettes(
 
     // Compter le total
     let count_query = format!(
-        "SELECT COUNT(*) FROM media_content.programme_radio_tele prt WHERE {}",
+        "SELECT COUNT(*) FROM media_content.programme_tele prt WHERE {}",
         where_clause
     );
     let mut count_q = sqlx::query_scalar::<_, i64>(&count_query);
@@ -312,7 +310,7 @@ pub async fn lister_programmes_vedettes(
     // Récupérer les programmes avec jointure pays + chaîne (télé de rattachement)
     let query = format!(
         "SELECT {}, p.nom AS pays_nom, c.nom AS chaine_nom
-         FROM media_content.programme_radio_tele prt
+         FROM media_content.programme_tele prt
          LEFT JOIN shared.pays p ON p.id = prt.pays_id
          LEFT JOIN media_content.chaine_tv c ON c.id = prt.chaine_id
          WHERE {}
@@ -362,10 +360,10 @@ pub async fn obtenir_programme_vedette(
 
     let query = format!(
         "SELECT {}, p.nom AS pays_nom, c.nom AS chaine_nom
-         FROM media_content.programme_radio_tele prt
+         FROM media_content.programme_tele prt
          LEFT JOIN shared.pays p ON p.id = prt.pays_id
          LEFT JOIN media_content.chaine_tv c ON c.id = prt.chaine_id
-         WHERE prt.id = $1 AND prt.type = 'tele' AND prt.etat = 'publie' AND prt.deleted_at IS NULL",
+         WHERE prt.id = $1 AND prt.etat = 'publie' AND prt.deleted_at IS NULL",
         PROGRAMME_TELE_COLONNES
     );
 
@@ -424,10 +422,10 @@ pub async fn creer_programme_vedette(
     let programme_id = Uuid::new_v4();
 
     sqlx::query(
-        "INSERT INTO media_content.programme_radio_tele
-            (id, nom_emission, slug, type, description, video_url, image_couverture_url,
+        "INSERT INTO media_content.programme_tele
+            (id, nom_emission, slug, description, video_url, image_couverture_url,
              info_animateur, info_producteur, pays_id, est_international, langue, chaine_id, etat, cree_par)
-         VALUES ($1, $2, $3, 'tele'::media_content.type_programme_media, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'publie', $13)"
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'publie', $13)"
     )
     .bind(programme_id)
     .bind(body.nom_emission.trim())
@@ -449,7 +447,7 @@ pub async fn creer_programme_vedette(
     // Récupérer le programme créé avec jointure pays + chaîne
     let query = format!(
         "SELECT {}, p.nom AS pays_nom, c.nom AS chaine_nom
-         FROM media_content.programme_radio_tele prt
+         FROM media_content.programme_tele prt
          LEFT JOIN shared.pays p ON p.id = prt.pays_id
          LEFT JOIN media_content.chaine_tv c ON c.id = prt.chaine_id
          WHERE prt.id = $1",
@@ -483,7 +481,7 @@ pub async fn lister_pays_television(
          FROM (
              SELECT pays_id FROM media_content.chaine_tv WHERE etat = 'publie' AND deleted_at IS NULL AND pays_id IS NOT NULL
              UNION
-             SELECT pays_id FROM media_content.programme_radio_tele WHERE type = 'tele' AND etat = 'publie' AND deleted_at IS NULL AND pays_id IS NOT NULL
+             SELECT pays_id FROM media_content.programme_tele WHERE etat = 'publie' AND deleted_at IS NULL AND pays_id IS NOT NULL
          ) sub
          JOIN shared.pays p ON p.id = sub.pays_id
          ORDER BY p.nom ASC"
@@ -546,7 +544,7 @@ pub async fn obtenir_stats_television(
     .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage pays: {}", e)))?;
 
     let nombre_programmes: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM media_content.programme_radio_tele WHERE type = 'tele' AND etat = 'publie' AND deleted_at IS NULL"
+        "SELECT COUNT(*) FROM media_content.programme_tele WHERE etat = 'publie' AND deleted_at IS NULL"
     )
     .fetch_one(pool.get_ref())
     .await

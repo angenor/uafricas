@@ -10,6 +10,8 @@ export interface RadioStation {
   location: string
   country: string
   programType: 'Nationales' | 'Local' | 'International'
+  audioUrl?: string
+  aLaUne?: boolean
 }
 
 export interface RadioCategory {

@@ -6,7 +6,7 @@ export interface ChaineTvAPI {
   nom: string
   slug: string | null
   description: string | null
-  stream_url: string
+  stream_url: string | null
   image_couverture_url: string | null
   categorie: string
   pays: string | null
@@ -124,7 +124,7 @@ export interface ProgrammeTeleFiltres {
 export interface CreerChaineTvForm {
   nom: string
   description?: string
-  stream_url: string
+  stream_url?: string
   categorie?: string
   pays?: string
   langue?: string
@@ -156,7 +156,7 @@ function mapperChaineApiVersTv(chaine: ChaineTvAPI, apiBase: string): TvChannel 
     id: chaine.id,
     name: chaine.nom,
     description: chaine.description || '',
-    streamUrl: chaine.stream_url,
+    streamUrl: chaine.stream_url || '',
     cover: resoudreUrl(chaine.image_couverture_url, apiBase, '/images/tv-default.jpg'),
     category: chaine.categorie,
     country: chaine.pays || '',

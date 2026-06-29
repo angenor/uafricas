@@ -10,9 +10,9 @@ pub const ADMIN_STATION_RADIO_LISTE_COLONNES: &str =
      pays.nom AS pays_nom, s.ville, s.created_at";
 
 pub const ADMIN_STATION_RADIO_DETAIL_COLONNES: &str =
-    "s.id, s.nom, s.slug, s.description, s.stream_url, s.image_couverture_url,
+    "s.id, s.nom, s.slug, s.description, s.stream_url, s.audio_url, s.image_couverture_url,
      s.genre, s.genres_liste, s.pays_id, pays.nom AS pays_nom, s.ville,
-     s.type_station::TEXT as type_station,
+     s.type_station::TEXT as type_station, s.a_la_une,
      s.etat, s.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      s.created_at, s.updated_at";
 
@@ -37,25 +37,44 @@ pub const CHAINE_TV_TRI_COLONNES: &[&str] = &[
     "created_at", "nom", "categorie", "etat",
 ];
 
-// ── Colonnes SQL — Programmes Radio/Télé ─────────────────────
+// ── Colonnes SQL — Programmes RADIO (émissions) ──────────────
 
-pub const ADMIN_PROGRAMME_MEDIA_LISTE_COLONNES: &str =
-    "p.id, p.nom_emission, p.type::TEXT as type_programme, p.etat,
+pub const ADMIN_PROGRAMME_RADIO_LISTE_COLONNES: &str =
+    "p.id, p.nom_emission, p.etat,
      p.categorie_radio::TEXT as categorie_radio, p.langue,
-     pays.nom AS pays_nom, ch.nom AS chaine_nom, p.a_la_une, p.created_at";
+     pays.nom AS pays_nom, st.nom AS station_nom, p.a_la_une, p.created_at";
 
-pub const ADMIN_PROGRAMME_MEDIA_DETAIL_COLONNES: &str =
-    "p.id, p.nom_emission, p.slug, p.type::TEXT as type_programme,
-     p.description, p.image_couverture_url, p.video_url,
+pub const ADMIN_PROGRAMME_RADIO_DETAIL_COLONNES: &str =
+    "p.id, p.nom_emission, p.slug,
+     p.description, p.image_couverture_url, p.audio_url,
      p.info_animateur, p.info_producteur,
      p.pays_id, pays.nom AS pays_nom, p.est_international, p.langue,
      p.categorie_radio::TEXT as categorie_radio,
+     p.station_id, st.nom AS station_nom, p.a_la_une,
+     p.etat, p.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
+     p.created_at, p.updated_at";
+
+pub const PROGRAMME_RADIO_TRI_COLONNES: &[&str] = &[
+    "created_at", "nom_emission", "etat",
+];
+
+// ── Colonnes SQL — Programmes TÉLÉ ───────────────────────────
+
+pub const ADMIN_PROGRAMME_TELE_LISTE_COLONNES: &str =
+    "p.id, p.nom_emission, p.etat, p.langue,
+     pays.nom AS pays_nom, ch.nom AS chaine_nom, p.a_la_une, p.created_at";
+
+pub const ADMIN_PROGRAMME_TELE_DETAIL_COLONNES: &str =
+    "p.id, p.nom_emission, p.slug,
+     p.description, p.image_couverture_url, p.video_url,
+     p.info_animateur, p.info_producteur,
+     p.pays_id, pays.nom AS pays_nom, p.est_international, p.langue,
      p.chaine_id, ch.nom AS chaine_nom, p.a_la_une,
      p.etat, p.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      p.created_at, p.updated_at";
 
-pub const PROGRAMME_MEDIA_TRI_COLONNES: &[&str] = &[
-    "created_at", "nom_emission", "type", "etat",
+pub const PROGRAMME_TELE_TRI_COLONNES: &[&str] = &[
+    "created_at", "nom_emission", "etat",
 ];
 
 // ── Row & Response — Station Radio ───────────────────────────
@@ -78,7 +97,8 @@ pub struct AdminStationRadioDetailRow {
     pub nom: String,
     pub slug: Option<String>,
     pub description: Option<String>,
-    pub stream_url: String,
+    pub stream_url: Option<String>,
+    pub audio_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub genre: Option<String>,
     pub genres_liste: Vec<String>,
@@ -86,6 +106,7 @@ pub struct AdminStationRadioDetailRow {
     pub pays_nom: Option<String>,
     pub ville: Option<String>,
     pub type_station: String,
+    pub a_la_une: bool,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -99,7 +120,8 @@ pub struct AdminStationRadioDetailResponse {
     pub nom: String,
     pub slug: Option<String>,
     pub description: Option<String>,
-    pub stream_url: String,
+    pub stream_url: Option<String>,
+    pub audio_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub genre: Option<String>,
     pub genres_liste: Vec<String>,
@@ -107,6 +129,7 @@ pub struct AdminStationRadioDetailResponse {
     pub pays_nom: Option<String>,
     pub ville: Option<String>,
     pub type_station: String,
+    pub a_la_une: bool,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -122,6 +145,7 @@ impl AdminStationRadioDetailRow {
             slug: self.slug.clone(),
             description: self.description.clone(),
             stream_url: self.stream_url.clone(),
+            audio_url: self.audio_url.clone(),
             image_couverture_url: self.image_couverture_url.clone(),
             genre: self.genre.clone(),
             genres_liste: self.genres_liste.clone(),
@@ -129,6 +153,7 @@ impl AdminStationRadioDetailRow {
             pays_nom: self.pays_nom.clone(),
             ville: self.ville.clone(),
             type_station: self.type_station.clone(),
+            a_la_une: self.a_la_une,
             etat: self.etat.clone(),
             cree_par: self.cree_par,
             cree_par_nom: self.cree_par_nom.clone(),
@@ -158,7 +183,7 @@ pub struct AdminChaineTvDetailRow {
     pub nom: String,
     pub slug: Option<String>,
     pub description: Option<String>,
-    pub stream_url: String,
+    pub stream_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub categorie: String,
     pub pays_id: Option<Uuid>,
@@ -178,7 +203,7 @@ pub struct AdminChaineTvDetailResponse {
     pub nom: String,
     pub slug: Option<String>,
     pub description: Option<String>,
-    pub stream_url: String,
+    pub stream_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub categorie: String,
     pub pays_id: Option<Uuid>,
@@ -215,15 +240,106 @@ impl AdminChaineTvDetailRow {
     }
 }
 
-// ── Row & Response — Programme Radio/Télé ────────────────────
+// ── Row & Response — Programme RADIO ─────────────────────────
 
 #[derive(Debug, Serialize, FromRow)]
-pub struct AdminProgrammeMediaListeResponse {
+pub struct AdminProgrammeRadioListeResponse {
     pub id: Uuid,
     pub nom_emission: String,
-    pub type_programme: String,
     pub etat: String,
     pub categorie_radio: Option<String>,
+    pub langue: String,
+    pub pays_nom: Option<String>,
+    pub station_nom: Option<String>,
+    pub a_la_une: bool,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, FromRow)]
+pub struct AdminProgrammeRadioDetailRow {
+    pub id: Uuid,
+    pub nom_emission: String,
+    pub slug: Option<String>,
+    pub description: String,
+    pub image_couverture_url: Option<String>,
+    pub audio_url: Option<String>,
+    pub info_animateur: Option<String>,
+    pub info_producteur: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+    pub est_international: bool,
+    pub langue: String,
+    pub categorie_radio: Option<String>,
+    pub station_id: Option<Uuid>,
+    pub station_nom: Option<String>,
+    pub a_la_une: bool,
+    pub etat: String,
+    pub cree_par: Uuid,
+    pub cree_par_nom: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdminProgrammeRadioDetailResponse {
+    pub id: Uuid,
+    pub nom_emission: String,
+    pub slug: Option<String>,
+    pub description: String,
+    pub image_couverture_url: Option<String>,
+    pub audio_url: Option<String>,
+    pub info_animateur: Option<String>,
+    pub info_producteur: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub pays_nom: Option<String>,
+    pub est_international: bool,
+    pub langue: String,
+    pub categorie_radio: Option<String>,
+    pub station_id: Option<Uuid>,
+    pub station_nom: Option<String>,
+    pub a_la_une: bool,
+    pub etat: String,
+    pub cree_par: Uuid,
+    pub cree_par_nom: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl AdminProgrammeRadioDetailRow {
+    pub fn to_response(&self) -> AdminProgrammeRadioDetailResponse {
+        AdminProgrammeRadioDetailResponse {
+            id: self.id,
+            nom_emission: self.nom_emission.clone(),
+            slug: self.slug.clone(),
+            description: self.description.clone(),
+            image_couverture_url: self.image_couverture_url.clone(),
+            audio_url: self.audio_url.clone(),
+            info_animateur: self.info_animateur.clone(),
+            info_producteur: self.info_producteur.clone(),
+            pays_id: self.pays_id,
+            pays_nom: self.pays_nom.clone(),
+            est_international: self.est_international,
+            langue: self.langue.clone(),
+            categorie_radio: self.categorie_radio.clone(),
+            station_id: self.station_id,
+            station_nom: self.station_nom.clone(),
+            a_la_une: self.a_la_une,
+            etat: self.etat.clone(),
+            cree_par: self.cree_par,
+            cree_par_nom: self.cree_par_nom.clone(),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+}
+
+// ── Row & Response — Programme TÉLÉ ──────────────────────────
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct AdminProgrammeTeleListeResponse {
+    pub id: Uuid,
+    pub nom_emission: String,
+    pub etat: String,
     pub langue: String,
     pub pays_nom: Option<String>,
     pub chaine_nom: Option<String>,
@@ -232,11 +348,10 @@ pub struct AdminProgrammeMediaListeResponse {
 }
 
 #[derive(Debug, FromRow)]
-pub struct AdminProgrammeMediaDetailRow {
+pub struct AdminProgrammeTeleDetailRow {
     pub id: Uuid,
     pub nom_emission: String,
     pub slug: Option<String>,
-    pub type_programme: String,
     pub description: String,
     pub image_couverture_url: Option<String>,
     pub video_url: Option<String>,
@@ -246,7 +361,6 @@ pub struct AdminProgrammeMediaDetailRow {
     pub pays_nom: Option<String>,
     pub est_international: bool,
     pub langue: String,
-    pub categorie_radio: Option<String>,
     pub chaine_id: Option<Uuid>,
     pub chaine_nom: Option<String>,
     pub a_la_une: bool,
@@ -258,11 +372,10 @@ pub struct AdminProgrammeMediaDetailRow {
 }
 
 #[derive(Debug, Serialize)]
-pub struct AdminProgrammeMediaDetailResponse {
+pub struct AdminProgrammeTeleDetailResponse {
     pub id: Uuid,
     pub nom_emission: String,
     pub slug: Option<String>,
-    pub type_programme: String,
     pub description: String,
     pub image_couverture_url: Option<String>,
     pub video_url: Option<String>,
@@ -272,7 +385,6 @@ pub struct AdminProgrammeMediaDetailResponse {
     pub pays_nom: Option<String>,
     pub est_international: bool,
     pub langue: String,
-    pub categorie_radio: Option<String>,
     pub chaine_id: Option<Uuid>,
     pub chaine_nom: Option<String>,
     pub a_la_une: bool,
@@ -283,13 +395,12 @@ pub struct AdminProgrammeMediaDetailResponse {
     pub updated_at: DateTime<Utc>,
 }
 
-impl AdminProgrammeMediaDetailRow {
-    pub fn to_response(&self) -> AdminProgrammeMediaDetailResponse {
-        AdminProgrammeMediaDetailResponse {
+impl AdminProgrammeTeleDetailRow {
+    pub fn to_response(&self) -> AdminProgrammeTeleDetailResponse {
+        AdminProgrammeTeleDetailResponse {
             id: self.id,
             nom_emission: self.nom_emission.clone(),
             slug: self.slug.clone(),
-            type_programme: self.type_programme.clone(),
             description: self.description.clone(),
             image_couverture_url: self.image_couverture_url.clone(),
             video_url: self.video_url.clone(),
@@ -299,7 +410,6 @@ impl AdminProgrammeMediaDetailRow {
             pays_nom: self.pays_nom.clone(),
             est_international: self.est_international,
             langue: self.langue.clone(),
-            categorie_radio: self.categorie_radio.clone(),
             chaine_id: self.chaine_id,
             chaine_nom: self.chaine_nom.clone(),
             a_la_une: self.a_la_une,
@@ -318,13 +428,15 @@ impl AdminProgrammeMediaDetailRow {
 pub struct CreerStationRadioRequest {
     pub nom: String,
     pub description: Option<String>,
-    pub stream_url: String,
+    pub stream_url: Option<String>,
+    pub audio_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub genre: Option<String>,
     pub genres_liste: Option<Vec<String>>,
     pub pays_id: Option<Uuid>,
     pub ville: Option<String>,
     pub type_station: Option<String>,
+    pub a_la_une: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -332,19 +444,21 @@ pub struct ModifierStationRadioRequest {
     pub nom: Option<String>,
     pub description: Option<String>,
     pub stream_url: Option<String>,
+    pub audio_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub genre: Option<String>,
     pub genres_liste: Option<Vec<String>>,
     pub pays_id: Option<Uuid>,
     pub ville: Option<String>,
     pub type_station: Option<String>,
+    pub a_la_une: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct CreerChaineTvRequest {
     pub nom: String,
     pub description: Option<String>,
-    pub stream_url: String,
+    pub stream_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub categorie: Option<String>,
     pub pays_id: Option<Uuid>,
@@ -364,27 +478,43 @@ pub struct ModifierChaineTvRequest {
     pub est_en_direct: Option<bool>,
 }
 
+// Programme RADIO
 #[derive(Debug, Deserialize)]
-pub struct CreerProgrammeMediaRequest {
+pub struct CreerProgrammeRadioRequest {
     pub nom_emission: String,
-    pub type_programme: String,
-    pub description: String,
+    pub description: Option<String>,
     pub image_couverture_url: Option<String>,
-    pub video_url: Option<String>,
+    pub audio_url: Option<String>,
     pub info_animateur: Option<String>,
     pub info_producteur: Option<String>,
     pub pays_id: Option<Uuid>,
     pub est_international: Option<bool>,
     pub langue: Option<String>,
     pub categorie_radio: Option<String>,
-    pub chaine_id: Option<Uuid>,
+    pub station_id: Option<Uuid>,
     pub a_la_une: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ModifierProgrammeMediaRequest {
+pub struct ModifierProgrammeRadioRequest {
     pub nom_emission: Option<String>,
-    pub type_programme: Option<String>,
+    pub description: Option<String>,
+    pub image_couverture_url: Option<String>,
+    pub audio_url: Option<String>,
+    pub info_animateur: Option<String>,
+    pub info_producteur: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub est_international: Option<bool>,
+    pub langue: Option<String>,
+    pub categorie_radio: Option<String>,
+    pub station_id: Option<Uuid>,
+    pub a_la_une: Option<bool>,
+}
+
+// Programme TÉLÉ
+#[derive(Debug, Deserialize)]
+pub struct CreerProgrammeTeleRequest {
+    pub nom_emission: String,
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
     pub video_url: Option<String>,
@@ -393,7 +523,21 @@ pub struct ModifierProgrammeMediaRequest {
     pub pays_id: Option<Uuid>,
     pub est_international: Option<bool>,
     pub langue: Option<String>,
-    pub categorie_radio: Option<String>,
+    pub chaine_id: Option<Uuid>,
+    pub a_la_une: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ModifierProgrammeTeleRequest {
+    pub nom_emission: Option<String>,
+    pub description: Option<String>,
+    pub image_couverture_url: Option<String>,
+    pub video_url: Option<String>,
+    pub info_animateur: Option<String>,
+    pub info_producteur: Option<String>,
+    pub pays_id: Option<Uuid>,
+    pub est_international: Option<bool>,
+    pub langue: Option<String>,
     pub chaine_id: Option<Uuid>,
     pub a_la_une: Option<bool>,
 }
@@ -425,14 +569,25 @@ pub struct AdminChaineTvQueryParams {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct AdminProgrammeMediaQueryParams {
+pub struct AdminProgrammeRadioQueryParams {
     pub page: Option<i64>,
     pub par_page: Option<i64>,
     pub tri_par: Option<String>,
     pub tri_dir: Option<String>,
     pub recherche: Option<String>,
-    pub type_programme: Option<String>,
     pub categorie_radio: Option<String>,
+    pub station_id: Option<Uuid>,
+    pub etat: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminProgrammeTeleQueryParams {
+    pub page: Option<i64>,
+    pub par_page: Option<i64>,
+    pub tri_par: Option<String>,
+    pub tri_dir: Option<String>,
+    pub recherche: Option<String>,
+    pub chaine_id: Option<Uuid>,
     pub etat: Option<String>,
 }
 

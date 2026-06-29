@@ -102,7 +102,7 @@ pub async fn lister_stations(
          FROM media_content.station_radio sr
          LEFT JOIN shared.pays p ON p.id = sr.pays_id
          WHERE {}
-         ORDER BY sr.nom ASC
+         ORDER BY sr.a_la_une DESC, sr.nom ASC
          LIMIT ${} OFFSET ${}",
         STATION_RADIO_COLONNES,
         where_clause,
@@ -223,12 +223,16 @@ pub async fn creer_station(
     let utilisateur_id = extraire_utilisateur_id(&req)
         .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
 
-    // Validation
+    // Validation : audio (fichier/lien) OU flux live, au moins l'un des deux
     if body.nom.trim().is_empty() {
         return Err(ApiErreur::Validation("Le nom de la station est requis".into()));
     }
-    if body.stream_url.trim().is_empty() {
-        return Err(ApiErreur::Validation("L'URL de streaming est requise".into()));
+    let stream_url = body.stream_url.as_deref().map(str::trim).filter(|s| !s.is_empty());
+    let audio_url = body.audio_url.as_deref().map(str::trim).filter(|s| !s.is_empty());
+    if stream_url.is_none() && audio_url.is_none() {
+        return Err(ApiErreur::Validation(
+            "Fournissez au moins un fichier/lien audio ou une URL de flux live".into(),
+        ));
     }
 
     let slug = generer_slug(&body.nom);
@@ -255,14 +259,16 @@ pub async fn creer_station(
 
     sqlx::query(
         "INSERT INTO media_content.station_radio
-            (id, nom, slug, description, stream_url, genre, genres_liste, pays_id, ville, type_station, etat, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::media_content.type_station, 'publie', $11)"
+            (id, nom, slug, description, stream_url, audio_url, image_couverture_url, genre, genres_liste, pays_id, ville, type_station, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::media_content.type_station, 'publie', $13)"
     )
     .bind(station_id)
     .bind(body.nom.trim())
     .bind(&slug)
     .bind(body.description.as_deref().map(str::trim))
-    .bind(body.stream_url.trim())
+    .bind(stream_url)
+    .bind(audio_url)
+    .bind(body.image_couverture_url.as_deref().map(str::trim))
     .bind(body.genre.as_deref().map(str::trim))
     .bind(&genres_liste)
     .bind(pays_id)

@@ -196,7 +196,8 @@ const sidebarSections: SidebarSection[] = [
     label: 'Médias & Contenus',
     faIcon: 'tv',
     children: [
-      { label: 'Radio & TV', faIcon: 'broadcast-tower', route: '/admin/radio-tele' },
+      { label: 'Radio', faIcon: 'radio', route: '/admin/radio' },
+      { label: 'Télévision', faIcon: 'tv', route: '/admin/television' },
       { label: 'Vidafrica', faIcon: 'closed-captioning', route: '/admin/vidafrica' },
       { label: 'Événements', faIcon: 'calendar', route: '/admin/evenements' },
       { label: 'Bibliothèque', faIcon: 'book', route: '/admin/livres' },

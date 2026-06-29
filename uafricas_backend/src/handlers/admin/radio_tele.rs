@@ -9,11 +9,14 @@ use crate::models::admin::radio_tele::{
     CreerStationRadioRequest, ModifierStationRadioRequest,
     AdminChaineTvListeResponse, AdminChaineTvDetailRow, AdminChaineTvQueryParams,
     CreerChaineTvRequest, ModifierChaineTvRequest,
-    AdminProgrammeMediaListeResponse, AdminProgrammeMediaDetailRow, AdminProgrammeMediaQueryParams,
-    CreerProgrammeMediaRequest, ModifierProgrammeMediaRequest,
+    AdminProgrammeRadioListeResponse, AdminProgrammeRadioDetailRow, AdminProgrammeRadioQueryParams,
+    CreerProgrammeRadioRequest, ModifierProgrammeRadioRequest,
+    AdminProgrammeTeleListeResponse, AdminProgrammeTeleDetailRow, AdminProgrammeTeleQueryParams,
+    CreerProgrammeTeleRequest, ModifierProgrammeTeleRequest,
     ADMIN_STATION_RADIO_LISTE_COLONNES, ADMIN_STATION_RADIO_DETAIL_COLONNES, STATION_RADIO_TRI_COLONNES,
     ADMIN_CHAINE_TV_LISTE_COLONNES, ADMIN_CHAINE_TV_DETAIL_COLONNES, CHAINE_TV_TRI_COLONNES,
-    ADMIN_PROGRAMME_MEDIA_LISTE_COLONNES, ADMIN_PROGRAMME_MEDIA_DETAIL_COLONNES, PROGRAMME_MEDIA_TRI_COLONNES,
+    ADMIN_PROGRAMME_RADIO_LISTE_COLONNES, ADMIN_PROGRAMME_RADIO_DETAIL_COLONNES, PROGRAMME_RADIO_TRI_COLONNES,
+    ADMIN_PROGRAMME_TELE_LISTE_COLONNES, ADMIN_PROGRAMME_TELE_DETAIL_COLONNES, PROGRAMME_TELE_TRI_COLONNES,
     generer_slug,
 };
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
@@ -25,7 +28,6 @@ const TYPES_STATION_VALIDES: &[&str] = &["nationale", "locale", "internationale"
 const CATEGORIES_CHAINE_VALIDES: &[&str] = &[
     "generaliste", "info", "sport", "culture", "divertissement", "religieux", "education", "musique",
 ];
-const TYPES_PROGRAMME_VALIDES: &[&str] = &["radio", "tele"];
 
 // ══════════════════════════════════════════════════════════════
 // STATIONS RADIO
@@ -176,9 +178,13 @@ pub async fn creer_station_radio(
     if nom.is_empty() {
         return Err(ApiErreur::Validation("Le nom de la station est requis".into()));
     }
-    let stream_url = body.stream_url.trim();
-    if stream_url.is_empty() {
-        return Err(ApiErreur::Validation("L'URL de stream est requise".into()));
+    // Flux live et audio (fichier/lien) sont tous deux optionnels — au moins un est attendu.
+    let stream_url = body.stream_url.as_deref().map(str::trim).filter(|s| !s.is_empty());
+    let audio_url = body.audio_url.as_deref().map(str::trim).filter(|s| !s.is_empty());
+    if stream_url.is_none() && audio_url.is_none() {
+        return Err(ApiErreur::Validation(
+            "Fournissez au moins un fichier/lien audio ou une URL de flux live".into(),
+        ));
     }
 
     if let Some(ref ts) = body.type_station {
@@ -194,22 +200,24 @@ pub async fn creer_station_radio(
 
     sqlx::query(
         "INSERT INTO media_content.station_radio
-         (id, nom, slug, description, stream_url, image_couverture_url, genre, genres_liste,
-          pays_id, ville, type_station, etat, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-                 $11::media_content.type_station, 'brouillon', $12)"
+         (id, nom, slug, description, stream_url, audio_url, image_couverture_url, genre, genres_liste,
+          pays_id, ville, type_station, a_la_une, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+                 $12::media_content.type_station, $13, 'brouillon', $14)"
     )
     .bind(id)
     .bind(nom)
     .bind(&slug)
     .bind(body.description.as_deref().map(|s| s.trim()))
     .bind(stream_url)
+    .bind(audio_url)
     .bind(body.image_couverture_url.as_deref().map(|s| s.trim()))
     .bind(body.genre.as_deref().map(|s| s.trim()))
     .bind(&genres)
     .bind(body.pays_id)
     .bind(body.ville.as_deref().map(|s| s.trim()))
     .bind(type_station)
+    .bind(body.a_la_une.unwrap_or(false))
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -273,6 +281,7 @@ pub async fn modifier_station_radio(
     champ_str!(body.nom, "nom");
     champ_str!(body.description, "description");
     champ_str!(body.stream_url, "stream_url");
+    champ_str!(body.audio_url, "audio_url");
     champ_str!(body.image_couverture_url, "image_couverture_url");
     champ_str!(body.genre, "genre");
     champ_str!(body.ville, "ville");
@@ -284,6 +293,10 @@ pub async fn modifier_station_radio(
         sets.push(format!("type_station = ${}::media_content.type_station", bind_index));
         bind_strings.push(ts.clone());
         bind_index += 1;
+    }
+
+    if let Some(v) = body.a_la_une {
+        sets.push(format!("a_la_une = {}", v));
     }
 
     if let Some(pays_id) = body.pays_id {
@@ -530,10 +543,8 @@ pub async fn creer_chaine_tv(
     if nom.is_empty() {
         return Err(ApiErreur::Validation("Le nom de la chaine est requis".into()));
     }
-    let stream_url = body.stream_url.trim();
-    if stream_url.is_empty() {
-        return Err(ApiErreur::Validation("L'URL de stream est requise".into()));
-    }
+    // Flux live optionnel — le cœur de la télé = les programmes (cf. migration 09d).
+    let stream_url = body.stream_url.as_deref().map(str::trim).filter(|s| !s.is_empty());
 
     if let Some(ref cat) = body.categorie {
         if !CATEGORIES_CHAINE_VALIDES.contains(&cat.as_str()) {
@@ -732,14 +743,14 @@ pub async fn supprimer_chaine_tv(
 }
 
 // ══════════════════════════════════════════════════════════════
-// PROGRAMMES RADIO / TELE
+// PROGRAMMES RADIO (émissions)
 // ══════════════════════════════════════════════════════════════
 
-/// GET /api/admin/programmes-media
-pub async fn lister_programmes_media(
+/// GET /api/admin/programmes-radio
+pub async fn lister_programmes_radio(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    params: web::Query<AdminProgrammeMediaQueryParams>,
+    params: web::Query<AdminProgrammeRadioQueryParams>,
 ) -> Result<HttpResponse, ApiErreur> {
     verifier_permission!(admin, "media", "voir");
 
@@ -766,15 +777,6 @@ pub async fn lister_programmes_media(
         }
     }
 
-    if let Some(ref tp) = params.type_programme {
-        let t = tp.trim();
-        if !t.is_empty() {
-            conditions.push(format!("p.type::TEXT = ${}", bind_index));
-            bind_values.push(t.to_string());
-            bind_index += 1;
-        }
-    }
-
     if let Some(ref cat) = params.categorie_radio {
         let c = cat.trim();
         if !c.is_empty() {
@@ -782,6 +784,12 @@ pub async fn lister_programmes_media(
             bind_values.push(c.to_string());
             bind_index += 1;
         }
+    }
+
+    if let Some(station_id) = params.station_id {
+        conditions.push(format!("p.station_id = ${}", bind_index));
+        bind_values.push(station_id.to_string());
+        bind_index += 1;
     }
 
     if let Some(ref etat) = params.etat {
@@ -795,17 +803,17 @@ pub async fn lister_programmes_media(
     let _ = bind_index;
 
     let where_clause = conditions.join(" AND ");
-    let colonne = pagination.colonne_tri(PROGRAMME_MEDIA_TRI_COLONNES, "created_at");
+    let colonne = pagination.colonne_tri(PROGRAMME_RADIO_TRI_COLONNES, "created_at");
     let direction = pagination.direction_tri();
     let page = pagination.page();
     let par_page = pagination.par_page();
     let offset = pagination.offset();
 
     let joins = "LEFT JOIN shared.pays ON p.pays_id = pays.id
-                 LEFT JOIN media_content.chaine_tv ch ON p.chaine_id = ch.id";
+                 LEFT JOIN media_content.station_radio st ON p.station_id = st.id";
 
     let count_sql = format!(
-        "SELECT COUNT(*) FROM media_content.programme_radio_tele p {} WHERE {}",
+        "SELECT COUNT(*) FROM media_content.programme_radio p {} WHERE {}",
         joins, where_clause
     );
     let mut count_q = sqlx::query_scalar::<_, i64>(&count_sql);
@@ -813,10 +821,10 @@ pub async fn lister_programmes_media(
     let total: i64 = count_q.fetch_one(pool.get_ref()).await?;
 
     let select_sql = format!(
-        "SELECT {} FROM media_content.programme_radio_tele p {} WHERE {} ORDER BY p.{} {} LIMIT {} OFFSET {}",
-        ADMIN_PROGRAMME_MEDIA_LISTE_COLONNES, joins, where_clause, colonne, direction, par_page, offset
+        "SELECT {} FROM media_content.programme_radio p {} WHERE {} ORDER BY p.{} {} LIMIT {} OFFSET {}",
+        ADMIN_PROGRAMME_RADIO_LISTE_COLONNES, joins, where_clause, colonne, direction, par_page, offset
     );
-    let mut select_q = sqlx::query_as::<_, AdminProgrammeMediaListeResponse>(&select_sql);
+    let mut select_q = sqlx::query_as::<_, AdminProgrammeRadioListeResponse>(&select_sql);
     for v in &bind_values { select_q = select_q.bind(v); }
     let items = select_q.fetch_all(pool.get_ref()).await?;
 
@@ -827,8 +835,344 @@ pub async fn lister_programmes_media(
     }))
 }
 
-/// GET /api/admin/programmes-media/{id}
-pub async fn obtenir_programme_media(
+/// GET /api/admin/programmes-radio/{id}
+pub async fn obtenir_programme_radio(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "voir");
+    let id = path.into_inner();
+
+    let joins = "LEFT JOIN shared.pays ON p.pays_id = pays.id
+                 LEFT JOIN media_content.station_radio st ON p.station_id = st.id
+                 LEFT JOIN iam.utilisateur u ON p.cree_par = u.id";
+
+    let sql = format!(
+        "SELECT {} FROM media_content.programme_radio p {} WHERE p.id = $1 AND p.deleted_at IS NULL",
+        ADMIN_PROGRAMME_RADIO_DETAIL_COLONNES, joins
+    );
+    let row = sqlx::query_as::<_, AdminProgrammeRadioDetailRow>(&sql)
+        .bind(id)
+        .fetch_optional(pool.get_ref())
+        .await?
+        .ok_or_else(|| ApiErreur::NonTrouve("Programme radio non trouve".into()))?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(row.to_response()),
+        error: None,
+    }))
+}
+
+/// POST /api/admin/programmes-radio
+pub async fn creer_programme_radio(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    body: web::Json<CreerProgrammeRadioRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+
+    let nom = body.nom_emission.trim();
+    if nom.is_empty() {
+        return Err(ApiErreur::Validation("Le nom de l'emission est requis".into()));
+    }
+
+    let id = Uuid::new_v4();
+    let slug = generer_slug(nom);
+    let langue = body.langue.as_deref().unwrap_or("Français");
+    let a_la_une = body.a_la_une.unwrap_or(false);
+
+    // Une seule émission « à la une » par station : on retire le marqueur des autres
+    if a_la_une {
+        if let Some(station_id) = body.station_id {
+            sqlx::query(
+                "UPDATE media_content.programme_radio SET a_la_une = FALSE, updated_at = NOW()
+                 WHERE station_id = $1 AND a_la_une = TRUE AND deleted_at IS NULL"
+            )
+            .bind(station_id)
+            .execute(pool.get_ref())
+            .await?;
+        }
+    }
+
+    sqlx::query(
+        "INSERT INTO media_content.programme_radio
+         (id, nom_emission, slug, description, image_couverture_url, audio_url,
+          info_animateur, info_producteur, pays_id, est_international, langue,
+          categorie_radio, station_id, a_la_une, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6,
+                 $7, $8, $9, $10, $11,
+                 $12::media_content.categorie_radio, $13, $14, 'brouillon', $15)"
+    )
+    .bind(id)
+    .bind(nom)
+    .bind(&slug)
+    .bind(body.description.as_deref().map(|s| s.trim()).unwrap_or(""))
+    .bind(body.image_couverture_url.as_deref().map(|s| s.trim()))
+    .bind(body.audio_url.as_deref().map(|s| s.trim()))
+    .bind(body.info_animateur.as_deref().map(|s| s.trim()))
+    .bind(body.info_producteur.as_deref().map(|s| s.trim()))
+    .bind(body.pays_id)
+    .bind(body.est_international.unwrap_or(false))
+    .bind(langue)
+    .bind(body.categorie_radio.as_deref())
+    .bind(body.station_id)
+    .bind(a_la_une)
+    .bind(admin.id)
+    .execute(pool.get_ref())
+    .await?;
+
+    log::info!("Admin {} a cree le programme radio {} ({})", admin.id, nom, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(), Some(admin.id), "CREATE", "media_content", "programme_radio",
+        Some(id), None, None, ip.as_deref(), ua.as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "id": id })),
+        error: None,
+    }))
+}
+
+/// PUT /api/admin/programmes-radio/{id}
+pub async fn modifier_programme_radio(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<ModifierProgrammeRadioRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+    let id = path.into_inner();
+
+    let existe: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM media_content.programme_radio WHERE id = $1 AND deleted_at IS NULL)"
+    ).bind(id).fetch_one(pool.get_ref()).await?;
+    if !existe {
+        return Err(ApiErreur::NonTrouve("Programme radio non trouve".into()));
+    }
+
+    let mut sets = Vec::new();
+    let mut bind_strings: Vec<String> = Vec::new();
+    let mut bind_index: u32 = 1;
+
+    macro_rules! champ_str {
+        ($field:expr, $col:expr) => {
+            if let Some(ref val) = $field {
+                sets.push(format!("{} = ${}", $col, bind_index));
+                bind_strings.push(val.trim().to_string());
+                bind_index += 1;
+            }
+        };
+    }
+
+    champ_str!(body.nom_emission, "nom_emission");
+    champ_str!(body.description, "description");
+    champ_str!(body.image_couverture_url, "image_couverture_url");
+    champ_str!(body.audio_url, "audio_url");
+    champ_str!(body.info_animateur, "info_animateur");
+    champ_str!(body.info_producteur, "info_producteur");
+    champ_str!(body.langue, "langue");
+
+    if let Some(ref cat) = body.categorie_radio {
+        sets.push(format!("categorie_radio = ${}::media_content.categorie_radio", bind_index));
+        bind_strings.push(cat.clone());
+        bind_index += 1;
+    }
+
+    if let Some(pays_id) = body.pays_id {
+        sets.push(format!("pays_id = '{}'", pays_id));
+    }
+    if let Some(v) = body.est_international {
+        sets.push(format!("est_international = {}", v));
+    }
+
+    // Rattachement à une station
+    if let Some(station_id) = body.station_id {
+        sets.push(format!("station_id = '{}'", station_id));
+    }
+
+    // Émission « à la une » : une seule par station
+    if let Some(a_la_une) = body.a_la_une {
+        if a_la_une {
+            let station_eff: Option<Uuid> = match body.station_id {
+                Some(s) => Some(s),
+                None => sqlx::query_scalar(
+                    "SELECT station_id FROM media_content.programme_radio WHERE id = $1"
+                ).bind(id).fetch_one(pool.get_ref()).await?,
+            };
+            if let Some(st) = station_eff {
+                sqlx::query(
+                    "UPDATE media_content.programme_radio SET a_la_une = FALSE, updated_at = NOW()
+                     WHERE station_id = $1 AND id <> $2 AND a_la_une = TRUE AND deleted_at IS NULL"
+                ).bind(st).bind(id).execute(pool.get_ref()).await?;
+            }
+        }
+        sets.push(format!("a_la_une = {}", a_la_une));
+    }
+
+    if body.nom_emission.is_some() {
+        let nom = body.nom_emission.as_ref().unwrap().trim();
+        let slug = generer_slug(nom);
+        sets.push(format!("slug = ${}", bind_index));
+        bind_strings.push(slug);
+        bind_index += 1;
+    }
+
+    if sets.is_empty() {
+        return Err(ApiErreur::Validation("Aucun champ a modifier".into()));
+    }
+
+    sets.push("updated_at = NOW()".to_string());
+    let sql = format!(
+        "UPDATE media_content.programme_radio SET {} WHERE id = ${} AND deleted_at IS NULL",
+        sets.join(", "), bind_index
+    );
+
+    let mut q = sqlx::query(&sql);
+    for v in &bind_strings { q = q.bind(v); }
+    q = q.bind(id);
+    q.execute(pool.get_ref()).await?;
+
+    log::info!("Admin {} a modifie le programme radio {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(), Some(admin.id), "UPDATE", "media_content", "programme_radio",
+        Some(id), None, None, ip.as_deref(), ua.as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "id": id })),
+        error: None,
+    }))
+}
+
+/// DELETE /api/admin/programmes-radio/{id}
+pub async fn supprimer_programme_radio(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "supprimer");
+    let id = path.into_inner();
+
+    let result = sqlx::query(
+        "UPDATE media_content.programme_radio SET deleted_at = NOW(), updated_at = NOW()
+         WHERE id = $1 AND deleted_at IS NULL"
+    ).bind(id).execute(pool.get_ref()).await?;
+
+    if result.rows_affected() == 0 {
+        return Err(ApiErreur::NonTrouve("Programme radio non trouve".into()));
+    }
+
+    log::info!("Admin {} a supprime le programme radio {}", admin.id, id);
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(), Some(admin.id), "DELETE", "media_content", "programme_radio",
+        Some(id), None, None, ip.as_deref(), ua.as_deref(),
+    ).await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+}
+
+// ══════════════════════════════════════════════════════════════
+// PROGRAMMES TÉLÉ
+// ══════════════════════════════════════════════════════════════
+
+/// GET /api/admin/programmes-tele
+pub async fn lister_programmes_tele(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    params: web::Query<AdminProgrammeTeleQueryParams>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "voir");
+
+    let pagination = PaginationParams {
+        page: params.page,
+        par_page: params.par_page,
+        tri_par: params.tri_par.clone(),
+        tri_dir: params.tri_dir.clone(),
+    };
+
+    let mut conditions = vec!["p.deleted_at IS NULL".to_string()];
+    let mut bind_values: Vec<String> = Vec::new();
+    let mut bind_index: u32 = 1;
+
+    if let Some(ref recherche) = params.recherche {
+        let r = recherche.trim();
+        if !r.is_empty() {
+            conditions.push(format!(
+                "(LOWER(p.nom_emission) LIKE ${bi} OR LOWER(p.description) LIKE ${bi})",
+                bi = bind_index
+            ));
+            bind_values.push(format!("%{}%", r.to_lowercase()));
+            bind_index += 1;
+        }
+    }
+
+    if let Some(chaine_id) = params.chaine_id {
+        conditions.push(format!("p.chaine_id = ${}", bind_index));
+        bind_values.push(chaine_id.to_string());
+        bind_index += 1;
+    }
+
+    if let Some(ref etat) = params.etat {
+        let e = etat.trim();
+        if !e.is_empty() {
+            conditions.push(format!("p.etat = ${}", bind_index));
+            bind_values.push(e.to_string());
+            bind_index += 1;
+        }
+    }
+    let _ = bind_index;
+
+    let where_clause = conditions.join(" AND ");
+    let colonne = pagination.colonne_tri(PROGRAMME_TELE_TRI_COLONNES, "created_at");
+    let direction = pagination.direction_tri();
+    let page = pagination.page();
+    let par_page = pagination.par_page();
+    let offset = pagination.offset();
+
+    let joins = "LEFT JOIN shared.pays ON p.pays_id = pays.id
+                 LEFT JOIN media_content.chaine_tv ch ON p.chaine_id = ch.id";
+
+    let count_sql = format!(
+        "SELECT COUNT(*) FROM media_content.programme_tele p {} WHERE {}",
+        joins, where_clause
+    );
+    let mut count_q = sqlx::query_scalar::<_, i64>(&count_sql);
+    for v in &bind_values { count_q = count_q.bind(v); }
+    let total: i64 = count_q.fetch_one(pool.get_ref()).await?;
+
+    let select_sql = format!(
+        "SELECT {} FROM media_content.programme_tele p {} WHERE {} ORDER BY p.{} {} LIMIT {} OFFSET {}",
+        ADMIN_PROGRAMME_TELE_LISTE_COLONNES, joins, where_clause, colonne, direction, par_page, offset
+    );
+    let mut select_q = sqlx::query_as::<_, AdminProgrammeTeleListeResponse>(&select_sql);
+    for v in &bind_values { select_q = select_q.bind(v); }
+    let items = select_q.fetch_all(pool.get_ref()).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(PaginatedResponse::new(items, total, page, par_page)),
+        error: None,
+    }))
+}
+
+/// GET /api/admin/programmes-tele/{id}
+pub async fn obtenir_programme_tele(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
@@ -841,14 +1185,14 @@ pub async fn obtenir_programme_media(
                  LEFT JOIN iam.utilisateur u ON p.cree_par = u.id";
 
     let sql = format!(
-        "SELECT {} FROM media_content.programme_radio_tele p {} WHERE p.id = $1 AND p.deleted_at IS NULL",
-        ADMIN_PROGRAMME_MEDIA_DETAIL_COLONNES, joins
+        "SELECT {} FROM media_content.programme_tele p {} WHERE p.id = $1 AND p.deleted_at IS NULL",
+        ADMIN_PROGRAMME_TELE_DETAIL_COLONNES, joins
     );
-    let row = sqlx::query_as::<_, AdminProgrammeMediaDetailRow>(&sql)
+    let row = sqlx::query_as::<_, AdminProgrammeTeleDetailRow>(&sql)
         .bind(id)
         .fetch_optional(pool.get_ref())
         .await?
-        .ok_or_else(|| ApiErreur::NonTrouve("Programme media non trouve".into()))?;
+        .ok_or_else(|| ApiErreur::NonTrouve("Programme tele non trouve".into()))?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -857,12 +1201,12 @@ pub async fn obtenir_programme_media(
     }))
 }
 
-/// POST /api/admin/programmes-media
-pub async fn creer_programme_media(
+/// POST /api/admin/programmes-tele
+pub async fn creer_programme_tele(
     admin: AdminUtilisateur,
     req: HttpRequest,
     pool: web::Data<PgPool>,
-    body: web::Json<CreerProgrammeMediaRequest>,
+    body: web::Json<CreerProgrammeTeleRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
     verifier_permission!(admin, "media", "modifier");
 
@@ -870,21 +1214,18 @@ pub async fn creer_programme_media(
     if nom.is_empty() {
         return Err(ApiErreur::Validation("Le nom de l'emission est requis".into()));
     }
-    if !TYPES_PROGRAMME_VALIDES.contains(&body.type_programme.as_str()) {
-        return Err(ApiErreur::Validation(format!("Type programme invalide: {}", body.type_programme)));
-    }
 
     let id = Uuid::new_v4();
     let slug = generer_slug(nom);
     let langue = body.langue.as_deref().unwrap_or("Français");
     let a_la_une = body.a_la_une.unwrap_or(false);
 
-    // Un seul programme « à la une » par chaîne : on retire le marqueur des autres
+    // Un seul programme « à la une » par chaîne
     if a_la_une {
         if let Some(chaine_id) = body.chaine_id {
             sqlx::query(
-                "UPDATE media_content.programme_radio_tele SET a_la_une = FALSE, updated_at = NOW()
-                 WHERE chaine_id = $1 AND a_la_une = TRUE AND type = 'tele' AND deleted_at IS NULL"
+                "UPDATE media_content.programme_tele SET a_la_une = FALSE, updated_at = NOW()
+                 WHERE chaine_id = $1 AND a_la_une = TRUE AND deleted_at IS NULL"
             )
             .bind(chaine_id)
             .execute(pool.get_ref())
@@ -893,19 +1234,18 @@ pub async fn creer_programme_media(
     }
 
     sqlx::query(
-        "INSERT INTO media_content.programme_radio_tele
-         (id, nom_emission, slug, type, description, image_couverture_url, video_url,
+        "INSERT INTO media_content.programme_tele
+         (id, nom_emission, slug, description, image_couverture_url, video_url,
           info_animateur, info_producteur, pays_id, est_international, langue,
-          categorie_radio, chaine_id, a_la_une, etat, cree_par)
-         VALUES ($1, $2, $3, $4::media_content.type_programme_media, $5, $6, $7,
-                 $8, $9, $10, $11, $12,
-                 $13::media_content.categorie_radio, $14, $15, 'brouillon', $16)"
+          chaine_id, a_la_une, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6,
+                 $7, $8, $9, $10, $11,
+                 $12, $13, 'brouillon', $14)"
     )
     .bind(id)
     .bind(nom)
     .bind(&slug)
-    .bind(&body.type_programme)
-    .bind(body.description.trim())
+    .bind(body.description.as_deref().map(|s| s.trim()).unwrap_or(""))
     .bind(body.image_couverture_url.as_deref().map(|s| s.trim()))
     .bind(body.video_url.as_deref().map(|s| s.trim()))
     .bind(body.info_animateur.as_deref().map(|s| s.trim()))
@@ -913,28 +1253,19 @@ pub async fn creer_programme_media(
     .bind(body.pays_id)
     .bind(body.est_international.unwrap_or(false))
     .bind(langue)
-    .bind(body.categorie_radio.as_deref())
     .bind(body.chaine_id)
     .bind(a_la_une)
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
 
-    log::info!("Admin {} a cree le programme media {} ({})", admin.id, nom, id);
+    log::info!("Admin {} a cree le programme tele {} ({})", admin.id, nom, id);
 
     let ip = audit::extraire_ip(&req);
     let ua = audit::extraire_user_agent(&req);
     audit::log_action(
-        pool.get_ref(),
-        Some(admin.id),
-        "CREATE",
-        "media_content",
-        "programme_media",
-        Some(id),
-        None,
-        None,
-        ip.as_deref(),
-        ua.as_deref(),
+        pool.get_ref(), Some(admin.id), "CREATE", "media_content", "programme_tele",
+        Some(id), None, None, ip.as_deref(), ua.as_deref(),
     ).await;
 
     Ok(HttpResponse::Created().json(ApiResponse {
@@ -944,22 +1275,22 @@ pub async fn creer_programme_media(
     }))
 }
 
-/// PUT /api/admin/programmes-media/{id}
-pub async fn modifier_programme_media(
+/// PUT /api/admin/programmes-tele/{id}
+pub async fn modifier_programme_tele(
     admin: AdminUtilisateur,
     req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<ModifierProgrammeMediaRequest>,
+    body: web::Json<ModifierProgrammeTeleRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
     verifier_permission!(admin, "media", "modifier");
     let id = path.into_inner();
 
     let existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM media_content.programme_radio_tele WHERE id = $1 AND deleted_at IS NULL)"
+        "SELECT EXISTS(SELECT 1 FROM media_content.programme_tele WHERE id = $1 AND deleted_at IS NULL)"
     ).bind(id).fetch_one(pool.get_ref()).await?;
     if !existe {
-        return Err(ApiErreur::NonTrouve("Programme media non trouve".into()));
+        return Err(ApiErreur::NonTrouve("Programme tele non trouve".into()));
     }
 
     let mut sets = Vec::new();
@@ -984,21 +1315,6 @@ pub async fn modifier_programme_media(
     champ_str!(body.info_producteur, "info_producteur");
     champ_str!(body.langue, "langue");
 
-    if let Some(ref tp) = body.type_programme {
-        if !TYPES_PROGRAMME_VALIDES.contains(&tp.as_str()) {
-            return Err(ApiErreur::Validation(format!("Type programme invalide: {}", tp)));
-        }
-        sets.push(format!("type = ${}::media_content.type_programme_media", bind_index));
-        bind_strings.push(tp.clone());
-        bind_index += 1;
-    }
-
-    if let Some(ref cat) = body.categorie_radio {
-        sets.push(format!("categorie_radio = ${}::media_content.categorie_radio", bind_index));
-        bind_strings.push(cat.clone());
-        bind_index += 1;
-    }
-
     if let Some(pays_id) = body.pays_id {
         sets.push(format!("pays_id = '{}'", pays_id));
     }
@@ -1006,7 +1322,7 @@ pub async fn modifier_programme_media(
         sets.push(format!("est_international = {}", v));
     }
 
-    // Rattachement à une chaîne (télé)
+    // Rattachement à une chaîne
     if let Some(chaine_id) = body.chaine_id {
         sets.push(format!("chaine_id = '{}'", chaine_id));
     }
@@ -1014,17 +1330,16 @@ pub async fn modifier_programme_media(
     // Programme « à la une » : un seul par chaîne
     if let Some(a_la_une) = body.a_la_une {
         if a_la_une {
-            // Chaîne effective = celle du corps, sinon celle déjà enregistrée
             let chaine_eff: Option<Uuid> = match body.chaine_id {
                 Some(c) => Some(c),
                 None => sqlx::query_scalar(
-                    "SELECT chaine_id FROM media_content.programme_radio_tele WHERE id = $1"
+                    "SELECT chaine_id FROM media_content.programme_tele WHERE id = $1"
                 ).bind(id).fetch_one(pool.get_ref()).await?,
             };
             if let Some(ch) = chaine_eff {
                 sqlx::query(
-                    "UPDATE media_content.programme_radio_tele SET a_la_une = FALSE, updated_at = NOW()
-                     WHERE chaine_id = $1 AND id <> $2 AND a_la_une = TRUE AND type = 'tele' AND deleted_at IS NULL"
+                    "UPDATE media_content.programme_tele SET a_la_une = FALSE, updated_at = NOW()
+                     WHERE chaine_id = $1 AND id <> $2 AND a_la_une = TRUE AND deleted_at IS NULL"
                 ).bind(ch).bind(id).execute(pool.get_ref()).await?;
             }
         }
@@ -1045,7 +1360,7 @@ pub async fn modifier_programme_media(
 
     sets.push("updated_at = NOW()".to_string());
     let sql = format!(
-        "UPDATE media_content.programme_radio_tele SET {} WHERE id = ${} AND deleted_at IS NULL",
+        "UPDATE media_content.programme_tele SET {} WHERE id = ${} AND deleted_at IS NULL",
         sets.join(", "), bind_index
     );
 
@@ -1054,21 +1369,13 @@ pub async fn modifier_programme_media(
     q = q.bind(id);
     q.execute(pool.get_ref()).await?;
 
-    log::info!("Admin {} a modifie le programme media {}", admin.id, id);
+    log::info!("Admin {} a modifie le programme tele {}", admin.id, id);
 
     let ip = audit::extraire_ip(&req);
     let ua = audit::extraire_user_agent(&req);
     audit::log_action(
-        pool.get_ref(),
-        Some(admin.id),
-        "UPDATE",
-        "media_content",
-        "programme_media",
-        Some(id),
-        None,
-        None,
-        ip.as_deref(),
-        ua.as_deref(),
+        pool.get_ref(), Some(admin.id), "UPDATE", "media_content", "programme_tele",
+        Some(id), None, None, ip.as_deref(), ua.as_deref(),
     ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
@@ -1078,8 +1385,8 @@ pub async fn modifier_programme_media(
     }))
 }
 
-/// DELETE /api/admin/programmes-media/{id}
-pub async fn supprimer_programme_media(
+/// DELETE /api/admin/programmes-tele/{id}
+pub async fn supprimer_programme_tele(
     admin: AdminUtilisateur,
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -1089,30 +1396,133 @@ pub async fn supprimer_programme_media(
     let id = path.into_inner();
 
     let result = sqlx::query(
-        "UPDATE media_content.programme_radio_tele SET deleted_at = NOW(), updated_at = NOW()
+        "UPDATE media_content.programme_tele SET deleted_at = NOW(), updated_at = NOW()
          WHERE id = $1 AND deleted_at IS NULL"
     ).bind(id).execute(pool.get_ref()).await?;
 
     if result.rows_affected() == 0 {
-        return Err(ApiErreur::NonTrouve("Programme media non trouve".into()));
+        return Err(ApiErreur::NonTrouve("Programme tele non trouve".into()));
     }
 
-    log::info!("Admin {} a supprime le programme media {}", admin.id, id);
+    log::info!("Admin {} a supprime le programme tele {}", admin.id, id);
 
     let ip = audit::extraire_ip(&req);
     let ua = audit::extraire_user_agent(&req);
     audit::log_action(
-        pool.get_ref(),
-        Some(admin.id),
-        "DELETE",
-        "media_content",
-        "programme_media",
-        Some(id),
-        None,
-        None,
-        ip.as_deref(),
-        ua.as_deref(),
+        pool.get_ref(), Some(admin.id), "DELETE", "media_content", "programme_tele",
+        Some(id), None, None, ip.as_deref(), ua.as_deref(),
     ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+}
+
+// ══════════════════════════════════════════════════════════════
+// UPLOAD DE FICHIERS MÉDIA (vidéo / audio)
+// ══════════════════════════════════════════════════════════════
+
+const EXTENSIONS_VIDEO: &[&str] = &["mp4", "webm", "mov", "m4v", "ogv"];
+const EXTENSIONS_AUDIO: &[&str] = &["mp3", "ogg", "oga", "wav", "m4a", "aac"];
+const TAILLE_MAX_VIDEO: usize = 300 * 1024 * 1024; // 300 Mo
+const TAILLE_MAX_AUDIO: usize = 80 * 1024 * 1024; //  80 Mo
+
+/// POST /api/admin/medias/upload
+/// Reçoit un fichier vidéo OU audio (champ multipart `fichier`), le stocke sous
+/// `/uploads/medias/{videos|audios}/` et renvoie son URL relative.
+/// Permet aux formulaires radio/télé d'uploader directement un média (ou de
+/// continuer à coller un lien externe sans passer par ici).
+pub async fn uploader_media(
+    admin: AdminUtilisateur,
+    upload_dir: web::Data<String>,
+    mut payload: actix_multipart::Multipart,
+) -> Result<HttpResponse, ApiErreur> {
+    use futures_util::StreamExt;
+    use std::io::Write;
+
+    verifier_permission!(admin, "media", "modifier");
+
+    while let Some(item) = payload.next().await {
+        let mut field = item.map_err(|e| ApiErreur::Upload(format!("Champ multipart invalide: {}", e)))?;
+
+        let content_disposition = field.content_disposition().cloned();
+        let nom_champ = content_disposition
+            .as_ref()
+            .and_then(|cd| cd.get_name())
+            .unwrap_or("")
+            .to_string();
+        if nom_champ != "fichier" {
+            // Vider le champ ignoré
+            while let Some(chunk) = field.next().await {
+                let _ = chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture: {}", e)))?;
+            }
+            continue;
+        }
+
+        // Déterminer l'extension depuis le nom de fichier
+        let nom_fichier = content_disposition
+            .as_ref()
+            .and_then(|cd| cd.get_filename())
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+        let ext = std::path::Path::new(&nom_fichier)
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|e| e.to_lowercase())
+            .unwrap_or_default();
+
+        let (sous_dossier, taille_max) = if EXTENSIONS_VIDEO.contains(&ext.as_str()) {
+            ("videos", TAILLE_MAX_VIDEO)
+        } else if EXTENSIONS_AUDIO.contains(&ext.as_str()) {
+            ("audios", TAILLE_MAX_AUDIO)
+        } else {
+            return Err(ApiErreur::Validation(format!(
+                "Format de fichier non supporté: « {} ». Vidéos: {} ; Audios: {}.",
+                if ext.is_empty() { "inconnu" } else { &ext },
+                EXTENSIONS_VIDEO.join(", "),
+                EXTENSIONS_AUDIO.join(", "),
+            )));
+        };
+
+        let nom_stocke = format!("{}.{}", Uuid::new_v4(), ext);
+        let chemin_relatif = format!("/uploads/medias/{}/{}", sous_dossier, nom_stocke);
+        let chemin_complet = format!("{}/medias/{}/{}", upload_dir.get_ref(), sous_dossier, nom_stocke);
+
+        if let Some(parent) = std::path::Path::new(&chemin_complet).parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| ApiErreur::Upload(format!("Impossible de créer le répertoire: {}", e)))?;
+        }
+        let mut fichier = std::fs::File::create(&chemin_complet)
+            .map_err(|e| ApiErreur::Upload(format!("Impossible de créer le fichier: {}", e)))?;
+
+        let mut taille: usize = 0;
+        while let Some(chunk) = field.next().await {
+            let data = chunk.map_err(|e| ApiErreur::Upload(format!("Erreur lecture fichier: {}", e)))?;
+            taille += data.len();
+            if taille > taille_max {
+                drop(fichier);
+                let _ = std::fs::remove_file(&chemin_complet);
+                return Err(ApiErreur::Validation(format!(
+                    "Fichier trop volumineux (max {} Mo)",
+                    taille_max / (1024 * 1024)
+                )));
+            }
+            fichier
+                .write_all(&data)
+                .map_err(|e| ApiErreur::Upload(format!("Erreur écriture fichier: {}", e)))?;
+        }
+
+        if taille == 0 {
+            let _ = std::fs::remove_file(&chemin_complet);
+            return Err(ApiErreur::Validation("Fichier vide".into()));
+        }
+
+        log::info!("Admin {} a uploadé un média {} ({} octets)", admin.id, chemin_relatif, taille);
+
+        return Ok(HttpResponse::Created().json(ApiResponse {
+            success: true,
+            data: Some(serde_json::json!({ "url": chemin_relatif })),
+            error: None,
+        }));
+    }
+
+    Err(ApiErreur::Validation("Aucun fichier reçu (champ « fichier » attendu)".into()))
 }

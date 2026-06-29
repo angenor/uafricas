@@ -6,13 +6,15 @@ export interface StationRadioAPI {
   nom: string
   slug: string | null
   description: string | null
-  stream_url: string
+  stream_url: string | null
+  audio_url: string | null
   image_couverture_url: string | null
   genre: string | null
   genres_liste: string[]
   pays: string | null
   ville: string | null
   type_station: string
+  a_la_une: boolean
   created_at: string
 }
 
@@ -30,13 +32,17 @@ export interface RadioStation {
   id: string
   name: string
   description: string
+  /** URL audio à jouer : fichier/lien audio en priorité, sinon flux live */
   streamUrl: string
+  /** Audio dédié (fichier uploadé ou lien) — prioritaire sur le flux live */
+  audioUrl: string
   cover: string
   genre: string
   genresList: string[]
   location: string
   country: string
   programType: 'Nationales' | 'Local' | 'International'
+  aLaUne: boolean
 }
 
 /** Reponse API standardisee */
@@ -60,7 +66,9 @@ export interface StationRadioFiltres {
 export interface CreerStationForm {
   nom: string
   description?: string
-  stream_url: string
+  stream_url?: string
+  audio_url?: string
+  image_couverture_url?: string
   genre?: string
   genres_liste?: string[]
   pays?: string
@@ -70,13 +78,24 @@ export interface CreerStationForm {
 
 // ── Mapping API → Frontend ────────────────────────────────────────────
 
+/** Résout une URL média : absolue telle quelle, relative préfixée par l'API */
+function resoudreUrlMedia(url: string | null, apiBase: string): string {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return `${apiBase}${url}`
+}
+
 function mapperStationApiVersRadio(station: StationRadioAPI, apiBase: string): RadioStation {
   const location = [station.ville, station.pays].filter(Boolean).join(', ')
+  const audioUrl = resoudreUrlMedia(station.audio_url, apiBase)
+  const streamUrl = resoudreUrlMedia(station.stream_url, apiBase)
   return {
     id: station.id,
     name: station.nom,
     description: station.description || '',
-    streamUrl: station.stream_url,
+    // L'audio dédié prime ; à défaut, le flux live
+    streamUrl: audioUrl || streamUrl,
+    audioUrl,
     cover: station.image_couverture_url
       ? `${apiBase}${station.image_couverture_url}`
       : '/images/radio-default.jpg',
@@ -85,6 +104,7 @@ function mapperStationApiVersRadio(station: StationRadioAPI, apiBase: string): R
     location,
     country: station.pays || '',
     programType: station.type_station as RadioStation['programType'],
+    aLaUne: station.a_la_une ?? false,
   }
 }
 

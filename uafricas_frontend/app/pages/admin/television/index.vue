@@ -3,19 +3,16 @@ import type { TableColumn, FilterDefinition } from '~/types/admin'
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
-const { stations, chaines, programmes, filtresStations, filtresChaines, filtresProgrammes, pagination, sort, loading, chargerStations, chargerChaines, chargerProgrammes, supprimerStation, supprimerChaine, supprimerProgramme, allerPage, changerTri, reinitialiserPagination } = useAdminRadioTele()
+const {
+  chaines, programmes,
+  filtresChaines, filtresProgrammes,
+  pagination, sort, loading,
+  chargerChaines, chargerProgrammes,
+  supprimerChaine, supprimerProgramme,
+  allerPage, changerTri, reinitialiserPagination,
+} = useAdminTelevision()
 
-const ongletActif = ref<'stations' | 'chaines' | 'programmes'>('stations')
-
-const colonnesStations: TableColumn[] = [
-  { key: 'nom', label: 'Nom', sortable: true },
-  { key: 'type_station', label: 'Type', sortable: true },
-  { key: 'genre', label: 'Genre' },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-24', align: 'center' },
-  { key: 'pays_nom', label: 'Territoire' },
-  { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
-    format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
-]
+const ongletActif = ref<'chaines' | 'programmes'>('chaines')
 
 const colonnesChaines: TableColumn[] = [
   { key: 'nom', label: 'Nom', sortable: true },
@@ -28,28 +25,12 @@ const colonnesChaines: TableColumn[] = [
 ]
 
 const colonnesProgrammes: TableColumn[] = [
-  { key: 'nom_emission', label: 'Emission', sortable: true },
-  { key: 'type_programme', label: 'Type', sortable: true, width: 'w-24', align: 'center' },
+  { key: 'nom_emission', label: 'Programme', sortable: true },
   { key: 'chaine_nom', label: 'Télé / À la une' },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-24', align: 'center' },
-  { key: 'categorie_radio', label: 'Categorie radio' },
   { key: 'langue', label: 'Langue' },
+  { key: 'etat', label: 'Etat', sortable: true, width: 'w-24', align: 'center' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
-]
-
-const filtresDefStations: FilterDefinition[] = [
-  { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom, description...' },
-  { key: 'type_station', label: 'Type', type: 'select', placeholder: 'Tous les types', options: [
-    { value: 'nationale', label: 'Nationale' },
-    { value: 'locale', label: 'Locale' },
-    { value: 'internationale', label: 'Internationale' },
-  ]},
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous les etats', options: [
-    { value: 'brouillon', label: 'Brouillon' },
-    { value: 'publie', label: 'Publie' },
-    { value: 'suspendu', label: 'Suspendu' },
-  ]},
 ]
 
 const filtresDefChaines: FilterDefinition[] = [
@@ -71,11 +52,7 @@ const filtresDefChaines: FilterDefinition[] = [
 ]
 
 const filtresDefProgrammes: FilterDefinition[] = [
-  { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom emission...' },
-  { key: 'type_programme', label: 'Type', type: 'select', placeholder: 'Tous', options: [
-    { value: 'radio', label: 'Radio' },
-    { value: 'tele', label: 'Tele' },
-  ]},
+  { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom programme...' },
   { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous les etats', options: [
     { value: 'brouillon', label: 'Brouillon' },
     { value: 'publie', label: 'Publie' },
@@ -89,84 +66,53 @@ const badgeEtat = (etat: string) => {
   const map: Record<string, string> = { brouillon: 'badge-warning', publie: 'badge-success', suspendu: 'badge-error', supprime: 'badge-ghost' }
   return map[etat] || 'badge-info'
 }
-
 const etatLabel = (etat: string) => {
   const map: Record<string, string> = { brouillon: 'Brouillon', publie: 'Publie', suspendu: 'Suspendu' }
   return map[etat] || etat
 }
 
-const labelType = (type: string) => {
-  const map: Record<string, string> = { nationale: 'Nationale', locale: 'Locale', internationale: 'Internationale' }
-  return map[type] || type
-}
-
 const supprimerElement = async () => {
   if (!suppressionId.value) return
-  if (ongletActif.value === 'stations') { await supprimerStation(suppressionId.value); await chargerStations() }
-  else if (ongletActif.value === 'chaines') { await supprimerChaine(suppressionId.value); await chargerChaines() }
+  if (ongletActif.value === 'chaines') { await supprimerChaine(suppressionId.value); await chargerChaines() }
   else { await supprimerProgramme(suppressionId.value); await chargerProgrammes() }
   suppressionId.value = null
 }
 
 const chargerDonnees = () => {
-  if (ongletActif.value === 'stations') chargerStations()
-  else if (ongletActif.value === 'chaines') chargerChaines()
+  if (ongletActif.value === 'chaines') chargerChaines()
   else chargerProgrammes()
 }
 
-const filtresActifs = computed(() => {
-  if (ongletActif.value === 'stations') return filtresDefStations
-  if (ongletActif.value === 'chaines') return filtresDefChaines
-  return filtresDefProgrammes
-})
-
-const donneesActives = computed(() => {
-  if (ongletActif.value === 'stations') return stations.value
-  if (ongletActif.value === 'chaines') return chaines.value
-  return programmes.value
-})
-
-const colonnesActives = computed(() => {
-  if (ongletActif.value === 'stations') return colonnesStations
-  if (ongletActif.value === 'chaines') return colonnesChaines
-  return colonnesProgrammes
-})
-
-const filtresValeurs = computed(() => {
-  if (ongletActif.value === 'stations') return filtresStations
-  if (ongletActif.value === 'chaines') return filtresChaines
-  return filtresProgrammes
-})
+const filtresActifs = computed(() => ongletActif.value === 'chaines' ? filtresDefChaines : filtresDefProgrammes)
+const donneesActives = computed(() => ongletActif.value === 'chaines' ? chaines.value : programmes.value)
+const colonnesActives = computed(() => ongletActif.value === 'chaines' ? colonnesChaines : colonnesProgrammes)
+const filtresValeurs = computed(() => ongletActif.value === 'chaines' ? filtresChaines : filtresProgrammes)
 
 const reinitialiser = () => {
-  if (ongletActif.value === 'stations') { filtresStations.recherche = ''; filtresStations.type_station = ''; filtresStations.etat = '' }
-  else if (ongletActif.value === 'chaines') { filtresChaines.recherche = ''; filtresChaines.categorie = ''; filtresChaines.etat = '' }
-  else { filtresProgrammes.recherche = ''; filtresProgrammes.type_programme = ''; filtresProgrammes.etat = '' }
+  if (ongletActif.value === 'chaines') { filtresChaines.recherche = ''; filtresChaines.categorie = ''; filtresChaines.etat = '' }
+  else { filtresProgrammes.recherche = ''; filtresProgrammes.etat = '' }
   reinitialiserPagination()
   chargerDonnees()
 }
 
 watch(ongletActif, () => { reinitialiserPagination(); chargerDonnees() })
-onMounted(() => chargerStations())
+onMounted(() => chargerChaines())
 watch([() => pagination.page, () => sort.column, () => sort.direction], chargerDonnees)
 </script>
 
 <template>
   <div>
-    <AdminPageHeader titre="Radio & TV" sous-titre="Gestion des stations radio, chaines TV et programmes">
+    <AdminPageHeader titre="Télévision" sous-titre="Gestion des chaînes et des programmes télé">
       <template #actions>
-        <NuxtLink :to="`/admin/radio-tele/create?type=${ongletActif}`" class="btn btn-primary btn-sm">
+        <NuxtLink :to="`/admin/television/create?type=${ongletActif}`" class="btn btn-primary btn-sm">
           <font-awesome-icon icon="plus" class="mr-1" /> Creer
         </NuxtLink>
       </template>
     </AdminPageHeader>
 
     <div role="tablist" class="tabs tabs-bordered mb-6">
-      <a role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'stations' }" @click="ongletActif = 'stations'">
-        <font-awesome-icon icon="broadcast-tower" class="mr-2" /> Stations Radio
-      </a>
       <a role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'chaines' }" @click="ongletActif = 'chaines'">
-        <font-awesome-icon icon="tv" class="mr-2" /> Chaines TV
+        <font-awesome-icon icon="tv" class="mr-2" /> Chaînes
       </a>
       <a role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'programmes' }" @click="ongletActif = 'programmes'">
         <font-awesome-icon icon="film" class="mr-2" /> Programmes
@@ -194,19 +140,9 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], chargerD
         <span :class="['badge badge-sm', badgeEtat(value)]">{{ etatLabel(value) }}</span>
       </template>
 
-      <template #cell-type_station="{ value }">
-        {{ labelType(value) }}
-      </template>
-
       <template #cell-est_en_direct="{ value }">
         <span :class="['badge badge-sm', value ? 'badge-success' : 'badge-ghost']">
           {{ value ? 'En direct' : 'Hors ligne' }}
-        </span>
-      </template>
-
-      <template #cell-type_programme="{ value }">
-        <span :class="['badge badge-sm', value === 'radio' ? 'badge-info' : 'badge-accent']">
-          {{ value === 'radio' ? 'Radio' : 'Tele' }}
         </span>
       </template>
 
@@ -222,7 +158,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], chargerD
 
       <template #actions="{ item }">
         <div class="flex gap-1">
-          <NuxtLink :to="`/admin/radio-tele/${item.id}?type=${ongletActif}`" class="btn btn-ghost btn-xs">
+          <NuxtLink :to="`/admin/television/${item.id}?type=${ongletActif}`" class="btn btn-ghost btn-xs">
             <font-awesome-icon icon="pen-to-square" />
           </NuxtLink>
           <button class="btn btn-ghost btn-xs text-error" @click="suppressionId = item.id">
@@ -232,7 +168,6 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], chargerD
       </template>
     </AdminDataTable>
 
-    <!-- Modal suppression -->
     <div v-if="suppressionId" class="modal modal-open">
       <div class="modal-box">
         <h3 class="font-bold text-lg">Confirmer la suppression</h3>

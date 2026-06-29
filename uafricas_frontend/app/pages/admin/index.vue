@@ -140,8 +140,8 @@ const modulesOverview = computed(() => {
     { label: 'Evenements', total: s.evenements.total, icon: 'calendar', lien: '/admin/evenements' },
     { label: 'MOOC', total: s.moocs.total, icon: 'graduation-cap', lien: '/admin/mooc' },
     { label: 'Livres', total: s.livres.total, icon: 'book', lien: '/admin/livres' },
-    { label: 'Radio', total: s.radio_tv.stations_radio, icon: 'radio', lien: '/admin/radio-tele' },
-    { label: 'TV', total: s.radio_tv.chaines_tv, icon: 'tv', lien: '/admin/radio-tele' },
+    { label: 'Radio', total: s.radio_tv.stations_radio, icon: 'radio', lien: '/admin/radio' },
+    { label: 'TV', total: s.radio_tv.chaines_tv, icon: 'tv', lien: '/admin/television' },
     { label: 'Factchecks', total: s.factchecks.total, icon: 'scale-balanced', lien: '/admin/factcheck' },
     { label: 'Fiches territoires', total: s.fiches_pays.total, icon: 'earth-africa', lien: '/admin/profils-pays' },
   ]

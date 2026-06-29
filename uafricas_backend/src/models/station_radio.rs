@@ -6,9 +6,9 @@ use uuid::Uuid;
 // ── Colonnes SQL ──────────────────────────────────────────────────────
 
 pub const STATION_RADIO_COLONNES: &str =
-    "sr.id, sr.nom, sr.slug, sr.description, sr.stream_url, sr.image_couverture_url,
+    "sr.id, sr.nom, sr.slug, sr.description, sr.stream_url, sr.audio_url, sr.image_couverture_url,
      sr.genre, sr.genres_liste, sr.pays_id, sr.ville,
-     sr.type_station::text AS type_station, sr.etat,
+     sr.type_station::text AS type_station, sr.a_la_une, sr.etat,
      sr.cree_par, sr.created_at, sr.updated_at";
 
 // ── Structs DB ────────────────────────────────────────────────────────
@@ -19,13 +19,15 @@ pub struct StationRadioRow {
     pub nom: String,
     pub slug: Option<String>,
     pub description: Option<String>,
-    pub stream_url: String,
+    pub stream_url: Option<String>,
+    pub audio_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub genre: Option<String>,
     pub genres_liste: Vec<String>,
     pub pays_id: Option<Uuid>,
     pub ville: Option<String>,
     pub type_station: String,
+    pub a_la_une: bool,
     pub etat: String,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
@@ -43,13 +45,15 @@ pub struct StationRadioResponse {
     pub nom: String,
     pub slug: Option<String>,
     pub description: Option<String>,
-    pub stream_url: String,
+    pub stream_url: Option<String>,
+    pub audio_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub genre: Option<String>,
     pub genres_liste: Vec<String>,
     pub pays: Option<String>,
     pub ville: Option<String>,
     pub type_station: String,
+    pub a_la_une: bool,
     pub created_at: DateTime<Utc>,
 }
 
@@ -80,12 +84,15 @@ pub struct StationRadioQueryParams {
 pub struct CreerStationRadioForm {
     pub nom: String,
     pub description: Option<String>,
-    pub stream_url: String,
+    pub stream_url: Option<String>,
+    pub audio_url: Option<String>,
+    pub image_couverture_url: Option<String>,
     pub genre: Option<String>,
     pub genres_liste: Option<Vec<String>>,
     pub pays: Option<String>,
     pub ville: Option<String>,
     pub type_station: Option<String>,
+    pub a_la_une: Option<bool>,
 }
 
 // ── Mapping ───────────────────────────────────────────────────────────
@@ -132,12 +139,14 @@ impl StationRadioRow {
             slug: self.slug.clone(),
             description: self.description.clone(),
             stream_url: self.stream_url.clone(),
+            audio_url: self.audio_url.clone(),
             image_couverture_url: self.image_couverture_url.clone(),
             genre: self.genre.clone(),
             genres_liste: self.genres_liste.clone(),
             pays: self.pays_nom.clone(),
             ville: self.ville.clone(),
             type_station: mapper_type_station_frontend(&self.type_station),
+            a_la_une: self.a_la_une,
             created_at: self.created_at,
         }
     }
