@@ -119,6 +119,7 @@ const sidebarSections: SidebarSection[] = [
     faIcon: 'chart-line',
     route: '/admin',
   },
+  // ─── Administration & système ───
   {
     label: 'Utilisateurs & Accès',
     faIcon: 'users',
@@ -141,6 +142,7 @@ const sidebarSections: SidebarSection[] = [
       { label: 'Spécialités Biblio', faIcon: 'book-open', route: '/admin/specialites' },
     ],
   },
+  // ─── Domaines métier (alignés sur la navigation publique) ───
   {
     label: 'Marché Africain',
     faIcon: 'store',
@@ -150,13 +152,14 @@ const sidebarSections: SidebarSection[] = [
     ],
   },
   {
-    label: "Programmes d'échange",
-    faIcon: 'plane',
+    label: 'Université (Muniversa)',
+    faIcon: 'graduation-cap',
     children: [
-      { label: 'Programmes', faIcon: 'calendar-check', route: '/admin/programmes' },
-      { label: 'Candidatures', faIcon: 'file-lines', route: '/admin/candidatures' },
       { label: 'Facultés (INUDA)', faIcon: 'building-columns', route: '/admin/facultes' },
       { label: 'Écoles partenaires', faIcon: 'school', route: '/admin/ecoles-partenaires' },
+      { label: 'Formations', faIcon: 'chalkboard-user', route: '/admin/mooc' },
+      { label: "Programmes d'échange", faIcon: 'plane', route: '/admin/programmes' },
+      { label: 'Candidatures', faIcon: 'file-lines', route: '/admin/candidatures' },
     ],
   },
   {
@@ -194,10 +197,9 @@ const sidebarSections: SidebarSection[] = [
     faIcon: 'tv',
     children: [
       { label: 'Radio & TV', faIcon: 'broadcast-tower', route: '/admin/radio-tele' },
-      { label: 'Événements', faIcon: 'calendar', route: '/admin/evenements' },
-      { label: 'MOOC', faIcon: 'graduation-cap', route: '/admin/mooc' },
-      { label: 'Bibliothèque', faIcon: 'book', route: '/admin/livres' },
       { label: 'Vidafrica', faIcon: 'closed-captioning', route: '/admin/vidafrica' },
+      { label: 'Événements', faIcon: 'calendar', route: '/admin/evenements' },
+      { label: 'Bibliothèque', faIcon: 'book', route: '/admin/livres' },
     ],
   },
   {
@@ -210,16 +212,8 @@ const sidebarSections: SidebarSection[] = [
     ],
   },
   {
-    label: 'Retrouve Amis',
-    faIcon: 'users',
-    children: [
-      { label: 'Avis de recherche', faIcon: 'magnifying-glass', route: '/admin/retrouve-amis' },
-      { label: 'Signalements', faIcon: 'flag', route: '/admin/retrouve-amis/signalements' },
-    ],
-  },
-  {
     label: 'Profils territoires',
-    faIcon: 'earth-africa',
+    faIcon: 'map-marker-alt',
     children: [
       { label: 'Fiches territoires', faIcon: 'earth-africa', route: '/admin/profils-pays' },
       { label: 'Contributions', faIcon: 'clipboard-list', route: '/admin/profils-pays/contributions' },
@@ -227,10 +221,16 @@ const sidebarSections: SidebarSection[] = [
     ],
   },
   {
-    label: 'Bibliothèques Humaines',
-    faIcon: 'book-open',
-    route: '/admin/bibliotheques-humaines',
+    label: 'Communauté',
+    faIcon: 'hand-holding-heart',
+    children: [
+      { label: 'Experts', faIcon: 'user-tie', route: '/admin/experts' },
+      { label: 'Bibliothèques Humaines', faIcon: 'book-open', route: '/admin/bibliotheques-humaines' },
+      { label: 'Retrouve Amis', faIcon: 'magnifying-glass', route: '/admin/retrouve-amis' },
+      { label: 'Signalements', faIcon: 'flag', route: '/admin/retrouve-amis/signalements' },
+    ],
   },
+  // ─── Système ───
   {
     label: 'Audit & Logs',
     faIcon: 'clock-rotate-left',
