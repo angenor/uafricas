@@ -129,6 +129,12 @@ const programmeActif = computed<TvProgram | null>(() => {
   return t.aLaUne
 })
 
+// ⚠️ PROVISOIRE — vidéo YouTube mise en avant (autoplay) sur l'écran principal de /medias/tele.
+// mute=1 est requis par les navigateurs pour autoriser l'autoplay (l'internaute peut réactiver
+// le son dans le lecteur). start=17 démarre à 17 s. Pour revenir au comportement normal
+// (lecteur des programmes à la une), remettre une chaîne vide : const videoProvisoireEmbed = ''
+const videoProvisoireEmbed = 'https://www.youtube.com/embed/JeVaVtr_DCE?autoplay=1&mute=1&start=17&rel=0&playsinline=1'
+
 const heroVideoUrl = computed(() => programmeActif.value?.videoUrl || defaultCoverVideoUrl)
 
 // Methods
@@ -190,6 +196,19 @@ onMounted(() => {
   <div class="min-h-screen bg-gray-900">
     <!-- Section Vidéo Hero : écran principal (programme à la une, en boucle) -->
     <div class="relative">
+      <!-- ⚠️ PROVISOIRE : vidéo YouTube en vedette (autoplay) couvrant l'écran principal.
+           Retirer ce bloc + la constante `videoProvisoireEmbed` (script) pour revenir au lecteur normal. -->
+      <div v-if="videoProvisoireEmbed" class="absolute inset-x-0 top-24 bottom-0 z-30 bg-black">
+        <iframe
+          :src="videoProvisoireEmbed"
+          class="w-full h-full"
+          title="Vidéo télé en vedette"
+          frameborder="0"
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          allowfullscreen
+        />
+      </div>
+
       <div class="flex absolute">
         <div v-if="!isMobile" class="w-screen h-screen relative">
           <video
