@@ -28,6 +28,8 @@ const TYPES_STATION_VALIDES: &[&str] = &["nationale", "locale", "internationale"
 const CATEGORIES_CHAINE_VALIDES: &[&str] = &[
     "generaliste", "info", "sport", "culture", "divertissement", "religieux", "education", "musique",
 ];
+// États valides pour les médias radio/télé (stations, chaînes, programmes)
+const ETATS_MEDIA_VALIDES: &[&str] = &["brouillon", "publie", "suspendu", "supprime"];
 
 // ══════════════════════════════════════════════════════════════
 // STATIONS RADIO
@@ -285,6 +287,16 @@ pub async fn modifier_station_radio(
     champ_str!(body.image_couverture_url, "image_couverture_url");
     champ_str!(body.genre, "genre");
     champ_str!(body.ville, "ville");
+
+    if let Some(ref etat) = body.etat {
+        let e = etat.trim();
+        if !ETATS_MEDIA_VALIDES.contains(&e) {
+            return Err(ApiErreur::Validation(format!("État invalide: {}", e)));
+        }
+        sets.push(format!("etat = ${}", bind_index));
+        bind_strings.push(e.to_string());
+        bind_index += 1;
+    }
 
     if let Some(ref ts) = body.type_station {
         if !TYPES_STATION_VALIDES.contains(&ts.as_str()) {
@@ -640,6 +652,16 @@ pub async fn modifier_chaine_tv(
     champ_str!(body.image_couverture_url, "image_couverture_url");
     champ_str!(body.langue, "langue");
 
+    if let Some(ref etat) = body.etat {
+        let e = etat.trim();
+        if !ETATS_MEDIA_VALIDES.contains(&e) {
+            return Err(ApiErreur::Validation(format!("État invalide: {}", e)));
+        }
+        sets.push(format!("etat = ${}", bind_index));
+        bind_strings.push(e.to_string());
+        bind_index += 1;
+    }
+
     if let Some(ref cat) = body.categorie {
         if !CATEGORIES_CHAINE_VALIDES.contains(&cat.as_str()) {
             return Err(ApiErreur::Validation(format!("Categorie invalide: {}", cat)));
@@ -980,6 +1002,16 @@ pub async fn modifier_programme_radio(
     champ_str!(body.info_producteur, "info_producteur");
     champ_str!(body.langue, "langue");
 
+    if let Some(ref etat) = body.etat {
+        let e = etat.trim();
+        if !ETATS_MEDIA_VALIDES.contains(&e) {
+            return Err(ApiErreur::Validation(format!("État invalide: {}", e)));
+        }
+        sets.push(format!("etat = ${}", bind_index));
+        bind_strings.push(e.to_string());
+        bind_index += 1;
+    }
+
     if let Some(ref cat) = body.categorie_radio {
         sets.push(format!("categorie_radio = ${}::media_content.categorie_radio", bind_index));
         bind_strings.push(cat.clone());
@@ -1314,6 +1346,35 @@ pub async fn modifier_programme_tele(
     champ_str!(body.info_animateur, "info_animateur");
     champ_str!(body.info_producteur, "info_producteur");
     champ_str!(body.langue, "langue");
+
+    if let Some(ref etat) = body.etat {
+        let e = etat.trim();
+        if !ETATS_MEDIA_VALIDES.contains(&e) {
+            return Err(ApiErreur::Validation(format!("État invalide: {}", e)));
+        }
+        // Une vidéo est requise pour publier un programme télé (contrainte chk_video_tele).
+        if e == "publie" {
+            let aura_video = match body.video_url.as_deref().map(str::trim) {
+                Some(v) if !v.is_empty() => true,
+                _ => sqlx::query_scalar::<_, bool>(
+                    "SELECT video_url IS NOT NULL AND video_url <> '' \
+                     FROM media_content.programme_tele WHERE id = $1",
+                )
+                .bind(id)
+                .fetch_optional(pool.get_ref())
+                .await?
+                .unwrap_or(false),
+            };
+            if !aura_video {
+                return Err(ApiErreur::Validation(
+                    "Ajoutez une vidéo au programme avant de le publier.".into(),
+                ));
+            }
+        }
+        sets.push(format!("etat = ${}", bind_index));
+        bind_strings.push(e.to_string());
+        bind_index += 1;
+    }
 
     if let Some(pays_id) = body.pays_id {
         sets.push(format!("pays_id = '{}'", pays_id));

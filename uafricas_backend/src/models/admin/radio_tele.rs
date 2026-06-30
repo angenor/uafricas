@@ -441,6 +441,7 @@ pub struct CreerStationRadioRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct ModifierStationRadioRequest {
+    pub etat: Option<String>,
     pub nom: Option<String>,
     pub description: Option<String>,
     pub stream_url: Option<String>,
@@ -468,6 +469,7 @@ pub struct CreerChaineTvRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct ModifierChaineTvRequest {
+    pub etat: Option<String>,
     pub nom: Option<String>,
     pub description: Option<String>,
     pub stream_url: Option<String>,
@@ -497,6 +499,7 @@ pub struct CreerProgrammeRadioRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct ModifierProgrammeRadioRequest {
+    pub etat: Option<String>,
     pub nom_emission: Option<String>,
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,
@@ -529,6 +532,7 @@ pub struct CreerProgrammeTeleRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct ModifierProgrammeTeleRequest {
+    pub etat: Option<String>,
     pub nom_emission: Option<String>,
     pub description: Option<String>,
     pub image_couverture_url: Option<String>,

@@ -6,8 +6,8 @@ const id = route.params.id as string
 const type = (route.query.type as string) || 'chaines'
 
 const {
-  chaineDetail, programmeDetail,
-  chargerChaine, chargerProgramme,
+  chaineDetail, programmeDetail, programmes, filtresProgrammes,
+  chargerChaine, chargerProgramme, chargerProgrammes,
   modifierChaine, modifierProgramme, listerToutesChaines,
   loading, error,
 } = useAdminTelevision()
@@ -146,6 +146,11 @@ onMounted(async () => {
   paysDisponibles.value = await listerPays()
   if (type === 'programmes') {
     chainesDisponibles.value = await listerToutesChaines()
+  }
+  else {
+    // Charger les vidéos (programmes) rattachées à cette chaîne
+    filtresProgrammes.chaine_id = id
+    await chargerProgrammes()
   }
 })
 </script>
@@ -343,6 +348,52 @@ onMounted(async () => {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- Vidéos (programmes) rattachées à cette chaîne -->
+      <div v-if="type === 'chaines'" class="card bg-base-100 shadow-sm mt-6">
+        <div class="card-body">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-lg font-semibold">Vidéos de cette chaîne</h3>
+            <NuxtLink :to="`/admin/television/create?type=programmes&chaine=${id}`" class="btn btn-primary btn-sm">
+              <font-awesome-icon icon="plus" class="mr-1" /> Ajouter une vidéo
+            </NuxtLink>
+          </div>
+          <p class="text-sm text-base-content/60">
+            Une vidéo de la chaîne = un <strong>programme télé</strong> rattaché. Le programme marqué
+            « à la une » <font-awesome-icon icon="star" class="text-warning" /> joue en boucle sur l'écran principal de la page <code>/tele</code>.
+          </p>
+
+          <div v-if="programmes.length" class="overflow-x-auto mt-2">
+            <table class="table table-zebra">
+              <thead>
+                <tr>
+                  <th>Programme</th>
+                  <th class="w-28 text-center">État</th>
+                  <th class="w-24 text-center">À la une</th>
+                  <th class="w-24"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="p in programmes" :key="p.id">
+                  <td class="font-medium">{{ p.nom_emission }}</td>
+                  <td class="text-center"><span :class="['badge badge-sm', etatBadge(p.etat)]">{{ etatLabel(p.etat) }}</span></td>
+                  <td class="text-center"><font-awesome-icon v-if="p.a_la_une" icon="star" class="text-warning" /></td>
+                  <td>
+                    <NuxtLink :to="`/admin/television/${p.id}?type=programmes`" class="btn btn-ghost btn-xs">
+                      <font-awesome-icon icon="pen" class="mr-1" /> Modifier
+                    </NuxtLink>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="text-center py-8 text-base-content/50">
+            <font-awesome-icon icon="video" class="text-3xl mb-2" />
+            <p>Aucune vidéo rattachée à cette chaîne pour l'instant.</p>
+            <p class="text-xs mt-1">Cliquez sur « Ajouter une vidéo » pour créer un programme rattaché à cette chaîne.</p>
+          </div>
         </div>
       </div>
 

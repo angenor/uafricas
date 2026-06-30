@@ -16,6 +16,11 @@ onMounted(async () => {
   const [chaines, pays] = await Promise.all([listerToutesChaines(), listerPays()])
   chainesDisponibles.value = chaines
   paysDisponibles.value = pays
+  // Préremplir la chaîne si on arrive depuis la page d'une chaîne (« Ajouter une vidéo »)
+  const chainePrefill = route.query.chaine as string | undefined
+  if (chainePrefill && chaines.some(c => c.id === chainePrefill)) {
+    programmeForm.chaine_id = chainePrefill
+  }
 })
 
 const chaineForm = reactive({
