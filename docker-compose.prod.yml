@@ -42,6 +42,11 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-https://www.africans-world.org}
       RUST_LOG: ${RUST_LOG:-info}
       LIVEKIT_URL: ${LIVEKIT_URL:-wss://www.africans-world.org/livekit-ws}
+      # URL de l'API serveur LiveKit (Twirp) : DOIT viser le conteneur en direct.
+      # Passer par le domaine public echoue (le client Twirp perd le prefixe
+      # `/livekit-ws` du reverse-proxy) et casse la moderation (spotlight,
+      # permissions tableau blanc, kick) qui echoue alors silencieusement.
+      LIVEKIT_API_URL: ${LIVEKIT_API_URL:-http://uafricas_livekit:7880}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-secret}
       SMTP_HOST: ${SMTP_HOST}

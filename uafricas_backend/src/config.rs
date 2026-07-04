@@ -13,6 +13,7 @@ pub struct AppConfig {
     pub jwt_expiration_minutes: i64,
     pub refresh_expiration_days: i64,
     pub livekit_url: String,
+    pub livekit_api_url: String,
     pub livekit_api_key: String,
     pub livekit_api_secret: String,
     pub smtp_host: String,
@@ -35,7 +36,13 @@ pub struct JwtConfig {
 /// Configuration LiveKit partagee via web::Data
 #[derive(Clone)]
 pub struct LivekitConfig {
+    /// URL client (WebSocket, publique) — renvoyee au frontend pour la connexion SFU.
     pub url: String,
+    /// URL de l'API serveur LiveKit (HTTP, souvent interne). En prod derriere un
+    /// reverse-proxy, elle DOIT pointer directement sur le conteneur LiveKit
+    /// (ex. `http://uafricas_livekit:7880`) car le client Twirp ecrase le chemin
+    /// de l'URL (le prefixe `/livekit-ws` du proxy est perdu). Repli sur `url`.
+    pub api_url: String,
     pub api_key: String,
     pub api_secret: String,
 }
@@ -80,6 +87,11 @@ impl AppConfig {
                 .expect("REFRESH_EXPIRATION_DAYS doit etre un nombre"),
             livekit_url: env::var("LIVEKIT_URL")
                 .unwrap_or_else(|_| "ws://localhost:7880".to_string()),
+            // URL de l'API serveur : `LIVEKIT_API_URL` si definie, sinon repli sur
+            // `LIVEKIT_URL` (comportement historique, valable en dev ou WS==API).
+            livekit_api_url: env::var("LIVEKIT_API_URL")
+                .or_else(|_| env::var("LIVEKIT_URL"))
+                .unwrap_or_else(|_| "ws://localhost:7880".to_string()),
             livekit_api_key: env::var("LIVEKIT_API_KEY")
                 .unwrap_or_else(|_| "devkey".to_string()),
             livekit_api_secret: env::var("LIVEKIT_API_SECRET")
@@ -118,6 +130,7 @@ impl AppConfig {
     pub fn livekit_config(&self) -> LivekitConfig {
         LivekitConfig {
             url: self.livekit_url.clone(),
+            api_url: self.livekit_api_url.clone(),
             api_key: self.livekit_api_key.clone(),
             api_secret: self.livekit_api_secret.clone(),
         }

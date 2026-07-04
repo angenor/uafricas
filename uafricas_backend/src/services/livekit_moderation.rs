@@ -8,8 +8,9 @@
 //! - [`publier_evenement_moderation`] — diffuse un DataPacket JSON sur le canal
 //!   `RELIABLE` à tous les participants de la room (FR-014/FR-023).
 //!
-//! Le `host` d'API LiveKit est dérivé de la `LivekitConfig.url` (qui peut être
-//! `ws://`/`wss://` côté client) en la convertissant en `http://`/`https://`.
+//! Le `host` d'API LiveKit est dérivé de la `LivekitConfig.api_url` (URL de
+//! l'API serveur, distincte de l'URL WebSocket cliente) en la convertissant en
+//! `http://`/`https://`.
 
 use livekit_api::services::room::{RoomClient, SendDataOptions, UpdateParticipantOptions};
 use livekit_protocol as proto;
@@ -17,9 +18,14 @@ use livekit_protocol as proto;
 use crate::config::LivekitConfig;
 use crate::errors::ApiErreur;
 
-/// Convertit l'URL WebSocket LiveKit du client en URL HTTP pour l'API serveur.
+/// Convertit l'URL LiveKit de l'API serveur (`api_url`) en URL HTTP.
+///
+/// On utilise `api_url` (et non `url`, l'URL WebSocket cliente) : derriere un
+/// reverse-proxy, le client Twirp de `livekit_api` ecrase le chemin de l'URL, si
+/// bien qu'un prefixe de proxy (ex. `/livekit-ws`) est perdu et la requete part
+/// vers la mauvaise route. `api_url` doit donc pointer directement sur LiveKit.
 fn host_api(cfg: &LivekitConfig) -> String {
-    let url = cfg.url.trim();
+    let url = cfg.api_url.trim();
     if let Some(rest) = url.strip_prefix("wss://") {
         format!("https://{}", rest)
     } else if let Some(rest) = url.strip_prefix("ws://") {
