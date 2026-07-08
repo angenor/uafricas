@@ -108,11 +108,35 @@
 
               <!-- Territoire -->
               <h4 class="text-sm font-medium text-gray-700 mb-2">Territoire</h4>
+
+              <!-- Choix de la zone (radio) qui pilote le contenu du menu déroulant -->
+              <div class="grid grid-cols-2 gap-2 mb-3">
+                <label
+                  v-for="option in ZONES_TERRITOIRE"
+                  :key="option.value"
+                  :class="[
+                    'flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all',
+                    zoneTerritoire === option.value
+                      ? 'bg-custom-green text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                  ]"
+                >
+                  <input
+                    v-model="zoneTerritoire"
+                    type="radio"
+                    :value="option.value"
+                    class="sr-only"
+                  />
+                  {{ option.label }}
+                </label>
+              </div>
+
+              <!-- Menu déroulant des territoires selon la zone -->
               <select
                 v-model="filtres.pays"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-3 focus:ring-custom-green focus:border-custom-green mb-6"
               >
-                <option v-for="pays in PAYS_AFRICAINS" :key="pays.value" :value="pays.value">
+                <option v-for="pays in territoiresDisponibles" :key="pays.value" :value="pays.value">
                   {{ pays.label }}
                 </option>
               </select>
@@ -309,6 +333,7 @@ import {
   useSabbatiques,
   TYPES_PROGRAMME,
   PAYS_AFRICAINS,
+  PAYS_HORS_AFRIQUE,
   DOMAINES,
   type SabbatiqueAPI,
   type SabbatiqueFiltres,
@@ -337,6 +362,22 @@ const filtres = ref<SabbatiqueFiltres>({
 
 const programmes = ref<SabbatiqueAPI[]>([])
 const total = ref(0)
+
+// Zone géographique qui pilote le contenu du menu déroulant des territoires
+const ZONES_TERRITOIRE = [
+  { value: 'afrique' as const, label: 'Afrique' },
+  { value: 'hors_afrique' as const, label: 'Hors Afrique' },
+]
+const zoneTerritoire = ref<'afrique' | 'hors_afrique'>('afrique')
+
+const territoiresDisponibles = computed(() =>
+  zoneTerritoire.value === 'afrique' ? PAYS_AFRICAINS : PAYS_HORS_AFRIQUE
+)
+
+// Changer de zone réinitialise le territoire choisi (contenus disjoints)
+watch(zoneTerritoire, () => {
+  filtres.value.pays = ''
+})
 
 const filtresActifs = computed(() =>
   filtres.value.type !== 'tous'
@@ -375,6 +416,7 @@ const voirDetail = (programme: SabbatiqueAPI) => {
 }
 
 const reinitialiserFiltres = () => {
+  zoneTerritoire.value = 'afrique'
   filtres.value = {
     type: 'tous',
     pays: '',
