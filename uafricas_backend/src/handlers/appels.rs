@@ -120,12 +120,13 @@ pub async fn appeler(
     }
     verifier_relation(pool.get_ref(), moi, cible).await?;
 
+    let video = body.video;
     let appel_id = Uuid::new_v4();
-    registre.ouvrir(appel_id, moi, cible);
+    registre.ouvrir(appel_id, moi, cible, video);
 
     // Sonnerie temps réel au destinataire (l'appelant accompagne l'évènement).
     let appelant = membre_light(pool.get_ref(), moi).await?;
-    sse.publier(cible, &evt_appel_entrant(appel_id, &appelant));
+    sse.publier(cible, &evt_appel_entrant(appel_id, &appelant, video));
 
     // Config P2P renvoyée à l'appelant.
     let autre = membre_light(pool.get_ref(), cible).await?;
@@ -136,6 +137,7 @@ pub async fn appeler(
             mon_peer_id: peer_id(appel_id, moi),
             pair_peer_id: peer_id(appel_id, cible),
             suis_appelant: moi < cible,
+            video,
             autre,
         }),
         error: None,
@@ -179,6 +181,7 @@ pub async fn salle(
             mon_peer_id: peer_id(id, moi),
             pair_peer_id: peer_id(id, autre_id),
             suis_appelant: moi < autre_id,
+            video: appel.video,
             autre,
         }),
         error: None,

@@ -102,8 +102,8 @@ const majEtat = (id: string, etat: EtatRelation): void => {
   if (etat === 'amis') chargerAmis()
 }
 
-const lancerAppel = (membre: MembreLightAPI): void => {
-  void appeler(membre.id)
+const lancerAppel = (membre: MembreLightAPI, avecVideo = false): void => {
+  void appeler(membre.id, avecVideo)
 }
 
 const ouvrirMessage = (membre: MembreLightAPI): void => {
@@ -188,13 +188,23 @@ const pageSuivante = (): void => {
             >
               <font-awesome-icon icon="fa-solid fa-comment-dots" />
             </button>
-            <!-- Appel direct -->
+            <!-- Appel normal (audio, caméra coupée par défaut) -->
+            <button
+              type="button"
+              class="shrink-0 w-9 h-9 rounded-full bg-custom-chocolat text-white hover:brightness-110 flex items-center justify-center transition shadow-sm"
+              :aria-label="`Appeler ${u.prenom}`"
+              :title="`Appeler ${u.prenom}`"
+              @click="lancerAppel(u, false)"
+            >
+              <font-awesome-icon icon="fa-solid fa-phone" />
+            </button>
+            <!-- Appel vidéo -->
             <button
               type="button"
               class="shrink-0 w-9 h-9 rounded-full bg-custom-green text-white hover:brightness-110 flex items-center justify-center transition shadow-sm"
-              :aria-label="`Appeler ${u.prenom}`"
-              :title="`Appeler ${u.prenom} en visio`"
-              @click="lancerAppel(u)"
+              :aria-label="`Appeler ${u.prenom} en vidéo`"
+              :title="`Appeler ${u.prenom} en vidéo`"
+              @click="lancerAppel(u, true)"
             >
               <font-awesome-icon icon="fa-solid fa-video" />
             </button>

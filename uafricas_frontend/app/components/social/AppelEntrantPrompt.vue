@@ -78,7 +78,9 @@ onBeforeUnmount(() => {
         <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/70" />
         <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
       </span>
+      <font-awesome-icon :icon="appel.video ? 'fa-solid fa-video' : 'fa-solid fa-phone'" class="text-xs" />
       <p class="text-xs font-semibold tracking-wide uppercase">Appel entrant</p>
+      <img src="/logos/logo_uafracas.png" alt="UAfricas" class="h-5 w-auto ml-auto bg-white/90 rounded px-1 py-0.5">
     </div>
 
     <!-- Corps -->
@@ -98,7 +100,7 @@ onBeforeUnmount(() => {
 
       <p class="mt-3 font-semibold text-gray-800">{{ nomComplet }}</p>
       <p v-if="appelant.fonction" class="text-xs text-gray-500 truncate max-w-full">{{ appelant.fonction }}</p>
-      <p class="text-xs text-gray-400 mt-0.5">vous appelle en visio…</p>
+      <p class="text-xs text-gray-400 mt-0.5">{{ appel.video ? 'vous appelle en visio…' : 'vous appelle…' }}</p>
 
       <!-- Actions -->
       <div class="mt-4 flex items-center justify-center gap-6">

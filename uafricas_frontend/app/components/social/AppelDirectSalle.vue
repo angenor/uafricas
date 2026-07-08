@@ -27,7 +27,9 @@ type Etat = 'attente' | 'connexion' | 'connecte' | 'parti' | 'echec' | 'refuse' 
 const etat = ref<Etat>('attente')
 const messageEtat = ref('Connexion en cours…')
 const microActif = ref(true)
-const cameraActive = ref(true)
+// Appel vidéo : caméra active d'emblée ; appel « normal » : caméra coupée par
+// défaut (activable en cours d'appel via le bouton dédié).
+const cameraActive = ref(props.salle.video)
 const partageEcran = ref(false)
 
 // Plein écran (API native) + panneau de discussion intégré à la fenêtre d'appel.
@@ -89,6 +91,8 @@ const demarrer = async () => {
   // 1. Flux local (caméra + micro).
   try {
     fluxLocal = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    // Applique l'état initial de la caméra (coupée pour un appel « normal »).
+    fluxLocal.getVideoTracks().forEach((t) => { t.enabled = cameraActive.value })
     if (videoLocal.value) videoLocal.value.srcObject = fluxLocal
   }
   catch {
@@ -307,9 +311,15 @@ onBeforeUnmount(() => {
       @pointerup="finDeplacement"
       @pointercancel="finDeplacement"
     >
-      <div class="min-w-0">
-        <p class="font-semibold truncate">Appel · {{ nomComplet }}</p>
-        <p class="text-xs text-white/60 truncate">Visioconférence directe</p>
+      <div class="flex items-center gap-2.5 min-w-0">
+        <img src="/logos/logo_uafracas.png" alt="UAfricas" class="h-8 w-auto shrink-0 bg-white/90 rounded-md px-1 py-0.5">
+        <span class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+          <font-awesome-icon :icon="salle.video ? 'fa-solid fa-video' : 'fa-solid fa-phone'" class="text-sm" />
+        </span>
+        <div class="min-w-0">
+          <p class="font-semibold truncate">Appel · {{ nomComplet }}</p>
+          <p class="text-xs text-white/60 truncate">{{ salle.video ? 'Visioconférence directe' : 'Appel audio' }}</p>
+        </div>
       </div>
       <div class="flex items-center gap-1 shrink-0">
         <button
