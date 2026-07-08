@@ -751,9 +751,13 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{id}/partages", web::post().to(fiche_pays_social::partager_fiche))
                     // Sections Afripulse enrichies (US1)
                     .route("/{id}/sites-touristiques", web::get().to(afripulse_public::lister_sites_touristiques))
+                    .route("/{id}/sites-touristiques/{site_id}", web::get().to(afripulse_public::obtenir_site_touristique))
                     .route("/{id}/secteurs-opportunites", web::get().to(afripulse_public::lister_secteurs_opportunites))
+                    .route("/{id}/secteurs-opportunites/{secteur_id}", web::get().to(afripulse_public::obtenir_secteur_opportunite))
                     .route("/{id}/recettes-culinaires", web::get().to(afripulse_public::lister_recettes_culinaires))
+                    .route("/{id}/recettes-culinaires/{recette_id}", web::get().to(afripulse_public::obtenir_recette_culinaire))
                     .route("/{id}/personnalites", web::get().to(afripulse_public::lister_personnalites))
+                    .route("/{id}/personnalites/{personnalite_id}", web::get().to(afripulse_public::obtenir_personnalite))
                     .route("/{id}/savoirs-pratiques", web::get().to(afripulse_public::lister_savoirs_pratiques))
                     // US4 — galerie photos + recommandations
                     .route("/{id}/recommandations", web::get().to(afripulse_public::lister_recommandations))

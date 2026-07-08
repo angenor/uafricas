@@ -64,6 +64,10 @@ onMounted(async () => {
 
 const router = useRouter()
 
+const ouvrirDetail = (secteur: SecteurOpportuniteAPI) => {
+  navigateTo(`/opportunite-afrique/${props.ficheId}/secteurs/${secteur.id}`)
+}
+
 const ouvrirContribution = (
   type_contribution: 'ajout' | 'edition' | 'suppression',
   secteur?: SecteurOpportuniteAPI,
@@ -186,67 +190,34 @@ const proposerSecteur = () => {
           :key="secteur.id"
           class="flex flex-col sm:flex-row gap-5 bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow border-l-4 border-custom-green"
         >
-          <!-- Image illustrative (optionnelle) -->
-          <img
+          <!-- Image illustrative (optionnelle) — cliquable -->
+          <button
             v-if="secteur.image_url"
-            :src="resoudreUrlImage(secteur.image_url)"
-            :alt="secteur.nom"
-            class="w-full sm:w-44 h-40 sm:h-auto sm:max-h-44 shrink-0 rounded-lg object-cover"
-          />
+            type="button"
+            class="w-full sm:w-44 h-40 sm:h-auto sm:max-h-44 shrink-0 overflow-hidden rounded-lg cursor-pointer"
+            @click="ouvrirDetail(secteur)"
+          >
+            <img
+              :src="resoudreUrlImage(secteur.image_url)"
+              :alt="secteur.nom"
+              class="w-full h-full object-cover transition-transform hover:scale-105"
+            />
+          </button>
 
           <div class="min-w-0 flex-1">
-            <h3 class="font-oswald text-xl font-semibold text-gray-900 mb-1">
+            <h3
+              class="font-oswald text-xl font-semibold text-gray-900 mb-1 cursor-pointer hover:text-custom-green transition-colors"
+              @click="ouvrirDetail(secteur)"
+            >
               {{ secteur.nom }}
             </h3>
             <p v-if="secteur.localite" class="inline-flex items-center gap-1.5 text-sm text-gray-500 mb-2">
               <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3.5 h-3.5 text-custom-chocolat" />
               {{ secteur.localite }}
             </p>
-            <p v-if="secteur.description" class="text-gray-600 leading-relaxed">
+            <p v-if="secteur.description" class="text-gray-600 leading-relaxed line-clamp-3">
               {{ secteur.description }}
             </p>
-
-            <!-- Références -->
-            <p v-if="secteur.references_utiles" class="mt-3 text-sm text-gray-500">
-              <span class="font-medium text-gray-600">Références : </span>{{ secteur.references_utiles }}
-            </p>
-
-            <!-- Contacts + site web -->
-            <div
-              v-if="secteur.contact_telephone || secteur.contact_courriel || secteur.contact_adresse || secteur.site_web_url"
-              class="mt-3 flex flex-col gap-1.5 text-sm rounded-md bg-gray-50 px-4 py-3"
-            >
-              <a
-                v-if="secteur.contact_telephone"
-                :href="`tel:${secteur.contact_telephone}`"
-                class="inline-flex items-center gap-2 text-gray-700 hover:text-custom-green"
-              >
-                <font-awesome-icon :icon="['fas', 'phone']" class="w-3.5 h-3.5 text-custom-green" />
-                {{ secteur.contact_telephone }}
-              </a>
-              <a
-                v-if="secteur.contact_courriel"
-                :href="`mailto:${secteur.contact_courriel}`"
-                class="inline-flex items-center gap-2 text-gray-700 hover:text-custom-green break-all"
-              >
-                <font-awesome-icon :icon="['fas', 'envelope']" class="w-3.5 h-3.5 text-custom-green" />
-                {{ secteur.contact_courriel }}
-              </a>
-              <span v-if="secteur.contact_adresse" class="inline-flex items-center gap-2 text-gray-700">
-                <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3.5 h-3.5 text-custom-green" />
-                {{ secteur.contact_adresse }}
-              </span>
-              <a
-                v-if="secteur.site_web_url"
-                :href="secteur.site_web_url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-2 font-medium text-custom-chocolat hover:underline"
-              >
-                <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="w-3.5 h-3.5" />
-                Visiter le site web
-              </a>
-            </div>
 
           <!-- Bandeau de suspension (>10 signalements) -->
           <div
@@ -257,7 +228,15 @@ const proposerSecteur = () => {
             <span>Contribution suspendue — en cours de vérification par la modération.</span>
           </div>
 
-          <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+          <div class="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 text-xs font-medium text-custom-green hover:underline"
+              @click="ouvrirDetail(secteur)"
+            >
+              <font-awesome-icon :icon="['fas', 'circle-info']" class="w-3.5 h-3.5" />
+              Détails
+            </button>
             <template v-if="!secteur.suspendu">
               <button
                 type="button"

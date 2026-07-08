@@ -899,6 +899,74 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
+  /** Obtenir un site touristique par son ID (page de détail dédiée) */
+  const obtenirSiteTouristique = async (
+    ficheId: string,
+    siteId: string,
+  ): Promise<SiteTouristiqueAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<SiteTouristiqueAPI>>(
+        `${apiBase}/api/fiches-pays/${encodeURIComponent(ficheId)}/sites-touristiques/${encodeURIComponent(siteId)}`,
+        { headers: authHeaders() },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur obtenirSiteTouristique:', e)
+      return null
+    }
+  }
+
+  /** Obtenir un secteur d'opportunité par son ID (page de détail dédiée) */
+  const obtenirSecteurOpportunite = async (
+    ficheId: string,
+    secteurId: string,
+  ): Promise<SecteurOpportuniteAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<SecteurOpportuniteAPI>>(
+        `${apiBase}/api/fiches-pays/${encodeURIComponent(ficheId)}/secteurs-opportunites/${encodeURIComponent(secteurId)}`,
+        { headers: authHeaders() },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur obtenirSecteurOpportunite:', e)
+      return null
+    }
+  }
+
+  /** Obtenir une recette culinaire par son ID (page de détail dédiée) */
+  const obtenirRecetteCulinaire = async (
+    ficheId: string,
+    recetteId: string,
+  ): Promise<RecetteCulinaireAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<RecetteCulinaireAPI>>(
+        `${apiBase}/api/fiches-pays/${encodeURIComponent(ficheId)}/recettes-culinaires/${encodeURIComponent(recetteId)}`,
+        { headers: authHeaders() },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur obtenirRecetteCulinaire:', e)
+      return null
+    }
+  }
+
+  /** Obtenir une personnalité connue par son ID (page de détail dédiée) */
+  const obtenirPersonnalite = async (
+    ficheId: string,
+    personnaliteId: string,
+  ): Promise<PersonnaliteConnueAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<PersonnaliteConnueAPI>>(
+        `${apiBase}/api/fiches-pays/${encodeURIComponent(ficheId)}/personnalites/${encodeURIComponent(personnaliteId)}`,
+        { headers: authHeaders() },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur obtenirPersonnalite:', e)
+      return null
+    }
+  }
+
   /** Lister les personnalités connues d'une fiche (filtre domaine optionnel) */
   const listerPersonnalites = async (
     ficheId: string,
@@ -1347,9 +1415,13 @@ export const useOpportuniteAfrique = () => {
     uploaderImageContribution,
     resoudreUrlImage,
     listerSitesTouristiques,
+    obtenirSiteTouristique,
     listerSecteursOpportunites,
+    obtenirSecteurOpportunite,
     listerRecettesCulinaires,
+    obtenirRecetteCulinaire,
     listerPersonnalites,
+    obtenirPersonnalite,
     listerSavoirsPratiques,
     // US3 / US4
     creerFichePays,

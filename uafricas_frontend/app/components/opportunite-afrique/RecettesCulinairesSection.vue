@@ -64,16 +64,9 @@ const recettesFiltrees = computed(() => {
 // Pagination locale (grille 3 colonnes → 9 par page)
 const { page, totalPages, pageItems: recettesPage } = usePaginationLocale(recettesFiltrees, 9)
 
-// Modale de détail
-const recetteSelectionnee = ref<RecetteCulinaireAPI | null>(null)
-const showDetail = ref(false)
-
+// Navigation vers la page de détail dédiée
 const ouvrirDetail = (recette: RecetteCulinaireAPI) => {
-  recetteSelectionnee.value = recette
-  showDetail.value = true
-}
-const fermerDetail = () => {
-  showDetail.value = false
+  navigateTo(`/opportunite-afrique/${props.ficheId}/recettes/${recette.id}`)
 }
 
 onMounted(async () => {
@@ -317,14 +310,5 @@ const proposerRecette = () => ouvrirContribution('ajout')
         </template>
       </div>
     </div>
-
-    <!-- Modale de détail -->
-    <OpportuniteAfriqueRecetteCulinaireDetailModal
-      :is-open="showDetail"
-      :recette="recetteSelectionnee"
-      @close="fermerDetail"
-      @edit="(r) => { fermerDetail(); ouvrirContribution('edition', r) }"
-      @delete="(r) => { fermerDetail(); ouvrirContribution('suppression', r) }"
-    />
   </section>
 </template>

@@ -148,6 +148,38 @@ pub async fn lister_sites_touristiques(
     }))
 }
 
+/// GET /api/fiches-pays/{id}/sites-touristiques/{site_id}
+/// Détail d'un site touristique (page dédiée). 404 si absent/supprimé.
+pub async fn obtenir_site_touristique(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<(String, String)>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req);
+    let (fiche_brut, site_brut) = chemin.into_inner();
+    let fiche_id = Uuid::parse_str(&fiche_brut)
+        .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
+    let site_id = Uuid::parse_str(&site_brut)
+        .map_err(|_| ApiErreur::Validation("ID de site invalide".to_string()))?;
+
+    let sql = format!(
+        "{SITE_TOURISTIQUE_SELECT} WHERE st.fiche_pays_id = $2 AND st.id = $3 AND st.deleted_at IS NULL"
+    );
+    let site = sqlx::query_as::<_, SiteTouristiqueResponse>(&sql)
+        .bind(utilisateur_id)
+        .bind(fiche_id)
+        .bind(site_id)
+        .fetch_optional(pool.get_ref())
+        .await?
+        .ok_or_else(|| ApiErreur::NonTrouve("Site touristique introuvable".to_string()))?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(site),
+        error: None,
+    }))
+}
+
 // ────────────────────────────────────────────────────────────────
 // Secteur d'opportunité
 // ────────────────────────────────────────────────────────────────
@@ -205,6 +237,48 @@ pub async fn lister_secteurs_opportunites(
     }))
 }
 
+/// GET /api/fiches-pays/{id}/secteurs-opportunites/{secteur_id}
+/// Détail d'un secteur d'opportunité (page dédiée). 404 si absent.
+pub async fn obtenir_secteur_opportunite(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<(String, String)>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req);
+    let (fiche_brut, secteur_brut) = chemin.into_inner();
+    let fiche_id = Uuid::parse_str(&fiche_brut)
+        .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
+    let secteur_id = Uuid::parse_str(&secteur_brut)
+        .map_err(|_| ApiErreur::Validation("ID de secteur invalide".to_string()))?;
+
+    // La table secteur_developpement n'a pas de colonne deleted_at (soft-delete non applicable).
+    let secteur: Option<SecteurOpportuniteResponse> = sqlx::query_as(
+        "SELECT sd.id, sd.fiche_pays_id, sd.nom, sd.description, sd.localite,
+                sd.contact_telephone, sd.contact_courriel, sd.contact_adresse,
+                sd.references_utiles, sd.site_web_url, sd.image_url,
+                sd.nombre_signalements, sd.suspendu,
+                EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
+                       WHERE sc.type_objet = 'secteur_developpement'::country_profile.type_objet_contribution
+                         AND sc.objet_id = sd.id AND sc.signale_par = $1) AS a_signale,
+                sd.created_at
+         FROM country_profile.secteur_developpement sd
+         WHERE sd.fiche_pays_id = $2 AND sd.id = $3",
+    )
+    .bind(utilisateur_id)
+    .bind(fiche_id)
+    .bind(secteur_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let secteur = secteur.ok_or_else(|| ApiErreur::NonTrouve("Secteur introuvable".to_string()))?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(secteur),
+        error: None,
+    }))
+}
+
 // ────────────────────────────────────────────────────────────────
 // Recette culinaire populaire
 // ────────────────────────────────────────────────────────────────
@@ -254,6 +328,46 @@ pub async fn lister_recettes_culinaires(
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(rows),
+        error: None,
+    }))
+}
+
+/// GET /api/fiches-pays/{id}/recettes-culinaires/{recette_id}
+/// Détail d'une recette culinaire (page dédiée). 404 si absent/supprimé.
+pub async fn obtenir_recette_culinaire(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<(String, String)>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req);
+    let (fiche_brut, recette_brut) = chemin.into_inner();
+    let fiche_id = Uuid::parse_str(&fiche_brut)
+        .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
+    let recette_id = Uuid::parse_str(&recette_brut)
+        .map_err(|_| ApiErreur::Validation("ID de recette invalide".to_string()))?;
+
+    let recette: Option<RecetteCulinaireResponse> = sqlx::query_as(
+        "SELECT rc.id, rc.fiche_pays_id, rc.titre, rc.territoires_consommation, rc.histoire,
+                rc.ingredients, rc.etapes_preparation, rc.images,
+                rc.nombre_signalements, rc.suspendu,
+                EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
+                       WHERE sc.type_objet = 'recette_culinaire'::country_profile.type_objet_contribution
+                         AND sc.objet_id = rc.id AND sc.signale_par = $1) AS a_signale,
+                rc.created_at
+         FROM country_profile.recette_culinaire rc
+         WHERE rc.fiche_pays_id = $2 AND rc.id = $3 AND rc.deleted_at IS NULL",
+    )
+    .bind(utilisateur_id)
+    .bind(fiche_id)
+    .bind(recette_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let recette = recette.ok_or_else(|| ApiErreur::NonTrouve("Recette introuvable".to_string()))?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(recette),
         error: None,
     }))
 }
@@ -356,6 +470,47 @@ pub async fn lister_personnalites(
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(rows),
+        error: None,
+    }))
+}
+
+/// GET /api/fiches-pays/{id}/personnalites/{personnalite_id}
+/// Détail d'une personnalité connue (page dédiée). 404 si absent/supprimé.
+pub async fn obtenir_personnalite(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<(String, String)>,
+) -> Result<HttpResponse, ApiErreur> {
+    let utilisateur_id = extraire_utilisateur_id(&req);
+    let (fiche_brut, perso_brut) = chemin.into_inner();
+    let fiche_id = Uuid::parse_str(&fiche_brut)
+        .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
+    let perso_id = Uuid::parse_str(&perso_brut)
+        .map_err(|_| ApiErreur::Validation("ID de personnalité invalide".to_string()))?;
+
+    let perso: Option<PersonnaliteResponse> = sqlx::query_as(
+        "SELECT pc.id, pc.fiche_pays_id, pc.nom_complet, pc.domaine::text AS domaine,
+                pc.biographie_courte, pc.annee_naissance, pc.annee_deces,
+                pc.portrait_url, pc.lien_reference, pc.cree_par,
+                pc.nombre_signalements, pc.suspendu,
+                EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
+                       WHERE sc.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                         AND sc.objet_id = pc.id AND sc.signale_par = $1) AS a_signale,
+                pc.created_at
+         FROM country_profile.personnalite_connue pc
+         WHERE pc.fiche_pays_id = $2 AND pc.id = $3 AND pc.deleted_at IS NULL",
+    )
+    .bind(utilisateur_id)
+    .bind(fiche_id)
+    .bind(perso_id)
+    .fetch_optional(pool.get_ref())
+    .await?;
+
+    let perso = perso.ok_or_else(|| ApiErreur::NonTrouve("Personnalité introuvable".to_string()))?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(perso),
         error: None,
     }))
 }
