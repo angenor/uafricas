@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import type { AvisPublicResume, PaginationInfo, TypeRelationRecherche } from '~/composables/useRetrouvAmis'
+import type { AvisPublicResume, PaginationInfo, PaysInfo, TypeRelationRecherche } from '~/composables/useRetrouvAmis'
 import { TYPES_RELATION } from '~/composables/useRetrouvAmis'
+import { NOMS_PAYS_FR, normaliserNomPays } from '~/utils/carteAfrique'
 
 definePageMeta({ layout: 'default' })
 
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBaseUrl as string
 const userStore = useUserStore()
 const { tableauDeBord, basculerTrouvable, rechercherAvisPublics } = useRetrouvAmis()
 
 const estConnecte = computed(() => userStore.isAuthenticated)
+
+// ── Mode d'affichage : liste ou carte ─────────────────────
+const viewMode = ref<'liste' | 'carte'>('liste')
 
 // ── Filtres ───────────────────────────────────────────────
 const filtreRelation = ref<TypeRelationRecherche | ''>('')
@@ -95,6 +101,102 @@ const etapes = [
     description: 'Quand une correspondance est trouvée, les deux parties doivent accepter avant que les coordonnées ne soient partagées.'
   }
 ]
+
+// ── Mode carte : répartition géographique des avis ────────
+const chargementCarte = ref(false)
+const carteChargee = ref(false)
+const avisCarteBrut = ref<AvisPublicResume[]>([])
+
+// Index de résolution pays (id / nom normalisé → code ISO2, et ISO2 → pays_id)
+const isoParPaysId = ref<Record<string, string>>({})
+const isoParNomNorm = ref<Record<string, string>>({})
+const paysIdParIso = ref<Record<string, string>>({})
+
+/** Résout le code ISO2 (minuscule) d'un pays d'avis via son id puis son nom. */
+const resoudreIso = (pays?: PaysInfo): string | null => {
+  if (!pays) return null
+  const parId = isoParPaysId.value[pays.id]
+  if (parId) return parId
+  return isoParNomNorm.value[normaliserNomPays(pays.nom)] ?? null
+}
+
+/** Nombre d'avis par code ISO2 (recalculé quand les avis/index changent). */
+const comptesParIso = computed<Record<string, number>>(() => {
+  const map: Record<string, number> = {}
+  for (const avis of avisCarteBrut.value) {
+    const iso = resoudreIso(avis.pays)
+    if (iso) map[iso] = (map[iso] || 0) + 1
+  }
+  return map
+})
+
+/** Charge le référentiel des pays (id, nom, code ISO2) une seule fois. */
+const chargerReferentielPays = async () => {
+  if (Object.keys(isoParPaysId.value).length > 0) return
+  try {
+    const rep = await $fetch<{ success: boolean; data: { id: string; nom: string; code_iso2: string | null }[] | null }>(
+      `${apiBase}/api/pays`,
+    )
+    const parId: Record<string, string> = {}
+    const parNom: Record<string, string> = {}
+    const idParIso: Record<string, string> = {}
+    for (const p of rep.data ?? []) {
+      const iso = p.code_iso2?.toLowerCase()
+      if (!iso) continue
+      parId[p.id] = iso
+      parNom[normaliserNomPays(p.nom)] = iso
+      idParIso[iso] = p.id
+    }
+    isoParPaysId.value = parId
+    isoParNomNorm.value = parNom
+    paysIdParIso.value = idParIso
+  } catch (e) {
+    console.error('Erreur chargement référentiel pays:', e)
+  }
+}
+
+/** Prépare la vue carte : référentiel pays + lot d'avis à géolocaliser. */
+const chargerCarte = async () => {
+  if (carteChargee.value) return
+  chargementCarte.value = true
+  try {
+    await chargerReferentielPays()
+    const res = await rechercherAvisPublics({ par_page: 300 })
+    if (res) avisCarteBrut.value = res.avis
+    carteChargee.value = true
+  } finally {
+    chargementCarte.value = false
+  }
+}
+
+watch(viewMode, (mode) => {
+  if (mode === 'carte') chargerCarte()
+})
+
+// ── Territoire sélectionné sur la carte ───────────────────
+const paysSelectionneIso = ref<string | null>(null)
+const avisPaysSelectionne = ref<AvisPublicResume[]>([])
+const chargementPaysSel = ref(false)
+
+const nomPaysSelectionne = computed(() =>
+  paysSelectionneIso.value ? (NOMS_PAYS_FR[paysSelectionneIso.value] ?? paysSelectionneIso.value) : '',
+)
+
+const onSelectPays = async (iso: string) => {
+  paysSelectionneIso.value = iso
+  const paysId = paysIdParIso.value[iso]
+  if (!paysId) {
+    avisPaysSelectionne.value = []
+    return
+  }
+  chargementPaysSel.value = true
+  try {
+    const res = await rechercherAvisPublics({ pays_id: paysId, par_page: 60 })
+    avisPaysSelectionne.value = res?.avis ?? []
+  } finally {
+    chargementPaysSel.value = false
+  }
+}
 
 onMounted(() => {
   chargerAvisPublics()
@@ -185,8 +287,30 @@ onMounted(() => {
         <!-- Barre de filtres compacte -->
         <div class="mb-10 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-200/60">
           <div class="flex flex-wrap items-center gap-2">
+            <!-- Toggle liste / carte -->
+            <div class="flex items-center rounded-xl bg-gray-100 p-1">
+              <button
+                class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer"
+                :class="viewMode === 'liste' ? 'bg-custom-chocolat text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                title="Vue liste"
+                @click="viewMode = 'liste'"
+              >
+                <font-awesome-icon :icon="['fas', 'list-check']" />
+                <span class="hidden sm:inline">Liste</span>
+              </button>
+              <button
+                class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer"
+                :class="viewMode === 'carte' ? 'bg-custom-chocolat text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                title="Vue carte"
+                @click="viewMode = 'carte'"
+              >
+                <font-awesome-icon :icon="['fas', 'earth-africa']" />
+                <span class="hidden sm:inline">Carte</span>
+              </button>
+            </div>
+
             <!-- Recherche -->
-            <div class="relative flex-1 min-w-56">
+            <div v-if="viewMode === 'liste'" class="relative flex-1 min-w-56">
               <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
               <input
                 v-model="filtreRecherche"
@@ -197,7 +321,7 @@ onMounted(() => {
               >
             </div>
             <!-- Filtre relation -->
-            <div class="min-w-44">
+            <div v-if="viewMode === 'liste'" class="min-w-44">
               <select
                 v-model="filtreRelation"
                 class="w-full rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all appearance-none cursor-pointer"
@@ -211,6 +335,7 @@ onMounted(() => {
             </div>
             <!-- Bouton recherche (input texte non réactif) -->
             <button
+              v-if="viewMode === 'liste'"
               class="flex items-center gap-2 rounded-xl bg-custom-chocolat px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md active:scale-95 cursor-pointer"
               @click="appliquerFiltres"
             >
@@ -218,16 +343,129 @@ onMounted(() => {
               Rechercher
             </button>
             <button
-              v-if="filtresActifs"
+              v-if="viewMode === 'liste' && filtresActifs"
               class="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 cursor-pointer"
               @click="reinitialiserFiltres"
             >
               <font-awesome-icon :icon="['fas', 'xmark']" />
               Réinitialiser
             </button>
+
+            <!-- Aide mode carte -->
+            <p v-if="viewMode === 'carte'" class="flex items-center gap-2 px-2 text-sm text-gray-500">
+              <font-awesome-icon :icon="['fas', 'location-dot']" class="text-custom-chocolat" />
+              Cliquez sur un territoire pour voir les avis de recherche qui y sont rattachés.
+            </p>
           </div>
         </div>
 
+        <!-- Mode carte : répartition géographique des avis -->
+        <div v-if="viewMode === 'carte'" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <!-- Carte SVG d'Afrique -->
+          <div class="lg:col-span-3">
+            <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/60">
+              <!-- Chargement carte -->
+              <div v-if="chargementCarte" class="flex flex-col items-center justify-center py-20">
+                <div class="h-12 w-12 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
+                <p class="mt-4 text-sm text-gray-500">Chargement de la carte...</p>
+              </div>
+
+              <template v-else>
+                <RetrouveAmisCarteAfrique
+                  :comptes="comptesParIso"
+                  :selected-iso="paysSelectionneIso"
+                  @select="onSelectPays"
+                />
+
+                <!-- Légende (échelle de chaleur) -->
+                <div class="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-gray-100 pt-4">
+                  <span class="text-xs font-medium text-gray-500">Nombre d'avis :</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="h-3 w-3 rounded-full" style="background-color: #fbbf24" />
+                    <span class="text-xs text-gray-600">1-2</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="h-3 w-3 rounded-full" style="background-color: #f59e0b" />
+                    <span class="text-xs text-gray-600">3-5</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="h-3 w-3 rounded-full" style="background-color: #d97706" />
+                    <span class="text-xs text-gray-600">6-9</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="h-3 w-3 rounded-full" style="background-color: #b45309" />
+                    <span class="text-xs text-gray-600">10+</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="h-3 w-3 rounded-full" style="background-color: #e5e7eb" />
+                    <span class="text-xs text-gray-600">Aucun</span>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Panneau du territoire sélectionné -->
+          <div class="lg:col-span-2">
+            <div class="sticky top-4">
+              <!-- Aucun territoire sélectionné -->
+              <div
+                v-if="!paysSelectionneIso"
+                class="flex flex-col items-center justify-center rounded-2xl bg-white px-6 py-16 text-center shadow-sm ring-1 ring-gray-200/60"
+              >
+                <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50">
+                  <font-awesome-icon :icon="['fas', 'hand-pointer']" class="text-2xl text-amber-400" />
+                </div>
+                <h3 class="text-base font-semibold text-gray-700">Explorez la carte</h3>
+                <p class="mt-2 text-sm text-gray-400">
+                  Sélectionnez un territoire coloré pour afficher les avis de recherche qui y sont rattachés.
+                </p>
+              </div>
+
+              <!-- Territoire sélectionné -->
+              <div v-else>
+                <div class="mb-4 flex items-center justify-between">
+                  <h3 class="flex items-center gap-2 text-lg font-bold text-gray-800">
+                    <font-awesome-icon :icon="['fas', 'location-dot']" class="text-custom-chocolat" />
+                    {{ nomPaysSelectionne }}
+                  </h3>
+                  <button
+                    class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 cursor-pointer"
+                    title="Fermer"
+                    @click="paysSelectionneIso = null"
+                  >
+                    <font-awesome-icon :icon="['fas', 'xmark']" />
+                  </button>
+                </div>
+
+                <!-- Chargement des avis du territoire -->
+                <div v-if="chargementPaysSel" class="flex flex-col items-center justify-center py-16">
+                  <div class="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
+                </div>
+
+                <!-- Aucun avis (ne devrait pas arriver si sélectionnable) -->
+                <div
+                  v-else-if="avisPaysSelectionne.length === 0"
+                  class="rounded-2xl bg-white px-6 py-12 text-center text-sm text-gray-400 shadow-sm ring-1 ring-gray-200/60"
+                >
+                  Aucun avis de recherche pour ce territoire.
+                </div>
+
+                <!-- Liste des avis du territoire -->
+                <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-5">
+                  <RetrouveAmisCarteAvisPublic
+                    v-for="avis in avisPaysSelectionne"
+                    :key="avis.id"
+                    :avis="avis"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode liste -->
+        <template v-else>
         <!-- Chargement -->
         <div v-if="chargementAvis" class="flex flex-col items-center justify-center py-20">
           <div class="h-12 w-12 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
@@ -332,6 +570,7 @@ onMounted(() => {
               <font-awesome-icon :icon="['fas', 'chevron-right']" class="text-xs" />
             </button>
           </div>
+        </template>
         </template>
         </div>
       </div>
