@@ -231,6 +231,14 @@
             </div>
           </div>
 
+          <!-- Partage réseaux sociaux -->
+          <div class="mb-8">
+            <EvenementsEvenementPartage
+              :path="`/evenements/${evenementId}`"
+              :titre="evenement.titre"
+            />
+          </div>
+
           <!-- Enregistrement vidéo (rediffusion) — affiché une fois l'événement terminé -->
           <div v-if="estTermine && enregistrementUrl" class="border-t border-gray-100 mt-2 pt-6">
             <h2 class="flex items-center gap-2 text-xl font-bold text-gray-800 mb-3">
@@ -385,8 +393,14 @@ const userStore = useUserStore()
 
 const { obtenirEvenement, inscrireEvenement, obtenirEtatDirect, signalStream, chargement, erreur } = useEvenements()
 
-const evenement = ref<EvenementDetailAPI | null>(null)
-const isInscrit = ref(false)
+// Chargement SSR — indispensable pour que les balises Open Graph soient présentes
+// dans le HTML lu par les robots des réseaux sociaux (aperçu lors du partage).
+const { data: evenementCharge } = await useAsyncData(
+  `evenement-${evenementId}`,
+  () => obtenirEvenement(evenementId),
+)
+const evenement = ref<EvenementDetailAPI | null>(evenementCharge.value)
+const isInscrit = ref(evenementCharge.value?.est_inscrit ?? false)
 const isAuthenticated = computed(() => !!userStore.accessToken)
 
 // État du direct (feature 001-evenements-streaming) — rafraîchi via SSE.
@@ -402,6 +416,8 @@ watch(signalStream, (s) => {
 })
 
 onMounted(async () => {
+  // Rechargement authentifié côté client : le rendu SSR est anonyme, on récupère
+  // ici l'état d'inscription réel de l'utilisateur connecté.
   const data = await obtenirEvenement(evenementId)
   if (data) {
     evenement.value = data
@@ -415,8 +431,51 @@ const breadcrumbs = computed(() => [
   { label: evenement.value?.titre || 'Détail', to: undefined }
 ])
 
-useHead({
-  title: computed(() => evenement.value ? `${evenement.value.titre} | UAfricas` : 'Événement | UAfricas')
+// ── SEO / Open Graph (aperçu lors du partage sur les réseaux sociaux) ──
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBaseUrl as string
+const requete = useRequestURL()
+const origineSite = `${requete.protocol}//${requete.host}`
+const urlCanonique = `${origineSite}/evenements/${evenementId}`
+
+const resoudreUrlImage = (url: string | null | undefined): string => {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return `${apiBase}${url}`
+}
+
+const imageOg = computed(() => resoudreUrlImage(evenement.value?.couverture_url))
+const descriptionOg = computed(() => {
+  const e = evenement.value
+  if (!e) return 'Événements & ateliers panafricains — UAfricas'
+  const lieu = [e.ville, e.pays].filter(Boolean).join(', ')
+  const brut = (e.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+  const resume = brut.length > 160 ? `${brut.slice(0, 157)}…` : brut
+  return resume || `Rejoignez « ${e.titre} »${lieu ? ` à ${lieu}` : ''} sur UAfricas.`
+})
+
+useHead(() => {
+  const titre = evenement.value ? `${evenement.value.titre} | UAfricas` : 'Événement | UAfricas'
+  const img = imageOg.value
+  return {
+    title: titre,
+    meta: [
+      { name: 'description', content: descriptionOg.value },
+      // Open Graph
+      { property: 'og:type', content: 'article' },
+      { property: 'og:title', content: titre },
+      { property: 'og:description', content: descriptionOg.value },
+      { property: 'og:url', content: urlCanonique },
+      { property: 'og:site_name', content: 'UAfricas' },
+      ...(img ? [{ property: 'og:image', content: img }] : []),
+      // Twitter Card
+      { name: 'twitter:card', content: img ? 'summary_large_image' : 'summary' },
+      { name: 'twitter:title', content: titre },
+      { name: 'twitter:description', content: descriptionOg.value },
+      ...(img ? [{ name: 'twitter:image', content: img }] : []),
+    ],
+    link: [{ rel: 'canonical', href: urlCanonique }],
+  }
 })
 
 // --- Computed pour les badges ---
