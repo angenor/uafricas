@@ -182,6 +182,16 @@ const ajouterSegment = async () => {
   }
 }
 
+// Capture le temps courant de la vidéo (en millisecondes) dans un champ, pour
+// éviter la saisie manuelle de ms (source d'erreurs d'unité : secondes tapées
+// dans un champ ms → sous-titre d'une poignée de ms qui « flashe » et disparaît).
+const capturerDansNouveau = (champ: 'debut_ms' | 'fin_ms') => {
+  if (props.lecteur) nouveauSegment[champ] = props.lecteur.positionMs()
+}
+const capturerDansEdition = (champ: 'debut_ms' | 'fin_ms') => {
+  if (props.lecteur) segmentEditeData[champ] = props.lecteur.positionMs()
+}
+
 const debutEdition = (seg: SegmentSousTitre) => {
   segmentEdite.value = seg.id
   segmentEditeData.texte = seg.texte
@@ -386,14 +396,30 @@ onMounted(() => charger())
           placeholder="Ex : Bienvenue dans ce documentaire"
           class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40 focus:border-custom-chocolat mb-2"
         />
+        <p v-if="lecteur" class="text-xs text-gray-500 mb-2">
+          <font-awesome-icon icon="circle-info" class="text-custom-chocolat" />
+          Astuce : mettez la vidéo à la bonne position puis cliquez <font-awesome-icon icon="stopwatch" /> pour capturer le temps (en millisecondes).
+        </p>
         <div class="flex gap-3">
           <div class="flex-1">
             <label class="block text-xs font-medium text-gray-600 mb-1">Début (ms)</label>
-            <input v-model.number="nouveauSegment.debut_ms" type="number" min="0" class="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40">
+            <div class="flex items-center gap-1">
+              <input v-model.number="nouveauSegment.debut_ms" type="number" min="0" class="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40">
+              <button v-if="lecteur" type="button" class="shrink-0 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white border border-gray-300 text-gray-600 hover:bg-gray-100" title="Capturer la position actuelle de la vidéo" @click="capturerDansNouveau('debut_ms')">
+                <font-awesome-icon icon="stopwatch" />
+              </button>
+            </div>
+            <p class="text-[0.7rem] text-gray-400 mt-0.5 font-mono">= {{ formaterTimestamp(nouveauSegment.debut_ms || 0) }}</p>
           </div>
           <div class="flex-1">
             <label class="block text-xs font-medium text-gray-600 mb-1">Fin (ms)</label>
-            <input v-model.number="nouveauSegment.fin_ms" type="number" min="0" class="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40">
+            <div class="flex items-center gap-1">
+              <input v-model.number="nouveauSegment.fin_ms" type="number" min="0" class="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40">
+              <button v-if="lecteur" type="button" class="shrink-0 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white border border-gray-300 text-gray-600 hover:bg-gray-100" title="Capturer la position actuelle de la vidéo" @click="capturerDansNouveau('fin_ms')">
+                <font-awesome-icon icon="stopwatch" />
+              </button>
+            </div>
+            <p class="text-[0.7rem] text-gray-400 mt-0.5 font-mono">= {{ formaterTimestamp(nouveauSegment.fin_ms || 0) }}</p>
           </div>
         </div>
         <div class="flex justify-end gap-2 mt-3">
@@ -461,9 +487,25 @@ onMounted(() => charger())
           <!-- Édition -->
           <div v-else>
             <textarea v-model="segmentEditeData.texte" rows="2" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40" />
-            <div class="flex gap-3 mb-2">
-              <input v-model.number="segmentEditeData.debut_ms" type="number" min="0" placeholder="Début (ms)" class="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40">
-              <input v-model.number="segmentEditeData.fin_ms" type="number" min="0" placeholder="Fin (ms)" class="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40">
+            <div class="flex gap-3 mb-1">
+              <div class="flex-1">
+                <div class="flex items-center gap-1">
+                  <input v-model.number="segmentEditeData.debut_ms" type="number" min="0" placeholder="Début (ms)" class="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40">
+                  <button v-if="lecteur" type="button" class="shrink-0 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white border border-gray-300 text-gray-600 hover:bg-gray-100" title="Capturer la position actuelle de la vidéo" @click="capturerDansEdition('debut_ms')">
+                    <font-awesome-icon icon="stopwatch" />
+                  </button>
+                </div>
+                <p class="text-[0.7rem] text-gray-400 mt-0.5 font-mono">= {{ formaterTimestamp(segmentEditeData.debut_ms || 0) }}</p>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-1">
+                  <input v-model.number="segmentEditeData.fin_ms" type="number" min="0" placeholder="Fin (ms)" class="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40">
+                  <button v-if="lecteur" type="button" class="shrink-0 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white border border-gray-300 text-gray-600 hover:bg-gray-100" title="Capturer la position actuelle de la vidéo" @click="capturerDansEdition('fin_ms')">
+                    <font-awesome-icon icon="stopwatch" />
+                  </button>
+                </div>
+                <p class="text-[0.7rem] text-gray-400 mt-0.5 font-mono">= {{ formaterTimestamp(segmentEditeData.fin_ms || 0) }}</p>
+              </div>
             </div>
             <div class="flex justify-end gap-2">
               <button class="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100" @click="segmentEdite = null">Annuler</button>
