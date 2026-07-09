@@ -106,7 +106,6 @@ defineExpose({ setLoading, setError, setSuccess })
               <p class="text-sm text-gray-600 mb-4">
                 Aidez-nous à garder un espace sûr. Vous signalez
                 <span class="font-semibold text-gray-900">{{ libelle }}</span>.
-                Au-delà de 10 signalements, cette salle est suspendue le temps d'une vérification.
               </p>
 
               <label class="block text-sm font-medium text-gray-700 mb-1.5">Motif</label>
