@@ -144,6 +144,16 @@ export interface SousTitres {
   segments: SegmentKaraoke[]
 }
 
+// Poignée impérative exposée par VidafricaLecteur pour piloter le lecteur
+// depuis un panneau externe (transcription latérale, sous-titrage direct).
+export interface LecteurControl {
+  seek: (ms: number, autoPlay?: boolean) => void
+  lire: () => void
+  pause: () => void
+  positionMs: () => number
+  dureeMs: () => number
+}
+
 // ── Mappers ──────────────────────────────────────────────────
 
 const mapperVideo = (api: VideoAfricaAPI, apiBase: string): VideoAfrica => ({

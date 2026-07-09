@@ -193,6 +193,9 @@ import {
   faCheckCircle,
   faExclamationTriangle,
   faClosedCaptioning,
+  faScissors,
+  faWandMagicSparkles,
+  faForward,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -220,6 +223,9 @@ library.add(
   faCheckCircle,
   faExclamationTriangle,
   faClosedCaptioning,
+  faScissors,
+  faWandMagicSparkles,
+  faForward,
   faArrowRight,
   faArrowDown,
   faTv,

@@ -21,6 +21,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'segment-change': [position: number | null]
+  'lecture': [enLecture: boolean]
+  // Vrai quand la vidéo atteint sa fin ; remis à faux dès qu'on relit ou qu'on
+  // déplace la tête ailleurs (évite un état « fin » périmé).
+  'fin': [termine: boolean]
 }>()
 
 const videoRef = ref<HTMLVideoElement | null>(null)
@@ -31,15 +35,23 @@ const animationId = ref<number | null>(null)
 // Signale le segment courant au parent (surbrillance dans la transcription latérale)
 watch(segmentCourant, seg => emit('segment-change', seg ? seg.position : null))
 
-// Permet à un panneau externe (transcription) de déplacer la lecture
-const seek = (ms: number) => {
+// ── API impérative (transcription latérale + sous-titrage direct) ──
+// Permet à un panneau externe de déplacer/piloter la lecture.
+const seek = (ms: number, autoPlay = true) => {
   const video = videoRef.value
   if (!video) return
   video.currentTime = ms / 1000
-  video.play().catch(() => {})
+  if (autoPlay) video.play().catch(() => {})
+}
+const lire = () => videoRef.value?.play().catch(() => {})
+const pause = () => videoRef.value?.pause()
+const positionMs = () => (videoRef.value ? Math.round(videoRef.value.currentTime * 1000) : 0)
+const dureeMs = () => {
+  const d = videoRef.value?.duration
+  return d && Number.isFinite(d) ? Math.round(d * 1000) : 0
 }
 
-defineExpose({ seek })
+defineExpose({ seek, lire, pause, positionMs, dureeMs })
 
 // Recherche binaire pour trouver le segment courant
 const trouverSegment = (timeMs: number): SegmentKaraoke | null => {
@@ -97,22 +109,32 @@ const mettreAJour = () => {
 }
 
 const onPlay = () => {
+  emit('lecture', true)
+  emit('fin', false)
   if (animationId.value === null) {
     animationId.value = requestAnimationFrame(mettreAJour)
   }
 }
 
 const onPause = () => {
+  emit('lecture', false)
   if (animationId.value !== null) {
     cancelAnimationFrame(animationId.value)
     animationId.value = null
   }
 }
 
+const onEnded = () => {
+  onPause()
+  emit('fin', true)
+}
+
 const onSeeked = () => {
   // Recalcul immédiat après un seek
   const video = videoRef.value
   if (!video) return
+  // Déplacer la tête annule l'état « fin de vidéo » (on n'est plus au bout).
+  emit('fin', false)
   const timeMs = Math.round(video.currentTime * 1000)
   const seg = trouverSegment(timeMs)
   segmentCourant.value = seg
@@ -132,17 +154,17 @@ onUnmounted(() => {
 
 <template>
   <div class="relative">
-    <!-- Lecteur vidéo -->
+    <!-- Lecteur vidéo : la boîte épouse la vidéo (l'overlay karaoké reste incrusté sur l'image). -->
     <video
       ref="videoRef"
       :src="videoUrl"
-      class="w-full max-h-[78vh] object-contain rounded-lg bg-black"
+      class="w-full object-contain rounded-lg bg-black max-h-[78vh]"
       controls
       preload="metadata"
       @play="onPlay"
       @pause="onPause"
       @seeked="onSeeked"
-      @ended="onPause"
+      @ended="onEnded"
     />
 
     <!-- Overlay sous-titres karaoké -->
