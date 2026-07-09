@@ -161,6 +161,10 @@ const ajouterSegment = async () => {
     erreur.value = 'Le début doit être inférieur à la fin'
     return
   }
+  if (chevaucheExistant(nouveauSegment.debut_ms, nouveauSegment.fin_ms)) {
+    erreur.value = 'Ce segment chevauche un segment existant.'
+    return
+  }
   segmentLoading.value = true
   erreur.value = ''
   try {
@@ -192,6 +196,11 @@ const capturerDansEdition = (champ: 'debut_ms' | 'fin_ms') => {
   if (props.lecteur) segmentEditeData[champ] = props.lecteur.positionMs()
 }
 
+// Chevauchement RÉEL avec un autre segment (les bornes qui se touchent sont OK,
+// c'est le cas des segments contigus). Retour immédiat avant l'appel serveur.
+const chevaucheExistant = (debut: number, fin: number, exclureId?: string) =>
+  segments.value.some(s => s.id !== exclureId && debut < s.fin_ms && fin > s.debut_ms)
+
 const debutEdition = (seg: SegmentSousTitre) => {
   segmentEdite.value = seg.id
   segmentEditeData.texte = seg.texte
@@ -201,6 +210,15 @@ const debutEdition = (seg: SegmentSousTitre) => {
 
 const sauvegarderSegment = async () => {
   if (!segmentEdite.value || !pisteSelectionnee.value) return
+  if (segmentEditeData.debut_ms >= segmentEditeData.fin_ms) {
+    erreur.value = 'Le début doit être inférieur à la fin'
+    return
+  }
+  if (chevaucheExistant(segmentEditeData.debut_ms, segmentEditeData.fin_ms, segmentEdite.value)) {
+    erreur.value = 'Ce segment chevauche un autre segment.'
+    return
+  }
+  erreur.value = ''
   segmentLoading.value = true
   try {
     await modifierSegment(segmentEdite.value, {
