@@ -1654,6 +1654,10 @@ export interface AdminMoocDetail {
   langue: string
   nombre_places: number | null
   prerequis: string | null
+  objectif: string | null
+  presentation: string | null
+  a_evaluation: boolean
+  est_certifiante: boolean
   etat: string
   cree_par: string
   cree_par_nom: string | null
@@ -1677,6 +1681,10 @@ export interface CreerMoocForm {
   langue: string
   nombre_places: number | null
   prerequis: string
+  objectif: string
+  presentation: string
+  a_evaluation: boolean
+  est_certifiante: boolean
 }
 
 export interface AdminMoocInscription {

@@ -199,9 +199,11 @@ pub async fn creer_mooc(
         "INSERT INTO media_content.mooc
          (id, titre, slug, description, type, pays_id, ville,
           date_heure_debut, date_heure_fin, image_couverture_url,
-          format, lien_en_ligne, langue, nombre_places, prerequis, etat, cree_par)
+          format, lien_en_ligne, langue, nombre_places, prerequis,
+          objectif, presentation, a_evaluation, est_certifiante, etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-                 $11::media_content.format_evenement, $12, $13, $14, $15, 'brouillon', $16)"
+                 $11::media_content.format_evenement, $12, $13, $14, $15,
+                 $16, $17, $18, $19, 'brouillon', $20)"
     )
     .bind(id)
     .bind(titre)
@@ -218,6 +220,10 @@ pub async fn creer_mooc(
     .bind(langue)
     .bind(body.nombre_places)
     .bind(body.prerequis.as_deref().map(|s| s.trim()))
+    .bind(body.objectif.as_deref().map(|s| s.trim()))
+    .bind(body.presentation.as_deref().map(|s| s.trim()))
+    .bind(body.a_evaluation.unwrap_or(false))
+    .bind(body.est_certifiante.unwrap_or(false))
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -286,6 +292,15 @@ pub async fn modifier_mooc(
     champ_str!(body.lien_en_ligne, "lien_en_ligne");
     champ_str!(body.langue, "langue");
     champ_str!(body.prerequis, "prerequis");
+    champ_str!(body.objectif, "objectif");
+    champ_str!(body.presentation, "presentation");
+
+    if let Some(v) = body.a_evaluation {
+        sets.push(format!("a_evaluation = {}", v));
+    }
+    if let Some(v) = body.est_certifiante {
+        sets.push(format!("est_certifiante = {}", v));
+    }
 
     if let Some(ref fmt) = body.format {
         if !FORMATS_VALIDES.contains(&fmt.as_str()) {

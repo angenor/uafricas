@@ -18,6 +18,7 @@ pub const ADMIN_MOOC_DETAIL_COLONNES: &str =
      m.date_heure_debut, m.date_heure_fin,
      m.image_couverture_url, m.format::TEXT as format,
      m.lien_en_ligne, m.langue, m.nombre_places, m.prerequis,
+     m.objectif, m.presentation, m.a_evaluation, m.est_certifiante,
      m.etat, m.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      m.created_at, m.updated_at";
 
@@ -59,6 +60,10 @@ pub struct AdminMoocDetailRow {
     pub langue: String,
     pub nombre_places: Option<i32>,
     pub prerequis: Option<String>,
+    pub objectif: Option<String>,
+    pub presentation: Option<String>,
+    pub a_evaluation: bool,
+    pub est_certifiante: bool,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -84,6 +89,10 @@ pub struct AdminMoocDetailResponse {
     pub langue: String,
     pub nombre_places: Option<i32>,
     pub prerequis: Option<String>,
+    pub objectif: Option<String>,
+    pub presentation: Option<String>,
+    pub a_evaluation: bool,
+    pub est_certifiante: bool,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -112,6 +121,10 @@ impl AdminMoocDetailRow {
             langue: self.langue.clone(),
             nombre_places: self.nombre_places,
             prerequis: self.prerequis.clone(),
+            objectif: self.objectif.clone(),
+            presentation: self.presentation.clone(),
+            a_evaluation: self.a_evaluation,
+            est_certifiante: self.est_certifiante,
             etat: self.etat.clone(),
             cree_par: self.cree_par,
             cree_par_nom: self.cree_par_nom.clone(),
@@ -164,6 +177,10 @@ pub struct CreerMoocRequest {
     pub langue: Option<String>,
     pub nombre_places: Option<i32>,
     pub prerequis: Option<String>,
+    pub objectif: Option<String>,
+    pub presentation: Option<String>,
+    pub a_evaluation: Option<bool>,
+    pub est_certifiante: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -181,6 +198,10 @@ pub struct ModifierMoocRequest {
     pub langue: Option<String>,
     pub nombre_places: Option<i32>,
     pub prerequis: Option<String>,
+    pub objectif: Option<String>,
+    pub presentation: Option<String>,
+    pub a_evaluation: Option<bool>,
+    pub est_certifiante: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]

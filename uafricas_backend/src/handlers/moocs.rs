@@ -267,6 +267,10 @@ pub async fn obtenir_mooc(
         nombre_places: row.nombre_places,
         nombre_inscrits,
         prerequis: row.prerequis.clone(),
+        objectif: row.objectif.clone(),
+        presentation: row.presentation.clone(),
+        a_evaluation: row.a_evaluation,
+        est_certifiante: row.est_certifiante,
         est_inscrit: inscrit,
         formateur: FormateurResponse {
             uid: formateur.id,
