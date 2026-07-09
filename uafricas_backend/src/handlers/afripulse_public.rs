@@ -62,6 +62,9 @@ pub struct SiteTouristiqueResponse {
     pub nombre_signalements: i32,
     pub suspendu: bool,
     pub a_signale: bool,
+    pub nombre_likes: i32,
+    pub nombre_dislikes: i32,
+    pub ma_reaction: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -85,6 +88,15 @@ const SITE_TOURISTIQUE_SELECT: &str = "SELECT st.id, st.fiche_pays_id, st.nom,
         EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
                WHERE sc.type_objet = 'site_touristique'::country_profile.type_objet_contribution
                  AND sc.objet_id = st.id AND sc.signale_par = $1) AS a_signale,
+        (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+           WHERE re.type_objet = 'site_touristique'::country_profile.type_objet_contribution
+             AND re.objet_id = st.id AND re.type_reaction = 'like') AS nombre_likes,
+        (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+           WHERE re.type_objet = 'site_touristique'::country_profile.type_objet_contribution
+             AND re.objet_id = st.id AND re.type_reaction = 'dislike') AS nombre_dislikes,
+        (SELECT re.type_reaction FROM country_profile.reaction_element re
+           WHERE re.type_objet = 'site_touristique'::country_profile.type_objet_contribution
+             AND re.objet_id = st.id AND re.utilisateur_id = $1) AS ma_reaction,
         st.created_at
      FROM country_profile.site_touristique st
      LEFT JOIN LATERAL (
@@ -200,6 +212,9 @@ pub struct SecteurOpportuniteResponse {
     pub nombre_signalements: i32,
     pub suspendu: bool,
     pub a_signale: bool,
+    pub nombre_likes: i32,
+    pub nombre_dislikes: i32,
+    pub ma_reaction: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -220,6 +235,15 @@ pub async fn lister_secteurs_opportunites(
                 EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
                        WHERE sc.type_objet = 'secteur_developpement'::country_profile.type_objet_contribution
                          AND sc.objet_id = sd.id AND sc.signale_par = $2) AS a_signale,
+                (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'secteur_developpement'::country_profile.type_objet_contribution
+                     AND re.objet_id = sd.id AND re.type_reaction = 'like') AS nombre_likes,
+                (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'secteur_developpement'::country_profile.type_objet_contribution
+                     AND re.objet_id = sd.id AND re.type_reaction = 'dislike') AS nombre_dislikes,
+                (SELECT re.type_reaction FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'secteur_developpement'::country_profile.type_objet_contribution
+                     AND re.objet_id = sd.id AND re.utilisateur_id = $2) AS ma_reaction,
                 sd.created_at
          FROM country_profile.secteur_developpement sd
          WHERE sd.fiche_pays_id = $1
@@ -260,6 +284,15 @@ pub async fn obtenir_secteur_opportunite(
                 EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
                        WHERE sc.type_objet = 'secteur_developpement'::country_profile.type_objet_contribution
                          AND sc.objet_id = sd.id AND sc.signale_par = $1) AS a_signale,
+                (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'secteur_developpement'::country_profile.type_objet_contribution
+                     AND re.objet_id = sd.id AND re.type_reaction = 'like') AS nombre_likes,
+                (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'secteur_developpement'::country_profile.type_objet_contribution
+                     AND re.objet_id = sd.id AND re.type_reaction = 'dislike') AS nombre_dislikes,
+                (SELECT re.type_reaction FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'secteur_developpement'::country_profile.type_objet_contribution
+                     AND re.objet_id = sd.id AND re.utilisateur_id = $1) AS ma_reaction,
                 sd.created_at
          FROM country_profile.secteur_developpement sd
          WHERE sd.fiche_pays_id = $2 AND sd.id = $3",
@@ -296,6 +329,9 @@ pub struct RecetteCulinaireResponse {
     pub nombre_signalements: i32,
     pub suspendu: bool,
     pub a_signale: bool,
+    pub nombre_likes: i32,
+    pub nombre_dislikes: i32,
+    pub ma_reaction: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -315,6 +351,15 @@ pub async fn lister_recettes_culinaires(
                 EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
                        WHERE sc.type_objet = 'recette_culinaire'::country_profile.type_objet_contribution
                          AND sc.objet_id = rc.id AND sc.signale_par = $2) AS a_signale,
+                (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'recette_culinaire'::country_profile.type_objet_contribution
+                     AND re.objet_id = rc.id AND re.type_reaction = 'like') AS nombre_likes,
+                (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'recette_culinaire'::country_profile.type_objet_contribution
+                     AND re.objet_id = rc.id AND re.type_reaction = 'dislike') AS nombre_dislikes,
+                (SELECT re.type_reaction FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'recette_culinaire'::country_profile.type_objet_contribution
+                     AND re.objet_id = rc.id AND re.utilisateur_id = $2) AS ma_reaction,
                 rc.created_at
          FROM country_profile.recette_culinaire rc
          WHERE rc.fiche_pays_id = $1 AND rc.deleted_at IS NULL
@@ -353,6 +398,15 @@ pub async fn obtenir_recette_culinaire(
                 EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
                        WHERE sc.type_objet = 'recette_culinaire'::country_profile.type_objet_contribution
                          AND sc.objet_id = rc.id AND sc.signale_par = $1) AS a_signale,
+                (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'recette_culinaire'::country_profile.type_objet_contribution
+                     AND re.objet_id = rc.id AND re.type_reaction = 'like') AS nombre_likes,
+                (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'recette_culinaire'::country_profile.type_objet_contribution
+                     AND re.objet_id = rc.id AND re.type_reaction = 'dislike') AS nombre_dislikes,
+                (SELECT re.type_reaction FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'recette_culinaire'::country_profile.type_objet_contribution
+                     AND re.objet_id = rc.id AND re.utilisateur_id = $1) AS ma_reaction,
                 rc.created_at
          FROM country_profile.recette_culinaire rc
          WHERE rc.fiche_pays_id = $2 AND rc.id = $3 AND rc.deleted_at IS NULL",
@@ -391,6 +445,9 @@ pub struct PersonnaliteResponse {
     pub nombre_signalements: i32,
     pub suspendu: bool,
     pub a_signale: bool,
+    pub nombre_likes: i32,
+    pub nombre_dislikes: i32,
+    pub ma_reaction: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -436,6 +493,15 @@ pub async fn lister_personnalites(
                     EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
                            WHERE sc.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
                              AND sc.objet_id = pc.id AND sc.signale_par = $3) AS a_signale,
+                    (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                       WHERE re.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                         AND re.objet_id = pc.id AND re.type_reaction = 'like') AS nombre_likes,
+                    (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                       WHERE re.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                         AND re.objet_id = pc.id AND re.type_reaction = 'dislike') AS nombre_dislikes,
+                    (SELECT re.type_reaction FROM country_profile.reaction_element re
+                       WHERE re.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                         AND re.objet_id = pc.id AND re.utilisateur_id = $3) AS ma_reaction,
                     pc.created_at
              FROM country_profile.personnalite_connue pc
              WHERE pc.fiche_pays_id = $1 AND pc.deleted_at IS NULL
@@ -456,6 +522,15 @@ pub async fn lister_personnalites(
                     EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
                            WHERE sc.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
                              AND sc.objet_id = pc.id AND sc.signale_par = $2) AS a_signale,
+                    (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                       WHERE re.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                         AND re.objet_id = pc.id AND re.type_reaction = 'like') AS nombre_likes,
+                    (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                       WHERE re.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                         AND re.objet_id = pc.id AND re.type_reaction = 'dislike') AS nombre_dislikes,
+                    (SELECT re.type_reaction FROM country_profile.reaction_element re
+                       WHERE re.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                         AND re.objet_id = pc.id AND re.utilisateur_id = $2) AS ma_reaction,
                     pc.created_at
              FROM country_profile.personnalite_connue pc
              WHERE pc.fiche_pays_id = $1 AND pc.deleted_at IS NULL
@@ -496,6 +571,15 @@ pub async fn obtenir_personnalite(
                 EXISTS(SELECT 1 FROM country_profile.signalement_contribution sc
                        WHERE sc.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
                          AND sc.objet_id = pc.id AND sc.signale_par = $1) AS a_signale,
+                (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                     AND re.objet_id = pc.id AND re.type_reaction = 'like') AS nombre_likes,
+                (SELECT COUNT(*)::int FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                     AND re.objet_id = pc.id AND re.type_reaction = 'dislike') AS nombre_dislikes,
+                (SELECT re.type_reaction FROM country_profile.reaction_element re
+                   WHERE re.type_objet = 'personnalite_connue'::country_profile.type_objet_contribution
+                     AND re.objet_id = pc.id AND re.utilisateur_id = $1) AS ma_reaction,
                 pc.created_at
          FROM country_profile.personnalite_connue pc
          WHERE pc.fiche_pays_id = $2 AND pc.id = $3 AND pc.deleted_at IS NULL",
