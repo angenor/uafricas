@@ -74,7 +74,7 @@ onMounted(charger)
 
 watch(domaineFiltre, charger)
 
-const router = useRouter()
+const { redirigerVersConnexion } = useAuth()
 
 const ouvrirDetail = (personnalite: PersonnaliteConnueAPI) => {
   navigateTo(`/opportunite-afrique/${props.ficheId}/personnalites/${personnalite.id}`)
@@ -85,7 +85,7 @@ const ouvrirContribution = (
   personnalite?: PersonnaliteConnueAPI,
 ) => {
   if (!props.estAuthentifie) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
   emit('open-contribution', {

@@ -62,7 +62,7 @@ onMounted(async () => {
   chargement.value = false
 })
 
-const router = useRouter()
+const { redirigerVersConnexion } = useAuth()
 
 const ouvrirDetail = (secteur: SecteurOpportuniteAPI) => {
   navigateTo(`/opportunite-afrique/${props.ficheId}/secteurs/${secteur.id}`)
@@ -73,7 +73,7 @@ const ouvrirContribution = (
   secteur?: SecteurOpportuniteAPI,
 ) => {
   if (!props.estAuthentifie) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
   emit('open-contribution', {

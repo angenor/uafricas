@@ -192,12 +192,19 @@ onMounted(async () => {
     await verifierEmail(token)
     etat.value = 'succes'
 
+    // Cible de redirection : ?redirect=<page interne> si present et valide, sinon accueil
+    const redirect = route.query.redirect
+    const cible
+      = typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')
+        ? redirect
+        : '/'
+
     // Redirection automatique apres 3 secondes
     const interval = setInterval(() => {
       compteurRedirection.value--
       if (compteurRedirection.value <= 0) {
         clearInterval(interval)
-        router.push('/')
+        router.push(cible)
       }
     }, 1000)
   }

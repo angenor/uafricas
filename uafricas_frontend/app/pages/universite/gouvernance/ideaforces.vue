@@ -232,6 +232,7 @@ const breadcrumbs = [
 const userStore = useUserStore()
 const { getContributions, partagerContribution } = useGouvernance()
 const { pubCible, cibler } = usePartagePublication()
+const { redirigerVersConnexion } = useAuth()
 
 // Partage vers le mur /publications
 const modalPartageOuvert = ref(false)
@@ -240,7 +241,7 @@ const modalPartageRef = ref<{ setLoading: (v: boolean) => void; setError: (m: st
 
 function ouvrirPartage(c: ContributionCitoyenne) {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   contribAPartager.value = c
@@ -267,7 +268,7 @@ const modalOuvert = ref(false)
 
 function ouvrirModalPublication() {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   modalOuvert.value = true

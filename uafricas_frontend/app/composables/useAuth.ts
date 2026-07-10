@@ -230,6 +230,20 @@ export const useAuth = () => {
     return userStore.user?.roles?.includes(role) || false
   }
 
+  // ── Rediriger vers la connexion en conservant la page cible ──
+  // Ajoute automatiquement ?redirect=<page courante> pour revenir sur la
+  // page d'origine apres authentification. Passer `cible` pour forcer une
+  // destination differente de la page courante.
+  const redirigerVersConnexion = (cible?: string) => {
+    const router = useRouter()
+    const chemin = cible || router.currentRoute.value.fullPath
+    const query
+      = typeof chemin === 'string' && chemin.startsWith('/') && !chemin.startsWith('//')
+        ? { redirect: chemin }
+        : undefined
+    return navigateTo({ path: '/login', query })
+  }
+
   return {
     // Etat
     loading: readonly(loading),
@@ -253,5 +267,6 @@ export const useAuth = () => {
     refreshAccessToken,
     initAuth,
     hasRole,
+    redirigerVersConnexion,
   }
 }

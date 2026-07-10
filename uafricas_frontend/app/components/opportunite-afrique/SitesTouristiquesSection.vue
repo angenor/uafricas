@@ -108,7 +108,7 @@ onMounted(async () => {
   await Promise.all([chargerEmblematiques(), chargerPrives()])
 })
 
-const router = useRouter()
+const { redirigerVersConnexion } = useAuth()
 
 /** Construit le snapshot complet des champs d'un site (pré-remplissage édition). */
 const snapshotSite = (site: SiteTouristiqueAPI): Record<string, unknown> => ({
@@ -138,7 +138,7 @@ const ouvrirContribution = (
   site?: SiteTouristiqueAPI,
 ) => {
   if (!props.estAuthentifie) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
   emit('open-contribution', {
