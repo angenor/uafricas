@@ -795,6 +795,11 @@
               <EvenementsMesEvenements />
             </div>
 
+            <!-- ─── Onglet Mes points ─── -->
+            <div v-if="ongletActif === 'mes-points'" class="space-y-6">
+              <EngagementMesPointsPanel />
+            </div>
+
           </div>
         </div>
       </template>
@@ -820,7 +825,8 @@ const profilComposable = useProfil()
 
 const profil = ref<Profil | null>(null)
 const chargement = ref(true)
-const ongletActif = ref('informations')
+const route = useRoute()
+const ongletActif = ref(typeof route.query.onglet === 'string' ? route.query.onglet : 'informations')
 const tabMenuOuvert = ref(false)
 const modeEdition = ref(false)
 const modeEditionLocalisation = ref(false)
@@ -849,6 +855,7 @@ const onglets = [
   { id: 'expertise', label: 'Expertise', icon: 'fa-solid fa-user-tie' },
   { id: 'mes-echanges', label: 'Mes échanges', icon: 'fa-solid fa-right-left' },
   { id: 'mes-evenements', label: 'Mes événements', icon: 'fa-solid fa-calendar-day' },
+  { id: 'mes-points', label: 'Mes points', icon: 'fa-solid fa-medal' },
 ]
 
 const ongletCourant = computed(() => onglets.find(t => t.id === ongletActif.value) || onglets[0]!)

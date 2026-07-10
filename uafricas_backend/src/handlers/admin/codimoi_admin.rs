@@ -336,6 +336,30 @@ pub async fn modifier_codimoi(
         .await?;
     }
 
+    // Engagement : créditer l'auteur quand la contribution passe à « publié » (validation modération).
+    // Idempotent (clé unique) + anti-auto-attribution ; non-bloquant.
+    if body.etat.as_deref() == Some("publie") {
+        if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
+            "SELECT cree_par FROM culture.codimoi WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_optional(pool.get_ref())
+        .await
+        {
+            if cree_par != admin.id {
+                crate::services::engagement::attribuer(
+                    pool.get_ref(),
+                    cree_par,
+                    "contribution_validee",
+                    Some("codimoi"),
+                    Some(id),
+                    &format!("contribution_validee:codimoi:{id}"),
+                )
+                .await;
+            }
+        }
+    }
+
     log::info!("Admin {} a modifie le post Codi-Moi {}", admin.id, id);
 
     let ip = audit::extraire_ip(&req);

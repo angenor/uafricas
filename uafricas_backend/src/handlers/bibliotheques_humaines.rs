@@ -598,6 +598,15 @@ pub async fn reagir_biblio(
 
     let (nombre_likes, nombre_dislikes) = compter_reactions(pool.get_ref(), biblio_id).await?;
 
+    // Engagement : paliers de popularité de la bibliothèque humaine (non-bloquant).
+    // Le bénéficiaire est le titulaire de la biblio (biblio_id) ; l'auto-like est déjà interdit.
+    if type_reaction == "like" {
+        crate::services::engagement::evaluer_popularite(
+            pool.get_ref(), "biblio_humaine", biblio_id, biblio_id, nombre_likes as i64,
+        )
+        .await;
+    }
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(ReactionBiblioResponse {

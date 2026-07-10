@@ -119,6 +119,15 @@ const sidebarSections: SidebarSection[] = [
     faIcon: 'chart-line',
     route: '/admin',
   },
+  // ─── Engagement / gamification ───
+  {
+    label: 'Engagement',
+    faIcon: 'medal',
+    children: [
+      { label: 'Barème', faIcon: 'sliders', route: '/admin/engagement/regles' },
+      { label: 'Journal des points', faIcon: 'list', route: '/admin/engagement/journal' },
+    ],
+  },
   // ─── Administration & système ───
   {
     label: 'Utilisateurs & Accès',
