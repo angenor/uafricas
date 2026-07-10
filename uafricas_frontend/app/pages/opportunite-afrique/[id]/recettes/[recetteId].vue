@@ -171,7 +171,7 @@
                 :nombre-dislikes="recette.nombre_dislikes"
                 :ma-reaction="recette.ma_reaction"
                 :est-authentifie="userStore.isAuthenticated"
-                @require-login="navigateTo('/login')"
+                @require-login="redirigerVersConnexion()"
               />
               <button
                 type="button"
@@ -199,7 +199,7 @@
                   :libelle="recette.titre"
                   :a-signale="recette.a_signale"
                   :est-authentifie="userStore.isAuthenticated"
-                  @require-login="navigateTo('/login')"
+                  @require-login="redirigerVersConnexion()"
                   @suspendu="recette.suspendu = true"
                 />
               </div>
@@ -228,6 +228,7 @@ import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 const { obtenirRecetteCulinaire, resoudreUrlImage } = useOpportuniteAfrique()
 
 const showPartage = ref(false)

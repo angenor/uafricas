@@ -378,6 +378,7 @@ const ITEMS_PER_PAGE = 12
 
 const { chargement, erreur, listerAnnonces } = useMarcheAfricain()
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 
 // State
 const annonces = ref<AnnonceAPI[]>([])
@@ -502,7 +503,7 @@ const handleSearch = () => {
 
 const handlePublish = () => {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   showPublishModal.value = true

@@ -229,7 +229,7 @@
                 :nombre-dislikes="site.nombre_dislikes"
                 :ma-reaction="site.ma_reaction"
                 :est-authentifie="userStore.isAuthenticated"
-                @require-login="navigateTo('/login')"
+                @require-login="redirigerVersConnexion()"
               />
               <button
                 type="button"
@@ -257,7 +257,7 @@
                   :libelle="site.nom"
                   :a-signale="site.a_signale"
                   :est-authentifie="userStore.isAuthenticated"
-                  @require-login="navigateTo('/login')"
+                  @require-login="redirigerVersConnexion()"
                   @suspendu="site.suspendu = true"
                 />
               </div>
@@ -286,6 +286,7 @@ import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 const { obtenirSiteTouristique, resoudreUrlImage } = useOpportuniteAfrique()
 
 const showPartage = ref(false)

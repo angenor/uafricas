@@ -4,6 +4,7 @@ import type { CorrespondanceDetail, CoordonneesChoix, MotifSignalement } from '~
 definePageMeta({ layout: 'default' })
 
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 const route = useRoute()
 const { detailCorrespondance, accepterCorrespondance, refuserCorrespondance, signalerAvis, chargement, erreur } = useRetrouvAmis()
 
@@ -70,7 +71,7 @@ const onSignaler = async (avisId: string, motif: MotifSignalement, description: 
 
 onMounted(() => {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   charger()

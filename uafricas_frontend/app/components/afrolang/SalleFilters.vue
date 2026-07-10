@@ -38,13 +38,36 @@
         <font-awesome-icon :icon="['fas', 'globe']" class="w-4 h-4 mr-2 text-gray-400" />
         Territoire d'origine
       </label>
+
+      <!-- Choix de la zone (radio) qui pilote le contenu du menu déroulant -->
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label
+          v-for="option in ZONES_TERRITOIRE"
+          :key="option.value"
+          :class="[
+            'flex items-center justify-center px-3 py-2 rounded-xl text-sm font-medium cursor-pointer transition-all',
+            zoneTerritoire === option.value
+              ? 'bg-blue-500 text-white shadow-sm'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+          ]"
+        >
+          <input
+            v-model="zoneTerritoire"
+            type="radio"
+            :value="option.value"
+            class="sr-only"
+          />
+          {{ option.label }}
+        </label>
+      </div>
+
       <select
         v-model="localFiltres.pays_id"
         class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         @change="emitChange"
       >
         <option value="">Tous les territoires</option>
-        <option v-for="p in pays" :key="p.id" :value="p.id">
+        <option v-for="p in territoiresDisponibles" :key="p.id" :value="p.id">
           {{ p.nom }}
         </option>
       </select>
@@ -69,6 +92,7 @@
 
 <script setup lang="ts">
 import type { PaysOrigineLight, SalleFiltres } from '~/composables/useAfrolang'
+import { PAYS_AFRICAINS_ISO2 } from '~/constants/afripulsePaysAutorises'
 
 const props = defineProps<{
   totalSalles: number
@@ -85,10 +109,39 @@ const emit = defineEmits<{
 
 const localFiltres = ref<SalleFiltres>({ ...props.modelValue })
 
+// Zone géographique qui pilote le contenu du menu déroulant des territoires
+const ZONES_TERRITOIRE = [
+  { value: 'afrique' as const, label: 'Afrique' },
+  { value: 'hors_afrique' as const, label: 'Hors Afrique' },
+]
+const zoneTerritoire = ref<'afrique' | 'hors_afrique'>('afrique')
+
+const PAYS_AFRICAINS_SET = new Set<string>(PAYS_AFRICAINS_ISO2)
+
+const estAfricain = (p: PaysOrigineLight): boolean =>
+  !!p.code_iso2 && PAYS_AFRICAINS_SET.has(p.code_iso2.toLowerCase())
+
+const territoiresDisponibles = computed(() =>
+  props.pays.filter(p => (zoneTerritoire.value === 'afrique' ? estAfricain(p) : !estAfricain(p))),
+)
+
+// Changer de zone réinitialise le territoire choisi (contenus disjoints)
+watch(zoneTerritoire, () => {
+  if (localFiltres.value.pays_id) {
+    localFiltres.value.pays_id = ''
+    emitChange()
+  }
+})
+
 watch(
   () => props.modelValue,
   (newValue) => {
     localFiltres.value = { ...newValue }
+    // Aligner la zone sur le territoire sélectionné (ex. reset externe)
+    const selection = props.pays.find(p => p.id === newValue.pays_id)
+    if (selection) {
+      zoneTerritoire.value = estAfricain(selection) ? 'afrique' : 'hors_afrique'
+    }
   },
   { deep: true },
 )

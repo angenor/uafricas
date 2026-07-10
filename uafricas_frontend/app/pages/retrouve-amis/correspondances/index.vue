@@ -4,6 +4,7 @@ import type { Correspondance, CorrespondanceFiltres, EtatCorrespondance } from '
 definePageMeta({ layout: 'default' })
 
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 const { listerCorrespondances, listerNotifications, toutMarquerLu, chargement } = useRetrouvAmis()
 
 // Donnees reactives
@@ -97,7 +98,7 @@ let intervalle: ReturnType<typeof setInterval> | null = null
 
 onMounted(async () => {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   await Promise.all([charger(), chargerNotifications()])

@@ -100,7 +100,8 @@ onMounted(() => charger())
             @click="showContribution = !showContribution"
           >
             <font-awesome-icon icon="closed-captioning" class="mr-1" />
-            <span class="hidden sm:inline">{{ showContribution ? 'Fermer l\'atelier' : 'Atelier sous-titres' }}</span>
+            <span class="hidden lg:inline">{{ showContribution ? 'Fermer' : 'Connaissez-vous la langue de cette vidéo ? Proposez un sous-titre' }}</span>
+            <span class="hidden sm:inline lg:hidden">{{ showContribution ? 'Fermer' : 'Proposer un sous-titre' }}</span>
           </button>
           <button
             v-if="estConnecte"
@@ -297,7 +298,7 @@ onMounted(() => charger())
             >
               <header class="shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 text-white border-b border-white/15">
                 <span class="flex items-center gap-2 text-sm font-bold font-['Oswald'] uppercase tracking-wide">
-                  <font-awesome-icon icon="closed-captioning" /> Atelier de sous-titrage
+                  <font-awesome-icon icon="closed-captioning" /> Proposer un sous-titre
                 </span>
                 <button
                   class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-white/15 hover:bg-white/30 transition-colors"

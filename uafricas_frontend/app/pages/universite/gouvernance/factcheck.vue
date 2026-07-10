@@ -395,6 +395,7 @@ useHead({
 
 const { getContributions, reagir, signaler, partagerContribution } = useGouvernance()
 const { pubCible, cibler } = usePartagePublication()
+const { redirigerVersConnexion } = useAuth()
 
 // Partage vers le mur /publications
 const modalPartageOuvert = ref(false)
@@ -403,7 +404,7 @@ const modalPartageRef = ref<{ setLoading: (v: boolean) => void; setError: (m: st
 
 function ouvrirPartage(c: ContributionCitoyenne) {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   contribAPartager.value = c
@@ -447,7 +448,7 @@ const erreurReaction = ref<string | null>(null)
 
 function ouvrirModalPublication() {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   modalOuvert.value = true
@@ -524,7 +525,7 @@ function appliquerEtat(id: string, etat: Awaited<ReturnType<typeof reagir>>) {
 
 async function reagirGlobal(c: ContributionCitoyenne, type: TypeReactionGlobale) {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   erreurReaction.value = null
@@ -537,7 +538,7 @@ async function reagirGlobal(c: ContributionCitoyenne, type: TypeReactionGlobale)
 
 async function reagirVolet(c: ContributionCitoyenne, cible: 'prejuge' | 'realite') {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   erreurReaction.value = null
@@ -552,7 +553,7 @@ const messageInfo = ref<string | null>(null)
 
 async function signalerContribution(c: ContributionCitoyenne) {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   if (c.aSignale) return

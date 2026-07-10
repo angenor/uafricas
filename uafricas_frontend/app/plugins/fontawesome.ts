@@ -196,6 +196,8 @@ import {
   faScissors,
   faWandMagicSparkles,
   faForward,
+  faVolumeHigh,
+  faVolumeXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -226,6 +228,8 @@ library.add(
   faScissors,
   faWandMagicSparkles,
   faForward,
+  faVolumeHigh,
+  faVolumeXmark,
   faArrowRight,
   faArrowDown,
   faTv,

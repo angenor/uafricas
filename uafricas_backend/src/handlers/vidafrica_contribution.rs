@@ -708,6 +708,26 @@ pub async fn creer_segment_membre(
 
     verifier_piste_modifiable(pool.get_ref(), piste_id, user_id).await?;
 
+    // Interdire un chevauchement avec un segment existant. Les bornes qui se
+    // touchent (fin de l'un = début de l'autre) sont autorisées : c'est le cas
+    // des segments contigus du mode « au fil de la lecture ».
+    let chevauche = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(
+            SELECT 1 FROM media_content.segment_sous_titre
+            WHERE piste_id = $1 AND debut_ms < $3 AND fin_ms > $2
+         )",
+    )
+    .bind(piste_id)
+    .bind(body.debut_ms)
+    .bind(body.fin_ms)
+    .fetch_one(pool.get_ref())
+    .await?;
+    if chevauche {
+        return Err(ApiErreur::Validation(
+            "Ce segment chevauche un segment existant de la piste".into(),
+        ));
+    }
+
     let next_pos = sqlx::query_scalar::<_, Option<i32>>(
         "SELECT MAX(position) FROM media_content.segment_sous_titre WHERE piste_id = $1",
     )
@@ -767,6 +787,41 @@ pub async fn modifier_segment_membre(
     let texte = body.texte.as_ref().map(|t| t.trim().to_string()).filter(|t| !t.is_empty());
     if texte.is_none() && body.debut_ms.is_none() && body.fin_ms.is_none() {
         return Err(ApiErreur::Validation("Aucun champ à modifier".into()));
+    }
+
+    // Si les bornes changent : valider début < fin et l'absence de chevauchement
+    // avec les AUTRES segments de la piste (bornes qui se touchent autorisées).
+    if body.debut_ms.is_some() || body.fin_ms.is_some() {
+        let (piste_id, cur_debut, cur_fin) = sqlx::query_as::<_, (Uuid, i32, i32)>(
+            "SELECT piste_id, debut_ms, fin_ms FROM media_content.segment_sous_titre WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool.get_ref())
+        .await?;
+        let new_debut = body.debut_ms.unwrap_or(cur_debut);
+        let new_fin = body.fin_ms.unwrap_or(cur_fin);
+        if new_debut < 0 || new_debut >= new_fin {
+            return Err(ApiErreur::Validation(
+                "Le timestamp de début doit être positif et inférieur à la fin".into(),
+            ));
+        }
+        let chevauche = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(
+                SELECT 1 FROM media_content.segment_sous_titre
+                WHERE piste_id = $1 AND id <> $2 AND debut_ms < $4 AND fin_ms > $3
+             )",
+        )
+        .bind(piste_id)
+        .bind(id)
+        .bind(new_debut)
+        .bind(new_fin)
+        .fetch_one(pool.get_ref())
+        .await?;
+        if chevauche {
+            return Err(ApiErreur::Validation(
+                "Ce segment chevauche un autre segment de la piste".into(),
+            ));
+        }
     }
 
     let mut tx = pool.begin().await?;

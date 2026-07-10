@@ -105,14 +105,14 @@ const basculerCategorie = (cat: CategorieSavoir) => {
   categorieOuverte.value = categorieOuverte.value === cat ? null : cat
 }
 
-const router = useRouter()
+const { redirigerVersConnexion } = useAuth()
 
 const ouvrirContribution = (
   type_contribution: 'ajout' | 'edition' | 'suppression',
   savoir?: SavoirPratiqueAPI,
 ) => {
   if (!props.estAuthentifie) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
   emit('open-contribution', {

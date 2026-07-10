@@ -390,6 +390,7 @@ useHead({
 const ITEMS_PER_PAGE = 12
 const router = useRouter()
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 
 // Modale « Proposer une salle » (feature 001-admin-salles-publiques, US1)
 const proposerOuvert = ref(false)
@@ -473,7 +474,7 @@ const entrerDansSalle = async (salleId: string) => {
   erreurEntrer.value = null
 
   if (!userStore.isAuthenticated) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
 
@@ -532,7 +533,7 @@ const maSallePriveeIciId = computed<string | null>(() => {
 
 const ouvrirCreationModal = (salleId: string) => {
   if (!userStore.isAuthenticated) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
   createModalSalleId.value = salleId
@@ -579,7 +580,7 @@ const rediriger_vers_salle_existante = (_sallePriveeId?: string) => {
 
 const ouvrirJoinModal = (sallePriveeId: string) => {
   if (!userStore.isAuthenticated) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
   const liste = expandedSalleId.value ? sallesPriveesCache.value[expandedSalleId.value] : null
@@ -616,7 +617,7 @@ const soumettreCodeAcces = async (code: string) => {
  *  que l'utilisateur est `cree_par`. On envoie une chaîne quelconque. */
 const ouvrirMaSallePrivee = async (sallePriveeId: string) => {
   if (!userStore.isAuthenticated) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
   sallePriveeEnCours.value = sallePriveeId

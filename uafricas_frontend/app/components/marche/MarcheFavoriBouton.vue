@@ -19,7 +19,6 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { navigateTo } from '#app'
 import { useMarcheAfricain } from '~/composables/useMarcheAfricain'
 import { useUserStore } from '~/stores/user'
 
@@ -38,6 +37,7 @@ const emit = defineEmits<{
 }>()
 
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 const { ajouterFavori, retirerFavori } = useMarcheAfricain()
 
 const actif = ref(props.favoriInitial)
@@ -52,7 +52,7 @@ const classeBouton = computed(() => {
 
 const basculer = async () => {
   if (!userStore.isAuthenticated) {
-    await navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   enCours.value = true

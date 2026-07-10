@@ -77,7 +77,7 @@ definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Recommandations accompagnateur — UAfricas' })
 
 const userStore = useUserStore()
-const router = useRouter()
+const { redirigerVersConnexion } = useAuth()
 const { listerRecommandationsRecues, rafraichirCompteur, chargement, erreur } = useAfrolangAccompagnateur()
 
 const recommandations = ref<RecommandationRecueAPI[]>([])
@@ -108,7 +108,7 @@ const recharger = async () => {
 
 onMounted(() => {
   if (!userStore.accessToken) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
   recharger()

@@ -367,6 +367,7 @@ import type { TypePratique } from '~/composables/useGouvernance'
 
 const { getContributions, partagerContribution } = useGouvernance()
 const { pubCible, cibler } = usePartagePublication()
+const { redirigerVersConnexion } = useAuth()
 const chargement = ref(false)
 const erreurChargement = ref<string | null>(null)
 
@@ -404,7 +405,7 @@ const modalPartageRef = ref<{ setLoading: (v: boolean) => void; setError: (m: st
 
 function ouvrirPartage(c: ContributionCitoyenne) {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   contribAPartager.value = c
@@ -447,7 +448,7 @@ const typePratiqueInitial = ref<TypePratique>('mauvaise')
 
 function ouvrirModalPublication(type: TypePratique = 'mauvaise') {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   typePratiqueInitial.value = type

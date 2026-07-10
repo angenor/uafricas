@@ -521,11 +521,12 @@ useHead({
 const router = useRouter()
 const userStore = useUserStore()
 const { creerProjet, chargement } = useProjets()
+const { redirigerVersConnexion } = useAuth()
 
 // Auth guard
 onMounted(() => {
   if (!userStore.isAuthenticated) {
-    router.push('/login')
+    redirigerVersConnexion()
   }
 })
 

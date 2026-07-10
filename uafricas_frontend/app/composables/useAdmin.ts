@@ -11,6 +11,7 @@ export const useAdmin = () => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBaseUrl as string
   const userStore = useUserStore()
+  const router = useRouter()
 
   // ── Etat reactif de pagination ───────────────────────────
   const pagination = reactive<PaginationState>({
@@ -66,7 +67,9 @@ export const useAdmin = () => {
         // Gestion centralisee des erreurs 401/403
         if (response.status === 401) {
           userStore.clearUser()
-          navigateTo('/login')
+          // Conserver la page admin courante pour y revenir apres reconnexion
+          const cible = router.currentRoute.value.fullPath
+          navigateTo({ path: '/login', query: { redirect: cible } })
         }
         else if (response.status === 403) {
           error.value = 'Acces interdit : permissions insuffisantes'

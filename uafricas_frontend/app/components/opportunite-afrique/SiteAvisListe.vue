@@ -10,7 +10,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const { listerAvisSite, soumettreAvisSite, resoudreUrlImage, erreur } = useOpportuniteAfrique()
-const router = useRouter()
+const { redirigerVersConnexion } = useAuth()
 
 const donnees = ref<AvisSiteListe | null>(null)
 const chargement = ref(true)
@@ -69,7 +69,7 @@ const soumettre = async () => {
   }
 }
 
-const allerConnexion = () => router.push('/login')
+const allerConnexion = () => redirigerVersConnexion()
 </script>
 
 <template>

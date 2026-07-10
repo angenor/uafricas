@@ -372,6 +372,7 @@ import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 const {
   chargement,
   obtenirFiche,
@@ -462,7 +463,7 @@ const contributionModalRef = ref<{ setLoading: (val: boolean) => void; setError:
 
 const proposerModification = () => {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   afripulseContext.value = null
@@ -483,7 +484,7 @@ const onOpenChampVoyage = (ctx: LegacyFieldContext) => {
 }
 
 const onRequireLogin = () => {
-  navigateTo('/login')
+  redirigerVersConnexion()
 }
 
 const fermerContributionModal = () => {
@@ -498,7 +499,7 @@ const reactionEnCours = ref(false)
 const basculerReaction = async (type: 'like' | 'dislike') => {
   if (!pays.value) return
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   if (reactionEnCours.value) return
