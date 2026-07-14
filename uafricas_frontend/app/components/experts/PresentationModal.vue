@@ -22,24 +22,23 @@
 
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-              <font-awesome-icon :icon="['fas', 'language']" class="w-6 h-6" />
+              <font-awesome-icon :icon="['fas', 'user-tie']" class="w-6 h-6" />
             </div>
             <div>
-              <h2 class="text-xl md:text-2xl font-bold leading-tight">Afrolang</h2>
-              <p class="text-white/90 text-sm">Préserver, transmettre et faire revivre nos langues</p>
+              <h2 class="text-xl md:text-2xl font-bold leading-tight">Diapertise</h2>
+              <p class="text-white/90 text-sm">Les talents africains, réunis et faciles à solliciter</p>
             </div>
           </div>
         </div>
 
         <!-- Corps défilant -->
         <div class="overflow-y-auto px-6 py-6 space-y-8">
-          <!-- Le pourquoi -->
+          <!-- L'accroche -->
           <p class="text-gray-700 leading-relaxed">
-            Beaucoup de langues africaines et afro-descendantes disparaissent peu à peu, et les
-            nouvelles générations s'en éloignent. <strong class="text-gray-900">Afrolang</strong>
-            est un espace en ligne collaboratif qui réunit locuteurs natifs, apprenants, enseignants,
-            chercheurs et membres de la diaspora pour <strong class="text-gray-900">apprendre,
-            transmettre et sauver ces langues</strong>, ensemble.
+            Partout dans le monde, des Africaines et des Africains — sur le continent comme dans
+            les diasporas — portent des savoir-faire précieux. <strong class="text-gray-900">Diapertise</strong>
+            les rassemble en un seul endroit pour les rendre <strong class="text-gray-900">visibles
+            et faciles à solliciter</strong>, au service du développement du continent.
           </p>
 
           <!-- Ce que vous pouvez faire -->
@@ -88,8 +87,9 @@
               Notre objectif
             </h3>
             <p class="text-gray-700 text-sm leading-relaxed">
-              Sauvegarder et faire revivre les langues africaines, rendre leur apprentissage
-              accessible à tous, et renforcer le lien culturel entre l'Afrique et sa diaspora.
+              Mobiliser la richesse des talents de la diaspora, renforcer les compétences
+              techniques, scientifiques et managériales en Afrique, et faire circuler les savoirs
+              et les bonnes pratiques.
             </p>
           </div>
         </div>
@@ -115,33 +115,33 @@ defineEmits<{ close: [] }>()
 
 const fonctionnalites = [
   {
-    icone: 'video',
-    titre: 'Salles de langue en direct',
-    texte: 'Rejoignez des salles de visioconférence par langue et par territoire pour pratiquer avec des locuteurs natifs.',
+    icone: 'users',
+    titre: 'Un répertoire mondial',
+    texte: 'Découvrez des experts et des professionnels africains et afrodescendants, où qu\'ils soient.',
   },
   {
-    icone: 'chalkboard-user',
-    titre: 'Ateliers & accompagnement',
-    texte: 'Participez à des ateliers de conversation en direct et trouvez un accompagnateur pour progresser.',
+    icone: 'magnifying-glass',
+    titre: 'Une recherche sur mesure',
+    texte: 'Filtrez par domaine, territoire ou situation professionnelle et affinez selon vos critères.',
   },
   {
-    icone: 'book-open',
-    titre: 'Ressources par langue',
-    texte: 'Retrouvez l\'alphabet, un dictionnaire et les documents, vidéos et liens partagés dans chaque salle.',
+    icone: 'envelope',
+    titre: 'Un contact direct',
+    texte: 'Consultez la fiche d\'un expert et prenez contact directement avec lui.',
   },
   {
-    icone: 'door-open',
-    titre: 'Vos propres salles',
-    texte: 'Proposez une salle publique ou créez une salle privée protégée par un code pour votre groupe.',
+    icone: 'user-plus',
+    titre: 'Proposez votre expertise',
+    texte: 'Déposez votre candidature et votre CV pour rejoindre le répertoire des experts.',
   },
 ]
 
 const outils = [
-  'Visioconférence',
-  'Tableau blanc interactif',
-  'Chat en direct',
-  'Ressources partagées',
-  'Réactions en direct',
+  'Base de données d\'experts',
+  'Recherche multicritère',
+  'Fiches détaillées',
+  'Candidature en ligne',
+  'Notation & recommandations',
 ]
 </script>
 

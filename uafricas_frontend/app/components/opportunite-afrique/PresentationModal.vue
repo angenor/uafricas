@@ -22,11 +22,11 @@
 
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-              <font-awesome-icon :icon="['fas', 'language']" class="w-6 h-6" />
+              <font-awesome-icon :icon="['fas', 'earth-africa']" class="w-6 h-6" />
             </div>
             <div>
-              <h2 class="text-xl md:text-2xl font-bold leading-tight">Afrolang</h2>
-              <p class="text-white/90 text-sm">Préserver, transmettre et faire revivre nos langues</p>
+              <h2 class="text-xl md:text-2xl font-bold leading-tight">Afripulse</h2>
+              <p class="text-white/90 text-sm">Faire rayonner les territoires et les richesses de l'Afrique</p>
             </div>
           </div>
         </div>
@@ -35,11 +35,11 @@
         <div class="overflow-y-auto px-6 py-6 space-y-8">
           <!-- Le pourquoi -->
           <p class="text-gray-700 leading-relaxed">
-            Beaucoup de langues africaines et afro-descendantes disparaissent peu à peu, et les
-            nouvelles générations s'en éloignent. <strong class="text-gray-900">Afrolang</strong>
-            est un espace en ligne collaboratif qui réunit locuteurs natifs, apprenants, enseignants,
-            chercheurs et membres de la diaspora pour <strong class="text-gray-900">apprendre,
-            transmettre et sauver ces langues</strong>, ensemble.
+            L'Afrique regorge de trésors culturels, touristiques, économiques et humains encore trop
+            peu connus. <strong class="text-gray-900">Afripulse</strong> invite chacun à les
+            <strong class="text-gray-900">faire découvrir et à les promouvoir</strong> : mettez en
+            lumière les territoires, les communautés et les opportunités du continent, pour donner à
+            l'Afrique la visibilité qu'elle mérite.
           </p>
 
           <!-- Ce que vous pouvez faire -->
@@ -88,8 +88,8 @@
               Notre objectif
             </h3>
             <p class="text-gray-700 text-sm leading-relaxed">
-              Sauvegarder et faire revivre les langues africaines, rendre leur apprentissage
-              accessible à tous, et renforcer le lien culturel entre l'Afrique et sa diaspora.
+              Développer le tourisme et les opportunités locales, valoriser les patrimoines africains
+              et donner de la visibilité aux territoires du continent et à leurs communautés.
             </p>
           </div>
         </div>
@@ -115,33 +115,32 @@ defineEmits<{ close: [] }>()
 
 const fonctionnalites = [
   {
-    icone: 'video',
-    titre: 'Salles de langue en direct',
-    texte: 'Rejoignez des salles de visioconférence par langue et par territoire pour pratiquer avec des locuteurs natifs.',
+    icone: 'location-dot',
+    titre: 'Promotion territoriale',
+    texte: 'Sites emblématiques et destinations à faire découvrir dans chaque territoire africain.',
   },
   {
-    icone: 'chalkboard-user',
-    titre: 'Ateliers & accompagnement',
-    texte: 'Participez à des ateliers de conversation en direct et trouvez un accompagnateur pour progresser.',
+    icone: 'plane',
+    titre: 'Tourisme collaboratif',
+    texte: 'Sites touristiques et avis de visiteurs partagés par la communauté.',
   },
   {
-    icone: 'book-open',
-    titre: 'Ressources par langue',
-    texte: 'Retrouvez l\'alphabet, un dictionnaire et les documents, vidéos et liens partagés dans chaque salle.',
+    icone: 'utensils',
+    titre: "Saveurs d'Afrique",
+    texte: 'Recettes culinaires et leurs procédés, pour voyager aussi par le goût.',
   },
   {
-    icone: 'door-open',
-    titre: 'Vos propres salles',
-    texte: 'Proposez une salle publique ou créez une salle privée protégée par un code pour votre groupe.',
+    icone: 'briefcase',
+    titre: 'Opportunités économiques',
+    texte: 'Secteurs porteurs, contacts utiles et références pour explorer les opportunités des territoires.',
   },
 ]
 
 const outils = [
-  'Visioconférence',
-  'Tableau blanc interactif',
-  'Chat en direct',
-  'Ressources partagées',
-  'Réactions en direct',
+  'Cartographie interactive',
+  'Galeries photos',
+  'Avis & recommandations',
+  'Répertoire territorial',
 ]
 </script>
 

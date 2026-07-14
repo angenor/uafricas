@@ -12,6 +12,9 @@ const { tableauDeBord, basculerTrouvable, rechercherAvisPublics } = useRetrouvAm
 
 const estConnecte = computed(() => userStore.isAuthenticated)
 
+// Modale de présentation « C'est quoi Africonnect ? »
+const presentationOuverte = ref(false)
+
 // ── Mode d'affichage : liste ou carte ─────────────────────
 const viewMode = ref<'liste' | 'carte'>('liste')
 
@@ -222,7 +225,17 @@ onMounted(() => {
             Retrouvez vos amis, proches et connaissances perdus de vue grâce à la communauté panafricaine.
           </p>
         </div>
-        <div class="flex flex-wrap justify-center gap-4 mt-6">
+        <div class="flex flex-wrap items-center justify-center gap-3 mt-6">
+          <!-- Bouton d'aide : ouvre la présentation d'Africonnect -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Africonnect"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Africonnect&nbsp;?
+          </button>
           <button
             v-if="estConnecte"
             class="px-6 py-3 bg-white text-custom-chocolat font-semibold rounded-lg hover:bg-amber-50 transition-colors cursor-pointer"
@@ -251,6 +264,12 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi Africonnect ? » -->
+    <RetrouveAmisPresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Comment ça marche (placé avant le listing : comprendre avant de commencer) -->
     <section class="py-10 px-4 bg-white border-b border-gray-100">

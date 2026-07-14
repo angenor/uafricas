@@ -31,6 +31,9 @@ const videoRef = ref<HTMLVideoElement | null>(null)
 const audioMuted = ref(true)
 const isMobile = ref(false)
 
+// Modale de présentation « C'est quoi Africans Télé ? »
+const presentationOuverte = ref(false)
+
 // Données chargées depuis l'API
 const chaines = ref<TvChannel[]>([])
 const programmes = ref<TvProgram[]>([])
@@ -321,9 +324,28 @@ onMounted(() => {
     <!-- Section Télés -->
     <div class="bg-gray-900 px-4 py-12">
       <div class="max-w-6xl mx-auto">
-        <h2 class="text-3xl font-bold text-white mb-8 text-center">
+        <h2 class="text-3xl font-bold text-white mb-4 text-center">
           Nos télés <span class="text-yellow-400">Africaines</span>
         </h2>
+
+        <!-- Bouton d'aide : ouvre la présentation d'Africans Télé -->
+        <div class="mb-10 flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Africans Télé"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Africans Télé&nbsp;?
+          </button>
+        </div>
+
+        <!-- Modale de présentation « C'est quoi Africans Télé ? » -->
+        <MediaTelePresentationModal
+          :open="presentationOuverte"
+          @close="presentationOuverte = false"
+        />
 
         <!-- Statistiques -->
         <div v-if="stats.length > 0" class="bg-gradient-to-r from-custom-green to-custom-chocolat rounded-2xl p-8 text-white mb-12">

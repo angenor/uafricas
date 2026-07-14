@@ -44,6 +44,7 @@
         :total-experts="totalExperts"
         :categories="categories"
         @search="handleSearch"
+        @presentation="presentationOuverte = true"
       />
 
       <!-- Main Content Section -->
@@ -322,6 +323,12 @@
       @close="filtreSurMesureOuvert = false"
       @apply="appliquerFiltreSurMesure"
     />
+
+    <!-- Modale de présentation « C'est quoi Diapertise ? » -->
+    <ExpertsPresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
   </div>
 </template>
 
@@ -359,6 +366,9 @@ const sidebarOpen = ref(false)
 const currentPage = ref(1)
 const parPage = 12
 const filtreSurMesureOuvert = ref(false)
+
+// Modale de présentation « C'est quoi Diapertise ? »
+const presentationOuverte = ref(false)
 
 // Sort options
 const sortOptions = [

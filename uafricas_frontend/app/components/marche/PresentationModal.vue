@@ -22,11 +22,11 @@
 
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-              <font-awesome-icon :icon="['fas', 'language']" class="w-6 h-6" />
+              <font-awesome-icon :icon="['fas', 'store']" class="w-6 h-6" />
             </div>
             <div>
-              <h2 class="text-xl md:text-2xl font-bold leading-tight">Afrolang</h2>
-              <p class="text-white/90 text-sm">Préserver, transmettre et faire revivre nos langues</p>
+              <h2 class="text-xl md:text-2xl font-bold leading-tight">Marché africain</h2>
+              <p class="text-white/90 text-sm">Le marché collaboratif de l'Afrique et de sa diaspora</p>
             </div>
           </div>
         </div>
@@ -35,11 +35,12 @@
         <div class="overflow-y-auto px-6 py-6 space-y-8">
           <!-- Le pourquoi -->
           <p class="text-gray-700 leading-relaxed">
-            Beaucoup de langues africaines et afro-descendantes disparaissent peu à peu, et les
-            nouvelles générations s'en éloignent. <strong class="text-gray-900">Afrolang</strong>
-            est un espace en ligne collaboratif qui réunit locuteurs natifs, apprenants, enseignants,
-            chercheurs et membres de la diaspora pour <strong class="text-gray-900">apprendre,
-            transmettre et sauver ces langues</strong>, ensemble.
+            Le <strong class="text-gray-900">Marché africain</strong> est une place de marché en
+            ligne où l'Afrique, sa diaspora et les communautés afrodescendantes
+            <strong class="text-gray-900">achètent, vendent, échangent et s'entraident</strong>.
+            En reliant directement les producteurs, les PME et les acheteurs, il fait tourner le
+            commerce à l'intérieur du continent comme avec le reste du monde, et met en lumière
+            les produits, les savoir-faire et les marques de chez nous.
           </p>
 
           <!-- Ce que vous pouvez faire -->
@@ -88,8 +89,8 @@
               Notre objectif
             </h3>
             <p class="text-gray-700 text-sm leading-relaxed">
-              Sauvegarder et faire revivre les langues africaines, rendre leur apprentissage
-              accessible à tous, et renforcer le lien culturel entre l'Afrique et sa diaspora.
+              Faire grandir le commerce entre l'Afrique et sa diaspora, valoriser les savoir-faire
+              du continent, et soutenir les PME et les entrepreneurs locaux.
             </p>
           </div>
         </div>
@@ -115,33 +116,31 @@ defineEmits<{ close: [] }>()
 
 const fonctionnalites = [
   {
-    icone: 'video',
-    titre: 'Salles de langue en direct',
-    texte: 'Rejoignez des salles de visioconférence par langue et par territoire pour pratiquer avec des locuteurs natifs.',
+    icone: 'store',
+    titre: 'Vendre produits et services',
+    texte: 'Mettez en avant ce que vous fabriquez ou proposez, et touchez toute la communauté.',
   },
   {
-    icone: 'chalkboard-user',
-    titre: 'Ateliers & accompagnement',
-    texte: 'Participez à des ateliers de conversation en direct et trouvez un accompagnateur pour progresser.',
+    icone: 'right-left',
+    titre: 'Échanger et troquer',
+    texte: 'Troquez des biens entre membres, sans forcément passer par l\'argent.',
   },
   {
-    icone: 'book-open',
-    titre: 'Ressources par langue',
-    texte: 'Retrouvez l\'alphabet, un dictionnaire et les documents, vidéos et liens partagés dans chaque salle.',
+    icone: 'hand-holding-heart',
+    titre: 'Donner et recevoir',
+    texte: 'Offrez des biens ou des ressources, ou trouvez le coup de pouce dont vous avez besoin.',
   },
   {
-    icone: 'door-open',
-    titre: 'Vos propres salles',
-    texte: 'Proposez une salle publique ou créez une salle privée protégée par un code pour votre groupe.',
+    icone: 'handshake',
+    titre: 'Saisir des opportunités',
+    texte: 'Repérez des affaires et nouez des partenariats à travers le continent.',
   },
 ]
 
 const outils = [
-  'Visioconférence',
-  'Tableau blanc interactif',
-  'Chat en direct',
-  'Ressources partagées',
-  'Réactions en direct',
+  'Marché dédié',
+  'Catalogue produits détaillé',
+  'Messagerie intégrée',
 ]
 </script>
 

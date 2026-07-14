@@ -6,6 +6,8 @@ const userStore = useUserStore()
 const estConnecte = computed(() => userStore.isAuthenticated)
 
 const showProposer = ref(false)
+// Modale de présentation « C'est quoi Vidafrica ? »
+const presentationOuverte = ref(false)
 const videos = ref<VideoAfrica[]>([])
 const languesFiltre = ref<{ code: string; label: string; nombreVideos: number }[]>([])
 const chargement = ref(true)
@@ -71,6 +73,19 @@ onMounted(async () => {
           </p>
         </div>
 
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation de Vidafrica -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Vidafrica"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Vidafrica&nbsp;?
+          </button>
+        </div>
+
         <!-- Barre de recherche -->
         <div class="mt-5 max-w-xl mx-auto">
           <div class="relative">
@@ -99,6 +114,12 @@ onMounted(async () => {
 
     <!-- Modale : proposer une vidéo -->
     <VidafricaProposerVideoModal v-model="showProposer" />
+
+    <!-- Modale de présentation « C'est quoi Vidafrica ? » -->
+    <VidafricaPresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Filtres langues -->
     <section v-if="languesFiltre.length > 0" class="max-w-5xl mx-auto px-4 py-6">

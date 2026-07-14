@@ -16,8 +16,27 @@
             Rendre visible pour chaque territoire africain les opportunités touristiques, d'investissement et toute autre opportunité pertinente.
           </p>
         </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation d'Afripulse -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Afripulse"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Afripulse&nbsp;?
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi Afripulse ? » -->
+    <OpportuniteAfriquePresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Contenu principal -->
     <div class="max-w-6xl mx-auto px-4 relative mt-6">
@@ -341,6 +360,9 @@ useHead({
 })
 
 const { chargement, listerFiches, listerRegions } = useOpportuniteAfrique()
+
+// Modale de présentation « C'est quoi Afripulse ? »
+const presentationOuverte = ref(false)
 
 const paysList = ref<FichePaysAPI[]>([])
 const searchTerm = ref('')

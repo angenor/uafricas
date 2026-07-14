@@ -16,8 +16,27 @@
             Institut universitaire pour le développement de l'Afrique — vulgariser des formations de masse sur des enjeux d'intérêt pour le développement et le renforcement de gouvernance en Afrique.
           </p>
         </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation de Muniversa -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Muniversa"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Muniversa&nbsp;?
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi Muniversa ? » -->
+    <UniversitePresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Statistiques -->
     <div class="max-w-6xl mx-auto px-4 mt-6">
@@ -233,6 +252,9 @@ const { listerFormations, obtenirStatsUniversite } = useFormations()
 
 const loading = ref(true)
 const afficherAPropos = ref(false)
+
+// Modale de présentation « C'est quoi Muniversa ? »
+const presentationOuverte = ref(false)
 
 const stats = ref({
   nombreFacultes: 0,

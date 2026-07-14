@@ -25,8 +25,27 @@
             Permettre à des africains ou à des écoles de consulter vos publications ou ouvrages.
           </p>
         </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation de la Bibliothèque Numérique -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur la Bibliothèque Numérique"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Numetech&nbsp;?
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi Numetech ? » -->
+    <BibliothequeNumeriquePresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Barre de recherche -->
     <div class="max-w-4xl mx-auto mt-6 relative z-10 px-4">
@@ -385,6 +404,9 @@ useAOS()
 
 // Composable API bibliotheque
 const { chargement, erreur, listerLivres, creerLivre } = useBibliotheque()
+
+// Modale de présentation « C'est quoi Numetech ? »
+const presentationOuverte = ref(false)
 
 // Etat de recherche et filtrage
 const searchQuery = ref('')

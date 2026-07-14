@@ -22,11 +22,11 @@
 
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-              <font-awesome-icon :icon="['fas', 'language']" class="w-6 h-6" />
+              <font-awesome-icon :icon="['fas', 'users']" class="w-6 h-6" />
             </div>
             <div>
-              <h2 class="text-xl md:text-2xl font-bold leading-tight">Afrolang</h2>
-              <p class="text-white/90 text-sm">Préserver, transmettre et faire revivre nos langues</p>
+              <h2 class="text-xl md:text-2xl font-bold leading-tight">Africonnect</h2>
+              <p class="text-white/90 text-sm">Renouer les liens à travers l'Afrique et sa diaspora</p>
             </div>
           </div>
         </div>
@@ -35,11 +35,10 @@
         <div class="overflow-y-auto px-6 py-6 space-y-8">
           <!-- Le pourquoi -->
           <p class="text-gray-700 leading-relaxed">
-            Beaucoup de langues africaines et afro-descendantes disparaissent peu à peu, et les
-            nouvelles générations s'en éloignent. <strong class="text-gray-900">Afrolang</strong>
-            est un espace en ligne collaboratif qui réunit locuteurs natifs, apprenants, enseignants,
-            chercheurs et membres de la diaspora pour <strong class="text-gray-900">apprendre,
-            transmettre et sauver ces langues</strong>, ensemble.
+            La vie, les migrations et le temps nous éloignent parfois de personnes qui comptent.
+            <strong class="text-gray-900">Africonnect</strong> vous aide à
+            <strong class="text-gray-900">retrouver familles, amis et connaissances perdus de vue</strong>,
+            partout en Afrique et dans la diaspora — et à renouer le contact en toute confiance.
           </p>
 
           <!-- Ce que vous pouvez faire -->
@@ -88,8 +87,9 @@
               Notre objectif
             </h3>
             <p class="text-gray-700 text-sm leading-relaxed">
-              Sauvegarder et faire revivre les langues africaines, rendre leur apprentissage
-              accessible à tous, et renforcer le lien culturel entre l'Afrique et sa diaspora.
+              Reconnecter familles, amis et connaissances séparés par la distance ou le temps,
+              renforcer le tissu communautaire panafricain et faciliter les retrouvailles à travers
+              le continent et la diaspora.
             </p>
           </div>
         </div>
@@ -115,33 +115,32 @@ defineEmits<{ close: [] }>()
 
 const fonctionnalites = [
   {
-    icone: 'video',
-    titre: 'Salles de langue en direct',
-    texte: 'Rejoignez des salles de visioconférence par langue et par territoire pour pratiquer avec des locuteurs natifs.',
+    icone: 'magnifying-glass',
+    titre: 'Recherchez une personne',
+    texte: 'Retrouvez quelqu\'un à partir d\'un nom, d\'un lieu ou d\'une école.',
   },
   {
-    icone: 'chalkboard-user',
-    titre: 'Ateliers & accompagnement',
-    texte: 'Participez à des ateliers de conversation en direct et trouvez un accompagnateur pour progresser.',
+    icone: 'bullhorn',
+    titre: 'Lancez un avis de recherche',
+    texte: 'Décrivez la personne recherchée et mobilisez toute la communauté panafricaine.',
   },
   {
-    icone: 'book-open',
-    titre: 'Ressources par langue',
-    texte: 'Retrouvez l\'alphabet, un dictionnaire et les documents, vidéos et liens partagés dans chaque salle.',
+    icone: 'handshake',
+    titre: 'Reconnectez en confiance',
+    texte: 'La mise en relation ne se fait qu\'avec l\'accord des deux personnes concernées.',
   },
   {
-    icone: 'door-open',
-    titre: 'Vos propres salles',
-    texte: 'Proposez une salle publique ou créez une salle privée protégée par un code pour votre groupe.',
+    icone: 'user-check',
+    titre: 'Validez les correspondances',
+    texte: 'Vérifiez et confirmez les pistes proposées avant tout partage de coordonnées.',
   },
 ]
 
 const outils = [
-  'Visioconférence',
-  'Tableau blanc interactif',
-  'Chat en direct',
-  'Ressources partagées',
-  'Réactions en direct',
+  'Moteur de recherche',
+  'Profils membres',
+  'Notifications',
+  'Validation & signalement',
 ]
 </script>
 

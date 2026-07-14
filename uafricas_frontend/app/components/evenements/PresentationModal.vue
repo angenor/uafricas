@@ -22,11 +22,11 @@
 
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-              <font-awesome-icon :icon="['fas', 'language']" class="w-6 h-6" />
+              <font-awesome-icon :icon="['fas', 'calendar-days']" class="w-6 h-6" />
             </div>
             <div>
-              <h2 class="text-xl md:text-2xl font-bold leading-tight">Afrolang</h2>
-              <p class="text-white/90 text-sm">Préserver, transmettre et faire revivre nos langues</p>
+              <h2 class="text-xl md:text-2xl font-bold leading-tight">Africalive</h2>
+              <p class="text-white/90 text-sm">Vos événements virtuels panafricains</p>
             </div>
           </div>
         </div>
@@ -35,11 +35,11 @@
         <div class="overflow-y-auto px-6 py-6 space-y-8">
           <!-- Le pourquoi -->
           <p class="text-gray-700 leading-relaxed">
-            Beaucoup de langues africaines et afro-descendantes disparaissent peu à peu, et les
-            nouvelles générations s'en éloignent. <strong class="text-gray-900">Afrolang</strong>
-            est un espace en ligne collaboratif qui réunit locuteurs natifs, apprenants, enseignants,
-            chercheurs et membres de la diaspora pour <strong class="text-gray-900">apprendre,
-            transmettre et sauver ces langues</strong>, ensemble.
+            <strong class="text-gray-900">Africalive</strong> est votre espace d'événements
+            100&nbsp;% en ligne pour rassembler l'Afrique, ses diasporas et ses afrodescendants.
+            Webinaires, conférences, forums ou ateliers&nbsp;: on se retrouve autour des grands
+            enjeux du continent pour <strong class="text-gray-900">échanger des idées, apprendre
+            les uns des autres et construire ensemble des solutions concrètes</strong>.
           </p>
 
           <!-- Ce que vous pouvez faire -->
@@ -88,8 +88,9 @@
               Notre objectif
             </h3>
             <p class="text-gray-700 text-sm leading-relaxed">
-              Sauvegarder et faire revivre les langues africaines, rendre leur apprentissage
-              accessible à tous, et renforcer le lien culturel entre l'Afrique et sa diaspora.
+              Faire vivre un vrai dialogue panafricain&nbsp;: diffuser les connaissances et les
+              bonnes pratiques, et faire naître de nouveaux partenariats et de nouvelles
+              coopérations à travers le continent et sa diaspora.
             </p>
           </div>
         </div>
@@ -115,33 +116,27 @@ defineEmits<{ close: [] }>()
 
 const fonctionnalites = [
   {
-    icone: 'video',
-    titre: 'Salles de langue en direct',
-    texte: 'Rejoignez des salles de visioconférence par langue et par territoire pour pratiquer avec des locuteurs natifs.',
+    icone: 'calendar-plus',
+    titre: 'Organiser vos événements',
+    texte: 'Webinaires, conférences, forums ou ateliers collaboratifs : lancez et animez votre événement en quelques clics.',
   },
   {
-    icone: 'chalkboard-user',
-    titre: 'Ateliers & accompagnement',
-    texte: 'Participez à des ateliers de conversation en direct et trouvez un accompagnateur pour progresser.',
+    icone: 'comments',
+    titre: 'Participer en direct',
+    texte: 'Inscrivez-vous en ligne, intervenez pendant les sessions et posez vos questions en temps réel.',
   },
   {
-    icone: 'book-open',
-    titre: 'Ressources par langue',
-    texte: 'Retrouvez l\'alphabet, un dictionnaire et les documents, vidéos et liens partagés dans chaque salle.',
-  },
-  {
-    icone: 'door-open',
-    titre: 'Vos propres salles',
-    texte: 'Proposez une salle publique ou créez une salle privée protégée par un code pour votre groupe.',
+    icone: 'play',
+    titre: 'Revoir à tout moment',
+    texte: 'Une fois l\'événement terminé, sa rediffusion reste accessible quand vous le souhaitez.',
   },
 ]
 
 const outils = [
   'Visioconférence',
-  'Tableau blanc interactif',
-  'Chat en direct',
-  'Ressources partagées',
-  'Réactions en direct',
+  'Streaming en direct',
+  'Chat interactif',
+  'Gestion des inscriptions',
 ]
 </script>
 

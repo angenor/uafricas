@@ -22,11 +22,11 @@
 
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-              <font-awesome-icon :icon="['fas', 'language']" class="w-6 h-6" />
+              <font-awesome-icon :icon="['fas', 'users']" class="w-6 h-6" />
             </div>
             <div>
-              <h2 class="text-xl md:text-2xl font-bold leading-tight">Afrolang</h2>
-              <p class="text-white/90 text-sm">Préserver, transmettre et faire revivre nos langues</p>
+              <h2 class="text-xl md:text-2xl font-bold leading-tight">Bibliothèques Humaines</h2>
+              <p class="text-white/90 text-sm">Rencontrer celles et ceux qui portent la mémoire du continent</p>
             </div>
           </div>
         </div>
@@ -35,11 +35,12 @@
         <div class="overflow-y-auto px-6 py-6 space-y-8">
           <!-- Le pourquoi -->
           <p class="text-gray-700 leading-relaxed">
-            Beaucoup de langues africaines et afro-descendantes disparaissent peu à peu, et les
-            nouvelles générations s'en éloignent. <strong class="text-gray-900">Afrolang</strong>
-            est un espace en ligne collaboratif qui réunit locuteurs natifs, apprenants, enseignants,
-            chercheurs et membres de la diaspora pour <strong class="text-gray-900">apprendre,
-            transmettre et sauver ces langues</strong>, ensemble.
+            En Afrique, on dit qu'un vieillard qui meurt est une bibliothèque qui brûle.
+            <strong class="text-gray-900">HumanTech</strong> relie celles et ceux qui détiennent
+            un savoir — aînés, griots, experts, témoins de l'histoire — à celles et ceux qui
+            veulent apprendre. Ici, on ne prête pas des livres&nbsp;: on
+            <strong class="text-gray-900">écoute des personnes</strong>, on recueille leurs
+            expériences de vie et on garde vivante la mémoire du continent et de ses diasporas.
           </p>
 
           <!-- Ce que vous pouvez faire -->
@@ -88,8 +89,9 @@
               Notre objectif
             </h3>
             <p class="text-gray-700 text-sm leading-relaxed">
-              Sauvegarder et faire revivre les langues africaines, rendre leur apprentissage
-              accessible à tous, et renforcer le lien culturel entre l'Afrique et sa diaspora.
+              Préserver le patrimoine immatériel vivant de l'Afrique, transmettre directement les
+              savoirs et les expériences, et donner toute leur place à celles et ceux qui portent
+              ces mémoires.
             </p>
           </div>
         </div>
@@ -115,33 +117,31 @@ defineEmits<{ close: [] }>()
 
 const fonctionnalites = [
   {
-    icone: 'video',
-    titre: 'Salles de langue en direct',
-    texte: 'Rejoignez des salles de visioconférence par langue et par territoire pour pratiquer avec des locuteurs natifs.',
+    icone: 'user-tie',
+    titre: 'Devenir bibliothèque humaine',
+    texte: 'Créez votre profil et présentez les domaines et expériences que vous souhaitez transmettre.',
   },
   {
-    icone: 'chalkboard-user',
-    titre: 'Ateliers & accompagnement',
-    texte: 'Participez à des ateliers de conversation en direct et trouvez un accompagnateur pour progresser.',
+    icone: 'id-card',
+    titre: 'Consulter les profils',
+    texte: 'Parcourez les biographies, les spécialités et les domaines de nos personnes ressources.',
   },
   {
-    icone: 'book-open',
-    titre: 'Ressources par langue',
-    texte: 'Retrouvez l\'alphabet, un dictionnaire et les documents, vidéos et liens partagés dans chaque salle.',
+    icone: 'magnifying-glass',
+    titre: 'Rechercher une personne ressource',
+    texte: 'Trouvez la bonne personne grâce à la recherche et aux filtres par spécialité.',
   },
   {
-    icone: 'door-open',
-    titre: 'Vos propres salles',
-    texte: 'Proposez une salle publique ou créez une salle privée protégée par un code pour votre groupe.',
+    icone: 'comments',
+    titre: 'Réagir & recommander',
+    texte: 'Aimez, commentez et recommandez les personnes ressources dont le savoir vous a marqué.',
   },
 ]
 
 const outils = [
-  'Visioconférence',
-  'Tableau blanc interactif',
-  'Chat en direct',
-  'Ressources partagées',
-  'Réactions en direct',
+  'Répertoire de personnes ressources',
+  'Recherche par spécialité',
+  'Réactions & recommandations',
 ]
 </script>
 

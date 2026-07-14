@@ -14,8 +14,27 @@
             Offrir des canaux aux entreprises et organisations en Afrique de bénéficier de l'expérience pointue de la diaspora dans des domaines clés de développement.
           </p>
         </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation de Sabbafrica -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Sabbafrica"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Sabbafrica&nbsp;?
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi Sabbafrica ? » -->
+    <SabbatiquePresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Contenu principal -->
     <div class="max-w-7xl mx-auto px-4 relative mt-6">
@@ -350,6 +369,9 @@ useHead({
     }
   ]
 })
+
+// Modale de présentation « C'est quoi Sabbafrica ? »
+const presentationOuverte = ref(false)
 
 const viewMode = ref<'grille' | 'carte'>('carte')
 

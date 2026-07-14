@@ -17,8 +17,27 @@
             Offrir un marché virtuel aux africains, aux afro-descendants et à la diaspora africaine.
           </p>
         </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation du Marché africain -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur le Marché africain"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi le Marché africain&nbsp;?
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi le Marché africain ? » -->
+    <MarchePresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Barre de recherche -->
     <div class="max-w-4xl mx-auto -mt-5 relative z-10 px-4">
@@ -387,6 +406,9 @@ const totalPages = ref(1)
 const currentPage = ref(1)
 const showMobileFilters = ref(false)
 const showPublishModal = ref(false)
+
+// Modale de présentation « C'est quoi le Marché africain ? »
+const presentationOuverte = ref(false)
 
 const filtres = ref<FiltresAnnonce>({
   categorie: 'Tout',
