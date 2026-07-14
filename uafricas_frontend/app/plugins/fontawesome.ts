@@ -198,6 +198,7 @@ import {
   faForward,
   faVolumeHigh,
   faVolumeXmark,
+  faCircleQuestion,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -230,6 +231,7 @@ library.add(
   faForward,
   faVolumeHigh,
   faVolumeXmark,
+  faCircleQuestion,
   faArrowRight,
   faArrowDown,
   faTv,

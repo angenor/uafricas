@@ -40,17 +40,36 @@
           </p>
         </div>
 
-        <button
-          v-if="userStore.isAuthenticated"
-          type="button"
-          class="mt-4 inline-flex items-center gap-2 rounded-full bg-white/95 hover:bg-white text-custom-chocolat font-semibold text-sm px-5 py-2.5 shadow-lg transition-colors"
-          @click="proposerOuvert = true"
-        >
-          <font-awesome-icon :icon="['fas', 'lightbulb']" class="w-4 h-4" />
-          Proposer une salle
-        </button>
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation d'Afrolang -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Afrolang"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Afrolang&nbsp;?
+          </button>
+
+          <button
+            v-if="userStore.isAuthenticated"
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/95 hover:bg-white text-custom-chocolat font-semibold text-sm px-5 py-2.5 shadow-lg transition-colors"
+            @click="proposerOuvert = true"
+          >
+            <font-awesome-icon :icon="['fas', 'lightbulb']" class="w-4 h-4" />
+            Proposer une salle
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi Afrolang ? » -->
+    <AfrolangPresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Breadcrumb -->
     <div class="bg-gray-50">
@@ -394,6 +413,9 @@ const { redirigerVersConnexion } = useAuth()
 
 // Modale « Proposer une salle » (feature 001-admin-salles-publiques, US1)
 const proposerOuvert = ref(false)
+
+// Modale de présentation « C'est quoi Afrolang ? »
+const presentationOuverte = ref(false)
 
 const {
   listerSalles,
