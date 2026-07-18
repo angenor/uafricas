@@ -3,7 +3,7 @@
     <!-- Mobile : Logo + hamburger -->
     <div class="flex items-center justify-between lg:hidden px-4 h-16">
       <NuxtLink to="/">
-        <img class="h-14 sm:h-16" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
+        <img class="h-14 sm:h-16" src="/logos/logo_uafracas.png" alt="AfricanS Logo" />
       </NuxtLink>
 
       <div class="flex items-center gap-1">
@@ -28,7 +28,7 @@
     <nav class="hidden lg:flex items-center justify-center relative py-1.5 px-4 lg:px-6">
       <!-- Logo à gauche (absolu pour ne pas décaler le centrage) -->
       <NuxtLink to="/" class="absolute left-4 lg:left-6">
-        <img class="h-16" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
+        <img class="h-16" src="/logos/logo_uafracas.png" alt="AfricanS Logo" />
       </NuxtLink>
 
       <!-- Menus principaux (centrés) -->
@@ -514,8 +514,8 @@ const menus: NavMenu[] = [
     items: [
       { label: 'Africalive', to: '/evenements/liste', description: 'Organiser un événement mettant en valeur l\'Afrique et son développement', icon: 'fa-solid fa-calendar-days' },
       { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Parler à une bibliothèque humaine', icon: 'fa-solid fa-chalkboard-user' },
-      { label: 'Numetech', to: '/bibliotheque/numerique', description: 'Permettre aux Africains et aux écoles de consulter vos publications', icon: 'fa-solid fa-display' },
-      { label: 'Muniversa', to: '/universite', description: 'Mindshift University of Africa — éduquer sur les enjeux prioritaires', icon: 'fa-solid fa-graduation-cap' },
+      { label: 'Librafrica', to: '/bibliotheque/numerique', description: 'Permettre aux Africains et aux écoles de consulter vos publications', icon: 'fa-solid fa-display' },
+      { label: 'Mindshiftlab', to: '/universite', description: 'Mindshift University of Africa — éduquer sur les enjeux prioritaires', icon: 'fa-solid fa-graduation-cap' },
     ]
   },
   {

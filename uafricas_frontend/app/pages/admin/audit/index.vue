@@ -105,7 +105,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
       </template>
 
       <template #cell-action="{ value }">
-        <span class="badge badge-sm" :class="actionBadge(value)">{{ value }}</span>
+        <span class="badge badge-sm" :class="actionBadge(value)" :title="value">{{ libelleAction(value) }}</span>
       </template>
 
       <template #cell-schema_name="{ value }">

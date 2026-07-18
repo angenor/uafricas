@@ -17,7 +17,7 @@
             Foire Aux Questions
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Retrouvez les réponses aux questions les plus fréquemment posées sur UAfricas.
+            Retrouvez les réponses aux questions les plus fréquemment posées sur AfricanS.
           </p>
         </div>
       </div>
@@ -82,9 +82,9 @@
 
 <script setup lang="ts">
 useHead({
-  title: 'FAQ - UAfricas',
+  title: 'FAQ - AfricanS',
   meta: [
-    { name: 'description', content: 'Foire aux questions - Trouvez les réponses à vos questions sur UAfricas.' }
+    { name: 'description', content: 'Foire aux questions - Trouvez les réponses à vos questions sur AfricanS.' }
   ]
 })
 
@@ -96,15 +96,15 @@ const toggleItem = (index: number) => {
 
 const faqItems = [
   {
-    question: "Qu'est-ce que UAfricas ?",
-    reponse: "UAfricas (United Africa for Sustainable Development) est un réseau international qui réunit les africain(e)s et afro-descendant(e)s autour de la promotion des valeurs culturelles, socio-économiques et scientifiques de l'Afrique. Le réseau vise un développement durable du continent à travers l'union des populations africaines et l'expertise de la diaspora."
+    question: "Qu'est-ce que AfricanS ?",
+    reponse: "AfricanS (United Africa for Sustainable Development) est un réseau international qui réunit les africain(e)s et afro-descendant(e)s autour de la promotion des valeurs culturelles, socio-économiques et scientifiques de l'Afrique. Le réseau vise un développement durable du continent à travers l'union des populations africaines et l'expertise de la diaspora."
   },
   {
     question: "Comment puis-je m'inscrire sur la plateforme ?",
     reponse: "Vous pouvez vous inscrire en cliquant sur le bouton « Se connecter » dans la barre de navigation, puis en choisissant « Créer un compte ». Remplissez le formulaire d'inscription avec vos informations personnelles. Un email de vérification vous sera envoyé pour activer votre compte."
   },
   {
-    question: "Comment devenir partenaire de UAfricas ?",
+    question: "Comment devenir partenaire de AfricanS ?",
     reponse: "Pour devenir partenaire, rendez-vous sur la page « Devenir Partenaire » accessible depuis le menu. Remplissez le formulaire de demande de partenariat en précisant votre organisation, votre motivation et le type de partenariat souhaité. Notre équipe examinera votre demande."
   },
   {
@@ -117,14 +117,14 @@ const faqItems = [
   },
   {
     question: "Comment contribuer à la gouvernance ?",
-    reponse: "La section « Gouvernance » vous permet de participer à travers plusieurs outils : FactCheck pour vérifier les informations, IdeaForces pour proposer des idées constructives, et BadHabits pour identifier les mauvaises pratiques à combattre. Chaque contribution est soumise à modération."
+    reponse: "La section « Gouvernance » vous permet de participer à travers plusieurs outils : FactCheck pour vérifier les informations, IdeaForces pour proposer des idées constructives, et BadGoodhabits pour identifier les mauvaises pratiques à combattre. Chaque contribution est soumise à modération."
   },
   {
     question: "La plateforme est-elle gratuite ?",
-    reponse: "Oui, l'inscription et l'accès aux fonctionnalités de base de UAfricas sont entièrement gratuits. La plateforme repose sur le volontariat de ses membres et le soutien de ses partenaires. Certains services spécifiques pourront être proposés à l'avenir."
+    reponse: "Oui, l'inscription et l'accès aux fonctionnalités de base de AfricanS sont entièrement gratuits. La plateforme repose sur le volontariat de ses membres et le soutien de ses partenaires. Certains services spécifiques pourront être proposés à l'avenir."
   },
   {
-    question: "Comment contacter l'équipe UAfricas ?",
+    question: "Comment contacter l'équipe AfricanS ?",
     reponse: "Vous pouvez nous contacter par email à uafricas@gmail.com ou via notre page de contact. Notre équipe s'efforcera de répondre à votre demande dans les meilleurs délais."
   }
 ]

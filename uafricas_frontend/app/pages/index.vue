@@ -10,9 +10,9 @@
 
 <script setup lang="ts">
 useHead({
-  title: 'Accueil - UAfricas',
+  title: 'Accueil - AfricanS',
   meta: [
-    { name: 'description', content: 'Bienvenue sur UAfricas - United Africa for Sustainable Development' }
+    { name: 'description', content: 'Bienvenue sur AfricanS - United Africa for Sustainable Development' }
   ]
 })
 </script>

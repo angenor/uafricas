@@ -9,9 +9,9 @@ const { rechercherAvisPublics, chargement, erreur } = useRetrouvAmis()
 
 // SEO
 useSeoMeta({
-  title: 'Rechercher un avis de recherche — UAfricas',
-  description: 'Parcourez les avis de recherche publics sur UAfricas. Aidez les gens a retrouver des amis perdus de vue en Afrique et dans le monde.',
-  ogTitle: 'Rechercher un avis de recherche — UAfricas',
+  title: 'Rechercher un avis de recherche — AfricanS',
+  description: 'Parcourez les avis de recherche publics sur AfricanS. Aidez les gens a retrouver des amis perdus de vue en Afrique et dans le monde.',
+  ogTitle: 'Rechercher un avis de recherche — AfricanS',
   ogDescription: 'Parcourez les avis de recherche publics et aidez a retrouver des amis perdus de vue.',
   ogType: 'website',
   ogUrl: 'https://www.africans-world.org/retrouve-amis/rechercher',

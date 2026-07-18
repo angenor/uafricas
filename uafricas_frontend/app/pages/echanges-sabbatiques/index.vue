@@ -317,7 +317,7 @@ import {
 const { listerProgrammes, chargement } = useSabbatiques()
 
 useHead({
-  title: 'Échanges Sabbafrica - UAfricas',
+  title: 'Échanges Sabbafrica - AfricanS',
   meta: [
     {
       name: 'description',

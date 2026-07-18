@@ -130,7 +130,6 @@
                 <p class="font-medium text-gray-800">
                   {{ initiative.user.prenom }} {{ initiative.user.nom }}
                 </p>
-                <p class="text-sm text-gray-500">{{ initiative.user.email }}</p>
               </div>
             </div>
           </div>
@@ -327,7 +326,7 @@ onMounted(async () => {
 
   if (initiative.value) {
     useHead({
-      title: `${initiative.value.titre} - Africantives - UAfricas`,
+      title: `${initiative.value.titre} - Africantives - AfricanS`,
       meta: [
         {
           name: 'description',

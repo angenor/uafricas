@@ -27,7 +27,7 @@
               <img
                 class="h-14 mx-auto filter drop-shadow-2xl"
                 src="/logos/logo_uafracas.png"
-                alt="UAfricas"
+                alt="AfricanS"
               />
             </NuxtLink>
             <h1 class="text-white text-xl font-bold mt-3 tracking-wide">
@@ -128,7 +128,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Verifiez votre email - UAfricas',
+  title: 'Verifiez votre email - AfricanS',
 })
 
 useAOS()

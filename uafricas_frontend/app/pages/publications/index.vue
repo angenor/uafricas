@@ -375,7 +375,7 @@ import type { PartageVideoAPI } from '~/composables/useVidafrica'
 import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 useHead({
-  title: 'Publications de la Communauté | UAfricas',
+  title: 'Publications de la Communauté | AfricanS',
 })
 
 type FiltreValue = 'tous' | 'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits' | 'territoire_partage' | 'profil_partage' | 'video_partage'
@@ -456,7 +456,7 @@ const filtres: { value: FiltreValue; label: string; icon: string[]; activeClasse
   { value: 'codimoi', label: 'Codimoi', icon: ['fas', 'quote-left'], activeClasses: 'bg-custom-chocolat text-white border-custom-chocolat' },
   { value: 'factcheck', label: 'FactCheck', icon: ['fas', 'magnifying-glass'], activeClasses: 'bg-blue-600 text-white border-blue-600' },
   { value: 'ideaforces', label: 'IdeaForces', icon: ['fas', 'lightbulb'], activeClasses: 'bg-amber-500 text-white border-amber-500' },
-  { value: 'badhabits', label: 'BadHabits', icon: ['fas', 'triangle-exclamation'], activeClasses: 'bg-red-600 text-white border-red-600' },
+  { value: 'badhabits', label: 'BadGoodhabits', icon: ['fas', 'triangle-exclamation'], activeClasses: 'bg-red-600 text-white border-red-600' },
   { value: 'territoire_partage', label: 'Territoires partagés', icon: ['fas', 'earth-africa'], activeClasses: 'bg-custom-green text-white border-custom-green' },
   { value: 'profil_partage', label: 'Profils partagés', icon: ['fas', 'user'], activeClasses: 'bg-custom-chocolat text-white border-custom-chocolat' },
   { value: 'video_partage', label: 'Vidéos partagées', icon: ['fas', 'video'], activeClasses: 'bg-purple-600 text-white border-purple-600' },
@@ -494,7 +494,7 @@ const STYLES_PAR_TYPE: Record<'codimoi' | 'factcheck' | 'ideaforces' | 'badhabit
     flecheHoverColor: 'group-hover:text-amber-600',
   },
   badhabits: {
-    label: 'BadHabits',
+    label: 'BadGoodhabits',
     icone: ['fas', 'triangle-exclamation'],
     iconeBg: 'bg-red-100 text-red-600',
     badge: 'bg-red-100 text-red-700',

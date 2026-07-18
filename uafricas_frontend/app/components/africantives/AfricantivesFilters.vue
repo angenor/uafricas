@@ -5,23 +5,7 @@
       Filtres
     </h3>
 
-    <!-- Domaine -->
-    <div class="mb-6">
-      <h4 class="text-sm font-medium text-gray-700 mb-3">Domaine</h4>
-      <select
-        :value="modelValue.domaine"
-        @change="updateDomaine"
-        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
-      >
-        <option value="">Tous les domaines</option>
-        <option v-for="dom in domaines" :key="dom.value" :value="dom.value">
-          {{ dom.label }}
-        </option>
-      </select>
-    </div>
-
-    <!-- Separateur -->
-    <hr class="my-6 border-gray-100" />
+    <!-- Domaine : filtré via la barre de puces de la page (dédup, audit #8) -->
 
     <!-- Pays -->
     <div class="mb-6">
@@ -67,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { DOMAINES_AFRICANTIVES, PAYS_AFRICAINS } from '~/composables/useAfricantives'
+import { PAYS_AFRICAINS } from '~/composables/useAfricantives'
 
 export interface FiltresAfricantive {
   domaine: string
@@ -85,15 +69,7 @@ const emit = defineEmits<{
   'reset': []
 }>()
 
-const domaines = DOMAINES_AFRICANTIVES.filter(d => d.value !== '')
 const pays = PAYS_AFRICAINS
-
-const updateDomaine = (event: Event) => {
-  emit('update:modelValue', {
-    ...props.modelValue,
-    domaine: (event.target as HTMLSelectElement).value,
-  })
-}
 
 const updatePays = (event: Event) => {
   emit('update:modelValue', {

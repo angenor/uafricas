@@ -173,7 +173,7 @@ import {
 } from '~/composables/useProjets'
 
 useHead({
-  title: 'Financer un Projet - UAfricas',
+  title: 'Financer un Projet - AfricanS',
   meta: [
     {
       name: 'description',

@@ -509,7 +509,7 @@ import {
 import { useUserStore } from '~/stores/user'
 
 useHead({
-  title: 'Soumettre un Projet - UAfricas',
+  title: 'Soumettre un Projet - AfricanS',
   meta: [
     {
       name: 'description',

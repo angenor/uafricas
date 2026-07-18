@@ -51,7 +51,7 @@ const breadcrumbs = computed(() => [
 ])
 
 useHead({
-  title: 'Détail Forum | UAfricas'
+  title: 'Détail Forum | AfricanS'
 })
 
 const handleAddComment = (data: { forumId: string; content: string }) => {

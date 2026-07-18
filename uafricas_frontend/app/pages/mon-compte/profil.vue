@@ -814,7 +814,7 @@ import type { MaDemandeAPI } from '~/composables/useBibliothequeHumaine'
 import type { MaCandidatureAPI } from '~/composables/useExperts'
 
 useHead({
-  title: 'Mon profil - UAfricas',
+  title: 'Mon profil - AfricanS',
 })
 
 useAOS()

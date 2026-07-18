@@ -4,7 +4,7 @@ import type { RadioStation } from '~/composables/useStationsRadio'
 const { listerStations, listerPays, listerGenres, chargement } = useStationsRadio()
 
 useHead({
-  title: 'Radios Nationales | UAfricas',
+  title: 'Radios Nationales | AfricanS',
   meta: [
     { name: 'description', content: 'Écoutez les radios nationales africaines de chaque territoire. Programmes locaux et informations régionales.' }
   ]

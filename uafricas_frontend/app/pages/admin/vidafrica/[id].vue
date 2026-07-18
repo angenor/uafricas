@@ -516,6 +516,11 @@ onMounted(() => charger())
                 >
                   Masquer
                 </button>
+                <AdminMiseEnAvantBouton
+                  v-if="piste.etat === 'publie'"
+                  type-objet="video"
+                  :objet-id="piste.id"
+                />
                 <button class="btn btn-ghost btn-xs text-error" @click="supprimerPisteAction(piste.id)">
                   <font-awesome-icon icon="trash" />
                 </button>

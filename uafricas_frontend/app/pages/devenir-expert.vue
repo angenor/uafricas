@@ -7,7 +7,7 @@ import {
   type MaCandidatureAPI,
 } from '~/composables/useExperts'
 
-useHead({ title: 'Devenir expert - UAfricas' })
+useHead({ title: 'Devenir expert - AfricanS' })
 useAOS()
 
 const router = useRouter()

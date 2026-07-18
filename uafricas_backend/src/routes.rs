@@ -204,6 +204,9 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/engagement/niveaux/{id}", web::put().to(admin::engagement::modifier_niveau))
                     .route("/engagement/journal", web::get().to(admin::engagement::lister_journal))
                     .route("/engagement/ajustement", web::post().to(admin::engagement::ajuster_points))
+                    .route("/engagement/mise-en-avant", web::post().to(admin::engagement::mettre_en_avant))
+                    .route("/engagement/mise-en-avant/{type_objet}/{objet_id}", web::get().to(admin::engagement::statut_mise_en_avant))
+                    .route("/engagement/mise-en-avant/{type_objet}/{objet_id}", web::delete().to(admin::engagement::retirer_mise_en_avant))
                     // AfroLang - Salles publiques
                     .route("/salles", web::get().to(admin::salles::lister_salles))
                     .route("/salles", web::post().to(admin::salles::creer_salle))

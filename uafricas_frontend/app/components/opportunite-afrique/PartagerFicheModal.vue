@@ -25,7 +25,7 @@ const urlPage = ref('')
 const copieLienOk = ref(false)
 
 const textePartage = computed(
-  () => `Découvrez ${props.paysNom} sur UAfricas`,
+  () => `Découvrez ${props.paysNom} sur AfricanS`,
 )
 
 const urlWhatsApp = computed(() =>
@@ -222,7 +222,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   <div class="w-full border-t border-gray-200"></div>
                 </div>
                 <div class="relative flex justify-center">
-                  <span class="bg-white px-3 text-xs font-medium text-gray-400">ou sur le mur UAfricas</span>
+                  <span class="bg-white px-3 text-xs font-medium text-gray-400">ou sur le mur AfricanS</span>
                 </div>
               </div>
 
@@ -258,7 +258,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                 <NuxtLink to="/login" class="text-custom-green font-medium hover:underline">
                   Connectez-vous
                 </NuxtLink>
-                pour partager aussi ce territoire sur le mur communautaire UAfricas.
+                pour partager aussi ce territoire sur le mur communautaire AfricanS.
               </p>
             </template>
           </div>

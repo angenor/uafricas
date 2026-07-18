@@ -346,7 +346,7 @@ import {
 } from '~/composables/useExperts'
 
 useHead({
-  title: 'Experts - UAfricas',
+  title: 'Experts - AfricanS',
   meta: [
     {
       name: 'description',

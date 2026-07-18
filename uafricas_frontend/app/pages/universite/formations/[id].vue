@@ -72,7 +72,6 @@
                 </div>
                 <div>
                   <h3 class="text-xl font-semibold">{{ formation.formateur.prenom }} {{ formation.formateur.nom }}</h3>
-                  <p class="text-gray-500 text-sm">{{ formation.formateur.email }}</p>
                 </div>
               </div>
             </div>

@@ -199,7 +199,7 @@ const soumettre = async () => {
             </div>
             <div v-if="form.type_organisateur === 'organisation'" class="form-control">
               <label class="label"><span class="label-text">Nom de l'organisation *</span></label>
-              <input v-model="form.contact_nom" type="text" class="input input-bordered" placeholder="Ex: Fondation UAfricas">
+              <input v-model="form.contact_nom" type="text" class="input input-bordered" placeholder="Ex: Fondation AfricanS">
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="form-control">

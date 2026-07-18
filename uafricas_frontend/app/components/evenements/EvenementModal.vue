@@ -130,8 +130,12 @@
                 id="datef"
                 v-model="form.date_heure_fin"
                 type="datetime-local"
+                :min="form.date_heure_debut || undefined"
                 class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden"
               />
+              <p v-if="!dateFinValide" class="mt-1 text-sm text-red-600">
+                L'heure de fin doit être postérieure à l'heure de début.
+              </p>
             </div>
 
             <!-- Adresse précise (présentiel / hybride) -->
@@ -230,7 +234,7 @@
                   v-model="form.contact_nom"
                   type="text"
                   class="w-full border-2 rounded-md p-2 border-custom-chocolat/40 focus:outline-hidden focus:border-custom-chocolat"
-                  placeholder="Ex. : Fondation UAfricas"
+                  placeholder="Ex. : Fondation AfricanS"
                 />
               </div>
 
@@ -382,6 +386,12 @@ const contactValide = computed(() =>
   form.type_organisateur !== 'organisation' || form.contact_nom.trim().length > 0
 )
 
+// Constat #16 : la fin doit être postérieure au début (fini les créneaux 13:04-13:04)
+const dateFinValide = computed(() => {
+  if (!form.date_heure_debut || !form.date_heure_fin) return true
+  return new Date(form.date_heure_fin) > new Date(form.date_heure_debut)
+})
+
 const isFormValid = computed(() => {
   return form.titre &&
     hasDescription.value &&
@@ -391,6 +401,7 @@ const isFormValid = computed(() => {
     form.ville &&
     form.date_heure_debut &&
     form.date_heure_fin &&
+    dateFinValide.value &&
     contactValide.value
 })
 

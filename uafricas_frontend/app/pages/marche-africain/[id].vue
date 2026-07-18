@@ -142,7 +142,6 @@
                 <p class="font-medium text-gray-800">
                   {{ annonce.user.prenom }} {{ annonce.user.nom }}
                 </p>
-                <p class="text-sm text-gray-500">{{ annonce.user.email }}</p>
               </div>
             </div>
 
@@ -476,7 +475,7 @@ onMounted(async () => {
 
   if (annonce.value) {
     useHead({
-      title: `${annonce.value.titre} - Marché Africain - UAfricas`,
+      title: `${annonce.value.titre} - Marché Africain - AfricanS`,
       meta: [
         {
           name: 'description',

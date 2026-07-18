@@ -365,11 +365,11 @@ import { useUserStore } from '~/stores/user'
 import { navigateTo } from '#app'
 
 useHead({
-  title: 'Marché Africain - UAfricas',
+  title: 'Marché Africain - AfricanS',
   meta: [
     {
       name: 'description',
-      content: 'Découvrez le Marché Africain UAfricas : annonces de vente, troc et dons à travers toute l\'Afrique. Agriculture, informatique, immobilier et plus.',
+      content: 'Découvrez le Marché Africain AfricanS : annonces de vente, troc et dons à travers toute l\'Afrique. Agriculture, informatique, immobilier et plus.',
     },
   ],
 })

@@ -111,7 +111,7 @@ async fn construire_response(
             uid: formateur.id,
             nom: formateur.nom,
             prenom: formateur.prenom,
-            email: formateur.email,
+            email: String::new(), // e-mail de compte non exposé publiquement (audit #26)
             photo_url: formateur.photo_url,
         },
         created_at: row.created_at,
@@ -272,7 +272,7 @@ pub async fn obtenir_mooc(
             uid: formateur.id,
             nom: formateur.nom,
             prenom: formateur.prenom,
-            email: formateur.email,
+            email: String::new(), // e-mail de compte non exposé publiquement (audit #26)
             photo_url: formateur.photo_url,
         },
         created_at: row.created_at,

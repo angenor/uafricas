@@ -127,9 +127,9 @@
 import { responsable } from '~/mocks/homepage'
 
 useHead({
-  title: 'Notre Mission - UAfricas',
+  title: 'Notre Mission - AfricanS',
   meta: [
-    { name: 'description', content: 'Découvrez la mission et les objectifs de UAfricas - United Africa for Sustainable Development.' }
+    { name: 'description', content: 'Découvrez la mission et les objectifs de AfricanS - United Africa for Sustainable Development.' }
   ]
 })
 

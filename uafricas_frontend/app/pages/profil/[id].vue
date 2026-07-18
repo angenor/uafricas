@@ -162,8 +162,8 @@ const onglets = computed(() => {
 useHead({
   title: computed(() =>
     profil.value
-      ? `${profil.value.prenom} ${profil.value.nom} — UAfricas`
-      : 'Profil — UAfricas',
+      ? `${profil.value.prenom} ${profil.value.nom} — AfricanS`
+      : 'Profil — AfricanS',
   ),
 })
 

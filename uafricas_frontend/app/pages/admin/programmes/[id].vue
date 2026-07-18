@@ -6,6 +6,12 @@ definePageMeta({ layout: 'admin', middleware: ['admin'] })
 const route = useRoute()
 const id = route.params.id as string
 const { programmeDetail, candidaturesProgramme, chargerDetail, modifier, changerEtat, chargerCandidaturesProgramme, loading, error } = useAdminProgrammes()
+const { listerTousDomaines } = useAdminDomaines()
+const { listerPays } = useCentresCulturels()
+
+// Sélecteurs de référentiel (audit #20 : fini les UUID en saisie libre)
+const domainesListe = ref<{ id: string, nom: string }[]>([])
+const paysListe = ref<{ id: string, nom: string }[]>([])
 
 const saving = ref(false)
 const erreurLocale = ref<string | null>(null)
@@ -173,6 +179,9 @@ const executerChangerEtat = async () => {
 }
 
 onMounted(async () => {
+  const [domaines, pays] = await Promise.all([listerTousDomaines(), listerPays()])
+  domainesListe.value = domaines.map(d => ({ id: d.id, nom: d.nom }))
+  paysListe.value = pays
   await charger()
   await chargerCandidaturesProgramme(id)
 })
@@ -249,13 +258,17 @@ onMounted(async () => {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="form-control">
                   <label class="label"><span class="label-text">Territoire de destination</span></label>
-                  <input v-model="form.pays_id" type="text" class="input input-bordered" placeholder="UUID du territoire">
-                  <label v-if="programmeDetail.pays_nom" class="label"><span class="label-text-alt text-success">{{ programmeDetail.pays_nom }}</span></label>
+                  <select v-model="form.pays_id" class="select select-bordered">
+                    <option value="">— Sélectionner un territoire —</option>
+                    <option v-for="p in paysListe" :key="p.id" :value="p.id">{{ p.nom }}</option>
+                  </select>
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text">Domaine</span></label>
-                  <input v-model="form.domaine_id" type="text" class="input input-bordered" placeholder="UUID du domaine">
-                  <label v-if="programmeDetail.domaine_nom" class="label"><span class="label-text-alt text-success">{{ programmeDetail.domaine_nom }}</span></label>
+                  <select v-model="form.domaine_id" class="select select-bordered">
+                    <option value="">— Sélectionner un domaine —</option>
+                    <option v-for="d in domainesListe" :key="d.id" :value="d.id">{{ d.nom }}</option>
+                  </select>
                 </div>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

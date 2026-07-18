@@ -4,7 +4,7 @@
       <!-- Titre -->
       <div class="text-center mb-12">
         <h2 class="text-custom-chocolat text-3xl sm:text-4xl lg:text-5xl font-display">
-          <span class="font-bold">D</span>écouvrir UAfricas
+          <span class="font-bold">D</span>écouvrir AfricanS
         </h2>
         <p class="text-gray-500 mt-3 text-lg max-w-2xl mx-auto">
           Apprenez-en plus sur notre organisation, notre mission et comment nous rejoindre.

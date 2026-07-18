@@ -7,7 +7,7 @@
           <span class="text-white font-display font-bold text-lg">UA</span>
         </div>
         <div v-if="!collapsed">
-          <h1 class="font-display font-bold text-lg leading-tight">UAfricas</h1>
+          <h1 class="font-display font-bold text-lg leading-tight">AfricanS</h1>
           <p class="text-xs text-base-content/60">Administration</p>
         </div>
       </NuxtLink>
@@ -161,7 +161,7 @@ const sidebarSections: SidebarSection[] = [
     ],
   },
   {
-    label: 'Université (Muniversa)',
+    label: 'Université (Mindshiftlab)',
     faIcon: 'graduation-cap',
     children: [
       { label: 'Facultés (INUDA)', faIcon: 'building-columns', route: '/admin/facultes' },

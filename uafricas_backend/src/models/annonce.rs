@@ -376,7 +376,7 @@ impl MesAnnonceRow {
                 uid: self.cree_par,
                 nom: self.auteur_nom.clone(),
                 prenom: self.auteur_prenom.clone(),
-                email: self.auteur_email.clone(),
+                email: String::new(), // e-mail de compte non exposé publiquement (audit #26)
                 telephone_verifie: self.auteur_telephone_verifie.unwrap_or(false),
                 documents_verifie: self.auteur_documents_verifie.unwrap_or(false),
                 compte_valide: self.auteur_compte_verifie_admin.unwrap_or(false),
@@ -480,7 +480,7 @@ impl AnnonceListeRow {
                 uid: self.cree_par,
                 nom: self.auteur_nom.clone(),
                 prenom: self.auteur_prenom.clone(),
-                email: self.auteur_email.clone(),
+                email: String::new(), // e-mail de compte non exposé publiquement (audit #26)
                 telephone_verifie: self.auteur_telephone_verifie.unwrap_or(false),
                 documents_verifie: self.auteur_documents_verifie.unwrap_or(false),
                 compte_valide: self.auteur_compte_verifie_admin.unwrap_or(false),
@@ -547,7 +547,7 @@ impl AnnonceDetailRow {
                 uid: self.cree_par,
                 nom: self.auteur_nom.clone(),
                 prenom: self.auteur_prenom.clone(),
-                email: self.auteur_email.clone(),
+                email: String::new(), // e-mail de compte non exposé publiquement (audit #26)
                 telephone_verifie: self.auteur_telephone_verifie.unwrap_or(false),
                 documents_verifie: self.auteur_documents_verifie.unwrap_or(false),
                 compte_valide: self.auteur_compte_verifie_admin.unwrap_or(false),

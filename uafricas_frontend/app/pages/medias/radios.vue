@@ -2,7 +2,7 @@
 import { radioCategories, radioStats } from '~/mocks/radios'
 
 useHead({
-  title: 'Radios Africaines | UAfricas',
+  title: 'Radios Africaines | AfricanS',
   meta: [
     { name: 'description', content: 'Découvrez les meilleures stations de radio africaines. Écoutez en direct les radios africaines internationales et nationales.' }
   ]

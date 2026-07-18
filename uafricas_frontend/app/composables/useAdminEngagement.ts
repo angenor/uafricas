@@ -107,10 +107,28 @@ export const useAdminEngagement = () => {
     })
   }
 
+  // ── Mise en avant d'une contribution (règle +5) ──
+  const statutMiseEnAvant = async (typeObjet: string, objetId: string): Promise<boolean> => {
+    const r = await adminFetch<ApiResponse<{ mis_en_avant: boolean }>>(
+      `/api/admin/engagement/mise-en-avant/${typeObjet}/${objetId}`,
+    )
+    return r.data?.mis_en_avant ?? false
+  }
+  const mettreEnAvant = async (typeObjet: string, objetId: string): Promise<void> => {
+    await adminFetch('/api/admin/engagement/mise-en-avant', {
+      method: 'POST',
+      body: { type_objet: typeObjet, objet_id: objetId },
+    })
+  }
+  const retirerMiseEnAvant = async (typeObjet: string, objetId: string): Promise<void> => {
+    await adminFetch(`/api/admin/engagement/mise-en-avant/${typeObjet}/${objetId}`, { method: 'DELETE' })
+  }
+
   return {
     listerRegles, modifierRegle,
     listerPaliers, creerPalier, modifierPalier, desactiverPalier,
     listerNiveaux, modifierNiveau,
     listerJournal, ajuster,
+    statutMiseEnAvant, mettreEnAvant, retirerMiseEnAvant,
   }
 }

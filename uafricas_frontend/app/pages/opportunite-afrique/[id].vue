@@ -418,13 +418,13 @@ const imageOg = computed(() => {
 })
 const descriptionOg = computed(() =>
   pays.value
-    ? `Découvrez ${pays.value.nom} : capitale ${pays.value.capitale}, population ${pays.value.population}, culture, langues et opportunités sur UAfricas.`
-    : 'Opportunités en Afrique — UAfricas',
+    ? `Découvrez ${pays.value.nom} : capitale ${pays.value.capitale}, population ${pays.value.population}, culture, langues et opportunités sur AfricanS.`
+    : 'Opportunités en Afrique — AfricanS',
 )
 
 useHead(() => {
   if (!pays.value) return {}
-  const titre = `${pays.value.nom} - Opportunités en Afrique - UAfricas`
+  const titre = `${pays.value.nom} - Opportunités en Afrique - AfricanS`
   return {
     title: titre,
     meta: [
@@ -434,7 +434,7 @@ useHead(() => {
       { property: 'og:title', content: titre },
       { property: 'og:description', content: descriptionOg.value },
       { property: 'og:url', content: urlCanonique },
-      { property: 'og:site_name', content: 'UAfricas' },
+      { property: 'og:site_name', content: 'AfricanS' },
       ...(imageOg.value ? [{ property: 'og:image', content: imageOg.value }] : []),
       // Twitter Card
       { name: 'twitter:card', content: imageOg.value ? 'summary_large_image' : 'summary' },

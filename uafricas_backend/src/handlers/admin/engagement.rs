@@ -10,8 +10,8 @@ use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
 use crate::models::admin::engagement::{
     AjustementRequest, CreerPalierRequest, JournalAdminPage, JournalAdminParams, JournalAdminRow,
-    ModifierNiveauRequest, ModifierPalierRequest, ModifierRegleRequest, NiveauAdmin, PalierAdmin,
-    RegleAdmin,
+    MiseEnAvantEtat, MiseEnAvantRequest, ModifierNiveauRequest, ModifierPalierRequest,
+    ModifierRegleRequest, NiveauAdmin, PalierAdmin, RegleAdmin,
 };
 use crate::services::audit;
 use crate::verifier_permission;
@@ -339,6 +339,148 @@ pub async fn ajuster_points(
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "solde_points": nouveau_solde.unwrap_or(0) })),
+        error: None,
+    }))
+}
+
+// ── Mise en avant d'une contribution (règle `contribution_mise_en_avant`, +5) ─
+
+/// Mappe un `type_objet` vers `(table, colonne auteur)`. Seules les contributions
+/// ayant un auteur unique sont éligibles. Les noms sont des littéraux fixes →
+/// interpolation SQL sûre.
+fn table_et_auteur(type_objet: &str) -> Option<(&'static str, &'static str)> {
+    match type_objet {
+        "codimoi" => Some(("culture.codimoi", "cree_par")),
+        "factcheck" => Some(("governance.factcheck", "cree_par")),
+        "bad_habit" => Some(("governance.bad_habit", "cree_par")),
+        "idea_force" => Some(("governance.idea_force", "cree_par")),
+        "video" => Some(("media_content.piste_sous_titre", "cree_par")),
+        _ => None,
+    }
+}
+
+/// GET /api/admin/engagement/mise-en-avant/{type_objet}/{objet_id}
+/// Indique si la contribution est actuellement mise en avant (pour le bouton admin).
+pub async fn statut_mise_en_avant(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    path: web::Path<(String, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "engagement", "gerer");
+    let (type_objet, objet_id) = path.into_inner();
+
+    let mis_en_avant: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM engagement.mise_en_avant
+                       WHERE type_objet = $1 AND objet_id = $2)",
+    )
+    .bind(&type_objet)
+    .bind(objet_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(MiseEnAvantEtat { mis_en_avant }),
+        error: None,
+    }))
+}
+
+/// POST /api/admin/engagement/mise-en-avant — met une contribution en avant et
+/// crédite son auteur du +5 (idempotent, anti‑auto‑attribution, non‑bloquant).
+pub async fn mettre_en_avant(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    body: web::Json<MiseEnAvantRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "engagement", "gerer");
+
+    let (table, col_auteur) = table_et_auteur(&body.type_objet)
+        .ok_or_else(|| ApiErreur::Validation("type_objet non éligible à la mise en avant".into()))?;
+
+    // Résolution de l'auteur (littéraux fixes → SQL sûr).
+    let sql = format!("SELECT {col_auteur} FROM {table} WHERE id = $1");
+    let auteur_id: Option<Uuid> = sqlx::query_scalar(&sql)
+        .bind(body.objet_id)
+        .fetch_optional(pool.get_ref())
+        .await?;
+    let auteur_id = auteur_id.ok_or_else(|| ApiErreur::NonTrouve("Contribution introuvable".into()))?;
+
+    // Marque la mise en avant (une seule fois par objet).
+    let res = sqlx::query(
+        "INSERT INTO engagement.mise_en_avant (type_objet, objet_id, auteur_id, mis_par)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (type_objet, objet_id) DO NOTHING",
+    )
+    .bind(&body.type_objet)
+    .bind(body.objet_id)
+    .bind(auteur_id)
+    .bind(admin.id)
+    .execute(pool.get_ref())
+    .await?;
+
+    // +5 uniquement à la première mise en avant et hors auto‑attribution.
+    // La clé d'idempotence rend tout rejeu inoffensif (pas de double crédit même
+    // après retrait puis remise en avant — cohérent avec « pas de clawback »).
+    if res.rows_affected() > 0 && auteur_id != admin.id {
+        crate::services::engagement::attribuer(
+            pool.get_ref(),
+            auteur_id,
+            "contribution_mise_en_avant",
+            Some(&body.type_objet),
+            Some(body.objet_id),
+            &format!("mise_en_avant:{}:{}", body.type_objet, body.objet_id),
+        )
+        .await;
+    }
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(), Some(admin.id), "MISE_EN_AVANT", "engagement", "mise_en_avant",
+        Some(body.objet_id), None,
+        Some(serde_json::json!({ "type_objet": body.type_objet, "auteur_id": auteur_id })),
+        ip.as_deref(), ua.as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(MiseEnAvantEtat { mis_en_avant: true }),
+        error: None,
+    }))
+}
+
+/// DELETE /api/admin/engagement/mise-en-avant/{type_objet}/{objet_id}
+/// Retire la mise en avant. Ne reprend PAS les points déjà attribués (pas de clawback).
+pub async fn retirer_mise_en_avant(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<(String, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "engagement", "gerer");
+    let (type_objet, objet_id) = path.into_inner();
+
+    sqlx::query("DELETE FROM engagement.mise_en_avant WHERE type_objet = $1 AND objet_id = $2")
+        .bind(&type_objet)
+        .bind(objet_id)
+        .execute(pool.get_ref())
+        .await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(), Some(admin.id), "RETRAIT_MISE_EN_AVANT", "engagement", "mise_en_avant",
+        Some(objet_id), None,
+        Some(serde_json::json!({ "type_objet": type_objet })),
+        ip.as_deref(), ua.as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(MiseEnAvantEtat { mis_en_avant: false }),
         error: None,
     }))
 }

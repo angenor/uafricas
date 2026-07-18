@@ -81,7 +81,7 @@ export interface Responsable {
 
 export const responsable: Responsable = {
   nom: 'Koné Mamadou',
-  role: 'Responsable de la direction de UAfricaS',
+  role: 'Responsable de la direction de AfricanS',
   photo: '/images/profil1.jpg',
 }
 

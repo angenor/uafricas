@@ -56,8 +56,8 @@ const googleMapsUrl = computed(() => {
 
 useHead(() => ({
   title: centre.value
-    ? `Centre culturel de ${centre.value.nom} – UAfricas`
-    : 'Centre culturel – UAfricas',
+    ? `Centre culturel de ${centre.value.nom} – AfricanS`
+    : 'Centre culturel – AfricanS',
   meta: [
     {
       name: 'description',

@@ -177,6 +177,7 @@
 
 -- Engagement / gamification (schéma + seed barème + permission ; après 15_seed pour super_admin)
 \ir schemas/35_engagement.sql
+\ir schemas/35b_engagement_mise_en_avant.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

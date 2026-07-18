@@ -38,14 +38,14 @@
               <img
                 class="h-14 mx-auto filter drop-shadow-2xl"
                 src="/logos/logo_uafracas.png"
-                alt="UAfricas"
+                alt="AfricanS"
               />
             </NuxtLink>
             <h1 class="text-white text-xl font-bold mt-3 tracking-wide">
               Creer un compte
             </h1>
             <p class="text-gray-300 text-sm mt-1">
-              Rejoignez la communaute UAfricas
+              Rejoignez la communaute AfricanS
             </p>
           </div>
         </div>
@@ -292,7 +292,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Inscription - UAfricas',
+  title: 'Inscription - AfricanS',
 })
 
 // Initialiser AOS

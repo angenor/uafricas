@@ -32,7 +32,7 @@
           <div class="flex items-center bg-white/20 backdrop-blur-xs px-4 py-2 rounded-full">
             <font-awesome-icon :icon="['fas', 'exclamation-triangle']" class="mr-2" />
             <span class="font-semibold">{{ stats.badhabits }}</span>
-            <span class="ml-1 text-sm">BadHabits</span>
+            <span class="ml-1 text-sm">BadGoodhabits</span>
           </div>
         </div>
         <p class="text-white/80 text-sm mt-4 max-w-3xl mx-auto px-4">
@@ -96,7 +96,7 @@
                   <font-awesome-icon :icon="['fas', 'exclamation-triangle']" class="text-white text-2xl" />
                 </div>
               </div>
-              <h3 class="text-2xl font-bold text-red-900 mb-3 group-hover:text-red-700">BadHabits</h3>
+              <h3 class="text-2xl font-bold text-red-900 mb-3 group-hover:text-red-700">BadGoodhabits</h3>
               <p class="text-red-700 mb-6">Signalement des mauvaises pratiques et habitudes néfastes</p>
               <div class="flex items-center text-red-600 group-hover:text-red-700">
                 <span class="font-medium">Explorer</span>
@@ -126,7 +126,7 @@
 import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 useHead({
-  title: 'Novagouv - Gouvernance Citoyenne | UAfricas'
+  title: 'Novagouv - Gouvernance Citoyenne | AfricanS'
 })
 
 const { getStats, getContributions } = useGouvernance()

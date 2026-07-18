@@ -111,3 +111,16 @@ pub struct AjustementRequest {
     pub reputation_delta: i32,
     pub motif: Option<String>,
 }
+
+/// Marque une contribution comme « mise en avant » (déclenche le +5 à l'auteur).
+#[derive(Deserialize)]
+pub struct MiseEnAvantRequest {
+    pub type_objet: String,
+    pub objet_id: Uuid,
+}
+
+/// État de mise en avant d'une contribution (pour le bouton admin).
+#[derive(Serialize)]
+pub struct MiseEnAvantEtat {
+    pub mis_en_avant: bool,
+}

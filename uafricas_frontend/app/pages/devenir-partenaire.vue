@@ -20,7 +20,7 @@
             Devenir Partenaire
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Rejoignez le réseau UAfricas et contribuez au développement durable du continent africain en devenant partenaire de notre plateforme.
+            Rejoignez le réseau AfricanS et contribuez au développement durable du continent africain en devenant partenaire de notre plateforme.
           </p>
         </div>
       </div>
@@ -48,7 +48,7 @@
             Demande de partenariat
           </h1>
           <p class="text-gray-500 text-sm mb-8">
-            Remplissez ce formulaire pour soumettre votre demande de partenariat avec UAfricas.
+            Remplissez ce formulaire pour soumettre votre demande de partenariat avec AfricanS.
             Les champs marqués d'un <span class="text-red-500">*</span> sont obligatoires.
           </p>
 
@@ -410,11 +410,11 @@ import {
 import { useUserStore } from '~/stores/user'
 
 useHead({
-  title: 'Devenir Partenaire - UAfricas',
+  title: 'Devenir Partenaire - AfricanS',
   meta: [
     {
       name: 'description',
-      content: 'Devenez partenaire de UAfricas et contribuez au développement durable du continent africain.',
+      content: 'Devenez partenaire de AfricanS et contribuez au développement durable du continent africain.',
     },
   ],
 })

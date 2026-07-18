@@ -101,7 +101,7 @@
 import { useEvenements, type EvenementAPI, type EvenementFiltres } from '~/composables/useEvenements'
 
 useHead({
-  title: 'Africalive - Événements & Ateliers | UAfricas'
+  title: 'Africalive - Événements & Ateliers | AfricanS'
 })
 
 const breadcrumbs = [

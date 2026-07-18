@@ -209,7 +209,7 @@ impl AfricantiveListeRow {
                 uid: self.cree_par,
                 nom: self.auteur_nom.clone(),
                 prenom: self.auteur_prenom.clone(),
-                email: self.auteur_email.clone(),
+                email: String::new(), // e-mail de compte non exposé publiquement (audit #26)
             },
             created_at: self.created_at,
             updated_at: self.updated_at,
@@ -242,7 +242,7 @@ impl AfricantiveDetailRow {
                 uid: self.cree_par,
                 nom: self.auteur_nom.clone(),
                 prenom: self.auteur_prenom.clone(),
-                email: self.auteur_email.clone(),
+                email: String::new(), // e-mail de compte non exposé publiquement (audit #26)
                 photo_url: self.auteur_photo_url.clone(),
             },
             created_at: self.created_at,

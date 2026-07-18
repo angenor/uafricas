@@ -222,7 +222,7 @@ const menuItems: MenuItem[] = [
     id: 'attout',
     icon: 'fa-solid fa-table-cells-large',
     label: 'APPLIS',
-    description: 'Toutes les applications de la plateforme UAfricas',
+    description: 'Toutes les applications de la plateforme AfricanS',
     popupTop: '11rem',
     gradient: 'bg-linear-to-br from-amber-700 to-orange-900',
     image: '/images/danse-afrique.jpg',

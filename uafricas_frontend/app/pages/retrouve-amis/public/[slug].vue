@@ -42,9 +42,9 @@ useSeoMeta({
   title: () => {
     if (estActif.value) {
       const a = avis.value as AvisPublicDetail
-      return `Recherche : ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''} — UAfricas`
+      return `Recherche : ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''} — AfricanS`
     }
-    return 'Avis de recherche — UAfricas'
+    return 'Avis de recherche — AfricanS'
   },
   description: () => {
     if (estActif.value) {
@@ -55,21 +55,21 @@ useSeoMeta({
       if (a.ecole) parties.push(a.ecole)
       return `Aidez ${a.auteur_anonyme} a retrouver ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''}${parties.length ? ' (' + parties.join(', ') + ')' : ''}. Partagez cet avis de recherche.`
     }
-    return 'Avis de recherche sur UAfricas — Retrouver des amis perdus de vue.'
+    return 'Avis de recherche sur AfricanS — Retrouver des amis perdus de vue.'
   },
   ogTitle: () => {
     if (estActif.value) {
       const a = avis.value as AvisPublicDetail
       return `Recherche : ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''}`
     }
-    return 'Avis de recherche — UAfricas'
+    return 'Avis de recherche — AfricanS'
   },
   ogDescription: () => {
     if (estActif.value) {
       const a = avis.value as AvisPublicDetail
-      return `Aidez a retrouver ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''} sur UAfricas.`
+      return `Aidez a retrouver ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''} sur AfricanS.`
     }
-    return 'Retrouvez des amis perdus de vue sur UAfricas.'
+    return 'Retrouvez des amis perdus de vue sur AfricanS.'
   },
   ogType: 'article',
   ogUrl: () => `https://www.africans-world.org/retrouve-amis/public/${slug}`,
@@ -80,14 +80,14 @@ useSeoMeta({
       const a = avis.value as AvisPublicDetail
       return `Recherche : ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''}`
     }
-    return 'Avis de recherche — UAfricas'
+    return 'Avis de recherche — AfricanS'
   },
   twitterDescription: () => {
     if (estActif.value) {
       const a = avis.value as AvisPublicDetail
-      return `Aidez a retrouver ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''} sur UAfricas.`
+      return `Aidez a retrouver ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''} sur AfricanS.`
     }
-    return 'Retrouvez des amis perdus de vue sur UAfricas.'
+    return 'Retrouvez des amis perdus de vue sur AfricanS.'
   },
   twitterImage: () => ogImageUrl.value,
 })

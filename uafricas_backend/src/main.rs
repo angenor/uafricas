@@ -31,7 +31,7 @@ pub struct ApiResponse<T> {
 pub async fn health_check() -> impl Responder {
     HttpResponse::Ok().json(HealthResponse {
         status: "ok",
-        message: "UAfricas Backend is running",
+        message: "AfricanS Backend is running",
     })
 }
 

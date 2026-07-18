@@ -112,7 +112,7 @@ async fn construire_response(
             uid: organisateur.id,
             nom: organisateur.nom,
             prenom: organisateur.prenom,
-            email: organisateur.email,
+            email: String::new(), // e-mail de compte non exposé publiquement (audit #26)
             photo_url: organisateur.photo_url,
         },
         created_at: row.created_at,
@@ -285,7 +285,7 @@ pub async fn obtenir_evenement(
             uid: organisateur.id,
             nom: organisateur.nom,
             prenom: organisateur.prenom,
-            email: organisateur.email,
+            email: String::new(), // e-mail de compte non exposé publiquement (audit #26)
             photo_url: organisateur.photo_url,
         },
         created_at: row.created_at,
@@ -527,7 +527,7 @@ pub async fn creer_evenement(
             uid: organisateur.id,
             nom: organisateur.nom,
             prenom: organisateur.prenom,
-            email: organisateur.email,
+            email: String::new(), // e-mail de compte non exposé publiquement (audit #26)
             photo_url: organisateur.photo_url,
         },
         created_at: row.created_at,
@@ -632,7 +632,7 @@ async fn construire_detail(
             uid: organisateur.id,
             nom: organisateur.nom,
             prenom: organisateur.prenom,
-            email: organisateur.email,
+            email: String::new(), // e-mail de compte non exposé publiquement (audit #26)
             photo_url: organisateur.photo_url,
         },
         created_at: row.created_at,

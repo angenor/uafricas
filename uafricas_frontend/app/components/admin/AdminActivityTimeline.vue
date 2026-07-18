@@ -12,7 +12,7 @@ const actionConfig: Record<string, { icon: string; color: string; label: string 
   LOGIN: { icon: 'right-to-bracket', color: 'text-neutral', label: 'Connexion' },
 }
 
-const getConfig = (action: string) => actionConfig[action] || { icon: 'circle', color: 'text-base-content/40', label: action }
+const getConfig = (action: string) => actionConfig[action] || { icon: 'circle', color: 'text-base-content/40', label: libelleAction(action) }
 
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr)

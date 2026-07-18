@@ -2,7 +2,19 @@
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
 const { creer, loading, error } = useAdminProgrammes()
+const { listerTousDomaines } = useAdminDomaines()
+const { listerPays } = useCentresCulturels()
 const router = useRouter()
+
+// Sélecteurs de référentiel (audit #20 : fini les UUID en saisie libre)
+const domainesListe = ref<{ id: string, nom: string }[]>([])
+const paysListe = ref<{ id: string, nom: string }[]>([])
+
+onMounted(async () => {
+  const [domaines, pays] = await Promise.all([listerTousDomaines(), listerPays()])
+  domainesListe.value = domaines.map(d => ({ id: d.id, nom: d.nom }))
+  paysListe.value = pays
+})
 
 const form = reactive({
   titre: '',
@@ -118,11 +130,17 @@ const soumettre = async () => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="form-control">
                 <label class="label"><span class="label-text">Territoire de destination</span></label>
-                <input v-model="form.pays_id" type="text" class="input input-bordered" placeholder="UUID du territoire">
+                <select v-model="form.pays_id" class="select select-bordered">
+                  <option value="">— Sélectionner un territoire —</option>
+                  <option v-for="p in paysListe" :key="p.id" :value="p.id">{{ p.nom }}</option>
+                </select>
               </div>
               <div class="form-control">
                 <label class="label"><span class="label-text">Domaine</span></label>
-                <input v-model="form.domaine_id" type="text" class="input input-bordered" placeholder="UUID du domaine">
+                <select v-model="form.domaine_id" class="select select-bordered">
+                  <option value="">— Sélectionner un domaine —</option>
+                  <option v-for="d in domainesListe" :key="d.id" :value="d.id">{{ d.nom }}</option>
+                </select>
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

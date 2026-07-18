@@ -180,7 +180,7 @@
           <!-- eslint-disable-next-line vue/no-v-html -->
           <div
             class="text-gray-700 leading-relaxed prose prose-sm max-w-none"
-            v-html="programme.description"
+            v-html="sanitiserHtml(programme.description)"
           />
         </section>
 
@@ -268,7 +268,6 @@
               <p class="font-medium text-gray-900">
                 {{ programme.user.prenom ? `${programme.user.prenom} ` : '' }}{{ programme.user.nom }}
               </p>
-              <p class="text-sm text-gray-600">{{ programme.user.email }}</p>
             </div>
 
             <!-- Document -->
@@ -492,7 +491,7 @@ onMounted(async () => {
 
   if (programme.value) {
     useHead({
-      title: `${programme.value.titre} - Échanges Sabbatiques - UAfricas`,
+      title: `${programme.value.titre} - Échanges Sabbatiques - AfricanS`,
       meta: [
         {
           name: 'description',

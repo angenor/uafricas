@@ -6,7 +6,7 @@
         <!-- Logo -->
         <div class="flex flex-col items-center md:items-start">
           <NuxtLink to="/">
-            <img class="h-24 sm:h-28 lg:h-32" src="/logos/logo_uafracas.png" alt="UAfricas Logo" />
+            <img class="h-24 sm:h-28 lg:h-32" src="/logos/logo_uafracas.png" alt="AfricanS Logo" />
           </NuxtLink>
           <p class="mt-3 text-sm text-gray-500 text-center md:text-left max-w-xs">
             Afrique, une Nation pour le développement durable.
@@ -62,12 +62,15 @@
 
     <!-- Copyright -->
     <div class="text-center text-white bg-custom-chocolat py-2 text-sm">
-      &copy; Copyright 2025
+      &copy; Copyright {{ anneeCourante }}
     </div>
   </footer>
 </template>
 
 <script setup lang="ts">
+// Année de copyright dynamique (constat #13 de l'audit)
+const anneeCourante = new Date().getFullYear()
+
 const liensRapides = [
   { label: 'Notre Mission', to: '/a-propos/mission', icone: 'fa-solid fa-rocket' },
   { label: 'Gouvernance', to: '/universite/gouvernance', icone: 'fa-solid fa-landmark' },

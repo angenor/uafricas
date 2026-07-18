@@ -133,7 +133,7 @@ const createModalOpen = ref(false)
 const toastCreation = ref<{ code: string } | null>(null)
 let codeSecretEnAttente = ''
 
-useHead({ title: 'Livestream Afrolang - UAfricas' })
+useHead({ title: 'Livestream Afrolang - AfricanS' })
 
 const handleQuitterVisio = async () => {
   if (session.value) {

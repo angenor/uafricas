@@ -353,7 +353,7 @@ import {
 import { useUserStore } from '~/stores/user'
 
 useHead({
-  title: 'Africantives - Initiatives Africaines - UAfricas',
+  title: 'Africantives - Initiatives Africaines - AfricanS',
   meta: [
     {
       name: 'description',

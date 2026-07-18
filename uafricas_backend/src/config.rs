@@ -109,7 +109,7 @@ impl AppConfig {
             smtp_from_email: env::var("SMTP_FROM_EMAIL")
                 .unwrap_or_else(|_| env::var("SMTP_USERNAME").unwrap_or_default()),
             smtp_from_name: env::var("SMTP_FROM_NAME")
-                .unwrap_or_else(|_| "UAfricas".to_string()),
+                .unwrap_or_else(|_| "AfricanS".to_string()),
             email_verification_expiration_hours: env::var("EMAIL_VERIFICATION_EXPIRATION_HOURS")
                 .unwrap_or_else(|_| "24".to_string())
                 .parse::<i64>()
