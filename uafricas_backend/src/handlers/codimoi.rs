@@ -484,6 +484,37 @@ pub async fn reagir(
         }
     }
 
+    // Engagement : évaluer les paliers de popularité de la publication (non-bloquant).
+    // On ne compte que les « like » et on exclut l'auto-like de l'auteur (FR-017).
+    if body.type_reaction == "like" {
+        if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
+            "SELECT cree_par FROM culture.codimoi WHERE id = $1",
+        )
+        .bind(codimoi_id)
+        .fetch_optional(pool.get_ref())
+        .await
+        {
+            let likes: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM culture.codimoi_reaction
+                 WHERE codimoi_id = $1 AND type_reaction = 'like' AND utilisateur_id <> $2",
+            )
+            .bind(codimoi_id)
+            .bind(cree_par)
+            .fetch_one(pool.get_ref())
+            .await
+            .unwrap_or(0);
+
+            crate::services::engagement::evaluer_popularite(
+                pool.get_ref(),
+                "codimoi",
+                codimoi_id,
+                cree_par,
+                likes,
+            )
+            .await;
+        }
+    }
+
     // Retourner le post mis a jour
     let query = format!(
         "SELECT {} FROM culture.codimoi c WHERE c.id = $1",

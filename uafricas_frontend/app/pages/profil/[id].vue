@@ -162,8 +162,8 @@ const onglets = computed(() => {
 useHead({
   title: computed(() =>
     profil.value
-      ? `${profil.value.prenom} ${profil.value.nom} — UAfricas`
-      : 'Profil — UAfricas',
+      ? `${profil.value.prenom} ${profil.value.nom} — AfricanS`
+      : 'Profil — AfricanS',
   ),
 })
 
@@ -261,7 +261,10 @@ onMounted(async () => {
               </div>
 
               <div class="flex-1 text-center sm:text-left">
-                <h1 class="text-3xl font-bold text-gray-800 font-display">{{ profil.prenom }} {{ profil.nom }}</h1>
+                <div class="flex items-center justify-center sm:justify-start gap-2">
+                  <h1 class="text-3xl font-bold text-gray-800 font-display">{{ profil.prenom }} {{ profil.nom }}</h1>
+                  <EngagementBadgeStatut :utilisateur-id="id" taille="sm" />
+                </div>
                 <p class="text-lg text-custom-chocolat font-medium mt-1">{{ profil.fonction }}</p>
                 <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
                   <span

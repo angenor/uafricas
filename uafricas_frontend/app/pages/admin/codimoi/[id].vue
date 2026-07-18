@@ -172,6 +172,11 @@ onMounted(() => charger())
         </div>
       </div>
 
+      <!-- Mise en avant (engagement +5) -->
+      <div class="mb-4">
+        <AdminMiseEnAvantBouton type-objet="codimoi" :objet-id="id" />
+      </div>
+
       <!-- Alertes -->
       <div v-if="erreurLocale || error" class="alert alert-error mb-4">
         <font-awesome-icon icon="circle-exclamation" />

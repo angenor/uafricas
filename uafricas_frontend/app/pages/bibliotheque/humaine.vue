@@ -414,7 +414,7 @@ import { useUserStore } from '~/stores/user'
 import type { BiblioHumaineAPI, SpecialiteAPI, DemandeBiblioHumaine } from '~/composables/useBibliothequeHumaine'
 
 useHead({
-  title: 'Bibliothèques Humaines - UAfricas',
+  title: 'Bibliothèques Humaines - AfricanS',
   meta: [
     { name: 'description', content: 'Découvrez les personnes-livres et partagez des histoires vivantes' },
   ],

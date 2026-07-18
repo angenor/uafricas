@@ -390,6 +390,33 @@ pub async fn reagir_video(
 
     let (nombre_likes, nombre_dislikes) = compter_reactions_video(pool.get_ref(), video_id).await?;
 
+    // Engagement : paliers de popularité de la vidéo (non-bloquant). Auteur = vidéo.cree_par,
+    // auto-like exclu du compte (FR-017).
+    if type_reaction == "like" {
+        if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
+            "SELECT cree_par FROM media_content.video WHERE id = $1",
+        )
+        .bind(video_id)
+        .fetch_optional(pool.get_ref())
+        .await
+        {
+            let likes: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM media_content.video_reaction
+                 WHERE video_id = $1 AND type_reaction = 'like' AND utilisateur_id <> $2",
+            )
+            .bind(video_id)
+            .bind(cree_par)
+            .fetch_one(pool.get_ref())
+            .await
+            .unwrap_or(0);
+
+            crate::services::engagement::evaluer_popularite(
+                pool.get_ref(), "video", video_id, cree_par, likes,
+            )
+            .await;
+        }
+    }
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(VideoReactionResponse {

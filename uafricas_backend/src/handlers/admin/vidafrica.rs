@@ -781,6 +781,30 @@ pub async fn changer_etat_piste(
         return Err(ApiErreur::NonTrouve("Piste non trouvée".into()));
     }
 
+    // Engagement : créditer l'auteur de la piste lors de sa publication (validation modération).
+    // Idempotent (clé unique) + anti-auto-attribution ; non-bloquant.
+    if etat == "publie" {
+        if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
+            "SELECT cree_par FROM media_content.piste_sous_titre WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_optional(pool.get_ref())
+        .await
+        {
+            if cree_par != admin.id {
+                crate::services::engagement::attribuer(
+                    pool.get_ref(),
+                    cree_par,
+                    "contribution_validee",
+                    Some("video"),
+                    Some(id),
+                    &format!("contribution_validee:video:{id}"),
+                )
+                .await;
+            }
+        }
+    }
+
     log::info!("Admin {} a changé l'état de la piste {} → {}", admin.id, id, etat);
 
     let ip = audit::extraire_ip(&req);

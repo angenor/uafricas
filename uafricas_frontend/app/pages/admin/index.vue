@@ -154,7 +154,7 @@ const modulesOverview = computed(() => {
     <div class="mb-8 flex items-center justify-between flex-wrap gap-2">
       <div>
         <h1 class="text-2xl font-display font-bold text-base-content">Dashboard</h1>
-        <p class="text-sm text-base-content/60 mt-1">Vue d'ensemble de la plateforme UAfricas</p>
+        <p class="text-sm text-base-content/60 mt-1">Vue d'ensemble de la plateforme AfricanS</p>
       </div>
       <div v-if="stats" class="text-xs text-base-content/40 flex items-center gap-2">
         <font-awesome-icon icon="clock-rotate-left" />

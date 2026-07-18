@@ -46,7 +46,7 @@ const STYLES: Record<TypeContribution, {
     path: '/universite/gouvernance/ideaforces',
   },
   badhabits: {
-    label: 'BadHabits',
+    label: 'BadGoodhabits',
     icon: ['fas', 'triangle-exclamation'],
     bande: 'from-red-500 to-rose-500',
     badge: 'bg-red-100 text-red-700',

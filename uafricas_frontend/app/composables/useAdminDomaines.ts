@@ -20,6 +20,12 @@ export const useAdminDomaines = () => {
     if (result) domaines.value = result.data
   }
 
+  // Liste complète non paginée — pour alimenter un sélecteur (audit #20)
+  const listerTousDomaines = async (): Promise<AdminDomaine[]> => {
+    const result = await listerPagine<AdminDomaine>('/api/admin/domaines', { par_page: 500 })
+    return result?.data ?? []
+  }
+
   const chargerDetail = async (id: string) => {
     const response = await adminFetch<ApiResponse<AdminDomaineDetail>>(`/api/admin/domaines/${id}`)
     if (response.success && response.data) domaineDetail.value = response.data
@@ -49,7 +55,7 @@ export const useAdminDomaines = () => {
   return {
     domaines, domaineDetail, filtres,
     pagination, sort, loading, error,
-    chargerListe, chargerDetail, creer, modifier, supprimer,
+    chargerListe, listerTousDomaines, chargerDetail, creer, modifier, supprimer,
     allerPage, changerTri, reinitialiserPagination,
   }
 }

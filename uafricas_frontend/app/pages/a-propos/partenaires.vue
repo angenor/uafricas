@@ -43,7 +43,7 @@
           <span class="font-bold">U</span>n réseau de partenaires engagés
         </h2>
         <p class="text-gray-600 leading-relaxed">
-          UAfricas collabore avec des organisations internationales, des entreprises et des institutions
+          AfricanS collabore avec des organisations internationales, des entreprises et des institutions
           partageant notre vision d'une Afrique unie et prospère. Nos partenaires contribuent activement
           au développement culturel, économique et scientifique du continent.
         </p>
@@ -82,9 +82,9 @@
 import { partenaires } from '~/mocks/homepage'
 
 useHead({
-  title: 'Nos Partenaires - UAfricas',
+  title: 'Nos Partenaires - AfricanS',
   meta: [
-    { name: 'description', content: 'Découvrez les partenaires de UAfricas qui soutiennent le développement durable en Afrique.' }
+    { name: 'description', content: 'Découvrez les partenaires de AfricanS qui soutiennent le développement durable en Afrique.' }
   ]
 })
 </script>

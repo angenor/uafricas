@@ -77,7 +77,7 @@ import {
 } from '~/mocks/forums'
 
 useHead({
-  title: 'Forums - Codification des valeurs | UAfricas'
+  title: 'Forums - Codification des valeurs | AfricanS'
 })
 
 // Mock user

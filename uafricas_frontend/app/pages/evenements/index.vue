@@ -132,7 +132,7 @@
 
 <script setup lang="ts">
 useHead({
-  title: 'Forum - Événements | UAfricas'
+  title: 'Forum - Événements | AfricanS'
 })
 
 const breadcrumbs = [

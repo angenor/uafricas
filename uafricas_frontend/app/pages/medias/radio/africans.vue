@@ -4,7 +4,7 @@ import type { RadioStation } from '~/composables/useStationsRadio'
 const { listerStations, listerPays, listerGenres, chargement } = useStationsRadio()
 
 useHead({
-  title: 'Radios Africans | UAfricas',
+  title: 'Radios Africans | AfricanS',
   meta: [
     { name: 'description', content: 'Écoutez les meilleures radios africaines internationales en streaming. Afrobeats, Mbalax, Rumba et plus encore.' }
   ]

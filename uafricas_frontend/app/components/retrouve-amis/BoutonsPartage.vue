@@ -16,7 +16,7 @@ const nomComplet = computed(() => {
     ? `${props.nomRecherche} ${props.prenomRecherche}`
     : props.nomRecherche
 })
-const textePartage = computed(() => `Aidez a retrouver ${nomComplet.value} sur UAfricas`)
+const textePartage = computed(() => `Aidez a retrouver ${nomComplet.value} sur AfricanS`)
 
 // URLs de partage par reseau
 const urlWhatsApp = computed(() =>

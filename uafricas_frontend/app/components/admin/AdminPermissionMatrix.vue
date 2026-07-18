@@ -63,7 +63,7 @@ const groupeToutSelectionne = (perms: PermissionListeItem[]) => {
             :disabled="disabled"
             @change="toutSelectionnerGroupe(perms)"
           >
-          <h4 class="font-semibold text-sm capitalize">{{ ressource === '*' ? 'Toutes les ressources' : ressource }}</h4>
+          <h4 class="font-semibold text-sm" :title="ressource">{{ libelleRessource(ressource) }}</h4>
           <span class="badge badge-xs">{{ perms.length }}</span>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -80,7 +80,7 @@ const groupeToutSelectionne = (perms: PermissionListeItem[]) => {
               :disabled="disabled"
               @change="basculer(perm.id)"
             >
-            <span class="text-sm">{{ perm.action === '*' ? 'Tout' : perm.action }}</span>
+            <span class="text-sm" :title="perm.action">{{ libellePermissionAction(perm.action) }}</span>
           </label>
         </div>
       </div>

@@ -79,7 +79,7 @@
 import { mediaCards, mediaStats } from '~/mocks/medias'
 
 useHead({
-  title: 'Médias - UAfricas',
+  title: 'Médias - AfricanS',
   meta: [
     { name: 'description', content: 'Explorez notre collection de Radios & Télés africaines' },
   ],

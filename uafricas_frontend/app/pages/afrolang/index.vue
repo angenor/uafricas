@@ -397,7 +397,7 @@ const breadcrumbs = [
 ]
 
 useHead({
-  title: 'Salles Afrolang - UAfricas',
+  title: 'Salles Afrolang - AfricanS',
   meta: [
     {
       name: 'description',

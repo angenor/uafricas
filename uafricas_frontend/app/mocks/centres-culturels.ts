@@ -233,7 +233,7 @@ export const centresCulturelsMock: CentreCulturel[] = [
         id: 'prog-dkr-2',
         titre: 'Formation en ligne : Langues africaines',
         description: 'Cours intensif de wolof pour débutants. 10 sessions en ligne avec des professeurs natifs pour maîtriser les bases de la langue sénégalaise.',
-        adress: 'En ligne - Plateforme UAfricas',
+        adress: 'En ligne - Plateforme AfricanS',
         type: 'en-ligne',
         couvertureUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&h=400&fit=crop',
         dateDebut: new Date('2026-02-15T17:00:00'),

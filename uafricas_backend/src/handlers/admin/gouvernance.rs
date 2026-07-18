@@ -297,6 +297,36 @@ pub async fn modifier_factcheck(
         .await?;
     }
 
+    // Engagement : jugement de modération du factcheck (non-bloquant, idempotent, anti-auto-attribution).
+    // publie = jugé correct (+points/+réputation) ; suspendu = jugé faux/abusif (malus points + réputation).
+    if let Some(nouvel_etat) = body.etat.as_deref() {
+        if nouvel_etat == "publie" || nouvel_etat == "suspendu" {
+            if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
+                "SELECT cree_par FROM governance.factcheck WHERE id = $1",
+            )
+            .bind(id)
+            .fetch_optional(pool.get_ref())
+            .await
+            {
+                if cree_par != admin.id {
+                    if nouvel_etat == "publie" {
+                        crate::services::engagement::attribuer(
+                            pool.get_ref(), cree_par, "factcheck_valide",
+                            Some("factcheck"), Some(id), &format!("factcheck_valide:{id}"),
+                        )
+                        .await;
+                    } else {
+                        crate::services::engagement::retirer(
+                            pool.get_ref(), cree_par, "factcheck_faux",
+                            Some("factcheck"), Some(id), &format!("factcheck_faux:{id}"),
+                        )
+                        .await;
+                    }
+                }
+            }
+        }
+    }
+
     log::info!("Admin {} a modifie le factcheck {}", admin.id, id);
 
     let ip = audit::extraire_ip(&req);
@@ -877,6 +907,25 @@ pub async fn modifier_bad_habit(
     q = q.bind(id);
     q.execute(pool.get_ref()).await?;
 
+    // Engagement : contribution validée quand la bonne pratique passe à « publié ».
+    if body.etat.as_deref() == Some("publie") {
+        if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
+            "SELECT cree_par FROM governance.bad_habit WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_optional(pool.get_ref())
+        .await
+        {
+            if cree_par != admin.id {
+                crate::services::engagement::attribuer(
+                    pool.get_ref(), cree_par, "contribution_validee",
+                    Some("bad_habit"), Some(id), &format!("contribution_validee:bad_habit:{id}"),
+                )
+                .await;
+            }
+        }
+    }
+
     log::info!("Admin {} a modifie la mauvaise pratique {}", admin.id, id);
 
     let ip = audit::extraire_ip(&req);
@@ -1389,6 +1438,25 @@ pub async fn modifier_idea_force(
     for v in &bind_strings { q = q.bind(v); }
     q = q.bind(id);
     q.execute(pool.get_ref()).await?;
+
+    // Engagement : contribution validée quand l'idée force passe à « publié ».
+    if body.etat.as_deref() == Some("publie") {
+        if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
+            "SELECT cree_par FROM governance.idea_force WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_optional(pool.get_ref())
+        .await
+        {
+            if cree_par != admin.id {
+                crate::services::engagement::attribuer(
+                    pool.get_ref(), cree_par, "contribution_validee",
+                    Some("ideaforce"), Some(id), &format!("contribution_validee:ideaforce:{id}"),
+                )
+                .await;
+            }
+        }
+    }
 
     log::info!("Admin {} a modifie l'idee force {}", admin.id, id);
 

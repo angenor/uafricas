@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -193,6 +193,20 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/codimoi/{id}/commentaires", web::get().to(admin::codimoi_admin::lister_commentaires))
                     .route("/codimoi/{id}/commentaires/{commentaire_id}", web::delete().to(admin::codimoi_admin::supprimer_commentaire))
                     .route("/codimoi/{id}/reactions", web::get().to(admin::codimoi_admin::obtenir_reactions))
+                    // Engagement / gamification (barème + journal)
+                    .route("/engagement/regles", web::get().to(admin::engagement::lister_regles))
+                    .route("/engagement/regles/{id}", web::put().to(admin::engagement::modifier_regle))
+                    .route("/engagement/paliers", web::get().to(admin::engagement::lister_paliers))
+                    .route("/engagement/paliers", web::post().to(admin::engagement::creer_palier))
+                    .route("/engagement/paliers/{id}", web::put().to(admin::engagement::modifier_palier))
+                    .route("/engagement/paliers/{id}", web::delete().to(admin::engagement::desactiver_palier))
+                    .route("/engagement/niveaux", web::get().to(admin::engagement::lister_niveaux))
+                    .route("/engagement/niveaux/{id}", web::put().to(admin::engagement::modifier_niveau))
+                    .route("/engagement/journal", web::get().to(admin::engagement::lister_journal))
+                    .route("/engagement/ajustement", web::post().to(admin::engagement::ajuster_points))
+                    .route("/engagement/mise-en-avant", web::post().to(admin::engagement::mettre_en_avant))
+                    .route("/engagement/mise-en-avant/{type_objet}/{objet_id}", web::get().to(admin::engagement::statut_mise_en_avant))
+                    .route("/engagement/mise-en-avant/{type_objet}/{objet_id}", web::delete().to(admin::engagement::retirer_mise_en_avant))
                     // AfroLang - Salles publiques
                     .route("/salles", web::get().to(admin::salles::lister_salles))
                     .route("/salles", web::post().to(admin::salles::creer_salle))
@@ -530,6 +544,13 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{id}/reaction", web::post().to(codimoi::reagir))
                     .route("/{id}/commentaires", web::get().to(codimoi::lister_commentaires))
                     .route("/{id}/commentaires", web::post().to(codimoi::creer_commentaire)),
+            )
+            // Routes Engagement / gamification (lecture publique)
+            .service(
+                web::scope("/engagement")
+                    .route("/mon-compte", web::get().to(engagement::mon_compte))
+                    .route("/mon-journal", web::get().to(engagement::mon_journal))
+                    .route("/niveau/{utilisateur_id}", web::get().to(engagement::niveau_utilisateur)),
             )
             // Routes des annonces (Marche Africain)
             .service(

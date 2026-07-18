@@ -124,7 +124,7 @@
 
 <script setup lang="ts">
 useHead({
-  title: 'Librafrica - UAfricas',
+  title: 'Librafrica - AfricanS',
   meta: [
     { name: 'description', content: 'Explorez nos bibliothèques numériques et humaines africaines' },
   ],

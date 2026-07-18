@@ -238,7 +238,7 @@ import { PAYS_AFRICAINS_ISO2 } from '~/constants/afripulsePaysAutorises'
 import { useEvenements, type EvenementAPI, type EvenementFiltres } from '~/composables/useEvenements'
 
 useHead({
-  title: 'Africalive - Événements & Ateliers | UAfricas'
+  title: 'Africalive - Événements & Ateliers | AfricanS'
 })
 
 const breadcrumbs = [

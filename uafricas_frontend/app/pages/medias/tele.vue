@@ -5,7 +5,7 @@ import { defaultCoverVideoUrl } from '~/mocks/tele'
 const { listerChaines, listerProgrammesVedettes, obtenirStats, listerPays, listerCategories, chargement } = useTelevision()
 
 useHead({
-  title: 'Télévision Africaine | UAfricas',
+  title: 'Télévision Africaine | AfricanS',
   meta: [
     { name: 'description', content: 'Regardez les télés africaines : chaque télé regroupe ses programmes, avec un programme à la une qui joue en boucle.' }
   ]

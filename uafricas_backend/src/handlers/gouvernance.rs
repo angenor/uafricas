@@ -667,6 +667,33 @@ pub async fn reagir_factcheck(
         }
     }
 
+    // Engagement : évaluer les paliers de popularité du factcheck (non-bloquant).
+    // « like » = cœur (général + préjugé/réalité), auto-like exclu (FR-017).
+    if type_reaction == "coeur" {
+        if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
+            "SELECT cree_par FROM governance.factcheck WHERE id = $1",
+        )
+        .bind(factcheck_id)
+        .fetch_optional(pool.get_ref())
+        .await
+        {
+            let likes: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM governance.factcheck_reaction
+                 WHERE factcheck_id = $1 AND type_reaction = 'coeur' AND utilisateur_id <> $2",
+            )
+            .bind(factcheck_id)
+            .bind(cree_par)
+            .fetch_one(pool.get_ref())
+            .await
+            .unwrap_or(0);
+
+            crate::services::engagement::evaluer_popularite(
+                pool.get_ref(), "factcheck", factcheck_id, cree_par, likes,
+            )
+            .await;
+        }
+    }
+
     // Renvoyer l'etat de reaction a jour pour ce factcheck et cet utilisateur
     let etat = sqlx::query_as::<_, FactcheckReactionEtat>(
         "SELECT f.nombre_coeur, f.nombre_pouce, f.nombre_rire, f.nombre_jaime_pas,

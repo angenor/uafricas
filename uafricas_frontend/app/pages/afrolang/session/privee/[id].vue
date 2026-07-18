@@ -72,7 +72,7 @@ const salleParenteId = ref<string | null>(null)
 const salleParenteNom = ref<string | null>(null)
 const sallePriveeTitre = ref<string | null>(null)
 
-useHead({ title: 'Salle privée Afrolang - UAfricas' })
+useHead({ title: 'Salle privée Afrolang - AfricanS' })
 
 const handleQuitterVisio = async () => {
   if (session.value) {

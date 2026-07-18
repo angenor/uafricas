@@ -19,7 +19,7 @@ const carouselImages: string[] = [
 ]
 
 useHead({
-  title: 'Centres culturels africains et afro-descendants – UAfricas',
+  title: 'Centres culturels africains et afro-descendants – AfricanS',
   meta: [
     {
       name: 'description',

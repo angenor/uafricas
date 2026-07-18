@@ -116,5 +116,5 @@ const quitter = async (): Promise<void> => {
   router.push(`/evenements/${evenementId}`)
 }
 
-useHead({ title: computed(() => (titre.value ? `Direct · ${titre.value}` : 'Direct | UAfricas')) })
+useHead({ title: computed(() => (titre.value ? `Direct · ${titre.value}` : 'Direct | AfricanS')) })
 </script>

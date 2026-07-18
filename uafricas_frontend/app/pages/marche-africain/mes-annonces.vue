@@ -165,7 +165,7 @@ import {
 
 definePageMeta({ middleware: 'auth' })
 
-useHead({ title: 'Mes annonces - Marché Africain - UAfricas' })
+useHead({ title: 'Mes annonces - Marché Africain - AfricanS' })
 
 const {
   chargement,

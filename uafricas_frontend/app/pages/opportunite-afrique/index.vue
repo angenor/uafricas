@@ -353,7 +353,7 @@ import World from '@svg-maps/world'
 import { PAYS_AFRICAINS_ISO2 } from '~/constants/afripulsePaysAutorises'
 
 useHead({
-  title: 'Afripulse - Opportunités en Afrique | UAfricas',
+  title: 'Afripulse - Opportunités en Afrique | AfricanS',
   meta: [
     { name: 'description', content: 'Decouvrez les fiches territoires africains et leurs opportunites economiques, culturelles et sociales.' }
   ]

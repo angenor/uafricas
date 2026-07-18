@@ -74,7 +74,7 @@ import {
 import type { StatutAccompagnateur } from '~/composables/useAfrolangRessources'
 
 definePageMeta({ middleware: 'auth' })
-useHead({ title: 'Recommandations accompagnateur — UAfricas' })
+useHead({ title: 'Recommandations accompagnateur — AfricanS' })
 
 const userStore = useUserStore()
 const { redirigerVersConnexion } = useAuth()

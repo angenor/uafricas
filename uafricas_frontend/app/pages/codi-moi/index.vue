@@ -350,7 +350,7 @@ import type { MembreLightAPI } from '~/composables/useAmis'
 import { useUserStore } from '~/stores/user'
 
 useHead({
-  title: 'Codimoi - Codification des valeurs | UAfricas'
+  title: 'Codimoi - Codification des valeurs | AfricanS'
 })
 
 const { erreur: apiErreur, listerPosts, creerPost, reagir, listerCommentaires, creerCommentaire } = useCodiMoi()
@@ -390,8 +390,9 @@ const stats = computed(() => {
     citations: p.filter(x => x.type === 'citation').length,
     ressourcesHistoriques: p.filter(x => x.type === 'ressource_historique').length,
     bonnesPratiques: p.filter(x => x.type === 'bonne_pratique').length,
-    totalLikes: p.reduce((sum, x) => sum + x.nombre_likes, 0),
-    totalVues: p.reduce((sum, x) => sum + x.nombre_vues, 0),
+    // Garde contre les valeurs manquantes/non numériques (constat #14 : total NaN)
+    totalLikes: p.reduce((sum, x) => sum + (Number(x.nombre_likes) || 0), 0),
+    totalVues: p.reduce((sum, x) => sum + (Number(x.nombre_vues) || 0), 0),
   }
 })
 

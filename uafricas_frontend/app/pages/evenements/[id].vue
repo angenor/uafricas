@@ -277,7 +277,8 @@
               <font-awesome-icon icon="fa-solid fa-align-left" class="text-custom-green text-base" />
               Description
             </h2>
-            <div class="text-gray-600 leading-relaxed prose prose-sm max-w-none" v-html="evenement.description" />
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div class="text-gray-600 leading-relaxed prose prose-sm max-w-none" v-html="sanitiserHtml(evenement.description)" />
           </div>
 
           <!-- Organisateur -->
@@ -304,7 +305,6 @@
                 <div class="font-semibold text-gray-800 text-lg">
                   {{ evenement.user.prenom }} {{ evenement.user.nom }}
                 </div>
-                <div class="text-sm text-gray-500">{{ evenement.user.email }}</div>
                 <div
                   v-if="evenement.type_organisateur === 'organisation' && evenement.contact_nom"
                   class="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-custom-chocolat"

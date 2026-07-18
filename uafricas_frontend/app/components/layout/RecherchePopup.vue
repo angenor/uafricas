@@ -40,7 +40,7 @@
                 ref="champRecherche"
                 v-model="termeRecherche"
                 type="text"
-                placeholder="Rechercher sur UAfricas..."
+                placeholder="Rechercher sur AfricanS..."
                 class="flex-1 bg-transparent text-gray-800 placeholder-gray-400 text-lg outline-none font-body"
                 autocomplete="off"
                 aria-label="Terme de recherche"
@@ -145,7 +145,7 @@
                     />
                     <div class="flex-1 min-w-0">
                       <!-- eslint-disable-next-line vue/no-v-html -->
-                      <p class="text-sm text-gray-800 truncate" v-html="surligner(resultat.titre)" />
+                      <p class="text-sm text-gray-800 truncate" v-html="sanitiserHtml(surligner(resultat.titre))" />
                       <p v-if="resultat.sousTexte" class="text-xs text-gray-500 truncate">
                         {{ resultat.sousTexte }}
                       </p>

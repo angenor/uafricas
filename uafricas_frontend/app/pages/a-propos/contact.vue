@@ -161,9 +161,9 @@
 
 <script setup lang="ts">
 useHead({
-  title: 'Contact - UAfricas',
+  title: 'Contact - AfricanS',
   meta: [
-    { name: 'description', content: 'Contactez l\'équipe UAfricas pour toute question ou proposition de collaboration.' }
+    { name: 'description', content: 'Contactez l\'équipe AfricanS pour toute question ou proposition de collaboration.' }
   ]
 })
 

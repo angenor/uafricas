@@ -110,7 +110,7 @@ import gsap from 'gsap'
 import { actionCards } from '~/mocks/actions'
 
 useHead({
-  title: 'Actions - UAfricas',
+  title: 'Actions - AfricanS',
   meta: [
     { name: 'description', content: "Découvrez nos initiatives pour l'Afrique" },
   ],

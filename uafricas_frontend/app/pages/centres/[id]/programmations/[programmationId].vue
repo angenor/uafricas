@@ -127,8 +127,8 @@ onMounted(() => rafraichirStatut())
 
 useHead(() => ({
   title: programmation.value
-    ? `${programmation.value.titre} – UAfricas`
-    : 'Programmation – UAfricas',
+    ? `${programmation.value.titre} – AfricanS`
+    : 'Programmation – AfricanS',
   meta: [
     {
       name: 'description',

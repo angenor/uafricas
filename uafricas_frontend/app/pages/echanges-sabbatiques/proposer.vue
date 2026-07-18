@@ -437,7 +437,7 @@ const typeParam = route.query.type as string | undefined
 const typeInitial = typesValides.includes(typeParam as TypeProgramme) ? (typeParam as TypeProgramme) : ''
 
 useHead({
-  title: 'Proposer un projet d\'échange - UAfricas',
+  title: 'Proposer un projet d\'échange - AfricanS',
   meta: [
     {
       name: 'description',

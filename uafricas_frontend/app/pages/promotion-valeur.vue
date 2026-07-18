@@ -72,7 +72,7 @@
 import { promotionValeurPageData } from '~/mocks/promotion-valeur'
 
 useHead({
-  title: 'Promotion des Valeurs Africaines - UAfricas',
+  title: 'Promotion des Valeurs Africaines - AfricanS',
   meta: [
     {
       name: 'description',

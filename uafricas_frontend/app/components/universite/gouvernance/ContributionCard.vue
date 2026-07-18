@@ -97,7 +97,7 @@ defineProps<{
 const getTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
     factcheck: 'FactCheck',
-    badhabits: 'BadHabits',
+    badhabits: 'BadGoodhabits',
     ideaforces: 'IdeaForces'
   }
   return labels[type] || type

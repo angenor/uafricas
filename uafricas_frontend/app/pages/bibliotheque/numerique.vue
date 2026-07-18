@@ -19,7 +19,7 @@
         <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
         <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
           <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Numetech
+            Librafrica
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             Permettre à des africains ou à des écoles de consulter vos publications ou ouvrages.
@@ -394,7 +394,7 @@ const documentTypes = ['Tous', ...typesBase]
 import type { LivreAPI } from '~/composables/useBibliotheque'
 
 useHead({
-  title: 'Bibliotheque Numerique - UAfricas',
+  title: 'Bibliotheque Numerique - AfricanS',
   meta: [
     { name: 'description', content: 'Accedez a des milliers de livres et documents africains' },
   ],
@@ -425,8 +425,9 @@ const erreurSoumission = ref<string | null>(null)
 const docImage = ref<File | null>(null)
 const docFichier = ref<File | null>(null)
 
-// Nom utilisateur pour le consentement
-const utilisateurNom = ref('Utilisateur')
+// Nom utilisateur pour le consentement (constat #19 : plus de placeholder « Utilisateur »)
+const userStore = useUserStore()
+const utilisateurNom = computed(() => userStore.displayName || userStore.fullName || 'Utilisateur')
 
 const documentForm = ref({
   titre: '',

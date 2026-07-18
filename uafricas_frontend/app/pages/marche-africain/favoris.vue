@@ -94,7 +94,7 @@ import { useMarcheAfricain, type AnnonceAPI } from '~/composables/useMarcheAfric
 
 definePageMeta({ middleware: 'auth' })
 
-useHead({ title: 'Mes favoris - Marché Africain - UAfricas' })
+useHead({ title: 'Mes favoris - Marché Africain - AfricanS' })
 
 const { chargement, listerFavoris } = useMarcheAfricain()
 

@@ -1,4 +1,5 @@
 pub mod utilisateurs;
+pub mod engagement;
 pub mod organisations;
 pub mod partenariats;
 pub mod roles;

@@ -177,6 +177,10 @@
 \ir schemas/33_seed_pays_monde.sql
 \ir schemas/34_seed_afrolang_salles_diaspora.sql
 
+-- Engagement / gamification (schéma + seed barème + permission ; après 15_seed pour super_admin)
+\ir schemas/35_engagement.sql
+\ir schemas/35b_engagement_mise_en_avant.sql
+
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- FIN DU SCHÉMA

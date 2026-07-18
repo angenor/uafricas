@@ -171,7 +171,7 @@
 import { africaCulturePageData } from '~/mocks/africa-culture'
 
 useHead({
-  title: 'Afroculture - UAfricas',
+  title: 'Afroculture - AfricanS',
   meta: [
     { name: 'description', content: 'Découvrez la richesse culturelle africaine et les opportunités de la diaspora' },
   ],

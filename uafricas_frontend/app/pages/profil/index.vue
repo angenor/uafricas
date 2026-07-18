@@ -8,7 +8,7 @@
           Annuaire des membres
         </h1>
         <p class="text-gray-500 mt-3 max-w-2xl mx-auto">
-          Découvrez les membres de la communauté UAfricas : experts, bibliothèques humaines et passionnés du développement durable africain.
+          Découvrez les membres de la communauté AfricanS : experts, bibliothèques humaines et passionnés du développement durable africain.
         </p>
         <p v-if="total > 0" class="text-sm text-custom-chocolat font-medium mt-2">
           {{ total }} membre{{ total > 1 ? 's' : '' }} inscrit{{ total > 1 ? 's' : '' }}
@@ -205,11 +205,11 @@ import type { EtatRelation } from '~/composables/useAmis'
 import { useUserStore } from '~/stores/user'
 
 useHead({
-  title: 'Annuaire des membres - UAfricas',
+  title: 'Annuaire des membres - AfricanS',
   meta: [
     {
       name: 'description',
-      content: 'Découvrez tous les membres inscrits sur la plateforme UAfricas.',
+      content: 'Découvrez tous les membres inscrits sur la plateforme AfricanS.',
     },
   ],
 })
