@@ -74,14 +74,18 @@ onMounted(charger)
 
 watch(domaineFiltre, charger)
 
-const router = useRouter()
+const { redirigerVersConnexion } = useAuth()
+
+const ouvrirDetail = (personnalite: PersonnaliteConnueAPI) => {
+  navigateTo(`/opportunite-afrique/${props.ficheId}/personnalites/${personnalite.id}`)
+}
 
 const ouvrirContribution = (
   type_contribution: 'ajout' | 'edition' | 'suppression',
   personnalite?: PersonnaliteConnueAPI,
 ) => {
   if (!props.estAuthentifie) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
   emit('open-contribution', {
@@ -174,12 +178,17 @@ const proposerPersonnalite = () => {
           :key="p.id"
           class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col"
         >
-          <div class="aspect-square bg-gray-100 relative overflow-hidden">
+          <button
+            type="button"
+            class="aspect-square bg-gray-100 relative overflow-hidden cursor-pointer group"
+            :aria-label="`Voir la fiche de ${p.nom_complet}`"
+            @click="ouvrirDetail(p)"
+          >
             <img
               v-if="p.portrait_url"
               :src="resoudreUrlImage(p.portrait_url)"
               :alt="p.nom_complet"
-              class="w-full h-full object-cover"
+              class="w-full h-full object-cover transition-transform group-hover:scale-105"
             />
             <div
               v-else
@@ -187,9 +196,12 @@ const proposerPersonnalite = () => {
             >
               {{ getInitiales(p.nom_complet) }}
             </div>
-          </div>
+          </button>
           <div class="p-4 flex-1 flex flex-col">
-            <h3 class="font-oswald text-lg font-semibold text-gray-900 mb-1">
+            <h3
+              class="font-oswald text-lg font-semibold text-gray-900 mb-1 cursor-pointer hover:text-custom-chocolat transition-colors"
+              @click="ouvrirDetail(p)"
+            >
               {{ p.nom_complet }}
             </h3>
             <span
@@ -224,7 +236,15 @@ const proposerPersonnalite = () => {
               <span>Contribution suspendue — en cours de vérification.</span>
             </div>
 
-            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+            <div class="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 text-xs font-medium text-custom-green hover:underline"
+                @click="ouvrirDetail(p)"
+              >
+                <font-awesome-icon :icon="['fas', 'circle-info']" class="w-3.5 h-3.5" />
+                Détails
+              </button>
               <template v-if="!p.suspendu">
                 <button
                   type="button"

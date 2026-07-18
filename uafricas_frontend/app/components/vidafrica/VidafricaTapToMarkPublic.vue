@@ -26,6 +26,29 @@ const progression = computed(() => {
   return Math.round((motCourantIndex.value / props.mots.length) * 100)
 })
 
+// Cherche le début du segment PUIS lance la lecture une fois le seek terminé
+// (sinon play() démarre depuis la position courante pendant que le seek est
+// encore en cours → la vidéo « ne commence pas au bon endroit »).
+const seekEtLire = () => {
+  const video = videoRef.value
+  if (!video) return
+  const cible = props.debutMs / 1000
+  const lancer = () => {
+    enCours.value = true
+    video.play().catch(() => {})
+  }
+  if (Math.abs(video.currentTime - cible) < 0.05) {
+    lancer()
+    return
+  }
+  const onSeeked = () => {
+    video.removeEventListener('seeked', onSeeked)
+    lancer()
+  }
+  video.addEventListener('seeked', onSeeked)
+  video.currentTime = cible
+}
+
 const demarrer = () => {
   const video = videoRef.value
   if (!video) return
@@ -33,11 +56,21 @@ const demarrer = () => {
   motCourantIndex.value = 0
   timings.value = []
   termine.value = false
-  enCours.value = true
   dernierTimestamp.value = props.debutMs
 
-  video.currentTime = props.debutMs / 1000
-  video.play()
+  // Un seek posé avant le chargement des métadonnées est ignoré : on attend.
+  if (video.readyState < 1 /* HAVE_METADATA */) {
+    video.addEventListener('loadedmetadata', seekEtLire, { once: true })
+  } else {
+    seekEtLire()
+  }
+}
+
+// Positionne la vidéo sur le début du segment dès le chargement (frame de départ
+// correcte, avant même d'appuyer sur « Démarrer »).
+const onMetaChargee = () => {
+  const video = videoRef.value
+  if (video && !enCours.value) video.currentTime = props.debutMs / 1000
 }
 
 const marquerMot = () => {
@@ -101,6 +134,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       class="w-full rounded-lg max-h-64 bg-black"
       preload="metadata"
       controls
+      @loadedmetadata="onMetaChargee"
     />
 
     <!-- Progression -->

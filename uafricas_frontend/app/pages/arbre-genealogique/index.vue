@@ -39,6 +39,9 @@ let timerId: ReturnType<typeof setTimeout> | null = null
 const modeAjout = ref<'wizard' | 'classique' | null>(null)
 const creationEnCours = ref(false)
 
+// Modale de présentation « C'est quoi Rootstree ? »
+const presentationOuverte = ref(false)
+
 // ─── Debounce recherche ───────────────────────────────────────────────────
 
 watch(recherche, (val) => {
@@ -135,8 +138,27 @@ const infoPagination = computed(() => {
             Explorez votre arbre généalogique, découvrez vos origines et connectez-vous avec votre famille à travers les générations.
           </p>
         </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation de Rootstree (hero clair → variante chocolat) -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white hover:bg-stone-50 text-custom-chocolat font-medium text-sm px-4 py-2.5 shadow-sm ring-1 ring-stone-200 transition-colors"
+            aria-label="En savoir plus sur Rootstree"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Rootstree&nbsp;?
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi Rootstree ? » -->
+    <ArbreGenealogiquePresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <div class="max-w-5xl mx-auto px-4 py-8">
     <!-- En-tête -->

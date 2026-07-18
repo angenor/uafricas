@@ -193,6 +193,59 @@ export const PAYS_EXPERTS: PaysOption[] = [
 ]
 
 /**
+ * Les 54 territoires du continent africain (noms français, avec accents).
+ * Utilisé par le filtre territoire (zone « Afrique »).
+ */
+export const PAYS_AFRIQUE: string[] = [
+  'Afrique du Sud', 'Algérie', 'Angola', 'Bénin', 'Botswana', 'Burkina Faso',
+  'Burundi', 'Cameroun', 'Cap-Vert', 'Centrafrique', 'Comores', 'Congo',
+  'Côte d\'Ivoire', 'Djibouti', 'Égypte', 'Érythrée', 'Eswatini', 'Éthiopie',
+  'Gabon', 'Gambie', 'Ghana', 'Guinée', 'Guinée-Bissau', 'Guinée équatoriale',
+  'Kenya', 'Lesotho', 'Liberia', 'Libye', 'Madagascar', 'Malawi', 'Mali',
+  'Maroc', 'Maurice', 'Mauritanie', 'Mozambique', 'Namibie', 'Niger',
+  'Nigeria', 'Ouganda', 'RD Congo', 'Rwanda', 'São Tomé-et-Príncipe',
+  'Sénégal', 'Seychelles', 'Sierra Leone', 'Somalie', 'Soudan',
+  'Soudan du Sud', 'Tanzanie', 'Tchad', 'Togo', 'Tunisie', 'Zambie', 'Zimbabwe',
+]
+
+/**
+ * Tous les territoires du monde hors Afrique (noms français, avec accents).
+ * Utilisé par le filtre territoire (zone « Hors Afrique »).
+ */
+export const PAYS_HORS_AFRIQUE: string[] = [
+  // Europe
+  'Albanie', 'Allemagne', 'Andorre', 'Autriche', 'Belgique', 'Biélorussie',
+  'Bosnie-Herzégovine', 'Bulgarie', 'Chypre', 'Croatie', 'Danemark', 'Espagne',
+  'Estonie', 'Finlande', 'France', 'Grèce', 'Hongrie', 'Irlande', 'Islande',
+  'Italie', 'Kosovo', 'Lettonie', 'Liechtenstein', 'Lituanie', 'Luxembourg',
+  'Macédoine du Nord', 'Malte', 'Moldavie', 'Monaco', 'Monténégro', 'Norvège',
+  'Pays-Bas', 'Pologne', 'Portugal', 'République tchèque', 'Roumanie',
+  'Royaume-Uni', 'Russie', 'Saint-Marin', 'Serbie', 'Slovaquie', 'Slovénie',
+  'Suède', 'Suisse', 'Ukraine', 'Vatican',
+  // Amériques
+  'Antigua-et-Barbuda', 'Argentine', 'Bahamas', 'Barbade', 'Belize', 'Bolivie',
+  'Brésil', 'Canada', 'Chili', 'Colombie', 'Costa Rica', 'Cuba', 'Dominique',
+  'El Salvador', 'Équateur', 'États-Unis', 'Grenade', 'Guatemala', 'Guyana',
+  'Haïti', 'Honduras', 'Jamaïque', 'Mexique', 'Nicaragua', 'Panama', 'Paraguay',
+  'Pérou', 'République dominicaine', 'Saint-Kitts-et-Nevis', 'Sainte-Lucie',
+  'Saint-Vincent-et-les-Grenadines', 'Suriname', 'Trinité-et-Tobago', 'Uruguay',
+  'Venezuela',
+  // Asie
+  'Afghanistan', 'Arabie saoudite', 'Arménie', 'Azerbaïdjan', 'Bahreïn',
+  'Bangladesh', 'Bhoutan', 'Birmanie', 'Brunei', 'Cambodge', 'Chine',
+  'Corée du Nord', 'Corée du Sud', 'Émirats arabes unis', 'Géorgie', 'Inde',
+  'Indonésie', 'Irak', 'Iran', 'Israël', 'Japon', 'Jordanie', 'Kazakhstan',
+  'Kirghizistan', 'Koweït', 'Laos', 'Liban', 'Malaisie', 'Maldives', 'Mongolie',
+  'Népal', 'Oman', 'Ouzbékistan', 'Pakistan', 'Palestine', 'Philippines',
+  'Qatar', 'Singapour', 'Sri Lanka', 'Syrie', 'Tadjikistan', 'Thaïlande',
+  'Timor oriental', 'Turkménistan', 'Turquie', 'Viêt Nam', 'Yémen',
+  // Océanie
+  'Australie', 'Fidji', 'Îles Marshall', 'Îles Salomon', 'Kiribati',
+  'Micronésie', 'Nauru', 'Nouvelle-Zélande', 'Palaos',
+  'Papouasie-Nouvelle-Guinée', 'Samoa', 'Tonga', 'Tuvalu', 'Vanuatu',
+]
+
+/**
  * Liste complète des territoires pour le filtre « sur mesure » :
  * les 54 pays d'Afrique + principaux territoires de la diaspora.
  */

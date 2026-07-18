@@ -20,6 +20,8 @@ pub struct AppelEnCours {
     pub appelant_id: Uuid,
     pub destinataire_id: Uuid,
     pub cree_a: DateTime<Utc>,
+    /// Vidéo activée d'emblée, ou appel « normal » caméra coupée par défaut.
+    pub video: bool,
 }
 
 impl AppelEnCours {
@@ -53,7 +55,7 @@ impl RegistreAppels {
     }
 
     /// Enregistre un nouvel appel.
-    pub fn ouvrir(&self, appel_id: Uuid, appelant_id: Uuid, destinataire_id: Uuid) {
+    pub fn ouvrir(&self, appel_id: Uuid, appelant_id: Uuid, destinataire_id: Uuid, video: bool) {
         let maintenant = Utc::now();
         let mut map = self.inner.lock().unwrap();
         Self::purger(&mut map, maintenant);
@@ -63,6 +65,7 @@ impl RegistreAppels {
                 appelant_id,
                 destinataire_id,
                 cree_a: maintenant,
+                video,
             },
         );
     }

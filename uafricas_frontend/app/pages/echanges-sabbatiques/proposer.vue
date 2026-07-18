@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Hero -->
-    <SabbatiqueHero />
+    <SabbatiqueHero :type="form.type as TypeProgramme | ''" />
 
     <!-- Breadcrumb -->
     <CommonBreadcrumbNav
@@ -48,8 +48,9 @@
                     type="radio"
                     name="type-programme"
                     :value="type.value"
-                    v-model="form.type"
+                    :checked="form.type === type.value"
                     class="hidden"
+                    @change="changerType(type.value as TypeProgramme)"
                   />
                   <div
                     class="text-center py-3 px-4 rounded-md border-2 transition-all text-sm font-medium"
@@ -421,6 +422,7 @@ import {
   DOMAINES,
   DUREES,
   PAYS_AFRICAINS,
+  PAYS_HORS_AFRIQUE,
   PRISES_EN_CHARGE,
   TYPES_ORGANISATION,
   type TypeProgramme,
@@ -454,7 +456,14 @@ const DOMAINES_FORM = [
   ...DOMAINES.filter(d => d.value !== ''),
   { value: 'autre', label: 'Autre' },
 ]
-const PAYS_FORM = PAYS_AFRICAINS.filter(p => p.value !== '')
+
+// Liste des territoires selon le type de programme :
+// - interafricain → uniquement les pays d'Afrique
+// - hors_afrique  → uniquement les pays hors d'Afrique
+const PAYS_FORM = computed(() =>
+  (form.type === 'hors_afrique' ? PAYS_HORS_AFRIQUE : PAYS_AFRICAINS)
+    .filter(p => p.value !== '')
+)
 
 const editorRef = ref<{ save: () => Promise<EditorJsData | null>; clear: () => Promise<void> } | null>(null)
 
@@ -477,6 +486,15 @@ const form = reactive({
   organisateurNom: '',
   organisateurEmail: ''
 })
+
+// Basculer entre les deux pages « interafricain » / « hors_afrique »
+// en mettant à jour l'URL, et réinitialiser le territoire (les listes diffèrent)
+const changerType = (nouveauType: TypeProgramme) => {
+  if (form.type === nouveauType) return
+  form.type = nouveauType
+  form.pays = ''
+  navigateTo({ path: '/echanges-sabbatiques/proposer', query: { type: nouveauType } })
+}
 
 const loading = ref(false)
 const succes = ref(false)

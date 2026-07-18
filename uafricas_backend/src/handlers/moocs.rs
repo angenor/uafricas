@@ -267,6 +267,10 @@ pub async fn obtenir_mooc(
         nombre_places: row.nombre_places,
         nombre_inscrits,
         prerequis: row.prerequis.clone(),
+        objectif: row.objectif.clone(),
+        presentation: row.presentation.clone(),
+        a_evaluation: row.a_evaluation,
+        est_certifiante: row.est_certifiante,
         est_inscrit: inscrit,
         formateur: FormateurResponse {
             uid: formateur.id,
@@ -299,11 +303,13 @@ pub async fn inscrire_mooc(
     let utilisateur_id = extraire_utilisateur_id(&req)
         .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
 
-    // Verifier que le MOOC existe et est publie
+    // Verifier que le MOOC existe et est ouvert aux inscriptions.
+    // Coherent avec les endpoints publics (liste/contenu) : une formation
+    // 'publie' ou 'en_cours' est inscriptible ; 'termine' ne l'est plus.
     let existe: bool = sqlx::query_scalar(
         "SELECT EXISTS(
             SELECT 1 FROM media_content.mooc
-            WHERE id = $1 AND etat = 'publie' AND deleted_at IS NULL
+            WHERE id = $1 AND etat IN ('publie', 'en_cours') AND deleted_at IS NULL
         )",
     )
     .bind(mooc_id)

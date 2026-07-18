@@ -201,6 +201,33 @@ export const PAYS_AFRICAINS: { value: string; label: string }[] = [
   { value: 'Tunisie', label: 'Tunisie' },
 ]
 
+// Pays hors Afrique (origine des expertises pour les programmes « Hors Afrique vers Afrique »)
+export const PAYS_HORS_AFRIQUE: { value: string; label: string }[] = [
+  { value: '', label: 'Tous les territoires' },
+  { value: 'Allemagne', label: 'Allemagne' },
+  { value: 'Arabie saoudite', label: 'Arabie saoudite' },
+  { value: 'Argentine', label: 'Argentine' },
+  { value: 'Australie', label: 'Australie' },
+  { value: 'Belgique', label: 'Belgique' },
+  { value: 'Brésil', label: 'Brésil' },
+  { value: 'Canada', label: 'Canada' },
+  { value: 'Chine', label: 'Chine' },
+  { value: 'Corée du Sud', label: 'Corée du Sud' },
+  { value: 'Émirats arabes unis', label: 'Émirats arabes unis' },
+  { value: 'Espagne', label: 'Espagne' },
+  { value: 'États-Unis', label: 'États-Unis' },
+  { value: 'France', label: 'France' },
+  { value: 'Inde', label: 'Inde' },
+  { value: 'Italie', label: 'Italie' },
+  { value: 'Japon', label: 'Japon' },
+  { value: 'Pays-Bas', label: 'Pays-Bas' },
+  { value: 'Portugal', label: 'Portugal' },
+  { value: 'Qatar', label: 'Qatar' },
+  { value: 'Royaume-Uni', label: 'Royaume-Uni' },
+  { value: 'Suisse', label: 'Suisse' },
+  { value: 'Turquie', label: 'Turquie' },
+]
+
 export const PRISES_EN_CHARGE: { value: string; label: string }[] = [
   { value: 'billet_avion', label: 'Billet d\'avion' },
   { value: 'hebergement', label: 'Hébergement' },

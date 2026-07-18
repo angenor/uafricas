@@ -10,6 +10,14 @@
       <div class="absolute top-0 right-0 bg-custom-chocolat text-white text-xs px-2 py-1 rounded-bl-md">
         {{ evenement.type }}
       </div>
+      <!-- Partage réseaux sociaux -->
+      <div class="absolute top-2 left-2">
+        <EvenementsEvenementPartage
+          variant="compact"
+          :path="`/evenements/${evenement.id}`"
+          :titre="evenement.titre"
+        />
+      </div>
     </div>
 
     <!-- Contenu -->

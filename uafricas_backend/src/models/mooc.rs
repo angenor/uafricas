@@ -11,7 +11,7 @@ pub const MOOC_COLONNES: &str =
      m.date_heure_debut, m.date_heure_fin,
      m.image_couverture_url, m.format::text AS format,
      m.lien_en_ligne, m.langue, m.nombre_places,
-     m.prerequis,
+     m.prerequis, m.objectif, m.presentation, m.a_evaluation, m.est_certifiante,
      m.etat, m.cree_par, m.created_at, m.updated_at";
 
 /// Representation d'un MOOC en base de donnees
@@ -32,6 +32,10 @@ pub struct MoocRow {
     pub langue: String,
     pub nombre_places: Option<i32>,
     pub prerequis: Option<String>,
+    pub objectif: Option<String>,
+    pub presentation: Option<String>,
+    pub a_evaluation: bool,
+    pub est_certifiante: bool,
     pub etat: String,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
@@ -93,6 +97,10 @@ pub struct MoocDetailResponse {
     pub nombre_places: Option<i32>,
     pub nombre_inscrits: i64,
     pub prerequis: Option<String>,
+    pub objectif: Option<String>,
+    pub presentation: Option<String>,
+    pub a_evaluation: bool,
+    pub est_certifiante: bool,
     pub est_inscrit: bool,
     pub formateur: FormateurResponse,
     pub created_at: DateTime<Utc>,

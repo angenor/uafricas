@@ -19,6 +19,7 @@ pub mod engagement;
 pub mod experts;
 pub mod facultes;
 pub mod fiches_pays;
+pub mod element_social;
 pub mod fiche_pays_social;
 pub mod gouvernance;
 pub mod livres;

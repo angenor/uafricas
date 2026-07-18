@@ -16,6 +16,7 @@ pub mod formation_contenu;
 pub mod expert;
 pub mod faculte;
 pub mod fiche_pays;
+pub mod element_social;
 pub mod fiche_pays_social;
 pub mod gouvernance;
 pub mod livre;

@@ -13,8 +13,27 @@
             Événements & Rencontres
           </p>
         </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation d'Africalive -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Africalive"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Africalive&nbsp;?
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi Africalive ? » -->
+    <EvenementsPresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Breadcrumb -->
     <div class="backdrop-blur-xs">
@@ -119,4 +138,7 @@ useHead({
 const breadcrumbs = [
   { label: 'Événements', to: undefined }
 ]
+
+// Modale de présentation « C'est quoi Africalive ? »
+const presentationOuverte = ref(false)
 </script>

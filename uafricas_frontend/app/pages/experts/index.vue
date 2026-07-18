@@ -9,10 +9,9 @@
 
     <!-- Mobile Sidebar for Filters -->
     <ExpertsExpertFiltersMobile
+      v-model:selected-country="selectedCountry"
       :is-open="sidebarOpen"
       :selected-profile="selectedProfile"
-      :total-experts="totalExperts"
-      :filtered-count="totalExperts"
       @close="sidebarOpen = false"
       @filter-profile="filterByProfile"
       @reset="resetFilters"
@@ -45,6 +44,7 @@
         :total-experts="totalExperts"
         :categories="categories"
         @search="handleSearch"
+        @presentation="presentationOuverte = true"
       />
 
       <!-- Main Content Section -->
@@ -54,9 +54,8 @@
           <!-- Left Sidebar - Profile Filters (Desktop uniquement) -->
           <div class="hidden lg:block w-80 flex-shrink-0">
             <ExpertsExpertFilters
+              v-model:selected-country="selectedCountry"
               :selected-profile="selectedProfile"
-              :total-experts="totalExperts"
-              :filtered-count="totalExperts"
               @filter-profile="filterByProfile"
               @reset="resetFilters"
             />
@@ -186,18 +185,8 @@
                   </div>
                 </div>
 
-                <!-- Controles de tri et filtre pays -->
+                <!-- Controles de tri -->
                 <div class="flex flex-col sm:flex-row gap-3">
-                  <!-- Filtre pays -->
-                  <select
-                    v-model="selectedCountry"
-                    class="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                  >
-                    <option v-for="country in countries" :key="country.value" :value="country.value">
-                      {{ country.label }}
-                    </option>
-                  </select>
-
                   <!-- Boutons de tri -->
                   <div class="flex gap-2">
                     <button
@@ -334,6 +323,12 @@
       @close="filtreSurMesureOuvert = false"
       @apply="appliquerFiltreSurMesure"
     />
+
+    <!-- Modale de présentation « C'est quoi Diapertise ? » -->
+    <ExpertsPresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
   </div>
 </template>
 
@@ -341,7 +336,6 @@
 import {
   useExperts,
   CATEGORIES_EXPERTISE as categories,
-  PAYS_EXPERTS as countries,
   type ExpertAPI,
 } from '~/composables/useExperts'
 
@@ -372,6 +366,9 @@ const sidebarOpen = ref(false)
 const currentPage = ref(1)
 const parPage = 12
 const filtreSurMesureOuvert = ref(false)
+
+// Modale de présentation « C'est quoi Diapertise ? »
+const presentationOuverte = ref(false)
 
 // Sort options
 const sortOptions = [

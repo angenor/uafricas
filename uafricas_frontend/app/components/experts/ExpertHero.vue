@@ -24,6 +24,19 @@
           Valoriser en un seul endroit l'expertise africaine et afro-descendante et encourager les entreprises en Afrique à recourir aux ressources pertinentes sur le continent et au-delà.
         </p>
 
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation de Diapertise -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Diapertise"
+            @click="$emit('presentation')"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Diapertise&nbsp;?
+          </button>
+        </div>
+
         <!-- Search Bar integree dans le hero -->
         <div class="max-w-4xl mx-auto mt-10">
           <div class="bg-white/10 backdrop-blur-md rounded-2xl p-2 shadow-2xl">
@@ -99,6 +112,7 @@ const emit = defineEmits<{
   'update:searchTerm': [value: string]
   'update:categorySelected': [value: string]
   search: []
+  presentation: []
 }>()
 
 // Local refs with two-way binding

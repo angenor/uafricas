@@ -39,19 +39,54 @@
       </div>
     </div>
 
-    <!-- Quick Stats -->
+    <!-- Filtre Territoire -->
     <div class="mb-6 pt-6 border-t border-gray-200">
-      <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Statistiques</h4>
-      <div class="space-y-3">
-        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-          <span class="text-sm text-gray-600">Total experts</span>
-          <span class="font-bold text-gray-900 text-lg">{{ totalExperts }}</span>
-        </div>
-        <div class="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
-          <span class="text-sm text-emerald-700">Resultats filtres</span>
-          <span class="font-bold text-emerald-600 text-lg">{{ filteredCount }}</span>
-        </div>
+      <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        Territoire
+      </h4>
+
+      <!-- Choix de la zone (radio) -->
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label
+          v-for="option in zones"
+          :key="option.value"
+          :class="[
+            'flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all',
+            zone === option.value
+              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
+              : 'bg-gray-50 text-gray-700 hover:bg-gray-100',
+          ]"
+        >
+          <input
+            v-model="zone"
+            type="radio"
+            :value="option.value"
+            class="sr-only"
+          >
+          {{ option.label }}
+        </label>
       </div>
+
+      <!-- Menu déroulant des territoires -->
+      <select
+        v-model="selectedCountry"
+        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+      >
+        <option value="">
+          {{ zone === 'afrique' ? 'Tous les territoires d\'Afrique' : 'Tous les territoires hors Afrique' }}
+        </option>
+        <option v-for="territoire in territoires" :key="territoire" :value="territoire">
+          {{ territoire }}
+        </option>
+      </select>
     </div>
 
     <!-- Reset Filters -->
@@ -73,18 +108,42 @@
 </template>
 
 <script setup lang="ts">
-import { PROFILS_PROFESSIONNELS as profiles } from '~/composables/useExperts'
+import {
+  PROFILS_PROFESSIONNELS as profiles,
+  PAYS_AFRIQUE,
+  PAYS_HORS_AFRIQUE,
+} from '~/composables/useExperts'
 
 defineProps<{
   selectedProfile: string
-  totalExperts: number
-  filteredCount: number
 }>()
 
 defineEmits<{
   filterProfile: [profileId: string]
   reset: []
 }>()
+
+/** Territoire sélectionné (synchronisé avec la page via v-model). */
+const selectedCountry = defineModel<string>('selectedCountry', { default: '' })
+
+/** Zone géographique qui pilote le contenu du menu déroulant. */
+const zones = [
+  { value: 'afrique' as const, label: 'Afrique' },
+  { value: 'hors_afrique' as const, label: 'Hors Afrique' },
+]
+const zone = ref<'afrique' | 'hors_afrique'>('afrique')
+
+/** Territoires proposés selon la zone, triés alphabétiquement (fr). */
+const territoires = computed(() =>
+  (zone.value === 'afrique' ? PAYS_AFRIQUE : PAYS_HORS_AFRIQUE)
+    .slice()
+    .sort((a, b) => a.localeCompare(b, 'fr')),
+)
+
+// Changer de zone réinitialise le territoire choisi (contenus disjoints).
+watch(zone, () => {
+  selectedCountry.value = ''
+})
 </script>
 
 <style scoped>

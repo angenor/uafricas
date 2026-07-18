@@ -2,6 +2,7 @@
 definePageMeta({ layout: 'default' })
 
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 const { listerAvis, cloturerAvis, supprimerAvis } = useRetrouvAmis()
 
 const avisListe = ref<any[]>([])
@@ -132,7 +133,7 @@ const labelRelation = (type: string | null, autre: string | null): string | null
 
 onMounted(() => {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   chargerAvis()

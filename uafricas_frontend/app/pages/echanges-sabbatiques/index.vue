@@ -14,8 +14,27 @@
             Offrir des canaux aux entreprises et organisations en Afrique de bénéficier de l'expérience pointue de la diaspora dans des domaines clés de développement.
           </p>
         </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation de Sabbafrica -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Sabbafrica"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Sabbafrica&nbsp;?
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi Sabbafrica ? » -->
+    <SabbatiquePresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Contenu principal -->
     <div class="max-w-7xl mx-auto px-4 relative mt-6">
@@ -108,11 +127,35 @@
 
               <!-- Territoire -->
               <h4 class="text-sm font-medium text-gray-700 mb-2">Territoire</h4>
+
+              <!-- Choix de la zone (radio) qui pilote le contenu du menu déroulant -->
+              <div class="grid grid-cols-2 gap-2 mb-3">
+                <label
+                  v-for="option in ZONES_TERRITOIRE"
+                  :key="option.value"
+                  :class="[
+                    'flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all',
+                    zoneTerritoire === option.value
+                      ? 'bg-custom-green text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                  ]"
+                >
+                  <input
+                    v-model="zoneTerritoire"
+                    type="radio"
+                    :value="option.value"
+                    class="sr-only"
+                  />
+                  {{ option.label }}
+                </label>
+              </div>
+
+              <!-- Menu déroulant des territoires selon la zone -->
               <select
                 v-model="filtres.pays"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-3 focus:ring-custom-green focus:border-custom-green mb-6"
               >
-                <option v-for="pays in PAYS_AFRICAINS" :key="pays.value" :value="pays.value">
+                <option v-for="pays in territoiresDisponibles" :key="pays.value" :value="pays.value">
                   {{ pays.label }}
                 </option>
               </select>
@@ -309,6 +352,7 @@ import {
   useSabbatiques,
   TYPES_PROGRAMME,
   PAYS_AFRICAINS,
+  PAYS_HORS_AFRIQUE,
   DOMAINES,
   type SabbatiqueAPI,
   type SabbatiqueFiltres,
@@ -326,6 +370,9 @@ useHead({
   ]
 })
 
+// Modale de présentation « C'est quoi Sabbafrica ? »
+const presentationOuverte = ref(false)
+
 const viewMode = ref<'grille' | 'carte'>('carte')
 
 const filtres = ref<SabbatiqueFiltres>({
@@ -337,6 +384,22 @@ const filtres = ref<SabbatiqueFiltres>({
 
 const programmes = ref<SabbatiqueAPI[]>([])
 const total = ref(0)
+
+// Zone géographique qui pilote le contenu du menu déroulant des territoires
+const ZONES_TERRITOIRE = [
+  { value: 'afrique' as const, label: 'Afrique' },
+  { value: 'hors_afrique' as const, label: 'Hors Afrique' },
+]
+const zoneTerritoire = ref<'afrique' | 'hors_afrique'>('afrique')
+
+const territoiresDisponibles = computed(() =>
+  zoneTerritoire.value === 'afrique' ? PAYS_AFRICAINS : PAYS_HORS_AFRIQUE
+)
+
+// Changer de zone réinitialise le territoire choisi (contenus disjoints)
+watch(zoneTerritoire, () => {
+  filtres.value.pays = ''
+})
 
 const filtresActifs = computed(() =>
   filtres.value.type !== 'tous'
@@ -375,6 +438,7 @@ const voirDetail = (programme: SabbatiqueAPI) => {
 }
 
 const reinitialiserFiltres = () => {
+  zoneTerritoire.value = 'afrique'
   filtres.value = {
     type: 'tous',
     pays: '',

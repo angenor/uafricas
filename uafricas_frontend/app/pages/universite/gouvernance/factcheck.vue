@@ -18,8 +18,131 @@
             Vérifier des idées reçues sur l'Afrique
           </p>
         </div>
+
+        <!-- Bouton d'aide : ouvre la présentation de FactCheck -->
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur FactCheck"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi FactCheck&nbsp;?
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi FactCheck ? » -->
+    <Transition name="modal-fade">
+      <div
+        v-if="presentationOuverte"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
+        @click.self="presentationOuverte = false"
+      >
+        <div
+          class="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white shadow-2xl rounded-3xl overflow-hidden"
+          @click.stop
+        >
+          <!-- En-tête -->
+          <div class="relative shrink-0 bg-linear-to-r from-custom-chocolat to-custom-chocolat/80 px-6 py-6 text-white">
+            <button
+              type="button"
+              class="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
+              aria-label="Fermer"
+              @click="presentationOuverte = false"
+            >
+              <font-awesome-icon :icon="['fas', 'xmark']" class="w-5 h-5" />
+            </button>
+
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+                <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="w-6 h-6" />
+              </div>
+              <div>
+                <h2 class="text-xl md:text-2xl font-bold leading-tight">FactCheck</h2>
+                <p class="text-white/90 text-sm">Vérifier l'info et défendre la vérité sur l'Afrique</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Corps défilant -->
+          <div class="overflow-y-auto px-6 py-6 space-y-8">
+            <!-- L'accroche -->
+            <p class="text-gray-700 leading-relaxed">
+              Sur Internet, beaucoup d'idées reçues et de fausses informations circulent sur
+              l'Afrique. <strong class="text-gray-900">FactCheck</strong> est un espace où l'on
+              vérifie <strong class="text-gray-900">ensemble</strong> les contenus qui circulent —
+              articles, images, vidéos, rumeurs — pour distinguer le vrai du faux et raconter une
+              Afrique <strong class="text-gray-900">fiable, nuancée et vérifiée</strong>.
+            </p>
+
+            <!-- Ce que vous pouvez faire -->
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-wide text-custom-chocolat mb-4">
+                Ce que vous pouvez y faire
+              </h3>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div
+                  v-for="item in presentationCartes"
+                  :key="item.titre"
+                  class="flex gap-3 rounded-2xl border border-gray-100 bg-gray-50/60 p-4"
+                >
+                  <div class="w-10 h-10 rounded-xl bg-custom-green/10 text-custom-green flex items-center justify-center shrink-0">
+                    <font-awesome-icon :icon="['fas', item.icone]" class="w-5 h-5" />
+                  </div>
+                  <div class="min-w-0">
+                    <p class="font-semibold text-gray-900 text-sm">{{ item.titre }}</p>
+                    <p class="text-gray-500 text-xs mt-0.5 leading-relaxed">{{ item.texte }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Les outils -->
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-wide text-custom-chocolat mb-4">
+                Les outils à votre disposition
+              </h3>
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="outil in presentationOutils"
+                  :key="outil"
+                  class="inline-flex items-center gap-1.5 rounded-full bg-custom-chocolat/5 text-custom-chocolat text-xs font-medium px-3 py-1.5"
+                >
+                  <font-awesome-icon :icon="['fas', 'circle-check']" class="w-3 h-3 text-custom-green" />
+                  {{ outil }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Notre objectif -->
+            <div class="rounded-2xl bg-custom-green/5 border border-custom-green/15 p-5">
+              <h3 class="flex items-center gap-2 text-sm font-bold text-custom-green mb-2">
+                <font-awesome-icon :icon="['fas', 'seedling']" class="w-4 h-4" />
+                Notre objectif
+              </h3>
+              <p class="text-gray-700 text-sm leading-relaxed">
+                Faire reculer la désinformation et les clichés sur l'Afrique, renforcer l'esprit
+                critique de chacun et donner à voir une image plus juste du continent.
+              </p>
+            </div>
+          </div>
+
+          <!-- Pied -->
+          <div class="shrink-0 border-t border-gray-100 px-6 py-4 bg-gray-50/50">
+            <button
+              type="button"
+              class="w-full sm:w-auto sm:ml-auto sm:block px-6 py-2.5 rounded-full bg-custom-chocolat text-white font-semibold text-sm hover:bg-custom-chocolat/90 transition-colors"
+              @click="presentationOuverte = false"
+            >
+              J'ai compris
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Contenu -->
     <div class="max-w-7xl mx-auto px-4 py-8 relative z-10">
@@ -395,6 +518,7 @@ useHead({
 
 const { getContributions, reagir, signaler, partagerContribution } = useGouvernance()
 const { pubCible, cibler } = usePartagePublication()
+const { redirigerVersConnexion } = useAuth()
 
 // Partage vers le mur /publications
 const modalPartageOuvert = ref(false)
@@ -403,7 +527,7 @@ const modalPartageRef = ref<{ setLoading: (v: boolean) => void; setError: (m: st
 
 function ouvrirPartage(c: ContributionCitoyenne) {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   contribAPartager.value = c
@@ -445,9 +569,40 @@ const modalOuvert = ref(false)
 const chargement = ref(false)
 const erreurReaction = ref<string | null>(null)
 
+// Modale de présentation « C'est quoi FactCheck ? »
+const presentationOuverte = ref(false)
+const presentationCartes = [
+  {
+    icone: 'users',
+    titre: 'Vérifier ensemble',
+    texte: 'Passez au crible articles, images, vidéos et rumeurs, à plusieurs.',
+  },
+  {
+    icone: 'link',
+    titre: 'Remonter aux sources',
+    texte: "Indiquez la source d'origine et joignez une preuve (photo ou PDF).",
+  },
+  {
+    icone: 'book-open',
+    titre: 'Publier des vérifications',
+    texte: 'Structurez chaque analyse en deux volets : préjugé et réalité.',
+  },
+  {
+    icone: 'flag',
+    titre: 'Réagir & signaler',
+    texte: 'Aimez les volets, réagissez par emoji et signalez les contenus trompeurs.',
+  },
+]
+const presentationOutils = [
+  'Vérification collaborative',
+  'Volets préjugé / réalité',
+  'Sources & preuves',
+  'Réactions & signalement',
+]
+
 function ouvrirModalPublication() {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   modalOuvert.value = true
@@ -524,7 +679,7 @@ function appliquerEtat(id: string, etat: Awaited<ReturnType<typeof reagir>>) {
 
 async function reagirGlobal(c: ContributionCitoyenne, type: TypeReactionGlobale) {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   erreurReaction.value = null
@@ -537,7 +692,7 @@ async function reagirGlobal(c: ContributionCitoyenne, type: TypeReactionGlobale)
 
 async function reagirVolet(c: ContributionCitoyenne, cible: 'prejuge' | 'realite') {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   erreurReaction.value = null
@@ -552,7 +707,7 @@ const messageInfo = ref<string | null>(null)
 
 async function signalerContribution(c: ContributionCitoyenne) {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   if (c.aSignale) return
@@ -630,3 +785,14 @@ watch(() => userStore.accessToken, (token, ancien) => {
   if (token && !ancien) chargerContributions()
 })
 </script>
+
+<style scoped>
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+</style>

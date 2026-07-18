@@ -341,6 +341,7 @@ const route = useRoute()
 const userStore = useUserStore()
 const { obtenirAnnonce, contacterAuteur, erreur } = useMarcheAfricain()
 const { listerConversations, demanderOuverture } = useMessagerie()
+const { redirigerVersConnexion } = useAuth()
 
 // State
 const loading = ref(true)
@@ -428,7 +429,7 @@ const getTypeColor = (type: string): string => {
 
 const ouvrirContact = () => {
   if (!isAuthenticated.value) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   erreurContact.value = null

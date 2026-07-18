@@ -120,6 +120,41 @@ export interface PartageFicheListeAPI {
   total_pages: number
 }
 
+/** Type de sous-objet afripulse partageable / réactionnable */
+export type TypeObjetElement =
+  | 'secteur_developpement'
+  | 'recette_culinaire'
+  | 'site_touristique'
+  | 'personnalite_connue'
+
+/** Aperçu d'un sous-objet partagé (carte du mur communautaire) */
+export interface PartageElementApercuAPI {
+  type_objet: TypeObjetElement
+  objet_id: string
+  fiche_pays_id: string
+  territoire_nom: string
+  titre: string
+  image_url: string | null
+}
+
+/** Partage d'un sous-objet afripulse dans le mur communautaire */
+export interface PartageElementAPI {
+  id: string
+  legende: string | null
+  created_at: string
+  element: PartageElementApercuAPI
+  auteur: PartageAuteurAPI
+}
+
+/** Réponse paginée des partages de sous-objets */
+export interface PartageElementListeAPI {
+  partages: PartageElementAPI[]
+  total: number
+  page: number
+  par_page: number
+  total_pages: number
+}
+
 /** Reponse paginee */
 export interface FichePaysListeAPI {
   fiches: FichePaysAPI[]
@@ -297,6 +332,9 @@ export interface PersonnaliteConnueAPI {
   nombre_signalements: number
   suspendu: boolean
   a_signale: boolean
+  nombre_likes: number
+  nombre_dislikes: number
+  ma_reaction: 'like' | 'dislike' | null
   created_at: string
 }
 
@@ -372,6 +410,9 @@ export interface SiteTouristiqueAPI {
   nombre_signalements: number
   suspendu: boolean
   a_signale: boolean
+  nombre_likes: number
+  nombre_dislikes: number
+  ma_reaction: 'like' | 'dislike' | null
   created_at: string
 }
 
@@ -408,6 +449,9 @@ export interface SecteurOpportuniteAPI {
   nombre_signalements: number
   suspendu: boolean
   a_signale: boolean
+  nombre_likes: number
+  nombre_dislikes: number
+  ma_reaction: 'like' | 'dislike' | null
   created_at: string
 }
 
@@ -424,6 +468,9 @@ export interface RecetteCulinaireAPI {
   nombre_signalements: number
   suspendu: boolean
   a_signale: boolean
+  nombre_likes: number
+  nombre_dislikes: number
+  ma_reaction: 'like' | 'dislike' | null
   created_at: string
 }
 
@@ -899,6 +946,74 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
+  /** Obtenir un site touristique par son ID (page de détail dédiée) */
+  const obtenirSiteTouristique = async (
+    ficheId: string,
+    siteId: string,
+  ): Promise<SiteTouristiqueAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<SiteTouristiqueAPI>>(
+        `${apiBase}/api/fiches-pays/${encodeURIComponent(ficheId)}/sites-touristiques/${encodeURIComponent(siteId)}`,
+        { headers: authHeaders() },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur obtenirSiteTouristique:', e)
+      return null
+    }
+  }
+
+  /** Obtenir un secteur d'opportunité par son ID (page de détail dédiée) */
+  const obtenirSecteurOpportunite = async (
+    ficheId: string,
+    secteurId: string,
+  ): Promise<SecteurOpportuniteAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<SecteurOpportuniteAPI>>(
+        `${apiBase}/api/fiches-pays/${encodeURIComponent(ficheId)}/secteurs-opportunites/${encodeURIComponent(secteurId)}`,
+        { headers: authHeaders() },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur obtenirSecteurOpportunite:', e)
+      return null
+    }
+  }
+
+  /** Obtenir une recette culinaire par son ID (page de détail dédiée) */
+  const obtenirRecetteCulinaire = async (
+    ficheId: string,
+    recetteId: string,
+  ): Promise<RecetteCulinaireAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<RecetteCulinaireAPI>>(
+        `${apiBase}/api/fiches-pays/${encodeURIComponent(ficheId)}/recettes-culinaires/${encodeURIComponent(recetteId)}`,
+        { headers: authHeaders() },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur obtenirRecetteCulinaire:', e)
+      return null
+    }
+  }
+
+  /** Obtenir une personnalité connue par son ID (page de détail dédiée) */
+  const obtenirPersonnalite = async (
+    ficheId: string,
+    personnaliteId: string,
+  ): Promise<PersonnaliteConnueAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<PersonnaliteConnueAPI>>(
+        `${apiBase}/api/fiches-pays/${encodeURIComponent(ficheId)}/personnalites/${encodeURIComponent(personnaliteId)}`,
+        { headers: authHeaders() },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur obtenirPersonnalite:', e)
+      return null
+    }
+  }
+
   /** Lister les personnalités connues d'une fiche (filtre domaine optionnel) */
   const listerPersonnalites = async (
     ficheId: string,
@@ -1326,6 +1441,69 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
+  // ── Sous-objets afripulse : réactions & partage communautaire (11k) ──
+
+  /** Like/dislike (toggle) sur un sous-objet. Authentification requise. */
+  const reagirElement = async (
+    typeObjet: TypeObjetElement,
+    objetId: string,
+    typeReaction: 'like' | 'dislike',
+  ): Promise<ReactionFicheEtat | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<ReactionFicheEtat>>(
+        `${apiBase}/api/fiches-pays/elements/${encodeURIComponent(typeObjet)}/${encodeURIComponent(objetId)}/reaction`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: { type_reaction: typeReaction },
+        },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur reagirElement:', e)
+      return null
+    }
+  }
+
+  /** Partager un sous-objet dans le mur communautaire (légende facultative). */
+  const partagerElement = async (
+    typeObjet: TypeObjetElement,
+    objetId: string,
+    legende?: string,
+  ): Promise<PartageElementAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<PartageElementAPI>>(
+        `${apiBase}/api/fiches-pays/elements/${encodeURIComponent(typeObjet)}/${encodeURIComponent(objetId)}/partages`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: { legende: legende || undefined },
+        },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur partagerElement:', e)
+      return null
+    }
+  }
+
+  /** Liste paginée des sous-objets partagés (mur communautaire, public). */
+  const listerPartagesElements = async (
+    page = 1,
+    parPage = 20,
+  ): Promise<PartageElementListeAPI | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<PartageElementListeAPI>>(
+        `${apiBase}/api/fiches-pays/elements/partages?page=${page}&par_page=${parPage}`,
+        { headers: authHeaders() },
+      )
+      return reponse.success ? reponse.data ?? null : null
+    } catch (e) {
+      console.error('Erreur listerPartagesElements:', e)
+      return null
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -1338,6 +1516,10 @@ export const useOpportuniteAfrique = () => {
     signalerContribution,
     partagerFiche,
     listerPartagesFiches,
+    // Sous-objets : réactions & partage communautaire
+    reagirElement,
+    partagerElement,
+    listerPartagesElements,
     // Contributions
     soumettreContribution,
     listerContributions,
@@ -1347,9 +1529,13 @@ export const useOpportuniteAfrique = () => {
     uploaderImageContribution,
     resoudreUrlImage,
     listerSitesTouristiques,
+    obtenirSiteTouristique,
     listerSecteursOpportunites,
+    obtenirSecteurOpportunite,
     listerRecettesCulinaires,
+    obtenirRecetteCulinaire,
     listerPersonnalites,
+    obtenirPersonnalite,
     listerSavoirsPratiques,
     // US3 / US4
     creerFichePays,

@@ -17,8 +17,27 @@
             Préservons nos cultures les meilleures — codifier les récits, images et souvenirs de l'Afrique et des afro-descendants.
           </p>
         </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation de Codimoi -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Codimoi"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Codimoi&nbsp;?
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi Codimoi ? » -->
+    <CodiMoiPresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Barre de recherche flottante -->
     <CodiMoiFilters
@@ -342,6 +361,9 @@ const userStore = useUserStore()
 const breadcrumbs = [
   { label: 'Codimoi', to: undefined }
 ]
+
+// Modale de présentation « C'est quoi Codimoi ? »
+const presentationOuverte = ref(false)
 
 // Données — on utilise directement CodiMoiPostAPI (pas de mapping)
 const posts = ref<CodiMoiPostAPI[]>([])

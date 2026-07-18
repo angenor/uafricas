@@ -4,6 +4,7 @@ import type { ParcoursTrouvable } from '~/composables/useRetrouvAmis'
 definePageMeta({ layout: 'default' })
 
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 const { basculerTrouvable, listerParcours, ajouterParcours, modifierParcours, supprimerParcours, tableauDeBord, chargement, erreur } = useRetrouvAmis()
 
 const estTrouvable = ref(false)
@@ -88,7 +89,7 @@ const onSupprimerParcours = async (id: string) => {
 
 onMounted(() => {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
     return
   }
   charger()

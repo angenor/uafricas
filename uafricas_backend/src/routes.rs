@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, engagement, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -770,11 +770,20 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{id}/reaction", web::post().to(fiche_pays_social::reagir_fiche))
                     .route("/{id}/signalement", web::post().to(fiche_pays_social::signaler_fiche))
                     .route("/{id}/partages", web::post().to(fiche_pays_social::partager_fiche))
+                    // Sous-objets afripulse — réactions like/dislike & partage communautaire.
+                    // Route littérale (mur) AVANT les routes paramétrées.
+                    .route("/elements/partages", web::get().to(element_social::lister_partages_elements))
+                    .route("/elements/{type_objet}/{objet_id}/reaction", web::post().to(element_social::reagir_element))
+                    .route("/elements/{type_objet}/{objet_id}/partages", web::post().to(element_social::partager_element))
                     // Sections Afripulse enrichies (US1)
                     .route("/{id}/sites-touristiques", web::get().to(afripulse_public::lister_sites_touristiques))
+                    .route("/{id}/sites-touristiques/{site_id}", web::get().to(afripulse_public::obtenir_site_touristique))
                     .route("/{id}/secteurs-opportunites", web::get().to(afripulse_public::lister_secteurs_opportunites))
+                    .route("/{id}/secteurs-opportunites/{secteur_id}", web::get().to(afripulse_public::obtenir_secteur_opportunite))
                     .route("/{id}/recettes-culinaires", web::get().to(afripulse_public::lister_recettes_culinaires))
+                    .route("/{id}/recettes-culinaires/{recette_id}", web::get().to(afripulse_public::obtenir_recette_culinaire))
                     .route("/{id}/personnalites", web::get().to(afripulse_public::lister_personnalites))
+                    .route("/{id}/personnalites/{personnalite_id}", web::get().to(afripulse_public::obtenir_personnalite))
                     .route("/{id}/savoirs-pratiques", web::get().to(afripulse_public::lister_savoirs_pratiques))
                     // US4 — galerie photos + recommandations
                     .route("/{id}/recommandations", web::get().to(afripulse_public::lister_recommandations))

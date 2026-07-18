@@ -17,6 +17,10 @@ const form = reactive({
   ville: '',
   lien_en_ligne: '',
   prerequis: '',
+  objectif: '',
+  presentation: '',
+  a_evaluation: false,
+  est_certifiante: false,
   image_couverture_url: '',
 })
 
@@ -60,6 +64,10 @@ const soumettre = async () => {
     if (form.ville.trim()) body.ville = form.ville.trim()
     if (form.lien_en_ligne.trim()) body.lien_en_ligne = form.lien_en_ligne.trim()
     if (form.prerequis.trim()) body.prerequis = form.prerequis.trim()
+    if (form.objectif.trim()) body.objectif = form.objectif.trim()
+    if (form.presentation.trim()) body.presentation = form.presentation.trim()
+    body.a_evaluation = form.a_evaluation
+    body.est_certifiante = form.est_certifiante
     if (form.image_couverture_url.trim()) body.image_couverture_url = form.image_couverture_url.trim()
     await creer(body)
     router.push('/admin/mooc')
@@ -163,12 +171,35 @@ const soumettre = async () => {
             </div>
           </div>
 
-          <!-- Prerequis -->
+          <!-- Contenu pedagogique -->
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold border-b pb-2">Prerequis</h3>
+            <h3 class="text-lg font-semibold border-b pb-2">Contenu pedagogique</h3>
+            <div class="form-control">
+              <label class="label"><span class="label-text">Objectif</span></label>
+              <textarea v-model="form.objectif" class="textarea textarea-bordered h-24" placeholder="Objectifs pedagogiques : ce que l'apprenant saura faire a l'issue de la formation..." />
+            </div>
+            <div class="form-control">
+              <label class="label"><span class="label-text">Presentation</span></label>
+              <textarea v-model="form.presentation" class="textarea textarea-bordered h-32" placeholder="Presentation detaillee de la formation (affichee sur la page publique)..." />
+            </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Prerequis</span></label>
               <textarea v-model="form.prerequis" class="textarea textarea-bordered" placeholder="Niveau requis, connaissances prealables..." />
+            </div>
+          </div>
+
+          <!-- Evaluation & certification -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold border-b pb-2">Evaluation & certification</h3>
+            <div class="flex flex-col gap-3">
+              <label class="label cursor-pointer justify-start gap-3">
+                <input v-model="form.a_evaluation" type="checkbox" class="checkbox checkbox-primary">
+                <span class="label-text">La formation se termine par une evaluation</span>
+              </label>
+              <label class="label cursor-pointer justify-start gap-3">
+                <input v-model="form.est_certifiante" type="checkbox" class="checkbox checkbox-primary">
+                <span class="label-text">La formation est certifiante</span>
+              </label>
             </div>
           </div>
 

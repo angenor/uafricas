@@ -17,6 +17,8 @@ export interface SalleAppelAPI {
   mon_peer_id: string
   pair_peer_id: string
   suis_appelant: boolean
+  /** Vidéo activée d'emblée, ou appel « normal » caméra coupée par défaut. */
+  video: boolean
   autre: MembreLightAPI
 }
 
@@ -24,6 +26,8 @@ export interface SalleAppelAPI {
 export interface AppelEntrant {
   appel_id: string
   appelant: MembreLightAPI
+  /** L'appelant a lancé un appel vidéo (`true`) ou un appel normal (`false`). */
+  video: boolean
 }
 
 /** Raison de fin d'un appel non connecté. */
@@ -34,6 +38,7 @@ export interface EvenementAppel {
   type: 'appel_entrant' | 'appel_accepte' | 'appel_refuse' | 'appel_annule'
   appel_id: string
   appelant?: MembreLightAPI
+  video?: boolean
 }
 
 interface ApiResponse<T> {
@@ -82,8 +87,12 @@ export const useAppels = () => {
 
   // ── Émettre un appel ────────────────────────────────────────
 
-  /** Démarre un appel direct vers un ami. Ouvre la salle si la mise en relation réussit. */
-  const appeler = async (destinataireId: string): Promise<boolean> => {
+  /**
+   * Démarre un appel direct vers un ami. Ouvre la salle si la mise en relation
+   * réussit. `avecVideo` = appel vidéo (caméra active d'emblée) ; par défaut
+   * appel « normal » (audio, caméra coupée mais activable en cours d'appel).
+   */
+  const appeler = async (destinataireId: string, avecVideo = false): Promise<boolean> => {
     erreurAppel.value = null
     // Un seul appel à la fois.
     if (appelActif.value || appelEntrant.value) {
@@ -94,7 +103,7 @@ export const useAppels = () => {
       const r = await $fetch<ApiResponse<SalleAppelAPI>>(`${apiBase}/api/appels`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: { destinataire_id: destinataireId },
+        body: { destinataire_id: destinataireId, video: avecVideo },
       })
       if (!r.success || !r.data) throw new Error(r.error || 'Appel impossible')
       finAppel.value = null
@@ -168,7 +177,7 @@ export const useAppels = () => {
           void postSilencieux(`/api/appels/${evt.appel_id}/refuser`)
           return
         }
-        appelEntrant.value = { appel_id: evt.appel_id, appelant: evt.appelant }
+        appelEntrant.value = { appel_id: evt.appel_id, appelant: evt.appelant, video: evt.video ?? false }
         break
       }
       case 'appel_accepte':

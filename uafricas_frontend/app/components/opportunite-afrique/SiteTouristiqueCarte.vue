@@ -18,8 +18,10 @@ const emit = defineEmits<{
 
 const { resoudreUrlImage } = useOpportuniteAfrique()
 
-// Modal de détails (galerie complète, contacts, lien web, GPS, constitution, avis).
-const detailsOuvert = ref(false)
+// Navigation vers la page de détail dédiée (galerie, contacts, lien web, GPS, constitution, avis).
+const ouvrirDetail = () => {
+  navigateTo(`/opportunite-afrique/${props.site.fiche_pays_id}/sites/${props.site.id}`)
+}
 
 // Galerie : `images` (≤5) avec repli sur `image_url` (sites legacy).
 const galerie = computed<string[]>(() => {
@@ -43,7 +45,7 @@ const localisation = computed(() =>
       type="button"
       class="group relative block aspect-video w-full shrink-0 cursor-pointer overflow-hidden"
       :aria-label="`Voir les détails de ${site.nom}`"
-      @click="detailsOuvert = true"
+      @click="ouvrirDetail"
     >
       <img
         v-if="couverture"
@@ -116,7 +118,7 @@ const localisation = computed(() =>
         <button
           type="button"
           class="inline-flex items-center gap-1 text-gray-700 hover:text-custom-chocolat"
-          @click="detailsOuvert = true"
+          @click="ouvrirDetail"
         >
           <font-awesome-icon :icon="['fas', 'circle-info']" class="h-3.5 w-3.5 text-custom-chocolat" />
           Détails<span v-if="site.nombre_avis > 0"> &amp; avis ({{ site.nombre_avis }})</span>
@@ -144,13 +146,5 @@ const localisation = computed(() =>
         </span>
       </div>
     </div>
-
-    <!-- Modal détails -->
-    <OpportuniteAfriqueSiteTouristiqueDetailModal
-      :site="site"
-      :est-authentifie="estAuthentifie"
-      :ouvert="detailsOuvert"
-      @fermer="detailsOuvert = false"
-    />
   </article>
 </template>

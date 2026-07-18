@@ -13,6 +13,10 @@ use crate::models::amitie::MembreLight;
 #[derive(Debug, Deserialize)]
 pub struct AppelerBody {
     pub destinataire_id: Uuid,
+    /// Vidéo activée d'emblée (`true`) ou appel « normal » caméra coupée par
+    /// défaut (`false`). Absent = appel normal (rétrocompatibilité).
+    #[serde(default)]
+    pub video: bool,
 }
 
 /// Configuration P2P renvoyée à l'ouverture / l'acceptation d'un appel.
@@ -25,6 +29,8 @@ pub struct SalleAppelResponse {
     pub pair_peer_id: String,
     /// Anti-glare : le plus petit UUID initie l'appel WebRTC (research §7).
     pub suis_appelant: bool,
+    /// Vidéo activée d'emblée (`true`) ou appel « normal » caméra coupée par défaut.
+    pub video: bool,
     pub autre: MembreLight,
 }
 
@@ -34,8 +40,8 @@ pub struct SalleAppelResponse {
 
 /// `appel_entrant` : poussé au destinataire ; porte l'appelant (MembreLight)
 /// pour afficher la sonnerie sans lecture supplémentaire.
-pub fn evt_appel_entrant(appel_id: Uuid, appelant: &MembreLight) -> serde_json::Value {
-    serde_json::json!({ "type": "appel_entrant", "appel_id": appel_id, "appelant": appelant })
+pub fn evt_appel_entrant(appel_id: Uuid, appelant: &MembreLight, video: bool) -> serde_json::Value {
+    serde_json::json!({ "type": "appel_entrant", "appel_id": appel_id, "appelant": appelant, "video": video })
 }
 
 /// `appel_accepte` : poussé à l'appelant quand le destinataire rejoint.

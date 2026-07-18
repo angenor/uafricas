@@ -9,6 +9,9 @@ useHead({
 })
 
 useAOS()
+
+// Modale de présentation « C'est quoi Africans Radio ? »
+const presentationOuverte = ref(false)
 </script>
 
 <template>
@@ -30,8 +33,27 @@ useAOS()
             Écoutez l'Afrique en direct
           </p>
         </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <!-- Bouton d'aide : ouvre la présentation d'Africans Radio -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
+            aria-label="En savoir plus sur Africans Radio"
+            @click="presentationOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
+            C'est quoi Africans Radio&nbsp;?
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modale de présentation « C'est quoi Africans Radio ? » -->
+    <MediaRadioPresentationModal
+      :open="presentationOuverte"
+      @close="presentationOuverte = false"
+    />
 
     <!-- Navigation breadcrumb -->
     <div class="max-w-6xl mx-auto px-4 pt-4">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { VideoAfrica, SousTitres, SegmentKaraoke } from '~/composables/useVidafrica'
+import type { VideoAfrica, SousTitres, SegmentKaraoke, LecteurControl } from '~/composables/useVidafrica'
 import { formaterDuree, formaterTimestamp, LANGUES_LABELS } from '~/mocks/vidafrica'
 
 const route = useRoute()
@@ -20,8 +20,14 @@ const showProposer = ref(false)
 const showContribution = ref(false)
 
 // Lecteur + synchronisation avec la transcription latérale
-const lecteurRef = ref<{ seek: (ms: number) => void } | null>(null)
+const lecteurRef = ref<LecteurControl | null>(null)
 const positionActive = ref<number | null>(null)
+// État réel de lecture (relayé par le lecteur) — pilote le mode « au fil de la lecture ».
+const lectureEnCours = ref(false)
+// La vidéo a atteint sa fin (permet de sous-titrer le dernier passage jusqu'au bout).
+// Pilotée par l'événement `fin` du lecteur : vrai à la fin, faux dès qu'on relit
+// ou qu'on déplace la tête ailleurs.
+const videoTerminee = ref(false)
 
 const segments = computed<SegmentKaraoke[]>(() => {
   return sousTitres.value?.segments || []
@@ -60,6 +66,12 @@ const changerLangue = async (langue: string) => {
   sousTitres.value = await chargerSousTitres(video.value.id, langue)
 }
 
+// Une piste a été modifiée dans l'atelier : rafraîchir le panneau droit (publiées).
+const onPisteModifiee = async () => {
+  if (!video.value || !langueActive.value) return
+  sousTitres.value = await chargerSousTitres(video.value.id, langueActive.value)
+}
+
 onMounted(() => charger())
 </script>
 
@@ -88,7 +100,8 @@ onMounted(() => charger())
             @click="showContribution = !showContribution"
           >
             <font-awesome-icon icon="closed-captioning" class="mr-1" />
-            <span class="hidden sm:inline">{{ showContribution ? 'Fermer l\'atelier' : 'Atelier sous-titres' }}</span>
+            <span class="hidden lg:inline">{{ showContribution ? 'Fermer' : 'Connaissez-vous la langue de cette vidéo ? Proposez un sous-titre' }}</span>
+            <span class="hidden sm:inline lg:hidden">{{ showContribution ? 'Fermer' : 'Proposer un sous-titre' }}</span>
           </button>
           <button
             v-if="estConnecte"
@@ -210,9 +223,8 @@ onMounted(() => charger())
           </div>
         </aside>
 
-        <!-- ── CANVAS CENTRAL : lecteur vidéo + atelier superposé ── -->
-        <main class="order-1 lg:order-2 lg:min-h-0 relative flex flex-col rounded-xl bg-gray-900 shadow-sm overflow-hidden">
-          <!-- Zone vidéo (reste en place, l'atelier vient par-dessus) -->
+        <!-- ── CANVAS CENTRAL : lecteur vidéo (pleine taille) ────── -->
+        <main class="order-1 lg:order-2 lg:min-h-0 flex flex-col rounded-xl bg-gray-900 shadow-sm overflow-hidden">
           <div class="lg:flex-1 min-h-0 flex items-center justify-center p-3 lg:p-4">
             <VidafricaLecteur
               v-if="video.fichierVideoUrl"
@@ -221,48 +233,23 @@ onMounted(() => charger())
               :video-url="video.fichierVideoUrl!"
               :segments="segments"
               @segment-change="positionActive = $event"
+              @lecture="lectureEnCours = $event"
+              @fin="videoTerminee = $event"
             />
             <p v-else class="text-gray-400 text-sm">Vidéo indisponible.</p>
           </div>
 
-          <!-- Mention auteur (cachée quand l'atelier est ouvert) -->
-          <p v-if="sousTitres?.auteur && !showContribution" class="shrink-0 px-4 pb-3 text-xs text-gray-400 text-center">
+          <!-- Mention auteur -->
+          <p v-if="sousTitres?.auteur" class="shrink-0 px-4 pb-3 text-xs text-gray-400 text-center">
             <font-awesome-icon icon="closed-captioning" class="mr-1" />
             Sous-titres<template v-if="langueActive"> en {{ LANGUES_LABELS[langueActive] || langueActive }}</template>
             proposés par <span class="font-medium text-gray-200">{{ sousTitres.auteur }}</span>.
             La plateforme n'est pas responsable de l'exactitude de la traduction.
           </p>
-
-          <!-- Atelier docké en PIED de la fenêtre vidéo (tiroir bas, fond dégradé) -->
-          <Transition name="atelier">
-            <section
-              v-if="estConnecte && showContribution && video.fichierVideoUrl"
-              class="static lg:absolute lg:inset-x-0 lg:bottom-0 z-20 lg:max-h-[58%] flex flex-col bg-linear-to-br from-custom-chocolat via-custom-chocolat/90 to-amber-900/90 lg:rounded-t-2xl lg:shadow-2xl"
-            >
-              <header class="shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 text-white border-b border-white/15">
-                <span class="flex items-center gap-2 text-sm font-bold font-['Oswald'] uppercase tracking-wide">
-                  <font-awesome-icon icon="closed-captioning" /> Atelier de sous-titrage
-                </span>
-                <button
-                  class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-white/15 hover:bg-white/30 transition-colors"
-                  title="Fermer l'atelier"
-                  @click="showContribution = false"
-                >
-                  <font-awesome-icon icon="xmark" />
-                </button>
-              </header>
-              <div class="lg:flex-1 lg:min-h-0 overflow-y-auto p-2">
-                <VidafricaContribuerSousTitres
-                  :video-id="video.id"
-                  :video-url="video.fichierVideoUrl!"
-                />
-              </div>
-            </section>
-          </Transition>
         </main>
 
-        <!-- ── PANNEAU DROIT : sous-titres enregistrés ──────────── -->
-        <aside class="order-3 lg:min-h-0 flex flex-col rounded-xl bg-white shadow-sm overflow-hidden">
+        <!-- ── PANNEAU DROIT : sous-titres enregistrés (+ atelier en overlay) ── -->
+        <aside class="order-3 lg:min-h-0 relative flex flex-col rounded-xl bg-white shadow-sm overflow-hidden">
           <header class="shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-100">
             <h2 class="flex items-center gap-2 text-sm font-bold text-gray-900 font-['Oswald'] uppercase tracking-wide">
               <font-awesome-icon icon="closed-captioning" class="text-custom-chocolat" /> Sous-titres enregistrés
@@ -302,6 +289,37 @@ onMounted(() => charger())
               </li>
             </ul>
           </div>
+
+          <!-- Atelier de sous-titrage : superposé au widget (desktop) / empilé (mobile) -->
+          <Transition name="atelier">
+            <section
+              v-if="estConnecte && showContribution && video.fichierVideoUrl"
+              class="static lg:absolute lg:inset-0 lg:z-20 flex flex-col overflow-hidden rounded-xl bg-linear-to-br from-custom-chocolat via-custom-chocolat/90 to-amber-900/90 lg:shadow-2xl"
+            >
+              <header class="shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 text-white border-b border-white/15">
+                <span class="flex items-center gap-2 text-sm font-bold font-['Oswald'] uppercase tracking-wide">
+                  <font-awesome-icon icon="closed-captioning" /> Proposer un sous-titre
+                </span>
+                <button
+                  class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-white/15 hover:bg-white/30 transition-colors"
+                  title="Fermer l'atelier"
+                  @click="showContribution = false"
+                >
+                  <font-awesome-icon icon="xmark" />
+                </button>
+              </header>
+              <div class="lg:flex-1 lg:min-h-0 overflow-y-auto p-2">
+                <VidafricaContribuerSousTitres
+                  :video-id="video.id"
+                  :video-url="video.fichierVideoUrl!"
+                  :lecteur="lecteurRef"
+                  :en-lecture="lectureEnCours"
+                  :video-terminee="videoTerminee"
+                  @piste-modifiee="onPisteModifiee"
+                />
+              </div>
+            </section>
+          </Transition>
         </aside>
       </div>
     </div>

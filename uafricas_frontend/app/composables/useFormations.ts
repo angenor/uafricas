@@ -42,6 +42,10 @@ export interface FormationDetailAPI extends FormationAPI {
   format: string
   lien_en_ligne: string | null
   prerequis: string | null
+  objectif: string | null
+  presentation: string | null
+  a_evaluation: boolean
+  est_certifiante: boolean
   est_inscrit: boolean
 }
 

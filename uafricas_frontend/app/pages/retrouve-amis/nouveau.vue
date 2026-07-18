@@ -5,6 +5,7 @@ import { useAnimationsFormulaire } from '~/composables/useAnimationsFormulaire'
 definePageMeta({ layout: 'default' })
 
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 const { creerAvis } = useRetrouvAmis()
 
 const chargement = ref(false)
@@ -113,7 +114,7 @@ watch(erreur, async (valeur) => {
 
 onMounted(() => {
   if (!userStore.isAuthenticated) {
-    navigateTo('/login')
+    redirigerVersConnexion()
   }
 })
 </script>

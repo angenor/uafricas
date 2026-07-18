@@ -819,8 +819,7 @@ useHead({
 
 useAOS()
 
-const router = useRouter()
-const { isAuthenticated } = useAuth()
+const { isAuthenticated, redirigerVersConnexion } = useAuth()
 const profilComposable = useProfil()
 
 const profil = ref<Profil | null>(null)
@@ -1080,7 +1079,7 @@ const handleChangerMotDePasse = async () => {
 // ── Init ──
 onMounted(async () => {
   if (!isAuthenticated.value) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
 

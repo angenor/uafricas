@@ -29,6 +29,10 @@ const form = reactive({
   ville: '',
   lien_en_ligne: '',
   prerequis: '',
+  objectif: '',
+  presentation: '',
+  a_evaluation: false,
+  est_certifiante: false,
   image_couverture_url: '',
 })
 
@@ -117,6 +121,10 @@ const charger = async () => {
     form.ville = m.ville || ''
     form.lien_en_ligne = m.lien_en_ligne || ''
     form.prerequis = m.prerequis || ''
+    form.objectif = m.objectif || ''
+    form.presentation = m.presentation || ''
+    form.a_evaluation = m.a_evaluation ?? false
+    form.est_certifiante = m.est_certifiante ?? false
     form.image_couverture_url = m.image_couverture_url || ''
   }
 }
@@ -298,12 +306,35 @@ onMounted(async () => {
               </div>
             </div>
 
-            <!-- Prerequis -->
+            <!-- Contenu pedagogique -->
             <div class="space-y-4">
-              <h3 class="text-lg font-semibold border-b pb-2">Prerequis</h3>
+              <h3 class="text-lg font-semibold border-b pb-2">Contenu pedagogique</h3>
+              <div class="form-control">
+                <label class="label"><span class="label-text">Objectif</span></label>
+                <textarea v-model="form.objectif" class="textarea textarea-bordered h-24" placeholder="Objectifs pedagogiques : ce que l'apprenant saura faire a l'issue de la formation..." />
+              </div>
+              <div class="form-control">
+                <label class="label"><span class="label-text">Presentation</span></label>
+                <textarea v-model="form.presentation" class="textarea textarea-bordered h-32" placeholder="Presentation detaillee de la formation (affichee sur la page publique)..." />
+              </div>
               <div class="form-control">
                 <label class="label"><span class="label-text">Prerequis</span></label>
                 <textarea v-model="form.prerequis" class="textarea textarea-bordered" />
+              </div>
+            </div>
+
+            <!-- Evaluation & certification -->
+            <div class="space-y-4">
+              <h3 class="text-lg font-semibold border-b pb-2">Evaluation & certification</h3>
+              <div class="flex flex-col gap-3">
+                <label class="label cursor-pointer justify-start gap-3">
+                  <input v-model="form.a_evaluation" type="checkbox" class="checkbox checkbox-primary">
+                  <span class="label-text">La formation se termine par une evaluation</span>
+                </label>
+                <label class="label cursor-pointer justify-start gap-3">
+                  <input v-model="form.est_certifiante" type="checkbox" class="checkbox checkbox-primary">
+                  <span class="label-text">La formation est certifiante</span>
+                </label>
               </div>
             </div>
 

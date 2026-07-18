@@ -51,6 +51,7 @@ import { useUserStore } from '~/stores/user'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const { redirigerVersConnexion } = useAuth()
 const {
   demarrerOuRejoindreSallePrivee,
   recupererAccesJeton,
@@ -91,7 +92,7 @@ const handleTerminerVisio = async () => {
 
 onMounted(async () => {
   if (!userStore.isAuthenticated) {
-    router.push('/login')
+    redirigerVersConnexion()
     return
   }
 
