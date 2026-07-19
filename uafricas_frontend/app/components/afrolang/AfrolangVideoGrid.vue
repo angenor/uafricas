@@ -1,20 +1,24 @@
 <template>
-  <div class="flex-1 p-2 sm:p-4 overflow-hidden flex flex-col gap-2 sm:gap-4">
+  <div ref="rootEl" class="flex-1 p-2 sm:p-4 overflow-hidden flex flex-col gap-2 sm:gap-4">
     <!-- Partage d'écran proéminent + pellicule des participants (pour qu'ils
          restent visibles ; l'audio, lui, est rendu indépendamment dans AfrolangRoom).
          Pellicule en bas sur mobile, à gauche sur desktop. -->
     <template v-if="ecranPartageActif">
-      <div class="flex-1 min-h-0 flex flex-col sm:flex-row gap-2 sm:gap-4">
-        <div class="order-last sm:order-first shrink-0 flex sm:flex-col gap-2 h-24 sm:h-auto sm:w-40 overflow-x-auto sm:overflow-x-hidden sm:overflow-y-auto">
+      <div class="flex-1 min-h-0 flex flex-col sm:flex-row sm:justify-center gap-2 sm:gap-4">
+        <div
+          class="order-last sm:order-first shrink-0 flex sm:flex-col gap-2 h-24 sm:h-auto sm:max-h-full sm:w-40 overflow-x-auto sm:overflow-x-hidden sm:overflow-y-auto"
+          :class="{ 'overflow-visible!': flipEnCours }"
+        >
           <AfrolangParticipantTile
             v-for="participant in participants"
             :key="participant.identity"
+            :data-identity="participant.identity"
             :participant="participant"
             :is-dominant="participant.identity === dominantSpeaker"
             class="h-full w-auto sm:h-auto sm:w-full aspect-video shrink-0 rounded-lg"
           />
         </div>
-        <div class="relative flex-1 min-h-0 flex items-center justify-center">
+        <div class="relative flex-1 sm:flex-none min-h-0 min-w-0 flex items-center justify-center">
           <AfrolangParticipantTile
             :participant="ecranPartageActif"
             :is-dominant="false"
@@ -29,21 +33,25 @@
          À défaut de mise en évidence manuelle, repli automatique sur l'orateur actif.
          Pellicule des autres en bas sur mobile, à gauche sur desktop. -->
     <template v-else-if="participantSpotlight">
-      <div class="flex-1 min-h-0 flex flex-col sm:flex-row gap-2 sm:gap-4 transition-all duration-300 ease-in-out">
+      <div class="flex-1 min-h-0 flex flex-col sm:flex-row sm:justify-center gap-2 sm:gap-4">
         <div
           v-if="autresParticipants.length"
-          class="order-last sm:order-first shrink-0 flex sm:flex-col gap-2 h-24 sm:h-auto sm:w-40 overflow-x-auto sm:overflow-x-hidden sm:overflow-y-auto transition-all duration-300"
+          class="order-last sm:order-first shrink-0 flex sm:flex-col gap-2 h-24 sm:h-auto sm:max-h-full sm:w-40 overflow-x-auto sm:overflow-x-hidden sm:overflow-y-auto transition-all duration-300"
+          :class="{ 'overflow-visible!': flipEnCours }"
         >
           <AfrolangParticipantTile
             v-for="participant in autresParticipants"
             :key="participant.identity"
+            :data-identity="participant.identity"
             :participant="participant"
             :is-dominant="participant.identity === dominantSpeaker"
             class="h-full w-auto sm:h-auto sm:w-full aspect-video shrink-0 rounded-lg"
           />
         </div>
-        <div class="relative flex-1 min-h-0 flex items-center justify-center">
+        <div class="relative flex-1 sm:flex-none min-h-0 min-w-0 flex items-center justify-center">
           <AfrolangParticipantTile
+            :key="participantSpotlight.identity"
+            :data-identity="participantSpotlight.identity"
             :participant="participantSpotlight"
             :is-dominant="true"
             :prominent="true"
@@ -76,6 +84,7 @@
       <AfrolangParticipantTile
         v-for="participant in participants"
         :key="participant.identity"
+        :data-identity="participant.identity"
         :participant="participant"
         :is-dominant="participant.identity === dominantSpeaker"
       />
@@ -160,5 +169,92 @@ const gridClass = computed(() => {
   if (count <= 6) return 'grid grid-cols-3 grid-rows-2 gap-2 sm:gap-3'
   if (count <= 9) return 'grid grid-cols-3 grid-rows-3 gap-2 sm:gap-3'
   return 'grid grid-cols-4 auto-rows-fr gap-2'
+})
+
+// ── Transition FLIP : la vignette « vole » et grandit vers la place en évidence
+//    (et inversement l'ancienne rétrécit vers la pellicule / la grille). On
+//    photographie la position de chaque tuile (par `data-identity`) AVANT le
+//    changement de disposition, puis on inverse+rejoue le transform après. ──
+const rootEl = ref<HTMLElement | null>(null)
+const rectsAvant = new Map<string, DOMRect>()
+const DUREE_FLIP = 420
+// Pendant le vol des tuiles, on relâche l'overflow de la pellicule pour qu'elle
+// ne découpe pas la tuile qui traverse l'espace en évidence.
+const flipEnCours = ref(false)
+let flipTimer: ReturnType<typeof setTimeout> | null = null
+
+// Signature de la disposition : change dès que le mode (grille/évidence/écran),
+// le participant en évidence ou l'ordre des participants évolue.
+const dispositionSignature = computed(() => {
+  const mode = ecranPartageActif.value ? 'ecran' : (participantSpotlight.value ? 'evidence' : 'grille')
+  const evidence = participantSpotlight.value?.identity ?? ''
+  const ids = props.participants.map(p => p.identity).join(',')
+  return `${mode}|${evidence}|${ids}`
+})
+
+const listerTuiles = (): HTMLElement[] =>
+  rootEl.value ? Array.from(rootEl.value.querySelectorAll<HTMLElement>('[data-identity]')) : []
+
+const photographierRects = () => {
+  rectsAvant.clear()
+  for (const el of listerTuiles()) {
+    const id = el.dataset.identity
+    if (id) rectsAvant.set(id, el.getBoundingClientRect())
+  }
+}
+
+const jouerFlip = () => {
+  const aRejouer: HTMLElement[] = []
+  for (const el of listerTuiles()) {
+    const id = el.dataset.identity
+    if (!id) continue
+    const avant = rectsAvant.get(id)
+    if (!avant) continue // nouvelle tuile (participant qui rejoint) : pas de vol
+    const apres = el.getBoundingClientRect()
+    if (!apres.width || !apres.height) continue
+    const dx = avant.left - apres.left
+    const dy = avant.top - apres.top
+    const sx = avant.width / apres.width
+    const sy = avant.height / apres.height
+    // Ignorer les tuiles qui n'ont pas bougé (évite les animations parasites).
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) continue
+    // Invert : replacer visuellement la tuile à sa position/taille d'origine.
+    el.style.transition = 'none'
+    el.style.transformOrigin = 'top left'
+    el.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`
+    el.style.zIndex = sx > 1 || sy > 1 ? '20' : '' // la tuile qui grandit passe au-dessus
+    aRejouer.push(el)
+  }
+  if (!aRejouer.length) return
+  // Relâcher l'overflow de la pellicule le temps de l'animation.
+  flipEnCours.value = true
+  if (flipTimer) clearTimeout(flipTimer)
+  flipTimer = setTimeout(() => { flipEnCours.value = false }, DUREE_FLIP + 80)
+  // Forcer un reflow pour que l'état inversé soit pris en compte avant de rejouer.
+  void rootEl.value?.offsetWidth
+  requestAnimationFrame(() => {
+    for (const el of aRejouer) {
+      el.style.transition = `transform ${DUREE_FLIP}ms cubic-bezier(0.22, 1, 0.36, 1)`
+      el.style.transform = ''
+      const nettoyer = () => {
+        el.style.transition = ''
+        el.style.transformOrigin = ''
+        el.style.zIndex = ''
+        el.removeEventListener('transitionend', nettoyer)
+      }
+      el.addEventListener('transitionend', nettoyer)
+    }
+  })
+}
+
+// flush 'pre' : la photo est prise AVANT que le DOM ne soit repeint (ancienne
+// disposition) ; nextTick rejoue le FLIP APRÈS la mise à jour (nouvelle position).
+watch(dispositionSignature, () => {
+  photographierRects()
+  nextTick(jouerFlip)
+}, { flush: 'pre' })
+
+onBeforeUnmount(() => {
+  if (flipTimer) clearTimeout(flipTimer)
 })
 </script>
