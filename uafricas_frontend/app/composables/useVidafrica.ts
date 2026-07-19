@@ -12,6 +12,7 @@ interface VideoAfricaAPI {
   duree_secondes: number | null
   territoires?: string[]
   auteur_reel?: string | null
+  langue_originale?: string | null
   langues_disponibles: string[]
   nombre_likes?: number
   nombre_dislikes?: number
@@ -75,6 +76,7 @@ export interface VideoAfrica {
   dureeSecondes: number | null
   territoires: string[]
   auteurReel: string | null
+  langueOriginale: string | null
   languesDisponibles: string[]
   nombreLikes: number
   nombreDislikes: number
@@ -166,6 +168,7 @@ const mapperVideo = (api: VideoAfricaAPI, apiBase: string): VideoAfrica => ({
   dureeSecondes: api.duree_secondes,
   territoires: api.territoires ?? [],
   auteurReel: api.auteur_reel ?? null,
+  langueOriginale: api.langue_originale ?? null,
   languesDisponibles: api.langues_disponibles,
   nombreLikes: api.nombre_likes ?? 0,
   nombreDislikes: api.nombre_dislikes ?? 0,

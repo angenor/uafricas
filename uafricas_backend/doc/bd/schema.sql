@@ -141,6 +141,7 @@
 \ir schemas/27c_vidafrica_proposition_infos.sql
 \ir schemas/27d_vidafrica_reactions_partages.sql
 \ir schemas/27e_vidafrica_pistes_collaboratif.sql
+\ir schemas/27f_vidafrica_langue_originale.sql
 \ir schemas/29_social.sql
 \ir schemas/30_social_conversation_annonce.sql
 \ir schemas/31_social_rendez_vous.sql

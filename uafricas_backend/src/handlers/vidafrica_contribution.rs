@@ -120,6 +120,7 @@ pub async fn proposer_video(
     let mut format_video: Option<String> = None;
     let mut territoires: Vec<String> = Vec::new();
     let mut auteur_reel: Option<String> = None;
+    let mut langue_originale: Option<String> = None;
     let mut decharge_droits = false;
 
     while let Some(item) = payload.next().await {
@@ -137,6 +138,8 @@ pub async fn proposer_video(
             "titre" => titre = Some(lire_champ_texte(&mut field).await?),
             "description" => description = Some(lire_champ_texte(&mut field).await?),
             "auteur_reel" => auteur_reel = Some(lire_champ_texte(&mut field).await?),
+            // Langue parlée/chantée dans la vidéo (texte libre : langues Afrolang + « Autre »).
+            "langue_originale" => langue_originale = Some(lire_champ_texte(&mut field).await?),
             // Décharge : « Je ne suis pas l'auteur de cette chanson… » — accepté si "true".
             "decharge_droits" => {
                 let v = lire_champ_texte(&mut field).await?;
@@ -236,14 +239,17 @@ pub async fn proposer_video(
     let auteur_reel = auteur_reel
         .map(|a| a.trim().to_string())
         .filter(|a| !a.is_empty());
+    let langue_originale = langue_originale
+        .map(|l| l.trim().to_string())
+        .filter(|l| !l.is_empty());
 
     // État explicite 'brouillon' → file de modération admin.
     sqlx::query(
         "INSERT INTO media_content.video
          (id, titre, slug, description, fichier_video_url, vignette_url,
           taille_octets, format_video, territoires, decharge_droits, auteur_reel,
-          etat, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'brouillon', $12)",
+          langue_originale, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'brouillon', $13)",
     )
     .bind(id)
     .bind(&titre)
@@ -256,6 +262,7 @@ pub async fn proposer_video(
     .bind(&territoires)
     .bind(decharge_droits)
     .bind(&auteur_reel)
+    .bind(&langue_originale)
     .bind(user_id)
     .execute(pool.get_ref())
     .await?;

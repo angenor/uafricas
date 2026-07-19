@@ -11,12 +11,19 @@ const emit = defineEmits<{
 }>()
 
 const { proposerVideo } = useVidafricaContribution()
+const { listerLangues } = useAfrolang()
 
 const titre = ref('')
 const description = ref('')
 const territoires = ref<string[]>([])
 const territoireAAjouter = ref('')
 const auteurReel = ref('')
+// Langue initiale (parlée/chantée) de la vidéo. Choix par défaut = langues Afrolang ;
+// valeur sentinelle « __autre__ » → saisie libre d'une langue absente de la liste.
+const AUTRE_LANGUE = '__autre__'
+const langueChoisie = ref('')
+const langueAutre = ref('')
+const languesAfrolang = ref<string[]>([])
 const dechargeAcceptee = ref(false)
 const fichierVideo = ref<File | null>(null)
 const vignette = ref<File | null>(null)
@@ -26,6 +33,22 @@ const succes = ref(false)
 
 const MAX_VIDEO = 500 * 1024 * 1024
 const MAX_VIGNETTE = 5 * 1024 * 1024
+
+// Langue initiale finale envoyée au backend (sélection ou saisie libre).
+const langueOriginale = computed(() =>
+  langueChoisie.value === AUTRE_LANGUE ? langueAutre.value.trim() : langueChoisie.value,
+)
+
+// Charger les langues Afrolang à l'ouverture (une seule fois).
+watch(
+  () => props.modelValue,
+  async (ouvert) => {
+    if (ouvert && languesAfrolang.value.length === 0) {
+      languesAfrolang.value = await listerLangues()
+    }
+  },
+  { immediate: true },
+)
 
 // Territoires encore disponibles dans le sélecteur (non déjà ajoutés).
 const territoiresDisponibles = computed(() =>
@@ -48,6 +71,8 @@ const reinitialiser = () => {
   territoires.value = []
   territoireAAjouter.value = ''
   auteurReel.value = ''
+  langueChoisie.value = ''
+  langueAutre.value = ''
   dechargeAcceptee.value = false
   fichierVideo.value = null
   vignette.value = null
@@ -117,6 +142,10 @@ const soumettre = async () => {
     erreur.value = 'Le fichier vidéo est requis.'
     return
   }
+  if (langueChoisie.value === AUTRE_LANGUE && !langueAutre.value.trim()) {
+    erreur.value = 'Veuillez préciser la langue initiale de la vidéo.'
+    return
+  }
   if (!dechargeAcceptee.value) {
     erreur.value = 'Vous devez accepter la mention de décharge de droits.'
     return
@@ -129,6 +158,7 @@ const soumettre = async () => {
     if (description.value.trim()) formData.append('description', description.value.trim())
     territoires.value.forEach(t => formData.append('territoires', t))
     if (auteurReel.value.trim()) formData.append('auteur_reel', auteurReel.value.trim())
+    if (langueOriginale.value) formData.append('langue_originale', langueOriginale.value)
     formData.append('decharge_droits', 'true')
     formData.append('fichier_video', fichierVideo.value)
     if (vignette.value) formData.append('vignette', vignette.value)
@@ -239,6 +269,28 @@ const soumettre = async () => {
                   </button>
                 </span>
               </div>
+            </div>
+
+            <!-- Langue initiale de la vidéo -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Langue initiale de la vidéo</label>
+              <select
+                v-model="langueChoisie"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40 focus:border-custom-chocolat"
+              >
+                <option value="">Sélectionner la langue…</option>
+                <option v-for="l in languesAfrolang" :key="l" :value="l">{{ l }}</option>
+                <option :value="AUTRE_LANGUE">Autre (préciser)…</option>
+              </select>
+              <input
+                v-if="langueChoisie === AUTRE_LANGUE"
+                v-model="langueAutre"
+                type="text"
+                maxlength="80"
+                placeholder="Précisez la langue de la vidéo"
+                class="mt-2 w-full px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40 focus:border-custom-chocolat"
+              >
+              <p class="text-xs text-gray-400 mt-1">Langue parlée ou chantée dans la vidéo.</p>
             </div>
 
             <!-- Auteur réel -->

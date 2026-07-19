@@ -41,6 +41,7 @@ pub struct VideoPubliqueDetailResponse {
     pub duree_secondes: Option<i32>,
     pub territoires: Vec<String>,
     pub auteur_reel: Option<String>,
+    pub langue_originale: Option<String>,
     pub langues_disponibles: Vec<String>,
     pub nombre_likes: i64,
     pub nombre_dislikes: i64,
@@ -61,6 +62,7 @@ pub struct VideoPubliqueDetailRow {
     pub duree_secondes: Option<i32>,
     pub territoires: Vec<String>,
     pub auteur_reel: Option<String>,
+    pub langue_originale: Option<String>,
     pub created_at: DateTime<Utc>,
 }
 

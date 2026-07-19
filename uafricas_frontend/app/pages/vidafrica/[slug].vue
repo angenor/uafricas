@@ -190,6 +190,13 @@ onMounted(() => charger())
                 </dd>
               </div>
 
+              <div v-if="video.langueOriginale">
+                <dt class="flex items-center gap-1.5 text-gray-500 font-medium mb-0.5">
+                  <font-awesome-icon icon="language" class="text-gray-400" /> Langue de la vidéo
+                </dt>
+                <dd class="font-medium text-gray-800">{{ video.langueOriginale }}</dd>
+              </div>
+
               <div v-if="video.auteurReel">
                 <dt class="flex items-center gap-1.5 text-gray-500 font-medium mb-0.5">
                   <font-awesome-icon icon="user" class="text-gray-400" /> Auteur

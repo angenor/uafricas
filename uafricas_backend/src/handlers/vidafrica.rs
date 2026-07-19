@@ -153,7 +153,7 @@ pub async fn obtenir_video_publique(
 
     let row = sqlx::query_as::<_, VideoPubliqueDetailRow>(
         "SELECT id, titre, slug, description, fichier_video_url, vignette_url, duree_secondes,
-                territoires, auteur_reel, created_at
+                territoires, auteur_reel, langue_originale, created_at
          FROM media_content.video
          WHERE slug = $1 AND etat = 'publie' AND deleted_at IS NULL"
     )
@@ -212,6 +212,7 @@ pub async fn obtenir_video_publique(
         duree_secondes: row.duree_secondes,
         territoires: row.territoires,
         auteur_reel: row.auteur_reel,
+        langue_originale: row.langue_originale,
         langues_disponibles: langues,
         nombre_likes,
         nombre_dislikes,
