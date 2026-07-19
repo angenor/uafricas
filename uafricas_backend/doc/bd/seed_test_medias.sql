@@ -37,7 +37,13 @@ SELECT
     (SELECT id FROM iam.utilisateur WHERE email = 'test-admin@test.com') AS admin_id,
     (SELECT id FROM iam.utilisateur WHERE email = 'test-user@test.com')  AS membre_id,
     (SELECT id FROM shared.pays ORDER BY nom LIMIT 1)                    AS pays_id,
-    (SELECT id FROM shared.categorie WHERE contexte = 'media' ORDER BY nom LIMIT 1) AS theme_id;
+    (SELECT id FROM shared.categorie WHERE contexte = 'media' ORDER BY nom LIMIT 1) AS theme_id,
+    -- Un membre tiers, auteur des demandes d'engagement : sans lui le détenteur
+    -- se retrouverait à arbitrer ses propres demandes.
+    (SELECT id FROM iam.utilisateur
+      WHERE deleted_at IS NULL
+        AND email NOT IN ('test-admin@test.com', 'test-user@test.com')
+      ORDER BY created_at LIMIT 1) AS tiers_id;
 
 DO $$
 DECLARE r RECORD;
@@ -167,21 +173,26 @@ INSERT INTO media_content.chaine_tv
      pays_id, langue, est_en_direct, etat, cree_par, role_partie_prenante)
 SELECT v.id, v.nom, v.slug, v.description, v.stream, v.image,
        v.categorie::media_content.categorie_chaine_tv,
-       r.pays_id, 'Français', v.direct, 'publie', r.admin_id, 'producteur'
+       r.pays_id, 'Français', v.direct, 'publie',
+       -- « Africans Doc » est créée par le MEMBRE, comme le serait toute chaîne
+       -- née d'une proposition validée : c'est le support qui sert à éprouver
+       -- le parcours d'un détenteur non administrateur.
+       CASE WHEN v.par_le_membre THEN r.membre_id ELSE r.admin_id END,
+       'producteur'
 FROM ref_seed r,
 (VALUES
     ('dddd0000-0000-0000-0000-000000000301'::uuid, 'Africans Doc',
      'africans-doc-test',
      'Documentaires et grands reportages sur les transformations du continent.',
      'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-     NULL, 'culture', TRUE),
+     NULL, 'culture', TRUE, TRUE),
 
     ('dddd0000-0000-0000-0000-000000000302'::uuid, 'Africans Innovation',
      'africans-innovation-test',
      'L''Afrique qui invente : start-up, recherche et technologies du continent.',
      'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-     NULL, 'education', FALSE)
-) AS v(id, nom, slug, description, stream, image, categorie, direct)
+     NULL, 'education', FALSE, FALSE)
+) AS v(id, nom, slug, description, stream, image, categorie, direct, par_le_membre)
 ON CONFLICT (id) DO NOTHING;
 
 
@@ -251,8 +262,13 @@ UPDATE media_content.programme_tele
 
 
 -- ════════════════════════════════════════════════════════════════════════════
---  5. CO-DÉTENTION (US5) — l'administrateur est propriétaire, le membre est
---     co-détenteur : il peut donc éditer la grille depuis /mon-compte.
+--  5. CO-DÉTENTION (US5)
+--
+--  « Africans Doc » appartient au MEMBRE : c'est le support qui éprouve le
+--  parcours d'un détenteur ordinaire — grille, équipe, et décision sur les
+--  idées et demandes d'animation reçues (US6). L'administrateur n'y est que
+--  co-détenteur, pour vérifier qu'un non-propriétaire ne peut pas tout faire.
+--  `uq_support_un_proprietaire` n'admet qu'un propriétaire par support.
 -- ════════════════════════════════════════════════════════════════════════════
 
 INSERT INTO media_content.support_detenteur
@@ -261,8 +277,8 @@ SELECT v.type::media_content.type_support_media, v.support, v.qui,
        v.role::media_content.role_detenteur, r.admin_id, TRUE
 FROM ref_seed r,
 (VALUES
-    ('chaine_tv',    'dddd0000-0000-0000-0000-000000000301'::uuid, 'admin',  'proprietaire'),
-    ('chaine_tv',    'dddd0000-0000-0000-0000-000000000301'::uuid, 'membre', 'co_detenteur'),
+    ('chaine_tv',    'dddd0000-0000-0000-0000-000000000301'::uuid, 'membre', 'proprietaire'),
+    ('chaine_tv',    'dddd0000-0000-0000-0000-000000000301'::uuid, 'admin',  'co_detenteur'),
     ('chaine_tv',    'dddd0000-0000-0000-0000-000000000302'::uuid, 'admin',  'proprietaire'),
     ('station_radio','dddd0000-0000-0000-0000-000000000101'::uuid, 'admin',  'proprietaire'),
     ('station_radio','dddd0000-0000-0000-0000-000000000101'::uuid, 'membre', 'programmateur'),
@@ -354,7 +370,12 @@ WHERE (c.debut + make_interval(mins => c.duree)) <= TIME '24:00'
 
 INSERT INTO media_content.proposition_media
     (id, auteur_id, type_objet, target_id, donnees, justification, statut)
-SELECT v.id, r.membre_id, v.type::media_content.type_objet_propose,
+SELECT v.id,
+       -- Les demandes VISANT un support émanent d'un tiers : le détenteur ne
+       -- déciderait pas de ses propres demandes. Les propositions d'objets
+       -- nouveaux restent au membre, pour son suivi dans /mon-compte.
+       CASE WHEN v.cible IS NULL THEN r.membre_id ELSE COALESCE(r.tiers_id, r.membre_id) END,
+       v.type::media_content.type_objet_propose,
        v.cible, v.donnees::jsonb, v.justification, 'en_attente'
 FROM ref_seed r,
 (VALUES
@@ -374,12 +395,14 @@ FROM ref_seed r,
      '{"titre":"Série sur les femmes scientifiques africaines","description":"Un portrait par épisode, dans dix territoires."}',
      'Ce sujet manque cruellement sur les antennes du continent.'),
 
-    -- Une DEMANDE D''ANIMATION : l''acceptation ajoutera son auteur aux
-    -- co-détenteurs du support visé (FR-045).
+    -- Une DEMANDE D''ANIMATION visant la même chaîne : l''acceptation ajoutera
+    -- son auteur aux co-détenteurs du support (FR-045). Elle porte sur
+    -- « Africans Doc » pour que son propriétaire ait les DEUX types de demande
+    -- à arbitrer depuis un seul support.
     ('dddd0000-0000-0000-0000-000000000604'::uuid, 'animation_programme',
-     'dddd0000-0000-0000-0000-000000000103'::uuid,
-     '{"motivation":"Journaliste depuis 12 ans, je souhaite animer la matinale.","experience":"Radio Tanzanie, 2014-2023"}',
-     'Je propose d''animer bénévolement la tranche matinale.')
+     'dddd0000-0000-0000-0000-000000000301'::uuid,
+     '{"motivation":"Documentariste depuis 12 ans, je souhaite animer une case documentaire.","experience":"RTI puis Canal+ Afrique, 2014-2023"}',
+     'Je propose d''animer bénévolement la case documentaire du dimanche.')
 ) AS v(id, type, cible, donnees, justification)
 ON CONFLICT (id) DO NOTHING;
 

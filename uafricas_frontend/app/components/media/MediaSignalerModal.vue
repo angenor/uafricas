@@ -102,8 +102,6 @@ defineExpose({ setLoading, setError, setSuccess })
               <p class="text-sm text-gray-600 mb-4">
                 Vous signalez
                 <span class="font-semibold text-gray-900">{{ titre }}</span>.
-                Un contenu suffisamment signalé est retiré de l'antenne le temps
-                qu'un administrateur l'examine.
               </p>
 
               <label class="block text-sm font-medium text-gray-700 mb-1.5">Motif</label>

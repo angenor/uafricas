@@ -227,6 +227,21 @@ const breadcrumbs = [
             </section>
 
             <section>
+              <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">
+                Demandes reçues
+              </h3>
+              <p class="mb-3 text-sm text-gray-600">
+                Les idées de contenu déposées par les visiteurs et les demandes
+                d'animation adressées à ce support.
+              </p>
+              <MediaDemandesEngagementSupport
+                :type-support="detenteur.type_support"
+                :support-id="detenteur.support_id"
+                :mon-role="detenteur.role"
+              />
+            </section>
+
+            <section>
               <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">Équipe du support</h3>
               <MediaGestionCoDetenteurs
                 :type-support="detenteur.type_support"
