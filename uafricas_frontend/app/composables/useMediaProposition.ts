@@ -51,6 +51,12 @@ export interface ThemePhareAPI {
   nom: string
 }
 
+/** Un territoire du référentiel partagé. L'UI dit « territoire », la BD « pays ». */
+export interface TerritoireAPI {
+  id: string
+  nom: string
+}
+
 /** Payload métier de la proposition — miroir de `DonneesProposition` (Rust). */
 export interface DonneesProposition {
   nom?: string
@@ -288,6 +294,22 @@ export const useMediaProposition = () => {
     }
   }
 
+  /**
+   * Référentiel des territoires (`shared.pays`), pour le champ « Territoire »
+   * du formulaire. La validation admin résout `pays_id` par NOM : le formulaire
+   * envoie donc le nom, jamais l'identifiant.
+   */
+  const listerTerritoires = async (): Promise<TerritoireAPI[]> => {
+    try {
+      const reponse = await $fetch<ApiResponse<TerritoireAPI[]>>(`${apiBase}/api/pays`)
+      return reponse.success && reponse.data ? reponse.data : []
+    }
+    catch (e: any) {
+      console.error('Erreur listerTerritoires:', e)
+      return []
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -297,5 +319,6 @@ export const useMediaProposition = () => {
     modifierMetadonnees,
     remplacerMedia,
     listerThemes,
+    listerTerritoires,
   }
 }

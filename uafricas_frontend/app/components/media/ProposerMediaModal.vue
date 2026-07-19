@@ -17,6 +17,7 @@ import {
   type TypeObjetPropose,
   type DonneesProposition,
   type ThemePhareAPI,
+  type TerritoireAPI,
 } from '~/composables/useMediaProposition'
 
 const props = withDefaults(defineProps<{
@@ -35,7 +36,9 @@ const emit = defineEmits<{
   (e: 'soumise'): void
 }>()
 
-const { soumettre, chargement, erreur: erreurApi, listerThemes } = useMediaProposition()
+const { soumettre, chargement, erreur: erreurApi, listerThemes, listerTerritoires } = useMediaProposition()
+const { listerChaines } = useTelevision()
+const { listerStations } = useStationsRadio()
 const userStore = useUserStore()
 
 const typeObjet = ref<TypeObjetPropose>(props.typesOfferts[0] ?? 'chaine_tv')
@@ -47,8 +50,9 @@ const lienExterne = ref('')
 const erreur = ref('')
 const succes = ref(false)
 
-// Référentiel des thèmes phares, chargé une fois à la première ouverture.
+// Référentiels chargés une fois à la première ouverture.
 const themes = ref<ThemePhareAPI[]>([])
+const territoires = ref<TerritoireAPI[]>([])
 /**
  * Valeur du sélecteur de thème : l'identifiant d'un thème du référentiel, ou
  * la sentinelle `'autre'` qui révèle le champ de précision libre. Distincte de
@@ -57,9 +61,44 @@ const themes = ref<ThemePhareAPI[]>([])
 const themeSelection = ref('')
 const AUTRE = 'autre'
 
+/**
+ * Chaînes ou stations publiées, pour rattacher une émission proposée. Une
+ * émission sans support parent (`chaine_id`/`station_id` nul) n'apparaîtrait
+ * sur aucune page : les pages Télé et Radio sont entièrement structurées par
+ * support. Le rattachement est donc obligatoire — sauf si la proposition part
+ * déjà d'une page de détail, qui fixe le parent par `targetId`.
+ */
+const supportsParents = ref<{ id: string, nom: string }[]>([])
+
 const estSupport = computed(() => ['chaine_tv', 'station_radio'].includes(typeObjet.value))
 const estContenu = computed(() => typeObjet.value.startsWith('programme_'))
 const estVideo = computed(() => typeObjet.value === 'programme_tele')
+
+/** Le parent est demandé pour une émission proposée hors d'une page de détail. */
+const rattachementRequis = computed(() => estContenu.value && !props.targetId)
+
+const chargerSupportsParents = async () => {
+  supportsParents.value = []
+  if (!rattachementRequis.value) return
+  if (estVideo.value) {
+    const res = await listerChaines({ par_page: 100 })
+    supportsParents.value = (res?.chaines ?? []).map(c => ({ id: c.id, nom: c.name }))
+  }
+  else {
+    const res = await listerStations({ par_page: 100 })
+    supportsParents.value = (res?.stations ?? []).map(s => ({ id: s.id, nom: s.name }))
+  }
+}
+
+/**
+ * Identifiant du support parent choisi, dirigé vers `chaine_id` ou `station_id`
+ * selon le type d'émission. La validation admin lit l'un ou l'autre.
+ */
+const parentSelection = ref('')
+watch(parentSelection, (id) => {
+  donnees.value.chaine_id = estVideo.value ? (id || undefined) : undefined
+  donnees.value.station_id = estVideo.value ? undefined : (id || undefined)
+})
 
 // Le choix pilote les deux champs envoyés au serveur : un id, OU une précision
 // libre — jamais les deux, à l'image du CHECK « Autre exige une précision ».
@@ -81,6 +120,7 @@ const reinitialiser = () => {
   fichierImage.value = null
   lienExterne.value = ''
   themeSelection.value = ''
+  parentSelection.value = ''
   erreur.value = ''
   succes.value = false
 }
@@ -89,14 +129,18 @@ watch(() => props.isOpen, async (ouvert) => {
   if (!ouvert) return
   reinitialiser()
   if (themes.value.length === 0) themes.value = await listerThemes()
+  if (territoires.value.length === 0) territoires.value = await listerTerritoires()
+  await chargerSupportsParents()
 })
 
 // Changer de type invalide les champs propres à l'ancien.
-watch(typeObjet, () => {
+watch(typeObjet, async () => {
   donnees.value = {}
   fichierMedia.value = null
   lienExterne.value = ''
   themeSelection.value = ''
+  parentSelection.value = ''
+  await chargerSupportsParents()
 })
 
 const surFichierMedia = (e: Event) => {
@@ -118,6 +162,7 @@ const fermer = () => {
  */
 const valider = (): string | null => {
   if (!donnees.value.nom?.trim()) return 'Le nom est requis.'
+  if (!donnees.value.pays?.trim()) return 'Indiquez le territoire concerné.'
   if (!justification.value.trim()) {
     return 'Expliquez en quelques mots pourquoi vous proposez ce contenu.'
   }
@@ -131,6 +176,11 @@ const valider = (): string | null => {
     ) {
       return 'Précisez le rôle choisi au titre de « Autre ».'
     }
+  }
+  if (rattachementRequis.value && !parentSelection.value) {
+    return estVideo.value
+      ? 'Choisissez la chaîne à laquelle rattacher cette émission.'
+      : 'Choisissez la station à laquelle rattacher cette émission.'
   }
   if (estContenu.value) {
     if (!themeSelection.value) {
@@ -284,6 +334,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                 ></textarea>
               </div>
 
+              <!-- Territoire concerné — résolu en pays_id par nom côté serveur. -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                  Territoire <span class="text-red-500">*</span>
+                </label>
+                <select
+                  v-model="donnees.pays"
+                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                >
+                  <option value="">Choisir un territoire…</option>
+                  <option v-for="t in territoires" :key="t.id" :value="t.nom">
+                    {{ t.nom }}
+                  </option>
+                </select>
+              </div>
+
               <!-- Rôle de partie prenante (supports) — FR-029 -->
               <div v-if="estSupport">
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -306,6 +372,31 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   class="mt-2 w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
                   placeholder="Précisez votre rôle"
                 >
+              </div>
+
+              <!-- Support de rattachement (émission proposée hors page de détail).
+                   Sans lui, l'émission serait orpheline et n'apparaîtrait sur
+                   aucune page, toutes structurées par support. -->
+              <div v-if="rattachementRequis">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                  {{ estVideo ? 'Chaîne de rattachement' : 'Station de rattachement' }}
+                  <span class="text-red-500">*</span>
+                </label>
+                <select
+                  v-model="parentSelection"
+                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                >
+                  <option value="">
+                    {{ estVideo ? 'Choisir une chaîne…' : 'Choisir une station…' }}
+                  </option>
+                  <option v-for="parent in supportsParents" :key="parent.id" :value="parent.id">
+                    {{ parent.nom }}
+                  </option>
+                </select>
+                <p v-if="supportsParents.length === 0" class="mt-1.5 text-xs text-gray-500">
+                  Aucune {{ estVideo ? 'chaîne' : 'station' }} publiée pour l'instant.
+                  Proposez-en une d'abord, ou attendez sa validation.
+                </p>
               </div>
 
               <!-- Thème phare (contenus) — FR-030 -->
