@@ -155,6 +155,30 @@ pub async fn lister_evenements(
         bind_index += 1;
     }
 
+    // Filtre par zone geographique (Afrique / Hors Afrique).
+    // La liste des codes ISO2 africains est une constante figee (aucun risque
+    // d'injection) : on l'injecte directement dans le IN, sans bind parametre.
+    if let Some(ref zone) = params.zone {
+        let liste_iso = crate::constants::afripulse_pays_autorises::PAYS_AFRICAINS_ISO2
+            .iter()
+            .map(|c| format!("'{}'", c))
+            .collect::<Vec<_>>()
+            .join(",");
+        match zone.as_str() {
+            "afrique" => conditions.push(format!(
+                "EXISTS (SELECT 1 FROM shared.pays p WHERE p.id = e.pays_id \
+                 AND LOWER(p.code_iso2) IN ({}))",
+                liste_iso
+            )),
+            "hors_afrique" => conditions.push(format!(
+                "EXISTS (SELECT 1 FROM shared.pays p WHERE p.id = e.pays_id \
+                 AND (p.code_iso2 IS NULL OR LOWER(p.code_iso2) NOT IN ({})))",
+                liste_iso
+            )),
+            _ => {}
+        }
+    }
+
     if let Some(annee) = params.annee {
         conditions.push(format!("EXTRACT(YEAR FROM e.date_heure_debut) = ${}::numeric", bind_index));
         bind_values.push(annee.to_string());

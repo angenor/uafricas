@@ -31,12 +31,13 @@
           v-model:annee-selected="anneeSelected"
           v-model:filtre-type="filtreType"
           v-model:filtre-pays="filtrePays"
+          v-model:filtre-zone="filtreZone"
           @open-modal="showModal = true"
           class="flex-1"
         />
 
-        <!-- Toggle grille / carte -->
-        <div class="flex items-center bg-gray-100 rounded-lg p-1 self-start lg:self-auto shrink-0">
+        <!-- Toggle grille / carte (la carte Afrique n'a de sens que pour la zone Afrique) -->
+        <div v-if="filtreZone === 'afrique'" class="flex items-center bg-gray-100 rounded-lg p-1 self-start lg:self-auto shrink-0">
           <button
             @click="viewMode = 'grille'"
             class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -253,6 +254,7 @@ const viewMode = ref<'grille' | 'carte'>('grille')
 const anneeSelected = ref(new Date().getFullYear().toString())
 const filtreType = ref('')
 const filtrePays = ref('')
+const filtreZone = ref<'afrique' | 'hors_afrique'>('afrique')
 const evenements = ref<EvenementAPI[]>([])
 
 const chargerEvenements = async () => {
@@ -260,13 +262,23 @@ const chargerEvenements = async () => {
     annee: parseInt(anneeSelected.value),
     format: filtreType.value || undefined,
     pays: filtrePays.value || undefined,
+    zone: filtreZone.value,
     par_page: 50,
   }
   const data = await listerEvenements(filtres)
   evenements.value = data?.evenements ?? []
 }
 
-watch([anneeSelected, filtreType, filtrePays], chargerEvenements)
+// Changer de zone : la carte Afrique n'a de sens que pour l'Afrique ; hors
+// Afrique on force la grille et on réinitialise le territoire (liste africaine).
+watch(filtreZone, (zone) => {
+  if (zone === 'hors_afrique') {
+    viewMode.value = 'grille'
+    filtrePays.value = ''
+  }
+})
+
+watch([anneeSelected, filtreType, filtrePays, filtreZone], chargerEvenements)
 onMounted(async () => {
   await chargerEvenements()
   if (viewMode.value === 'carte') {

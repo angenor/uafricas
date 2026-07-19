@@ -152,6 +152,8 @@ export interface EvenementFiltres {
   recherche?: string
   format?: string
   pays?: string
+  /** Zone geographique : 'afrique' (defaut) ou 'hors_afrique' */
+  zone?: 'afrique' | 'hors_afrique'
   annee?: number
   page?: number
   par_page?: number
@@ -315,6 +317,7 @@ export const useEvenements = () => {
       if (filtres.recherche) params.set('recherche', filtres.recherche)
       if (filtres.format) params.set('format', filtres.format)
       if (filtres.pays) params.set('pays', filtres.pays)
+      if (filtres.zone) params.set('zone', filtres.zone)
       if (filtres.annee) params.set('annee', String(filtres.annee))
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))

@@ -15,7 +15,7 @@
       </button>
     </div>
 
-    <!-- Filtres type et pays + bouton proposer -->
+    <!-- Filtres type, zone et pays + bouton proposer -->
     <div class="flex flex-wrap items-center gap-3">
       <select
         :value="filtreType"
@@ -27,7 +27,26 @@
         </option>
       </select>
 
+      <!-- Zone géographique : Afrique / Hors Afrique -->
+      <div class="inline-flex rounded-md border border-custom-chocolat overflow-hidden text-sm">
+        <button
+          v-for="option in ZONES_TERRITOIRE"
+          :key="option.value"
+          type="button"
+          @click="emit('update:filtreZone', option.value)"
+          :class="[
+            'px-3 py-1 transition-colors',
+            filtreZone === option.value
+              ? 'bg-custom-chocolat text-white'
+              : 'bg-white text-custom-chocolat hover:bg-custom-chocolat/10',
+          ]"
+        >
+          {{ option.label }}
+        </button>
+      </div>
+
       <select
+        v-if="filtreZone === 'afrique'"
         :value="filtrePays"
         @change="emit('update:filtrePays', ($event.target as HTMLSelectElement).value)"
         class="rounded-md border border-custom-chocolat bg-white px-3 py-1 text-sm focus:outline-hidden focus:ring-2 focus:ring-custom-chocolat"
@@ -52,16 +71,23 @@
 <script setup lang="ts">
 import { ANNEES, TYPES_EVENEMENT, PAYS_AFRICAINS } from '~/composables/useEvenements'
 
+const ZONES_TERRITOIRE = [
+  { value: 'afrique' as const, label: 'Afrique' },
+  { value: 'hors_afrique' as const, label: 'Hors Afrique' },
+]
+
 defineProps<{
   anneeSelected: string
   filtreType: string
   filtrePays: string
+  filtreZone: 'afrique' | 'hors_afrique'
 }>()
 
 const emit = defineEmits<{
   'update:anneeSelected': [value: string]
   'update:filtreType': [value: string]
   'update:filtrePays': [value: string]
+  'update:filtreZone': [value: 'afrique' | 'hors_afrique']
   'openModal': []
 }>()
 </script>

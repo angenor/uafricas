@@ -181,6 +181,8 @@ pub struct EvenementQueryParams {
     pub recherche: Option<String>,
     pub format: Option<String>,
     pub pays: Option<String>,
+    /// Zone geographique : `afrique` (defaut cote client) ou `hors_afrique`.
+    pub zone: Option<String>,
     pub annee: Option<i32>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,
