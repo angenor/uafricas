@@ -173,6 +173,26 @@ pub struct CreneauResponse {
 }
 
 impl CreneauRow {
+    /// Variante servie aux visiteurs qui ne détiennent pas le support.
+    ///
+    /// La grille reste publique — c'est une grille de programmes — mais les
+    /// champs décrivant un contenu RETIRÉ de l'antenne sont tus : les laisser
+    /// exposerait le titre et la vignette de ce qui vient d'être suspendu pour
+    /// violence ou racisme, faisant du signalement massif un révélateur.
+    /// `contenu_indisponible` reste renseigné, ce qui suffit à afficher un
+    /// créneau invalide sans le décrire (FR-041).
+    pub fn to_response_publique(self) -> CreneauResponse {
+        let indisponible =
+            matches!(self.contenu_etat.as_deref(), Some(etat) if etat != "publie");
+        let mut reponse = self.to_response();
+        if indisponible {
+            reponse.contenu_nom = None;
+            reponse.contenu_slug = None;
+            reponse.contenu_image = None;
+        }
+        reponse
+    }
+
     pub fn to_response(self) -> CreneauResponse {
         let jour_libelle = self
             .jour_semaine

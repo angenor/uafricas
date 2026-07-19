@@ -142,6 +142,7 @@ pub async fn obtenir_diffusion(
 /// Les créneaux dont le contenu n'est plus publié sont conservés et marqués
 /// `contenu_indisponible`, pour que leurs co-détenteurs les corrigent (FR-043).
 pub async fn lister_grille(
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<(String, Uuid)>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -165,11 +166,34 @@ pub async fn lister_grille(
     .fetch_all(pool.get_ref())
     .await?;
 
+    // Un détenteur voit la grille entière, y compris ce qui a été retiré de
+    // l'antenne — c'est à lui que FR-041 doit signaler un créneau invalide.
+    // Pour tout autre visiteur, les champs décrivant un contenu retiré sont tus.
+    let est_detenteur = match crate::handlers::media_social::extraire_utilisateur_id(&req) {
+        Some(moi) => crate::handlers::media_detention::garde_detenteur(
+            pool.get_ref(),
+            &type_support,
+            support_id,
+            moi,
+            "programmateur",
+        )
+        .await
+        .is_ok(),
+        None => false,
+    };
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(
             rows.into_iter()
-                .map(|r| r.to_response())
+                .map(|r| {
+                    if est_detenteur {
+                        r.to_response()
+                    }
+                    else {
+                        r.to_response_publique()
+                    }
+                })
                 .collect::<Vec<_>>(),
         ),
         error: None,
@@ -312,16 +336,57 @@ fn instantane(
     })
 }
 
+/// Deux arcs d'un cadran circulaire de `modulo` minutes se recouvrent-ils ?
+///
+/// Ramener chaque créneau à un instant UTC le fait potentiellement enjamber
+/// minuit, alors même qu'il ne l'enjambe pas dans son fuseau local : la
+/// comparaison linéaire `debut_a < fin_b && debut_b < fin_a` devient fausse.
+/// Sur un cadran, deux arcs se recouvrent si l'un commence avant que l'autre
+/// ne s'achève, dans un sens ou dans l'autre.
+fn arcs_se_recouvrent(debut_a: i32, duree_a: i32, debut_b: i32, duree_b: i32, modulo: i32) -> bool {
+    (debut_b - debut_a).rem_euclid(modulo) < duree_a
+        || (debut_a - debut_b).rem_euclid(modulo) < duree_b
+}
+
+/// Position d'un créneau sur le cadran UTC, en minutes.
+///
+/// `decalage_min` est l'écart du fuseau à UTC au jour courant : soustrait de
+/// l'heure locale, il ramène tous les créneaux d'un même support sur un
+/// référentiel unique. Pour un créneau hebdomadaire, le jour est intégré au
+/// calcul — un décalage de fuseau peut faire changer de jour.
+fn position_utc(
+    heure: chrono::NaiveTime,
+    jour_semaine: Option<i16>,
+    decalage_min: i32,
+    hebdomadaire: bool,
+) -> i32 {
+    use chrono::Timelike;
+    let minutes_locales = (heure.num_seconds_from_midnight() / 60) as i32;
+    if hebdomadaire {
+        let jour = jour_semaine.unwrap_or(0) as i32;
+        (jour * 1440 + minutes_locales - decalage_min).rem_euclid(10_080)
+    }
+    else {
+        (minutes_locales - decalage_min).rem_euclid(1440)
+    }
+}
+
 /// Cherche un créneau actif du support qui se chevaucherait avec celui proposé.
 ///
-/// Deux créneaux se chevauchent si leurs jours peuvent coïncider — un quotidien
-/// croise tout — et si leurs intervalles horaires se recouvrent. Le CHECK
-/// `ck_creneau_pas_minuit` garantit qu'aucun intervalle ne s'enroule, ce qui
-/// rend la comparaison écrivable sans cas particulier.
+/// **Les fuseaux sont pris en compte.** Une comparaison d'heures locales naïves
+/// diverge de `SQL_DIFFUSION_EN_COURS`, qui résout lui le créneau courant par
+/// `NOW() AT TIME ZONE fuseau` — et elle se trompe dans les deux sens : elle
+/// accepte deux créneaux réellement simultanés (dont l'un évincerait
+/// silencieusement l'autre au `LIMIT 1`) et refuse en 409 des créneaux sans
+/// conflit réel. La garantie de non-chevauchement, cœur d'US5, ne tient que si
+/// les deux logiques partagent le même référentiel.
 ///
-/// La comparaison ignore les fuseaux : deux créneaux d'un même support relèvent
-/// en pratique de la même antenne. Comparer des heures locales de fuseaux
-/// distincts serait plus juste mais rendrait le message d'erreur illisible.
+/// Les candidats sont ramenés en mémoire — un support en compte quelques
+/// dizaines au plus, et le verrou `FOR UPDATE` sur le support parent est déjà
+/// posé — puis comparés sur un cadran circulaire : quotidien contre quotidien
+/// sur 1 440 minutes, hebdomadaire contre hebdomadaire sur 10 080. Un créneau
+/// quotidien revenant chaque jour, sa confrontation à un hebdomadaire se joue
+/// sur le cadran journalier.
 async fn chevauchement(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     type_support: &str,
@@ -329,33 +394,59 @@ async fn chevauchement(
     creneau: &crate::models::media_programmation::CreneauValide,
     exclure_id: Option<Uuid>,
 ) -> Result<Option<String>, ApiErreur> {
-    let conflit: Option<(String, Option<i16>, chrono::NaiveTime, i32)> = sqlx::query_as(
-        "SELECT c.recurrence, c.jour_semaine, c.heure_debut, c.duree_minutes
+    // `decalage_min` : écart du fuseau à UTC, calculé au jour courant par
+    // PostgreSQL, qui porte la base de fuseaux. `decalage_candidat` est celui
+    // du créneau proposé, obtenu dans la même requête pour rester cohérent.
+    let candidats: Vec<(String, Option<i16>, chrono::NaiveTime, i32, i32, i32, String)> = sqlx::query_as(
+        "SELECT c.recurrence, c.jour_semaine, c.heure_debut, c.duree_minutes,
+                (EXTRACT(EPOCH FROM ((NOW() AT TIME ZONE c.fuseau)
+                                   - (NOW() AT TIME ZONE 'UTC'))) / 60)::int AS decalage_min,
+                (EXTRACT(EPOCH FROM ((NOW() AT TIME ZONE $3)
+                                   - (NOW() AT TIME ZONE 'UTC'))) / 60)::int AS decalage_candidat,
+                c.fuseau
            FROM media_content.creneau_programmation c
           WHERE c.type_support = $1::media_content.type_support_media
             AND c.support_id = $2
             AND c.actif = TRUE AND c.deleted_at IS NULL
-            AND ($6::uuid IS NULL OR c.id <> $6)
-            -- Jours susceptibles de coïncider
-            AND (c.recurrence = 'quotidien' OR $3::text = 'quotidien'
-                 OR c.jour_semaine = $4::smallint)
-            -- Intervalles qui se recouvrent
-            AND c.heure_debut < ($5::time + make_interval(mins => $7::int))
-            AND $5::time < c.heure_debut + make_interval(mins => c.duree_minutes)
-          ORDER BY c.heure_debut ASC
-          LIMIT 1",
+            AND ($4::uuid IS NULL OR c.id <> $4)
+          ORDER BY c.jour_semaine ASC NULLS FIRST, c.heure_debut ASC",
     )
     .bind(type_support)
     .bind(support_id)
-    .bind(&creneau.recurrence)
-    .bind(creneau.jour_semaine)
-    .bind(creneau.heure_debut)
+    .bind(&creneau.fuseau)
     .bind(exclure_id)
-    .bind(creneau.duree_minutes)
-    .fetch_optional(&mut **tx)
+    .fetch_all(&mut **tx)
     .await?;
 
-    Ok(conflit.map(|(recurrence, jour, heure, duree)| {
+    let propose_hebdo = creneau.recurrence == "hebdomadaire";
+
+    let conflit = candidats.into_iter().find(
+        |(recurrence, jour, heure, duree, decalage, decalage_candidat, _fuseau)| {
+            let existant_hebdo = recurrence == "hebdomadaire";
+            // Dès qu'un des deux revient chaque jour, la confrontation se joue
+            // sur le cadran journalier : le jour de l'autre y coïncide toujours.
+            let sur_la_semaine = propose_hebdo && existant_hebdo;
+            let modulo = if sur_la_semaine { 10_080 } else { 1440 };
+
+            let position_proposee = position_utc(
+                creneau.heure_debut,
+                creneau.jour_semaine,
+                *decalage_candidat,
+                sur_la_semaine,
+            );
+            let position_existante = position_utc(*heure, *jour, *decalage, sur_la_semaine);
+
+            arcs_se_recouvrent(
+                position_proposee,
+                creneau.duree_minutes,
+                position_existante,
+                *duree,
+                modulo,
+            )
+        },
+    );
+
+    Ok(conflit.map(|(recurrence, jour, heure, duree, _, _, fuseau)| {
         let quand = match jour.and_then(|j| {
             crate::models::media_programmation::JOURS_SEMAINE.get(j as usize)
         }) {
@@ -363,11 +454,13 @@ async fn chevauchement(
             None => "chaque jour".to_string(),
         };
         format!(
-            "Ce créneau en chevauche un autre ({} {}, à {} pendant {} minutes). Ajustez l'horaire ou la durée.",
+            "Ce créneau en chevauche un autre ({} {}, à {} pendant {} minutes, fuseau {}). \
+             Ajustez l'horaire ou la durée.",
             recurrence,
             quand,
             heure.format("%H:%M"),
-            duree
+            duree,
+            fuseau
         )
     }))
 }

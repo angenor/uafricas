@@ -26,6 +26,10 @@ const props = withDefaults(defineProps<{
   poster?: string | null
   volume?: number
   titre?: string | null
+  /** `source_media` renvoyé par le backend. Il raisonne sur la donnée brute,
+   *  avant absolutisation de l'URL, et fait donc autorité sur l'inspection
+   *  du lien côté client. */
+  sourceMedia?: string | null
 }>(), {
   type: 'video',
   lectureAuto: false,
@@ -35,6 +39,7 @@ const props = withDefaults(defineProps<{
   poster: null,
   volume: 0.8,
   titre: null,
+  sourceMedia: null,
 })
 
 const emit = defineEmits<{
@@ -47,7 +52,7 @@ const element = ref<HTMLMediaElement | null>(null)
 
 const urlEmbed = computed(() => youtubeEmbedUrl(props.url))
 const estYoutube = computed(() => urlEmbed.value !== null)
-const estJouable = computed(() => estMediaJouable(props.url))
+const estJouable = computed(() => estMediaJouable(props.url, props.sourceMedia))
 
 /**
  * Paramètres d'intégration YouTube. `mute=1` est indispensable dès que la

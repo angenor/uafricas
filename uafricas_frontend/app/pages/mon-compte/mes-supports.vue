@@ -20,11 +20,33 @@ definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Mes supports médias — UAfricas' })
 
 const { mesSupports, chargement, erreur } = useMediaDetention()
+const { listerContenusChaine } = useTelevision()
+const { listerContenusStation } = useStationsRadio()
 
 const supports = ref<DetenteurAPI[]>([])
 
 /** Identifiant du support dont le panneau de gestion est déplié (un seul à la fois). */
 const gestionOuverte = ref<string | null>(null)
+
+/**
+ * Émissions de chaque support, pour le sélecteur de contenu de la grille.
+ *
+ * Chargées à l'ouverture du panneau et mémorisées : sans elles le sélecteur
+ * reste vide et aucun créneau n'est créable — la grille n'a alors rien à
+ * programmer (US5). Clé : l'identifiant du support.
+ */
+const contenusParSupport = ref<Record<string, { id: string, titre: string }[]>>({})
+
+const chargerContenus = async (detenteur: DetenteurAPI) => {
+  if (contenusParSupport.value[detenteur.support_id]) return
+  const contenus = detenteur.type_support === 'chaine_tv'
+    ? await listerContenusChaine(detenteur.support_id)
+    : await listerContenusStation(detenteur.support_id)
+  contenusParSupport.value[detenteur.support_id] = contenus.map(c => ({
+    id: c.id,
+    titre: c.title,
+  }))
+}
 
 const charger = async () => {
   supports.value = await mesSupports()
@@ -32,8 +54,10 @@ const charger = async () => {
 
 onMounted(charger)
 
-const basculerGestion = (id: string) => {
+const basculerGestion = (detenteur: DetenteurAPI) => {
+  const id = detenteur.id
   gestionOuverte.value = gestionOuverte.value === id ? null : id
+  if (gestionOuverte.value === id) chargerContenus(detenteur)
 }
 
 const LIBELLES_TYPE_SUPPORT: Record<DetenteurAPI['type_support'], string> = {
@@ -170,7 +194,7 @@ const breadcrumbs = [
                   ? 'bg-gray-800 text-white'
                   : 'bg-custom-chocolat text-white hover:bg-custom-chocolat/90'"
                 :aria-expanded="gestionOuverte === detenteur.id"
-                @click="basculerGestion(detenteur.id)"
+                @click="basculerGestion(detenteur)"
               >
                 <font-awesome-icon :icon="['fas', 'sliders']" class="w-3.5 h-3.5" />
                 {{ gestionOuverte === detenteur.id ? 'Fermer la gestion' : 'Gérer' }}
@@ -183,16 +207,23 @@ const breadcrumbs = [
           <div v-if="gestionOuverte === detenteur.id" class="border-t border-gray-100 bg-gray-50/60 p-5 space-y-8">
             <section>
               <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">Grille de programmation</h3>
-              <!-- `contenus` reste vide ici : le choix des contenus à placer dans
-                   la grille se peuplera depuis la fiche du support, qui seule
-                   connaît ses émissions. Cette page ne fabrique pas d'appel. -->
+              <!-- Les émissions du support, chargées à l'ouverture du panneau :
+                   c'est la seule source du sélecteur de contenu, sans laquelle
+                   aucun créneau n'est créable. -->
               <MediaGrilleProgrammation
                 :type-support="detenteur.type_support"
                 :support-id="detenteur.support_id"
                 :mon-role="detenteur.role"
-                :contenus="[]"
+                :contenus="contenusParSupport[detenteur.support_id] ?? []"
                 :modifiable="true"
               />
+              <p
+                v-if="(contenusParSupport[detenteur.support_id] ?? []).length === 0"
+                class="mt-2 text-sm text-gray-500"
+              >
+                Ce support n'a encore aucune émission publiée : publiez-en une
+                avant de bâtir sa grille.
+              </p>
             </section>
 
             <section>

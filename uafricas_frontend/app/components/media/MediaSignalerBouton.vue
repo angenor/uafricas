@@ -54,10 +54,17 @@ const soumettre = async (payload: { motif: string, description: string }) => {
     }
     aSignale.value = true
     if (etat.suspendu) emit('suspendu')
+    // Le signaleur reste devant un contenu d'apparence intacte : sans énoncer
+    // ce qui vient de se produire, il en déduit soit que son signalement n'est
+    // pas passé, soit que la plateforme n'agit pas — les deux inférences allant
+    // contre l'objectif de FR-049/050, qui est de rendre la modération
+    // communautaire lisible par celui qui l'exerce.
     modalRef.value?.setSuccess(
-      etat.deja_signale
-        ? 'Vous aviez déjà signalé ce contenu.'
-        : 'Merci, votre signalement a été pris en compte.',
+      etat.suspendu
+        ? 'Merci. Ce contenu a atteint le seuil de signalements : il vient d\'être retiré de l\'antenne et sera examiné par un administrateur.'
+        : etat.deja_signale
+          ? 'Vous aviez déjà signalé ce contenu. Votre signalement reste enregistré.'
+          : 'Merci, votre signalement a été enregistré. Il sera examiné par un administrateur.',
     )
   } catch {
     modalRef.value?.setError('Une erreur est survenue. Veuillez réessayer.')

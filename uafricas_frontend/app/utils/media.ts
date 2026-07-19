@@ -30,19 +30,48 @@ export const youtubeEmbedUrl = (url: string | null | undefined): string | null =
 
 /**
  * L'URL désigne-t-elle un média hébergé ailleurs que sur la plateforme ?
- * Les fichiers téléversés sont servis sous `/uploads/` ; tout le reste est tiers.
+ *
+ * Les fichiers téléversés sont servis sous `/uploads/`, mais les composables
+ * les absolutisent en `https://api…/uploads/…` pour qu'ils soient atteignables
+ * depuis le navigateur. Tester `startsWith('/uploads/')` déclarait donc tiers
+ * tout fichier réellement hébergé, et le lecteur refusait de le jouer : le
+ * test porte sur le CHEMIN, quelle que soit l'origine.
  */
 export const estMediaExterne = (url: string | null | undefined): boolean => {
   if (!url) return false
   const u = url.trim()
-  return !u.startsWith('/uploads/')
+  return !cheminEstUpload(u)
+}
+
+/** `/uploads/x`, `http://host/uploads/x` et `//host/uploads/x` sont hébergés. */
+const cheminEstUpload = (url: string): boolean => {
+  if (url.startsWith('/uploads/')) return true
+  // `URL` échoue sur les chemins relatifs : la base ne sert qu'à les parser,
+  // elle n'apparaît jamais dans le résultat.
+  try {
+    return new URL(url, 'http://local.invalid').pathname.startsWith('/uploads/')
+  }
+  catch {
+    return true // URL illisible : ne pas la déclarer tierce à tort.
+  }
 }
 
 /** Miroir côté client de `source_media` calculé par le backend. */
 export type SourceMedia = 'hebergee' | 'externe' | 'aucune'
 
-export const sourceMedia = (url: string | null | undefined): SourceMedia => {
+/**
+ * `sourceMediaDeclaree` est la valeur renvoyée par le backend, qui raisonne sur
+ * la donnée brute et fait donc autorité. On ne retombe sur l'inspection de
+ * l'URL que lorsqu'elle est absente.
+ */
+export const sourceMedia = (
+  url: string | null | undefined,
+  sourceMediaDeclaree?: SourceMedia | string | null,
+): SourceMedia => {
   if (!url) return 'aucune'
+  if (sourceMediaDeclaree === 'hebergee' || sourceMediaDeclaree === 'externe') {
+    return sourceMediaDeclaree
+  }
   return estMediaExterne(url) ? 'externe' : 'hebergee'
 }
 
@@ -51,7 +80,11 @@ export const sourceMedia = (url: string | null | undefined): SourceMedia => {
  * Un lien tiers non reconnu (ni fichier, ni YouTube) ne l'est pas : la page doit
  * alors proposer d'ouvrir la source plutôt qu'un lecteur qui resterait vide.
  */
-export const estMediaJouable = (url: string | null | undefined): boolean => {
+export const estMediaJouable = (
+  url: string | null | undefined,
+  sourceMediaDeclaree?: SourceMedia | string | null,
+): boolean => {
   if (!url) return false
-  return !estMediaExterne(url) || youtubeEmbedUrl(url) !== null
+  if (sourceMedia(url, sourceMediaDeclaree) === 'hebergee') return true
+  return youtubeEmbedUrl(url) !== null
 }

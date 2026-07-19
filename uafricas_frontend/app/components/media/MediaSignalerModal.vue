@@ -58,7 +58,9 @@ const setSuccess = (message: string) => {
   enCours.value = false
   succes.value = true
   messageSucces.value = message
-  setTimeout(() => emit('close'), 1800)
+  // Le message de suspension fait deux phrases : 1,8 s ne suffit pas à le lire,
+  // et c'est précisément celui qui doit être lu.
+  setTimeout(() => emit('close'), 4000)
 }
 defineExpose({ setLoading, setError, setSuccess })
 </script>

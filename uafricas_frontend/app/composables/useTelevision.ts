@@ -416,6 +416,27 @@ export const useTelevision = () => {
   }
 
   /**
+   * Émissions publiées d'une chaîne — pendant télé de
+   * `useStationsRadio.listerContenusStation`.
+   *
+   * Alimente notamment le sélecteur de contenu de la grille de programmation :
+   * sans lui, un co-détenteur ne pouvait placer aucun créneau (US5).
+   */
+  const listerContenusChaine = async (chaineId: string): Promise<TvProgram[]> => {
+    try {
+      const reponse = await $fetch<ApiResponse<ProgrammeTeleListeAPI>>(
+        `${apiBase}/api/television/programmes-vedettes?chaine=${chaineId}&par_page=50`,
+      )
+      if (!reponse.success || !reponse.data) return []
+      return reponse.data.programmes.map(p => mapperProgrammeApiVersTv(p, apiBase))
+    }
+    catch (e: any) {
+      console.error('Erreur listerContenusChaine:', e)
+      return []
+    }
+  }
+
+  /**
    * Récupérer un programme vedette par ID
    */
   const obtenirProgrammeVedette = async (id: string): Promise<TvProgram | null> => {
@@ -700,6 +721,7 @@ export const useTelevision = () => {
     listerChaines,
     obtenirChaine,
     listerProgrammesVedettes,
+    listerContenusChaine,
     obtenirProgrammeVedette,
     listerPays,
     listerCategories,
