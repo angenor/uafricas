@@ -851,7 +851,7 @@ pub async fn lister_programmes_radio(
     }
 
     if let Some(station_id) = params.station_id {
-        conditions.push(format!("p.station_id = ${}", bind_index));
+        conditions.push(format!("p.station_id = ${}::uuid", bind_index));
         bind_values.push(station_id.to_string());
         bind_index += 1;
     }
@@ -1226,7 +1226,7 @@ pub async fn lister_programmes_tele(
     }
 
     if let Some(chaine_id) = params.chaine_id {
-        conditions.push(format!("p.chaine_id = ${}", bind_index));
+        conditions.push(format!("p.chaine_id = ${}::uuid", bind_index));
         bind_values.push(chaine_id.to_string());
         bind_index += 1;
     }

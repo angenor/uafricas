@@ -16,6 +16,8 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
 }>()
 
+import { youtubeEmbedUrl, estMediaExterne } from '~/utils/media'
+
 const { uploaderMedia, resoudreUrlMedia } = useAdminMediaUpload()
 
 const enChargement = ref(false)
@@ -29,6 +31,16 @@ const accept = computed(() =>
 )
 
 const apercu = computed(() => resoudreUrlMedia(props.modelValue))
+
+// Aperçu routé comme le lecteur public (LecteurMedia) : un lien YouTube passe
+// par une iframe d'intégration, un fichier hébergé par la plateforme par la
+// balise native, et un lien tiers non reconnu ne reçoit pas de lecteur (un
+// `<video>` resterait noir et muet) mais un simple renvoi vers la source.
+const urlEmbed = computed(() => youtubeEmbedUrl(props.modelValue))
+const estFichierHeberge = computed(() => !!props.modelValue && !estMediaExterne(props.modelValue))
+const lienExterneNonLisible = computed(
+  () => !!props.modelValue && !urlEmbed.value && !estFichierHeberge.value,
+)
 
 const onChange = async (event: Event) => {
   const input = event.target as HTMLInputElement
@@ -71,14 +83,42 @@ const retirer = () => {
 
     <!-- Aperçu si un média est défini -->
     <div v-if="modelValue" class="space-y-2">
-      <video
-        v-if="kind === 'video'"
-        :src="apercu"
-        controls
-        preload="metadata"
-        class="w-full max-h-56 rounded-lg border border-base-300 bg-black"
-      />
-      <audio v-else :src="apercu" controls preload="metadata" class="w-full" />
+      <!-- Lien YouTube reconnu : iframe d'intégration -->
+      <div v-if="urlEmbed" class="w-full aspect-video rounded-lg overflow-hidden border border-base-300 bg-black">
+        <iframe
+          :src="urlEmbed"
+          title="Aperçu vidéo"
+          class="w-full h-full border-0"
+          allow="encrypted-media; picture-in-picture; fullscreen"
+          allowfullscreen
+          loading="lazy"
+        />
+      </div>
+
+      <!-- Fichier hébergé par la plateforme : lecteur natif -->
+      <template v-else-if="estFichierHeberge">
+        <video
+          v-if="kind === 'video'"
+          :src="apercu"
+          controls
+          preload="metadata"
+          class="w-full max-h-56 rounded-lg border border-base-300 bg-black"
+        />
+        <audio v-else :src="apercu" controls preload="metadata" class="w-full" />
+      </template>
+
+      <!-- Lien tiers non lisible ici : pas de cadre noir trompeur, un renvoi honnête -->
+      <div
+        v-else-if="lienExterneNonLisible"
+        class="flex items-start gap-2 rounded-lg border border-base-300 bg-base-200 px-3 py-2 text-sm"
+      >
+        <font-awesome-icon icon="circle-info" class="mt-0.5 text-info" />
+        <span>
+          Lien externe enregistré. L'aperçu intégré n'est disponible que pour les fichiers téléversés
+          et les vidéos YouTube.
+          <a :href="modelValue" target="_blank" rel="noopener noreferrer" class="link link-primary">Ouvrir la source</a>
+        </span>
+      </div>
 
       <div class="flex items-center gap-2">
         <span class="text-xs text-base-content/60 truncate flex-1">{{ modelValue }}</span>
@@ -110,6 +150,7 @@ const retirer = () => {
           placeholder="Coller un lien externe (https://…)"
           class="input input-bordered input-sm flex-1"
           @keydown.enter.prevent="validerLien"
+          @blur="validerLien"
         />
         <button type="button" class="btn btn-sm btn-outline" @click="validerLien">
           Utiliser le lien
