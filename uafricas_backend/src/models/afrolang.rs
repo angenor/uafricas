@@ -679,6 +679,10 @@ pub struct SalleFiltres {
     pub langue_code: Option<String>,
     pub groupe_ethnique_id: Option<Uuid>,
     pub pays_id: Option<Uuid>,
+    /// Zone géographique du territoire d'origine : `afrique` ou `hors_afrique`.
+    /// Restreint la liste aux salles ayant au moins un territoire d'origine
+    /// dans la zone (même critère ISO2 que le filtre côté frontend).
+    pub zone: Option<String>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,
 }

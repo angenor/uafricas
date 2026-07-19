@@ -11,6 +11,7 @@
     <ExpertsExpertFiltersMobile
       v-model:selected-country="selectedCountry"
       v-model:selected-specialty="selectedSpecialty"
+      v-model:zone="selectedZone"
       :is-open="sidebarOpen"
       :selected-profile="selectedProfile"
       :specialites="specialites"
@@ -58,6 +59,7 @@
             <ExpertsExpertFilters
               v-model:selected-country="selectedCountry"
               v-model:selected-specialty="selectedSpecialty"
+              v-model:zone="selectedZone"
               :selected-profile="selectedProfile"
               :specialites="specialites"
               @filter-profile="filterByProfile"
@@ -363,6 +365,8 @@ const totalPages = ref(1)
 const searchTerm = ref('')
 const categorySelected = ref('Tout')
 const selectedCountry = ref('')
+/** Zone géographique du territoire (radio binaire) : filtre aussi la liste. Défaut : Afrique. */
+const selectedZone = ref<'afrique' | 'hors_afrique'>('afrique')
 const selectedProfile = ref('')
 /** Spécialité choisie dans les filtres ('' = toutes). */
 const selectedSpecialty = ref('')
@@ -403,6 +407,7 @@ const chargerExperts = async () => {
     recherche: searchTerm.value || undefined,
     domaine: categorySelected.value !== 'Tout' ? categorySelected.value : undefined,
     pays: selectedCountry.value || undefined,
+    zone: selectedZone.value,
     situation: selectedProfile.value && selectedProfile.value !== 'tous'
       ? selectedProfile.value
       : undefined,
@@ -458,6 +463,7 @@ const sortExperts = (order: 'recent' | 'experience' | 'rating') => {
 const resetFilters = () => {
   categorySelected.value = 'Tout'
   selectedCountry.value = ''
+  selectedZone.value = 'afrique'
   selectedProfile.value = ''
   selectedSpecialty.value = ''
   searchTerm.value = ''
@@ -492,7 +498,7 @@ const contactExpert = (expert: ExpertAPI) => {
 }
 
 // Recharger quand les filtres changent (reset page + appel API)
-watch([categorySelected, selectedCountry, selectedProfile, selectedSpecialty, sortOrder], () => {
+watch([categorySelected, selectedCountry, selectedZone, selectedProfile, selectedSpecialty, sortOrder], () => {
   currentPage.value = 1
   chargerExperts()
 })

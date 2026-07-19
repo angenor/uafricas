@@ -101,6 +101,27 @@ pub async fn lister_experts(
         }
     }
 
+    // Filtre par zone géographique du territoire d'origine.
+    // Le radio « Afrique / Hors Afrique » filtre aussi la liste des experts,
+    // pas seulement le menu déroulant des territoires. La comparaison se fait
+    // sur le code ISO2 du pays de résidence (JOIN shared.pays p déjà présent).
+    // Les codes ISO2 sont des constantes maîtrisées, inlinées sans risque d'injection.
+    if let Some(ref zone) = params.zone {
+        let zone = zone.trim();
+        if zone == "afrique" || zone == "hors_afrique" {
+            let liste = crate::constants::afripulse_pays_autorises::PAYS_AFRICAINS_ISO2
+                .iter()
+                .map(|c| format!("'{}'", c))
+                .collect::<Vec<_>>()
+                .join(",");
+            let comparateur = if zone == "hors_afrique" { "NOT IN" } else { "IN" };
+            conditions.push(format!(
+                "LOWER(p.code_iso2) {} ({})",
+                comparateur, liste
+            ));
+        }
+    }
+
     // Recherche textuelle (nom, prenom, biographie, domaine)
     if let Some(ref recherche) = params.recherche {
         let trimmed = recherche.trim();

@@ -63,6 +63,8 @@ export interface ExpertFiltres {
   situation?: string
   /** Spécialité déclarée par l'expert (valeur libre). « toutes » = pas de filtre. */
   specialite?: string
+  /** Zone géographique du territoire d'origine : filtre aussi la liste des experts. */
+  zone?: 'afrique' | 'hors_afrique'
   tri?: 'recent' | 'experience' | 'rating'
   page?: number
   par_page?: number
@@ -303,6 +305,7 @@ export const useExperts = () => {
       if (filtres.pays) params.set('pays', filtres.pays)
       if (filtres.situation && filtres.situation !== 'tous') params.set('situation', filtres.situation)
       if (filtres.specialite && filtres.specialite !== 'toutes') params.set('specialite', filtres.specialite)
+      if (filtres.zone) params.set('zone', filtres.zone)
       if (filtres.tri) params.set('tri', filtres.tri)
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))

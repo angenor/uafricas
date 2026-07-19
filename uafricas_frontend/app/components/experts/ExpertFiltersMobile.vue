@@ -158,12 +158,16 @@ const selectedCountry = defineModel<string>('selectedCountry', { default: '' })
 /** Spécialité sélectionnée (synchronisée avec la page via v-model). */
 const selectedSpecialty = defineModel<string>('selectedSpecialty', { default: '' })
 
-/** Zone géographique qui pilote le contenu du menu déroulant. */
+/**
+ * Zone géographique (synchronisée avec la page via v-model) : elle pilote le
+ * contenu du menu déroulant des territoires ET filtre la liste des experts.
+ */
+const zone = defineModel<'afrique' | 'hors_afrique'>('zone', { default: 'afrique' })
+
 const zones = [
   { value: 'afrique' as const, label: 'Afrique' },
   { value: 'hors_afrique' as const, label: 'Hors Afrique' },
 ]
-const zone = ref<'afrique' | 'hors_afrique'>('afrique')
 
 /** Territoires proposés selon la zone, triés alphabétiquement (fr). */
 const territoires = computed(() =>
