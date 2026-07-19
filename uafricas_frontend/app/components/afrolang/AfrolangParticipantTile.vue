@@ -4,8 +4,12 @@
     :class="{
       'ring-2 ring-emerald-400': isDominant && !participant.isMuted,
       'ring-2 ring-blue-400': participant.isLocal && !isScreenShare,
-      'h-full': isScreenShare,
+      'h-full': isScreenShare && !prominent,
+      // Mode « mis en évidence » : la tuile ne s'étire plus sur toute la largeur ;
+      // elle est centrée et bornée au ratio de la source (max 16:9 / 9:16).
+      'h-full w-auto max-w-full mx-auto': prominent,
     }"
+    :style="prominent ? { aspectRatio: String(ratioContraint) } : undefined"
   >
     <!-- Mode partage d'écran (tuile dédiée) -->
     <video
@@ -15,11 +19,15 @@
       playsinline
       muted
       class="w-full h-full object-contain bg-black"
+      @loadedmetadata="majRatioSource"
+      @resize="majRatioSource"
     />
 
     <!-- Video camera (tuile normale) — monté tant qu'un track existe, caché via v-show
          si la caméra est coupée. Évite le démontage/remontage qui cassait srcObject
-         au cycle mute → unmute du correspondant (MediaStreamTrack identique). -->
+         au cycle mute → unmute du correspondant (MediaStreamTrack identique).
+         En mode « mis en évidence » : object-contain pour respecter le ratio source
+         (pas de recadrage), sinon object-cover pour un remplissage propre en grille. -->
     <video
       v-if="!isScreenShare && participant.videoTrack"
       v-show="!participant.isCameraOff"
@@ -27,7 +35,10 @@
       autoplay
       playsinline
       :muted="participant.isLocal"
-      class="w-full h-full object-cover"
+      class="w-full h-full"
+      :class="prominent ? 'object-contain' : 'object-cover'"
+      @loadedmetadata="majRatioSource"
+      @resize="majRatioSource"
     />
 
     <!-- Avatar fallback (pas de track ou caméra off) -->
@@ -95,6 +106,10 @@
         <font-awesome-icon :icon="['fas', 'video']" class="w-3 h-3 line-through" />
       </span>
     </div>
+
+    <!-- Contenu superposé fourni par le parent (ex. badge « En train de parler »
+         en mode mis en évidence) — positionné dans la tuile, pas dans le conteneur. -->
+    <slot />
   </div>
 </template>
 
@@ -105,10 +120,33 @@ const props = defineProps<{
   participant: RoomParticipant
   isDominant: boolean
   isScreenShare?: boolean
+  /** Mode « mis en évidence » (spotlight ou partage d'écran proéminent) : la tuile
+   *  est centrée et bornée au ratio de la source (max 16:9 paysage / 9:16 portrait). */
+  prominent?: boolean
 }>()
 
 const videoRef = ref<HTMLVideoElement | null>(null)
 const screenRef = ref<HTMLVideoElement | null>(null)
+
+// Ratio (largeur/hauteur) natif de la source vidéo, lu depuis l'élément <video>.
+const ratioNaturel = ref<number | null>(null)
+
+const majRatioSource = (e: Event) => {
+  const el = e.target as HTMLVideoElement
+  if (el?.videoWidth && el?.videoHeight) {
+    ratioNaturel.value = el.videoWidth / el.videoHeight
+  }
+}
+
+// Ratio appliqué en mode « mis en évidence », borné à l'intervalle [9:16, 16:9].
+// Défaut 16:9 tant que les métadonnées ne sont pas chargées (ou caméra coupée).
+const RATIO_MIN = 9 / 16
+const RATIO_MAX = 16 / 9
+const ratioContraint = computed(() => {
+  const r = ratioNaturel.value
+  if (!r) return RATIO_MAX
+  return Math.min(Math.max(r, RATIO_MIN), RATIO_MAX)
+})
 
 const initiales = computed(() => {
   const name = props.participant.name || '?'

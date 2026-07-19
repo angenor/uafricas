@@ -1,49 +1,70 @@
 <template>
   <div class="flex-1 p-2 sm:p-4 overflow-hidden flex flex-col gap-2 sm:gap-4">
     <!-- Partage d'écran proéminent + pellicule des participants (pour qu'ils
-         restent visibles ; l'audio, lui, est rendu indépendamment dans AfrolangRoom). -->
+         restent visibles ; l'audio, lui, est rendu indépendamment dans AfrolangRoom).
+         Pellicule en bas sur mobile, à gauche sur desktop. -->
     <template v-if="ecranPartageActif">
-      <div class="flex-1 min-h-0">
-        <AfrolangParticipantTile
-          :participant="ecranPartageActif"
-          :is-dominant="false"
-          :is-screen-share="true"
-        />
-      </div>
-      <div class="h-24 sm:h-32 shrink-0 flex gap-2 overflow-x-auto">
-        <AfrolangParticipantTile
-          v-for="participant in participants"
-          :key="participant.identity"
-          :participant="participant"
-          :is-dominant="participant.identity === dominantSpeaker"
-          class="w-28 sm:w-36 shrink-0 rounded-lg"
-        />
+      <div class="flex-1 min-h-0 flex flex-col sm:flex-row gap-2 sm:gap-4">
+        <div class="order-last sm:order-first shrink-0 flex sm:flex-col gap-2 h-24 sm:h-auto sm:w-40 overflow-x-auto sm:overflow-x-hidden sm:overflow-y-auto">
+          <AfrolangParticipantTile
+            v-for="participant in participants"
+            :key="participant.identity"
+            :participant="participant"
+            :is-dominant="participant.identity === dominantSpeaker"
+            class="h-full w-auto sm:h-auto sm:w-full aspect-video shrink-0 rounded-lg"
+          />
+        </div>
+        <div class="relative flex-1 min-h-0 flex items-center justify-center">
+          <AfrolangParticipantTile
+            :participant="ecranPartageActif"
+            :is-dominant="false"
+            :is-screen-share="true"
+            :prominent="true"
+          />
+        </div>
       </div>
     </template>
 
-    <!-- Spotlight (FR-023) : participant mis en évidence agrandi au centre. -->
+    <!-- Spotlight (FR-023) : participant mis en évidence agrandi au centre.
+         À défaut de mise en évidence manuelle, repli automatique sur l'orateur actif.
+         Pellicule des autres en bas sur mobile, à gauche sur desktop. -->
     <template v-else-if="participantSpotlight">
-      <div class="relative flex-1 min-h-0 transition-all duration-300 ease-in-out">
-        <AfrolangParticipantTile
-          :participant="participantSpotlight"
-          :is-dominant="true"
-          class="border-2 border-custom-chocolat rounded-lg h-full"
-        />
-        <span
-          class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-custom-chocolat text-white text-[11px] font-semibold tracking-wide"
+      <div class="flex-1 min-h-0 flex flex-col sm:flex-row gap-2 sm:gap-4 transition-all duration-300 ease-in-out">
+        <div
+          v-if="autresParticipants.length"
+          class="order-last sm:order-first shrink-0 flex sm:flex-col gap-2 h-24 sm:h-auto sm:w-40 overflow-x-auto sm:overflow-x-hidden sm:overflow-y-auto transition-all duration-300"
         >
-          <font-awesome-icon :icon="['fas', 'star']" class="w-3 h-3" />
-          En vedette
-        </span>
-      </div>
-      <div class="h-24 sm:h-32 shrink-0 flex gap-2 overflow-x-auto transition-all duration-300">
-        <AfrolangParticipantTile
-          v-for="participant in autresParticipants"
-          :key="participant.identity"
-          :participant="participant"
-          :is-dominant="participant.identity === dominantSpeaker"
-          class="w-28 sm:w-36 shrink-0 rounded-lg"
-        />
+          <AfrolangParticipantTile
+            v-for="participant in autresParticipants"
+            :key="participant.identity"
+            :participant="participant"
+            :is-dominant="participant.identity === dominantSpeaker"
+            class="h-full w-auto sm:h-auto sm:w-full aspect-video shrink-0 rounded-lg"
+          />
+        </div>
+        <div class="relative flex-1 min-h-0 flex items-center justify-center">
+          <AfrolangParticipantTile
+            :participant="participantSpotlight"
+            :is-dominant="true"
+            :prominent="true"
+            :class="spotlightEstAuto ? 'border-2 border-emerald-500 rounded-lg' : 'border-2 border-custom-chocolat rounded-lg'"
+          >
+            <span
+              v-if="spotlightEstAuto"
+              class="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500 text-white text-[11px] font-semibold tracking-wide"
+            >
+              <font-awesome-icon :icon="['fas', 'microphone']" class="w-3 h-3" />
+              En train de parler
+            </span>
+            <span
+              v-else
+              class="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-custom-chocolat text-white text-[11px] font-semibold tracking-wide"
+            >
+              <font-awesome-icon :icon="['fas', 'star']" class="w-3 h-3" />
+              En vedette
+            </span>
+          </AfrolangParticipantTile>
+        </div>
       </div>
     </template>
 
@@ -84,14 +105,43 @@ const props = defineProps<{
 // Feature 001-session-moderation : mise en évidence (spotlight)
 const { spotlightActif } = useAfrolang()
 
-const participantSpotlight = computed<RoomParticipant | null>(() => {
+// Spotlight manuel défini par un modérateur (FR-023) — prioritaire.
+const participantSpotlightManuel = computed<RoomParticipant | null>(() => {
   const id = spotlightActif.value?.utilisateur_id
   if (!id) return null
   return props.participants.find(p => p.identity === id) ?? null
 })
 
+// Repli automatique : mémorise le dernier orateur actif (le `dominantSpeaker`
+// repasse à null dès que le silence s'installe ; on conserve la dernière valeur
+// pour éviter que la vue oscille sans cesse entre grille et vedette).
+const dernierOrateur = ref<string | null>(null)
+watch(() => props.dominantSpeaker, (id) => {
+  if (id) dernierOrateur.value = id
+})
+
+// Si personne n'est mis en évidence manuellement, on met en évidence l'orateur
+// courant. Ignoré s'il n'y a qu'un seul participant (rien à mettre en vedette).
+const participantOrateurAuto = computed<RoomParticipant | null>(() => {
+  if (participantSpotlightManuel.value) return null
+  if (props.participants.length < 2) return null
+  const id = dernierOrateur.value
+  if (!id) return null
+  return props.participants.find(p => p.identity === id) ?? null
+})
+
+const participantSpotlight = computed<RoomParticipant | null>(() =>
+  participantSpotlightManuel.value ?? participantOrateurAuto.value,
+)
+
+// Vrai quand la mise en évidence provient du repli automatique (orateur) et non
+// d'un modérateur — sert à différencier le libellé/couleur du badge.
+const spotlightEstAuto = computed(() =>
+  !participantSpotlightManuel.value && !!participantOrateurAuto.value,
+)
+
 const autresParticipants = computed<RoomParticipant[]>(() => {
-  const id = spotlightActif.value?.utilisateur_id
+  const id = participantSpotlight.value?.identity
   if (!id) return props.participants
   return props.participants.filter(p => p.identity !== id)
 })
