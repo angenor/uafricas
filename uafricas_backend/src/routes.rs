@@ -1010,6 +1010,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // « /partages », « /commentaires » et « /propositions ».
                     .route("/partages", web::get().to(media_social::lister_partages_medias))
                     .route("/commentaires/{id}", web::delete().to(media_social::supprimer_commentaire))
+                    .route("/themes", web::get().to(media_proposition::lister_themes_phares))
                     .route("/propositions", web::post().to(media_proposition::soumettre_proposition))
                     .route("/propositions/moi", web::get().to(media_proposition::lister_mes_propositions))
                     .route("/propositions/{id}/retirer", web::patch().to(media_proposition::retirer_proposition))

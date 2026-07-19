@@ -16,6 +16,7 @@ import {
   LIBELLES_TYPE_OBJET,
   type TypeObjetPropose,
   type DonneesProposition,
+  type ThemePhareAPI,
 } from '~/composables/useMediaProposition'
 
 const props = withDefaults(defineProps<{
@@ -34,7 +35,7 @@ const emit = defineEmits<{
   (e: 'soumise'): void
 }>()
 
-const { soumettre, chargement, erreur: erreurApi } = useMediaProposition()
+const { soumettre, chargement, erreur: erreurApi, listerThemes } = useMediaProposition()
 const userStore = useUserStore()
 
 const typeObjet = ref<TypeObjetPropose>(props.typesOfferts[0] ?? 'chaine_tv')
@@ -46,9 +47,31 @@ const lienExterne = ref('')
 const erreur = ref('')
 const succes = ref(false)
 
+// Référentiel des thèmes phares, chargé une fois à la première ouverture.
+const themes = ref<ThemePhareAPI[]>([])
+/**
+ * Valeur du sélecteur de thème : l'identifiant d'un thème du référentiel, ou
+ * la sentinelle `'autre'` qui révèle le champ de précision libre. Distincte de
+ * `donnees.theme_phare_id`, qu'elle pilote, car « Autre » n'est pas un id.
+ */
+const themeSelection = ref('')
+const AUTRE = 'autre'
+
 const estSupport = computed(() => ['chaine_tv', 'station_radio'].includes(typeObjet.value))
 const estContenu = computed(() => typeObjet.value.startsWith('programme_'))
 const estVideo = computed(() => typeObjet.value === 'programme_tele')
+
+// Le choix pilote les deux champs envoyés au serveur : un id, OU une précision
+// libre — jamais les deux, à l'image du CHECK « Autre exige une précision ».
+watch(themeSelection, (valeur) => {
+  if (valeur === AUTRE) {
+    donnees.value.theme_phare_id = undefined
+  }
+  else {
+    donnees.value.theme_phare_id = valeur || undefined
+    donnees.value.theme_phare_autre = undefined
+  }
+})
 
 const reinitialiser = () => {
   typeObjet.value = props.typesOfferts[0] ?? 'chaine_tv'
@@ -57,17 +80,23 @@ const reinitialiser = () => {
   fichierMedia.value = null
   fichierImage.value = null
   lienExterne.value = ''
+  themeSelection.value = ''
   erreur.value = ''
   succes.value = false
 }
 
-watch(() => props.isOpen, (ouvert) => { if (ouvert) reinitialiser() })
+watch(() => props.isOpen, async (ouvert) => {
+  if (!ouvert) return
+  reinitialiser()
+  if (themes.value.length === 0) themes.value = await listerThemes()
+})
 
 // Changer de type invalide les champs propres à l'ancien.
 watch(typeObjet, () => {
   donnees.value = {}
   fichierMedia.value = null
   lienExterne.value = ''
+  themeSelection.value = ''
 })
 
 const surFichierMedia = (e: Event) => {
@@ -103,8 +132,13 @@ const valider = (): string | null => {
       return 'Précisez le rôle choisi au titre de « Autre ».'
     }
   }
-  if (estContenu.value && !donnees.value.theme_phare_autre?.trim() && !donnees.value.theme_phare_id) {
-    return 'Indiquez le thème phare du contenu.'
+  if (estContenu.value) {
+    if (!themeSelection.value) {
+      return 'Choisissez un thème phare.'
+    }
+    if (themeSelection.value === AUTRE && !donnees.value.theme_phare_autre?.trim()) {
+      return 'Précisez le thème phare choisi au titre de « Autre ».'
+    }
   }
   return null
 }
@@ -279,12 +313,23 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
                   Thème phare <span class="text-red-500">*</span>
                 </label>
+                <select
+                  v-model="themeSelection"
+                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                >
+                  <option value="">Choisir un thème…</option>
+                  <option v-for="theme in themes" :key="theme.id" :value="theme.id">
+                    {{ theme.nom }}
+                  </option>
+                  <option :value="AUTRE">Autre (à préciser)</option>
+                </select>
                 <input
+                  v-if="themeSelection === AUTRE"
                   v-model="donnees.theme_phare_autre"
                   type="text"
                   maxlength="200"
-                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                  placeholder="Ex. : Afrique Société, Innovations simples chez nous…"
+                  class="mt-2 w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                  placeholder="Précisez le thème phare"
                 >
               </div>
 

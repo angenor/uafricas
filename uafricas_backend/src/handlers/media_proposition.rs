@@ -1153,3 +1153,37 @@ pub async fn charger_proposition(
     .ok_or_else(|| ApiErreur::NonTrouve("Proposition introuvable".into()))?;
     Ok(row.to_response())
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /api/medias/themes — référentiel des thèmes phares (FR-030)
+// ═══════════════════════════════════════════════════════════════════════════
+
+#[derive(sqlx::FromRow, serde::Serialize)]
+struct ThemePhareResponse {
+    id: Uuid,
+    nom: String,
+}
+
+/// Les thèmes phares proposables pour un contenu, alimentant le sélecteur du
+/// formulaire de proposition. Ce sont les catégories `shared.categorie` de
+/// contexte `media`, seedées par la migration 09j.
+///
+/// Public : le formulaire est ouvert à tout membre, la liste n'a rien de
+/// sensible.
+pub async fn lister_themes_phares(
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let themes = sqlx::query_as::<_, ThemePhareResponse>(
+        "SELECT id, nom FROM shared.categorie
+          WHERE contexte = 'media' AND actif = TRUE
+          ORDER BY ordre ASC, nom ASC",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(themes),
+        error: None,
+    }))
+}

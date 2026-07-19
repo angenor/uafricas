@@ -45,6 +45,12 @@ export const LIBELLES_STATUT: Record<StatutProposition, string> = {
   retiree: 'Retirée',
 }
 
+/** Un thème phare proposable — catégorie média (FR-030). */
+export interface ThemePhareAPI {
+  id: string
+  nom: string
+}
+
 /** Payload métier de la proposition — miroir de `DonneesProposition` (Rust). */
 export interface DonneesProposition {
   nom?: string
@@ -263,6 +269,25 @@ export const useMediaProposition = () => {
     }
   }
 
+  /**
+   * Référentiel des thèmes phares proposables pour un contenu (FR-030).
+   *
+   * Public et stable : les catégories média seedées par la migration 09j, dans
+   * l'ordre éditorial voulu. Alimente le sélecteur du formulaire.
+   */
+  const listerThemes = async (): Promise<ThemePhareAPI[]> => {
+    try {
+      const reponse = await $fetch<ApiResponse<ThemePhareAPI[]>>(
+        `${apiBase}/api/medias/themes`,
+      )
+      return reponse.success && reponse.data ? reponse.data : []
+    }
+    catch (e: any) {
+      console.error('Erreur listerThemes:', e)
+      return []
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
@@ -271,5 +296,6 @@ export const useMediaProposition = () => {
     retirer,
     modifierMetadonnees,
     remplacerMedia,
+    listerThemes,
   }
 }
