@@ -47,12 +47,16 @@ const userStore = useUserStore()
 const showIdee = ref(false)
 const showAnimation = ref(false)
 
-const ouvrirSiConnecte = (cible: Ref<boolean>) => {
+// Reçoit une fonction d'ouverture, et non le ref lui-même : dans un template,
+// Vue déballe les refs, si bien que `ouvrirSiConnecte(showIdee)` transmettait le
+// booléen `false` et l'affectation de `.value` levait une TypeError. Le bouton
+// restait donc sans effet.
+const ouvrirSiConnecte = (ouvrir: () => void) => {
   if (!userStore.accessToken) {
     redirigerVersConnexion()
     return
   }
-  cible.value = true
+  ouvrir()
 }
 
 /** Commenter suppose la page de détail, seule à héberger le fil complet. */
@@ -209,7 +213,7 @@ const contenusRangee = computed(() =>
       <button
         type="button"
         class="inline-flex items-center gap-2 rounded-full border border-white/20 text-gray-300 px-4 py-2 text-sm hover:border-yellow-400 hover:text-yellow-400 transition-colors"
-        @click="ouvrirSiConnecte(showIdee)"
+        @click="ouvrirSiConnecte(() => showIdee = true)"
       >
         <font-awesome-icon :icon="['fas', 'lightbulb']" />
         Proposer une idée
@@ -217,7 +221,7 @@ const contenusRangee = computed(() =>
       <button
         type="button"
         class="inline-flex items-center gap-2 rounded-full border border-white/20 text-gray-300 px-4 py-2 text-sm hover:border-yellow-400 hover:text-yellow-400 transition-colors"
-        @click="ouvrirSiConnecte(showAnimation)"
+        @click="ouvrirSiConnecte(() => showAnimation = true)"
       >
         <font-awesome-icon :icon="['fas', 'microphone']" />
         Demander à animer

@@ -795,6 +795,26 @@
               <EvenementsMesEvenements />
             </div>
 
+            <!-- ─── Onglet Mes supports médias ─── -->
+            <div v-if="ongletActif === 'mes-supports'" class="space-y-6">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-800">Mes supports médias</h2>
+                <NuxtLink
+                  to="/mon-compte/invitations-medias"
+                  class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-custom-green text-white font-medium rounded-xl hover:bg-custom-green/90 transition-all"
+                >
+                  <font-awesome-icon icon="fa-solid fa-envelope" />
+                  <span class="hidden sm:inline">Invitations</span>
+                </NuxtLink>
+              </div>
+              <p class="text-sm text-gray-500 -mt-3">
+                Les chaînes et stations que vous détenez : bâtissez leur grille de
+                programmation, arbitrez les idées et demandes d'animation reçues,
+                et gérez votre équipe.
+              </p>
+              <MediaMesSupports />
+            </div>
+
           </div>
         </div>
       </template>
@@ -848,6 +868,7 @@ const onglets = [
   { id: 'expertise', label: 'Expertise', icon: 'fa-solid fa-user-tie' },
   { id: 'mes-echanges', label: 'Mes échanges', icon: 'fa-solid fa-right-left' },
   { id: 'mes-evenements', label: 'Mes événements', icon: 'fa-solid fa-calendar-day' },
+  { id: 'mes-supports', label: 'Mes supports médias', icon: 'fa-solid fa-tv' },
 ]
 
 const ongletCourant = computed(() => onglets.find(t => t.id === ongletActif.value) || onglets[0]!)
