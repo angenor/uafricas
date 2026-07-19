@@ -132,6 +132,8 @@ pub struct ExpertQueryParams {
     pub domaine: Option<String>,
     pub pays: Option<String>,
     pub situation: Option<String>,
+    /// Metier declare, compare sans tenir compte de la casse (FR-046).
+    pub specialite: Option<String>,
     pub tri: Option<String>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,

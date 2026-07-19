@@ -45,6 +45,17 @@ pub mod afrolang {
     pub const SALLE_REACTIVEE_ADMIN: &str = "afrolang.salle.reactivee_admin";
 }
 
+// ── Types de notifications Médias radio/télé (feature 001-refonte-tele-radio) ──
+// Émis par le workflow de soumission (US4), la co-détention (US5) et la
+// modération sur signalement (US7).
+
+pub mod media {
+    pub const PROPOSITION_VALIDEE: &str = "media.proposition_validee";
+    pub const PROPOSITION_REJETEE: &str = "media.proposition_rejetee";
+    pub const CODETENTEUR_AJOUTE: &str = "media.codetenteur_ajoute";
+    pub const CONTENU_SUSPENDU: &str = "media.contenu_suspendu";
+}
+
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct NotificationRow {
     pub id: Uuid,

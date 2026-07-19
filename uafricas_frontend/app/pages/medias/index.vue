@@ -5,7 +5,7 @@
       class="group relative bg-cover bg-center z-0"
       style="background-image: url('/images/banners/radio-home.jpg')"
     >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
 
       <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
         <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
@@ -36,7 +36,7 @@
                   :src="card.image"
                   :alt="card.title"
                 />
-                <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div class="absolute inset-0 bg-linear-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div class="absolute top-4 right-4">
                   <div
                     class="text-white px-3 py-1 rounded-full text-sm font-medium"
@@ -63,7 +63,7 @@
       </div>
 
       <!-- Section Statistiques -->
-      <div class="mt-16 bg-gradient-to-r from-custom-green to-custom-chocolat rounded-2xl p-8 text-white">
+      <div class="mt-16 bg-linear-to-r from-custom-green to-custom-chocolat rounded-2xl p-8 text-white">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div v-for="stat in mediaStats" :key="stat.label">
             <div class="text-3xl font-bold">{{ stat.value }}</div>

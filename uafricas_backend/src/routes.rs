@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_programmation, media_proposition, media_social, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -92,6 +92,22 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/tags/{id}", web::put().to(admin::tags::modifier_tag))
                     .route("/tags/{id}", web::delete().to(admin::tags::supprimer_tag))
                     // Referentiels - Medias
+                    // Declarees AVANT « /medias/{id} », qui capterait sinon
+                    // « /medias/propositions » et ferait echouer le parsing d'UUID.
+                    // Medias & Contenus - File de moderation des propositions (US4)
+                    .route("/medias/propositions", web::get().to(admin::media_proposition::lister_propositions))
+                    .route("/medias/propositions/{id}", web::get().to(admin::media_proposition::obtenir_proposition))
+                    .route("/medias/propositions/{id}/valider", web::patch().to(admin::media_proposition::valider_proposition))
+                    .route("/medias/propositions/{id}/rejeter", web::patch().to(admin::media_proposition::rejeter_proposition))
+                    // Medias & Contenus - File des contenus signales (US7)
+                    // Segments fixes AVANT « /medias/{type_support}/… », qui les capterait.
+                    .route("/medias/signalements", web::get().to(admin::media_proposition::lister_signalements))
+                    .route("/medias/signalements/{type_media}/{id}", web::get().to(admin::media_proposition::detail_signalements))
+                    .route("/medias/{type_media}/{id}/etat", web::patch().to(admin::media_proposition::changer_etat_media))
+                    // Co-detenteurs — recours administratif (US5)
+                    .route("/medias/{type_support}/{support_id}/detenteurs", web::get().to(admin::media_proposition::lister_detenteurs_admin))
+                    .route("/medias/{type_support}/{support_id}/detenteurs", web::post().to(admin::media_proposition::ajouter_detenteur_admin))
+                    .route("/medias/{type_support}/{support_id}/detenteurs/{utilisateur_id}", web::delete().to(admin::media_proposition::retirer_detenteur_admin))
                     .route("/medias", web::get().to(admin::medias::lister_medias))
                     .route("/medias/{id}", web::get().to(admin::medias::obtenir_media))
                     .route("/medias/{id}", web::delete().to(admin::medias::supprimer_media))
@@ -286,6 +302,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/programmes-tele/{id}", web::get().to(admin::radio_tele::obtenir_programme_tele))
                     .route("/programmes-tele/{id}", web::put().to(admin::radio_tele::modifier_programme_tele))
                     .route("/programmes-tele/{id}", web::delete().to(admin::radio_tele::supprimer_programme_tele))
+                    .route("/programmes-tele/{id}/vedette-globale", web::patch().to(admin::radio_tele::definir_vedette_globale))
                     .route("/medias/upload", web::post().to(admin::radio_tele::uploader_media))
                     // Medias & Contenus - Evenements
                     .route("/evenements", web::get().to(admin::evenements::lister_evenements))
@@ -590,6 +607,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/cv", web::post().to(experts::uploader_cv))
                     .route("/candidature", web::post().to(experts::creer_candidature))
                     .route("/moi", web::get().to(experts::ma_candidature))
+                    .route("/specialites", web::get().to(experts::lister_specialites_experts))
                     .route("/{id}", web::get().to(experts::obtenir_expert))
                     .route("/{id}/note", web::post().to(experts::noter_expert)),
             )
@@ -718,9 +736,19 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/stations-radio")
                     .route("", web::get().to(stations_radio::lister_stations))
                     .route("", web::post().to(stations_radio::creer_station))
+                    // Sections des pages Radio (US2). Déclarées AVANT « /{id} »,
+                    // qui capterait sinon ces chemins littéraux.
+                    .route("/sections", web::get().to(stations_radio::lister_sections_stations))
+                    .route("/slug/{slug}", web::get().to(stations_radio::obtenir_station_par_slug))
                     .route("/pays", web::get().to(stations_radio::lister_pays_stations))
                     .route("/genres", web::get().to(stations_radio::lister_genres_stations))
                     .route("/{id}", web::get().to(stations_radio::obtenir_station)),
+            )
+            // Émissions radio — exposition publique (US2, FR-020)
+            .service(
+                web::scope("/programmes-radio")
+                    .route("", web::get().to(stations_radio::lister_programmes_radio))
+                    .route("/slug/{slug}", web::get().to(stations_radio::obtenir_programme_radio_par_slug)),
             )
             // Routes des fiches pays (Opportunites en Afrique)
             .service(
@@ -956,6 +984,13 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             // Routes de la télévision
             .service(
                 web::scope("/television")
+                    // Page Télé : vedette plein écran puis sections par chaîne (US1).
+                    // Déclarées AVANT les routes à paramètre : « /chaines/slug/… »
+                    // serait sinon capté par « /chaines/{id} ».
+                    .route("/vedette", web::get().to(television::obtenir_vedette))
+                    .route("/sections", web::get().to(television::lister_sections))
+                    .route("/chaines/slug/{slug}", web::get().to(television::obtenir_chaine_par_slug))
+                    .route("/programmes/slug/{slug}", web::get().to(television::obtenir_programme_par_slug))
                     .route("/chaines", web::get().to(television::lister_chaines))
                     .route("/chaines", web::post().to(television::creer_chaine))
                     .route("/chaines/{id}", web::get().to(television::obtenir_chaine))
@@ -965,6 +1000,46 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/pays", web::get().to(television::lister_pays_television))
                     .route("/categories", web::get().to(television::lister_categories_television))
                     .route("/stats", web::get().to(television::obtenir_stats_television)),
+            )
+            // Interactions communautaires et contributions sur les médias (US3, US4).
+            // La lecture des commentaires et du mur reste publique ; toutes les
+            // mutations exigent un compte, contrôlé dans le handler (FR-027).
+            .service(
+                web::scope("/medias")
+                    // Déclarées AVANT « /{type_media}/… », qui capterait sinon
+                    // « /partages », « /commentaires » et « /propositions ».
+                    .route("/partages", web::get().to(media_social::lister_partages_medias))
+                    .route("/commentaires/{id}", web::delete().to(media_social::supprimer_commentaire))
+                    .route("/propositions", web::post().to(media_proposition::soumettre_proposition))
+                    .route("/propositions/moi", web::get().to(media_proposition::lister_mes_propositions))
+                    .route("/propositions/{id}/retirer", web::patch().to(media_proposition::retirer_proposition))
+                    .route("/contenus/{type_media}/{id}/metadonnees", web::patch().to(media_proposition::modifier_metadonnees))
+                    .route("/contenus/{type_media}/{id}/media", web::put().to(media_proposition::remplacer_media))
+                    // Décision des co-détenteurs sur les idées et demandes
+                    // d'animation visant leur support (US6, FR-047).
+                    .route("/propositions/{id}/accepter", web::patch().to(media_proposition::accepter_engagement))
+                    .route("/propositions/{id}/refuser", web::patch().to(media_proposition::refuser_engagement))
+                    // Co-détention et programmation (US5). Ces segments fixes
+                    // précèdent « /{type_support}/… » pour ne pas être captés.
+                    .route("/supports/moi", web::get().to(media_detention::lister_mes_supports))
+                    .route("/invitations/moi", web::get().to(media_detention::lister_mes_invitations))
+                    .route("/invitations/{id}/accepter", web::patch().to(media_detention::accepter_invitation))
+                    .route("/invitations/{id}/refuser", web::patch().to(media_detention::refuser_invitation))
+                    .route("/creneaux/{id}", web::put().to(media_programmation::modifier_creneau))
+                    .route("/creneaux/{id}", web::delete().to(media_programmation::supprimer_creneau))
+                    .route("/{type_support}/{support_id}/detenteurs", web::get().to(media_detention::lister_detenteurs))
+                    .route("/{type_support}/{support_id}/detenteurs/{utilisateur_id}", web::delete().to(media_detention::retirer_detenteur))
+                    .route("/{type_support}/{support_id}/invitations", web::post().to(media_detention::inviter_detenteur))
+                    .route("/{type_support}/{support_id}/contacter", web::post().to(media_detention::contacter_support))
+                    .route("/{type_support}/{support_id}/propositions", web::get().to(media_proposition::lister_propositions_support))
+                    .route("/{type_support}/{support_id}/grille", web::get().to(media_programmation::lister_grille))
+                    .route("/{type_support}/{support_id}/diffusion", web::get().to(media_programmation::obtenir_diffusion))
+                    .route("/{type_support}/{support_id}/creneaux", web::post().to(media_programmation::creer_creneau))
+                    .route("/{type_media}/{media_id}/reaction", web::post().to(media_social::reagir_media))
+                    .route("/{type_media}/{media_id}/commentaires", web::get().to(media_social::lister_commentaires))
+                    .route("/{type_media}/{media_id}/commentaires", web::post().to(media_social::commenter_media))
+                    .route("/{type_media}/{media_id}/partages", web::post().to(media_social::partager_media))
+                    .route("/{type_media}/{media_id}/signalement", web::post().to(media_social::signaler_media)),
             ),
     );
 }

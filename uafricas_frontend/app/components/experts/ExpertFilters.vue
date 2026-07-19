@@ -89,6 +89,34 @@
       </select>
     </div>
 
+    <!-- Filtre Spécialité -->
+    <div class="mb-6 pt-6 border-t border-gray-200">
+      <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+          />
+        </svg>
+        Spécialité
+      </h4>
+
+      <!-- Menu déroulant des spécialités -->
+      <select
+        v-model="selectedSpecialty"
+        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+      >
+        <option value="">
+          Toutes les spécialités
+        </option>
+        <option v-for="specialite in specialites" :key="specialite" :value="specialite">
+          {{ specialite }}
+        </option>
+      </select>
+    </div>
+
     <!-- Reset Filters -->
     <button
       class="w-full flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 font-medium"
@@ -116,6 +144,8 @@ import {
 
 defineProps<{
   selectedProfile: string
+  /** Spécialités réellement déclarées par les experts (source : API). */
+  specialites: string[]
 }>()
 
 defineEmits<{
@@ -125,6 +155,9 @@ defineEmits<{
 
 /** Territoire sélectionné (synchronisé avec la page via v-model). */
 const selectedCountry = defineModel<string>('selectedCountry', { default: '' })
+
+/** Spécialité sélectionnée (synchronisée avec la page via v-model). */
+const selectedSpecialty = defineModel<string>('selectedSpecialty', { default: '' })
 
 /** Zone géographique qui pilote le contenu du menu déroulant. */
 const zones = [

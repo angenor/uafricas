@@ -7,12 +7,14 @@ use uuid::Uuid;
 
 pub const ADMIN_STATION_RADIO_LISTE_COLONNES: &str =
     "s.id, s.nom, s.type_station::TEXT as type_station, s.genre, s.etat,
-     pays.nom AS pays_nom, s.ville, s.created_at";
+     pays.nom AS pays_nom, s.ville, s.origine_publication, s.created_at";
 
 pub const ADMIN_STATION_RADIO_DETAIL_COLONNES: &str =
     "s.id, s.nom, s.slug, s.description, s.stream_url, s.audio_url, s.image_couverture_url,
      s.genre, s.genres_liste, s.pays_id, pays.nom AS pays_nom, s.ville,
      s.type_station::TEXT as type_station, s.a_la_une,
+     s.origine_publication, s.role_partie_prenante, s.role_partie_prenante_autre,
+     s.nombre_signalements,
      s.etat, s.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      s.created_at, s.updated_at";
 
@@ -30,6 +32,7 @@ pub const ADMIN_CHAINE_TV_DETAIL_COLONNES: &str =
     "c.id, c.nom, c.slug, c.description, c.stream_url, c.image_couverture_url,
      c.categorie::TEXT as categorie, c.pays_id, pays.nom AS pays_nom,
      c.langue, c.est_en_direct,
+     c.role_partie_prenante, c.role_partie_prenante_autre, c.nombre_signalements,
      c.etat, c.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      c.created_at, c.updated_at";
 
@@ -51,6 +54,7 @@ pub const ADMIN_PROGRAMME_RADIO_DETAIL_COLONNES: &str =
      p.pays_id, pays.nom AS pays_nom, p.est_international, p.langue,
      p.categorie_radio::TEXT as categorie_radio,
      p.station_id, st.nom AS station_nom, p.a_la_une,
+     p.theme_phare_id, p.theme_phare_autre, p.nombre_signalements,
      p.etat, p.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      p.created_at, p.updated_at";
 
@@ -62,14 +66,16 @@ pub const PROGRAMME_RADIO_TRI_COLONNES: &[&str] = &[
 
 pub const ADMIN_PROGRAMME_TELE_LISTE_COLONNES: &str =
     "p.id, p.nom_emission, p.etat, p.langue,
-     pays.nom AS pays_nom, ch.nom AS chaine_nom, p.a_la_une, p.created_at";
+     pays.nom AS pays_nom, ch.nom AS chaine_nom, p.a_la_une, p.a_la_une_globale,
+     p.created_at";
 
 pub const ADMIN_PROGRAMME_TELE_DETAIL_COLONNES: &str =
     "p.id, p.nom_emission, p.slug,
      p.description, p.image_couverture_url, p.video_url,
      p.info_animateur, p.info_producteur,
      p.pays_id, pays.nom AS pays_nom, p.est_international, p.langue,
-     p.chaine_id, ch.nom AS chaine_nom, p.a_la_une,
+     p.chaine_id, ch.nom AS chaine_nom, p.a_la_une, p.a_la_une_globale,
+     p.theme_phare_id, p.theme_phare_autre, p.nombre_signalements,
      p.etat, p.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      p.created_at, p.updated_at";
 
@@ -88,6 +94,8 @@ pub struct AdminStationRadioListeResponse {
     pub etat: String,
     pub pays_nom: Option<String>,
     pub ville: Option<String>,
+    /// « africans » ou « territoire » : départage /medias/radio/africans de /medias/radio/nationales.
+    pub origine_publication: String,
     pub created_at: DateTime<Utc>,
 }
 
@@ -107,6 +115,11 @@ pub struct AdminStationRadioDetailRow {
     pub ville: Option<String>,
     pub type_station: String,
     pub a_la_une: bool,
+    /// « africans » ou « territoire » : départage /medias/radio/africans de /medias/radio/nationales.
+    pub origine_publication: String,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
+    pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -130,6 +143,11 @@ pub struct AdminStationRadioDetailResponse {
     pub ville: Option<String>,
     pub type_station: String,
     pub a_la_une: bool,
+    /// « africans » ou « territoire » : départage /medias/radio/africans de /medias/radio/nationales.
+    pub origine_publication: String,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
+    pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -154,6 +172,10 @@ impl AdminStationRadioDetailRow {
             ville: self.ville.clone(),
             type_station: self.type_station.clone(),
             a_la_une: self.a_la_une,
+            origine_publication: self.origine_publication.clone(),
+            role_partie_prenante: self.role_partie_prenante.clone(),
+            role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
+            nombre_signalements: self.nombre_signalements,
             etat: self.etat.clone(),
             cree_par: self.cree_par,
             cree_par_nom: self.cree_par_nom.clone(),
@@ -190,6 +212,9 @@ pub struct AdminChaineTvDetailRow {
     pub pays_nom: Option<String>,
     pub langue: String,
     pub est_en_direct: bool,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
+    pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -210,6 +235,9 @@ pub struct AdminChaineTvDetailResponse {
     pub pays_nom: Option<String>,
     pub langue: String,
     pub est_en_direct: bool,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
+    pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -231,6 +259,9 @@ impl AdminChaineTvDetailRow {
             pays_nom: self.pays_nom.clone(),
             langue: self.langue.clone(),
             est_en_direct: self.est_en_direct,
+            role_partie_prenante: self.role_partie_prenante.clone(),
+            role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
+            nombre_signalements: self.nombre_signalements,
             etat: self.etat.clone(),
             cree_par: self.cree_par,
             cree_par_nom: self.cree_par_nom.clone(),
@@ -273,6 +304,9 @@ pub struct AdminProgrammeRadioDetailRow {
     pub station_id: Option<Uuid>,
     pub station_nom: Option<String>,
     pub a_la_une: bool,
+    pub theme_phare_id: Option<Uuid>,
+    pub theme_phare_autre: Option<String>,
+    pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -298,6 +332,9 @@ pub struct AdminProgrammeRadioDetailResponse {
     pub station_id: Option<Uuid>,
     pub station_nom: Option<String>,
     pub a_la_une: bool,
+    pub theme_phare_id: Option<Uuid>,
+    pub theme_phare_autre: Option<String>,
+    pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -324,6 +361,9 @@ impl AdminProgrammeRadioDetailRow {
             station_id: self.station_id,
             station_nom: self.station_nom.clone(),
             a_la_une: self.a_la_une,
+            theme_phare_id: self.theme_phare_id,
+            theme_phare_autre: self.theme_phare_autre.clone(),
+            nombre_signalements: self.nombre_signalements,
             etat: self.etat.clone(),
             cree_par: self.cree_par,
             cree_par_nom: self.cree_par_nom.clone(),
@@ -344,6 +384,8 @@ pub struct AdminProgrammeTeleListeResponse {
     pub pays_nom: Option<String>,
     pub chaine_nom: Option<String>,
     pub a_la_une: bool,
+    /// Vedette unique de TOUTE la page Télé, à distinguer de `a_la_une` qui vaut par chaîne.
+    pub a_la_une_globale: bool,
     pub created_at: DateTime<Utc>,
 }
 
@@ -364,6 +406,11 @@ pub struct AdminProgrammeTeleDetailRow {
     pub chaine_id: Option<Uuid>,
     pub chaine_nom: Option<String>,
     pub a_la_une: bool,
+    /// Vedette unique de TOUTE la page Télé, à distinguer de `a_la_une` qui vaut par chaîne.
+    pub a_la_une_globale: bool,
+    pub theme_phare_id: Option<Uuid>,
+    pub theme_phare_autre: Option<String>,
+    pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -388,6 +435,11 @@ pub struct AdminProgrammeTeleDetailResponse {
     pub chaine_id: Option<Uuid>,
     pub chaine_nom: Option<String>,
     pub a_la_une: bool,
+    /// Vedette unique de TOUTE la page Télé, à distinguer de `a_la_une` qui vaut par chaîne.
+    pub a_la_une_globale: bool,
+    pub theme_phare_id: Option<Uuid>,
+    pub theme_phare_autre: Option<String>,
+    pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
     pub cree_par_nom: Option<String>,
@@ -413,6 +465,10 @@ impl AdminProgrammeTeleDetailRow {
             chaine_id: self.chaine_id,
             chaine_nom: self.chaine_nom.clone(),
             a_la_une: self.a_la_une,
+            a_la_une_globale: self.a_la_une_globale,
+            theme_phare_id: self.theme_phare_id,
+            theme_phare_autre: self.theme_phare_autre.clone(),
+            nombre_signalements: self.nombre_signalements,
             etat: self.etat.clone(),
             cree_par: self.cree_par,
             cree_par_nom: self.cree_par_nom.clone(),
@@ -437,6 +493,10 @@ pub struct CreerStationRadioRequest {
     pub ville: Option<String>,
     pub type_station: Option<String>,
     pub a_la_une: Option<bool>,
+    /// « africans » ou « territoire » : départage /medias/radio/africans de /medias/radio/nationales.
+    pub origine_publication: Option<String>,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -453,6 +513,10 @@ pub struct ModifierStationRadioRequest {
     pub ville: Option<String>,
     pub type_station: Option<String>,
     pub a_la_une: Option<bool>,
+    /// « africans » ou « territoire » : départage /medias/radio/africans de /medias/radio/nationales.
+    pub origine_publication: Option<String>,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -465,6 +529,8 @@ pub struct CreerChaineTvRequest {
     pub pays_id: Option<Uuid>,
     pub langue: Option<String>,
     pub est_en_direct: Option<bool>,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -478,6 +544,8 @@ pub struct ModifierChaineTvRequest {
     pub pays_id: Option<Uuid>,
     pub langue: Option<String>,
     pub est_en_direct: Option<bool>,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
 }
 
 // Programme RADIO
@@ -495,6 +563,8 @@ pub struct CreerProgrammeRadioRequest {
     pub categorie_radio: Option<String>,
     pub station_id: Option<Uuid>,
     pub a_la_une: Option<bool>,
+    pub theme_phare_id: Option<Uuid>,
+    pub theme_phare_autre: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -512,6 +582,8 @@ pub struct ModifierProgrammeRadioRequest {
     pub categorie_radio: Option<String>,
     pub station_id: Option<Uuid>,
     pub a_la_une: Option<bool>,
+    pub theme_phare_id: Option<Uuid>,
+    pub theme_phare_autre: Option<String>,
 }
 
 // Programme TÉLÉ
@@ -528,6 +600,10 @@ pub struct CreerProgrammeTeleRequest {
     pub langue: Option<String>,
     pub chaine_id: Option<Uuid>,
     pub a_la_une: Option<bool>,
+    /// Vedette unique de TOUTE la page Télé, à distinguer de `a_la_une` qui vaut par chaîne.
+    pub a_la_une_globale: Option<bool>,
+    pub theme_phare_id: Option<Uuid>,
+    pub theme_phare_autre: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -544,6 +620,10 @@ pub struct ModifierProgrammeTeleRequest {
     pub langue: Option<String>,
     pub chaine_id: Option<Uuid>,
     pub a_la_une: Option<bool>,
+    /// Vedette unique de TOUTE la page Télé, à distinguer de `a_la_une` qui vaut par chaîne.
+    pub a_la_une_globale: Option<bool>,
+    pub theme_phare_id: Option<Uuid>,
+    pub theme_phare_autre: Option<String>,
 }
 
 // ── Query Params ─────────────────────────────────────────────
@@ -558,6 +638,8 @@ pub struct AdminStationRadioQueryParams {
     pub type_station: Option<String>,
     pub pays_id: Option<Uuid>,
     pub etat: Option<String>,
+    /// Filtre la liste admin sur `origine_publication` (« africans » ou « territoire »).
+    pub origine: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

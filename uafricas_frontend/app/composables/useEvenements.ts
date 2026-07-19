@@ -278,26 +278,10 @@ export const getHeure = (dateStr: string | null): string => {
   })
 }
 
-/**
- * Convertit une URL YouTube (watch, youtu.be, shorts, live, embed) en URL d'iframe embed.
- * Renvoie null si l'URL n'est pas reconnue comme une vidéo YouTube.
- */
-export const youtubeEmbedUrl = (url: string | null | undefined): string | null => {
-  if (!url) return null
-  const u = url.trim()
-  const patterns = [
-    /(?:youtube\.com\/watch\?(?:.*&)?v=)([\w-]{11})/,
-    /(?:youtu\.be\/)([\w-]{11})/,
-    /(?:youtube\.com\/embed\/)([\w-]{11})/,
-    /(?:youtube\.com\/live\/)([\w-]{11})/,
-    /(?:youtube\.com\/shorts\/)([\w-]{11})/,
-  ]
-  for (const p of patterns) {
-    const m = u.match(p)
-    if (m) return `https://www.youtube.com/embed/${m[1]}`
-  }
-  return null
-}
+// `youtubeEmbedUrl` a été déplacé dans `~/utils/media`, où il rejoint les
+// autres utilitaires de routage des médias (radio, télé, vidafrica). Le
+// ré-exporter d'ici créerait un doublon d'auto-import Nuxt : les consommateurs
+// l'importent désormais directement depuis `~/utils/media`.
 
 // ──────────────────────────────────────────────────────────────
 // Composable

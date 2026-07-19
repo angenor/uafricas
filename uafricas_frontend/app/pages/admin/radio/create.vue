@@ -5,7 +5,10 @@ const route = useRoute()
 const router = useRouter()
 const type = computed(() => (route.query.type as string) || 'stations')
 
-const { creerStation, creerProgramme, listerToutesStations, loading, error } = useAdminRadio()
+const {
+  creerStation, creerProgramme, listerToutesStations, loading, error,
+  ORIGINES_PUBLICATION_RADIO, ROLES_PARTIE_PRENANTE_RADIO,
+} = useAdminRadio()
 const { listerPays } = useCentresCulturels()
 
 const erreurLocale = ref<string | null>(null)
@@ -23,7 +26,10 @@ onMounted(async () => {
 const stationForm = reactive({
   nom: '', description: '', stream_url: '', audio_url: '', image_couverture_url: '',
   genre: '', genres_liste: [] as string[], pays_id: '', ville: '', type_station: 'nationale', a_la_une: false,
+  origine_publication: 'territoire', role_partie_prenante: '', role_partie_prenante_autre: '',
 })
+
+const aideOrigine = computed(() => ORIGINES_PUBLICATION_RADIO.find(o => o.valeur === stationForm.origine_publication)?.aide || '')
 
 const genreInput = ref('')
 const ajouterGenre = () => {
@@ -50,7 +56,19 @@ const soumettre = async () => {
       if (!stationForm.audio_url.trim() && !stationForm.stream_url.trim()) {
         erreurLocale.value = 'Fournissez un fichier/lien audio ou une URL de flux live'; return
       }
-      const body: any = { nom: stationForm.nom.trim(), type_station: stationForm.type_station, a_la_une: stationForm.a_la_une }
+      if (stationForm.role_partie_prenante === 'autre' && !stationForm.role_partie_prenante_autre.trim()) {
+        erreurLocale.value = 'Précisez le rôle lorsque « Autre » est sélectionné'; return
+      }
+      const body: any = {
+        nom: stationForm.nom.trim(),
+        type_station: stationForm.type_station,
+        a_la_une: stationForm.a_la_une,
+        origine_publication: stationForm.origine_publication,
+      }
+      if (stationForm.role_partie_prenante) {
+        body.role_partie_prenante = stationForm.role_partie_prenante
+        if (stationForm.role_partie_prenante === 'autre') body.role_partie_prenante_autre = stationForm.role_partie_prenante_autre.trim()
+      }
       if (stationForm.stream_url.trim()) body.stream_url = stationForm.stream_url.trim()
       if (stationForm.audio_url.trim()) body.audio_url = stationForm.audio_url.trim()
       if (stationForm.description.trim()) body.description = stationForm.description.trim()
@@ -134,6 +152,32 @@ const soumettre = async () => {
                 <input v-model="stationForm.a_la_une" type="checkbox" class="checkbox checkbox-primary" />
                 <span class="label-text">À la une (station mise en avant sur sa page)</span>
               </label>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold border-b pb-2">Publication &amp; rôle</h3>
+            <div class="form-control">
+              <label class="label"><span class="label-text">Origine de publication *</span></label>
+              <select v-model="stationForm.origine_publication" class="select select-bordered">
+                <option v-for="o in ORIGINES_PUBLICATION_RADIO" :key="o.valeur" :value="o.valeur">
+                  {{ o.libelle }} — page {{ o.page }}
+                </option>
+              </select>
+              <label class="label"><span class="label-text-alt">{{ aideOrigine }}</span></label>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="form-control">
+                <label class="label"><span class="label-text">Rôle de la partie prenante</span></label>
+                <select v-model="stationForm.role_partie_prenante" class="select select-bordered">
+                  <option value="">— Non spécifié —</option>
+                  <option v-for="r in ROLES_PARTIE_PRENANTE_RADIO" :key="r.valeur" :value="r.valeur">{{ r.libelle }}</option>
+                </select>
+              </div>
+              <div v-if="stationForm.role_partie_prenante === 'autre'" class="form-control">
+                <label class="label"><span class="label-text">Préciser le rôle *</span></label>
+                <input v-model="stationForm.role_partie_prenante_autre" type="text" class="input input-bordered" required placeholder="Ex: Collectif de podcasteurs">
+              </div>
             </div>
           </div>
 

@@ -11,6 +11,13 @@
     <ClientOnly>
       <SocialMessagerieFlottante v-if="estConnecte" />
     </ClientOnly>
+
+    <!-- Lecteur audio persistant. Monté ICI, hors du <slot/> : c'est ce
+         placement qui fait survivre l'écoute au changement de page (FR-017).
+         Dans une page, il serait démonté à la navigation et le son se couperait. -->
+    <ClientOnly>
+      <MediaBarreLecturePersistante />
+    </ClientOnly>
   </div>
 </template>
 

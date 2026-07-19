@@ -21,7 +21,7 @@ const presentationOuverte = ref(false)
       class="group relative bg-cover bg-center z-0"
       style="background-image: url('/images/banners/radio-home.jpg')"
     >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
+      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
 
       <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
         <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
@@ -77,7 +77,7 @@ const presentationOuverte = ref(false)
                 :alt="category.title"
                 class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+              <div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent"></div>
 
               <!-- Badge -->
               <div class="absolute top-4 right-4">
@@ -113,7 +113,7 @@ const presentationOuverte = ref(false)
 
       <!-- Section Statistiques -->
       <div
-        class="mt-16 bg-gradient-to-r from-custom-green to-custom-chocolat rounded-2xl p-8 text-white"
+        class="mt-16 bg-linear-to-r from-custom-green to-custom-chocolat rounded-2xl p-8 text-white"
         data-aos="fade-up"
       >
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">

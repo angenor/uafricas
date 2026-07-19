@@ -198,6 +198,8 @@ const sidebarSections: SidebarSection[] = [
     children: [
       { label: 'Radio', faIcon: 'radio', route: '/admin/radio' },
       { label: 'Télévision', faIcon: 'tv', route: '/admin/television' },
+      { label: 'Propositions médias', faIcon: 'inbox', route: '/admin/medias/propositions' },
+      { label: 'Contenus signalés', faIcon: 'flag', route: '/admin/medias/signalements' },
       { label: 'Vidafrica', faIcon: 'closed-captioning', route: '/admin/vidafrica' },
       { label: 'Événements', faIcon: 'calendar', route: '/admin/evenements' },
       { label: 'Bibliothèque', faIcon: 'book', route: '/admin/livres' },

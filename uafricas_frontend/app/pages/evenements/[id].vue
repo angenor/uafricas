@@ -384,7 +384,8 @@
 </template>
 
 <script setup lang="ts">
-import { useEvenements, formatDateShort, getHeure, youtubeEmbedUrl, type EvenementDetailAPI, type EtatDirect } from '~/composables/useEvenements'
+import { useEvenements, formatDateShort, getHeure, type EvenementDetailAPI, type EtatDirect } from '~/composables/useEvenements'
+import { youtubeEmbedUrl } from '~/utils/media'
 import { useUserStore } from '~/stores/user'
 
 const route = useRoute()

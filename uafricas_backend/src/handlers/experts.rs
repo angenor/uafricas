@@ -85,6 +85,22 @@ pub async fn lister_experts(
         }
     }
 
+    // Filtre par specialite (FR-046) — le tableau `e.specialites` est un
+    // text[] de libelles libres saisis par le candidat, sans reference au
+    // referentiel : la comparaison est donc insensible a la casse, faute de
+    // quoi « realisateur » et « Realisateur » seraient deux metiers distincts.
+    if let Some(ref specialite) = params.specialite {
+        let trimmed = specialite.trim();
+        if !trimmed.is_empty() && trimmed != "toutes" {
+            conditions.push(format!(
+                "EXISTS (SELECT 1 FROM unnest(e.specialites) s WHERE LOWER(s) = LOWER(${}))",
+                bind_index
+            ));
+            bind_values.push(trimmed.to_string());
+            bind_index += 1;
+        }
+    }
+
     // Recherche textuelle (nom, prenom, biographie, domaine)
     if let Some(ref recherche) = params.recherche {
         let trimmed = recherche.trim();
@@ -557,6 +573,38 @@ pub async fn uploader_cv(
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "cv_url": url })),
+        error: None,
+    }))
+}
+
+// ────────────────────────────────────────────────────────────────
+// GET /api/experts/specialites — options du filtre par metier (FR-046)
+// ────────────────────────────────────────────────────────────────
+
+/// Les specialites REELLEMENT declarees par les experts valides.
+///
+/// La liste n'est pas tiree de `iam.specialite_bibliotheque` : ce referentiel
+/// sert les bibliotheques humaines, tandis que `iam.expertise.specialites` est
+/// un text[] de libelles libres. Proposer des options absentes des profils
+/// donnerait un filtre qui ne ramene jamais rien.
+pub async fn lister_specialites_experts(
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let specialites: Vec<String> = sqlx::query_scalar(
+        "SELECT DISTINCT btrim(s) AS specialite
+           FROM iam.expertise e
+           JOIN iam.utilisateur u ON u.id = e.utilisateur_id
+           CROSS JOIN LATERAL unnest(e.specialites) s
+          WHERE e.statut = 'valide' AND e.deleted_at IS NULL AND u.deleted_at IS NULL
+            AND btrim(s) <> ''
+          ORDER BY specialite ASC",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(specialites),
         error: None,
     }))
 }

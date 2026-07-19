@@ -1,3 +1,7 @@
+import type { CreneauAPI } from '~/composables/useMediaProgrammation'
+
+import type { CompteursInteraction } from '~/composables/useMediaSocial'
+
 // Composable pour les appels API de la télévision
 
 /** Interface correspondant au DTO ChaineTvResponse du backend */
@@ -13,6 +17,8 @@ export interface ChaineTvAPI {
   langue: string
   est_en_direct: boolean
   created_at: string
+  /** Réactions, commentaires et partages agrégés (FR-027). */
+  interactions?: CompteursInteraction | null
 }
 
 /** Interface correspondant au DTO ChaineTvListeResponse du backend */
@@ -39,8 +45,42 @@ export interface ProgrammeTeleAPI {
   langue: string
   chaine_id: string | null
   chaine_nom: string | null
+  chaine_slug: string | null
   a_la_une: boolean
+  /** Vedette de TOUTE la page Télé — distincte de `a_la_une`, qui vaut par chaîne. */
+  a_la_une_globale: boolean
+  theme_phare_id: string | null
+  theme_phare_autre: string | null
+  theme_phare_nom: string | null
+  /** "hebergee" | "externe" | "aucune" — décide du lecteur à employer. */
+  source_media: string
   created_at: string
+  /** Réactions, commentaires et partages agrégés (FR-027). */
+  interactions?: CompteursInteraction | null
+}
+
+/** Vedette de la page Télé : le programme, plus l'indication d'un repli (FR-007) */
+export interface ProgrammeVedetteAPI extends ProgrammeTeleAPI {
+  est_repli: boolean
+}
+
+/** Une section = une chaîne, son contenu mis en évidence et ses autres contenus */
+export interface TeleSectionAPI {
+  chaine: ChaineTvAPI
+  mis_en_evidence: ProgrammeTeleAPI | null
+  contenus: ProgrammeTeleAPI[]
+  total_contenus: number
+  /** Grille du moment (US5) — absents quand la chaîne n'en a aucune. */
+  diffusion_en_cours?: CreneauAPI | null
+  creneau_suivant?: CreneauAPI | null
+}
+
+export interface TeleSectionsListeAPI {
+  sections: TeleSectionAPI[]
+  total: number
+  page: number
+  par_page: number
+  total_pages: number
 }
 
 /** Interface correspondant au DTO ProgrammeTeleListeResponse du backend */
@@ -64,6 +104,7 @@ export interface TelevisionStatsAPI {
 export interface TvChannel {
   id: string
   name: string
+  slug: string | null
   description: string
   streamUrl: string
   cover: string
@@ -71,11 +112,14 @@ export interface TvChannel {
   country: string
   language: string
   isLive: boolean
+  /** Compteurs d'interaction, absents tant que l'API ne les greffe pas. */
+  interactions: CompteursInteraction | null
 }
 
 /** Interface adaptée au format attendu par les composants frontend (programme) */
 export interface TvProgram {
   id: string
+  slug: string | null
   title: string
   description: string
   banner: string
@@ -86,7 +130,34 @@ export interface TvProgram {
   language: string
   chaineId: string | null
   chaineNom: string | null
+  chaineSlug: string | null
   aLaUne: boolean
+  aLaUneGlobale: boolean
+  themePhare: string | null
+  /** Décide du lecteur : fichier natif, intégration tierce, ou aucun. */
+  sourceMedia: string
+  /** Compteurs d'interaction, absents tant que l'API ne les greffe pas. */
+  interactions: CompteursInteraction | null
+}
+
+/** Section prête à l'affichage, telle que la consomment les composants */
+export interface TeleSection {
+  chaine: TvChannel
+  misEnEvidence: TvProgram | null
+  contenus: TvProgram[]
+  totalContenus: number
+  /**
+   * « En ce moment » et « À suivre » (FR-039), résolus par le serveur à
+   * l'instant de la requête. `null` quand la chaîne n'a pas de grille active :
+   * la section retombe alors sur son contenu mis en évidence (FR-041).
+   */
+  diffusionEnCours: CreneauAPI | null
+  creneauSuivant: CreneauAPI | null
+}
+
+/** Programme vedette de la page, avec l'indication d'un éventuel repli */
+export interface ProgrammeVedette extends TvProgram {
+  estRepli: boolean
 }
 
 /** Stats frontend */
@@ -109,6 +180,16 @@ export interface ChaineTvFiltres {
   pays?: string
   page?: number
   par_page?: number
+}
+
+/** Paramètres de filtre pour le listing des sections de la page Télé */
+export interface TeleSectionsFiltres {
+  recherche?: string
+  categorie?: string
+  pays?: string
+  page?: number
+  par_page?: number
+  contenus_par_section?: number
 }
 
 /** Paramètres de filtre pour le listing des programmes */
@@ -145,7 +226,13 @@ export interface CreerProgrammeVedetteForm {
 
 // ── Mapping API → Frontend ────────────────────────────────────────────
 
-function resoudreUrl(url: string | null, apiBase: string, fallback: string): string {
+/**
+ * Les replis historiques (`/images/tv-default.jpg`, `tv-programme-default.jpg`)
+ * n'existent pas dans `public/images/` : ils produisaient une image cassée dès
+ * qu'un contenu n'avait pas de couverture. On renvoie désormais une chaîne
+ * vide, et les composants affichent un vrai placeholder.
+ */
+function resoudreUrl(url: string | null, apiBase: string, fallback = ''): string {
   if (!url) return fallback
   if (url.startsWith('http://') || url.startsWith('https://')) return url
   return `${apiBase}${url}`
@@ -155,30 +242,40 @@ function mapperChaineApiVersTv(chaine: ChaineTvAPI, apiBase: string): TvChannel 
   return {
     id: chaine.id,
     name: chaine.nom,
+    slug: chaine.slug,
     description: chaine.description || '',
     streamUrl: chaine.stream_url || '',
-    cover: resoudreUrl(chaine.image_couverture_url, apiBase, '/images/tv-default.jpg'),
+    cover: resoudreUrl(chaine.image_couverture_url, apiBase),
     category: chaine.categorie,
     country: chaine.pays || '',
     language: chaine.langue,
     isLive: chaine.est_en_direct,
+    interactions: chaine.interactions ?? null,
   }
 }
 
 function mapperProgrammeApiVersTv(programme: ProgrammeTeleAPI, apiBase: string): TvProgram {
   return {
     id: programme.id,
+    slug: programme.slug,
     title: programme.nom_emission,
     description: programme.description,
-    banner: resoudreUrl(programme.image_couverture_url, apiBase, '/images/tv-programme-default.jpg'),
-    videoUrl: programme.video_url || '',
+    banner: resoudreUrl(programme.image_couverture_url, apiBase),
+    // Un lien externe est laissé intact : seul un fichier local doit être
+    // préfixé par la base API pour être atteignable depuis le navigateur.
+    videoUrl: programme.video_url ? resoudreUrl(programme.video_url, apiBase, '') : '',
     animator: programme.info_animateur || '',
     producer: programme.info_producteur || '',
     country: programme.pays || '',
     language: programme.langue,
     chaineId: programme.chaine_id,
     chaineNom: programme.chaine_nom,
+    chaineSlug: programme.chaine_slug ?? null,
     aLaUne: programme.a_la_une,
+    aLaUneGlobale: programme.a_la_une_globale ?? false,
+    themePhare: programme.theme_phare_nom || programme.theme_phare_autre || null,
+    sourceMedia: programme.source_media ?? 'aucune',
+    interactions: programme.interactions ?? null,
   }
 }
 
@@ -186,8 +283,10 @@ function mapperStatsApiVersFrontend(stats: TelevisionStatsAPI): TvStat[] {
   return [
     { value: `${stats.nombre_chaines}+`, label: 'Chaînes TV' },
     { value: `${stats.nombre_pays}`, label: 'Territoires Africains' },
-    { value: '24/7', label: 'Diffusion Continue' },
-    { value: 'HD+', label: 'Qualité Vidéo' },
+    // L'API renvoyait déjà ces deux comptages sans qu'ils soient jamais
+    // affichés, au profit de deux valeurs décoratives (« 24/7 », « HD+ »).
+    { value: `${stats.nombre_programmes}`, label: 'Programmes' },
+    { value: `${stats.nombre_chaines_en_direct}`, label: 'Chaînes en direct' },
   ]
 }
 
@@ -482,9 +581,122 @@ export const useTelevision = () => {
     }
   }
 
+  /**
+   * Programme mis en avant sur toute la page (FR-001).
+   * `null` quand aucun programme n'est publié — la page affiche alors son
+   * message d'état vide, jamais un lecteur en erreur.
+   */
+  const obtenirVedette = async (): Promise<ProgrammeVedette | null> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<ProgrammeVedetteAPI>>(
+        `${apiBase}/api/television/vedette`,
+      )
+      if (!reponse.success || !reponse.data) return null
+      return {
+        ...mapperProgrammeApiVersTv(reponse.data, apiBase),
+        estRepli: reponse.data.est_repli,
+      }
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
+      console.error('Erreur obtenirVedette:', e)
+      return null
+    }
+  }
+
+  /**
+   * Sections de la page, une par chaîne, paginées et chargées au défilement.
+   */
+  const listerSections = async (filtres: TeleSectionsFiltres = {}): Promise<{
+    sections: TeleSection[]
+    total: number
+    page: number
+    totalPages: number
+  } | null> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      const params = new URLSearchParams()
+      if (filtres.recherche) params.set('recherche', filtres.recherche)
+      if (filtres.categorie && filtres.categorie !== 'Toutes les catégories') params.set('categorie', filtres.categorie)
+      if (filtres.pays && filtres.pays !== 'Tous les territoires') params.set('pays', filtres.pays)
+      if (filtres.page) params.set('page', String(filtres.page))
+      if (filtres.par_page) params.set('par_page', String(filtres.par_page))
+      if (filtres.contenus_par_section) params.set('contenus_par_section', String(filtres.contenus_par_section))
+
+      const queryString = params.toString()
+      const reponse = await $fetch<ApiResponse<TeleSectionsListeAPI>>(
+        `${apiBase}/api/television/sections${queryString ? `?${queryString}` : ''}`,
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement des sections')
+      }
+
+      return {
+        sections: reponse.data.sections.map(s => ({
+          chaine: mapperChaineApiVersTv(s.chaine, apiBase),
+          misEnEvidence: s.mis_en_evidence ? mapperProgrammeApiVersTv(s.mis_en_evidence, apiBase) : null,
+          contenus: s.contenus.map(c => mapperProgrammeApiVersTv(c, apiBase)),
+          totalContenus: s.total_contenus,
+          diffusionEnCours: s.diffusion_en_cours ?? null,
+          creneauSuivant: s.creneau_suivant ?? null,
+        })),
+        total: reponse.data.total,
+        page: reponse.data.page,
+        totalPages: reponse.data.total_pages,
+      }
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
+      console.error('Erreur listerSections:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Détail d'une chaîne par son slug — requis par les pages SSR. */
+  const obtenirChaineParSlug = async (slug: string): Promise<TvChannel | null> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<ChaineTvAPI>>(
+        `${apiBase}/api/television/chaines/slug/${encodeURIComponent(slug)}`,
+      )
+      if (!reponse.success || !reponse.data) return null
+      return mapperChaineApiVersTv(reponse.data, apiBase)
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
+      return null
+    }
+  }
+
+  /** Détail d'un programme par son slug. */
+  const obtenirProgrammeParSlug = async (slug: string): Promise<TvProgram | null> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<ProgrammeTeleAPI>>(
+        `${apiBase}/api/television/programmes/slug/${encodeURIComponent(slug)}`,
+      )
+      if (!reponse.success || !reponse.data) return null
+      return mapperProgrammeApiVersTv(reponse.data, apiBase)
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
+      return null
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
+    obtenirVedette,
+    listerSections,
+    obtenirChaineParSlug,
+    obtenirProgrammeParSlug,
     listerChaines,
     obtenirChaine,
     listerProgrammesVedettes,

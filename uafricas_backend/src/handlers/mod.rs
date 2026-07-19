@@ -39,3 +39,7 @@ pub mod notification;
 pub mod vidafrica;
 pub mod vidafrica_contribution;
 pub mod rendez_vous;
+pub mod media_social;
+pub mod media_proposition;
+pub mod media_detention;
+pub mod media_programmation;

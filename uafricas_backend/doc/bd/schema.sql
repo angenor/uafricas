@@ -107,6 +107,11 @@
 \ir schemas/09g_media_content_split_programmes.sql
 \ir schemas/09h_media_content_formation_chapitres_lecons.sql
 \ir schemas/09i_media_content_formation_objectif_certif.sql
+\ir schemas/09j_media_content_editorial.sql
+\ir schemas/09k_media_content_interactions.sql
+\ir schemas/09l_media_content_propositions.sql
+\ir schemas/09m_media_content_codetention.sql
+\ir schemas/09n_media_content_programmation.sql
 \ir schemas/10_governance.sql
 \ir schemas/10f_governance_factcheck_volets_reactions.sql
 \ir schemas/10g_governance_factcheck_signalement.sql

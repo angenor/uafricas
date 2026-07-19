@@ -9,12 +9,14 @@ const {
   chaineDetail, programmeDetail, programmes, filtresProgrammes,
   chargerChaine, chargerProgramme, chargerProgrammes,
   modifierChaine, modifierProgramme, listerToutesChaines,
+  definirVedetteGlobale, listerThemesPhares,
   loading, error,
 } = useAdminTelevision()
 const { listerPays } = useCentresCulturels()
 
 const chainesDisponibles = ref<{ id: string; nom: string }[]>([])
 const paysDisponibles = ref<{ id: string; nom: string }[]>([])
+const themesPhares = ref<{ id: string; nom: string }[]>([])
 
 const saving = ref(false)
 const erreurLocale = ref<string | null>(null)
@@ -29,7 +31,13 @@ const programmeForm = reactive({
   nom_emission: '', description: '', image_couverture_url: '', video_url: '',
   info_animateur: '', info_producteur: '', pays_id: '', est_international: false,
   langue: '', chaine_id: '', a_la_une: false,
+  theme_phare_id: '', theme_phare_autre: '',
 })
+
+// Valeur sentinelle du sélecteur : « Autre » n'est pas une catégorie en base,
+// elle bascule la saisie vers le champ libre `theme_phare_autre`.
+const THEME_AUTRE = '__autre__'
+const themeEstAutre = computed(() => programmeForm.theme_phare_id === THEME_AUTRE)
 
 const titreDetail = computed(() => {
   if (type === 'chaines') return chaineDetail.value?.nom || 'Chargement...'
@@ -92,6 +100,8 @@ const charger = async () => {
       programmeForm.langue = p.langue || ''
       programmeForm.chaine_id = p.chaine_id || ''
       programmeForm.a_la_une = p.a_la_une || false
+      programmeForm.theme_phare_autre = p.theme_phare_autre || ''
+      programmeForm.theme_phare_id = p.theme_phare_id || (p.theme_phare_autre ? THEME_AUTRE : '')
     }
   }
 }
@@ -115,6 +125,10 @@ const sauvegarder = async () => {
       await modifierChaine(id, body)
     }
     else {
+      if (themeEstAutre.value && !programmeForm.theme_phare_autre.trim()) {
+        erreurLocale.value = 'Précisez le thème phare choisi dans « Autre »'
+        return
+      }
       const body: any = {
         nom_emission: programmeForm.nom_emission.trim(),
         est_international: programmeForm.est_international,
@@ -128,6 +142,8 @@ const sauvegarder = async () => {
       if (programmeForm.pays_id) body.pays_id = programmeForm.pays_id
       if (programmeForm.langue.trim()) body.langue = programmeForm.langue.trim()
       if (programmeForm.chaine_id) body.chaine_id = programmeForm.chaine_id
+      if (themeEstAutre.value) body.theme_phare_autre = programmeForm.theme_phare_autre.trim()
+      else if (programmeForm.theme_phare_id) body.theme_phare_id = programmeForm.theme_phare_id
       await modifierProgramme(id, body)
     }
     successMsg.value = 'Mis à jour avec succès'
@@ -138,6 +154,26 @@ const sauvegarder = async () => {
   finally { saving.value = false }
 }
 
+// ── Vedette générale de la page Télé ────────────────────────
+const estVedetteGlobale = computed(() => !!programmeDetail.value?.a_la_une_globale)
+const peutDevenirVedette = computed(() => etatCourant.value === 'publie' && !estVedetteGlobale.value)
+
+const showVedetteModal = ref(false)
+const vedetteLoading = ref(false)
+const executerVedetteGlobale = async () => {
+  vedetteLoading.value = true
+  erreurLocale.value = null
+  try {
+    await definirVedetteGlobale(id)
+    showVedetteModal.value = false
+    successMsg.value = 'Ce programme est désormais la vedette générale de la page Télé'
+    setTimeout(() => { successMsg.value = null }, 4000)
+    await charger()
+  }
+  catch (e: any) { erreurLocale.value = e?.data?.error || e?.message || 'Erreur'; showVedetteModal.value = false }
+  finally { vedetteLoading.value = false }
+}
+
 const metaCreeParNom = computed(() => type === 'chaines' ? chaineDetail.value?.cree_par_nom : programmeDetail.value?.cree_par_nom)
 const metaId = computed(() => type === 'chaines' ? chaineDetail.value?.id : programmeDetail.value?.id)
 
@@ -145,7 +181,9 @@ onMounted(async () => {
   await charger()
   paysDisponibles.value = await listerPays()
   if (type === 'programmes') {
-    chainesDisponibles.value = await listerToutesChaines()
+    const [chaines, themes] = await Promise.all([listerToutesChaines(), listerThemesPhares()])
+    chainesDisponibles.value = chaines
+    themesPhares.value = themes
   }
   else {
     // Charger les vidéos (programmes) rattachées à cette chaîne
@@ -298,6 +336,23 @@ onMounted(async () => {
                   <span class="label-text">Programme à la une (joue en boucle sur l'écran principal de la télé)</span>
                 </label>
                 <label v-if="!programmeForm.chaine_id" class="label"><span class="label-text-alt text-warning">Sélectionnez d'abord une télé pour la mettre à la une.</span></label>
+                <label class="label"><span class="label-text-alt">Portée : cette télé uniquement. À ne pas confondre avec la vedette générale, plus bas.</span></label>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <h3 class="text-lg font-semibold border-b pb-2">Thème phare</h3>
+              <div class="form-control">
+                <label class="label"><span class="label-text">Thème phare du programme</span></label>
+                <select v-model="programmeForm.theme_phare_id" class="select select-bordered">
+                  <option value="">— Aucun —</option>
+                  <option v-for="t in themesPhares" :key="t.id" :value="t.id">{{ t.nom }}</option>
+                  <option :value="THEME_AUTRE">Autre (à préciser)</option>
+                </select>
+              </div>
+              <div v-if="themeEstAutre" class="form-control">
+                <label class="label"><span class="label-text">Préciser le thème *</span></label>
+                <input v-model="programmeForm.theme_phare_autre" type="text" class="input input-bordered" maxlength="200" required placeholder="Ex: Diplomatie culturelle">
               </div>
             </div>
 
@@ -351,6 +406,46 @@ onMounted(async () => {
         </div>
       </div>
 
+      <!-- Vedette générale : action immédiate hors formulaire (endpoint transactionnel dédié) -->
+      <div v-if="type === 'programmes'" class="card bg-base-100 shadow-sm mt-6 border-2 border-warning">
+        <div class="card-body">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h3 class="text-lg font-semibold flex items-center gap-2">
+              <font-awesome-icon icon="star" class="text-warning" />
+              Vedette générale de la page Télé
+            </h3>
+            <span v-if="estVedetteGlobale" class="badge badge-warning gap-1">
+              <font-awesome-icon icon="star" /> Vedette actuelle
+            </span>
+          </div>
+
+          <p class="text-sm text-base-content/70">
+            Portée <strong>globale</strong> : un seul programme, toutes télés confondues, occupe la mise en avant
+            en tête de <code>/tele</code>. À distinguer du « programme à la une » ci-dessus, qui ne vaut que pour
+            sa propre télé.
+          </p>
+
+          <div v-if="estVedetteGlobale" class="alert alert-success mt-2">
+            <font-awesome-icon icon="circle-check" />
+            <span>Ce programme est actuellement la vedette générale. Pour la libérer, désignez un autre programme.</span>
+          </div>
+          <div v-else-if="etatCourant !== 'publie'" class="alert alert-warning mt-2">
+            <font-awesome-icon icon="circle-exclamation" />
+            <span>Seul un programme <strong>publié</strong> peut devenir vedette générale. Changez son état d'abord.</span>
+          </div>
+          <div v-else class="alert alert-warning mt-2">
+            <font-awesome-icon icon="triangle-exclamation" />
+            <span>Désigner ce programme <strong>remplacera immédiatement la vedette actuelle</strong> de toute la page Télé.</span>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button type="button" class="btn btn-warning" :disabled="!peutDevenirVedette" @click="showVedetteModal = true">
+              <font-awesome-icon icon="star" class="mr-1" /> Désigner comme vedette générale
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Vidéos (programmes) rattachées à cette chaîne -->
       <div v-if="type === 'chaines'" class="card bg-base-100 shadow-sm mt-6">
         <div class="card-body">
@@ -395,6 +490,30 @@ onMounted(async () => {
             <p class="text-xs mt-1">Cliquez sur « Ajouter une vidéo » pour créer un programme rattaché à cette chaîne.</p>
           </div>
         </div>
+      </div>
+
+      <!-- Modal confirmation vedette générale -->
+      <div v-if="showVedetteModal" class="modal modal-open">
+        <div class="modal-box">
+          <h3 class="font-bold text-lg mb-2 flex items-center gap-2">
+            <font-awesome-icon icon="star" class="text-warning" />
+            Désigner la vedette générale
+          </h3>
+          <p class="text-sm text-base-content/80">
+            « {{ programmeDetail?.nom_emission }} » deviendra l'unique programme mis en avant en tête de la page Télé.
+          </p>
+          <div class="alert alert-warning mt-4">
+            <font-awesome-icon icon="triangle-exclamation" />
+            <span>La vedette actuelle sera automatiquement rétrogradée. Cette bascule est immédiate et visible du public.</span>
+          </div>
+          <div class="modal-action">
+            <button class="btn btn-ghost" @click="showVedetteModal = false">Annuler</button>
+            <button class="btn btn-warning" :class="{ loading: vedetteLoading }" :disabled="vedetteLoading" @click="executerVedetteGlobale">
+              Confirmer
+            </button>
+          </div>
+        </div>
+        <div class="modal-backdrop" @click="showVedetteModal = false" />
       </div>
 
       <!-- Modal changement d'état -->

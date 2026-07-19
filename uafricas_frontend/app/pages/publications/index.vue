@@ -178,6 +178,12 @@
                 :partage="pub.data"
               />
 
+              <!-- Carte « Média radio/télé partagé » (composant dédié) -->
+              <PublicationsMediaPartageCard
+                v-else-if="pub.source === 'media_partage'"
+                :partage="pub.data"
+              />
+
               <!-- Cartes Codimoi / Gouvernance (markup inline) -->
               <div
                 v-else
@@ -378,13 +384,14 @@ import type { PartageFicheAPI, PartageElementAPI } from '~/composables/useOpport
 import type { PartageProfilAPI } from '~/composables/useMembres'
 import type { PartageContributionAPI } from '~/composables/useGouvernance'
 import type { PartageVideoAPI } from '~/composables/useVidafrica'
+import type { PartageMediaAPI } from '~/composables/useMediaSocial'
 import type { ContributionCitoyenne } from '~/types/gouvernance'
 
 useHead({
   title: 'Publications de la Communauté | UAfricas',
 })
 
-type FiltreValue = 'tous' | 'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits' | 'territoire_partage' | 'element_partage' | 'profil_partage' | 'video_partage'
+type FiltreValue = 'tous' | 'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits' | 'territoire_partage' | 'element_partage' | 'profil_partage' | 'video_partage' | 'media_partage'
 
 interface TypeStyle {
   label: string
@@ -460,7 +467,16 @@ interface PublicationVideoPartage {
   typeStyle: TypeStyle
 }
 
-type Publication = PublicationCodimoi | PublicationGouvernance | PublicationTerritoirePartage | PublicationElementPartage | PublicationProfilPartage | PublicationContributionPartage | PublicationVideoPartage
+interface PublicationMediaPartage {
+  key: string
+  source: 'media_partage'
+  data: PartageMediaAPI
+  date: Date
+  typeFiltre: 'media_partage'
+  typeStyle: TypeStyle
+}
+
+type Publication = PublicationCodimoi | PublicationGouvernance | PublicationTerritoirePartage | PublicationElementPartage | PublicationProfilPartage | PublicationContributionPartage | PublicationVideoPartage | PublicationMediaPartage | PublicationMediaPartage
 
 const breadcrumbs = [
   { label: 'Publications', to: undefined },
@@ -476,9 +492,10 @@ const filtres: { value: FiltreValue; label: string; icon: string[]; activeClasse
   { value: 'element_partage', label: 'Découvertes partagées', icon: ['fas', 'share-nodes'], activeClasses: 'bg-emerald-600 text-white border-emerald-600' },
   { value: 'profil_partage', label: 'Profils partagés', icon: ['fas', 'user'], activeClasses: 'bg-custom-chocolat text-white border-custom-chocolat' },
   { value: 'video_partage', label: 'Vidéos partagées', icon: ['fas', 'video'], activeClasses: 'bg-purple-600 text-white border-purple-600' },
+  { value: 'media_partage', label: 'Radio & télé', icon: ['fas', 'tv'], activeClasses: 'bg-custom-chocolat text-white border-custom-chocolat' },
 ]
 
-const STYLES_PAR_TYPE: Record<'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits' | 'territoire_partage' | 'element_partage' | 'profil_partage' | 'video_partage', TypeStyle> = {
+const STYLES_PAR_TYPE: Record<'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits' | 'territoire_partage' | 'element_partage' | 'profil_partage' | 'video_partage' | 'media_partage', TypeStyle> = {
   codimoi: {
     label: 'Codimoi',
     icone: ['fas', 'quote-left'],
@@ -559,6 +576,16 @@ const STYLES_PAR_TYPE: Record<'codimoi' | 'factcheck' | 'ideaforces' | 'badhabit
     flecheHoverBg: 'group-hover:bg-purple-100',
     flecheHoverColor: 'group-hover:text-purple-600',
   },
+  media_partage: {
+    label: 'Radio & télé',
+    icone: ['fas', 'tv'],
+    iconeBg: 'bg-amber-100 text-custom-chocolat',
+    badge: 'bg-amber-100 text-custom-chocolat',
+    bande: 'bg-linear-to-r from-custom-chocolat to-amber-600',
+    titreHover: 'group-hover:text-custom-chocolat',
+    flecheHoverBg: 'group-hover:bg-amber-100',
+    flecheHoverColor: 'group-hover:text-custom-chocolat',
+  },
 }
 
 const activeFilter = ref<FiltreValue>('tous')
@@ -574,6 +601,7 @@ const { getContributions, listerPartagesContributions } = useGouvernance()
 const { listerPartagesFiches, listerPartagesElements } = useOpportuniteAfrique()
 const { listerPartagesProfils } = useMembres()
 const { listerPartagesVideos } = useVidafrica()
+const { listerPartages: listerPartagesMedias } = useMediaSocial()
 
 // Toast
 const showToast = ref(false)
@@ -602,6 +630,7 @@ const compteurs = computed<Record<FiltreValue, number>>(() => {
     element_partage: 0,
     profil_partage: 0,
     video_partage: 0,
+    media_partage: 0,
   }
   for (const p of publications.value) {
     c[p.typeFiltre]++
@@ -687,7 +716,7 @@ function nomAuteur(pub: Publication): string {
     const { prenom, nom } = pub.data.auteur
     return `${prenom ?? ''} ${nom}`.trim() || 'Anonyme'
   }
-  if (pub.source === 'territoire_partage' || pub.source === 'element_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage' || pub.source === 'video_partage') {
+  if (pub.source === 'territoire_partage' || pub.source === 'element_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage' || pub.source === 'video_partage' || pub.source === 'media_partage') {
     const { prenom, nom } = pub.data.auteur
     return `${prenom ?? ''} ${nom ?? ''}`.trim() || 'Anonyme'
   }
@@ -699,25 +728,25 @@ function paysPub(pub: Publication): string | null {
   if (pub.source === 'territoire_partage') return pub.data.fiche.nom || null
   if (pub.source === 'element_partage') return pub.data.element.territoire_nom || null
   if (pub.source === 'profil_partage') return pub.data.profil.pays || null
-  if (pub.source === 'contribution_partage' || pub.source === 'video_partage') return null
+  if (pub.source === 'contribution_partage' || pub.source === 'video_partage' || pub.source === 'media_partage') return null
   return pub.data.localisation.pays || null
 }
 
 function statsVues(pub: Publication): number {
   if (pub.source === 'codimoi') return pub.data.nombre_vues
-  if (pub.source === 'territoire_partage' || pub.source === 'element_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage' || pub.source === 'video_partage') return 0
+  if (pub.source === 'territoire_partage' || pub.source === 'element_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage' || pub.source === 'video_partage' || pub.source === 'media_partage') return 0
   return pub.data.stats.vues
 }
 
 function statsLikes(pub: Publication): number {
   if (pub.source === 'codimoi') return pub.data.nombre_likes
-  if (pub.source === 'territoire_partage' || pub.source === 'element_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage' || pub.source === 'video_partage') return 0
+  if (pub.source === 'territoire_partage' || pub.source === 'element_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage' || pub.source === 'video_partage' || pub.source === 'media_partage') return 0
   return pub.data.stats.likes
 }
 
 function statsCommentaires(pub: Publication): number {
   if (pub.source === 'codimoi') return pub.data.nombre_commentaires
-  if (pub.source === 'territoire_partage' || pub.source === 'element_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage' || pub.source === 'video_partage') return 0
+  if (pub.source === 'territoire_partage' || pub.source === 'element_partage' || pub.source === 'profil_partage' || pub.source === 'contribution_partage' || pub.source === 'video_partage' || pub.source === 'media_partage') return 0
   return pub.data.stats.commentaires
 }
 
@@ -743,7 +772,7 @@ const chargerTout = async () => {
   loading.value = true
   erreurChargement.value = null
 
-  const [resCodimoi, resGouv, resPartages, resPartagesElements, resPartagesProfils, resPartagesContrib, resPartagesVideos] = await Promise.allSettled([
+  const [resCodimoi, resGouv, resPartages, resPartagesElements, resPartagesProfils, resPartagesContrib, resPartagesVideos, resPartagesMedias] = await Promise.allSettled([
     listerPosts({ page: 1, par_page: 30 }),
     getContributions({ page: 1, parPage: 30 }),
     listerPartagesFiches(1, 30),
@@ -751,6 +780,7 @@ const chargerTout = async () => {
     listerPartagesProfils(1, 30),
     listerPartagesContributions(1, 30),
     listerPartagesVideos(1, 30),
+    listerPartagesMedias(1, 30),
   ])
 
   const items: Publication[] = []
@@ -865,6 +895,22 @@ const chargerTout = async () => {
   }
   else if (resPartagesVideos.status === 'rejected') {
     console.error('Erreur chargement Partages vidéos:', resPartagesVideos.reason)
+  }
+
+  if (resPartagesMedias.status === 'fulfilled' && resPartagesMedias.value?.partages) {
+    for (const partage of resPartagesMedias.value.partages) {
+      items.push({
+        key: `partage-media-${partage.id}`,
+        source: 'media_partage',
+        data: partage,
+        date: new Date(partage.created_at),
+        typeFiltre: 'media_partage',
+        typeStyle: STYLES_PAR_TYPE.media_partage,
+      })
+    }
+  }
+  else if (resPartagesMedias.status === 'rejected') {
+    console.error('Erreur chargement Partages médias:', resPartagesMedias.reason)
   }
 
   items.sort((a, b) => b.date.getTime() - a.date.getTime())
