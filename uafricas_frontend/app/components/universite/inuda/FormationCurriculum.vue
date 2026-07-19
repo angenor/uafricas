@@ -5,7 +5,7 @@ import {
   type ChapitrePublic,
   type LeconPublic,
 } from '~/composables/useFormations'
-import { youtubeEmbedUrl } from '~/composables/useEvenements'
+import { youtubeEmbedUrl } from '~/utils/media'
 
 const props = defineProps<{
   formationId: string

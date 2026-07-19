@@ -3,12 +3,16 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
+use crate::models::media_social::CompteursInteraction;
+
 // ── Colonnes SQL ──────────────────────────────────────────────────────
 
 pub const STATION_RADIO_COLONNES: &str =
     "sr.id, sr.nom, sr.slug, sr.description, sr.stream_url, sr.audio_url, sr.image_couverture_url,
      sr.genre, sr.genres_liste, sr.pays_id, sr.ville,
      sr.type_station::text AS type_station, sr.a_la_une, sr.etat,
+     sr.origine_publication, sr.role_partie_prenante, sr.role_partie_prenante_autre,
+     sr.nombre_signalements,
      sr.cree_par, sr.created_at, sr.updated_at";
 
 // ── Structs DB ────────────────────────────────────────────────────────
@@ -29,6 +33,12 @@ pub struct StationRadioRow {
     pub type_station: String,
     pub a_la_une: bool,
     pub etat: String,
+    /// 'africans' → /medias/radio/africans · 'territoire' → /medias/radio/nationales.
+    /// Porté par la page, jamais par un filtre utilisateur (FR-014).
+    pub origine_publication: String,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
+    pub nombre_signalements: i32,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -54,7 +64,14 @@ pub struct StationRadioResponse {
     pub ville: Option<String>,
     pub type_station: String,
     pub a_la_une: bool,
+    pub origine_publication: String,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
     pub created_at: DateTime<Utc>,
+    /// Réactions, commentaires et partages agrégés (FR-027). `None` tant que
+    /// l'appelant ne les a pas greffés.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interactions: Option<CompteursInteraction>,
 }
 
 #[derive(Debug, Serialize)]
@@ -74,8 +91,21 @@ pub struct StationRadioQueryParams {
     pub type_station: Option<String>,
     pub pays: Option<String>,
     pub genre: Option<String>,
+    /// 'africans' | 'territoire' — porté par la page appelante (FR-014).
+    /// Une valeur hors whitelist est rejetée en 400 par le handler.
+    pub origine: Option<String>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,
+    /// Pagination des sections (`/sections`) : nombre de contenus par rangée.
+    pub contenus_par_section: Option<i64>,
+}
+
+/// Whitelist des origines de publication. Jamais d'interpolation de l'entrée
+/// brute dans le SQL : la valeur est validée puis liée en paramètre.
+pub const ORIGINES_PUBLICATION: [&str; 2] = ["africans", "territoire"];
+
+pub fn origine_valide(valeur: &str) -> bool {
+    ORIGINES_PUBLICATION.contains(&valeur)
 }
 
 // ── Formulaire de création ────────────────────────────────────────────
@@ -93,6 +123,9 @@ pub struct CreerStationRadioForm {
     pub ville: Option<String>,
     pub type_station: Option<String>,
     pub a_la_une: Option<bool>,
+    pub origine_publication: Option<String>,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
 }
 
 // ── Mapping ───────────────────────────────────────────────────────────
@@ -147,7 +180,11 @@ impl StationRadioRow {
             ville: self.ville.clone(),
             type_station: mapper_type_station_frontend(&self.type_station),
             a_la_une: self.a_la_une,
+            origine_publication: self.origine_publication.clone(),
+            role_partie_prenante: self.role_partie_prenante.clone(),
+            role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
             created_at: self.created_at,
+            interactions: None,
         }
     }
 }

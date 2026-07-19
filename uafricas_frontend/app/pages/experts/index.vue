@@ -10,8 +10,11 @@
     <!-- Mobile Sidebar for Filters -->
     <ExpertsExpertFiltersMobile
       v-model:selected-country="selectedCountry"
+      v-model:selected-specialty="selectedSpecialty"
+      v-model:zone="selectedZone"
       :is-open="sidebarOpen"
       :selected-profile="selectedProfile"
+      :specialites="specialites"
       @close="sidebarOpen = false"
       @filter-profile="filterByProfile"
       @reset="resetFilters"
@@ -55,7 +58,10 @@
           <div class="hidden lg:block w-80 flex-shrink-0">
             <ExpertsExpertFilters
               v-model:selected-country="selectedCountry"
+              v-model:selected-specialty="selectedSpecialty"
+              v-model:zone="selectedZone"
               :selected-profile="selectedProfile"
+              :specialites="specialites"
               @filter-profile="filterByProfile"
               @reset="resetFilters"
             />
@@ -350,7 +356,7 @@ useHead({
 })
 
 // Composable API
-const { listerExperts, chargement } = useExperts()
+const { listerExperts, listerSpecialites, chargement } = useExperts()
 
 // State
 const experts = ref<ExpertAPI[]>([])
@@ -359,7 +365,13 @@ const totalPages = ref(1)
 const searchTerm = ref('')
 const categorySelected = ref('Tout')
 const selectedCountry = ref('')
+/** Zone géographique du territoire (radio binaire) : filtre aussi la liste. Défaut : Afrique. */
+const selectedZone = ref<'afrique' | 'hors_afrique'>('afrique')
 const selectedProfile = ref('')
+/** Spécialité choisie dans les filtres ('' = toutes). */
+const selectedSpecialty = ref('')
+/** Spécialités réellement déclarées par les experts (chargées au montage). */
+const specialites = ref<string[]>([])
 const sortOrder = ref<'recent' | 'experience' | 'rating'>('recent')
 const showMoreCategories = ref(false)
 const sidebarOpen = ref(false)
@@ -395,9 +407,11 @@ const chargerExperts = async () => {
     recherche: searchTerm.value || undefined,
     domaine: categorySelected.value !== 'Tout' ? categorySelected.value : undefined,
     pays: selectedCountry.value || undefined,
+    zone: selectedZone.value,
     situation: selectedProfile.value && selectedProfile.value !== 'tous'
       ? selectedProfile.value
       : undefined,
+    specialite: selectedSpecialty.value || undefined,
     tri: sortOrder.value,
     page: currentPage.value,
     par_page: parPage,
@@ -449,7 +463,9 @@ const sortExperts = (order: 'recent' | 'experience' | 'rating') => {
 const resetFilters = () => {
   categorySelected.value = 'Tout'
   selectedCountry.value = ''
+  selectedZone.value = 'afrique'
   selectedProfile.value = ''
+  selectedSpecialty.value = ''
   searchTerm.value = ''
   currentPage.value = 1
 }
@@ -482,7 +498,7 @@ const contactExpert = (expert: ExpertAPI) => {
 }
 
 // Recharger quand les filtres changent (reset page + appel API)
-watch([categorySelected, selectedCountry, selectedProfile, sortOrder], () => {
+watch([categorySelected, selectedCountry, selectedZone, selectedProfile, selectedSpecialty, sortOrder], () => {
   currentPage.value = 1
   chargerExperts()
 })
@@ -493,7 +509,8 @@ watch(currentPage, () => {
 })
 
 // Chargement initial
-onMounted(() => {
+onMounted(async () => {
   chargerExperts()
+  specialites.value = await listerSpecialites()
 })
 </script>

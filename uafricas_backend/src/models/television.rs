@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
+use crate::models::media_social::CompteursInteraction;
+
 // ═══════════════════════════════════════════════════════════════════════════
 // PARTIE 1 : Chaînes TV (table media_content.chaine_tv)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -12,7 +14,8 @@ use uuid::Uuid;
 pub const CHAINE_TV_COLONNES: &str =
     "ct.id, ct.nom, ct.slug, ct.description, ct.stream_url, ct.image_couverture_url,
      ct.categorie::text AS categorie, ct.pays_id, ct.langue, ct.est_en_direct,
-     ct.etat, ct.cree_par, ct.created_at, ct.updated_at";
+     ct.etat, ct.role_partie_prenante, ct.role_partie_prenante_autre,
+     ct.nombre_signalements, ct.cree_par, ct.created_at, ct.updated_at";
 
 // ── Structs DB ────────────────────────────────────────────────────────
 
@@ -29,6 +32,9 @@ pub struct ChaineTvRow {
     pub langue: String,
     pub est_en_direct: bool,
     pub etat: String,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
+    pub nombre_signalements: i32,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -51,7 +57,13 @@ pub struct ChaineTvResponse {
     pub pays: Option<String>,
     pub langue: String,
     pub est_en_direct: bool,
+    pub role_partie_prenante: Option<String>,
+    pub role_partie_prenante_autre: Option<String>,
     pub created_at: DateTime<Utc>,
+    /// Réactions, commentaires et partages agrégés (FR-027). `None` tant que
+    /// l'appelant ne les a pas greffés.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interactions: Option<CompteursInteraction>,
 }
 
 #[derive(Debug, Serialize)]
@@ -145,20 +157,37 @@ impl ChaineTvRow {
             pays: self.pays_nom.clone(),
             langue: self.langue.clone(),
             est_en_direct: self.est_en_direct,
+            role_partie_prenante: self.role_partie_prenante.clone(),
+            role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
             created_at: self.created_at,
+            interactions: None,
         }
     }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PARTIE 2 : Programmes Vedettes (table programme_radio_tele, type='tele')
+// PARTIE 2 : Programmes Télé (table media_content.programme_tele, cf. 09g)
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub const PROGRAMME_TELE_COLONNES: &str =
     "prt.id, prt.nom_emission, prt.slug, prt.description, prt.image_couverture_url,
      prt.video_url, prt.info_animateur, prt.info_producteur, prt.pays_id,
      prt.est_international, prt.langue, prt.etat, prt.cree_par,
-     prt.chaine_id, prt.a_la_une, prt.created_at, prt.updated_at";
+     prt.chaine_id, prt.a_la_une, prt.a_la_une_globale,
+     prt.theme_phare_id, prt.theme_phare_autre, prt.nombre_signalements,
+     prt.created_at, prt.updated_at";
+
+/// Source du média, déduite de l'URL — elle décide du lecteur employé côté
+/// frontend (iframe tiers vs balise `<video>` native, FR-056). Une URL YouTube
+/// injectée dans un `<video>` ne joue pas : c'est le bug latent que le retrait
+/// du contenu provisoire codé en dur (FR-010) mettait à nu.
+pub fn source_media(url: Option<&str>) -> String {
+    match url {
+        Some(u) if u.starts_with("/uploads/") => "hebergee".to_string(),
+        Some(_) => "externe".to_string(),
+        None => "aucune".to_string(),
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct ProgrammeTeleRow {
@@ -177,6 +206,12 @@ pub struct ProgrammeTeleRow {
     pub cree_par: Uuid,
     pub chaine_id: Option<Uuid>,
     pub a_la_une: bool,
+    /// Vedette unique de toute la page Télé (FR-001) — à ne pas confondre avec
+    /// `a_la_une`, qui met en avant un programme au sein de sa seule chaîne.
+    pub a_la_une_globale: bool,
+    pub theme_phare_id: Option<Uuid>,
+    pub theme_phare_autre: Option<String>,
+    pub nombre_signalements: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     // Champs jointures optionnels
@@ -184,6 +219,10 @@ pub struct ProgrammeTeleRow {
     pub pays_nom: Option<String>,
     #[sqlx(default)]
     pub chaine_nom: Option<String>,
+    #[sqlx(default)]
+    pub chaine_slug: Option<String>,
+    #[sqlx(default)]
+    pub theme_phare_nom: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -201,8 +240,29 @@ pub struct ProgrammeTeleResponse {
     pub langue: String,
     pub chaine_id: Option<Uuid>,
     pub chaine_nom: Option<String>,
+    pub chaine_slug: Option<String>,
     pub a_la_une: bool,
+    pub a_la_une_globale: bool,
+    pub theme_phare_id: Option<Uuid>,
+    pub theme_phare_autre: Option<String>,
+    pub theme_phare_nom: Option<String>,
+    /// "hebergee" | "externe" | "aucune" — pilote le choix du lecteur (FR-056).
+    pub source_media: String,
     pub created_at: DateTime<Utc>,
+    /// Réactions, commentaires et partages agrégés (FR-027). `None` tant que
+    /// l'appelant ne les a pas greffés — servir une carte n'oblige pas à les
+    /// compter.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interactions: Option<CompteursInteraction>,
+}
+
+/// Vedette de la page Télé : le programme mis en avant, plus l'indication qu'il
+/// s'agit d'un repli faute de vedette désignée (FR-007).
+#[derive(Debug, Serialize)]
+pub struct ProgrammeVedetteResponse {
+    #[serde(flatten)]
+    pub programme: ProgrammeTeleResponse,
+    pub est_repli: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -235,6 +295,49 @@ pub struct CreerProgrammeTeleForm {
     pub est_international: Option<bool>,
     pub langue: Option<String>,
     pub chaine_id: Option<Uuid>,
+    pub theme_phare_id: Option<Uuid>,
+    pub theme_phare_autre: Option<String>,
+}
+
+// ── Sections de la page Télé (US1) ────────────────────────────────────
+// Une section = une chaîne, son contenu mis en évidence et une rangée de ses
+// autres contenus. Servir la page section par section évite de charger d'un
+// bloc l'intégralité des programmes, et sert le chargement différé (FR-054).
+
+#[derive(Debug, Serialize)]
+pub struct TeleSectionResponse {
+    pub chaine: ChaineTvResponse,
+    /// `a_la_une` de la chaîne ; à défaut, son programme publié le plus récent.
+    pub mis_en_evidence: Option<ProgrammeTeleResponse>,
+    /// Les autres contenus publiés de la chaîne, hors `mis_en_evidence`.
+    pub contenus: Vec<ProgrammeTeleResponse>,
+    pub total_contenus: i64,
+    /// Ce que la grille programme à l'instant de la requête, et ce qui suit
+    /// (US5, FR-039). `None` si la chaîne n'a aucune grille active — la section
+    /// retombe alors sur son contenu mis en évidence (FR-041).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub diffusion_en_cours: Option<crate::models::media_programmation::CreneauResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub creneau_suivant: Option<crate::models::media_programmation::CreneauResponse>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TeleSectionsListeResponse {
+    pub sections: Vec<TeleSectionResponse>,
+    pub total: i64,
+    pub page: i64,
+    pub par_page: i64,
+    pub total_pages: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TeleSectionsQueryParams {
+    pub recherche: Option<String>,
+    pub pays: Option<String>,
+    pub categorie: Option<String>,
+    pub page: Option<i64>,
+    pub par_page: Option<i64>,
+    pub contenus_par_section: Option<i64>,
 }
 
 // ── Stats Télévision ──────────────────────────────────────────────────
@@ -265,8 +368,15 @@ impl ProgrammeTeleRow {
             langue: self.langue.clone(),
             chaine_id: self.chaine_id,
             chaine_nom: self.chaine_nom.clone(),
+            chaine_slug: self.chaine_slug.clone(),
             a_la_une: self.a_la_une,
+            a_la_une_globale: self.a_la_une_globale,
+            theme_phare_id: self.theme_phare_id,
+            theme_phare_autre: self.theme_phare_autre.clone(),
+            theme_phare_nom: self.theme_phare_nom.clone(),
+            source_media: source_media(self.video_url.as_deref()),
             created_at: self.created_at,
+            interactions: None,
         }
     }
 }

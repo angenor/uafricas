@@ -195,6 +195,17 @@ pub async fn creer_station_radio(
         }
     }
 
+    // L'origine décide de LA PAGE sur laquelle la station apparaîtra : une
+    // valeur hors whitelist violerait le CHECK en base, autant la refuser ici
+    // avec un message clair.
+    let origine = body.origine_publication.as_deref().unwrap_or("territoire");
+    if !crate::models::station_radio::origine_valide(origine) {
+        return Err(ApiErreur::Validation(format!(
+            "Origine de publication invalide: {} (attendu : africans ou territoire)",
+            origine
+        )));
+    }
+
     let id = Uuid::new_v4();
     let slug = generer_slug(nom);
     let type_station = body.type_station.as_deref().unwrap_or("nationale");
@@ -203,9 +214,10 @@ pub async fn creer_station_radio(
     sqlx::query(
         "INSERT INTO media_content.station_radio
          (id, nom, slug, description, stream_url, audio_url, image_couverture_url, genre, genres_liste,
-          pays_id, ville, type_station, a_la_une, etat, cree_par)
+          pays_id, ville, type_station, a_la_une, origine_publication,
+          role_partie_prenante, role_partie_prenante_autre, etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-                 $12::media_content.type_station, $13, 'brouillon', $14)"
+                 $12::media_content.type_station, $13, $14, $15, $16, 'brouillon', $17)"
     )
     .bind(id)
     .bind(nom)
@@ -220,6 +232,11 @@ pub async fn creer_station_radio(
     .bind(body.ville.as_deref().map(|s| s.trim()))
     .bind(type_station)
     .bind(body.a_la_une.unwrap_or(false))
+    // Défaut 'territoire' : une station soumise relève de son territoire ; la
+    // publication sous la bannière Radio Africans est une décision éditoriale.
+    .bind(origine)
+    .bind(body.role_partie_prenante.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()))
+    .bind(body.role_partie_prenante_autre.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()))
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -309,6 +326,31 @@ pub async fn modifier_station_radio(
 
     if let Some(v) = body.a_la_une {
         sets.push(format!("a_la_une = {}", v));
+    }
+
+    // Changer l'origine fait BASCULER la station d'une page Radio à l'autre :
+    // c'est une décision éditoriale, tracée comme telle dans l'audit ci-dessous.
+    if let Some(ref origine) = body.origine_publication {
+        if !crate::models::station_radio::origine_valide(origine) {
+            return Err(ApiErreur::Validation(format!(
+                "Origine de publication invalide: {} (attendu : africans ou territoire)",
+                origine
+            )));
+        }
+        sets.push(format!("origine_publication = ${}", bind_index));
+        bind_strings.push(origine.clone());
+        bind_index += 1;
+    }
+
+    if let Some(ref role) = body.role_partie_prenante {
+        sets.push(format!("role_partie_prenante = ${}", bind_index));
+        bind_strings.push(role.clone());
+        bind_index += 1;
+    }
+    if let Some(ref role_autre) = body.role_partie_prenante_autre {
+        sets.push(format!("role_partie_prenante_autre = ${}", bind_index));
+        bind_strings.push(role_autre.clone());
+        bind_index += 1;
     }
 
     if let Some(pays_id) = body.pays_id {
@@ -809,7 +851,7 @@ pub async fn lister_programmes_radio(
     }
 
     if let Some(station_id) = params.station_id {
-        conditions.push(format!("p.station_id = ${}", bind_index));
+        conditions.push(format!("p.station_id = ${}::uuid", bind_index));
         bind_values.push(station_id.to_string());
         bind_index += 1;
     }
@@ -906,6 +948,9 @@ pub async fn creer_programme_radio(
     let langue = body.langue.as_deref().unwrap_or("Français");
     let a_la_une = body.a_la_une.unwrap_or(false);
 
+    // L'index unique partiel sur (station_id, a_la_une) rejetterait deux mises à la une concurrentes : on sérialise démarcation et insertion.
+    let mut tx = pool.begin().await?;
+
     // Une seule émission « à la une » par station : on retire le marqueur des autres
     if a_la_une {
         if let Some(station_id) = body.station_id {
@@ -914,7 +959,7 @@ pub async fn creer_programme_radio(
                  WHERE station_id = $1 AND a_la_une = TRUE AND deleted_at IS NULL"
             )
             .bind(station_id)
-            .execute(pool.get_ref())
+            .execute(&mut *tx)
             .await?;
         }
     }
@@ -923,10 +968,10 @@ pub async fn creer_programme_radio(
         "INSERT INTO media_content.programme_radio
          (id, nom_emission, slug, description, image_couverture_url, audio_url,
           info_animateur, info_producteur, pays_id, est_international, langue,
-          categorie_radio, station_id, a_la_une, etat, cree_par)
+          categorie_radio, station_id, a_la_une, theme_phare_id, theme_phare_autre, etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6,
                  $7, $8, $9, $10, $11,
-                 $12::media_content.categorie_radio, $13, $14, 'brouillon', $15)"
+                 $12::media_content.categorie_radio, $13, $14, $15, $16, 'brouillon', $17)"
     )
     .bind(id)
     .bind(nom)
@@ -942,9 +987,13 @@ pub async fn creer_programme_radio(
     .bind(body.categorie_radio.as_deref())
     .bind(body.station_id)
     .bind(a_la_une)
+    .bind(body.theme_phare_id)
+    .bind(body.theme_phare_autre.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()))
     .bind(admin.id)
-    .execute(pool.get_ref())
+    .execute(&mut *tx)
     .await?;
+
+    tx.commit().await?;
 
     log::info!("Admin {} a cree le programme radio {} ({})", admin.id, nom, id);
 
@@ -1030,6 +1079,9 @@ pub async fn modifier_programme_radio(
         sets.push(format!("station_id = '{}'", station_id));
     }
 
+    // L'index unique partiel sur (station_id, a_la_une) rejetterait deux mises à la une concurrentes : on sérialise démarcation et mise à jour.
+    let mut tx = pool.begin().await?;
+
     // Émission « à la une » : une seule par station
     if let Some(a_la_une) = body.a_la_une {
         if a_la_une {
@@ -1037,16 +1089,33 @@ pub async fn modifier_programme_radio(
                 Some(s) => Some(s),
                 None => sqlx::query_scalar(
                     "SELECT station_id FROM media_content.programme_radio WHERE id = $1"
-                ).bind(id).fetch_one(pool.get_ref()).await?,
+                ).bind(id).fetch_one(&mut *tx).await?,
             };
             if let Some(st) = station_eff {
                 sqlx::query(
                     "UPDATE media_content.programme_radio SET a_la_une = FALSE, updated_at = NOW()
                      WHERE station_id = $1 AND id <> $2 AND a_la_une = TRUE AND deleted_at IS NULL"
-                ).bind(st).bind(id).execute(pool.get_ref()).await?;
+                ).bind(st).bind(id).execute(&mut *tx).await?;
             }
         }
         sets.push(format!("a_la_une = {}", a_la_une));
+    }
+
+    // Thème phare : un identifiant de référentiel, ou une précision libre quand
+    // le contributeur a choisi « Autre ». Les deux sont mutuellement exclusifs
+    // côté formulaire, mais rien n'interdit de les effacer l'un après l'autre.
+    if let Some(theme_id) = body.theme_phare_id {
+        sets.push(format!("theme_phare_id = '{}'", theme_id));
+    }
+    if let Some(ref theme_autre) = body.theme_phare_autre {
+        let valeur = theme_autre.trim();
+        if valeur.is_empty() {
+            sets.push("theme_phare_autre = NULL".to_string());
+        } else {
+            sets.push(format!("theme_phare_autre = ${}", bind_index));
+            bind_strings.push(valeur.to_string());
+            bind_index += 1;
+        }
     }
 
     if body.nom_emission.is_some() {
@@ -1070,7 +1139,9 @@ pub async fn modifier_programme_radio(
     let mut q = sqlx::query(&sql);
     for v in &bind_strings { q = q.bind(v); }
     q = q.bind(id);
-    q.execute(pool.get_ref()).await?;
+    q.execute(&mut *tx).await?;
+
+    tx.commit().await?;
 
     log::info!("Admin {} a modifie le programme radio {}", admin.id, id);
 
@@ -1155,7 +1226,7 @@ pub async fn lister_programmes_tele(
     }
 
     if let Some(chaine_id) = params.chaine_id {
-        conditions.push(format!("p.chaine_id = ${}", bind_index));
+        conditions.push(format!("p.chaine_id = ${}::uuid", bind_index));
         bind_values.push(chaine_id.to_string());
         bind_index += 1;
     }
@@ -1252,6 +1323,9 @@ pub async fn creer_programme_tele(
     let langue = body.langue.as_deref().unwrap_or("Français");
     let a_la_une = body.a_la_une.unwrap_or(false);
 
+    // L'index unique partiel sur (chaine_id, a_la_une) rejetterait deux mises à la une concurrentes : on sérialise démarcation et insertion.
+    let mut tx = pool.begin().await?;
+
     // Un seul programme « à la une » par chaîne
     if a_la_une {
         if let Some(chaine_id) = body.chaine_id {
@@ -1260,7 +1334,7 @@ pub async fn creer_programme_tele(
                  WHERE chaine_id = $1 AND a_la_une = TRUE AND deleted_at IS NULL"
             )
             .bind(chaine_id)
-            .execute(pool.get_ref())
+            .execute(&mut *tx)
             .await?;
         }
     }
@@ -1269,10 +1343,10 @@ pub async fn creer_programme_tele(
         "INSERT INTO media_content.programme_tele
          (id, nom_emission, slug, description, image_couverture_url, video_url,
           info_animateur, info_producteur, pays_id, est_international, langue,
-          chaine_id, a_la_une, etat, cree_par)
+          chaine_id, a_la_une, theme_phare_id, theme_phare_autre, etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6,
                  $7, $8, $9, $10, $11,
-                 $12, $13, 'brouillon', $14)"
+                 $12, $13, $14, $15, 'brouillon', $16)"
     )
     .bind(id)
     .bind(nom)
@@ -1287,9 +1361,13 @@ pub async fn creer_programme_tele(
     .bind(langue)
     .bind(body.chaine_id)
     .bind(a_la_une)
+    .bind(body.theme_phare_id)
+    .bind(body.theme_phare_autre.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()))
     .bind(admin.id)
-    .execute(pool.get_ref())
+    .execute(&mut *tx)
     .await?;
+
+    tx.commit().await?;
 
     log::info!("Admin {} a cree le programme tele {} ({})", admin.id, nom, id);
 
@@ -1388,6 +1466,9 @@ pub async fn modifier_programme_tele(
         sets.push(format!("chaine_id = '{}'", chaine_id));
     }
 
+    // L'index unique partiel sur (chaine_id, a_la_une) rejetterait deux mises à la une concurrentes : on sérialise démarcation et mise à jour.
+    let mut tx = pool.begin().await?;
+
     // Programme « à la une » : un seul par chaîne
     if let Some(a_la_une) = body.a_la_une {
         if a_la_une {
@@ -1395,16 +1476,33 @@ pub async fn modifier_programme_tele(
                 Some(c) => Some(c),
                 None => sqlx::query_scalar(
                     "SELECT chaine_id FROM media_content.programme_tele WHERE id = $1"
-                ).bind(id).fetch_one(pool.get_ref()).await?,
+                ).bind(id).fetch_one(&mut *tx).await?,
             };
             if let Some(ch) = chaine_eff {
                 sqlx::query(
                     "UPDATE media_content.programme_tele SET a_la_une = FALSE, updated_at = NOW()
                      WHERE chaine_id = $1 AND id <> $2 AND a_la_une = TRUE AND deleted_at IS NULL"
-                ).bind(ch).bind(id).execute(pool.get_ref()).await?;
+                ).bind(ch).bind(id).execute(&mut *tx).await?;
             }
         }
         sets.push(format!("a_la_une = {}", a_la_une));
+    }
+
+    // Thème phare : un identifiant de référentiel, ou une précision libre quand
+    // le contributeur a choisi « Autre ». Les deux sont mutuellement exclusifs
+    // côté formulaire, mais rien n'interdit de les effacer l'un après l'autre.
+    if let Some(theme_id) = body.theme_phare_id {
+        sets.push(format!("theme_phare_id = '{}'", theme_id));
+    }
+    if let Some(ref theme_autre) = body.theme_phare_autre {
+        let valeur = theme_autre.trim();
+        if valeur.is_empty() {
+            sets.push("theme_phare_autre = NULL".to_string());
+        } else {
+            sets.push(format!("theme_phare_autre = ${}", bind_index));
+            bind_strings.push(valeur.to_string());
+            bind_index += 1;
+        }
     }
 
     if body.nom_emission.is_some() {
@@ -1428,7 +1526,9 @@ pub async fn modifier_programme_tele(
     let mut q = sqlx::query(&sql);
     for v in &bind_strings { q = q.bind(v); }
     q = q.bind(id);
-    q.execute(pool.get_ref()).await?;
+    q.execute(&mut *tx).await?;
+
+    tx.commit().await?;
 
     log::info!("Admin {} a modifie le programme tele {}", admin.id, id);
 
@@ -1475,6 +1575,99 @@ pub async fn supprimer_programme_tele(
     ).await;
 
     Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
+}
+
+/// PATCH /api/admin/programmes-tele/{id}/vedette-globale
+///
+/// Désigne le programme mis en avant sur TOUTE la page Télé (FR-001). Un index
+/// unique partiel garantit l'unicité côté base : la démarcation de l'ancienne
+/// vedette et la promotion de la nouvelle DOIVENT donc tenir dans une même
+/// transaction, faute de quoi deux administrateurs agissant simultanément
+/// feraient échouer la seconde requête sur violation de contrainte.
+pub async fn definir_vedette_globale(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+    let id = path.into_inner();
+
+    let mut tx = pool.begin().await?;
+
+    // Un programme non publié ne peut pas devenir la vedette : la page publique
+    // filtre sur `etat = 'publie'` et n'afficherait que son repli.
+    let etat: Option<String> = sqlx::query_scalar(
+        "SELECT etat FROM media_content.programme_tele
+          WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(id)
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    let etat = etat.ok_or_else(|| ApiErreur::NonTrouve("Programme tele non trouve".into()))?;
+    if etat != "publie" {
+        return Err(ApiErreur::Validation(
+            "Seul un programme publié peut devenir la vedette de la page Télé".into(),
+        ));
+    }
+
+    // Ancienne vedette conservée pour l'audit : sans cet instantané, la trace ne
+    // dirait pas ce que la décision a remplacé.
+    let ancienne: Option<Uuid> = sqlx::query_scalar(
+        "SELECT id FROM media_content.programme_tele
+          WHERE a_la_une_globale = TRUE AND deleted_at IS NULL",
+    )
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    sqlx::query(
+        "UPDATE media_content.programme_tele
+            SET a_la_une_globale = FALSE, updated_at = NOW()
+          WHERE a_la_une_globale = TRUE AND id <> $1 AND deleted_at IS NULL",
+    )
+    .bind(id)
+    .execute(&mut *tx)
+    .await?;
+
+    sqlx::query(
+        "UPDATE media_content.programme_tele
+            SET a_la_une_globale = TRUE, updated_at = NOW()
+          WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(id)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    log::info!(
+        "Admin {} a designe le programme tele {} comme vedette globale",
+        admin.id,
+        id
+    );
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(admin.id),
+        "VEDETTE_GLOBALE",
+        "media_content",
+        "programme_tele",
+        Some(id),
+        Some(serde_json::json!({ "a_la_une_globale": ancienne })),
+        Some(serde_json::json!({ "a_la_une_globale": id })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "id": id, "ancienne_vedette": ancienne })),
+        error: None,
+    }))
 }
 
 // ══════════════════════════════════════════════════════════════

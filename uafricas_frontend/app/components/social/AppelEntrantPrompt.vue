@@ -10,6 +10,9 @@ const emit = defineEmits<{ (e: 'accepter'): void, (e: 'refuser'): void }>()
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBaseUrl as string
 
+// Décalage au-dessus de la barre de lecture persistante quand elle est visible.
+const { aUnContenu: lectureMediaActive } = useLecteurMedia()
+
 const appelant = computed(() => props.appel.appelant)
 const nomComplet = computed(() => `${appelant.value.prenom} ${appelant.value.nom}`.trim())
 const photo = computed(() => {
@@ -71,7 +74,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="fixed bottom-24 right-6 z-[75] w-[20rem] max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+  <div
+    class="fixed right-6 z-[75] w-[20rem] max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+    :class="lectureMediaActive ? 'bottom-46' : 'bottom-24'"
+  >
     <!-- Bandeau dégradé -->
     <div class="bg-linear-to-r from-custom-chocolat to-custom-green px-4 py-2.5 flex items-center gap-2 text-white">
       <span class="relative flex h-2.5 w-2.5">

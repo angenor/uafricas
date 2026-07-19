@@ -94,6 +94,24 @@
       </select>
     </div>
 
+    <!-- Filtre Spécialité Mobile -->
+    <div class="p-6 border-b border-gray-200">
+      <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Spécialité</h3>
+
+      <!-- Menu déroulant des spécialités -->
+      <select
+        v-model="selectedSpecialty"
+        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+      >
+        <option value="">
+          Toutes les spécialités
+        </option>
+        <option v-for="specialite in specialites" :key="specialite" :value="specialite">
+          {{ specialite }}
+        </option>
+      </select>
+    </div>
+
     <!-- Reset Filters Mobile -->
     <div class="p-6">
       <button
@@ -124,6 +142,8 @@ import {
 defineProps<{
   isOpen: boolean
   selectedProfile: string
+  /** Spécialités réellement déclarées par les experts (source : API). */
+  specialites: string[]
 }>()
 
 defineEmits<{
@@ -135,12 +155,19 @@ defineEmits<{
 /** Territoire sélectionné (synchronisé avec la page via v-model). */
 const selectedCountry = defineModel<string>('selectedCountry', { default: '' })
 
-/** Zone géographique qui pilote le contenu du menu déroulant. */
+/** Spécialité sélectionnée (synchronisée avec la page via v-model). */
+const selectedSpecialty = defineModel<string>('selectedSpecialty', { default: '' })
+
+/**
+ * Zone géographique (synchronisée avec la page via v-model) : elle pilote le
+ * contenu du menu déroulant des territoires ET filtre la liste des experts.
+ */
+const zone = defineModel<'afrique' | 'hors_afrique'>('zone', { default: 'afrique' })
+
 const zones = [
   { value: 'afrique' as const, label: 'Afrique' },
   { value: 'hors_afrique' as const, label: 'Hors Afrique' },
 ]
-const zone = ref<'afrique' | 'hors_afrique'>('afrique')
 
 /** Territoires proposés selon la zone, triés alphabétiquement (fr). */
 const territoires = computed(() =>

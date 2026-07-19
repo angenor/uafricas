@@ -6,6 +6,10 @@ const { nbAttenteMoi, compterAttenteMoi } = useRendezVous()
 // Appels directs : sonnerie entrante + salle visio (montés globalement, ci-dessous).
 const { appelEntrant, appelActif, accepterAppel, refuserAppel } = useAppels()
 
+// La barre de lecture persistante occupe le bas de l'écran : sans ce décalage,
+// le bouton flottant passerait dessous et deviendrait inatteignable.
+const { aUnContenu: lectureMediaActive } = useLecteurMedia()
+
 // Fenêtre déplaçable + redimensionnable (position/taille persistées).
 const {
   style: styleFenetre,
@@ -88,7 +92,8 @@ const fermerFenetre = () => {
     <!-- Bouton flottant -->
     <button
       type="button"
-      class="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-linear-to-r from-custom-chocolat to-custom-green text-white shadow-lg hover:shadow-xl flex items-center justify-center transition hover:scale-105"
+      class="fixed right-6 z-50 w-14 h-14 rounded-full bg-linear-to-r from-custom-chocolat to-custom-green text-white shadow-lg hover:shadow-xl flex items-center justify-center transition hover:scale-105"
+      :class="lectureMediaActive ? 'bottom-28' : 'bottom-6'"
       :aria-label="ouvert ? 'Fermer la messagerie' : 'Ouvrir la messagerie'"
       @click="basculer"
     >

@@ -884,6 +884,29 @@ pub async fn lister_salles(
         bind_index += 1;
     }
 
+    // Filtre zone géographique (Afrique / Hors Afrique) : la salle doit avoir au
+    // moins un territoire d'origine dans la zone. Même périmètre ISO2 que le
+    // filtre du menu déroulant côté frontend. Les codes sont des constantes
+    // `&'static str` maîtrisées → inlinés sans risque d'injection.
+    if let Some(ref zone) = params.zone {
+        let zone = zone.trim();
+        if zone == "afrique" || zone == "hors_afrique" {
+            let liste = crate::constants::afripulse_pays_autorises::PAYS_AFRICAINS_ISO2
+                .iter()
+                .map(|c| format!("'{}'", c))
+                .collect::<Vec<_>>()
+                .join(",");
+            let comparateur = if zone == "hors_afrique" { "NOT IN" } else { "IN" };
+            conditions.push(format!(
+                "EXISTS (SELECT 1 FROM afrolang.salle_pays_origine spo_z \
+                  JOIN shared.pays p_z ON p_z.id = spo_z.pays_id \
+                  WHERE spo_z.salle_id = s.id AND p_z.actif = TRUE \
+                  AND LOWER(p_z.code_iso2) {} ({}))",
+                comparateur, liste
+            ));
+        }
+    }
+
     if let Some(ref recherche) = params.recherche {
         if !recherche.trim().is_empty() {
             let terme = format!("%{}%", recherche.trim().to_lowercase());

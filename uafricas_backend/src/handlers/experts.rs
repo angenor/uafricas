@@ -85,6 +85,43 @@ pub async fn lister_experts(
         }
     }
 
+    // Filtre par specialite (FR-046) — le tableau `e.specialites` est un
+    // text[] de libelles libres saisis par le candidat, sans reference au
+    // referentiel : la comparaison est donc insensible a la casse, faute de
+    // quoi « realisateur » et « Realisateur » seraient deux metiers distincts.
+    if let Some(ref specialite) = params.specialite {
+        let trimmed = specialite.trim();
+        if !trimmed.is_empty() && trimmed != "toutes" {
+            conditions.push(format!(
+                "EXISTS (SELECT 1 FROM unnest(e.specialites) s WHERE LOWER(s) = LOWER(${}))",
+                bind_index
+            ));
+            bind_values.push(trimmed.to_string());
+            bind_index += 1;
+        }
+    }
+
+    // Filtre par zone géographique du territoire d'origine.
+    // Le radio « Afrique / Hors Afrique » filtre aussi la liste des experts,
+    // pas seulement le menu déroulant des territoires. La comparaison se fait
+    // sur le code ISO2 du pays de résidence (JOIN shared.pays p déjà présent).
+    // Les codes ISO2 sont des constantes maîtrisées, inlinées sans risque d'injection.
+    if let Some(ref zone) = params.zone {
+        let zone = zone.trim();
+        if zone == "afrique" || zone == "hors_afrique" {
+            let liste = crate::constants::afripulse_pays_autorises::PAYS_AFRICAINS_ISO2
+                .iter()
+                .map(|c| format!("'{}'", c))
+                .collect::<Vec<_>>()
+                .join(",");
+            let comparateur = if zone == "hors_afrique" { "NOT IN" } else { "IN" };
+            conditions.push(format!(
+                "LOWER(p.code_iso2) {} ({})",
+                comparateur, liste
+            ));
+        }
+    }
+
     // Recherche textuelle (nom, prenom, biographie, domaine)
     if let Some(ref recherche) = params.recherche {
         let trimmed = recherche.trim();
@@ -557,6 +594,38 @@ pub async fn uploader_cv(
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({ "cv_url": url })),
+        error: None,
+    }))
+}
+
+// ────────────────────────────────────────────────────────────────
+// GET /api/experts/specialites — options du filtre par metier (FR-046)
+// ────────────────────────────────────────────────────────────────
+
+/// Les specialites REELLEMENT declarees par les experts valides.
+///
+/// La liste n'est pas tiree de `iam.specialite_bibliotheque` : ce referentiel
+/// sert les bibliotheques humaines, tandis que `iam.expertise.specialites` est
+/// un text[] de libelles libres. Proposer des options absentes des profils
+/// donnerait un filtre qui ne ramene jamais rien.
+pub async fn lister_specialites_experts(
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let specialites: Vec<String> = sqlx::query_scalar(
+        "SELECT DISTINCT btrim(s) AS specialite
+           FROM iam.expertise e
+           JOIN iam.utilisateur u ON u.id = e.utilisateur_id
+           CROSS JOIN LATERAL unnest(e.specialites) s
+          WHERE e.statut = 'valide' AND e.deleted_at IS NULL AND u.deleted_at IS NULL
+            AND btrim(s) <> ''
+          ORDER BY specialite ASC",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(specialites),
         error: None,
     }))
 }

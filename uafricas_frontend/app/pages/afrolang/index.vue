@@ -461,6 +461,7 @@ const filtres = ref<SalleFiltres>({
   recherche: '',
   langue: '',
   pays_id: '',
+  zone: 'afrique',
 })
 
 // Pays d'origine disponibles (feature 001-afrolang-pays-origine).
@@ -479,6 +480,7 @@ const buildApiFiltres = (): SalleFiltres => {
   if (filtres.value.recherche?.trim()) f.recherche = filtres.value.recherche.trim()
   if (filtres.value.langue) f.langue = filtres.value.langue
   if (filtres.value.pays_id) f.pays_id = filtres.value.pays_id
+  if (filtres.value.zone) f.zone = filtres.value.zone
   return f
 }
 
@@ -758,6 +760,15 @@ watch(
   },
 )
 
+// La zone (Afrique / Hors Afrique) filtre aussi la liste des salles.
+watch(
+  () => filtres.value.zone,
+  () => {
+    currentPage.value = 1
+    chargerSalles()
+  },
+)
+
 watch(
   () => filtres.value.recherche,
   () => {
@@ -776,7 +787,7 @@ const handleSearch = () => {
 }
 
 const resetFilters = () => {
-  filtres.value = { recherche: '', langue: '', pays_id: '' }
+  filtres.value = { recherche: '', langue: '', pays_id: '', zone: 'afrique' }
   currentPage.value = 1
 }
 

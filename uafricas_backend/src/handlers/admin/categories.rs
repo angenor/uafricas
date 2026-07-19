@@ -29,7 +29,7 @@ pub async fn lister_categories(
         tri_dir: params.tri_dir.clone(),
     };
 
-    let mut conditions = vec!["c.deleted_at IS NULL".to_string()];
+    let mut conditions = vec!["c.actif = true".to_string()];
     let mut bind_values: Vec<String> = Vec::new();
     let mut bind_index: u32 = 1;
 
@@ -100,7 +100,7 @@ pub async fn obtenir_categorie(
     let id = path.into_inner();
 
     let sql = format!(
-        "SELECT {} FROM shared.categorie c WHERE c.id = $1 AND c.deleted_at IS NULL",
+        "SELECT {} FROM shared.categorie c WHERE c.id = $1 AND c.actif = true",
         ADMIN_CATEGORIE_DETAIL_COLONNES
     );
     let row = sqlx::query_as::<_, AdminCategorieDetailResponse>(&sql)
@@ -111,7 +111,7 @@ pub async fn obtenir_categorie(
 
     let enfants = sqlx::query_as::<_, AdminCategorieEnfant>(
         "SELECT id, nom, slug, icone, ordre, actif FROM shared.categorie
-         WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY ordre, nom"
+         WHERE parent_id = $1 AND actif = true ORDER BY ordre, nom"
     )
     .bind(id)
     .fetch_all(pool.get_ref())
@@ -205,7 +205,7 @@ pub async fn modifier_categorie(
     let id = path.into_inner();
 
     let existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM shared.categorie WHERE id = $1 AND deleted_at IS NULL)"
+        "SELECT EXISTS(SELECT 1 FROM shared.categorie WHERE id = $1 AND actif = true)"
     )
     .bind(id)
     .fetch_one(pool.get_ref())
@@ -260,7 +260,7 @@ pub async fn modifier_categorie(
 
     sets.push("updated_at = NOW()".to_string());
     let sql = format!(
-        "UPDATE shared.categorie SET {} WHERE id = ${} AND deleted_at IS NULL",
+        "UPDATE shared.categorie SET {} WHERE id = ${} AND actif = true",
         sets.join(", "), bind_index
     );
 
@@ -305,7 +305,7 @@ pub async fn supprimer_categorie(
     let id = path.into_inner();
 
     let enfants_count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM shared.categorie WHERE parent_id = $1 AND deleted_at IS NULL"
+        "SELECT COUNT(*) FROM shared.categorie WHERE parent_id = $1 AND actif = true"
     )
     .bind(id)
     .fetch_one(pool.get_ref())
@@ -318,8 +318,8 @@ pub async fn supprimer_categorie(
     }
 
     let result = sqlx::query(
-        "UPDATE shared.categorie SET deleted_at = NOW(), actif = false, updated_at = NOW()
-         WHERE id = $1 AND deleted_at IS NULL"
+        "UPDATE shared.categorie SET actif = false, updated_at = NOW()
+         WHERE id = $1 AND actif = true"
     )
     .bind(id)
     .execute(pool.get_ref())

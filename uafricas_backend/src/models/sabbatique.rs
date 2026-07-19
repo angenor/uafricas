@@ -207,6 +207,8 @@ pub struct SabbatiqueQueryParams {
     #[serde(rename = "type")]
     pub type_programme: Option<String>,
     pub pays: Option<String>,
+    /// Zone géographique du territoire d'origine : `afrique` ou `hors_afrique`.
+    pub zone: Option<String>,
     pub domaine: Option<String>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,

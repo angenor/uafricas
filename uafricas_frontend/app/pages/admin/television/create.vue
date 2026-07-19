@@ -5,17 +5,19 @@ const route = useRoute()
 const router = useRouter()
 const type = computed(() => (route.query.type as string) || 'chaines')
 
-const { creerChaine, creerProgramme, listerToutesChaines, loading, error } = useAdminTelevision()
+const { creerChaine, creerProgramme, listerToutesChaines, listerThemesPhares, loading, error } = useAdminTelevision()
 const { listerPays } = useCentresCulturels()
 
 const erreurLocale = ref<string | null>(null)
 
 const chainesDisponibles = ref<{ id: string; nom: string }[]>([])
 const paysDisponibles = ref<{ id: string; nom: string }[]>([])
+const themesPhares = ref<{ id: string; nom: string }[]>([])
 onMounted(async () => {
-  const [chaines, pays] = await Promise.all([listerToutesChaines(), listerPays()])
+  const [chaines, pays, themes] = await Promise.all([listerToutesChaines(), listerPays(), listerThemesPhares()])
   chainesDisponibles.value = chaines
   paysDisponibles.value = pays
+  themesPhares.value = themes
   // Préremplir la chaîne si on arrive depuis la page d'une chaîne (« Ajouter une vidéo »)
   const chainePrefill = route.query.chaine as string | undefined
   if (chainePrefill && chaines.some(c => c.id === chainePrefill)) {
@@ -32,7 +34,13 @@ const programmeForm = reactive({
   nom_emission: '', description: '', image_couverture_url: '', video_url: '',
   info_animateur: '', info_producteur: '', pays_id: '', est_international: false,
   langue: '', chaine_id: '', a_la_une: false,
+  theme_phare_id: '', theme_phare_autre: '',
 })
+
+// Valeur sentinelle du sélecteur : « Autre » n'est pas une catégorie en base,
+// elle bascule la saisie vers le champ libre `theme_phare_autre`.
+const THEME_AUTRE = '__autre__'
+const themeEstAutre = computed(() => programmeForm.theme_phare_id === THEME_AUTRE)
 
 const titreMap: Record<string, string> = { chaines: 'Nouvelle chaîne TV', programmes: 'Nouveau programme télé' }
 const sousTitreMap: Record<string, string> = { chaines: 'Créer une chaîne de télévision', programmes: 'Créer un programme télé' }
@@ -53,6 +61,10 @@ const soumettre = async () => {
     }
     else {
       if (!programmeForm.nom_emission.trim()) { erreurLocale.value = "Le nom du programme est requis"; return }
+      if (themeEstAutre.value && !programmeForm.theme_phare_autre.trim()) {
+        erreurLocale.value = 'Précisez le thème phare choisi dans « Autre »'
+        return
+      }
       const body: any = {
         nom_emission: programmeForm.nom_emission.trim(),
         est_international: programmeForm.est_international,
@@ -66,6 +78,8 @@ const soumettre = async () => {
       if (programmeForm.pays_id) body.pays_id = programmeForm.pays_id
       if (programmeForm.langue.trim()) body.langue = programmeForm.langue.trim()
       if (programmeForm.chaine_id) body.chaine_id = programmeForm.chaine_id
+      if (themeEstAutre.value) body.theme_phare_autre = programmeForm.theme_phare_autre.trim()
+      else if (programmeForm.theme_phare_id) body.theme_phare_id = programmeForm.theme_phare_id
       await creerProgramme(body)
       router.push('/admin/television?type=programmes')
     }
@@ -196,6 +210,37 @@ const soumettre = async () => {
                 <span class="label-text">Programme à la une (joue en boucle sur l'écran principal de la télé)</span>
               </label>
               <label v-if="!programmeForm.chaine_id" class="label"><span class="label-text-alt text-warning">Sélectionnez d'abord une télé pour la mettre à la une.</span></label>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold border-b pb-2">Vedette générale de la page Télé</h3>
+            <div class="alert alert-info">
+              <font-awesome-icon icon="circle-info" />
+              <div>
+                <p class="font-semibold">Disponible après publication</p>
+                <p class="text-sm">
+                  Un programme est créé en <strong>brouillon</strong>. La vedette générale — l'unique programme
+                  mis en avant en tête de <code>/tele</code>, toutes télés confondues — ne peut désigner qu'un
+                  programme publié. Créez le programme, publiez-le, puis désignez-le depuis sa page de modification.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold border-b pb-2">Thème phare</h3>
+            <div class="form-control">
+              <label class="label"><span class="label-text">Thème phare du programme</span></label>
+              <select v-model="programmeForm.theme_phare_id" class="select select-bordered">
+                <option value="">— Aucun —</option>
+                <option v-for="t in themesPhares" :key="t.id" :value="t.id">{{ t.nom }}</option>
+                <option :value="THEME_AUTRE">Autre (à préciser)</option>
+              </select>
+            </div>
+            <div v-if="themeEstAutre" class="form-control">
+              <label class="label"><span class="label-text">Préciser le thème *</span></label>
+              <input v-model="programmeForm.theme_phare_autre" type="text" class="input input-bordered" maxlength="200" required placeholder="Ex: Diplomatie culturelle">
             </div>
           </div>
 

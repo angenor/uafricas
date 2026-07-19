@@ -1,8 +1,75 @@
 import type {
   ApiResponse,
-  AdminStationRadio, AdminStationRadioDetail, CreerStationRadioForm,
+  AdminStationRadio as AdminStationRadioBase,
+  AdminStationRadioDetail as AdminStationRadioDetailBase,
+  CreerStationRadioForm as CreerStationRadioFormBase,
   AdminProgrammeRadio, AdminProgrammeRadioDetail, CreerProgrammeRadioForm,
 } from '~/types/admin'
+
+// L'origine de publication n'est pas une étiquette : elle décide de la page publique
+// sur laquelle la station apparaît — une station relève d'exactement une des deux.
+export type OriginePublicationRadio = 'africans' | 'territoire'
+
+export const ORIGINES_PUBLICATION_RADIO: { valeur: OriginePublicationRadio; libelle: string; page: string; aide: string }[] = [
+  {
+    valeur: 'africans',
+    libelle: 'Radio Africans',
+    page: '/medias/radio/africans',
+    aide: 'Production propre de la plateforme — publiée sur la page Radio Africans.',
+  },
+  {
+    valeur: 'territoire',
+    libelle: 'Radio de territoire',
+    page: '/medias/radio/nationales',
+    aide: 'Station rattachée à un territoire africain — publiée sur la page Radios nationales.',
+  },
+]
+
+export type RolePartiePrenanteRadio =
+  | 'chaine_tele' | 'radio' | 'journaliste' | 'communicateur'
+  | 'createur_contenu' | 'influenceur' | 'realisateur' | 'producteur' | 'autre'
+
+export const ROLES_PARTIE_PRENANTE_RADIO: { valeur: RolePartiePrenanteRadio; libelle: string }[] = [
+  { valeur: 'chaine_tele', libelle: 'Chaîne de télévision' },
+  { valeur: 'radio', libelle: 'Radio' },
+  { valeur: 'journaliste', libelle: 'Journaliste' },
+  { valeur: 'communicateur', libelle: 'Communicateur' },
+  { valeur: 'createur_contenu', libelle: 'Créateur de contenu' },
+  { valeur: 'influenceur', libelle: 'Influenceur' },
+  { valeur: 'realisateur', libelle: 'Réalisateur' },
+  { valeur: 'producteur', libelle: 'Producteur' },
+  { valeur: 'autre', libelle: 'Autre' },
+]
+
+export interface AdminStationRadio extends AdminStationRadioBase {
+  origine_publication: OriginePublicationRadio
+  role_partie_prenante: RolePartiePrenanteRadio | null
+  role_partie_prenante_autre: string | null
+}
+
+export interface AdminStationRadioDetail extends AdminStationRadioDetailBase {
+  origine_publication: OriginePublicationRadio
+  role_partie_prenante: RolePartiePrenanteRadio | null
+  role_partie_prenante_autre: string | null
+}
+
+export interface CreerStationRadioForm extends CreerStationRadioFormBase {
+  origine_publication: OriginePublicationRadio
+  role_partie_prenante: RolePartiePrenanteRadio | ''
+  role_partie_prenante_autre: string
+}
+
+export const libelleOriginePublication = (origine?: string | null) =>
+  ORIGINES_PUBLICATION_RADIO.find(o => o.valeur === origine)?.libelle || 'Radio de territoire'
+
+export const pageOriginePublication = (origine?: string | null) =>
+  ORIGINES_PUBLICATION_RADIO.find(o => o.valeur === origine)?.page || '/medias/radio/nationales'
+
+export const libelleRolePartiePrenante = (role?: string | null, precision?: string | null) => {
+  if (!role) return ''
+  if (role === 'autre') return precision?.trim() || 'Autre'
+  return ROLES_PARTIE_PRENANTE_RADIO.find(r => r.valeur === role)?.libelle || role
+}
 
 // Back-office RADIO : stations + émissions (programmes radio)
 export const useAdminRadio = () => {
@@ -14,7 +81,7 @@ export const useAdminRadio = () => {
   const programmes = ref<AdminProgrammeRadio[]>([])
   const programmeDetail = ref<AdminProgrammeRadioDetail | null>(null)
 
-  const filtresStations = reactive({ recherche: '', type_station: '', pays_id: '', etat: '' })
+  const filtresStations = reactive({ recherche: '', type_station: '', pays_id: '', etat: '', origine_publication: '' })
   const filtresProgrammes = reactive({ recherche: '', categorie_radio: '', station_id: '', etat: '' })
 
   // ── Stations ──────────────────────────────────────────────
@@ -34,6 +101,15 @@ export const useAdminRadio = () => {
   const modifierStation = async (id: string, form: Partial<CreerStationRadioForm>) => {
     const response = await adminFetch<ApiResponse<{ id: string }>>(`/api/admin/stations-radio/${id}`, { method: 'PUT', body: form })
     return response.data
+  }
+  // Bascule d'une station d'une page publique à l'autre : pas d'endpoint PATCH dédié,
+  // on repasse par le PUT de modification.
+  const definirOrigine = async (id: string, origine: OriginePublicationRadio) => {
+    const resultat = await modifierStation(id, { origine_publication: origine })
+    const station = stations.value.find(s => s.id === id)
+    if (station) station.origine_publication = origine
+    if (stationDetail.value?.id === id) stationDetail.value.origine_publication = origine
+    return resultat
   }
   const supprimerStation = async (id: string) => {
     await adminFetch<ApiResponse<null>>(`/api/admin/stations-radio/${id}`, { method: 'DELETE' })
@@ -70,7 +146,9 @@ export const useAdminRadio = () => {
     stations, stationDetail, programmes, programmeDetail,
     filtresStations, filtresProgrammes,
     pagination, sort, loading, error,
-    chargerStations, chargerStation, creerStation, modifierStation, supprimerStation, listerToutesStations,
+    chargerStations, chargerStation, creerStation, modifierStation, definirOrigine, supprimerStation, listerToutesStations,
+    ORIGINES_PUBLICATION_RADIO, ROLES_PARTIE_PRENANTE_RADIO,
+    libelleOriginePublication, pageOriginePublication, libelleRolePartiePrenante,
     chargerProgrammes, chargerProgramme, creerProgramme, modifierProgramme, supprimerProgramme,
     uploaderMedia, resoudreUrlMedia,
     allerPage, changerTri, reinitialiserPagination,

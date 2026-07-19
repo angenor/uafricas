@@ -1,3 +1,7 @@
+import type { CreneauAPI } from '~/composables/useMediaProgrammation'
+
+import type { CompteursInteraction } from '~/composables/useMediaSocial'
+
 // Composable pour les appels API des stations radio
 
 /** Interface correspondant au DTO StationRadioResponse du backend */
@@ -15,7 +19,60 @@ export interface StationRadioAPI {
   ville: string | null
   type_station: string
   a_la_une: boolean
+  /** 'africans' | 'territoire' — départage les deux pages Radio (FR-014). */
+  origine_publication: string
+  role_partie_prenante: string | null
+  role_partie_prenante_autre: string | null
   created_at: string
+  /** Réactions, commentaires et partages agrégés (FR-027). */
+  interactions?: CompteursInteraction | null
+}
+
+/** Interface correspondant au DTO ProgrammeRadioResponse du backend */
+export interface ProgrammeRadioAPI {
+  id: string
+  nom_emission: string
+  slug: string | null
+  description: string
+  image_couverture_url: string | null
+  audio_url: string | null
+  info_animateur: string | null
+  info_producteur: string | null
+  pays: string | null
+  est_international: boolean
+  langue: string
+  categorie_radio: string | null
+  station_id: string | null
+  station_nom: string | null
+  station_slug: string | null
+  a_la_une: boolean
+  theme_phare_id: string | null
+  theme_phare_autre: string | null
+  theme_phare_nom: string | null
+  source_media: string
+  created_at: string
+  /** Réactions, commentaires et partages agrégés (FR-027). */
+  interactions?: CompteursInteraction | null
+}
+
+/** Une section = une station, son émission mise en évidence et ses contenus */
+export interface StationSectionAPI {
+  station: StationRadioAPI
+  direct_disponible: boolean
+  mis_en_evidence: ProgrammeRadioAPI | null
+  contenus: ProgrammeRadioAPI[]
+  total_contenus: number
+  /** Grille du moment (US5) — absents quand la station n'en a aucune. */
+  diffusion_en_cours?: CreneauAPI | null
+  creneau_suivant?: CreneauAPI | null
+}
+
+export interface StationSectionsListeAPI {
+  sections: StationSectionAPI[]
+  total: number
+  page: number
+  par_page: number
+  total_pages: number
 }
 
 /** Interface correspondant au DTO StationRadioListeResponse du backend */
@@ -31,6 +88,7 @@ export interface StationRadioListeAPI {
 export interface RadioStation {
   id: string
   name: string
+  slug: string | null
   description: string
   /** URL audio à jouer : fichier/lien audio en priorité, sinon flux live */
   streamUrl: string
@@ -43,6 +101,46 @@ export interface RadioStation {
   country: string
   programType: 'Nationales' | 'Local' | 'International'
   aLaUne: boolean
+  origine: 'africans' | 'territoire'
+  /** Compteurs d'interaction, absents tant que l'API ne les greffe pas. */
+  interactions: CompteursInteraction | null
+}
+
+/** Émission radio, telle que la consomment les composants */
+export interface ProgrammeRadio {
+  id: string
+  slug: string | null
+  title: string
+  description: string
+  cover: string
+  audioUrl: string
+  animator: string
+  producer: string
+  stationId: string | null
+  stationNom: string | null
+  stationSlug: string | null
+  aLaUne: boolean
+  themePhare: string | null
+  sourceMedia: string
+  /** Compteurs d'interaction, absents tant que l'API ne les greffe pas. */
+  interactions: CompteursInteraction | null
+}
+
+/** Section prête à l'affichage sur une page Radio */
+export interface StationSection {
+  station: RadioStation
+  /** La station diffuse-t-elle un direct ? Il est alors offert comme un contenu (FR-016). */
+  directDisponible: boolean
+  misEnEvidence: ProgrammeRadio | null
+  contenus: ProgrammeRadio[]
+  totalContenus: number
+  /**
+   * « En ce moment » et « À suivre » (FR-039), résolus par le serveur à
+   * l'instant de la requête. `null` quand la station n'a pas de grille active :
+   * la section retombe alors sur son contenu mis en évidence (FR-041).
+   */
+  diffusionEnCours: CreneauAPI | null
+  creneauSuivant: CreneauAPI | null
 }
 
 /** Reponse API standardisee */
@@ -60,6 +158,14 @@ export interface StationRadioFiltres {
   genre?: string
   page?: number
   par_page?: number
+}
+
+/**
+ * Filtres des sections d'une page Radio. `origine` est OBLIGATOIRE : elle est
+ * fixée par la page et non par l'utilisateur.
+ */
+export interface StationSectionsFiltres extends StationRadioFiltres {
+  origine: 'africans' | 'territoire'
 }
 
 /** Formulaire de creation de station */
@@ -85,6 +191,45 @@ function resoudreUrlMedia(url: string | null, apiBase: string): string {
   return `${apiBase}${url}`
 }
 
+/**
+ * Le backend renvoie déjà des libellés d'affichage, mais rien ne garantit qu'ils
+ * appartiennent aux trois valeurs attendues : un cast direct laisserait passer
+ * n'importe quelle chaîne sous un type qui promet le contraire.
+ */
+const TYPES_STATION = ['Nationales', 'Local', 'International'] as const
+
+function normaliserTypeStation(valeur: string): RadioStation['programType'] {
+  return (TYPES_STATION as readonly string[]).includes(valeur)
+    ? (valeur as RadioStation['programType'])
+    : 'Nationales'
+}
+
+function normaliserOrigine(valeur: string | undefined): RadioStation['origine'] {
+  return valeur === 'africans' ? 'africans' : 'territoire'
+}
+
+function mapperProgrammeRadioApi(programme: ProgrammeRadioAPI, apiBase: string): ProgrammeRadio {
+  return {
+    id: programme.id,
+    slug: programme.slug,
+    title: programme.nom_emission,
+    description: programme.description,
+    cover: programme.image_couverture_url
+      ? resoudreUrlMedia(programme.image_couverture_url, apiBase)
+      : '',
+    audioUrl: resoudreUrlMedia(programme.audio_url, apiBase),
+    animator: programme.info_animateur || '',
+    producer: programme.info_producteur || '',
+    stationId: programme.station_id,
+    stationNom: programme.station_nom,
+    stationSlug: programme.station_slug,
+    aLaUne: programme.a_la_une,
+    themePhare: programme.theme_phare_nom || programme.theme_phare_autre || null,
+    sourceMedia: programme.source_media ?? 'aucune',
+    interactions: programme.interactions ?? null,
+  }
+}
+
 function mapperStationApiVersRadio(station: StationRadioAPI, apiBase: string): RadioStation {
   const location = [station.ville, station.pays].filter(Boolean).join(', ')
   const audioUrl = resoudreUrlMedia(station.audio_url, apiBase)
@@ -92,19 +237,22 @@ function mapperStationApiVersRadio(station: StationRadioAPI, apiBase: string): R
   return {
     id: station.id,
     name: station.nom,
+    slug: station.slug,
     description: station.description || '',
     // L'audio dédié prime ; à défaut, le flux live
     streamUrl: audioUrl || streamUrl,
     audioUrl,
     cover: station.image_couverture_url
       ? `${apiBase}${station.image_couverture_url}`
-      : '/images/radio-default.jpg',
+      : '',
     genre: station.genre || '',
     genresList: station.genres_liste || [],
     location,
     country: station.pays || '',
-    programType: station.type_station as RadioStation['programType'],
+    programType: normaliserTypeStation(station.type_station),
     aLaUne: station.a_la_une ?? false,
+    origine: normaliserOrigine(station.origine_publication),
+    interactions: station.interactions ?? null,
   }
 }
 
@@ -273,9 +421,113 @@ export const useStationsRadio = () => {
     }
   }
 
+  /**
+   * Sections d'une page Radio. `origine` est imposée par la page appelante et
+   * n'est jamais offerte au visiteur comme filtre (FR-014) : c'est elle qui
+   * garantit qu'une station ne figure jamais sur les deux pages à la fois.
+   */
+  const listerSections = async (filtres: StationSectionsFiltres): Promise<{
+    sections: StationSection[]
+    total: number
+    page: number
+    totalPages: number
+  } | null> => {
+    chargement.value = true
+    erreur.value = null
+    try {
+      const params = new URLSearchParams({ origine: filtres.origine })
+      if (filtres.recherche) params.set('recherche', filtres.recherche)
+      if (filtres.type_station && filtres.type_station !== 'Tous les types') params.set('type_station', filtres.type_station)
+      if (filtres.pays && filtres.pays !== 'Tous les territoires') params.set('pays', filtres.pays)
+      if (filtres.genre && filtres.genre !== 'Tous les genres') params.set('genre', filtres.genre)
+      if (filtres.page) params.set('page', String(filtres.page))
+      if (filtres.par_page) params.set('par_page', String(filtres.par_page))
+
+      const reponse = await $fetch<ApiResponse<StationSectionsListeAPI>>(
+        `${apiBase}/api/stations-radio/sections?${params.toString()}`,
+      )
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement des stations')
+      }
+
+      return {
+        sections: reponse.data.sections.map(s => ({
+          station: mapperStationApiVersRadio(s.station, apiBase),
+          directDisponible: s.direct_disponible,
+          misEnEvidence: s.mis_en_evidence ? mapperProgrammeRadioApi(s.mis_en_evidence, apiBase) : null,
+          contenus: s.contenus.map(c => mapperProgrammeRadioApi(c, apiBase)),
+          totalContenus: s.total_contenus,
+          diffusionEnCours: s.diffusion_en_cours ?? null,
+          creneauSuivant: s.creneau_suivant ?? null,
+        })),
+        total: reponse.data.total,
+        page: reponse.data.page,
+        totalPages: reponse.data.total_pages,
+      }
+    }
+    catch (e: any) {
+      erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
+      console.error('Erreur listerSections:', e)
+      return null
+    }
+    finally {
+      chargement.value = false
+    }
+  }
+
+  /** Détail d'une station par son slug — requis par les pages SSR. */
+  const obtenirStationParSlug = async (slug: string): Promise<RadioStation | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<StationRadioAPI>>(
+        `${apiBase}/api/stations-radio/slug/${encodeURIComponent(slug)}`,
+      )
+      if (!reponse.success || !reponse.data) return null
+      return mapperStationApiVersRadio(reponse.data, apiBase)
+    }
+    catch (e: any) {
+      console.error('Erreur obtenirStationParSlug:', e)
+      return null
+    }
+  }
+
+  /** Détail d'une émission radio par son slug — requis par les pages SSR. */
+  const obtenirProgrammeRadioParSlug = async (slug: string): Promise<ProgrammeRadio | null> => {
+    try {
+      const reponse = await $fetch<ApiResponse<ProgrammeRadioAPI>>(
+        `${apiBase}/api/programmes-radio/slug/${encodeURIComponent(slug)}`,
+      )
+      if (!reponse.success || !reponse.data) return null
+      return mapperProgrammeRadioApi(reponse.data, apiBase)
+    }
+    catch (e: any) {
+      console.error('Erreur obtenirProgrammeRadioParSlug:', e)
+      return null
+    }
+  }
+
+  /** Émissions d'une station — comble l'absence d'exposition publique (FR-020). */
+  const listerContenusStation = async (stationId: string): Promise<ProgrammeRadio[]> => {
+    try {
+      const reponse = await $fetch<ApiResponse<{ programmes: ProgrammeRadioAPI[] }>>(
+        `${apiBase}/api/programmes-radio?station=${stationId}&par_page=50`,
+      )
+      if (!reponse.success || !reponse.data) return []
+      return reponse.data.programmes.map(p => mapperProgrammeRadioApi(p, apiBase))
+    }
+    catch (e: any) {
+      console.error('Erreur listerContenusStation:', e)
+      return []
+    }
+  }
+
   return {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
+    listerSections,
+    obtenirStationParSlug,
+    obtenirProgrammeRadioParSlug,
+    listerContenusStation,
     listerStations,
     obtenirStation,
     listerPays,

@@ -207,6 +207,26 @@ pub async fn lister_programmes(
         }
     }
 
+    // Filtre par zone géographique du territoire (afrique / hors_afrique).
+    // Le pays du programme est une FK vers shared.pays : on compare son
+    // code ISO2 à la liste figée des pays africains. Ces codes sont des
+    // constantes maîtrisées, inlinées sans risque d'injection.
+    if let Some(ref zone) = params.zone {
+        let zone = zone.trim();
+        if zone == "afrique" || zone == "hors_afrique" {
+            let liste = crate::constants::afripulse_pays_autorises::PAYS_AFRICAINS_ISO2
+                .iter()
+                .map(|c| format!("'{}'", c))
+                .collect::<Vec<_>>()
+                .join(",");
+            let comparateur = if zone == "hors_afrique" { "NOT IN" } else { "IN" };
+            conditions.push(format!(
+                "EXISTS (SELECT 1 FROM shared.pays p_z WHERE p_z.id = p.pays_id AND LOWER(p_z.code_iso2) {} ({}))",
+                comparateur, liste
+            ));
+        }
+    }
+
     // Filtre par domaine
     if let Some(ref domaine) = params.domaine {
         if !domaine.is_empty() {

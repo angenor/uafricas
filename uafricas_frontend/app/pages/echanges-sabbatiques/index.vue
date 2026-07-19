@@ -397,8 +397,10 @@ const territoiresDisponibles = computed(() =>
 )
 
 // Changer de zone réinitialise le territoire choisi (contenus disjoints)
+// et recharge la liste des programmes (filtre serveur, pagination remise à 1)
 watch(zoneTerritoire, () => {
   filtres.value.pays = ''
+  chargerProgrammes()
 })
 
 const filtresActifs = computed(() =>
@@ -409,7 +411,11 @@ const filtresActifs = computed(() =>
 )
 
 const chargerProgrammes = async () => {
-  const result = await listerProgrammes({ ...filtres.value, par_page: 60 })
+  const result = await listerProgrammes({
+    ...filtres.value,
+    zone: zoneTerritoire.value,
+    par_page: 60,
+  })
   if (result) {
     programmes.value = result.programmes
     total.value = result.total

@@ -61,6 +61,10 @@ export interface ExpertFiltres {
   domaine?: string
   pays?: string
   situation?: string
+  /** Spécialité déclarée par l'expert (valeur libre). « toutes » = pas de filtre. */
+  specialite?: string
+  /** Zone géographique du territoire d'origine : filtre aussi la liste des experts. */
+  zone?: 'afrique' | 'hors_afrique'
   tri?: 'recent' | 'experience' | 'rating'
   page?: number
   par_page?: number
@@ -300,6 +304,8 @@ export const useExperts = () => {
       if (filtres.domaine && filtres.domaine !== 'Tout') params.set('domaine', filtres.domaine)
       if (filtres.pays) params.set('pays', filtres.pays)
       if (filtres.situation && filtres.situation !== 'tous') params.set('situation', filtres.situation)
+      if (filtres.specialite && filtres.specialite !== 'toutes') params.set('specialite', filtres.specialite)
+      if (filtres.zone) params.set('zone', filtres.zone)
       if (filtres.tri) params.set('tri', filtres.tri)
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))
@@ -323,6 +329,30 @@ export const useExperts = () => {
     }
     finally {
       chargement.value = false
+    }
+  }
+
+  /**
+   * Lister les spécialités réellement déclarées par les experts validés.
+   * Alimente le menu déroulant du filtre par spécialité.
+   */
+  const listerSpecialites = async (): Promise<string[]> => {
+    erreur.value = null
+
+    try {
+      const reponse = await $fetch<ApiResponse<string[]>>(`${apiBase}/api/experts/specialites`)
+
+      if (!reponse.success || !reponse.data) {
+        throw new Error(reponse.error || 'Erreur lors du chargement des spécialités')
+      }
+
+      return reponse.data
+    }
+    catch (e: any) {
+      const message = e?.data?.error || e?.message || 'Erreur reseau'
+      erreur.value = message
+      console.error('Erreur listerSpecialites:', e)
+      return []
     }
   }
 
@@ -492,6 +522,7 @@ export const useExperts = () => {
     chargement: readonly(chargement),
     erreur: readonly(erreur),
     listerExperts,
+    listerSpecialites,
     obtenirExpert,
     creerCandidature,
     uploaderCV,
