@@ -80,7 +80,7 @@ onBeforeUnmount(() => {
       </span>
       <font-awesome-icon :icon="appel.video ? 'fa-solid fa-video' : 'fa-solid fa-phone'" class="text-xs" />
       <p class="text-xs font-semibold tracking-wide uppercase">Appel entrant</p>
-      <img src="/logos/logo_uafracas.png" alt="UAfricas" class="h-5 w-auto ml-auto bg-white/90 rounded px-1 py-0.5">
+      <img src="/logos/logo_uafracas.png" alt="AfricanS" class="h-5 w-auto ml-auto bg-white/90 rounded px-1 py-0.5">
     </div>
 
     <!-- Corps -->

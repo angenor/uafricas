@@ -35,13 +35,13 @@
             @click="presentationOuverte = true"
           >
             <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
-            C'est quoi Numetech&nbsp;?
+            C'est quoi Librafrica&nbsp;?
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Modale de présentation « C'est quoi Numetech ? » -->
+    <!-- Modale de présentation « C'est quoi Librafrica ? » -->
     <BibliothequeNumeriquePresentationModal
       :open="presentationOuverte"
       @close="presentationOuverte = false"
@@ -405,7 +405,7 @@ useAOS()
 // Composable API bibliotheque
 const { chargement, erreur, listerLivres, creerLivre } = useBibliotheque()
 
-// Modale de présentation « C'est quoi Numetech ? »
+// Modale de présentation « C'est quoi Librafrica ? »
 const presentationOuverte = ref(false)
 
 // Etat de recherche et filtrage

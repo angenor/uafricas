@@ -6,7 +6,7 @@ const props = withDefaults(defineProps<{
   path: string
   /** Titre de l'événement (utilisé pour le partage natif et le texte) */
   titre: string
-  /** Texte d'accompagnement facultatif ; par défaut « Découvrez … sur UAfricas » */
+  /** Texte d'accompagnement facultatif ; par défaut « Découvrez … sur AfricanS » */
   texte?: string
   /** `full` : barre de boutons ; `compact` : bouton unique + menu déroulant */
   variant?: 'full' | 'compact'
@@ -21,7 +21,7 @@ const copieLienOk = ref(false)
 const menuOuvert = ref(false)
 
 const urlPage = computed(() => `${origine.value}${props.path}`)
-const textePartage = computed(() => props.texte || `Découvrez « ${props.titre} » sur UAfricas`)
+const textePartage = computed(() => props.texte || `Découvrez « ${props.titre} » sur AfricanS`)
 
 // URLs de partage par réseau
 const urlWhatsApp = computed(() =>

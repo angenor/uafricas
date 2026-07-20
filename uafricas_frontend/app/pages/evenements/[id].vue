@@ -447,15 +447,15 @@ const resoudreUrlImage = (url: string | null | undefined): string => {
 const imageOg = computed(() => resoudreUrlImage(evenement.value?.couverture_url))
 const descriptionOg = computed(() => {
   const e = evenement.value
-  if (!e) return 'Événements & ateliers panafricains — UAfricas'
+  if (!e) return 'Événements & ateliers panafricains — AfricanS'
   const lieu = [e.ville, e.pays].filter(Boolean).join(', ')
   const brut = (e.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
   const resume = brut.length > 160 ? `${brut.slice(0, 157)}…` : brut
-  return resume || `Rejoignez « ${e.titre} »${lieu ? ` à ${lieu}` : ''} sur UAfricas.`
+  return resume || `Rejoignez « ${e.titre} »${lieu ? ` à ${lieu}` : ''} sur AfricanS.`
 })
 
 useHead(() => {
-  const titre = evenement.value ? `${evenement.value.titre} | UAfricas` : 'Événement | UAfricas'
+  const titre = evenement.value ? `${evenement.value.titre} | AfricanS` : 'Événement | AfricanS'
   const img = imageOg.value
   return {
     title: titre,
@@ -466,7 +466,7 @@ useHead(() => {
       { property: 'og:title', content: titre },
       { property: 'og:description', content: descriptionOg.value },
       { property: 'og:url', content: urlCanonique },
-      { property: 'og:site_name', content: 'UAfricas' },
+      { property: 'og:site_name', content: 'AfricanS' },
       ...(img ? [{ property: 'og:image', content: img }] : []),
       // Twitter Card
       { name: 'twitter:card', content: img ? 'summary_large_image' : 'summary' },

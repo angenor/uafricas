@@ -25,7 +25,7 @@
               <font-awesome-icon :icon="['fas', 'graduation-cap']" class="w-6 h-6" />
             </div>
             <div>
-              <h2 class="text-xl md:text-2xl font-bold leading-tight">Muniversa</h2>
+              <h2 class="text-xl md:text-2xl font-bold leading-tight">Mindshiftlab</h2>
               <p class="text-white/90 text-sm">L'université numérique au service du développement de l'Afrique</p>
             </div>
           </div>
@@ -35,7 +35,7 @@
         <div class="overflow-y-auto px-6 py-6 space-y-8">
           <!-- Le pourquoi -->
           <p class="text-gray-700 leading-relaxed">
-            <strong class="text-gray-900">Muniversa</strong> est une université en ligne panafricaine
+            <strong class="text-gray-900">Mindshiftlab</strong> est une université en ligne panafricaine
             qui met la formation <strong class="text-gray-900">à la portée de tous</strong>. Elle
             diffuse à grande échelle des cours, des programmes et des ateliers pensés pour les grands
             défis du continent, afin de renforcer les compétences des citoyens, des professionnels et

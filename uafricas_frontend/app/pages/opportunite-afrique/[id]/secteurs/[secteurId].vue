@@ -211,7 +211,7 @@ const descriptionOg = computed(() =>
 
 useHead(() => {
   if (!secteur.value) return {}
-  const titre = `${secteur.value.nom} — Secteur d'opportunité — UAfricas`
+  const titre = `${secteur.value.nom} — Secteur d'opportunité — AfricanS`
   return {
     title: titre,
     meta: [
@@ -220,7 +220,7 @@ useHead(() => {
       { property: 'og:title', content: titre },
       { property: 'og:description', content: descriptionOg.value },
       { property: 'og:url', content: urlCanonique },
-      { property: 'og:site_name', content: 'UAfricas' },
+      { property: 'og:site_name', content: 'AfricanS' },
       ...(imageOg.value ? [{ property: 'og:image', content: imageOg.value }] : []),
       { name: 'twitter:card', content: imageOg.value ? 'summary_large_image' : 'summary' },
       { name: 'twitter:title', content: titre },

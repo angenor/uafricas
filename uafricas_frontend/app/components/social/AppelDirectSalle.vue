@@ -312,7 +312,7 @@ onBeforeUnmount(() => {
       @pointercancel="finDeplacement"
     >
       <div class="flex items-center gap-2.5 min-w-0">
-        <img src="/logos/logo_uafracas.png" alt="UAfricas" class="h-8 w-auto shrink-0 bg-white/90 rounded-md px-1 py-0.5">
+        <img src="/logos/logo_uafracas.png" alt="AfricanS" class="h-8 w-auto shrink-0 bg-white/90 rounded-md px-1 py-0.5">
         <span class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
           <font-awesome-icon :icon="salle.video ? 'fa-solid fa-video' : 'fa-solid fa-phone'" class="text-sm" />
         </span>
