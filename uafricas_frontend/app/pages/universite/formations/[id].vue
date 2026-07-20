@@ -135,7 +135,6 @@
                       <div>
                         <h3 class="font-semibold text-gray-900">{{ formation.formateur.prenom }} {{ formation.formateur.nom }}</h3>
                         <p class="text-sm text-custom-green">Responsable de la formation</p>
-                        <p class="text-sm text-gray-500">{{ formation.formateur.email }}</p>
                       </div>
                     </div>
 
