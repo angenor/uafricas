@@ -484,6 +484,74 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                 </div>
               </div>
 
+              <!-- Coordonnées publiques du support (09p).
+                   Réservées aux chaînes et stations : une émission n'a pas
+                   d'équipe propre à joindre, c'est son support qui la porte. -->
+              <div v-if="estSupport" class="rounded-lg border border-gray-200 p-4 space-y-4">
+                <div>
+                  <p class="text-sm font-semibold text-gray-900">Contacts de votre média</p>
+                  <p class="text-xs text-gray-500 mt-0.5">
+                    Facultatif. Ces coordonnées seront affichées sur la page publique de
+                    votre {{ typeObjet === 'chaine_tv' ? 'chaîne' : 'station' }} une fois
+                    la proposition validée — n’y mettez que ce que vous acceptez de rendre public.
+                  </p>
+                </div>
+
+                <div class="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">E-mail</label>
+                    <input
+                      v-model="donnees.contact_email"
+                      type="email"
+                      maxlength="320"
+                      class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                      placeholder="contact@votremedia.tv"
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Téléphone</label>
+                    <input
+                      v-model="donnees.contact_telephone"
+                      type="tel"
+                      maxlength="50"
+                      class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                      placeholder="+225 01 02 03 04 05"
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">WhatsApp</label>
+                    <input
+                      v-model="donnees.contact_whatsapp"
+                      type="tel"
+                      maxlength="50"
+                      class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                      placeholder="+225 01 02 03 04 05"
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Site web</label>
+                    <input
+                      v-model="donnees.contact_site_web"
+                      type="text"
+                      maxlength="500"
+                      class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                      placeholder="www.votremedia.tv"
+                    >
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Adresse</label>
+                  <input
+                    v-model="donnees.contact_adresse"
+                    type="text"
+                    maxlength="300"
+                    class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                    placeholder="Siège, quartier, ville"
+                  >
+                </div>
+              </div>
+
               <!-- Justification -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">

@@ -78,6 +78,16 @@ export interface DonneesProposition {
   /** Présentés en évidence à l'administrateur, seul juge de la licéité (H-012). */
   source_declaree?: string
   auteur_declare?: string
+  /**
+   * Coordonnées publiques de l'équipe, pour les supports uniquement (09p).
+   * Comme le reste de la proposition, elles n'atteignent le public qu'à la
+   * validation — jusque-là seul l'administrateur les voit.
+   */
+  contact_email?: string
+  contact_telephone?: string
+  contact_whatsapp?: string
+  contact_site_web?: string
+  contact_adresse?: string
 }
 
 export interface PropositionMediaAPI {

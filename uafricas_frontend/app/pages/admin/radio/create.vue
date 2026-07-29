@@ -27,6 +27,8 @@ const stationForm = reactive({
   nom: '', description: '', stream_url: '', audio_url: '', image_couverture_url: '',
   genre: '', genres_liste: [] as string[], pays_id: '', ville: '', type_station: 'nationale', a_la_une: false,
   origine_publication: 'territoire', role_partie_prenante: '', role_partie_prenante_autre: '',
+  contact_email: '', contact_telephone: '', contact_whatsapp: '',
+  contact_site_web: '', contact_adresse: '',
 })
 
 const aideOrigine = computed(() => ORIGINES_PUBLICATION_RADIO.find(o => o.valeur === stationForm.origine_publication)?.aide || '')
@@ -77,6 +79,13 @@ const soumettre = async () => {
       if (stationForm.genres_liste.length) body.genres_liste = stationForm.genres_liste
       if (stationForm.pays_id) body.pays_id = stationForm.pays_id
       if (stationForm.ville.trim()) body.ville = stationForm.ville.trim()
+      // Les contacts partent tels quels : le serveur les nettoie et préfixe
+      // le site web, un champ vide y devenant NULL.
+      body.contact_email = stationForm.contact_email.trim()
+      body.contact_telephone = stationForm.contact_telephone.trim()
+      body.contact_whatsapp = stationForm.contact_whatsapp.trim()
+      body.contact_site_web = stationForm.contact_site_web.trim()
+      body.contact_adresse = stationForm.contact_adresse.trim()
       await creerStation(body)
       router.push('/admin/radio?type=stations')
     }
@@ -180,6 +189,15 @@ const soumettre = async () => {
               </div>
             </div>
           </div>
+
+          <AdminContactsSupportFields
+            v-model:email="stationForm.contact_email"
+            v-model:telephone="stationForm.contact_telephone"
+            v-model:whatsapp="stationForm.contact_whatsapp"
+            v-model:site-web="stationForm.contact_site_web"
+            v-model:adresse="stationForm.contact_adresse"
+            libelle-support="la station"
+          />
 
           <div class="space-y-4">
             <h3 class="text-lg font-semibold border-b pb-2">Classification</h3>

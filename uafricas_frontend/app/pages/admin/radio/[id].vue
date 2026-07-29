@@ -25,6 +25,8 @@ const stationForm = reactive({
   nom: '', description: '', stream_url: '', audio_url: '', image_couverture_url: '',
   genre: '', genres_liste: [] as string[], pays_id: '', ville: '', type_station: 'nationale', a_la_une: false,
   origine_publication: 'territoire', role_partie_prenante: '', role_partie_prenante_autre: '',
+  contact_email: '', contact_telephone: '', contact_whatsapp: '',
+  contact_site_web: '', contact_adresse: '',
 })
 
 const aideOrigine = computed(() => ORIGINES_PUBLICATION_RADIO.find(o => o.valeur === stationForm.origine_publication)?.aide || '')
@@ -92,6 +94,11 @@ const charger = async () => {
       stationForm.origine_publication = s.origine_publication || 'territoire'
       stationForm.role_partie_prenante = s.role_partie_prenante || ''
       stationForm.role_partie_prenante_autre = s.role_partie_prenante_autre || ''
+      stationForm.contact_email = s.contact_email || ''
+      stationForm.contact_telephone = s.contact_telephone || ''
+      stationForm.contact_whatsapp = s.contact_whatsapp || ''
+      stationForm.contact_site_web = s.contact_site_web || ''
+      stationForm.contact_adresse = s.contact_adresse || ''
     }
   }
   else {
@@ -148,6 +155,12 @@ const sauvegarder = async () => {
       if (stationForm.genres_liste.length) body.genres_liste = stationForm.genres_liste
       if (stationForm.pays_id) body.pays_id = stationForm.pays_id
       if (stationForm.ville.trim()) body.ville = stationForm.ville.trim()
+      // Envoyés même vides : c'est ce qui permet d'effacer un contact.
+      body.contact_email = stationForm.contact_email.trim()
+      body.contact_telephone = stationForm.contact_telephone.trim()
+      body.contact_whatsapp = stationForm.contact_whatsapp.trim()
+      body.contact_site_web = stationForm.contact_site_web.trim()
+      body.contact_adresse = stationForm.contact_adresse.trim()
       await modifierStation(id, body)
     }
     else {
@@ -272,6 +285,15 @@ onMounted(async () => {
                 </div>
               </div>
             </div>
+
+            <AdminContactsSupportFields
+              v-model:email="stationForm.contact_email"
+              v-model:telephone="stationForm.contact_telephone"
+              v-model:whatsapp="stationForm.contact_whatsapp"
+              v-model:site-web="stationForm.contact_site_web"
+              v-model:adresse="stationForm.contact_adresse"
+              libelle-support="la station"
+            />
 
             <div class="space-y-4">
               <h3 class="text-lg font-semibold border-b pb-2">Classification</h3>

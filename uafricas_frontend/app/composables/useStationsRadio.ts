@@ -2,6 +2,8 @@ import type { CreneauAPI } from '~/composables/useMediaProgrammation'
 
 import type { CompteursInteraction } from '~/composables/useMediaSocial'
 
+import type { ContactsSupport } from '~/composables/useContactsSupport'
+
 // Composable pour les appels API des stations radio
 
 /** Interface correspondant au DTO StationRadioResponse du backend */
@@ -23,6 +25,8 @@ export interface StationRadioAPI {
   origine_publication: string
   role_partie_prenante: string | null
   role_partie_prenante_autre: string | null
+  /** Coordonnées publiques de l'équipe (09p) — absent quand aucune. */
+  contacts?: ContactsSupport | null
   created_at: string
   /** Réactions, commentaires et partages agrégés (FR-027). */
   interactions?: CompteursInteraction | null
@@ -102,6 +106,8 @@ export interface RadioStation {
   programType: 'Nationales' | 'Local' | 'International'
   aLaUne: boolean
   origine: 'africans' | 'territoire'
+  /** Coordonnées publiques de l'équipe, `null` quand elle n'en publie aucune. */
+  contacts: ContactsSupport | null
   /** Compteurs d'interaction, absents tant que l'API ne les greffe pas. */
   interactions: CompteursInteraction | null
 }
@@ -252,6 +258,7 @@ function mapperStationApiVersRadio(station: StationRadioAPI, apiBase: string): R
     programType: normaliserTypeStation(station.type_station),
     aLaUne: station.a_la_une ?? false,
     origine: normaliserOrigine(station.origine_publication),
+    contacts: station.contacts ?? null,
     interactions: station.interactions ?? null,
   }
 }

@@ -27,6 +27,8 @@ const chaineForm = reactive({
   nom: '', description: '', stream_url: '', image_couverture_url: '',
   categorie: 'generaliste', pays_id: '', langue: '', est_en_direct: false,
   origine_publication: 'territoire',
+  contact_email: '', contact_telephone: '', contact_whatsapp: '',
+  contact_site_web: '', contact_adresse: '',
 })
 
 const aideOrigine = computed(() => ORIGINES_PUBLICATION_TELE.find(o => o.valeur === chaineForm.origine_publication)?.aide || '')
@@ -88,6 +90,11 @@ const charger = async () => {
       chaineForm.langue = c.langue || ''
       chaineForm.est_en_direct = c.est_en_direct || false
       chaineForm.origine_publication = c.origine_publication || 'territoire'
+      chaineForm.contact_email = c.contact_email || ''
+      chaineForm.contact_telephone = c.contact_telephone || ''
+      chaineForm.contact_whatsapp = c.contact_whatsapp || ''
+      chaineForm.contact_site_web = c.contact_site_web || ''
+      chaineForm.contact_adresse = c.contact_adresse || ''
     }
   }
   else {
@@ -123,6 +130,12 @@ const sauvegarder = async () => {
         categorie: chaineForm.categorie,
         est_en_direct: chaineForm.est_en_direct,
         origine_publication: chaineForm.origine_publication,
+        // Envoyés même vides : c'est ce qui permet d'effacer un contact.
+        contact_email: chaineForm.contact_email.trim(),
+        contact_telephone: chaineForm.contact_telephone.trim(),
+        contact_whatsapp: chaineForm.contact_whatsapp.trim(),
+        contact_site_web: chaineForm.contact_site_web.trim(),
+        contact_adresse: chaineForm.contact_adresse.trim(),
       }
       if (chaineForm.description.trim()) body.description = chaineForm.description.trim()
       if (chaineForm.image_couverture_url.trim()) body.image_couverture_url = chaineForm.image_couverture_url.trim()
@@ -297,6 +310,15 @@ onMounted(async () => {
                 </label>
               </div>
             </div>
+
+            <AdminContactsSupportFields
+              v-model:email="chaineForm.contact_email"
+              v-model:telephone="chaineForm.contact_telephone"
+              v-model:whatsapp="chaineForm.contact_whatsapp"
+              v-model:site-web="chaineForm.contact_site_web"
+              v-model:adresse="chaineForm.contact_adresse"
+              libelle-support="la chaîne"
+            />
 
             <div class="flex items-center justify-between pt-4">
               <div class="text-sm text-base-content/50">

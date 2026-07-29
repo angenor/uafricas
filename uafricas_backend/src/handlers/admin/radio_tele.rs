@@ -21,6 +21,7 @@ use crate::models::admin::radio_tele::{
 };
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
 use crate::services::audit;
+use crate::services::contacts_media::{normaliser_url, texte_non_vide};
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -215,9 +216,12 @@ pub async fn creer_station_radio(
         "INSERT INTO media_content.station_radio
          (id, nom, slug, description, stream_url, audio_url, image_couverture_url, genre, genres_liste,
           pays_id, ville, type_station, a_la_une, origine_publication,
-          role_partie_prenante, role_partie_prenante_autre, etat, cree_par)
+          role_partie_prenante, role_partie_prenante_autre,
+          contact_email, contact_telephone, contact_whatsapp, contact_site_web, contact_adresse,
+          etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-                 $12::media_content.type_station, $13, $14, $15, $16, 'brouillon', $17)"
+                 $12::media_content.type_station, $13, $14, $15, $16,
+                 $17, $18, $19, $20, $21, 'brouillon', $22)"
     )
     .bind(id)
     .bind(nom)
@@ -237,6 +241,11 @@ pub async fn creer_station_radio(
     .bind(origine)
     .bind(body.role_partie_prenante.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()))
     .bind(body.role_partie_prenante_autre.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()))
+    .bind(texte_non_vide(body.contact_email.as_deref()))
+    .bind(texte_non_vide(body.contact_telephone.as_deref()))
+    .bind(texte_non_vide(body.contact_whatsapp.as_deref()))
+    .bind(normaliser_url(body.contact_site_web.as_deref()))
+    .bind(texte_non_vide(body.contact_adresse.as_deref()))
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -304,6 +313,18 @@ pub async fn modifier_station_radio(
     champ_str!(body.image_couverture_url, "image_couverture_url");
     champ_str!(body.genre, "genre");
     champ_str!(body.ville, "ville");
+    champ_str!(body.contact_email, "contact_email");
+    champ_str!(body.contact_telephone, "contact_telephone");
+    champ_str!(body.contact_whatsapp, "contact_whatsapp");
+    champ_str!(body.contact_adresse, "contact_adresse");
+
+    // Le site web ne passe pas par `champ_str!` : il lui faut son schéma, sans
+    // quoi « www.radio.fm » serait rendu comme un lien relatif.
+    if let Some(ref val) = body.contact_site_web {
+        sets.push(format!("contact_site_web = ${}", bind_index));
+        bind_strings.push(normaliser_url(Some(val)).unwrap_or_default());
+        bind_index += 1;
+    }
 
     if let Some(ref etat) = body.etat {
         let e = etat.trim();
@@ -634,9 +655,12 @@ pub async fn creer_chaine_tv(
     sqlx::query(
         "INSERT INTO media_content.chaine_tv
          (id, nom, slug, description, stream_url, image_couverture_url,
-          categorie, pays_id, langue, est_en_direct, origine_publication, etat, cree_par)
+          categorie, pays_id, langue, est_en_direct, origine_publication,
+          contact_email, contact_telephone, contact_whatsapp, contact_site_web, contact_adresse,
+          etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6,
-                 $7::media_content.categorie_chaine_tv, $8, $9, $10, $11, 'brouillon', $12)"
+                 $7::media_content.categorie_chaine_tv, $8, $9, $10, $11,
+                 $12, $13, $14, $15, $16, 'brouillon', $17)"
     )
     .bind(id)
     .bind(nom)
@@ -649,6 +673,11 @@ pub async fn creer_chaine_tv(
     .bind(langue)
     .bind(body.est_en_direct.unwrap_or(true))
     .bind(origine)
+    .bind(texte_non_vide(body.contact_email.as_deref()))
+    .bind(texte_non_vide(body.contact_telephone.as_deref()))
+    .bind(texte_non_vide(body.contact_whatsapp.as_deref()))
+    .bind(normaliser_url(body.contact_site_web.as_deref()))
+    .bind(texte_non_vide(body.contact_adresse.as_deref()))
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -714,6 +743,17 @@ pub async fn modifier_chaine_tv(
     champ_str!(body.stream_url, "stream_url");
     champ_str!(body.image_couverture_url, "image_couverture_url");
     champ_str!(body.langue, "langue");
+    champ_str!(body.contact_email, "contact_email");
+    champ_str!(body.contact_telephone, "contact_telephone");
+    champ_str!(body.contact_whatsapp, "contact_whatsapp");
+    champ_str!(body.contact_adresse, "contact_adresse");
+
+    // Cf. `modifier_station_radio` : le site web exige son schéma.
+    if let Some(ref val) = body.contact_site_web {
+        sets.push(format!("contact_site_web = ${}", bind_index));
+        bind_strings.push(normaliser_url(Some(val)).unwrap_or_default());
+        bind_index += 1;
+    }
 
     if let Some(ref etat) = body.etat {
         let e = etat.trim();

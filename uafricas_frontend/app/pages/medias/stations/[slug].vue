@@ -206,6 +206,9 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
           {{ station.description }}
         </p>
 
+        <!-- Coordonnées publiques renseignées par l'équipe de la station (09p) -->
+        <MediaBlocContacts :contacts="station.contacts" :nom-support="station.name" />
+
         <section v-if="contenus.length" class="mb-12">
           <h2 class="font-oswald text-xl font-bold text-white mb-4">Ses émissions</h2>
           <MediaRangeeContenus>

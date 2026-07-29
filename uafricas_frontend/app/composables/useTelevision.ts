@@ -2,6 +2,8 @@ import type { CreneauAPI } from '~/composables/useMediaProgrammation'
 
 import type { CompteursInteraction } from '~/composables/useMediaSocial'
 
+import type { ContactsSupport } from '~/composables/useContactsSupport'
+
 // Composable pour les appels API de la télévision
 
 /** Interface correspondant au DTO ChaineTvResponse du backend */
@@ -18,6 +20,8 @@ export interface ChaineTvAPI {
   est_en_direct: boolean
   /** « africans » (Africans Télé International) ou « territoire » — cf. 09o. */
   origine_publication: string
+  /** Coordonnées publiques de l'équipe (09p) — absent quand aucune. */
+  contacts?: ContactsSupport | null
   created_at: string
   /** Réactions, commentaires et partages agrégés (FR-027). */
   interactions?: CompteursInteraction | null
@@ -108,6 +112,8 @@ export interface TvChannel {
   isLive: boolean
   /** Chaîne de la plateforme (« africans ») ou d'un territoire. */
   origine: string
+  /** Coordonnées publiques de l'équipe, `null` quand elle n'en publie aucune. */
+  contacts: ContactsSupport | null
   /** Compteurs d'interaction, absents tant que l'API ne les greffe pas. */
   interactions: CompteursInteraction | null
 }
@@ -247,6 +253,7 @@ function mapperChaineApiVersTv(chaine: ChaineTvAPI, apiBase: string): TvChannel 
     language: chaine.langue,
     isLive: chaine.est_en_direct,
     origine: chaine.origine_publication || 'territoire',
+    contacts: chaine.contacts ?? null,
     interactions: chaine.interactions ?? null,
   }
 }

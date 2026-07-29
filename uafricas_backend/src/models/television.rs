@@ -4,6 +4,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 use crate::models::media_social::CompteursInteraction;
+use crate::services::contacts_media::ContactsSupport;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PARTIE 1 : Chaînes TV (table media_content.chaine_tv)
@@ -15,6 +16,8 @@ pub const CHAINE_TV_COLONNES: &str =
     "ct.id, ct.nom, ct.slug, ct.description, ct.stream_url, ct.image_couverture_url,
      ct.categorie::text AS categorie, ct.pays_id, ct.langue, ct.est_en_direct,
      ct.etat, ct.origine_publication, ct.role_partie_prenante, ct.role_partie_prenante_autre,
+     ct.contact_email, ct.contact_telephone, ct.contact_whatsapp,
+     ct.contact_site_web, ct.contact_adresse,
      ct.nombre_signalements, ct.cree_par, ct.created_at, ct.updated_at";
 
 // ── Structs DB ────────────────────────────────────────────────────────
@@ -36,6 +39,12 @@ pub struct ChaineTvRow {
     pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p) — toutes facultatives.
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_whatsapp: Option<String>,
+    pub contact_site_web: Option<String>,
+    pub contact_adresse: Option<String>,
     pub nombre_signalements: i32,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
@@ -64,6 +73,10 @@ pub struct ChaineTvResponse {
     pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p). Absent du JSON quand la chaîne
+    /// n'en publie aucune — le bloc « Contacts » disparaît alors de sa page.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub contacts: Option<ContactsSupport>,
     pub created_at: DateTime<Utc>,
     /// Réactions, commentaires et partages agrégés (FR-027). `None` tant que
     /// l'appelant ne les a pas greffés.
@@ -165,6 +178,13 @@ impl ChaineTvRow {
             origine_publication: self.origine_publication.clone(),
             role_partie_prenante: self.role_partie_prenante.clone(),
             role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
+            contacts: ContactsSupport::depuis(
+                self.contact_email.as_deref(),
+                self.contact_telephone.as_deref(),
+                self.contact_whatsapp.as_deref(),
+                self.contact_site_web.as_deref(),
+                self.contact_adresse.as_deref(),
+            ),
             created_at: self.created_at,
             interactions: None,
         }

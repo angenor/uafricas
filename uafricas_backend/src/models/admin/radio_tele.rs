@@ -14,6 +14,8 @@ pub const ADMIN_STATION_RADIO_DETAIL_COLONNES: &str =
      s.genre, s.genres_liste, s.pays_id, pays.nom AS pays_nom, s.ville,
      s.type_station::TEXT as type_station, s.a_la_une,
      s.origine_publication, s.role_partie_prenante, s.role_partie_prenante_autre,
+     s.contact_email, s.contact_telephone, s.contact_whatsapp,
+     s.contact_site_web, s.contact_adresse,
      s.nombre_signalements,
      s.etat, s.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      s.created_at, s.updated_at";
@@ -32,7 +34,10 @@ pub const ADMIN_CHAINE_TV_DETAIL_COLONNES: &str =
     "c.id, c.nom, c.slug, c.description, c.stream_url, c.image_couverture_url,
      c.categorie::TEXT as categorie, c.pays_id, pays.nom AS pays_nom,
      c.langue, c.est_en_direct, c.origine_publication,
-     c.role_partie_prenante, c.role_partie_prenante_autre, c.nombre_signalements,
+     c.role_partie_prenante, c.role_partie_prenante_autre,
+     c.contact_email, c.contact_telephone, c.contact_whatsapp,
+     c.contact_site_web, c.contact_adresse,
+     c.nombre_signalements,
      c.etat, c.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      c.created_at, c.updated_at";
 
@@ -119,6 +124,12 @@ pub struct AdminStationRadioDetailRow {
     pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p).
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_whatsapp: Option<String>,
+    pub contact_site_web: Option<String>,
+    pub contact_adresse: Option<String>,
     pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
@@ -147,6 +158,12 @@ pub struct AdminStationRadioDetailResponse {
     pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p).
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_whatsapp: Option<String>,
+    pub contact_site_web: Option<String>,
+    pub contact_adresse: Option<String>,
     pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
@@ -175,6 +192,11 @@ impl AdminStationRadioDetailRow {
             origine_publication: self.origine_publication.clone(),
             role_partie_prenante: self.role_partie_prenante.clone(),
             role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
+            contact_email: self.contact_email.clone(),
+            contact_telephone: self.contact_telephone.clone(),
+            contact_whatsapp: self.contact_whatsapp.clone(),
+            contact_site_web: self.contact_site_web.clone(),
+            contact_adresse: self.contact_adresse.clone(),
             nombre_signalements: self.nombre_signalements,
             etat: self.etat.clone(),
             cree_par: self.cree_par,
@@ -217,6 +239,12 @@ pub struct AdminChaineTvDetailRow {
     pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p).
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_whatsapp: Option<String>,
+    pub contact_site_web: Option<String>,
+    pub contact_adresse: Option<String>,
     pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
@@ -241,6 +269,12 @@ pub struct AdminChaineTvDetailResponse {
     pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p).
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_whatsapp: Option<String>,
+    pub contact_site_web: Option<String>,
+    pub contact_adresse: Option<String>,
     pub nombre_signalements: i32,
     pub etat: String,
     pub cree_par: Uuid,
@@ -266,6 +300,11 @@ impl AdminChaineTvDetailRow {
             origine_publication: self.origine_publication.clone(),
             role_partie_prenante: self.role_partie_prenante.clone(),
             role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
+            contact_email: self.contact_email.clone(),
+            contact_telephone: self.contact_telephone.clone(),
+            contact_whatsapp: self.contact_whatsapp.clone(),
+            contact_site_web: self.contact_site_web.clone(),
+            contact_adresse: self.contact_adresse.clone(),
             nombre_signalements: self.nombre_signalements,
             etat: self.etat.clone(),
             cree_par: self.cree_par,
@@ -502,6 +541,13 @@ pub struct CreerStationRadioRequest {
     pub origine_publication: Option<String>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p) — affichées sur la page du
+    /// support une fois celui-ci publié.
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_whatsapp: Option<String>,
+    pub contact_site_web: Option<String>,
+    pub contact_adresse: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -522,6 +568,13 @@ pub struct ModifierStationRadioRequest {
     pub origine_publication: Option<String>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p) — affichées sur la page du
+    /// support une fois celui-ci publié.
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_whatsapp: Option<String>,
+    pub contact_site_web: Option<String>,
+    pub contact_adresse: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -540,6 +593,13 @@ pub struct CreerChaineTvRequest {
     pub origine_publication: Option<String>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p) — affichées sur la page du
+    /// support une fois celui-ci publié.
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_whatsapp: Option<String>,
+    pub contact_site_web: Option<String>,
+    pub contact_adresse: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -557,6 +617,13 @@ pub struct ModifierChaineTvRequest {
     pub origine_publication: Option<String>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p) — affichées sur la page du
+    /// support une fois celui-ci publié.
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_whatsapp: Option<String>,
+    pub contact_site_web: Option<String>,
+    pub contact_adresse: Option<String>,
 }
 
 // Programme RADIO

@@ -113,6 +113,7 @@
 \ir schemas/09m_media_content_codetention.sql
 \ir schemas/09n_media_content_programmation.sql
 \ir schemas/09o_media_content_chaine_tv_origine.sql
+\ir schemas/09p_media_content_contacts_supports.sql
 \ir schemas/10_governance.sql
 \ir schemas/10f_governance_factcheck_volets_reactions.sql
 \ir schemas/10g_governance_factcheck_signalement.sql

@@ -171,6 +171,9 @@ useHead(() => {
           {{ chaine.description }}
         </p>
 
+        <!-- Coordonnées publiques renseignées par l'équipe de la chaîne (09p) -->
+        <MediaBlocContacts :contacts="chaine.contacts" :nom-support="chaine.name" />
+
         <!-- Contenus de la chaîne -->
         <section v-if="contenus.length" class="mb-12">
           <h2 class="font-oswald text-xl font-bold text-white mb-4">Ses émissions</h2>

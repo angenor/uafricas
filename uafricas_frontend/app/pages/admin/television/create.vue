@@ -32,6 +32,8 @@ const chaineForm = reactive({
   nom: '', description: '', stream_url: '', image_couverture_url: '',
   categorie: 'generaliste', pays_id: '', langue: '', est_en_direct: false,
   origine_publication: 'territoire',
+  contact_email: '', contact_telephone: '', contact_whatsapp: '',
+  contact_site_web: '', contact_adresse: '',
 })
 
 const aideOrigine = computed(() => ORIGINES_PUBLICATION_TELE.find(o => o.valeur === chaineForm.origine_publication)?.aide || '')
@@ -67,6 +69,13 @@ const soumettre = async () => {
       if (chaineForm.image_couverture_url.trim()) body.image_couverture_url = chaineForm.image_couverture_url.trim()
       if (chaineForm.pays_id) body.pays_id = chaineForm.pays_id
       if (chaineForm.langue.trim()) body.langue = chaineForm.langue.trim()
+      // Les contacts partent tels quels : le serveur les nettoie et préfixe
+      // le site web, un champ vide y devenant NULL.
+      body.contact_email = chaineForm.contact_email.trim()
+      body.contact_telephone = chaineForm.contact_telephone.trim()
+      body.contact_whatsapp = chaineForm.contact_whatsapp.trim()
+      body.contact_site_web = chaineForm.contact_site_web.trim()
+      body.contact_adresse = chaineForm.contact_adresse.trim()
       await creerChaine(body)
       router.push('/admin/television?type=chaines')
     }
@@ -183,6 +192,15 @@ const soumettre = async () => {
               </label>
             </div>
           </div>
+
+          <AdminContactsSupportFields
+            v-model:email="chaineForm.contact_email"
+            v-model:telephone="chaineForm.contact_telephone"
+            v-model:whatsapp="chaineForm.contact_whatsapp"
+            v-model:site-web="chaineForm.contact_site_web"
+            v-model:adresse="chaineForm.contact_adresse"
+            libelle-support="la chaîne"
+          />
 
           <div class="flex justify-end gap-2 pt-4">
             <NuxtLink to="/admin/television" class="btn btn-ghost">Annuler</NuxtLink>

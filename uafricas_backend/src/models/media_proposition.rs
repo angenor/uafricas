@@ -104,6 +104,16 @@ pub struct DonneesProposition {
     /// l'administrateur, seul à se prononcer sur la licéité (H-012, FR-033).
     pub source_declaree: Option<String>,
     pub auteur_declare: Option<String>,
+    /// Coordonnées publiques de l'équipe, pour les supports uniquement (09p).
+    ///
+    /// Elles ne deviennent publiques qu'à la validation, comme le reste de la
+    /// proposition : tant qu'elle est en attente, elles ne vivent que dans
+    /// `donnees`, sous les yeux du seul administrateur.
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_whatsapp: Option<String>,
+    pub contact_site_web: Option<String>,
+    pub contact_adresse: Option<String>,
 }
 
 impl DonneesProposition {

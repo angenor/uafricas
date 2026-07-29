@@ -34,6 +34,7 @@ use crate::models::media_social::{
 };
 use crate::models::notification;
 use crate::services::audit;
+use crate::services::contacts_media::{normaliser_url, texte_non_vide};
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -426,8 +427,11 @@ async fn creer_objet(
             sqlx::query_scalar(
                 "INSERT INTO media_content.chaine_tv
                     (nom, slug, description, stream_url, image_couverture_url, pays_id, langue,
-                     etat, cree_par, role_partie_prenante, role_partie_prenante_autre)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'publie', $8, $9, $10)
+                     etat, cree_par, role_partie_prenante, role_partie_prenante_autre,
+                     contact_email, contact_telephone, contact_whatsapp,
+                     contact_site_web, contact_adresse)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'publie', $8, $9, $10,
+                         $11, $12, $13, $14, $15)
                  RETURNING id",
             )
             .bind(nom)
@@ -440,6 +444,11 @@ async fn creer_objet(
             .bind(auteur_id)
             .bind(donnees.role_partie_prenante.as_deref())
             .bind(donnees.role_partie_prenante_autre.as_deref())
+            .bind(texte_non_vide(donnees.contact_email.as_deref()))
+            .bind(texte_non_vide(donnees.contact_telephone.as_deref()))
+            .bind(texte_non_vide(donnees.contact_whatsapp.as_deref()))
+            .bind(normaliser_url(donnees.contact_site_web.as_deref()))
+            .bind(texte_non_vide(donnees.contact_adresse.as_deref()))
             .fetch_one(&mut **tx)
             .await?
         }
@@ -453,8 +462,11 @@ async fn creer_objet(
                 "INSERT INTO media_content.station_radio
                     (nom, slug, description, stream_url, audio_url, image_couverture_url,
                      pays_id, etat, cree_par, origine_publication,
-                     role_partie_prenante, role_partie_prenante_autre)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'publie', $8, 'territoire', $9, $10)
+                     role_partie_prenante, role_partie_prenante_autre,
+                     contact_email, contact_telephone, contact_whatsapp,
+                     contact_site_web, contact_adresse)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'publie', $8, 'territoire', $9, $10,
+                         $11, $12, $13, $14, $15)
                  RETURNING id",
             )
             .bind(nom)
@@ -467,6 +479,11 @@ async fn creer_objet(
             .bind(auteur_id)
             .bind(donnees.role_partie_prenante.as_deref())
             .bind(donnees.role_partie_prenante_autre.as_deref())
+            .bind(texte_non_vide(donnees.contact_email.as_deref()))
+            .bind(texte_non_vide(donnees.contact_telephone.as_deref()))
+            .bind(texte_non_vide(donnees.contact_whatsapp.as_deref()))
+            .bind(normaliser_url(donnees.contact_site_web.as_deref()))
+            .bind(texte_non_vide(donnees.contact_adresse.as_deref()))
             .fetch_one(&mut **tx)
             .await?
         }

@@ -1371,6 +1371,11 @@ export interface AdminStationRadioDetail {
   ville: string | null
   type_station: string
   a_la_une: boolean
+  contact_email: string | null
+  contact_telephone: string | null
+  contact_whatsapp: string | null
+  contact_site_web: string | null
+  contact_adresse: string | null
   etat: string
   cree_par: string
   cree_par_nom: string | null
@@ -1390,6 +1395,12 @@ export interface CreerStationRadioForm {
   ville: string
   type_station: string
   a_la_une: boolean
+  /** Coordonnées publiques affichées sur /medias/stations/{slug} — cf. 09p. */
+  contact_email: string
+  contact_telephone: string
+  contact_whatsapp: string
+  contact_site_web: string
+  contact_adresse: string
 }
 
 export interface AdminChaineTv {
@@ -1418,6 +1429,11 @@ export interface AdminChaineTvDetail {
   langue: string
   est_en_direct: boolean
   origine_publication: string
+  contact_email: string | null
+  contact_telephone: string | null
+  contact_whatsapp: string | null
+  contact_site_web: string | null
+  contact_adresse: string | null
   etat: string
   cree_par: string
   cree_par_nom: string | null
@@ -1435,6 +1451,12 @@ export interface CreerChaineTvForm {
   langue: string
   est_en_direct: boolean
   origine_publication: string
+  /** Coordonnées publiques affichées sur /medias/chaines/{slug} — cf. 09p. */
+  contact_email: string
+  contact_telephone: string
+  contact_whatsapp: string
+  contact_site_web: string
+  contact_adresse: string
 }
 
 // ── Programmes RADIO (émissions) ──────────────────────────────

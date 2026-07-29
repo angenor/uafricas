@@ -4,6 +4,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 use crate::models::media_social::CompteursInteraction;
+use crate::services::contacts_media::ContactsSupport;
 
 // ── Colonnes SQL ──────────────────────────────────────────────────────
 
@@ -12,6 +13,8 @@ pub const STATION_RADIO_COLONNES: &str =
      sr.genre, sr.genres_liste, sr.pays_id, sr.ville,
      sr.type_station::text AS type_station, sr.a_la_une, sr.etat,
      sr.origine_publication, sr.role_partie_prenante, sr.role_partie_prenante_autre,
+     sr.contact_email, sr.contact_telephone, sr.contact_whatsapp,
+     sr.contact_site_web, sr.contact_adresse,
      sr.nombre_signalements,
      sr.cree_par, sr.created_at, sr.updated_at";
 
@@ -38,6 +41,12 @@ pub struct StationRadioRow {
     pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p) — toutes facultatives.
+    pub contact_email: Option<String>,
+    pub contact_telephone: Option<String>,
+    pub contact_whatsapp: Option<String>,
+    pub contact_site_web: Option<String>,
+    pub contact_adresse: Option<String>,
     pub nombre_signalements: i32,
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
@@ -67,6 +76,10 @@ pub struct StationRadioResponse {
     pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
+    /// Coordonnées publiques de l'équipe (09p). Absent du JSON quand la station
+    /// n'en publie aucune — le bloc « Contacts » disparaît alors de sa page.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub contacts: Option<ContactsSupport>,
     pub created_at: DateTime<Utc>,
     /// Réactions, commentaires et partages agrégés (FR-027). `None` tant que
     /// l'appelant ne les a pas greffés.
@@ -183,6 +196,13 @@ impl StationRadioRow {
             origine_publication: self.origine_publication.clone(),
             role_partie_prenante: self.role_partie_prenante.clone(),
             role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
+            contacts: ContactsSupport::depuis(
+                self.contact_email.as_deref(),
+                self.contact_telephone.as_deref(),
+                self.contact_whatsapp.as_deref(),
+                self.contact_site_web.as_deref(),
+                self.contact_adresse.as_deref(),
+            ),
             created_at: self.created_at,
             interactions: None,
         }
