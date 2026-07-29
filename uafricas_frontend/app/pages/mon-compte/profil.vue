@@ -1,6 +1,8 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 pt-28 pb-16">
-    <div class="max-w-4xl mx-auto px-4">
+    <!-- Élargi depuis `max-w-4xl` : le menu latéral occupe une colonne qui
+         n'existait pas quand les sections tenaient dans un menu déroulant. -->
+    <div class="max-w-6xl mx-auto px-4">
 
       <!-- Chargement -->
       <div v-if="chargement" class="flex items-center justify-center py-32">
@@ -77,6 +79,23 @@
                     Membre depuis {{ dateInscription }}
                   </span>
                 </div>
+
+                <!-- Accès direct à la gestion des supports détenus : l'onglet
+                     existe, mais il siège au dixième rang d'un menu déroulant.
+                     Rien ne s'affiche pour qui ne détient aucun support. -->
+                <div v-if="nombreSupports > 0" class="mt-3 flex justify-center sm:justify-start">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-custom-chocolat/30 bg-orange-50 text-custom-chocolat hover:bg-orange-100 transition-colors cursor-pointer"
+                    @click="allerAuxSupports"
+                  >
+                    <font-awesome-icon icon="fa-solid fa-tv" class="text-xs" />
+                    Gérer mes supports médias
+                    <span class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-custom-chocolat text-white text-[11px] font-bold">
+                      {{ nombreSupports }}
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -117,63 +136,80 @@
           </div>
         </Transition>
 
-        <!-- ═══ Onglets ═══ -->
+        <!-- ═══ Sections du compte ═══
+             Menu latéral en écran large, rangée de pilules défilable en mobile.
+             Un menu déroulant tenait cette place : dix sections repliées
+             derrière un bouton, dont on ne savait l'existence qu'en l'ouvrant. -->
         <div
-          class="bg-white rounded-2xl shadow-lg overflow-hidden"
+          ref="zoneOnglets"
+          class="grid lg:grid-cols-[264px_minmax(0,1fr)] gap-6 scroll-mt-28"
           data-aos="fade-up"
           data-aos-delay="100"
         >
-          <!-- Tab Header (dropdown : la liste d'onglets etant longue) -->
-          <div class="border-b border-gray-200 p-3 relative">
-            <button
-              class="w-full flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-              @click="tabMenuOuvert = !tabMenuOuvert"
-            >
-              <span class="flex items-center gap-2 text-sm font-semibold text-custom-chocolat">
-                <font-awesome-icon :icon="ongletCourant.icon" />
-                {{ ongletCourant.label }}
-              </span>
-              <font-awesome-icon
-                icon="fa-solid fa-chevron-down"
-                class="text-gray-400 transition-transform duration-200"
-                :class="{ 'rotate-180': tabMenuOuvert }"
-              />
-            </button>
-
-            <!-- Menu deroulant -->
-            <Transition
-              enter-active-class="transition-all duration-150 ease-out"
-              enter-from-class="opacity-0 -translate-y-1"
-              enter-to-class="opacity-100 translate-y-0"
-              leave-active-class="transition-all duration-100 ease-in"
-              leave-from-class="opacity-100 translate-y-0"
-              leave-to-class="opacity-0 -translate-y-1"
-            >
-              <div
-                v-if="tabMenuOuvert"
-                class="absolute left-3 right-3 top-full mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1"
-              >
+          <nav aria-label="Sections de mon compte" class="lg:sticky lg:top-28 lg:self-start">
+            <!-- Mobile : rangée horizontale, tout est visible d'un coup d'œil
+                 ou d'un glissement — les marges négatives laissent les pilules
+                 défiler jusqu'aux bords de l'écran. -->
+            <div class="lg:hidden -mx-4 px-4 overflow-x-auto">
+              <div class="flex w-max gap-2 pb-1">
                 <button
                   v-for="tab in onglets"
                   :key="tab.id"
-                  class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors"
+                  type="button"
+                  class="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors cursor-pointer"
                   :class="ongletActif === tab.id
-                    ? 'bg-orange-50 text-custom-chocolat font-medium'
+                    ? 'bg-custom-chocolat text-white shadow-md'
+                    : 'bg-white text-gray-600 shadow-sm hover:text-custom-chocolat'"
+                  :aria-current="ongletActif === tab.id ? 'page' : undefined"
+                  @click="selectionnerOnglet(tab.id)"
+                >
+                  <font-awesome-icon :icon="tab.icon" class="text-xs" />
+                  {{ tab.label }}
+                  <span
+                    v-if="tab.id === 'mes-supports' && nombreSupports > 0"
+                    class="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold"
+                    :class="ongletActif === tab.id ? 'bg-white/25 text-white' : 'bg-custom-chocolat text-white'"
+                  >
+                    {{ nombreSupports }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Écran large : sections nommées, pour que « Mes supports
+                 médias » se cherche là où on l'attend. -->
+            <div class="hidden lg:block bg-white rounded-2xl shadow-lg p-3 space-y-5">
+              <div v-for="groupe in GROUPES_ONGLETS" :key="groupe.titre">
+                <p class="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                  {{ groupe.titre }}
+                </p>
+                <button
+                  v-for="tab in groupe.onglets"
+                  :key="tab.id"
+                  type="button"
+                  class="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors cursor-pointer"
+                  :class="ongletActif === tab.id
+                    ? 'bg-orange-50 text-custom-chocolat font-semibold'
                     : 'text-gray-600 hover:bg-gray-50'"
+                  :aria-current="ongletActif === tab.id ? 'page' : undefined"
                   @click="selectionnerOnglet(tab.id)"
                 >
                   <font-awesome-icon :icon="tab.icon" class="w-4 text-center" />
-                  {{ tab.label }}
+                  <span class="min-w-0 truncate">{{ tab.label }}</span>
+                  <!-- Combien de supports on détient, lisible sans ouvrir la section -->
+                  <span
+                    v-if="tab.id === 'mes-supports' && nombreSupports > 0"
+                    class="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-custom-chocolat px-1.5 text-[11px] font-bold text-white"
+                  >
+                    {{ nombreSupports }}
+                  </span>
                 </button>
               </div>
-            </Transition>
+            </div>
+          </nav>
 
-            <!-- Zone de fermeture -->
-            <div v-if="tabMenuOuvert" class="fixed inset-0 z-10" @click="tabMenuOuvert = false"></div>
-          </div>
-
-          <!-- Tab Content -->
-          <div class="p-6">
+          <!-- Contenu de la section retenue -->
+          <div class="bg-white rounded-2xl shadow-lg p-6 min-w-0">
 
             <!-- ─── Onglet Informations ─── -->
             <div v-if="ongletActif === 'informations'" class="space-y-6">
@@ -845,8 +881,23 @@ const profilComposable = useProfil()
 const profil = ref<Profil | null>(null)
 const chargement = ref(true)
 const route = useRoute()
-const ongletActif = ref(typeof route.query.onglet === 'string' ? route.query.onglet : 'informations')
-const tabMenuOuvert = ref(false)
+
+/**
+ * Onglet d'arrivée.
+ *
+ * `?onglet=` fait foi quand il est donné. À défaut, `?support=<id>` suffit à
+ * désigner l'onglet : c'est ce que portent les passerelles venues des vitrines
+ * publiques (« Gérer ma chaîne » dans une section de `/medias/tele`), qui ne
+ * connaissent que l'identifiant du support. `MediaMesSupports` s'en sert
+ * ensuite pour déplier le bon panneau.
+ */
+const ongletActif = ref(
+  typeof route.query.onglet === 'string'
+    ? route.query.onglet
+    : route.query.support
+      ? 'mes-supports'
+      : 'informations',
+)
 const modeEdition = ref(false)
 const modeEditionLocalisation = ref(false)
 
@@ -864,25 +915,59 @@ const { obtenirMaCandidature } = useExperts()
 const maCandidatureExpert = ref<MaCandidatureAPI | null>(null)
 const chargementExpertise = ref(false)
 
-// ── Onglets ──
-const onglets = [
-  { id: 'informations', label: 'Informations', icon: 'fa-solid fa-user' },
-  { id: 'localisation', label: 'Localisation', icon: 'fa-solid fa-location-dot' },
-  { id: 'retrouve-amis', label: 'Retrouve Amis', icon: 'fa-solid fa-users' },
-  { id: 'securite', label: 'Securite', icon: 'fa-solid fa-lock' },
-  { id: 'bibliotheque-humaine', label: 'Bibliothèque', icon: 'fa-solid fa-book-open' },
-  { id: 'expertise', label: 'Expertise', icon: 'fa-solid fa-user-tie' },
-  { id: 'mes-echanges', label: 'Mes échanges', icon: 'fa-solid fa-right-left' },
-  { id: 'mes-evenements', label: 'Mes événements', icon: 'fa-solid fa-calendar-day' },
-  { id: 'mes-points', label: 'Mes points', icon: 'fa-solid fa-medal' },
-  { id: 'mes-supports', label: 'Mes supports médias', icon: 'fa-solid fa-tv' },
+// ── Supports médias détenus ──
+// Comptés au montage pour que l'accès à leur gestion soit visible d'emblée :
+// enfoui dans un menu de dix onglets, il ne se trouvait qu'en le cherchant.
+const { mesSupports } = useMediaDetention()
+const nombreSupports = ref(0)
+
+/** Ancre de la zone d'onglets, pour y amener le raccourci d'en-tête. */
+const zoneOnglets = ref<HTMLElement | null>(null)
+
+const allerAuxSupports = () => {
+  ongletActif.value = 'mes-supports'
+  nextTick(() => zoneOnglets.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+}
+
+// ── Sections du compte ──
+// Groupées : dix entrées d'affilée ne se parcourent pas, on les balaie. Le
+// regroupement dit aussi *pourquoi* on chercherait chaque section — réglages du
+// compte, statut d'une candidature, ou ce qu'on anime sur la plateforme.
+interface OngletProfil { id: string, label: string, icon: string }
+
+const GROUPES_ONGLETS: { titre: string, onglets: OngletProfil[] }[] = [
+  {
+    titre: 'Mon compte',
+    onglets: [
+      { id: 'informations', label: 'Informations', icon: 'fa-solid fa-user' },
+      { id: 'localisation', label: 'Localisation', icon: 'fa-solid fa-location-dot' },
+      { id: 'securite', label: 'Securite', icon: 'fa-solid fa-lock' },
+    ],
+  },
+  {
+    titre: 'Mes demandes',
+    onglets: [
+      { id: 'bibliotheque-humaine', label: 'Bibliothèque', icon: 'fa-solid fa-book-open' },
+      { id: 'expertise', label: 'Expertise', icon: 'fa-solid fa-user-tie' },
+      { id: 'retrouve-amis', label: 'Retrouve Amis', icon: 'fa-solid fa-users' },
+    ],
+  },
+  {
+    titre: 'Ce que j’anime',
+    onglets: [
+      { id: 'mes-supports', label: 'Mes supports médias', icon: 'fa-solid fa-tv' },
+      { id: 'mes-evenements', label: 'Mes événements', icon: 'fa-solid fa-calendar-day' },
+      { id: 'mes-echanges', label: 'Mes échanges', icon: 'fa-solid fa-right-left' },
+      { id: 'mes-points', label: 'Mes points', icon: 'fa-solid fa-medal' },
+    ],
+  },
 ]
 
-const ongletCourant = computed(() => onglets.find(t => t.id === ongletActif.value) || onglets[0]!)
+/** Liste à plat : la rangée mobile ignore les groupes, faute de place. */
+const onglets = GROUPES_ONGLETS.flatMap(g => g.onglets)
 
 const selectionnerOnglet = (id: string) => {
   ongletActif.value = id
-  tabMenuOuvert.value = false
 }
 
 // ── Formulaires ──
@@ -1130,6 +1215,12 @@ onMounted(async () => {
       // non bloquant
     } finally {
       chargementExpertise.value = false
+    }
+    // Compter les supports médias détenus (chaînes et stations confondues)
+    try {
+      nombreSupports.value = (await mesSupports()).length
+    } catch {
+      // non bloquant
     }
   }
   catch {

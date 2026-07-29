@@ -10,8 +10,17 @@
  * pour des contenus jamais vus (FR-054, SC-011).
  */
 import type { TeleSection, TvProgram } from '~/composables/useTelevision'
+import { LIBELLES_ROLE_DETENTEUR, type RoleDetenteur } from '~/composables/useMediaDetention'
 
-const props = defineProps<{ section: TeleSection }>()
+const props = defineProps<{
+  section: TeleSection
+  /**
+   * Rôle du visiteur sur cette chaîne, s'il la détient — renseigné par la page,
+   * qui connaît ses supports (un appel pour toutes les sections). `null` pour
+   * un visiteur ordinaire : la vitrine reste alors strictement publique.
+   */
+  monRole?: RoleDetenteur | null
+}>()
 
 const racine = ref<HTMLElement | null>(null)
 const { aEteVisible } = useObservateurVisibilite(racine)
@@ -65,6 +74,17 @@ const ouvrirDetail = () => {
   if (lien) navigateTo(lien)
 }
 
+/**
+ * Passerelle vers la gestion de sa propre chaîne (grille, demandes, équipe).
+ *
+ * L'identifiant du support est porté en requête pour que « Mes supports »
+ * déplie directement le bon panneau : sans lui, le détenteur atterrit sur une
+ * liste où il doit retrouver la chaîne qu'il vient de quitter.
+ */
+const lienGestion = computed(() =>
+  props.monRole ? `/mon-compte/mes-supports?support=${props.section.chaine.id}` : null,
+)
+
 /** Les contenus de la rangée, hors celui qui occupe déjà le bandeau. */
 const contenusRangee = computed(() =>
   props.section.contenus.filter(c => c.id !== contenuAffiche.value?.id),
@@ -113,9 +133,25 @@ const contenusRangee = computed(() =>
           <span v-if="section.chaine.category">{{ section.chaine.category }}</span>
         </p>
       </div>
-      <span class="text-xs text-gray-500 shrink-0 hidden sm:block">
-        {{ section.totalContenus }} contenu{{ section.totalContenus > 1 ? 's' : '' }}
-      </span>
+      <div class="shrink-0 flex items-center gap-3">
+        <span class="text-xs text-gray-500 hidden sm:block">
+          {{ section.totalContenus }} contenu{{ section.totalContenus > 1 ? 's' : '' }}
+        </span>
+
+        <!-- Le détenteur retrouve sa chaîne dans la vitrine : la gestion se
+             rejoint d'ici, sans repasser par son compte (grille, demandes
+             reçues, équipe). Invisible pour tout autre visiteur. -->
+        <NuxtLink
+          v-if="lienGestion"
+          :to="lienGestion"
+          class="inline-flex items-center gap-2 rounded-full border border-yellow-400 bg-yellow-400/10 text-yellow-400 px-4 py-1.5 text-xs sm:text-sm font-semibold hover:bg-yellow-400/20 transition-colors"
+          :title="`Vous êtes ${LIBELLES_ROLE_DETENTEUR[monRole!].toLowerCase()} de cette chaîne`"
+        >
+          <font-awesome-icon :icon="['fas', 'sliders']" class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">Gérer ma chaîne</span>
+          <span class="sm:hidden">Gérer</span>
+        </NuxtLink>
+      </div>
     </header>
 
     <!-- Ce que la grille programme à cet instant (US5, FR-039) -->

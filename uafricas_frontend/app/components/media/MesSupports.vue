@@ -49,6 +49,28 @@ const chargerContenus = async (detenteur: DetenteurAPI) => {
 
 const charger = async () => {
   supports.value = await mesSupports()
+  ouvrirSupportDemande()
+}
+
+/**
+ * Déplie d'emblée le panneau du support désigné par `?support=<id>`.
+ *
+ * C'est ce que visent les passerelles venues des vitrines publiques (« Gérer ma
+ * chaîne » dans une section de `/medias/tele`) : sans cela le détenteur
+ * atterrit sur une liste refermée et doit y retrouver le support qu'il vient de
+ * quitter. Un identifiant inconnu — support retiré entre-temps, lien recopié —
+ * est simplement ignoré.
+ */
+const route = useRoute()
+
+const ouvrirSupportDemande = () => {
+  const demande = route.query.support
+  const supportId = Array.isArray(demande) ? demande[0] : demande
+  if (!supportId) return
+  const cible = supports.value.find(s => s.support_id === supportId)
+  if (!cible) return
+  gestionOuverte.value = cible.id
+  chargerContenus(cible)
 }
 
 onMounted(charger)

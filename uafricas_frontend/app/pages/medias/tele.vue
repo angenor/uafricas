@@ -9,11 +9,14 @@
  */
 import type { ProgrammeVedette, TeleSection } from '~/composables/useTelevision'
 import type { ThemePhareAPI } from '~/composables/useMediaProposition'
+import type { RoleDetenteur } from '~/composables/useMediaDetention'
 
 const { obtenirVedette, listerSections, listerPays, chargement } = useTelevision()
 // Le référentiel des thèmes phares est déjà servi publiquement pour le
 // formulaire de proposition : le filtre s'y branche plutôt que d'en dupliquer un.
 const { listerThemes } = useMediaProposition()
+const { mesSupports } = useMediaDetention()
+const userStore = useUserStore()
 
 useHead({
   title: 'Télévision Africaine | AfricanS',
@@ -27,6 +30,28 @@ useHead({
 
 const vedette = ref<ProgrammeVedette | null>(null)
 const sections = ref<TeleSection[]>([])
+
+/**
+ * Rôle de détention de l'utilisateur sur les chaînes qu'il détient, indexé par
+ * identifiant de chaîne.
+ *
+ * Un seul appel au montage, plutôt qu'une interrogation par section : la liste
+ * de ses propres supports est courte, et les sections arrivent par pages
+ * successives. C'est ce qui laisse `SectionChaine` révéler l'accès à la gestion
+ * sur les seules chaînes qui lui appartiennent — le serveur restant seul juge
+ * des droits réels (`garde_detenteur`).
+ */
+const rolesParChaine = ref<Record<string, RoleDetenteur>>({})
+
+const chargerMesChaines = async () => {
+  if (!userStore.accessToken) return
+  const supports = await mesSupports()
+  rolesParChaine.value = Object.fromEntries(
+    supports
+      .filter(s => s.type_support === 'chaine_tv')
+      .map(s => [s.support_id, s.role]),
+  )
+}
 
 const page = ref(1)
 const totalPages = ref(1)
@@ -135,6 +160,9 @@ onMounted(async () => {
     obtenirVedette(),
     listerPays(),
     listerThemes(),
+    // Sans incidence sur l'affichage de la vitrine : elle ne doit pas attendre
+    // cette réponse, ni échouer avec elle.
+    chargerMesChaines(),
   ])
   vedette.value = resultatVedette
   if (resultatPays) territoires.value = resultatPays
@@ -221,6 +249,7 @@ onMounted(async () => {
           v-for="section in sections"
           :key="section.chaine.id"
           :section="section"
+          :mon-role="rolesParChaine[section.chaine.id] ?? null"
         />
 
         <div v-if="chargementSections" class="flex justify-center py-12">
