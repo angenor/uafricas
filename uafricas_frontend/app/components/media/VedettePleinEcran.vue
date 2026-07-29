@@ -1,8 +1,11 @@
 <script setup lang="ts">
 /**
  * Vedette de la page Télé : occupe toute la surface visible à l'ouverture
- * (FR-002), démarre d'elle-même le son coupé (FR-003), et invite à défiler vers
- * les sections (SC-002).
+ * (FR-002) et démarre d'elle-même le son coupé (FR-003).
+ *
+ * Le bas de la vedette est laissé au parent (slot `filtres`), qui y monte la
+ * barre de filtres : c'est elle qui invite désormais à descendre vers les
+ * sections (SC-002).
  */
 import type { ProgrammeVedette } from '~/composables/useTelevision'
 
@@ -10,8 +13,6 @@ const props = defineProps<{
   programme: ProgrammeVedette | null
   chargement?: boolean
 }>()
-
-const emit = defineEmits<{ defiler: [] }>()
 
 const sonCoupe = ref(true)
 const enPause = ref(false)
@@ -139,16 +140,12 @@ const lienDetail = computed(() =>
       </div>
     </div>
 
-    <!-- Repère de défilement : montre où continuer, sans avoir à chercher (SC-002) -->
-    <button
-      type="button"
-      class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors animate-bounce focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400 rounded"
-      aria-label="Aller aux chaînes"
-      @click="emit('defiler')"
-    >
-      <span class="text-xs uppercase tracking-wide">Nos chaînes</span>
-      <font-awesome-icon :icon="['fas', 'chevron-down']" />
-    </button>
+    <!-- Bas de vedette : la barre de filtres a remplacé le repère de défilement
+         animé (SC-002). Elle signale tout aussi bien qu'il y a du contenu sous
+         le pli, et donne en plus une prise pour y entrer. -->
+    <div class="absolute inset-x-0 bottom-0">
+      <slot name="filtres" />
+    </div>
   </section>
 </template>
 

@@ -1400,6 +1400,8 @@ export interface AdminChaineTv {
   est_en_direct: boolean
   pays_nom: string | null
   langue: string
+  /** « africans » (Africans Télé International) ou « territoire » — cf. 09o. */
+  origine_publication: string
   created_at: string
 }
 
@@ -1415,6 +1417,7 @@ export interface AdminChaineTvDetail {
   pays_nom: string | null
   langue: string
   est_en_direct: boolean
+  origine_publication: string
   etat: string
   cree_par: string
   cree_par_nom: string | null
@@ -1431,6 +1434,7 @@ export interface CreerChaineTvForm {
   pays_id: string
   langue: string
   est_en_direct: boolean
+  origine_publication: string
 }
 
 // ── Programmes RADIO (émissions) ──────────────────────────────

@@ -7,9 +7,13 @@
  * filtrable qui tenait cette page auparavant a disparu : elle donnait à voir un
  * catalogue, non une programmation.
  */
-import type { ProgrammeVedette, TeleSection, TvStat } from '~/composables/useTelevision'
+import type { ProgrammeVedette, TeleSection } from '~/composables/useTelevision'
+import type { ThemePhareAPI } from '~/composables/useMediaProposition'
 
-const { obtenirVedette, listerSections, obtenirStats, chargement } = useTelevision()
+const { obtenirVedette, listerSections, listerPays, chargement } = useTelevision()
+// Le référentiel des thèmes phares est déjà servi publiquement pour le
+// formulaire de proposition : le filtre s'y branche plutôt que d'en dupliquer un.
+const { listerThemes } = useMediaProposition()
 
 useHead({
   title: 'Télévision Africaine | AfricanS',
@@ -23,24 +27,71 @@ useHead({
 
 const vedette = ref<ProgrammeVedette | null>(null)
 const sections = ref<TeleSection[]>([])
-const stats = ref<TvStat[]>([])
 
 const page = ref(1)
 const totalPages = ref(1)
+const totalChaines = ref(0)
 const chargementSections = ref(false)
+
+// ── Filtres de la barre montée dans la vedette ────────────────────────
+const TOUS_TERRITOIRES = 'Tous les territoires'
+
+const territoires = ref<string[]>([])
+const themes = ref<ThemePhareAPI[]>([])
+
+const origine = ref('')
+const paysSelectionne = ref(TOUS_TERRITOIRES)
+const themeSelectionne = ref('')
+const enDirect = ref(false)
+
+const filtresActifs = computed(() =>
+  origine.value !== ''
+  || paysSelectionne.value !== TOUS_TERRITOIRES
+  || themeSelectionne.value !== ''
+  || enDirect.value,
+)
+
+const reinitialiserFiltres = () => {
+  origine.value = ''
+  paysSelectionne.value = TOUS_TERRITOIRES
+  themeSelectionne.value = ''
+  enDirect.value = false
+}
 
 const presentationOuverte = ref(false)
 const reglesOuvertes = ref(false)
 const propositionOuverte = ref(false)
 const ancreSections = ref<HTMLElement | null>(null)
 
-const chargerPageSections = async (numero: number) => {
-  if (chargementSections.value) return
+/**
+ * Départage les réponses concurrentes : changer deux fois de filtre coup sur
+ * coup lance deux requêtes, et la première à revenir n'est pas forcément celle
+ * qui décrit l'état courant des filtres.
+ */
+let jetonChargement = 0
+
+const chargerPageSections = async (numero: number, forcer = false) => {
+  // Le défilement infini n'empile pas les pages ; un changement de filtre, lui,
+  // doit passer même si une page est encore en vol.
+  if (chargementSections.value && !forcer) return
+  const jeton = ++jetonChargement
   chargementSections.value = true
-  const resultat = await listerSections({ page: numero, par_page: 6 })
+  const resultat = await listerSections({
+    origine: origine.value,
+    pays: paysSelectionne.value,
+    theme: themeSelectionne.value,
+    en_direct: enDirect.value,
+    page: numero,
+    par_page: 6,
+  })
+  // Réponse dépassée : une requête plus récente fait foi, y compris pour
+  // relâcher l'indicateur de chargement.
+  if (jeton !== jetonChargement) return
+
   if (resultat) {
     sections.value = numero === 1 ? resultat.sections : [...sections.value, ...resultat.sections]
     totalPages.value = resultat.totalPages
+    totalChaines.value = resultat.total
     page.value = resultat.page
   }
   chargementSections.value = false
@@ -51,6 +102,17 @@ const encoreDesSections = computed(() => page.value < totalPages.value)
 const allerAuxSections = () => {
   ancreSections.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
+
+/**
+ * Un filtre relance la liste depuis la première page et amène le visiteur au
+ * résultat : la barre siégeant en bas de la vedette, sans ce défilement il
+ * agirait à l'aveugle sur des sections qu'il ne voit pas encore.
+ */
+watch([origine, paysSelectionne, themeSelectionne, enDirect], async () => {
+  page.value = 1
+  await chargerPageSections(1, true)
+  if (filtresActifs.value) allerAuxSections()
+})
 
 /**
  * Sentinelle de fin de liste : atteindre le bas charge la page suivante, sans
@@ -69,24 +131,38 @@ watch(sentinelleVisible, (visible) => {
 })
 
 onMounted(async () => {
-  const [resultatVedette, resultatStats] = await Promise.all([
+  const [resultatVedette, resultatPays, resultatThemes] = await Promise.all([
     obtenirVedette(),
-    obtenirStats(),
+    listerPays(),
+    listerThemes(),
   ])
   vedette.value = resultatVedette
-  if (resultatStats) stats.value = resultatStats
+  if (resultatPays) territoires.value = resultatPays
+  themes.value = resultatThemes
   await chargerPageSections(1)
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-900">
-    <!-- Vedette plein écran (FR-002) -->
+    <!-- Vedette plein écran (FR-002), close par la barre de filtres -->
     <MediaVedettePleinEcran
       :programme="vedette"
       :chargement="chargement && !vedette"
-      @defiler="allerAuxSections"
-    />
+    >
+      <template #filtres>
+        <MediaBarreFiltresTele
+          v-model:origine="origine"
+          v-model:pays="paysSelectionne"
+          v-model:theme="themeSelectionne"
+          v-model:en-direct="enDirect"
+          :territoires="territoires"
+          :themes="themes"
+          :nombre-chaines="totalChaines"
+          @reinitialiser="reinitialiserFiltres"
+        />
+      </template>
+    </MediaVedettePleinEcran>
 
     <div ref="ancreSections" class="px-4 py-12">
       <div class="max-w-6xl mx-auto">
@@ -140,19 +216,6 @@ onMounted(async () => {
           @close="propositionOuverte = false"
         />
 
-        <!-- Statistiques -->
-        <div
-          v-if="stats.length > 0"
-          class="bg-linear-to-r from-custom-green to-custom-chocolat rounded-2xl p-8 text-white mb-4"
-        >
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div v-for="stat in stats" :key="stat.label" class="p-4">
-              <div class="text-4xl font-bold mb-2">{{ stat.value }}</div>
-              <div class="text-sm opacity-80">{{ stat.label }}</div>
-            </div>
-          </div>
-        </div>
-
         <!-- Une section par chaîne, empilées et découvertes au défilement -->
         <MediaSectionChaine
           v-for="section in sections"
@@ -164,10 +227,24 @@ onMounted(async () => {
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400" />
         </div>
 
-        <!-- Aucune chaîne ne porte de contenu publié (FR-008) -->
+        <!-- Aucune chaîne ne porte de contenu publié (FR-008), ou les filtres
+             de la barre ne laissent rien passer : les deux cas ne se soignent
+             pas de la même façon, ils ne se disent donc pas pareil. -->
         <div v-else-if="!sections.length" class="text-center py-16">
-          <p class="text-gray-400 text-lg">Aucune chaîne ne diffuse encore de contenu</p>
-          <p class="text-gray-500 text-sm mt-2">Revenez bientôt : les programmes arrivent.</p>
+          <p class="text-gray-400 text-lg">
+            {{ filtresActifs ? 'Aucune chaîne ne correspond à ces filtres' : 'Aucune chaîne ne diffuse encore de contenu' }}
+          </p>
+          <p class="text-gray-500 text-sm mt-2">
+            {{ filtresActifs ? 'Essayez d’élargir votre recherche.' : 'Revenez bientôt : les programmes arrivent.' }}
+          </p>
+          <button
+            v-if="filtresActifs"
+            type="button"
+            class="mt-5 rounded-full border border-yellow-400 text-yellow-400 text-sm px-5 py-2 hover:bg-yellow-400/15 transition-colors cursor-pointer"
+            @click="reinitialiserFiltres"
+          >
+            Réinitialiser les filtres
+          </button>
         </div>
 
         <div ref="sentinelle" class="h-px" />

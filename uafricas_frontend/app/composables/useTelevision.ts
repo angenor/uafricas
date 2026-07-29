@@ -16,6 +16,8 @@ export interface ChaineTvAPI {
   pays: string | null
   langue: string
   est_en_direct: boolean
+  /** « africans » (Africans Télé International) ou « territoire » — cf. 09o. */
+  origine_publication: string
   created_at: string
   /** Réactions, commentaires et partages agrégés (FR-027). */
   interactions?: CompteursInteraction | null
@@ -92,14 +94,6 @@ export interface ProgrammeTeleListeAPI {
   total_pages: number
 }
 
-/** Interface correspondant au DTO TelevisionStats du backend */
-export interface TelevisionStatsAPI {
-  nombre_chaines: number
-  nombre_pays: number
-  nombre_programmes: number
-  nombre_chaines_en_direct: number
-}
-
 /** Interface adaptée au format attendu par les composants frontend (chaîne) */
 export interface TvChannel {
   id: string
@@ -112,6 +106,8 @@ export interface TvChannel {
   country: string
   language: string
   isLive: boolean
+  /** Chaîne de la plateforme (« africans ») ou d'un territoire. */
+  origine: string
   /** Compteurs d'interaction, absents tant que l'API ne les greffe pas. */
   interactions: CompteursInteraction | null
 }
@@ -160,12 +156,6 @@ export interface ProgrammeVedette extends TvProgram {
   estRepli: boolean
 }
 
-/** Stats frontend */
-export interface TvStat {
-  value: string
-  label: string
-}
-
 /** Réponse API standardisée */
 interface ApiResponse<T> {
   success: boolean
@@ -187,6 +177,12 @@ export interface TeleSectionsFiltres {
   recherche?: string
   categorie?: string
   pays?: string
+  /** « africans » : Africans Télé International. Vide = toutes les chaînes. */
+  origine?: string
+  /** Identifiant d'un thème phare (`shared.categorie`, contexte « media »). */
+  theme?: string
+  /** `true` restreint aux chaînes en direct ; `false`/absent ne filtre pas. */
+  en_direct?: boolean
   page?: number
   par_page?: number
   contenus_par_section?: number
@@ -250,6 +246,7 @@ function mapperChaineApiVersTv(chaine: ChaineTvAPI, apiBase: string): TvChannel 
     country: chaine.pays || '',
     language: chaine.langue,
     isLive: chaine.est_en_direct,
+    origine: chaine.origine_publication || 'territoire',
     interactions: chaine.interactions ?? null,
   }
 }
@@ -277,17 +274,6 @@ function mapperProgrammeApiVersTv(programme: ProgrammeTeleAPI, apiBase: string):
     sourceMedia: programme.source_media ?? 'aucune',
     interactions: programme.interactions ?? null,
   }
-}
-
-function mapperStatsApiVersFrontend(stats: TelevisionStatsAPI): TvStat[] {
-  return [
-    { value: `${stats.nombre_chaines}+`, label: 'Chaînes TV' },
-    { value: `${stats.nombre_pays}`, label: 'Territoires Africains' },
-    // L'API renvoyait déjà ces deux comptages sans qu'ils soient jamais
-    // affichés, au profit de deux valeurs décoratives (« 24/7 », « HD+ »).
-    { value: `${stats.nombre_programmes}`, label: 'Programmes' },
-    { value: `${stats.nombre_chaines_en_direct}`, label: 'Chaînes en direct' },
-  ]
 }
 
 export const useTelevision = () => {
@@ -508,27 +494,6 @@ export const useTelevision = () => {
   }
 
   /**
-   * Récupérer les statistiques TV
-   */
-  const obtenirStats = async (): Promise<TvStat[] | null> => {
-    try {
-      const reponse = await $fetch<ApiResponse<TelevisionStatsAPI>>(
-        `${apiBase}/api/television/stats`,
-      )
-
-      if (!reponse.success || !reponse.data) {
-        throw new Error(reponse.error || 'Erreur lors du chargement des statistiques')
-      }
-
-      return mapperStatsApiVersFrontend(reponse.data)
-    }
-    catch (e: any) {
-      console.error('Erreur obtenirStats:', e)
-      return null
-    }
-  }
-
-  /**
    * Créer une nouvelle chaîne TV (authentification requise)
    */
   const creerChaine = async (form: CreerChaineTvForm): Promise<TvChannel | null> => {
@@ -642,6 +607,11 @@ export const useTelevision = () => {
       if (filtres.recherche) params.set('recherche', filtres.recherche)
       if (filtres.categorie && filtres.categorie !== 'Toutes les catégories') params.set('categorie', filtres.categorie)
       if (filtres.pays && filtres.pays !== 'Tous les territoires') params.set('pays', filtres.pays)
+      if (filtres.origine) params.set('origine', filtres.origine)
+      if (filtres.theme) params.set('theme', filtres.theme)
+      // Seul l'état « activé » se transmet : un `en_direct=false` n'exclurait
+      // pas les chaînes en direct côté serveur, il n'a donc rien à faire ici.
+      if (filtres.en_direct) params.set('en_direct', 'true')
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))
       if (filtres.contenus_par_section) params.set('contenus_par_section', String(filtres.contenus_par_section))
@@ -725,7 +695,6 @@ export const useTelevision = () => {
     obtenirProgrammeVedette,
     listerPays,
     listerCategories,
-    obtenirStats,
     creerChaine,
     creerProgrammeVedette,
   }

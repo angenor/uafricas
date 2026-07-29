@@ -10,6 +10,7 @@ const {
   chargerChaine, chargerProgramme, chargerProgrammes,
   modifierChaine, modifierProgramme, listerToutesChaines,
   definirVedetteGlobale, listerThemesPhares,
+  ORIGINES_PUBLICATION_TELE,
   loading, error,
 } = useAdminTelevision()
 const { listerPays } = useCentresCulturels()
@@ -25,7 +26,10 @@ const successMsg = ref<string | null>(null)
 const chaineForm = reactive({
   nom: '', description: '', stream_url: '', image_couverture_url: '',
   categorie: 'generaliste', pays_id: '', langue: '', est_en_direct: false,
+  origine_publication: 'territoire',
 })
+
+const aideOrigine = computed(() => ORIGINES_PUBLICATION_TELE.find(o => o.valeur === chaineForm.origine_publication)?.aide || '')
 
 const programmeForm = reactive({
   nom_emission: '', description: '', image_couverture_url: '', video_url: '',
@@ -83,6 +87,7 @@ const charger = async () => {
       chaineForm.pays_id = c.pays_id || ''
       chaineForm.langue = c.langue || ''
       chaineForm.est_en_direct = c.est_en_direct || false
+      chaineForm.origine_publication = c.origine_publication || 'territoire'
     }
   }
   else {
@@ -117,6 +122,7 @@ const sauvegarder = async () => {
         stream_url: chaineForm.stream_url.trim(),
         categorie: chaineForm.categorie,
         est_en_direct: chaineForm.est_en_direct,
+        origine_publication: chaineForm.origine_publication,
       }
       if (chaineForm.description.trim()) body.description = chaineForm.description.trim()
       if (chaineForm.image_couverture_url.trim()) body.image_couverture_url = chaineForm.image_couverture_url.trim()
@@ -270,6 +276,13 @@ onMounted(async () => {
 
             <div class="space-y-4">
               <h3 class="text-lg font-semibold border-b pb-2">Localisation & diffusion</h3>
+              <div class="form-control">
+                <label class="label"><span class="label-text">Origine de publication *</span></label>
+                <select v-model="chaineForm.origine_publication" class="select select-bordered">
+                  <option v-for="o in ORIGINES_PUBLICATION_TELE" :key="o.valeur" :value="o.valeur">{{ o.libelle }}</option>
+                </select>
+                <label class="label"><span class="label-text-alt">{{ aideOrigine }}</span></label>
+              </div>
               <div class="form-control">
                 <label class="label"><span class="label-text">Territoire</span></label>
                 <select v-model="chaineForm.pays_id" class="select select-bordered">

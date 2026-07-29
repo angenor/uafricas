@@ -26,12 +26,12 @@ pub const STATION_RADIO_TRI_COLONNES: &[&str] = &[
 
 pub const ADMIN_CHAINE_TV_LISTE_COLONNES: &str =
     "c.id, c.nom, c.categorie::TEXT as categorie, c.etat, c.est_en_direct,
-     pays.nom AS pays_nom, c.langue, c.created_at";
+     pays.nom AS pays_nom, c.langue, c.origine_publication, c.created_at";
 
 pub const ADMIN_CHAINE_TV_DETAIL_COLONNES: &str =
     "c.id, c.nom, c.slug, c.description, c.stream_url, c.image_couverture_url,
      c.categorie::TEXT as categorie, c.pays_id, pays.nom AS pays_nom,
-     c.langue, c.est_en_direct,
+     c.langue, c.est_en_direct, c.origine_publication,
      c.role_partie_prenante, c.role_partie_prenante_autre, c.nombre_signalements,
      c.etat, c.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      c.created_at, c.updated_at";
@@ -196,6 +196,8 @@ pub struct AdminChaineTvListeResponse {
     pub est_en_direct: bool,
     pub pays_nom: Option<String>,
     pub langue: String,
+    /// « africans » (Africans Télé International) ou « territoire » — cf. 09o.
+    pub origine_publication: String,
     pub created_at: DateTime<Utc>,
 }
 
@@ -212,6 +214,7 @@ pub struct AdminChaineTvDetailRow {
     pub pays_nom: Option<String>,
     pub langue: String,
     pub est_en_direct: bool,
+    pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     pub nombre_signalements: i32,
@@ -235,6 +238,7 @@ pub struct AdminChaineTvDetailResponse {
     pub pays_nom: Option<String>,
     pub langue: String,
     pub est_en_direct: bool,
+    pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     pub nombre_signalements: i32,
@@ -259,6 +263,7 @@ impl AdminChaineTvDetailRow {
             pays_nom: self.pays_nom.clone(),
             langue: self.langue.clone(),
             est_en_direct: self.est_en_direct,
+            origine_publication: self.origine_publication.clone(),
             role_partie_prenante: self.role_partie_prenante.clone(),
             role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
             nombre_signalements: self.nombre_signalements,
@@ -529,6 +534,10 @@ pub struct CreerChaineTvRequest {
     pub pays_id: Option<Uuid>,
     pub langue: Option<String>,
     pub est_en_direct: Option<bool>,
+    /// « africans » ou « territoire » : alimente le filtre « Africans Télé
+    /// International » de /medias/tele. Les deux familles cohabitent sur la
+    /// même page, contrairement à la radio (cf. 09o).
+    pub origine_publication: Option<String>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
 }
@@ -544,6 +553,8 @@ pub struct ModifierChaineTvRequest {
     pub pays_id: Option<Uuid>,
     pub langue: Option<String>,
     pub est_en_direct: Option<bool>,
+    /// « africans » ou « territoire » — cf. `CreerChaineTvRequest`.
+    pub origine_publication: Option<String>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
 }
@@ -652,6 +663,8 @@ pub struct AdminChaineTvQueryParams {
     pub categorie: Option<String>,
     pub pays_id: Option<Uuid>,
     pub etat: Option<String>,
+    /// Filtre la liste admin sur `origine_publication` (« africans » ou « territoire »).
+    pub origine: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

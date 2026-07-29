@@ -14,7 +14,7 @@ use crate::models::media_social::CompteursInteraction;
 pub const CHAINE_TV_COLONNES: &str =
     "ct.id, ct.nom, ct.slug, ct.description, ct.stream_url, ct.image_couverture_url,
      ct.categorie::text AS categorie, ct.pays_id, ct.langue, ct.est_en_direct,
-     ct.etat, ct.role_partie_prenante, ct.role_partie_prenante_autre,
+     ct.etat, ct.origine_publication, ct.role_partie_prenante, ct.role_partie_prenante_autre,
      ct.nombre_signalements, ct.cree_par, ct.created_at, ct.updated_at";
 
 // ── Structs DB ────────────────────────────────────────────────────────
@@ -32,6 +32,8 @@ pub struct ChaineTvRow {
     pub langue: String,
     pub est_en_direct: bool,
     pub etat: String,
+    /// « africans » (Africans Télé International) ou « territoire » — cf. 09o.
+    pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     pub nombre_signalements: i32,
@@ -57,6 +59,9 @@ pub struct ChaineTvResponse {
     pub pays: Option<String>,
     pub langue: String,
     pub est_en_direct: bool,
+    /// Distingue les chaînes de la plateforme (« africans ») de celles d'un
+    /// territoire : c'est le filtre « Africans Télé International ».
+    pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     pub created_at: DateTime<Utc>,
@@ -157,6 +162,7 @@ impl ChaineTvRow {
             pays: self.pays_nom.clone(),
             langue: self.langue.clone(),
             est_en_direct: self.est_en_direct,
+            origine_publication: self.origine_publication.clone(),
             role_partie_prenante: self.role_partie_prenante.clone(),
             role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
             created_at: self.created_at,
@@ -335,6 +341,13 @@ pub struct TeleSectionsQueryParams {
     pub recherche: Option<String>,
     pub pays: Option<String>,
     pub categorie: Option<String>,
+    /// « africans » ou « territoire » (09o) — filtre « Africans Télé International ».
+    pub origine: Option<String>,
+    /// Identifiant d'un thème phare (`shared.categorie`, contexte « media ») :
+    /// remonte les chaînes qui diffusent au moins un programme sur ce thème.
+    pub theme: Option<Uuid>,
+    /// `true` restreint aux chaînes actuellement en direct.
+    pub en_direct: Option<bool>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,
     pub contenus_par_section: Option<i64>,

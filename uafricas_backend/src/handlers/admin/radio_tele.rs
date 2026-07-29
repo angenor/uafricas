@@ -506,6 +506,16 @@ pub async fn lister_chaines_tv(
         }
     }
 
+    if let Some(ref origine) = params.origine {
+        let o = origine.trim();
+        if !o.is_empty() {
+            conditions.push(format!("c.origine_publication = ${}", bind_index));
+            bind_values.push(o.to_string());
+            bind_types.push("str");
+            bind_index += 1;
+        }
+    }
+
     if let Some(pays_id) = params.pays_id {
         conditions.push(format!("c.pays_id = ${}", bind_index));
         bind_uuids.push(pays_id);
@@ -606,6 +616,16 @@ pub async fn creer_chaine_tv(
         }
     }
 
+    // Même référentiel que la radio (09o reprend le CHECK de 09j) : une valeur
+    // hors whitelist violerait la contrainte en base, autant la refuser ici.
+    let origine = body.origine_publication.as_deref().unwrap_or("territoire");
+    if !crate::models::station_radio::origine_valide(origine) {
+        return Err(ApiErreur::Validation(format!(
+            "Origine de publication invalide: {} (attendu : africans ou territoire)",
+            origine
+        )));
+    }
+
     let id = Uuid::new_v4();
     let slug = generer_slug(nom);
     let categorie = body.categorie.as_deref().unwrap_or("generaliste");
@@ -614,9 +634,9 @@ pub async fn creer_chaine_tv(
     sqlx::query(
         "INSERT INTO media_content.chaine_tv
          (id, nom, slug, description, stream_url, image_couverture_url,
-          categorie, pays_id, langue, est_en_direct, etat, cree_par)
+          categorie, pays_id, langue, est_en_direct, origine_publication, etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6,
-                 $7::media_content.categorie_chaine_tv, $8, $9, $10, 'brouillon', $11)"
+                 $7::media_content.categorie_chaine_tv, $8, $9, $10, $11, 'brouillon', $12)"
     )
     .bind(id)
     .bind(nom)
@@ -628,6 +648,7 @@ pub async fn creer_chaine_tv(
     .bind(body.pays_id)
     .bind(langue)
     .bind(body.est_en_direct.unwrap_or(true))
+    .bind(origine)
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -718,6 +739,20 @@ pub async fn modifier_chaine_tv(
     }
     if let Some(v) = body.est_en_direct {
         sets.push(format!("est_en_direct = {}", v));
+    }
+
+    // Bascule la chaîne dans (ou hors de) « Africans Télé International » : la
+    // chaîne reste sur /medias/tele, seul le filtre qui la remonte change.
+    if let Some(ref origine) = body.origine_publication {
+        if !crate::models::station_radio::origine_valide(origine) {
+            return Err(ApiErreur::Validation(format!(
+                "Origine de publication invalide: {} (attendu : africans ou territoire)",
+                origine
+            )));
+        }
+        sets.push(format!("origine_publication = ${}", bind_index));
+        bind_strings.push(origine.clone());
+        bind_index += 1;
     }
 
     if body.nom.is_some() {

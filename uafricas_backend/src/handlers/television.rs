@@ -623,6 +623,39 @@ pub async fn lister_sections(
         }
     }
 
+    // « Africans Télé International » : les chaînes produites par la plateforme
+    // (09o). Une valeur hors référentiel est ignorée plutôt que rejetée — un
+    // filtre inconnu ne doit pas casser la page.
+    if let Some(ref origine) = params.origine {
+        let o = origine.trim();
+        if o == "africans" || o == "territoire" {
+            conditions.push(format!("ct.origine_publication = ${}", bind_index));
+            bind_values.push(o.to_string());
+            bind_index += 1;
+        }
+    }
+
+    // « Chaînes thématiques » : le thème phare est porté par les PROGRAMMES, non
+    // par la chaîne. Une chaîne remonte donc dès qu'elle diffuse au moins un
+    // contenu publié sur ce thème — ses autres contenus restent affichés, la
+    // section décrivant la chaîne et non le thème.
+    if let Some(theme_id) = params.theme {
+        conditions.push(format!(
+            "EXISTS (SELECT 1 FROM media_content.programme_tele pt2
+                      WHERE pt2.chaine_id = ct.id
+                        AND pt2.theme_phare_id = ${}::uuid
+                        AND pt2.etat = 'publie'
+                        AND pt2.deleted_at IS NULL)",
+            bind_index
+        ));
+        bind_values.push(theme_id.to_string());
+        bind_index += 1;
+    }
+
+    if params.en_direct.unwrap_or(false) {
+        conditions.push("ct.est_en_direct = TRUE".to_string());
+    }
+
     if let Some(ref recherche) = params.recherche {
         if !recherche.trim().is_empty() {
             conditions.push(format!(

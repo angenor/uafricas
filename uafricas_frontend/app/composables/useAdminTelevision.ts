@@ -27,6 +27,29 @@ export interface ThemePhare {
   nom: string
 }
 
+/**
+ * Origine de publication d'une chaîne TV (09o). Contrairement à la radio, elle
+ * ne sépare pas deux pages : les deux familles cohabitent sur `/medias/tele`,
+ * où « Africans Télé International » n'est qu'un filtre de la barre d'entrée.
+ */
+export type OriginePublicationTele = 'africans' | 'territoire'
+
+export const ORIGINES_PUBLICATION_TELE: { valeur: OriginePublicationTele; libelle: string; aide: string }[] = [
+  {
+    valeur: 'africans',
+    libelle: 'Africans Télé International',
+    aide: 'Chaîne produite par la plateforme — remontée par le filtre « Africans Télé International » sur /medias/tele.',
+  },
+  {
+    valeur: 'territoire',
+    libelle: 'Chaîne de territoire',
+    aide: 'Chaîne rattachée à un territoire africain — visible sur /medias/tele hors filtre Africans.',
+  },
+]
+
+export const libelleOrigineTele = (origine?: string | null) =>
+  ORIGINES_PUBLICATION_TELE.find(o => o.valeur === origine)?.libelle || 'Chaîne de territoire'
+
 // Back-office TÉLÉVISION : chaînes + programmes télé
 export const useAdminTelevision = () => {
   const { adminFetch, listerPagine, pagination, sort, loading, error, allerPage, changerTri, reinitialiserPagination } = useAdmin()
@@ -37,7 +60,7 @@ export const useAdminTelevision = () => {
   const programmes = ref<AdminProgrammeTeleEtendu[]>([])
   const programmeDetail = ref<AdminProgrammeTeleDetailEtendu | null>(null)
 
-  const filtresChaines = reactive({ recherche: '', categorie: '', pays_id: '', etat: '' })
+  const filtresChaines = reactive({ recherche: '', categorie: '', pays_id: '', etat: '', origine: '' })
   const filtresProgrammes = reactive({ recherche: '', chaine_id: '', etat: '' })
 
   // ── Chaînes ───────────────────────────────────────────────
@@ -118,6 +141,7 @@ export const useAdminTelevision = () => {
     chargerChaines, chargerChaine, creerChaine, modifierChaine, supprimerChaine, listerToutesChaines,
     chargerProgrammes, chargerProgramme, creerProgramme, modifierProgramme, supprimerProgramme,
     definirVedetteGlobale, listerThemesPhares,
+    ORIGINES_PUBLICATION_TELE,
     uploaderMedia, resoudreUrlMedia,
     allerPage, changerTri, reinitialiserPagination,
   }
