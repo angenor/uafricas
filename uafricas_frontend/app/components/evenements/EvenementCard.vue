@@ -15,6 +15,7 @@
         <EvenementsEvenementPartage
           variant="compact"
           :path="`/evenements/${evenement.id}`"
+          :evenement-id="evenement.id"
           :titre="evenement.titre"
         />
       </div>

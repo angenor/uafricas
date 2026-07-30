@@ -56,6 +56,18 @@ pub mod media {
     pub const CONTENU_SUSPENDU: &str = "media.contenu_suspendu";
 }
 
+// ── Types de notifications Engagement (feature 007-engagement-points-badges) ──
+// Émis après le commit d'un mouvement de points, **uniquement** quand quelque
+// chose de nouveau s'est réellement produit : montée de niveau, badge débloqué.
+// Un badge réévalué mais déjà détenu ne notifie pas (R7, R8, SC-010).
+
+pub mod engagement {
+    pub const NIVEAU_ATTEINT: &str = "engagement.niveau_atteint";
+    pub const BADGE_DEBLOQUE: &str = "engagement.badge_debloque";
+    /// Cible commune des deux notifications : l'espace « Mon engagement ».
+    pub const LIEN_ESPACE: &str = "/mon-compte/engagement";
+}
+
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct NotificationRow {
     pub id: Uuid,

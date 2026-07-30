@@ -3,6 +3,7 @@ import type { BiblioHumaineAPI } from '~/composables/useBibliothequeHumaine'
 import type { ExpertAPI } from '~/composables/useExperts'
 import type { MembreAPI } from '~/composables/useMembres'
 import type { EtatRelation, MembreLightAPI } from '~/composables/useAmis'
+import type { BadgeObtenu } from '~/composables/useEngagement'
 import { useUserStore } from '~/stores/user'
 
 const route = useRoute()
@@ -13,7 +14,27 @@ const { obtenirExpert } = useExperts()
 const { obtenirMembre, partagerProfil, signalerProfil } = useMembres()
 const { obtenirEtatRelation } = useAmis()
 const { demanderOuverture } = useMessagerie()
+const { obtenirBadgesPublics } = useEngagement()
 const userStore = useUserStore()
+
+// Badges obtenus, affichés publiquement à côté du badge de statut (FR-014).
+// Aucun solde ni journal n'est exposé ici : le détail chiffré reste privé.
+const badgesPublics = ref<BadgeObtenu[]>([])
+
+/** Jetons de couleur (base) → classes Tailwind, alignés sur `EngagementBadgeSucces`. */
+const CLASSES_BADGE: Record<string, string> = {
+  green: 'bg-custom-green/10 text-custom-green ring-custom-green/30',
+  chocolat: 'bg-custom-chocolat/10 text-custom-chocolat ring-custom-chocolat/30',
+  amber: 'bg-amber-50 text-amber-700 ring-amber-200',
+  sky: 'bg-sky-50 text-sky-700 ring-sky-200',
+  violet: 'bg-violet-50 text-violet-700 ring-violet-200',
+  rose: 'bg-rose-50 text-rose-600 ring-rose-200',
+  slate: 'bg-slate-100 text-slate-700 ring-slate-300',
+  gray: 'bg-gray-100 text-gray-600 ring-gray-200',
+}
+
+const classesBadge = (couleur: string | null) =>
+  CLASSES_BADGE[couleur || 'gray'] || CLASSES_BADGE.gray
 
 // État de la relation avec ce membre (FR-016)
 const etatRelation = ref<EtatRelation>('aucune')
@@ -188,14 +209,16 @@ const dateInscriptionFormatee = computed(() => {
 
 onMounted(async () => {
   chargement.value = true
-  const [m, b, e] = await Promise.all([
+  const [m, b, e, bg] = await Promise.all([
     obtenirMembre(id).catch(() => null),
     obtenirBiblio(id).catch(() => null),
     obtenirExpert(id).catch(() => null),
+    obtenirBadgesPublics(id).catch(() => []),
   ])
   membre.value = m
   biblio.value = b
   expert.value = e
+  badgesPublics.value = bg
 
   if (estBiblio.value) ongletActif.value = 'biblio'
   else if (estExpert.value) ongletActif.value = 'expert'
@@ -280,6 +303,27 @@ onMounted(async () => {
                   >
                     <font-awesome-icon icon="fa-solid fa-briefcase" />
                     Expert
+                  </span>
+                </div>
+
+                <!--
+                  Badges obtenus, à côté du badge de statut. Volontairement SANS
+                  solde, réputation ni journal : le détail chiffré de l'engagement
+                  reste privé (FR-014), seule la distinction est publique.
+                -->
+                <div
+                  v-if="badgesPublics.length > 0"
+                  class="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 mt-3"
+                >
+                  <span
+                    v-for="b in badgesPublics"
+                    :key="b.code"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1"
+                    :class="classesBadge(b.couleur)"
+                    :title="b.description"
+                  >
+                    <font-awesome-icon :icon="`fa-solid fa-${b.icone || 'award'}`" />
+                    {{ b.libelle }}
                   </span>
                 </div>
                 <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3 text-sm text-gray-600">

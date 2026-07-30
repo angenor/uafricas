@@ -125,6 +125,9 @@ const sidebarSections: SidebarSection[] = [
     faIcon: 'medal',
     children: [
       { label: 'Barème', faIcon: 'sliders', route: '/admin/engagement/regles' },
+      { label: 'Catégories', faIcon: 'layer-group', route: '/admin/engagement/categories' },
+      { label: 'Niveaux', faIcon: 'medal', route: '/admin/engagement/niveaux' },
+      { label: 'Badges', faIcon: 'award', route: '/admin/engagement/badges' },
       { label: 'Journal des points', faIcon: 'list', route: '/admin/engagement/journal' },
     ],
   },

@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useAdminEngagement, type AdminJournalRow } from '~/composables/useAdminEngagement'
+import {
+  useAdminEngagement,
+  type AdminJournalRow,
+  type AdminCategorie,
+} from '~/composables/useAdminEngagement'
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
-const { listerJournal, ajuster } = useAdminEngagement()
+const { listerJournal, ajuster, listerCategories } = useAdminEngagement()
 
 const lignes = ref<AdminJournalRow[]>([])
 const total = ref(0)
@@ -12,7 +16,10 @@ const page = ref(1)
 const taille = 30
 const chargement = ref(false)
 
-const filtres = ref<{ utilisateur_id: string, type_action: string }>({ utilisateur_id: '', type_action: '' })
+const categories = ref<AdminCategorie[]>([])
+const filtres = ref<{ utilisateur_id: string, type_action: string, categorie: string }>({
+  utilisateur_id: '', type_action: '', categorie: '',
+})
 
 // Ajustement manuel
 const ajust = ref({ utilisateur_id: '', points: 0, reputation_delta: 0, motif: '' })
@@ -27,6 +34,7 @@ const charger = async (p = 1) => {
     taille,
     utilisateur_id: filtres.value.utilisateur_id || undefined,
     type_action: filtres.value.type_action || undefined,
+    categorie: filtres.value.categorie || undefined,
   })
   lignes.value = res.elements
   total.value = res.total
@@ -34,7 +42,12 @@ const charger = async (p = 1) => {
   chargement.value = false
 }
 
-onMounted(() => charger(1))
+onMounted(async () => {
+  // Le filtre par catégorie n'a de sens que si la liste vient du serveur :
+  // les codes de catégorie sont paramétrables et ne se codent pas en dur.
+  categories.value = await listerCategories().catch(() => [])
+  await charger(1)
+})
 
 const soumettreAjustement = async () => {
   if (!ajust.value.utilisateur_id) return
@@ -93,6 +106,13 @@ const formaterDate = (iso: string) =>
         <span class="label-text text-xs">Type d'action</span>
         <input v-model="filtres.type_action" class="input input-sm input-bordered w-56" placeholder="ex. contribution_validee" />
       </label>
+      <label class="form-control">
+        <span class="label-text text-xs">Catégorie</span>
+        <select v-model="filtres.categorie" class="select select-sm select-bordered w-48">
+          <option value="">Toutes</option>
+          <option v-for="c in categories" :key="c.id" :value="c.code">{{ c.libelle }}</option>
+        </select>
+      </label>
       <button class="btn btn-sm" @click="charger(1)">Filtrer</button>
     </div>
 
@@ -100,15 +120,16 @@ const formaterDate = (iso: string) =>
     <div class="overflow-x-auto">
       <table class="table table-zebra table-sm">
         <thead>
-          <tr><th>Date</th><th>Membre</th><th>Action</th><th>Objet</th><th>Points</th><th>Réput.</th><th>Solde après</th></tr>
+          <tr><th>Date</th><th>Membre</th><th>Action</th><th>Catégorie</th><th>Objet</th><th>Points</th><th>Réput.</th><th>Solde après</th></tr>
         </thead>
         <tbody>
-          <tr v-if="chargement"><td colspan="7" class="text-center py-6"><span class="loading loading-spinner"></span></td></tr>
-          <tr v-else-if="lignes.length === 0"><td colspan="7" class="text-center py-6 text-gray-400">Aucun mouvement.</td></tr>
+          <tr v-if="chargement"><td colspan="8" class="text-center py-6"><span class="loading loading-spinner"></span></td></tr>
+          <tr v-else-if="lignes.length === 0"><td colspan="8" class="text-center py-6 text-gray-400">Aucun mouvement.</td></tr>
           <tr v-for="l in lignes" v-else :key="l.id">
             <td class="whitespace-nowrap text-xs">{{ formaterDate(l.created_at) }}</td>
             <td>{{ l.utilisateur_nom || l.utilisateur_id }}</td>
             <td class="font-mono text-xs">{{ l.type_action }}<span v-if="l.plafond_atteint" class="badge badge-warning badge-xs ml-1">plafond</span></td>
+            <td class="text-xs">{{ l.categorie_libelle || '—' }}</td>
             <td class="text-xs">{{ l.type_objet || '—' }}</td>
             <td :class="l.points >= 0 ? 'text-success font-semibold' : 'text-error font-semibold'">{{ l.points > 0 ? '+' : '' }}{{ l.points }}</td>
             <td>{{ l.reputation_delta !== 0 ? (l.reputation_delta > 0 ? '+' : '') + l.reputation_delta : '' }}</td>

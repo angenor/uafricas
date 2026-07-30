@@ -352,6 +352,7 @@
       ref="partageModalRef"
       :is-open="showPartageModal"
       :pays-nom="pays?.nom || ''"
+      :fiche-id="pays?.id"
       :est-connecte="userStore.isAuthenticated"
       @close="showPartageModal = false"
       @submit="handlePartageSubmit"

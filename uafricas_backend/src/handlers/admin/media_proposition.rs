@@ -333,6 +333,43 @@ pub async fn valider_proposition(
 
     tx.commit().await?;
 
+    // ── Points d'engagement, APRÈS le COMMIT (US4) ───────────────────────────
+    // `attribuer` prend un `&PgPool` et doit rester hors de la transaction
+    // métier : une erreur d'attribution ne doit jamais annuler une validation
+    // déjà décidée. L'anti-auto-attribution est explicite — un administrateur
+    // qui valide sa propre proposition ne se crédite pas.
+    if auteur_id != admin.id {
+        match type_objet.as_str() {
+            // Une demande d'animation acceptée par la file admin porte la MÊME
+            // clé que la même demande acceptée par les co-détenteurs : quel que
+            // soit le chemin, un seul crédit est possible.
+            "animation_programme" => {
+                crate::services::engagement::attribuer(
+                    pool.get_ref(),
+                    auteur_id,
+                    "animation_support_acceptee",
+                    Some(&type_objet),
+                    Some(proposition_id),
+                    &format!("animation:{proposition_id}"),
+                )
+                .await;
+            }
+            // Une idée retenue ne crée aucun contenu : aucune règle ne la couvre.
+            "idee_contenu" => {}
+            _ => {
+                crate::services::engagement::attribuer(
+                    pool.get_ref(),
+                    auteur_id,
+                    "proposition_media_validee",
+                    Some(&type_objet),
+                    objet_id,
+                    &format!("prop_media:{proposition_id}"),
+                )
+                .await;
+            }
+        }
+    }
+
     let ip = audit::extraire_ip(&req);
     let ua = audit::extraire_user_agent(&req);
     audit::log_action(

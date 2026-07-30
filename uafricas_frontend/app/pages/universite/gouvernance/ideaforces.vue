@@ -327,6 +327,7 @@
                   </button>
                   <UniversiteGouvernancePartagePublication
                     path="/universite/gouvernance/ideaforces"
+                    type-objet="idea_force"
                     :id="contribution.id"
                     :titre="contribution.titre"
                   />

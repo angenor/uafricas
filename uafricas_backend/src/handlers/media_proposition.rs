@@ -978,6 +978,24 @@ pub async fn accepter_engagement(
 
     tx.commit().await?;
 
+    // ── Points d'engagement, APRÈS le COMMIT (US4) ───────────────────────────
+    // Le crédit n'est PAS placé dans `appliquer_acceptation_engagement` : cette
+    // fonction partagée travaille sur une `&mut Transaction`, alors qu'`attribuer`
+    // doit rester non-bloquant, donc hors transaction. La clé d'idempotence est
+    // identique à celle du chemin administratif (`animation:{proposition_id}`),
+    // ce qui préserve l'invariant « les deux chemins produisent le même effet ».
+    if type_objet == "animation_programme" && auteur_id != moi {
+        crate::services::engagement::attribuer(
+            pool.get_ref(),
+            auteur_id,
+            "animation_support_acceptee",
+            Some(&type_objet),
+            Some(proposition_id),
+            &format!("animation:{proposition_id}"),
+        )
+        .await;
+    }
+
     let ip = audit::extraire_ip(&req);
     let ua = audit::extraire_user_agent(&req);
     audit::log_action(

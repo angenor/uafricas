@@ -215,6 +215,7 @@ useHead({
 
         <RetrouveAmisBoutonsPartage
           :slug="slug"
+          :avis-id="(avis as AvisPublicDetail).id"
           :compteur-partages="(avis as AvisPublicDetail).compteur_partages"
           :nom-recherche="(avis as AvisPublicDetail).nom_recherche"
           :prenom-recherche="(avis as AvisPublicDetail).prenom_recherche"

@@ -483,6 +483,7 @@
                   <UniversiteGouvernancePartagePublication
                     class="px-2.5 py-1"
                     path="/universite/gouvernance/factcheck"
+                    type-objet="factcheck"
                     :id="contribution.id"
                     :titre="contribution.titre"
                   />
