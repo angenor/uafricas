@@ -1,6 +1,8 @@
 //! Endpoints publics du système d'engagement (lecture).
 //! - `GET /api/engagement/mon-compte` (JWT)
-//! - `GET /api/engagement/mon-journal` (JWT, paginé)
+//! - `GET /api/engagement/mon-journal` (JWT, paginé, filtrable)
+//! - `GET /api/engagement/mes-categories` (JWT, ventilation par catégorie)
+//! - `GET /api/engagement/actions-recompensees` (public, barème)
 //! - `GET /api/engagement/niveau/{utilisateur_id}` (public léger, badge)
 
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -10,9 +12,33 @@ use uuid::Uuid;
 use crate::errors::ApiErreur;
 use crate::jwt;
 use crate::models::engagement::{
-    CompteResponse, CompteRow, JournalPage, MouvementResponse, NiveauInfo, ProchainNiveau,
+    ActionRecompensee, BadgeADebloquerResponse, BadgeCatalogueRow, BadgeObtenuResponse,
+    CategorieVentilation, CompteResponse, CompteRow, JournalPage, MesBadgesResponse,
+    MouvementResponse, NiveauInfo, ProchainNiveau, VentilationResponse,
 };
 use crate::ApiResponse;
+
+/// Charge les badges obtenus d'un membre (requête partagée par l'espace membre et
+/// le profil public — un seul SQL, donc une seule définition de « badge obtenu »).
+async fn charger_badges_obtenus(
+    pool: &PgPool,
+    utilisateur_id: Uuid,
+) -> Result<Vec<BadgeObtenuResponse>, ApiErreur> {
+    // Un badge désactivé déjà obtenu RESTE affiché chez son détenteur (FR-020) :
+    // pas de filtre `b.actif` ici, contrairement au catalogue « à débloquer ».
+    let badges = sqlx::query_as::<_, BadgeObtenuResponse>(
+        "SELECT b.code, b.libelle, b.description, b.couleur, b.icone,
+                bo.origine::text AS origine, bo.created_at AS obtenu_at
+         FROM engagement.badge_obtenu bo
+         JOIN engagement.badge b ON b.id = bo.badge_id
+         WHERE bo.utilisateur_id = $1
+         ORDER BY bo.created_at DESC, b.ordre",
+    )
+    .bind(utilisateur_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(badges)
+}
 
 /// Extrait l'utilisateur connecté depuis le header Authorization (JWT).
 fn extraire_utilisateur_id(req: &HttpRequest) -> Option<Uuid> {
@@ -109,12 +135,18 @@ pub async fn mon_compte(
     }))
 }
 
-/// Paramètres du journal.
+/// Paramètres du journal. Les filtres nuls sont neutralisés par cast paramétré
+/// (`$n::text IS NULL OR …`) — jamais de concaténation de fragments SQL.
 #[derive(serde::Deserialize)]
 pub struct JournalParams {
     pub page: Option<i64>,
     pub taille: Option<i64>,
     pub type_action: Option<String>,
+    /// Code de catégorie (`engagement.categorie_points.code`).
+    pub categorie: Option<String>,
+    /// Bornes de période, dates ISO `YYYY-MM-DD`.
+    pub depuis: Option<String>,
+    pub jusqu_a: Option<String>,
 }
 
 /// GET /api/engagement/mon-journal
@@ -130,27 +162,50 @@ pub async fn mon_journal(
     let taille = params.taille.unwrap_or(20).clamp(1, 100);
     let offset = (page - 1) * taille;
     let filtre = params.type_action.clone();
+    let categorie = params.categorie.clone();
+    let depuis = params.depuis.clone();
+    let jusqu_a = params.jusqu_a.clone();
 
+    // La condition de catégorie est identique dans les deux requêtes : la
+    // catégorie est celle FIGÉE sur le mouvement, jointe pour son code seul.
     let total: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM engagement.mouvement_points
-         WHERE utilisateur_id = $1 AND ($2::text IS NULL OR type_action = $2)",
+        "SELECT COUNT(*) FROM engagement.mouvement_points m
+         LEFT JOIN engagement.categorie_points c ON c.id = m.categorie_id
+         WHERE m.utilisateur_id = $1
+           AND ($2::text IS NULL OR m.type_action = $2)
+           AND ($3::text IS NULL OR c.code = $3)
+           AND ($4::date IS NULL OR m.created_at >= $4::date)
+           AND ($5::date IS NULL OR m.created_at < ($5::date + INTERVAL '1 day'))",
     )
     .bind(uid)
     .bind(&filtre)
+    .bind(&categorie)
+    .bind(&depuis)
+    .bind(&jusqu_a)
     .fetch_one(pool.get_ref())
     .await?;
 
     let elements = sqlx::query_as::<_, MouvementResponse>(
-        "SELECT m.id, m.type_action, r.libelle, m.type_objet, m.objet_id, m.points,
+        "SELECT m.id, m.type_action, r.libelle,
+                c.code AS categorie_code, c.libelle AS categorie_libelle,
+                m.type_objet, m.objet_id, m.points,
                 m.reputation_delta, m.solde_apres, m.plafond_atteint, m.created_at
          FROM engagement.mouvement_points m
          LEFT JOIN engagement.regle_points r ON r.type_action = m.type_action
-         WHERE m.utilisateur_id = $1 AND ($2::text IS NULL OR m.type_action = $2)
+         LEFT JOIN engagement.categorie_points c ON c.id = m.categorie_id
+         WHERE m.utilisateur_id = $1
+           AND ($2::text IS NULL OR m.type_action = $2)
+           AND ($3::text IS NULL OR c.code = $3)
+           AND ($4::date IS NULL OR m.created_at >= $4::date)
+           AND ($5::date IS NULL OR m.created_at < ($5::date + INTERVAL '1 day'))
          ORDER BY m.created_at DESC
-         LIMIT $3 OFFSET $4",
+         LIMIT $6 OFFSET $7",
     )
     .bind(uid)
     .bind(&filtre)
+    .bind(&categorie)
+    .bind(&depuis)
+    .bind(&jusqu_a)
     .bind(taille)
     .bind(offset)
     .fetch_all(pool.get_ref())
@@ -164,6 +219,240 @@ pub async fn mon_journal(
             page,
             taille,
         }),
+        error: None,
+    }))
+}
+
+/// GET /api/engagement/mes-categories — ventilation des points par catégorie (FR-011).
+///
+/// Une seule requête d'agrégation sur le journal du membre (R2 : aucun solde
+/// persisté par catégorie). `solde_points` (courant) et `total_gagne` (cumul du
+/// journal) sont exposés **séparément** : le plancher 0 peut les faire diverger,
+/// et c'est précisément l'écart que l'espace membre doit rendre compréhensible.
+pub async fn mes_categories(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let uid = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+
+    let solde_points: i32 =
+        sqlx::query_scalar("SELECT solde_points FROM engagement.compte WHERE utilisateur_id = $1")
+            .bind(uid)
+            .fetch_optional(pool.get_ref())
+            .await?
+            .unwrap_or(0);
+
+    // Les mouvements sans catégorie (antérieurs au rattrapage, règle supprimée)
+    // sont regroupés sous « Autres » et placés en fin de liste — aucune ligne
+    // n'est masquée, sinon la somme ne se réconcilierait pas avec le journal.
+    let categories = sqlx::query_as::<_, CategorieVentilation>(
+        "SELECT c.code,
+                COALESCE(c.libelle, 'Autres')            AS libelle,
+                c.couleur, c.icone,
+                COALESCE(c.ordre, 99::smallint)          AS ordre,
+                COALESCE(SUM(m.points), 0)::bigint       AS points,
+                COUNT(*)::bigint                         AS nombre_mouvements
+         FROM engagement.mouvement_points m
+         LEFT JOIN engagement.categorie_points c ON c.id = m.categorie_id
+         WHERE m.utilisateur_id = $1
+         GROUP BY c.code, c.libelle, c.couleur, c.icone, c.ordre
+         ORDER BY ordre, libelle",
+    )
+    .bind(uid)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let total_gagne: i64 = categories.iter().map(|c| c.points).sum();
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(VentilationResponse {
+            solde_points,
+            total_gagne,
+            categories,
+        }),
+        error: None,
+    }))
+}
+
+/// GET /api/engagement/actions-recompensees — barème public (FR-015, FR-016).
+///
+/// Source **unique** des libellés, montants, plafonds et seuils du barème côté
+/// front : aucune de ces valeurs n'est écrite en dur dans le frontend. Public,
+/// car le barème n'est pas une donnée sensible et l'afficher sert l'engagement.
+pub async fn actions_recompensees(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
+    let actions = sqlx::query_as::<_, ActionRecompensee>(
+        "SELECT r.type_action, r.libelle, r.points, r.reputation_delta,
+                c.code AS categorie_code, c.libelle AS categorie_libelle,
+                c.icone AS categorie_icone,
+                r.plafond_journalier, r.seuil_declencheur
+         FROM engagement.regle_points r
+         LEFT JOIN engagement.categorie_points c ON c.id = r.categorie_id
+         WHERE r.actif = TRUE
+         ORDER BY c.ordre NULLS LAST, r.points DESC, r.libelle",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(actions),
+        error: None,
+    }))
+}
+
+/// GET /api/engagement/mes-badges (FR-013, FR-018)
+///
+/// Effet de bord assumé : `evaluer_badges` est appelée **avant** de répondre.
+/// C'est ce qui rattrape les conditions devenues vraies sans mouvement — badge
+/// créé par l'administration, seuil abaissé — sans aucune tâche de fond.
+/// L'insertion étant `ON CONFLICT DO NOTHING`, l'appel est inoffensif.
+pub async fn mes_badges(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let uid = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+
+    crate::services::engagement::evaluer_badges(pool.get_ref(), uid).await;
+
+    let obtenus = charger_badges_obtenus(pool.get_ref(), uid).await?;
+
+    // Le catalogue « à débloquer » exclut les badges désactivés (retirés du
+    // catalogue) et les badges manuels : une distinction éditoriale ne se
+    // « débloque » pas, l'annoncer comme un objectif serait mensonger.
+    let restants = sqlx::query_as::<_, BadgeCatalogueRow>(
+        "SELECT b.id, b.code, b.libelle, b.description, b.couleur, b.icone
+         FROM engagement.badge b
+         WHERE b.actif = TRUE AND b.manuel = FALSE
+           AND NOT EXISTS (SELECT 1 FROM engagement.badge_obtenu bo
+                            WHERE bo.badge_id = b.id AND bo.utilisateur_id = $1)
+         ORDER BY b.ordre",
+    )
+    .bind(uid)
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let mut a_debloquer = Vec::with_capacity(restants.len());
+    for b in restants {
+        // La progression vient du même SQL que la condition d'attribution
+        // (`services::engagement`), pour que les deux ne puissent pas diverger.
+        let progression =
+            crate::services::engagement::progression_badge(pool.get_ref(), uid, b.id).await;
+        a_debloquer.push(BadgeADebloquerResponse {
+            code: b.code,
+            libelle: b.libelle,
+            description: b.description,
+            couleur: b.couleur,
+            icone: b.icone,
+            progression_actuelle: progression.map(|(actuel, _)| actuel),
+            progression_cible: progression.map(|(_, cible)| cible),
+        });
+    }
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(MesBadgesResponse { obtenus, a_debloquer }),
+        error: None,
+    }))
+}
+
+/// GET /api/engagement/badges/{utilisateur_id} — badges **publics** (FR-014).
+///
+/// Public comme `GET /niveau/{utilisateur_id}` : renvoie uniquement les badges
+/// obtenus. **Jamais** de solde, de réputation ni de mouvement — le détail
+/// chiffré de l'engagement reste privé.
+pub async fn badges_utilisateur(
+    path: web::Path<Uuid>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let badges = charger_badges_obtenus(pool.get_ref(), path.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(badges), error: None }))
+}
+
+/// Réseaux traçables (miroir de l'enum `engagement.reseau_social`).
+/// « Copier le lien » n'en fait pas partie : invérifiable et trivialement
+/// répétable, il ne compte pas.
+const RESEAUX_TRACABLES: &[&str] =
+    &["whatsapp", "facebook", "x", "linkedin", "telegram", "email"];
+
+/// Familles de contenus partageables — littéraux fixes, alignés sur les **valeurs
+/// réellement émises** par les 6 composants de partage du frontend (et non sur une
+/// nomenclature théorique : une famille mal orthographiée ferait échouer le
+/// traçage en silence).
+const FAMILLES_PARTAGEABLES: &[&str] = &[
+    // Médias radio & télé — `media/MediaPartagerModal`
+    "chaine_tv",
+    "station_radio",
+    "programme_tele",
+    "programme_radio",
+    // Opportunité Afrique — `PartagerFicheModal` et `PartagerElementModal`
+    // (valeurs de `TypeObjetElement`, composables/useOpportuniteAfrique.ts)
+    "fiche_pays",
+    "secteur_developpement",
+    "recette_culinaire",
+    "site_touristique",
+    "personnalite_connue",
+    // Événements — `evenements/EvenementPartage`
+    "evenement",
+    // Gouvernance — `universite/gouvernance/PartagePublication`
+    "idea_force",
+    "factcheck",
+    "bad_habit",
+    // Retrouve-amis — `retrouve-amis/BoutonsPartage`
+    "avis_recherche",
+];
+
+#[derive(serde::Deserialize)]
+pub struct PartageExterneRequest {
+    pub type_objet: String,
+    pub objet_id: Uuid,
+    pub reseau: String,
+}
+
+/// POST /api/engagement/partages-externes (FR-027)
+///
+/// L'identité vient **toujours** du JWT, jamais du corps : sinon n'importe qui
+/// pourrait créditer n'importe qui.
+pub async fn tracer_partage_externe(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    body: web::Json<PartageExterneRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let uid = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))?;
+
+    let reseau = body.reseau.trim().to_lowercase();
+    if !RESEAUX_TRACABLES.contains(&reseau.as_str()) {
+        return Err(ApiErreur::Validation(format!(
+            "Réseau inconnu : « {reseau} »"
+        )));
+    }
+
+    let type_objet = body.type_objet.trim();
+    if !FAMILLES_PARTAGEABLES.contains(&type_objet) {
+        return Err(ApiErreur::Validation(format!(
+            "Famille de contenus non partageable : « {type_objet} »"
+        )));
+    }
+
+    let resultat = crate::services::engagement::enregistrer_partage_externe(
+        pool.get_ref(),
+        uid,
+        type_objet,
+        body.objet_id,
+        &reseau,
+    )
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({
+            "reseaux_distincts": resultat.reseaux_distincts,
+            "seuil": resultat.seuil,
+            "bonus_attribue": resultat.bonus_attribue,
+        })),
         error: None,
     }))
 }

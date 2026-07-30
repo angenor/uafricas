@@ -33,6 +33,74 @@ const CATEGORIES_CHAINE_VALIDES: &[&str] = &[
 const ETATS_MEDIA_VALIDES: &[&str] = &["brouillon", "publie", "suspendu", "supprime"];
 
 // ══════════════════════════════════════════════════════════════
+// ENGAGEMENT — mise à la une d'un contenu média (règle `media_a_la_une`, US4)
+// ══════════════════════════════════════════════════════════════
+
+/// Crédite le créateur d'un contenu que l'équipe vient de mettre à la une.
+///
+/// Appelée **après** la mutation, jamais dans une transaction : `attribuer` est
+/// non-bloquant et une erreur de sa part ne doit pas annuler une décision
+/// éditoriale déjà prise.
+///
+/// La clé d'idempotence est portée par le **contenu**, pas par l'événement :
+/// retirer puis reposer la mise à la une ne recrédite donc pas — comportement
+/// demandé, et cohérent avec l'absence de reprise de points (pas de clawback).
+///
+/// Anti-auto-attribution : un administrateur qui met en avant un contenu qu'il a
+/// lui-même créé ne se crédite pas. En pratique, les contenus créés depuis le
+/// back-office portent `cree_par = admin.id` et ne rapportent donc rien ; seuls
+/// les contenus nés d'une proposition de membre créditent leur auteur.
+///
+/// N.B. `chaine_tv` n'a **pas** de colonne `a_la_une` : les trois tables qui la
+/// portent sont `station_radio`, `programme_tele` et `programme_radio`, à quoi
+/// s'ajoute `programme_tele.a_la_une_globale` (vedette de la page Télé).
+async fn crediter_mise_a_la_une(
+    pool: &PgPool,
+    type_objet: &str,
+    objet_id: Uuid,
+    admin_id: Uuid,
+) {
+    // Littéraux fixes → interpolation SQL sûre (même pattern que `table_pour_type`).
+    let table = match type_objet {
+        "station_radio" => "media_content.station_radio",
+        "programme_tele" => "media_content.programme_tele",
+        "programme_radio" => "media_content.programme_radio",
+        autre => {
+            log::warn!("Engagement: type_objet non éligible à la mise à la une « {autre} »");
+            return;
+        }
+    };
+
+    let sql = format!("SELECT cree_par FROM {table} WHERE id = $1 AND deleted_at IS NULL");
+    let cree_par: Option<Uuid> = match sqlx::query_scalar(&sql)
+        .bind(objet_id)
+        .fetch_optional(pool)
+        .await
+    {
+        Ok(v) => v.flatten(),
+        Err(e) => {
+            log::error!("Engagement: échec résolution du créateur de {type_objet} {objet_id}: {e}");
+            return;
+        }
+    };
+
+    let Some(cree_par) = cree_par else { return };
+    if cree_par == admin_id {
+        return;
+    }
+
+    crate::services::engagement::attribuer(
+        pool,
+        cree_par,
+        "media_a_la_une",
+        Some(type_objet),
+        Some(objet_id),
+        &format!("alaune:{type_objet}:{objet_id}"),
+    )
+    .await;
+}
+
+// ══════════════════════════════════════════════════════════════
 // STATIONS RADIO
 // ══════════════════════════════════════════════════════════════
 
@@ -250,6 +318,11 @@ pub async fn creer_station_radio(
     .execute(pool.get_ref())
     .await?;
 
+    // Mise à la une dès la création : crédite le créateur du contenu (jamais l'admin).
+    if body.a_la_une.unwrap_or(false) {
+        crediter_mise_a_la_une(pool.get_ref(), "station_radio", id, admin.id).await;
+    }
+
     log::info!("Admin {} a cree la station radio {} ({})", admin.id, nom, id);
 
     let ip = audit::extraire_ip(&req);
@@ -405,6 +478,11 @@ pub async fn modifier_station_radio(
     for v in &bind_strings { q = q.bind(v); }
     q = q.bind(id);
     q.execute(pool.get_ref()).await?;
+
+    // Seule la POSE de la mise à la une crédite ; la retirer ne reprend rien.
+    if body.a_la_une == Some(true) {
+        crediter_mise_a_la_une(pool.get_ref(), "station_radio", id, admin.id).await;
+    }
 
     log::info!("Admin {} a modifie la station radio {}", admin.id, id);
 
@@ -1070,6 +1148,10 @@ pub async fn creer_programme_radio(
 
     tx.commit().await?;
 
+    if a_la_une {
+        crediter_mise_a_la_une(pool.get_ref(), "programme_radio", id, admin.id).await;
+    }
+
     log::info!("Admin {} a cree le programme radio {} ({})", admin.id, nom, id);
 
     let ip = audit::extraire_ip(&req);
@@ -1217,6 +1299,10 @@ pub async fn modifier_programme_radio(
     q.execute(&mut *tx).await?;
 
     tx.commit().await?;
+
+    if body.a_la_une == Some(true) {
+        crediter_mise_a_la_une(pool.get_ref(), "programme_radio", id, admin.id).await;
+    }
 
     log::info!("Admin {} a modifie le programme radio {}", admin.id, id);
 
@@ -1444,6 +1530,10 @@ pub async fn creer_programme_tele(
 
     tx.commit().await?;
 
+    if a_la_une {
+        crediter_mise_a_la_une(pool.get_ref(), "programme_tele", id, admin.id).await;
+    }
+
     log::info!("Admin {} a cree le programme tele {} ({})", admin.id, nom, id);
 
     let ip = audit::extraire_ip(&req);
@@ -1605,6 +1695,10 @@ pub async fn modifier_programme_tele(
 
     tx.commit().await?;
 
+    if body.a_la_une == Some(true) {
+        crediter_mise_a_la_une(pool.get_ref(), "programme_tele", id, admin.id).await;
+    }
+
     log::info!("Admin {} a modifie le programme tele {}", admin.id, id);
 
     let ip = audit::extraire_ip(&req);
@@ -1715,6 +1809,11 @@ pub async fn definir_vedette_globale(
     .await?;
 
     tx.commit().await?;
+
+    // La vedette globale est la mise à la une la plus visible de la plateforme :
+    // elle crédite au même titre. La clé étant portée par le contenu, un contenu
+    // déjà crédité pour sa mise à la une de chaîne ne l'est pas une seconde fois.
+    crediter_mise_a_la_une(pool.get_ref(), "programme_tele", id, admin.id).await;
 
     log::info!(
         "Admin {} a designe le programme tele {} comme vedette globale",

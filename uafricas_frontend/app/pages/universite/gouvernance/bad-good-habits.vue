@@ -472,6 +472,7 @@
                   </button>
                   <UniversiteGouvernancePartagePublication
                     path="/universite/gouvernance/bad-good-habits"
+                    type-objet="bad_habit"
                     :id="contribution.id"
                     :titre="contribution.titre"
                   />

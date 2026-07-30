@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { usePartageExterne, type OptionReseau } from '~/composables/usePartageExterne'
+
 const props = defineProps<{
   /** Chemin de la page section (ex: /universite/gouvernance/ideaforces) */
   path: string
@@ -6,6 +8,12 @@ const props = defineProps<{
   id: string
   /** Titre de la publication, utilisé comme texte de partage */
   titre: string
+  /**
+   * Famille de la publication (`idea_force`, `factcheck`, `bad_habit`), nécessaire
+   * au traçage des partages externes. Optionnel : sans elle le partage fonctionne,
+   * il n'est simplement pas compté.
+   */
+  typeObjet?: 'idea_force' | 'factcheck' | 'bad_habit'
 }>()
 
 // Domaine de production : on ne partage jamais une URL localhost.
@@ -17,7 +25,7 @@ const copieOk = ref(false)
 const urlPartage = computed(() => `${BASE_URL}${props.path}?pub=${props.id}`)
 const textePartage = computed(() => props.titre)
 
-const reseaux = computed(() => [
+const reseaux = computed<OptionReseau[]>(() => [
   {
     nom: 'WhatsApp',
     url: `https://wa.me/?text=${encodeURIComponent(`${textePartage.value} ${urlPartage.value}`)}`,
@@ -41,12 +49,37 @@ const reseaux = computed(() => [
     url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(urlPartage.value)}`,
     icon: ['fab', 'linkedin'],
     couleur: 'text-[#0A66C2]',
+    reseau: 'linkedin',
+  },
+  // Telegram et e-mail complètent le catalogue : sans eux, la plateforme n'offrait
+  // que 4 réseaux et le seuil de 5 réseaux distincts du barème était
+  // structurellement inatteignable (R10).
+  {
+    nom: 'Telegram',
+    url: `https://t.me/share/url?url=${encodeURIComponent(urlPartage.value)}&text=${encodeURIComponent(textePartage.value)}`,
+    icon: ['fab', 'telegram'],
+    couleur: 'text-[#229ED9]',
+    reseau: 'telegram',
+  },
+  {
+    nom: 'E-mail',
+    url: `mailto:?subject=${encodeURIComponent(textePartage.value)}&body=${encodeURIComponent(`${textePartage.value} ${urlPartage.value}`)}`,
+    icon: ['fas', 'envelope'],
+    couleur: 'text-gray-600',
+    reseau: 'email',
   },
 ])
 
-function partager(url: string) {
-  window.open(url, '_blank', 'noopener,noreferrer,width=600,height=500')
+const { tracerPartage } = usePartageExterne()
+
+function partager(r: OptionReseau) {
+  // `mailto:` ouvre le client de messagerie : `window.open` laisserait un onglet vide.
+  if (r.url.startsWith('mailto:')) window.location.href = r.url
+  else window.open(r.url, '_blank', 'noopener,noreferrer,width=600,height=500')
   ouvert.value = false
+
+  // Traçage APRÈS l'ouverture, best-effort.
+  if (r.reseau && props.typeObjet) tracerPartage(props.typeObjet, props.id, r.reseau)
 }
 
 async function copierLien() {
@@ -87,7 +120,7 @@ async function copierLien() {
         :key="reseau.nom"
         type="button"
         class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-        @click="partager(reseau.url)"
+        @click="partager(reseau)"
       >
         <font-awesome-icon :icon="reseau.icon" :class="reseau.couleur" class="w-4" />
         {{ reseau.nom }}

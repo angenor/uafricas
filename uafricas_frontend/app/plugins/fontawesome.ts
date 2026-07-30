@@ -205,6 +205,13 @@ import {
   faVolumeHigh,
   faVolumeXmark,
   faCircleQuestion,
+  // Engagement (feature 007) : icônes des catégories de points et des badges
+  faPenNib,
+  faMagnifyingGlassChart,
+  faFeather,
+  faTrophy,
+  faLockOpen,
+  faCircleNodes,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -219,6 +226,7 @@ import {
   faInstagram,
   faYoutube,
   faWhatsapp,
+  faTelegram,
 } from '@fortawesome/free-brands-svg-icons'
 
 // Prevent auto CSS injection
@@ -440,6 +448,14 @@ library.add(
   faFilePdf,
   faRightLeft,
   faSeedling,
+  // Engagement (feature 007)
+  faPenNib,
+  faMagnifyingGlassChart,
+  faFeather,
+  faTrophy,
+  faLockOpen,
+  faCircleNodes,
+  faTelegram,
 )
 
 export default defineNuxtPlugin((nuxtApp) => {

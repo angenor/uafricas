@@ -235,6 +235,7 @@
           <div class="mb-8">
             <EvenementsEvenementPartage
               :path="`/evenements/${evenementId}`"
+              :evenement-id="evenementId"
               :titre="evenement.titre"
             />
           </div>

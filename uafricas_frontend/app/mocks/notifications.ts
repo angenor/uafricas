@@ -2,7 +2,24 @@
 // Mock — Notifications et suggestions intelligentes
 // ════════════════════════════════════════════════════════════════════════════
 
-export type TypeNotification = 'matching' | 'collaboration' | 'invitation' | 'contact' | 'systeme' | 'evenement_direct_demarre'
+/**
+ * Types de notification connus de la cloche.
+ *
+ * ⚠️ Cette union ne couvre PAS tous les types réellement émis par le backend :
+ * les types pointés (`afrolang.*`, `media.*`) retombent volontairement sur le
+ * défaut `bell`. Les types listés ici sont ceux qui méritent une icône propre.
+ */
+export type TypeNotification =
+  | 'matching'
+  | 'collaboration'
+  | 'invitation'
+  | 'contact'
+  | 'systeme'
+  | 'evenement_direct_demarre'
+  // Engagement (feature 007) : deux types pointés à qui l'on donne une identité
+  // visuelle, plutôt que de les laisser hériter de la cloche générique.
+  | 'engagement.niveau_atteint'
+  | 'engagement.badge_debloque'
 
 export interface Notification {
   id: string
@@ -48,6 +65,8 @@ export const iconeNotification = (type: TypeNotification): string => {
     contact: 'address-book',
     systeme: 'bell',
     evenement_direct_demarre: 'video',
+    'engagement.niveau_atteint': 'medal',
+    'engagement.badge_debloque': 'award',
   }
   return icones[type] || 'bell'
 }
@@ -60,6 +79,8 @@ export const couleurNotification = (type: TypeNotification): string => {
     contact: 'text-purple-600',
     systeme: 'text-stone-500',
     evenement_direct_demarre: 'text-red-600',
+    'engagement.niveau_atteint': 'text-amber-600',
+    'engagement.badge_debloque': 'text-[var(--color-custom-chocolat)]',
   }
   return couleurs[type] || 'text-stone-500'
 }

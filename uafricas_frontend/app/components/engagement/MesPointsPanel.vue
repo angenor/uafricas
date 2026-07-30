@@ -1,72 +1,42 @@
 <script setup lang="ts">
-// Panneau « Mes points / mon statut / mes badges » — Tailwind pur
-import { ref, computed, onMounted } from 'vue'
-import {
-  useEngagement,
-  type CompteEngagement,
-  type MouvementPoints,
-} from '~/composables/useEngagement'
+/**
+ * Panneau « Mes points » de l'onglet du profil — Tailwind pur.
+ *
+ * Ce panneau n'est plus l'écran complet : il tient le rôle de **résumé et de
+ * porte d'entrée** vers `/mon-compte/engagement`, qui porte la ventilation, les
+ * badges et l'historique filtrable. L'onglet du profil est conservé : des
+ * membres l'utilisent, et le retirer serait une régression d'UX non demandée
+ * (R13). Le chemin profil → onglet → page fait 2 clics (SC-003).
+ */
+import { computed, ref, onMounted } from 'vue'
+import { useEngagement, type CompteEngagement } from '~/composables/useEngagement'
 
-const { obtenirMonCompte, listerMonJournal } = useEngagement()
+const { obtenirMonCompte } = useEngagement()
 
 const compte = ref<CompteEngagement | null>(null)
-const mouvements = ref<MouvementPoints[]>([])
-const total = ref(0)
-const page = ref(1)
-const taille = 20
 const chargement = ref(true)
 const erreur = ref('')
 
-const chargerCompte = async () => {
+onMounted(async () => {
   try {
     compte.value = await obtenirMonCompte()
   } catch {
     erreur.value = 'Impossible de charger votre compte d\'engagement.'
+  } finally {
+    chargement.value = false
   }
-}
-
-const chargerJournal = async (p = 1) => {
-  try {
-    const res = await listerMonJournal(p, taille)
-    if (res) {
-      mouvements.value = res.elements
-      total.value = res.total
-      page.value = res.page
-    }
-  } catch {
-    // journal facultatif — silencieux
-  }
-}
-
-onMounted(async () => {
-  chargement.value = true
-  await Promise.all([chargerCompte(), chargerJournal(1)])
-  chargement.value = false
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / taille)))
-
-const changerPage = async (p: number) => {
-  if (p < 1 || p > totalPages.value) return
-  await chargerJournal(p)
-}
-
-// Progression vers le prochain niveau (barre)
 const progression = computed(() => {
-  if (!compte.value) return 0
-  const prochain = compte.value.prochain_niveau
+  const c = compte.value
+  if (!c) return 0
+  const prochain = c.prochain_niveau
   if (!prochain) return 100
-  const base = compte.value.niveau.seuil_min
+  const base = c.niveau.seuil_min
   const cible = prochain.seuil_min
-  const solde = compte.value.solde_points
   if (cible <= base) return 100
-  return Math.min(100, Math.round(((solde - base) / (cible - base)) * 100))
+  return Math.min(100, Math.max(0, Math.round(((c.solde_points - base) / (cible - base)) * 100)))
 })
-
-const formaterDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-
-const signe = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 </script>
 
 <template>
@@ -83,14 +53,14 @@ const signe = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
     <template v-else-if="compte">
       <!-- Cartes solde / statut / réputation -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="rounded-2xl border border-gray-100 bg-gradient-to-br from-custom-green/5 to-custom-green/10 p-5">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="rounded-2xl border border-gray-100 bg-linear-to-br from-custom-green/5 to-custom-green/10 p-5">
           <p class="text-xs uppercase tracking-wide text-gray-500">Solde de points</p>
           <p class="mt-1 text-3xl font-bold text-custom-green">{{ compte.solde_points }}</p>
-          <p class="text-xs text-gray-400 mt-1">{{ compte.solde_points_mensuel }} ce mois-ci</p>
+          <p class="mt-1 text-xs text-gray-400">{{ compte.solde_points_mensuel }} ce mois-ci</p>
         </div>
 
-        <div class="rounded-2xl border border-gray-100 bg-white p-5 flex flex-col justify-between">
+        <div class="flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-5">
           <p class="text-xs uppercase tracking-wide text-gray-500">Mon statut</p>
           <div class="mt-2">
             <EngagementBadgeStatut :niveau="compte.niveau" />
@@ -100,7 +70,7 @@ const signe = (n: number) => (n > 0 ? `+${n}` : `${n}`)
         <div class="rounded-2xl border border-gray-100 bg-white p-5">
           <p class="text-xs uppercase tracking-wide text-gray-500">Réputation</p>
           <p class="mt-1 text-3xl font-bold text-custom-chocolat">{{ compte.reputation }}</p>
-          <p class="text-xs text-gray-400 mt-1">Score de confiance</p>
+          <p class="mt-1 text-xs text-gray-400">Score de confiance</p>
         </div>
       </div>
 
@@ -114,60 +84,27 @@ const signe = (n: number) => (n > 0 ? `+${n}` : `${n}`)
             encore {{ compte.prochain_niveau.points_restants }} pts
           </span>
         </div>
-        <div class="mt-3 h-2.5 w-full rounded-full bg-gray-100 overflow-hidden">
-          <div class="h-full rounded-full bg-custom-green transition-all" :style="{ width: progression + '%' }"></div>
+        <div class="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+          <div class="h-full rounded-full bg-custom-green transition-all" :style="{ width: progression + '%' }" />
         </div>
       </div>
 
-      <!-- Historique -->
-      <div class="rounded-2xl border border-gray-100 bg-white overflow-hidden">
-        <div class="px-5 py-3 border-b border-gray-100">
-          <h3 class="text-sm font-semibold text-gray-700">Historique des points</h3>
-        </div>
-
-        <p v-if="mouvements.length === 0" class="px-5 py-8 text-center text-sm text-gray-400">
-          Aucun mouvement pour l'instant. Contribuez pour gagner vos premiers points !
-        </p>
-
-        <ul v-else class="divide-y divide-gray-50">
-          <li v-for="m in mouvements" :key="m.id" class="flex items-center justify-between px-5 py-3">
-            <div class="min-w-0">
-              <p class="text-sm font-medium text-gray-800 truncate">
-                {{ m.libelle || m.type_action }}
-                <span v-if="m.plafond_atteint" class="ml-1 text-[10px] text-amber-600">(plafond atteint)</span>
-              </p>
-              <p class="text-xs text-gray-400">{{ formaterDate(m.created_at) }}</p>
-            </div>
-            <div class="text-right shrink-0 pl-3">
-              <span
-                class="text-sm font-bold"
-                :class="m.points >= 0 ? 'text-custom-green' : 'text-red-600'"
-              >{{ signe(m.points) }}</span>
-              <span v-if="m.reputation_delta !== 0" class="block text-[11px] text-custom-chocolat">
-                réputation {{ signe(m.reputation_delta) }}
-              </span>
-            </div>
-          </li>
-        </ul>
-
-        <div v-if="totalPages > 1" class="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-          <button
-            class="text-sm text-gray-500 disabled:opacity-40 hover:text-gray-800"
-            :disabled="page <= 1"
-            @click="changerPage(page - 1)"
-          >
-            <font-awesome-icon icon="fa-solid fa-chevron-left" /> Précédent
-          </button>
-          <span class="text-xs text-gray-400">Page {{ page }} / {{ totalPages }}</span>
-          <button
-            class="text-sm text-gray-500 disabled:opacity-40 hover:text-gray-800"
-            :disabled="page >= totalPages"
-            @click="changerPage(page + 1)"
-          >
-            Suivant <font-awesome-icon icon="fa-solid fa-chevron-right" />
-          </button>
-        </div>
-      </div>
+      <!-- Porte d'entrée vers l'espace complet -->
+      <NuxtLink
+        to="/mon-compte/engagement"
+        class="group flex items-center justify-between gap-4 rounded-2xl border border-custom-green/30 bg-custom-green/5 px-5 py-4 transition hover:border-custom-green/60 hover:bg-custom-green/10"
+      >
+        <span class="min-w-0">
+          <span class="block text-sm font-semibold text-custom-green">Voir tout mon engagement</span>
+          <span class="block text-xs text-gray-500">
+            L'origine de vos points, vos badges et votre historique complet
+          </span>
+        </span>
+        <font-awesome-icon
+          icon="fa-solid fa-chevron-right"
+          class="shrink-0 text-custom-green transition-transform group-hover:translate-x-1"
+        />
+      </NuxtLink>
     </template>
   </div>
 </template>

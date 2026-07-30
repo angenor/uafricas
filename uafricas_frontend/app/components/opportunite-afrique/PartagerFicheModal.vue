@@ -1,8 +1,15 @@
 <script setup lang="ts">
+import { usePartageExterne, type OptionReseau } from '~/composables/usePartageExterne'
+
 interface Props {
   isOpen: boolean
   paysNom: string
   estConnecte?: boolean
+  /**
+   * Identifiant de la fiche pays, nécessaire au traçage des partages externes.
+   * Optionnel : sans lui le partage fonctionne, il n'est simplement pas compté.
+   */
+  ficheId?: string
 }
 
 const props = defineProps<Props>()
@@ -41,15 +48,34 @@ const urlLinkedIn = computed(() =>
   `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(urlPage.value)}`,
 )
 
-const reseaux = computed(() => [
-  { nom: 'WhatsApp', url: urlWhatsApp.value, icon: ['fab', 'whatsapp'], couleur: 'bg-[#25D366] hover:bg-[#1da851]' },
-  { nom: 'Facebook', url: urlFacebook.value, icon: ['fab', 'facebook'], couleur: 'bg-[#1877F2] hover:bg-[#0d65d9]' },
-  { nom: 'X / Twitter', url: urlTwitter.value, icon: ['fab', 'twitter'], couleur: 'bg-black hover:bg-gray-800' },
-  { nom: 'LinkedIn', url: urlLinkedIn.value, icon: ['fab', 'linkedin'], couleur: 'bg-[#0A66C2] hover:bg-[#084e96]' },
+// Telegram et e-mail complètent le catalogue : sans eux, la plateforme n'offrait
+// que 4 réseaux et le seuil de 5 réseaux distincts du barème était structurellement
+// inatteignable (R10).
+const urlTelegram = computed(() =>
+  `https://t.me/share/url?url=${encodeURIComponent(urlPage.value)}&text=${encodeURIComponent(textePartage.value)}`,
+)
+const urlEmail = computed(() =>
+  `mailto:?subject=${encodeURIComponent(textePartage.value)}&body=${encodeURIComponent(`${textePartage.value} ${urlPage.value}`)}`,
+)
+
+const reseaux = computed<OptionReseau[]>(() => [
+  { nom: 'WhatsApp', url: urlWhatsApp.value, icon: ['fab', 'whatsapp'], couleur: 'bg-[#25D366] hover:bg-[#1da851]', reseau: 'whatsapp' },
+  { nom: 'Facebook', url: urlFacebook.value, icon: ['fab', 'facebook'], couleur: 'bg-[#1877F2] hover:bg-[#0d65d9]', reseau: 'facebook' },
+  { nom: 'X / Twitter', url: urlTwitter.value, icon: ['fab', 'twitter'], couleur: 'bg-black hover:bg-gray-800', reseau: 'x' },
+  { nom: 'LinkedIn', url: urlLinkedIn.value, icon: ['fab', 'linkedin'], couleur: 'bg-[#0A66C2] hover:bg-[#084e96]', reseau: 'linkedin' },
+  { nom: 'Telegram', url: urlTelegram.value, icon: ['fab', 'telegram'], couleur: 'bg-[#229ED9] hover:bg-[#1b7fae]', reseau: 'telegram' },
+  { nom: 'E-mail', url: urlEmail.value, icon: ['fas', 'envelope'], couleur: 'bg-gray-600 hover:bg-gray-700', reseau: 'email' },
 ])
 
-const partagerReseau = (url: string) => {
-  window.open(url, '_blank', 'noopener,noreferrer,width=600,height=500')
+const { tracerPartage } = usePartageExterne()
+
+const partagerReseau = (r: OptionReseau) => {
+  // `mailto:` ouvre le client de messagerie : `window.open` laisserait un onglet
+  // vide derrière lui.
+  if (r.url.startsWith('mailto:')) window.location.href = r.url
+  else window.open(r.url, '_blank', 'noopener,noreferrer,width=600,height=500')
+
+  if (r.reseau && props.ficheId) tracerPartage('fiche_pays', props.ficheId, r.reseau)
 }
 
 const partageNatif = async () => {
@@ -184,7 +210,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                     class="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md active:scale-95 cursor-pointer"
                     :class="reseau.couleur"
                     :title="`Partager sur ${reseau.nom}`"
-                    @click="partagerReseau(reseau.url)"
+                    @click="partagerReseau(reseau)"
                   >
                     <font-awesome-icon :icon="reseau.icon" />
                     <span class="hidden sm:inline">{{ reseau.nom }}</span>
