@@ -74,95 +74,105 @@ const classeSelect = [
 </script>
 
 <template>
-  <div class="w-full bg-linear-to-t from-black via-black/80 to-transparent pt-10 pb-4">
-    <!-- Défilement horizontal sous `sm` : la barre reste sur une ligne et ne
-         mange pas la vedette sur les petits écrans. -->
-    <div
-      class="max-w-6xl mx-auto px-4 flex flex-nowrap sm:flex-wrap items-center justify-start sm:justify-center gap-2 sm:gap-3 overflow-x-auto sm:overflow-visible pb-1"
-    >
-      <!-- Africans Télé International (FR — chaînes de la plateforme) -->
-      <button
-        type="button"
-        :class="classePastille(estAfricans)"
-        :aria-pressed="estAfricans"
-        @click="basculerAfricans"
+  <div class="w-full bg-linear-to-t from-black via-black/80 to-transparent pt-12 pb-5">
+    <!-- Le dégradé seul laissait les pastilles à nu sur l'image : un panneau
+         teinté et flouté leur donne un socle commun, qui tient la barre lisible
+         quelle que soit la vedette diffusée derrière. Le chocolat de la charte
+         plutôt qu'un gris neutre : la barre se lit alors comme un élément de la
+         page, non comme un voile posé sur la vidéo. Le jaune de l'anneau est
+         celui des filtres actifs, il détache le panneau sur les images sombres. -->
+    <div class="max-w-6xl mx-auto px-4">
+      <!-- Défilement horizontal sous `sm` : la barre reste sur une ligne et ne
+           mange pas la vedette sur les petits écrans. Le fond est porté par le
+           conteneur défilant lui-même, il reste donc fixe sous les pastilles
+           qui glissent. -->
+      <div
+        class="flex flex-nowrap sm:flex-wrap items-center justify-start sm:justify-center gap-2 sm:gap-3 overflow-x-auto sm:overflow-visible rounded-2xl bg-linear-to-r from-black/85 via-custom-chocolat/45 to-black/85 ring-1 ring-yellow-400/35 backdrop-blur-md shadow-lg shadow-black/50 px-3 py-2.5"
       >
-        <font-awesome-icon :icon="['fas', 'globe']" class="w-4 h-4" />
-        Africans Télé International
-      </button>
-
-      <!-- Territoire -->
-      <div class="relative shrink-0">
-        <font-awesome-icon
-          :icon="['fas', 'earth-africa']"
-          class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-          :class="pays !== TOUS_TERRITOIRES ? 'text-yellow-400' : 'text-gray-300'"
-        />
-        <select
-          :value="pays"
-          :class="[...classeSelect, 'w-52', pays !== TOUS_TERRITOIRES ? 'ring-yellow-400 text-yellow-400' : '']"
-          aria-label="Filtrer par territoire"
-          @change="emit('update:pays', ($event.target as HTMLSelectElement).value)"
-        >
-          <option class="bg-gray-900 text-white" :value="TOUS_TERRITOIRES">Tous les territoires</option>
-          <option v-for="t in territoires" :key="t" class="bg-gray-900 text-white" :value="t">{{ t }}</option>
-        </select>
-        <font-awesome-icon
-          :icon="['fas', 'chevron-down']"
-          class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
-        />
-      </div>
-
-      <!-- Chaînes thématiques -->
-      <div class="relative shrink-0">
-        <font-awesome-icon
-          :icon="['fas', 'layer-group']"
-          class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-          :class="theme ? 'text-yellow-400' : 'text-gray-300'"
-        />
-        <select
-          :value="theme"
-          :class="[...classeSelect, 'w-60', theme ? 'ring-yellow-400 text-yellow-400' : '']"
-          aria-label="Filtrer par thème"
-          @change="emit('update:theme', ($event.target as HTMLSelectElement).value)"
-        >
-          <option class="bg-gray-900 text-white" value="">Chaînes thématiques</option>
-          <option v-for="t in themes" :key="t.id" class="bg-gray-900 text-white" :value="t.id">{{ t.nom }}</option>
-        </select>
-        <font-awesome-icon
-          :icon="['fas', 'chevron-down']"
-          class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
-        />
-      </div>
-
-      <!-- En direct -->
-      <button
-        type="button"
-        :class="classePastille(enDirect)"
-        :aria-pressed="enDirect"
-        @click="basculerDirect"
-      >
-        <span
-          class="w-2 h-2 rounded-full"
-          :class="enDirect ? 'bg-red-600' : 'bg-red-500 animate-pulse'"
-        />
-        En direct
-      </button>
-
-      <!-- Compte-rendu du filtrage : sans lui, un résultat vide ressemble à une
-           page cassée plutôt qu'à un filtre trop étroit. -->
-      <div v-if="filtresActifs" class="flex shrink-0 items-center gap-2">
-        <span v-if="nombreChaines !== undefined" class="text-xs text-gray-300 whitespace-nowrap">
-          {{ nombreChaines }} chaîne{{ nombreChaines > 1 ? 's' : '' }}
-        </span>
+        <!-- Africans Télé International (FR — chaînes de la plateforme) -->
         <button
           type="button"
-          class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/25 text-gray-300 px-3 py-2 text-xs font-medium whitespace-nowrap hover:border-yellow-400 hover:text-yellow-400 transition-colors cursor-pointer"
-          @click="emit('reinitialiser')"
+          :class="classePastille(estAfricans)"
+          :aria-pressed="estAfricans"
+          @click="basculerAfricans"
         >
-          <font-awesome-icon :icon="['fas', 'xmark']" class="w-3 h-3" />
-          Réinitialiser
+          <font-awesome-icon :icon="['fas', 'globe']" class="w-4 h-4" />
+          Africans Télé International
         </button>
+
+        <!-- Territoire -->
+        <div class="relative shrink-0">
+          <font-awesome-icon
+            :icon="['fas', 'earth-africa']"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+            :class="pays !== TOUS_TERRITOIRES ? 'text-yellow-400' : 'text-gray-300'"
+          />
+          <select
+            :value="pays"
+            :class="[...classeSelect, 'w-52', pays !== TOUS_TERRITOIRES ? 'ring-yellow-400 text-yellow-400' : '']"
+            aria-label="Filtrer par territoire"
+            @change="emit('update:pays', ($event.target as HTMLSelectElement).value)"
+          >
+            <option class="bg-gray-900 text-white" :value="TOUS_TERRITOIRES">Tous les territoires</option>
+            <option v-for="t in territoires" :key="t" class="bg-gray-900 text-white" :value="t">{{ t }}</option>
+          </select>
+          <font-awesome-icon
+            :icon="['fas', 'chevron-down']"
+            class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
+          />
+        </div>
+
+        <!-- Chaînes thématiques -->
+        <div class="relative shrink-0">
+          <font-awesome-icon
+            :icon="['fas', 'layer-group']"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+            :class="theme ? 'text-yellow-400' : 'text-gray-300'"
+          />
+          <select
+            :value="theme"
+            :class="[...classeSelect, 'w-60', theme ? 'ring-yellow-400 text-yellow-400' : '']"
+            aria-label="Filtrer par thème"
+            @change="emit('update:theme', ($event.target as HTMLSelectElement).value)"
+          >
+            <option class="bg-gray-900 text-white" value="">Chaînes thématiques</option>
+            <option v-for="t in themes" :key="t.id" class="bg-gray-900 text-white" :value="t.id">{{ t.nom }}</option>
+          </select>
+          <font-awesome-icon
+            :icon="['fas', 'chevron-down']"
+            class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
+          />
+        </div>
+
+        <!-- En direct -->
+        <button
+          type="button"
+          :class="classePastille(enDirect)"
+          :aria-pressed="enDirect"
+          @click="basculerDirect"
+        >
+          <span
+            class="w-2 h-2 rounded-full"
+            :class="enDirect ? 'bg-red-600' : 'bg-red-500 animate-pulse'"
+          />
+          En direct
+        </button>
+
+        <!-- Compte-rendu du filtrage : sans lui, un résultat vide ressemble à une
+             page cassée plutôt qu'à un filtre trop étroit. -->
+        <div v-if="filtresActifs" class="flex shrink-0 items-center gap-2">
+          <span v-if="nombreChaines !== undefined" class="text-xs text-gray-300 whitespace-nowrap">
+            {{ nombreChaines }} chaîne{{ nombreChaines > 1 ? 's' : '' }}
+          </span>
+          <button
+            type="button"
+            class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/25 text-gray-300 px-3 py-2 text-xs font-medium whitespace-nowrap hover:border-yellow-400 hover:text-yellow-400 transition-colors cursor-pointer"
+            @click="emit('reinitialiser')"
+          >
+            <font-awesome-icon :icon="['fas', 'xmark']" class="w-3 h-3" />
+            Réinitialiser
+          </button>
+        </div>
       </div>
     </div>
   </div>
