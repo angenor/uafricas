@@ -326,13 +326,16 @@ export interface GroupeEthniqueListeAPI extends PageMeta {
 // ──────────────────────────────────────────────────────────────
 
 /** Niveau de modérateur de session calculé côté serveur (FR-001/FR-001b).
- *  `demarreur` = placeholder (utilisateur lambda ayant démarré la session). */
+ *  `demarreur` = placeholder (utilisateur lambda ayant démarré la session).
+ *  `promu_session` = co-modérateur nommé en séance — le SEUL révocable depuis
+ *  la salle, les autres découlant d'un rôle porté par la salle elle-même. */
 export type NiveauModerateur =
   | 'admin_plateforme'
   | 'admin_salle'
   | 'moderateur_attitre'
   | 'createur_salle_privee'
   | 'demarreur'
+  | 'promu_session'
 
 /** Demande de passation de modération en cours (placeholder → modérateur désigné). */
 export interface PassationEnAttenteAPI {
@@ -416,13 +419,31 @@ export interface ModerationDataPacket {
     | 'passation_resolue'
     | 'moderateur_ajoute'
     | 'moderateur_retire'
+    | 'micro_coupe'
+    | 'micros_coupes'
   payload:
     | ModerationPermissionPayload
     | SpotlightInfoAPI
     | PassationDemandePayload
     | PassationResoluePayload
     | ModerateurChangePayload
+    | MicroCoupePayload
+    | MicrosCoupesPayload
     | null
+}
+
+/** Un modérateur a coupé le micro d'un participant précis. */
+export interface MicroCoupePayload {
+  session_id: string
+  utilisateur_id: string
+  par: string
+}
+
+/** Un modérateur a coupé le micro de toute la salle. */
+export interface MicrosCoupesPayload {
+  session_id: string
+  utilisateurs: string[]
+  par: string
 }
 
 /** Reponse API standardisee */
@@ -624,6 +645,13 @@ export const useAfrolang = () => {
   const spotlightActif = useState<SpotlightInfoAPI | null>('afrolang.spotlightActif', () => null)
   /** Refonte multi-modérateurs : demande de passation en cours dans la session active. */
   const demandePassation = useState<PassationEnAttenteAPI | null>('afrolang.demandePassation', () => null)
+  /** Horodatage de la dernière coupure de MON micro par un modérateur. Le SDK
+   *  LiveKit applique déjà le mute serveur ; ce signal sert seulement à dire au
+   *  participant que le silence vient d'une décision, pas d'un incident. */
+  const microCoupeParModerateur = useState<number | null>('afrolang.microCoupeParModerateur', () => null)
+  const signalerMonMicroCoupe = () => {
+    microCoupeParModerateur.value = Date.now()
+  }
 
   /** Suis-je modérateur effectif de la session active (dérivé du niveau serveur) ? */
   const suisJeModerateur = computed<boolean>(() => monNiveauModerateurSession.value !== null)
@@ -636,6 +664,7 @@ export const useAfrolang = () => {
     moderateursOffice.value = []
     spotlightActif.value = null
     demandePassation.value = null
+    microCoupeParModerateur.value = null
   }
 
   /** Headers d'authentification si l'utilisateur est connecte */
@@ -1482,6 +1511,81 @@ export const useAfrolang = () => {
     }
   }
 
+  /** Retire la modération à un co-modérateur promu en séance (`promu_session`). */
+  const retirerModerateurSession = async (
+    sessionId: string,
+    utilisateurId: string,
+  ): Promise<boolean | { erreur: 'interdit' | 'irrevocable' | 'autre' }> => {
+    erreur.value = null
+    try {
+      await $fetch(
+        `${apiBase}/api/afrolang/sessions/${sessionId}/moderation/moderateurs/${utilisateurId}`,
+        { method: 'DELETE', headers: authHeaders() },
+      )
+      return true
+    }
+    catch (e: unknown) {
+      const obj = e as { status?: number; statusCode?: number }
+      const code = obj.status ?? obj.statusCode
+      if (code === 403) return { erreur: 'interdit' }
+      if (code === 409) return { erreur: 'irrevocable' }
+      erreur.value = extraireMessage(e, 'Impossible de retirer la modération.')
+      console.error('Erreur retirerModerateurSession:', e)
+      return { erreur: 'autre' }
+    }
+  }
+
+  /** Coupe le micro d'un participant (mute appliqué par le serveur LiveKit).
+   *  `coupe` vaut faux quand il n'y avait rien à couper (micro déjà fermé,
+   *  participant déconnecté) — ce n'est pas une erreur. */
+  const couperMicroParticipant = async (
+    sessionId: string,
+    utilisateurId: string,
+  ): Promise<{ coupe: boolean } | { erreur: 'interdit' | 'autre' }> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<{ utilisateur_id: string, coupe: boolean }>>(
+        `${apiBase}/api/afrolang/sessions/${sessionId}/moderation/couper-micro`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: { utilisateur_id: utilisateurId },
+        },
+      )
+      return { coupe: !!reponse.data?.coupe }
+    }
+    catch (e: unknown) {
+      const obj = e as { status?: number; statusCode?: number }
+      const code = obj.status ?? obj.statusCode
+      if (code === 403) return { erreur: 'interdit' }
+      erreur.value = extraireMessage(e, 'Impossible de couper ce micro.')
+      console.error('Erreur couperMicroParticipant:', e)
+      return { erreur: 'autre' }
+    }
+  }
+
+  /** Coupe le micro de tous les participants — modérateurs présents exceptés. */
+  const couperTousLesMicros = async (
+    sessionId: string,
+  ): Promise<{ coupes: number } | { erreur: 'interdit' | 'autre' }> => {
+    erreur.value = null
+    try {
+      const reponse = await $fetch<ApiResponse<{ coupes: number }>>(
+        `${apiBase}/api/afrolang/sessions/${sessionId}/moderation/couper-micros`,
+        { method: 'POST', headers: authHeaders() },
+      )
+      return { coupes: reponse.data?.coupes ?? 0 }
+    }
+    catch (e: unknown) {
+      const obj = e as { status?: number; statusCode?: number }
+      const code = obj.status ?? obj.statusCode
+      if (code === 403) return { erreur: 'interdit' }
+      erreur.value = extraireMessage(e, 'Impossible de couper les micros.')
+      console.error('Erreur couperTousLesMicros:', e)
+      return { erreur: 'autre' }
+    }
+  }
+
   // ── Feature 005 — US6 : Ressources et messagerie ──────────────────────
 
   const listerRessources = async (salleId: string): Promise<RessourceSalleAPI[]> => {
@@ -1964,6 +2068,17 @@ export const useAfrolang = () => {
             // Le SET de modérateurs a changé : re-fetch autoritaire.
             void listerPermissionsTableauBlanc(sessionId)
             break
+          case 'micro_coupe': {
+            const p = data.payload as MicroCoupePayload
+            if (p.utilisateur_id === userStore.user?.id) signalerMonMicroCoupe()
+            break
+          }
+          case 'micros_coupes': {
+            const p = data.payload as MicrosCoupesPayload
+            const moi = userStore.user?.id
+            if (moi && p.utilisateurs?.includes(moi)) signalerMonMicroCoupe()
+            break
+          }
         }
       }
       catch {
@@ -2101,6 +2216,11 @@ export const useAfrolang = () => {
     reinitialiserEtatModeration,
     accepterPassation,
     finaliserPassation,
+    // Modération en séance : co-modérateurs & micros
+    retirerModerateurSession,
+    couperMicroParticipant,
+    couperTousLesMicros,
+    microCoupeParModerateur,
   }
 }
 

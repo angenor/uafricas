@@ -238,6 +238,31 @@
 
       <!-- Overlay des réactions emoji flottantes (s'envolent à la Meet) -->
       <AfrolangReactionsOverlay ref="reactionsOverlayRef" />
+
+      <!-- Mon micro vient d'être coupé par un modérateur -->
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="translate-y-2 opacity-0"
+        leave-active-class="transition duration-150 ease-in"
+        leave-to-class="translate-y-2 opacity-0"
+      >
+        <div
+          v-if="bandeauMicroCoupe"
+          class="fixed bottom-28 left-1/2 -translate-x-1/2 z-10000 flex items-center gap-3 rounded-full bg-gray-800 border border-amber-500/50 px-4 py-2.5 text-sm text-amber-100 shadow-2xl"
+          role="status"
+        >
+          <font-awesome-icon :icon="['fas', 'microphone-slash']" class="w-4 h-4 text-amber-400" />
+          <span>Un modérateur a coupé votre micro. Vous pouvez le réactiver.</span>
+          <button
+            type="button"
+            class="text-amber-300/70 hover:text-white"
+            aria-label="Fermer"
+            @click="bandeauMicroCoupe = false"
+          >
+            <font-awesome-icon :icon="['fas', 'xmark']" class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </Transition>
     </div>
 
     <!-- Sidebar participants -->
@@ -379,6 +404,7 @@ const {
   spotlightActif,
   suisJeModerateur,
   demandePassation,
+  microCoupeParModerateur,
   listerPermissionsTableauBlanc,
   attacherListenerModeration,
   reinitialiserEtatModeration,
@@ -435,6 +461,20 @@ const ressourcesOuvertes = ref(false)
  *  pendant qu'il l'était (remis à zéro à l'ouverture par le composant enfant). */
 const chatOuvert = ref(false)
 const chatNonLus = ref(0)
+
+/** Bandeau « votre micro a été coupé ». Le mute lui-même vient du serveur
+ *  LiveKit (le SDK le reflète déjà dans `microActif` via `TrackMuted`) ; ce
+ *  bandeau ne fait qu'en donner la RAISON, pour que le silence ne passe pas
+ *  pour une panne. */
+const bandeauMicroCoupe = ref(false)
+let minuteurBandeauMicro: ReturnType<typeof setTimeout> | null = null
+
+watch(microCoupeParModerateur, (valeur) => {
+  if (!valeur) return
+  bandeauMicroCoupe.value = true
+  if (minuteurBandeauMicro) clearTimeout(minuteurBandeauMicro)
+  minuteurBandeauMicro = setTimeout(() => { bandeauMicroCoupe.value = false }, 6000)
+})
 const tableauBlancOuvert = ref(false)
 const microActif = ref(true)
 
@@ -796,6 +836,7 @@ watch(moderateursOffice, () => {
 
 onBeforeUnmount(async () => {
   if (dureeInterval) clearInterval(dureeInterval)
+  if (minuteurBandeauMicro) clearTimeout(minuteurBandeauMicro)
   window.removeEventListener('resize', reBornerLargeurTableauBlanc)
   if (detacherListenerModeration) {
     detacherListenerModeration()

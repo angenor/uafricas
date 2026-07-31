@@ -2,10 +2,11 @@
 // Espace commentaires temps réel de session (US6) — persistance REST +
 // diffusion instantanée par DataPacket LiveKit (`type: 'chat'`).
 //
-// Le POST persiste le message et renvoie sa forme canonique (id + auteur) ;
-// c'est CETTE forme qui est ensuite diffusée aux autres participants, pour que
-// tout le monde partage exactement les mêmes identifiants (dédoublonnage sûr
-// lors d'une reprise d'historique).
+// La diffusion est faite PAR LE SERVEUR après l'INSERT, pas par le client
+// émetteur : le token de session refuse `can_publish_data` à tout participant
+// ordinaire (canal data réservé au tableau blanc), si bien qu'une diffusion
+// côté client ne servirait le direct qu'aux modérateurs. Le client se contente
+// donc d'écouter — et d'afficher son propre message, qu'il connaît déjà.
 //
 // Le composant reste MONTÉ même quand le panneau est replié (`v-show` côté
 // parent) : sans cela il manquerait les paquets reçus pendant la fermeture, et
@@ -53,7 +54,6 @@ const nonLus = ref(0)
  *  et par la reprise d'historique `since`. */
 const idsConnus = new Set<string>()
 
-const encodeur = new TextEncoder()
 const decodeur = new TextDecoder()
 
 const initiales = (auteur: MessageSessionAPI): string => {
@@ -165,20 +165,6 @@ const envoyer = async () => {
   colleEnBas.value = true
   ajouterMessage(message)
   await defiler(true)
-  diffuser(message)
-}
-
-/** Diffuse le message persisté aux autres participants (fiable : le chat ne
- *  tolère pas la perte, contrairement aux réactions éphémères). */
-const diffuser = (message: MessageSessionAPI) => {
-  const room = props.room
-  if (!room?.localParticipant) return
-  const payload = JSON.stringify({ type: 'chat', message })
-  void room.localParticipant
-    .publishData(encodeur.encode(payload), { reliable: true })
-    .catch((e: unknown) => {
-      console.error('Erreur publishData chat:', e)
-    })
 }
 
 const surDataPacket = (payload: Uint8Array) => {
@@ -195,11 +181,10 @@ const surDataPacket = (payload: Uint8Array) => {
   }
 }
 
-/** Filet de rattrapage périodique. La diffusion temps réel repose sur le client
- *  ÉMETTEUR : si son `publishData` échoue (data channel pas encore prêt, sortie
- *  immédiate…), personne d'autre ne verra jamais le message. Ce sondage léger
- *  (une requête `since`, souvent vide) garantit la convergence, LiveKit restant
- *  le chemin instantané. */
+/** Filet de rattrapage périodique. Le `send_data` serveur est best-effort (son
+ *  échec est journalisé, jamais propagé, pour ne pas faire échouer un message
+ *  pourtant persisté) : ce sondage léger — une requête `since`, le plus souvent
+ *  vide — garantit la convergence, LiveKit restant le chemin instantané. */
 const INTERVALLE_RATTRAPAGE_MS = 30_000
 let minuteurRattrapage: ReturnType<typeof setInterval> | null = null
 

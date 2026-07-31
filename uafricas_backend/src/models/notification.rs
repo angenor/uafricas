@@ -19,6 +19,8 @@ pub mod afrolang {
     /// Une demande de passation de modération a été ouverte (un modérateur
     /// désigné est entré ; le démarreur « placeholder » est invité à céder).
     pub const MODERATION_DEMANDE_PASSATION: &str = "afrolang.moderation_demande_passation";
+    /// Un co-modérateur promu en séance a été rétrogradé participant.
+    pub const MODERATION_RETIREE: &str = "afrolang.moderation_retiree";
     pub const ADHESION_DEMANDEE: &str = "afrolang.adhesion_demandee";
     pub const ADHESION_ACCEPTEE: &str = "afrolang.adhesion_acceptee";
     pub const ADHESION_REFUSEE: &str = "afrolang.adhesion_refusee";

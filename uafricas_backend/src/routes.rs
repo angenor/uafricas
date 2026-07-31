@@ -915,6 +915,10 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/sessions/{id}/signalement", web::post().to(session_signalement::signaler_session))
                     // Transfert de modération (feature 005, US3)
                     .route("/sessions/{id}/moderation/transferer", web::put().to(afrolang::transferer_moderation_session))
+                    // Modération en séance : co-modérateurs & coupure des micros
+                    .route("/sessions/{id}/moderation/moderateurs/{utilisateur_id}", web::delete().to(afrolang::retirer_moderateur_session))
+                    .route("/sessions/{id}/moderation/couper-micro", web::post().to(afrolang::couper_micro_participant))
+                    .route("/sessions/{id}/moderation/couper-micros", web::post().to(afrolang::couper_tous_les_micros))
                     // Passation de modération multi-modérateurs (refonte 2026-06)
                     .route("/sessions/{id}/passation/accepter", web::post().to(afrolang::accepter_passation))
                     .route("/sessions/{id}/passation/finaliser", web::post().to(afrolang::finaliser_passation))
