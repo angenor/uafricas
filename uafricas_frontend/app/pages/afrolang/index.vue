@@ -108,7 +108,7 @@
       <!-- Content with Sidebar -->
       <div class="flex gap-8">
         <!-- Desktop Sidebar -->
-        <div class="hidden lg:block w-80 flex-shrink-0">
+        <div class="hidden lg:block w-82 shrink-0">
           <AfrolangSalleFilters
             v-model="filtres"
             :total-salles="totalSalles"
@@ -461,7 +461,7 @@ const filtres = ref<SalleFiltres>({
   recherche: '',
   langue: '',
   pays_id: '',
-  zone: 'afrique',
+  zone: 'tout',
 })
 
 // Pays d'origine disponibles (feature 001-afrolang-pays-origine).
@@ -787,7 +787,7 @@ const handleSearch = () => {
 }
 
 const resetFilters = () => {
-  filtres.value = { recherche: '', langue: '', pays_id: '', zone: 'afrique' }
+  filtres.value = { recherche: '', langue: '', pays_id: '', zone: 'tout' }
   currentPage.value = 1
 }
 

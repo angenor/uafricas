@@ -174,6 +174,111 @@ pub async fn fermer_session_admin(
     Ok(())
 }
 
+/// Coupe le micro d'un participant depuis le serveur (`MutePublishedTrack`).
+///
+/// Le mute est AUTORITAIRE : il s'applique au SFU, pas au bon vouloir du client
+/// visé. Comme dans Meet, le participant reste libre de se réactiver ensuite —
+/// couper définitivement la parole relèverait de `can_publish`, pas d'un mute.
+///
+/// Retourne `true` si une piste micro active a bien été coupée. `false` couvre
+/// les cas normaux (participant déconnecté, micro déjà coupé, aucune piste
+/// publiée) : ce sont des non-évènements, pas des erreurs.
+pub async fn couper_micro_participant(
+    cfg: &LivekitConfig,
+    room_name: &str,
+    identity: &str,
+) -> Result<bool, ApiErreur> {
+    let client = room_client(cfg);
+
+    let infos = match client.get_participant(room_name, identity).await {
+        Ok(infos) => infos,
+        Err(err) => {
+            // Cas courant : le participant a quitté la room entre-temps.
+            eprintln!(
+                "[livekit_moderation] get_participant({}, {}) a échoué : {}",
+                room_name, identity, err
+            );
+            return Ok(false);
+        }
+    };
+
+    let Some(sid) = sid_micro_actif(&infos) else {
+        return Ok(false);
+    };
+
+    if let Err(err) = client
+        .mute_published_track(room_name, identity, &sid, true)
+        .await
+    {
+        eprintln!(
+            "[livekit_moderation] mute_published_track({}, {}, {}) a échoué : {}",
+            room_name, identity, sid, err
+        );
+        return Ok(false);
+    }
+    Ok(true)
+}
+
+/// Coupe le micro de TOUS les participants de la room, sauf les identités
+/// exclues (auteur de l'action et modérateurs protégés).
+///
+/// La liste des participants vient de LiveKit et non de Postgres : seuls comptent
+/// ceux réellement connectés au SFU, et `session_participant` peut porter des
+/// lignes obsolètes (déconnexion brutale sans `quitte_at`).
+///
+/// Retourne les identités effectivement coupées.
+pub async fn couper_micros_room(
+    cfg: &LivekitConfig,
+    room_name: &str,
+    exclusions: &[String],
+) -> Result<Vec<String>, ApiErreur> {
+    let client = room_client(cfg);
+
+    let participants = match client.list_participants(room_name).await {
+        Ok(p) => p,
+        Err(err) => {
+            eprintln!(
+                "[livekit_moderation] list_participants({}) a échoué : {}",
+                room_name, err
+            );
+            return Ok(Vec::new());
+        }
+    };
+
+    let mut coupes = Vec::new();
+    for infos in participants {
+        let identity = infos.identity.clone();
+        if exclusions.iter().any(|e| e == &identity) {
+            continue;
+        }
+        let Some(sid) = sid_micro_actif(&infos) else {
+            continue;
+        };
+        match client
+            .mute_published_track(room_name, &identity, &sid, true)
+            .await
+        {
+            Ok(_) => coupes.push(identity),
+            Err(err) => eprintln!(
+                "[livekit_moderation] mute_published_track({}, {}) a échoué : {}",
+                room_name, identity, err
+            ),
+        }
+    }
+    Ok(coupes)
+}
+
+/// SID de la piste micro publiée et NON déjà coupée d'un participant.
+/// `None` si le participant ne publie pas de micro ou l'a déjà coupé — inutile
+/// alors d'appeler LiveKit.
+fn sid_micro_actif(infos: &proto::ParticipantInfo) -> Option<String> {
+    infos
+        .tracks
+        .iter()
+        .find(|t| t.source == proto::TrackSource::Microphone as i32 && !t.muted)
+        .map(|t| t.sid.clone())
+}
+
 /// Publie un DataPacket JSON sur le canal `RELIABLE` à tous les participants
 /// de la room. Utilisé pour notifier en temps réel les mutations de modération
 /// (permission_update, spotlight).
@@ -182,19 +287,34 @@ pub async fn publier_evenement_moderation(
     room_name: &str,
     payload: &serde_json::Value,
 ) -> Result<(), ApiErreur> {
+    publier_evenement(cfg, room_name, payload, "moderation").await
+}
+
+/// Publie un DataPacket JSON `RELIABLE` sur un `topic` donné.
+///
+/// Passer par le serveur plutôt que par le client émetteur est nécessaire dès
+/// que l'émetteur n'a pas `can_publish_data` — c'est le cas de tout participant
+/// ordinaire, à qui le token de session refuse le canal data (réservé au
+/// tableau blanc). La clé API serveur, elle, n'est pas soumise à ce grant.
+pub async fn publier_evenement(
+    cfg: &LivekitConfig,
+    room_name: &str,
+    payload: &serde_json::Value,
+    topic: &str,
+) -> Result<(), ApiErreur> {
     let bytes = serde_json::to_vec(payload)
         .map_err(|e| ApiErreur::BaseDeDonnees(format!("Sérialisation DataPacket: {}", e)))?;
 
     let options = SendDataOptions {
         kind: proto::data_packet::Kind::Reliable,
-        topic: Some("moderation".to_string()),
+        topic: Some(topic.to_string()),
         ..Default::default()
     };
 
     if let Err(err) = room_client(cfg).send_data(room_name, bytes, options).await {
         eprintln!(
-            "[livekit_moderation] send_data({}) a échoué : {}",
-            room_name, err
+            "[livekit_moderation] send_data({}, topic={}) a échoué : {}",
+            room_name, topic, err
         );
     }
     Ok(())

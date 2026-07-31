@@ -129,12 +129,12 @@
               <h4 class="text-sm font-medium text-gray-700 mb-2">Territoire</h4>
 
               <!-- Choix de la zone (radio) qui pilote le contenu du menu déroulant -->
-              <div class="grid grid-cols-2 gap-2 mb-3">
+              <div class="grid grid-cols-3 gap-2 mb-3">
                 <label
                   v-for="option in ZONES_TERRITOIRE"
                   :key="option.value"
                   :class="[
-                    'flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all',
+                    'flex items-center justify-center px-2 py-2 rounded-md text-xs font-medium whitespace-nowrap cursor-pointer transition-all',
                     zoneTerritoire === option.value
                       ? 'bg-custom-green text-white shadow-sm'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
@@ -387,14 +387,22 @@ const total = ref(0)
 
 // Zone géographique qui pilote le contenu du menu déroulant des territoires
 const ZONES_TERRITOIRE = [
+  { value: 'tout' as const, label: 'Tout' },
   { value: 'afrique' as const, label: 'Afrique' },
   { value: 'hors_afrique' as const, label: 'Hors Afrique' },
 ]
-const zoneTerritoire = ref<'afrique' | 'hors_afrique'>('afrique')
+type ZoneTerritoire = (typeof ZONES_TERRITOIRE)[number]['value']
+const zoneTerritoire = ref<ZoneTerritoire>('tout')
 
-const territoiresDisponibles = computed(() =>
-  zoneTerritoire.value === 'afrique' ? PAYS_AFRICAINS : PAYS_HORS_AFRIQUE
-)
+// En zone « Tout » le menu déroulant n'est pas filtré : les deux listes sont
+// fusionnées (une seule entrée « Tous les territoires », en tête).
+const territoiresDisponibles = computed(() => {
+  if (zoneTerritoire.value === 'afrique') return PAYS_AFRICAINS
+  if (zoneTerritoire.value === 'hors_afrique') return PAYS_HORS_AFRIQUE
+  const tous = [...PAYS_AFRICAINS.slice(1), ...PAYS_HORS_AFRIQUE.slice(1)]
+    .sort((a, b) => a.label.localeCompare(b.label, 'fr'))
+  return [{ value: '', label: 'Tous les territoires' }, ...tous]
+})
 
 // Changer de zone réinitialise le territoire choisi (contenus disjoints)
 // et recharge la liste des programmes (filtre serveur, pagination remise à 1)
@@ -404,7 +412,8 @@ watch(zoneTerritoire, () => {
 })
 
 const filtresActifs = computed(() =>
-  filtres.value.type !== 'tous'
+  zoneTerritoire.value !== 'tout'
+  || filtres.value.type !== 'tous'
   || !!filtres.value.pays
   || !!filtres.value.domaine
   || !!filtres.value.recherche
@@ -444,7 +453,7 @@ const voirDetail = (programme: SabbatiqueAPI) => {
 }
 
 const reinitialiserFiltres = () => {
-  zoneTerritoire.value = 'afrique'
+  zoneTerritoire.value = 'tout'
   filtres.value = {
     type: 'tous',
     pays: '',

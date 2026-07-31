@@ -72,6 +72,23 @@
             <font-awesome-icon :icon="['fas', 'flag']" class="w-4 h-4" />
             <span class="hidden sm:inline">{{ aSignaleSession ? 'Signalé' : 'Signaler' }}</span>
           </button>
+          <!-- Espace commentaires temps réel des participants -->
+          <button
+            class="relative px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
+            :class="chatOuvert ? 'bg-sky-500 text-white' : 'bg-gray-700/60 text-sky-300'"
+            aria-label="Ouvrir l'espace commentaires"
+            title="Commenter en direct avec les participants"
+            @click="chatOuvert = !chatOuvert"
+          >
+            <font-awesome-icon :icon="['fas', 'comments']" class="w-4 h-4" />
+            <span class="hidden sm:inline">Commentaires</span>
+            <span
+              v-if="chatNonLus > 0 && !chatOuvert"
+              class="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
+            >
+              {{ chatNonLus > 99 ? '99+' : chatNonLus }}
+            </span>
+          </button>
           <!-- Ressources contribuées (feature 001-ressources-fermeture-session, US1) -->
           <button
             class="px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
@@ -149,6 +166,21 @@
           @fermer="moderationPanelOuvert = false"
         />
 
+        <!-- Espace commentaires temps réel — monté EN PERMANENCE (`v-show`) : replié,
+             il continue d'écouter les DataPackets pour tenir le compteur de non-lus. -->
+        <aside
+          v-show="chatOuvert"
+          class="w-full max-w-sm border-l border-gray-700"
+        >
+          <AfrolangSalleChat
+            :session-id="session.id"
+            :room="room"
+            :visible="chatOuvert"
+            @non-lus="chatNonLus = $event"
+            @fermer="chatOuvert = false"
+          />
+        </aside>
+
         <!-- Ressources contribuées (feature 001-ressources-fermeture-session, US1) -->
         <aside
           v-if="ressourcesOuvertes && salleIdPourRessources"
@@ -206,6 +238,31 @@
 
       <!-- Overlay des réactions emoji flottantes (s'envolent à la Meet) -->
       <AfrolangReactionsOverlay ref="reactionsOverlayRef" />
+
+      <!-- Mon micro vient d'être coupé par un modérateur -->
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="translate-y-2 opacity-0"
+        leave-active-class="transition duration-150 ease-in"
+        leave-to-class="translate-y-2 opacity-0"
+      >
+        <div
+          v-if="bandeauMicroCoupe"
+          class="fixed bottom-28 left-1/2 -translate-x-1/2 z-10000 flex items-center gap-3 rounded-full bg-gray-800 border border-amber-500/50 px-4 py-2.5 text-sm text-amber-100 shadow-2xl"
+          role="status"
+        >
+          <font-awesome-icon :icon="['fas', 'microphone-slash']" class="w-4 h-4 text-amber-400" />
+          <span>Un modérateur a coupé votre micro. Vous pouvez le réactiver.</span>
+          <button
+            type="button"
+            class="text-amber-300/70 hover:text-white"
+            aria-label="Fermer"
+            @click="bandeauMicroCoupe = false"
+          >
+            <font-awesome-icon :icon="['fas', 'xmark']" class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </Transition>
     </div>
 
     <!-- Sidebar participants -->
@@ -347,6 +404,7 @@ const {
   spotlightActif,
   suisJeModerateur,
   demandePassation,
+  microCoupeParModerateur,
   listerPermissionsTableauBlanc,
   attacherListenerModeration,
   reinitialiserEtatModeration,
@@ -399,6 +457,24 @@ const wasConnected = ref(false)
 const sidebarOuverte = ref(false)
 const moderationPanelOuvert = ref(false)
 const ressourcesOuvertes = ref(false)
+/** Espace commentaires : panneau replié par défaut, compteur de messages reçus
+ *  pendant qu'il l'était (remis à zéro à l'ouverture par le composant enfant). */
+const chatOuvert = ref(false)
+const chatNonLus = ref(0)
+
+/** Bandeau « votre micro a été coupé ». Le mute lui-même vient du serveur
+ *  LiveKit (le SDK le reflète déjà dans `microActif` via `TrackMuted`) ; ce
+ *  bandeau ne fait qu'en donner la RAISON, pour que le silence ne passe pas
+ *  pour une panne. */
+const bandeauMicroCoupe = ref(false)
+let minuteurBandeauMicro: ReturnType<typeof setTimeout> | null = null
+
+watch(microCoupeParModerateur, (valeur) => {
+  if (!valeur) return
+  bandeauMicroCoupe.value = true
+  if (minuteurBandeauMicro) clearTimeout(minuteurBandeauMicro)
+  minuteurBandeauMicro = setTimeout(() => { bandeauMicroCoupe.value = false }, 6000)
+})
 const tableauBlancOuvert = ref(false)
 const microActif = ref(true)
 
@@ -760,6 +836,7 @@ watch(moderateursOffice, () => {
 
 onBeforeUnmount(async () => {
   if (dureeInterval) clearInterval(dureeInterval)
+  if (minuteurBandeauMicro) clearTimeout(minuteurBandeauMicro)
   window.removeEventListener('resize', reBornerLargeurTableauBlanc)
   if (detacherListenerModeration) {
     detacherListenerModeration()

@@ -156,6 +156,10 @@ pub async fn lister_evenements(
     }
 
     // Filtre par zone geographique (Afrique / Hors Afrique).
+    // Un evenement ne porte qu'UN territoire (`e.pays_id`) : les deux zones sont
+    // disjointes par construction, aucun correctif de recouvrement n'est requis.
+    // Toute autre valeur (`tout`, absente) n'applique aucun filtre — voir la
+    // branche `_ => {}` ci-dessous.
     // La liste des codes ISO2 africains est une constante figee (aucun risque
     // d'injection) : on l'injecte directement dans le IN, sans bind parametre.
     if let Some(ref zone) = params.zone {
@@ -164,7 +168,7 @@ pub async fn lister_evenements(
             .map(|c| format!("'{}'", c))
             .collect::<Vec<_>>()
             .join(",");
-        match zone.as_str() {
+        match zone.trim() {
             "afrique" => conditions.push(format!(
                 "EXISTS (SELECT 1 FROM shared.pays p WHERE p.id = e.pays_id \
                  AND LOWER(p.code_iso2) IN ({}))",

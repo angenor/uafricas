@@ -40,12 +40,12 @@
       </label>
 
       <!-- Choix de la zone (radio) qui pilote le contenu du menu déroulant -->
-      <div class="grid grid-cols-2 gap-2 mb-3">
+      <div class="grid grid-cols-3 gap-2 mb-3">
         <label
           v-for="option in ZONES_TERRITOIRE"
           :key="option.value"
           :class="[
-            'flex items-center justify-center px-3 py-2 rounded-xl text-sm font-medium cursor-pointer transition-all',
+            'flex items-center justify-center px-2 py-2 rounded-xl text-xs font-medium whitespace-nowrap cursor-pointer transition-all',
             zoneTerritoire === option.value
               ? 'bg-blue-500 text-white shadow-sm'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
@@ -111,13 +111,16 @@ const localFiltres = ref<SalleFiltres>({ ...props.modelValue })
 
 // Zone géographique qui pilote le contenu du menu déroulant des territoires
 const ZONES_TERRITOIRE = [
+  { value: 'tout' as const, label: 'Tout' },
   { value: 'afrique' as const, label: 'Afrique' },
   { value: 'hors_afrique' as const, label: 'Hors Afrique' },
 ]
+type ZoneTerritoire = (typeof ZONES_TERRITOIRE)[number]['value']
+
 // La zone est portée par le modèle (`filtres.zone`) : elle filtre aussi la
 // liste des salles, pas seulement le contenu du menu déroulant des territoires.
-const zoneTerritoire = computed<'afrique' | 'hors_afrique'>({
-  get: () => localFiltres.value.zone ?? 'afrique',
+const zoneTerritoire = computed<ZoneTerritoire>({
+  get: () => localFiltres.value.zone ?? 'tout',
   set: (valeur) => {
     localFiltres.value.zone = valeur
     // Contenus disjoints : changer de zone réinitialise le territoire choisi.
@@ -131,9 +134,10 @@ const PAYS_AFRICAINS_SET = new Set<string>(PAYS_AFRICAINS_ISO2)
 const estAfricain = (p: PaysOrigineLight): boolean =>
   !!p.code_iso2 && PAYS_AFRICAINS_SET.has(p.code_iso2.toLowerCase())
 
-const territoiresDisponibles = computed(() =>
-  props.pays.filter(p => (zoneTerritoire.value === 'afrique' ? estAfricain(p) : !estAfricain(p))),
-)
+const territoiresDisponibles = computed(() => {
+  if (zoneTerritoire.value === 'tout') return props.pays
+  return props.pays.filter(p => (zoneTerritoire.value === 'afrique' ? estAfricain(p) : !estAfricain(p)))
+})
 
 watch(
   () => props.modelValue,
@@ -141,7 +145,10 @@ watch(
     localFiltres.value = { ...newValue }
     // Aligner la zone sur le territoire sélectionné (ex. reset externe), sans
     // repasser par le setter de la computed (qui émettrait / viderait pays_id).
-    const selection = props.pays.find(p => p.id === newValue.pays_id)
+    // En zone « Tout » on ne réaligne pas : le choix englobe les deux zones.
+    const selection = newValue.zone === 'tout'
+      ? undefined
+      : props.pays.find(p => p.id === newValue.pays_id)
     if (selection) {
       localFiltres.value.zone = estAfricain(selection) ? 'afrique' : 'hors_afrique'
     }

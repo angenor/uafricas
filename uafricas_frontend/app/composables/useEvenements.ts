@@ -152,8 +152,13 @@ export interface EvenementFiltres {
   recherche?: string
   format?: string
   pays?: string
-  /** Zone geographique : 'afrique' (defaut) ou 'hors_afrique' */
-  zone?: 'afrique' | 'hors_afrique'
+  /**
+   * Zone géographique : 'afrique', 'hors_afrique' ou 'tout'.
+   * ⚠️ 'tout' n'est PAS transmis à l'API : c'est l'absence de filtre de zone.
+   * Le backend ignorerait de toute façon une valeur inconnue, mais on évite
+   * d'envoyer un paramètre qui n'a pas de sens côté serveur.
+   */
+  zone?: 'afrique' | 'hors_afrique' | 'tout'
   annee?: number
   page?: number
   par_page?: number
@@ -317,7 +322,8 @@ export const useEvenements = () => {
       if (filtres.recherche) params.set('recherche', filtres.recherche)
       if (filtres.format) params.set('format', filtres.format)
       if (filtres.pays) params.set('pays', filtres.pays)
-      if (filtres.zone) params.set('zone', filtres.zone)
+      // 'tout' = aucun filtre de zone : le paramètre n'est pas envoyé.
+      if (filtres.zone && filtres.zone !== 'tout') params.set('zone', filtres.zone)
       if (filtres.annee) params.set('annee', String(filtres.annee))
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))

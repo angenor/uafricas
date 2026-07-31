@@ -55,7 +55,7 @@
         <!-- Structure avec sidebar a gauche et contenu principal -->
         <div class="flex gap-8">
           <!-- Left Sidebar - Profile Filters (Desktop uniquement) -->
-          <div class="hidden lg:block w-80 flex-shrink-0">
+          <div class="hidden lg:block w-82 shrink-0">
             <ExpertsExpertFilters
               v-model:selected-country="selectedCountry"
               v-model:selected-specialty="selectedSpecialty"
@@ -365,8 +365,11 @@ const totalPages = ref(1)
 const searchTerm = ref('')
 const categorySelected = ref('Tout')
 const selectedCountry = ref('')
-/** Zone géographique du territoire (radio binaire) : filtre aussi la liste. Défaut : Afrique. */
-const selectedZone = ref<'afrique' | 'hors_afrique'>('afrique')
+/**
+ * Zone géographique du territoire : filtre aussi la liste des experts.
+ * Défaut « Tout » — non transmis à l'API, donc aucune restriction de zone.
+ */
+const selectedZone = ref<'afrique' | 'hors_afrique' | 'tout'>('tout')
 const selectedProfile = ref('')
 /** Spécialité choisie dans les filtres ('' = toutes). */
 const selectedSpecialty = ref('')
@@ -463,7 +466,7 @@ const sortExperts = (order: 'recent' | 'experience' | 'rating') => {
 const resetFilters = () => {
   categorySelected.value = 'Tout'
   selectedCountry.value = ''
-  selectedZone.value = 'afrique'
+  selectedZone.value = 'tout'
   selectedProfile.value = ''
   selectedSpecialty.value = ''
   searchTerm.value = ''

@@ -1460,6 +1460,12 @@ pub struct MettreEnEvidencePayload {
     pub utilisateur_id: Uuid,
 }
 
+/// Cible d'une coupure de micro par un modérateur de session.
+#[derive(Debug, Deserialize)]
+pub struct CouperMicroPayload {
+    pub utilisateur_id: Uuid,
+}
+
 /// Niveau de modérateur calculé applicatif (FR-001/FR-001b).
 /// Sérialisé en `snake_case` pour le frontend.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -1473,6 +1479,11 @@ pub enum NiveauModerateur {
     /// la modère en attendant qu'un modérateur attitré/admin prenne la main.
     /// Capacités minimales (ni spotlight, ni fermeture pour abus).
     Demarreur,
+    /// Co-modérateur promu EN SESSION par un modérateur en place. Capacités
+    /// identiques au démarreur, mais révocable — c'est le seul niveau qu'un
+    /// modérateur peut retirer, les autres découlant d'un rôle (admin de salle,
+    /// attitré, créateur) qui ne se défait pas depuis une session.
+    PromuSession,
 }
 
 impl NiveauModerateur {
@@ -1490,5 +1501,20 @@ impl NiveauModerateur {
     /// désactiver la salle eux-mêmes.
     pub fn peut_fermer_pour_abus(&self) -> bool {
         matches!(self, Self::AdminPlateforme | Self::AdminSalle)
+    }
+
+    /// Rang hiérarchique, du plus fort au plus faible. Sert à empêcher une
+    /// guerre de modérateurs : on ne coupe le micro d'un modérateur qu'avec un
+    /// rang STRICTEMENT supérieur — sinon un promu pourrait faire taire l'admin
+    /// de salle qui vient de le promouvoir.
+    pub fn rang(&self) -> u8 {
+        match self {
+            Self::AdminPlateforme => 5,
+            Self::AdminSalle => 4,
+            Self::CreateurSallePrivee => 3,
+            Self::ModerateurAttitre => 2,
+            Self::Demarreur => 1,
+            Self::PromuSession => 1,
+        }
     }
 }

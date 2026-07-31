@@ -181,7 +181,10 @@ pub struct EvenementQueryParams {
     pub recherche: Option<String>,
     pub format: Option<String>,
     pub pays: Option<String>,
-    /// Zone geographique : `afrique` (defaut cote client) ou `hors_afrique`.
+    /// Zone geographique : `afrique` ou `hors_afrique`. Toute autre valeur
+    /// (notamment `tout`, ou l'absence de parametre) n'applique aucun filtre.
+    /// Un evenement n'a qu'un seul territoire (`evenement.pays_id`) : les deux
+    /// zones sont donc DISJOINTES par construction, sans risque de recouvrement.
     pub zone: Option<String>,
     pub annee: Option<i32>,
     pub page: Option<i64>,

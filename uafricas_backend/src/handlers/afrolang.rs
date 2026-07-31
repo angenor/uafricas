@@ -184,13 +184,13 @@ pub async fn est_moderateur_actif(
 ) -> Result<Option<crate::models::afrolang::NiveauModerateur>, ApiErreur> {
     use crate::models::afrolang::NiveauModerateur;
 
-    let ctx: Option<(Option<Uuid>, Option<Uuid>)> = sqlx::query_as(
-        "SELECT salle_id, salle_privee_id FROM afrolang.session WHERE id = $1",
+    let ctx: Option<(Option<Uuid>, Option<Uuid>, Option<Uuid>)> = sqlx::query_as(
+        "SELECT salle_id, salle_privee_id, moderateur_id FROM afrolang.session WHERE id = $1",
     )
     .bind(session_id)
     .fetch_optional(pool)
     .await?;
-    let Some((salle_id, salle_privee_id)) = ctx else {
+    let Some((salle_id, salle_privee_id, placeholder_id)) = ctx else {
         return Ok(None);
     };
 
@@ -216,7 +216,15 @@ pub async fn est_moderateur_actif(
                 return Ok(Some(NiveauModerateur::ModerateurAttitre));
             }
         }
-        return Ok(Some(NiveauModerateur::Demarreur));
+        // Ni office ni attitré : soit le placeholder qui a ouvert la session,
+        // soit un co-modérateur promu en séance. Distinction dérivée de
+        // `session.moderateur_id` — aucune colonne supplémentaire —, elle
+        // délimite ce qu'un modérateur peut révoquer (cf. `retirer_moderateur_session`).
+        return Ok(Some(if placeholder_id == Some(utilisateur_id) {
+            NiveauModerateur::Demarreur
+        } else {
+            NiveauModerateur::PromuSession
+        }));
     }
 
     Ok(None)
@@ -884,10 +892,17 @@ pub async fn lister_salles(
         bind_index += 1;
     }
 
-    // Filtre zone géographique (Afrique / Hors Afrique) : la salle doit avoir au
-    // moins un territoire d'origine dans la zone. Même périmètre ISO2 que le
-    // filtre du menu déroulant côté frontend. Les codes sont des constantes
-    // `&'static str` maîtrisées → inlinés sans risque d'injection.
+    // Filtre zone géographique (Afrique / Hors Afrique) : les deux zones sont
+    // DISJOINTES. Un simple `EXISTS` par zone ne suffisait pas — les salles de
+    // diaspora (créoles) citent presque toutes un territoire africain parmi
+    // leurs origines et remontaient donc aussi dans « Afrique », qui affichait
+    // alors la quasi-totalité du catalogue. Règle retenue : dès qu'une salle a
+    // au moins un territoire hors d'Afrique, elle est « Hors Afrique » ;
+    // « Afrique » ne garde que les salles exclusivement africaines. Toute autre
+    // valeur (`tout`, absente) n'applique aucun filtre.
+    // Même périmètre ISO2 que le filtre du menu déroulant côté frontend. Les
+    // codes sont des constantes `&'static str` maîtrisées → inlinés sans risque
+    // d'injection.
     if let Some(ref zone) = params.zone {
         let zone = zone.trim();
         if zone == "afrique" || zone == "hors_afrique" {
@@ -896,14 +911,27 @@ pub async fn lister_salles(
                 .map(|c| format!("'{}'", c))
                 .collect::<Vec<_>>()
                 .join(",");
-            let comparateur = if zone == "hors_afrique" { "NOT IN" } else { "IN" };
-            conditions.push(format!(
+            // Sous-requête « la salle a au moins un territoire hors d'Afrique »
+            let existe_hors_afrique = format!(
                 "EXISTS (SELECT 1 FROM afrolang.salle_pays_origine spo_z \
                   JOIN shared.pays p_z ON p_z.id = spo_z.pays_id \
                   WHERE spo_z.salle_id = s.id AND p_z.actif = TRUE \
-                  AND LOWER(p_z.code_iso2) {} ({}))",
-                comparateur, liste
-            ));
+                  AND LOWER(p_z.code_iso2) NOT IN ({}))",
+                liste
+            );
+            if zone == "hors_afrique" {
+                conditions.push(existe_hors_afrique);
+            } else {
+                // Exclusivement africaine : au moins un territoire africain et
+                // aucun territoire hors d'Afrique.
+                conditions.push(format!(
+                    "EXISTS (SELECT 1 FROM afrolang.salle_pays_origine spo_a \
+                      JOIN shared.pays p_a ON p_a.id = spo_a.pays_id \
+                      WHERE spo_a.salle_id = s.id AND p_a.actif = TRUE \
+                      AND LOWER(p_a.code_iso2) IN ({})) AND NOT {}",
+                    liste, existe_hors_afrique
+                ));
+            }
         }
     }
 
@@ -3572,6 +3600,7 @@ pub async fn lister_messages_session(
 /// POST /api/afrolang/sessions/{id}/messages — Envoyer un message [JWT participant]
 pub async fn envoyer_message_session(
     pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
     req: HttpRequest,
     chemin: web::Path<Uuid>,
     body: web::Json<CreerMessageRequest>,
@@ -3615,10 +3644,25 @@ pub async fn envoyer_message_session(
         .bind(message_id)
         .fetch_one(pool.get_ref())
         .await?;
+    let message = row.to_response();
+
+    // Diffusion temps réel PAR LE SERVEUR : le token de session refuse
+    // `can_publish_data` à tout participant ordinaire (canal data réservé au
+    // tableau blanc, cf. `generer_token_session`). Faire porter la diffusion par
+    // le client émetteur reviendrait donc à ne servir le direct qu'aux
+    // modérateurs. La clé API serveur, elle, n'est pas soumise à ce grant.
+    let payload = serde_json::json!({ "type": "chat", "message": &message });
+    let _ = livekit_moderation::publier_evenement(
+        livekit_config.get_ref(),
+        &room_name_session(session_id),
+        &payload,
+        "chat",
+    )
+    .await;
 
     Ok(HttpResponse::Created().json(ApiResponse {
         success: true,
-        data: Some(row.to_response()),
+        data: Some(message),
         error: None,
     }))
 }
@@ -5871,4 +5915,270 @@ pub async fn fermer_session_pour_abus(
         })),
         error: None,
     }))
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Modération en séance — coupure des micros & co-modérateurs
+// ══════════════════════════════════════════════════════════════════════════
+
+/// Vérifie que l'appelant modère bien la session et renvoie son niveau.
+async fn exiger_moderateur(
+    pool: &PgPool,
+    session_id: Uuid,
+    utilisateur_id: Uuid,
+) -> Result<crate::models::afrolang::NiveauModerateur, ApiErreur> {
+    est_moderateur_actif(pool, session_id, utilisateur_id)
+        .await?
+        .ok_or_else(|| ApiErreur::AccesInterdit("Modérateur de session requis.".into()))
+}
+
+/// POST /api/afrolang/sessions/{id}/moderation/couper-micro — Coupe le micro
+/// d'un participant [JWT modérateur de session].
+///
+/// Le mute est appliqué par le SFU (`MutePublishedTrack`) : le client visé le
+/// subit, il ne l'applique pas de bonne grâce. Comme dans Meet, il pourra se
+/// réactiver — cette action rend la parole au groupe, elle ne bâillonne pas.
+pub async fn couper_micro_participant(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+    body: web::Json<crate::models::afrolang::CouperMicroPayload>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let session_id = chemin.into_inner();
+    let cible_id = body.utilisateur_id;
+
+    let niveau_auteur = exiger_moderateur(pool.get_ref(), session_id, auteur_id).await?;
+
+    // Un modérateur ne se fait couper que par un rang STRICTEMENT supérieur :
+    // sans cette garde, un co-modérateur promu pourrait faire taire l'admin de
+    // salle qui vient de le nommer.
+    if let Some(niveau_cible) = est_moderateur_actif(pool.get_ref(), session_id, cible_id).await? {
+        if cible_id != auteur_id && niveau_cible.rang() >= niveau_auteur.rang() {
+            return Err(ApiErreur::AccesInterdit(
+                "Vous ne pouvez pas couper le micro d'un modérateur de rang égal ou supérieur."
+                    .into(),
+            ));
+        }
+    }
+
+    let coupe = livekit_moderation::couper_micro_participant(
+        livekit_config.get_ref(),
+        &room_name_session(session_id),
+        &cible_id.to_string(),
+    )
+    .await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "UPDATE",
+        "afrolang",
+        "session_participant",
+        Some(session_id),
+        None,
+        Some(serde_json::json!({ "action": "micro_coupe", "utilisateur_id": cible_id })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    // Le SDK client bascule déjà son état sur le mute serveur ; ce paquet ne
+    // sert qu'à DIRE au participant que la coupure vient d'un modérateur.
+    diffuser_moderation(
+        livekit_config.get_ref(),
+        session_id,
+        "micro_coupe",
+        serde_json::json!({
+            "session_id": session_id,
+            "utilisateur_id": cible_id,
+            "par": auteur_id,
+        }),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "utilisateur_id": cible_id, "coupe": coupe })),
+        error: None,
+    }))
+}
+
+/// POST /api/afrolang/sessions/{id}/moderation/couper-micros — Coupe le micro de
+/// tous les participants, modérateurs exceptés [JWT modérateur de session].
+pub async fn couper_tous_les_micros(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    let auteur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let session_id = chemin.into_inner();
+
+    exiger_moderateur(pool.get_ref(), session_id, auteur_id).await?;
+
+    // Épargne l'auteur et l'équipe de modération présente : une coupure générale
+    // vise le brouhaha de la salle, pas ceux qui l'animent.
+    let mut exclusions: Vec<String> = lister_moderateurs_office(pool.get_ref(), session_id)
+        .await?
+        .into_iter()
+        .map(|m| m.utilisateur_id.to_string())
+        .collect();
+    let auteur_identity = auteur_id.to_string();
+    if !exclusions.contains(&auteur_identity) {
+        exclusions.push(auteur_identity);
+    }
+
+    let coupes = livekit_moderation::couper_micros_room(
+        livekit_config.get_ref(),
+        &room_name_session(session_id),
+        &exclusions,
+    )
+    .await?;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "UPDATE",
+        "afrolang",
+        "session",
+        Some(session_id),
+        None,
+        Some(serde_json::json!({ "action": "micros_coupes", "utilisateurs": coupes })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    diffuser_moderation(
+        livekit_config.get_ref(),
+        session_id,
+        "micros_coupes",
+        serde_json::json!({
+            "session_id": session_id,
+            "utilisateurs": coupes,
+            "par": auteur_id,
+        }),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "coupes": coupes.len(), "utilisateurs": coupes })),
+        error: None,
+    }))
+}
+
+/// DELETE /api/afrolang/sessions/{id}/moderation/moderateurs/{utilisateur_id} —
+/// Rétrograde un co-modérateur promu en séance [JWT modérateur de session].
+///
+/// Seul le niveau `PromuSession` est révocable : les autres découlent d'un rôle
+/// (admin plateforme, admin de salle, attitré, créateur de salle privée, ou
+/// démarreur de la session) qui ne se défait pas depuis la salle — le retirer
+/// ici laisserait la session sans modérateur ou court-circuiterait la passation.
+pub async fn retirer_moderateur_session(
+    pool: web::Data<PgPool>,
+    livekit_config: web::Data<LivekitConfig>,
+    req: HttpRequest,
+    chemin: web::Path<(Uuid, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    use crate::models::afrolang::NiveauModerateur;
+
+    let auteur_id = extraire_utilisateur_id(&req)
+        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
+    let (session_id, cible_id) = chemin.into_inner();
+
+    exiger_moderateur(pool.get_ref(), session_id, auteur_id).await?;
+
+    match est_moderateur_actif(pool.get_ref(), session_id, cible_id).await? {
+        Some(NiveauModerateur::PromuSession) => {}
+        Some(_) => {
+            return Err(ApiErreur::Conflit(
+                "Ce modérateur tient son rôle de la salle, pas de la séance : il ne peut pas être retiré ici."
+                    .into(),
+            ));
+        }
+        None => {
+            return Err(ApiErreur::Validation(
+                "Cet utilisateur n'est pas modérateur de la session.".into(),
+            ));
+        }
+    }
+
+    sqlx::query(
+        "UPDATE afrolang.session_participant SET role_session = 'participant'
+         WHERE session_id = $1 AND utilisateur_id = $2",
+    )
+    .bind(session_id)
+    .bind(cible_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    // Le droit d'écrire sur le tableau blanc suivait le rôle : il ne survit que
+    // si une permission individuelle avait été accordée à part.
+    let garde_ecriture: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM afrolang.session_permission_tableau_blanc
+            WHERE session_id = $1 AND utilisateur_id = $2
+        )",
+    )
+    .bind(session_id)
+    .bind(cible_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let _ = livekit_moderation::update_participant_can_publish_data(
+        livekit_config.get_ref(),
+        &room_name_session(session_id),
+        &cible_id.to_string(),
+        garde_ecriture,
+    )
+    .await;
+
+    let ip = audit::extraire_ip(&req);
+    let ua = audit::extraire_user_agent(&req);
+    audit::log_action(
+        pool.get_ref(),
+        Some(auteur_id),
+        "UPDATE",
+        "afrolang",
+        "session_participant",
+        Some(session_id),
+        Some(serde_json::json!({ "role_session": "moderateur" })),
+        Some(serde_json::json!({ "role_session": "participant", "utilisateur_id": cible_id })),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+
+    diffuser_moderation(
+        livekit_config.get_ref(),
+        session_id,
+        "moderateur_retire",
+        serde_json::json!({ "session_id": session_id, "utilisateur_id": cible_id }),
+    )
+    .await;
+
+    notification::creer_notification(
+        pool.get_ref(),
+        cible_id,
+        notification::afrolang::MODERATION_RETIREE,
+        "Vous n'êtes plus modérateur de cette session.",
+        Some(&format!("/afrolang/session/{}", session_id)),
+    )
+    .await;
+
+    log::info!(
+        "Session {} : {} a retiré la modération de {}",
+        session_id, auteur_id, cible_id
+    );
+
+    Ok(HttpResponse::NoContent().finish())
 }

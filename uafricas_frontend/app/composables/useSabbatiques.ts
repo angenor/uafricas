@@ -115,8 +115,11 @@ interface ApiResponse<T> {
 export interface SabbatiqueFiltres {
   type?: 'tous' | TypeProgramme
   pays?: string
-  /** Zone géographique du territoire d'origine : `afrique` ou `hors_afrique` */
-  zone?: 'afrique' | 'hors_afrique'
+  /**
+   * Zone géographique du territoire d'accueil : `afrique`, `hors_afrique` ou
+   * `tout` (aucun filtre — cette valeur n'est PAS transmise à l'API).
+   */
+  zone?: 'afrique' | 'hors_afrique' | 'tout'
   domaine?: string
   recherche?: string
   page?: number
@@ -305,7 +308,8 @@ export const useSabbatiques = () => {
       const params = new URLSearchParams()
       if (filtres.type && filtres.type !== 'tous') params.set('type', filtres.type)
       if (filtres.pays) params.set('pays', filtres.pays)
-      if (filtres.zone) params.set('zone', filtres.zone)
+      // `tout` = absence de filtre : on ne transmet rien.
+      if (filtres.zone && filtres.zone !== 'tout') params.set('zone', filtres.zone)
       if (filtres.domaine) params.set('domaine', filtres.domaine)
       if (filtres.recherche) params.set('recherche', filtres.recherche)
       if (filtres.page) params.set('page', String(filtres.page))
