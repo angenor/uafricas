@@ -72,6 +72,23 @@
             <font-awesome-icon :icon="['fas', 'flag']" class="w-4 h-4" />
             <span class="hidden sm:inline">{{ aSignaleSession ? 'Signalé' : 'Signaler' }}</span>
           </button>
+          <!-- Espace commentaires temps réel des participants -->
+          <button
+            class="relative px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
+            :class="chatOuvert ? 'bg-sky-500 text-white' : 'bg-gray-700/60 text-sky-300'"
+            aria-label="Ouvrir l'espace commentaires"
+            title="Commenter en direct avec les participants"
+            @click="chatOuvert = !chatOuvert"
+          >
+            <font-awesome-icon :icon="['fas', 'comments']" class="w-4 h-4" />
+            <span class="hidden sm:inline">Commentaires</span>
+            <span
+              v-if="chatNonLus > 0 && !chatOuvert"
+              class="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
+            >
+              {{ chatNonLus > 99 ? '99+' : chatNonLus }}
+            </span>
+          </button>
           <!-- Ressources contribuées (feature 001-ressources-fermeture-session, US1) -->
           <button
             class="px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
@@ -148,6 +165,21 @@
           :est-session-publique="!session.salle_privee_id"
           @fermer="moderationPanelOuvert = false"
         />
+
+        <!-- Espace commentaires temps réel — monté EN PERMANENCE (`v-show`) : replié,
+             il continue d'écouter les DataPackets pour tenir le compteur de non-lus. -->
+        <aside
+          v-show="chatOuvert"
+          class="w-full max-w-sm border-l border-gray-700"
+        >
+          <AfrolangSalleChat
+            :session-id="session.id"
+            :room="room"
+            :visible="chatOuvert"
+            @non-lus="chatNonLus = $event"
+            @fermer="chatOuvert = false"
+          />
+        </aside>
 
         <!-- Ressources contribuées (feature 001-ressources-fermeture-session, US1) -->
         <aside
@@ -399,6 +431,10 @@ const wasConnected = ref(false)
 const sidebarOuverte = ref(false)
 const moderationPanelOuvert = ref(false)
 const ressourcesOuvertes = ref(false)
+/** Espace commentaires : panneau replié par défaut, compteur de messages reçus
+ *  pendant qu'il l'était (remis à zéro à l'ouverture par le composant enfant). */
+const chatOuvert = ref(false)
+const chatNonLus = ref(0)
 const tableauBlancOuvert = ref(false)
 const microActif = ref(true)
 
