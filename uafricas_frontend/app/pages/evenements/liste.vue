@@ -254,7 +254,8 @@ const viewMode = ref<'grille' | 'carte'>('grille')
 const anneeSelected = ref(new Date().getFullYear().toString())
 const filtreType = ref('')
 const filtrePays = ref('')
-const filtreZone = ref<'afrique' | 'hors_afrique'>('afrique')
+// 'tout' = aucun filtre de zone (valeur par défaut, non transmise à l'API).
+const filtreZone = ref<'afrique' | 'hors_afrique' | 'tout'>('tout')
 const evenements = ref<EvenementAPI[]>([])
 
 const chargerEvenements = async () => {
@@ -269,11 +270,16 @@ const chargerEvenements = async () => {
   evenements.value = data?.evenements ?? []
 }
 
-// Changer de zone : la carte Afrique n'a de sens que pour l'Afrique ; hors
-// Afrique on force la grille et on réinitialise le territoire (liste africaine).
+// Changer de zone : la carte Afrique n'a de sens que pour la zone « Afrique »,
+// on force donc la grille dès qu'on la quitte (sinon la carte resterait
+// affichée alors que son sélecteur a disparu). Le territoire n'est réinitialisé
+// qu'en « Hors Afrique », la liste proposée étant exclusivement africaine ;
+// en « Tout » le territoire choisi reste valide.
 watch(filtreZone, (zone) => {
-  if (zone === 'hors_afrique') {
+  if (zone !== 'afrique') {
     viewMode.value = 'grille'
+  }
+  if (zone === 'hors_afrique') {
     filtrePays.value = ''
   }
 })

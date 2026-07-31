@@ -884,10 +884,17 @@ pub async fn lister_salles(
         bind_index += 1;
     }
 
-    // Filtre zone géographique (Afrique / Hors Afrique) : la salle doit avoir au
-    // moins un territoire d'origine dans la zone. Même périmètre ISO2 que le
-    // filtre du menu déroulant côté frontend. Les codes sont des constantes
-    // `&'static str` maîtrisées → inlinés sans risque d'injection.
+    // Filtre zone géographique (Afrique / Hors Afrique) : les deux zones sont
+    // DISJOINTES. Un simple `EXISTS` par zone ne suffisait pas — les salles de
+    // diaspora (créoles) citent presque toutes un territoire africain parmi
+    // leurs origines et remontaient donc aussi dans « Afrique », qui affichait
+    // alors la quasi-totalité du catalogue. Règle retenue : dès qu'une salle a
+    // au moins un territoire hors d'Afrique, elle est « Hors Afrique » ;
+    // « Afrique » ne garde que les salles exclusivement africaines. Toute autre
+    // valeur (`tout`, absente) n'applique aucun filtre.
+    // Même périmètre ISO2 que le filtre du menu déroulant côté frontend. Les
+    // codes sont des constantes `&'static str` maîtrisées → inlinés sans risque
+    // d'injection.
     if let Some(ref zone) = params.zone {
         let zone = zone.trim();
         if zone == "afrique" || zone == "hors_afrique" {
@@ -896,14 +903,27 @@ pub async fn lister_salles(
                 .map(|c| format!("'{}'", c))
                 .collect::<Vec<_>>()
                 .join(",");
-            let comparateur = if zone == "hors_afrique" { "NOT IN" } else { "IN" };
-            conditions.push(format!(
+            // Sous-requête « la salle a au moins un territoire hors d'Afrique »
+            let existe_hors_afrique = format!(
                 "EXISTS (SELECT 1 FROM afrolang.salle_pays_origine spo_z \
                   JOIN shared.pays p_z ON p_z.id = spo_z.pays_id \
                   WHERE spo_z.salle_id = s.id AND p_z.actif = TRUE \
-                  AND LOWER(p_z.code_iso2) {} ({}))",
-                comparateur, liste
-            ));
+                  AND LOWER(p_z.code_iso2) NOT IN ({}))",
+                liste
+            );
+            if zone == "hors_afrique" {
+                conditions.push(existe_hors_afrique);
+            } else {
+                // Exclusivement africaine : au moins un territoire africain et
+                // aucun territoire hors d'Afrique.
+                conditions.push(format!(
+                    "EXISTS (SELECT 1 FROM afrolang.salle_pays_origine spo_a \
+                      JOIN shared.pays p_a ON p_a.id = spo_a.pays_id \
+                      WHERE spo_a.salle_id = s.id AND p_a.actif = TRUE \
+                      AND LOWER(p_a.code_iso2) IN ({})) AND NOT {}",
+                    liste, existe_hors_afrique
+                ));
+            }
         }
     }
 

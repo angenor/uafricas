@@ -106,6 +106,11 @@ pub async fn lister_experts(
     // pas seulement le menu déroulant des territoires. La comparaison se fait
     // sur le code ISO2 du pays de résidence (JOIN shared.pays p déjà présent).
     // Les codes ISO2 sont des constantes maîtrisées, inlinées sans risque d'injection.
+    // Un expert n'a QU'UN seul territoire (`u.pays_residence_id`) : les deux zones sont
+    // donc déjà disjointes, contrairement aux salles Afrolang (table de liaison
+    // multi-territoires) qui exigent une règle d'exclusion. Toute autre valeur
+    // (`tout`, absente) n'applique aucun filtre — les experts sans territoire renseigné
+    // ne remontent alors que dans « Tout » (comparaison NULL sur `p.code_iso2`).
     if let Some(ref zone) = params.zone {
         let zone = zone.trim();
         if zone == "afrique" || zone == "hors_afrique" {

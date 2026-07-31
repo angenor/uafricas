@@ -439,8 +439,12 @@ export interface SalleFiltres {
   langue_code?: string
   groupe_ethnique_id?: string
   pays_id?: string
-  /** Zone géographique du territoire d'origine : `afrique` ou `hors_afrique`. */
-  zone?: 'afrique' | 'hors_afrique'
+  /**
+   * Zone géographique du territoire d'origine : `afrique` (salles
+   * exclusivement africaines), `hors_afrique` (au moins un territoire hors
+   * d'Afrique) ou `tout` (aucun filtre — non transmis à l'API).
+   */
+  zone?: 'afrique' | 'hors_afrique' | 'tout'
   page?: number
   par_page?: number
 }
@@ -701,7 +705,8 @@ export const useAfrolang = () => {
       if (filtres.langue_code) params.set('langue_code', filtres.langue_code)
       if (filtres.groupe_ethnique_id) params.set('groupe_ethnique_id', filtres.groupe_ethnique_id)
       if (filtres.pays_id) params.set('pays_id', filtres.pays_id)
-      if (filtres.zone) params.set('zone', filtres.zone)
+      // `tout` = absence de filtre : on ne transmet rien.
+      if (filtres.zone && filtres.zone !== 'tout') params.set('zone', filtres.zone)
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))
 

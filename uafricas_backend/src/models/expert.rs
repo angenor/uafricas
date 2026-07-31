@@ -135,6 +135,7 @@ pub struct ExpertQueryParams {
     /// Metier declare, compare sans tenir compte de la casse (FR-046).
     pub specialite: Option<String>,
     /// Zone géographique du territoire d'origine : `afrique` ou `hors_afrique`.
+    /// Toute autre valeur (`tout`, absente) n'applique aucun filtre de zone.
     pub zone: Option<String>,
     pub tri: Option<String>,
     pub page: Option<i64>,

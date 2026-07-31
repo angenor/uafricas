@@ -59,12 +59,12 @@
       <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Territoire</h3>
 
       <!-- Choix de la zone (radio) -->
-      <div class="grid grid-cols-2 gap-2 mb-3">
+      <div class="grid grid-cols-3 gap-2 mb-3">
         <label
           v-for="option in zones"
           :key="option.value"
           :class="[
-            'flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all',
+            'flex items-center justify-center gap-2 px-2 py-2.5 rounded-xl text-xs font-medium whitespace-nowrap cursor-pointer transition-all',
             zone === option.value
               ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
               : 'bg-gray-50 text-gray-700 hover:bg-gray-100',
@@ -86,7 +86,7 @@
         class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
       >
         <option value="">
-          {{ zone === 'afrique' ? 'Tous les territoires d\'Afrique' : 'Tous les territoires hors Afrique' }}
+          {{ libelleTousTerritoires }}
         </option>
         <option v-for="territoire in territoires" :key="territoire" :value="territoire">
           {{ territoire }}
@@ -162,22 +162,36 @@ const selectedSpecialty = defineModel<string>('selectedSpecialty', { default: ''
  * Zone géographique (synchronisée avec la page via v-model) : elle pilote le
  * contenu du menu déroulant des territoires ET filtre la liste des experts.
  */
-const zone = defineModel<'afrique' | 'hors_afrique'>('zone', { default: 'afrique' })
-
 const zones = [
+  { value: 'tout' as const, label: 'Tout' },
   { value: 'afrique' as const, label: 'Afrique' },
   { value: 'hors_afrique' as const, label: 'Hors Afrique' },
 ]
+type ZoneTerritoire = (typeof zones)[number]['value']
+
+const zone = defineModel<ZoneTerritoire>('zone', { default: 'tout' })
 
 /** Territoires proposés selon la zone, triés alphabétiquement (fr). */
-const territoires = computed(() =>
-  (zone.value === 'afrique' ? PAYS_AFRIQUE : PAYS_HORS_AFRIQUE)
-    .slice()
-    .sort((a, b) => a.localeCompare(b, 'fr')),
-)
+const territoires = computed(() => {
+  // En zone « Tout » aucun filtrage : les deux listes sont proposées.
+  const source = zone.value === 'tout'
+    ? [...PAYS_AFRIQUE, ...PAYS_HORS_AFRIQUE]
+    : zone.value === 'afrique' ? PAYS_AFRIQUE : PAYS_HORS_AFRIQUE
+  return source.slice().sort((a, b) => a.localeCompare(b, 'fr'))
+})
+
+/** Libellé de l'option « aucun territoire choisi », dépendant de la zone. */
+const libelleTousTerritoires = computed(() => {
+  if (zone.value === 'tout') return 'Tous les territoires'
+  return zone.value === 'afrique'
+    ? 'Tous les territoires d\'Afrique'
+    : 'Tous les territoires hors Afrique'
+})
 
 // Changer de zone réinitialise le territoire choisi (contenus disjoints).
-watch(zone, () => {
+// En zone « Tout » on ne réinitialise pas : tous les territoires restent valides.
+watch(zone, (nouvelle) => {
+  if (nouvelle === 'tout') return
   selectedCountry.value = ''
 })
 </script>
