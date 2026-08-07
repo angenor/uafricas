@@ -79,7 +79,7 @@ import { ANNEES, TYPES_EVENEMENT, PAYS_AFRICAINS } from '~/composables/useEvenem
 // Zones géographiques proposées. « Tout » est en première position : c'est le
 // choix le plus large, et la valeur par défaut de la page.
 const ZONES_TERRITOIRE = [
-  { value: 'tout' as const, label: 'Tout' },
+  { value: 'tout' as const, label: 'Mondial' },
   { value: 'afrique' as const, label: 'Afrique' },
   { value: 'hors_afrique' as const, label: 'Hors Afrique' },
 ]

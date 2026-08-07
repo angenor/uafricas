@@ -160,7 +160,7 @@ const localFiltres = ref<SalleFiltres>({ ...props.modelValue })
 
 // Zone géographique qui pilote le contenu du menu déroulant des territoires
 const ZONES_TERRITOIRE = [
-  { value: 'tout' as const, label: 'Tout' },
+  { value: 'tout' as const, label: 'Mondial' },
   { value: 'afrique' as const, label: 'Afrique' },
   { value: 'hors_afrique' as const, label: 'Hors Afrique' },
 ]

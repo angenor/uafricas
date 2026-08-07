@@ -164,7 +164,7 @@ const selectedSpecialty = defineModel<string>('selectedSpecialty', { default: ''
  * contenu du menu déroulant des territoires ET filtre la liste des experts.
  */
 const zones = [
-  { value: 'tout' as const, label: 'Tout' },
+  { value: 'tout' as const, label: 'Mondial' },
   { value: 'afrique' as const, label: 'Afrique' },
   { value: 'hors_afrique' as const, label: 'Hors Afrique' },
 ]
