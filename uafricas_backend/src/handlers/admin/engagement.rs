@@ -57,20 +57,51 @@ pub const ACTIONS_INSTRUMENTEES: &[CatalogueAction] = &[
         &["factcheck"],
         "admin/gouvernance",
     ),
+    // ── Les 3 sources canoniques (feature 008) ──────────────────────────────
     (
-        "popularite_palier",
-        "Palier de popularité franchi",
+        "jaime_recu",
+        "J'aime reçu sur un contenu",
         &[
             "codimoi",
             "factcheck",
-            "video",
             "biblio_humaine",
+            "video",
+            "fiche_pays",
             "chaine_tv",
             "station_radio",
             "programme_tele",
             "programme_radio",
+            "personnalite_connue",
+            "recette_culinaire",
         ],
-        "codimoi, gouvernance, vidafrica_contribution, bibliotheques_humaines, media_social",
+        "codimoi, gouvernance, bibliotheques_humaines, media_social, \
+         vidafrica_contribution, element_social, fiche_pays_social",
+    ),
+    (
+        "partage_recu",
+        "Contenu partagé par un membre",
+        &[
+            "codimoi",
+            "factcheck",
+            "biblio_humaine",
+            "video",
+            "fiche_pays",
+            "profil",
+            "chaine_tv",
+            "station_radio",
+            "programme_tele",
+            "programme_radio",
+            "personnalite_connue",
+            "recette_culinaire",
+        ],
+        "media_social, vidafrica_contribution, element_social, fiche_pays_social, \
+         profil_social, gouvernance, engagement (partages-externes)",
+    ),
+    (
+        "cadeau_recu",
+        "Cadeau virtuel reçu",
+        &["cadeau"],
+        "engagement_cadeau (confirmation de paiement)",
     ),
     (
         "ajustement_admin",
@@ -96,13 +127,14 @@ pub const ACTIONS_INSTRUMENTEES: &[CatalogueAction] = &[
         &["chaine_tv", "station_radio"],
         "admin/media_proposition, media_proposition (co-détenteurs)",
     ),
-    (
-        "partage_externe_5reseaux",
-        "Contenu partagé sur plusieurs réseaux sociaux distincts",
-        &[],
-        "engagement (partages-externes)",
-    ),
 ];
+
+// ⚠️ `popularite_palier` et `partage_externe_5reseaux` ont été RETIRÉS de ce
+// catalogue par la feature 008 : plus aucun code ne les émet. Leurs règles
+// restent en base, inactives et réactivables — mais le back-office doit les
+// afficher « non instrumentées », car les réactiver ne créditerait plus rien
+// tant qu'aucun appel n'est reposé. C'est précisément ce que ce catalogue sert
+// à révéler : une règle activable dont personne n'émet l'action est un piège.
 
 // ── Règles ──────────────────────────────────────────────────────────────────
 

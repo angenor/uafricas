@@ -12,6 +12,7 @@ pub mod contribution_fiche;
 pub mod evenement;
 pub mod evenement_streaming;
 pub mod engagement;
+pub mod engagement_cadeau;
 pub mod formation_contenu;
 pub mod expert;
 pub mod faculte;

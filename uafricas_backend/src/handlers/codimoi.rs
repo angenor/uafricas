@@ -484,8 +484,12 @@ pub async fn reagir(
         }
     }
 
-    // Engagement : évaluer les paliers de popularité de la publication (non-bloquant).
-    // On ne compte que les « like » et on exclut l'auto-like de l'auteur (FR-017).
+    // Engagement : 1 point à l'auteur par « j'aime » reçu (non-bloquant).
+    //
+    // Plus aucun décompte de likes : la clé `jaime:codimoi:{id}:{membre}` porte
+    // le membre qui aime, donc l'unicité est structurelle. Créditer aussi sur un
+    // RETRAIT est sans effet — le retrait suit toujours une pose qui a déjà
+    // écrit la clé, et le second INSERT retombe sur le `ON CONFLICT DO NOTHING`.
     if body.type_reaction == "like" {
         if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
             "SELECT cree_par FROM culture.codimoi WHERE id = $1",
@@ -494,22 +498,12 @@ pub async fn reagir(
         .fetch_optional(pool.get_ref())
         .await
         {
-            let likes: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM culture.codimoi_reaction
-                 WHERE codimoi_id = $1 AND type_reaction = 'like' AND utilisateur_id <> $2",
-            )
-            .bind(codimoi_id)
-            .bind(cree_par)
-            .fetch_one(pool.get_ref())
-            .await
-            .unwrap_or(0);
-
-            crate::services::engagement::evaluer_popularite(
+            crate::services::engagement::crediter_jaime(
                 pool.get_ref(),
                 "codimoi",
                 codimoi_id,
                 cree_par,
-                likes,
+                utilisateur_id,
             )
             .await;
         }

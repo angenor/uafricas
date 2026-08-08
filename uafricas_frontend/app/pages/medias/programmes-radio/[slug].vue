@@ -23,6 +23,9 @@ const showPartage = ref(false)
 const propositionOuverte = ref(false)
 const nombreCommentaires = ref(0)
 
+// Rechargé après qu'un cadeau vient d'être offert.
+const cadeauxRef = ref<{ rafraichir: () => void } | null>(null)
+
 const lienStation = computed(() =>
   emission.value?.stationSlug ? `/medias/stations/${emission.value.stationSlug}` : null,
 )
@@ -183,6 +186,14 @@ const enCours = computed(
               variante="pilule"
             />
           </span>
+          <span class="mt-4 sm:ml-3 inline-flex align-middle">
+            <EngagementOffrirCadeauBouton
+              type-objet="programme_radio"
+              :objet-id="emission.id"
+              :destinataire="emission.title"
+              @offert="cadeauxRef?.rafraichir()"
+            />
+          </span>
         </div>
 
         <p v-if="emission.description" class="text-gray-300 leading-relaxed whitespace-pre-line mb-4">
@@ -199,6 +210,16 @@ const enCours = computed(
             <dd>{{ emission.producer }}</dd>
           </div>
         </dl>
+
+        <!-- Cadeaux reçus par ce support (fond sombre : variante claire) -->
+        <div class="mb-10">
+          <EngagementCadeauxRecus
+            ref="cadeauxRef"
+            sombre
+            type-objet="programme_radio"
+            :objet-id="emission.id"
+          />
+        </div>
 
         <MediaCommentaires
           sombre

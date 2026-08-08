@@ -151,12 +151,24 @@
                 >
                   <font-awesome-icon icon="fa-solid fa-share" class="text-xl" />
                 </button>
+                <EngagementOffrirCadeauBouton
+                  type-objet="codimoi"
+                  :objet-id="post.id"
+                  :auteur-id="post.auteur.id"
+                  :destinataire="`${post.auteur.prenom ?? ''} ${post.auteur.nom}`"
+                  taille="sm"
+                  @offert="cadeauxRef?.rafraichir()"
+                />
               </div>
               <div class="text-sm text-gray-500">
                 <font-awesome-icon icon="fa-solid fa-eye" class="mr-1" />
                 {{ post.nombre_vues }} vues
               </div>
             </div>
+          </div>
+
+          <div class="border-t border-gray-100 px-6 py-4">
+            <EngagementCadeauxRecus ref="cadeauxRef" type-objet="codimoi" :objet-id="post.id" />
           </div>
 
           <!-- Section Commentaires -->
@@ -266,6 +278,10 @@ const emit = defineEmits<{
 const userStore = useUserStore()
 const nouveauCommentaire = ref('')
 const envoiCommentaire = ref(false)
+
+// Rechargement des cadeaux affichés après qu'un cadeau vient d'être offert :
+// sans lui, l'offreur ne verrait le sien qu'au prochain chargement de page.
+const cadeauxRef = ref<{ rafraichir: () => void } | null>(null)
 
 const userInitial = computed(() => {
   if (userStore.utilisateur?.prenom) return userStore.utilisateur.prenom.charAt(0)

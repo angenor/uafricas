@@ -122,6 +122,18 @@ pub async fn partager_profil(
     .fetch_one(pool.get_ref())
     .await?;
 
+    // Engagement : 1 point au membre dont le profil est partagé (non-bloquant).
+    // Le profil se désigne lui-même — `type_objet = 'profil'`, `objet_id` =
+    // identifiant du membre —, exactement comme la table de partage ci-dessus.
+    crate::services::engagement::crediter_partage(
+        pool.get_ref(),
+        "profil",
+        profil_id,
+        profil_id,
+        utilisateur_id,
+    )
+    .await;
+
     let row = sqlx::query_as::<_, PartageProfilRow>(&format!(
         "{} AND pp.id = $1",
         PARTAGE_PROFIL_SELECT

@@ -35,6 +35,15 @@ pub struct CompteRow {
     pub dernier_mouvement_at: Option<DateTime<Utc>>,
 }
 
+/// Résumé de cagnotte porté par « Mon compte » (feature 008).
+/// Le détail — dont la part simulée — vit sur `GET /ma-cagnotte`.
+#[derive(Serialize)]
+pub struct CagnotteResume {
+    pub montant_cumule: i32,
+    pub devise: String,
+    pub versement_disponible: bool,
+}
+
 /// Réponse « Mon compte d'engagement ».
 #[derive(Serialize)]
 pub struct CompteResponse {
@@ -44,6 +53,8 @@ pub struct CompteResponse {
     pub niveau: NiveauInfo,
     pub prochain_niveau: Option<ProchainNiveau>,
     pub dernier_mouvement_at: Option<DateTime<Utc>>,
+    pub cagnotte: CagnotteResume,
+    pub cadeaux_recus: i64,
 }
 
 /// Un mouvement de points (entrée de journal).

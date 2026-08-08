@@ -171,6 +171,9 @@ const profil = computed(() => {
 
 const ongletActif = ref<'apropos' | 'biblio' | 'expert'>('apropos')
 
+// Rechargé après qu'un cadeau vient d'être offert.
+const cadeauxRef = ref<{ rafraichir: () => void } | null>(null)
+
 const onglets = computed(() => {
   const items: Array<{ id: 'apropos' | 'biblio' | 'expert', label: string, icon: string }> = [
     { id: 'apropos', label: 'À propos', icon: 'fa-solid fa-user' },
@@ -506,6 +509,13 @@ onMounted(async () => {
               <font-awesome-icon icon="fa-solid fa-share-nodes" />
               Partager ce profil
             </button>
+            <EngagementOffrirCadeauBouton
+              type-objet="profil"
+              :objet-id="id"
+              :destinataire="`${profil.prenom} ${profil.nom}`"
+              taille="sm"
+              @offert="cadeauxRef?.rafraichir()"
+            />
             <button
               type="button"
               :disabled="profilSignale"
@@ -519,6 +529,15 @@ onMounted(async () => {
               {{ profilSignale ? 'Profil signalé' : 'Signaler ce profil' }}
             </button>
           </div>
+        </div>
+
+        <!--
+          Cadeaux reçus — HORS du bloc « peutNoter » : un visiteur déconnecté
+          doit voir la reconnaissance reçue par ce membre, même s'il ne peut pas
+          lui-même offrir. Le composant se masque seul quand il n'y a rien.
+        -->
+        <div class="mt-6 rounded-2xl bg-white p-6 shadow-lg">
+          <EngagementCadeauxRecus ref="cadeauxRef" type-objet="profil" :objet-id="id" />
         </div>
 
         <!-- Modale de proposition de rendez-vous -->

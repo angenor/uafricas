@@ -16,6 +16,7 @@ pub mod contributions_fiche;
 pub mod evenements;
 pub mod evenement_streaming;
 pub mod engagement;
+pub mod engagement_cadeau;
 pub mod experts;
 pub mod facultes;
 pub mod fiches_pays;

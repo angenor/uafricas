@@ -300,6 +300,18 @@
               </div>
             </div>
 
+            <!-- Cadeaux reçus par la fiche -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+              <EngagementOffrirCadeauBouton
+                type-objet="fiche_pays"
+                :objet-id="pays.id"
+                :destinataire="pays.nom"
+                class="mb-4"
+                @offert="cadeauxRef?.rafraichir()"
+              />
+              <EngagementCadeauxRecus ref="cadeauxRef" type-objet="fiche_pays" :objet-id="pays.id" />
+            </div>
+
             <!-- Contributeurs -->
             <OpportuniteAfriqueContributeursSection :contributeurs="contributeurs" />
 
@@ -517,6 +529,9 @@ const basculerReaction = async (type: 'like' | 'dislike') => {
 // ── Partage vers le mur communautaire /publications ─────────────
 const showPartageModal = ref(false)
 const partageModalRef = ref<{ setLoading: (v: boolean) => void; setError: (m: string) => void; setSuccess: () => void } | null>(null)
+
+// Rechargé après qu'un cadeau vient d'être offert.
+const cadeauxRef = ref<{ rafraichir: () => void } | null>(null)
 
 const ouvrirPartage = () => {
   // Le partage réseaux sociaux est ouvert à tous ; seule la publication

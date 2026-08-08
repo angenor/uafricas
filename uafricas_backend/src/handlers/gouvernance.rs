@@ -403,6 +403,27 @@ pub async fn partager_contribution(
     .fetch_one(pool.get_ref())
     .await?;
 
+    // Engagement : 1 point à l'auteur de la contribution par partage reçu.
+    // `type_contribution` est transmis tel quel : seul `factcheck` a aujourd'hui
+    // une résolution d'auteur ; `badhabits` et `ideaforces` ne créditent personne
+    // et n'échouent pas — brancher leur famille plus tard ne demandera rien ici.
+    if let Some(auteur_id) = crate::services::engagement::resoudre_beneficiaire(
+        pool.get_ref(),
+        type_contribution,
+        body.contribution_id,
+    )
+    .await
+    {
+        crate::services::engagement::crediter_partage(
+            pool.get_ref(),
+            type_contribution,
+            body.contribution_id,
+            auteur_id,
+            utilisateur_id,
+        )
+        .await;
+    }
+
     let row = sqlx::query_as::<_, PartageContributionRow>(&format!(
         "{} AND pc.id = $1",
         PARTAGE_CONTRIBUTION_SELECT
@@ -667,8 +688,11 @@ pub async fn reagir_factcheck(
         }
     }
 
-    // Engagement : évaluer les paliers de popularité du factcheck (non-bloquant).
-    // « like » = cœur (général + préjugé/réalité), auto-like exclu (FR-017).
+    // Engagement : 1 point à l'auteur par « j'aime » reçu (non-bloquant).
+    //
+    // Le CŒUR seul crédite (research R2) : c'est l'emoji présenté au membre
+    // comme la marque d'approbation de la fiche. `pouce`, `rire` et `jaime_pas`
+    // n'expriment pas une approbation et n'ont jamais compté comme un « j'aime ».
     if type_reaction == "coeur" {
         if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
             "SELECT cree_par FROM governance.factcheck WHERE id = $1",
@@ -677,18 +701,12 @@ pub async fn reagir_factcheck(
         .fetch_optional(pool.get_ref())
         .await
         {
-            let likes: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM governance.factcheck_reaction
-                 WHERE factcheck_id = $1 AND type_reaction = 'coeur' AND utilisateur_id <> $2",
-            )
-            .bind(factcheck_id)
-            .bind(cree_par)
-            .fetch_one(pool.get_ref())
-            .await
-            .unwrap_or(0);
-
-            crate::services::engagement::evaluer_popularite(
-                pool.get_ref(), "factcheck", factcheck_id, cree_par, likes,
+            crate::services::engagement::crediter_jaime(
+                pool.get_ref(),
+                "factcheck",
+                factcheck_id,
+                cree_par,
+                utilisateur_id,
             )
             .await;
         }

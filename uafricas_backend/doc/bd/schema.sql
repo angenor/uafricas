@@ -191,6 +191,8 @@
 \ir schemas/35c_engagement_categories_bareme.sql
 \ir schemas/35d_engagement_badges.sql
 \ir schemas/35e_engagement_partage_externe.sql
+\ir schemas/35f_engagement_recadrage.sql
+\ir schemas/35g_engagement_cadeaux.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════

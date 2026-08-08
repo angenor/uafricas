@@ -66,6 +66,9 @@ pub mod media {
 pub mod engagement {
     pub const NIVEAU_ATTEINT: &str = "engagement.niveau_atteint";
     pub const BADGE_DEBLOQUE: &str = "engagement.badge_debloque";
+    /// Un membre a reçu un cadeau virtuel (feature 008). Émise **après le
+    /// COMMIT** de la transaction comptable, comme les deux précédentes.
+    pub const CADEAU_RECU: &str = "engagement.cadeau_recu";
     /// Cible commune des deux notifications : l'espace « Mon engagement ».
     pub const LIEN_ESPACE: &str = "/mon-compte/engagement";
 }

@@ -1,5 +1,6 @@
 pub mod utilisateurs;
 pub mod engagement;
+pub mod engagement_cadeau;
 pub mod organisations;
 pub mod partenariats;
 pub mod roles;

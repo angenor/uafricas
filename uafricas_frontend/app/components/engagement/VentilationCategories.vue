@@ -26,9 +26,20 @@ const CLASSES: Record<string, { fond: string, texte: string, barre: string }> = 
 
 const classes = (couleur: string | null) => CLASSES[couleur || 'gray'] || CLASSES.gray
 
+/**
+ * Catégories réellement alimentées. L'API renvoie aussi celles restées à zéro
+ * — `contributions`, `medias`, `factcheck` n'ont plus de règle active depuis le
+ * recadrage — et les afficher vides donnerait à croire que le membre a « raté »
+ * des sources qui n'existent plus. Elles restent en base, prêtes à revenir si
+ * une règle écartée est réactivée.
+ */
+const categoriesAlimentees = computed(() =>
+  props.ventilation?.categories.filter(c => c.points !== 0) ?? [],
+)
+
 /** Base de la barre proportionnelle : la plus grosse catégorie positive. */
 const maximum = computed(() =>
-  Math.max(1, ...(props.ventilation?.categories.map(c => Math.abs(c.points)) ?? [1])),
+  Math.max(1, ...(categoriesAlimentees.value.map(c => Math.abs(c.points)))),
 )
 
 const largeur = (points: number) => Math.round((Math.abs(points) / maximum.value) * 100)
@@ -42,7 +53,7 @@ const ecart = computed(() => {
 </script>
 
 <template>
-  <section v-if="ventilation && ventilation.categories.length > 0" class="space-y-4">
+  <section v-if="ventilation && categoriesAlimentees.length > 0" class="space-y-4">
     <header class="flex flex-wrap items-baseline justify-between gap-2">
       <h2 class="font-oswald text-xl font-bold text-gray-900">D'où viennent mes points</h2>
       <div class="text-right text-xs text-gray-500">
@@ -75,7 +86,7 @@ const ecart = computed(() => {
 
     <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <li
-        v-for="cat in ventilation.categories"
+        v-for="cat in categoriesAlimentees"
         :key="cat.code || 'autres'"
         class="rounded-2xl border border-gray-100 bg-white p-4"
       >

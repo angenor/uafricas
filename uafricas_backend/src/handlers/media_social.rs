@@ -171,10 +171,27 @@ pub async fn reagir_media(
     .fetch_one(pool.get_ref())
     .await?;
 
-    // Paliers de popularité, uniquement lors de la POSE d'un « j'aime » : ni un
-    // retrait ni un « je n'aime pas » ne font franchir un palier. Non-bloquant.
+    // Engagement : 1 point au PROPRIÉTAIRE du support par « j'aime » reçu.
+    //
+    // **Changement de bénéficiaire assumé** (FR-008a) : ce n'est plus `cree_par`
+    // mais le détenteur déclaré du support, résolu par `resoudre_beneficiaire`.
+    // Un support qui change de mains fait donc suivre ses points, ce que le
+    // créateur figé ne permettait pas. Repli sur `cree_par` conservé pour les
+    // supports créés avant l'existence de la co-détention.
     if ma_reaction.as_deref() == Some("like") {
-        evaluer_popularite_media(pool.get_ref(), &type_media, media_id).await;
+        if let Some(beneficiaire_id) =
+            crate::services::engagement::resoudre_beneficiaire(pool.get_ref(), &type_media, media_id)
+                .await
+        {
+            crate::services::engagement::crediter_jaime(
+                pool.get_ref(),
+                &type_media,
+                media_id,
+                beneficiaire_id,
+                utilisateur_id,
+            )
+            .await;
+        }
     }
 
     Ok(HttpResponse::Ok().json(ApiResponse {
@@ -186,59 +203,6 @@ pub async fn reagir_media(
     }),
         error: None,
     }))
-}
-
-/// Évalue les paliers de popularité d'un contenu média et crédite son créateur.
-///
-/// **Deux décomptes, deux usages** : le compteur renvoyé au client reste le total
-/// réel (sinon l'auteur verrait son propre « j'aime » disparaître de l'interface),
-/// tandis que le décompte servant aux paliers exclut celui de l'auteur — un
-/// contenu ne doit pas progresser vers un palier grâce à l'auto-appréciation.
-async fn evaluer_popularite_media(pool: &PgPool, type_media: &str, media_id: Uuid) {
-    // Littéraux fixes → interpolation SQL sûre. Les 4 familles de médias portent
-    // toutes leur créateur dans `cree_par`.
-    let table = match type_media {
-        "chaine_tv" => "media_content.chaine_tv",
-        "station_radio" => "media_content.station_radio",
-        "programme_tele" => "media_content.programme_tele",
-        "programme_radio" => "media_content.programme_radio",
-        _ => return,
-    };
-
-    let sql = format!("SELECT cree_par FROM {table} WHERE id = $1 AND deleted_at IS NULL");
-    let auteur_id: Option<Uuid> = match sqlx::query_scalar(&sql)
-        .bind(media_id)
-        .fetch_optional(pool)
-        .await
-    {
-        Ok(v) => v.flatten(),
-        Err(e) => {
-            log::error!("Engagement: échec résolution du créateur de {type_media} {media_id}: {e}");
-            return;
-        }
-    };
-    let Some(auteur_id) = auteur_id else { return };
-
-    let likes: i64 = match sqlx::query_scalar(
-        "SELECT COUNT(*) FROM media_content.media_reaction
-          WHERE type_media = $1 AND media_id = $2 AND type_reaction = 'like'
-            AND utilisateur_id <> $3",
-    )
-    .bind(type_media)
-    .bind(media_id)
-    .bind(auteur_id)
-    .fetch_one(pool)
-    .await
-    {
-        Ok(v) => v,
-        Err(e) => {
-            log::error!("Engagement: échec décompte des « j'aime » de {type_media} {media_id}: {e}");
-            return;
-        }
-    };
-
-    crate::services::engagement::evaluer_popularite(pool, type_media, media_id, auteur_id, likes)
-        .await;
 }
 
 async fn retirer_reaction(
@@ -479,6 +443,23 @@ pub async fn partager_media(
     .bind(&legende)
     .fetch_one(pool.get_ref())
     .await?;
+
+    // Engagement : 1 point au propriétaire du support par partage reçu.
+    // La clé de crédit ne porte pas le canal : ce même membre ne créditera plus,
+    // qu'il partage ensuite vers WhatsApp, Facebook ou reposte à nouveau ici.
+    if let Some(auteur_id) =
+        crate::services::engagement::resoudre_beneficiaire(pool.get_ref(), &type_media, media_id)
+            .await
+    {
+        crate::services::engagement::crediter_partage(
+            pool.get_ref(),
+            &type_media,
+            media_id,
+            auteur_id,
+            utilisateur_id,
+        )
+        .await;
+    }
 
     let row = sqlx::query_as::<_, PartageMediaRow>(&format!(
         "SELECT * FROM ({}) sub WHERE id = $1",
