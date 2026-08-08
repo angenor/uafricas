@@ -459,19 +459,25 @@ export const useTelevision = () => {
   }
 
   /**
-   * Récupérer la liste des pays disponibles
+   * Récupérer la liste des territoires proposés au filtre.
+   *
+   * On interroge le référentiel public `/api/pays` (tous les territoires
+   * actifs, comme les sélecteurs des autres pages) et NON
+   * `/api/television/pays`, qui ne renvoie que les territoires ayant déjà une
+   * chaîne ou un programme publié : le visiteur ne voyait alors qu'une poignée
+   * d'entrées, sans moyen de constater qu'un territoire est encore vide.
    */
   const listerPays = async (): Promise<string[] | null> => {
     try {
-      const reponse = await $fetch<ApiResponse<string[]>>(
-        `${apiBase}/api/television/pays`,
+      const reponse = await $fetch<ApiResponse<{ nom: string }[]>>(
+        `${apiBase}/api/pays`,
       )
 
       if (!reponse.success || !reponse.data) {
         throw new Error(reponse.error || 'Erreur lors du chargement des pays')
       }
 
-      return reponse.data
+      return reponse.data.map(p => p.nom)
     }
     catch (e: any) {
       console.error('Erreur listerPays:', e)
