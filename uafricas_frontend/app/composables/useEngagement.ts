@@ -23,6 +23,14 @@ export interface ProchainNiveau {
 }
 
 /** Compte d'engagement du membre connecté */
+/** Résumé de cagnotte porté par « Mon compte » (feature 008). */
+export interface CagnotteResume {
+  montant_cumule: number
+  devise: string
+  /** Toujours `false` dans cette itération : aucun versement n'est disponible. */
+  versement_disponible: boolean
+}
+
 export interface CompteEngagement {
   solde_points: number
   solde_points_mensuel: number
@@ -30,6 +38,8 @@ export interface CompteEngagement {
   niveau: NiveauInfo
   prochain_niveau: ProchainNiveau | null
   dernier_mouvement_at: string | null
+  cagnotte: CagnotteResume
+  cadeaux_recus: number
 }
 
 /**

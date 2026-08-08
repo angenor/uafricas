@@ -33,12 +33,24 @@ watch(() => props.niveau, (v) => { if (v) niveauLocal.value = v })
 watch(() => props.utilisateurId, chargerSiBesoin)
 onMounted(chargerSiBesoin)
 
-// Mapping couleur (badge_couleur libre : gray / amber / slate…) → classes Tailwind
+// Mapping couleur (jeton libre en base : gray / amber / yellow / slate…) → classes
+// Tailwind. Le libellé, la couleur et l'icône viennent TOUS de l'API : aucun nom
+// de statut n'est écrit en dur ici, sans quoi renommer « Premium » en
+// back-office ne changerait rien à l'écran (FR-032).
+//
+// Les quatre statuts livrés — Membre Africans (gray), Premium (amber),
+// Gold (yellow), Platinum (slate) — ne sont qu'un paramétrage parmi d'autres :
+// en ajouter un cinquième ne demande aucune livraison, seulement un jeton connu
+// de cette table.
 const CLASSES: Record<string, string> = {
   gray: 'bg-gray-100 text-gray-700 ring-gray-300',
   amber: 'bg-amber-100 text-amber-800 ring-amber-300',
+  yellow: 'bg-yellow-100 text-yellow-800 ring-yellow-400',
   slate: 'bg-slate-800 text-white ring-slate-500',
   green: 'bg-custom-green/10 text-custom-green ring-custom-green/40',
+  rose: 'bg-rose-100 text-rose-700 ring-rose-300',
+  sky: 'bg-sky-100 text-sky-800 ring-sky-300',
+  violet: 'bg-violet-100 text-violet-800 ring-violet-300',
 }
 
 const classesCouleur = computed(() =>

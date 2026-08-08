@@ -146,6 +146,17 @@
           >
             <font-awesome-icon icon="fa-solid fa-share" />
           </button>
+          <!-- La carte entière est cliquable : sans `@click.stop`, ouvrir la
+               modale de cadeau ouvrirait aussi le post. -->
+          <span @click.stop>
+            <EngagementOffrirCadeauBouton
+              type-objet="codimoi"
+              :objet-id="post.id"
+              :auteur-id="post.auteur.id"
+              :destinataire="`${post.auteur.prenom ?? ''} ${post.auteur.nom}`"
+              taille="sm"
+            />
+          </span>
         </div>
         <div class="text-sm text-gray-500">
           <font-awesome-icon icon="fa-solid fa-eye" class="mr-1" />

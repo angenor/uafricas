@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_programmation, media_proposition, media_social, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_programmation, media_proposition, media_social, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -233,6 +233,15 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/engagement/badges/{id}", web::delete().to(admin::engagement::supprimer_badge))
                     .route("/engagement/badges/{id}/attribuer", web::post().to(admin::engagement::attribuer_badge_manuel))
                     .route("/engagement/badges/{id}/attribuer/{utilisateur_id}", web::delete().to(admin::engagement::retirer_badge_manuel))
+                    // ── Cadeaux virtuels (feature 008) ──────────────────────
+                    .route("/engagement/cadeaux", web::get().to(admin::engagement_cadeau::lister_cadeaux))
+                    .route("/engagement/cadeaux", web::post().to(admin::engagement_cadeau::creer_cadeau))
+                    .route("/engagement/cadeaux/{id}", web::put().to(admin::engagement_cadeau::modifier_cadeau))
+                    .route("/engagement/cadeaux/{id}", web::delete().to(admin::engagement_cadeau::supprimer_cadeau))
+                    .route("/engagement/transactions", web::get().to(admin::engagement_cadeau::lister_transactions))
+                    .route("/engagement/parametres-monetisation", web::get().to(admin::engagement_cadeau::obtenir_parametres))
+                    .route("/engagement/parametres-monetisation", web::put().to(admin::engagement_cadeau::modifier_parametres))
+                    .route("/engagement/purger-phase-test", web::post().to(admin::engagement_cadeau::purger_phase_test))
                     .route("/engagement/journal", web::get().to(admin::engagement::lister_journal))
                     .route("/engagement/ajustement", web::post().to(admin::engagement::ajuster_points))
                     .route("/engagement/mise-en-avant", web::post().to(admin::engagement::mettre_en_avant))
@@ -586,6 +595,15 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/mes-badges", web::get().to(engagement::mes_badges))
                     .route("/actions-recompensees", web::get().to(engagement::actions_recompensees))
                     .route("/partages-externes", web::post().to(engagement::tracer_partage_externe))
+                    // ── Cadeaux virtuels (feature 008) ──────────────────────
+                    // `/cadeaux/envoyer` est déclarée AVANT `/cadeaux/{type_objet}/{objet_id}`
+                    // pour que le littéral l'emporte sur le paramétré.
+                    .route("/cadeaux", web::get().to(engagement_cadeau::catalogue))
+                    .route("/cadeaux/envoyer", web::post().to(engagement_cadeau::envoyer_cadeau))
+                    .route("/mes-cadeaux", web::get().to(engagement_cadeau::mes_cadeaux))
+                    .route("/ma-cagnotte", web::get().to(engagement_cadeau::ma_cagnotte))
+                    .route("/paiements/{reference}/confirmer", web::post().to(engagement_cadeau::confirmer_paiement))
+                    .route("/cadeaux/{type_objet}/{objet_id}", web::get().to(engagement_cadeau::cadeaux_contenu))
                     .route("/badges/{utilisateur_id}", web::get().to(engagement::badges_utilisateur))
                     .route("/niveau/{utilisateur_id}", web::get().to(engagement::niveau_utilisateur)),
             )

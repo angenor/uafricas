@@ -154,6 +154,17 @@ const baremeParCategorie = computed(() => {
         </template>
 
         <!--
+          Cagnotte et cadeaux reçus (feature 008). Placés ici plutôt que sur une
+          page dédiée : depuis le profil, « Mon engagement » puis le défilement
+          suffisent — soit deux clics, ce qu'exige SC-010.
+          Les deux blocs s'affichent aussi quand le membre n'a aucun point : on
+          peut recevoir un cadeau en soutien financier alors que la règle
+          `cadeau_recu` est désactivée, donc avoir une cagnotte sans un point.
+        -->
+        <EngagementMaCagnotte />
+        <EngagementMesCadeaux />
+
+        <!--
           Les badges restent visibles même sans aucun point : la rétro-évaluation
           et l'attribution manuelle peuvent en avoir déposé, et le catalogue « à
           débloquer » est précisément ce qui donne envie de commencer.

@@ -192,6 +192,26 @@ pub async fn reagir_fiche(
     .execute(pool.get_ref())
     .await?;
 
+    // Engagement : 1 point au créateur de la fiche par « j'aime » reçu.
+    if ma_reaction.as_deref() == Some("like") {
+        if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
+            "SELECT cree_par FROM country_profile.fiche_pays WHERE id = $1",
+        )
+        .bind(fiche_id)
+        .fetch_optional(pool.get_ref())
+        .await
+        {
+            crate::services::engagement::crediter_jaime(
+                pool.get_ref(),
+                "fiche_pays",
+                fiche_id,
+                cree_par,
+                utilisateur_id,
+            )
+            .await;
+        }
+    }
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(ReactionFicheEtat {
@@ -323,6 +343,21 @@ pub async fn partager_fiche(
     .bind(&legende)
     .fetch_one(pool.get_ref())
     .await?;
+
+    // Engagement : 1 point au créateur de la fiche par partage reçu (non-bloquant).
+    if let Some(auteur_id) =
+        crate::services::engagement::resoudre_beneficiaire(pool.get_ref(), "fiche_pays", fiche_id)
+            .await
+    {
+        crate::services::engagement::crediter_partage(
+            pool.get_ref(),
+            "fiche_pays",
+            fiche_id,
+            auteur_id,
+            utilisateur_id,
+        )
+        .await;
+    }
 
     // Recharge le partage enrichi pour le renvoyer (carte du mur)
     let row = charger_partage(pool.get_ref(), partage_id).await?;

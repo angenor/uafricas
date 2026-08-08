@@ -14,8 +14,12 @@ const props = defineProps<{
 }>()
 
 /**
- * Avancement dans la tranche du niveau courant, en pourcentage.
- * 100 % quand il n'y a plus de niveau au-dessus (niveau maximal atteint).
+ * Avancement dans la tranche du statut courant, en pourcentage.
+ * 100 % quand il n'y a plus de statut au-dessus (statut maximal atteint).
+ *
+ * Note de vocabulaire : la base parle de « niveau », l'interface parle de
+ * « statut ». Renommer la colonne aurait cassé `compte.niveau_code` et les
+ * badges paramétrés dessus pour un gain purement cosmétique.
  */
 const progression = computed(() => {
   const c = props.compte
@@ -87,7 +91,7 @@ const progression = computed(() => {
       <template v-else>
         <p class="flex items-center gap-2 text-sm font-semibold text-custom-green">
           <font-awesome-icon icon="fa-solid fa-crown" />
-          Niveau maximal atteint
+          Statut maximal atteint
         </p>
         <p class="mt-1 text-xs text-gray-500">
           Vous avez atteint le statut le plus élevé du barème. Vos points continuent de s'accumuler.

@@ -119,6 +119,27 @@ pub async fn mon_compte(
     let niveau = charger_niveau(pool.get_ref(), &niveau_code).await?;
     let prochain_niveau = charger_prochain_niveau(pool.get_ref(), solde).await?;
 
+    // Cagnotte et cadeaux reçus (feature 008) : le compte d'engagement est le
+    // point d'entrée unique de l'espace membre, il doit porter les deux repères
+    // sans imposer un second aller-retour.
+    let (montant_cumule, devise): (i32, String) = sqlx::query_as(
+        "SELECT COALESCE(c.montant_cumule, 0),
+                COALESCE((SELECT devise FROM engagement.parametre_monetisation WHERE id = TRUE), 'XOF')
+           FROM (SELECT 1) AS _
+           LEFT JOIN engagement.cagnotte c ON c.utilisateur_id = $1",
+    )
+    .bind(uid)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    let cadeaux_recus: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM engagement.transaction_cadeau
+          WHERE beneficiaire_id = $1 AND etat = 'abouti'",
+    )
+    .bind(uid)
+    .fetch_one(pool.get_ref())
+    .await?;
+
     let reponse = CompteResponse {
         solde_points: solde,
         solde_points_mensuel: mensuel,
@@ -126,6 +147,13 @@ pub async fn mon_compte(
         niveau,
         prochain_niveau,
         dernier_mouvement_at: dernier,
+        cagnotte: crate::models::engagement::CagnotteResume {
+            montant_cumule,
+            devise,
+            // Aucun versement dans cette itération (FR-026).
+            versement_disponible: false,
+        },
+        cadeaux_recus,
     };
 
     Ok(HttpResponse::Ok().json(ApiResponse {
@@ -402,6 +430,14 @@ const FAMILLES_PARTAGEABLES: &[&str] = &[
     "bad_habit",
     // Retrouve-amis — `retrouve-amis/BoutonsPartage`
     "avis_recherche",
+    // Familles ajoutées par la feature 008 : depuis que le partage crédite
+    // l'auteur, toute famille dotée d'un auteur résolvable doit pouvoir être
+    // tracée — sinon le partage externe d'une vidéo ne rapporterait rien alors
+    // que son repost interne, lui, crédite.
+    "codimoi",
+    "video",
+    "biblio_humaine",
+    "profil",
 ];
 
 #[derive(serde::Deserialize)]
@@ -446,12 +482,14 @@ pub async fn tracer_partage_externe(
     )
     .await?;
 
+    // Le seuil de 5 réseaux distincts n'existe plus : le partage crédite
+    // désormais l'AUTEUR du contenu, une seule fois par partageur et par
+    // contenu, tous canaux confondus (feature 008, research R5).
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({
-            "reseaux_distincts": resultat.reseaux_distincts,
-            "seuil": resultat.seuil,
-            "bonus_attribue": resultat.bonus_attribue,
+            "enregistre": resultat.enregistre,
+            "auteur_credite": resultat.auteur_credite,
         })),
         error: None,
     }))

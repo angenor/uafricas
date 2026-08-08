@@ -32,6 +32,9 @@ const propositionOuverte = ref(false)
 const contactOuvert = ref(false)
 const nombreCommentaires = ref(0)
 
+// Rechargé après qu'un cadeau vient d'être offert.
+const cadeauxRef = ref<{ rafraichir: () => void } | null>(null)
+
 const breadcrumbs = computed(() => [
   { label: 'Médias', to: '/medias' },
   { label: 'Télévision', to: '/medias/tele' },
@@ -165,6 +168,14 @@ useHead(() => {
               variante="pilule"
             />
           </span>
+          <span class="mt-4 sm:ml-3 inline-flex align-middle">
+            <EngagementOffrirCadeauBouton
+              type-objet="chaine_tv"
+              :objet-id="chaine.id"
+              :destinataire="chaine.name"
+              @offert="cadeauxRef?.rafraichir()"
+            />
+          </span>
         </div>
 
         <p v-if="chaine.description" class="text-gray-300 leading-relaxed whitespace-pre-line mb-10">
@@ -202,6 +213,16 @@ useHead(() => {
             </NuxtLink>
           </div>
         </section>
+
+        <!-- Cadeaux reçus par ce support (fond sombre : variante claire) -->
+        <div class="mb-10">
+          <EngagementCadeauxRecus
+            ref="cadeauxRef"
+            sombre
+            type-objet="chaine_tv"
+            :objet-id="chaine.id"
+          />
+        </div>
 
         <MediaCommentaires
           sombre

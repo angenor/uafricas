@@ -158,6 +158,34 @@ pub async fn reagir_element(
     .fetch_one(pool.get_ref())
     .await?;
 
+    // Engagement : 1 point à l'auteur de l'élément par « j'aime » reçu.
+    //
+    // Le `type_objet` transmis est le **sous-type reçu dans l'URL**, jamais une
+    // valeur générique « element » : `reaction_element` est générique par
+    // `(type_objet, objet_id)` sur quatre tables distinctes, et sans le sous-type
+    // rien ne dirait laquelle interroger pour trouver l'auteur.
+    //
+    // Seuls `personnalite_connue` et `recette_culinaire` ont un `cree_par` :
+    // `site_touristique` et `secteur_developpement` sont des contenus éditoriaux
+    // rattachés à une fiche pays, sans aucune colonne d'auteur. Ils ne créditent
+    // donc personne — et ce n'est PAS une erreur (FR-008c) : la réaction est
+    // enregistrée, le compteur s'incrémente, rien n'échoue.
+    if ma_reaction.as_deref() == Some("like") {
+        if let Some(auteur_id) =
+            crate::services::engagement::resoudre_beneficiaire(pool.get_ref(), &type_objet, objet_id)
+                .await
+        {
+            crate::services::engagement::crediter_jaime(
+                pool.get_ref(),
+                &type_objet,
+                objet_id,
+                auteur_id,
+                utilisateur_id,
+            )
+            .await;
+        }
+    }
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(ReactionElementEtat {
@@ -210,6 +238,23 @@ pub async fn partager_element(
     .bind(&legende)
     .fetch_one(pool.get_ref())
     .await?;
+
+    // Engagement : 1 point à l'auteur de l'élément par partage reçu.
+    // Même règle qu'à la réaction : c'est le **sous-type reçu** qui est transmis,
+    // et les deux sous-types éditoriaux sans auteur ne créditent personne.
+    if let Some(auteur_id) =
+        crate::services::engagement::resoudre_beneficiaire(pool.get_ref(), &type_objet, objet_id)
+            .await
+    {
+        crate::services::engagement::crediter_partage(
+            pool.get_ref(),
+            &type_objet,
+            objet_id,
+            auteur_id,
+            utilisateur_id,
+        )
+        .await;
+    }
 
     let row = charger_partage(pool.get_ref(), partage_id)
         .await?

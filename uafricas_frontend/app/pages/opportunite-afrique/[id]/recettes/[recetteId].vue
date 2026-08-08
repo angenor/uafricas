@@ -181,6 +181,27 @@
                 <font-awesome-icon :icon="['fas', 'share-nodes']" class="w-4 h-4" />
                 Partager
               </button>
+              <!--
+                `RecetteCulinaireAPI` n'expose pas son `cree_par` : le masquage
+                anti-auto-cadeau repose donc sur le serveur, qui refuse en 403.
+              -->
+              <div class="mt-3 flex justify-center">
+                <EngagementOffrirCadeauBouton
+                  type-objet="recette_culinaire"
+                  :objet-id="recette.id"
+                  :destinataire="recette.titre"
+                  @offert="cadeauxRef?.rafraichir()"
+                />
+              </div>
+            </section>
+
+            <!-- Cadeaux reçus par cette recette -->
+            <section class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <EngagementCadeauxRecus
+                ref="cadeauxRef"
+                type-objet="recette_culinaire"
+                :objet-id="recette.id"
+              />
             </section>
 
             <!-- Actions -->
@@ -244,6 +265,9 @@ const recette = ref<RecetteCulinaireAPI | null>(recetteChargee.value)
 
 // Galerie
 const indexImage = ref(0)
+
+// Rechargé après qu'un cadeau vient d'être offert.
+const cadeauxRef = ref<{ rafraichir: () => void } | null>(null)
 const images = computed(() => recette.value?.images ?? [])
 const imagePrincipale = computed(() =>
   images.value.length ? resoudreUrlImage(images.value[indexImage.value]!) : '',

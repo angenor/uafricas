@@ -23,7 +23,36 @@ const formulaire = ref(false)
 const nouveau = ref({ code: '', libelle: '', seuil_min: 0, badge_couleur: '', badge_icone: '' })
 
 /** Jetons reconnus par `EngagementBadgeStatut`. */
-const COULEURS = ['gray', 'green', 'amber', 'slate']
+const COULEURS = ['gray', 'green', 'amber', 'yellow', 'slate', 'rose', 'sky', 'violet']
+
+/**
+ * Plage effective de chaque statut : la borne haute n'est JAMAIS stockée, elle
+ * se déduit du seuil suivant. C'est ce qui rend une grille incohérente
+ * impossible à exprimer — mais aussi ce qui la rend difficile à lire tant qu'on
+ * ne l'affiche pas explicitement.
+ */
+const plages = computed(() => {
+  const tries = [...niveaux.value].sort((a, b) => a.seuil_min - b.seuil_min)
+  const bornes = new Map<string, string>()
+  tries.forEach((n, i) => {
+    const suivant = tries[i + 1]
+    bornes.set(
+      n.id,
+      suivant
+        ? `${n.seuil_min} – ${suivant.seuil_min - 1} pts`
+        : `${n.seuil_min} pts et plus`,
+    )
+  })
+  return bornes
+})
+
+/** Deux statuts au même seuil rendraient la grille ambiguë ; l'index unique en
+ *  base le refuse déjà, autant le signaler avant l'aller-retour serveur. */
+const seuilsDupliques = computed(() => {
+  const vus = new Map<number, number>()
+  for (const n of niveaux.value) vus.set(n.seuil_min, (vus.get(n.seuil_min) ?? 0) + 1)
+  return new Set([...vus.entries()].filter(([, c]) => c > 1).map(([s]) => s))
+})
 
 const rafraichir = async () => {
   chargement.value = true
@@ -171,7 +200,10 @@ const supprimer = async (n: AdminNiveau) => {
       <div class="overflow-x-auto">
         <table class="table table-zebra table-sm">
           <thead>
-            <tr><th>Ordre</th><th>Code</th><th>Libellé</th><th>Seuil min</th><th>Badge</th><th /></tr>
+            <tr>
+              <th>Ordre</th><th>Code</th><th>Libellé</th><th>Seuil min</th>
+              <th>Plage effective</th><th>Badge</th><th />
+            </tr>
           </thead>
           <tbody>
             <tr v-for="n in niveaux" :key="n.id">
@@ -181,7 +213,23 @@ const supprimer = async (n: AdminNiveau) => {
                 <span v-if="n.seuil_min === 0" class="badge badge-ghost badge-sm ml-1">plancher</span>
               </td>
               <td><input v-model="n.libelle" class="input input-sm input-bordered w-44"></td>
-              <td><input v-model.number="n.seuil_min" type="number" class="input input-sm input-bordered w-24" :disabled="n.seuil_min === 0"></td>
+              <td>
+                <input v-model.number="n.seuil_min" type="number" class="input input-sm input-bordered w-24" :disabled="n.seuil_min === 0">
+                <!--
+                  L'index unique en base refuse déjà deux statuts au même seuil ;
+                  le dire ici évite un aller-retour serveur pour une erreur
+                  visible à l'œil nu.
+                -->
+                <span v-if="seuilsDupliques.has(n.seuil_min)" class="badge badge-error badge-sm mt-1 block">
+                  seuil déjà utilisé
+                </span>
+              </td>
+              <!--
+                La borne haute n'est jamais stockée : elle se déduit du seuil
+                suivant. L'afficher est le seul moyen de relire la grille comme
+                un membre la vivra.
+              -->
+              <td class="whitespace-nowrap text-xs opacity-70">{{ plages.get(n.id) }}</td>
               <td class="flex gap-1">
                 <select v-model="n.badge_couleur" class="select select-sm select-bordered w-28">
                   <option :value="null">—</option>

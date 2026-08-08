@@ -126,6 +126,24 @@
                 <font-awesome-icon :icon="['fas', 'share-nodes']" class="w-4 h-4" />
                 Partager
               </button>
+              <div class="mt-3 flex justify-center">
+                <EngagementOffrirCadeauBouton
+                  type-objet="personnalite_connue"
+                  :objet-id="personnalite.id"
+                  :auteur-id="personnalite.cree_par"
+                  :destinataire="personnalite.nom_complet"
+                  @offert="cadeauxRef?.rafraichir()"
+                />
+              </div>
+            </section>
+
+            <!-- Cadeaux reçus par cette personnalité -->
+            <section class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <EngagementCadeauxRecus
+                ref="cadeauxRef"
+                type-objet="personnalite_connue"
+                :objet-id="personnalite.id"
+              />
             </section>
 
             <!-- Actions -->
@@ -186,6 +204,9 @@ const { data: persoCharge, pending: chargement } = await useAsyncData(
   () => obtenirPersonnalite(ficheId, personnaliteId),
 )
 const personnalite = ref<PersonnaliteConnueAPI | null>(persoCharge.value)
+
+// Rechargé après qu'un cadeau vient d'être offert.
+const cadeauxRef = ref<{ rafraichir: () => void } | null>(null)
 
 const LABELS_DOMAINE: Record<DomainePersonnalite, string> = {
   politique: 'Politique',

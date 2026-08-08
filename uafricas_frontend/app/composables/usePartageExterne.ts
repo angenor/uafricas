@@ -25,14 +25,18 @@ interface ApiResponse<T> {
 }
 
 export interface ResultatPartageExterne {
-  reseaux_distincts: number
-  seuil: number
+  /** Ce réseau vient-il d'être journalisé pour ce couple membre/contenu ? */
+  enregistre: boolean
   /**
-   * Reflète le franchissement du seuil, **pas** le crédit effectif : le plafond
-   * journalier peut écrêter à 0 point. Ne rien promettre à l'utilisateur sur
-   * cette base — l'écrêtage se lit dans son journal de points.
+   * L'**auteur du contenu** vient-il d'être crédité ? Vrai au premier partage de
+   * ce contenu par ce membre, tous canaux confondus.
+   *
+   * Le bonus « 5 réseaux distincts » n'existe plus : le partage récompense
+   * désormais celui qui a produit le contenu, pas celui qui le relaie. Il n'y a
+   * donc plus rien à promettre au partageur, et aucune modale n'affiche de
+   * compteur de progression.
    */
-  bonus_attribue: boolean
+  auteur_credite: boolean
 }
 
 export const usePartageExterne = () => {

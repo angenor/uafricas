@@ -20,14 +20,15 @@ struct RegleActive {
     plafond_mensuel: Option<i32>,
     /// Catégorie de ventilation, **recopiée** sur le mouvement à l'écriture (R1).
     categorie_id: Option<Uuid>,
-    /// Nombre d'occurrences distinctes exigées avant crédit (R10). `NULL` = immédiat.
-    seuil_declencheur: Option<i32>,
 }
 
+/// La colonne `regle_points.seuil_declencheur` n'est plus lue par le moteur : son
+/// unique consommateur était le bonus « 5 réseaux distincts », supprimé par la
+/// feature 008. La colonne subsiste en base et reste réglable en back-office, au
+/// cas où une future règle à seuil serait introduite.
 async fn charger_regle(pool: &PgPool, type_action: &str) -> Option<RegleActive> {
-    sqlx::query_as::<_, (i32, i32, Option<i32>, Option<i32>, Option<Uuid>, Option<i32>)>(
-        "SELECT points, reputation_delta, plafond_journalier, plafond_mensuel,
-                categorie_id, seuil_declencheur
+    sqlx::query_as::<_, (i32, i32, Option<i32>, Option<i32>, Option<Uuid>)>(
+        "SELECT points, reputation_delta, plafond_journalier, plafond_mensuel, categorie_id
          FROM engagement.regle_points
          WHERE type_action = $1 AND actif = TRUE",
     )
@@ -37,20 +38,14 @@ async fn charger_regle(pool: &PgPool, type_action: &str) -> Option<RegleActive> 
     .ok()
     .flatten()
     .map(
-        |(
-            points,
-            reputation_delta,
-            plafond_journalier,
-            plafond_mensuel,
-            categorie_id,
-            seuil_declencheur,
-        )| RegleActive {
-            points,
-            reputation_delta,
-            plafond_journalier,
-            plafond_mensuel,
-            categorie_id,
-            seuil_declencheur,
+        |(points, reputation_delta, plafond_journalier, plafond_mensuel, categorie_id)| {
+            RegleActive {
+                points,
+                reputation_delta,
+                plafond_journalier,
+                plafond_mensuel,
+                categorie_id,
+            }
         },
     )
 }
@@ -432,7 +427,7 @@ async fn badges_a_evaluer(
 ///
 /// Appelée à deux endroits, **jamais dans une transaction métier** :
 /// 1. après le commit d'un mouvement (depuis `appliquer`, donc pour `attribuer`,
-///    `retirer`, `evaluer_popularite` et `ajuster` d'un coup) ;
+///    `retirer`, les trois `crediter_*` et `ajuster` d'un coup) ;
 /// 2. à la lecture de `GET /mes-badges`, ce qui rattrape les conditions devenues
 ///    vraies autrement qu'à la suite d'un mouvement (badge créé par
 ///    l'administration, condition assouplie) — sans aucune tâche de fond.
@@ -567,59 +562,283 @@ pub async fn retirer(
     }
 }
 
-/// Évalue les paliers de popularité d'une publication et crédite l'auteur
-/// une seule fois par palier franchi (idempotence via la clé) (D3, FR-015/016).
+// ════════════════════════════════════════════════════════════════════════════
+// RÉSOLUTION DU BÉNÉFICIAIRE (feature 008, research R4)
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Propriétaire actif d'un support média, avec repli sur son créateur.
 ///
-/// **Règle de substitution** (R4) : s'il existe au moins un palier actif pour la
-/// famille de contenus, ces paliers **remplacent** intégralement les paliers
-/// globaux pour cette famille — jamais d'union. Une union ferait cumuler
-/// « 100 likes global » et « 100 likes télé » sur le même contenu : deux clés
-/// d'idempotence distinctes, donc un double crédit.
-pub async fn evaluer_popularite(
+/// L'unicité du propriétaire est **structurelle** (`uq_support_un_proprietaire`,
+/// migration 09m) : la requête retourne 0 ou 1 ligne, aucune agrégation n'est
+/// nécessaire. Le repli sur `cree_par` couvre les supports créés par
+/// l'administration avant l'existence de `support_detenteur` — sans lui, ces
+/// contenus cesseraient silencieusement de rapporter.
+async fn proprietaire_support(
+    pool: &PgPool,
+    type_support: &str,
+    support_id: Uuid,
+    table: &str,
+) -> Option<Uuid> {
+    let proprietaire: Option<Uuid> = sqlx::query_scalar(
+        "SELECT utilisateur_id FROM media_content.support_detenteur
+          WHERE type_support = $1::media_content.type_support_media
+            AND support_id = $2 AND role = 'proprietaire' AND actif = TRUE",
+    )
+    .bind(type_support)
+    .bind(support_id)
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten();
+
+    if proprietaire.is_some() {
+        return proprietaire;
+    }
+
+    // `table` ne vient jamais du client : c'est une constante issue du `match`
+    // de `resoudre_beneficiaire`.
+    sqlx::query_scalar(&format!("SELECT cree_par FROM {table} WHERE id = $1"))
+        .bind(support_id)
+        .fetch_optional(pool)
+        .await
+        .ok()
+        .flatten()
+}
+
+/// Lit une colonne d'auteur sur une table dont le nom est une **constante**.
+async fn auteur_simple(pool: &PgPool, table: &str, objet_id: Uuid) -> Option<Uuid> {
+    sqlx::query_scalar(&format!("SELECT cree_par FROM {table} WHERE id = $1"))
+        .bind(objet_id)
+        .fetch_optional(pool)
+        .await
+        .ok()
+        .flatten()
+}
+
+/// Résout le membre à créditer pour un contenu donné (research R4).
+///
+/// Renvoie `None` — **sans erreur** — dans trois cas parfaitement légitimes :
+/// - `site_touristique` et `secteur_developpement` : contenus éditoriaux
+///   rattachés à une fiche pays, **sans aucune colonne d'auteur** en base
+///   (FR-008c). La réaction et le partage continuent de fonctionner
+///   normalement, ils ne créditent simplement personne.
+/// - contenu introuvable ;
+/// - `type_objet` inconnu.
+///
+/// `profil` et `biblio_humaine` sont les deux familles où l'`objet_id` **est**
+/// déjà l'identifiant du bénéficiaire : le profil se désigne lui-même, et une
+/// fiche de bibliothèque humaine est indexée sur son titulaire.
+pub async fn resoudre_beneficiaire(
+    pool: &PgPool,
+    type_objet: &str,
+    objet_id: Uuid,
+) -> Option<Uuid> {
+    match type_objet {
+        // ── Supports médias : le PROPRIÉTAIRE, plus le créateur (FR-008a) ────
+        "chaine_tv" => {
+            proprietaire_support(pool, "chaine_tv", objet_id, "media_content.chaine_tv").await
+        }
+        "station_radio" => {
+            proprietaire_support(pool, "station_radio", objet_id, "media_content.station_radio")
+                .await
+        }
+
+        // ── Programmes : le propriétaire du SUPPORT PARENT ───────────────────
+        // Le rattachement au parent est nullable (`ON DELETE SET NULL`) : un
+        // programme orphelin retombe sur son propre créateur.
+        "programme_tele" => {
+            let chaine_id: Option<Uuid> = sqlx::query_scalar(
+                "SELECT chaine_id FROM media_content.programme_tele WHERE id = $1",
+            )
+            .bind(objet_id)
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten()
+            .flatten();
+
+            match chaine_id {
+                Some(chaine_id) => {
+                    proprietaire_support(pool, "chaine_tv", chaine_id, "media_content.chaine_tv")
+                        .await
+                }
+                None => auteur_simple(pool, "media_content.programme_tele", objet_id).await,
+            }
+        }
+        "programme_radio" => {
+            let station_id: Option<Uuid> = sqlx::query_scalar(
+                "SELECT station_id FROM media_content.programme_radio WHERE id = $1",
+            )
+            .bind(objet_id)
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten()
+            .flatten();
+
+            match station_id {
+                Some(station_id) => {
+                    proprietaire_support(
+                        pool,
+                        "station_radio",
+                        station_id,
+                        "media_content.station_radio",
+                    )
+                    .await
+                }
+                None => auteur_simple(pool, "media_content.programme_radio", objet_id).await,
+            }
+        }
+
+        // ── Contenus dotés d'un `cree_par` ───────────────────────────────────
+        "codimoi" => auteur_simple(pool, "culture.codimoi", objet_id).await,
+        "factcheck" => auteur_simple(pool, "governance.factcheck", objet_id).await,
+        "video" => auteur_simple(pool, "media_content.video", objet_id).await,
+        "fiche_pays" => auteur_simple(pool, "country_profile.fiche_pays", objet_id).await,
+        "personnalite_connue" => {
+            auteur_simple(pool, "country_profile.personnalite_connue", objet_id).await
+        }
+        "recette_culinaire" => {
+            auteur_simple(pool, "country_profile.recette_culinaire", objet_id).await
+        }
+
+        // ── Familles où l'objet EST le membre ────────────────────────────────
+        "profil" | "biblio_humaine" => {
+            let existe: bool = sqlx::query_scalar(
+                "SELECT EXISTS(SELECT 1 FROM iam.utilisateur
+                                WHERE id = $1 AND deleted_at IS NULL AND etat = 'actif')",
+            )
+            .bind(objet_id)
+            .fetch_one(pool)
+            .await
+            .unwrap_or(false);
+            existe.then_some(objet_id)
+        }
+
+        // ── Aucun auteur enregistré, et ce n'est pas une anomalie (FR-008c) ──
+        "site_touristique" | "secteur_developpement" => None,
+
+        autre => {
+            log::debug!("Engagement: aucune résolution d'auteur pour la famille « {autre} »");
+            None
+        }
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LES TROIS SOURCES CANONIQUES (feature 008)
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Crédite l'auteur d'un contenu pour un « j'aime » reçu (research R3).
+///
+/// Clé `jaime:{type_objet}:{objet_id}:{membre_qui_aime_id}` — elle ne porte pas
+/// l'état de la réaction, seulement **qui a aimé quoi**. Trois exigences en
+/// découlent sans une ligne de code supplémentaire :
+/// - retirer puis remettre son j'aime ne crédite qu'une fois (le second INSERT
+///   frappe la contrainte `UNIQUE` et ne fait rien) ;
+/// - un retrait ne reprend jamais de point (la fonction n'est pas appelée) ;
+/// - deux membres distincts créditent séparément.
+///
+/// N'écrit rien si l'auteur est aussi celui qui aime (FR-009). Non-bloquante.
+pub async fn crediter_jaime(
     pool: &PgPool,
     type_objet: &str,
     objet_id: Uuid,
     auteur_id: Uuid,
-    likes_count: i64,
+    membre_qui_aime_id: Uuid,
 ) {
-    let paliers = sqlx::query_as::<_, (i32, i32)>(
-        "SELECT seuil_likes, points FROM engagement.palier_popularite
-         WHERE actif = TRUE AND seuil_likes <= $1
-           AND type_objet IS NOT DISTINCT FROM (
-                 CASE WHEN EXISTS (SELECT 1 FROM engagement.palier_popularite
-                                    WHERE actif = TRUE AND type_objet = $2)
-                      THEN $2 ELSE NULL END)
-         ORDER BY seuil_likes",
+    if auteur_id == membre_qui_aime_id {
+        return;
+    }
+
+    let cle = format!("jaime:{type_objet}:{objet_id}:{membre_qui_aime_id}");
+    if let Err(e) = appliquer(
+        pool,
+        auteur_id,
+        "jaime_recu",
+        Some(type_objet),
+        Some(objet_id),
+        &cle,
+        None,
+        None,
     )
-    .bind(likes_count as i32)
-    .bind(type_objet)
-    .fetch_all(pool)
-    .await;
+    .await
+    {
+        log::error!("Engagement: échec crédit j'aime sur {type_objet}/{objet_id}: {e}");
+    }
+}
 
-    let paliers = match paliers {
-        Ok(p) => p,
-        Err(e) => {
-            log::error!("Engagement: échec lecture paliers popularité: {e}");
-            return;
-        }
-    };
+/// Crédite l'auteur d'un contenu pour un partage reçu (research R5).
+///
+/// Le **canal n'apparaît pas dans la clé** : `partage:{type_objet}:{objet_id}:{partageur_id}`.
+/// Un même partageur ne crédite donc qu'une fois par contenu, qu'il l'ait
+/// envoyé sur WhatsApp, Facebook, Telegram ou reposté sur le mur. Aucun
+/// `COUNT(DISTINCT …)`, aucune fenêtre de concurrence : l'unicité par contenu et
+/// par partageur est structurelle. Les canaux restent tracés dans leur table
+/// d'origine et dans `engagement.partage_externe` pour la statistique.
+///
+/// N'écrit rien si le partageur est l'auteur (FR-014) — le bénéficiaire est
+/// désormais l'auteur, plus le partageur, ce qui inverse la sémantique de
+/// l'ancien bonus « 5 réseaux ». Non-bloquante.
+pub async fn crediter_partage(
+    pool: &PgPool,
+    type_objet: &str,
+    objet_id: Uuid,
+    auteur_id: Uuid,
+    partageur_id: Uuid,
+) {
+    if auteur_id == partageur_id {
+        return;
+    }
 
-    for (seuil, points) in paliers {
-        let cle = format!("popularite:{type_objet}:{objet_id}:{seuil}");
-        if let Err(e) = appliquer(
-            pool,
-            auteur_id,
-            "popularite_palier",
-            Some(type_objet),
-            Some(objet_id),
-            &cle,
-            Some(points),
-            Some(0),
-        )
-        .await
-        {
-            log::error!("Engagement: échec palier {seuil} pour {auteur_id}: {e}");
-        }
+    let cle = format!("partage:{type_objet}:{objet_id}:{partageur_id}");
+    if let Err(e) = appliquer(
+        pool,
+        auteur_id,
+        "partage_recu",
+        Some(type_objet),
+        Some(objet_id),
+        &cle,
+        None,
+        None,
+    )
+    .await
+    {
+        log::error!("Engagement: échec crédit partage sur {type_objet}/{objet_id}: {e}");
+    }
+}
+
+/// Crédite le bénéficiaire d'un cadeau virtuel, **après le COMMIT** de la
+/// transaction comptable (research R9, R10).
+///
+/// Le montant vient du **catalogue figé sur la transaction**, jamais de la
+/// règle : `cadeau_recu` porte `points = 0` et ne sert que de porte
+/// activable/désactivable et de porteuse de catégorie et de plafonds. D'où le
+/// `montant_override`, exactement comme l'ajustement administrateur.
+///
+/// Clé `cadeau:{transaction_id}` : rejouer la confirmation d'un paiement ne
+/// crédite jamais deux fois (FR-022). C'est aussi ce motif de clé que cible la
+/// purge de fin de phase de test — d'où l'interdiction d'y mettre autre chose.
+pub async fn crediter_cadeau(
+    pool: &PgPool,
+    beneficiaire_id: Uuid,
+    transaction_id: Uuid,
+    points: i32,
+) {
+    let cle = format!("cadeau:{transaction_id}");
+    if let Err(e) = appliquer(
+        pool,
+        beneficiaire_id,
+        "cadeau_recu",
+        Some("cadeau"),
+        Some(transaction_id),
+        &cle,
+        Some(points),
+        None,
+    )
+    .await
+    {
+        log::error!("Engagement: échec crédit cadeau {transaction_id} pour {beneficiaire_id}: {e}");
     }
 }
 
@@ -629,37 +848,30 @@ pub async fn evaluer_popularite(
 
 /// Résultat du traçage d'un partage vers un réseau social externe.
 pub struct ResultatPartageExterne {
-    /// Nombre de réseaux **distincts** vers lesquels ce contenu a été partagé
-    /// par ce membre.
-    pub reseaux_distincts: i64,
-    /// Seuil paramétré sur la règle (jamais une constante du code).
-    pub seuil: i32,
-    /// Le seuil vient-il d'être atteint ou dépassé ?
+    /// Le partage a-t-il été journalisé ? (`false` = ce réseau était déjà tracé
+    /// pour ce couple membre/contenu — la trace ne double jamais.)
+    pub enregistre: bool,
+    /// L'auteur du contenu vient-il d'être crédité ?
     ///
-    /// Reflète le **franchissement**, pas le crédit effectif : le plafond
-    /// journalier de la règle peut écrêter à 0 point. L'écrêtage se lit dans le
-    /// journal, pas ici.
-    pub bonus_attribue: bool,
+    /// Vrai au **premier** partage de ce contenu par ce membre, tous canaux
+    /// confondus. Purement informatif : le partage n'échoue jamais si le crédit
+    /// échoue (FR-034).
+    pub auteur_credite: bool,
 }
 
-/// Trace un partage externe et crédite le bonus quand assez de réseaux distincts
-/// ont été touchés pour un même contenu.
+/// Trace un partage vers un réseau externe et crédite **l'auteur du contenu**.
 ///
-/// Séquence : `INSERT … ON CONFLICT DO NOTHING` (répéter un réseau ne crée rien,
-/// donc n'avance pas le compteur) → `COUNT(DISTINCT reseau)` → crédit si le
-/// compte atteint le `seuil_declencheur` **lu dans la règle**.
+/// La sémantique est inversée par rapport au bonus « 5 réseaux distincts »
+/// qu'elle remplace : le bénéficiaire n'est plus le partageur mais l'auteur
+/// (FR-012). Le seuil, le décompte des réseaux et le drapeau `bonus_attribue`
+/// disparaissent avec lui — la clé commune de `crediter_partage` réalise
+/// structurellement l'unicité par (contenu, partageur) que le comptage
+/// approchait (research R5).
 ///
-/// Le seuil n'est jamais écrit en dur : il est paramétrable comme le reste du
-/// barème, et la règle livrée le fixe à 5.
-///
-/// La clé `partage5:{type_objet}:{objet_id}:{utilisateur_id}` porte le membre :
-/// deux membres qui partagent le même contenu sont crédités séparément, et un
-/// même membre ne l'est qu'une fois par contenu quel que soit le nombre de
-/// réseaux au-delà du seuil.
-///
-/// **Aucun filtre sur l'auteur du contenu** : le bénéficiaire est le partageur,
-/// et promouvoir sa propre contribution à l'extérieur est exactement le
-/// comportement recherché — c'est l'exception voulue à l'anti-auto-attribution.
+/// La table `engagement.partage_externe` survit **en tant que trace
+/// statistique** par canal : son unicité (membre, contenu, réseau) garantit
+/// qu'un même réseau n'est journalisé qu'une fois, ce qui rend le décompte des
+/// canaux exploitable même si le crédit, lui, est unique.
 pub async fn enregistrer_partage_externe(
     pool: &PgPool,
     utilisateur_id: Uuid,
@@ -667,7 +879,7 @@ pub async fn enregistrer_partage_externe(
     objet_id: Uuid,
     reseau: &str,
 ) -> Result<ResultatPartageExterne, sqlx::Error> {
-    sqlx::query(
+    let insertion = sqlx::query(
         "INSERT INTO engagement.partage_externe (utilisateur_id, type_objet, objet_id, reseau)
          VALUES ($1, $2, $3, $4::engagement.reseau_social)
          ON CONFLICT (utilisateur_id, type_objet, objet_id, reseau) DO NOTHING",
@@ -679,36 +891,28 @@ pub async fn enregistrer_partage_externe(
     .execute(pool)
     .await?;
 
-    let reseaux_distincts: i64 = sqlx::query_scalar(
-        "SELECT COUNT(DISTINCT reseau) FROM engagement.partage_externe
-          WHERE utilisateur_id = $1 AND type_objet = $2 AND objet_id = $3",
-    )
-    .bind(utilisateur_id)
-    .bind(type_objet)
-    .bind(objet_id)
-    .fetch_one(pool)
-    .await?;
+    // Le crédit est tenté à CHAQUE partage, y compris sur un réseau déjà tracé :
+    // c'est la clé d'idempotence qui décide, pas nous. Une lecture préalable
+    // rouvrirait une fenêtre de concurrence pour un résultat identique.
+    let auteur_id = resoudre_beneficiaire(pool, type_objet, objet_id).await;
+    let auteur_credite = match auteur_id {
+        Some(auteur_id) if auteur_id != utilisateur_id => {
+            let deja: bool = sqlx::query_scalar(
+                "SELECT EXISTS(SELECT 1 FROM engagement.mouvement_points
+                                WHERE cle_idempotence = $1)",
+            )
+            .bind(format!("partage:{type_objet}:{objet_id}:{utilisateur_id}"))
+            .fetch_one(pool)
+            .await
+            .unwrap_or(true);
 
-    // Règle inactive ou sans seuil : rien à créditer, mais le partage reste tracé
-    // (l'administration peut activer la règle plus tard, le log est déjà là).
-    let regle = charger_regle(pool, "partage_externe_5reseaux").await;
-    let seuil = regle.as_ref().and_then(|r| r.seuil_declencheur).unwrap_or(0);
+            crediter_partage(pool, type_objet, objet_id, auteur_id, utilisateur_id).await;
+            !deja
+        }
+        _ => false,
+    };
 
-    let bonus_attribue = seuil > 0 && reseaux_distincts >= seuil as i64;
-    if bonus_attribue {
-        let cle = format!("partage5:{type_objet}:{objet_id}:{utilisateur_id}");
-        attribuer(
-            pool,
-            utilisateur_id,
-            "partage_externe_5reseaux",
-            Some(type_objet),
-            Some(objet_id),
-            &cle,
-        )
-        .await;
-    }
-
-    Ok(ResultatPartageExterne { reseaux_distincts, seuil, bonus_attribue })
+    Ok(ResultatPartageExterne { enregistre: insertion.rows_affected() > 0, auteur_credite })
 }
 
 /// Ajustement manuel administrateur (crédit/débit motivé). Chaque appel est

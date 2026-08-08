@@ -397,8 +397,7 @@ pub async fn reagir_video(
 
     let (nombre_likes, nombre_dislikes) = compter_reactions_video(pool.get_ref(), video_id).await?;
 
-    // Engagement : paliers de popularité de la vidéo (non-bloquant). Auteur = vidéo.cree_par,
-    // auto-like exclu du compte (FR-017).
+    // Engagement : 1 point à l'auteur de la vidéo par « j'aime » reçu (non-bloquant).
     if type_reaction == "like" {
         if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
             "SELECT cree_par FROM media_content.video WHERE id = $1",
@@ -407,18 +406,12 @@ pub async fn reagir_video(
         .fetch_optional(pool.get_ref())
         .await
         {
-            let likes: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM media_content.video_reaction
-                 WHERE video_id = $1 AND type_reaction = 'like' AND utilisateur_id <> $2",
-            )
-            .bind(video_id)
-            .bind(cree_par)
-            .fetch_one(pool.get_ref())
-            .await
-            .unwrap_or(0);
-
-            crate::services::engagement::evaluer_popularite(
-                pool.get_ref(), "video", video_id, cree_par, likes,
+            crate::services::engagement::crediter_jaime(
+                pool.get_ref(),
+                "video",
+                video_id,
+                cree_par,
+                user_id,
             )
             .await;
         }
@@ -471,6 +464,20 @@ pub async fn partager_video(
     .bind(&legende)
     .fetch_one(pool.get_ref())
     .await?;
+
+    // Engagement : 1 point à l'auteur de la vidéo par partage reçu (non-bloquant).
+    if let Some(auteur_id) =
+        crate::services::engagement::resoudre_beneficiaire(pool.get_ref(), "video", video_id).await
+    {
+        crate::services::engagement::crediter_partage(
+            pool.get_ref(),
+            "video",
+            video_id,
+            auteur_id,
+            user_id,
+        )
+        .await;
+    }
 
     let row = sqlx::query_as::<_, PartageVideoRow>(&format!(
         "{} AND pv.id = $1",

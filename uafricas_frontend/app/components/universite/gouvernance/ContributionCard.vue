@@ -79,6 +79,18 @@
             {{ contribution.stats.commentaires }}
           </span>
         </div>
+        <!-- `contribution.type` est transmis tel quel : seul `factcheck` figure
+             parmi les familles éligibles, le bouton se masque donc de lui-même
+             pour les mauvaises habitudes et les idées-forces. -->
+        <span @click.stop>
+          <EngagementOffrirCadeauBouton
+            :type-objet="contribution.type"
+            :objet-id="contribution.id"
+            :auteur-id="contribution.auteur.id"
+            :destinataire="`${contribution.auteur.prenom} ${contribution.auteur.nom}`"
+            taille="sm"
+          />
+        </span>
         <span class="text-blue-600 font-medium hover:text-blue-800">
           Voir plus →
         </span>

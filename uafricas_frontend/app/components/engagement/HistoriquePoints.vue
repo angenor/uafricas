@@ -85,6 +85,60 @@ const signe = (n: number) => (n > 0 ? `+${n}` : `${n}`)
  * différentes pour le membre — les confondre ferait croire à une perte de points
  * là où il n'y en a pas, ou l'inverse.
  */
+/**
+ * Familles de contenus telles qu'elles sont écrites sur le mouvement, rendues
+ * lisibles. Une famille absente de cette table s'affiche brute plutôt que de
+ * disparaître : mieux vaut un `type_objet` technique qu'une ligne muette.
+ */
+const LIBELLE_FAMILLE: Record<string, string> = {
+  codimoi: 'Codi-moi',
+  factcheck: 'Vérification de faits',
+  biblio_humaine: 'Bibliothèque humaine',
+  video: 'Vidéo Vidafrica',
+  fiche_pays: 'Fiche territoire',
+  profil: 'Profil',
+  chaine_tv: 'Chaîne TV',
+  station_radio: 'Station radio',
+  programme_tele: 'Programme TV',
+  programme_radio: 'Émission radio',
+  personnalite_connue: 'Personnalité',
+  recette_culinaire: 'Recette culinaire',
+  cadeau: 'Cadeau virtuel',
+}
+
+const ICONE_FAMILLE: Record<string, string> = {
+  codimoi: 'comments',
+  factcheck: 'magnifying-glass-chart',
+  biblio_humaine: 'book-open',
+  video: 'video',
+  fiche_pays: 'earth-africa',
+  profil: 'user',
+  chaine_tv: 'tv',
+  station_radio: 'radio',
+  programme_tele: 'photo-film',
+  programme_radio: 'microphone',
+  personnalite_connue: 'user-tie',
+  recette_culinaire: 'utensils',
+  cadeau: 'gift',
+}
+
+/**
+ * Lien vers le contenu concerné, `undefined` quand aucune page de détail
+ * n'existe. Codi-moi et le fact-check vivent dans des cartes et des modales,
+ * pas sur une route dédiée : y renvoyer produirait un 404. Un cadeau pointe sur
+ * la transaction, qui n'a pas non plus de page.
+ */
+const lienContenu = (m: MouvementPoints): string | undefined => {
+  if (!m.objet_id) return undefined
+  switch (m.type_objet) {
+    case 'video': return `/vidafrica/${m.objet_id}`
+    case 'profil':
+    case 'biblio_humaine': return `/profil/${m.objet_id}`
+    case 'fiche_pays': return `/opportunite-afrique/${m.objet_id}`
+    default: return undefined
+  }
+}
+
 const mentionPlafond = (m: MouvementPoints): string | null => {
   if (!m.plafond_atteint) return null
   return m.points > 0
@@ -167,6 +221,22 @@ const mentionPlafond = (m: MouvementPoints): string | null => {
             </p>
             <div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
               <span class="text-gray-400">{{ formaterDate(m.created_at) }}</span>
+              <!--
+                Depuis le recadrage, un mouvement dit « J'aime reçu sur un
+                contenu » sans dire lequel : trois j'aime le même jour
+                deviendraient indiscernables. La famille est donc rendue
+                lisible, avec un lien quand la page de détail existe.
+              -->
+              <component
+                :is="lienContenu(m) ? 'NuxtLink' : 'span'"
+                v-if="m.type_objet"
+                :to="lienContenu(m)"
+                class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-gray-600"
+                :class="lienContenu(m) ? 'transition hover:bg-gray-200 hover:text-gray-900' : ''"
+              >
+                <font-awesome-icon :icon="`fa-solid fa-${ICONE_FAMILLE[m.type_objet] || 'circle-nodes'}`" />
+                {{ LIBELLE_FAMILLE[m.type_objet] || m.type_objet }}
+              </component>
               <span
                 v-if="m.categorie_libelle"
                 class="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600"

@@ -51,9 +51,10 @@ const reseaux = computed<OptionReseau[]>(() => [
     couleur: 'text-[#0A66C2]',
     reseau: 'linkedin',
   },
-  // Telegram et e-mail complètent le catalogue : sans eux, la plateforme n'offrait
-  // que 4 réseaux et le seuil de 5 réseaux distincts du barème était
-  // structurellement inatteignable (R10).
+  // Telegram et e-mail complètent le catalogue de partage. Ils avaient été
+  // ajoutés pour rendre atteignable le seuil de 5 réseaux distincts ; ce seuil
+  // n'existe plus (le partage crédite désormais l'auteur, une fois par
+  // partageur et par contenu), mais les deux réseaux restent utiles.
   {
     nom: 'Telegram',
     url: `https://t.me/share/url?url=${encodeURIComponent(urlPartage.value)}&text=${encodeURIComponent(textePartage.value)}`,

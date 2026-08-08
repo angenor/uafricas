@@ -212,6 +212,14 @@ import {
   faTrophy,
   faLockOpen,
   faCircleNodes,
+  // Cadeaux virtuels (feature 008) : catalogue + catégorie de points
+  faGift,
+  faCertificate,
+  faHatCowboy,
+  faThumbtack,
+  // Utilisées par le back-office de l'engagement
+  faList,
+  faSackXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faCalendar as farCalendar,
@@ -455,6 +463,13 @@ library.add(
   faTrophy,
   faLockOpen,
   faCircleNodes,
+  // Cadeaux virtuels (feature 008) — catalogue seedé + back-office
+  faGift,
+  faCertificate,
+  faHatCowboy,
+  faThumbtack,
+  faList,
+  faSackXmark,
   faTelegram,
 )
 

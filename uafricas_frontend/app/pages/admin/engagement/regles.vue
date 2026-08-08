@@ -142,6 +142,26 @@ const retirerRegle = async (r: AdminRegle) => {
   } catch (e) { signaler(e) }
 }
 
+// ── Filtre d'état des règles (feature 008) ──────────────────────────────────
+//
+// Depuis le recadrage, 3 règles sont actives et 9 inactives : l'état devient
+// l'information la plus importante de l'écran, alors qu'il n'était jusqu'ici
+// qu'une case à cocher perdue en avant-dernière colonne.
+const filtreEtat = ref<'toutes' | 'actives' | 'inactives'>('toutes')
+
+/** Les actives d'abord — une règle inactive ne doit pas se lire comme une active. */
+const reglesAffichees = computed(() => {
+  const filtrees = regles.value.filter((r) =>
+    filtreEtat.value === 'actives' ? r.actif
+      : filtreEtat.value === 'inactives' ? !r.actif
+        : true,
+  )
+  return [...filtrees].sort((a, b) => Number(b.actif) - Number(a.actif))
+})
+
+const nombreActives = computed(() => regles.value.filter((r) => r.actif).length)
+const nombreInactives = computed(() => regles.value.length - nombreActives.value)
+
 // ── Paliers, groupés par famille ────────────────────────────────────────────
 
 /** Les paliers globaux d'abord, puis un groupe par famille restreinte. */
@@ -214,11 +234,40 @@ const retirerPalier = async (p: AdminPalier) => {
       <!-- ─── Règles ─── -->
       <section class="space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 class="text-lg font-semibold">Règles de points</h2>
-          <button class="btn btn-sm btn-primary" @click="formulaireRegle = !formulaireRegle">
-            <font-awesome-icon :icon="formulaireRegle ? 'fa-solid fa-xmark' : 'fa-solid fa-plus'" />
-            {{ formulaireRegle ? 'Annuler' : 'Nouvelle règle' }}
-          </button>
+          <h2 class="text-lg font-semibold">
+            Règles de points
+            <span class="badge badge-success badge-sm ml-2">{{ nombreActives }} active(s)</span>
+            <span class="badge badge-ghost badge-sm">{{ nombreInactives }} inactive(s)</span>
+          </h2>
+          <div class="flex items-center gap-2">
+            <select v-model="filtreEtat" class="select select-sm select-bordered">
+              <option value="toutes">Toutes</option>
+              <option value="actives">Actives seulement</option>
+              <option value="inactives">Inactives seulement</option>
+            </select>
+            <button class="btn btn-sm btn-primary" @click="formulaireRegle = !formulaireRegle">
+              <font-awesome-icon :icon="formulaireRegle ? 'fa-solid fa-xmark' : 'fa-solid fa-plus'" />
+              {{ formulaireRegle ? 'Annuler' : 'Nouvelle règle' }}
+            </button>
+          </div>
+        </div>
+
+        <!--
+          Une règle désactivée n'est PAS supprimée : son montant d'origine est
+          conservé et la réactiver rétablit le crédit sans redéploiement. C'est
+          la contrepartie exacte du recadrage — encore faut-il que le lecteur de
+          l'écran le sache avant de conclure que le barème a été amputé.
+        -->
+        <div class="alert alert-info py-2 text-sm">
+          <font-awesome-icon icon="fa-solid fa-circle-info" />
+          <span>
+            Le barème repose sur <strong>trois sources</strong> : j'aime reçus, partages reçus
+            et cadeaux virtuels reçus. Les autres règles sont <strong>désactivées, pas
+            supprimées</strong> : leurs montants d'origine sont conservés et les réactiver
+            rétablit le crédit immédiatement. Vérifiez toutefois la mention
+            « non instrumentée » : une règle réactivée dont plus aucun code n'émet l'action
+            ne créditerait rien.
+          </span>
         </div>
 
         <!--
@@ -318,8 +367,13 @@ const retirerPalier = async (p: AdminPalier) => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="r in regles" :key="r.id">
+              <tr v-for="r in reglesAffichees" :key="r.id" :class="{ 'opacity-60': !r.actif }">
                 <td class="font-mono text-xs">
+                  <span
+                    class="mr-1.5 inline-block size-2 rounded-full align-middle"
+                    :class="r.actif ? 'bg-success' : 'bg-base-300'"
+                    :title="r.actif ? 'Règle active' : 'Règle inactive — ne crédite rien'"
+                  />
                   {{ r.type_action }}
                   <!--
                     Sans cette mention, une règle créée pour une action que le code
@@ -373,7 +427,28 @@ const retirerPalier = async (p: AdminPalier) => {
 
       <!-- ─── Paliers de popularité, groupés par famille ─── -->
       <section class="space-y-3">
-        <h2 class="text-lg font-semibold">Paliers de popularité (« j'aime » → points)</h2>
+        <h2 class="text-lg font-semibold">
+          Paliers de popularité (« j'aime » → points)
+          <span class="badge badge-ghost badge-sm ml-2">mécanisme remplacé</span>
+        </h2>
+
+        <!--
+          L'écran est conservé, mais il ne pilote plus rien : le laisser tel quel
+          ferait croire qu'y créer un palier crédite encore quelqu'un.
+        -->
+        <div class="alert alert-warning py-2 text-sm">
+          <font-awesome-icon icon="fa-solid fa-triangle-exclamation" />
+          <span>
+            <strong>Ce mécanisme n'est plus alimenté.</strong> Les paliers ont été remplacés
+            par le <strong>crédit unitaire du « j'aime »</strong> : chaque j'aime reçu rapporte
+            désormais les points de la règle <code class="font-mono">jaime_recu</code>, une seule
+            fois par membre et par contenu. Tous les paliers ci-dessous sont inactifs et la règle
+            <code class="font-mono">popularite_palier</code> est désactivée ; la liste n'est
+            conservée que pour une réactivation éventuelle. Un palier ne se déclenche qu'une fois
+            <em>par contenu</em>, jamais par membre — c'est ce qui l'a rendu inutilisable pour
+            récompenser la popularité réelle.
+          </span>
+        </div>
 
         <!--
           Sans ce rappel, un administrateur croira que les paliers d'une famille

@@ -29,6 +29,10 @@ const lectureEnCours = ref(false)
 // ou qu'on déplace la tête ailleurs.
 const videoTerminee = ref(false)
 
+// Rechargement des cadeaux affichés après qu'un cadeau vient d'être offert :
+// sans lui, l'offreur ne verrait le sien qu'au prochain chargement de page.
+const cadeauxRef = ref<{ rafraichir: () => void } | null>(null)
+
 const segments = computed<SegmentKaraoke[]>(() => {
   return sousTitres.value?.segments || []
 })
@@ -156,6 +160,20 @@ onMounted(() => charger())
           <!-- Réactions -->
           <div class="rounded-xl bg-white shadow-sm p-4">
             <VidafricaReactionsBar :video="video" :peut-interagir="estConnecte" />
+            <div class="mt-3">
+              <EngagementOffrirCadeauBouton
+                type-objet="video"
+                :objet-id="video.id"
+                :destinataire="video.titre"
+                taille="sm"
+                @offert="cadeauxRef?.rafraichir()"
+              />
+            </div>
+          </div>
+
+          <!-- Cadeaux reçus par la vidéo -->
+          <div class="rounded-xl bg-white shadow-sm p-4">
+            <EngagementCadeauxRecus ref="cadeauxRef" type-objet="video" :objet-id="video.id" />
           </div>
 
           <!-- Infos vidéo -->
