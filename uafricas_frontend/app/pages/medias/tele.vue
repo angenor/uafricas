@@ -8,16 +8,12 @@
  * catalogue, non une programmation.
  */
 import type { ProgrammeVedette, TeleSection } from '~/composables/useTelevision'
-import type { ThemePhareAPI } from '~/composables/useMediaProposition'
 import type { RoleDetenteur } from '~/composables/useMediaDetention'
-import type { ThematiqueDecompte, TerritoireDecompte } from '~/composables/useMediaSupport'
+import type { ThematiqueDecompte } from '~/composables/useMediaSupport'
 
 const { obtenirVedette, listerSections, listerPays, chargement } = useTelevision()
-// Référentiels de filtre US3/US4 : ils n'exposent que le déclaré.
-const { listerThematiquesDisponibles, listerTerritoiresDisponibles } = useMediaSupport()
-// Le référentiel des thèmes phares est déjà servi publiquement pour le
-// formulaire de proposition : le filtre s'y branche plutôt que d'en dupliquer un.
-const { listerThemes } = useMediaProposition()
+// Référentiel de filtre US3 : il n'expose que les thèmes réellement déclarés.
+const { listerThematiquesDisponibles } = useMediaSupport()
 const { mesSupports } = useMediaDetention()
 const userStore = useUserStore()
 
@@ -65,38 +61,29 @@ const chargementSections = ref(false)
 const TOUS_TERRITOIRES = 'Tous les territoires'
 
 const territoires = ref<string[]>([])
-const themes = ref<ThemePhareAPI[]>([])
 
 const origine = ref('')
 const paysSelectionne = ref(TOUS_TERRITOIRES)
-const themeSelectionne = ref('')
 const enDirect = ref(false)
 /** Thématiques déclarées par la chaîne (US3), sélection multiple. */
 const thematiquesSelectionnees = ref<string[]>([])
-/** Territoire couvert (US4) — remonte aussi les chaînes panafricaines. */
-const territoireSelectionne = ref('')
 
-/** Référentiels de FILTRE : seulement ce qui est réellement déclaré, pour ne
+/** Référentiel de FILTRE : seulement ce qui est réellement déclaré, pour ne
  * jamais proposer une entrée qui ne remonterait rien. */
 const thematiquesDisponibles = ref<ThematiqueDecompte[]>([])
-const territoiresDisponibles = ref<TerritoireDecompte[]>([])
 
 const filtresActifs = computed(() =>
   origine.value !== ''
   || paysSelectionne.value !== TOUS_TERRITOIRES
-  || themeSelectionne.value !== ''
   || enDirect.value
-  || thematiquesSelectionnees.value.length > 0
-  || territoireSelectionne.value !== '',
+  || thematiquesSelectionnees.value.length > 0,
 )
 
 const reinitialiserFiltres = () => {
   origine.value = ''
   paysSelectionne.value = TOUS_TERRITOIRES
-  themeSelectionne.value = ''
   enDirect.value = false
   thematiquesSelectionnees.value = []
-  territoireSelectionne.value = ''
 }
 
 const presentationOuverte = ref(false)
@@ -120,10 +107,8 @@ const chargerPageSections = async (numero: number, forcer = false) => {
   const resultat = await listerSections({
     origine: origine.value,
     pays: paysSelectionne.value,
-    theme: themeSelectionne.value,
     en_direct: enDirect.value,
     thematiques: thematiquesSelectionnees.value,
-    territoire: territoireSelectionne.value,
     page: numero,
     par_page: 6,
   })
@@ -151,7 +136,7 @@ const allerAuxSections = () => {
  * résultat : la barre siégeant en bas de la vedette, sans ce défilement il
  * agirait à l'aveugle sur des sections qu'il ne voit pas encore.
  */
-watch([origine, paysSelectionne, themeSelectionne, enDirect, thematiquesSelectionnees, territoireSelectionne], async () => {
+watch([origine, paysSelectionne, enDirect, thematiquesSelectionnees], async () => {
   page.value = 1
   await chargerPageSections(1, true)
   if (filtresActifs.value) allerAuxSections()
@@ -174,21 +159,17 @@ watch(sentinelleVisible, (visible) => {
 })
 
 onMounted(async () => {
-  const [resultatVedette, resultatPays, resultatThemes, resultatThematiques, resultatTerritoires] = await Promise.all([
+  const [resultatVedette, resultatPays, resultatThematiques] = await Promise.all([
     obtenirVedette(),
     listerPays(),
-    listerThemes(),
     listerThematiquesDisponibles('chaine_tv'),
-    listerTerritoiresDisponibles('chaine_tv'),
     // Sans incidence sur l'affichage de la vitrine : elle ne doit pas attendre
     // cette réponse, ni échouer avec elle.
     chargerMesChaines(),
   ])
   vedette.value = resultatVedette
   if (resultatPays) territoires.value = resultatPays
-  themes.value = resultatThemes
   thematiquesDisponibles.value = resultatThematiques
-  territoiresDisponibles.value = resultatTerritoires.territoires
   await chargerPageSections(1)
 })
 </script>
@@ -204,14 +185,10 @@ onMounted(async () => {
         <MediaBarreFiltresTele
           v-model:origine="origine"
           v-model:pays="paysSelectionne"
-          v-model:theme="themeSelectionne"
           v-model:en-direct="enDirect"
           v-model:thematiques="thematiquesSelectionnees"
-          v-model:territoire="territoireSelectionne"
           :territoires="territoires"
-          :themes="themes"
           :thematiques-disponibles="thematiquesDisponibles"
-          :territoires-disponibles="territoiresDisponibles"
           :nombre-chaines="totalChaines"
           @reinitialiser="reinitialiserFiltres"
         />

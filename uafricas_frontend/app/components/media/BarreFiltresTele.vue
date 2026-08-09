@@ -7,52 +7,47 @@
  * catalogue, et la présence de la barre suffit à signaler qu'il y a du contenu
  * sous le pli.
  *
- * Six entrées, toutes résolues côté serveur (`GET /television/sections`) :
+ * Quatre entrées, toutes résolues côté serveur (`GET /television/sections`) :
  *   • Africans Télé International — chaînes produites par la plateforme (09o) ;
- *   • Territoire (siège) — référentiel des pays de rattachement ;
- *   • Territoire couvert — couverture déclarée (US4) : une chaîne panafricaine
- *     remonte sur **chaque** territoire, ce que le siège ne dit pas (FR-036) ;
+ *   • Territoire — pays de rattachement de la chaîne ;
  *   • Thématiques — thèmes DÉCLARÉS par la chaîne, sélection multiple (US3) ;
- *   • Chaînes thématiques — thème phare des contenus diffusés (à ne pas
- *     confondre avec le précédent : celui-ci porte sur les programmes) ;
  *   • En direct — chaînes actuellement à l'antenne.
+ *
+ * Deux entrées ont été retirées parce qu'elles faisaient DOUBLON à l'usage :
+ *   • « Chaînes thématiques » interrogeait le thème phare des PROGRAMMES là où
+ *     « Thématiques » interroge ce que la chaîne déclare — deux mécanismes
+ *     distincts, mais qui puisent depuis 09s dans le même référentiel de genres
+ *     et renvoient donc presque toujours le même résultat. Le déclaré l'emporte :
+ *     il est explicite, multiple, et exigé pour publier.
+ *   • « Territoire couvert » doublonnait « Territoire » à l'écran.
+ * Les paramètres `theme` et `territoire` restent servis par l'API : c'est la
+ * barre qui ne les propose plus, pas le backend qui les a perdus.
  */
-import type { ThemePhareAPI } from '~/composables/useMediaProposition'
-import type { ThematiqueDecompte, TerritoireDecompte } from '~/composables/useMediaSupport'
+import type { ThematiqueDecompte } from '~/composables/useMediaSupport'
 
 const props = withDefaults(defineProps<{
   /** '' = toutes origines ; 'africans' = Africans Télé International. */
   origine: string
   /** Nom du territoire de rattachement, ou 'Tous les territoires'. */
   pays: string
-  /** Identifiant du thème phare, '' = tous. */
-  theme: string
   enDirect: boolean
   territoires: string[]
-  themes: ThemePhareAPI[]
   /** Thématiques déclarées, sélection multiple (US3). */
   thematiques?: string[]
-  /** Identifiant du territoire couvert, '' = tous (US4). */
-  territoire?: string
-  /** Référentiels des thématiques et territoires réellement déclarés. */
+  /** Thématiques réellement déclarées par au moins une chaîne publiée. */
   thematiquesDisponibles?: ThematiqueDecompte[]
-  territoiresDisponibles?: TerritoireDecompte[]
   /** Nombre de chaînes remontées, affiché dès qu'un filtre est actif. */
   nombreChaines?: number
 }>(), {
   thematiques: () => [],
-  territoire: '',
   thematiquesDisponibles: () => [],
-  territoiresDisponibles: () => [],
 })
 
 const emit = defineEmits<{
   'update:origine': [valeur: string]
   'update:pays': [valeur: string]
-  'update:theme': [valeur: string]
   'update:enDirect': [valeur: boolean]
   'update:thematiques': [valeur: string[]]
-  'update:territoire': [valeur: string]
   reinitialiser: []
 }>()
 
@@ -63,10 +58,8 @@ const estAfricans = computed(() => props.origine === 'africans')
 const filtresActifs = computed(() =>
   estAfricans.value
   || props.pays !== TOUS_TERRITOIRES
-  || props.theme !== ''
   || props.enDirect
-  || props.thematiques.length > 0
-  || props.territoire !== '',
+  || props.thematiques.length > 0,
 )
 
 /** Panneau des thématiques : une sélection multiple ne tient pas dans un
@@ -168,58 +161,6 @@ const classeSelect = [
           >
             <option class="bg-gray-900 text-white" :value="TOUS_TERRITOIRES">Tous les territoires</option>
             <option v-for="t in territoires" :key="t" class="bg-gray-900 text-white" :value="t">{{ t }}</option>
-          </select>
-          <font-awesome-icon
-            :icon="['fas', 'chevron-down']"
-            class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
-          />
-        </div>
-
-        <!-- Chaînes thématiques -->
-        <div class="relative shrink-0">
-          <font-awesome-icon
-            :icon="['fas', 'layer-group']"
-            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-            :class="theme ? 'text-yellow-400' : 'text-gray-300'"
-          />
-          <select
-            :value="theme"
-            :class="[...classeSelect, 'w-60', theme ? 'ring-yellow-400 text-yellow-400' : '']"
-            aria-label="Filtrer par thème"
-            @change="emit('update:theme', ($event.target as HTMLSelectElement).value)"
-          >
-            <option class="bg-gray-900 text-white" value="">Chaînes thématiques</option>
-            <option v-for="t in themes" :key="t.id" class="bg-gray-900 text-white" :value="t.id">{{ t.nom }}</option>
-          </select>
-          <font-awesome-icon
-            :icon="['fas', 'chevron-down']"
-            class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
-          />
-        </div>
-
-        <!-- Territoire couvert (US4) : distinct du siège ci-dessus — une chaîne
-             panafricaine remonte ici sur chaque territoire. -->
-        <div class="relative shrink-0">
-          <font-awesome-icon
-            :icon="['fas', 'globe']"
-            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-            :class="territoire ? 'text-yellow-400' : 'text-gray-300'"
-          />
-          <select
-            :value="territoire"
-            :class="[...classeSelect, 'w-56', territoire ? 'ring-yellow-400 text-yellow-400' : '']"
-            aria-label="Filtrer par territoire couvert"
-            @change="emit('update:territoire', ($event.target as HTMLSelectElement).value)"
-          >
-            <option class="bg-gray-900 text-white" value="">Territoire couvert</option>
-            <option
-              v-for="t in territoiresDisponibles"
-              :key="t.id"
-              class="bg-gray-900 text-white"
-              :value="t.id"
-            >
-              {{ t.nom }} ({{ t.nombre_supports }})
-            </option>
           </select>
           <font-awesome-icon
             :icon="['fas', 'chevron-down']"

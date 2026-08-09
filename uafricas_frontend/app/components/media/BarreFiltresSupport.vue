@@ -1,35 +1,30 @@
 <script setup lang="ts">
 /**
- * Filtres de **fiche de support** — thématiques déclarées (US3) et territoire
- * couvert (US4).
+ * Filtre de **fiche de support** — thématiques déclarées (US3).
  *
  * Complément de `MediaFilters` sur les pages Radio, qui ne porte que les
- * critères d'avant 09r (type, pays de rattachement, genre). Ces deux-là sont
+ * critères d'avant 09r (type, pays de rattachement, genre). La thématique est
  * d'une autre nature : le genre décrit la couleur d'antenne, la thématique est
- * déclarée par le support lui-même ; le pays dit où il siège, la couverture dit
- * où il rayonne — une station panafricaine remonte sur **chaque** territoire
- * (FR-036), ce que le pays de siège ne dira jamais.
+ * déclarée par le support lui-même.
+ *
+ * Le filtre « territoire couvert » a été retiré : il doublonnait à l'écran le
+ * « Territoire » de `MediaFilters`. La couverture (US4) reste déclarée, affichée
+ * sur la fiche et exigée pour publier ; c'est seulement l'entrée de filtre qui
+ * disparaît. Le paramètre `territoire` reste servi par l'API.
  *
  * Tailwind v4 pur — page publique (principe VI).
  */
-import type { ThematiqueDecompte, TerritoireDecompte } from '~/composables/useMediaSupport'
+import type { ThematiqueDecompte } from '~/composables/useMediaSupport'
 
 const props = withDefaults(defineProps<{
   thematiques: string[]
-  territoire: string
   thematiquesDisponibles?: ThematiqueDecompte[]
-  territoiresDisponibles?: TerritoireDecompte[]
-  /** Supports panafricains, annoncés à part : ils remontent sur tout territoire. */
-  nombreContinentales?: number
 }>(), {
   thematiquesDisponibles: () => [],
-  territoiresDisponibles: () => [],
-  nombreContinentales: 0,
 })
 
 const emit = defineEmits<{
   'update:thematiques': [valeur: string[]]
-  'update:territoire': [valeur: string]
 }>()
 
 const panneauOuvert = ref(false)
@@ -43,11 +38,9 @@ const basculer = (id: string) => {
   )
 }
 
-/** Rien de déclaré nulle part : la barre entière disparaît plutôt que d'offrir
- * des filtres qui ne remonteraient rien. */
-const utile = computed(() =>
-  props.thematiquesDisponibles.length > 0 || props.territoiresDisponibles.length > 0,
-)
+/** Rien de déclaré nulle part : la barre disparaît plutôt que d'offrir un
+ * filtre qui ne remonterait rien. */
+const utile = computed(() => props.thematiquesDisponibles.length > 0)
 </script>
 
 <template>
@@ -98,39 +91,5 @@ const utile = computed(() =>
       </div>
     </div>
 
-    <div v-if="territoiresDisponibles.length" class="relative">
-      <font-awesome-icon
-        :icon="['fas', 'globe']"
-        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-        :class="territoire ? 'text-yellow-400' : 'text-gray-300'"
-      />
-      <select
-        :value="territoire"
-        class="appearance-none truncate rounded-full bg-white/10 text-white text-sm font-medium ring-1 ring-white/25 pl-9 pr-9 py-2 w-56 cursor-pointer hover:bg-white/20 transition-colors"
-        :class="territoire ? 'ring-yellow-400 text-yellow-400' : ''"
-        aria-label="Filtrer par territoire couvert"
-        @change="emit('update:territoire', ($event.target as HTMLSelectElement).value)"
-      >
-        <option class="bg-gray-900 text-white" value="">Territoire couvert</option>
-        <option
-          v-for="t in territoiresDisponibles"
-          :key="t.id"
-          class="bg-gray-900 text-white"
-          :value="t.id"
-        >
-          {{ t.nom }} ({{ t.nombre_supports }})
-        </option>
-      </select>
-      <font-awesome-icon
-        :icon="['fas', 'chevron-down']"
-        class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
-      />
-    </div>
-
-    <!-- Ces supports ne peuvent pas figurer dans les décomptes ci-dessus : ils
-         remontent sur chaque territoire et les gonfleraient tous. -->
-    <span v-if="nombreContinentales" class="text-xs text-gray-400">
-      dont {{ nombreContinentales }} panafricain{{ nombreContinentales > 1 ? 's' : '' }}
-    </span>
   </div>
 </template>
