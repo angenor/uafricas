@@ -137,7 +137,8 @@ interface ApiResponse<T> {
  */
 export const FAMILLES_CADEAU = [
   'codimoi', 'factcheck', 'biblio_humaine', 'video', 'fiche_pays',
-  'chaine_tv', 'station_radio', 'programme_tele', 'programme_radio',
+  'chaine_tv', 'station_radio',
+  'emission_tele', 'emission_radio', 'episode_tele', 'episode_radio',
   'personnalite_connue', 'recette_culinaire', 'profil',
 ] as const
 

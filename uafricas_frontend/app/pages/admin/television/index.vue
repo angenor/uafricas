@@ -1,18 +1,22 @@
 <script setup lang="ts">
+/**
+ * Chaînes de télévision — back-office.
+ *
+ * L'onglet « Programmes » a disparu d'ici : depuis 09q un programme est une
+ * `emission_*` commune aux deux familles, gérée sur `/admin/medias/emissions`.
+ * Le renvoi explicite en tête de page évite qu'un administrateur cherche
+ * l'onglet disparu.
+ */
 import type { TableColumn, FilterDefinition } from '~/types/admin'
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
 const {
-  chaines, programmes,
-  filtresChaines, filtresProgrammes,
+  chaines, filtresChaines,
   pagination, sort, loading,
-  chargerChaines, chargerProgrammes,
-  supprimerChaine, supprimerProgramme,
+  chargerChaines, supprimerChaine,
   allerPage, changerTri, reinitialiserPagination,
 } = useAdminTelevision()
-
-const ongletActif = ref<'chaines' | 'programmes'>('chaines')
 
 const colonnesChaines: TableColumn[] = [
   { key: 'nom', label: 'Nom', sortable: true },
@@ -20,15 +24,6 @@ const colonnesChaines: TableColumn[] = [
   { key: 'etat', label: 'Etat', sortable: true, width: 'w-24', align: 'center' },
   { key: 'est_en_direct', label: 'En direct', width: 'w-24', align: 'center' },
   { key: 'pays_nom', label: 'Territoire' },
-  { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
-    format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
-]
-
-const colonnesProgrammes: TableColumn[] = [
-  { key: 'nom_emission', label: 'Programme', sortable: true },
-  { key: 'chaine_nom', label: 'Télé / À la une' },
-  { key: 'langue', label: 'Langue' },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-24', align: 'center' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]
@@ -51,15 +46,6 @@ const filtresDefChaines: FilterDefinition[] = [
   ]},
 ]
 
-const filtresDefProgrammes: FilterDefinition[] = [
-  { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom programme...' },
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous les etats', options: [
-    { value: 'brouillon', label: 'Brouillon' },
-    { value: 'publie', label: 'Publie' },
-    { value: 'suspendu', label: 'Suspendu' },
-  ]},
-]
-
 const suppressionId = ref<string | null>(null)
 
 const badgeEtat = (etat: string) => {
@@ -73,62 +59,55 @@ const etatLabel = (etat: string) => {
 
 const supprimerElement = async () => {
   if (!suppressionId.value) return
-  if (ongletActif.value === 'chaines') { await supprimerChaine(suppressionId.value); await chargerChaines() }
-  else { await supprimerProgramme(suppressionId.value); await chargerProgrammes() }
+  await supprimerChaine(suppressionId.value)
+  await chargerChaines()
   suppressionId.value = null
 }
 
-const chargerDonnees = () => {
-  if (ongletActif.value === 'chaines') chargerChaines()
-  else chargerProgrammes()
-}
-
-const filtresActifs = computed(() => ongletActif.value === 'chaines' ? filtresDefChaines : filtresDefProgrammes)
-const donneesActives = computed(() => ongletActif.value === 'chaines' ? chaines.value : programmes.value)
-const colonnesActives = computed(() => ongletActif.value === 'chaines' ? colonnesChaines : colonnesProgrammes)
-const filtresValeurs = computed(() => ongletActif.value === 'chaines' ? filtresChaines : filtresProgrammes)
-
 const reinitialiser = () => {
-  if (ongletActif.value === 'chaines') { filtresChaines.recherche = ''; filtresChaines.categorie = ''; filtresChaines.etat = '' }
-  else { filtresProgrammes.recherche = ''; filtresProgrammes.etat = '' }
+  filtresChaines.recherche = ''
+  filtresChaines.categorie = ''
+  filtresChaines.etat = ''
   reinitialiserPagination()
-  chargerDonnees()
+  chargerChaines()
 }
 
-watch(ongletActif, () => { reinitialiserPagination(); chargerDonnees() })
 onMounted(() => chargerChaines())
-watch([() => pagination.page, () => sort.column, () => sort.direction], chargerDonnees)
+watch([() => pagination.page, () => sort.column, () => sort.direction], chargerChaines)
 </script>
 
 <template>
   <div>
-    <AdminPageHeader titre="Télévision" sous-titre="Gestion des chaînes et des programmes télé">
+    <AdminPageHeader titre="Télévision" sous-titre="Gestion des chaînes de télévision">
       <template #actions>
-        <NuxtLink :to="`/admin/television/create?type=${ongletActif}`" class="btn btn-primary btn-sm">
+        <NuxtLink to="/admin/medias/emissions?type=tele" class="btn btn-ghost btn-sm">
+          <font-awesome-icon icon="film" class="mr-1" /> Programmes
+        </NuxtLink>
+        <NuxtLink to="/admin/television/create?type=chaines" class="btn btn-primary btn-sm">
           <font-awesome-icon icon="plus" class="mr-1" /> Creer
         </NuxtLink>
       </template>
     </AdminPageHeader>
 
-    <div role="tablist" class="tabs tabs-bordered mb-6">
-      <a role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'chaines' }" @click="ongletActif = 'chaines'">
-        <font-awesome-icon icon="tv" class="mr-2" /> Chaînes
-      </a>
-      <a role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'programmes' }" @click="ongletActif = 'programmes'">
-        <font-awesome-icon icon="film" class="mr-2" /> Programmes
-      </a>
+    <div class="alert alert-info mb-6">
+      <font-awesome-icon icon="circle-info" />
+      <span>
+        Les programmes et leurs épisodes se gèrent désormais sur
+        <NuxtLink to="/admin/medias/emissions?type=tele" class="link font-semibold">Médias &rsaquo; Programmes</NuxtLink>,
+        commun à la télévision et à la radio.
+      </span>
     </div>
 
     <AdminFilters
-      :filtres="filtresActifs"
-      v-model="filtresValeurs"
-      @rechercher="() => { reinitialiserPagination(); chargerDonnees() }"
+      v-model="filtresChaines"
+      :filtres="filtresDefChaines"
+      @rechercher="() => { reinitialiserPagination(); chargerChaines() }"
       @reinitialiser="reinitialiser"
     />
 
     <AdminDataTable
-      :colonnes="colonnesActives"
-      :donnees="donneesActives"
+      :colonnes="colonnesChaines"
+      :donnees="chaines"
       :pagination="pagination"
       :tri-colonne="sort.column"
       :tri-direction="sort.direction"
@@ -146,19 +125,12 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], chargerD
         </span>
       </template>
 
-      <template #cell-chaine_nom="{ item }">
-        <div class="flex items-center gap-1">
-          <span v-if="item.chaine_nom" class="text-sm">{{ item.chaine_nom }}</span>
-          <span v-else class="text-base-content/40 text-sm">—</span>
-          <span v-if="item.a_la_une" class="badge badge-sm badge-warning gap-1">
-            <font-awesome-icon icon="star" /> À la une
-          </span>
-        </div>
-      </template>
-
       <template #actions="{ item }">
         <div class="flex gap-1">
-          <NuxtLink :to="`/admin/television/${item.id}?type=${ongletActif}`" class="btn btn-ghost btn-xs">
+          <NuxtLink :to="`/admin/medias/emissions?type=tele&support_id=${item.id}`" class="btn btn-ghost btn-xs" title="Programmes de cette chaîne">
+            <font-awesome-icon icon="film" />
+          </NuxtLink>
+          <NuxtLink :to="`/admin/television/${item.id}?type=chaines`" class="btn btn-ghost btn-xs">
             <font-awesome-icon icon="pen-to-square" />
           </NuxtLink>
           <button class="btn btn-ghost btn-xs text-error" @click="suppressionId = item.id">
@@ -171,7 +143,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], chargerD
     <div v-if="suppressionId" class="modal modal-open">
       <div class="modal-box">
         <h3 class="font-bold text-lg">Confirmer la suppression</h3>
-        <p class="py-4">Voulez-vous vraiment supprimer cet element ?</p>
+        <p class="py-4">Voulez-vous vraiment supprimer cette chaîne ?</p>
         <div class="modal-action">
           <button class="btn btn-ghost" @click="suppressionId = null">Annuler</button>
           <button class="btn btn-error" @click="supprimerElement">Supprimer</button>

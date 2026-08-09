@@ -439,7 +439,7 @@ pub const FAMILLES_SANS_AUTEUR: [&str; 2] = ["site_touristique", "secteur_develo
 ///
 /// Identiques à celles éligibles au « j'aime », **moins** les deux familles de
 /// `FAMILLES_SANS_AUTEUR` (FR-008c).
-pub const FAMILLES_CADEAU: [&str; 12] = [
+pub const FAMILLES_CADEAU: [&str; 14] = [
     "codimoi",
     "factcheck",
     "biblio_humaine",
@@ -447,8 +447,10 @@ pub const FAMILLES_CADEAU: [&str; 12] = [
     "fiche_pays",
     "chaine_tv",
     "station_radio",
-    "programme_tele",
-    "programme_radio",
+    "emission_tele",
+    "emission_radio",
+    "episode_tele",
+    "episode_radio",
     "personnalite_connue",
     "recette_culinaire",
     "profil",

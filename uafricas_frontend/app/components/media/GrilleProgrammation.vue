@@ -1,17 +1,35 @@
 <script setup lang="ts">
 /**
- * Grille de programmation hebdomadaire d'un support média (US5, T098).
+ * Grille de programmation hebdomadaire d'un support média (US5, puis US2 de la
+ * feature 009).
  *
  * Un créneau n'est pas un événement daté mais une règle de diffusion. La grille
  * est donc une **projection** : un créneau `quotidien` n'existe qu'une fois en
  * base, mais se lit dans les sept colonnes. Rien n'est dupliqué côté données.
+ *
+ * Depuis 09q le créneau désigne un **programme**, pas un contenu diffusable.
+ * L'épisode qui passera se déduit de la rotation, calculée à la lecture à
+ * partir de `date_effet` : déplacer cette date est le seul levier du détenteur
+ * pour choisir quel épisode passe quand. Le formulaire en montre donc
+ * immédiatement l'effet — sans cet aperçu, la rotation resterait une
+ * abstraction que personne ne saurait piloter.
  */
-import type { CreneauAPI, CreneauFormulaire, TypeSupportMedia } from '~/composables/useMediaProgrammation'
+import type { CreneauAPI, CreneauFormulaire, RefContenu } from '~/composables/useMediaProgrammation'
+import type { TypeSupportMedia } from '~/composables/useMediaDetention'
+
+/** Programme proposé au créneau, avec de quoi juger s'il tiendra la cadence. */
+export interface EmissionProgrammable {
+  id: string
+  titre: string
+  cadence?: string
+  nombre_episodes?: number
+}
 
 const props = withDefaults(defineProps<{
   typeSupport: TypeSupportMedia
   supportId: string
-  contenus: { id: string, titre: string }[]
+  /** Programmes du support — la seule source du sélecteur. */
+  emissions: EmissionProgrammable[]
   modifiable?: boolean
 }>(), { modifiable: false })
 
@@ -28,15 +46,17 @@ const {
 
 const creneaux = ref<CreneauAPI[]>([])
 
+/** Le détenteur voit aussi les créneaux qui n'annoncent rien : ce sont
+ * précisément ceux qu'il doit corriger (FR-021). */
 const charger = async () => {
-  creneaux.value = await listerGrille(props.typeSupport, props.supportId)
+  creneaux.value = await listerGrille(props.typeSupport, props.supportId, props.modifiable)
 }
 
 onMounted(charger)
 
 /**
  * Fuseau de référence de la grille : celui du plus grand nombre de créneaux.
- * Les autres sont annotés créneau par créneau (FR-042) — annoter les vingt
+ * Les autres sont annotés créneau par créneau (FR-026) — annoter les vingt
  * lignes d'une grille homogène n'apprendrait rien à personne.
  */
 const fuseauMajoritaire = computed(() => {
@@ -63,6 +83,18 @@ const colonnes = computed(() =>
 
 const grilleVide = computed(() => creneaux.value.length === 0)
 
+const emissionDe = (creneau: CreneauAPI): EmissionProgrammable | undefined =>
+  props.emissions.find(e => e.id === creneau.emission_id)
+
+const nomEmission = (creneau: CreneauAPI) =>
+  creneau.emission?.titre ?? emissionDe(creneau)?.titre ?? 'Programme inconnu'
+
+const LIBELLES_CADENCE_COURTE: Record<string, string> = {
+  quotidienne: 'Quotidien',
+  hebdomadaire: 'Hebdo',
+  ponctuelle: 'Ponctuel',
+}
+
 // ---------------------------------------------------------------------------
 // Formulaire (création et édition partagent le même panneau)
 // ---------------------------------------------------------------------------
@@ -70,23 +102,32 @@ const grilleVide = computed(() => creneaux.value.length === 0)
 const panneauOuvert = ref(false)
 const creneauEdite = ref<CreneauAPI | null>(null)
 const enregistrement = ref(false)
+/** Épisode que le serveur a retenu au dernier enregistrement — l'aperçu. */
+const apercuEpisode = ref<RefContenu | null>(null)
 
 const formulaire = reactive<CreneauFormulaire>({
-  contenu_id: '',
+  emission_id: '',
   recurrence: 'hebdomadaire',
   jour_semaine: 1,
   heure_debut: '20:00',
   duree_minutes: 60,
   fuseau: FUSEAU_DEFAUT,
+  date_effet: dateAujourdhui(),
 })
 
+const emissionChoisie = computed(() =>
+  props.emissions.find(e => e.id === formulaire.emission_id),
+)
+
 const reinitialiser = () => {
-  formulaire.contenu_id = props.contenus[0]?.id ?? ''
+  formulaire.emission_id = props.emissions[0]?.id ?? ''
   formulaire.recurrence = 'hebdomadaire'
   formulaire.jour_semaine = 1
   formulaire.heure_debut = '20:00'
   formulaire.duree_minutes = 60
   formulaire.fuseau = fuseauMajoritaire.value
+  formulaire.date_effet = dateAujourdhui()
+  apercuEpisode.value = null
 }
 
 const ouvrirCreation = (jour?: number) => {
@@ -99,33 +140,40 @@ const ouvrirCreation = (jour?: number) => {
 const ouvrirEdition = (creneau: CreneauAPI) => {
   if (!props.modifiable) return
   creneauEdite.value = creneau
-  formulaire.contenu_id = creneau.contenu_id
+  formulaire.emission_id = creneau.emission_id
   formulaire.recurrence = creneau.recurrence
   formulaire.jour_semaine = creneau.jour_semaine ?? 1
   formulaire.heure_debut = creneau.heure_debut.slice(0, 5)
   formulaire.duree_minutes = creneau.duree_minutes
   formulaire.fuseau = creneau.fuseau
+  formulaire.date_effet = creneau.date_effet
+  apercuEpisode.value = creneau.episode ?? null
   panneauOuvert.value = true
 }
 
 const fermerPanneau = () => {
   panneauOuvert.value = false
   creneauEdite.value = null
+  apercuEpisode.value = null
 }
 
 const soumettre = async () => {
-  if (!formulaire.contenu_id) return
+  if (!formulaire.emission_id) return
   enregistrement.value = true
-  const ok = creneauEdite.value
+  const resultat = creneauEdite.value
     ? await modifierCreneau(creneauEdite.value.id, { ...formulaire })
-    : Boolean(await creerCreneau(props.typeSupport, props.supportId, { ...formulaire }))
+    : await creerCreneau(props.typeSupport, props.supportId, { ...formulaire })
   enregistrement.value = false
   // Un chevauchement (409) laisse le panneau ouvert : le message du serveur
   // désigne le créneau en cause, l'utilisateur doit pouvoir corriger sa saisie.
-  if (!ok) return
-  fermerPanneau()
+  if (!resultat) return
+  // L'épisode retenu revient du serveur : c'est ce qui rend la date d'effet
+  // lisible. Le panneau reste ouvert le temps de le montrer.
+  apercuEpisode.value = resultat.episode_actuel ?? null
   await charger()
   emit('maj')
+  if (!apercuEpisode.value) fermerPanneau()
+  else creneauEdite.value = creneaux.value.find(c => c.id === resultat.id) ?? creneauEdite.value
 }
 
 const supprimer = async (creneau: CreneauAPI) => {
@@ -136,10 +184,10 @@ const supprimer = async (creneau: CreneauAPI) => {
   emit('maj')
 }
 
-const nomContenu = (creneau: CreneauAPI) =>
-  creneau.contenu_nom
-  ?? props.contenus.find(c => c.id === creneau.contenu_id)?.titre
-  ?? 'Contenu inconnu'
+const dateLisible = (iso: string) => {
+  const [a, m, j] = iso.split('-')
+  return `${j}/${m}/${a}`
+}
 </script>
 
 <template>
@@ -227,7 +275,7 @@ const nomContenu = (creneau: CreneauAPI) =>
             :key="`${colonne.jour}-${creneau.id}`"
             class="rounded-lg border px-3 py-2 transition-colors"
             :class="[
-              creneau.contenu_indisponible
+              creneau.emission_indisponible
                 ? 'border-red-500 bg-red-500/5'
                 : 'border-white/10 bg-neutral-800 hover:border-yellow-400/60',
               modifiable ? 'cursor-pointer' : '',
@@ -236,17 +284,22 @@ const nomContenu = (creneau: CreneauAPI) =>
           >
             <p
               class="text-sm font-semibold"
-              :class="creneau.contenu_indisponible ? 'text-red-300' : 'text-yellow-400'"
+              :class="creneau.emission_indisponible ? 'text-red-300' : 'text-yellow-400'"
             >
               {{ creneau.heure_debut.slice(0, 5) }} →
               {{ heureFin(creneau.heure_debut.slice(0, 5), creneau.duree_minutes) }}
             </p>
             <p
               class="text-sm truncate"
-              :class="creneau.contenu_indisponible ? 'text-red-200' : 'text-white'"
-              :title="nomContenu(creneau)"
+              :class="creneau.emission_indisponible ? 'text-red-200' : 'text-white'"
+              :title="nomEmission(creneau)"
             >
-              {{ nomContenu(creneau) }}
+              {{ nomEmission(creneau) }}
+            </p>
+            <!-- L'épisode n'est résolu que sur les endpoints de diffusion : la
+                 grille annonce la série, pas le numéro du jour. -->
+            <p v-if="creneau.episode" class="text-xs text-gray-400 truncate">
+              {{ creneau.episode.titre }}
             </p>
 
             <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
@@ -255,6 +308,18 @@ const nomContenu = (creneau: CreneauAPI) =>
                 class="rounded-full bg-white/10 text-gray-300 text-[10px] px-2 py-0.5 uppercase tracking-wide"
               >
                 Quotidien
+              </span>
+              <span
+                v-if="emissionDe(creneau)?.nombre_episodes !== undefined"
+                class="rounded-full bg-white/10 text-gray-300 text-[10px] px-2 py-0.5"
+              >
+                {{ emissionDe(creneau)!.nombre_episodes }} ép.
+              </span>
+              <span
+                v-if="emissionDe(creneau)?.cadence"
+                class="rounded-full bg-white/10 text-gray-400 text-[10px] px-2 py-0.5"
+              >
+                {{ LIBELLES_CADENCE_COURTE[emissionDe(creneau)!.cadence!] || emissionDe(creneau)!.cadence }}
               </span>
               <!-- Le fuseau n'apparaît que s'il s'écarte de celui de l'en-tête. -->
               <span
@@ -265,9 +330,9 @@ const nomContenu = (creneau: CreneauAPI) =>
               </span>
             </div>
 
-            <p v-if="creneau.contenu_indisponible" class="mt-1.5 text-[11px] text-red-400 leading-snug">
+            <p v-if="creneau.emission_indisponible" class="mt-1.5 text-[11px] text-red-400 leading-snug">
               <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="mr-1" />
-              Contenu indisponible — ce créneau ne sera pas diffusé.
+              {{ creneau.alerte || 'Programme indisponible — ce créneau n’annonce rien.' }}
             </p>
           </li>
         </ul>
@@ -304,18 +369,27 @@ const nomContenu = (creneau: CreneauAPI) =>
 
         <form class="space-y-4" @submit.prevent="soumettre">
           <div>
-            <label class="block text-sm text-gray-400 mb-1.5" for="creneau-contenu">Contenu</label>
+            <label class="block text-sm text-gray-400 mb-1.5" for="creneau-emission">Programme</label>
             <select
-              id="creneau-contenu"
-              v-model="formulaire.contenu_id"
+              id="creneau-emission"
+              v-model="formulaire.emission_id"
               required
               class="w-full rounded-lg bg-neutral-800 border border-white/10 text-white px-3 py-2 text-sm focus:border-yellow-400 focus:outline-none"
             >
-              <option value="" disabled>Choisir un contenu…</option>
-              <option v-for="contenu in contenus" :key="contenu.id" :value="contenu.id">
-                {{ contenu.titre }}
+              <option value="" disabled>Choisir un programme…</option>
+              <option v-for="emission in emissions" :key="emission.id" :value="emission.id">
+                {{ emission.titre }}
               </option>
             </select>
+            <p v-if="emissionChoisie" class="text-xs text-gray-500 mt-1.5">
+              {{ emissionChoisie.nombre_episodes ?? 0 }} épisode(s) publié(s)
+              <template v-if="emissionChoisie.cadence">
+                · cadence {{ LIBELLES_CADENCE_COURTE[emissionChoisie.cadence] || emissionChoisie.cadence }}
+              </template>
+            </p>
+            <p v-if="emissionChoisie && !emissionChoisie.nombre_episodes" class="text-xs text-amber-400 mt-1">
+              Sans épisode publié, ce créneau n’annoncera rien au public.
+            </p>
           </div>
 
           <div class="grid sm:grid-cols-2 gap-4">
@@ -385,12 +459,51 @@ const nomContenu = (creneau: CreneauAPI) =>
             </select>
           </div>
 
+          <!-- Date d'effet : l'origine du comptage des occurrences. C'est elle
+               qui décide quel épisode passe quand. -->
+          <div>
+            <label class="block text-sm text-gray-400 mb-1.5" for="creneau-date-effet">
+              Date d’effet de la rotation
+            </label>
+            <input
+              id="creneau-date-effet"
+              v-model="formulaire.date_effet"
+              type="date"
+              class="w-full rounded-lg bg-neutral-800 border border-white/10 text-white px-3 py-2 text-sm focus:border-yellow-400 focus:outline-none"
+            >
+            <p class="text-xs text-gray-500 mt-1.5">
+              Le premier épisode du programme passe à cette date ; les suivants suivent
+              l’ordre des épisodes, puis la série recommence.
+            </p>
+          </div>
+
           <p class="text-xs text-gray-500">
             Fin prévue à
             <span class="text-gray-300">
               {{ heureFin(formulaire.heure_debut, formulaire.duree_minutes) }}
             </span>.
           </p>
+
+          <!-- Aperçu renvoyé par le serveur après enregistrement : la rotation
+               cesse d'être une abstraction. -->
+          <div
+            v-if="apercuEpisode"
+            class="rounded-lg border border-yellow-400/40 bg-yellow-400/5 px-4 py-3"
+          >
+            <p class="text-xs uppercase tracking-wide text-yellow-400 mb-1">
+              Prochaine occurrence
+            </p>
+            <p class="text-sm text-white">
+              <span v-if="apercuEpisode.numero_episode" class="text-gray-400">
+                Épisode {{ apercuEpisode.numero_episode }} —
+              </span>
+              {{ apercuEpisode.titre }}
+            </p>
+            <p v-if="creneauEdite" class="text-xs text-gray-400 mt-1">
+              Rotation calée sur le {{ dateLisible(creneauEdite.date_effet) }}
+              <template v-if="creneauEdite.est_rediffusion"> · rediffusion</template>
+            </p>
+          </div>
 
           <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
             <button
@@ -410,11 +523,11 @@ const nomContenu = (creneau: CreneauAPI) =>
                 class="rounded-full border border-white/20 text-gray-300 px-4 py-2 text-sm hover:bg-white/5 transition-colors"
                 @click="fermerPanneau"
               >
-                Annuler
+                {{ apercuEpisode ? 'Fermer' : 'Annuler' }}
               </button>
               <button
                 type="submit"
-                :disabled="enregistrement || !formulaire.contenu_id"
+                :disabled="enregistrement || !formulaire.emission_id"
                 class="inline-flex items-center gap-2 rounded-full bg-yellow-400 text-neutral-900 font-semibold px-5 py-2 text-sm hover:bg-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span

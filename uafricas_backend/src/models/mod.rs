@@ -44,3 +44,6 @@ pub mod media_social;
 pub mod media_proposition;
 pub mod media_detention;
 pub mod media_programmation;
+pub mod media_emission;
+pub mod media_episode;
+pub mod media_support;

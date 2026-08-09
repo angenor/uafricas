@@ -4,6 +4,10 @@ import type { CompteursInteraction } from '~/composables/useMediaSocial'
 
 import type { ContactsSupport } from '~/composables/useContactsSupport'
 
+import type { EmissionAPI, EpisodeAPI } from '~/composables/useMediaEmissions'
+
+import type { CouverturePublique, ThematiquePublique } from '~/composables/useMediaSupport'
+
 // Composable pour les appels API de la télévision
 
 /** Interface correspondant au DTO ChaineTvResponse du backend */
@@ -22,6 +26,10 @@ export interface ChaineTvAPI {
   origine_publication: string
   /** Coordonnées publiques de l'équipe (09p) — absent quand aucune. */
   contacts?: ContactsSupport | null
+  /** Thématiques déclarées (US3) — absent quand la chaîne n'en déclare aucune. */
+  thematiques?: ThematiquePublique[]
+  /** Couverture territoriale déclarée (US4). */
+  couverture?: CouverturePublique | null
   created_at: string
   /** Réactions, commentaires et partages agrégés (FR-027). */
   interactions?: CompteursInteraction | null
@@ -36,62 +44,33 @@ export interface ChaineTvListeAPI {
   total_pages: number
 }
 
-/** Interface correspondant au DTO ProgrammeTeleResponse du backend */
-export interface ProgrammeTeleAPI {
-  id: string
-  nom_emission: string
-  slug: string | null
-  description: string
-  image_couverture_url: string | null
-  video_url: string | null
-  info_animateur: string | null
-  info_producteur: string | null
-  pays: string | null
-  est_international: boolean
-  langue: string
-  chaine_id: string | null
-  chaine_nom: string | null
-  chaine_slug: string | null
-  a_la_une: boolean
-  /** Vedette de TOUTE la page Télé — distincte de `a_la_une`, qui vaut par chaîne. */
-  a_la_une_globale: boolean
-  theme_phare_id: string | null
-  theme_phare_autre: string | null
-  theme_phare_nom: string | null
-  /** "hebergee" | "externe" | "aucune" — décide du lecteur à employer. */
-  source_media: string
-  created_at: string
-  /** Réactions, commentaires et partages agrégés (FR-027). */
-  interactions?: CompteursInteraction | null
-}
-
-/** Vedette de la page Télé : le programme, plus l'indication d'un repli (FR-007) */
-export interface ProgrammeVedetteAPI extends ProgrammeTeleAPI {
+/**
+ * Vedette de la page Télé : l'**épisode** portant `a_la_une_globale` (FR-052),
+ * plus l'indication d'un repli faute de vedette désignée.
+ */
+export interface VedetteTeleAPI {
+  episode: EpisodeAPI
+  emission?: EmissionAPI | null
+  chaine?: ChaineTvAPI | null
   est_repli: boolean
 }
 
-/** Une section = une chaîne, son contenu mis en évidence et ses autres contenus */
+/**
+ * Une section = une chaîne et ses **programmes** publiés — et non plus une
+ * vignette par vidéo. Chaque programme annonce son nombre d'épisodes et un
+ * aperçu borné à 12.
+ */
 export interface TeleSectionAPI {
   chaine: ChaineTvAPI
-  mis_en_evidence: ProgrammeTeleAPI | null
-  contenus: ProgrammeTeleAPI[]
-  total_contenus: number
-  /** Grille du moment (US5) — absents quand la chaîne n'en a aucune. */
+  emissions: EmissionAPI[]
+  total_emissions: number
+  /** Grille du moment (US2) — absents quand la chaîne n'en a aucune. */
   diffusion_en_cours?: CreneauAPI | null
   creneau_suivant?: CreneauAPI | null
 }
 
 export interface TeleSectionsListeAPI {
   sections: TeleSectionAPI[]
-  total: number
-  page: number
-  par_page: number
-  total_pages: number
-}
-
-/** Interface correspondant au DTO ProgrammeTeleListeResponse du backend */
-export interface ProgrammeTeleListeAPI {
-  programmes: ProgrammeTeleAPI[]
   total: number
   page: number
   par_page: number
@@ -114,11 +93,21 @@ export interface TvChannel {
   origine: string
   /** Coordonnées publiques de l'équipe, `null` quand elle n'en publie aucune. */
   contacts: ContactsSupport | null
+  /** Thématiques déclarées (US3) — vide tant que l'API ne les greffe pas. */
+  thematiques: ThematiquePublique[]
+  /** Couverture territoriale déclarée (US4). */
+  couverture: CouverturePublique | null
   /** Compteurs d'interaction, absents tant que l'API ne les greffe pas. */
   interactions: CompteursInteraction | null
 }
 
-/** Interface adaptée au format attendu par les composants frontend (programme) */
+/**
+ * Forme d'un **épisode** telle que la consomment les composants.
+ *
+ * Le nom `TvProgram` est conservé : à l'écran, l'unité que le visiteur lit et
+ * partage reste « le programme qu'il regarde ». Ce qui a changé, c'est qu'il
+ * appartient désormais à une série — d'où `emissionId` et `emissionTitre`.
+ */
 export interface TvProgram {
   id: string
   slug: string | null
@@ -133,6 +122,12 @@ export interface TvProgram {
   chaineId: string | null
   chaineNom: string | null
   chaineSlug: string | null
+  emissionId: string | null
+  emissionTitre: string | null
+  emissionSlug: string | null
+  numeroEpisode: number | null
+  dureeMinutes: number | null
+  etat: string
   aLaUne: boolean
   aLaUneGlobale: boolean
   themePhare: string | null
@@ -142,22 +137,38 @@ export interface TvProgram {
   interactions: CompteursInteraction | null
 }
 
-/** Section prête à l'affichage, telle que la consomment les composants */
+/** Forme d'un **programme conteneur** (émission) prête à l'affichage. */
+export interface TvEmission {
+  id: string
+  slug: string | null
+  titre: string
+  description: string
+  banner: string
+  cadence: string
+  langue: string
+  themePhare: string | null
+  nombreEpisodes: number
+  dernierEpisodeAt: string | null
+  /** Aperçu borné à 12 ; au-delà, la page du programme. */
+  episodes: TvProgram[]
+  interactions: CompteursInteraction | null
+}
+
+/** Section prête à l'affichage : une chaîne et ses programmes. */
 export interface TeleSection {
   chaine: TvChannel
-  misEnEvidence: TvProgram | null
-  contenus: TvProgram[]
-  totalContenus: number
+  emissions: TvEmission[]
+  totalEmissions: number
   /**
-   * « En ce moment » et « À suivre » (FR-039), résolus par le serveur à
-   * l'instant de la requête. `null` quand la chaîne n'a pas de grille active :
-   * la section retombe alors sur son contenu mis en évidence (FR-041).
+   * « En ce moment » et « À suivre » (US2), résolus par le serveur à l'instant
+   * de la requête. `null` quand la chaîne n'a pas de grille active, ou quand le
+   * programme diffusé n'a aucun épisode publié (FR-021).
    */
   diffusionEnCours: CreneauAPI | null
   creneauSuivant: CreneauAPI | null
 }
 
-/** Programme vedette de la page, avec l'indication d'un éventuel repli */
+/** Vedette de la page : l'épisode mis en avant, avec l'indication d'un repli. */
 export interface ProgrammeVedette extends TvProgram {
   estRepli: boolean
 }
@@ -185,22 +196,18 @@ export interface TeleSectionsFiltres {
   pays?: string
   /** « africans » : Africans Télé International. Vide = toutes les chaînes. */
   origine?: string
-  /** Identifiant d'un thème phare (`shared.categorie`, contexte « media »). */
+  /** Identifiant d'un thème phare (`shared.categorie`, contexte « media »).
+   * Porte sur les PROGRAMMES diffusés, à ne pas confondre avec `thematiques`. */
   theme?: string
+  /** Thématiques DÉCLARÉES par la chaîne (US3) — répétable, entendu comme un OU. */
+  thematiques?: string[]
+  /** Territoire couvert (US4) — remonte aussi les chaînes continentales. */
+  territoire?: string
   /** `true` restreint aux chaînes en direct ; `false`/absent ne filtre pas. */
   en_direct?: boolean
   page?: number
   par_page?: number
   contenus_par_section?: number
-}
-
-/** Paramètres de filtre pour le listing des programmes */
-export interface ProgrammeTeleFiltres {
-  recherche?: string
-  pays?: string
-  chaine?: string
-  page?: number
-  par_page?: number
 }
 
 /** Formulaire de création de chaîne */
@@ -210,19 +217,6 @@ export interface CreerChaineTvForm {
   stream_url?: string
   categorie?: string
   pays?: string
-  langue?: string
-}
-
-/** Formulaire de création de programme vedette */
-export interface CreerProgrammeVedetteForm {
-  nom_emission: string
-  description: string
-  video_url: string
-  image_couverture_url?: string
-  info_animateur?: string
-  info_producteur?: string
-  pays?: string
-  est_international?: boolean
   langue?: string
 }
 
@@ -254,32 +248,65 @@ function mapperChaineApiVersTv(chaine: ChaineTvAPI, apiBase: string): TvChannel 
     isLive: chaine.est_en_direct,
     origine: chaine.origine_publication || 'territoire',
     contacts: chaine.contacts ?? null,
+    thematiques: chaine.thematiques ?? [],
+    couverture: chaine.couverture ?? null,
     interactions: chaine.interactions ?? null,
   }
 }
 
-function mapperProgrammeApiVersTv(programme: ProgrammeTeleAPI, apiBase: string): TvProgram {
+/**
+ * Un ÉPISODE vers la forme consommée par les composants.
+ *
+ * Exporté : `useStationsRadio` s'en sert à l'identique — la seule différence
+ * entre les deux familles est le nom de la colonne de média, et l'API l'a déjà
+ * aplanie sous `media_url`.
+ */
+export function mapperEpisodeVersTv(episode: EpisodeAPI, apiBase: string): TvProgram {
   return {
-    id: programme.id,
-    slug: programme.slug,
-    title: programme.nom_emission,
-    description: programme.description,
-    banner: resoudreUrl(programme.image_couverture_url, apiBase),
+    id: episode.id,
+    slug: episode.slug,
+    title: episode.titre,
+    description: episode.description,
+    banner: resoudreUrl(episode.image_couverture_url, apiBase),
     // Un lien externe est laissé intact : seul un fichier local doit être
     // préfixé par la base API pour être atteignable depuis le navigateur.
-    videoUrl: programme.video_url ? resoudreUrl(programme.video_url, apiBase, '') : '',
-    animator: programme.info_animateur || '',
-    producer: programme.info_producteur || '',
-    country: programme.pays || '',
-    language: programme.langue,
-    chaineId: programme.chaine_id,
-    chaineNom: programme.chaine_nom,
-    chaineSlug: programme.chaine_slug ?? null,
-    aLaUne: programme.a_la_une,
-    aLaUneGlobale: programme.a_la_une_globale ?? false,
-    themePhare: programme.theme_phare_nom || programme.theme_phare_autre || null,
-    sourceMedia: programme.source_media ?? 'aucune',
-    interactions: programme.interactions ?? null,
+    videoUrl: episode.media_url ? resoudreUrl(episode.media_url, apiBase, '') : '',
+    animator: '',
+    producer: '',
+    country: '',
+    language: '',
+    chaineId: episode.support?.id ?? null,
+    chaineNom: episode.support?.nom ?? null,
+    chaineSlug: episode.support?.slug ?? null,
+    emissionId: episode.emission_id,
+    emissionTitre: episode.emission?.nom ?? null,
+    emissionSlug: episode.emission?.slug ?? null,
+    numeroEpisode: episode.numero_episode,
+    dureeMinutes: episode.duree_minutes,
+    etat: episode.etat,
+    aLaUne: episode.a_la_une,
+    aLaUneGlobale: episode.a_la_une_globale ?? false,
+    themePhare: null,
+    sourceMedia: episode.source_media ?? 'aucune',
+    interactions: episode.interactions ?? null,
+  }
+}
+
+/** Un PROGRAMME conteneur vers la forme consommée par les composants. */
+export function mapperEmissionVersTv(emission: EmissionAPI, apiBase: string): TvEmission {
+  return {
+    id: emission.id,
+    slug: emission.slug,
+    titre: emission.titre,
+    description: emission.description,
+    banner: resoudreUrl(emission.image_couverture_url, apiBase),
+    cadence: emission.cadence,
+    langue: emission.langue,
+    themePhare: emission.theme_phare?.nom || emission.theme_phare_autre || null,
+    nombreEpisodes: emission.nombre_episodes ?? 0,
+    dernierEpisodeAt: emission.dernier_episode_at ?? null,
+    episodes: (emission.episodes_apercu ?? []).map(e => mapperEpisodeVersTv(e, apiBase)),
+    interactions: emission.interactions ?? null,
   }
 }
 
@@ -369,59 +396,17 @@ export const useTelevision = () => {
   }
 
   /**
-   * Récupérer la liste des programmes vedettes (TV à la une)
-   */
-  const listerProgrammesVedettes = async (filtres: ProgrammeTeleFiltres = {}): Promise<{ programmes: TvProgram[]; total: number } | null> => {
-    chargement.value = true
-    erreur.value = null
-
-    try {
-      const params = new URLSearchParams()
-      if (filtres.recherche) params.set('recherche', filtres.recherche)
-      if (filtres.pays && filtres.pays !== 'Tous les territoires') params.set('pays', filtres.pays)
-      if (filtres.chaine) params.set('chaine', filtres.chaine)
-      if (filtres.page) params.set('page', String(filtres.page))
-      if (filtres.par_page) params.set('par_page', String(filtres.par_page))
-
-      const queryString = params.toString()
-      const url = `${apiBase}/api/television/programmes-vedettes${queryString ? `?${queryString}` : ''}`
-
-      const reponse = await $fetch<ApiResponse<ProgrammeTeleListeAPI>>(url)
-
-      if (!reponse.success || !reponse.data) {
-        throw new Error(reponse.error || 'Erreur lors du chargement des programmes')
-      }
-
-      return {
-        programmes: reponse.data.programmes.map(p => mapperProgrammeApiVersTv(p, apiBase)),
-        total: reponse.data.total,
-      }
-    }
-    catch (e: any) {
-      const message = e?.data?.error || e?.message || 'Erreur réseau'
-      erreur.value = message
-      console.error('Erreur listerProgrammesVedettes:', e)
-      return null
-    }
-    finally {
-      chargement.value = false
-    }
-  }
-
-  /**
-   * Émissions publiées d'une chaîne — pendant télé de
-   * `useStationsRadio.listerContenusStation`.
+   * **Programmes** d'une chaîne détenue — alimente le sélecteur de la grille de
+   * programmation, qui désigne désormais une série et non un fichier (FR-014).
    *
-   * Alimente notamment le sélecteur de contenu de la grille de programmation :
-   * sans lui, un co-détenteur ne pouvait placer aucun créneau (US5).
+   * Route MEMBRE : la grille se construit depuis l'espace du détenteur, et la
+   * vue publique n'expose pas les programmes encore sans épisode.
    */
-  const listerContenusChaine = async (chaineId: string): Promise<TvProgram[]> => {
+  const listerContenusChaine = async (chaineId: string): Promise<TvEmission[]> => {
     try {
-      const reponse = await $fetch<ApiResponse<ProgrammeTeleListeAPI>>(
-        `${apiBase}/api/television/programmes-vedettes?chaine=${chaineId}&par_page=50`,
-      )
-      if (!reponse.success || !reponse.data) return []
-      return reponse.data.programmes.map(p => mapperProgrammeApiVersTv(p, apiBase))
+      const { listerEmissionsDetenteur } = useMediaEmissions()
+      const emissions = await listerEmissionsDetenteur('chaine_tv', chaineId)
+      return emissions.map(e => mapperEmissionVersTv(e, apiBase))
     }
     catch (e: any) {
       console.error('Erreur listerContenusChaine:', e)
@@ -429,44 +414,6 @@ export const useTelevision = () => {
     }
   }
 
-  /**
-   * Récupérer un programme vedette par ID
-   */
-  const obtenirProgrammeVedette = async (id: string): Promise<TvProgram | null> => {
-    chargement.value = true
-    erreur.value = null
-
-    try {
-      const reponse = await $fetch<ApiResponse<ProgrammeTeleAPI>>(
-        `${apiBase}/api/television/programmes-vedettes/${id}`,
-      )
-
-      if (!reponse.success || !reponse.data) {
-        throw new Error(reponse.error || 'Programme non trouvé')
-      }
-
-      return mapperProgrammeApiVersTv(reponse.data, apiBase)
-    }
-    catch (e: any) {
-      const message = e?.data?.error || e?.message || 'Erreur réseau'
-      erreur.value = message
-      console.error('Erreur obtenirProgrammeVedette:', e)
-      return null
-    }
-    finally {
-      chargement.value = false
-    }
-  }
-
-  /**
-   * Récupérer la liste des territoires proposés au filtre.
-   *
-   * On interroge le référentiel public `/api/pays` (tous les territoires
-   * actifs, comme les sélecteurs des autres pages) et NON
-   * `/api/television/pays`, qui ne renvoie que les territoires ayant déjà une
-   * chaîne ou un programme publié : le visiteur ne voyait alors qu'une poignée
-   * d'entrées, sans moyen de constater qu'un territoire est encore vide.
-   */
   const listerPays = async (): Promise<string[] | null> => {
     try {
       const reponse = await $fetch<ApiResponse<{ nom: string }[]>>(
@@ -481,27 +428,6 @@ export const useTelevision = () => {
     }
     catch (e: any) {
       console.error('Erreur listerPays:', e)
-      return null
-    }
-  }
-
-  /**
-   * Récupérer la liste des catégories disponibles
-   */
-  const listerCategories = async (): Promise<string[] | null> => {
-    try {
-      const reponse = await $fetch<ApiResponse<string[]>>(
-        `${apiBase}/api/television/categories`,
-      )
-
-      if (!reponse.success || !reponse.data) {
-        throw new Error(reponse.error || 'Erreur lors du chargement des catégories')
-      }
-
-      return reponse.data
-    }
-    catch (e: any) {
-      console.error('Erreur listerCategories:', e)
       return null
     }
   }
@@ -544,56 +470,19 @@ export const useTelevision = () => {
   }
 
   /**
-   * Créer un nouveau programme vedette (authentification requise)
-   */
-  const creerProgrammeVedette = async (form: CreerProgrammeVedetteForm): Promise<TvProgram | null> => {
-    chargement.value = true
-    erreur.value = null
-
-    try {
-      const reponse = await $fetch<ApiResponse<ProgrammeTeleAPI>>(
-        `${apiBase}/api/television/programmes-vedettes`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...authHeaders(),
-          },
-          body: form,
-        },
-      )
-
-      if (!reponse.success || !reponse.data) {
-        throw new Error(reponse.error || 'Erreur lors de la création du programme')
-      }
-
-      return mapperProgrammeApiVersTv(reponse.data, apiBase)
-    }
-    catch (e: any) {
-      const message = e?.data?.error || e?.message || 'Erreur réseau'
-      erreur.value = message
-      console.error('Erreur creerProgrammeVedette:', e)
-      return null
-    }
-    finally {
-      chargement.value = false
-    }
-  }
-
-  /**
-   * Programme mis en avant sur toute la page (FR-001).
-   * `null` quand aucun programme n'est publié — la page affiche alors son
-   * message d'état vide, jamais un lecteur en erreur.
+   * Épisode mis en avant sur toute la page (FR-052).
+   * `null` quand aucun épisode n'est publié — la page affiche alors son message
+   * d'état vide, jamais un lecteur en erreur.
    */
   const obtenirVedette = async (): Promise<ProgrammeVedette | null> => {
     erreur.value = null
     try {
-      const reponse = await $fetch<ApiResponse<ProgrammeVedetteAPI>>(
+      const reponse = await $fetch<ApiResponse<VedetteTeleAPI>>(
         `${apiBase}/api/television/vedette`,
       )
       if (!reponse.success || !reponse.data) return null
       return {
-        ...mapperProgrammeApiVersTv(reponse.data, apiBase),
+        ...mapperEpisodeVersTv(reponse.data.episode, apiBase),
         estRepli: reponse.data.est_repli,
       }
     }
@@ -622,6 +511,12 @@ export const useTelevision = () => {
       if (filtres.pays && filtres.pays !== 'Tous les territoires') params.set('pays', filtres.pays)
       if (filtres.origine) params.set('origine', filtres.origine)
       if (filtres.theme) params.set('theme', filtres.theme)
+      // Répétable : plusieurs thématiques s'entendent comme un OU côté serveur.
+      // Liste séparée par des VIRGULES, jamais une clé répétée : l'extracteur
+      // `web::Query` du serveur rejette la seconde forme en 400, y compris
+      // avec une seule valeur. Les thèmes s'entendent comme un OU (US3).
+      if (filtres.thematiques?.length) params.set('thematique', filtres.thematiques.join(','))
+      if (filtres.territoire) params.set('territoire', filtres.territoire)
       // Seul l'état « activé » se transmet : un `en_direct=false` n'exclurait
       // pas les chaînes en direct côté serveur, il n'a donc rien à faire ici.
       if (filtres.en_direct) params.set('en_direct', 'true')
@@ -641,9 +536,8 @@ export const useTelevision = () => {
       return {
         sections: reponse.data.sections.map(s => ({
           chaine: mapperChaineApiVersTv(s.chaine, apiBase),
-          misEnEvidence: s.mis_en_evidence ? mapperProgrammeApiVersTv(s.mis_en_evidence, apiBase) : null,
-          contenus: s.contenus.map(c => mapperProgrammeApiVersTv(c, apiBase)),
-          totalContenus: s.total_contenus,
+          emissions: (s.emissions ?? []).map(e => mapperEmissionVersTv(e, apiBase)),
+          totalEmissions: s.total_emissions ?? 0,
           diffusionEnCours: s.diffusion_en_cours ?? null,
           creneauSuivant: s.creneau_suivant ?? null,
         })),
@@ -662,15 +556,27 @@ export const useTelevision = () => {
     }
   }
 
-  /** Détail d'une chaîne par son slug — requis par les pages SSR. */
-  const obtenirChaineParSlug = async (slug: string): Promise<TvChannel | null> => {
+  /**
+   * Détail d'une chaîne par son slug, **avec ses programmes** — requis par les
+   * pages SSR. La page déplie ainsi le catalogue à deux niveaux sans second
+   * appel.
+   */
+  const obtenirChaineParSlug = async (
+    slug: string,
+  ): Promise<{ chaine: TvChannel, emissions: TvEmission[], totalEmissions: number } | null> => {
     erreur.value = null
     try {
-      const reponse = await $fetch<ApiResponse<ChaineTvAPI>>(
-        `${apiBase}/api/television/chaines/slug/${encodeURIComponent(slug)}`,
-      )
+      const reponse = await $fetch<ApiResponse<{
+        chaine: ChaineTvAPI
+        emissions: EmissionAPI[]
+        total_emissions: number
+      }>>(`${apiBase}/api/television/chaines/slug/${encodeURIComponent(slug)}`)
       if (!reponse.success || !reponse.data) return null
-      return mapperChaineApiVersTv(reponse.data, apiBase)
+      return {
+        chaine: mapperChaineApiVersTv(reponse.data.chaine, apiBase),
+        emissions: (reponse.data.emissions ?? []).map(e => mapperEmissionVersTv(e, apiBase)),
+        totalEmissions: reponse.data.total_emissions ?? 0,
+      }
     }
     catch (e: any) {
       erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
@@ -678,20 +584,37 @@ export const useTelevision = () => {
     }
   }
 
-  /** Détail d'un programme par son slug. */
-  const obtenirProgrammeParSlug = async (slug: string): Promise<TvProgram | null> => {
+  /**
+   * Détail d'un **épisode** par son slug, plus ses épisodes voisins (US1 §4).
+   *
+   * L'adresse `/api/television/programmes/slug/{slug}` est conservée : les slugs
+   * ayant survécu à 09q, les liens déjà indexés continuent de résoudre (FR-056).
+   */
+  const obtenirProgrammeParSlug = async (
+    slug: string,
+  ): Promise<{ episode: TvProgram, voisins: TvProgram[] } | null> => {
     erreur.value = null
     try {
-      const reponse = await $fetch<ApiResponse<ProgrammeTeleAPI>>(
-        `${apiBase}/api/television/programmes/slug/${encodeURIComponent(slug)}`,
-      )
+      const reponse = await $fetch<ApiResponse<{
+        episode: EpisodeAPI
+        episodes_voisins: EpisodeAPI[]
+      }>>(`${apiBase}/api/television/episodes/slug/${encodeURIComponent(slug)}`)
       if (!reponse.success || !reponse.data) return null
-      return mapperProgrammeApiVersTv(reponse.data, apiBase)
+      return {
+        episode: mapperEpisodeVersTv(reponse.data.episode, apiBase),
+        voisins: (reponse.data.episodes_voisins ?? []).map(e => mapperEpisodeVersTv(e, apiBase)),
+      }
     }
     catch (e: any) {
       erreur.value = e?.data?.error || e?.message || 'Erreur réseau'
       return null
     }
+  }
+
+  /** Détail d'un **programme** (émission) par son slug. */
+  const obtenirEmissionParSlug = async (slug: string): Promise<EmissionAPI | null> => {
+    const { obtenirEmission } = useMediaEmissions()
+    return obtenirEmission('chaine_tv', slug)
   }
 
   return {
@@ -701,14 +624,11 @@ export const useTelevision = () => {
     listerSections,
     obtenirChaineParSlug,
     obtenirProgrammeParSlug,
+    obtenirEmissionParSlug,
     listerChaines,
     obtenirChaine,
-    listerProgrammesVedettes,
     listerContenusChaine,
-    obtenirProgrammeVedette,
     listerPays,
-    listerCategories,
     creerChaine,
-    creerProgrammeVedette,
   }
 }

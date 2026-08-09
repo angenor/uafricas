@@ -114,6 +114,8 @@
 \ir schemas/09n_media_content_programmation.sql
 \ir schemas/09o_media_content_chaine_tv_origine.sql
 \ir schemas/09p_media_content_contacts_supports.sql
+\ir schemas/09q_media_content_emissions_episodes.sql
+\ir schemas/09r_media_content_support_thematiques_territoires.sql
 \ir schemas/10_governance.sql
 \ir schemas/10f_governance_factcheck_volets_reactions.sql
 \ir schemas/10g_governance_factcheck_signalement.sql

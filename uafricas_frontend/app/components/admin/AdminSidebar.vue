@@ -210,6 +210,10 @@ const sidebarSections: SidebarSection[] = [
     children: [
       { label: 'Radio', faIcon: 'radio', route: '/admin/radio' },
       { label: 'Télévision', faIcon: 'tv', route: '/admin/television' },
+      // Programmes et épisodes sont communs aux deux familles depuis 09q :
+      // les ranger sous « Radio » ou sous « Télévision » aurait été arbitraire.
+      { label: 'Programmes', faIcon: 'film', route: '/admin/medias/emissions' },
+      { label: 'Épisodes à valider', faIcon: 'clipboard-check', route: '/admin/medias/moderation-episodes' },
       { label: 'Propositions médias', faIcon: 'inbox', route: '/admin/medias/propositions' },
       { label: 'Contenus signalés', faIcon: 'flag', route: '/admin/medias/signalements' },
       { label: 'Vidafrica', faIcon: 'closed-captioning', route: '/admin/vidafrica' },

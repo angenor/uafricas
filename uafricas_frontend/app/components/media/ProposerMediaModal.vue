@@ -27,7 +27,7 @@ const props = withDefaults(defineProps<{
   /** Support visé, quand la proposition part d'une page de détail. */
   targetId?: string | null
 }>(), {
-  typesOfferts: () => ['chaine_tv', 'station_radio', 'programme_tele', 'programme_radio'],
+  typesOfferts: () => ['chaine_tv', 'station_radio', 'emission_tele', 'emission_radio'],
   targetId: null,
 })
 
@@ -71,8 +71,13 @@ const AUTRE = 'autre'
 const supportsParents = ref<{ id: string, nom: string }[]>([])
 
 const estSupport = computed(() => ['chaine_tv', 'station_radio'].includes(typeObjet.value))
-const estContenu = computed(() => typeObjet.value.startsWith('programme_'))
-const estVideo = computed(() => typeObjet.value === 'programme_tele')
+// Depuis 009, « contenu » recouvre les PROGRAMMES conteneurs (`emission_*`) et
+// les épisodes (`episode_*`) : les deux se rattachent à un support et portent un
+// média, à ceci près qu'un programme peut naître sans fichier (FR-003).
+const estContenu = computed(
+  () => typeObjet.value.startsWith('emission_') || typeObjet.value.startsWith('episode_'),
+)
+const estVideo = computed(() => typeObjet.value.endsWith('_tele'))
 
 /** Le parent est demandé pour une émission proposée hors d'une page de détail. */
 const rattachementRequis = computed(() => estContenu.value && !props.targetId)

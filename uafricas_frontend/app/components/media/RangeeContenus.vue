@@ -29,7 +29,12 @@ const defiler = (sens: -1 | 1) => {
 
 <template>
   <section class="relative group/rangee">
-    <h4 v-if="titre" class="text-white font-semibold mb-3 px-1">{{ titre }}</h4>
+    <!-- Titre et méta sur la même ligne : depuis 009, une rangée est un
+         PROGRAMME, et son en-tête porte son décompte d'épisodes et sa cadence. -->
+    <div v-if="titre || $slots.entete" class="flex items-baseline justify-between gap-4 mb-3 px-1">
+      <h4 v-if="titre" class="text-white font-semibold truncate">{{ titre }}</h4>
+      <slot name="entete" />
+    </div>
 
     <!-- Les flèches doublent le défilement tactile pour les visiteurs qui
          naviguent à la souris ou au clavier (FR-053). -->

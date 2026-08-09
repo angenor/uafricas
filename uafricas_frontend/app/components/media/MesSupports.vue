@@ -17,38 +17,81 @@ import {
   DESCRIPTIONS_ROLE_DETENTEUR,
   type DetenteurAPI,
 } from '~/composables/useMediaDetention'
+import type { EmissionAPI } from '~/composables/useMediaEmissions'
+import { LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
+import { LIBELLES_NIVEAU_ALERTE, type AlerteCadence } from '~/composables/useMediaProgrammation'
 
 const { mesSupports, chargement, erreur } = useMediaDetention()
-const { listerContenusChaine } = useTelevision()
-const { listerContenusStation } = useStationsRadio()
+const { listerEmissionsDetenteur, creerEmission } = useMediaEmissions()
+const { mesAlertesCadence } = useMediaProgrammation()
+const {
+  listerReferentielsEdition, obtenirThematiques, definirThematiques,
+  obtenirCouverture, definirCouverture, erreur: erreurFiche,
+} = useMediaSupport()
 
 const supports = ref<DetenteurAPI[]>([])
+
+/** Alertes de cadence, tous supports détenus confondus (FR-024). */
+const alertes = ref<AlerteCadence[]>([])
 
 /** Identifiant du support dont le panneau de gestion est déplié (un seul à la fois). */
 const gestionOuverte = ref<string | null>(null)
 
 /**
- * Émissions de chaque support, pour le sélecteur de contenu de la grille.
+ * Programmes de chaque support, pour la gestion des épisodes ET le sélecteur
+ * de la grille.
  *
- * Chargées à l'ouverture du panneau et mémorisées : sans elles le sélecteur
- * reste vide et aucun créneau n'est créable — la grille n'a alors rien à
- * programmer (US5). Clé : l'identifiant du support.
+ * Chargés à l'ouverture du panneau et mémorisés : sans eux le sélecteur reste
+ * vide et aucun créneau n'est créable — la grille n'a alors rien à programmer.
+ * Ce sont **tous** les programmes du détenteur, brouillons compris : ne montrer
+ * que les publiés lui cacherait ce qu'il vient de créer.
+ * Clé : l'identifiant du support.
  */
-const contenusParSupport = ref<Record<string, { id: string, titre: string }[]>>({})
+const emissionsParSupport = ref<Record<string, EmissionAPI[]>>({})
 
-const chargerContenus = async (detenteur: DetenteurAPI) => {
-  if (contenusParSupport.value[detenteur.support_id]) return
-  const contenus = detenteur.type_support === 'chaine_tv'
-    ? await listerContenusChaine(detenteur.support_id)
-    : await listerContenusStation(detenteur.support_id)
-  contenusParSupport.value[detenteur.support_id] = contenus.map(c => ({
-    id: c.id,
-    titre: c.title,
-  }))
+/** Thématiques et couverture, chargées à l'ouverture du panneau. */
+const ficheParSupport = ref<Record<string, {
+  thematiques: string[]
+  continentale: boolean
+  territoires: string[]
+}>>({})
+
+const thematiquesRef = ref<{ id: string, nom: string }[]>([])
+const territoiresRef = ref<{ id: string, nom: string }[]>([])
+
+const chargerEmissions = async (detenteur: DetenteurAPI, force = false) => {
+  if (!force && emissionsParSupport.value[detenteur.support_id]) return
+  emissionsParSupport.value[detenteur.support_id] = await listerEmissionsDetenteur(
+    detenteur.type_support,
+    detenteur.support_id,
+  )
 }
+
+const chargerFiche = async (detenteur: DetenteurAPI) => {
+  if (ficheParSupport.value[detenteur.support_id]) return
+  const [themes, couverture] = await Promise.all([
+    obtenirThematiques(detenteur.type_support, detenteur.support_id),
+    obtenirCouverture(detenteur.type_support, detenteur.support_id),
+  ])
+  ficheParSupport.value[detenteur.support_id] = {
+    thematiques: themes.map(t => t.id),
+    continentale: couverture?.couverture_continentale ?? false,
+    territoires: couverture?.territoires.map(t => t.id) ?? [],
+  }
+}
+
+/** Le sélecteur de la grille ne montre que ce que le serveur acceptera. */
+const emissionsProgrammables = (supportId: string) =>
+  (emissionsParSupport.value[supportId] ?? []).map(e => ({
+    id: e.id,
+    titre: e.titre,
+    cadence: e.cadence,
+    nombre_episodes: e.nombre_episodes,
+  }))
 
 const charger = async () => {
   supports.value = await mesSupports()
+  alertes.value = await mesAlertesCadence()
   ouvrirSupportDemande()
 }
 
@@ -70,16 +113,92 @@ const ouvrirSupportDemande = () => {
   const cible = supports.value.find(s => s.support_id === supportId)
   if (!cible) return
   gestionOuverte.value = cible.id
-  chargerContenus(cible)
+  ouvrirPanneau(cible)
 }
 
-onMounted(charger)
+onMounted(async () => {
+  await charger()
+  const referentiels = await listerReferentielsEdition()
+  thematiquesRef.value = referentiels.thematiques
+  territoiresRef.value = referentiels.territoires
+})
+
+const ouvrirPanneau = (detenteur: DetenteurAPI) => {
+  chargerEmissions(detenteur)
+  chargerFiche(detenteur)
+}
 
 const basculerGestion = (detenteur: DetenteurAPI) => {
   const id = detenteur.id
   gestionOuverte.value = gestionOuverte.value === id ? null : id
-  if (gestionOuverte.value === id) chargerContenus(detenteur)
+  if (gestionOuverte.value === id) ouvrirPanneau(detenteur)
 }
+
+// ── Création d'un programme ───────────────────────────────────
+const creationPour = ref<DetenteurAPI | null>(null)
+const creationErreur = ref<string | null>(null)
+const nouveauProgramme = reactive({ titre: '', cadence: 'ponctuelle', description: '' })
+
+const ouvrirCreationProgramme = (detenteur: DetenteurAPI) => {
+  creationPour.value = detenteur
+  creationErreur.value = null
+  nouveauProgramme.titre = ''
+  nouveauProgramme.cadence = 'ponctuelle'
+  nouveauProgramme.description = ''
+}
+
+/**
+ * Un programme naît **sans média et sans épisode** : c'est ce qui le distingue
+ * de l'ancien « programme », qui était le contenu lui-même. Exiger un fichier
+ * ici rendrait impossible de déclarer une série avant d'en avoir tourné le
+ * premier épisode (FR-003).
+ */
+const creerProgramme = async () => {
+  if (!creationPour.value) return
+  if (!nouveauProgramme.titre.trim()) { creationErreur.value = 'Le titre est obligatoire.'; return }
+  const detenteur = creationPour.value
+  const cree = await creerEmission(detenteur.type_support, detenteur.support_id, {
+    titre: nouveauProgramme.titre.trim(),
+    cadence: nouveauProgramme.cadence,
+    description: nouveauProgramme.description.trim(),
+  })
+  if (!cree) { creationErreur.value = 'Création impossible.'; return }
+  creationPour.value = null
+  await chargerEmissions(detenteur, true)
+}
+
+/** Programme dont les épisodes sont dépliés (un seul à la fois). */
+const episodesOuverts = ref<string | null>(null)
+
+const basculerEpisodes = (emissionId: string) => {
+  episodesOuverts.value = episodesOuverts.value === emissionId ? null : emissionId
+}
+
+// ── Fiche du support : enregistrement ─────────────────────────
+const enregistrementFiche = ref<string | null>(null)
+const ficheEnregistree = ref<string | null>(null)
+
+const enregistrerFiche = async (detenteur: DetenteurAPI) => {
+  const fiche = ficheParSupport.value[detenteur.support_id]
+  if (!fiche) return
+  enregistrementFiche.value = detenteur.support_id
+  ficheEnregistree.value = null
+  const okThemes = await definirThematiques(detenteur.type_support, detenteur.support_id, fiche.thematiques)
+  const okCouverture = await definirCouverture(
+    detenteur.type_support, detenteur.support_id, fiche.continentale, fiche.territoires,
+  )
+  enregistrementFiche.value = null
+  if (okThemes && okCouverture) {
+    ficheEnregistree.value = detenteur.support_id
+    setTimeout(() => { ficheEnregistree.value = null }, 3000)
+  }
+}
+
+const alertesDuSupport = (supportId: string) =>
+  alertes.value.filter(a => a.support.id === supportId)
+
+const dateCourte = (iso: string | null) =>
+  iso ? new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(new Date(iso)) : '—' 
 
 const LIBELLES_TYPE_SUPPORT: Record<DetenteurAPI['type_support'], string> = {
   chaine_tv: 'Chaîne de télévision',
@@ -136,7 +255,48 @@ const dateFormatee = (iso: string) =>
       </div>
     </div>
 
-    <ul v-else class="space-y-4">
+    <!-- Alertes de cadence, tous supports confondus : une échéance dépassée
+         doit se voir avant d'ouvrir un panneau (FR-024). -->
+    <div v-if="!chargement && alertes.length" class="mb-6 space-y-2">
+      <h2 class="font-oswald text-lg font-bold text-gray-900">
+        Échéances de vos programmes
+      </h2>
+      <ul class="space-y-2">
+        <li
+          v-for="alerte in alertes"
+          :key="alerte.emission.id"
+          class="rounded-lg border px-4 py-3 text-sm"
+          :class="alerte.niveau === 'depassee'
+            ? 'border-red-200 bg-red-50 text-red-900'
+            : 'border-amber-200 bg-amber-50 text-amber-900'"
+        >
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <span class="font-semibold">{{ alerte.emission.titre }}</span>
+            <span class="text-xs uppercase tracking-wide">
+              {{ LIBELLES_NIVEAU_ALERTE[alerte.niveau] }}
+            </span>
+          </div>
+          <p class="text-xs mt-1 opacity-80">
+            {{ alerte.support.nom }} · cadence {{ LIBELLES_CADENCE[alerte.cadence] || alerte.cadence }}
+            <template v-if="alerte.prochaine_echeance">
+              · attendu le {{ dateCourte(alerte.prochaine_echeance) }}
+            </template>
+          </p>
+          <!-- Le détenteur a fait sa part : c'est la file de modération qui n'a
+               pas suivi. L'alerte ne doit pas l'accuser. -->
+          <p v-if="alerte.episodes_en_attente" class="text-xs mt-1">
+            {{ alerte.episodes_en_attente }} épisode(s) déjà soumis, en attente de validation.
+          </p>
+          <p v-else-if="alerte.niveau === 'aucun_episode'" class="text-xs mt-1">
+            Ce programme n'a aucun épisode publié : ses créneaux n'annoncent rien.
+          </p>
+        </li>
+      </ul>
+    </div>
+
+    <!-- `v-if` autonome et non `v-else` : le bandeau d'alertes s'intercale
+         au-dessus et romprait la chaîne conditionnelle. -->
+    <ul v-if="!chargement && supports.length" class="space-y-4">
       <li
         v-for="detenteur in supports"
         :key="detenteur.id"
@@ -204,25 +364,126 @@ const dateFormatee = (iso: string) =>
         <!-- Panneau de gestion déplié en place : pas de navigation, on reste
              dans la liste de ses supports. -->
         <div v-if="gestionOuverte === detenteur.id" class="border-t border-gray-100 bg-gray-50/60 p-5 space-y-8">
+          <!-- Programmes et épisodes : le cœur de ce que gère un détenteur -->
+          <section>
+            <div class="flex flex-wrap items-baseline justify-between gap-3 mb-3">
+              <h3 class="font-oswald text-lg font-bold text-gray-900">Programmes</h3>
+              <button
+                type="button"
+                class="rounded-full bg-custom-chocolat px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-custom-chocolat/90"
+                @click="ouvrirCreationProgramme(detenteur)"
+              >
+                + Nouveau programme
+              </button>
+            </div>
+
+            <p
+              v-if="(emissionsParSupport[detenteur.support_id] ?? []).length === 0"
+              class="text-sm text-gray-500"
+            >
+              Aucun programme pour l'instant. Un programme se déclare sans fichier :
+              ses épisodes viendront ensuite.
+            </p>
+
+            <ul v-else class="space-y-3">
+              <li
+                v-for="emission in emissionsParSupport[detenteur.support_id]"
+                :key="emission.id"
+                class="rounded-lg border border-gray-200 bg-white"
+              >
+                <div class="flex flex-wrap items-center justify-between gap-3 p-4">
+                  <div class="min-w-0">
+                    <p class="font-semibold text-gray-900 truncate">{{ emission.titre }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                      {{ emission.nombre_episodes }} épisode(s) publié(s)
+                      · {{ LIBELLES_CADENCE[emission.cadence] || emission.cadence }}
+                      <span v-if="emission.episodes_en_attente" class="text-amber-700">
+                        · {{ emission.episodes_en_attente }} en attente
+                      </span>
+                      <span v-if="emission.episodes_rejetes" class="text-red-700">
+                        · {{ emission.episodes_rejetes }} refusé(s)
+                      </span>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    class="rounded-full border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                    @click="basculerEpisodes(emission.id)"
+                  >
+                    {{ episodesOuverts === emission.id ? 'Masquer les épisodes' : 'Gérer les épisodes' }}
+                  </button>
+                </div>
+
+                <div v-if="episodesOuverts === emission.id" class="border-t border-gray-100 p-4">
+                  <MediaGestionEpisodes
+                    :emission-id="emission.id"
+                    :emission-titre="emission.titre"
+                    :type-support="detenteur.type_support"
+                    :sombre="false"
+                    @change="chargerEmissions(detenteur, true)"
+                  />
+                </div>
+              </li>
+            </ul>
+          </section>
+
           <section>
             <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">Grille de programmation</h3>
-            <!-- Les émissions du support, chargées à l'ouverture du panneau :
-                 c'est la seule source du sélecteur de contenu, sans laquelle
-                 aucun créneau n'est créable. -->
+            <!-- Les programmes du support, chargés à l'ouverture du panneau :
+                 c'est la seule source du sélecteur, sans laquelle aucun créneau
+                 n'est créable. Le créneau vise un PROGRAMME ; l'épisode diffusé
+                 se déduit de la date d'effet. -->
             <MediaGrilleProgrammation
               :type-support="detenteur.type_support"
               :support-id="detenteur.support_id"
-              :mon-role="detenteur.role"
-              :contenus="contenusParSupport[detenteur.support_id] ?? []"
+              :emissions="emissionsProgrammables(detenteur.support_id)"
               :modifiable="true"
             />
             <p
-              v-if="(contenusParSupport[detenteur.support_id] ?? []).length === 0"
+              v-if="emissionsProgrammables(detenteur.support_id).length === 0"
               class="mt-2 text-sm text-gray-500"
             >
-              Ce support n'a encore aucune émission publiée : publiez-en une
-              avant de bâtir sa grille.
+              Ce support n'a encore aucun programme : créez-en un avant de bâtir sa grille.
             </p>
+          </section>
+
+          <!-- Thématiques et couverture : ce qui rend le support trouvable -->
+          <section v-if="ficheParSupport[detenteur.support_id]">
+            <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">
+              Thématiques &amp; couverture
+            </h3>
+            <div class="space-y-5 rounded-lg border border-gray-200 bg-white p-4">
+              <MediaSelecteurThematiques
+                :model-value="ficheParSupport[detenteur.support_id]!.thematiques"
+                :options="thematiquesRef"
+                :sombre="false"
+                @update:model-value="ficheParSupport[detenteur.support_id]!.thematiques = $event"
+              />
+              <MediaSelecteurCouverture
+                :continentale="ficheParSupport[detenteur.support_id]!.continentale"
+                :territoires="ficheParSupport[detenteur.support_id]!.territoires"
+                :options="territoiresRef"
+                :sombre="false"
+                @update:continentale="ficheParSupport[detenteur.support_id]!.continentale = $event"
+                @update:territoires="ficheParSupport[detenteur.support_id]!.territoires = $event"
+              />
+
+              <p v-if="erreurFiche" class="text-sm text-red-700">{{ erreurFiche }}</p>
+              <p v-if="ficheEnregistree === detenteur.support_id" class="text-sm text-green-700">
+                Fiche enregistrée.
+              </p>
+
+              <div class="flex justify-end">
+                <button
+                  type="button"
+                  :disabled="enregistrementFiche === detenteur.support_id"
+                  class="rounded-full bg-custom-chocolat px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-custom-chocolat/90 disabled:opacity-50"
+                  @click="enregistrerFiche(detenteur)"
+                >
+                  Enregistrer la fiche
+                </button>
+              </div>
+            </div>
           </section>
 
           <section>
@@ -251,5 +512,71 @@ const dateFormatee = (iso: string) =>
         </div>
       </li>
     </ul>
+
+    <!-- Création d'un programme : sans média, volontairement (FR-003) -->
+    <div
+      v-if="creationPour"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      @click.self="creationPour = null"
+    >
+      <div class="w-full max-w-md rounded-xl bg-white p-6">
+        <h3 class="font-oswald text-xl font-bold text-gray-900 mb-1">Nouveau programme</h3>
+        <p class="text-sm text-gray-500 mb-4">
+          Sur {{ creationPour.support_nom }}. Le programme est créé en brouillon ;
+          il devient public dès qu'un de ses épisodes est validé.
+        </p>
+
+        <p v-if="creationErreur" class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-900">
+          {{ creationErreur }}
+        </p>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm text-gray-700 mb-1">Titre *</label>
+            <input
+              v-model="nouveauProgramme.titre"
+              type="text"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
+              placeholder="Ex : Le Grand Débat"
+            >
+          </div>
+          <div>
+            <label class="block text-sm text-gray-700 mb-1">Cadence</label>
+            <select
+              v-model="nouveauProgramme.cadence"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
+            >
+              <option value="ponctuelle">Au fil des publications</option>
+              <option value="hebdomadaire">Chaque semaine</option>
+              <option value="quotidienne">Tous les jours</option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">
+              Elle sert à vous alerter d'une échéance sans épisode, pas à décider de la diffusion.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm text-gray-700 mb-1">Description</label>
+            <textarea
+              v-model="nouveauProgramme.description"
+              rows="3"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
+            />
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" class="text-sm text-gray-500 hover:text-gray-900" @click="creationPour = null">
+            Annuler
+          </button>
+          <button
+            type="button"
+            class="rounded-full bg-custom-chocolat px-5 py-2 text-sm font-medium text-white hover:bg-custom-chocolat/90"
+            @click="creerProgramme"
+          >
+            Créer le programme
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

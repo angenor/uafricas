@@ -11,17 +11,24 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-/// Les quatre cibles possibles d'une interaction.
+/// Les six cibles possibles d'une interaction — les deux supports, les deux
+/// niveaux de contenu (émission et épisode) de chaque famille.
+///
+/// Les anciennes valeurs `programme_tele` / `programme_radio` sont **absentes**
+/// depuis 09q : un client non porté échoue visiblement plutôt que d'écrire sur
+/// une cible fantôme (research.md R8).
 ///
 /// **Whitelist de littéraux** : ces valeurs sont interpolées dans le SQL des
 /// requêtes UNION du mur communautaire. Elles ne proviennent JAMAIS directement
 /// de l'entrée client — celle-ci est d'abord confrontée à cette liste, et
 /// rejetée si elle n'y figure pas.
-pub const TYPES_MEDIA_AUTORISES: [&str; 4] = [
+pub const TYPES_MEDIA_AUTORISES: [&str; 6] = [
     "chaine_tv",
     "station_radio",
-    "programme_tele",
-    "programme_radio",
+    "emission_tele",
+    "emission_radio",
+    "episode_tele",
+    "episode_radio",
 ];
 
 /// Au-delà de ce nombre de signalements DISTINCTS, le contenu bascule
@@ -58,14 +65,27 @@ pub fn descripteur_pour_type(type_media: &str) -> Option<DescripteurMedia> {
             colonne_titre: "nom",
             base_url: "/medias/stations",
         }),
-        "programme_tele" => Some(DescripteurMedia {
-            table: "media_content.programme_tele",
-            colonne_titre: "nom_emission",
+        "emission_tele" => Some(DescripteurMedia {
+            table: "media_content.emission_tele",
+            colonne_titre: "titre",
+            base_url: "/medias/emissions-tele",
+        }),
+        "emission_radio" => Some(DescripteurMedia {
+            table: "media_content.emission_radio",
+            colonne_titre: "titre",
+            base_url: "/medias/emissions-radio",
+        }),
+        // Les pages d'épisode restent à l'emplacement des anciennes pages de
+        // programme : les slugs ayant été conservés par 09q, les adresses
+        // publiques déjà indexées continuent de résoudre (FR-056).
+        "episode_tele" => Some(DescripteurMedia {
+            table: "media_content.episode_tele",
+            colonne_titre: "titre",
             base_url: "/medias/programmes-tele",
         }),
-        "programme_radio" => Some(DescripteurMedia {
-            table: "media_content.programme_radio",
-            colonne_titre: "nom_emission",
+        "episode_radio" => Some(DescripteurMedia {
+            table: "media_content.episode_radio",
+            colonne_titre: "titre",
             base_url: "/medias/programmes-radio",
         }),
         _ => None,

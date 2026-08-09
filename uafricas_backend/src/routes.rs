@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_programmation, media_proposition, media_social, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_emission, media_episode, media_programmation, media_proposition, media_social, media_support, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -99,6 +99,41 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/medias/propositions/{id}", web::get().to(admin::media_proposition::obtenir_proposition))
                     .route("/medias/propositions/{id}/valider", web::patch().to(admin::media_proposition::valider_proposition))
                     .route("/medias/propositions/{id}/rejeter", web::patch().to(admin::media_proposition::rejeter_proposition))
+                    // Medias & Contenus — Programmes conteneurs et épisodes (009).
+                    // `/programmes-radio` et `/programmes-tele` ont disparu avec
+                    // leurs tables : la création d'un épisode exige désormais un
+                    // programme d'accueil.
+                    //
+                    // ⚠️ Bloc déclaré ICI, en tête du scope, et non près des
+                    // chaînes/stations : « /medias/{id} » (médiathèque) capterait
+                    // « /medias/emissions », et « /medias/{type_media}/{id}/etat »
+                    // capterait « /medias/emissions/{id}/etat ». Dans les deux cas
+                    // actix tente un parsing d'UUID sur un segment littéral et
+                    // renvoie 404 — l'ordre de déclaration est la seule garde.
+                    .route("/medias/upload", web::post().to(admin::radio_tele::uploader_media))
+                    // File de modération des épisodes (US1, FR-040 à FR-043).
+                    .route("/medias/episodes", web::get().to(admin::media_moderation_episode::lister_episodes))
+                    .route("/medias/episodes/{id}/valider", web::patch().to(admin::media_moderation_episode::valider_episode))
+                    .route("/medias/episodes/{id}/rejeter", web::patch().to(admin::media_moderation_episode::rejeter_episode))
+                    .route("/medias/episodes/{id}/a-la-une", web::patch().to(admin::radio_tele::definir_a_la_une_admin))
+                    .route("/medias/episodes/{id}/vedette-globale", web::patch().to(admin::radio_tele::definir_vedette_globale))
+                    .route("/medias/episodes/{id}", web::put().to(admin::radio_tele::modifier_episode_admin))
+                    .route("/medias/episodes/{id}", web::delete().to(admin::radio_tele::supprimer_episode_admin))
+                    // CRUD des programmes conteneurs.
+                    .route("/medias/emissions", web::get().to(admin::radio_tele::lister_emissions_admin))
+                    .route("/medias/emissions", web::post().to(admin::radio_tele::creer_emission_admin))
+                    .route("/medias/emissions/{id}/episodes/reordonner", web::put().to(admin::radio_tele::reordonner_episodes_admin))
+                    .route("/medias/emissions/{id}/episodes", web::get().to(admin::radio_tele::lister_episodes_admin))
+                    .route("/medias/emissions/{id}/episodes", web::post().to(admin::radio_tele::creer_episode_admin))
+                    .route("/medias/emissions/{id}/etat", web::patch().to(admin::radio_tele::changer_etat_emission_admin))
+                    .route("/medias/emissions/{id}", web::get().to(admin::radio_tele::obtenir_emission_admin))
+                    .route("/medias/emissions/{id}", web::put().to(admin::radio_tele::modifier_emission_admin))
+                    .route("/medias/emissions/{id}", web::delete().to(admin::radio_tele::supprimer_emission_admin))
+                    // Fiche du support : thématiques et couverture (US3, US4).
+                    .route("/medias/{type_support}/{support_id}/thematiques", web::get().to(media_support::admin_obtenir_thematiques))
+                    .route("/medias/{type_support}/{support_id}/thematiques", web::put().to(media_support::admin_definir_thematiques))
+                    .route("/medias/{type_support}/{support_id}/couverture", web::get().to(media_support::admin_obtenir_couverture))
+                    .route("/medias/{type_support}/{support_id}/couverture", web::put().to(media_support::admin_definir_couverture))
                     // Medias & Contenus - File des contenus signales (US7)
                     // Segments fixes AVANT « /medias/{type_support}/… », qui les capterait.
                     .route("/medias/signalements", web::get().to(admin::media_proposition::lister_signalements))
@@ -328,20 +363,6 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/chaines-tv/{id}", web::get().to(admin::radio_tele::obtenir_chaine_tv))
                     .route("/chaines-tv/{id}", web::put().to(admin::radio_tele::modifier_chaine_tv))
                     .route("/chaines-tv/{id}", web::delete().to(admin::radio_tele::supprimer_chaine_tv))
-                    // Medias & Contenus - Programmes Radio/Tele
-                    .route("/programmes-radio", web::get().to(admin::radio_tele::lister_programmes_radio))
-                    .route("/programmes-radio", web::post().to(admin::radio_tele::creer_programme_radio))
-                    .route("/programmes-radio/{id}", web::get().to(admin::radio_tele::obtenir_programme_radio))
-                    .route("/programmes-radio/{id}", web::put().to(admin::radio_tele::modifier_programme_radio))
-                    .route("/programmes-radio/{id}", web::delete().to(admin::radio_tele::supprimer_programme_radio))
-
-                    .route("/programmes-tele", web::get().to(admin::radio_tele::lister_programmes_tele))
-                    .route("/programmes-tele", web::post().to(admin::radio_tele::creer_programme_tele))
-                    .route("/programmes-tele/{id}", web::get().to(admin::radio_tele::obtenir_programme_tele))
-                    .route("/programmes-tele/{id}", web::put().to(admin::radio_tele::modifier_programme_tele))
-                    .route("/programmes-tele/{id}", web::delete().to(admin::radio_tele::supprimer_programme_tele))
-                    .route("/programmes-tele/{id}/vedette-globale", web::patch().to(admin::radio_tele::definir_vedette_globale))
-                    .route("/medias/upload", web::post().to(admin::radio_tele::uploader_media))
                     // Medias & Contenus - Evenements
                     .route("/evenements", web::get().to(admin::evenements::lister_evenements))
                     .route("/evenements", web::post().to(admin::evenements::creer_evenement))
@@ -801,13 +822,23 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/slug/{slug}", web::get().to(stations_radio::obtenir_station_par_slug))
                     .route("/pays", web::get().to(stations_radio::lister_pays_stations))
                     .route("/genres", web::get().to(stations_radio::lister_genres_stations))
+                    // Référentiels de filtre issus de 09r (US3, US4).
+                    .route("/thematiques", web::get().to(stations_radio::lister_thematiques_radio))
+                    .route("/territoires", web::get().to(stations_radio::lister_territoires_radio))
+                    // Programmes et épisodes (009). Segments fixes AVANT « /{id} ».
+                    .route("/emissions/slug/{slug}", web::get().to(stations_radio::obtenir_emission_radio_slug))
+                    .route("/emissions/{id}/episodes", web::get().to(stations_radio::lister_episodes_radio))
+                    .route("/episodes/slug/{slug}", web::get().to(stations_radio::obtenir_episode_radio_slug))
                     .route("/{id}", web::get().to(stations_radio::obtenir_station)),
             )
             // Émissions radio — exposition publique (US2, FR-020)
             .service(
                 web::scope("/programmes-radio")
-                    .route("", web::get().to(stations_radio::lister_programmes_radio))
-                    .route("/slug/{slug}", web::get().to(stations_radio::obtenir_programme_radio_par_slug)),
+                    // L'ancienne liste `programme_radio` n'a plus de table : le
+                    // catalogue se parcourt désormais par station puis par
+                    // programme. Seule l'adresse de DÉTAIL est conservée — les
+                    // slugs ayant survécu à 09q, elle résout sur l'épisode.
+                    .route("/slug/{slug}", web::get().to(stations_radio::obtenir_episode_radio_slug)),
             )
             // Routes des fiches pays (Opportunites en Afrique)
             .service(
@@ -1053,15 +1084,23 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/vedette", web::get().to(television::obtenir_vedette))
                     .route("/sections", web::get().to(television::lister_sections))
                     .route("/chaines/slug/{slug}", web::get().to(television::obtenir_chaine_par_slug))
-                    .route("/programmes/slug/{slug}", web::get().to(television::obtenir_programme_par_slug))
+                    // Adresse historique conservée : les slugs ayant survécu à
+                    // 09q, elle résout désormais sur l'ÉPISODE (FR-056).
+                    .route("/programmes/slug/{slug}", web::get().to(television::obtenir_episode_slug))
                     .route("/chaines", web::get().to(television::lister_chaines))
                     .route("/chaines", web::post().to(television::creer_chaine))
                     .route("/chaines/{id}", web::get().to(television::obtenir_chaine))
-                    .route("/programmes-vedettes", web::get().to(television::lister_programmes_vedettes))
-                    .route("/programmes-vedettes", web::post().to(television::creer_programme_vedette))
-                    .route("/programmes-vedettes/{id}", web::get().to(television::obtenir_programme_vedette))
+                    // Programmes conteneurs et épisodes (009).
+                    .route("/emissions/slug/{slug}", web::get().to(television::obtenir_emission_slug))
+                    .route("/emissions/{id}/episodes", web::get().to(television::lister_episodes_publics))
+                    .route("/episodes/slug/{slug}", web::get().to(television::obtenir_episode_slug))
+                    // Référentiels de filtre issus de 09r (US3, US4).
+                    .route("/thematiques", web::get().to(television::lister_thematiques))
+                    .route("/territoires", web::get().to(television::lister_territoires))
+                    // `/pays` sert encore le filtre « Territoire (siège) » de la
+                    // barre d'entrée : il dit où la chaîne est rattachée, là où
+                    // `/territoires` (09r) dit où elle rayonne. Les deux coexistent.
                     .route("/pays", web::get().to(television::lister_pays_television))
-                    .route("/categories", web::get().to(television::lister_categories_television))
                     .route("/stats", web::get().to(television::obtenir_stats_television)),
             )
             // Interactions communautaires et contributions sur les médias (US3, US4).
@@ -1091,6 +1130,23 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/invitations/{id}/refuser", web::patch().to(media_detention::refuser_invitation))
                     .route("/creneaux/{id}", web::put().to(media_programmation::modifier_creneau))
                     .route("/creneaux/{id}", web::delete().to(media_programmation::supprimer_creneau))
+                    // Alertes de cadence (US2, FR-024) — calculées à la lecture.
+                    .route("/mes-alertes-cadence", web::get().to(media_programmation::mes_alertes_cadence))
+                    // Catalogue complet des thèmes et territoires, pour les
+                    // sélecteurs d'édition (US3, US4) — à ne pas confondre avec
+                    // les référentiels de FILTRE, qui n'exposent que le déclaré.
+                    .route("/referentiels", web::get().to(media_support::referentiels_edition))
+                    // Programmes et épisodes (US1). Ces segments fixes précèdent
+                    // « /{type_support}/… », qui les capterait sinon.
+                    .route("/emissions/{id}", web::put().to(media_emission::modifier_emission))
+                    .route("/emissions/{id}", web::delete().to(media_emission::supprimer_emission))
+                    .route("/emissions/{id}/episodes", web::get().to(media_episode::lister_episodes_detenteur))
+                    .route("/emissions/{id}/episodes", web::post().to(media_episode::creer_episode))
+                    .route("/emissions/{id}/episodes/reordonner", web::put().to(media_episode::reordonner_episodes))
+                    .route("/episodes/{id}", web::put().to(media_episode::modifier_episode))
+                    .route("/episodes/{id}", web::delete().to(media_episode::supprimer_episode))
+                    .route("/episodes/{id}/emission", web::patch().to(media_episode::deplacer_episode))
+                    .route("/episodes/{id}/a-la-une", web::patch().to(media_episode::mettre_a_la_une))
                     .route("/{type_support}/{support_id}/detenteurs", web::get().to(media_detention::lister_detenteurs))
                     .route("/{type_support}/{support_id}/detenteurs/{utilisateur_id}", web::delete().to(media_detention::retirer_detenteur))
                     .route("/{type_support}/{support_id}/invitations", web::post().to(media_detention::inviter_detenteur))
@@ -1099,6 +1155,13 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{type_support}/{support_id}/grille", web::get().to(media_programmation::lister_grille))
                     .route("/{type_support}/{support_id}/diffusion", web::get().to(media_programmation::obtenir_diffusion))
                     .route("/{type_support}/{support_id}/creneaux", web::post().to(media_programmation::creer_creneau))
+                    .route("/{type_support}/{support_id}/emissions", web::get().to(media_emission::lister_emissions_detenteur))
+                    .route("/{type_support}/{support_id}/emissions", web::post().to(media_emission::creer_emission))
+                    // Fiche du support : thématiques et couverture (US3, US4).
+                    .route("/{type_support}/{support_id}/thematiques", web::get().to(media_support::obtenir_thematiques))
+                    .route("/{type_support}/{support_id}/thematiques", web::put().to(media_support::definir_thematiques))
+                    .route("/{type_support}/{support_id}/couverture", web::get().to(media_support::obtenir_couverture))
+                    .route("/{type_support}/{support_id}/couverture", web::put().to(media_support::definir_couverture))
                     .route("/{type_media}/{media_id}/reaction", web::post().to(media_social::reagir_media))
                     .route("/{type_media}/{media_id}/commentaires", web::get().to(media_social::lister_commentaires))
                     .route("/{type_media}/{media_id}/commentaires", web::post().to(media_social::commenter_media))

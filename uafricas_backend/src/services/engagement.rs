@@ -615,6 +615,48 @@ async fn auteur_simple(pool: &PgPool, table: &str, objet_id: Uuid) -> Option<Uui
         .flatten()
 }
 
+/// Propriétaire du support portant une émission, avec repli sur l'auteur de
+/// l'émission — un support sans détenteur actif ne doit pas faire disparaître
+/// le crédit.
+async fn beneficiaire_emission(
+    pool: &PgPool,
+    emission_id: Uuid,
+    type_support: &str,
+    table_emission: &str,
+) -> Option<Uuid> {
+    let colonne = if type_support == "chaine_tv" {
+        "chaine_id"
+    }
+    else {
+        "station_id"
+    };
+    let table_support = if type_support == "chaine_tv" {
+        "media_content.chaine_tv"
+    }
+    else {
+        "media_content.station_radio"
+    };
+
+    let support_id: Option<Uuid> = sqlx::query_scalar(&format!(
+        "SELECT {colonne} FROM {table_emission} WHERE id = $1"
+    ))
+    .bind(emission_id)
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten();
+
+    match support_id {
+        Some(support_id) => {
+            match proprietaire_support(pool, type_support, support_id, table_support).await {
+                Some(proprietaire) => Some(proprietaire),
+                None => auteur_simple(pool, table_emission, emission_id).await,
+            }
+        }
+        None => auteur_simple(pool, table_emission, emission_id).await,
+    }
+}
+
 /// Résout le membre à créditer pour un contenu donné (research R4).
 ///
 /// Renvoie `None` — **sans erreur** — dans trois cas parfaitement légitimes :
@@ -644,49 +686,64 @@ pub async fn resoudre_beneficiaire(
         }
 
         // ── Programmes : le propriétaire du SUPPORT PARENT ───────────────────
-        // Le rattachement au parent est nullable (`ON DELETE SET NULL`) : un
-        // programme orphelin retombe sur son propre créateur.
-        "programme_tele" => {
-            let chaine_id: Option<Uuid> = sqlx::query_scalar(
-                "SELECT chaine_id FROM media_content.programme_tele WHERE id = $1",
-            )
-            .bind(objet_id)
-            .fetch_optional(pool)
-            .await
-            .ok()
-            .flatten()
-            .flatten();
-
-            match chaine_id {
-                Some(chaine_id) => {
-                    proprietaire_support(pool, "chaine_tv", chaine_id, "media_content.chaine_tv")
-                        .await
-                }
-                None => auteur_simple(pool, "media_content.programme_tele", objet_id).await,
-            }
+        // `emission_*.chaine_id` / `station_id` est NOT NULL depuis 09q : un
+        // programme sans support n'existe pas. Le repli sur `cree_par` reste
+        // néanmoins servi, pour le cas où le support n'a aucun détenteur actif.
+        "emission_tele" => {
+            beneficiaire_emission(pool, objet_id, "chaine_tv", "media_content.emission_tele").await
         }
-        "programme_radio" => {
-            let station_id: Option<Uuid> = sqlx::query_scalar(
-                "SELECT station_id FROM media_content.programme_radio WHERE id = $1",
+        "emission_radio" => {
+            beneficiaire_emission(pool, objet_id, "station_radio", "media_content.emission_radio")
+                .await
+        }
+
+        // ── Épisodes : on remonte à l'émission, puis au support ──────────────
+        // Deux sauts et non un : l'épisode ne porte pas la clé du support, seule
+        // son émission la connaît.
+        "episode_tele" => {
+            let emission_id: Option<Uuid> = sqlx::query_scalar(
+                "SELECT emission_id FROM media_content.episode_tele WHERE id = $1",
             )
             .bind(objet_id)
             .fetch_optional(pool)
             .await
             .ok()
-            .flatten()
             .flatten();
 
-            match station_id {
-                Some(station_id) => {
-                    proprietaire_support(
+            match emission_id {
+                Some(emission_id) => {
+                    beneficiaire_emission(
                         pool,
-                        "station_radio",
-                        station_id,
-                        "media_content.station_radio",
+                        emission_id,
+                        "chaine_tv",
+                        "media_content.emission_tele",
                     )
                     .await
                 }
-                None => auteur_simple(pool, "media_content.programme_radio", objet_id).await,
+                None => auteur_simple(pool, "media_content.episode_tele", objet_id).await,
+            }
+        }
+        "episode_radio" => {
+            let emission_id: Option<Uuid> = sqlx::query_scalar(
+                "SELECT emission_id FROM media_content.episode_radio WHERE id = $1",
+            )
+            .bind(objet_id)
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten();
+
+            match emission_id {
+                Some(emission_id) => {
+                    beneficiaire_emission(
+                        pool,
+                        emission_id,
+                        "station_radio",
+                        "media_content.emission_radio",
+                    )
+                    .await
+                }
+                None => auteur_simple(pool, "media_content.episode_radio", objet_id).await,
             }
         }
 

@@ -413,8 +413,10 @@ const FAMILLES_PARTAGEABLES: &[&str] = &[
     // Médias radio & télé — `media/MediaPartagerModal`
     "chaine_tv",
     "station_radio",
-    "programme_tele",
-    "programme_radio",
+    "emission_tele",
+    "emission_radio",
+    "episode_tele",
+    "episode_radio",
     // Opportunité Afrique — `PartagerFicheModal` et `PartagerElementModal`
     // (valeurs de `TypeObjetElement`, composables/useOpportuniteAfrique.ts)
     "fiche_pays",

@@ -4,27 +4,33 @@
  * et ses interactions. Rendue côté serveur pour que l'aperçu social porte le
  * nom de la chaîne et non celui de la page de liste (FR-026).
  */
-import { useTelevision, type TvProgram } from '~/composables/useTelevision'
+import { useTelevision, type TvEmission } from '~/composables/useTelevision'
+import { LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
 
 const route = useRoute()
 const slug = route.params.slug as string
 
-const { obtenirChaineParSlug, listerProgrammesVedettes } = useTelevision()
+const { obtenirChaineParSlug } = useTelevision()
 const { redirigerVersConnexion } = useAuth()
 
-const { data: chaine, pending: chargement } = await useAsyncData(
+const { data: detail, pending: chargement } = await useAsyncData(
   `chaine-${slug}`,
   () => obtenirChaineParSlug(slug),
 )
 
-// Les contenus ne conditionnent ni le rendu serveur ni l'aperçu social : ils
-// sont chargés après coup, sans bloquer l'affichage de la fiche.
-const contenus = ref<TvProgram[]>([])
-onMounted(async () => {
-  if (!chaine.value) return
-  const res = await listerProgrammesVedettes({ chaine: chaine.value.id, par_page: 50 })
-  contenus.value = res?.programmes ?? []
-})
+/**
+ * La fiche et ses **programmes** arrivent d'un seul appel : la page déplie le
+ * catalogue à deux niveaux — la série, puis ses épisodes — sans second
+ * aller-retour (US1 §3).
+ */
+const chaine = computed(() => detail.value?.chaine ?? null)
+const programmes = computed<TvEmission[]>(() => detail.value?.emissions ?? [])
+
+const lienEmission = (emission: TvEmission) =>
+  emission.slug ? `/medias/emissions-tele/${emission.slug}` : null
+// Les épisodes gardent leur adresse historique (FR-056).
+const lienEpisode = (slugEpisode: string | null) =>
+  slugEpisode ? `/medias/programmes-tele/${slugEpisode}` : null
 
 const showPartage = ref(false)
 const propositionOuverte = ref(false)
@@ -183,35 +189,77 @@ useHead(() => {
         </p>
 
         <!-- Coordonnées publiques renseignées par l'équipe de la chaîne (09p) -->
+        <!-- Thématiques déclarées et couverture territoriale (US3, US4) -->
+        <MediaBlocIdentiteSupport
+          :thematiques="chaine.thematiques"
+          :couverture="chaine.couverture"
+        />
+
         <MediaBlocContacts :contacts="chaine.contacts" :nom-support="chaine.name" />
 
-        <!-- Contenus de la chaîne -->
-        <section v-if="contenus.length" class="mb-12">
-          <h2 class="font-oswald text-xl font-bold text-white mb-4">Ses émissions</h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <!-- Les PROGRAMMES de la chaîne, chacun dépliant ses épisodes
+             (US1 §3). Une chaîne se lit désormais par ses séries, pas par une
+             mosaïque de vidéos sans lien entre elles. -->
+        <section v-if="programmes.length" class="mb-12">
+          <h2 class="font-oswald text-xl font-bold text-white mb-4">Ses programmes</h2>
+
+          <article
+            v-for="emission in programmes"
+            :key="emission.id"
+            class="mb-8 last:mb-0"
+          >
+            <div class="flex items-baseline justify-between gap-4 mb-3">
+              <NuxtLink
+                v-if="lienEmission(emission)"
+                :to="lienEmission(emission)!"
+                class="font-semibold text-white hover:text-yellow-400 transition-colors truncate"
+              >
+                {{ emission.titre }}
+              </NuxtLink>
+              <h3 v-else class="font-semibold text-white truncate">{{ emission.titre }}</h3>
+              <span class="text-xs text-gray-400 shrink-0">
+                {{ emission.nombreEpisodes }} épisode{{ emission.nombreEpisodes > 1 ? 's' : '' }}
+                <template v-if="emission.cadence !== 'ponctuelle'">
+                  · {{ LIBELLES_CADENCE[emission.cadence] }}
+                </template>
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              <NuxtLink
+                v-for="contenu in emission.episodes"
+                :key="contenu.id"
+                :to="lienEpisode(contenu.slug) ?? ''"
+                class="group block"
+              >
+                <div class="aspect-video rounded-lg overflow-hidden bg-neutral-900">
+                  <img
+                    v-if="contenu.banner"
+                    :src="contenu.banner"
+                    :alt="contenu.title"
+                    loading="lazy"
+                    class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  >
+                  <span v-else class="w-full h-full flex items-center justify-center">
+                    <font-awesome-icon :icon="['fas', 'image']" class="text-neutral-700" />
+                  </span>
+                </div>
+                <p class="mt-2 text-sm font-semibold text-white truncate group-hover:text-yellow-400 transition-colors">
+                  {{ contenu.title }}
+                </p>
+              </NuxtLink>
+            </div>
+
+            <!-- Au-delà de l'aperçu, la page du programme prend le relais :
+                 c'est elle qui tient la promesse de 500 épisodes navigables. -->
             <NuxtLink
-              v-for="contenu in contenus"
-              :key="contenu.id"
-              :to="contenu.slug ? `/medias/programmes-tele/${contenu.slug}` : ''"
-              class="group block"
+              v-if="lienEmission(emission) && emission.nombreEpisodes > emission.episodes.length"
+              :to="lienEmission(emission)!"
+              class="inline-block mt-3 text-sm text-yellow-400 hover:underline"
             >
-              <div class="aspect-video rounded-lg overflow-hidden bg-neutral-900">
-                <img
-                  v-if="contenu.banner"
-                  :src="contenu.banner"
-                  :alt="contenu.title"
-                  loading="lazy"
-                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                >
-                <span v-else class="w-full h-full flex items-center justify-center">
-                  <font-awesome-icon :icon="['fas', 'image']" class="text-neutral-700" />
-                </span>
-              </div>
-              <p class="mt-2 text-sm font-semibold text-white truncate group-hover:text-yellow-400 transition-colors">
-                {{ contenu.title }}
-              </p>
+              Voir les {{ emission.nombreEpisodes }} épisodes
             </NuxtLink>
-          </div>
+          </article>
         </section>
 
         <!-- Cadeaux reçus par ce support (fond sombre : variante claire) -->
@@ -235,7 +283,7 @@ useHead(() => {
 
       <MediaProposerMediaModal
         :is-open="propositionOuverte"
-        :types-offerts="['programme_tele']"
+        :types-offerts="['emission_tele']"
         :target-id="chaine.id"
         @close="propositionOuverte = false"
       />

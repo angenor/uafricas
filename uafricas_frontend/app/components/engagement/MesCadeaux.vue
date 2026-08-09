@@ -30,8 +30,10 @@ const LIBELLE_FAMILLE: Record<string, string> = {
   profil: 'Profil',
   chaine_tv: 'Chaîne TV',
   station_radio: 'Station radio',
-  programme_tele: 'Programme TV',
-  programme_radio: 'Émission radio',
+  emission_tele: 'Programme TV',
+  emission_radio: 'Programme radio',
+  episode_tele: 'Épisode TV',
+  episode_radio: 'Épisode radio',
   personnalite_connue: 'Personnalité',
   recette_culinaire: 'Recette culinaire',
 }

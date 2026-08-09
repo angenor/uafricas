@@ -4,20 +4,30 @@ use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::middleware::admin::AdminUtilisateur;
+use crate::handlers::media_emission::{
+    charger_emissions_du_support, contexte_emission, journaliser, refuser_si_episodes_publies,
+    slug_unique,
+};
+use crate::handlers::media_episode::{
+    basculer_a_la_une, charger_episodes, contexte_episode, journaliser_episode,
+};
 use crate::models::admin::radio_tele::{
     AdminStationRadioListeResponse, AdminStationRadioDetailRow, AdminStationRadioQueryParams,
     CreerStationRadioRequest, ModifierStationRadioRequest,
     AdminChaineTvListeResponse, AdminChaineTvDetailRow, AdminChaineTvQueryParams,
     CreerChaineTvRequest, ModifierChaineTvRequest,
-    AdminProgrammeRadioListeResponse, AdminProgrammeRadioDetailRow, AdminProgrammeRadioQueryParams,
-    CreerProgrammeRadioRequest, ModifierProgrammeRadioRequest,
-    AdminProgrammeTeleListeResponse, AdminProgrammeTeleDetailRow, AdminProgrammeTeleQueryParams,
-    CreerProgrammeTeleRequest, ModifierProgrammeTeleRequest,
+    AdminEmissionRequest, ChangerEtatEmissionRequest,
     ADMIN_STATION_RADIO_LISTE_COLONNES, ADMIN_STATION_RADIO_DETAIL_COLONNES, STATION_RADIO_TRI_COLONNES,
     ADMIN_CHAINE_TV_LISTE_COLONNES, ADMIN_CHAINE_TV_DETAIL_COLONNES, CHAINE_TV_TRI_COLONNES,
-    ADMIN_PROGRAMME_RADIO_LISTE_COLONNES, ADMIN_PROGRAMME_RADIO_DETAIL_COLONNES, PROGRAMME_RADIO_TRI_COLONNES,
-    ADMIN_PROGRAMME_TELE_LISTE_COLONNES, ADMIN_PROGRAMME_TELE_DETAIL_COLONNES, PROGRAMME_TELE_TRI_COLONNES,
     generer_slug,
+};
+use crate::models::media_emission::{
+    colonne_support, colonnes_emission, valider_cadence, EmissionQueryParams, EmissionResponse,
+    EmissionRow,
+};
+use crate::models::media_episode::{
+    colonne_media, table_episode, type_media_episode, valider_etat_episode, EpisodeQueryParams,
+    EpisodeRequest, ReordonnancementRequest,
 };
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
 use crate::services::audit;
@@ -52,8 +62,10 @@ const ETATS_MEDIA_VALIDES: &[&str] = &["brouillon", "publie", "suspendu", "suppr
 /// les contenus nés d'une proposition de membre créditent leur auteur.
 ///
 /// N.B. `chaine_tv` n'a **pas** de colonne `a_la_une` : les trois tables qui la
-/// portent sont `station_radio`, `programme_tele` et `programme_radio`, à quoi
-/// s'ajoute `programme_tele.a_la_une_globale` (vedette de la page Télé).
+/// portent sont `station_radio`, `episode_tele` et `episode_radio`, à quoi
+/// s'ajoute `episode_tele.a_la_une_globale` (vedette de la page Télé). Depuis
+/// 09q c'est bien l'ÉPISODE que l'on met en avant, non le programme : la vedette
+/// désigne une unité diffusable (FR-052).
 async fn crediter_mise_a_la_une(
     pool: &PgPool,
     type_objet: &str,
@@ -63,8 +75,8 @@ async fn crediter_mise_a_la_une(
     // Littéraux fixes → interpolation SQL sûre (même pattern que `table_pour_type`).
     let table = match type_objet {
         "station_radio" => "media_content.station_radio",
-        "programme_tele" => "media_content.programme_tele",
-        "programme_radio" => "media_content.programme_radio",
+        "episode_tele" => "media_content.episode_tele",
+        "episode_radio" => "media_content.episode_radio",
         autre => {
             log::warn!("Engagement: type_objet non éligible à la mise à la une « {autre} »");
             return;
@@ -960,886 +972,787 @@ pub async fn supprimer_chaine_tv(
 }
 
 // ══════════════════════════════════════════════════════════════
-// PROGRAMMES RADIO (émissions)
+// PROGRAMMES CONTENEURS ET ÉPISODES (009)
 // ══════════════════════════════════════════════════════════════
-
-/// GET /api/admin/programmes-radio
-pub async fn lister_programmes_radio(
-    admin: AdminUtilisateur,
-    pool: web::Data<PgPool>,
-    params: web::Query<AdminProgrammeRadioQueryParams>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "media", "voir");
-
-    let pagination = PaginationParams {
-        page: params.page,
-        par_page: params.par_page,
-        tri_par: params.tri_par.clone(),
-        tri_dir: params.tri_dir.clone(),
-    };
-
-    let mut conditions = vec!["p.deleted_at IS NULL".to_string()];
-    let mut bind_values: Vec<String> = Vec::new();
-    let mut bind_index: u32 = 1;
-
-    if let Some(ref recherche) = params.recherche {
-        let r = recherche.trim();
-        if !r.is_empty() {
-            conditions.push(format!(
-                "(LOWER(p.nom_emission) LIKE ${bi} OR LOWER(p.description) LIKE ${bi})",
-                bi = bind_index
-            ));
-            bind_values.push(format!("%{}%", r.to_lowercase()));
-            bind_index += 1;
-        }
-    }
-
-    if let Some(ref cat) = params.categorie_radio {
-        let c = cat.trim();
-        if !c.is_empty() {
-            conditions.push(format!("p.categorie_radio::TEXT = ${}", bind_index));
-            bind_values.push(c.to_string());
-            bind_index += 1;
-        }
-    }
-
-    if let Some(station_id) = params.station_id {
-        conditions.push(format!("p.station_id = ${}::uuid", bind_index));
-        bind_values.push(station_id.to_string());
-        bind_index += 1;
-    }
-
-    if let Some(ref etat) = params.etat {
-        let e = etat.trim();
-        if !e.is_empty() {
-            conditions.push(format!("p.etat = ${}", bind_index));
-            bind_values.push(e.to_string());
-            bind_index += 1;
-        }
-    }
-    let _ = bind_index;
-
-    let where_clause = conditions.join(" AND ");
-    let colonne = pagination.colonne_tri(PROGRAMME_RADIO_TRI_COLONNES, "created_at");
-    let direction = pagination.direction_tri();
-    let page = pagination.page();
-    let par_page = pagination.par_page();
-    let offset = pagination.offset();
-
-    let joins = "LEFT JOIN shared.pays ON p.pays_id = pays.id
-                 LEFT JOIN media_content.station_radio st ON p.station_id = st.id";
-
-    let count_sql = format!(
-        "SELECT COUNT(*) FROM media_content.programme_radio p {} WHERE {}",
-        joins, where_clause
-    );
-    let mut count_q = sqlx::query_scalar::<_, i64>(&count_sql);
-    for v in &bind_values { count_q = count_q.bind(v); }
-    let total: i64 = count_q.fetch_one(pool.get_ref()).await?;
-
-    let select_sql = format!(
-        "SELECT {} FROM media_content.programme_radio p {} WHERE {} ORDER BY p.{} {} LIMIT {} OFFSET {}",
-        ADMIN_PROGRAMME_RADIO_LISTE_COLONNES, joins, where_clause, colonne, direction, par_page, offset
-    );
-    let mut select_q = sqlx::query_as::<_, AdminProgrammeRadioListeResponse>(&select_sql);
-    for v in &bind_values { select_q = select_q.bind(v); }
-    let items = select_q.fetch_all(pool.get_ref()).await?;
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(PaginatedResponse::new(items, total, page, par_page)),
-        error: None,
-    }))
-}
-
-/// GET /api/admin/programmes-radio/{id}
-pub async fn obtenir_programme_radio(
-    admin: AdminUtilisateur,
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "media", "voir");
-    let id = path.into_inner();
-
-    let joins = "LEFT JOIN shared.pays ON p.pays_id = pays.id
-                 LEFT JOIN media_content.station_radio st ON p.station_id = st.id
-                 LEFT JOIN iam.utilisateur u ON p.cree_par = u.id";
-
-    let sql = format!(
-        "SELECT {} FROM media_content.programme_radio p {} WHERE p.id = $1 AND p.deleted_at IS NULL",
-        ADMIN_PROGRAMME_RADIO_DETAIL_COLONNES, joins
-    );
-    let row = sqlx::query_as::<_, AdminProgrammeRadioDetailRow>(&sql)
-        .bind(id)
-        .fetch_optional(pool.get_ref())
-        .await?
-        .ok_or_else(|| ApiErreur::NonTrouve("Programme radio non trouve".into()))?;
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(row.to_response()),
-        error: None,
-    }))
-}
-
-/// POST /api/admin/programmes-radio
-pub async fn creer_programme_radio(
-    admin: AdminUtilisateur,
-    req: HttpRequest,
-    pool: web::Data<PgPool>,
-    body: web::Json<CreerProgrammeRadioRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "media", "modifier");
-
-    let nom = body.nom_emission.trim();
-    if nom.is_empty() {
-        return Err(ApiErreur::Validation("Le nom de l'emission est requis".into()));
-    }
-
-    let id = Uuid::new_v4();
-    let slug = generer_slug(nom);
-    let langue = body.langue.as_deref().unwrap_or("Français");
-    let a_la_une = body.a_la_une.unwrap_or(false);
-
-    // L'index unique partiel sur (station_id, a_la_une) rejetterait deux mises à la une concurrentes : on sérialise démarcation et insertion.
-    let mut tx = pool.begin().await?;
-
-    // Une seule émission « à la une » par station : on retire le marqueur des autres
-    if a_la_une {
-        if let Some(station_id) = body.station_id {
-            sqlx::query(
-                "UPDATE media_content.programme_radio SET a_la_une = FALSE, updated_at = NOW()
-                 WHERE station_id = $1 AND a_la_une = TRUE AND deleted_at IS NULL"
-            )
-            .bind(station_id)
-            .execute(&mut *tx)
-            .await?;
-        }
-    }
-
-    sqlx::query(
-        "INSERT INTO media_content.programme_radio
-         (id, nom_emission, slug, description, image_couverture_url, audio_url,
-          info_animateur, info_producteur, pays_id, est_international, langue,
-          categorie_radio, station_id, a_la_une, theme_phare_id, theme_phare_autre, etat, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6,
-                 $7, $8, $9, $10, $11,
-                 $12::media_content.categorie_radio, $13, $14, $15, $16, 'brouillon', $17)"
-    )
-    .bind(id)
-    .bind(nom)
-    .bind(&slug)
-    .bind(body.description.as_deref().map(|s| s.trim()).unwrap_or(""))
-    .bind(body.image_couverture_url.as_deref().map(|s| s.trim()))
-    .bind(body.audio_url.as_deref().map(|s| s.trim()))
-    .bind(body.info_animateur.as_deref().map(|s| s.trim()))
-    .bind(body.info_producteur.as_deref().map(|s| s.trim()))
-    .bind(body.pays_id)
-    .bind(body.est_international.unwrap_or(false))
-    .bind(langue)
-    .bind(body.categorie_radio.as_deref())
-    .bind(body.station_id)
-    .bind(a_la_une)
-    .bind(body.theme_phare_id)
-    .bind(body.theme_phare_autre.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()))
-    .bind(admin.id)
-    .execute(&mut *tx)
-    .await?;
-
-    tx.commit().await?;
-
-    if a_la_une {
-        crediter_mise_a_la_une(pool.get_ref(), "programme_radio", id, admin.id).await;
-    }
-
-    log::info!("Admin {} a cree le programme radio {} ({})", admin.id, nom, id);
-
-    let ip = audit::extraire_ip(&req);
-    let ua = audit::extraire_user_agent(&req);
-    audit::log_action(
-        pool.get_ref(), Some(admin.id), "CREATE", "media_content", "programme_radio",
-        Some(id), None, None, ip.as_deref(), ua.as_deref(),
-    ).await;
-
-    Ok(HttpResponse::Created().json(ApiResponse {
-        success: true,
-        data: Some(serde_json::json!({ "id": id })),
-        error: None,
-    }))
-}
-
-/// PUT /api/admin/programmes-radio/{id}
-pub async fn modifier_programme_radio(
-    admin: AdminUtilisateur,
-    req: HttpRequest,
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-    body: web::Json<ModifierProgrammeRadioRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "media", "modifier");
-    let id = path.into_inner();
-
-    let existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM media_content.programme_radio WHERE id = $1 AND deleted_at IS NULL)"
-    ).bind(id).fetch_one(pool.get_ref()).await?;
-    if !existe {
-        return Err(ApiErreur::NonTrouve("Programme radio non trouve".into()));
-    }
-
-    let mut sets = Vec::new();
-    let mut bind_strings: Vec<String> = Vec::new();
-    let mut bind_index: u32 = 1;
-
-    macro_rules! champ_str {
-        ($field:expr, $col:expr) => {
-            if let Some(ref val) = $field {
-                sets.push(format!("{} = ${}", $col, bind_index));
-                bind_strings.push(val.trim().to_string());
-                bind_index += 1;
-            }
-        };
-    }
-
-    champ_str!(body.nom_emission, "nom_emission");
-    champ_str!(body.description, "description");
-    champ_str!(body.image_couverture_url, "image_couverture_url");
-    champ_str!(body.audio_url, "audio_url");
-    champ_str!(body.info_animateur, "info_animateur");
-    champ_str!(body.info_producteur, "info_producteur");
-    champ_str!(body.langue, "langue");
-
-    if let Some(ref etat) = body.etat {
-        let e = etat.trim();
-        if !ETATS_MEDIA_VALIDES.contains(&e) {
-            return Err(ApiErreur::Validation(format!("État invalide: {}", e)));
-        }
-        sets.push(format!("etat = ${}", bind_index));
-        bind_strings.push(e.to_string());
-        bind_index += 1;
-    }
-
-    if let Some(ref cat) = body.categorie_radio {
-        sets.push(format!("categorie_radio = ${}::media_content.categorie_radio", bind_index));
-        bind_strings.push(cat.clone());
-        bind_index += 1;
-    }
-
-    if let Some(pays_id) = body.pays_id {
-        sets.push(format!("pays_id = '{}'", pays_id));
-    }
-    if let Some(v) = body.est_international {
-        sets.push(format!("est_international = {}", v));
-    }
-
-    // Rattachement à une station
-    if let Some(station_id) = body.station_id {
-        sets.push(format!("station_id = '{}'", station_id));
-    }
-
-    // L'index unique partiel sur (station_id, a_la_une) rejetterait deux mises à la une concurrentes : on sérialise démarcation et mise à jour.
-    let mut tx = pool.begin().await?;
-
-    // Émission « à la une » : une seule par station
-    if let Some(a_la_une) = body.a_la_une {
-        if a_la_une {
-            let station_eff: Option<Uuid> = match body.station_id {
-                Some(s) => Some(s),
-                None => sqlx::query_scalar(
-                    "SELECT station_id FROM media_content.programme_radio WHERE id = $1"
-                ).bind(id).fetch_one(&mut *tx).await?,
-            };
-            if let Some(st) = station_eff {
-                sqlx::query(
-                    "UPDATE media_content.programme_radio SET a_la_une = FALSE, updated_at = NOW()
-                     WHERE station_id = $1 AND id <> $2 AND a_la_une = TRUE AND deleted_at IS NULL"
-                ).bind(st).bind(id).execute(&mut *tx).await?;
-            }
-        }
-        sets.push(format!("a_la_une = {}", a_la_une));
-    }
-
-    // Thème phare : un identifiant de référentiel, ou une précision libre quand
-    // le contributeur a choisi « Autre ». Les deux sont mutuellement exclusifs
-    // côté formulaire, mais rien n'interdit de les effacer l'un après l'autre.
-    if let Some(theme_id) = body.theme_phare_id {
-        sets.push(format!("theme_phare_id = '{}'", theme_id));
-    }
-    if let Some(ref theme_autre) = body.theme_phare_autre {
-        let valeur = theme_autre.trim();
-        if valeur.is_empty() {
-            sets.push("theme_phare_autre = NULL".to_string());
-        } else {
-            sets.push(format!("theme_phare_autre = ${}", bind_index));
-            bind_strings.push(valeur.to_string());
-            bind_index += 1;
-        }
-    }
-
-    if body.nom_emission.is_some() {
-        let nom = body.nom_emission.as_ref().unwrap().trim();
-        let slug = generer_slug(nom);
-        sets.push(format!("slug = ${}", bind_index));
-        bind_strings.push(slug);
-        bind_index += 1;
-    }
-
-    if sets.is_empty() {
-        return Err(ApiErreur::Validation("Aucun champ a modifier".into()));
-    }
-
-    sets.push("updated_at = NOW()".to_string());
-    let sql = format!(
-        "UPDATE media_content.programme_radio SET {} WHERE id = ${} AND deleted_at IS NULL",
-        sets.join(", "), bind_index
-    );
-
-    let mut q = sqlx::query(&sql);
-    for v in &bind_strings { q = q.bind(v); }
-    q = q.bind(id);
-    q.execute(&mut *tx).await?;
-
-    tx.commit().await?;
-
-    if body.a_la_une == Some(true) {
-        crediter_mise_a_la_une(pool.get_ref(), "programme_radio", id, admin.id).await;
-    }
-
-    log::info!("Admin {} a modifie le programme radio {}", admin.id, id);
-
-    let ip = audit::extraire_ip(&req);
-    let ua = audit::extraire_user_agent(&req);
-    audit::log_action(
-        pool.get_ref(), Some(admin.id), "UPDATE", "media_content", "programme_radio",
-        Some(id), None, None, ip.as_deref(), ua.as_deref(),
-    ).await;
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(serde_json::json!({ "id": id })),
-        error: None,
-    }))
-}
-
-/// DELETE /api/admin/programmes-radio/{id}
-pub async fn supprimer_programme_radio(
-    admin: AdminUtilisateur,
-    req: HttpRequest,
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "media", "supprimer");
-    let id = path.into_inner();
-
-    let result = sqlx::query(
-        "UPDATE media_content.programme_radio SET deleted_at = NOW(), updated_at = NOW()
-         WHERE id = $1 AND deleted_at IS NULL"
-    ).bind(id).execute(pool.get_ref()).await?;
-
-    if result.rows_affected() == 0 {
-        return Err(ApiErreur::NonTrouve("Programme radio non trouve".into()));
-    }
-
-    log::info!("Admin {} a supprime le programme radio {}", admin.id, id);
-
-    let ip = audit::extraire_ip(&req);
-    let ua = audit::extraire_user_agent(&req);
-    audit::log_action(
-        pool.get_ref(), Some(admin.id), "DELETE", "media_content", "programme_radio",
-        Some(id), None, None, ip.as_deref(), ua.as_deref(),
-    ).await;
-
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
-}
-
-// ══════════════════════════════════════════════════════════════
-// PROGRAMMES TÉLÉ
-// ══════════════════════════════════════════════════════════════
-
-/// GET /api/admin/programmes-tele
-pub async fn lister_programmes_tele(
-    admin: AdminUtilisateur,
-    pool: web::Data<PgPool>,
-    params: web::Query<AdminProgrammeTeleQueryParams>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "media", "voir");
-
-    let pagination = PaginationParams {
-        page: params.page,
-        par_page: params.par_page,
-        tri_par: params.tri_par.clone(),
-        tri_dir: params.tri_dir.clone(),
-    };
-
-    let mut conditions = vec!["p.deleted_at IS NULL".to_string()];
-    let mut bind_values: Vec<String> = Vec::new();
-    let mut bind_index: u32 = 1;
-
-    if let Some(ref recherche) = params.recherche {
-        let r = recherche.trim();
-        if !r.is_empty() {
-            conditions.push(format!(
-                "(LOWER(p.nom_emission) LIKE ${bi} OR LOWER(p.description) LIKE ${bi})",
-                bi = bind_index
-            ));
-            bind_values.push(format!("%{}%", r.to_lowercase()));
-            bind_index += 1;
-        }
-    }
-
-    if let Some(chaine_id) = params.chaine_id {
-        conditions.push(format!("p.chaine_id = ${}::uuid", bind_index));
-        bind_values.push(chaine_id.to_string());
-        bind_index += 1;
-    }
-
-    if let Some(ref etat) = params.etat {
-        let e = etat.trim();
-        if !e.is_empty() {
-            conditions.push(format!("p.etat = ${}", bind_index));
-            bind_values.push(e.to_string());
-            bind_index += 1;
-        }
-    }
-    let _ = bind_index;
-
-    let where_clause = conditions.join(" AND ");
-    let colonne = pagination.colonne_tri(PROGRAMME_TELE_TRI_COLONNES, "created_at");
-    let direction = pagination.direction_tri();
-    let page = pagination.page();
-    let par_page = pagination.par_page();
-    let offset = pagination.offset();
-
-    let joins = "LEFT JOIN shared.pays ON p.pays_id = pays.id
-                 LEFT JOIN media_content.chaine_tv ch ON p.chaine_id = ch.id";
-
-    let count_sql = format!(
-        "SELECT COUNT(*) FROM media_content.programme_tele p {} WHERE {}",
-        joins, where_clause
-    );
-    let mut count_q = sqlx::query_scalar::<_, i64>(&count_sql);
-    for v in &bind_values { count_q = count_q.bind(v); }
-    let total: i64 = count_q.fetch_one(pool.get_ref()).await?;
-
-    let select_sql = format!(
-        "SELECT {} FROM media_content.programme_tele p {} WHERE {} ORDER BY p.{} {} LIMIT {} OFFSET {}",
-        ADMIN_PROGRAMME_TELE_LISTE_COLONNES, joins, where_clause, colonne, direction, par_page, offset
-    );
-    let mut select_q = sqlx::query_as::<_, AdminProgrammeTeleListeResponse>(&select_sql);
-    for v in &bind_values { select_q = select_q.bind(v); }
-    let items = select_q.fetch_all(pool.get_ref()).await?;
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(PaginatedResponse::new(items, total, page, par_page)),
-        error: None,
-    }))
-}
-
-/// GET /api/admin/programmes-tele/{id}
-pub async fn obtenir_programme_tele(
-    admin: AdminUtilisateur,
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "media", "voir");
-    let id = path.into_inner();
-
-    let joins = "LEFT JOIN shared.pays ON p.pays_id = pays.id
-                 LEFT JOIN media_content.chaine_tv ch ON p.chaine_id = ch.id
-                 LEFT JOIN iam.utilisateur u ON p.cree_par = u.id";
-
-    let sql = format!(
-        "SELECT {} FROM media_content.programme_tele p {} WHERE p.id = $1 AND p.deleted_at IS NULL",
-        ADMIN_PROGRAMME_TELE_DETAIL_COLONNES, joins
-    );
-    let row = sqlx::query_as::<_, AdminProgrammeTeleDetailRow>(&sql)
-        .bind(id)
-        .fetch_optional(pool.get_ref())
-        .await?
-        .ok_or_else(|| ApiErreur::NonTrouve("Programme tele non trouve".into()))?;
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(row.to_response()),
-        error: None,
-    }))
-}
-
-/// POST /api/admin/programmes-tele
-pub async fn creer_programme_tele(
-    admin: AdminUtilisateur,
-    req: HttpRequest,
-    pool: web::Data<PgPool>,
-    body: web::Json<CreerProgrammeTeleRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "media", "modifier");
-
-    let nom = body.nom_emission.trim();
-    if nom.is_empty() {
-        return Err(ApiErreur::Validation("Le nom de l'emission est requis".into()));
-    }
-
-    let id = Uuid::new_v4();
-    let slug = generer_slug(nom);
-    let langue = body.langue.as_deref().unwrap_or("Français");
-    let a_la_une = body.a_la_une.unwrap_or(false);
-
-    // L'index unique partiel sur (chaine_id, a_la_une) rejetterait deux mises à la une concurrentes : on sérialise démarcation et insertion.
-    let mut tx = pool.begin().await?;
-
-    // Un seul programme « à la une » par chaîne
-    if a_la_une {
-        if let Some(chaine_id) = body.chaine_id {
-            sqlx::query(
-                "UPDATE media_content.programme_tele SET a_la_une = FALSE, updated_at = NOW()
-                 WHERE chaine_id = $1 AND a_la_une = TRUE AND deleted_at IS NULL"
-            )
-            .bind(chaine_id)
-            .execute(&mut *tx)
-            .await?;
-        }
-    }
-
-    sqlx::query(
-        "INSERT INTO media_content.programme_tele
-         (id, nom_emission, slug, description, image_couverture_url, video_url,
-          info_animateur, info_producteur, pays_id, est_international, langue,
-          chaine_id, a_la_une, theme_phare_id, theme_phare_autre, etat, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6,
-                 $7, $8, $9, $10, $11,
-                 $12, $13, $14, $15, 'brouillon', $16)"
-    )
-    .bind(id)
-    .bind(nom)
-    .bind(&slug)
-    .bind(body.description.as_deref().map(|s| s.trim()).unwrap_or(""))
-    .bind(body.image_couverture_url.as_deref().map(|s| s.trim()))
-    .bind(body.video_url.as_deref().map(|s| s.trim()))
-    .bind(body.info_animateur.as_deref().map(|s| s.trim()))
-    .bind(body.info_producteur.as_deref().map(|s| s.trim()))
-    .bind(body.pays_id)
-    .bind(body.est_international.unwrap_or(false))
-    .bind(langue)
-    .bind(body.chaine_id)
-    .bind(a_la_une)
-    .bind(body.theme_phare_id)
-    .bind(body.theme_phare_autre.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()))
-    .bind(admin.id)
-    .execute(&mut *tx)
-    .await?;
-
-    tx.commit().await?;
-
-    if a_la_une {
-        crediter_mise_a_la_une(pool.get_ref(), "programme_tele", id, admin.id).await;
-    }
-
-    log::info!("Admin {} a cree le programme tele {} ({})", admin.id, nom, id);
-
-    let ip = audit::extraire_ip(&req);
-    let ua = audit::extraire_user_agent(&req);
-    audit::log_action(
-        pool.get_ref(), Some(admin.id), "CREATE", "media_content", "programme_tele",
-        Some(id), None, None, ip.as_deref(), ua.as_deref(),
-    ).await;
-
-    Ok(HttpResponse::Created().json(ApiResponse {
-        success: true,
-        data: Some(serde_json::json!({ "id": id })),
-        error: None,
-    }))
-}
-
-/// PUT /api/admin/programmes-tele/{id}
-pub async fn modifier_programme_tele(
-    admin: AdminUtilisateur,
-    req: HttpRequest,
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-    body: web::Json<ModifierProgrammeTeleRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "media", "modifier");
-    let id = path.into_inner();
-
-    let existe: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM media_content.programme_tele WHERE id = $1 AND deleted_at IS NULL)"
-    ).bind(id).fetch_one(pool.get_ref()).await?;
-    if !existe {
-        return Err(ApiErreur::NonTrouve("Programme tele non trouve".into()));
-    }
-
-    let mut sets = Vec::new();
-    let mut bind_strings: Vec<String> = Vec::new();
-    let mut bind_index: u32 = 1;
-
-    macro_rules! champ_str {
-        ($field:expr, $col:expr) => {
-            if let Some(ref val) = $field {
-                sets.push(format!("{} = ${}", $col, bind_index));
-                bind_strings.push(val.trim().to_string());
-                bind_index += 1;
-            }
-        };
-    }
-
-    champ_str!(body.nom_emission, "nom_emission");
-    champ_str!(body.description, "description");
-    champ_str!(body.image_couverture_url, "image_couverture_url");
-    champ_str!(body.video_url, "video_url");
-    champ_str!(body.info_animateur, "info_animateur");
-    champ_str!(body.info_producteur, "info_producteur");
-    champ_str!(body.langue, "langue");
-
-    if let Some(ref etat) = body.etat {
-        let e = etat.trim();
-        if !ETATS_MEDIA_VALIDES.contains(&e) {
-            return Err(ApiErreur::Validation(format!("État invalide: {}", e)));
-        }
-        // Une vidéo est requise pour publier un programme télé (contrainte chk_video_tele).
-        if e == "publie" {
-            let aura_video = match body.video_url.as_deref().map(str::trim) {
-                Some(v) if !v.is_empty() => true,
-                _ => sqlx::query_scalar::<_, bool>(
-                    "SELECT video_url IS NOT NULL AND video_url <> '' \
-                     FROM media_content.programme_tele WHERE id = $1",
-                )
-                .bind(id)
-                .fetch_optional(pool.get_ref())
-                .await?
-                .unwrap_or(false),
-            };
-            if !aura_video {
-                return Err(ApiErreur::Validation(
-                    "Ajoutez une vidéo au programme avant de le publier.".into(),
-                ));
-            }
-        }
-        sets.push(format!("etat = ${}", bind_index));
-        bind_strings.push(e.to_string());
-        bind_index += 1;
-    }
-
-    if let Some(pays_id) = body.pays_id {
-        sets.push(format!("pays_id = '{}'", pays_id));
-    }
-    if let Some(v) = body.est_international {
-        sets.push(format!("est_international = {}", v));
-    }
-
-    // Rattachement à une chaîne
-    if let Some(chaine_id) = body.chaine_id {
-        sets.push(format!("chaine_id = '{}'", chaine_id));
-    }
-
-    // L'index unique partiel sur (chaine_id, a_la_une) rejetterait deux mises à la une concurrentes : on sérialise démarcation et mise à jour.
-    let mut tx = pool.begin().await?;
-
-    // Programme « à la une » : un seul par chaîne
-    if let Some(a_la_une) = body.a_la_une {
-        if a_la_une {
-            let chaine_eff: Option<Uuid> = match body.chaine_id {
-                Some(c) => Some(c),
-                None => sqlx::query_scalar(
-                    "SELECT chaine_id FROM media_content.programme_tele WHERE id = $1"
-                ).bind(id).fetch_one(&mut *tx).await?,
-            };
-            if let Some(ch) = chaine_eff {
-                sqlx::query(
-                    "UPDATE media_content.programme_tele SET a_la_une = FALSE, updated_at = NOW()
-                     WHERE chaine_id = $1 AND id <> $2 AND a_la_une = TRUE AND deleted_at IS NULL"
-                ).bind(ch).bind(id).execute(&mut *tx).await?;
-            }
-        }
-        sets.push(format!("a_la_une = {}", a_la_une));
-    }
-
-    // Thème phare : un identifiant de référentiel, ou une précision libre quand
-    // le contributeur a choisi « Autre ». Les deux sont mutuellement exclusifs
-    // côté formulaire, mais rien n'interdit de les effacer l'un après l'autre.
-    if let Some(theme_id) = body.theme_phare_id {
-        sets.push(format!("theme_phare_id = '{}'", theme_id));
-    }
-    if let Some(ref theme_autre) = body.theme_phare_autre {
-        let valeur = theme_autre.trim();
-        if valeur.is_empty() {
-            sets.push("theme_phare_autre = NULL".to_string());
-        } else {
-            sets.push(format!("theme_phare_autre = ${}", bind_index));
-            bind_strings.push(valeur.to_string());
-            bind_index += 1;
-        }
-    }
-
-    if body.nom_emission.is_some() {
-        let nom = body.nom_emission.as_ref().unwrap().trim();
-        let slug = generer_slug(nom);
-        sets.push(format!("slug = ${}", bind_index));
-        bind_strings.push(slug);
-        bind_index += 1;
-    }
-
-    if sets.is_empty() {
-        return Err(ApiErreur::Validation("Aucun champ a modifier".into()));
-    }
-
-    sets.push("updated_at = NOW()".to_string());
-    let sql = format!(
-        "UPDATE media_content.programme_tele SET {} WHERE id = ${} AND deleted_at IS NULL",
-        sets.join(", "), bind_index
-    );
-
-    let mut q = sqlx::query(&sql);
-    for v in &bind_strings { q = q.bind(v); }
-    q = q.bind(id);
-    q.execute(&mut *tx).await?;
-
-    tx.commit().await?;
-
-    if body.a_la_une == Some(true) {
-        crediter_mise_a_la_une(pool.get_ref(), "programme_tele", id, admin.id).await;
-    }
-
-    log::info!("Admin {} a modifie le programme tele {}", admin.id, id);
-
-    let ip = audit::extraire_ip(&req);
-    let ua = audit::extraire_user_agent(&req);
-    audit::log_action(
-        pool.get_ref(), Some(admin.id), "UPDATE", "media_content", "programme_tele",
-        Some(id), None, None, ip.as_deref(), ua.as_deref(),
-    ).await;
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(serde_json::json!({ "id": id })),
-        error: None,
-    }))
-}
-
-/// DELETE /api/admin/programmes-tele/{id}
-pub async fn supprimer_programme_tele(
-    admin: AdminUtilisateur,
-    req: HttpRequest,
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "media", "supprimer");
-    let id = path.into_inner();
-
-    let result = sqlx::query(
-        "UPDATE media_content.programme_tele SET deleted_at = NOW(), updated_at = NOW()
-         WHERE id = $1 AND deleted_at IS NULL"
-    ).bind(id).execute(pool.get_ref()).await?;
-
-    if result.rows_affected() == 0 {
-        return Err(ApiErreur::NonTrouve("Programme tele non trouve".into()));
-    }
-
-    log::info!("Admin {} a supprime le programme tele {}", admin.id, id);
-
-    let ip = audit::extraire_ip(&req);
-    let ua = audit::extraire_user_agent(&req);
-    audit::log_action(
-        pool.get_ref(), Some(admin.id), "DELETE", "media_content", "programme_tele",
-        Some(id), None, None, ip.as_deref(), ua.as_deref(),
-    ).await;
-
-    Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
-}
-
-/// PATCH /api/admin/programmes-tele/{id}/vedette-globale
+// Remplacent `/api/admin/programmes-tele` et `/api/admin/programmes-radio`,
+// supprimées avec leurs tables par la migration 09q.
+//
+// **Asymétrie assumée** : un épisode créé par un administrateur naît `publie`,
+// un épisode créé par un co-détenteur naît `en_attente`. C'est la conséquence
+// directe de FR-040 — l'administrateur *est* le validateur, le faire passer par
+// sa propre file n'aurait pas de sens.
+
+/// GET /api/admin/medias/emissions
 ///
-/// Désigne le programme mis en avant sur TOUTE la page Télé (FR-001). Un index
-/// unique partiel garantit l'unicité côté base : la démarcation de l'ancienne
-/// vedette et la promotion de la nouvelle DOIVENT donc tenir dans une même
-/// transaction, faute de quoi deux administrateurs agissant simultanément
-/// feraient échouer la seconde requête sur violation de contrainte.
-pub async fn definir_vedette_globale(
+/// Liste paginée, filtrable par famille, support, état, cadence et recherche
+/// (FR-046). Les deux familles sont interrogées séparément puis fusionnées :
+/// leurs tables n'ont pas la même colonne de rattachement, et un UNION imposerait
+/// de dupliquer la liste de colonnes au lieu de réutiliser les constantes.
+pub async fn lister_emissions_admin(
     admin: AdminUtilisateur,
-    req: HttpRequest,
     pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
+    params: web::Query<EmissionQueryParams>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "voir");
+
+    let familles: Vec<&str> = match params.r#type.as_deref() {
+        Some("tele") => vec!["chaine_tv"],
+        Some("radio") => vec!["station_radio"],
+        _ => vec!["chaine_tv", "station_radio"],
+    };
+
+    let mut toutes: Vec<EmissionResponse> = Vec::new();
+
+    for type_support in familles {
+        let colonnes = colonnes_emission(type_support).expect("type de support validé");
+        let table_emission =
+            crate::models::media_detention::table_contenu_pour_support(type_support)
+                .expect("type de support validé");
+        let table_support =
+            crate::models::media_detention::table_pour_support(type_support).expect("type validé");
+        let table_ep = table_episode(type_support).expect("type de support validé");
+        let colonne = colonne_support(type_support).expect("type de support validé");
+
+        let recherche = params
+            .recherche
+            .as_deref()
+            .map(str::trim)
+            .filter(|r| !r.is_empty())
+            .map(|r| format!("%{}%", r));
+
+        let rows = sqlx::query_as::<_, EmissionRow>(&format!(
+            "SELECT {colonnes},
+                    s.nom AS support_nom, s.slug AS support_slug,
+                    cat.nom AS theme_phare_nom,
+                    (SELECT COUNT(*) FROM {table_ep} ep
+                      WHERE ep.emission_id = e.id AND ep.etat = 'publie' AND ep.deleted_at IS NULL)
+                        AS nombre_episodes,
+                    (SELECT MAX(ep.valide_at) FROM {table_ep} ep
+                      WHERE ep.emission_id = e.id AND ep.etat = 'publie' AND ep.deleted_at IS NULL)
+                        AS dernier_episode_at,
+                    (SELECT COUNT(*) FROM {table_ep} ep
+                      WHERE ep.emission_id = e.id AND ep.etat = 'en_attente' AND ep.deleted_at IS NULL)
+                        AS episodes_en_attente,
+                    (SELECT COUNT(*) FROM {table_ep} ep
+                      WHERE ep.emission_id = e.id AND ep.etat = 'rejete' AND ep.deleted_at IS NULL)
+                        AS episodes_rejetes
+               FROM {table_emission} e
+               JOIN {table_support} s ON s.id = e.{colonne}
+               LEFT JOIN shared.categorie cat ON cat.id = e.theme_phare_id
+              WHERE e.deleted_at IS NULL
+                AND ($1::uuid IS NULL OR e.{colonne} = $1)
+                AND ($2::text IS NULL OR e.etat = $2)
+                AND ($3::text IS NULL OR e.cadence = $3)
+                AND ($4::text IS NULL OR e.titre ILIKE $4 OR s.nom ILIKE $4)
+              ORDER BY e.updated_at DESC, e.id"
+        ))
+        .bind(params.support_id)
+        .bind(params.etat.as_deref())
+        .bind(params.cadence.as_deref())
+        .bind(recherche.as_deref())
+        .fetch_all(pool.get_ref())
+        .await?;
+
+        toutes.extend(rows.iter().map(|r| r.to_response(type_support)));
+    }
+
+    let page = params.page.unwrap_or(1).max(1);
+    let par_page = params.par_page.unwrap_or(25).clamp(1, 100);
+    let total = toutes.len() as i64;
+    let debut = ((page - 1) * par_page).min(total) as usize;
+    let fin = (debut as i64 + par_page).min(total) as usize;
+    let donnees: Vec<_> = toutes.drain(debut..fin).collect();
+
+    // Enveloppe `PaginatedResponse` du back-office (clé `data`) : `listerPagine`
+    // côté frontend ne sait lire que celle-là. Une clé `donnees` propre à cette
+    // route obligerait à un chargeur dédié pour aucun gain.
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(PaginatedResponse::new(donnees, total, page, par_page)),
+        error: None,
+    }))
+}
+
+/// GET /api/admin/medias/emissions/{id}
+pub async fn obtenir_emission_admin(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "voir");
+    let emission_id = chemin.into_inner();
+    let (type_support, support_id, _) = contexte_emission(pool.get_ref(), emission_id).await?;
+
+    let emissions = charger_emissions_du_support(pool.get_ref(), &type_support, support_id).await?;
+    let emission = emissions
+        .into_iter()
+        .find(|e| e.id == emission_id)
+        .ok_or_else(|| ApiErreur::NonTrouve("Programme introuvable".into()))?;
+    let episodes = charger_episodes(pool.get_ref(), &type_support, emission_id, None).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "emission": emission, "episodes": episodes })),
+        error: None,
+    }))
+}
+
+/// POST /api/admin/medias/emissions
+pub async fn creer_emission_admin(
+    req: HttpRequest,
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    body: web::Json<AdminEmissionRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
     verifier_permission!(admin, "media", "modifier");
-    let id = path.into_inner();
 
-    let mut tx = pool.begin().await?;
+    let type_support = body
+        .type_support
+        .as_deref()
+        .ok_or_else(|| ApiErreur::Validation("Le type de support est requis".into()))?;
+    crate::models::media_detention::valider_type_support(type_support)?;
+    let support_id = body
+        .support_id
+        .ok_or_else(|| ApiErreur::Validation("Le support de rattachement est requis".into()))?;
 
-    // Un programme non publié ne peut pas devenir la vedette : la page publique
-    // filtre sur `etat = 'publie'` et n'afficherait que son repli.
-    let etat: Option<String> = sqlx::query_scalar(
-        "SELECT etat FROM media_content.programme_tele
-          WHERE id = $1 AND deleted_at IS NULL",
-    )
-    .bind(id)
-    .fetch_optional(&mut *tx)
-    .await?;
-
-    let etat = etat.ok_or_else(|| ApiErreur::NonTrouve("Programme tele non trouve".into()))?;
-    if etat != "publie" {
+    if body.titre.trim().is_empty() {
         return Err(ApiErreur::Validation(
-            "Seul un programme publié peut devenir la vedette de la page Télé".into(),
+            "Le titre du programme est obligatoire".into(),
         ));
     }
+    let cadence = body.cadence.as_deref().unwrap_or("ponctuelle");
+    valider_cadence(cadence)?;
 
-    // Ancienne vedette conservée pour l'audit : sans cet instantané, la trace ne
-    // dirait pas ce que la décision a remplacé.
-    let ancienne: Option<Uuid> = sqlx::query_scalar(
-        "SELECT id FROM media_content.programme_tele
-          WHERE a_la_une_globale = TRUE AND deleted_at IS NULL",
-    )
-    .fetch_optional(&mut *tx)
-    .await?;
+    let table_emission = crate::models::media_detention::table_contenu_pour_support(type_support)
+        .expect("type de support validé");
+    let colonne = colonne_support(type_support).expect("type de support validé");
+    let slug = slug_unique(pool.get_ref(), table_emission, &generer_slug(&body.titre)).await?;
 
-    sqlx::query(
-        "UPDATE media_content.programme_tele
-            SET a_la_une_globale = FALSE, updated_at = NOW()
-          WHERE a_la_une_globale = TRUE AND id <> $1 AND deleted_at IS NULL",
-    )
-    .bind(id)
-    .execute(&mut *tx)
-    .await?;
+    let emission_id: Uuid = if type_support == "station_radio" {
+        sqlx::query_scalar(&format!(
+            "INSERT INTO {table_emission}
+                (station_id, titre, slug, description, image_couverture_url,
+                 info_animateur, info_producteur, langue, categorie_radio,
+                 theme_phare_id, theme_phare_autre, cadence, etat, cree_par)
+             VALUES ($1, $2, $3, COALESCE($4, ''), $5, $6, $7, COALESCE($8, 'Français'),
+                     $9::media_content.categorie_radio, $10, $11, $12, 'brouillon', $13)
+             RETURNING id"
+        ))
+        .bind(support_id)
+        .bind(body.titre.trim())
+        .bind(&slug)
+        .bind(body.description.as_deref().map(str::trim))
+        .bind(body.image_couverture_url.as_deref().map(str::trim))
+        .bind(body.info_animateur.as_deref().map(str::trim))
+        .bind(body.info_producteur.as_deref().map(str::trim))
+        .bind(body.langue.as_deref().map(str::trim))
+        .bind(body.categorie_radio.as_deref())
+        .bind(body.theme_phare_id)
+        .bind(body.theme_phare_autre.as_deref().map(str::trim))
+        .bind(cadence)
+        .bind(admin.id)
+        .fetch_one(pool.get_ref())
+        .await?
+    }
+    else {
+        sqlx::query_scalar(&format!(
+            "INSERT INTO {table_emission}
+                ({colonne}, titre, slug, description, image_couverture_url,
+                 info_animateur, info_producteur, langue,
+                 theme_phare_id, theme_phare_autre, cadence, etat, cree_par)
+             VALUES ($1, $2, $3, COALESCE($4, ''), $5, $6, $7, COALESCE($8, 'Français'),
+                     $9, $10, $11, 'brouillon', $12)
+             RETURNING id"
+        ))
+        .bind(support_id)
+        .bind(body.titre.trim())
+        .bind(&slug)
+        .bind(body.description.as_deref().map(str::trim))
+        .bind(body.image_couverture_url.as_deref().map(str::trim))
+        .bind(body.info_animateur.as_deref().map(str::trim))
+        .bind(body.info_producteur.as_deref().map(str::trim))
+        .bind(body.langue.as_deref().map(str::trim))
+        .bind(body.theme_phare_id)
+        .bind(body.theme_phare_autre.as_deref().map(str::trim))
+        .bind(cadence)
+        .bind(admin.id)
+        .fetch_one(pool.get_ref())
+        .await?
+    };
 
-    sqlx::query(
-        "UPDATE media_content.programme_tele
-            SET a_la_une_globale = TRUE, updated_at = NOW()
-          WHERE id = $1 AND deleted_at IS NULL",
-    )
-    .bind(id)
-    .execute(&mut *tx)
-    .await?;
-
-    tx.commit().await?;
-
-    // La vedette globale est la mise à la une la plus visible de la plateforme :
-    // elle crédite au même titre. La clé étant portée par le contenu, un contenu
-    // déjà crédité pour sa mise à la une de chaîne ne l'est pas une seconde fois.
-    crediter_mise_a_la_une(pool.get_ref(), "programme_tele", id, admin.id).await;
-
-    log::info!(
-        "Admin {} a designe le programme tele {} comme vedette globale",
-        admin.id,
-        id
-    );
-
-    let ip = audit::extraire_ip(&req);
-    let ua = audit::extraire_user_agent(&req);
-    audit::log_action(
+    journaliser(
+        &req,
         pool.get_ref(),
-        Some(admin.id),
-        "VEDETTE_GLOBALE",
-        "media_content",
-        "programme_tele",
-        Some(id),
-        Some(serde_json::json!({ "a_la_une_globale": ancienne })),
-        Some(serde_json::json!({ "a_la_une_globale": id })),
-        ip.as_deref(),
-        ua.as_deref(),
+        admin.id,
+        "CREATE",
+        type_support,
+        emission_id,
+        None,
+        Some(serde_json::json!({ "titre": body.titre.trim(), "cadence": cadence })),
     )
     .await;
 
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "id": emission_id, "slug": slug })),
+        error: None,
+    }))
+}
+
+/// PUT /api/admin/medias/emissions/{id}
+pub async fn modifier_emission_admin(
+    req: HttpRequest,
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    body: web::Json<AdminEmissionRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+    let emission_id = chemin.into_inner();
+    let (type_support, _, ancien) = contexte_emission(pool.get_ref(), emission_id).await?;
+
+    if body.titre.trim().is_empty() {
+        return Err(ApiErreur::Validation(
+            "Le titre du programme est obligatoire".into(),
+        ));
+    }
+    let cadence = body.cadence.as_deref().unwrap_or("ponctuelle");
+    valider_cadence(cadence)?;
+
+    let table_emission = crate::models::media_detention::table_contenu_pour_support(&type_support)
+        .expect("type de support validé");
+
+    sqlx::query(&format!(
+        "UPDATE {table_emission}
+            SET titre = $2, description = COALESCE($3, description),
+                image_couverture_url = $4, info_animateur = $5, info_producteur = $6,
+                langue = COALESCE($7, langue), theme_phare_id = $8,
+                theme_phare_autre = $9, cadence = $10, updated_at = NOW()
+          WHERE id = $1 AND deleted_at IS NULL"
+    ))
+    .bind(emission_id)
+    .bind(body.titre.trim())
+    .bind(body.description.as_deref().map(str::trim))
+    .bind(body.image_couverture_url.as_deref().map(str::trim))
+    .bind(body.info_animateur.as_deref().map(str::trim))
+    .bind(body.info_producteur.as_deref().map(str::trim))
+    .bind(body.langue.as_deref().map(str::trim))
+    .bind(body.theme_phare_id)
+    .bind(body.theme_phare_autre.as_deref().map(str::trim))
+    .bind(cadence)
+    .execute(pool.get_ref())
+    .await?;
+
+    journaliser(
+        &req,
+        pool.get_ref(),
+        admin.id,
+        "UPDATE",
+        &type_support,
+        emission_id,
+        Some(ancien),
+        Some(serde_json::json!({ "titre": body.titre.trim(), "cadence": cadence })),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+/// PATCH /api/admin/medias/emissions/{id}/etat
+///
+/// Suspendre un programme retire ses épisodes de l'espace public **sans les
+/// supprimer** (FR-011) : la lecture publique filtre sur l'état des deux
+/// niveaux, aucune cascade n'est nécessaire. Le rétablissement remet
+/// `nombre_signalements = 0`, sans quoi le seuil de suspension resterait franchi.
+pub async fn changer_etat_emission_admin(
+    req: HttpRequest,
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    body: web::Json<ChangerEtatEmissionRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+    let emission_id = chemin.into_inner();
+    let (type_support, _, ancien) = contexte_emission(pool.get_ref(), emission_id).await?;
+
+    let etat = body.etat.trim();
+    if !["brouillon", "en_attente", "publie", "suspendu", "supprime"].contains(&etat) {
+        return Err(ApiErreur::Validation(format!(
+            "État « {} » inconnu pour un programme",
+            etat
+        )));
+    }
+
+    let table_emission = crate::models::media_detention::table_contenu_pour_support(&type_support)
+        .expect("type de support validé");
+
+    sqlx::query(&format!(
+        "UPDATE {table_emission}
+            SET etat = $2,
+                nombre_signalements = CASE WHEN $2 = 'publie' THEN 0 ELSE nombre_signalements END,
+                updated_at = NOW()
+          WHERE id = $1 AND deleted_at IS NULL"
+    ))
+    .bind(emission_id)
+    .bind(etat)
+    .execute(pool.get_ref())
+    .await?;
+
+    journaliser(
+        &req,
+        pool.get_ref(),
+        admin.id,
+        "UPDATE",
+        &type_support,
+        emission_id,
+        Some(ancien),
+        Some(serde_json::json!({ "etat": etat })),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+/// DELETE /api/admin/medias/emissions/{id} — `409` si épisodes publiés (FR-010).
+pub async fn supprimer_emission_admin(
+    req: HttpRequest,
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "supprimer");
+    let emission_id = chemin.into_inner();
+    let (type_support, _, ancien) = contexte_emission(pool.get_ref(), emission_id).await?;
+
+    refuser_si_episodes_publies(pool.get_ref(), &type_support, emission_id).await?;
+
+    let table_emission = crate::models::media_detention::table_contenu_pour_support(&type_support)
+        .expect("type de support validé");
+    sqlx::query(&format!(
+        "UPDATE {table_emission} SET etat = 'supprime', deleted_at = NOW(), updated_at = NOW()
+          WHERE id = $1 AND deleted_at IS NULL"
+    ))
+    .bind(emission_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    journaliser(
+        &req,
+        pool.get_ref(),
+        admin.id,
+        "DELETE",
+        &type_support,
+        emission_id,
+        Some(ancien),
+        Some(serde_json::json!({ "etat": "supprime" })),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+/// GET /api/admin/medias/emissions/{id}/episodes
+pub async fn lister_episodes_admin(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    params: web::Query<EpisodeQueryParams>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "voir");
+    let emission_id = chemin.into_inner();
+    let (type_support, _, _) = contexte_emission(pool.get_ref(), emission_id).await?;
+
+    let episodes = charger_episodes(
+        pool.get_ref(),
+        &type_support,
+        emission_id,
+        params.etat.as_deref(),
+    )
+    .await?;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(serde_json::json!({ "id": id, "ancienne_vedette": ancienne })),
+        data: Some(serde_json::json!({ "episodes": episodes })),
+        error: None,
+    }))
+}
+
+/// POST /api/admin/medias/emissions/{id}/episodes
+///
+/// L'épisode naît **`publie`** : l'administration est l'autorité de validation.
+pub async fn creer_episode_admin(
+    req: HttpRequest,
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    body: web::Json<EpisodeRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+    let emission_id = chemin.into_inner();
+    let (type_support, _, _) = contexte_emission(pool.get_ref(), emission_id).await?;
+
+    body.valider()?;
+    let media = body.media();
+    // `ck_episode_*_media_publie` refuserait la ligne ; le dire ici donne un
+    // message en français plutôt qu'une violation de contrainte.
+    if media.is_none() {
+        return Err(ApiErreur::Validation(
+            "Un épisode publié doit porter son fichier ou son lien".into(),
+        ));
+    }
+
+    let table_ep = table_episode(&type_support).expect("type de support validé");
+    let colonne = colonne_media(&type_support).expect("type de support validé");
+    let slug = slug_unique(pool.get_ref(), table_ep, &generer_slug(&body.titre)).await?;
+
+    let episode_id: Uuid = sqlx::query_scalar(&format!(
+        "INSERT INTO {table_ep}
+            (emission_id, titre, slug, description, image_couverture_url, {colonne},
+             numero_episode, duree_minutes, ordre, etat, valide_par, valide_at, cree_par)
+         VALUES ($1, $2, $3, COALESCE($4, ''), $5, $6, $7, $8,
+                 (SELECT COALESCE(MAX(ordre), -1) + 1 FROM {table_ep}
+                   WHERE emission_id = $1 AND deleted_at IS NULL),
+                 'publie', $9, NOW(), $9)
+         RETURNING id"
+    ))
+    .bind(emission_id)
+    .bind(body.titre.trim())
+    .bind(&slug)
+    .bind(body.description.as_deref().map(str::trim))
+    .bind(body.image_couverture_url.as_deref().map(str::trim))
+    .bind(media.as_deref())
+    .bind(body.numero_episode)
+    .bind(body.duree_minutes)
+    .bind(admin.id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    journaliser_episode(
+        &req,
+        pool.get_ref(),
+        admin.id,
+        "CREATE",
+        &type_support,
+        episode_id,
+        None,
+        Some(serde_json::json!({ "emission_id": emission_id, "etat": "publie" })),
+    )
+    .await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "id": episode_id, "slug": slug, "etat": "publie" })),
+        error: None,
+    }))
+}
+
+/// PUT /api/admin/medias/episodes/{id}
+///
+/// À la différence de la route membre, l'administration **ne renvoie pas**
+/// l'épisode en file : elle a autorité pour publier, la modifier ne remet donc
+/// rien en attente.
+pub async fn modifier_episode_admin(
+    req: HttpRequest,
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    body: web::Json<EpisodeRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+    let episode_id = chemin.into_inner();
+    let ctx = contexte_episode(pool.get_ref(), episode_id).await?;
+
+    body.valider()?;
+    let table_ep = table_episode(&ctx.type_support).expect("type de support validé");
+    let colonne = colonne_media(&ctx.type_support).expect("type de support validé");
+    let media = body.media();
+
+    let etat = match body.etat.as_deref() {
+        Some(e) => {
+            valider_etat_episode(e)?;
+            Some(e)
+        }
+        None => None,
+    };
+
+    sqlx::query(&format!(
+        "UPDATE {table_ep}
+            SET titre = $2,
+                description = COALESCE($3, description),
+                image_couverture_url = $4,
+                {colonne} = COALESCE($5, {colonne}),
+                numero_episode = $6,
+                duree_minutes = $7,
+                etat = COALESCE($8, etat),
+                valide_par = CASE WHEN COALESCE($8, etat) IN ('publie','rejete')
+                                  THEN COALESCE(valide_par, $9) ELSE valide_par END,
+                valide_at  = CASE WHEN COALESCE($8, etat) IN ('publie','rejete')
+                                  THEN COALESCE(valide_at, NOW()) ELSE valide_at END,
+                updated_at = NOW()
+          WHERE id = $1 AND deleted_at IS NULL"
+    ))
+    .bind(episode_id)
+    .bind(body.titre.trim())
+    .bind(body.description.as_deref().map(str::trim))
+    .bind(body.image_couverture_url.as_deref().map(str::trim))
+    .bind(media.as_deref())
+    .bind(body.numero_episode)
+    .bind(body.duree_minutes)
+    .bind(etat)
+    .bind(admin.id)
+    .execute(pool.get_ref())
+    .await?;
+
+    journaliser_episode(
+        &req,
+        pool.get_ref(),
+        admin.id,
+        "UPDATE",
+        &ctx.type_support,
+        episode_id,
+        Some(ctx.instantane()),
+        Some(serde_json::json!({ "titre": body.titre.trim(), "etat": etat })),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+/// DELETE /api/admin/medias/episodes/{id} — suppression douce.
+pub async fn supprimer_episode_admin(
+    req: HttpRequest,
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "supprimer");
+    let episode_id = chemin.into_inner();
+    let ctx = contexte_episode(pool.get_ref(), episode_id).await?;
+
+    let table_ep = table_episode(&ctx.type_support).expect("type de support validé");
+    sqlx::query(&format!(
+        "UPDATE {table_ep} SET etat = 'supprime', a_la_une = FALSE,
+                deleted_at = NOW(), updated_at = NOW()
+          WHERE id = $1 AND deleted_at IS NULL"
+    ))
+    .bind(episode_id)
+    .execute(pool.get_ref())
+    .await?;
+
+    journaliser_episode(
+        &req,
+        pool.get_ref(),
+        admin.id,
+        "DELETE",
+        &ctx.type_support,
+        episode_id,
+        Some(ctx.instantane()),
+        Some(serde_json::json!({ "etat": "supprime" })),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+/// PUT /api/admin/medias/emissions/{id}/episodes/reordonner
+///
+/// Réécriture atomique — même invariant que la route membre : la liste doit
+/// couvrir exactement les épisodes du programme.
+pub async fn reordonner_episodes_admin(
+    req: HttpRequest,
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    body: web::Json<ReordonnancementRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+    let emission_id = chemin.into_inner();
+    let (type_support, _, _) = contexte_emission(pool.get_ref(), emission_id).await?;
+    let table_ep = table_episode(&type_support).expect("type de support validé");
+
+    let mut tx = pool.begin().await?;
+
+    let existants: Vec<Uuid> = sqlx::query_scalar(&format!(
+        "SELECT id FROM {table_ep}
+          WHERE emission_id = $1 AND deleted_at IS NULL FOR UPDATE"
+    ))
+    .bind(emission_id)
+    .fetch_all(&mut *tx)
+    .await?;
+
+    let soumis: std::collections::HashSet<Uuid> = body.ordres.iter().map(|o| o.episode_id).collect();
+    let attendus: std::collections::HashSet<Uuid> = existants.iter().copied().collect();
+    if soumis != attendus {
+        return Err(ApiErreur::Validation(format!(
+            "La liste doit couvrir exactement les {} épisode(s) du programme : {} reçu(s).",
+            attendus.len(),
+            soumis.len()
+        )));
+    }
+
+    for ordre in &body.ordres {
+        sqlx::query(&format!(
+            "UPDATE {table_ep} SET ordre = $2, updated_at = NOW()
+              WHERE id = $1 AND emission_id = $3 AND deleted_at IS NULL"
+        ))
+        .bind(ordre.episode_id)
+        .bind(ordre.ordre)
+        .bind(emission_id)
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    tx.commit().await?;
+
+    journaliser(
+        &req,
+        pool.get_ref(),
+        admin.id,
+        "UPDATE",
+        &type_support,
+        emission_id,
+        None,
+        Some(serde_json::json!({ "reordonnancement": body.ordres.len() })),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+/// PATCH /api/admin/medias/episodes/{id}/a-la-une
+///
+/// Mise en avant au sein de son SUPPORT. Bascule et désignation dans une seule
+/// transaction — l'index unique partiel est violé en concurrence sinon.
+pub async fn definir_a_la_une_admin(
+    req: HttpRequest,
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+    let episode_id = chemin.into_inner();
+    let ctx = contexte_episode(pool.get_ref(), episode_id).await?;
+
+    if ctx.etat != "publie" {
+        return Err(ApiErreur::Conflit(
+            "Seul un épisode publié peut être mis en avant".into(),
+        ));
+    }
+
+    basculer_a_la_une(pool.get_ref(), &ctx.type_support, ctx.support_id, episode_id).await?;
+
+    let type_objet = type_media_episode(&ctx.type_support).expect("type de support validé");
+    crediter_mise_a_la_une(pool.get_ref(), type_objet, episode_id, admin.id).await;
+
+    journaliser_episode(
+        &req,
+        pool.get_ref(),
+        admin.id,
+        "UPDATE",
+        &ctx.type_support,
+        episode_id,
+        Some(ctx.instantane()),
+        Some(serde_json::json!({ "a_la_une": true })),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+/// PATCH /api/admin/medias/episodes/{id}/vedette-globale
+///
+/// Remplace `/api/admin/programmes-tele/{id}/vedette-globale`. La vedette
+/// désigne une **unité diffusable** (FR-052) : elle porte donc sur un épisode.
+///
+/// La bascule de l'ancienne vedette et la désignation de la nouvelle tiennent
+/// dans **une seule transaction** : l'index unique partiel sur l'expression
+/// constante `((TRUE))` est violé dès que deux désignations se croisent.
+pub async fn definir_vedette_globale(
+    req: HttpRequest,
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+    let episode_id = chemin.into_inner();
+    let ctx = contexte_episode(pool.get_ref(), episode_id).await?;
+
+    // La vedette plein écran n'existe que sur l'espace Télé.
+    if ctx.type_support != "chaine_tv" {
+        return Err(ApiErreur::Validation(
+            "La vedette globale ne concerne que l'espace Télé".into(),
+        ));
+    }
+    if ctx.etat != "publie" {
+        return Err(ApiErreur::Conflit(
+            "Seul un épisode publié peut devenir la vedette de la page Télé".into(),
+        ));
+    }
+
+    let mut tx = pool.begin().await?;
+
+    sqlx::query(
+        "UPDATE media_content.episode_tele SET a_la_une_globale = FALSE, updated_at = NOW()
+          WHERE a_la_une_globale = TRUE AND deleted_at IS NULL",
+    )
+    .execute(&mut *tx)
+    .await?;
+
+    sqlx::query(
+        "UPDATE media_content.episode_tele SET a_la_une_globale = TRUE, updated_at = NOW()
+          WHERE id = $1 AND deleted_at IS NULL",
+    )
+    .bind(episode_id)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    crediter_mise_a_la_une(pool.get_ref(), "episode_tele", episode_id, admin.id).await;
+
+    journaliser_episode(
+        &req,
+        pool.get_ref(),
+        admin.id,
+        "UPDATE",
+        &ctx.type_support,
+        episode_id,
+        Some(ctx.instantane()),
+        Some(serde_json::json!({ "a_la_une_globale": true })),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
         error: None,
     }))
 }

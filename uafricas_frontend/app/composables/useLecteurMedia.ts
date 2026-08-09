@@ -15,7 +15,7 @@
 export interface ContenuEnLecture {
   /** Identifiant du contenu, pour reconnaître ce qui joue déjà. */
   id: string
-  type: 'programme_radio' | 'programme_tele' | 'station_radio' | 'chaine_tv'
+  type: 'episode_radio' | 'episode_tele' | 'station_radio' | 'chaine_tv'
   titre: string
   /** Chaîne ou station d'origine — affichée dans la barre de lecture (SC-004). */
   support?: string | null

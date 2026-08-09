@@ -7,33 +7,52 @@
  * catalogue, et la présence de la barre suffit à signaler qu'il y a du contenu
  * sous le pli.
  *
- * Quatre entrées, toutes résolues côté serveur (`GET /television/sections`) :
+ * Six entrées, toutes résolues côté serveur (`GET /television/sections`) :
  *   • Africans Télé International — chaînes produites par la plateforme (09o) ;
- *   • Territoire — référentiel des pays réellement représentés ;
- *   • Chaînes thématiques — thème phare des contenus diffusés ;
+ *   • Territoire (siège) — référentiel des pays de rattachement ;
+ *   • Territoire couvert — couverture déclarée (US4) : une chaîne panafricaine
+ *     remonte sur **chaque** territoire, ce que le siège ne dit pas (FR-036) ;
+ *   • Thématiques — thèmes DÉCLARÉS par la chaîne, sélection multiple (US3) ;
+ *   • Chaînes thématiques — thème phare des contenus diffusés (à ne pas
+ *     confondre avec le précédent : celui-ci porte sur les programmes) ;
  *   • En direct — chaînes actuellement à l'antenne.
  */
 import type { ThemePhareAPI } from '~/composables/useMediaProposition'
+import type { ThematiqueDecompte, TerritoireDecompte } from '~/composables/useMediaSupport'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   /** '' = toutes origines ; 'africans' = Africans Télé International. */
   origine: string
-  /** Nom du territoire, ou 'Tous les territoires'. */
+  /** Nom du territoire de rattachement, ou 'Tous les territoires'. */
   pays: string
   /** Identifiant du thème phare, '' = tous. */
   theme: string
   enDirect: boolean
   territoires: string[]
   themes: ThemePhareAPI[]
+  /** Thématiques déclarées, sélection multiple (US3). */
+  thematiques?: string[]
+  /** Identifiant du territoire couvert, '' = tous (US4). */
+  territoire?: string
+  /** Référentiels des thématiques et territoires réellement déclarés. */
+  thematiquesDisponibles?: ThematiqueDecompte[]
+  territoiresDisponibles?: TerritoireDecompte[]
   /** Nombre de chaînes remontées, affiché dès qu'un filtre est actif. */
   nombreChaines?: number
-}>()
+}>(), {
+  thematiques: () => [],
+  territoire: '',
+  thematiquesDisponibles: () => [],
+  territoiresDisponibles: () => [],
+})
 
 const emit = defineEmits<{
   'update:origine': [valeur: string]
   'update:pays': [valeur: string]
   'update:theme': [valeur: string]
   'update:enDirect': [valeur: boolean]
+  'update:thematiques': [valeur: string[]]
+  'update:territoire': [valeur: string]
   reinitialiser: []
 }>()
 
@@ -45,8 +64,23 @@ const filtresActifs = computed(() =>
   estAfricans.value
   || props.pays !== TOUS_TERRITOIRES
   || props.theme !== ''
-  || props.enDirect,
+  || props.enDirect
+  || props.thematiques.length > 0
+  || props.territoire !== '',
 )
+
+/** Panneau des thématiques : une sélection multiple ne tient pas dans un
+ * `<select>` natif sans devenir illisible sur mobile. */
+const panneauThematiques = ref(false)
+
+const basculerThematique = (id: string) => {
+  emit(
+    'update:thematiques',
+    props.thematiques.includes(id)
+      ? props.thematiques.filter(x => x !== id)
+      : [...props.thematiques, id],
+  )
+}
 
 /** Un second clic sur la pastille active la relâche : elle vaut bascule. */
 const basculerAfricans = () => emit('update:origine', estAfricans.value ? '' : 'africans')
@@ -142,6 +176,80 @@ const classeSelect = [
             :icon="['fas', 'chevron-down']"
             class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
           />
+        </div>
+
+        <!-- Territoire couvert (US4) : distinct du siège ci-dessus — une chaîne
+             panafricaine remonte ici sur chaque territoire. -->
+        <div class="relative shrink-0">
+          <font-awesome-icon
+            :icon="['fas', 'globe']"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+            :class="territoire ? 'text-yellow-400' : 'text-gray-300'"
+          />
+          <select
+            :value="territoire"
+            :class="[...classeSelect, 'w-56', territoire ? 'ring-yellow-400 text-yellow-400' : '']"
+            aria-label="Filtrer par territoire couvert"
+            @change="emit('update:territoire', ($event.target as HTMLSelectElement).value)"
+          >
+            <option class="bg-gray-900 text-white" value="">Territoire couvert</option>
+            <option
+              v-for="t in territoiresDisponibles"
+              :key="t.id"
+              class="bg-gray-900 text-white"
+              :value="t.id"
+            >
+              {{ t.nom }} ({{ t.nombre_supports }})
+            </option>
+          </select>
+          <font-awesome-icon
+            :icon="['fas', 'chevron-down']"
+            class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
+          />
+        </div>
+
+        <!-- Thématiques déclarées (US3), sélection multiple -->
+        <div v-if="thematiquesDisponibles.length" class="relative shrink-0">
+          <button
+            type="button"
+            :class="classePastille(thematiques.length > 0)"
+            :aria-expanded="panneauThematiques"
+            @click="panneauThematiques = !panneauThematiques"
+          >
+            <font-awesome-icon :icon="['fas', 'tags']" class="w-4 h-4" />
+            Thématiques
+            <span v-if="thematiques.length" class="rounded-full bg-black/20 px-1.5 text-xs">
+              {{ thematiques.length }}
+            </span>
+          </button>
+
+          <div
+            v-if="panneauThematiques"
+            class="absolute left-0 top-full z-20 mt-2 w-72 max-h-72 overflow-y-auto rounded-xl bg-neutral-900 ring-1 ring-white/15 p-3 shadow-xl"
+          >
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="t in thematiquesDisponibles"
+                :key="t.id"
+                type="button"
+                class="rounded-full border px-3 py-1 text-xs transition-colors"
+                :class="thematiques.includes(t.id)
+                  ? 'bg-yellow-400 border-yellow-400 text-neutral-900 font-semibold'
+                  : 'bg-white/5 border-white/15 text-gray-300 hover:border-yellow-400'"
+                @click="basculerThematique(t.id)"
+              >
+                {{ t.nom }} ({{ t.nombre_supports }})
+              </button>
+            </div>
+            <button
+              v-if="thematiques.length"
+              type="button"
+              class="mt-3 text-xs text-gray-400 underline hover:text-white"
+              @click="emit('update:thematiques', [])"
+            >
+              Tout décocher
+            </button>
+          </div>
         </div>
 
         <!-- En direct -->

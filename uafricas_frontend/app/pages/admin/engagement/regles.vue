@@ -33,7 +33,8 @@ const erreur = ref('')
 /** Familles de contenus auxquelles un palier peut être restreint (miroir du serveur). */
 const FAMILLES = [
   'codimoi', 'factcheck', 'video', 'biblio_humaine',
-  'chaine_tv', 'station_radio', 'programme_tele', 'programme_radio',
+  'chaine_tv', 'station_radio',
+  'emission_tele', 'emission_radio', 'episode_tele', 'episode_radio',
 ]
 
 const nouveauPalier = ref<{ seuil_likes: number, points: number, type_objet: string }>({

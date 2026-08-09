@@ -22,8 +22,10 @@ const resoudreUrl = (url: string | null | undefined): string | null => {
 const HABILLAGE: Record<TypeMedia, { verbe: string; badge: string; icone: string[] }> = {
   chaine_tv: { verbe: 'a partagé une chaîne de télévision', badge: 'Chaîne', icone: ['fas', 'tv'] },
   station_radio: { verbe: 'a partagé une station de radio', badge: 'Station', icone: ['fas', 'radio'] },
-  programme_tele: { verbe: 'a partagé une émission de télévision', badge: 'Émission TV', icone: ['fas', 'tv'] },
-  programme_radio: { verbe: 'a partagé une émission de radio', badge: 'Émission radio', icone: ['fas', 'microphone'] },
+  emission_tele: { verbe: 'a partagé un programme de télévision', badge: 'Programme TV', icone: ['fas', 'layer-group'] },
+  emission_radio: { verbe: 'a partagé un programme de radio', badge: 'Programme radio', icone: ['fas', 'layer-group'] },
+  episode_tele: { verbe: 'a partagé un épisode de télévision', badge: 'Épisode TV', icone: ['fas', 'tv'] },
+  episode_radio: { verbe: 'a partagé un épisode de radio', badge: 'Épisode radio', icone: ['fas', 'microphone'] },
 }
 
 const habillage = computed(() => HABILLAGE[props.partage.media.type_media])

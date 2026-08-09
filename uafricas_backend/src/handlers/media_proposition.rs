@@ -97,6 +97,42 @@ pub async fn soumettre_proposition(
             "Cette proposition doit désigner la chaîne ou la station visée".into(),
         ));
     }
+    // Un épisode n'existe pas hors d'un programme (FR-002) : sa proposition
+    // désigne obligatoirement l'émission d'accueil, et cette émission doit
+    // exister — sinon la validation créerait un orphelin que la clé étrangère
+    // refuserait, un mois plus tard, sous les yeux d'un administrateur.
+    if crate::models::media_proposition::TYPES_EPISODE_PROPOSE
+        .contains(&soumission.type_objet.as_str())
+    {
+        let emission_id = soumission.target_id.ok_or_else(|| {
+            ApiErreur::Validation(
+                "Cette proposition doit désigner le programme dans lequel verser l'épisode".into(),
+            )
+        })?;
+        let table = crate::models::media_proposition::table_cible(&soumission.type_objet)
+            .map(|t| {
+                if t.ends_with("episode_tele") {
+                    "media_content.emission_tele"
+                }
+                else {
+                    "media_content.emission_radio"
+                }
+            })
+            .expect("type d'épisode connu");
+
+        let existe: bool = sqlx::query_scalar(&format!(
+            "SELECT EXISTS(SELECT 1 FROM {table} WHERE id = $1 AND deleted_at IS NULL)"
+        ))
+        .bind(emission_id)
+        .fetch_one(pool.get_ref())
+        .await?;
+        if !existe {
+            return Err(ApiErreur::Validation(
+                "Le programme désigné est introuvable".into(),
+            ));
+        }
+    }
+
     soumission.donnees.valider(&soumission.type_objet)?;
 
     let donnees = serde_json::to_value(&soumission.donnees)
@@ -502,24 +538,37 @@ async fn support_porteur(
     type_media: &str,
     media_id: Uuid,
 ) -> Result<(String, Uuid), ApiErreur> {
+    // Un épisode ne porte pas la clé du support : il faut d'abord remonter à son
+    // programme. D'où deux sauts là où l'ancien modèle n'en demandait qu'un.
     let (type_support, requete) = match type_media {
         "chaine_tv" => return Ok(("chaine_tv".to_string(), media_id)),
         "station_radio" => return Ok(("station_radio".to_string(), media_id)),
-        "programme_tele" => (
+        "emission_tele" => (
             "chaine_tv",
-            "SELECT chaine_id FROM media_content.programme_tele WHERE id = $1",
+            "SELECT chaine_id FROM media_content.emission_tele WHERE id = $1",
+        ),
+        "emission_radio" => (
+            "station_radio",
+            "SELECT station_id FROM media_content.emission_radio WHERE id = $1",
+        ),
+        "episode_tele" => (
+            "chaine_tv",
+            "SELECT m.chaine_id FROM media_content.episode_tele ep
+               JOIN media_content.emission_tele m ON m.id = ep.emission_id
+              WHERE ep.id = $1",
         ),
         _ => (
             "station_radio",
-            "SELECT station_id FROM media_content.programme_radio WHERE id = $1",
+            "SELECT m.station_id FROM media_content.episode_radio ep
+               JOIN media_content.emission_radio m ON m.id = ep.emission_id
+              WHERE ep.id = $1",
         ),
     };
 
     let support_id: Option<Uuid> = sqlx::query_scalar(requete)
         .bind(media_id)
         .fetch_optional(pool)
-        .await?
-        .flatten();
+        .await?;
 
     // Un contenu orphelin de support n'a pas de co-détenteur à interroger : la
     // garde ne peut alors reposer que sur la qualité d'auteur.
@@ -542,19 +591,30 @@ pub async fn modifier_metadonnees(
     garde_auteur_contenu(pool.get_ref(), &type_media, media_id, moi).await?;
 
     let table = table_pour_type(&type_media).expect("type de média supporté");
-    let est_contenu = type_media.starts_with("programme_");
+    // Le thème phare est porté par le PROGRAMME (émission), pas par l'épisode :
+    // celui-ci l'hérite de sa série. Un épisode se modifie donc comme un support,
+    // à ceci près qu'il porte `titre` et non `nom` — d'où trois formes de requête
+    // et non deux.
+    let est_emission = type_media.starts_with("emission_");
+    let est_episode = type_media.starts_with("episode_");
 
-    // Les supports portent `nom`, les contenus `nom_emission`, et le thème
-    // phare ne concerne que les seconds : les deux formes de requête sont
-    // écrites en clair plutôt que recomposées par morceaux.
-    let requete = if est_contenu {
+    let requete = if est_emission {
         format!(
             "UPDATE {table}
-                SET nom_emission          = COALESCE($2, nom_emission),
+                SET titre                 = COALESCE($2, titre),
                     description           = COALESCE($3, description),
                     image_couverture_url  = COALESCE($4, image_couverture_url),
                     theme_phare_id        = COALESCE($5, theme_phare_id),
                     theme_phare_autre     = COALESCE($6, theme_phare_autre),
+                    updated_at            = NOW()
+              WHERE id = $1 AND deleted_at IS NULL"
+        )
+    } else if est_episode {
+        format!(
+            "UPDATE {table}
+                SET titre                 = COALESCE($2, titre),
+                    description           = COALESCE($3, description),
+                    image_couverture_url  = COALESCE($4, image_couverture_url),
                     updated_at            = NOW()
               WHERE id = $1 AND deleted_at IS NULL"
         )
@@ -579,7 +639,7 @@ pub async fn modifier_metadonnees(
         .bind(non_vide(&body.nom))
         .bind(non_vide(&body.description))
         .bind(non_vide(&body.image_couverture_url));
-    if est_contenu {
+    if est_emission {
         q = q
             .bind(body.theme_phare_id)
             .bind(non_vide(&body.theme_phare_autre));
@@ -638,12 +698,14 @@ pub async fn remplacer_media(
 
     // Seuls les contenus portent un média remplaçable ; une chaîne ou une
     // station n'a qu'un flux, édité par ses métadonnées.
+    // Seuls les ÉPISODES portent un fichier : une émission est un conteneur,
+    // une chaîne ou une station n'a qu'un flux édité par ses métadonnées.
     let colonne_media = match type_media.as_str() {
-        "programme_tele" => "video_url",
-        "programme_radio" => "audio_url",
+        "episode_tele" => "video_url",
+        "episode_radio" => "audio_url",
         _ => {
             return Err(ApiErreur::Validation(
-                "Seules les émissions portent un média remplaçable".into(),
+                "Seuls les épisodes portent un média remplaçable".into(),
             ));
         }
     };

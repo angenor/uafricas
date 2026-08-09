@@ -1,10 +1,34 @@
+//! Espace Télé — chaînes, programmes et épisodes
+//! (feature 001-refonte-tele-radio ; recadré par 009-medias-programmes-episodes).
+//!
+//! La page ne présente plus une vignette par vidéo mais **une rangée par
+//! programme** : chaque chaîne porte ses programmes publiés, chaque programme
+//! annonce son nombre d'épisodes et un aperçu borné. Au-delà, la page du
+//! programme prend le relais — c'est ce qui tient la promesse de navigabilité à
+//! 500 épisodes.
+
 use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
+use crate::handlers::media_emission::{
+    emissions_publiees_par_supports, greffer_apercus_et_compteurs, lister_episodes_emission,
+    obtenir_emission_par_slug,
+};
+use crate::handlers::media_episode::obtenir_episode_par_slug;
 use crate::handlers::media_social;
+// Parsing du filtre `?thematique=` : utilitaire de MODÈLE, pas un handler.
+use crate::models::media_support::thematiques_demandees;
+use crate::handlers::media_support::{
+    couverture_par_supports, territoires_disponibles, thematiques_disponibles,
+    thematiques_par_supports,
+};
+use crate::models::media_emission::EmissionResponse;
+use crate::models::media_episode::{colonnes_episode, EpisodeRow, ORDRE_EPISODES};
 use crate::models::television::*;
+
+const TYPE_SUPPORT: &str = "chaine_tv";
 
 #[derive(serde::Serialize)]
 struct ApiResponse<T: serde::Serialize> {
@@ -44,43 +68,39 @@ pub async fn lister_chaines(
     let mut bind_index = 1u32;
     let mut bind_values: Vec<String> = Vec::new();
 
-    // Filtre par catégorie
-    if let Some(ref categorie) = params.categorie {
-        if categorie != "Toutes les catégories" {
-            let cat_db = mapper_categorie_chaine_db(categorie);
-            conditions.push(format!("ct.categorie::text = ${}", bind_index));
-            bind_values.push(cat_db);
-            bind_index += 1;
-        }
+    if let Some(ref categorie) = params.categorie
+        && categorie != "Toutes les catégories"
+    {
+        let cat_db = mapper_categorie_chaine_db(categorie);
+        conditions.push(format!("ct.categorie::text = ${}", bind_index));
+        bind_values.push(cat_db);
+        bind_index += 1;
     }
 
-    // Filtre par pays
-    if let Some(ref pays) = params.pays {
-        if pays != "Tous les pays" {
-            conditions.push(format!(
-                "EXISTS (SELECT 1 FROM shared.pays p2 WHERE p2.id = ct.pays_id AND LOWER(p2.nom) = LOWER(${}))",
-                bind_index
-            ));
-            bind_values.push(pays.clone());
-            bind_index += 1;
-        }
+    if let Some(ref pays) = params.pays
+        && pays != "Tous les pays"
+    {
+        conditions.push(format!(
+            "EXISTS (SELECT 1 FROM shared.pays p2 WHERE p2.id = ct.pays_id AND LOWER(p2.nom) = LOWER(${}))",
+            bind_index
+        ));
+        bind_values.push(pays.clone());
+        bind_index += 1;
     }
 
-    // Recherche textuelle
-    if let Some(ref recherche) = params.recherche {
-        if !recherche.trim().is_empty() {
-            conditions.push(format!(
-                "(LOWER(ct.nom) LIKE LOWER(${bi}) OR LOWER(ct.description) LIKE LOWER(${bi}))",
-                bi = bind_index
-            ));
-            bind_values.push(format!("%{}%", recherche.trim()));
-            bind_index += 1;
-        }
+    if let Some(ref recherche) = params.recherche
+        && !recherche.trim().is_empty()
+    {
+        conditions.push(format!(
+            "(LOWER(ct.nom) LIKE LOWER(${bi}) OR LOWER(ct.description) LIKE LOWER(${bi}))",
+            bi = bind_index
+        ));
+        bind_values.push(format!("%{}%", recherche.trim()));
+        bind_index += 1;
     }
 
     let where_clause = conditions.join(" AND ");
 
-    // Compter le total
     let count_query = format!(
         "SELECT COUNT(*) FROM media_content.chaine_tv ct WHERE {}",
         where_clause
@@ -89,10 +109,11 @@ pub async fn lister_chaines(
     for val in &bind_values {
         count_q = count_q.bind(val);
     }
-    let total: i64 = count_q.fetch_one(pool.get_ref()).await
+    let total: i64 = count_q
+        .fetch_one(pool.get_ref())
+        .await
         .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage chaînes TV: {}", e)))?;
 
-    // Récupérer les chaînes avec jointure pays
     let query = format!(
         "SELECT {}, p.nom AS pays_nom
          FROM media_content.chaine_tv ct
@@ -112,22 +133,25 @@ pub async fn lister_chaines(
     }
     q = q.bind(par_page).bind(offset);
 
-    let chaines = q.fetch_all(pool.get_ref()).await
+    let chaines = q
+        .fetch_all(pool.get_ref())
+        .await
         .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur listing chaînes TV: {}", e)))?;
 
     let total_pages = (total as f64 / par_page as f64).ceil() as i64;
 
-    let reponse = ChaineTvListeResponse {
-        chaines: chaines.iter().map(|c| c.to_response()).collect(),
-        total,
-        page,
-        par_page,
-        total_pages,
-    };
+    let mut reponses: Vec<ChaineTvResponse> = chaines.iter().map(|c| c.to_response()).collect();
+    greffer_fiche_support(pool.get_ref(), &mut reponses).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(reponse),
+        data: Some(ChaineTvListeResponse {
+            chaines: reponses,
+            total,
+            page,
+            par_page,
+            total_pages,
+        }),
         error: None,
     }))
 }
@@ -157,9 +181,12 @@ pub async fn obtenir_chaine(
         .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur lecture chaîne TV: {}", e)))?
         .ok_or_else(|| ApiErreur::NonTrouve("Chaîne TV non trouvée".into()))?;
 
+    let mut reponses = vec![chaine.to_response()];
+    greffer_fiche_support(pool.get_ref(), &mut reponses).await?;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(chaine.to_response()),
+        data: reponses.pop(),
         error: None,
     }))
 }
@@ -174,41 +201,42 @@ pub async fn creer_chaine(
     let utilisateur_id = extraire_utilisateur_id(&req)
         .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
 
-    // Validation
     if body.nom.trim().is_empty() {
-        return Err(ApiErreur::Validation("Le nom de la chaîne est requis".into()));
+        return Err(ApiErreur::Validation(
+            "Le nom de la chaîne est requis".into(),
+        ));
     }
-    // Flux live optionnel — le cœur de la télé = les programmes (vidéos fichier/lien).
-    let stream_url = body.stream_url.as_deref().map(str::trim).filter(|s| !s.is_empty());
+    let stream_url = body
+        .stream_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
 
     let slug = generer_slug(&body.nom);
-    let categorie = body.categorie.as_deref()
+    let categorie = body
+        .categorie
+        .as_deref()
         .map(mapper_categorie_chaine_db)
         .unwrap_or_else(|| "generaliste".to_string());
     let langue = body.langue.as_deref().unwrap_or("Français");
 
-    // Résoudre pays_id si un nom de pays est fourni
     let pays_id: Option<Uuid> = if let Some(ref pays_nom) = body.pays {
-        sqlx::query_scalar(
-            "SELECT id FROM shared.pays WHERE LOWER(nom) = LOWER($1)"
-        )
-        .bind(pays_nom)
-        .fetch_optional(pool.get_ref())
-        .await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur résolution pays: {}", e)))?
-    } else {
+        sqlx::query_scalar("SELECT id FROM shared.pays WHERE LOWER(nom) = LOWER($1)")
+            .bind(pays_nom)
+            .fetch_optional(pool.get_ref())
+            .await
+            .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur résolution pays: {}", e)))?
+    }
+    else {
         None
     };
 
     let chaine_id = Uuid::new_v4();
 
     // FAILLE FERMÉE (FR-031, FR-032) : cette route publique insérait
-    // `etat = 'publie'` en dur, sans le moindre contrôle de rôle — tout membre
-    // connecté publiait donc directement sur les pages Télé. Le contenu naît
-    // désormais en `'en_attente'` : il n'est visible nulle part tant qu'un
-    // administrateur ne l'a pas validé depuis le back-office. La voie de
-    // contribution nominale reste `POST /api/medias/propositions`, qui alimente
-    // la file de modération (US4).
+    // `etat = 'publie'` en dur, sans le moindre contrôle de rôle. Le contenu
+    // naît désormais en `'en_attente'` : il n'est visible nulle part tant qu'un
+    // administrateur ne l'a pas validé.
     sqlx::query(
         "INSERT INTO media_content.chaine_tv
             (id, nom, slug, description, stream_url, categorie, pays_id, langue, etat, cree_par)
@@ -227,7 +255,6 @@ pub async fn creer_chaine(
     .await
     .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur création chaîne TV: {}", e)))?;
 
-    // Récupérer la chaîne créée avec jointure pays
     let query = format!(
         "SELECT {}, p.nom AS pays_nom
          FROM media_content.chaine_tv ct
@@ -250,314 +277,65 @@ pub async fn creer_chaine(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PROGRAMMES TÉLÉ (media_content.programme_tele — table dédiée depuis 09g)
+// PAGE TÉLÉ — VEDETTE ET SECTIONS
 // ═══════════════════════════════════════════════════════════════════════════
-
-// ── GET /api/television/programmes-vedettes ───────────────────────────
-
-pub async fn lister_programmes_vedettes(
-    pool: web::Data<PgPool>,
-    params: web::Query<ProgrammeTeleQueryParams>,
-) -> Result<HttpResponse, ApiErreur> {
-    let page = params.page.unwrap_or(1).max(1);
-    let par_page = params.par_page.unwrap_or(20).min(100);
-    let offset = (page - 1) * par_page;
-
-    let mut conditions: Vec<String> = vec![
-        "prt.etat = 'publie'".to_string(),
-        "prt.deleted_at IS NULL".to_string(),
-    ];
-    let mut bind_index = 1u32;
-    let mut bind_values: Vec<String> = Vec::new();
-
-    // Filtre par pays
-    if let Some(ref pays) = params.pays {
-        if pays != "Tous les pays" {
-            conditions.push(format!(
-                "EXISTS (SELECT 1 FROM shared.pays p2 WHERE p2.id = prt.pays_id AND LOWER(p2.nom) = LOWER(${}))",
-                bind_index
-            ));
-            bind_values.push(pays.clone());
-            bind_index += 1;
-        }
-    }
-
-    // Filtre par chaîne (télé)
-    if let Some(chaine_id) = params.chaine {
-        conditions.push(format!("prt.chaine_id = ${}::uuid", bind_index));
-        bind_values.push(chaine_id.to_string());
-        bind_index += 1;
-    }
-
-    // Recherche textuelle
-    if let Some(ref recherche) = params.recherche {
-        if !recherche.trim().is_empty() {
-            conditions.push(format!(
-                "(LOWER(prt.nom_emission) LIKE LOWER(${bi}) OR LOWER(prt.description) LIKE LOWER(${bi}))",
-                bi = bind_index
-            ));
-            bind_values.push(format!("%{}%", recherche.trim()));
-            bind_index += 1;
-        }
-    }
-
-    let where_clause = conditions.join(" AND ");
-
-    // Compter le total
-    let count_query = format!(
-        "SELECT COUNT(*) FROM media_content.programme_tele prt WHERE {}",
-        where_clause
-    );
-    let mut count_q = sqlx::query_scalar::<_, i64>(&count_query);
-    for val in &bind_values {
-        count_q = count_q.bind(val);
-    }
-    let total: i64 = count_q.fetch_one(pool.get_ref()).await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage programmes TV: {}", e)))?;
-
-    // Récupérer les programmes avec jointure pays + chaîne (télé de rattachement)
-    let query = format!(
-        "SELECT {}, p.nom AS pays_nom, c.nom AS chaine_nom
-         FROM media_content.programme_tele prt
-         LEFT JOIN shared.pays p ON p.id = prt.pays_id
-         LEFT JOIN media_content.chaine_tv c ON c.id = prt.chaine_id
-         WHERE {}
-         ORDER BY prt.a_la_une DESC, prt.created_at DESC
-         LIMIT ${} OFFSET ${}",
-        PROGRAMME_TELE_COLONNES,
-        where_clause,
-        bind_index,
-        bind_index + 1,
-    );
-
-    let mut q = sqlx::query_as::<_, ProgrammeTeleRow>(&query);
-    for val in &bind_values {
-        q = q.bind(val);
-    }
-    q = q.bind(par_page).bind(offset);
-
-    let programmes = q.fetch_all(pool.get_ref()).await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur listing programmes TV: {}", e)))?;
-
-    let total_pages = (total as f64 / par_page as f64).ceil() as i64;
-
-    let reponse = ProgrammeTeleListeResponse {
-        programmes: programmes.iter().map(|p| p.to_response()).collect(),
-        total,
-        page,
-        par_page,
-        total_pages,
-    };
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(reponse),
-        error: None,
-    }))
-}
-
-// ── GET /api/television/programmes-vedettes/{id} ──────────────────────
-
-pub async fn obtenir_programme_vedette(
-    pool: web::Data<PgPool>,
-    chemin: web::Path<String>,
-) -> Result<HttpResponse, ApiErreur> {
-    let id_str = chemin.into_inner();
-    let programme_id = Uuid::parse_str(&id_str)
-        .map_err(|_| ApiErreur::Validation("ID de programme invalide".into()))?;
-
-    let query = format!(
-        "SELECT {}, p.nom AS pays_nom, c.nom AS chaine_nom
-         FROM media_content.programme_tele prt
-         LEFT JOIN shared.pays p ON p.id = prt.pays_id
-         LEFT JOIN media_content.chaine_tv c ON c.id = prt.chaine_id
-         WHERE prt.id = $1 AND prt.etat = 'publie' AND prt.deleted_at IS NULL",
-        PROGRAMME_TELE_COLONNES
-    );
-
-    let programme = sqlx::query_as::<_, ProgrammeTeleRow>(&query)
-        .bind(programme_id)
-        .fetch_optional(pool.get_ref())
-        .await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur lecture programme TV: {}", e)))?
-        .ok_or_else(|| ApiErreur::NonTrouve("Programme TV non trouvé".into()))?;
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(programme.to_response()),
-        error: None,
-    }))
-}
-
-// ── POST /api/television/programmes-vedettes ──────────────────────────
-
-pub async fn creer_programme_vedette(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-    body: web::Json<CreerProgrammeTeleForm>,
-) -> Result<HttpResponse, ApiErreur> {
-    let utilisateur_id = extraire_utilisateur_id(&req)
-        .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".into()))?;
-
-    // Validation
-    if body.nom_emission.trim().is_empty() {
-        return Err(ApiErreur::Validation("Le nom de l'émission est requis".into()));
-    }
-    if body.description.trim().is_empty() {
-        return Err(ApiErreur::Validation("La description est requise".into()));
-    }
-    if body.video_url.trim().is_empty() {
-        return Err(ApiErreur::Validation("L'URL de la vidéo est requise".into()));
-    }
-
-    let slug = generer_slug(&body.nom_emission);
-    let langue = body.langue.as_deref().unwrap_or("Français");
-    let est_international = body.est_international.unwrap_or(false);
-
-    // Résoudre pays_id si un nom de pays est fourni
-    let pays_id: Option<Uuid> = if let Some(ref pays_nom) = body.pays {
-        sqlx::query_scalar(
-            "SELECT id FROM shared.pays WHERE LOWER(nom) = LOWER($1)"
-        )
-        .bind(pays_nom)
-        .fetch_optional(pool.get_ref())
-        .await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur résolution pays: {}", e)))?
-    } else {
-        None
-    };
-
-    let programme_id = Uuid::new_v4();
-
-    // FAILLE FERMÉE (FR-031, FR-032) : cette route publique insérait
-    // `etat = 'publie'` en dur, sans contrôle de rôle — tout membre connecté
-    // publiait donc directement. Le contenu naît désormais en `'en_attente'`,
-    // invisible tant qu'un administrateur ne l'a pas validé. La voie de
-    // contribution nominale reste `POST /api/medias/propositions` (US4).
-    sqlx::query(
-        "INSERT INTO media_content.programme_tele
-            (id, nom_emission, slug, description, video_url, image_couverture_url,
-             info_animateur, info_producteur, pays_id, est_international, langue, chaine_id, etat, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'en_attente', $13)"
-    )
-    .bind(programme_id)
-    .bind(body.nom_emission.trim())
-    .bind(&slug)
-    .bind(body.description.trim())
-    .bind(body.video_url.trim())
-    .bind(body.image_couverture_url.as_deref().map(str::trim))
-    .bind(body.info_animateur.as_deref().map(str::trim))
-    .bind(body.info_producteur.as_deref().map(str::trim))
-    .bind(pays_id)
-    .bind(est_international)
-    .bind(langue)
-    .bind(body.chaine_id)
-    .bind(utilisateur_id)
-    .execute(pool.get_ref())
-    .await
-    .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur création programme TV: {}", e)))?;
-
-    // Récupérer le programme créé avec jointure pays + chaîne
-    let query = format!(
-        "SELECT {}, p.nom AS pays_nom, c.nom AS chaine_nom
-         FROM media_content.programme_tele prt
-         LEFT JOIN shared.pays p ON p.id = prt.pays_id
-         LEFT JOIN media_content.chaine_tv c ON c.id = prt.chaine_id
-         WHERE prt.id = $1",
-        PROGRAMME_TELE_COLONNES
-    );
-
-    let programme = sqlx::query_as::<_, ProgrammeTeleRow>(&query)
-        .bind(programme_id)
-        .fetch_one(pool.get_ref())
-        .await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur lecture programme créé: {}", e)))?;
-
-    Ok(HttpResponse::Created().json(ApiResponse {
-        success: true,
-        data: Some(programme.to_response()),
-        error: None,
-    }))
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PAGE TÉLÉ — VEDETTE ET SECTIONS (US1)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Jointures communes aux lectures de programmes télé : pays, chaîne (nom et
-/// slug, ce dernier servant les liens vers la page de détail) et libellé du
-/// thème phare — `theme_phare_id` étant une référence logique sans FK, seule
-/// une jointure explicite en rapporte le nom.
-const JOINTURES_PROGRAMME_TELE: &str =
-    "LEFT JOIN shared.pays p ON p.id = prt.pays_id
-     LEFT JOIN media_content.chaine_tv c ON c.id = prt.chaine_id
-     LEFT JOIN shared.categorie cat ON cat.id = prt.theme_phare_id";
-
-const CHAMPS_JOINTS_PROGRAMME_TELE: &str =
-    "p.nom AS pays_nom, c.nom AS chaine_nom, c.slug AS chaine_slug, cat.nom AS theme_phare_nom";
 
 // ── GET /api/television/vedette ───────────────────────────────────────
 
-/// Programme mis en avant sur toute la page Télé (FR-001).
+/// Vedette de toute la page Télé.
 ///
-/// Repli déterministe (FR-007) : faute de vedette désignée ET publiée, on sert
-/// le programme publié le plus récent, signalé par `est_repli`. Sans aucun
-/// programme publié, `data` vaut `null` — la page affiche alors son message
-/// d'état vide plutôt qu'un lecteur en erreur.
+/// Elle désigne une **unité diffusable** (FR-052) : l'épisode portant
+/// `a_la_une_globale`, accompagné de son programme et de sa chaîne. Repli
+/// déterministe faute de vedette désignée : l'épisode publié le plus récent,
+/// signalé par `est_repli`.
 pub async fn obtenir_vedette(
     req: HttpRequest,
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ApiErreur> {
     let moi = media_social::extraire_utilisateur_id(&req);
-    let requete_vedette = format!(
-        "SELECT {}, {}
-           FROM media_content.programme_tele prt
-           {}
-          WHERE prt.a_la_une_globale = TRUE
-            AND prt.etat = 'publie'
-            AND prt.deleted_at IS NULL
-          LIMIT 1",
-        PROGRAMME_TELE_COLONNES, CHAMPS_JOINTS_PROGRAMME_TELE, JOINTURES_PROGRAMME_TELE
+    let colonnes = colonnes_episode(TYPE_SUPPORT).expect("type de support constant");
+
+    let base = format!(
+        "SELECT {colonnes},
+                m.titre AS emission_titre, m.slug AS emission_slug,
+                m.cadence AS emission_cadence,
+                s.id AS support_id, s.nom AS support_nom, s.slug AS support_slug
+           FROM media_content.episode_tele ep
+           JOIN media_content.emission_tele m ON m.id = ep.emission_id AND m.deleted_at IS NULL
+           JOIN media_content.chaine_tv s ON s.id = m.chaine_id
+          WHERE ep.etat = 'publie' AND ep.deleted_at IS NULL
+            AND m.etat = 'publie' AND s.etat = 'publie' AND s.deleted_at IS NULL"
     );
 
-    let vedette = sqlx::query_as::<_, ProgrammeTeleRow>(&requete_vedette)
-        .fetch_optional(pool.get_ref())
-        .await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur lecture vedette télé: {}", e)))?;
+    let vedette = sqlx::query_as::<_, EpisodeRow>(&format!(
+        "{base} AND ep.a_la_une_globale = TRUE LIMIT 1"
+    ))
+    .fetch_optional(pool.get_ref())
+    .await?;
 
-    let (programme, est_repli) = match vedette {
-        Some(p) => (Some(p), false),
+    let (episode, est_repli) = match vedette {
+        Some(e) => (Some(e), false),
         None => {
-            let requete_repli = format!(
-                "SELECT {}, {}
-                   FROM media_content.programme_tele prt
-                   {}
-                  WHERE prt.etat = 'publie'
-                    AND prt.deleted_at IS NULL
-                    AND prt.video_url IS NOT NULL
-                  ORDER BY prt.created_at DESC
-                  LIMIT 1",
-                PROGRAMME_TELE_COLONNES, CHAMPS_JOINTS_PROGRAMME_TELE, JOINTURES_PROGRAMME_TELE
-            );
-            let repli = sqlx::query_as::<_, ProgrammeTeleRow>(&requete_repli)
-                .fetch_optional(pool.get_ref())
-                .await
-                .map_err(|e| {
-                    ApiErreur::BaseDeDonnees(format!("Erreur lecture repli vedette télé: {}", e))
-                })?;
+            let repli = sqlx::query_as::<_, EpisodeRow>(&format!(
+                "{base} AND ep.video_url IS NOT NULL ORDER BY ep.created_at DESC LIMIT 1"
+            ))
+            .fetch_optional(pool.get_ref())
+            .await?;
             (repli, true)
         }
     };
 
-    let data = match programme {
-        Some(p) => {
-            let mut reponse = p.to_response();
+    let data = match episode {
+        Some(row) => {
+            let mut reponse = row.to_response(TYPE_SUPPORT);
             let compteurs =
-                media_social::compteurs_pour(pool.get_ref(), "programme_tele", &[reponse.id], moi)
+                media_social::compteurs_pour(pool.get_ref(), "episode_tele", &[reponse.id], moi)
                     .await?;
             reponse.interactions = compteurs.get(&reponse.id).cloned();
-            Some(ProgrammeVedetteResponse {
-                programme: reponse,
+            Some(VedetteTeleResponse {
+                episode: reponse,
+                emission: None,
+                chaine: None,
                 est_repli,
             })
         }
@@ -573,11 +351,12 @@ pub async fn obtenir_vedette(
 
 // ── GET /api/television/sections ──────────────────────────────────────
 
-/// Une section par chaîne, prête à l'affichage (FR-004, FR-005, FR-008).
+/// Une section par chaîne, prête à l'affichage.
 ///
-/// Les sections sont paginées et chargées au défilement : servir d'un bloc les
-/// programmes de toutes les chaînes est précisément ce que la page faisait, et
-/// ce que FR-054 proscrit.
+/// **Aucune requête N+1** : les programmes de toutes les chaînes de la page sont
+/// chargés en une passe (fenêtre `ROW_NUMBER() OVER (PARTITION BY chaine)`),
+/// leurs aperçus d'épisodes en une seconde, et les compteurs d'interaction en
+/// deux — quel que soit le nombre de chaînes affichées (SC-010).
 pub async fn lister_sections(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -587,32 +366,34 @@ pub async fn lister_sections(
     let page = params.page.unwrap_or(1).max(1);
     let par_page = params.par_page.unwrap_or(6).clamp(1, 20);
     let offset = (page - 1) * par_page;
-    let contenus_par_section = params.contenus_par_section.unwrap_or(12).clamp(1, 30);
+    let emissions_par_section = params.contenus_par_section.unwrap_or(12).clamp(1, 30);
 
-    // Une chaîne sans aucun contenu publié ne donne pas de section (FR-008).
+    // Une chaîne dont aucun programme n'a d'épisode publié ne donne pas de
+    // section : elle n'aurait rien à montrer (FR-011).
     let mut conditions: Vec<String> = vec![
         "ct.etat = 'publie'".to_string(),
         "ct.deleted_at IS NULL".to_string(),
-        "EXISTS (SELECT 1 FROM media_content.programme_tele pt
-                  WHERE pt.chaine_id = ct.id
-                    AND pt.etat = 'publie'
-                    AND pt.deleted_at IS NULL)"
+        "EXISTS (SELECT 1 FROM media_content.emission_tele m
+                  JOIN media_content.episode_tele ep
+                    ON ep.emission_id = m.id AND ep.etat = 'publie' AND ep.deleted_at IS NULL
+                  WHERE m.chaine_id = ct.id
+                    AND m.etat = 'publie' AND m.deleted_at IS NULL)"
             .to_string(),
     ];
     let mut bind_index = 1u32;
     let mut bind_values: Vec<String> = Vec::new();
 
-    if let Some(ref categorie) = params.categorie {
-        if categorie != "Toutes les catégories" {
-            conditions.push(format!("ct.categorie::text = ${}", bind_index));
-            bind_values.push(mapper_categorie_chaine_db(categorie));
-            bind_index += 1;
-        }
+    if let Some(ref categorie) = params.categorie
+        && categorie != "Toutes les catégories"
+    {
+        conditions.push(format!("ct.categorie::text = ${}", bind_index));
+        bind_values.push(mapper_categorie_chaine_db(categorie));
+        bind_index += 1;
     }
 
     if let Some(ref pays) = params.pays {
-        // Le frontend envoie « Tous les territoires » : la terminologie d'affichage
-        // dit « territoire » là où le code et la base disent « pays ».
+        // Le frontend envoie « Tous les territoires » : la terminologie
+        // d'affichage dit « territoire » là où la base dit « pays ».
         if pays != "Tous les territoires" && pays != "Tous les pays" {
             conditions.push(format!(
                 "EXISTS (SELECT 1 FROM shared.pays p2 WHERE p2.id = ct.pays_id AND LOWER(p2.nom) = LOWER(${}))",
@@ -635,20 +416,62 @@ pub async fn lister_sections(
         }
     }
 
-    // « Chaînes thématiques » : le thème phare est porté par les PROGRAMMES, non
-    // par la chaîne. Une chaîne remonte donc dès qu'elle diffuse au moins un
-    // contenu publié sur ce thème — ses autres contenus restent affichés, la
-    // section décrivant la chaîne et non le thème.
+    // « Chaînes thématiques » : le thème phare est porté par les PROGRAMMES. Une
+    // chaîne remonte dès qu'elle diffuse au moins un programme publié sur ce
+    // thème — la section décrit la chaîne, pas le thème.
     if let Some(theme_id) = params.theme {
         conditions.push(format!(
-            "EXISTS (SELECT 1 FROM media_content.programme_tele pt2
-                      WHERE pt2.chaine_id = ct.id
-                        AND pt2.theme_phare_id = ${}::uuid
-                        AND pt2.etat = 'publie'
-                        AND pt2.deleted_at IS NULL)",
+            "EXISTS (SELECT 1 FROM media_content.emission_tele m2
+                      WHERE m2.chaine_id = ct.id
+                        AND m2.theme_phare_id = ${}::uuid
+                        AND m2.etat = 'publie'
+                        AND m2.deleted_at IS NULL)",
             bind_index
         ));
         bind_values.push(theme_id.to_string());
+        bind_index += 1;
+    }
+
+    // Thématiques DÉCLARÉES par la chaîne (US3), entendues comme un **OU** :
+    // la barre de filtres affiche un décompte par thème, cocher deux thèmes doit
+    // donc élargir la sélection, non la restreindre à leur intersection — qui
+    // serait vide presque à coup sûr.
+    //
+    // Un seul `EXISTS` sur `= ANY(...)` plutôt qu'un `EXISTS` par thème joint en
+    // AND : c'est ce qui porte le OU, et l'`EXISTS` garantit du même coup qu'une
+    // chaîne portant deux des thèmes demandés ne remonte qu'**une fois** (FR-030).
+    let thematiques_filtrees = thematiques_demandees(params.thematique.as_deref())?;
+    if !thematiques_filtrees.is_empty() {
+        conditions.push(format!(
+            "EXISTS (SELECT 1 FROM media_content.support_thematique st
+                      WHERE st.type_support = 'chaine_tv'
+                        AND st.support_id = ct.id
+                        AND st.categorie_id = ANY(${}::uuid[]))",
+            bind_index
+        ));
+        bind_values.push(format!(
+            "{{{}}}",
+            thematiques_filtrees
+                .iter()
+                .map(|id| id.to_string())
+                .collect::<Vec<_>>()
+                .join(",")
+        ));
+        bind_index += 1;
+    }
+
+    // Territoire couvert (US4) : les chaînes continentales remontent sur
+    // **chaque** territoire — c'est FR-036 en une clause.
+    if let Some(territoire) = params.territoire {
+        conditions.push(format!(
+            "(ct.couverture_continentale = TRUE
+              OR EXISTS (SELECT 1 FROM media_content.support_territoire ste
+                          WHERE ste.type_support = 'chaine_tv'
+                            AND ste.support_id = ct.id
+                            AND ste.pays_id = ${}::uuid))",
+            bind_index
+        ));
+        bind_values.push(territoire.to_string());
         bind_index += 1;
     }
 
@@ -656,15 +479,15 @@ pub async fn lister_sections(
         conditions.push("ct.est_en_direct = TRUE".to_string());
     }
 
-    if let Some(ref recherche) = params.recherche {
-        if !recherche.trim().is_empty() {
-            conditions.push(format!(
-                "(LOWER(ct.nom) LIKE LOWER(${bi}) OR LOWER(ct.description) LIKE LOWER(${bi}))",
-                bi = bind_index
-            ));
-            bind_values.push(format!("%{}%", recherche.trim()));
-            bind_index += 1;
-        }
+    if let Some(ref recherche) = params.recherche
+        && !recherche.trim().is_empty()
+    {
+        conditions.push(format!(
+            "(LOWER(ct.nom) LIKE LOWER(${bi}) OR LOWER(ct.description) LIKE LOWER(${bi}))",
+            bi = bind_index
+        ));
+        bind_values.push(format!("%{}%", recherche.trim()));
+        bind_index += 1;
     }
 
     let where_clause = conditions.join(" AND ");
@@ -682,8 +505,8 @@ pub async fn lister_sections(
         .await
         .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage sections télé: {}", e)))?;
 
-    // Ordre stable entre deux visites (FR-004) : le nom seul ne départage pas
-    // deux chaînes homonymes, d'où l'identifiant en second critère.
+    // Ordre stable entre deux visites : le nom seul ne départage pas deux
+    // chaînes homonymes, d'où l'identifiant en second critère.
     let query_chaines = format!(
         "SELECT {}, p.nom AS pays_nom
            FROM media_content.chaine_tv ct
@@ -708,71 +531,52 @@ pub async fn lister_sections(
         .await
         .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur listing sections télé: {}", e)))?;
 
-    // Contenus de chaque chaîne. Une requête par section, sur au plus `par_page`
-    // sections : le coût reste borné, et le SQL demeure lisible.
-    let requete_contenus = format!(
-        "SELECT {}, {}
-           FROM media_content.programme_tele prt
-           {}
-          WHERE prt.chaine_id = $1
-            AND prt.etat = 'publie'
-            AND prt.deleted_at IS NULL
-          ORDER BY prt.a_la_une DESC, prt.created_at DESC
-          LIMIT $2",
-        PROGRAMME_TELE_COLONNES, CHAMPS_JOINTS_PROGRAMME_TELE, JOINTURES_PROGRAMME_TELE
-    );
+    let ids: Vec<Uuid> = chaines.iter().map(|c| c.id).collect();
+    let mut par_chaine = emissions_publiees_par_supports(
+        pool.get_ref(),
+        TYPE_SUPPORT,
+        &ids,
+        emissions_par_section,
+    )
+    .await?;
 
     let mut sections: Vec<TeleSectionResponse> = Vec::with_capacity(chaines.len());
-
     for chaine in &chaines {
-        let total_contenus: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM media_content.programme_tele
-              WHERE chaine_id = $1 AND etat = 'publie' AND deleted_at IS NULL",
-        )
-        .bind(chaine.id)
-        .fetch_one(pool.get_ref())
-        .await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage contenus chaîne: {}", e)))?;
-
-        // +1 : le contenu mis en évidence est extrait de cette liste, la rangée
-        // doit malgré tout compter `contenus_par_section` éléments.
-        let contenus = sqlx::query_as::<_, ProgrammeTeleRow>(&requete_contenus)
-            .bind(chaine.id)
-            .bind(contenus_par_section + 1)
-            .fetch_all(pool.get_ref())
-            .await
-            .map_err(|e| {
-                ApiErreur::BaseDeDonnees(format!("Erreur lecture contenus chaîne: {}", e))
-            })?;
-
-        // `ORDER BY a_la_une DESC` place la mise en avant de la chaîne en tête ;
-        // à défaut, c'est le contenu le plus récent qui occupe la place (FR-005).
-        let mut iter = contenus.iter();
-        let mis_en_evidence = iter.next().map(|p| p.to_response());
-        let autres: Vec<_> = iter.map(|p| p.to_response()).collect();
+        let (emissions, total_emissions) = par_chaine.remove(&chaine.id).unwrap_or((Vec::new(), 0));
 
         // Résolution paresseuse de la grille : deux requêtes SQL, aucun état
-        // conservé, aucune tâche de fond (R7, FR-038).
+        // conservé, aucune tâche de fond.
         let diffusion = crate::handlers::media_programmation::diffusion_pour_support(
             pool.get_ref(),
-            "chaine_tv",
+            TYPE_SUPPORT,
             chaine.id,
         )
         .await?;
 
         sections.push(TeleSectionResponse {
             chaine: chaine.to_response(),
-            mis_en_evidence,
-            contenus: autres,
-            total_contenus,
+            emissions,
+            total_emissions,
             diffusion_en_cours: diffusion.diffusion_en_cours,
             creneau_suivant: diffusion.creneau_suivant,
         });
     }
 
-    // Compteurs d'interaction de TOUTE la page en deux requêtes — une par type
-    // de cible — plutôt qu'une par carte affichée (FR-027).
-    greffer_compteurs_sections(pool.get_ref(), &mut sections, moi).await?;
+    // Aperçus d'épisodes et compteurs de TOUTE la page, en un lot.
+    let mut toutes: Vec<&mut EmissionResponse> = sections
+        .iter_mut()
+        .flat_map(|s| s.emissions.iter_mut())
+        .collect();
+    greffer_apercus_et_compteurs(pool.get_ref(), TYPE_SUPPORT, &mut toutes, moi).await?;
+
+    let ids_chaines: Vec<Uuid> = sections.iter().map(|s| s.chaine.id).collect();
+    let compteurs_chaines =
+        media_social::compteurs_pour(pool.get_ref(), "chaine_tv", &ids_chaines, moi).await?;
+    for section in sections.iter_mut() {
+        section.chaine.interactions = compteurs_chaines.get(&section.chaine.id).cloned();
+    }
+
+    greffer_fiche_support_sections(pool.get_ref(), &mut sections).await?;
 
     let total_pages = (total as f64 / par_page as f64).ceil() as i64;
 
@@ -809,7 +613,7 @@ pub async fn obtenir_chaine_par_slug(
         CHAINE_TV_COLONNES
     );
 
-    // Un contenu retiré est indiscernable d'un contenu inexistant (FR-028).
+    // Un contenu retiré est indiscernable d'un contenu inexistant.
     let chaine = sqlx::query_as::<_, ChaineTvRow>(&query)
         .bind(&slug)
         .fetch_optional(pool.get_ref())
@@ -817,73 +621,151 @@ pub async fn obtenir_chaine_par_slug(
         .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur lecture chaîne TV: {}", e)))?
         .ok_or_else(|| ApiErreur::NonTrouve("Chaîne TV non trouvée".into()))?;
 
-    let mut reponse = chaine.to_response();
+    let mut reponses = vec![chaine.to_response()];
+    greffer_fiche_support(pool.get_ref(), &mut reponses).await?;
+    let mut reponse = reponses.pop().expect("une chaîne");
+
     let compteurs =
         media_social::compteurs_pour(pool.get_ref(), "chaine_tv", &[reponse.id], moi).await?;
     reponse.interactions = compteurs.get(&reponse.id).cloned();
 
+    // Les programmes de la chaîne, avec leur aperçu d'épisodes : la page déplie
+    // ainsi le catalogue à deux niveaux sans second appel.
+    let mut par_chaine =
+        emissions_publiees_par_supports(pool.get_ref(), TYPE_SUPPORT, &[reponse.id], 50).await?;
+    let (mut emissions, total_emissions) =
+        par_chaine.remove(&reponse.id).unwrap_or((Vec::new(), 0));
+    let mut refs: Vec<&mut EmissionResponse> = emissions.iter_mut().collect();
+    greffer_apercus_et_compteurs(pool.get_ref(), TYPE_SUPPORT, &mut refs, moi).await?;
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(reponse),
+        data: Some(serde_json::json!({
+            "chaine": reponse,
+            "emissions": emissions,
+            "total_emissions": total_emissions,
+        })),
         error: None,
     }))
 }
 
-// ── GET /api/television/programmes-slug/{slug} ───────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// PROGRAMMES ET ÉPISODES
+// ═══════════════════════════════════════════════════════════════════════════
 
-pub async fn obtenir_programme_par_slug(
+// ── GET /api/television/emissions/slug/{slug} ─────────────────────────
+
+pub async fn obtenir_emission_slug(
     req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<String>,
 ) -> Result<HttpResponse, ApiErreur> {
     let slug = chemin.into_inner();
     let moi = media_social::extraire_utilisateur_id(&req);
-
-    let query = format!(
-        "SELECT {}, {}
-           FROM media_content.programme_tele prt
-           {}
-          WHERE prt.slug = $1 AND prt.etat = 'publie' AND prt.deleted_at IS NULL",
-        PROGRAMME_TELE_COLONNES, CHAMPS_JOINTS_PROGRAMME_TELE, JOINTURES_PROGRAMME_TELE
-    );
-
-    let programme = sqlx::query_as::<_, ProgrammeTeleRow>(&query)
-        .bind(&slug)
-        .fetch_optional(pool.get_ref())
-        .await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur lecture programme télé: {}", e)))?
-        .ok_or_else(|| ApiErreur::NonTrouve("Programme télé non trouvé".into()))?;
-
-    let mut reponse = programme.to_response();
-    let compteurs =
-        media_social::compteurs_pour(pool.get_ref(), "programme_tele", &[reponse.id], moi).await?;
-    reponse.interactions = compteurs.get(&reponse.id).cloned();
+    let emission = obtenir_emission_par_slug(pool.get_ref(), TYPE_SUPPORT, &slug, moi).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(reponse),
+        data: Some(emission),
+        error: None,
+    }))
+}
+
+// ── GET /api/television/emissions/{id}/episodes ───────────────────────
+
+#[derive(serde::Deserialize)]
+pub struct PaginationEpisodes {
+    pub page: Option<i64>,
+    pub taille: Option<i64>,
+}
+
+pub async fn lister_episodes_publics(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    params: web::Query<PaginationEpisodes>,
+) -> Result<HttpResponse, ApiErreur> {
+    let emission_id = chemin.into_inner();
+    let moi = media_social::extraire_utilisateur_id(&req);
+    let page = params.page.unwrap_or(1).max(1);
+    let taille = params.taille.unwrap_or(24).clamp(1, 100);
+
+    let data = lister_episodes_emission(
+        pool.get_ref(),
+        TYPE_SUPPORT,
+        emission_id,
+        page,
+        taille,
+        moi,
+    )
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(data),
+        error: None,
+    }))
+}
+
+// ── GET /api/television/episodes/slug/{slug} ──────────────────────────
+
+/// Remplace `GET /api/television/programmes-slug/{slug}`. Les slugs ayant été
+/// conservés par 09q, les adresses publiques existantes continuent de résoudre
+/// (FR-056) et affichent désormais la page d'épisode.
+pub async fn obtenir_episode_slug(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<String>,
+) -> Result<HttpResponse, ApiErreur> {
+    let slug = chemin.into_inner();
+    let moi = media_social::extraire_utilisateur_id(&req);
+    let data = obtenir_episode_par_slug(pool.get_ref(), TYPE_SUPPORT, &slug, moi).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(data),
         error: None,
     }))
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// UTILITAIRES (pays, catégories, stats)
+// RÉFÉRENTIELS DE FILTRE ET STATS
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ── GET /api/television/pays ──────────────────────────────────────────
+// ── GET /api/television/thematiques ───────────────────────────────────
 
-pub async fn lister_pays_television(
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, ApiErreur> {
+pub async fn lister_thematiques(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
+    let data = thematiques_disponibles(pool.get_ref(), TYPE_SUPPORT).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(data),
+        error: None,
+    }))
+}
+
+// ── GET /api/television/territoires ───────────────────────────────────
+
+pub async fn lister_territoires(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
+    let data = territoires_disponibles(pool.get_ref(), TYPE_SUPPORT).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(data),
+        error: None,
+    }))
+}
+
+// ── GET /api/television/pays ──────────────────────────────────────────
+//
+// Conservé le temps du portage frontend, puis retiré au profit de
+// `/territoires` : il n'expose que le pays unique de la chaîne.
+
+pub async fn lister_pays_television(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
     let pays: Vec<String> = sqlx::query_scalar(
         "SELECT DISTINCT p.nom
-         FROM (
-             SELECT pays_id FROM media_content.chaine_tv WHERE etat = 'publie' AND deleted_at IS NULL AND pays_id IS NOT NULL
-             UNION
-             SELECT pays_id FROM media_content.programme_tele WHERE etat = 'publie' AND deleted_at IS NULL AND pays_id IS NOT NULL
-         ) sub
-         JOIN shared.pays p ON p.id = sub.pays_id
-         ORDER BY p.nom ASC"
+           FROM media_content.chaine_tv ct
+           JOIN shared.pays p ON p.id = ct.pays_id
+          WHERE ct.etat = 'publie' AND ct.deleted_at IS NULL AND ct.pays_id IS NOT NULL
+          ORDER BY p.nom ASC",
     )
     .fetch_all(pool.get_ref())
     .await
@@ -896,112 +778,93 @@ pub async fn lister_pays_television(
     }))
 }
 
-// ── GET /api/television/categories ────────────────────────────────────
-
-pub async fn lister_categories_television(
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, ApiErreur> {
-    let categories_db: Vec<String> = sqlx::query_scalar(
-        "SELECT DISTINCT categorie::text
-         FROM media_content.chaine_tv
-         WHERE etat = 'publie' AND deleted_at IS NULL
-         ORDER BY categorie ASC"
-    )
-    .fetch_all(pool.get_ref())
-    .await
-    .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur listing catégories TV: {}", e)))?;
-
-    let categories: Vec<String> = categories_db
-        .iter()
-        .map(|c| mapper_categorie_chaine_frontend(c))
-        .collect();
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(categories),
-        error: None,
-    }))
-}
-
 // ── GET /api/television/stats ─────────────────────────────────────────
 
-pub async fn obtenir_stats_television(
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, ApiErreur> {
+pub async fn obtenir_stats_television(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
     let nombre_chaines: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM media_content.chaine_tv WHERE etat = 'publie' AND deleted_at IS NULL"
+        "SELECT COUNT(*) FROM media_content.chaine_tv WHERE etat = 'publie' AND deleted_at IS NULL",
     )
     .fetch_one(pool.get_ref())
-    .await
-    .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage chaînes: {}", e)))?;
+    .await?;
 
     let nombre_pays: i64 = sqlx::query_scalar(
-        "SELECT COUNT(DISTINCT pays_id) FROM media_content.chaine_tv WHERE etat = 'publie' AND deleted_at IS NULL AND pays_id IS NOT NULL"
+        "SELECT COUNT(DISTINCT pays_id) FROM media_content.chaine_tv
+          WHERE etat = 'publie' AND deleted_at IS NULL AND pays_id IS NOT NULL",
     )
     .fetch_one(pool.get_ref())
-    .await
-    .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage pays: {}", e)))?;
+    .await?;
 
+    // Le décompte annoncé porte sur les PROGRAMMES : c'est l'unité que le
+    // public parcourt désormais, l'épisode n'étant qu'un élément de série.
     let nombre_programmes: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM media_content.programme_tele WHERE etat = 'publie' AND deleted_at IS NULL"
+        "SELECT COUNT(*) FROM media_content.emission_tele
+          WHERE etat = 'publie' AND deleted_at IS NULL",
     )
     .fetch_one(pool.get_ref())
-    .await
-    .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage programmes: {}", e)))?;
+    .await?;
 
     let nombre_chaines_en_direct: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM media_content.chaine_tv WHERE etat = 'publie' AND deleted_at IS NULL AND est_en_direct = true"
+        "SELECT COUNT(*) FROM media_content.chaine_tv
+          WHERE etat = 'publie' AND deleted_at IS NULL AND est_en_direct = true",
     )
     .fetch_one(pool.get_ref())
-    .await
-    .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage en direct: {}", e)))?;
-
-    let stats = TelevisionStats {
-        nombre_chaines,
-        nombre_pays,
-        nombre_programmes,
-        nombre_chaines_en_direct,
-    };
+    .await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(stats),
+        data: Some(TelevisionStats {
+            nombre_chaines,
+            nombre_pays,
+            nombre_programmes,
+            nombre_chaines_en_direct,
+        }),
         error: None,
     }))
 }
 
-/// Greffe les compteurs d'interaction sur toutes les cartes d'un lot de
-/// sections : deux requêtes au total (chaînes d'une part, programmes de
-/// l'autre), quel que soit le nombre de cartes affichées.
-async fn greffer_compteurs_sections(
+// ═══════════════════════════════════════════════════════════════════════════
+// Greffes de fiche support (thématiques et couverture)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Deux requêtes pour toute une liste — jamais une par chaîne.
+async fn greffer_fiche_support(
     pool: &PgPool,
-    sections: &mut [TeleSectionResponse],
-    moi: Option<Uuid>,
+    chaines: &mut [ChaineTvResponse],
 ) -> Result<(), ApiErreur> {
-    let ids_chaines: Vec<Uuid> = sections.iter().map(|s| s.chaine.id).collect();
-    let ids_programmes: Vec<Uuid> = sections
-        .iter()
-        .flat_map(|s| {
-            s.mis_en_evidence
-                .iter()
-                .map(|p| p.id)
-                .chain(s.contenus.iter().map(|p| p.id))
-        })
-        .collect();
+    let ids: Vec<Uuid> = chaines.iter().map(|c| c.id).collect();
+    if ids.is_empty() {
+        return Ok(());
+    }
+    let thematiques = thematiques_par_supports(pool, TYPE_SUPPORT, &ids).await?;
+    let couvertures = couverture_par_supports(pool, TYPE_SUPPORT, &ids).await?;
 
-    let compteurs_chaines =
-        media_social::compteurs_pour(pool, "chaine_tv", &ids_chaines, moi).await?;
-    let compteurs_programmes =
-        media_social::compteurs_pour(pool, "programme_tele", &ids_programmes, moi).await?;
-
-    for section in sections.iter_mut() {
-        section.chaine.interactions = compteurs_chaines.get(&section.chaine.id).cloned();
-        if let Some(ref mut p) = section.mis_en_evidence {
-            p.interactions = compteurs_programmes.get(&p.id).cloned();
-        }
-        for p in section.contenus.iter_mut() {
-            p.interactions = compteurs_programmes.get(&p.id).cloned();
-        }
+    for chaine in chaines.iter_mut() {
+        chaine.thematiques = thematiques.get(&chaine.id).cloned().unwrap_or_default();
+        chaine.couverture = couvertures.get(&chaine.id).cloned();
     }
     Ok(())
 }
+
+async fn greffer_fiche_support_sections(
+    pool: &PgPool,
+    sections: &mut [TeleSectionResponse],
+) -> Result<(), ApiErreur> {
+    let ids: Vec<Uuid> = sections.iter().map(|s| s.chaine.id).collect();
+    if ids.is_empty() {
+        return Ok(());
+    }
+    let thematiques = thematiques_par_supports(pool, TYPE_SUPPORT, &ids).await?;
+    let couvertures = couverture_par_supports(pool, TYPE_SUPPORT, &ids).await?;
+
+    for section in sections.iter_mut() {
+        section.chaine.thematiques = thematiques
+            .get(&section.chaine.id)
+            .cloned()
+            .unwrap_or_default();
+        section.chaine.couverture = couvertures.get(&section.chaine.id).cloned();
+    }
+    Ok(())
+}
+
+/// Réexport : les épisodes se trient partout dans le même ordre.
+pub const ORDRE_EPISODES_TELE: &str = ORDRE_EPISODES;

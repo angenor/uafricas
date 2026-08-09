@@ -1,15 +1,18 @@
 <script setup lang="ts">
 /**
- * Section d'une chaîne sur la page Télé (FR-005, FR-006, FR-022).
+ * Section d'une chaîne sur la page Télé.
  *
- * Bloc empilé de hauteur naturelle : identité de la chaîne, bandeau du contenu
- * mis en évidence, puis rangée horizontale de ses autres contenus.
+ * Bloc empilé de hauteur naturelle : identité de la chaîne, bandeau de
+ * l'épisode joué, puis **une rangée par programme** — et non plus une vignette
+ * par vidéo (feature 009, US1 §3). Chaque rangée annonce le nombre d'épisodes
+ * du programme et mène à sa page.
  *
  * Le lecteur n'est monté qu'une fois la section approchée du cadre : cinquante
  * sections montées d'emblée déclencheraient autant de chargements de médias
- * pour des contenus jamais vus (FR-054, SC-011).
+ * pour des contenus jamais vus.
  */
-import type { TeleSection, TvProgram } from '~/composables/useTelevision'
+import type { TeleSection, TvEmission, TvProgram } from '~/composables/useTelevision'
+import { LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
 import { LIBELLES_ROLE_DETENTEUR, type RoleDetenteur } from '~/composables/useMediaDetention'
 
 const props = defineProps<{
@@ -25,9 +28,20 @@ const props = defineProps<{
 const racine = ref<HTMLElement | null>(null)
 const { aEteVisible } = useObservateurVisibilite(racine)
 
-/** Contenu joué dans le bandeau : le mis en évidence, sauf choix contraire. */
+/**
+ * Épisode joué dans le bandeau. À défaut de choix, le plus récent du premier
+ * programme : la section doit montrer quelque chose sans attendre un clic.
+ */
 const contenuActif = ref<TvProgram | null>(null)
-const contenuAffiche = computed(() => contenuActif.value ?? props.section.misEnEvidence)
+const contenuAffiche = computed<TvProgram | null>(
+  () => contenuActif.value ?? props.section.emissions[0]?.episodes[0] ?? null,
+)
+
+/** Programme auquel appartient l'épisode joué — il nomme la série au-dessus du titre. */
+const emissionAffichee = computed<TvEmission | null>(() => {
+  const id = contenuAffiche.value?.emissionId
+  return id ? (props.section.emissions.find(e => e.id === id) ?? null) : null
+})
 
 const lire = (contenu: TvProgram) => {
   contenuActif.value = contenu
@@ -43,8 +57,14 @@ const lienChaine = computed(() =>
   props.section.chaine.slug ? `/medias/chaines/${props.section.chaine.slug}` : null,
 )
 
+// Les épisodes restent à `/medias/programmes-tele/<slug>` : les slugs ayant été
+// conservés par la migration 09q, les adresses déjà indexées continuent de
+// résoudre (FR-056).
 const lienContenu = (contenu: TvProgram) =>
   contenu.slug ? `/medias/programmes-tele/${contenu.slug}` : null
+
+const lienEmission = (emission: TvEmission) =>
+  emission.slug ? `/medias/emissions-tele/${emission.slug}` : null
 
 const { redirigerVersConnexion } = useAuth()
 const showPartage = ref(false)
@@ -85,10 +105,8 @@ const lienGestion = computed(() =>
   props.monRole ? `/mon-compte/mes-supports?support=${props.section.chaine.id}` : null,
 )
 
-/** Les contenus de la rangée, hors celui qui occupe déjà le bandeau. */
-const contenusRangee = computed(() =>
-  props.section.contenus.filter(c => c.id !== contenuAffiche.value?.id),
-)
+/** Les programmes qui ont au moins un épisode à montrer. */
+const programmes = computed(() => props.section.emissions.filter(e => e.episodes.length > 0))
 </script>
 
 <template>
@@ -135,7 +153,7 @@ const contenusRangee = computed(() =>
       </div>
       <div class="shrink-0 flex items-center gap-3">
         <span class="text-xs text-gray-500 hidden sm:block">
-          {{ section.totalContenus }} contenu{{ section.totalContenus > 1 ? 's' : '' }}
+          {{ section.totalEmissions }} programme{{ section.totalEmissions > 1 ? 's' : '' }}
         </span>
 
         <!-- Le détenteur retrouve sa chaîne dans la vitrine : la gestion se
@@ -193,11 +211,25 @@ const contenusRangee = computed(() =>
           >
             À la une
           </span>
-          <span v-if="contenuAffiche.themePhare" class="text-xs text-gray-400">
-            {{ contenuAffiche.themePhare }}
+          <span v-if="emissionAffichee?.themePhare" class="text-xs text-gray-400">
+            {{ emissionAffichee.themePhare }}
           </span>
         </div>
-        <h3 class="text-white text-lg sm:text-xl font-bold mb-2">{{ contenuAffiche.title }}</h3>
+        <!-- La série avant l'épisode : le visiteur doit savoir ce qu'il regarde
+             AVANT de savoir quel numéro c'est (US1 §4). -->
+        <NuxtLink
+          v-if="emissionAffichee && lienEmission(emissionAffichee)"
+          :to="lienEmission(emissionAffichee)!"
+          class="text-yellow-400 text-sm font-semibold hover:underline mb-1"
+        >
+          {{ emissionAffichee.titre }}
+        </NuxtLink>
+        <h3 class="text-white text-lg sm:text-xl font-bold mb-2">
+          <span v-if="contenuAffiche.numeroEpisode" class="text-gray-400 font-normal">
+            Épisode {{ contenuAffiche.numeroEpisode }} —
+          </span>
+          {{ contenuAffiche.title }}
+        </h3>
         <p v-if="contenuAffiche.description" class="text-gray-400 text-sm line-clamp-4 mb-4">
           {{ contenuAffiche.description }}
         </p>
@@ -216,7 +248,7 @@ const contenusRangee = computed(() =>
         <MediaReactionsBar
           compact
           class="mt-4"
-          type-media="programme_tele"
+          type-media="episode_tele"
           :media-id="contenuAffiche.id"
           :nombre-likes="contenuAffiche.interactions?.nombre_likes ?? 0"
           :nombre-dislikes="contenuAffiche.interactions?.nombre_dislikes ?? 0"
@@ -230,19 +262,39 @@ const contenusRangee = computed(() =>
       </div>
     </div>
 
-    <!-- Rangée des autres contenus de la chaîne -->
-    <MediaRangeeContenus v-if="contenusRangee.length" titre="Autres contenus">
-      <MediaCarteContenu
-        v-for="contenu in contenusRangee"
-        :key="contenu.id"
-        :titre="contenu.title"
-        :image="contenu.banner"
-        :description="contenu.description"
-        :a-la-une="contenu.aLaUne"
-        :lien="lienContenu(contenu)"
-        @lire="lire(contenu)"
-      />
-    </MediaRangeeContenus>
+    <!-- Une rangée PAR PROGRAMME (US1 §3) : le catalogue se lit à deux
+         niveaux, la série puis ses épisodes. -->
+    <div v-for="emission in programmes" :key="emission.id" class="mb-6">
+      <MediaRangeeContenus :titre="emission.titre">
+        <template #entete>
+          <div class="flex items-center gap-3 text-xs text-gray-400">
+            <span>
+              {{ emission.nombreEpisodes }} épisode{{ emission.nombreEpisodes > 1 ? 's' : '' }}
+            </span>
+            <span v-if="emission.cadence !== 'ponctuelle'">
+              · {{ LIBELLES_CADENCE[emission.cadence] }}
+            </span>
+            <NuxtLink
+              v-if="lienEmission(emission)"
+              :to="lienEmission(emission)!"
+              class="text-yellow-400 hover:underline"
+            >
+              Tout voir
+            </NuxtLink>
+          </div>
+        </template>
+        <MediaCarteContenu
+          v-for="contenu in emission.episodes"
+          :key="contenu.id"
+          :titre="contenu.title"
+          :image="contenu.banner"
+          :description="contenu.description"
+          :a-la-une="contenu.aLaUne"
+          :lien="lienContenu(contenu)"
+          @lire="lire(contenu)"
+        />
+      </MediaRangeeContenus>
+    </div>
 
     <!-- S'engager auprès de la chaîne (US6, FR-044, FR-045) -->
     <div class="flex flex-wrap gap-3 mt-6">
@@ -265,7 +317,7 @@ const contenusRangee = computed(() =>
       <!-- Signaler le contenu mis en évidence (US7, FR-049) -->
       <MediaSignalerBouton
         v-if="contenuAffiche"
-        type-media="programme_tele"
+        type-media="episode_tele"
         :media-id="contenuAffiche.id"
         :titre="contenuAffiche.title"
         variante="pilule"
@@ -276,7 +328,7 @@ const contenusRangee = computed(() =>
       v-if="contenuAffiche"
       :is-open="showPartage"
       :titre="contenuAffiche.title"
-      type-media="programme_tele"
+      type-media="episode_tele"
       :media-id="contenuAffiche.id"
       :url-detail="lienContenu(contenuAffiche) ?? undefined"
       @close="showPartage = false"
