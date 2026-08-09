@@ -72,9 +72,19 @@ services:
     container_name: uafricas_frontend
     restart: unless-stopped
     environment:
-      # Les composables incluent deja /api/ dans leurs URLs
-      NUXT_PUBLIC_API_BASE_URL: ""
-      # URL interne pour les appels SSR (Docker → backend directement, sans passer par nginx/internet)
+      # Base absolue et NON vide : les composables incluent deja /api/ dans leurs
+      # URLs, mais un prefixe vide ne marche que dans le navigateur. Cote SSR, le
+      # meme `$fetch('/api/...')` est resolu par Nitro contre LUI-MEME, qui n'a
+      # aucune route /api : toutes les pages de detail rendues au serveur
+      # (useAsyncData) tombaient donc sur leur branche « introuvable », et leurs
+      # balises Open Graph sortaient vides — precisement ce pour quoi ces pages
+      # existent. Le conteneur atteint bien ce domaine (verifie).
+      NUXT_PUBLIC_API_BASE_URL: "https://www.africans-world.org"
+      # URL interne, plus directe pour le SSR (Docker → backend, sans nginx ni
+      # TLS). ⚠️ Une seule page la lit aujourd'hui (retrouve-amis/public/[slug]) :
+      # les ~50 composables lisent `config.public.apiBaseUrl`. Tant qu'ils n'ont
+      # pas ete portes sur un helper commun, c'est la variable ci-dessus qui fait
+      # foi, et celle-ci reste sans effet general.
       NUXT_SSR_API_BASE_URL: "http://uafricas_backend:8080"
       # ICE servers pour les appels P2P (PeerJS/WebRTC) : STUN public + TURN auto-heberge
       # (coturn ci-dessous). Le TURN est INDISPENSABLE en prod pour les pairs derriere
