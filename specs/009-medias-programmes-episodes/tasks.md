@@ -285,7 +285,7 @@ n'entraîne pas celle de l'autre.
 - [X] T109 Retirer `GET /api/television/categories` et `GET /api/television/pays` de `uafricas_backend/src/routes.rs` une fois le portage frontend confirmé, ainsi que la route jetable `POST /api/admin/medias/rapport-reprise`
 - [X] T110 **Décision : conservées, elles ne sont pas muettes.** `chaine_tv.categorie` sert le filtre « Catégorie » du back-office ; `chaine_tv.pays_id` et `station_radio.pays_id` portent le **siège** du support, distinct de sa **couverture** (09r) — le siège dit d'où l'on émet, la couverture où l'on rayonne, et une chaîne panafricaine n'a qu'un siège ; `station_radio.genre` et `genres_liste` décrivent la couleur d'antenne, là où la thématique est déclarée par le support. Aucune migration de nettoyage. Décider du sort des colonnes devenues muettes du schéma `uafricas_backend/doc/bd/schemas/09_media_content.sql` (`chaine_tv.categorie`, `chaine_tv.pays_id`, `station_radio.genre`, `genres_liste`, `pays_id`) : les conserver ou les retirer dans une migration de nettoyage ultérieure, et consigner la décision
 - [X] T111 Mettre à jour la section « Recent Changes » de `CLAUDE.md` — **une ligne**, citant les migrations `09q` et `09r` et les modules clés, conformément à la règle d'auto-maintenance du fichier
-- [ ] T112 Appliquer `09q` et `09r` en production via SSH+psql après `./deploy.sh update`, puis exécuter le rapport de reprise et traiter les supports listés sans thématique ni couverture
+- [X] T112 Appliquer `09q` et `09r` en production via SSH+psql après `./deploy.sh update`, puis exécuter le rapport de reprise et traiter les supports listés sans thématique ni couverture
 
 ---
 
