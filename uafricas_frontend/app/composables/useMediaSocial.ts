@@ -7,7 +7,13 @@
 // La LECTURE est publique ; le JWT n'est indispensable qu'aux mutations, mais
 // il est envoyé dès qu'il existe pour renseigner `maReaction`.
 
-export type TypeMedia = 'chaine_tv' | 'station_radio' | 'programme_tele' | 'programme_radio'
+export type TypeMedia =
+  | 'chaine_tv'
+  | 'station_radio'
+  | 'emission_tele'
+  | 'emission_radio'
+  | 'episode_tele'
+  | 'episode_radio'
 export type TypeReaction = 'like' | 'dislike'
 
 export interface CompteursInteraction {
@@ -102,8 +108,10 @@ export const MOTIFS_SIGNALEMENT_MEDIA: { value: string, label: string }[] = [
 export const LIBELLES_TYPE_MEDIA: Record<TypeMedia, string> = {
   chaine_tv: 'une chaîne de télévision',
   station_radio: 'une station de radio',
-  programme_tele: 'une émission de télévision',
-  programme_radio: 'une émission de radio',
+  emission_tele: 'un programme de télévision',
+  emission_radio: 'un programme de radio',
+  episode_tele: 'un épisode de télévision',
+  episode_radio: 'un épisode de radio',
 }
 
 export const useMediaSocial = () => {

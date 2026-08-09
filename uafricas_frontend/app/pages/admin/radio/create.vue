@@ -1,25 +1,38 @@
 <script setup lang="ts">
+/**
+ * Création d'une **station de radio**. Les émissions ont quitté cet écran avec
+ * la migration 09q : elles vivent sur `/admin/medias/emissions`, communes aux
+ * deux familles.
+ *
+ * Thématiques et couverture s'écrivent **après** la création — elles portent
+ * sur un support qui n'existe pas encore au moment de la saisie.
+ */
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
-const route = useRoute()
 const router = useRouter()
-const type = computed(() => (route.query.type as string) || 'stations')
 
 const {
-  creerStation, creerProgramme, listerToutesStations, loading, error,
+  creerStation, loading, error,
   ORIGINES_PUBLICATION_RADIO, ROLES_PARTIE_PRENANTE_RADIO,
 } = useAdminRadio()
 const { listerPays } = useCentresCulturels()
+const { listerReferentielsEdition, definirThematiques, definirCouverture } = useMediaSupport()
 
 const erreurLocale = ref<string | null>(null)
 
-// Stations disponibles pour rattacher une émission (brouillons inclus)
-const stationsDisponibles = ref<{ id: string; nom: string }[]>([])
 const paysDisponibles = ref<{ id: string; nom: string }[]>([])
+const thematiquesRef = ref<{ id: string; nom: string }[]>([])
+const territoiresRef = ref<{ id: string; nom: string }[]>([])
+
+const thematiquesChoisies = ref<string[]>([])
+const couvertureContinentale = ref(false)
+const territoiresChoisis = ref<string[]>([])
+
 onMounted(async () => {
-  const [stations, pays] = await Promise.all([listerToutesStations(), listerPays()])
-  stationsDisponibles.value = stations
+  const [pays, referentiels] = await Promise.all([listerPays(), listerReferentielsEdition()])
   paysDisponibles.value = pays
+  thematiquesRef.value = referentiels.thematiques
+  territoiresRef.value = referentiels.territoires
 })
 
 // Station form
@@ -40,74 +53,55 @@ const ajouterGenre = () => {
 }
 const retirerGenre = (i: number) => stationForm.genres_liste.splice(i, 1)
 
-// Émission radio form
-const programmeForm = reactive({
-  nom_emission: '', description: '', image_couverture_url: '', audio_url: '',
-  info_animateur: '', info_producteur: '', pays_id: '', est_international: false,
-  langue: '', categorie_radio: '', station_id: '', a_la_une: false,
-})
-
-const titreMap: Record<string, string> = { stations: 'Nouvelle station radio', programmes: 'Nouvelle émission radio' }
-const sousTitreMap: Record<string, string> = { stations: 'Créer une station de radio', programmes: 'Créer une émission radio' }
-
 const soumettre = async () => {
   erreurLocale.value = null
   try {
-    if (type.value === 'stations') {
-      if (!stationForm.nom.trim()) { erreurLocale.value = 'Le nom de la station est requis'; return }
-      if (!stationForm.audio_url.trim() && !stationForm.stream_url.trim()) {
-        erreurLocale.value = 'Fournissez un fichier/lien audio ou une URL de flux live'; return
-      }
-      if (stationForm.role_partie_prenante === 'autre' && !stationForm.role_partie_prenante_autre.trim()) {
-        erreurLocale.value = 'Précisez le rôle lorsque « Autre » est sélectionné'; return
-      }
-      const body: any = {
-        nom: stationForm.nom.trim(),
-        type_station: stationForm.type_station,
-        a_la_une: stationForm.a_la_une,
-        origine_publication: stationForm.origine_publication,
-      }
-      if (stationForm.role_partie_prenante) {
-        body.role_partie_prenante = stationForm.role_partie_prenante
-        if (stationForm.role_partie_prenante === 'autre') body.role_partie_prenante_autre = stationForm.role_partie_prenante_autre.trim()
-      }
-      if (stationForm.stream_url.trim()) body.stream_url = stationForm.stream_url.trim()
-      if (stationForm.audio_url.trim()) body.audio_url = stationForm.audio_url.trim()
-      if (stationForm.description.trim()) body.description = stationForm.description.trim()
-      if (stationForm.image_couverture_url.trim()) body.image_couverture_url = stationForm.image_couverture_url.trim()
-      if (stationForm.genre.trim()) body.genre = stationForm.genre.trim()
-      if (stationForm.genres_liste.length) body.genres_liste = stationForm.genres_liste
-      if (stationForm.pays_id) body.pays_id = stationForm.pays_id
-      if (stationForm.ville.trim()) body.ville = stationForm.ville.trim()
-      // Les contacts partent tels quels : le serveur les nettoie et préfixe
-      // le site web, un champ vide y devenant NULL.
-      body.contact_email = stationForm.contact_email.trim()
-      body.contact_telephone = stationForm.contact_telephone.trim()
-      body.contact_whatsapp = stationForm.contact_whatsapp.trim()
-      body.contact_site_web = stationForm.contact_site_web.trim()
-      body.contact_adresse = stationForm.contact_adresse.trim()
-      await creerStation(body)
-      router.push('/admin/radio?type=stations')
+    if (!stationForm.nom.trim()) { erreurLocale.value = 'Le nom de la station est requis'; return }
+    if (!stationForm.audio_url.trim() && !stationForm.stream_url.trim()) {
+      erreurLocale.value = 'Fournissez un fichier/lien audio ou une URL de flux live'; return
     }
-    else {
-      if (!programmeForm.nom_emission.trim()) { erreurLocale.value = "Le nom de l'émission est requis"; return }
-      const body: any = {
-        nom_emission: programmeForm.nom_emission.trim(),
-        est_international: programmeForm.est_international,
-        a_la_une: programmeForm.station_id ? programmeForm.a_la_une : false,
-      }
-      if (programmeForm.description.trim()) body.description = programmeForm.description.trim()
-      if (programmeForm.image_couverture_url.trim()) body.image_couverture_url = programmeForm.image_couverture_url.trim()
-      if (programmeForm.audio_url.trim()) body.audio_url = programmeForm.audio_url.trim()
-      if (programmeForm.info_animateur.trim()) body.info_animateur = programmeForm.info_animateur.trim()
-      if (programmeForm.info_producteur.trim()) body.info_producteur = programmeForm.info_producteur.trim()
-      if (programmeForm.pays_id) body.pays_id = programmeForm.pays_id
-      if (programmeForm.langue.trim()) body.langue = programmeForm.langue.trim()
-      if (programmeForm.categorie_radio) body.categorie_radio = programmeForm.categorie_radio
-      if (programmeForm.station_id) body.station_id = programmeForm.station_id
-      await creerProgramme(body)
-      router.push('/admin/radio?type=programmes')
+    if (stationForm.role_partie_prenante === 'autre' && !stationForm.role_partie_prenante_autre.trim()) {
+      erreurLocale.value = 'Précisez le rôle lorsque « Autre » est sélectionné'; return
     }
+    const body: any = {
+      nom: stationForm.nom.trim(),
+      type_station: stationForm.type_station,
+      a_la_une: stationForm.a_la_une,
+      origine_publication: stationForm.origine_publication,
+    }
+    if (stationForm.role_partie_prenante) {
+      body.role_partie_prenante = stationForm.role_partie_prenante
+      if (stationForm.role_partie_prenante === 'autre') body.role_partie_prenante_autre = stationForm.role_partie_prenante_autre.trim()
+    }
+    if (stationForm.stream_url.trim()) body.stream_url = stationForm.stream_url.trim()
+    if (stationForm.audio_url.trim()) body.audio_url = stationForm.audio_url.trim()
+    if (stationForm.description.trim()) body.description = stationForm.description.trim()
+    if (stationForm.image_couverture_url.trim()) body.image_couverture_url = stationForm.image_couverture_url.trim()
+    if (stationForm.genre.trim()) body.genre = stationForm.genre.trim()
+    if (stationForm.genres_liste.length) body.genres_liste = stationForm.genres_liste
+    if (stationForm.pays_id) body.pays_id = stationForm.pays_id
+    if (stationForm.ville.trim()) body.ville = stationForm.ville.trim()
+    // Les contacts partent tels quels : le serveur les nettoie et préfixe
+    // le site web, un champ vide y devenant NULL.
+    body.contact_email = stationForm.contact_email.trim()
+    body.contact_telephone = stationForm.contact_telephone.trim()
+    body.contact_whatsapp = stationForm.contact_whatsapp.trim()
+    body.contact_site_web = stationForm.contact_site_web.trim()
+    body.contact_adresse = stationForm.contact_adresse.trim()
+
+    const cree = await creerStation(body)
+
+    // Écrites seulement une fois l'identifiant connu ; un échec ici ne signifie
+    // pas que la station n'existe pas — l'écran d'édition permet de compléter.
+    if (cree?.id) {
+      if (thematiquesChoisies.value.length) {
+        await definirThematiques('station_radio', cree.id, thematiquesChoisies.value, true)
+      }
+      if (couvertureContinentale.value || territoiresChoisis.value.length) {
+        await definirCouverture('station_radio', cree.id, couvertureContinentale.value, territoiresChoisis.value, true)
+      }
+    }
+    router.push('/admin/radio?type=stations')
   }
   catch (e: any) {
     erreurLocale.value = e?.data?.error || e?.message || 'Erreur lors de la création'
@@ -117,7 +111,7 @@ const soumettre = async () => {
 
 <template>
   <div>
-    <AdminPageHeader :titre="titreMap[type] || 'Nouveau'" :sous-titre="sousTitreMap[type] || ''">
+    <AdminPageHeader titre="Nouvelle station radio" sous-titre="Créer une station de radio">
       <template #actions>
         <NuxtLink to="/admin/radio" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour
@@ -132,8 +126,7 @@ const soumettre = async () => {
           <span>{{ erreurLocale || error }}</span>
         </div>
 
-        <!-- Station -->
-        <form v-if="type === 'stations'" @submit.prevent="soumettre" class="space-y-6">
+        <form class="space-y-6" @submit.prevent="soumettre">
           <div class="space-y-4">
             <h3 class="text-lg font-semibold border-b pb-2">Informations de base</h3>
             <div class="form-control">
@@ -247,98 +240,22 @@ const soumettre = async () => {
             </div>
           </div>
 
-          <div class="flex justify-end gap-2 pt-4">
-            <NuxtLink to="/admin/radio" class="btn btn-ghost">Annuler</NuxtLink>
-            <button type="submit" class="btn btn-primary" :class="{ loading }" :disabled="loading">
-              <font-awesome-icon v-if="!loading" icon="plus" class="mr-1" /> Créer
-            </button>
-          </div>
-        </form>
-
-        <!-- Émission radio -->
-        <form v-else @submit.prevent="soumettre" class="space-y-6">
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold border-b pb-2">Informations de base</h3>
-            <div class="form-control">
-              <label class="label"><span class="label-text">Nom de l'émission *</span></label>
-              <input v-model="programmeForm.nom_emission" type="text" class="input input-bordered" required placeholder="Ex: Le Grand Débat">
-            </div>
-            <div class="form-control">
-              <label class="label"><span class="label-text">Description</span></label>
-              <textarea v-model="programmeForm.description" class="textarea textarea-bordered h-32" placeholder="Description de l'émission..." />
-            </div>
-          </div>
-
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold border-b pb-2">Médias</h3>
-            <OpportuniteAfriqueImageUploadField v-model="programmeForm.image_couverture_url" label="Image de couverture (optionnel)" />
-            <AdminMediaUploadField v-model="programmeForm.audio_url" kind="audio" label="Audio de l'émission (fichier ou lien)" />
-          </div>
-
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold border-b pb-2">Station & à la une</h3>
-            <div class="form-control">
-              <label class="label"><span class="label-text">Station de rattachement</span></label>
-              <select v-model="programmeForm.station_id" class="select select-bordered">
-                <option value="">Aucune (émission libre)</option>
-                <option v-for="s in stationsDisponibles" :key="s.id" :value="s.id">{{ s.nom }}</option>
-              </select>
-            </div>
-            <div class="form-control">
-              <label class="label cursor-pointer justify-start gap-3">
-                <input v-model="programmeForm.a_la_une" type="checkbox" class="checkbox checkbox-primary" :disabled="!programmeForm.station_id" />
-                <span class="label-text">Émission à la une de la station</span>
-              </label>
-              <label v-if="!programmeForm.station_id" class="label"><span class="label-text-alt text-warning">Sélectionnez d'abord une station pour la mettre à la une.</span></label>
-            </div>
-          </div>
-
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold border-b pb-2">Équipe & production</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="form-control">
-                <label class="label"><span class="label-text">Animateur</span></label>
-                <input v-model="programmeForm.info_animateur" type="text" class="input input-bordered" placeholder="Nom de l'animateur">
-              </div>
-              <div class="form-control">
-                <label class="label"><span class="label-text">Producteur</span></label>
-                <input v-model="programmeForm.info_producteur" type="text" class="input input-bordered" placeholder="Nom du producteur">
-              </div>
-            </div>
-          </div>
-
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold border-b pb-2">Classification & localisation</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="form-control">
-                <label class="label"><span class="label-text">Territoire</span></label>
-                <select v-model="programmeForm.pays_id" class="select select-bordered">
-                  <option value="">— Aucun —</option>
-                  <option v-for="p in paysDisponibles" :key="p.id" :value="p.id">{{ p.nom }}</option>
-                </select>
-              </div>
-              <div class="form-control">
-                <label class="label"><span class="label-text">Langue</span></label>
-                <input v-model="programmeForm.langue" type="text" class="input input-bordered" placeholder="Ex: Français">
-              </div>
-            </div>
-            <div class="form-control">
-              <label class="label"><span class="label-text">Catégorie radio</span></label>
-              <select v-model="programmeForm.categorie_radio" class="select select-bordered">
-                <option value="">Non spécifié</option>
-                <option value="radio_africans_international">Africans — International</option>
-                <option value="radio_africans_national">Africans — National</option>
-                <option value="radio_africans_local">Africans — Local</option>
-                <option value="radio_nationale_national">Nationale — National</option>
-                <option value="radio_nationale_local">Nationale — Local</option>
-              </select>
-            </div>
-            <div class="form-control">
-              <label class="label cursor-pointer justify-start gap-3">
-                <input v-model="programmeForm.est_international" type="checkbox" class="checkbox checkbox-primary" />
-                <span class="label-text">Émission internationale</span>
-              </label>
-            </div>
+            <h3 class="text-lg font-semibold border-b pb-2">Thématiques &amp; couverture</h3>
+            <MediaSelecteurThematiques
+              v-model="thematiquesChoisies"
+              :options="thematiquesRef"
+            />
+            <MediaSelecteurCouverture
+              :continentale="couvertureContinentale"
+              :territoires="territoiresChoisis"
+              :options="territoiresRef"
+              @update:continentale="couvertureContinentale = $event"
+              @update:territoires="territoiresChoisis = $event"
+            />
+            <p class="text-sm text-base-content/60">
+              Facultatives sur un brouillon ; exigées pour publier la station.
+            </p>
           </div>
 
           <div class="flex justify-end gap-2 pt-4">

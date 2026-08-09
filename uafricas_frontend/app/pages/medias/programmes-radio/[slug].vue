@@ -14,9 +14,24 @@ const slug = route.params.slug as string
 const { obtenirProgrammeRadioParSlug } = useStationsRadio()
 const { redirigerVersConnexion } = useAuth()
 
-const { data: emission, pending: chargement } = await useAsyncData(
-  `programme-radio-${slug}`,
+const { data: detail, pending: chargement } = await useAsyncData(
+  `episode-radio-${slug}`,
   () => obtenirProgrammeRadioParSlug(slug),
+)
+
+/**
+ * Cette page est désormais la page d'un **ÉPISODE** — son emplacement et son
+ * slug sont conservés, ce qui préserve les adresses publiques déjà indexées
+ * (FR-056). Ce qui change, c'est qu'elle nomme la série à laquelle il appartient
+ * et propose les autres épisodes (US1 §4). La variable garde son nom `emission`
+ * pour ne pas réécrire tout le gabarit.
+ */
+const emission = computed(() => detail.value?.episode ?? null)
+const voisins = computed(() => detail.value?.voisins ?? [])
+
+/** Adresse du PROGRAMME auquel l'épisode appartient. */
+const lienProgramme = computed(() =>
+  emission.value?.emissionSlug ? `/medias/emissions-radio/${emission.value.emissionSlug}` : null,
 )
 
 const showPartage = ref(false)
@@ -74,7 +89,7 @@ const ecouter = () => {
   if (!emission.value) return
   lire({
     id: emission.value.id,
-    type: 'programme_radio',
+    type: 'episode_radio',
     titre: emission.value.title,
     support: emission.value.stationNom ?? '',
     supportSlug: emission.value.stationSlug,
@@ -131,7 +146,20 @@ const enCours = computed(
           </div>
 
           <div class="min-w-0 flex flex-col justify-center">
+            <!-- La série AVANT l'épisode : le visiteur doit savoir ce qu'il
+                 écoute avant d'en connaître le numéro (US1 §4). -->
+            <NuxtLink
+              v-if="lienProgramme"
+              :to="lienProgramme"
+              class="inline-flex items-center gap-2 text-yellow-400 text-sm font-semibold hover:underline mb-2 self-start"
+            >
+              <font-awesome-icon :icon="['fas', 'layer-group']" class="w-3.5 h-3.5" />
+              {{ emission.emissionTitre }}
+            </NuxtLink>
             <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-white mb-2">
+              <span v-if="emission.numeroEpisode" class="text-gray-400 font-normal">
+                Épisode {{ emission.numeroEpisode }} —
+              </span>
               {{ emission.title }}
             </h1>
             <p class="text-gray-400 text-sm flex flex-wrap items-center gap-x-3 gap-y-1 mb-5">
@@ -156,7 +184,7 @@ const enCours = computed(
 
         <div class="mb-8">
           <MediaReactionsBar
-            type-media="programme_radio"
+            type-media="episode_radio"
             :media-id="emission.id"
             :nombre-likes="emission.interactions?.nombre_likes ?? 0"
             :nombre-dislikes="emission.interactions?.nombre_dislikes ?? 0"
@@ -180,7 +208,7 @@ const enCours = computed(
           <!-- Signaler ce contenu (US7, FR-049) -->
           <span class="mt-4 sm:ml-3 inline-flex align-middle">
             <MediaSignalerBouton
-              type-media="programme_radio"
+              type-media="episode_radio"
               :media-id="emission.id"
               :titre="emission.title"
               variante="pilule"
@@ -188,7 +216,7 @@ const enCours = computed(
           </span>
           <span class="mt-4 sm:ml-3 inline-flex align-middle">
             <EngagementOffrirCadeauBouton
-              type-objet="programme_radio"
+              type-objet="episode_radio"
               :objet-id="emission.id"
               :destinataire="emission.title"
               @offert="cadeauxRef?.rafraichir()"
@@ -216,23 +244,59 @@ const enCours = computed(
           <EngagementCadeauxRecus
             ref="cadeauxRef"
             sombre
-            type-objet="programme_radio"
+            type-objet="episode_radio"
             :objet-id="emission.id"
           />
         </div>
 
         <MediaCommentaires
           sombre
-          type-media="programme_radio"
+          type-media="episode_radio"
           :media-id="emission.id"
           @require-login="redirigerVersConnexion()"
           @total="nombreCommentaires = $event"
         />
-      </div>
+      
+        <!-- Les autres épisodes du même programme (US1 §4) : c'est ce qui rend
+             la série navigable depuis n'importe lequel de ses épisodes. -->
+        <section v-if="voisins.length" class="mt-10">
+          <div class="flex items-baseline justify-between gap-4 mb-4">
+            <h2 class="font-oswald text-xl font-bold text-white">
+              Autres épisodes
+            </h2>
+            <NuxtLink
+              v-if="lienProgramme"
+              :to="lienProgramme"
+              class="text-yellow-400 text-sm hover:underline"
+            >
+              Voir le programme
+            </NuxtLink>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <NuxtLink
+              v-for="voisin in voisins"
+              :key="voisin.id"
+              :to="`/medias/programmes-radio/${voisin.slug}`"
+              class="group block rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-yellow-400/60 transition-colors"
+            >
+              <div class="aspect-video bg-neutral-800 overflow-hidden">
+                <img
+                  v-if="voisin.cover"
+                  :src="voisin.cover"
+                  :alt="voisin.title"
+                  loading="lazy"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                >
+              </div>
+              <p class="p-3 text-sm text-white line-clamp-2">{{ voisin.title }}</p>
+            </NuxtLink>
+          </div>
+        </section>
+</div>
 
       <MediaProposerMediaModal
         :is-open="propositionOuverte"
-        :types-offerts="['programme_radio']"
+        :types-offerts="['episode_radio']"
         :target-id="emission.stationId ?? undefined"
         @close="propositionOuverte = false"
       />
@@ -240,7 +304,7 @@ const enCours = computed(
       <MediaPartagerModal
         :is-open="showPartage"
         :titre="emission.title"
-        type-media="programme_radio"
+        type-media="episode_radio"
         :media-id="emission.id"
         :url-detail="`/medias/programmes-radio/${slug}`"
         @close="showPartage = false"

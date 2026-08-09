@@ -1,8 +1,9 @@
 //! Interactions communautaires sur les médias radio et télé (US3) :
 //! réactions, commentaires et partages vers le mur `/publications`.
 //!
-//! Les quatre types de média (`chaine_tv`, `station_radio`, `programme_tele`,
-//! `programme_radio`) sont servis par les mêmes endpoints, discriminés par
+//! Les six types de média (`chaine_tv`, `station_radio`, `emission_tele`,
+//! `emission_radio`, `episode_tele`, `episode_radio`) sont servis par les mêmes
+//! endpoints, discriminés par
 //! `(type_media, media_id)` — cf. migration 09k. Calqué sur `element_social`,
 //! qui rend le même service aux sous-objets afripulse.
 //!
@@ -521,10 +522,10 @@ pub async fn lister_partages_medias(
     }))
 }
 
-// ── Construction de l'UNION des quatre types ──────────────────────────
+// ── Construction de l'UNION des six types ─────────────────────────────
 // Le titre ne porte pas le même nom de colonne selon la table (`nom` pour les
-// supports, `nom_emission` pour les contenus) : une seule requête ne peut pas
-// les couvrir, d'où quatre fragments réunis par UNION ALL — patron
+// supports, `titre` pour les programmes et les épisodes) : une seule requête ne
+// peut pas les couvrir, d'où un fragment par type réuni par UNION ALL — patron
 // `element_social::union_select`.
 
 fn fragment_partages(type_media: &str) -> String {
@@ -729,7 +730,7 @@ pub async fn signaler_media(
     let doit_suspendre = nombre > SEUIL_SIGNALEMENTS_SUSPENSION_MEDIA;
 
     // 3. Compteur dénormalisé + bascule d'état. `etat` est une colonne texte sur
-    //    ces quatre tables — il n'y existe pas de colonne booléenne `suspendu`.
+    //    ces six tables — il n'y existe pas de colonne booléenne `suspendu`.
     let suspendu: bool = sqlx::query_scalar(&format!(
         "UPDATE {table}
             SET etat = CASE WHEN $3 AND etat = 'publie' THEN 'suspendu' ELSE etat END,

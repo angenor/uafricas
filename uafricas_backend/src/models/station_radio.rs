@@ -80,6 +80,13 @@ pub struct StationRadioResponse {
     /// n'en publie aucune — le bloc « Contacts » disparaît alors de sa page.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub contacts: Option<ContactsSupport>,
+    /// Thématiques déclarées (US3, table `support_thematique`). Vide tant que
+    /// l'appelant ne les a pas greffées.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub thematiques: Vec<crate::models::media_support::ThematiquePublique>,
+    /// Couverture territoriale déclarée (US4).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub couverture: Option<crate::models::media_support::CouverturePublique>,
     pub created_at: DateTime<Utc>,
     /// Réactions, commentaires et partages agrégés (FR-027). `None` tant que
     /// l'appelant ne les a pas greffés.
@@ -107,9 +114,22 @@ pub struct StationRadioQueryParams {
     /// 'africans' | 'territoire' — porté par la page appelante (FR-014).
     /// Une valeur hors whitelist est rejetée en 400 par le handler.
     pub origine: Option<String>,
+    /// Thématiques DÉCLARÉES par le support (US3), entendues comme un OU :
+    /// `?thematique=<uuid>,<uuid>`.
+    ///
+    /// **Liste séparée par des virgules, et non clé répétée** : `web::Query`
+    /// s'appuie sur `serde_urlencoded`, qui ne sait pas agréger plusieurs
+    /// occurrences d'une même clé dans un `Vec` — il échoue en 400 dès la
+    /// PREMIÈRE valeur (« invalid type: string, expected a sequence »), même
+    /// seule. Un `Vec<Uuid>` ici rendrait donc le filtre inutilisable ; le
+    /// parser en une passe est ce qui évite d'ajouter `serde_qs` pour un champ.
+    pub thematique: Option<String>,
+    /// Territoire couvert (US4) — remonte aussi les stations continentales
+    /// (FR-036).
+    pub territoire: Option<Uuid>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,
-    /// Pagination des sections (`/sections`) : nombre de contenus par rangée.
+    /// Pagination des sections (`/sections`) : nombre de programmes par rangée.
     pub contenus_par_section: Option<i64>,
 }
 
@@ -204,6 +224,8 @@ impl StationRadioRow {
                 self.contact_adresse.as_deref(),
             ),
             created_at: self.created_at,
+            thematiques: Vec::new(),
+            couverture: None,
             interactions: None,
         }
     }

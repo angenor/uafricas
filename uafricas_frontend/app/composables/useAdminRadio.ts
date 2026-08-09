@@ -3,7 +3,6 @@ import type {
   AdminStationRadio as AdminStationRadioBase,
   AdminStationRadioDetail as AdminStationRadioDetailBase,
   CreerStationRadioForm as CreerStationRadioFormBase,
-  AdminProgrammeRadio, AdminProgrammeRadioDetail, CreerProgrammeRadioForm,
 } from '~/types/admin'
 
 // L'origine de publication n'est pas une étiquette : elle décide de la page publique
@@ -71,18 +70,20 @@ export const libelleRolePartiePrenante = (role?: string | null, precision?: stri
   return ROLES_PARTIE_PRENANTE_RADIO.find(r => r.valeur === role)?.libelle || role
 }
 
-// Back-office RADIO : stations + émissions (programmes radio)
+/**
+ * Back-office RADIO : **stations seulement**.
+ *
+ * Les émissions ne sont plus gérées ici : depuis 09q ce sont des `emission_*`
+ * communes aux deux familles, servies par `/api/admin/medias/emissions` et
+ * pilotées par `useAdminMediaEmissions`.
+ */
 export const useAdminRadio = () => {
   const { adminFetch, listerPagine, pagination, sort, loading, error, allerPage, changerTri, reinitialiserPagination } = useAdmin()
   const { uploaderMedia, resoudreUrlMedia } = useAdminMediaUpload()
 
   const stations = ref<AdminStationRadio[]>([])
   const stationDetail = ref<AdminStationRadioDetail | null>(null)
-  const programmes = ref<AdminProgrammeRadio[]>([])
-  const programmeDetail = ref<AdminProgrammeRadioDetail | null>(null)
-
   const filtresStations = reactive({ recherche: '', type_station: '', pays_id: '', etat: '', origine_publication: '' })
-  const filtresProgrammes = reactive({ recherche: '', categorie_radio: '', station_id: '', etat: '' })
 
   // ── Stations ──────────────────────────────────────────────
   const chargerStations = async () => {
@@ -120,36 +121,13 @@ export const useAdminRadio = () => {
     return result ? result.data.map(s => ({ id: s.id, nom: s.nom })) : []
   }
 
-  // ── Émissions (programmes radio) ──────────────────────────
-  const chargerProgrammes = async () => {
-    const result = await listerPagine<AdminProgrammeRadio>('/api/admin/programmes-radio', { ...filtresProgrammes })
-    if (result) programmes.value = result.data
-  }
-  const chargerProgramme = async (id: string) => {
-    const response = await adminFetch<ApiResponse<AdminProgrammeRadioDetail>>(`/api/admin/programmes-radio/${id}`)
-    if (response.success && response.data) programmeDetail.value = response.data
-    return response.data
-  }
-  const creerProgramme = async (form: Partial<CreerProgrammeRadioForm>) => {
-    const response = await adminFetch<ApiResponse<{ id: string }>>('/api/admin/programmes-radio', { method: 'POST', body: form })
-    return response.data
-  }
-  const modifierProgramme = async (id: string, form: Partial<CreerProgrammeRadioForm>) => {
-    const response = await adminFetch<ApiResponse<{ id: string }>>(`/api/admin/programmes-radio/${id}`, { method: 'PUT', body: form })
-    return response.data
-  }
-  const supprimerProgramme = async (id: string) => {
-    await adminFetch<ApiResponse<null>>(`/api/admin/programmes-radio/${id}`, { method: 'DELETE' })
-  }
-
   return {
-    stations, stationDetail, programmes, programmeDetail,
-    filtresStations, filtresProgrammes,
+    stations, stationDetail,
+    filtresStations,
     pagination, sort, loading, error,
     chargerStations, chargerStation, creerStation, modifierStation, definirOrigine, supprimerStation, listerToutesStations,
     ORIGINES_PUBLICATION_RADIO, ROLES_PARTIE_PRENANTE_RADIO,
     libelleOriginePublication, pageOriginePublication, libelleRolePartiePrenante,
-    chargerProgrammes, chargerProgramme, creerProgramme, modifierProgramme, supprimerProgramme,
     uploaderMedia, resoudreUrlMedia,
     allerPage, changerTri, reinitialiserPagination,
   }

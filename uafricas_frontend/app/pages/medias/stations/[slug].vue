@@ -3,24 +3,29 @@
  * Page de détail d'une station de radio (US3) : son identité, son direct, ses
  * émissions et ses interactions. Pendant exact de la page des chaînes.
  */
-import { useStationsRadio, type ProgrammeRadio } from '~/composables/useStationsRadio'
+import { useStationsRadio, type EmissionRadio, type ProgrammeRadio } from '~/composables/useStationsRadio'
+import { LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
 
 const route = useRoute()
 const slug = route.params.slug as string
 
-const { obtenirStationParSlug, listerContenusStation } = useStationsRadio()
+const { obtenirStationParSlug } = useStationsRadio()
 const { redirigerVersConnexion } = useAuth()
 
-const { data: station, pending: chargement } = await useAsyncData(
+const { data: detail, pending: chargement } = await useAsyncData(
   `station-${slug}`,
   () => obtenirStationParSlug(slug),
 )
 
-const contenus = ref<ProgrammeRadio[]>([])
-onMounted(async () => {
-  if (!station.value) return
-  contenus.value = await listerContenusStation(station.value.id)
-})
+/**
+ * La fiche et ses **programmes** arrivent d'un seul appel : la page déplie le
+ * catalogue à deux niveaux — la série, puis ses épisodes (US1 §3).
+ */
+const station = computed(() => detail.value?.station ?? null)
+const programmes = computed<EmissionRadio[]>(() => detail.value?.emissions ?? [])
+
+const lienEmission = (emission: EmissionRadio) =>
+  emission.slug ? `/medias/emissions-radio/${emission.slug}` : null
 
 const showPartage = ref(false)
 const propositionOuverte = ref(false)
@@ -93,7 +98,7 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
   if (!station.value) return
   lire({
     id: emission.id,
-    type: 'programme_radio',
+    type: 'episode_radio',
     titre: emission.title,
     support: station.value.name,
     supportSlug: station.value.slug,
@@ -218,24 +223,50 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
         </p>
 
         <!-- Coordonnées publiques renseignées par l'équipe de la station (09p) -->
+        <!-- Thématiques déclarées et couverture territoriale (US3, US4) -->
+        <MediaBlocIdentiteSupport
+          :thematiques="station.thematiques"
+          :couverture="station.couverture"
+        />
+
         <MediaBlocContacts :contacts="station.contacts" :nom-support="station.name" />
 
-        <section v-if="contenus.length" class="mb-12">
-          <h2 class="font-oswald text-xl font-bold text-white mb-4">Ses émissions</h2>
-          <MediaRangeeContenus>
-            <MediaCarteContenu
-              v-for="contenu in contenus"
-              :key="contenu.id"
-              compacte
-              :titre="contenu.title"
-              :image="contenu.cover"
-              :description="contenu.description"
-              :a-la-une="contenu.aLaUne"
-              :en-lecture="estContenuCourant(contenu.id) && enLecture"
-              :lien="contenu.slug ? `/medias/programmes-radio/${contenu.slug}` : null"
-              @lire="ecouterEmission(contenu)"
-            />
-          </MediaRangeeContenus>
+        <!-- Les PROGRAMMES de la station, chacun dépliant ses épisodes. -->
+        <section v-if="programmes.length" class="mb-12">
+          <h2 class="font-oswald text-xl font-bold text-white mb-4">Ses programmes</h2>
+          <div v-for="emission in programmes" :key="emission.id" class="mb-6 last:mb-0">
+            <MediaRangeeContenus :titre="emission.titre">
+              <template #entete>
+                <div class="flex items-center gap-3 text-xs text-gray-400">
+                  <span>
+                    {{ emission.nombreEpisodes }} épisode{{ emission.nombreEpisodes > 1 ? 's' : '' }}
+                  </span>
+                  <span v-if="emission.cadence !== 'ponctuelle'">
+                    · {{ LIBELLES_CADENCE[emission.cadence] }}
+                  </span>
+                  <NuxtLink
+                    v-if="lienEmission(emission)"
+                    :to="lienEmission(emission)!"
+                    class="text-yellow-400 hover:underline"
+                  >
+                    Tout voir
+                  </NuxtLink>
+                </div>
+              </template>
+              <MediaCarteContenu
+                v-for="contenu in emission.episodes"
+                :key="contenu.id"
+                compacte
+                :titre="contenu.title"
+                :image="contenu.cover"
+                :description="contenu.description"
+                :a-la-une="contenu.aLaUne"
+                :en-lecture="estContenuCourant(contenu.id) && enLecture"
+                :lien="contenu.slug ? `/medias/programmes-radio/${contenu.slug}` : null"
+                @lire="ecouterEmission(contenu)"
+              />
+            </MediaRangeeContenus>
+          </div>
         </section>
 
         <!-- Cadeaux reçus par ce support (fond sombre : variante claire) -->
@@ -259,7 +290,7 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
 
       <MediaProposerMediaModal
         :is-open="propositionOuverte"
-        :types-offerts="['programme_radio']"
+        :types-offerts="['emission_radio']"
         :target-id="station.id"
         @close="propositionOuverte = false"
       />

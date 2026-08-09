@@ -1,25 +1,7 @@
 import type {
   ApiResponse, PaginatedResponse,
   AdminChaineTv, AdminChaineTvDetail, CreerChaineTvForm,
-  AdminProgrammeTele, AdminProgrammeTeleDetail, CreerProgrammeTeleForm,
 } from '~/types/admin'
-
-/** Vedette générale de la page Télé + thème phare : colonnes ajoutées à `media_content.programme_tele`. */
-export interface AdminProgrammeTeleVedette {
-  a_la_une_globale: boolean
-  theme_phare_id: string | null
-  theme_phare_autre: string | null
-}
-
-export type AdminProgrammeTeleEtendu = AdminProgrammeTele & AdminProgrammeTeleVedette
-export type AdminProgrammeTeleDetailEtendu = AdminProgrammeTeleDetail & AdminProgrammeTeleVedette & {
-  theme_phare_nom: string | null
-}
-/** La vedette générale ne passe pas par le PUT : elle a son endpoint transactionnel dédié. */
-export type CreerProgrammeTeleFormEtendu = CreerProgrammeTeleForm & {
-  theme_phare_id: string
-  theme_phare_autre: string
-}
 
 /** Thème phare = catégorie `shared.categorie` de contexte `media`. */
 export interface ThemePhare {
@@ -50,18 +32,22 @@ export const ORIGINES_PUBLICATION_TELE: { valeur: OriginePublicationTele; libell
 export const libelleOrigineTele = (origine?: string | null) =>
   ORIGINES_PUBLICATION_TELE.find(o => o.valeur === origine)?.libelle || 'Chaîne de territoire'
 
-// Back-office TÉLÉVISION : chaînes + programmes télé
+/**
+ * Back-office TÉLÉVISION : **chaînes seulement**.
+ *
+ * Les programmes ne sont plus gérés ici : depuis 09q ils sont des `emission_*`
+ * communes aux deux familles, servies par `/api/admin/medias/emissions` et
+ * pilotées par `useAdminMediaEmissions`. Garder ici une branche « programmes »
+ * aurait laissé compiler des écrans visant `/api/admin/programmes-tele`,
+ * supprimée.
+ */
 export const useAdminTelevision = () => {
   const { adminFetch, listerPagine, pagination, sort, loading, error, allerPage, changerTri, reinitialiserPagination } = useAdmin()
   const { uploaderMedia, resoudreUrlMedia } = useAdminMediaUpload()
 
   const chaines = ref<AdminChaineTv[]>([])
   const chaineDetail = ref<AdminChaineTvDetail | null>(null)
-  const programmes = ref<AdminProgrammeTeleEtendu[]>([])
-  const programmeDetail = ref<AdminProgrammeTeleDetailEtendu | null>(null)
-
   const filtresChaines = reactive({ recherche: '', categorie: '', pays_id: '', etat: '', origine: '' })
-  const filtresProgrammes = reactive({ recherche: '', chaine_id: '', etat: '' })
 
   // ── Chaînes ───────────────────────────────────────────────
   const chargerChaines = async () => {
@@ -90,39 +76,6 @@ export const useAdminTelevision = () => {
     return result ? result.data.map(c => ({ id: c.id, nom: c.nom })) : []
   }
 
-  // ── Programmes télé ───────────────────────────────────────
-  const chargerProgrammes = async () => {
-    const result = await listerPagine<AdminProgrammeTeleEtendu>('/api/admin/programmes-tele', { ...filtresProgrammes })
-    if (result) programmes.value = result.data
-  }
-  const chargerProgramme = async (id: string) => {
-    const response = await adminFetch<ApiResponse<AdminProgrammeTeleDetailEtendu>>(`/api/admin/programmes-tele/${id}`)
-    if (response.success && response.data) programmeDetail.value = response.data
-    return response.data
-  }
-  const creerProgramme = async (form: Partial<CreerProgrammeTeleFormEtendu>) => {
-    const response = await adminFetch<ApiResponse<{ id: string }>>('/api/admin/programmes-tele', { method: 'POST', body: form })
-    return response.data
-  }
-  const modifierProgramme = async (id: string, form: Partial<CreerProgrammeTeleFormEtendu>) => {
-    const response = await adminFetch<ApiResponse<{ id: string }>>(`/api/admin/programmes-tele/${id}`, { method: 'PUT', body: form })
-    return response.data
-  }
-  const supprimerProgramme = async (id: string) => {
-    await adminFetch<ApiResponse<null>>(`/api/admin/programmes-tele/${id}`, { method: 'DELETE' })
-  }
-
-  // Endpoint dédié : la rétrogradation de l'ancienne vedette et la promotion de la
-  // nouvelle sont faites dans une seule transaction côté serveur, ce que le PUT
-  // générique ne garantit pas. Refuse un programme dont l'état n'est pas « publié ».
-  const definirVedetteGlobale = async (id: string) => {
-    const response = await adminFetch<ApiResponse<{ id: string; ancienne_vedette: string | null }>>(
-      `/api/admin/programmes-tele/${id}/vedette-globale`,
-      { method: 'PATCH' },
-    )
-    return response.data
-  }
-
   // ── Thèmes phares (catégories de contexte « media ») ──────
   // adminFetch direct plutôt que listerPagine : ce référentiel ne doit pas écraser
   // l'état de pagination partagé des listes de chaînes/programmes.
@@ -135,12 +88,11 @@ export const useAdminTelevision = () => {
   }
 
   return {
-    chaines, chaineDetail, programmes, programmeDetail,
-    filtresChaines, filtresProgrammes,
+    chaines, chaineDetail,
+    filtresChaines,
     pagination, sort, loading, error,
     chargerChaines, chargerChaine, creerChaine, modifierChaine, supprimerChaine, listerToutesChaines,
-    chargerProgrammes, chargerProgramme, creerProgramme, modifierProgramme, supprimerProgramme,
-    definirVedetteGlobale, listerThemesPhares,
+    listerThemesPhares,
     ORIGINES_PUBLICATION_TELE,
     uploaderMedia, resoudreUrlMedia,
     allerPage, changerTri, reinitialiserPagination,

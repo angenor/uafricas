@@ -28,6 +28,7 @@ pub mod moderateurs_afrolang;
 pub mod propositions_salle;
 pub mod gouvernance;
 pub mod radio_tele;
+pub mod media_moderation_episode;
 pub mod retrouve_amis;
 pub mod evenements;
 pub mod bibliotheques_humaines;

@@ -9,8 +9,10 @@
 export type TypeObjetPropose =
   | 'chaine_tv'
   | 'station_radio'
-  | 'programme_tele'
-  | 'programme_radio'
+  | 'emission_tele'
+  | 'emission_radio'
+  | 'episode_tele'
+  | 'episode_radio'
   | 'animation_programme'
   | 'idee_contenu'
 
@@ -32,8 +34,10 @@ export const ROLES_PARTIE_PRENANTE: { valeur: string, libelle: string }[] = [
 export const LIBELLES_TYPE_OBJET: Record<TypeObjetPropose, string> = {
   chaine_tv: 'Chaîne de télévision',
   station_radio: 'Station de radio',
-  programme_tele: 'Émission de télévision',
-  programme_radio: 'Émission de radio',
+  emission_tele: 'Programme de télévision',
+  emission_radio: 'Programme de radio',
+  episode_tele: 'Épisode de télévision',
+  episode_radio: 'Épisode de radio',
   animation_programme: 'Demande d’animation',
   idee_contenu: 'Idée de contenu',
 }

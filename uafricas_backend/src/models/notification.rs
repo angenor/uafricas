@@ -56,6 +56,13 @@ pub mod media {
     pub const PROPOSITION_REJETEE: &str = "media.proposition_rejetee";
     pub const CODETENTEUR_AJOUTE: &str = "media.codetenteur_ajoute";
     pub const CONTENU_SUSPENDU: &str = "media.contenu_suspendu";
+    /// Décision de modération sur un épisode (feature 009, FR-041). Le rejet
+    /// porte **toujours** son motif dans le message : sans lui, l'auteur n'a
+    /// rien à corriger.
+    pub const EPISODE_VALIDE: &str = "media.episode_valide";
+    pub const EPISODE_REJETE: &str = "media.episode_rejete";
+    /// Cible des deux notifications : l'écran de suivi de ses supports.
+    pub const LIEN_MES_SUPPORTS: &str = "/mon-compte/mes-supports";
 }
 
 // ── Types de notifications Engagement (feature 007-engagement-points-badges) ──

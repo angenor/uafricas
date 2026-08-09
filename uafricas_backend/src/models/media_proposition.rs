@@ -16,24 +16,38 @@ use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 
-/// Les six types de proposition, tels que déclarés par l'ENUM
+/// Les types de proposition, tels que déclarés par l'ENUM
 /// `media_content.type_objet_propose`.
-pub const TYPES_OBJET_PROPOSE: [&str; 6] = [
+///
+/// Depuis 09q, les contenus se proposent à deux niveaux : une **émission**
+/// (programme conteneur) ou un **épisode** versé dans une émission existante.
+/// Les anciennes valeurs `programme_tele` / `programme_radio` subsistent dans
+/// l'enum pour l'historique — PostgreSQL ne sait pas retirer une valeur — mais
+/// ne sont plus produites, d'où leur absence de cette liste.
+pub const TYPES_OBJET_PROPOSE: [&str; 8] = [
     "chaine_tv",
     "station_radio",
-    "programme_tele",
-    "programme_radio",
+    "emission_tele",
+    "emission_radio",
+    "episode_tele",
+    "episode_radio",
     "animation_programme",
     "idee_contenu",
 ];
 
 /// Types dont la validation crée un objet dans une table métier.
-pub const TYPES_CREANT_UN_OBJET: [&str; 4] = [
+pub const TYPES_CREANT_UN_OBJET: [&str; 6] = [
     "chaine_tv",
     "station_radio",
-    "programme_tele",
-    "programme_radio",
+    "emission_tele",
+    "emission_radio",
+    "episode_tele",
+    "episode_radio",
 ];
+
+/// Types dont la proposition exige une `target_id` désignant l'émission
+/// d'accueil : un épisode n'existe pas hors d'un programme (FR-002).
+pub const TYPES_EPISODE_PROPOSE: [&str; 2] = ["episode_tele", "episode_radio"];
 
 /// Les neuf rôles de partie prenante déclarables (FR-029), miroir du CHECK posé
 /// par 09j sur `chaine_tv` et `station_radio`.
@@ -63,8 +77,20 @@ pub fn table_cible(type_objet: &str) -> Option<&'static str> {
     match type_objet {
         "chaine_tv" => Some("media_content.chaine_tv"),
         "station_radio" => Some("media_content.station_radio"),
-        "programme_tele" => Some("media_content.programme_tele"),
-        "programme_radio" => Some("media_content.programme_radio"),
+        "emission_tele" => Some("media_content.emission_tele"),
+        "emission_radio" => Some("media_content.emission_radio"),
+        "episode_tele" => Some("media_content.episode_tele"),
+        "episode_radio" => Some("media_content.episode_radio"),
+        _ => None,
+    }
+}
+
+/// Type de support auquel se rattache l'objet proposé, ou None pour les types
+/// qui n'en désignent pas.
+pub fn support_pour_type_objet(type_objet: &str) -> Option<&'static str> {
+    match type_objet {
+        "emission_tele" | "episode_tele" => Some("chaine_tv"),
+        "emission_radio" | "episode_radio" => Some("station_radio"),
         _ => None,
     }
 }
@@ -160,8 +186,9 @@ impl DonneesProposition {
             }
         }
 
-        // Thème phare — contenus uniquement.
-        if matches!(type_objet, "programme_tele" | "programme_radio") {
+        // Thème phare — émissions uniquement. Un épisode hérite du thème de son
+        // programme : le lui redemander à chaque versement serait du bruit.
+        if matches!(type_objet, "emission_tele" | "emission_radio") {
             let autre_renseigne = !self
                 .theme_phare_autre
                 .as_deref()

@@ -7,9 +7,24 @@
  * au lecteur persistant du layout — elle doit survivre au défilement et à la
  * navigation (FR-017).
  */
-import type { StationSection, ProgrammeRadio } from '~/composables/useStationsRadio'
+import type { EmissionRadio, StationSection, ProgrammeRadio } from '~/composables/useStationsRadio'
+import { LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
 
 const props = defineProps<{ section: StationSection }>()
+
+/**
+ * Épisode mis en avant : le plus récent du premier programme. La section doit
+ * montrer quelque chose sans attendre un clic (feature 009, US1 §3).
+ */
+const misEnAvant = computed<ProgrammeRadio | null>(
+  () => props.section.emissions[0]?.episodes[0] ?? null,
+)
+
+/** Programmes ayant au moins un épisode à montrer. */
+const programmes = computed(() => props.section.emissions.filter(e => e.episodes.length > 0))
+
+const lienEmission = (emission: EmissionRadio) =>
+  emission.slug ? `/medias/emissions-radio/${emission.slug}` : null
 
 const { lire, estContenuCourant, enLecture } = useLecteurMedia()
 
@@ -24,7 +39,7 @@ const lienContenu = (contenu: ProgrammeRadio) =>
 const lireContenu = (contenu: ProgrammeRadio) => {
   lire({
     id: contenu.id,
-    type: 'programme_radio',
+    type: 'episode_radio',
     titre: contenu.title,
     support: props.section.station.name,
     supportSlug: props.section.station.slug,
@@ -70,7 +85,7 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
 
 /** Commenter suppose la page de détail, seule à héberger le fil complet. */
 const ouvrirDetail = () => {
-  const lien = props.section.misEnEvidence ? lienContenu(props.section.misEnEvidence) : null
+  const lien = props.misEnAvant ? lienContenu(props.misEnAvant) : null
   if (lien) navigateTo(lien)
 }
 
@@ -137,17 +152,17 @@ const directEnCours = computed(
       base-lien-contenu="programmes-radio"
     />
 
-    <div v-if="section.misEnEvidence" class="flex flex-col sm:flex-row gap-5 mb-8 px-1">
+    <div v-if="misEnAvant" class="flex flex-col sm:flex-row gap-5 mb-8 px-1">
       <button
         type="button"
         class="relative w-full sm:w-56 aspect-video rounded-xl overflow-hidden bg-gray-800 shrink-0 group/mev focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400"
-        :aria-label="`Écouter ${section.misEnEvidence.title}`"
-        @click="lireContenu(section.misEnEvidence)"
+        :aria-label="`Écouter ${misEnAvant.title}`"
+        @click="lireContenu(misEnAvant)"
       >
         <img
-          v-if="section.misEnEvidence.cover"
-          :src="section.misEnEvidence.cover"
-          :alt="section.misEnEvidence.title"
+          v-if="misEnAvant.cover"
+          :src="misEnAvant.cover"
+          :alt="misEnAvant.title"
           loading="lazy"
           class="w-full h-full object-cover"
         >
@@ -157,7 +172,7 @@ const directEnCours = computed(
         <span class="absolute inset-0 bg-black/40 flex items-center justify-center">
           <span class="h-14 w-14 rounded-full bg-white/90 text-black flex items-center justify-center">
             <font-awesome-icon
-              :icon="['fas', estContenuCourant(section.misEnEvidence.id) && enLecture ? 'volume-high' : 'play']"
+              :icon="['fas', estContenuCourant(misEnAvant.id) && enLecture ? 'volume-high' : 'play']"
               class="text-lg"
             />
           </span>
@@ -167,22 +182,22 @@ const directEnCours = computed(
       <div class="min-w-0 flex flex-col justify-center">
         <div class="flex items-center gap-2 mb-1 flex-wrap">
           <span
-            v-if="section.misEnEvidence.aLaUne"
+            v-if="misEnAvant.aLaUne"
             class="rounded-full px-3 py-0.5 text-xs bg-yellow-400/20 border border-yellow-400 text-yellow-400 uppercase"
           >
             À la une
           </span>
-          <span v-if="section.misEnEvidence.themePhare" class="text-xs text-gray-400">
-            {{ section.misEnEvidence.themePhare }}
+          <span v-if="misEnAvant.themePhare" class="text-xs text-gray-400">
+            {{ misEnAvant.themePhare }}
           </span>
         </div>
-        <h3 class="text-white text-lg font-bold">{{ section.misEnEvidence.title }}</h3>
-        <p v-if="section.misEnEvidence.description" class="text-gray-400 text-sm line-clamp-3 mt-1">
-          {{ section.misEnEvidence.description }}
+        <h3 class="text-white text-lg font-bold">{{ misEnAvant.title }}</h3>
+        <p v-if="misEnAvant.description" class="text-gray-400 text-sm line-clamp-3 mt-1">
+          {{ misEnAvant.description }}
         </p>
         <NuxtLink
-          v-if="lienContenu(section.misEnEvidence)"
-          :to="lienContenu(section.misEnEvidence)!"
+          v-if="lienContenu(misEnAvant)"
+          :to="lienContenu(misEnAvant)!"
           class="mt-3 inline-flex items-center gap-2 self-start text-yellow-400 text-sm hover:text-yellow-300 underline underline-offset-4"
         >
           En savoir plus
@@ -193,13 +208,13 @@ const directEnCours = computed(
         <MediaReactionsBar
           compact
           class="mt-4"
-          type-media="programme_radio"
-          :media-id="section.misEnEvidence.id"
-          :nombre-likes="section.misEnEvidence.interactions?.nombre_likes ?? 0"
-          :nombre-dislikes="section.misEnEvidence.interactions?.nombre_dislikes ?? 0"
-          :ma-reaction="section.misEnEvidence.interactions?.ma_reaction ?? null"
-          :nombre-commentaires="section.misEnEvidence.interactions?.nombre_commentaires ?? 0"
-          :nombre-partages="section.misEnEvidence.interactions?.nombre_partages ?? 0"
+          type-media="episode_radio"
+          :media-id="misEnAvant.id"
+          :nombre-likes="misEnAvant.interactions?.nombre_likes ?? 0"
+          :nombre-dislikes="misEnAvant.interactions?.nombre_dislikes ?? 0"
+          :ma-reaction="misEnAvant.interactions?.ma_reaction ?? null"
+          :nombre-commentaires="misEnAvant.interactions?.nombre_commentaires ?? 0"
+          :nombre-partages="misEnAvant.interactions?.nombre_partages ?? 0"
           @require-login="redirigerVersConnexion()"
           @commenter="ouvrirDetail()"
           @partager="showPartage = true"
@@ -207,23 +222,42 @@ const directEnCours = computed(
       </div>
     </div>
 
-    <!-- Rangée des autres émissions -->
-    <MediaRangeeContenus v-if="section.contenus.length" titre="Autres émissions">
-      <MediaCarteContenu
-        v-for="contenu in section.contenus"
-        :key="contenu.id"
-        compacte
-        :titre="contenu.title"
-        :image="contenu.cover"
-        :description="contenu.description"
-        :a-la-une="contenu.aLaUne"
-        :en-lecture="estContenuCourant(contenu.id) && enLecture"
-        :lien="lienContenu(contenu)"
-        @lire="lireContenu(contenu)"
-      />
-    </MediaRangeeContenus>
+    <!-- Une rangée PAR PROGRAMME (US1 §3). -->
+    <div v-for="emission in programmes" :key="emission.id" class="mb-6">
+      <MediaRangeeContenus :titre="emission.titre">
+        <template #entete>
+          <div class="flex items-center gap-3 text-xs text-gray-400">
+            <span>
+              {{ emission.nombreEpisodes }} épisode{{ emission.nombreEpisodes > 1 ? 's' : '' }}
+            </span>
+            <span v-if="emission.cadence !== 'ponctuelle'">
+              · {{ LIBELLES_CADENCE[emission.cadence] }}
+            </span>
+            <NuxtLink
+              v-if="lienEmission(emission)"
+              :to="lienEmission(emission)!"
+              class="text-yellow-400 hover:underline"
+            >
+              Tout voir
+            </NuxtLink>
+          </div>
+        </template>
+        <MediaCarteContenu
+          v-for="contenu in emission.episodes"
+          :key="contenu.id"
+          compacte
+          :titre="contenu.title"
+          :image="contenu.cover"
+          :description="contenu.description"
+          :a-la-une="contenu.aLaUne"
+          :en-lecture="estContenuCourant(contenu.id) && enLecture"
+          :lien="lienContenu(contenu)"
+          @lire="lireContenu(contenu)"
+        />
+      </MediaRangeeContenus>
+    </div>
 
-    <p v-else-if="!section.misEnEvidence" class="text-gray-500 text-sm px-1">
+    <p v-if="!programmes.length" class="text-gray-500 text-sm px-1">
       Cette station n'a pas encore publié d'émission.
     </p>
 
@@ -247,21 +281,21 @@ const directEnCours = computed(
       </button>
       <!-- Signaler l'émission mise en évidence (US7, FR-049) -->
       <MediaSignalerBouton
-        v-if="section.misEnEvidence"
-        type-media="programme_radio"
-        :media-id="section.misEnEvidence.id"
-        :titre="section.misEnEvidence.title"
+        v-if="misEnAvant"
+        type-media="episode_radio"
+        :media-id="misEnAvant.id"
+        :titre="misEnAvant.title"
         variante="pilule"
       />
     </div>
 
     <MediaPartagerModal
-      v-if="section.misEnEvidence"
+      v-if="misEnAvant"
       :is-open="showPartage"
-      :titre="section.misEnEvidence.title"
-      type-media="programme_radio"
-      :media-id="section.misEnEvidence.id"
-      :url-detail="lienContenu(section.misEnEvidence) ?? undefined"
+      :titre="misEnAvant.title"
+      type-media="episode_radio"
+      :media-id="misEnAvant.id"
+      :url-detail="lienContenu(misEnAvant) ?? undefined"
       @close="showPartage = false"
     />
 

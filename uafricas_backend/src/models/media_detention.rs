@@ -32,10 +32,23 @@ pub fn table_pour_support(type_support: &str) -> Option<&'static str> {
 }
 
 /// Table des contenus programmables sur ce type de support.
+///
+/// Depuis 09q, ce sont les **émissions** (programmes conteneurs) que l'on
+/// programme, et non plus les fichiers : la grille désigne une série, l'épisode
+/// diffusé se déduisant par rotation (FR-014).
 pub fn table_contenu_pour_support(type_support: &str) -> Option<&'static str> {
     match type_support {
-        "chaine_tv" => Some("media_content.programme_tele"),
-        "station_radio" => Some("media_content.programme_radio"),
+        "chaine_tv" => Some("media_content.emission_tele"),
+        "station_radio" => Some("media_content.emission_radio"),
+        _ => None,
+    }
+}
+
+/// Table des épisodes — les unités diffusables versées dans une émission.
+pub fn table_episode_pour_support(type_support: &str) -> Option<&'static str> {
+    match type_support {
+        "chaine_tv" => Some("media_content.episode_tele"),
+        "station_radio" => Some("media_content.episode_radio"),
         _ => None,
     }
 }

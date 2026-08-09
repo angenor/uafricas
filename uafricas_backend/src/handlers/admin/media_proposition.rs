@@ -524,55 +524,120 @@ async fn creer_objet(
             .fetch_one(&mut **tx)
             .await?
         }
-        "programme_tele" => {
-            let slug = slug_libre(tx, "media_content.programme_tele", &generer_slug(nom)).await?;
+        // ── Programmes conteneurs (009) ─────────────────────────────────
+        // L'émission naît directement `publie` : c'est la décision
+        // administrative qui vaut validation. Son support est celui désigné par
+        // la proposition — `chaine_id` est NOT NULL depuis 09q.
+        "emission_tele" => {
+            let chaine_id = donnees.chaine_id.or(target_id).ok_or_else(|| {
+                ApiErreur::Validation("Cette proposition ne désigne aucune chaîne".into())
+            })?;
+            let slug = slug_libre(tx, "media_content.emission_tele", &generer_slug(nom)).await?;
             sqlx::query_scalar(
-                "INSERT INTO media_content.programme_tele
-                    (nom_emission, slug, description, video_url, image_couverture_url,
-                     info_animateur, info_producteur, pays_id, langue, chaine_id,
-                     etat, cree_par, theme_phare_id, theme_phare_autre)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'publie', $11, $12, $13)
+                "INSERT INTO media_content.emission_tele
+                    (chaine_id, titre, slug, description, image_couverture_url,
+                     info_animateur, info_producteur, langue, theme_phare_id,
+                     theme_phare_autre, cadence, etat, cree_par)
+                 VALUES ($1, $2, $3, COALESCE($4, ''), $5, $6, $7, $8, $9, $10,
+                         'ponctuelle', 'publie', $11)
                  RETURNING id",
             )
+            .bind(chaine_id)
             .bind(nom)
             .bind(&slug)
-            .bind(donnees.description.as_deref().unwrap_or(""))
-            .bind(donnees.video_url.as_deref())
+            .bind(donnees.description.as_deref())
             .bind(donnees.image_couverture_url.as_deref())
             .bind(donnees.info_animateur.as_deref())
             .bind(donnees.info_producteur.as_deref())
-            .bind(pays_id)
             .bind(langue)
-            .bind(donnees.chaine_id.or(target_id))
-            .bind(auteur_id)
             .bind(donnees.theme_phare_id)
             .bind(donnees.theme_phare_autre.as_deref())
+            .bind(auteur_id)
             .fetch_one(&mut **tx)
             .await?
         }
-        "programme_radio" => {
-            let slug = slug_libre(tx, "media_content.programme_radio", &generer_slug(nom)).await?;
+        "emission_radio" => {
+            let station_id = donnees.station_id.or(target_id).ok_or_else(|| {
+                ApiErreur::Validation("Cette proposition ne désigne aucune station".into())
+            })?;
+            let slug = slug_libre(tx, "media_content.emission_radio", &generer_slug(nom)).await?;
             sqlx::query_scalar(
-                "INSERT INTO media_content.programme_radio
-                    (nom_emission, slug, description, audio_url, image_couverture_url,
-                     info_animateur, info_producteur, pays_id, langue, station_id,
-                     etat, cree_par, theme_phare_id, theme_phare_autre)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'publie', $11, $12, $13)
+                "INSERT INTO media_content.emission_radio
+                    (station_id, titre, slug, description, image_couverture_url,
+                     info_animateur, info_producteur, langue, theme_phare_id,
+                     theme_phare_autre, cadence, etat, cree_par)
+                 VALUES ($1, $2, $3, COALESCE($4, ''), $5, $6, $7, $8, $9, $10,
+                         'ponctuelle', 'publie', $11)
                  RETURNING id",
             )
+            .bind(station_id)
             .bind(nom)
             .bind(&slug)
-            .bind(donnees.description.as_deref().unwrap_or(""))
-            .bind(donnees.audio_url.as_deref())
+            .bind(donnees.description.as_deref())
             .bind(donnees.image_couverture_url.as_deref())
             .bind(donnees.info_animateur.as_deref())
             .bind(donnees.info_producteur.as_deref())
-            .bind(pays_id)
             .bind(langue)
-            .bind(donnees.station_id.or(target_id))
-            .bind(auteur_id)
             .bind(donnees.theme_phare_id)
             .bind(donnees.theme_phare_autre.as_deref())
+            .bind(auteur_id)
+            .fetch_one(&mut **tx)
+            .await?
+        }
+
+        // ── Épisodes (009) ──────────────────────────────────────────────
+        // Créés directement en `publie` : la décision administrative EST la
+        // validation, l'épisode ne repasse pas par la file de modération. Il
+        // prend rang en fin de programme, comme tout épisode versé.
+        "episode_tele" => {
+            let emission_id = target_id.ok_or_else(|| {
+                ApiErreur::Validation("Cette proposition ne désigne aucun programme".into())
+            })?;
+            let slug = slug_libre(tx, "media_content.episode_tele", &generer_slug(nom)).await?;
+            sqlx::query_scalar(
+                "INSERT INTO media_content.episode_tele
+                    (emission_id, titre, slug, description, image_couverture_url, video_url,
+                     ordre, etat, valide_par, valide_at, cree_par)
+                 VALUES ($1, $2, $3, COALESCE($4, ''), $5, $6,
+                         (SELECT COALESCE(MAX(ordre), -1) + 1 FROM media_content.episode_tele
+                           WHERE emission_id = $1 AND deleted_at IS NULL),
+                         'publie', $7, NOW(), $8)
+                 RETURNING id",
+            )
+            .bind(emission_id)
+            .bind(nom)
+            .bind(&slug)
+            .bind(donnees.description.as_deref())
+            .bind(donnees.image_couverture_url.as_deref())
+            .bind(donnees.video_url.as_deref())
+            .bind(decideur)
+            .bind(auteur_id)
+            .fetch_one(&mut **tx)
+            .await?
+        }
+        "episode_radio" => {
+            let emission_id = target_id.ok_or_else(|| {
+                ApiErreur::Validation("Cette proposition ne désigne aucun programme".into())
+            })?;
+            let slug = slug_libre(tx, "media_content.episode_radio", &generer_slug(nom)).await?;
+            sqlx::query_scalar(
+                "INSERT INTO media_content.episode_radio
+                    (emission_id, titre, slug, description, image_couverture_url, audio_url,
+                     ordre, etat, valide_par, valide_at, cree_par)
+                 VALUES ($1, $2, $3, COALESCE($4, ''), $5, $6,
+                         (SELECT COALESCE(MAX(ordre), -1) + 1 FROM media_content.episode_radio
+                           WHERE emission_id = $1 AND deleted_at IS NULL),
+                         'publie', $7, NOW(), $8)
+                 RETURNING id",
+            )
+            .bind(emission_id)
+            .bind(nom)
+            .bind(&slug)
+            .bind(donnees.description.as_deref())
+            .bind(donnees.image_couverture_url.as_deref())
+            .bind(donnees.audio_url.as_deref())
+            .bind(decideur)
+            .bind(auteur_id)
             .fetch_one(&mut **tx)
             .await?
         }

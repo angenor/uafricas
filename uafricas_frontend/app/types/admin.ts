@@ -1459,105 +1459,110 @@ export interface CreerChaineTvForm {
   contact_adresse: string
 }
 
-// ── Programmes RADIO (émissions) ──────────────────────────────
-export interface AdminProgrammeRadio {
+// ── Programmes conteneurs et épisodes (feature 009) ───────────
+// `emission_*` en base = « Programme » à l'écran ; `episode_*` = « Épisode ».
+// Les anciens types `AdminProgramme{Tele,Radio}*` ont disparu avec les tables
+// `programme_*` (migration 09q) : les conserver aurait laissé compiler des
+// écrans visant des routes supprimées.
+
+/** « chaine_tv » ou « station_radio » — le support qui porte le programme. */
+export type TypeSupportAdmin = 'chaine_tv' | 'station_radio'
+
+/** Cadence déclarée : elle alimente les alertes, jamais la rotation. */
+export type CadenceEmission = 'quotidienne' | 'hebdomadaire' | 'ponctuelle'
+
+/** Référence nommée renvoyée en grappe par l'API (support, thème phare…). */
+export interface RefNommeeAdmin {
   id: string
-  nom_emission: string
-  etat: string
-  categorie_radio: string | null
-  langue: string
-  pays_nom: string | null
-  station_nom: string | null
-  a_la_une: boolean
-  created_at: string
+  nom: string
+  slug: string | null
 }
 
-export interface AdminProgrammeRadioDetail {
+export interface AdminEmission {
   id: string
-  nom_emission: string
+  titre: string
   slug: string | null
   description: string
   image_couverture_url: string | null
-  audio_url: string | null
   info_animateur: string | null
   info_producteur: string | null
-  pays_id: string | null
-  pays_nom: string | null
-  est_international: boolean
   langue: string
-  categorie_radio: string | null
-  station_id: string | null
-  station_nom: string | null
-  a_la_une: boolean
+  cadence: CadenceEmission
   etat: string
+  type_support: TypeSupportAdmin
+  support_id: string
+  support: RefNommeeAdmin | null
+  categorie_radio: string | null
+  theme_phare_id: string | null
+  theme_phare_autre: string | null
+  theme_phare: RefNommeeAdmin | null
+  nombre_episodes: number
+  dernier_episode_at: string | null
+  /** Présents sur les vues back-office et détenteur uniquement. */
+  episodes_en_attente?: number | null
+  episodes_rejetes?: number | null
+  nombre_signalements: number
   cree_par: string
-  cree_par_nom: string | null
   created_at: string
   updated_at: string
 }
 
-export interface CreerProgrammeRadioForm {
-  nom_emission: string
+/** Le détail ne diffère pas de la liste : l'API renvoie le même objet. */
+export type AdminEmissionDetail = AdminEmission
+
+export interface CreerEmissionForm {
+  type_support: TypeSupportAdmin | ''
+  support_id: string
+  titre: string
   description: string
+  cadence: CadenceEmission
   image_couverture_url: string
-  audio_url: string
   info_animateur: string
   info_producteur: string
-  pays_id: string
-  est_international: boolean
   langue: string
+  theme_phare_id: string
+  theme_phare_autre: string
   categorie_radio: string
-  station_id: string
-  a_la_une: boolean
 }
 
-// ── Programmes TÉLÉ ───────────────────────────────────────────
-export interface AdminProgrammeTele {
+export interface AdminEpisode {
   id: string
-  nom_emission: string
-  etat: string
-  langue: string
-  pays_nom: string | null
-  chaine_nom: string | null
-  a_la_une: boolean
-  created_at: string
-}
-
-export interface AdminProgrammeTeleDetail {
-  id: string
-  nom_emission: string
+  emission_id: string
+  titre: string
   slug: string | null
   description: string
   image_couverture_url: string | null
+  /** Uniforme quelle que soit la famille ; les deux champs typés suivent. */
+  media_url: string | null
   video_url: string | null
-  info_animateur: string | null
-  info_producteur: string | null
-  pays_id: string | null
-  pays_nom: string | null
-  est_international: boolean
-  langue: string
-  chaine_id: string | null
-  chaine_nom: string | null
+  audio_url: string | null
+  source_media: string
+  numero_episode: number | null
+  ordre: number
+  duree_minutes: number | null
   a_la_une: boolean
+  a_la_une_globale: boolean
   etat: string
+  motif_rejet: string | null
+  valide_at: string | null
+  type_support: TypeSupportAdmin
+  emission: RefNommeeAdmin | null
+  emission_cadence: CadenceEmission | null
+  support: RefNommeeAdmin | null
+  nombre_signalements: number
   cree_par: string
-  cree_par_nom: string | null
+  auteur_nom_complet: string | null
   created_at: string
   updated_at: string
 }
 
-export interface CreerProgrammeTeleForm {
-  nom_emission: string
+export interface CreerEpisodeForm {
+  titre: string
   description: string
+  media_url: string
   image_couverture_url: string
-  video_url: string
-  info_animateur: string
-  info_producteur: string
-  pays_id: string
-  est_international: boolean
-  langue: string
-  chaine_id: string
-  a_la_une: boolean
+  numero_episode: number | null
+  duree_minutes: number | null
 }
 
 // ── Médias & Contenus — Événements ───────────────────────────

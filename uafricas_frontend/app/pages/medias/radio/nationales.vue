@@ -12,6 +12,8 @@
 import type { StationSection } from '~/composables/useStationsRadio'
 
 const { listerSections, listerPays, listerGenres, chargement } = useStationsRadio()
+// Référentiels de FILTRE (US3, US4) : seulement ce qui est réellement déclaré.
+const { listerThematiquesDisponibles, listerTerritoiresDisponibles } = useMediaSupport()
 const { aUnContenu, enLecture } = useLecteurMedia()
 
 useHead({
@@ -35,6 +37,12 @@ const page = ref(1)
 const totalPages = ref(1)
 const totalStations = ref(0)
 
+const thematiquesSelectionnees = ref<string[]>([])
+const territoireSelectionne = ref('')
+const thematiquesDisponibles = ref<{ id: string, nom: string, nombre_supports: number }[]>([])
+const territoiresDisponibles = ref<{ id: string, nom: string, nombre_supports: number }[]>([])
+const stationsContinentales = ref(0)
+
 const typeSelectionne = ref('Tous les types')
 const paysSelectionne = ref('Tous les territoires')
 const genreSelectionne = ref('Tous les genres')
@@ -48,6 +56,8 @@ const chargerSections = async (numero = 1) => {
     type_station: typeSelectionne.value,
     pays: paysSelectionne.value,
     genre: genreSelectionne.value,
+    thematiques: thematiquesSelectionnees.value,
+    territoire: territoireSelectionne.value,
     page: numero,
     par_page: 6,
   })
@@ -63,21 +73,36 @@ const reinitialiserFiltres = () => {
   typeSelectionne.value = 'Tous les types'
   paysSelectionne.value = 'Tous les territoires'
   genreSelectionne.value = 'Tous les genres'
+  thematiquesSelectionnees.value = []
+  territoireSelectionne.value = ''
 }
 
-watch([typeSelectionne, paysSelectionne, genreSelectionne], () => chargerSections(1))
+watch(
+  [typeSelectionne, paysSelectionne, genreSelectionne, thematiquesSelectionnees, territoireSelectionne],
+  () => chargerSections(1),
+)
 
 const encoreDesStations = computed(() => page.value < totalPages.value)
 const filtresActifs = computed(() =>
   typeSelectionne.value !== 'Tous les types'
   || paysSelectionne.value !== 'Tous les territoires'
-  || genreSelectionne.value !== 'Tous les genres',
+  || genreSelectionne.value !== 'Tous les genres'
+  || thematiquesSelectionnees.value.length > 0
+  || territoireSelectionne.value !== '',
 )
 
 onMounted(async () => {
-  const [pays, genres] = await Promise.all([listerPays(), listerGenres()])
+  const [pays, genres, thematiques, territoires] = await Promise.all([
+    listerPays(),
+    listerGenres(),
+    listerThematiquesDisponibles('station_radio'),
+    listerTerritoiresDisponibles('station_radio'),
+  ])
   if (pays) paysDisponibles.value = pays
   if (genres) genresDisponibles.value = genres
+  thematiquesDisponibles.value = thematiques
+  territoiresDisponibles.value = territoires.territoires
+  stationsContinentales.value = territoires.continentales
   await chargerSections(1)
 })
 </script>
@@ -122,7 +147,7 @@ onMounted(async () => {
       <!-- Toute proposition part en attente de validation (FR-031). -->
       <MediaProposerMediaModal
         :is-open="propositionOuverte"
-        :types-offerts="['station_radio', 'programme_radio']"
+        :types-offerts="['station_radio', 'emission_radio']"
         @close="propositionOuverte = false"
       />
 
@@ -143,6 +168,16 @@ onMounted(async () => {
         @select-country="paysSelectionne = $event"
         @select-genre="genreSelectionne = $event"
         @reset="reinitialiserFiltres"
+      />
+
+      <!-- Thématique déclarée et couverture : d'une autre nature que le genre
+           et le pays de siège ci-dessus (US3, US4). -->
+      <MediaBarreFiltresSupport
+        v-model:thematiques="thematiquesSelectionnees"
+        v-model:territoire="territoireSelectionne"
+        :thematiques-disponibles="thematiquesDisponibles"
+        :territoires-disponibles="territoiresDisponibles"
+        :nombre-continentales="stationsContinentales"
       />
 
       <div class="max-w-6xl mx-auto mt-8">

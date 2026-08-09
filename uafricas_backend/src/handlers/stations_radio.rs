@@ -3,9 +3,23 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::errors::ApiErreur;
+use crate::handlers::media_emission::{
+    emissions_publiees_par_supports, greffer_apercus_et_compteurs, lister_episodes_emission,
+    obtenir_emission_par_slug,
+};
+use crate::handlers::media_episode::obtenir_episode_par_slug;
 use crate::handlers::media_social;
+// Parsing du filtre `?thematique=` : utilitaire de MODÈLE, pas un handler.
+use crate::models::media_support::thematiques_demandees;
+use crate::handlers::media_support::{
+    couverture_par_supports, territoires_disponibles, thematiques_disponibles,
+    thematiques_par_supports,
+};
+use crate::models::media_emission::EmissionResponse;
 use crate::models::programme_radio::*;
 use crate::models::station_radio::*;
+
+const TYPE_SUPPORT: &str = "station_radio";
 
 #[derive(serde::Serialize)]
 struct ApiResponse<T: serde::Serialize> {
@@ -218,30 +232,37 @@ pub async fn obtenir_station_par_slug(
 
     let mut reponse = station.to_response();
     let compteurs =
-        media_social::compteurs_pour(pool.get_ref(), "station_radio", &[reponse.id], moi).await?;
+        media_social::compteurs_pour(pool.get_ref(), TYPE_SUPPORT, &[reponse.id], moi).await?;
     reponse.interactions = compteurs.get(&reponse.id).cloned();
+
+    let thematiques = thematiques_par_supports(pool.get_ref(), TYPE_SUPPORT, &[reponse.id]).await?;
+    let couvertures = couverture_par_supports(pool.get_ref(), TYPE_SUPPORT, &[reponse.id]).await?;
+    reponse.thematiques = thematiques.get(&reponse.id).cloned().unwrap_or_default();
+    reponse.couverture = couvertures.get(&reponse.id).cloned();
+
+    // Les programmes de la station, avec leur aperçu d'épisodes : la page déplie
+    // ainsi le catalogue à deux niveaux sans second appel.
+    let mut par_station =
+        emissions_publiees_par_supports(pool.get_ref(), TYPE_SUPPORT, &[reponse.id], 50).await?;
+    let (mut emissions, total_emissions) =
+        par_station.remove(&reponse.id).unwrap_or((Vec::new(), 0));
+    let mut refs: Vec<&mut EmissionResponse> = emissions.iter_mut().collect();
+    greffer_apercus_et_compteurs(pool.get_ref(), TYPE_SUPPORT, &mut refs, moi).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(reponse),
+        data: Some(serde_json::json!({
+            "station": reponse,
+            "emissions": emissions,
+            "total_emissions": total_emissions,
+        })),
         error: None,
     }))
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PAGES RADIO — SECTIONS PAR STATION (US2)
+// PAGES RADIO — SECTIONS PAR STATION
 // ═══════════════════════════════════════════════════════════════════════════
-
-/// Jointures communes aux lectures d'émissions radio. Le libellé du thème phare
-/// exige une jointure explicite : `theme_phare_id` est une référence logique,
-/// sans clé étrangère.
-const JOINTURES_PROGRAMME_RADIO: &str =
-    "LEFT JOIN shared.pays p ON p.id = pr.pays_id
-     LEFT JOIN media_content.station_radio st ON st.id = pr.station_id
-     LEFT JOIN shared.categorie cat ON cat.id = pr.theme_phare_id";
-
-const CHAMPS_JOINTS_PROGRAMME_RADIO: &str =
-    "p.nom AS pays_nom, st.nom AS station_nom, st.slug AS station_slug, cat.nom AS theme_phare_nom";
 
 // ── GET /api/stations-radio/sections ──────────────────────────────────
 
@@ -249,8 +270,10 @@ const CHAMPS_JOINTS_PROGRAMME_RADIO: &str =
 ///
 /// Le paramètre `origine` est porté par la PAGE (`africans` ou `territoire`) et
 /// non par l'utilisateur : c'est lui qui garantit qu'aucune station n'apparaît
-/// sur les deux pages (FR-013, FR-014). Les autres filtres restent à la main du
-/// visiteur et s'appliquent en plus.
+/// sur les deux pages. Les autres filtres restent à la main du visiteur.
+///
+/// **Aucune requête N+1** : les programmes de toutes les stations sont chargés
+/// en une passe, leurs aperçus d'épisodes en une seconde, les compteurs en deux.
 pub async fn lister_sections_stations(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -260,8 +283,11 @@ pub async fn lister_sections_stations(
     let page = params.page.unwrap_or(1).max(1);
     let par_page = params.par_page.unwrap_or(6).clamp(1, 20);
     let offset = (page - 1) * par_page;
-    let contenus_par_section = params.contenus_par_section.unwrap_or(12).clamp(1, 30);
+    let emissions_par_section = params.contenus_par_section.unwrap_or(12).clamp(1, 30);
 
+    // Une station dont aucun programme n'a d'épisode publié ne donne pas de
+    // section : elle n'aurait rien à montrer (FR-011). Le direct fait exception
+    // — une station qui émet en continu reste une section légitime.
     let mut conditions: Vec<String> = vec![
         "sr.etat = 'publie'".to_string(),
         "sr.deleted_at IS NULL".to_string(),
@@ -280,42 +306,81 @@ pub async fn lister_sections_stations(
         bind_index += 1;
     }
 
-    if let Some(ref type_station) = params.type_station {
-        if type_station != "Tous les types" {
-            conditions.push(format!("sr.type_station::text = ${}", bind_index));
-            bind_values.push(mapper_type_station_db(type_station));
-            bind_index += 1;
-        }
+    if let Some(ref type_station) = params.type_station
+        && type_station != "Tous les types"
+    {
+        conditions.push(format!("sr.type_station::text = ${}", bind_index));
+        bind_values.push(mapper_type_station_db(type_station));
+        bind_index += 1;
     }
 
-    if let Some(ref pays) = params.pays {
-        if pays != "Tous les territoires" && pays != "Tous les pays" {
-            conditions.push(format!(
-                "EXISTS (SELECT 1 FROM shared.pays p2 WHERE p2.id = sr.pays_id AND LOWER(p2.nom) = LOWER(${}))",
-                bind_index
-            ));
-            bind_values.push(pays.clone());
-            bind_index += 1;
-        }
+    if let Some(ref pays) = params.pays
+        && pays != "Tous les territoires"
+        && pays != "Tous les pays"
+    {
+        conditions.push(format!(
+            "EXISTS (SELECT 1 FROM shared.pays p2 WHERE p2.id = sr.pays_id AND LOWER(p2.nom) = LOWER(${}))",
+            bind_index
+        ));
+        bind_values.push(pays.clone());
+        bind_index += 1;
     }
 
-    if let Some(ref genre) = params.genre {
-        if genre != "Tous les genres" {
-            conditions.push(format!("${} = ANY(sr.genres_liste)", bind_index));
-            bind_values.push(genre.clone());
-            bind_index += 1;
-        }
+    if let Some(ref genre) = params.genre
+        && genre != "Tous les genres"
+    {
+        conditions.push(format!("${} = ANY(sr.genres_liste)", bind_index));
+        bind_values.push(genre.clone());
+        bind_index += 1;
     }
 
-    if let Some(ref recherche) = params.recherche {
-        if !recherche.trim().is_empty() {
-            conditions.push(format!(
-                "(LOWER(sr.nom) LIKE LOWER(${bi}) OR LOWER(sr.description) LIKE LOWER(${bi}))",
-                bi = bind_index
-            ));
-            bind_values.push(format!("%{}%", recherche.trim()));
-            bind_index += 1;
-        }
+    // Thématiques DÉCLARÉES par la station (US3), entendues comme un **OU**
+    // (mêmes raisons que côté télé). L'`EXISTS` garantit qu'une station portant
+    // deux des thèmes demandés ne remonte qu'**une fois** (FR-030).
+    let thematiques_filtrees = thematiques_demandees(params.thematique.as_deref())?;
+    if !thematiques_filtrees.is_empty() {
+        conditions.push(format!(
+            "EXISTS (SELECT 1 FROM media_content.support_thematique st
+                      WHERE st.type_support = 'station_radio'
+                        AND st.support_id = sr.id
+                        AND st.categorie_id = ANY(${}::uuid[]))",
+            bind_index
+        ));
+        bind_values.push(format!(
+            "{{{}}}",
+            thematiques_filtrees
+                .iter()
+                .map(|id| id.to_string())
+                .collect::<Vec<_>>()
+                .join(",")
+        ));
+        bind_index += 1;
+    }
+
+    // Territoire couvert (US4) : les stations continentales remontent sur
+    // **chaque** territoire — c'est FR-036 en une clause.
+    if let Some(territoire) = params.territoire {
+        conditions.push(format!(
+            "(sr.couverture_continentale = TRUE
+              OR EXISTS (SELECT 1 FROM media_content.support_territoire ste
+                          WHERE ste.type_support = 'station_radio'
+                            AND ste.support_id = sr.id
+                            AND ste.pays_id = ${}::uuid))",
+            bind_index
+        ));
+        bind_values.push(territoire.to_string());
+        bind_index += 1;
+    }
+
+    if let Some(ref recherche) = params.recherche
+        && !recherche.trim().is_empty()
+    {
+        conditions.push(format!(
+            "(LOWER(sr.nom) LIKE LOWER(${bi}) OR LOWER(sr.description) LIKE LOWER(${bi}))",
+            bi = bind_index
+        ));
+        bind_values.push(format!("%{}%", recherche.trim()));
+        bind_index += 1;
     }
 
     let where_clause = conditions.join(" AND ");
@@ -359,48 +424,21 @@ pub async fn lister_sections_stations(
         .await
         .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur listing sections radio: {}", e)))?;
 
-    let requete_contenus = format!(
-        "SELECT {}, {}
-           FROM media_content.programme_radio pr
-           {}
-          WHERE pr.station_id = $1
-            AND pr.etat = 'publie'
-            AND pr.deleted_at IS NULL
-          ORDER BY pr.a_la_une DESC, pr.created_at DESC
-          LIMIT $2",
-        PROGRAMME_RADIO_COLONNES, CHAMPS_JOINTS_PROGRAMME_RADIO, JOINTURES_PROGRAMME_RADIO
-    );
+    let ids: Vec<Uuid> = stations.iter().map(|s| s.id).collect();
+    let mut par_station = emissions_publiees_par_supports(
+        pool.get_ref(),
+        TYPE_SUPPORT,
+        &ids,
+        emissions_par_section,
+    )
+    .await?;
 
     let mut sections: Vec<StationSectionResponse> = Vec::with_capacity(stations.len());
-
     for station in &stations {
-        let total_contenus: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM media_content.programme_radio
-              WHERE station_id = $1 AND etat = 'publie' AND deleted_at IS NULL",
-        )
-        .bind(station.id)
-        .fetch_one(pool.get_ref())
-        .await
-        .map_err(|e| {
-            ApiErreur::BaseDeDonnees(format!("Erreur comptage contenus station: {}", e))
-        })?;
+        let (emissions, total_emissions) =
+            par_station.remove(&station.id).unwrap_or((Vec::new(), 0));
 
-        // +1 : le contenu mis en évidence est extrait de cette liste, la rangée
-        // doit malgré tout compter `contenus_par_section` éléments.
-        let contenus = sqlx::query_as::<_, ProgrammeRadioRow>(&requete_contenus)
-            .bind(station.id)
-            .bind(contenus_par_section + 1)
-            .fetch_all(pool.get_ref())
-            .await
-            .map_err(|e| {
-                ApiErreur::BaseDeDonnees(format!("Erreur lecture contenus station: {}", e))
-            })?;
-
-        let mut iter = contenus.iter();
-        let mis_en_evidence = iter.next().map(|p| p.to_response());
-        let autres: Vec<_> = iter.map(|p| p.to_response()).collect();
-
-        // Le direct est offert au même titre qu'une émission enregistrée (FR-016).
+        // Le direct est offert au même titre qu'une émission enregistrée.
         let direct_disponible = station
             .stream_url
             .as_deref()
@@ -408,10 +446,10 @@ pub async fn lister_sections_stations(
             .unwrap_or(false);
 
         // Résolution paresseuse de la grille : deux requêtes SQL, aucun état
-        // conservé, aucune tâche de fond (R7, FR-038).
+        // conservé, aucune tâche de fond.
         let diffusion = crate::handlers::media_programmation::diffusion_pour_support(
             pool.get_ref(),
-            "station_radio",
+            TYPE_SUPPORT,
             station.id,
         )
         .await?;
@@ -419,17 +457,34 @@ pub async fn lister_sections_stations(
         sections.push(StationSectionResponse {
             station: station.to_response(),
             direct_disponible,
-            mis_en_evidence,
-            contenus: autres,
-            total_contenus,
+            emissions,
+            total_emissions,
             diffusion_en_cours: diffusion.diffusion_en_cours,
             creneau_suivant: diffusion.creneau_suivant,
         });
     }
 
-    // Compteurs d'interaction de TOUTE la page en deux requêtes — une par type
-    // de cible — plutôt qu'une par carte affichée (FR-027).
-    greffer_compteurs_sections_radio(pool.get_ref(), &mut sections, moi).await?;
+    // Une station sans programme diffusable ET sans direct n'a rien à montrer.
+    sections.retain(|s| !s.emissions.is_empty() || s.direct_disponible);
+
+    let mut toutes: Vec<&mut EmissionResponse> = sections
+        .iter_mut()
+        .flat_map(|s| s.emissions.iter_mut())
+        .collect();
+    greffer_apercus_et_compteurs(pool.get_ref(), TYPE_SUPPORT, &mut toutes, moi).await?;
+
+    let ids_stations: Vec<Uuid> = sections.iter().map(|s| s.station.id).collect();
+    let compteurs_stations =
+        media_social::compteurs_pour(pool.get_ref(), TYPE_SUPPORT, &ids_stations, moi).await?;
+    let thematiques = thematiques_par_supports(pool.get_ref(), TYPE_SUPPORT, &ids_stations).await?;
+    let couvertures = couverture_par_supports(pool.get_ref(), TYPE_SUPPORT, &ids_stations).await?;
+
+    for section in sections.iter_mut() {
+        let id = section.station.id;
+        section.station.interactions = compteurs_stations.get(&id).cloned();
+        section.station.thematiques = thematiques.get(&id).cloned().unwrap_or_default();
+        section.station.couverture = couvertures.get(&id).cloned();
+    }
 
     let total_pages = (total as f64 / par_page as f64).ceil() as i64;
 
@@ -447,153 +502,102 @@ pub async fn lister_sections_stations(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PROGRAMMES RADIO (émissions) — exposition publique
+// PROGRAMMES ET ÉPISODES RADIO
 // ═══════════════════════════════════════════════════════════════════════════
-// Ces contenus n'avaient aucun endpoint public, alors que leur équivalent
-// télévision en comptait trois (FR-020).
 
-// ── GET /api/programmes-radio ─────────────────────────────────────────
+// ── GET /api/stations-radio/emissions/slug/{slug} ─────────────────────
 
-pub async fn lister_programmes_radio(
-    pool: web::Data<PgPool>,
-    params: web::Query<ProgrammeRadioQueryParams>,
-) -> Result<HttpResponse, ApiErreur> {
-    let page = params.page.unwrap_or(1).max(1);
-    let par_page = params.par_page.unwrap_or(20).min(100);
-    let offset = (page - 1) * par_page;
-
-    let mut conditions: Vec<String> = vec![
-        "pr.etat = 'publie'".to_string(),
-        "pr.deleted_at IS NULL".to_string(),
-    ];
-    let mut bind_index = 1u32;
-    let mut bind_values: Vec<String> = Vec::new();
-
-    if let Some(ref pays) = params.pays {
-        if pays != "Tous les territoires" && pays != "Tous les pays" {
-            conditions.push(format!(
-                "EXISTS (SELECT 1 FROM shared.pays p2 WHERE p2.id = pr.pays_id AND LOWER(p2.nom) = LOWER(${}))",
-                bind_index
-            ));
-            bind_values.push(pays.clone());
-            bind_index += 1;
-        }
-    }
-
-    if let Some(station_id) = params.station {
-        conditions.push(format!("pr.station_id = ${}::uuid", bind_index));
-        bind_values.push(station_id.to_string());
-        bind_index += 1;
-    }
-
-    if let Some(ref categorie) = params.categorie_radio {
-        if !categorie.trim().is_empty() {
-            conditions.push(format!("pr.categorie_radio::text = ${}", bind_index));
-            bind_values.push(categorie.clone());
-            bind_index += 1;
-        }
-    }
-
-    if let Some(ref recherche) = params.recherche {
-        if !recherche.trim().is_empty() {
-            conditions.push(format!(
-                "(LOWER(pr.nom_emission) LIKE LOWER(${bi}) OR LOWER(pr.description) LIKE LOWER(${bi}))",
-                bi = bind_index
-            ));
-            bind_values.push(format!("%{}%", recherche.trim()));
-            bind_index += 1;
-        }
-    }
-
-    let where_clause = conditions.join(" AND ");
-
-    let count_query = format!(
-        "SELECT COUNT(*) FROM media_content.programme_radio pr WHERE {}",
-        where_clause
-    );
-    let mut count_q = sqlx::query_scalar::<_, i64>(&count_query);
-    for val in &bind_values {
-        count_q = count_q.bind(val);
-    }
-    let total: i64 = count_q
-        .fetch_one(pool.get_ref())
-        .await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage émissions radio: {}", e)))?;
-
-    let query = format!(
-        "SELECT {}, {}
-           FROM media_content.programme_radio pr
-           {}
-          WHERE {}
-          ORDER BY pr.a_la_une DESC, pr.created_at DESC
-          LIMIT ${} OFFSET ${}",
-        PROGRAMME_RADIO_COLONNES,
-        CHAMPS_JOINTS_PROGRAMME_RADIO,
-        JOINTURES_PROGRAMME_RADIO,
-        where_clause,
-        bind_index,
-        bind_index + 1
-    );
-
-    let mut q = sqlx::query_as::<_, ProgrammeRadioRow>(&query);
-    for val in &bind_values {
-        q = q.bind(val);
-    }
-    q = q.bind(par_page).bind(offset);
-
-    let programmes = q
-        .fetch_all(pool.get_ref())
-        .await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur listing émissions radio: {}", e)))?;
-
-    let total_pages = (total as f64 / par_page as f64).ceil() as i64;
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(ProgrammeRadioListeResponse {
-            programmes: programmes.iter().map(|p| p.to_response()).collect(),
-            total,
-            page,
-            par_page,
-            total_pages,
-        }),
-        error: None,
-    }))
-}
-
-// ── GET /api/programmes-radio/slug/{slug} ─────────────────────────────
-
-pub async fn obtenir_programme_radio_par_slug(
+pub async fn obtenir_emission_radio_slug(
     req: HttpRequest,
     pool: web::Data<PgPool>,
     chemin: web::Path<String>,
 ) -> Result<HttpResponse, ApiErreur> {
     let slug = chemin.into_inner();
     let moi = media_social::extraire_utilisateur_id(&req);
-
-    let query = format!(
-        "SELECT {}, {}
-           FROM media_content.programme_radio pr
-           {}
-          WHERE pr.slug = $1 AND pr.etat = 'publie' AND pr.deleted_at IS NULL",
-        PROGRAMME_RADIO_COLONNES, CHAMPS_JOINTS_PROGRAMME_RADIO, JOINTURES_PROGRAMME_RADIO
-    );
-
-    let programme = sqlx::query_as::<_, ProgrammeRadioRow>(&query)
-        .bind(&slug)
-        .fetch_optional(pool.get_ref())
-        .await
-        .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur lecture émission radio: {}", e)))?
-        .ok_or_else(|| ApiErreur::NonTrouve("Émission radio non trouvée".into()))?;
-
-    let mut reponse = programme.to_response();
-    let compteurs =
-        media_social::compteurs_pour(pool.get_ref(), "programme_radio", &[reponse.id], moi).await?;
-    reponse.interactions = compteurs.get(&reponse.id).cloned();
+    let emission = obtenir_emission_par_slug(pool.get_ref(), TYPE_SUPPORT, &slug, moi).await?;
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(reponse),
+        data: Some(emission),
+        error: None,
+    }))
+}
+
+// ── GET /api/stations-radio/emissions/{id}/episodes ───────────────────
+
+#[derive(serde::Deserialize)]
+pub struct PaginationEpisodes {
+    pub page: Option<i64>,
+    pub taille: Option<i64>,
+}
+
+pub async fn lister_episodes_radio(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<Uuid>,
+    params: web::Query<PaginationEpisodes>,
+) -> Result<HttpResponse, ApiErreur> {
+    let emission_id = chemin.into_inner();
+    let moi = media_social::extraire_utilisateur_id(&req);
+    let page = params.page.unwrap_or(1).max(1);
+    let taille = params.taille.unwrap_or(24).clamp(1, 100);
+
+    let data = lister_episodes_emission(
+        pool.get_ref(),
+        TYPE_SUPPORT,
+        emission_id,
+        page,
+        taille,
+        moi,
+    )
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(data),
+        error: None,
+    }))
+}
+
+// ── GET /api/stations-radio/episodes/slug/{slug} ──────────────────────
+
+/// Remplace `GET /api/programmes-radio/slug/{slug}`. Les slugs ayant été
+/// conservés par 09q, les adresses publiques existantes continuent de résoudre
+/// (FR-056) et affichent désormais la page d'épisode.
+pub async fn obtenir_episode_radio_slug(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<String>,
+) -> Result<HttpResponse, ApiErreur> {
+    let slug = chemin.into_inner();
+    let moi = media_social::extraire_utilisateur_id(&req);
+    let data = obtenir_episode_par_slug(pool.get_ref(), TYPE_SUPPORT, &slug, moi).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(data),
+        error: None,
+    }))
+}
+
+// ── GET /api/stations-radio/thematiques ───────────────────────────────
+
+pub async fn lister_thematiques_radio(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
+    let data = thematiques_disponibles(pool.get_ref(), TYPE_SUPPORT).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(data),
+        error: None,
+    }))
+}
+
+// ── GET /api/stations-radio/territoires ───────────────────────────────
+
+pub async fn lister_territoires_radio(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
+    let data = territoires_disponibles(pool.get_ref(), TYPE_SUPPORT).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(data),
         error: None,
     }))
 }
@@ -734,39 +738,4 @@ pub async fn creer_station(
         data: Some(station.to_response()),
         error: None,
     }))
-}
-
-/// Greffe les compteurs d'interaction sur toutes les cartes d'un lot de
-/// sections radio : deux requêtes au total, quel que soit le nombre de cartes.
-async fn greffer_compteurs_sections_radio(
-    pool: &PgPool,
-    sections: &mut [StationSectionResponse],
-    moi: Option<Uuid>,
-) -> Result<(), ApiErreur> {
-    let ids_stations: Vec<Uuid> = sections.iter().map(|s| s.station.id).collect();
-    let ids_programmes: Vec<Uuid> = sections
-        .iter()
-        .flat_map(|s| {
-            s.mis_en_evidence
-                .iter()
-                .map(|p| p.id)
-                .chain(s.contenus.iter().map(|p| p.id))
-        })
-        .collect();
-
-    let compteurs_stations =
-        media_social::compteurs_pour(pool, "station_radio", &ids_stations, moi).await?;
-    let compteurs_programmes =
-        media_social::compteurs_pour(pool, "programme_radio", &ids_programmes, moi).await?;
-
-    for section in sections.iter_mut() {
-        section.station.interactions = compteurs_stations.get(&section.station.id).cloned();
-        if let Some(ref mut p) = section.mis_en_evidence {
-            p.interactions = compteurs_programmes.get(&p.id).cloned();
-        }
-        for p in section.contenus.iter_mut() {
-            p.interactions = compteurs_programmes.get(&p.id).cloned();
-        }
-    }
-    Ok(())
 }

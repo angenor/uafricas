@@ -1,0 +1,576 @@
+//! Fiche d'un support média — thématiques multiples et couverture territoriale
+//! (feature 009-medias-programmes-episodes, US3 et US4 — migration 09r).
+//!
+//! Routes membres (gardées par `garde_detenteur`) **et** back-office (gardées
+//! par `verifier_permission!`) : les règles de validation sont strictement les
+//! mêmes des deux côtés, et les écrire deux fois serait le meilleur moyen d'en
+//! avoir une fausse.
+//!
+//!   GET|PUT /api/medias/{type_support}/{support_id}/thematiques
+//!   GET|PUT /api/medias/{type_support}/{support_id}/couverture
+//!   GET|PUT /api/admin/medias/{type_support}/{support_id}/thematiques
+//!   GET|PUT /api/admin/medias/{type_support}/{support_id}/couverture
+
+use std::collections::HashMap;
+
+use actix_web::{web, HttpRequest, HttpResponse};
+use sqlx::PgPool;
+use uuid::Uuid;
+
+use crate::errors::ApiErreur;
+use crate::handlers::media_detention::{exiger_utilisateur_id, garde_detenteur};
+use crate::middleware::admin::AdminUtilisateur;
+use crate::models::media_detention::{table_pour_support, valider_type_support};
+use crate::models::media_support::{
+    CouverturePublique, CouvertureRequest, TerritoireDecompte, TerritoirePublic,
+    TerritoiresDisponibles, ThematiqueDecompte, ThematiquePublique, ThematiquesRequest,
+};
+use crate::services::audit;
+use crate::verifier_permission;
+use crate::ApiResponse;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Lectures groupées — sans requête N+1
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Thématiques de plusieurs supports, en **une seule requête**.
+pub async fn thematiques_par_supports(
+    pool: &PgPool,
+    type_support: &str,
+    support_ids: &[Uuid],
+) -> Result<HashMap<Uuid, Vec<ThematiquePublique>>, ApiErreur> {
+    let mut resultat: HashMap<Uuid, Vec<ThematiquePublique>> = HashMap::new();
+    if support_ids.is_empty() {
+        return Ok(resultat);
+    }
+
+    let lignes: Vec<(Uuid, Uuid, String)> = sqlx::query_as(
+        "SELECT st.support_id, cat.id, cat.nom
+           FROM media_content.support_thematique st
+           JOIN shared.categorie cat ON cat.id = st.categorie_id
+          WHERE st.type_support = $1::media_content.type_support_media
+            AND st.support_id = ANY($2)
+          ORDER BY cat.nom ASC",
+    )
+    .bind(type_support)
+    .bind(support_ids)
+    .fetch_all(pool)
+    .await?;
+
+    for (support_id, id, nom) in lignes {
+        resultat
+            .entry(support_id)
+            .or_default()
+            .push(ThematiquePublique { id, nom });
+    }
+    Ok(resultat)
+}
+
+/// Couverture de plusieurs supports, en **deux requêtes** — le drapeau
+/// continental vit sur la table du support, les territoires sur la liaison.
+pub async fn couverture_par_supports(
+    pool: &PgPool,
+    type_support: &str,
+    support_ids: &[Uuid],
+) -> Result<HashMap<Uuid, CouverturePublique>, ApiErreur> {
+    let mut resultat: HashMap<Uuid, CouverturePublique> = HashMap::new();
+    if support_ids.is_empty() {
+        return Ok(resultat);
+    }
+    let table = table_pour_support(type_support)
+        .ok_or_else(|| ApiErreur::Validation("Type de support inconnu".into()))?;
+
+    let drapeaux: Vec<(Uuid, bool)> = sqlx::query_as(&format!(
+        "SELECT id, couverture_continentale FROM {table} WHERE id = ANY($1)"
+    ))
+    .bind(support_ids)
+    .fetch_all(pool)
+    .await?;
+
+    for (id, continentale) in drapeaux {
+        resultat.insert(
+            id,
+            CouverturePublique {
+                couverture_continentale: continentale,
+                territoires: Vec::new(),
+            },
+        );
+    }
+
+    let lignes: Vec<(Uuid, Uuid, String)> = sqlx::query_as(
+        "SELECT ste.support_id, p.id, p.nom
+           FROM media_content.support_territoire ste
+           JOIN shared.pays p ON p.id = ste.pays_id
+          WHERE ste.type_support = $1::media_content.type_support_media
+            AND ste.support_id = ANY($2)
+          ORDER BY p.nom ASC",
+    )
+    .bind(type_support)
+    .bind(support_ids)
+    .fetch_all(pool)
+    .await?;
+
+    for (support_id, id, nom) in lignes {
+        if let Some(couverture) = resultat.get_mut(&support_id) {
+            couverture.territoires.push(TerritoirePublic { id, nom });
+        }
+    }
+
+    Ok(resultat)
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Référentiels de filtre
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Thèmes **réellement déclarés** par au moins un support publié, avec leur
+/// décompte — même principe que `GET /api/experts/specialites` : on ne propose
+/// pas un filtre qui ne remonterait rien.
+pub async fn thematiques_disponibles(
+    pool: &PgPool,
+    type_support: &str,
+) -> Result<Vec<ThematiqueDecompte>, ApiErreur> {
+    let table = table_pour_support(type_support)
+        .ok_or_else(|| ApiErreur::Validation("Type de support inconnu".into()))?;
+
+    let lignes = sqlx::query_as::<_, ThematiqueDecompte>(&format!(
+        "SELECT cat.id, cat.nom, COUNT(*)::bigint AS nombre_supports
+           FROM media_content.support_thematique st
+           JOIN shared.categorie cat ON cat.id = st.categorie_id
+           JOIN {table} s ON s.id = st.support_id
+          WHERE st.type_support = $1::media_content.type_support_media
+            AND s.etat = 'publie' AND s.deleted_at IS NULL
+          GROUP BY cat.id, cat.nom
+          ORDER BY cat.nom ASC"
+    ))
+    .bind(type_support)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(lignes)
+}
+
+/// Territoires réellement couverts, plus le marqueur des supports panafricains.
+///
+/// Ces derniers ne peuvent pas être comptés dans les lignes ci-dessus : ils
+/// remontent sur **chaque** territoire (FR-036) et gonfleraient tous les
+/// décomptes.
+pub async fn territoires_disponibles(
+    pool: &PgPool,
+    type_support: &str,
+) -> Result<TerritoiresDisponibles, ApiErreur> {
+    let table = table_pour_support(type_support)
+        .ok_or_else(|| ApiErreur::Validation("Type de support inconnu".into()))?;
+
+    let territoires = sqlx::query_as::<_, TerritoireDecompte>(&format!(
+        "SELECT p.id, p.nom, COUNT(*)::bigint AS nombre_supports
+           FROM media_content.support_territoire ste
+           JOIN shared.pays p ON p.id = ste.pays_id
+           JOIN {table} s ON s.id = ste.support_id
+          WHERE ste.type_support = $1::media_content.type_support_media
+            AND s.etat = 'publie' AND s.deleted_at IS NULL
+          GROUP BY p.id, p.nom
+          ORDER BY p.nom ASC"
+    ))
+    .bind(type_support)
+    .fetch_all(pool)
+    .await?;
+
+    let continentales: i64 = sqlx::query_scalar(&format!(
+        "SELECT COUNT(*) FROM {table}
+          WHERE couverture_continentale = TRUE AND etat = 'publie' AND deleted_at IS NULL"
+    ))
+    .fetch_one(pool)
+    .await?;
+
+    Ok(TerritoiresDisponibles {
+        territoires,
+        continentales,
+    })
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Écritures — règles communes membre et back-office
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Remplacement intégral des thématiques d'un support.
+///
+/// Les identifiants sont confrontés au **contexte `media`** du référentiel : un
+/// thème d'un autre contexte passerait sinon inaperçu, la liaison ne portant
+/// aucune clé étrangère.
+async fn appliquer_thematiques(
+    pool: &PgPool,
+    type_support: &str,
+    support_id: Uuid,
+    body: &ThematiquesRequest,
+) -> Result<usize, ApiErreur> {
+    let table = table_pour_support(type_support)
+        .ok_or_else(|| ApiErreur::Validation("Type de support inconnu".into()))?;
+
+    let etat: String = sqlx::query_scalar(&format!(
+        "SELECT etat FROM {table} WHERE id = $1 AND deleted_at IS NULL"
+    ))
+    .bind(support_id)
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Support introuvable".into()))?;
+
+    body.valider(&etat)?;
+    let ids = body.ids_uniques();
+
+    if !ids.is_empty() {
+        let valides: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM shared.categorie
+              WHERE id = ANY($1) AND contexte = 'media'",
+        )
+        .bind(&ids)
+        .fetch_one(pool)
+        .await?;
+        if valides as usize != ids.len() {
+            return Err(ApiErreur::Validation(
+                "Une des thématiques ne relève pas du référentiel média".into(),
+            ));
+        }
+    }
+
+    let mut tx = pool.begin().await?;
+
+    sqlx::query(
+        "DELETE FROM media_content.support_thematique
+          WHERE type_support = $1::media_content.type_support_media AND support_id = $2",
+    )
+    .bind(type_support)
+    .bind(support_id)
+    .execute(&mut *tx)
+    .await?;
+
+    for id in &ids {
+        sqlx::query(
+            "INSERT INTO media_content.support_thematique (type_support, support_id, categorie_id)
+             VALUES ($1::media_content.type_support_media, $2, $3)
+             ON CONFLICT DO NOTHING",
+        )
+        .bind(type_support)
+        .bind(support_id)
+        .bind(id)
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    tx.commit().await?;
+    Ok(ids.len())
+}
+
+/// Remplacement intégral de la couverture.
+///
+/// Le passage à `couverture_continentale = TRUE` supprime les lignes de
+/// territoire **dans la même transaction** : les laisser violerait l'invariant
+/// que le trigger défend à l'écriture suivante, et la fiche afficherait deux
+/// couvertures contradictoires entre-temps.
+async fn appliquer_couverture(
+    pool: &PgPool,
+    type_support: &str,
+    support_id: Uuid,
+    body: &CouvertureRequest,
+) -> Result<(), ApiErreur> {
+    let table = table_pour_support(type_support)
+        .ok_or_else(|| ApiErreur::Validation("Type de support inconnu".into()))?;
+
+    let etat: String = sqlx::query_scalar(&format!(
+        "SELECT etat FROM {table} WHERE id = $1 AND deleted_at IS NULL"
+    ))
+    .bind(support_id)
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Support introuvable".into()))?;
+
+    body.valider(&etat)?;
+    let ids = body.ids_uniques();
+
+    let mut tx = pool.begin().await?;
+
+    // L'ordre compte : vider les territoires AVANT de poser le drapeau, sinon
+    // le trigger refuserait la moindre réécriture ultérieure.
+    sqlx::query(
+        "DELETE FROM media_content.support_territoire
+          WHERE type_support = $1::media_content.type_support_media AND support_id = $2",
+    )
+    .bind(type_support)
+    .bind(support_id)
+    .execute(&mut *tx)
+    .await?;
+
+    sqlx::query(&format!(
+        "UPDATE {table} SET couverture_continentale = $2, updated_at = NOW() WHERE id = $1"
+    ))
+    .bind(support_id)
+    .bind(body.couverture_continentale)
+    .execute(&mut *tx)
+    .await?;
+
+    if !body.couverture_continentale {
+        for id in &ids {
+            sqlx::query(
+                "INSERT INTO media_content.support_territoire (type_support, support_id, pays_id)
+                 VALUES ($1::media_content.type_support_media, $2, $3)
+                 ON CONFLICT DO NOTHING",
+            )
+            .bind(type_support)
+            .bind(support_id)
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        }
+    }
+
+    tx.commit().await?;
+    Ok(())
+}
+
+async fn journaliser(
+    req: &HttpRequest,
+    pool: &PgPool,
+    moi: Uuid,
+    type_support: &str,
+    support_id: Uuid,
+    table_logique: &str,
+    apres: serde_json::Value,
+) {
+    let ip = audit::extraire_ip(req);
+    let ua = audit::extraire_user_agent(req);
+    audit::log_action(
+        pool,
+        Some(moi),
+        "UPDATE",
+        "media_content",
+        table_logique,
+        Some(support_id),
+        Some(serde_json::json!({ "type_support": type_support })),
+        Some(apres),
+        ip.as_deref(),
+        ua.as_deref(),
+    )
+    .await;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Routes membre
+// ═══════════════════════════════════════════════════════════════════════════
+
+pub async fn obtenir_thematiques(
+    pool: web::Data<PgPool>,
+    chemin: web::Path<(String, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    let (type_support, support_id) = chemin.into_inner();
+    valider_type_support(&type_support)?;
+    let map = thematiques_par_supports(pool.get_ref(), &type_support, &[support_id]).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(map.get(&support_id).cloned().unwrap_or_default()),
+        error: None,
+    }))
+}
+
+pub async fn definir_thematiques(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<(String, Uuid)>,
+    body: web::Json<ThematiquesRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let moi = exiger_utilisateur_id(&req)?;
+    let (type_support, support_id) = chemin.into_inner();
+    garde_detenteur(pool.get_ref(), &type_support, support_id, moi, "co_detenteur").await?;
+
+    let nombre = appliquer_thematiques(pool.get_ref(), &type_support, support_id, &body).await?;
+    journaliser(
+        &req,
+        pool.get_ref(),
+        moi,
+        &type_support,
+        support_id,
+        "support_thematique",
+        serde_json::json!({ "thematiques": nombre }),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+pub async fn obtenir_couverture(
+    pool: web::Data<PgPool>,
+    chemin: web::Path<(String, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    let (type_support, support_id) = chemin.into_inner();
+    valider_type_support(&type_support)?;
+    let map = couverture_par_supports(pool.get_ref(), &type_support, &[support_id]).await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: map.get(&support_id).cloned(),
+        error: None,
+    }))
+}
+
+pub async fn definir_couverture(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    chemin: web::Path<(String, Uuid)>,
+    body: web::Json<CouvertureRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let moi = exiger_utilisateur_id(&req)?;
+    let (type_support, support_id) = chemin.into_inner();
+    garde_detenteur(pool.get_ref(), &type_support, support_id, moi, "co_detenteur").await?;
+
+    appliquer_couverture(pool.get_ref(), &type_support, support_id, &body).await?;
+    journaliser(
+        &req,
+        pool.get_ref(),
+        moi,
+        &type_support,
+        support_id,
+        "support_territoire",
+        serde_json::json!({
+            "couverture_continentale": body.couverture_continentale,
+            "territoires": body.ids_uniques().len(),
+        }),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Routes back-office
+// ═══════════════════════════════════════════════════════════════════════════
+
+pub async fn admin_obtenir_thematiques(
+    pool: web::Data<PgPool>,
+    admin: AdminUtilisateur,
+    chemin: web::Path<(String, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "voir");
+    obtenir_thematiques(pool, chemin).await
+}
+
+pub async fn admin_definir_thematiques(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    admin: AdminUtilisateur,
+    chemin: web::Path<(String, Uuid)>,
+    body: web::Json<ThematiquesRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+    let (type_support, support_id) = chemin.into_inner();
+    valider_type_support(&type_support)?;
+
+    let nombre = appliquer_thematiques(pool.get_ref(), &type_support, support_id, &body).await?;
+    journaliser(
+        &req,
+        pool.get_ref(),
+        admin.id,
+        &type_support,
+        support_id,
+        "support_thematique",
+        serde_json::json!({ "thematiques": nombre }),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+pub async fn admin_obtenir_couverture(
+    pool: web::Data<PgPool>,
+    admin: AdminUtilisateur,
+    chemin: web::Path<(String, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "voir");
+    obtenir_couverture(pool, chemin).await
+}
+
+pub async fn admin_definir_couverture(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    admin: AdminUtilisateur,
+    chemin: web::Path<(String, Uuid)>,
+    body: web::Json<CouvertureRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "media", "modifier");
+    let (type_support, support_id) = chemin.into_inner();
+    valider_type_support(&type_support)?;
+
+    appliquer_couverture(pool.get_ref(), &type_support, support_id, &body).await?;
+    journaliser(
+        &req,
+        pool.get_ref(),
+        admin.id,
+        &type_support,
+        support_id,
+        "support_territoire",
+        serde_json::json!({
+            "couverture_continentale": body.couverture_continentale,
+            "territoires": body.ids_uniques().len(),
+        }),
+    )
+    .await;
+
+    Ok(HttpResponse::Ok().json(ApiResponse::<()> {
+        success: true,
+        data: None,
+        error: None,
+    }))
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Référentiels d'ÉDITION — GET /api/medias/referentiels
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Catalogue complet des thèmes et des territoires, pour les **sélecteurs**.
+///
+/// Distinct des référentiels de filtre ci-dessus, et pour une raison de fond :
+/// ceux-là ne listent que ce qui est **déjà déclaré**, afin de ne pas proposer
+/// un filtre qui ne remonterait rien. Les réutiliser ici rendrait un thème
+/// inédit inatteignable — le premier support à vouloir le choisir ne le verrait
+/// pas dans la liste.
+pub async fn referentiels_edition(
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, ApiErreur> {
+    let thematiques = sqlx::query_as::<_, (Uuid, String)>(
+        "SELECT id, nom FROM shared.categorie
+          WHERE contexte = 'media' AND actif = TRUE
+          ORDER BY nom ASC",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    let territoires = sqlx::query_as::<_, (Uuid, String)>(
+        "SELECT id, nom FROM shared.pays ORDER BY nom ASC",
+    )
+    .fetch_all(pool.get_ref())
+    .await?;
+
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({
+            "thematiques": thematiques.iter()
+                .map(|(id, nom)| serde_json::json!({ "id": id, "nom": nom }))
+                .collect::<Vec<_>>(),
+            "territoires": territoires.iter()
+                .map(|(id, nom)| serde_json::json!({ "id": id, "nom": nom }))
+                .collect::<Vec<_>>(),
+        })),
+        error: None,
+    }))
+}

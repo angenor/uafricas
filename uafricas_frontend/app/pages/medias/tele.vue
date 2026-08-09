@@ -10,8 +10,11 @@
 import type { ProgrammeVedette, TeleSection } from '~/composables/useTelevision'
 import type { ThemePhareAPI } from '~/composables/useMediaProposition'
 import type { RoleDetenteur } from '~/composables/useMediaDetention'
+import type { ThematiqueDecompte, TerritoireDecompte } from '~/composables/useMediaSupport'
 
 const { obtenirVedette, listerSections, listerPays, chargement } = useTelevision()
+// Référentiels de filtre US3/US4 : ils n'exposent que le déclaré.
+const { listerThematiquesDisponibles, listerTerritoiresDisponibles } = useMediaSupport()
 // Le référentiel des thèmes phares est déjà servi publiquement pour le
 // formulaire de proposition : le filtre s'y branche plutôt que d'en dupliquer un.
 const { listerThemes } = useMediaProposition()
@@ -68,12 +71,23 @@ const origine = ref('')
 const paysSelectionne = ref(TOUS_TERRITOIRES)
 const themeSelectionne = ref('')
 const enDirect = ref(false)
+/** Thématiques déclarées par la chaîne (US3), sélection multiple. */
+const thematiquesSelectionnees = ref<string[]>([])
+/** Territoire couvert (US4) — remonte aussi les chaînes panafricaines. */
+const territoireSelectionne = ref('')
+
+/** Référentiels de FILTRE : seulement ce qui est réellement déclaré, pour ne
+ * jamais proposer une entrée qui ne remonterait rien. */
+const thematiquesDisponibles = ref<ThematiqueDecompte[]>([])
+const territoiresDisponibles = ref<TerritoireDecompte[]>([])
 
 const filtresActifs = computed(() =>
   origine.value !== ''
   || paysSelectionne.value !== TOUS_TERRITOIRES
   || themeSelectionne.value !== ''
-  || enDirect.value,
+  || enDirect.value
+  || thematiquesSelectionnees.value.length > 0
+  || territoireSelectionne.value !== '',
 )
 
 const reinitialiserFiltres = () => {
@@ -81,6 +95,8 @@ const reinitialiserFiltres = () => {
   paysSelectionne.value = TOUS_TERRITOIRES
   themeSelectionne.value = ''
   enDirect.value = false
+  thematiquesSelectionnees.value = []
+  territoireSelectionne.value = ''
 }
 
 const presentationOuverte = ref(false)
@@ -106,6 +122,8 @@ const chargerPageSections = async (numero: number, forcer = false) => {
     pays: paysSelectionne.value,
     theme: themeSelectionne.value,
     en_direct: enDirect.value,
+    thematiques: thematiquesSelectionnees.value,
+    territoire: territoireSelectionne.value,
     page: numero,
     par_page: 6,
   })
@@ -133,7 +151,7 @@ const allerAuxSections = () => {
  * résultat : la barre siégeant en bas de la vedette, sans ce défilement il
  * agirait à l'aveugle sur des sections qu'il ne voit pas encore.
  */
-watch([origine, paysSelectionne, themeSelectionne, enDirect], async () => {
+watch([origine, paysSelectionne, themeSelectionne, enDirect, thematiquesSelectionnees, territoireSelectionne], async () => {
   page.value = 1
   await chargerPageSections(1, true)
   if (filtresActifs.value) allerAuxSections()
@@ -156,10 +174,12 @@ watch(sentinelleVisible, (visible) => {
 })
 
 onMounted(async () => {
-  const [resultatVedette, resultatPays, resultatThemes] = await Promise.all([
+  const [resultatVedette, resultatPays, resultatThemes, resultatThematiques, resultatTerritoires] = await Promise.all([
     obtenirVedette(),
     listerPays(),
     listerThemes(),
+    listerThematiquesDisponibles('chaine_tv'),
+    listerTerritoiresDisponibles('chaine_tv'),
     // Sans incidence sur l'affichage de la vitrine : elle ne doit pas attendre
     // cette réponse, ni échouer avec elle.
     chargerMesChaines(),
@@ -167,6 +187,8 @@ onMounted(async () => {
   vedette.value = resultatVedette
   if (resultatPays) territoires.value = resultatPays
   themes.value = resultatThemes
+  thematiquesDisponibles.value = resultatThematiques
+  territoiresDisponibles.value = resultatTerritoires.territoires
   await chargerPageSections(1)
 })
 </script>
@@ -184,8 +206,12 @@ onMounted(async () => {
           v-model:pays="paysSelectionne"
           v-model:theme="themeSelectionne"
           v-model:en-direct="enDirect"
+          v-model:thematiques="thematiquesSelectionnees"
+          v-model:territoire="territoireSelectionne"
           :territoires="territoires"
           :themes="themes"
+          :thematiques-disponibles="thematiquesDisponibles"
+          :territoires-disponibles="territoiresDisponibles"
           :nombre-chaines="totalChaines"
           @reinitialiser="reinitialiserFiltres"
         />
@@ -240,7 +266,7 @@ onMounted(async () => {
         <!-- Toute proposition part en attente de validation (FR-031). -->
         <MediaProposerMediaModal
           :is-open="propositionOuverte"
-          :types-offerts="['chaine_tv', 'programme_tele']"
+          :types-offerts="['chaine_tv', 'emission_tele']"
           @close="propositionOuverte = false"
         />
 

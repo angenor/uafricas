@@ -1,18 +1,20 @@
 <script setup lang="ts">
+/**
+ * Stations de radio — back-office.
+ *
+ * L'onglet « Émissions » a disparu d'ici : depuis 09q une émission est une
+ * `emission_*` commune aux deux familles, gérée sur `/admin/medias/emissions`.
+ */
 import type { TableColumn, FilterDefinition } from '~/types/admin'
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
 const {
-  stations, programmes,
-  filtresStations, filtresProgrammes,
+  stations, filtresStations,
   pagination, sort, loading,
-  chargerStations, chargerProgrammes,
-  supprimerStation, supprimerProgramme,
+  chargerStations, supprimerStation,
   allerPage, changerTri, reinitialiserPagination,
 } = useAdminRadio()
-
-const ongletActif = ref<'stations' | 'programmes'>('stations')
 
 const colonnesStations: TableColumn[] = [
   { key: 'nom', label: 'Nom', sortable: true },
@@ -25,41 +27,12 @@ const colonnesStations: TableColumn[] = [
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]
 
-const colonnesProgrammes: TableColumn[] = [
-  { key: 'nom_emission', label: 'Emission', sortable: true },
-  { key: 'station_nom', label: 'Station / À la une' },
-  { key: 'categorie_radio', label: 'Categorie' },
-  { key: 'langue', label: 'Langue' },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-24', align: 'center' },
-  { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
-    format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
-]
-
 const filtresDefStations: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom, description...' },
   { key: 'type_station', label: 'Type', type: 'select', placeholder: 'Tous les types', options: [
     { value: 'nationale', label: 'Nationale' },
     { value: 'locale', label: 'Locale' },
     { value: 'internationale', label: 'Internationale' },
-  ]},
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous les etats', options: [
-    { value: 'brouillon', label: 'Brouillon' },
-    { value: 'publie', label: 'Publie' },
-    { value: 'suspendu', label: 'Suspendu' },
-  ]},
-]
-
-const filtresDefProgrammes: FilterDefinition[] = [
-  { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom emission...' },
-  { key: 'categorie_radio', label: 'Categorie', type: 'select', placeholder: 'Toutes', options: [
-    { value: 'information', label: 'Information' },
-    { value: 'divertissement', label: 'Divertissement' },
-    { value: 'musique', label: 'Musique' },
-    { value: 'culture', label: 'Culture' },
-    { value: 'sport', label: 'Sport' },
-    { value: 'education', label: 'Education' },
-    { value: 'debat', label: 'Debat' },
-    { value: 'religieux', label: 'Religieux' },
   ]},
   { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous les etats', options: [
     { value: 'brouillon', label: 'Brouillon' },
@@ -85,62 +58,55 @@ const labelType = (type: string) => {
 
 const supprimerElement = async () => {
   if (!suppressionId.value) return
-  if (ongletActif.value === 'stations') { await supprimerStation(suppressionId.value); await chargerStations() }
-  else { await supprimerProgramme(suppressionId.value); await chargerProgrammes() }
+  await supprimerStation(suppressionId.value)
+  await chargerStations()
   suppressionId.value = null
 }
 
-const chargerDonnees = () => {
-  if (ongletActif.value === 'stations') chargerStations()
-  else chargerProgrammes()
-}
-
-const filtresActifs = computed(() => ongletActif.value === 'stations' ? filtresDefStations : filtresDefProgrammes)
-const donneesActives = computed(() => ongletActif.value === 'stations' ? stations.value : programmes.value)
-const colonnesActives = computed(() => ongletActif.value === 'stations' ? colonnesStations : colonnesProgrammes)
-const filtresValeurs = computed(() => ongletActif.value === 'stations' ? filtresStations : filtresProgrammes)
-
 const reinitialiser = () => {
-  if (ongletActif.value === 'stations') { filtresStations.recherche = ''; filtresStations.type_station = ''; filtresStations.etat = '' }
-  else { filtresProgrammes.recherche = ''; filtresProgrammes.categorie_radio = ''; filtresProgrammes.etat = '' }
+  filtresStations.recherche = ''
+  filtresStations.type_station = ''
+  filtresStations.etat = ''
   reinitialiserPagination()
-  chargerDonnees()
+  chargerStations()
 }
 
-watch(ongletActif, () => { reinitialiserPagination(); chargerDonnees() })
 onMounted(() => chargerStations())
-watch([() => pagination.page, () => sort.column, () => sort.direction], chargerDonnees)
+watch([() => pagination.page, () => sort.column, () => sort.direction], chargerStations)
 </script>
 
 <template>
   <div>
-    <AdminPageHeader titre="Radio" sous-titre="Gestion des stations et des émissions radio">
+    <AdminPageHeader titre="Radio" sous-titre="Gestion des stations de radio">
       <template #actions>
-        <NuxtLink :to="`/admin/radio/create?type=${ongletActif}`" class="btn btn-primary btn-sm">
+        <NuxtLink to="/admin/medias/emissions?type=radio" class="btn btn-ghost btn-sm">
+          <font-awesome-icon icon="film" class="mr-1" /> Émissions
+        </NuxtLink>
+        <NuxtLink to="/admin/radio/create?type=stations" class="btn btn-primary btn-sm">
           <font-awesome-icon icon="plus" class="mr-1" /> Creer
         </NuxtLink>
       </template>
     </AdminPageHeader>
 
-    <div role="tablist" class="tabs tabs-bordered mb-6">
-      <a role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'stations' }" @click="ongletActif = 'stations'">
-        <font-awesome-icon icon="broadcast-tower" class="mr-2" /> Stations
-      </a>
-      <a role="tab" class="tab" :class="{ 'tab-active': ongletActif === 'programmes' }" @click="ongletActif = 'programmes'">
-        <font-awesome-icon icon="film" class="mr-2" /> Émissions
-      </a>
+    <div class="alert alert-info mb-6">
+      <font-awesome-icon icon="circle-info" />
+      <span>
+        Les émissions et leurs épisodes se gèrent désormais sur
+        <NuxtLink to="/admin/medias/emissions?type=radio" class="link font-semibold">Médias &rsaquo; Programmes</NuxtLink>,
+        commun à la radio et à la télévision.
+      </span>
     </div>
 
     <AdminFilters
-      :filtres="filtresActifs"
-      v-model="filtresValeurs"
-      @rechercher="() => { reinitialiserPagination(); chargerDonnees() }"
+      v-model="filtresStations"
+      :filtres="filtresDefStations"
+      @rechercher="() => { reinitialiserPagination(); chargerStations() }"
       @reinitialiser="reinitialiser"
     />
 
     <AdminDataTable
-      :colonnes="colonnesActives"
-      :donnees="donneesActives"
+      :colonnes="colonnesStations"
+      :donnees="stations"
       :pagination="pagination"
       :tri-colonne="sort.column"
       :tri-direction="sort.direction"
@@ -156,19 +122,12 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], chargerD
         {{ labelType(value) }}
       </template>
 
-      <template #cell-station_nom="{ item }">
-        <div class="flex items-center gap-1">
-          <span v-if="item.station_nom" class="text-sm">{{ item.station_nom }}</span>
-          <span v-else class="text-base-content/40 text-sm">—</span>
-          <span v-if="item.a_la_une" class="badge badge-sm badge-warning gap-1">
-            <font-awesome-icon icon="star" /> À la une
-          </span>
-        </div>
-      </template>
-
       <template #actions="{ item }">
         <div class="flex gap-1">
-          <NuxtLink :to="`/admin/radio/${item.id}?type=${ongletActif}`" class="btn btn-ghost btn-xs">
+          <NuxtLink :to="`/admin/medias/emissions?type=radio&support_id=${item.id}`" class="btn btn-ghost btn-xs" title="Émissions de cette station">
+            <font-awesome-icon icon="film" />
+          </NuxtLink>
+          <NuxtLink :to="`/admin/radio/${item.id}?type=stations`" class="btn btn-ghost btn-xs">
             <font-awesome-icon icon="pen-to-square" />
           </NuxtLink>
           <button class="btn btn-ghost btn-xs text-error" @click="suppressionId = item.id">
@@ -181,7 +140,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], chargerD
     <div v-if="suppressionId" class="modal modal-open">
       <div class="modal-box">
         <h3 class="font-bold text-lg">Confirmer la suppression</h3>
-        <p class="py-4">Voulez-vous vraiment supprimer cet element ?</p>
+        <p class="py-4">Voulez-vous vraiment supprimer cette station ?</p>
         <div class="modal-action">
           <button class="btn btn-ghost" @click="suppressionId = null">Annuler</button>
           <button class="btn btn-error" @click="supprimerElement">Supprimer</button>
