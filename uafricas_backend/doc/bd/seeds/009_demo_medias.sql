@@ -67,7 +67,7 @@ BEGIN
     FOR v_theme IN
         SELECT id FROM shared.categorie
          WHERE contexte = 'media' AND actif
-           AND nom IN ('Histoire de l''Afrique', 'Documentaires africains', 'Traditions d''Afrique')
+           AND nom IN ('Culture', 'Investigations', 'Grandes interviews')
     LOOP
         INSERT INTO media_content.support_thematique (type_support, support_id, categorie_id)
         VALUES ('chaine_tv', v_chaine, v_theme) ON CONFLICT DO NOTHING;
@@ -81,7 +81,7 @@ BEGIN
             'Chaque semaine, un empire africain raconté par ses sources : le Ghana, le Mali, le Songhaï.',
             'https://i.ytimg.com/vi/tuCIq9NPvQ4/hqdefault.jpg',
             'Aminata Diallo', 'Africans Histoire', 'Français', 'hebdomadaire', 'publie', v_auteur,
-            (SELECT id FROM shared.categorie WHERE contexte='media' AND nom='Histoire de l''Afrique'),
+            (SELECT id FROM shared.categorie WHERE contexte='media' AND nom='Culture'),
             NOW(), NOW())
     RETURNING id INTO v_emission;
 
@@ -134,8 +134,8 @@ BEGIN
     FOR v_theme IN
         SELECT id FROM shared.categorie
          WHERE contexte = 'media' AND actif
-           AND nom IN ('Afrique et technologies', 'Numérique et développement africain',
-                       'Innovations simples chez nous', 'Futurs génies d''Afrique')
+           AND nom IN ('Magazine Innovation', 'Émissions économiques',
+                       'Émissions jeunesse', 'Éducation')
     LOOP
         INSERT INTO media_content.support_thematique (type_support, support_id, categorie_id)
         VALUES ('chaine_tv', v_chaine, v_theme) ON CONFLICT DO NOTHING;
@@ -149,7 +149,7 @@ BEGIN
             'Le magazine hebdomadaire de l''innovation africaine, du prototype au déploiement.',
             'https://i.ytimg.com/vi/OvTMkEYu6l8/hqdefault.jpg',
             'Kwame Mensah', 'Africans Innovation', 'Français', 'hebdomadaire', 'publie', v_auteur,
-            (SELECT id FROM shared.categorie WHERE contexte='media' AND nom='Afrique et technologies'),
+            (SELECT id FROM shared.categorie WHERE contexte='media' AND nom='Magazine Innovation'),
             NOW(), NOW())
     RETURNING id INTO v_emission;
 
@@ -207,7 +207,7 @@ BEGIN
     FOR v_theme IN
         SELECT id FROM shared.categorie
          WHERE contexte = 'media' AND actif
-           AND nom IN ('La voix du terrain en Afrique', 'Afrique Société', 'Documentaires africains')
+           AND nom IN ('Investigations', 'Émissions citoyennes', 'Grandes interviews')
     LOOP
         INSERT INTO media_content.support_thematique (type_support, support_id, categorie_id)
         VALUES ('chaine_tv', v_chaine, v_theme) ON CONFLICT DO NOTHING;
@@ -228,7 +228,7 @@ BEGIN
             'Un terrain, chaque jour. Des villes qui débordent, des économies qui s''inventent.',
             'https://i.ytimg.com/vi/KzjEhgcBvSE/hqdefault.jpg',
             'Fatou Bensouda', 'Français', 'quotidienne', 'publie', v_auteur,
-            (SELECT id FROM shared.categorie WHERE contexte='media' AND nom='La voix du terrain en Afrique'),
+            (SELECT id FROM shared.categorie WHERE contexte='media' AND nom='Investigations'),
             NOW(), NOW())
     RETURNING id INTO v_emission;
 
@@ -266,7 +266,7 @@ BEGIN
             'Des films au long cours, diffusés au fil des acquisitions. Aucune périodicité annoncée.',
             'https://i.ytimg.com/vi/u9uf-cd63Po/hqdefault.jpg',
             'Ngozi Okoro', 'Français', 'ponctuelle', 'publie', v_auteur,
-            (SELECT id FROM shared.categorie WHERE contexte='media' AND nom='Documentaires africains'),
+            (SELECT id FROM shared.categorie WHERE contexte='media' AND nom='Culture'),
             NOW(), NOW())
     RETURNING id INTO v_emission;
 
@@ -298,7 +298,7 @@ BEGIN
         FOR v_theme IN
             SELECT id FROM shared.categorie
              WHERE contexte = 'media' AND actif
-               AND nom IN ('Afrique Société', 'Journal de l''Afrique')
+               AND nom IN ('Journal télévisé', 'Émissions citoyennes')
         LOOP
             INSERT INTO media_content.support_thematique (type_support, support_id, categorie_id)
             VALUES ('chaine_tv', v_chaine, v_theme) ON CONFLICT DO NOTHING;

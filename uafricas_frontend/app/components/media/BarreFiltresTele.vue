@@ -73,6 +73,25 @@ const filtresActifs = computed(() =>
  * `<select>` natif sans devenir illisible sur mobile. */
 const panneauThematiques = ref(false)
 
+/**
+ * Échap ferme la feuille. Elle recouvre le bas de l'écran et n'a pas d'autre
+ * sortie au clavier ; sans cela, une navigation sans souris s'y trouve coincée.
+ * L'écouteur n'existe que pendant l'ouverture.
+ */
+const fermerSurEchap = (evenement: KeyboardEvent) => {
+  if (evenement.key === 'Escape') panneauThematiques.value = false
+}
+
+watch(panneauThematiques, (ouvert) => {
+  if (!import.meta.client) return
+  if (ouvert) window.addEventListener('keydown', fermerSurEchap)
+  else window.removeEventListener('keydown', fermerSurEchap)
+})
+
+onBeforeUnmount(() => {
+  if (import.meta.client) window.removeEventListener('keydown', fermerSurEchap)
+})
+
 const basculerThematique = (id: string) => {
   emit(
     'update:thematiques',
@@ -208,49 +227,22 @@ const classeSelect = [
           />
         </div>
 
-        <!-- Thématiques déclarées (US3), sélection multiple -->
-        <div v-if="thematiquesDisponibles.length" class="relative shrink-0">
-          <button
-            type="button"
-            :class="classePastille(thematiques.length > 0)"
-            :aria-expanded="panneauThematiques"
-            @click="panneauThematiques = !panneauThematiques"
-          >
-            <font-awesome-icon :icon="['fas', 'tags']" class="w-4 h-4" />
-            Thématiques
-            <span v-if="thematiques.length" class="rounded-full bg-black/20 px-1.5 text-xs">
-              {{ thematiques.length }}
-            </span>
-          </button>
-
-          <div
-            v-if="panneauThematiques"
-            class="absolute left-0 top-full z-20 mt-2 w-72 max-h-72 overflow-y-auto rounded-xl bg-neutral-900 ring-1 ring-white/15 p-3 shadow-xl"
-          >
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="t in thematiquesDisponibles"
-                :key="t.id"
-                type="button"
-                class="rounded-full border px-3 py-1 text-xs transition-colors"
-                :class="thematiques.includes(t.id)
-                  ? 'bg-yellow-400 border-yellow-400 text-neutral-900 font-semibold'
-                  : 'bg-white/5 border-white/15 text-gray-300 hover:border-yellow-400'"
-                @click="basculerThematique(t.id)"
-              >
-                {{ t.nom }} ({{ t.nombre_supports }})
-              </button>
-            </div>
-            <button
-              v-if="thematiques.length"
-              type="button"
-              class="mt-3 text-xs text-gray-400 underline hover:text-white"
-              @click="emit('update:thematiques', [])"
-            >
-              Tout décocher
-            </button>
-          </div>
-        </div>
+        <!-- Thématiques déclarées (US3), sélection multiple.
+             Le panneau lui-même est TÉLÉPORTÉ hors de la barre : voir plus bas. -->
+        <button
+          v-if="thematiquesDisponibles.length"
+          type="button"
+          :class="classePastille(thematiques.length > 0)"
+          aria-haspopup="dialog"
+          :aria-expanded="panneauThematiques"
+          @click="panneauThematiques = !panneauThematiques"
+        >
+          <font-awesome-icon :icon="['fas', 'tags']" class="w-4 h-4" />
+          Thématiques
+          <span v-if="thematiques.length" class="rounded-full bg-black/20 px-1.5 text-xs">
+            {{ thematiques.length }}
+          </span>
+        </button>
 
         <!-- En direct -->
         <button
@@ -283,5 +275,83 @@ const classeSelect = [
         </div>
       </div>
     </div>
+
+    <!--
+      Panneau des thématiques, TÉLÉPORTÉ dans `<body>`.
+
+      Il ne peut pas vivre dans la barre : celle-ci est collée au bas d'une
+      vedette qui occupe tout l'écran, donc un panneau ouvert vers le bas sort
+      du champ ; et la rangée de pastilles porte `overflow-x-auto`, qui le
+      rogne. Un simple `fixed` ne suffirait pas non plus — le `backdrop-blur`
+      de la barre crée un bloc conteneur qui capture jusqu'aux éléments fixes.
+      Sortir du sous-arbre est le seul remède qui tienne dans les trois cas.
+
+      La forme retenue est une feuille ancrée en bas : c'est là que se trouve
+      le bouton, et c'est ce qui reste atteignable au pouce sur mobile.
+    -->
+    <Teleport to="body">
+      <div v-if="panneauThematiques" class="fixed inset-0 z-60">
+        <div class="absolute inset-0 bg-black/60" @click="panneauThematiques = false" />
+
+        <div
+          role="dialog"
+          aria-label="Filtrer par thématique"
+          class="absolute inset-x-3 bottom-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[36rem] max-h-[65vh] flex flex-col rounded-2xl bg-neutral-900 ring-1 ring-white/15 shadow-2xl"
+        >
+          <div class="flex items-center justify-between gap-3 px-4 pt-4 pb-3 border-b border-white/10">
+            <p class="text-white font-semibold">
+              Thématiques
+              <span v-if="thematiques.length" class="text-yellow-400">({{ thematiques.length }})</span>
+            </p>
+            <div class="flex items-center gap-3">
+              <button
+                v-if="thematiques.length"
+                type="button"
+                class="text-xs text-gray-400 underline hover:text-white"
+                @click="emit('update:thematiques', [])"
+              >
+                Tout décocher
+              </button>
+              <button
+                type="button"
+                class="text-gray-400 hover:text-white"
+                aria-label="Fermer"
+                @click="panneauThematiques = false"
+              >
+                <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Le défilement vit ici, pas sur la feuille : l'en-tête et le pied
+               doivent rester visibles quand la liste est longue. -->
+          <div class="flex flex-wrap gap-2 overflow-y-auto px-4 py-4">
+            <button
+              v-for="t in thematiquesDisponibles"
+              :key="t.id"
+              type="button"
+              class="rounded-full border px-3 py-1.5 text-xs transition-colors"
+              :class="thematiques.includes(t.id)
+                ? 'bg-yellow-400 border-yellow-400 text-neutral-900 font-semibold'
+                : 'bg-white/5 border-white/15 text-gray-300 hover:border-yellow-400'"
+              @click="basculerThematique(t.id)"
+            >
+              {{ t.nom }} ({{ t.nombre_supports }})
+            </button>
+          </div>
+
+          <div class="px-4 pb-4 pt-1 border-t border-white/10">
+            <button
+              type="button"
+              class="w-full rounded-full bg-yellow-400 text-neutral-900 font-semibold py-2.5 text-sm hover:bg-yellow-300 transition-colors"
+              @click="panneauThematiques = false"
+            >
+              Voir les résultats
+              <span v-if="nombreChaines !== undefined">({{ nombreChaines }})</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
