@@ -123,9 +123,21 @@ pub async fn couverture_par_supports(
 // Référentiels de filtre
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Thèmes **réellement déclarés** par au moins un support publié, avec leur
-/// décompte — même principe que `GET /api/experts/specialites` : on ne propose
-/// pas un filtre qui ne remonterait rien.
+/// Thèmes **actifs du référentiel `media`**, chacun avec le nombre de supports
+/// publiés qui le déclarent — zéro compris.
+///
+/// La liste partait auparavant des déclarations, et ne montrait donc que les
+/// thèmes déjà servis. C'est ce qui cachait l'étendue du catalogue : le
+/// visiteur ne pouvait pas distinguer « ce thème n'existe pas ici » de « ce
+/// thème n'a encore rien ». Le décompte à `(0)` le dit, et le référentiel
+/// affiché reste stable d'une visite à l'autre.
+///
+/// Le `LEFT JOIN` sur la table du support porte l'état dans sa condition de
+/// jointure, non dans le `WHERE` : l'y remonter transformerait la jointure
+/// externe en jointure interne et ramènerait au comportement précédent. Le
+/// décompte porte sur `s.id` et non sur `st.support_id`, sans quoi un thème
+/// déclaré uniquement par des supports non publiés compterait ses lignes de
+/// liaison.
 pub async fn thematiques_disponibles(
     pool: &PgPool,
     type_support: &str,
@@ -134,12 +146,16 @@ pub async fn thematiques_disponibles(
         .ok_or_else(|| ApiErreur::Validation("Type de support inconnu".into()))?;
 
     let lignes = sqlx::query_as::<_, ThematiqueDecompte>(&format!(
-        "SELECT cat.id, cat.nom, COUNT(*)::bigint AS nombre_supports
-           FROM media_content.support_thematique st
-           JOIN shared.categorie cat ON cat.id = st.categorie_id
-           JOIN {table} s ON s.id = st.support_id
-          WHERE st.type_support = $1::media_content.type_support_media
-            AND s.etat = 'publie' AND s.deleted_at IS NULL
+        "SELECT cat.id, cat.nom, COUNT(s.id)::bigint AS nombre_supports
+           FROM shared.categorie cat
+           LEFT JOIN media_content.support_thematique st
+                  ON st.categorie_id = cat.id
+                 AND st.type_support = $1::media_content.type_support_media
+           LEFT JOIN {table} s
+                  ON s.id = st.support_id
+                 AND s.etat = 'publie'
+                 AND s.deleted_at IS NULL
+          WHERE cat.contexte = 'media' AND cat.actif = TRUE
           GROUP BY cat.id, cat.nom
           ORDER BY cat.nom ASC"
     ))
@@ -539,11 +555,10 @@ pub async fn admin_definir_couverture(
 
 /// Catalogue complet des thèmes et des territoires, pour les **sélecteurs**.
 ///
-/// Distinct des référentiels de filtre ci-dessus, et pour une raison de fond :
-/// ceux-là ne listent que ce qui est **déjà déclaré**, afin de ne pas proposer
-/// un filtre qui ne remonterait rien. Les réutiliser ici rendrait un thème
-/// inédit inatteignable — le premier support à vouloir le choisir ne le verrait
-/// pas dans la liste.
+/// Distinct des référentiels de filtre ci-dessus, qui portent un décompte par
+/// support et, pour les territoires, ne listent que ce qui est **déjà
+/// couvert** : les réutiliser ici rendrait un territoire inédit inatteignable —
+/// le premier support à vouloir le choisir ne le verrait pas dans la liste.
 pub async fn referentiels_edition(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ApiErreur> {

@@ -38,8 +38,9 @@ const basculer = (id: string) => {
   )
 }
 
-/** Rien de déclaré nulle part : la barre disparaît plutôt que d'offrir un
- * filtre qui ne remonterait rien. */
+/** Référentiel `media` vide : la barre disparaît plutôt que d'offrir un menu
+ * sans entrée. Un thème sans support, lui, reste proposé — il s'affiche
+ * « (0) », ce qui donne à voir l'étendue du catalogue. */
 const utile = computed(() => props.thematiquesDisponibles.length > 0)
 </script>
 
@@ -74,7 +75,9 @@ const utile = computed(() => props.thematiquesDisponibles.length > 0)
             class="rounded-full border px-3 py-1 text-xs transition-colors"
             :class="thematiques.includes(t.id)
               ? 'bg-yellow-400 border-yellow-400 text-neutral-900 font-semibold'
-              : 'bg-white/5 border-white/15 text-gray-300 hover:border-yellow-400'"
+              : t.nombre_supports > 0
+                ? 'bg-white/5 border-white/15 text-gray-300 hover:border-yellow-400'
+                : 'bg-transparent border-white/10 text-gray-500 hover:border-yellow-400/60 hover:text-gray-300'"
             @click="basculer(t.id)"
           >
             {{ t.nom }} ({{ t.nombre_supports }})

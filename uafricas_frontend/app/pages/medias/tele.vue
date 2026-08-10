@@ -12,7 +12,7 @@ import type { RoleDetenteur } from '~/composables/useMediaDetention'
 import type { ThematiqueDecompte } from '~/composables/useMediaSupport'
 
 const { obtenirVedette, listerSections, listerPays, chargement } = useTelevision()
-// Référentiel de filtre US3 : il n'expose que les thèmes réellement déclarés.
+// Référentiel de filtre US3 : tous les thèmes actifs, avec leur décompte.
 const { listerThematiquesDisponibles } = useMediaSupport()
 const { mesSupports } = useMediaDetention()
 const userStore = useUserStore()
@@ -68,8 +68,9 @@ const enDirect = ref(false)
 /** Thématiques déclarées par la chaîne (US3), sélection multiple. */
 const thematiquesSelectionnees = ref<string[]>([])
 
-/** Référentiel de FILTRE : seulement ce qui est réellement déclaré, pour ne
- * jamais proposer une entrée qui ne remonterait rien. */
+/** Référentiel de FILTRE : tout le catalogue de thèmes, chacun avec son nombre
+ * de chaînes publiées — un thème encore vide s'affiche « (0) » plutôt que de
+ * disparaître, ce qui laisserait croire qu'il n'existe pas. */
 const thematiquesDisponibles = ref<ThematiqueDecompte[]>([])
 
 const filtresActifs = computed(() =>

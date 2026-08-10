@@ -7,13 +7,19 @@
  * catalogue, et la présence de la barre suffit à signaler qu'il y a du contenu
  * sous le pli.
  *
- * Quatre entrées, toutes résolues côté serveur (`GET /television/sections`) :
- *   • Africans Télé International — chaînes produites par la plateforme (09o) ;
+ * Trois entrées, toutes résolues côté serveur (`GET /television/sections`) :
+ *   • Africans Télé International — chaînes produites par la plateforme (09o),
+ *     qui PORTE aussi le choix des thématiques déclarées (US3, multiple) ;
  *   • Territoire — pays de rattachement de la chaîne ;
- *   • Thématiques — thèmes DÉCLARÉS par la chaîne, sélection multiple (US3) ;
  *   • En direct — chaînes actuellement à l'antenne.
  *
- * Deux entrées ont été retirées parce qu'elles faisaient DOUBLON à l'usage :
+ * Les thématiques n'ont plus de pastille à elles : elles ne qualifient que les
+ * chaînes de la plateforme, donc ouvrir leur panneau active `origine=africans`
+ * et relâcher cette origine vide la sélection. Deux filtres indépendants
+ * laissaient composer « territoire + thématique », combinaison qui ne décrit
+ * rien de ce que la page met en avant.
+ *
+ * Deux entrées ont été retirées avant elles parce qu'elles faisaient DOUBLON :
  *   • « Chaînes thématiques » interrogeait le thème phare des PROGRAMMES là où
  *     « Thématiques » interroge ce que la chaîne déclare — deux mécanismes
  *     distincts, mais qui puisent depuis 09s dans le même référentiel de genres
@@ -34,7 +40,8 @@ const props = withDefaults(defineProps<{
   territoires: string[]
   /** Thématiques déclarées, sélection multiple (US3). */
   thematiques?: string[]
-  /** Thématiques réellement déclarées par au moins une chaîne publiée. */
+  /** Référentiel `media` complet, chaque thème avec son nombre de chaînes
+   * publiées — `0` compris, pour donner à voir l'étendue du catalogue. */
   thematiquesDisponibles?: ThematiqueDecompte[]
   /** Nombre de chaînes remontées, affiché dès qu'un filtre est actif. */
   nombreChaines?: number
@@ -94,8 +101,32 @@ const basculerThematique = (id: string) => {
   )
 }
 
-/** Un second clic sur la pastille active la relâche : elle vaut bascule. */
-const basculerAfricans = () => emit('update:origine', estAfricans.value ? '' : 'africans')
+/**
+ * La pastille Africans porte deux gestes en un : elle active l'origine ET
+ * découvre les thématiques de ces chaînes.
+ *
+ * • inactive → on l'active et on ouvre le panneau ;
+ * • active, panneau fermé → on ouvre le panneau (affiner la sélection) ;
+ * • active, panneau ouvert → on relâche l'origine, donc aussi les thématiques,
+ *   qui n'ont pas de sens hors de ce périmètre.
+ *
+ * Sans thématique à proposer, elle redevient une simple bascule : ouvrir un
+ * panneau vide n'apprendrait rien.
+ */
+const basculerAfricans = () => {
+  if (!props.thematiquesDisponibles.length) {
+    emit('update:origine', estAfricans.value ? '' : 'africans')
+    return
+  }
+  if (estAfricans.value && panneauThematiques.value) {
+    panneauThematiques.value = false
+    emit('update:origine', '')
+    if (props.thematiques.length) emit('update:thematiques', [])
+    return
+  }
+  if (!estAfricans.value) emit('update:origine', 'africans')
+  panneauThematiques.value = true
+}
 const basculerDirect = () => emit('update:enDirect', !props.enDirect)
 
 const classePastille = (actif: boolean) => [
@@ -135,15 +166,27 @@ const classeSelect = [
       <div
         class="flex flex-nowrap sm:flex-wrap items-center justify-start sm:justify-center gap-2 sm:gap-3 overflow-x-auto sm:overflow-visible rounded-2xl bg-linear-to-r from-black/85 via-custom-chocolat/45 to-black/85 ring-1 ring-yellow-400/35 backdrop-blur-md shadow-lg shadow-black/50 px-3 py-2.5"
       >
-        <!-- Africans Télé International (FR — chaînes de la plateforme) -->
+        <!-- Africans Télé International (chaînes de la plateforme) : porte aussi
+             le panneau des thématiques déclarées. Le panneau lui-même est
+             TÉLÉPORTÉ hors de la barre — voir plus bas. -->
         <button
           type="button"
           :class="classePastille(estAfricans)"
           :aria-pressed="estAfricans"
+          :aria-haspopup="thematiquesDisponibles.length ? 'dialog' : undefined"
+          :aria-expanded="thematiquesDisponibles.length ? panneauThematiques : undefined"
           @click="basculerAfricans"
         >
           <font-awesome-icon :icon="['fas', 'globe']" class="w-4 h-4" />
           Africans Télé International
+          <span v-if="thematiques.length" class="rounded-full bg-black/20 px-1.5 text-xs">
+            {{ thematiques.length }}
+          </span>
+          <font-awesome-icon
+            v-if="thematiquesDisponibles.length"
+            :icon="['fas', 'chevron-down']"
+            class="w-3 h-3 opacity-70"
+          />
         </button>
 
         <!-- Territoire -->
@@ -167,23 +210,6 @@ const classeSelect = [
             class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
           />
         </div>
-
-        <!-- Thématiques déclarées (US3), sélection multiple.
-             Le panneau lui-même est TÉLÉPORTÉ hors de la barre : voir plus bas. -->
-        <button
-          v-if="thematiquesDisponibles.length"
-          type="button"
-          :class="classePastille(thematiques.length > 0)"
-          aria-haspopup="dialog"
-          :aria-expanded="panneauThematiques"
-          @click="panneauThematiques = !panneauThematiques"
-        >
-          <font-awesome-icon :icon="['fas', 'tags']" class="w-4 h-4" />
-          Thématiques
-          <span v-if="thematiques.length" class="rounded-full bg-black/20 px-1.5 text-xs">
-            {{ thematiques.length }}
-          </span>
-        </button>
 
         <!-- En direct -->
         <button
@@ -218,7 +244,8 @@ const classeSelect = [
     </div>
 
     <!--
-      Panneau des thématiques, TÉLÉPORTÉ dans `<body>`.
+      Panneau des thématiques d'Africans Télé International, TÉLÉPORTÉ dans
+      `<body>`.
 
       Il ne peut pas vivre dans la barre : celle-ci est collée au bas d'une
       vedette qui occupe tout l'écran, donc un panneau ouvert vers le bas sort
@@ -236,14 +263,17 @@ const classeSelect = [
 
         <div
           role="dialog"
-          aria-label="Filtrer par thématique"
+          aria-label="Africans Télé International — filtrer par thématique"
           class="absolute inset-x-3 bottom-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[36rem] max-h-[65vh] flex flex-col rounded-2xl bg-neutral-900 ring-1 ring-white/15 shadow-2xl"
         >
           <div class="flex items-center justify-between gap-3 px-4 pt-4 pb-3 border-b border-white/10">
-            <p class="text-white font-semibold">
-              Thématiques
-              <span v-if="thematiques.length" class="text-yellow-400">({{ thematiques.length }})</span>
-            </p>
+            <div class="min-w-0">
+              <p class="text-white font-semibold truncate">
+                Africans Télé International
+                <span v-if="thematiques.length" class="text-yellow-400">({{ thematiques.length }})</span>
+              </p>
+              <p class="text-xs text-gray-400">Affiner par thématique</p>
+            </div>
             <div class="flex items-center gap-3">
               <button
                 v-if="thematiques.length"
@@ -267,6 +297,11 @@ const classeSelect = [
           <!-- Le défilement vit ici, pas sur la feuille : l'en-tête et le pied
                doivent rester visibles quand la liste est longue. -->
           <div class="flex flex-wrap gap-2 overflow-y-auto px-4 py-4">
+            <!-- Les thèmes sans chaîne restent proposés et cliquables : leur
+                 `(0)` est une information — il dit que le thème existe et
+                 n'attend qu'un contenu —, là où les masquer laisserait croire
+                 à un catalogue plus étroit qu'il n'est. Ils sont simplement
+                 estompés pour ne pas concurrencer les thèmes servis. -->
             <button
               v-for="t in thematiquesDisponibles"
               :key="t.id"
@@ -274,7 +309,9 @@ const classeSelect = [
               class="rounded-full border px-3 py-1.5 text-xs transition-colors"
               :class="thematiques.includes(t.id)
                 ? 'bg-yellow-400 border-yellow-400 text-neutral-900 font-semibold'
-                : 'bg-white/5 border-white/15 text-gray-300 hover:border-yellow-400'"
+                : t.nombre_supports > 0
+                  ? 'bg-white/5 border-white/15 text-gray-300 hover:border-yellow-400'
+                  : 'bg-transparent border-white/10 text-gray-500 hover:border-yellow-400/60 hover:text-gray-300'"
               @click="basculerThematique(t.id)"
             >
               {{ t.nom }} ({{ t.nombre_supports }})

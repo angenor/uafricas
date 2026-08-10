@@ -66,7 +66,8 @@ export const useMediaSupport = () => {
   const prefixePublic = (type: TypeSupport): string =>
     type === 'station_radio' ? '/api/stations-radio' : '/api/television'
 
-  /** Thèmes **réellement déclarés** — on ne propose pas un filtre vide. */
+  /** Tous les thèmes actifs du référentiel `media`, avec le nombre de supports
+   * publiés qui les déclarent — `0` compris. */
   const listerThematiquesDisponibles = async (type: TypeSupport): Promise<ThematiqueDecompte[]> => {
     try {
       const reponse = await $fetch<ApiResponse<ThematiqueDecompte[]>>(
@@ -98,9 +99,10 @@ export const useMediaSupport = () => {
   /**
    * Catalogue **complet** des thèmes et des territoires, pour les sélecteurs.
    *
-   * Distinct des deux listes ci-dessus, qui ne renvoient que ce qui est déjà
-   * déclaré : les réutiliser dans un formulaire rendrait un thème inédit
-   * inatteignable, le premier support à vouloir le choisir ne le voyant pas.
+   * Distinct des deux listes ci-dessus, qui portent un décompte et, pour les
+   * territoires, ne renvoient que ce qui est déjà couvert : les réutiliser dans
+   * un formulaire rendrait un territoire inédit inatteignable, le premier
+   * support à vouloir le choisir ne le voyant pas.
    */
   const listerReferentielsEdition = async (): Promise<{
     thematiques: ThematiquePublique[]
