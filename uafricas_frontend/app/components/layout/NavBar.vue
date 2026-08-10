@@ -505,7 +505,7 @@ const menus: NavMenu[] = [
   },
   {
     id: 'mindshiftlab',
-    label: 'Mindshiftlab',
+    label: 'Muniversa',
     subtitle: 'Formation & savoir',
     description: 'Se former et développer de nouvelles compétences pour le continent',
     to: '/universite',
@@ -515,7 +515,7 @@ const menus: NavMenu[] = [
       { label: 'Africalive', to: '/evenements/liste', description: 'Organiser un événement mettant en valeur l\'Afrique et son développement', icon: 'fa-solid fa-calendar-days' },
       { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Parler à une bibliothèque humaine', icon: 'fa-solid fa-chalkboard-user' },
       { label: 'Librafrica', to: '/bibliotheque/numerique', description: 'Permettre aux Africains et aux écoles de consulter vos publications', icon: 'fa-solid fa-display' },
-      { label: 'Mindshiftlab', to: '/universite', description: 'Mindshift University of Africa — éduquer sur les enjeux prioritaires', icon: 'fa-solid fa-graduation-cap' },
+      { label: 'Muniversa', to: '/universite', description: 'Mindshift University of Africa — éduquer sur les enjeux prioritaires', icon: 'fa-solid fa-graduation-cap' },
     ]
   },
   {

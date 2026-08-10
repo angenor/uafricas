@@ -10,7 +10,7 @@
         <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
         <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
           <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Mindshiftlab
+            Muniversa
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             Institut universitaire pour le développement de l'Afrique — vulgariser des formations de masse sur des enjeux d'intérêt pour le développement et le renforcement de gouvernance en Afrique.
@@ -186,7 +186,7 @@
       <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-8">
           <div class="flex justify-between items-start mb-6">
-            <h2 class="text-3xl font-bold">À propos de Mindshiftlab</h2>
+            <h2 class="text-3xl font-bold">À propos de Muniversa</h2>
             <button @click="afficherAPropos = false" class="text-gray-500 hover:text-gray-700">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -245,7 +245,7 @@
 import { type FormationAPI, getTypeLabel, formatDateFormation } from '~/composables/useFormations'
 
 useHead({
-  title: 'Mindshiftlab - Institut universitaire pour le développement de l\'Afrique'
+  title: 'Muniversa - Institut universitaire pour le développement de l\'Afrique'
 })
 
 const { listerFormations, obtenirStatsUniversite } = useFormations()
