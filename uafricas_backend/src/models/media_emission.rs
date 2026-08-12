@@ -30,26 +30,50 @@ use crate::models::media_social::CompteursInteraction;
 /// Périodicité déclarée d'un programme. Alimente les alertes de FR-024 ; la
 /// **rotation**, elle, se déduit de la récurrence du créneau et non de cette
 /// valeur — un programme hebdomadaire peut être diffusé tous les jours.
-pub const CADENCES_AUTORISEES: [&str; 3] = ["quotidienne", "hebdomadaire", "ponctuelle"];
+///
+/// Quatre valeurs depuis la feature 010 (FR-040). Les trois clés d'origine sont
+/// CONSERVÉES telles quelles — seuls les libellés affichés changent, côté
+/// frontend : renommer les clés aurait imposé un `UPDATE` de données pour un
+/// gain nul, la clé n'étant jamais montrée à l'utilisateur.
+pub const CADENCES_AUTORISEES: [&str; 4] =
+    ["quotidienne", "hebdomadaire", "mensuelle", "ponctuelle"];
 
 pub fn valider_cadence(valeur: &str) -> Result<(), ApiErreur> {
     if CADENCES_AUTORISEES.contains(&valeur) {
         Ok(())
     } else {
         Err(ApiErreur::Validation(format!(
-            "Cadence « {} » inconnue : attendu quotidienne, hebdomadaire ou ponctuelle",
+            "Cadence « {} » inconnue : attendu quotidienne, hebdomadaire, mensuelle ou ponctuelle",
             valeur
         )))
     }
 }
 
+/// Longueur du cycle, en heures. `None` pour « ponctuelle » : aucune échéance à
+/// tenir, donc aucune alerte.
+///
+/// Cette fonction **remplace** le calcul en dur « 24 h si quotidienne, sinon
+/// 24 × 7 » de `mes_alertes_cadence`. Tel quel, un programme mensuel aurait été
+/// signalé en retard dès le 8ᵉ jour — un symptôme qui n'apparaît qu'après coup,
+/// jamais à la compilation.
+pub fn periode_heures_cadence(cadence: &str) -> Option<i64> {
+    match cadence {
+        "quotidienne" => Some(24),
+        "hebdomadaire" => Some(24 * 7),
+        "mensuelle" => Some(24 * 30),
+        _ => None,
+    }
+}
+
 /// Marge d'anticipation de l'alerte de cadence (FR-024, contrat membre §5).
 /// Elle doit absorber le délai de validation administrative : prévenir le jour
-/// même laisserait le détenteur sans recours.
+/// même laisserait le détenteur sans recours. Elle croît avec la période — sept
+/// jours d'avance sur un mensuel, six heures sur un quotidien.
 pub fn heures_anticipation_alerte(cadence: &str) -> Option<i64> {
     match cadence {
-        "hebdomadaire" => Some(48),
         "quotidienne" => Some(6),
+        "hebdomadaire" => Some(48),
+        "mensuelle" => Some(24 * 7),
         _ => None, // « ponctuelle » : aucune échéance, donc aucune alerte
     }
 }
@@ -224,6 +248,11 @@ pub struct EmissionResponse {
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    /// Équipe éditoriale **du programme** (010) — distincte de celle de son
+    /// support, jamais un repli sur elle (FR-032). Greffée après coup par les
+    /// appelants, comme `episodes_apercu` et `interactions`.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub equipe: Vec<crate::models::media_equipe::MembreEquipeResponse>,
     /// Compteurs de **l'émission seule** — jamais la somme de ceux de ses
     /// épisodes (FR-048).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -270,6 +299,7 @@ impl EmissionRow {
             cree_par: self.cree_par,
             created_at: self.created_at,
             updated_at: self.updated_at,
+            equipe: Vec::new(),
             interactions: None,
         }
     }

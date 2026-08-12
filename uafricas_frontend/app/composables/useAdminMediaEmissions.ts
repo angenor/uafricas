@@ -17,27 +17,26 @@ import type {
   AdminEpisode, CreerEpisodeForm,
   TypeSupportAdmin, CadenceEmission,
 } from '~/types/admin'
+import { AIDES_CADENCE, CADENCES_ORDONNEES, LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
 
-export const CADENCES: { valeur: CadenceEmission; libelle: string; aide: string }[] = [
-  {
-    valeur: 'quotidienne',
-    libelle: 'Quotidienne',
-    aide: 'Un épisode attendu chaque jour — alerte 6 h avant l’échéance.',
-  },
-  {
-    valeur: 'hebdomadaire',
-    libelle: 'Hebdomadaire',
-    aide: 'Un épisode attendu chaque semaine — alerte 48 h avant l’échéance.',
-  },
-  {
-    valeur: 'ponctuelle',
-    libelle: 'Ponctuelle',
-    aide: 'Aucune périodicité déclarée : aucune alerte de cadence.',
-  },
-]
+/**
+ * Périodicités proposées en back-office — **dérivées** de la table publique
+ * (010, FR-041).
+ *
+ * Ce fichier entretenait auparavant ses propres libellés (« Quotidienne »,
+ * « Ponctuelle »), distincts de ceux du public. Deux tables séparées ne
+ * garantissent pas dans la durée qu'un gestionnaire et un visiteur lisent le
+ * même mot pour la même valeur : il n'y en a donc plus qu'une.
+ */
+export const CADENCES: { valeur: CadenceEmission; libelle: string; aide: string }[] =
+  CADENCES_ORDONNEES.map(valeur => ({
+    valeur: valeur as CadenceEmission,
+    libelle: LIBELLES_CADENCE[valeur] ?? valeur,
+    aide: AIDES_CADENCE[valeur] ?? '',
+  }))
 
 export const libelleCadence = (cadence?: string | null) =>
-  CADENCES.find(c => c.valeur === cadence)?.libelle || 'Ponctuelle'
+  (cadence ? LIBELLES_CADENCE[cadence] : undefined) ?? LIBELLES_CADENCE.ponctuelle!
 
 /**
  * États d'un épisode. `rejete` et son motif rendent le refus corrigeable :

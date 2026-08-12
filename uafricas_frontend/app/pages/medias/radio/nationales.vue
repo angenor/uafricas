@@ -199,7 +199,7 @@ onMounted(async () => {
         <div v-else class="text-center py-20">
           <font-awesome-icon :icon="['fas', 'radio']" class="text-4xl text-gray-600 mb-4" />
           <p class="text-gray-300 text-lg">
-            {{ filtresActifs ? 'Aucune station ne correspond à ces filtres' : 'Aucune station nationale n’est encore diffusée' }}
+            {{ filtresActifs ? 'Aucune station ne correspond à ces filtres' : 'Aucune station nationale n’est encore publiée' }}
           </p>
           <p class="text-gray-500 text-sm mt-2">
             {{ filtresActifs ? 'Essayez d’élargir votre recherche.' : 'Les stations des territoires apparaîtront ici.' }}

@@ -260,15 +260,17 @@ onMounted(async () => {
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400" />
         </div>
 
-        <!-- Aucune chaîne ne porte de contenu publié (FR-008), ou les filtres
-             de la barre ne laissent rien passer : les deux cas ne se soignent
-             pas de la même façon, ils ne se disent donc pas pareil. -->
+        <!-- Aucune chaîne publiée, ou les filtres de la barre ne laissent
+             rien passer : les deux cas ne se soignent pas de la même façon, ils
+             ne se disent donc pas pareil. Depuis la feature 010, une chaîne sans
+             contenu N'EST PLUS filtrée — ce message ne parle donc plus de
+             contenu mais de publication. -->
         <div v-else-if="!sections.length" class="text-center py-16">
           <p class="text-gray-400 text-lg">
-            {{ filtresActifs ? 'Aucune chaîne ne correspond à ces filtres' : 'Aucune chaîne ne diffuse encore de contenu' }}
+            {{ filtresActifs ? 'Aucune chaîne ne correspond à ces filtres' : 'Aucune chaîne n’est encore publiée' }}
           </p>
           <p class="text-gray-500 text-sm mt-2">
-            {{ filtresActifs ? 'Essayez d’élargir votre recherche.' : 'Revenez bientôt : les programmes arrivent.' }}
+            {{ filtresActifs ? 'Essayez d’élargir votre recherche.' : 'Revenez bientôt : les chaînes arrivent.' }}
           </p>
           <button
             v-if="filtresActifs"

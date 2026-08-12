@@ -366,19 +366,20 @@ pub async fn lister_sections(
     let page = params.page.unwrap_or(1).max(1);
     let par_page = params.par_page.unwrap_or(6).clamp(1, 20);
     let offset = (page - 1) * par_page;
-    let emissions_par_section = params.contenus_par_section.unwrap_or(12).clamp(1, 30);
+    // 010 — ce plafond bornait un APERÇU d'épisodes ; il borne désormais le
+    // contenu PRINCIPAL de la section, la liste de programmes. Le laisser à 12
+    // cacherait un programme sur treize sans le dire, aucune page ne
+    // transmettant ce paramètre. Au-delà du plafond, la section annonce le
+    // total et mène à la page du support (FR-008).
+    let emissions_par_section = params.contenus_par_section.unwrap_or(30).clamp(1, 60);
 
-    // Une chaîne dont aucun programme n'a d'épisode publié ne donne pas de
-    // section : elle n'aurait rien à montrer (FR-011).
+    // 010 — l'`EXISTS` sur les épisodes publiés a disparu (FR-005) : une chaîne
+    // publiée a une identité, une équipe et une grille annoncée bien avant
+    // d'avoir une vidéo en ligne. Conséquence assumée et visible : des chaînes
+    // jusqu'ici filtrées apparaissent, le décompte de la page augmente.
     let mut conditions: Vec<String> = vec![
         "ct.etat = 'publie'".to_string(),
         "ct.deleted_at IS NULL".to_string(),
-        "EXISTS (SELECT 1 FROM media_content.emission_tele m
-                  JOIN media_content.episode_tele ep
-                    ON ep.emission_id = m.id AND ep.etat = 'publie' AND ep.deleted_at IS NULL
-                  WHERE m.chaine_id = ct.id
-                    AND m.etat = 'publie' AND m.deleted_at IS NULL)"
-            .to_string(),
     ];
     let mut bind_index = 1u32;
     let mut bind_values: Vec<String> = Vec::new();
@@ -562,13 +563,11 @@ pub async fn lister_sections(
         });
     }
 
-    // Aperçus d'épisodes et compteurs de TOUTE la page, en un lot.
-    let mut toutes: Vec<&mut EmissionResponse> = sections
-        .iter_mut()
-        .flat_map(|s| s.emissions.iter_mut())
-        .collect();
-    greffer_apercus_et_compteurs(pool.get_ref(), TYPE_SUPPORT, &mut toutes, moi).await?;
-
+    // 010 — plus aucun aperçu d'épisode : la section ne rend plus de vidéo
+    // (FR-002). Jusqu'à 12 épisodes × 30 programmes × 6 chaînes cessent d'être
+    // sérialisés, ce qui est le levier de SC-008. Les compteurs d'interaction
+    // du SUPPORT, eux, restent — la barre de réactions de la chaîne n'est pas
+    // retirée.
     let ids_chaines: Vec<Uuid> = sections.iter().map(|s| s.chaine.id).collect();
     let compteurs_chaines =
         media_social::compteurs_pour(pool.get_ref(), "chaine_tv", &ids_chaines, moi).await?;
@@ -637,6 +636,23 @@ pub async fn obtenir_chaine_par_slug(
         par_chaine.remove(&reponse.id).unwrap_or((Vec::new(), 0));
     let mut refs: Vec<&mut EmissionResponse> = emissions.iter_mut().collect();
     greffer_apercus_et_compteurs(pool.get_ref(), TYPE_SUPPORT, &mut refs, moi).await?;
+
+    // 010 — l'équipe de la chaîne ET celle de chacun de ses programmes (FR-025).
+    // Deux appels, un par discriminant : deux requêtes au total, jamais une par
+    // programme.
+    reponse.equipe =
+        crate::handlers::media_equipe::equipe_du_porteur(pool.get_ref(), TYPE_SUPPORT, reponse.id)
+            .await?;
+    let ids_emissions: Vec<Uuid> = emissions.iter().map(|e| e.id).collect();
+    let equipes_emissions = crate::handlers::media_equipe::equipes_par_porteurs(
+        pool.get_ref(),
+        "emission_tele",
+        &ids_emissions,
+    )
+    .await?;
+    for emission in emissions.iter_mut() {
+        emission.equipe = equipes_emissions.get(&emission.id).cloned().unwrap_or_default();
+    }
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -855,6 +871,10 @@ async fn greffer_fiche_support_sections(
     }
     let thematiques = thematiques_par_supports(pool, TYPE_SUPPORT, &ids).await?;
     let couvertures = couverture_par_supports(pool, TYPE_SUPPORT, &ids).await?;
+    // 010 — l'équipe du SUPPORT, et elle seule : la carte de programme
+    // n'affiche pas d'équipe en vitrine (FR-004). Une requête pour toute la
+    // page, comme les thématiques.
+    let equipes = crate::handlers::media_equipe::equipes_par_porteurs(pool, TYPE_SUPPORT, &ids).await?;
 
     for section in sections.iter_mut() {
         section.chaine.thematiques = thematiques
@@ -862,6 +882,7 @@ async fn greffer_fiche_support_sections(
             .cloned()
             .unwrap_or_default();
         section.chaine.couverture = couvertures.get(&section.chaine.id).cloned();
+        section.chaine.equipe = equipes.get(&section.chaine.id).cloned().unwrap_or_default();
     }
     Ok(())
 }

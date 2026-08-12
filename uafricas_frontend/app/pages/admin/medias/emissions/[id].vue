@@ -7,6 +7,8 @@
  * c'est un épisode qui occupe la tête de page, pas une série. Elle a suivi les
  * contenus lors du recadrage 09q — elle vivait auparavant sur `programme_tele`.
  */
+import { porteurProgramme } from '~/composables/useMediaEquipe'
+
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
 const route = useRoute()
@@ -266,19 +268,45 @@ onMounted(async () => {
             </div>
 
             <div class="space-y-4">
-              <h3 class="text-lg font-semibold border-b pb-2">Équipe &amp; langue</h3>
+              <h3 class="text-lg font-semibold border-b pb-2">Langue</h3>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="form-control">
-                  <label class="label"><span class="label-text">Animateur</span></label>
-                  <input v-model="formulaire.info_animateur" type="text" class="input input-bordered">
-                </div>
-                <div class="form-control">
-                  <label class="label"><span class="label-text">Producteur</span></label>
-                  <input v-model="formulaire.info_producteur" type="text" class="input input-bordered">
-                </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text">Langue</span></label>
                   <input v-model="formulaire.langue" type="text" class="input input-bordered" placeholder="Ex: Français">
+                </div>
+              </div>
+            </div>
+
+            <!-- Champs HÉRITÉS (010, FR-034). Ils ne s'affichent plus au public :
+                 l'équipe éditoriale est désormais la seule source sur les
+                 personnes. Ils restent lisibles ICI — les masquer priverait le
+                 gestionnaire de la seule trace de ce qu'il doit reporter. -->
+            <div v-if="formulaire.info_animateur || formulaire.info_producteur" class="space-y-2">
+              <h3 class="text-lg font-semibold border-b pb-2">
+                Champs hérités — reporter dans l'équipe
+              </h3>
+              <p class="text-sm text-base-content/60">
+                Saisis avant la refonte des équipes éditoriales. Ils ne sont plus publiés :
+                reportez-les dans le bloc « Équipe éditoriale » ci-dessous, puis videz-les.
+              </p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Animation (hérité)</span></label>
+                  <input
+                    v-model="formulaire.info_animateur"
+                    type="text"
+                    class="input input-bordered input-sm"
+                    readonly
+                  >
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Production (hérité)</span></label>
+                  <input
+                    v-model="formulaire.info_producteur"
+                    type="text"
+                    class="input input-bordered input-sm"
+                    readonly
+                  >
                 </div>
               </div>
             </div>
@@ -292,6 +320,19 @@ onMounted(async () => {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- Équipe éditoriale DU PROGRAMME (010). Le porteur se déduit de la
+           famille du support : un programme n'a pas de discriminant propre. -->
+      <div class="card bg-base-100 shadow-sm mt-6">
+        <div class="card-body">
+          <MediaGestionEquipe
+            :type-porteur="porteurProgramme(emissionDetail.type_support)"
+            :porteur-id="id"
+            base="admin"
+            titre="Équipe éditoriale du programme"
+          />
         </div>
       </div>
 

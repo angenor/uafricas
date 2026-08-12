@@ -22,7 +22,7 @@ use uuid::Uuid;
 use crate::errors::ApiErreur;
 use crate::handlers::media_detention::{exiger_utilisateur_id, garde_detenteur};
 use crate::models::media_detention::{table_contenu_pour_support, valider_type_support};
-use crate::models::media_emission::heures_anticipation_alerte;
+use crate::models::media_emission::{heures_anticipation_alerte, periode_heures_cadence};
 use crate::models::media_episode::{colonne_media, table_episode};
 use crate::models::media_programmation::{
     AlerteCadenceResponse, AlerteCadenceRow, CreneauRequest, CreneauRow, DiffusionResponse,
@@ -826,7 +826,14 @@ pub async fn mes_alertes_cadence(
                 Some(h) => h,
                 None => continue,
             };
-            let periode_heures: i64 = if ligne.cadence == "quotidienne" { 24 } else { 24 * 7 };
+            // 010 — la période vient de la cadence et n'est plus déduite d'un
+            // « sinon » à deux branches. Le calcul précédent traitait TOUT ce
+            // qui n'était pas quotidien comme hebdomadaire : un programme
+            // mensuel aurait été signalé en retard dès le 8ᵉ jour.
+            let periode_heures = match periode_heures_cadence(&ligne.cadence) {
+                Some(h) => h,
+                None => continue,
+            };
 
             let (prochaine_echeance, niveau) = match ligne.dernier_episode_at {
                 None => (None, "aucun_episode".to_string()),

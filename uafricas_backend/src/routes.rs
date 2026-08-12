@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_emission, media_episode, media_programmation, media_proposition, media_social, media_support, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_emission, media_episode, media_equipe, media_programmation, media_proposition, media_social, media_support, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -134,6 +134,12 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/medias/{type_support}/{support_id}/thematiques", web::put().to(media_support::admin_definir_thematiques))
                     .route("/medias/{type_support}/{support_id}/couverture", web::get().to(media_support::admin_obtenir_couverture))
                     .route("/medias/{type_support}/{support_id}/couverture", web::put().to(media_support::admin_definir_couverture))
+                    // Équipe éditoriale (010) — même forme que les deux blocs
+                    // ci-dessus. Déclarée AVANT « /medias/{id} », qui capterait
+                    // « /medias/equipe ». {type_porteur} accepte quatre valeurs :
+                    // le back-office édite aussi l'équipe d'un programme.
+                    .route("/medias/{type_porteur}/{porteur_id}/equipe", web::get().to(media_equipe::admin_obtenir_equipe))
+                    .route("/medias/{type_porteur}/{porteur_id}/equipe", web::put().to(media_equipe::admin_definir_equipe))
                     // Medias & Contenus - File des contenus signales (US7)
                     // Segments fixes AVANT « /medias/{type_support}/… », qui les capterait.
                     .route("/medias/signalements", web::get().to(admin::media_proposition::lister_signalements))
@@ -1136,6 +1142,12 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // sélecteurs d'édition (US3, US4) — à ne pas confondre avec
                     // les référentiels de FILTRE, qui n'exposent que le déclaré.
                     .route("/referentiels", web::get().to(media_support::referentiels_edition))
+                    // Suggestions de fonction d'équipe (010, FR-015). Segment
+                    // LITTÉRAL : il doit précéder « /{type_porteur}/… », qui
+                    // tenterait sinon de parser « equipe » comme un UUID et
+                    // renverrait un 404 « UUID parsing failed » — deux cas
+                    // livrés en 009 pour cette raison exacte.
+                    .route("/equipe/fonctions", web::get().to(media_equipe::lister_fonctions))
                     // Programmes et épisodes (US1). Ces segments fixes précèdent
                     // « /{type_support}/… », qui les capterait sinon.
                     .route("/emissions/{id}", web::put().to(media_emission::modifier_emission))
@@ -1162,6 +1174,12 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{type_support}/{support_id}/thematiques", web::put().to(media_support::definir_thematiques))
                     .route("/{type_support}/{support_id}/couverture", web::get().to(media_support::obtenir_couverture))
                     .route("/{type_support}/{support_id}/couverture", web::put().to(media_support::definir_couverture))
+                    // Équipe éditoriale (010). {type_porteur} accepte QUATRE
+                    // valeurs — les deux supports et les deux familles de
+                    // programme —, là où les motifs voisins n'en acceptent que
+                    // deux. Le segment final « equipe » les distingue.
+                    .route("/{type_porteur}/{porteur_id}/equipe", web::get().to(media_equipe::obtenir_equipe))
+                    .route("/{type_porteur}/{porteur_id}/equipe", web::put().to(media_equipe::definir_equipe))
                     .route("/{type_media}/{media_id}/reaction", web::post().to(media_social::reagir_media))
                     .route("/{type_media}/{media_id}/commentaires", web::get().to(media_social::lister_commentaires))
                     .route("/{type_media}/{media_id}/commentaires", web::post().to(media_social::commenter_media))

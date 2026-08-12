@@ -1,52 +1,42 @@
 <script setup lang="ts">
 /**
- * Section d'une station sur les pages Radio (FR-016, FR-022).
+ * Section d'une station sur les pages Radio — refondue par la feature 010
+ * (FR-060 : parité stricte avec la section télé, « station » et « audio »
+ * substitués).
  *
- * Même structure que la section télé, à deux différences près : le direct est
- * proposé au même titre qu'une émission enregistrée, et la lecture est confiée
- * au lecteur persistant du layout — elle doit survivre au défilement et à la
- * navigation (FR-017).
+ * La vitrine annonce une **offre éditoriale** : identité → extrait de
+ * description → équipe → bandeau de programmation → cartes de programme
+ * (FR-001). L'épisode mis en avant, ses vignettes d'écoute et sa barre de
+ * réactions ont disparu (FR-002) ; ils vivent sur les pages de détail.
+ *
+ * **Le direct reste**, et c'est délibéré : « écouter le direct » n'est pas la
+ * lecture d'un enregistrement mais l'accès au flux de la station, au même titre
+ * que sa page. Il est confié au lecteur persistant du layout, qui survit au
+ * défilement et à la navigation (FR-017).
+ *
+ * Tailwind v4 pur (Principe VI).
  */
-import type { EmissionRadio, StationSection, ProgrammeRadio } from '~/composables/useStationsRadio'
-import { LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
+import type { StationSection } from '~/composables/useStationsRadio'
 
 const props = defineProps<{ section: StationSection }>()
 
-/**
- * Épisode mis en avant : le plus récent du premier programme. La section doit
- * montrer quelque chose sans attendre un clic (feature 009, US1 §3).
- */
-const misEnAvant = computed<ProgrammeRadio | null>(
-  () => props.section.emissions[0]?.episodes[0] ?? null,
-)
-
-/** Programmes ayant au moins un épisode à montrer. */
-const programmes = computed(() => props.section.emissions.filter(e => e.episodes.length > 0))
-
-const lienEmission = (emission: EmissionRadio) =>
-  emission.slug ? `/medias/emissions-radio/${emission.slug}` : null
-
 const { lire, estContenuCourant, enLecture } = useLecteurMedia()
 
-// Voir `SectionChaine.vue` : les pages de détail sont livrées avec ce lot.
 const lienStation = computed(() =>
   props.section.station.slug ? `/medias/stations/${props.section.station.slug}` : null,
 )
 
-const lienContenu = (contenu: ProgrammeRadio) =>
-  contenu.slug ? `/medias/programmes-radio/${contenu.slug}` : null
+/**
+ * **Tous** les programmes servis sont affichés — y compris ceux sans épisode
+ * publié (FR-005). Le filtre `episodes.length > 0` qui régnait ici n'avait de
+ * sens que tant que la section montrait des enregistrements.
+ */
+const programmes = computed(() => props.section.emissions)
 
-const lireContenu = (contenu: ProgrammeRadio) => {
-  lire({
-    id: contenu.id,
-    type: 'episode_radio',
-    titre: contenu.title,
-    support: props.section.station.name,
-    supportSlug: props.section.station.slug,
-    url: contenu.audioUrl,
-    image: contenu.cover,
-  })
-}
+/** Au-delà du plafond de section, le total est annoncé (FR-008). */
+const programmesMasques = computed(() =>
+  Math.max(0, props.section.totalEmissions - programmes.value.length),
+)
 
 /** Le direct est un contenu comme un autre : il se lance de la même façon. */
 const lireDirect = () => {
@@ -62,19 +52,19 @@ const lireDirect = () => {
   })
 }
 
-const { redirigerVersConnexion } = useAuth()
-const showPartage = ref(false)
+const directEnCours = computed(
+  () => estContenuCourant(`direct-${props.section.station.id}`) && enLecture.value,
+)
 
-// Engagement (US6) : proposer un sujet à la station, ou demander à animer une
-// de ses émissions. Voir `SectionChaine.vue` — même contrat.
+const { redirigerVersConnexion } = useAuth()
 const userStore = useUserStore()
+
+const showPartage = ref(false)
 const showIdee = ref(false)
 const showAnimation = ref(false)
 
-// Reçoit une fonction d'ouverture, et non le ref lui-même : dans un template,
-// Vue déballe les refs, si bien que `ouvrirSiConnecte(showIdee)` transmettait le
-// booléen `false` et l'affectation de `.value` levait une TypeError. Le bouton
-// restait donc sans effet.
+// Voir `SectionChaine.vue` : une fonction d'ouverture, et non le ref lui-même —
+// Vue déballe les refs dans un template.
 const ouvrirSiConnecte = (ouvrir: () => void) => {
   if (!userStore.accessToken) {
     redirigerVersConnexion()
@@ -82,32 +72,22 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
   }
   ouvrir()
 }
-
-/** Commenter suppose la page de détail, seule à héberger le fil complet. */
-const ouvrirDetail = () => {
-  const lien = props.misEnAvant ? lienContenu(props.misEnAvant) : null
-  if (lien) navigateTo(lien)
-}
-
-const directEnCours = computed(
-  () => estContenuCourant(`direct-${props.section.station.id}`) && enLecture.value,
-)
 </script>
 
 <template>
-  <section class="py-10 border-t border-white/10">
+  <section class="border-t border-white/10 py-10">
     <!-- Identité de la station -->
-    <header class="flex items-center gap-4 mb-6 px-1">
+    <header class="mb-4 flex items-center gap-4 px-1">
       <img
         v-if="section.station.cover"
         :src="section.station.cover"
         :alt="section.station.name"
         loading="lazy"
-        class="h-14 w-14 rounded-lg object-cover shrink-0"
+        class="h-14 w-14 shrink-0 rounded-lg object-cover"
       >
       <span
         v-else
-        class="h-14 w-14 rounded-lg shrink-0 bg-neutral-800 flex items-center justify-center"
+        class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-neutral-800"
       >
         <font-awesome-icon :icon="['fas', 'radio']" class="text-neutral-600" />
       </span>
@@ -115,157 +95,114 @@ const directEnCours = computed(
         <NuxtLink
           v-if="lienStation"
           :to="lienStation"
-          class="block text-xl sm:text-2xl font-bold text-white truncate hover:text-yellow-400 transition-colors"
+          class="block truncate text-xl font-bold text-white transition-colors hover:text-custom-chocolat sm:text-2xl"
         >
           {{ section.station.name }}
         </NuxtLink>
-        <h2 v-else class="block text-xl sm:text-2xl font-bold text-white truncate">
+        <h2 v-else class="block truncate text-xl font-bold text-white sm:text-2xl">
           {{ section.station.name }}
         </h2>
-        <p class="text-gray-400 text-sm truncate">
+        <p class="truncate text-sm text-gray-400">
           <span v-if="section.station.location">{{ section.station.location }}</span>
           <span v-if="section.station.location && section.station.genre"> · </span>
           <span v-if="section.station.genre">{{ section.station.genre }}</span>
         </p>
       </div>
 
-      <!-- Le direct, offert au même rang que les émissions (FR-016) -->
-      <button
-        v-if="section.directDisponible"
-        type="button"
-        class="shrink-0 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400"
-        :class="directEnCours
-          ? 'bg-red-600 text-white'
-          : 'border border-red-500 text-red-400 hover:bg-red-500/15'"
-        @click="lireDirect"
-      >
-        <font-awesome-icon :icon="['fas', directEnCours ? 'volume-high' : 'play']" />
-        <span class="hidden sm:inline">{{ directEnCours ? 'En direct' : 'Écouter le direct' }}</span>
-      </button>
+      <div class="flex shrink-0 items-center gap-3">
+        <span class="hidden text-xs text-gray-500 sm:block">
+          {{ section.totalEmissions }} programme{{ section.totalEmissions > 1 ? 's' : '' }}
+        </span>
+
+        <!-- Le direct, offert au même rang que la page de la station (FR-016) -->
+        <button
+          v-if="section.directDisponible"
+          type="button"
+          class="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-custom-chocolat"
+          :class="directEnCours
+            ? 'bg-red-600 text-white'
+            : 'border border-red-500 text-red-400 hover:bg-red-500/15'"
+          @click="lireDirect"
+        >
+          <font-awesome-icon :icon="['fas', directEnCours ? 'volume-high' : 'play']" />
+          <span class="hidden sm:inline">{{ directEnCours ? 'En direct' : 'Écouter le direct' }}</span>
+        </button>
+      </div>
     </header>
 
-    <!-- Émission mise en évidence -->
-    <!-- Ce que la grille programme à cet instant (US5, FR-039) -->
+    <!-- Extrait de description : ellipse figée, sans dépliage (FR-003). -->
+    <CommonTexteRepliable
+      v-if="section.station.description"
+      :texte="section.station.description"
+      :lignes="3"
+      :repliable="false"
+      sombre
+      class="mb-4 max-w-4xl px-1 text-sm text-gray-300"
+    />
+
+    <!-- Équipe éditoriale : aucun cadre quand la station n'en déclare pas. -->
+    <MediaEquipeMedia
+      :membres="section.station.equipe"
+      :seuil="0"
+      sombre
+      class="mb-6 px-1"
+    />
+
+    <!-- Ce que la grille programme à cet instant (US5, FR-039) — texte seul. -->
     <MediaBandeauDiffusion
       :en-cours="section.diffusionEnCours"
       :suivant="section.creneauSuivant"
       base-lien-contenu="programmes-radio"
     />
 
-    <div v-if="misEnAvant" class="flex flex-col sm:flex-row gap-5 mb-8 px-1">
-      <button
-        type="button"
-        class="relative w-full sm:w-56 aspect-video rounded-xl overflow-hidden bg-gray-800 shrink-0 group/mev focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400"
-        :aria-label="`Écouter ${misEnAvant.title}`"
-        @click="lireContenu(misEnAvant)"
-      >
-        <img
-          v-if="misEnAvant.cover"
-          :src="misEnAvant.cover"
-          :alt="misEnAvant.title"
-          loading="lazy"
-          class="w-full h-full object-cover"
-        >
-        <span v-else class="w-full h-full flex items-center justify-center bg-neutral-800">
-          <font-awesome-icon :icon="['fas', 'radio']" class="text-2xl text-neutral-600" />
-        </span>
-        <span class="absolute inset-0 bg-black/40 flex items-center justify-center">
-          <span class="h-14 w-14 rounded-full bg-white/90 text-black flex items-center justify-center">
-            <font-awesome-icon
-              :icon="['fas', estContenuCourant(misEnAvant.id) && enLecture ? 'volume-high' : 'play']"
-              class="text-lg"
-            />
-          </span>
-        </span>
-      </button>
-
-      <div class="min-w-0 flex flex-col justify-center">
-        <div class="flex items-center gap-2 mb-1 flex-wrap">
-          <span
-            v-if="misEnAvant.aLaUne"
-            class="rounded-full px-3 py-0.5 text-xs bg-yellow-400/20 border border-yellow-400 text-yellow-400 uppercase"
-          >
-            À la une
-          </span>
-          <span v-if="misEnAvant.themePhare" class="text-xs text-gray-400">
-            {{ misEnAvant.themePhare }}
-          </span>
-        </div>
-        <h3 class="text-white text-lg font-bold">{{ misEnAvant.title }}</h3>
-        <p v-if="misEnAvant.description" class="text-gray-400 text-sm line-clamp-3 mt-1">
-          {{ misEnAvant.description }}
-        </p>
-        <NuxtLink
-          v-if="lienContenu(misEnAvant)"
-          :to="lienContenu(misEnAvant)!"
-          class="mt-3 inline-flex items-center gap-2 self-start text-yellow-400 text-sm hover:text-yellow-300 underline underline-offset-4"
-        >
-          En savoir plus
-        </NuxtLink>
-
-        <!-- Réagir et partager sans quitter la page (US3). Le fil de
-             commentaires reste sur la page de détail. -->
-        <MediaReactionsBar
-          compact
-          class="mt-4"
-          type-media="episode_radio"
-          :media-id="misEnAvant.id"
-          :nombre-likes="misEnAvant.interactions?.nombre_likes ?? 0"
-          :nombre-dislikes="misEnAvant.interactions?.nombre_dislikes ?? 0"
-          :ma-reaction="misEnAvant.interactions?.ma_reaction ?? null"
-          :nombre-commentaires="misEnAvant.interactions?.nombre_commentaires ?? 0"
-          :nombre-partages="misEnAvant.interactions?.nombre_partages ?? 0"
-          @require-login="redirigerVersConnexion()"
-          @commenter="ouvrirDetail()"
-          @partager="showPartage = true"
-        />
-      </div>
+    <!-- Les programmes de la station (FR-004) -->
+    <div
+      v-if="programmes.length"
+      class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+    >
+      <MediaCarteProgramme
+        v-for="programme in programmes"
+        :key="programme.id"
+        :programme="programme"
+        type-support="station_radio"
+      />
     </div>
-
-    <!-- Une rangée PAR PROGRAMME (US1 §3). -->
-    <div v-for="emission in programmes" :key="emission.id" class="mb-6">
-      <MediaRangeeContenus :titre="emission.titre">
-        <template #entete>
-          <div class="flex items-center gap-3 text-xs text-gray-400">
-            <span>
-              {{ emission.nombreEpisodes }} épisode{{ emission.nombreEpisodes > 1 ? 's' : '' }}
-            </span>
-            <span v-if="emission.cadence !== 'ponctuelle'">
-              · {{ LIBELLES_CADENCE[emission.cadence] }}
-            </span>
-            <NuxtLink
-              v-if="lienEmission(emission)"
-              :to="lienEmission(emission)!"
-              class="text-yellow-400 hover:underline"
-            >
-              Tout voir
-            </NuxtLink>
-          </div>
-        </template>
-        <MediaCarteContenu
-          v-for="contenu in emission.episodes"
-          :key="contenu.id"
-          compacte
-          :titre="contenu.title"
-          :image="contenu.cover"
-          :description="contenu.description"
-          :a-la-une="contenu.aLaUne"
-          :en-lecture="estContenuCourant(contenu.id) && enLecture"
-          :lien="lienContenu(contenu)"
-          @lire="lireContenu(contenu)"
-        />
-      </MediaRangeeContenus>
-    </div>
-
-    <p v-if="!programmes.length" class="text-gray-500 text-sm px-1">
-      Cette station n'a pas encore publié d'émission.
+    <p v-else class="mt-6 px-1 text-sm text-gray-500">
+      Cette station n'a pas encore annoncé de programme.
     </p>
 
+    <!-- Jamais de disparition silencieuse (FR-008). -->
+    <NuxtLink
+      v-if="programmesMasques > 0 && lienStation"
+      :to="lienStation"
+      class="mt-4 inline-flex items-center gap-2 px-1 text-sm font-medium text-custom-chocolat underline underline-offset-2 transition-colors hover:text-white"
+    >
+      Voir les {{ section.totalEmissions }} programmes
+      <font-awesome-icon :icon="['fas', 'arrow-right']" class="h-3 w-3" />
+    </NuxtLink>
+
+    <!-- Réagir et partager LA STATION : la cible a changé avec le retrait de
+         l'épisode mis en avant. -->
+    <MediaReactionsBar
+      compact
+      class="mt-6 px-1"
+      type-media="station_radio"
+      :media-id="section.station.id"
+      :nombre-likes="section.station.interactions?.nombre_likes ?? 0"
+      :nombre-dislikes="section.station.interactions?.nombre_dislikes ?? 0"
+      :ma-reaction="section.station.interactions?.ma_reaction ?? null"
+      :nombre-commentaires="section.station.interactions?.nombre_commentaires ?? 0"
+      :nombre-partages="section.station.interactions?.nombre_partages ?? 0"
+      @require-login="redirigerVersConnexion()"
+      @commenter="lienStation && navigateTo(lienStation)"
+      @partager="showPartage = true"
+    />
+
     <!-- S'engager auprès de la station (US6, FR-044, FR-045) -->
-    <div class="flex flex-wrap gap-3 mt-6 px-1">
+    <div class="mt-4 flex flex-wrap gap-3 px-1">
       <button
         type="button"
-        class="inline-flex items-center gap-2 rounded-full border border-white/20 text-gray-300 px-4 py-2 text-sm hover:border-yellow-400 hover:text-yellow-400 transition-colors"
+        class="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-custom-chocolat hover:text-custom-chocolat"
         @click="ouvrirSiConnecte(() => showIdee = true)"
       >
         <font-awesome-icon :icon="['fas', 'lightbulb']" />
@@ -273,29 +210,26 @@ const directEnCours = computed(
       </button>
       <button
         type="button"
-        class="inline-flex items-center gap-2 rounded-full border border-white/20 text-gray-300 px-4 py-2 text-sm hover:border-yellow-400 hover:text-yellow-400 transition-colors"
+        class="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-custom-chocolat hover:text-custom-chocolat"
         @click="ouvrirSiConnecte(() => showAnimation = true)"
       >
         <font-awesome-icon :icon="['fas', 'microphone']" />
         Demander à animer
       </button>
-      <!-- Signaler l'émission mise en évidence (US7, FR-049) -->
       <MediaSignalerBouton
-        v-if="misEnAvant"
-        type-media="episode_radio"
-        :media-id="misEnAvant.id"
-        :titre="misEnAvant.title"
+        type-media="station_radio"
+        :media-id="section.station.id"
+        :titre="section.station.name"
         variante="pilule"
       />
     </div>
 
     <MediaPartagerModal
-      v-if="misEnAvant"
       :is-open="showPartage"
-      :titre="misEnAvant.title"
-      type-media="episode_radio"
-      :media-id="misEnAvant.id"
-      :url-detail="lienContenu(misEnAvant) ?? undefined"
+      :titre="section.station.name"
+      type-media="station_radio"
+      :media-id="section.station.id"
+      :url-detail="lienStation ?? undefined"
       @close="showPartage = false"
     />
 
@@ -315,12 +249,3 @@ const directEnCours = computed(
     />
   </section>
 </template>
-
-<style scoped>
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>

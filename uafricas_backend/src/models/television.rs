@@ -89,6 +89,11 @@ pub struct ChaineTvResponse {
     /// greffée.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub couverture: Option<CouverturePublique>,
+    /// Équipe éditoriale déclarée (010, table `membre_equipe`). Omise du JSON
+    /// quand elle est vide : le bloc « équipe » disparaît alors des pages, sans
+    /// cadre ni libellé creux (FR-007).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub equipe: Vec<crate::models::media_equipe::MembreEquipeResponse>,
     pub created_at: DateTime<Utc>,
     /// Réactions, commentaires et partages agrégés (FR-027). `None` tant que
     /// l'appelant ne les a pas greffés.
@@ -199,6 +204,9 @@ impl ChaineTvRow {
             ),
             thematiques: Vec::new(),
             couverture: None,
+            // Greffée après coup par les appelants, comme les thématiques : servir
+            // une carte n'oblige pas à charger l'équipe.
+            equipe: Vec::new(),
             created_at: self.created_at,
             interactions: None,
         }

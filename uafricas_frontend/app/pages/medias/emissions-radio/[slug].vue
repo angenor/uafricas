@@ -83,7 +83,7 @@ useHead(() => {
       <font-awesome-icon :icon="['fas', 'microphone']" class="w-14 h-14 text-neutral-700 mb-4" />
       <h1 class="text-2xl font-bold text-white mb-2">Programme introuvable</h1>
       <p class="text-gray-400 mb-4">
-        Ce programme n'existe pas, n'est pas encore publié, ou n'a aucun épisode diffusé.
+        Ce programme n'existe pas, ou n'est pas publié.
       </p>
       <NuxtLink to="/medias/radios" class="text-yellow-400 hover:underline">
         &#8592; Retour à la radio
@@ -91,7 +91,16 @@ useHead(() => {
     </div>
 
     <div v-else class="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-      <CommonFilAriane :items="breadcrumbs" sombre class="mb-6" />
+      <!-- Fil d'Ariane. `CommonFilAriane` était monté ici alors que ce composant
+           N'EXISTE PAS : le fil était donc mort sur cette page. Remplacé par le
+           <nav> écrit à la main qu'emploient les autres pages médias (D8). -->
+      <nav aria-label="Fil d'Ariane" class="mb-6 text-sm text-gray-400">
+        <template v-for="(fil, i) in breadcrumbs" :key="i">
+          <NuxtLink v-if="fil.to" :to="fil.to" class="hover:text-custom-chocolat">{{ fil.label }}</NuxtLink>
+          <span v-else class="text-white">{{ fil.label }}</span>
+          <span v-if="i < breadcrumbs.length - 1" class="mx-2">/</span>
+        </template>
+      </nav>
 
       <!-- Identité du programme -->
       <header class="flex flex-col sm:flex-row gap-6 mb-10">
@@ -116,25 +125,37 @@ useHead(() => {
               {{ emission.support?.nom }}
             </NuxtLink>
             <span v-else-if="emission.support">{{ emission.support.nom }}</span>
-            <span>· {{ emission.nombre_episodes }} épisode{{ emission.nombre_episodes > 1 ? 's' : '' }}</span>
-            <span v-if="emission.cadence !== 'ponctuelle'">
-              · {{ LIBELLES_CADENCE[emission.cadence] }}
-            </span>
+            <span>· {{ emission.nombre_episodes }} enregistrement{{ emission.nombre_episodes > 1 ? 's' : '' }}</span>
+            <!-- La périodicité n'est PLUS masquée quand elle vaut « ponctuelle » :
+                 « Non périodique » est une information sur le rythme, pas une
+                 absence d'information (FR-044, US5-3). -->
+            <span>· {{ LIBELLES_CADENCE[emission.cadence] || emission.cadence }}</span>
             <span v-if="emission.theme_phare">· {{ emission.theme_phare.nom }}</span>
           </p>
-          <p v-if="emission.description" class="text-gray-300 text-sm">
-            {{ emission.description }}
-          </p>
-          <p
-            v-if="emission.info_animateur || emission.info_producteur"
-            class="text-gray-500 text-xs mt-3"
-          >
-            <span v-if="emission.info_animateur">Animation : {{ emission.info_animateur }}</span>
-            <span v-if="emission.info_animateur && emission.info_producteur"> · </span>
-            <span v-if="emission.info_producteur">Production : {{ emission.info_producteur }}</span>
-          </p>
+          <CommonTexteRepliable
+            v-if="emission.description"
+            :texte="emission.description"
+            :lignes="4"
+            sombre
+            class="text-gray-300 text-sm"
+          />
+          <!-- La ligne héritée « Animation : … · Production : … » est RETIRÉE
+               (FR-034) : conservée à côté du bloc d'équipe, elle offrirait deux
+               sources concurrentes pour la même information, l'une structurée et
+               l'autre non. Les deux champs restent en base et lisibles en
+               back-office, sous un libellé « hérité ». -->
         </div>
       </header>
+
+      <!-- Équipe éditoriale DU PROGRAMME (FR-032) : jamais celle de son support
+           en repli, ce qui attribuerait à ce programme des personnes qui n'y
+           travaillent pas. Aucun cadre s'il n'en déclare pas (FR-007). -->
+      <MediaEquipeMedia
+        :membres="emission.equipe ?? []"
+        :seuil="8"
+        sombre
+        class="mb-10"
+      />
 
       <!--
         Interactions du PROGRAMME. Le libellé le dit explicitement : sans lui, un
@@ -171,8 +192,13 @@ useHead(() => {
         <EngagementCadeauxRecus sombre type-objet="emission_radio" :objet-id="emission.id" />
       </div>
 
-      <!-- Les épisodes, paginés (SC-009) : leurs compteurs sont les leurs. -->
-      <div class="mb-12">
+      <!-- Les épisodes, paginés (SC-009) : leurs compteurs sont les leurs.
+           Un programme sans aucun épisode publié RESTE consultable (FR-033) et
+           le dit explicitement — il renvoyait un 404 avant la feature 010. -->
+      <p v-if="!emission.nombre_episodes" class="mb-12 text-sm text-gray-500">
+        Aucun enregistrement n'est encore publié pour ce programme.
+      </p>
+      <div v-else class="mb-12">
         <MediaListeEpisodes
           type-support="station_radio"
           :emission-id="emission.id"

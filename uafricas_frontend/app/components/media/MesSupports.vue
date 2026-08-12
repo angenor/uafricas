@@ -18,8 +18,9 @@ import {
   type DetenteurAPI,
 } from '~/composables/useMediaDetention'
 import type { EmissionAPI } from '~/composables/useMediaEmissions'
-import { LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
+import { CADENCES_ORDONNEES, LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
 import { LIBELLES_NIVEAU_ALERTE, type AlerteCadence } from '~/composables/useMediaProgrammation'
+import { porteurProgramme } from '~/composables/useMediaEquipe'
 
 const { mesSupports, chargement, erreur } = useMediaDetention()
 const { listerEmissionsDetenteur, creerEmission } = useMediaEmissions()
@@ -414,7 +415,7 @@ const dateFormatee = (iso: string) =>
                   </button>
                 </div>
 
-                <div v-if="episodesOuverts === emission.id" class="border-t border-gray-100 p-4">
+                <div v-if="episodesOuverts === emission.id" class="border-t border-gray-100 p-4 space-y-6">
                   <MediaGestionEpisodes
                     :emission-id="emission.id"
                     :emission-titre="emission.titre"
@@ -422,6 +423,18 @@ const dateFormatee = (iso: string) =>
                     :sombre="false"
                     @change="chargerEmissions(detenteur, true)"
                   />
+
+                  <!-- L'équipe DU PROGRAMME (010, FR-011) : distincte de celle
+                       de son support, elles coexistent sans recopie. Le
+                       discriminant se déduit de la famille du support. -->
+                  <div class="border-t border-gray-100 pt-4">
+                    <MediaGestionEquipe
+                      :type-porteur="porteurProgramme(detenteur.type_support)"
+                      :porteur-id="emission.id"
+                      base="membre"
+                      :titre="`Équipe de « ${emission.titre} »`"
+                    />
+                  </div>
                 </div>
               </li>
             </ul>
@@ -501,8 +514,28 @@ const dateFormatee = (iso: string) =>
             />
           </section>
 
+          <!-- Équipe ÉDITORIALE du support (010) : les personnes qui font la
+               chaîne ou la station, publiées sur ses pages. À ne pas confondre
+               avec « Gestion des accès » ci-dessous, qui distribue des DROITS. -->
           <section>
-            <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">Équipe du support</h3>
+            <MediaGestionEquipe
+              :type-porteur="detenteur.type_support"
+              :porteur-id="detenteur.support_id"
+              base="membre"
+              titre="Équipe éditoriale"
+            />
+          </section>
+
+          <!-- Anciennement « Équipe du support » — renommé par la feature 010 :
+               ce panneau ne décrit personne, il ouvre des accès. Deux blocs
+               « équipe » sans rapport dans la même page étaient une invitation
+               à se tromper de formulaire. -->
+          <section>
+            <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">Gestion des accès</h3>
+            <p class="mb-3 text-sm text-gray-600">
+              Qui peut administrer ce support : co-détenteurs et programmateurs.
+              Sans effet sur l'équipe éditoriale publiée ci-dessus.
+            </p>
             <MediaGestionCoDetenteurs
               :type-support="detenteur.type_support"
               :support-id="detenteur.support_id"
@@ -541,14 +574,17 @@ const dateFormatee = (iso: string) =>
             >
           </div>
           <div>
-            <label class="block text-sm text-gray-700 mb-1">Cadence</label>
+            <label class="block text-sm text-gray-700 mb-1">Périodicité</label>
+            <!-- Les quatre valeurs et leurs libellés viennent de la table
+                 partagée : le public, l'espace membre et le back-office lisent
+                 le même mot pour la même valeur (010, FR-041). -->
             <select
               v-model="nouveauProgramme.cadence"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
             >
-              <option value="ponctuelle">Au fil des publications</option>
-              <option value="hebdomadaire">Chaque semaine</option>
-              <option value="quotidienne">Tous les jours</option>
+              <option v-for="c in CADENCES_ORDONNEES" :key="c" :value="c">
+                {{ LIBELLES_CADENCE[c] }}
+              </option>
             </select>
             <p class="text-xs text-gray-500 mt-1">
               Elle sert à vous alerter d'une échéance sans épisode, pas à décider de la diffusion.

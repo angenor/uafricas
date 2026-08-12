@@ -381,6 +381,19 @@ onMounted(async () => {
         </div>
       </div>
 
+      <!-- Équipe éditoriale (010) — voir la note de `/admin/television/[id]` :
+           un seul composant, monté membre et admin, l'autorité seule diffère. -->
+      <div class="card bg-base-100 shadow-sm mt-6">
+        <div class="card-body">
+          <MediaGestionEquipe
+            type-porteur="station_radio"
+            :porteur-id="id"
+            base="admin"
+            titre="Équipe éditoriale de la station"
+          />
+        </div>
+      </div>
+
       <!-- Émissions de cette station : listées ici, éditées sur leur écran -->
       <div class="card bg-base-100 shadow-sm mt-6">
         <div class="card-body">

@@ -1469,7 +1469,7 @@ export interface CreerChaineTvForm {
 export type TypeSupportAdmin = 'chaine_tv' | 'station_radio'
 
 /** Cadence déclarée : elle alimente les alertes, jamais la rotation. */
-export type CadenceEmission = 'quotidienne' | 'hebdomadaire' | 'ponctuelle'
+export type CadenceEmission = 'quotidienne' | 'hebdomadaire' | 'mensuelle' | 'ponctuelle'
 
 /** Référence nommée renvoyée en grappe par l'API (support, thème phare…). */
 export interface RefNommeeAdmin {

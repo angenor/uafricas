@@ -1,4 +1,5 @@
 import type { CompteursInteraction } from '~/composables/useMediaSocial'
+import type { MembreEquipeAPI } from '~/composables/useMediaEquipe'
 
 /**
  * Programmes conteneurs et épisodes — feature 009.
@@ -53,6 +54,9 @@ export interface EmissionAPI {
   cree_par: string
   created_at: string
   updated_at: string
+  /** Équipe éditoriale DU PROGRAMME (010) — distincte de celle de son support,
+   *  jamais un repli sur elle. Absente quand le programme n'en déclare aucune. */
+  equipe?: MembreEquipeAPI[]
   /** Compteurs du PROGRAMME seul — jamais la somme de ceux de ses épisodes. */
   interactions?: CompteursInteraction | null
 }
@@ -105,11 +109,40 @@ interface ApiResponse<T> {
   error: string | null
 }
 
-/** Libellé lisible d'une cadence — l'API ne renvoie que la valeur brute. */
+/**
+ * Libellé lisible d'une cadence — l'API ne renvoie que la valeur brute.
+ *
+ * **Source UNIQUE des libellés de périodicité** (010, FR-041) : le back-office
+ * entretenait les siens dans `useAdminMediaEmissions`, ce qui garantissait qu'ils
+ * divergeraient tôt ou tard de ceux du public. Les deux surfaces lisent
+ * désormais cette table.
+ *
+ * Les clés stockées sont inchangées ; seuls les libellés le sont.
+ */
 export const LIBELLES_CADENCE: Record<string, string> = {
-  quotidienne: 'Tous les jours',
-  hebdomadaire: 'Chaque semaine',
-  ponctuelle: 'Au fil des publications',
+  ponctuelle: 'Non périodique',
+  quotidienne: 'Journalier',
+  hebdomadaire: 'Hebdomadaire',
+  mensuelle: 'Mensuel',
+}
+
+/**
+ * Ordre d'affichage dans les sélecteurs — « non périodique » en tête, parce que
+ * c'est le défaut d'un programme neuf (FR-042).
+ */
+export const CADENCES_ORDONNEES = [
+  'ponctuelle',
+  'quotidienne',
+  'hebdomadaire',
+  'mensuelle',
+] as const
+
+/** Ce que la cadence engage, dit au moment de la choisir. */
+export const AIDES_CADENCE: Record<string, string> = {
+  ponctuelle: 'Aucune périodicité déclarée : aucune alerte de cadence.',
+  quotidienne: 'Un épisode attendu chaque jour — alerte 6 h avant l’échéance.',
+  hebdomadaire: 'Un épisode attendu chaque semaine — alerte 48 h avant l’échéance.',
+  mensuelle: 'Un épisode attendu chaque mois — alerte 7 jours avant l’échéance.',
 }
 
 /** Libellé d'un état d'épisode, tel que l'auteur doit le lire. */

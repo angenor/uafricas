@@ -8,6 +8,8 @@ import type { EmissionAPI, EpisodeAPI } from '~/composables/useMediaEmissions'
 
 import type { CouverturePublique, ThematiquePublique } from '~/composables/useMediaSupport'
 
+import type { MembreEquipeAPI } from '~/composables/useMediaEquipe'
+
 // Composable pour les appels API de la télévision
 
 /** Interface correspondant au DTO ChaineTvResponse du backend */
@@ -30,6 +32,8 @@ export interface ChaineTvAPI {
   thematiques?: ThematiquePublique[]
   /** Couverture territoriale déclarée (US4). */
   couverture?: CouverturePublique | null
+  /** Équipe éditoriale déclarée (010) — absent quand la chaîne n'en a aucune. */
+  equipe?: MembreEquipeAPI[]
   created_at: string
   /** Réactions, commentaires et partages agrégés (FR-027). */
   interactions?: CompteursInteraction | null
@@ -97,6 +101,9 @@ export interface TvChannel {
   thematiques: ThematiquePublique[]
   /** Couverture territoriale déclarée (US4). */
   couverture: CouverturePublique | null
+  /** Équipe éditoriale (010). Toujours un tableau, jamais `undefined` : les
+   *  gabarits n'ont ainsi qu'une seule forme à tester. */
+  equipe: MembreEquipeAPI[]
   /** Compteurs d'interaction, absents tant que l'API ne les greffe pas. */
   interactions: CompteursInteraction | null
 }
@@ -149,8 +156,11 @@ export interface TvEmission {
   themePhare: string | null
   nombreEpisodes: number
   dernierEpisodeAt: string | null
-  /** Aperçu borné à 12 ; au-delà, la page du programme. */
+  /** Aperçu borné à 12 ; au-delà, la page du programme. Vide sur les
+   *  sections de vitrine, qui ne rendent plus d'épisode (010, FR-002). */
   episodes: TvProgram[]
+  /** Équipe éditoriale DU PROGRAMME (010) — jamais celle de sa chaîne. */
+  equipe: MembreEquipeAPI[]
   interactions: CompteursInteraction | null
 }
 
@@ -250,6 +260,7 @@ function mapperChaineApiVersTv(chaine: ChaineTvAPI, apiBase: string): TvChannel 
     contacts: chaine.contacts ?? null,
     thematiques: chaine.thematiques ?? [],
     couverture: chaine.couverture ?? null,
+    equipe: chaine.equipe ?? [],
     interactions: chaine.interactions ?? null,
   }
 }
@@ -306,6 +317,7 @@ export function mapperEmissionVersTv(emission: EmissionAPI, apiBase: string): Tv
     nombreEpisodes: emission.nombre_episodes ?? 0,
     dernierEpisodeAt: emission.dernier_episode_at ?? null,
     episodes: (emission.episodes_apercu ?? []).map(e => mapperEpisodeVersTv(e, apiBase)),
+    equipe: emission.equipe ?? [],
     interactions: emission.interactions ?? null,
   }
 }

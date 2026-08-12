@@ -218,9 +218,24 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
           </span>
         </div>
 
-        <p v-if="station.description" class="text-gray-300 leading-relaxed whitespace-pre-line mb-10">
-          {{ station.description }}
-        </p>
+        <!-- Description dépliable (FR-021) ; un texte court s'affiche entier,
+             SANS bouton (FR-022). -->
+        <CommonTexteRepliable
+          v-if="station.description"
+          :texte="station.description"
+          :lignes="5"
+          sombre
+          class="mb-8 text-gray-300 leading-relaxed"
+        />
+
+        <!-- Équipe éditoriale de la station (FR-023), repliée au-delà de six
+             fiches (FR-024). -->
+        <MediaEquipeMedia
+          :membres="station.equipe"
+          :seuil="6"
+          sombre
+          class="mb-10"
+        />
 
         <!-- Coordonnées publiques renseignées par l'équipe de la station (09p) -->
         <!-- Thématiques déclarées et couverture territoriale (US3, US4) -->
@@ -231,28 +246,56 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
 
         <MediaBlocContacts :contacts="station.contacts" :nom-support="station.name" />
 
-        <!-- Les PROGRAMMES de la station, chacun dépliant ses épisodes. -->
+        <!-- Les PROGRAMMES de la station (FR-025, FR-060). Rendu ALIGNÉ sur la
+             page chaîne : une grille et non un carrousel — deux pages jumelles
+             qui ne se lisent pas de la même façon sont deux pages à maintenir
+             deux fois. -->
         <section v-if="programmes.length" class="mb-12">
           <h2 class="font-oswald text-xl font-bold text-white mb-4">Ses programmes</h2>
-          <div v-for="emission in programmes" :key="emission.id" class="mb-6 last:mb-0">
-            <MediaRangeeContenus :titre="emission.titre">
-              <template #entete>
-                <div class="flex items-center gap-3 text-xs text-gray-400">
-                  <span>
-                    {{ emission.nombreEpisodes }} épisode{{ emission.nombreEpisodes > 1 ? 's' : '' }}
-                  </span>
-                  <span v-if="emission.cadence !== 'ponctuelle'">
-                    · {{ LIBELLES_CADENCE[emission.cadence] }}
-                  </span>
-                  <NuxtLink
-                    v-if="lienEmission(emission)"
-                    :to="lienEmission(emission)!"
-                    class="text-yellow-400 hover:underline"
-                  >
-                    Tout voir
-                  </NuxtLink>
-                </div>
-              </template>
+
+          <article v-for="emission in programmes" :key="emission.id" class="mb-8 last:mb-0">
+            <!-- Périodicité D'ABORD, et jamais masquée (FR-044, US5-3). -->
+            <p class="mb-1 text-xs uppercase tracking-wide text-custom-chocolat">
+              {{ LIBELLES_CADENCE[emission.cadence] || emission.cadence }}
+            </p>
+
+            <div class="flex items-baseline justify-between gap-4 mb-2">
+              <NuxtLink
+                v-if="lienEmission(emission)"
+                :to="lienEmission(emission)!"
+                class="font-semibold text-white hover:text-custom-chocolat transition-colors truncate"
+              >
+                {{ emission.titre }}
+              </NuxtLink>
+              <h3 v-else class="font-semibold text-white truncate">{{ emission.titre }}</h3>
+              <span class="text-xs text-gray-400 shrink-0">
+                {{ emission.nombreEpisodes }} enregistrement{{ emission.nombreEpisodes > 1 ? 's' : '' }}
+              </span>
+            </div>
+
+            <!-- Aucune image de couverture de programme sur cette page (FR-026). -->
+            <CommonTexteRepliable
+              v-if="emission.description"
+              :texte="emission.description"
+              :lignes="3"
+              sombre
+              class="mb-3 text-sm text-gray-400"
+            />
+
+            <!-- Équipe PROPRE au programme (FR-025). -->
+            <MediaEquipeMedia
+              :membres="emission.equipe"
+              titre=""
+              :seuil="4"
+              compact
+              sombre
+              class="mb-3"
+            />
+
+            <div
+              v-if="emission.episodes.length"
+              class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"
+            >
               <MediaCarteContenu
                 v-for="contenu in emission.episodes"
                 :key="contenu.id"
@@ -265,8 +308,19 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
                 :lien="contenu.slug ? `/medias/programmes-radio/${contenu.slug}` : null"
                 @lire="ecouterEmission(contenu)"
               />
-            </MediaRangeeContenus>
-          </div>
+            </div>
+            <p v-else class="text-sm text-gray-500">
+              Aucun enregistrement publié pour l'instant.
+            </p>
+
+            <NuxtLink
+              v-if="lienEmission(emission) && emission.nombreEpisodes > emission.episodes.length"
+              :to="lienEmission(emission)!"
+              class="inline-block mt-3 text-sm text-custom-chocolat hover:underline"
+            >
+              Voir les {{ emission.nombreEpisodes }} enregistrements
+            </NuxtLink>
+          </article>
         </section>
 
         <!-- Cadeaux reçus par ce support (fond sombre : variante claire) -->

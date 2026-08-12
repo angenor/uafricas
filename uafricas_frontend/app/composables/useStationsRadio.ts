@@ -5,6 +5,7 @@ import type { CompteursInteraction } from '~/composables/useMediaSocial'
 import type { EmissionAPI, EpisodeAPI } from '~/composables/useMediaEmissions'
 
 import type { CouverturePublique, ThematiquePublique } from '~/composables/useMediaSupport'
+import type { MembreEquipeAPI } from '~/composables/useMediaEquipe'
 
 import type { ContactsSupport } from '~/composables/useContactsSupport'
 
@@ -35,6 +36,8 @@ export interface StationRadioAPI {
   thematiques?: ThematiquePublique[]
   /** Couverture territoriale déclarée (US4). */
   couverture?: CouverturePublique | null
+  /** Équipe éditoriale déclarée (010) — absent quand la station n'en a aucune. */
+  equipe?: MembreEquipeAPI[]
   created_at: string
   /** Réactions, commentaires et partages agrégés (FR-027). */
   interactions?: CompteursInteraction | null
@@ -96,6 +99,9 @@ export interface RadioStation {
   thematiques: ThematiquePublique[]
   /** Couverture territoriale déclarée (US4). */
   couverture: CouverturePublique | null
+  /** Équipe éditoriale (010). Toujours un tableau, jamais `undefined` : les
+   *  gabarits n'ont ainsi qu'une seule forme à tester. */
+  equipe: MembreEquipeAPI[]
   /** Compteurs d'interaction, absents tant que l'API ne les greffe pas. */
   interactions: CompteursInteraction | null
 }
@@ -137,8 +143,11 @@ export interface EmissionRadio {
   themePhare: string | null
   nombreEpisodes: number
   dernierEpisodeAt: string | null
-  /** Aperçu borné à 12 ; au-delà, la page du programme. */
+  /** Aperçu borné à 12 ; au-delà, la page du programme. Vide sur les sections
+   *  de vitrine, qui ne rendent plus d'audio (010, FR-002). */
   episodes: ProgrammeRadio[]
+  /** Équipe éditoriale DU PROGRAMME (010) — jamais celle de sa station. */
+  equipe: MembreEquipeAPI[]
   interactions: CompteursInteraction | null
 }
 
@@ -272,6 +281,7 @@ function mapperEmissionRadio(emission: EmissionAPI, apiBase: string): EmissionRa
     nombreEpisodes: emission.nombre_episodes ?? 0,
     dernierEpisodeAt: emission.dernier_episode_at ?? null,
     episodes: (emission.episodes_apercu ?? []).map(e => mapperEpisodeRadio(e, apiBase)),
+    equipe: emission.equipe ?? [],
     interactions: emission.interactions ?? null,
   }
 }
@@ -301,6 +311,7 @@ function mapperStationApiVersRadio(station: StationRadioAPI, apiBase: string): R
     contacts: station.contacts ?? null,
     thematiques: station.thematiques ?? [],
     couverture: station.couverture ?? null,
+    equipe: station.equipe ?? [],
     interactions: station.interactions ?? null,
   }
 }

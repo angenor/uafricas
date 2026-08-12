@@ -184,9 +184,25 @@ useHead(() => {
           </span>
         </div>
 
-        <p v-if="chaine.description" class="text-gray-300 leading-relaxed whitespace-pre-line mb-10">
-          {{ chaine.description }}
-        </p>
+        <!-- Description dépliable (FR-021) : une chaîne à la présentation longue
+             ne doit ni écraser la page, ni obliger à quitter pour la lire. Un
+             texte court s'affiche entier, SANS bouton (FR-022). -->
+        <CommonTexteRepliable
+          v-if="chaine.description"
+          :texte="chaine.description"
+          :lignes="5"
+          sombre
+          class="mb-8 text-gray-300 leading-relaxed"
+        />
+
+        <!-- Équipe éditoriale de la chaîne (FR-023) : repliée au-delà de six
+             fiches (FR-024). Aucun cadre si la chaîne n'en déclare pas. -->
+        <MediaEquipeMedia
+          :membres="chaine.equipe"
+          :seuil="6"
+          sombre
+          class="mb-10"
+        />
 
         <!-- Coordonnées publiques renseignées par l'équipe de la chaîne (09p) -->
         <!-- Thématiques déclarées et couverture territoriale (US3, US4) -->
@@ -208,24 +224,49 @@ useHead(() => {
             :key="emission.id"
             class="mb-8 last:mb-0"
           >
-            <div class="flex items-baseline justify-between gap-4 mb-3">
+            <!-- Périodicité D'ABORD, et jamais masquée : « Non périodique » est
+                 une information sur le rythme, pas une absence d'information
+                 (FR-044, US5-3). -->
+            <p class="mb-1 text-xs uppercase tracking-wide text-custom-chocolat">
+              {{ LIBELLES_CADENCE[emission.cadence] || emission.cadence }}
+            </p>
+
+            <div class="flex items-baseline justify-between gap-4 mb-2">
               <NuxtLink
                 v-if="lienEmission(emission)"
                 :to="lienEmission(emission)!"
-                class="font-semibold text-white hover:text-yellow-400 transition-colors truncate"
+                class="font-semibold text-white hover:text-custom-chocolat transition-colors truncate"
               >
                 {{ emission.titre }}
               </NuxtLink>
               <h3 v-else class="font-semibold text-white truncate">{{ emission.titre }}</h3>
               <span class="text-xs text-gray-400 shrink-0">
-                {{ emission.nombreEpisodes }} épisode{{ emission.nombreEpisodes > 1 ? 's' : '' }}
-                <template v-if="emission.cadence !== 'ponctuelle'">
-                  · {{ LIBELLES_CADENCE[emission.cadence] }}
-                </template>
+                {{ emission.nombreEpisodes }} vidéo{{ emission.nombreEpisodes > 1 ? 's' : '' }}
               </span>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <!-- Aucune image de couverture de programme sur cette page (FR-026) :
+                 elle appartient à la vitrine et à la page du programme. -->
+            <CommonTexteRepliable
+              v-if="emission.description"
+              :texte="emission.description"
+              :lignes="3"
+              sombre
+              class="mb-3 text-sm text-gray-400"
+            />
+
+            <!-- Équipe PROPRE au programme (FR-025), distincte de celle de la
+                 chaîne : les deux coexistent sur cette page sans se confondre. -->
+            <MediaEquipeMedia
+              :membres="emission.equipe"
+              titre=""
+              :seuil="4"
+              compact
+              sombre
+              class="mb-3"
+            />
+
+            <div v-if="emission.episodes.length" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               <NuxtLink
                 v-for="contenu in emission.episodes"
                 :key="contenu.id"
@@ -249,6 +290,10 @@ useHead(() => {
                 </p>
               </NuxtLink>
             </div>
+
+            <p v-if="!emission.episodes.length" class="text-sm text-gray-500">
+              Aucune vidéo publiée pour l'instant.
+            </p>
 
             <!-- Au-delà de l'aperçu, la page du programme prend le relais :
                  c'est elle qui tient la promesse de 500 épisodes navigables. -->

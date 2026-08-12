@@ -117,6 +117,7 @@
 \ir schemas/09q_media_content_emissions_episodes.sql
 \ir schemas/09r_media_content_support_thematiques_territoires.sql
 \ir schemas/09s_media_content_thematiques_grille.sql
+\ir schemas/09t_media_content_equipes_periodicite.sql
 \ir schemas/10_governance.sql
 \ir schemas/10f_governance_factcheck_volets_reactions.sql
 \ir schemas/10g_governance_factcheck_signalement.sql

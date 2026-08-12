@@ -322,6 +322,22 @@ onMounted(async () => {
         </div>
       </div>
 
+      <!-- Équipe éditoriale (010). Le composant est le MÊME que côté membre —
+           les règles ne diffèrent pas, seule l'autorité change : d'où
+           `base="admin"`. Il est en Tailwind pur, ce qui est assumé sur une page
+           daisyUI : c'est le prix d'un composant unique, et le prix inverse
+           serait deux formulaires à tenir d'accord. -->
+      <div class="card bg-base-100 shadow-sm mt-6">
+        <div class="card-body">
+          <MediaGestionEquipe
+            type-porteur="chaine_tv"
+            :porteur-id="id"
+            base="admin"
+            titre="Équipe éditoriale de la chaîne"
+          />
+        </div>
+      </div>
+
       <!-- Programmes de cette chaîne : listés ici, édités sur leur propre écran -->
       <div class="card bg-base-100 shadow-sm mt-6">
         <div class="card-body">

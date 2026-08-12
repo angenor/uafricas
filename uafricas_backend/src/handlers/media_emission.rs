@@ -52,8 +52,11 @@ pub const MAX_EPISODES_APERCU: i64 = 12;
 /// BY support)` rapporte le total dans la même passe — un second aller-retour
 /// de comptage serait précisément le N+1 que SC-010 proscrit.
 ///
-/// Un programme sans épisode publié est **écarté** (FR-011) : la jointure
-/// latérale de comptage le filtre par `nombre_episodes > 0`.
+/// Un programme sans épisode publié **reste listé** (010, FR-005) : la latérale
+/// de comptage est jointe `ON TRUE` et non `ON agg.nombre_episodes > 0`. Sous le
+/// modèle de la feature 010, la vitrine annonce une offre éditoriale et non un
+/// catalogue de fichiers — un programme annoncé mais pas encore tourné a sa
+/// place dans la grille.
 pub async fn emissions_publiees_par_supports(
     pool: &PgPool,
     type_support: &str,
@@ -91,7 +94,7 @@ pub async fn emissions_publiees_par_supports(
                     FROM {table_ep} ep
                    WHERE ep.emission_id = e.id
                      AND ep.etat = 'publie' AND ep.deleted_at IS NULL
-              ) agg ON agg.nombre_episodes > 0
+              ) agg ON TRUE
              WHERE e.{colonne} = ANY($1)
                AND e.etat = 'publie' AND e.deleted_at IS NULL
          ) fenetre
@@ -241,8 +244,10 @@ fn cloner_episode(e: &EpisodeResponse) -> EpisodeResponse {
 
 /// Détail d'un programme publié, par son slug.
 ///
-/// `404` si le programme n'est pas publié **ou n'a aucun épisode publié** : un
-/// programme vide n'existe pas pour le public (FR-011).
+/// `404` **si et seulement si** le programme n'est pas publié. Le 404 qui
+/// frappait aussi les programmes sans épisode publié est levé par la feature 010
+/// (FR-033) : un programme annoncé dans la grille doit rester consultable, la
+/// page annonçant simplement qu'aucune vidéo n'est encore en ligne.
 pub async fn obtenir_emission_par_slug(
     pool: &PgPool,
     type_support: &str,
@@ -275,16 +280,19 @@ pub async fn obtenir_emission_par_slug(
     .await?
     .ok_or_else(|| ApiErreur::NonTrouve("Programme non trouvé".into()))?;
 
-    if row.nombre_episodes.unwrap_or(0) == 0 {
-        return Err(ApiErreur::NonTrouve("Programme non trouvé".into()));
-    }
-
     let mut reponse = row.to_response(type_support);
     let type_emission = type_media_emission(type_support).expect("type de support validé");
     let compteurs = media_social::compteurs_pour(pool, type_emission, &[reponse.id], moi).await?;
     // Compteurs de L'ÉMISSION SEULE — jamais la somme de ceux de ses épisodes
     // (FR-048). Les épisodes portent les leurs, servis par leur propre page.
     reponse.interactions = compteurs.get(&reponse.id).cloned();
+
+    // 010 — l'équipe DU PROGRAMME (FR-032) : jamais celle de son support en
+    // repli, ce qui attribuerait à une émission des personnes qui n'y travaillent
+    // pas.
+    let type_porteur = crate::models::media_equipe::type_porteur_emission(type_support)?;
+    reponse.equipe =
+        crate::handlers::media_equipe::equipe_du_porteur(pool, type_porteur, reponse.id).await?;
 
     Ok(reponse)
 }
@@ -621,6 +629,16 @@ pub async fn supprimer_emission(
     ))
     .bind(emission_id)
     .execute(pool.get_ref())
+    .await?;
+
+    // L'équipe du programme suit son porteur (FR-019). `porteur_id` n'ayant pas
+    // de FK, aucune cascade ne s'en charge : sans ce nettoyage, l'équipe
+    // survivrait, invisible, dans le référentiel de suggestions de fonctions.
+    crate::handlers::media_equipe::supprimer_equipe_du_porteur_pool(
+        pool.get_ref(),
+        crate::models::media_equipe::type_porteur_emission(&type_support)?,
+        emission_id,
+    )
     .await?;
 
     journaliser(

@@ -249,6 +249,22 @@ pub async fn obtenir_station_par_slug(
     let mut refs: Vec<&mut EmissionResponse> = emissions.iter_mut().collect();
     greffer_apercus_et_compteurs(pool.get_ref(), TYPE_SUPPORT, &mut refs, moi).await?;
 
+    // 010 — l'équipe de la station ET celle de chacun de ses programmes
+    // (FR-025). Deux appels, un par discriminant, jamais un par programme.
+    reponse.equipe =
+        crate::handlers::media_equipe::equipe_du_porteur(pool.get_ref(), TYPE_SUPPORT, reponse.id)
+            .await?;
+    let ids_emissions: Vec<Uuid> = emissions.iter().map(|e| e.id).collect();
+    let equipes_emissions = crate::handlers::media_equipe::equipes_par_porteurs(
+        pool.get_ref(),
+        "emission_radio",
+        &ids_emissions,
+    )
+    .await?;
+    for emission in emissions.iter_mut() {
+        emission.equipe = equipes_emissions.get(&emission.id).cloned().unwrap_or_default();
+    }
+
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(serde_json::json!({
@@ -283,11 +299,10 @@ pub async fn lister_sections_stations(
     let page = params.page.unwrap_or(1).max(1);
     let par_page = params.par_page.unwrap_or(6).clamp(1, 20);
     let offset = (page - 1) * par_page;
-    let emissions_par_section = params.contenus_par_section.unwrap_or(12).clamp(1, 30);
+    // 010 — jumeau télé : ce plafond bornait un aperçu d'épisodes, il borne
+    // désormais la liste de programmes, contenu principal de la section (FR-008).
+    let emissions_par_section = params.contenus_par_section.unwrap_or(30).clamp(1, 60);
 
-    // Une station dont aucun programme n'a d'épisode publié ne donne pas de
-    // section : elle n'aurait rien à montrer (FR-011). Le direct fait exception
-    // — une station qui émet en continu reste une section légitime.
     let mut conditions: Vec<String> = vec![
         "sr.etat = 'publie'".to_string(),
         "sr.deleted_at IS NULL".to_string(),
@@ -464,26 +479,29 @@ pub async fn lister_sections_stations(
         });
     }
 
-    // Une station sans programme diffusable ET sans direct n'a rien à montrer.
-    sections.retain(|s| !s.emissions.is_empty() || s.direct_disponible);
-
-    let mut toutes: Vec<&mut EmissionResponse> = sections
-        .iter_mut()
-        .flat_map(|s| s.emissions.iter_mut())
-        .collect();
-    greffer_apercus_et_compteurs(pool.get_ref(), TYPE_SUPPORT, &mut toutes, moi).await?;
-
+    // 010 — le filtre a posteriori `sections.retain(…)` a disparu (FR-005) :
+    // une station publiée sans programme reste une section, avec son identité et
+    // son équipe. Sa disparition corrige au passage une incohérence — le `total`
+    // était compté en SQL, la liste filtrée en Rust, et la pagination annonçait
+    // donc plus de sections qu'elle n'en servait.
+    //
+    // Plus aucun aperçu d'épisode non plus : la section ne rend plus d'audio
+    // (FR-002). Les compteurs d'interaction du SUPPORT, eux, restent.
     let ids_stations: Vec<Uuid> = sections.iter().map(|s| s.station.id).collect();
     let compteurs_stations =
         media_social::compteurs_pour(pool.get_ref(), TYPE_SUPPORT, &ids_stations, moi).await?;
     let thematiques = thematiques_par_supports(pool.get_ref(), TYPE_SUPPORT, &ids_stations).await?;
     let couvertures = couverture_par_supports(pool.get_ref(), TYPE_SUPPORT, &ids_stations).await?;
+    let equipes =
+        crate::handlers::media_equipe::equipes_par_porteurs(pool.get_ref(), TYPE_SUPPORT, &ids_stations)
+            .await?;
 
     for section in sections.iter_mut() {
         let id = section.station.id;
         section.station.interactions = compteurs_stations.get(&id).cloned();
         section.station.thematiques = thematiques.get(&id).cloned().unwrap_or_default();
         section.station.couverture = couvertures.get(&id).cloned();
+        section.station.equipe = equipes.get(&id).cloned().unwrap_or_default();
     }
 
     let total_pages = (total as f64 / par_page as f64).ceil() as i64;

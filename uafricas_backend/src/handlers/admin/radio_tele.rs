@@ -539,6 +539,15 @@ pub async fn supprimer_station_radio(
         return Err(ApiErreur::NonTrouve("Station radio non trouvee".into()));
     }
 
+    // L'équipe du support suit son porteur (FR-019) : `porteur_id` n'a pas de
+    // FK, aucune cascade ne s'en charge.
+    crate::handlers::media_equipe::supprimer_equipe_du_porteur_pool(
+        pool.get_ref(),
+        "station_radio",
+        id,
+    )
+    .await?;
+
     log::info!("Admin {} a supprime la station radio {}", admin.id, id);
 
     let ip = audit::extraire_ip(&req);
@@ -951,6 +960,15 @@ pub async fn supprimer_chaine_tv(
         return Err(ApiErreur::NonTrouve("Chaine TV non trouvee".into()));
     }
 
+    // L'équipe du support suit son porteur (FR-019) : `porteur_id` n'a pas de
+    // FK, aucune cascade ne s'en charge.
+    crate::handlers::media_equipe::supprimer_equipe_du_porteur_pool(
+        pool.get_ref(),
+        "chaine_tv",
+        id,
+    )
+    .await?;
+
     log::info!("Admin {} a supprime la chaine TV {}", admin.id, id);
 
     let ip = audit::extraire_ip(&req);
@@ -1342,6 +1360,15 @@ pub async fn supprimer_emission_admin(
     ))
     .bind(emission_id)
     .execute(pool.get_ref())
+    .await?;
+
+    // L'équipe du programme suit son porteur (FR-019) — voir la note du chemin
+    // membre, `media_emission::supprimer_emission`.
+    crate::handlers::media_equipe::supprimer_equipe_du_porteur_pool(
+        pool.get_ref(),
+        crate::models::media_equipe::type_porteur_emission(&type_support)?,
+        emission_id,
+    )
     .await?;
 
     journaliser(
