@@ -18,6 +18,33 @@
 }
 
 @theme {
+  /* ===== Refonte AfricanS — valeurs extraites du Figma « Africans — Design » =====
+     Espace de noms `af-*` SÉPARÉ de `custom-*` : la refonte se déploie écran par
+     écran, et redéfinir `custom-chocolat` (#A54A1C) repeindrait d'un coup toutes
+     les pages non encore reprises. Les deux jeux cohabitent le temps du chantier ;
+     `custom-*` disparaîtra quand le dernier écran sera porté. */
+  --color-af-chocolat: #A74916;  /* couleur de marque — titres de section, actions */
+  --color-af-orange: #FF8746;    /* extrémité claire du dégradé, jamais en aplat */
+  --color-af-vert: #1C8C1C;      /* badges de catégorie et de région, vérifié */
+  --color-af-fond: #F5F5F5;      /* ground applicatif */
+  --color-af-bordure: #D9D9D9;   /* contours, filets, fonds d'étiquette */
+  --color-af-live: #FF0004;      /* pastille direct — usage unique */
+  --color-af-encre: #16161D;     /* Grey/900 */
+  --color-af-corps: #33363F;     /* Line_icon, texte courant */
+  --color-af-atone: #8B8BA7;     /* Grey/400 — métadonnées */
+  --color-af-atone-2: #A8A8BD;   /* Grey/300 — placeholders, inactif */
+  --color-af-icone: #222222;     /* fill_icon */
+
+  /* Police de la maquette. Inter est le défaut de Figma Sites : si le choix
+     bascule sur Oswald + Open Sans, c'est cette ligne seule qui change. */
+  --font-af: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Gabarit mesuré dans Figma (artboard 1920). */
+  --spacing-af-conteneur: 1443px;
+  --spacing-af-colonne: 312px;
+  --spacing-af-barre: 89px;
+  --spacing-af-bandeau: 315px;
+
   /* ===== Couleurs custom ===== */
   --color-custom-chocolat: #A54A1C;
   --color-custom-green: #228B22;
@@ -71,6 +98,12 @@
   --background-image-font-baniere-cuisine: url('/images/baniere-cuisine.jpg');
   --background-image-font-baniere-ethnie: url('/images/banniere-ethnie.png');
   --background-image-font-c-culturel: url('https://mediaculture.info/wp-content/uploads/2020/03/Patrimoine-culturel-africain-1-1024x850.jpg');
+}
+
+/* Dégradé primaire de la maquette. Déclaré une fois : il revient sur le bouton
+   principal, le segment actif d'une bascule et le voile des bandeaux de module. */
+@utility bg-af-degrade {
+  background-image: linear-gradient(90deg, var(--color-af-orange), var(--color-af-chocolat));
 }
 
 /* Masquer la barre de défilement tout en gardant le défilement actif */
