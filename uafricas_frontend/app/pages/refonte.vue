@@ -355,27 +355,51 @@ const couleurs = [
 // Actifs sortis du fichier « Africans — Design ». La définition d'origine est
 // portée ici plutôt que déduite du fichier : c'est elle qui dit si l'image
 // tiendra à l'affichage, pas la taille après compression.
+const INSUFFISANT = 'Sous la largeur d\'affichage de 1443 px — sera flou'
+
 const actifs = [
   {
     nom: 'Bandeau — Accueil',
     fichier: '/images/africans/heros/hero-accueil.jpg',
-    source: 'source 4000 × 2667 → 2400 px',
+    source: '4000 × 2667 → 2400 px',
+  },
+  {
+    nom: 'Bandeau — Codimoi',
+    fichier: '/images/africans/heros/hero-codimoi.jpg',
+    source: '4096 × 2296 → 2400 px',
   },
   {
     nom: 'Bandeau — Afripulse',
     fichier: '/images/africans/heros/hero-afripulse.jpg',
-    source: 'source 740 × 492, non redimensionnée',
-    alerte: 'Définition insuffisante : affichée sur 1443 px',
+    source: '740 × 492, non redimensionnée',
+    alerte: INSUFFISANT,
+  },
+  {
+    nom: 'Bandeau — Afrolang',
+    fichier: '/images/africans/heros/hero-afrolang.jpg',
+    source: '810 × 1080 — image en PORTRAIT',
+    alerte: 'Portrait recadré en bande de 1443 × 315 : cadrage à revoir',
+  },
+  {
+    nom: 'Bandeau — Africonnect',
+    fichier: '/images/africans/heros/hero-africonnect.jpg',
+    source: '748 × 420, non redimensionnée',
+    alerte: INSUFFISANT,
+  },
+  {
+    nom: 'Bandeau — Vidafrica',
+    fichier: '/images/africans/heros/hero-vidafrica.jpg',
+    source: '2000 × 1055 → 2000 px',
   },
   {
     nom: 'Bandeau — Afroculture',
     fichier: '/images/africans/heros/hero-afroculture.jpg',
-    source: 'source 3569 × 2000 → 2400 px',
+    source: '3569 × 2000 → 2400 px',
   },
   {
     nom: 'Bandeau — Fiche pays',
     fichier: '/images/africans/heros/hero-fiche-pays.jpg',
-    source: 'source 1920 × 1280 → 1920 px',
+    source: '1920 × 1280 → 1920 px',
   },
   {
     nom: 'Illustration — Codimoi',
@@ -386,9 +410,15 @@ const actifs = [
   {
     nom: 'Motif — tressage',
     fichier: '/images/africans/motifs/motif-tresse.jpg',
-    source: 'source 4096 × 2304 → 2048 px',
+    source: '4096 × 2304 → 2048 px',
   },
-]
+] satisfies Array<{
+  nom: string
+  fichier: string
+  source: string
+  alerte?: string
+  fond?: string
+}>
 
 const statistiques = [
   { libelle: 'Publications totales', detail: '01 Posts', valeur: '02 likes' },
