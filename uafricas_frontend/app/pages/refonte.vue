@@ -35,54 +35,89 @@
         Échantillon de fil
       </h2>
 
+      <AfricansOnglets v-model="ongletActif" :onglets="[
+        { valeur: 'pour-vous', libelle: 'Pour vous' },
+        { valeur: 'tendances', libelle: 'Tendances' },
+      ]" />
+
       <!-- Carte de publication : anatomie relevée sur 4 modules. -->
-      <article
+      <AfricansCartePublication
         v-for="post in publications"
         :key="post.id"
-        class="overflow-hidden rounded-[10px] border border-af-bordure bg-white"
-      >
-        <header class="flex items-start gap-3 p-4">
-          <span class="grid size-11 shrink-0 place-items-center rounded-full bg-af-chocolat/15 text-af-chocolat">
-            <font-awesome-icon icon="fa-solid fa-user" />
-          </span>
-          <div class="min-w-0">
-            <p class="flex items-center gap-2 text-[14px]/[1.4] font-bold">
-              {{ post.auteur }}
-              <font-awesome-icon
-                v-if="post.verifie"
-                icon="fa-solid fa-circle-check"
-                class="text-af-vert"
-              />
-            </p>
-            <p class="flex items-center gap-1.5 text-[12px]/[1.4] text-af-atone">
-              <font-awesome-icon icon="fa-solid fa-location-dot" />
-              {{ post.lieu }}
-            </p>
+        :auteur="{ nom: post.auteur, lieu: post.lieu, verifie: post.verifie }"
+        :categorie="post.categorie"
+        :texte="post.texte"
+        :images="post.images"
+        :likes="post.likes"
+        :commentaires="post.commentaires"
+        :partages="post.partages"
+        :quand="post.quand"
+        :jaime="jaimes.has(post.id)"
+        @jaime="basculerJaime(post.id)"
+      />
+
+      <!-- Cartes métier, dans leur grille d'origine : 2 colonnes, gouttière 20 px. -->
+      <h2 class="text-[20px]/[1.4] font-bold text-af-chocolat">Cartes métier</h2>
+      <div class="grid gap-5 sm:grid-cols-2">
+        <AfricansCarteSalle
+          titre="Créole louisianais"
+          description="Chaque tissu raconte l'histoire d'une génération. L'art de nos ancêtres vivant dans le présent."
+          lieu="Lagos, Nigeria"
+          langue="Créole louisianais"
+          :image="'/images/africans/heros/hero-afroculture.jpg'"
+        />
+        <AfricansCarteSalle
+          titre="Baoulé"
+          description="Session ouverte, apprentissage guidé par un modérateur."
+          lieu="Abidjan, Côte d'Ivoire"
+          langue="Baoulé"
+          en-direct
+          :participants="25"
+          :image="'/images/africans/heros/hero-afripulse.jpg'"
+        />
+        <AfricansCarteTerritoire
+          nom="Afrique du Sud"
+          region="Afrique Australe"
+          devise="L'unité dans la Diversité"
+          capitale="Pretoria"
+          population="63.2 millions"
+          drapeau="🇿🇦"
+          :contributions="2"
+          image="/images/africans/heros/hero-fiche-pays.jpg"
+        />
+        <AfricansCarteEvenement
+          titre="Exposition : Masques et Traditions"
+          type="Exposition en présentiel"
+          lieu="Centre Culturel de Paris, Salle d'exposition"
+          date="Dimanche 09 Août 2026"
+          heure="13H05"
+          image="/images/africans/heros/hero-accueil.jpg"
+          vers="/refonte"
+        />
+      </div>
+
+      <!-- Accordéon et modale. -->
+      <h2 class="text-[20px]/[1.4] font-bold text-af-chocolat">Surcouches</h2>
+      <AfricansAccordeon titre="Informations Générales" icone="fa-solid fa-circle-info" par-defaut-ouvert>
+        <dl class="grid gap-4 sm:grid-cols-2">
+          <div v-for="info in infosPays" :key="info.libelle">
+            <dt class="text-[14px]/[1.4] text-af-atone">{{ info.libelle }}</dt>
+            <dd class="text-[16px]/[1.4] font-bold">{{ info.valeur }}</dd>
           </div>
-          <span class="ml-auto rounded px-3 py-1 text-[12px]/[1.4] font-bold text-white" :class="'bg-af-vert'">
-            {{ post.categorie }}
-          </span>
-        </header>
+        </dl>
+      </AfricansAccordeon>
+      <AfricansAccordeon titre="Secteurs d'Opportunités" icone="fa-solid fa-briefcase">
+        <p class="text-[14px]/[1.4] text-af-corps">Contenu replié par défaut.</p>
+      </AfricansAccordeon>
 
-        <p class="px-4 pb-3 text-[14px]/[1.4] text-af-corps">{{ post.texte }}</p>
-
-        <div class="aspect-[16/10] w-full bg-af-bordure">
-          <img :src="post.image" :alt="''" class="size-full object-cover" />
-        </div>
-
-        <footer class="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 text-[12px]/[1.4] text-af-corps">
-          <span class="flex items-center gap-2">
-            <font-awesome-icon icon="fa-solid fa-thumbs-up" /> {{ post.likes }} Likes
-          </span>
-          <span class="flex items-center gap-2">
-            <font-awesome-icon icon="fa-solid fa-comment" /> {{ post.commentaires }} Commentaires
-          </span>
-          <span class="flex items-center gap-2">
-            <font-awesome-icon icon="fa-solid fa-share-nodes" /> {{ post.partages }} Partages
-          </span>
-          <span class="ml-auto text-af-atone italic">{{ post.quand }}</span>
-        </footer>
-      </article>
+      <div class="flex flex-wrap gap-3">
+        <AfricansBouton icone="fa-solid fa-plus" @click="modaleCreation = true">
+          Modale de création
+        </AfricansBouton>
+        <AfricansBouton variante="secondaire" @click="modaleInfo = true">
+          Modale d'explication
+        </AfricansBouton>
+      </div>
 
       <!-- Bloc de contrôle typographique : permet de comparer au Figma d'un
            coup d'œil, sans ouvrir l'inspecteur. -->
@@ -175,16 +210,69 @@
 
       <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser">
         <div class="flex flex-col gap-4">
-          <div>
-            <p class="mb-2 text-[14px]/[1.4] font-bold">Langues</p>
-            <select class="h-11 w-full rounded-md border border-af-bordure bg-white px-3 text-sm">
-              <option>Toutes les langues</option>
-            </select>
-          </div>
+          <AfricansChamp v-model="langue" libelle="Langues" type="select">
+            <option value="">Toutes les langues</option>
+            <option value="baoule">Baoulé</option>
+            <option value="lingala">Lingala</option>
+          </AfricansChamp>
           <AfricansBouton variante="secondaire" pleine-largeur>Appliquer</AfricansBouton>
         </div>
       </AfricansPanneau>
     </template>
+
+    <!-- Modales, montées hors du flux par Teleport. -->
+    <AfricansModale
+      v-model="modaleCreation"
+      titre="Nouvelle Publication"
+      icone="fa-solid fa-plus"
+      ton="vert"
+    >
+      <div class="flex flex-col gap-5">
+        <AfricansChamp v-model="brouillonTitre" libelle="Titre du contenu" placeholder="Nouvelle collection Ankara" />
+        <AfricansChamp
+          v-model="brouillonTexte"
+          libelle="Descriptif"
+          type="textarea"
+          placeholder="Chaque tissu raconte l'histoire d'une génération."
+        />
+        <AfricansChamp v-model="langue" libelle="Catégories" type="select">
+          <option value="">Catégories</option>
+          <option value="mode">Mode</option>
+          <option value="cuisine">Cuisine</option>
+        </AfricansChamp>
+      </div>
+      <template #actions>
+        <button type="button" class="text-[16px]/[1.4] font-bold text-af-chocolat" @click="modaleCreation = false">
+          Annuler
+        </button>
+        <AfricansBouton @click="modaleCreation = false">Publier</AfricansBouton>
+      </template>
+    </AfricansModale>
+
+    <AfricansModale
+      v-model="modaleInfo"
+      titre="C'est quoi Codimoi ?"
+      sous-titre="La mémoire numérique de l'Afrique et de ses diasporas"
+      icone="fa-solid fa-book-open"
+      ton="chocolat"
+    >
+      <div class="flex items-center gap-8">
+        <p class="flex-1 text-[14px]/[1.4] text-af-corps">
+          L'histoire, les traditions et les savoirs de l'Afrique et des peuples afro-descendants
+          risquent parfois de se perdre au fil du temps. Codimoi est une mémoire collective en ligne
+          où chacun peut documenter, conserver et partager récits, proverbes, traditions et savoirs —
+          pour que rien de précieux ne disparaisse.
+        </p>
+        <img
+          src="/images/africans/illustrations/codimoi-personnage.svg"
+          alt=""
+          class="h-56 w-auto shrink-0"
+        />
+      </div>
+      <template #actions>
+        <AfricansBouton @click="modaleInfo = false">Suivant</AfricansBouton>
+      </template>
+    </AfricansModale>
   </NuxtLayout>
 </template>
 
@@ -192,6 +280,15 @@
 definePageMeta({ layout: false })
 useHead({ title: 'Refonte — recette visuelle · AfricanS' })
 
+const ongletActif = ref('pour-vous')
+const modaleCreation = ref(false)
+const modaleInfo = ref(false)
+const langue = ref('')
+const brouillonTitre = ref('')
+const brouillonTexte = ref('')
+
+// Les compteurs sont des NOMBRES : c'est BarreInteractions qui abrège en « 25k ».
+// Les passer déjà abrégés interdirait au composant d'incrémenter à la volée.
 const publications = [
   {
     id: 1,
@@ -200,8 +297,8 @@ const publications = [
     categorie: 'Mode',
     verifie: false,
     texte: "Nouvelle collection Ankara printemps 2026. Chaque tissu raconte l'histoire d'une génération. L'art de nos ancêtres vivant dans le présent.",
-    image: '/images/banniere-ethnie.jpg',
-    likes: '25k', commentaires: '25k', partages: '5', quand: 'il y a 2h',
+    images: ['/images/banniere-ethnie.jpg'],
+    likes: 25400, commentaires: 25000, partages: 5, quand: 'il y a 2h',
   },
   {
     id: 2,
@@ -209,10 +306,29 @@ const publications = [
     lieu: "Abidjan, Côte d'Ivoire",
     categorie: 'Cuisine',
     verifie: true,
-    texte: "Thiéboudienne revisité pour un palais contemporain. La cuisine africaine est mondiale. Recette complète dans ma bio.",
-    image: '/images/cuisine-afrique.jpg',
-    likes: '25k', commentaires: '25k', partages: '5', quand: 'il y a 1j',
+    texte: "Thiéboudienne revisité pour un palais contemporain. La cuisine africaine est mondiale.\nRecette complète dans ma bio.",
+    // Trois images : vérifie la mosaïque « une grande + deux empilées ».
+    images: ['/images/cuisine-afrique.jpg', '/images/africa-culture.jpg', '/images/danse-afrique.jpg'],
+    likes: 25000, commentaires: 25000, partages: 5, quand: 'il y a 1j',
   },
+]
+
+// Réaction locale : la page de recette n'appelle aucune API, mais l'état doit
+// bouger pour qu'on voie que la barre d'interactions réagit.
+const jaimes = ref(new Set<number>())
+function basculerJaime(id: number) {
+  const s = new Set(jaimes.value)
+  s.has(id) ? s.delete(id) : s.add(id)
+  jaimes.value = s
+}
+
+const infosPays = [
+  { libelle: 'Capitale', valeur: 'Pretoria' },
+  { libelle: 'Superficie', valeur: '1 221 037 km²' },
+  { libelle: 'Région', valeur: 'Afrique Australe' },
+  { libelle: 'Population', valeur: '63.2 millions' },
+  { libelle: 'Monnaie', valeur: 'Rand sud-africain (ZAR)' },
+  { libelle: 'Devise', valeur: "L'unité dans la Diversité" },
 ]
 
 // Valeurs extraites du Figma : Inter, interlignage 1.4 partout, interlettrage nul.
