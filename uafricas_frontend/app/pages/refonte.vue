@@ -2,14 +2,14 @@
   <NuxtLayout name="africans">
     <template #bandeau>
       <AfricansBandeauModule
-        titre="Codimoi"
-        image="/images/africa-culture.jpg"
-        aide="C'est quoi Codimoi ?"
+        titre="Afripulse"
+        image="/images/africans/heros/hero-afripulse.jpg"
+        aide="C'est quoi Afripulse ?"
       />
     </template>
 
     <template #fil-ariane>
-      <AfricansFilAriane :segments="[{ libelle: 'Africarise', vers: '/codi-moi' }, { libelle: 'Codimoi' }]">
+      <AfricansFilAriane :segments="[{ libelle: 'Africarise', vers: '/codi-moi' }, { libelle: 'Afripulse' }]">
         <template #action>
           <AfricansBouton icone="fa-solid fa-plus">Nouvelle Publication</AfricansBouton>
         </template>
@@ -113,6 +113,32 @@
           <AfricansBouton variante="vert" icone="fa-solid fa-arrow-right">Découvrir</AfricansBouton>
         </div>
       </section>
+
+      <!-- Actifs sortis du fichier Figma, à valider visuellement. -->
+      <section class="rounded-[10px] border border-af-bordure bg-white p-6">
+        <h2 class="mb-1 text-[20px]/[1.4] font-bold text-af-chocolat">Actifs extraits du Figma</h2>
+        <p class="mb-5 text-[14px]/[1.4] text-af-corps">
+          Redimensionnés et compressés. La définition d'origine est indiquée sous chacun.
+        </p>
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <figure v-for="a in actifs" :key="a.fichier" class="min-w-0">
+            <div
+              class="grid aspect-[16/9] place-items-center overflow-hidden rounded-lg border border-af-bordure"
+              :class="a.fond ?? 'bg-af-fond'"
+            >
+              <img :src="a.fichier" :alt="a.nom" class="max-h-full max-w-full object-contain" />
+            </div>
+            <figcaption class="mt-2">
+              <p class="text-[14px]/[1.4] font-bold">{{ a.nom }}</p>
+              <p class="text-[12px]/[1.4] text-af-atone">{{ a.source }}</p>
+              <p v-if="a.alerte" class="mt-1 text-[12px]/[1.4] font-bold text-af-live">
+                {{ a.alerte }}
+              </p>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
     </div>
 
     <!-- ================= Rail droit ================= -->
@@ -208,6 +234,44 @@ const couleurs = [
   { nom: 'Pêche 35 %', hex: 'chocolat /35', classe: 'bg-af-chocolat/35' },
   { nom: 'Bordure', hex: '#D9D9D9', classe: 'bg-af-bordure' },
   { nom: 'Live', hex: '#FF0004', classe: 'bg-af-live' },
+]
+
+// Actifs sortis du fichier « Africans — Design ». La définition d'origine est
+// portée ici plutôt que déduite du fichier : c'est elle qui dit si l'image
+// tiendra à l'affichage, pas la taille après compression.
+const actifs = [
+  {
+    nom: 'Bandeau — Accueil',
+    fichier: '/images/africans/heros/hero-accueil.jpg',
+    source: 'source 4000 × 2667 → 2400 px',
+  },
+  {
+    nom: 'Bandeau — Afripulse',
+    fichier: '/images/africans/heros/hero-afripulse.jpg',
+    source: 'source 740 × 492, non redimensionnée',
+    alerte: 'Définition insuffisante : affichée sur 1443 px',
+  },
+  {
+    nom: 'Bandeau — Afroculture',
+    fichier: '/images/africans/heros/hero-afroculture.jpg',
+    source: 'source 3569 × 2000 → 2400 px',
+  },
+  {
+    nom: 'Bandeau — Fiche pays',
+    fichier: '/images/africans/heros/hero-fiche-pays.jpg',
+    source: 'source 1920 × 1280 → 1920 px',
+  },
+  {
+    nom: 'Illustration — Codimoi',
+    fichier: '/images/africans/illustrations/codimoi-personnage.svg',
+    source: 'vectoriel, 40 Ko, fonds opaques retirés',
+    fond: 'bg-white',
+  },
+  {
+    nom: 'Motif — tressage',
+    fichier: '/images/africans/motifs/motif-tresse.jpg',
+    source: 'source 4096 × 2304 → 2048 px',
+  },
 ]
 
 const statistiques = [
