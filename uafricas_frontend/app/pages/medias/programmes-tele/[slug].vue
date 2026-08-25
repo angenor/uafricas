@@ -136,7 +136,7 @@ useHead(() => {
           </NuxtLink>
           <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-white mb-2">
             <span v-if="programme.numeroEpisode" class="text-gray-400 font-normal">
-              Épisode {{ programme.numeroEpisode }} 
+              Épisode {{ programme.numeroEpisode }}, 
             </span>
             {{ programme.title }}
           </h1>

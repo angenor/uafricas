@@ -34,7 +34,7 @@ const suppressionCible = ref<AdminEmission | null>(null)
 const messageSuppression = ref<string | null>(null)
 
 // ── Création ──────────────────────────────────────────────
-// Le strict nécessaire ici : support, titre, cadence , le reste sur l'écran
+// Le strict nécessaire ici : support, titre, cadence, le reste sur l'écran
 // de détail. Un programme naît sans épisode et sans fichier : c'est la
 // différence de fond avec l'ancien « programme », qui était le média lui-même.
 const showCreation = ref(false)

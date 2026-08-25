@@ -1,384 +1,3 @@
-<template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Mobile Sidebar (Filtres) -->
-    <AfrolangSalleFiltersMobile
-      v-model="filtres"
-      :is-open="sidebarOpen"
-      :total-salles="totalSalles"
-      :filtered-count="total"
-      :langues="languesDisponibles"
-      :pays="paysDisponibles"
-      @close="sidebarOpen = false"
-      @reset="resetFilters"
-    />
-
-    <!-- Mobile Toggle Button -->
-    <div class="lg:hidden fixed bottom-6 right-6 z-30">
-      <button
-        class="p-4 rounded-full bg-blue-500 text-white shadow-lg hover:shadow-xl transition-all"
-        @click="sidebarOpen = true"
-      >
-        <font-awesome-icon :icon="['fas', 'filter']" class="w-5 h-5" />
-      </button>
-    </div>
-
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
-    >
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
-
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Afrolang : Sauvons nos langues
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Apprendre une langue africaine ou afro-descendante à distance et rencontrer des personnes qui pratiquent la langue et souhaitent l'apprendre.
-          </p>
-        </div>
-
-        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <!-- Bouton d'aide : ouvre la présentation d'Afrolang -->
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
-            aria-label="En savoir plus sur Afrolang"
-            @click="presentationOuverte = true"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
-            C'est quoi Afrolang&nbsp;?
-          </button>
-
-          <button
-            v-if="userStore.isAuthenticated"
-            type="button"
-            class="inline-flex items-center gap-2 rounded-full bg-white/95 hover:bg-white text-custom-chocolat font-semibold text-sm px-5 py-2.5 shadow-lg transition-colors"
-            @click="proposerOuvert = true"
-          >
-            <font-awesome-icon :icon="['fas', 'lightbulb']" class="w-4 h-4" />
-            Proposer une salle
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modale de présentation « C'est quoi Afrolang ? » -->
-    <AfrolangPresentationModal
-      :open="presentationOuverte"
-      @close="presentationOuverte = false"
-    />
-
-    <!-- Breadcrumb -->
-    <div class="bg-gray-50">
-      <div class="max-w-7xl mx-auto px-4 py-4">
-        <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
-      </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 py-8">
-      <!-- Search Bar -->
-      <div class="max-w-2xl mx-auto mb-8">
-        <div class="relative">
-          <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            v-model="filtres.recherche"
-            type="text"
-            class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-xl shadow-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-700 placeholder-gray-400"
-            placeholder="Rechercher une salle par nom ou langue..."
-            @keyup.enter="handleSearch"
-          />
-        </div>
-      </div>
-
-      <!-- Erreur entrer dans la salle -->
-      <div v-if="erreurEntrer" class="max-w-2xl mx-auto mb-6">
-        <div class="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2">
-          <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="w-4 h-4" />
-          {{ erreurEntrer }}
-          <button class="ml-auto text-red-400 hover:text-red-600" @click="erreurEntrer = null">
-            <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Content with Sidebar -->
-      <div class="flex gap-8">
-        <!-- Desktop Sidebar -->
-        <div class="hidden lg:block w-82 shrink-0">
-          <AfrolangSalleFilters
-            v-model="filtres"
-            :total-salles="totalSalles"
-            :filtered-count="total"
-            :langues="languesDisponibles"
-            :pays="paysDisponibles"
-            @reset="resetFilters"
-          />
-        </div>
-
-        <!-- Main Content Area -->
-        <div class="flex-1 min-w-0">
-          <!-- Results count -->
-          <div class="flex items-center justify-between mb-6">
-            <p class="text-gray-600">
-              <span class="font-semibold text-gray-900">{{ total }}</span> salle(s) trouvée(s)
-            </p>
-          </div>
-
-          <!-- Loading State -->
-          <div v-if="initialLoading" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            <div
-              v-for="n in 6"
-              :key="n"
-              class="bg-white rounded-xl shadow-md overflow-hidden animate-pulse"
-            >
-              <div class="h-32 bg-gray-200" />
-              <div class="p-3 space-y-3">
-                <div class="h-3 bg-gray-200 rounded w-3/4" />
-                <div class="h-3 bg-gray-200 rounded w-1/2" />
-                <div class="h-8 bg-gray-200 rounded" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Salles List -->
-          <template v-else-if="salles.length > 0">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-              <template v-for="salle in salles" :key="salle.id">
-                <AfrolangSalleCard
-                  :salle="salle"
-                  :expanded="expandedSalleId === salle.id"
-                  :chargement="salleEnCoursEntree === salle.id"
-                  data-aos="fade-up"
-                  @entrer="entrerDansSalle"
-                  @toggle-privees="togglePrivees"
-                />
-
-                <!-- Widget Canal privé : dropdown des salles privées, déplié juste sous la carte cliquée (pleine largeur) -->
-                <Transition name="expand">
-                  <div
-                    v-if="expandedSalleId === salle.id"
-                    class="col-span-full bg-blue-50/50 border border-blue-100 rounded-2xl p-4 md:p-6"
-                  >
-                    <div v-if="loadingPrivees" class="flex items-center justify-center py-8">
-                      <div class="animate-spin rounded-full h-8 w-8 border-3 border-blue-500 border-t-transparent" />
-                      <span class="ml-3 text-gray-500 text-sm">Chargement des cours privés...</span>
-                    </div>
-
-                    <template v-else>
-                      <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
-                        <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                          <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4 text-blue-500" />
-                          {{ (sallesPriveesCache[salle.id]?.length ?? 0) }}
-                          cours privé{{ (sallesPriveesCache[salle.id]?.length ?? 0) > 1 ? 's' : '' }}
-                          {{ salle.titre }}
-                        </h4>
-
-                        <!-- US4 : bouton Créer ma salle privée / Ouvrir ma salle privée -->
-                        <button
-                          v-if="userStore.isAuthenticated"
-                          type="button"
-                          class="px-3 py-1.5 text-xs rounded-lg font-semibold transition-all flex items-center gap-1.5"
-                          :class="maSallePriveeIciId
-                            ? 'bg-custom-chocolat text-white hover:bg-custom-chocolat/90'
-                            : 'bg-blue-500 text-white hover:bg-blue-600'"
-                          :disabled="sallePriveeEnCours === (maSallePriveeIciId || 'creation')"
-                          @click="maSallePriveeIciId ? ouvrirMaSallePrivee(maSallePriveeIciId) : ouvrirCreationModal(salle.id)"
-                        >
-                          <font-awesome-icon
-                            :icon="['fas', maSallePriveeIciId ? 'door-open' : 'plus']"
-                            class="w-3 h-3"
-                          />
-                          {{ maSallePriveeIciId ? 'Ouvrir ma salle privée' : 'Créer ma salle privée' }}
-                        </button>
-                      </div>
-
-                      <div
-                        v-if="(sallesPriveesCache[salle.id]?.length ?? 0) > 0"
-                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
-                      >
-                        <AfrolangSallePriveeCard
-                          v-for="sp in (sallesPriveesCache[salle.id] ?? [])"
-                          :key="sp.id"
-                          :salle-privee="sp"
-                          :chargement="sallePriveeEnCours === sp.id"
-                          @rejoindre="ouvrirJoinModal"
-                          @ouvrir="ouvrirMaSallePrivee"
-                          @modifier-code="ouvrirModifCodeModal"
-                          @archiver="confirmerArchivage"
-                        />
-                      </div>
-
-                      <div v-else class="text-center py-6">
-                        <font-awesome-icon :icon="['fas', 'door-open']" class="w-8 h-8 text-gray-300 mb-3" />
-                        <p class="text-gray-500 text-sm">Aucun cours privé dans cette salle</p>
-                      </div>
-                    </template>
-                  </div>
-                </Transition>
-              </template>
-            </div>
-
-            <!-- Erreur widget salle privée -->
-            <div v-if="erreurSallePrivee" class="max-w-2xl mx-auto mb-6">
-              <div class="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2">
-                <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="w-4 h-4" />
-                {{ erreurSallePrivee }}
-                <button class="ml-auto text-red-400 hover:text-red-600" @click="erreurSallePrivee = null">
-                  <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <!-- Modales US2 / US3 / Phase 7 -->
-            <AfrolangSallePriveeCreateModal
-              ref="createModalRef"
-              :is-open="createModalOpen"
-              :salle-id="createModalSalleId"
-              @close="createModalOpen = false"
-              @submit="soumettreCreationSallePrivee"
-              @existante="rediriger_vers_salle_existante"
-            />
-
-            <AfrolangSallePriveeJoinModal
-              ref="joinModalRef"
-              :is-open="joinModalOpen"
-              :salle-privee-titre="joinModalSalleTitre"
-              @close="joinModalOpen = false"
-              @submit="soumettreCodeAcces"
-            />
-
-            <!-- Modal simple : modification du code secret (auteur uniquement) -->
-            <Transition name="modal-fade">
-              <div
-                v-if="modifCodeModalOpen"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
-                @click.self="modifCodeModalOpen = false"
-              >
-                <div class="relative w-full max-w-md bg-white shadow-2xl rounded-2xl border-t-4 border-custom-chocolat" @click.stop>
-                  <div class="p-6">
-                    <div class="flex items-center justify-between mb-4">
-                      <h3 class="text-lg font-bold text-gray-800">Modifier le code secret</h3>
-                      <button type="button" class="text-gray-400 hover:text-gray-600" @click="modifCodeModalOpen = false">
-                        <font-awesome-icon :icon="['fas', 'xmark']" class="w-5 h-5" />
-                      </button>
-                    </div>
-                    <form @submit.prevent="soumettreNouveauCode">
-                      <label class="block text-sm font-semibold text-gray-700 mb-2">Nouveau code secret</label>
-                      <input
-                        v-model="nouveauCode"
-                        type="text"
-                        pattern="^[A-Za-z0-9!@#$%&*?-]{4,16}$"
-                        class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-custom-chocolat font-mono tracking-wider"
-                        placeholder="nouveauCode!"
-                        required
-                      >
-                      <p class="text-xs text-gray-400 mt-1">
-                        4 à 16 caractères (lettres, chiffres ou <code>!@#$%&amp;*?-</code>).
-                      </p>
-                      <p v-if="erreurModifCode" class="text-xs text-red-500 mt-2">{{ erreurModifCode }}</p>
-                      <div class="flex gap-3 pt-4">
-                        <button type="button" class="flex-1 p-3 bg-gray-100 text-gray-700 rounded-xl font-medium" @click="modifCodeModalOpen = false">
-                          Annuler
-                        </button>
-                        <button type="submit" :disabled="modifCodeEnCours" class="flex-1 p-3 bg-custom-chocolat text-white rounded-xl font-medium disabled:opacity-50">
-                          {{ modifCodeEnCours ? 'Enregistrement...' : 'Enregistrer' }}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </Transition>
-
-            <!-- Toast succès création salle privée -->
-            <Transition name="fade-slide">
-              <div
-                v-if="toastCreation"
-                class="fixed bottom-6 right-6 z-60 max-w-sm bg-green-600 text-white rounded-xl shadow-2xl p-4"
-              >
-                <div class="flex items-start gap-3">
-                  <font-awesome-icon :icon="['fas', 'circle-check']" class="w-5 h-5 mt-0.5 shrink-0" />
-                  <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-sm">Salle privée créée !</p>
-                    <p class="text-xs text-green-100 mt-1">
-                      Code secret :
-                      <code class="bg-green-700/50 px-1.5 py-0.5 rounded font-mono">{{ toastCreation.code }}</code>
-                    </p>
-                    <p class="text-xs text-green-100 mt-1">Notez-le, il ne sera plus jamais affiché.</p>
-                  </div>
-                  <button type="button" class="text-white/80 hover:text-white" @click="toastCreation = null">
-                    <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </Transition>
-          </template>
-
-          <!-- Empty State -->
-          <div v-else class="bg-white rounded-2xl shadow-xl p-12 text-center">
-            <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <font-awesome-icon :icon="['fas', 'door-open']" class="w-12 h-12 text-gray-400" />
-            </div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucune salle trouvée</h3>
-            <p class="text-gray-500 max-w-md mx-auto mb-6">
-              Essayez de modifier vos critères de recherche ou explorez d'autres langues.
-            </p>
-            <button
-              class="px-6 py-3 bg-blue-500 text-white font-medium rounded-xl hover:bg-blue-600 transition-colors"
-              @click="resetFilters"
-            >
-              Réinitialiser les filtres
-            </button>
-          </div>
-
-          <!-- Pagination -->
-          <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-8">
-            <button
-              @click="goToPage(currentPage - 1)"
-              :disabled="currentPage === 1"
-              class="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <font-awesome-icon :icon="['fas', 'chevron-left']" class="w-4 h-4" />
-            </button>
-
-            <template v-for="page in visiblePages" :key="page">
-              <span v-if="page === '...'" class="px-3 py-2 text-gray-400">...</span>
-              <button
-                v-else
-                @click="goToPage(page as number)"
-                class="px-4 py-2 rounded-lg font-medium transition-colors"
-                :class="currentPage === page
-                  ? 'bg-blue-500 text-white shadow-lg'
-                  : 'border border-gray-200 text-gray-600 hover:bg-gray-50'"
-              >
-                {{ page }}
-              </button>
-            </template>
-
-            <button
-              @click="goToPage(currentPage + 1)"
-              :disabled="currentPage === totalPages"
-              class="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <font-awesome-icon :icon="['fas', 'chevron-right']" class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modale Proposer une salle (US1) -->
-    <AfrolangProposerSalleModal
-      :open="proposerOuvert"
-      @close="proposerOuvert = false"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import {
   useAfrolang,
@@ -390,11 +9,18 @@ import {
 } from '~/composables/useAfrolang'
 import { useUserStore } from '~/stores/user'
 
-useAOS()
-
-const breadcrumbs = [
-  { label: 'Afrolang', to: undefined }
-]
+/**
+ * Afrolang : listing des salles publiques, porté sur le gabarit de la refonte.
+ *
+ * La logique de données est celle d'avant, inchangée : mêmes endpoints, mêmes
+ * filtres serveur, même pagination, même parcours d'entrée en session. Seule la
+ * présentation bascule, et deux choses se déplacent :
+ *   - les filtres passent de la colonne GAUCHE au rail droit, là où la maquette
+ *     les pose ; la colonne gauche est désormais la navigation du gabarit ;
+ *   - la fiche d'une salle devient une modale (« Infos salle Afrolang »), la
+ *     page `/afrolang/[id]` n'étant plus qu'une redirection vers la session.
+ */
+definePageMeta({ layout: false })
 
 useHead({
   title: 'Salles Afrolang - AfricanS',
@@ -407,7 +33,6 @@ useHead({
 })
 
 const ITEMS_PER_PAGE = 12
-const router = useRouter()
 const userStore = useUserStore()
 const { redirigerVersConnexion } = useAuth()
 
@@ -416,6 +41,11 @@ const proposerOuvert = ref(false)
 
 // Modale de présentation « C'est quoi Afrolang ? »
 const presentationOuverte = ref(false)
+
+// Modale « Infos salle » : la salle affichée est celle de la liste déjà
+// chargée : la fiche n'entraîne AUCUNE requête supplémentaire.
+const salleAffichee = ref<SalleAPI | null>(null)
+const infosOuvertes = ref(false)
 
 const {
   listerSalles,
@@ -436,7 +66,6 @@ const total = ref(0)
 const totalSalles = ref(0)
 const totalPages = ref(1)
 const currentPage = ref(1)
-const sidebarOpen = ref(false)
 const languesDisponibles = ref<string[]>([])
 const initialLoading = ref(true)
 
@@ -449,7 +78,7 @@ const sallesPriveesCache = ref<Record<string, SallePriveeAPI[]>>({})
 const salleEnCoursEntree = ref<string | null>(null)
 const erreurEntrer = ref<string | null>(null)
 
-const _stats = ref<AfrolangStats>({
+const stats = ref<AfrolangStats>({
   total_salles: 0,
   total_salles_privees: 0,
   sessions_en_cours: 0,
@@ -516,6 +145,26 @@ const entrerDansSalle = async (salleId: string) => {
   }
 }
 
+const ouvrirInfos = (salle: SalleAPI) => {
+  salleAffichee.value = salle
+  infosOuvertes.value = true
+}
+
+/** Depuis la modale : on ferme avant de naviguer, sinon la modale rendrait le
+ *  focus à un bouton d'une page déjà quittée. */
+const entrerDepuisInfos = async (salleId: string) => {
+  infosOuvertes.value = false
+  await entrerDansSalle(salleId)
+}
+
+const ouvrirProposition = () => {
+  if (!userStore.isAuthenticated) {
+    redirigerVersConnexion()
+    return
+  }
+  proposerOuvert.value = true
+}
+
 // ── Widget salles privées : état modales + actions ────────────────────────
 
 const createModalRef = ref<{
@@ -564,7 +213,7 @@ const ouvrirCreationModal = (salleId: string) => {
   createModalOpen.value = true
 }
 
-const soumettreCreationSallePrivee = async (payload: { titre: string; description: string; code_acces: string }) => {
+const soumettreCreationSallePrivee = async (payload: { titre: string, description: string, code_acces: string }) => {
   createModalRef.value?.setLoading(true)
   codeSecretEnAttente = payload.code_acces
 
@@ -744,30 +393,17 @@ const visiblePages = computed(() => {
   return pages
 })
 
+/**
+ * UN watcher pour les trois filtres serveur, et non un par champ : changer de
+ * zone vide aussi le territoire, et deux watchers séparés déclencheraient deux
+ * requêtes pour un seul geste. La recherche garde le sien, elle est amortie.
+ */
 watch(
-  () => filtres.value.langue,
+  () => [filtres.value.langue, filtres.value.pays_id, filtres.value.zone],
   () => {
     currentPage.value = 1
     chargerSalles()
-  },
-)
-
-watch(
-  () => filtres.value.pays_id,
-  () => {
-    currentPage.value = 1
-    chargerSalles()
-  },
-)
-
-// La zone (Afrique / Hors Afrique) filtre aussi la liste des salles.
-watch(
-  () => filtres.value.zone,
-  () => {
-    currentPage.value = 1
-    chargerSalles()
-  },
-)
+  })
 
 watch(
   () => filtres.value.recherche,
@@ -777,14 +413,7 @@ watch(
       currentPage.value = 1
       chargerSalles()
     }, 300)
-  },
-)
-
-const handleSearch = () => {
-  if (rechercheTimer) clearTimeout(rechercheTimer)
-  currentPage.value = 1
-  chargerSalles()
-}
+  })
 
 const resetFilters = () => {
   filtres.value = { recherche: '', langue: '', pays_id: '', zone: 'tout' }
@@ -799,6 +428,36 @@ const goToPage = (page: number) => {
   }
 }
 
+/** Compteurs de la maquette, à deux chiffres : ils s'alignent d'une carte à
+ *  l'autre dans la grille, ce qu'un « 2 » nu ne fait pas. */
+const surDeux = (n: number) => String(n).padStart(2, '0')
+
+/**
+ * Métrique de pied de vignette. La maquette y met un nombre de participants
+ * qu'aucune donnée serveur ne porte par salle ; le compteur réellement servi
+ * est celui des modérateurs attitrés. À zéro, il n'est PAS affiché : une
+ * colonne de « 00 » sur toute la grille n'apprend rien et fait du bruit.
+ */
+const metriqueDe = (salle: SalleAPI) => {
+  const n = salle.nombre_moderateurs_attitres
+  if (!n) return undefined
+  return {
+    icone: 'fa-solid fa-user-shield',
+    texte: `${surDeux(n)} modérateur${n > 1 ? 's' : ''}`,
+  }
+}
+
+/** Territoires d'origine en une ligne : au-delà de deux, la carte déborderait. */
+const lieuDe = (salle: SalleAPI): string | undefined => {
+  const noms = salle.pays_origine?.map(p => p.nom) ?? []
+  if (!noms.length) return undefined
+  return noms.length <= 2 ? noms.join(', ') : `${noms.slice(0, 2).join(', ')} +${noms.length - 2}`
+}
+
+const aucunFiltreActif = computed(() =>
+  !filtres.value.recherche && !filtres.value.langue && !filtres.value.pays_id
+  && (!filtres.value.zone || filtres.value.zone === 'tout'))
+
 onMounted(async () => {
   const [statsResult, languesResult, paysResult] = await Promise.all([
     obtenirStats(),
@@ -807,7 +466,7 @@ onMounted(async () => {
   ])
 
   if (statsResult) {
-    _stats.value = statsResult
+    stats.value = statsResult
     totalSalles.value = statsResult.total_salles
   }
   languesDisponibles.value = languesResult
@@ -818,28 +477,410 @@ onMounted(async () => {
 })
 </script>
 
+<template>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Afrolang"
+        image="/images/africans/heros/hero-afrolang.jpg"
+        aide="C'est quoi Afrolang ?"
+        @aide="presentationOuverte = true"
+      />
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="[{ libelle: 'Africarise', vers: '/codi-moi' }, { libelle: 'Afrolang' }]">
+        <template #action>
+          <!-- La maquette écrit « Nouvelle Salle ». Le bouton n'en crée aucune :
+               une salle publique naît d'une proposition soumise à validation.
+               Le libellé dit ce qui va réellement se passer. -->
+          <AfricansBouton icone="fa-solid fa-lightbulb" @click="ouvrirProposition">
+            Proposer une salle
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
+
+    <div class="flex flex-col gap-8">
+      <p class="max-w-3xl text-[14px]/[1.4] text-af-corps">
+        Apprenez une langue africaine ou afro-descendante à distance, et rencontrez celles et ceux
+        qui la pratiquent. Chaque salle est un espace de visioconférence ouvert&nbsp;; les cours
+        privés y sont protégés par un code remis par leur auteur.
+      </p>
+
+      <!-- Erreurs d'action : au-dessus de la liste, parce qu'elles répondent à
+           un geste que l'utilisateur vient de faire dans la grille. -->
+      <div
+        v-if="erreurEntrer || erreurSallePrivee"
+        class="flex items-start gap-3 rounded-[10px] border border-af-live/30 bg-af-live/[0.05] px-5 py-4"
+      >
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="mt-1 text-af-live" />
+        <p class="flex-1 text-[14px]/[1.4] text-af-corps">{{ erreurEntrer || erreurSallePrivee }}</p>
+        <button
+          type="button"
+          class="text-af-atone transition hover:text-af-encre"
+          aria-label="Masquer le message"
+          @click="erreurEntrer = null; erreurSallePrivee = null"
+        >
+          <font-awesome-icon icon="fa-solid fa-xmark" />
+        </button>
+      </div>
+
+      <!-- Chargement : squelettes aux dimensions réelles des cartes, pour que
+           la mise en page ne saute pas à l'arrivée des données. -->
+      <div v-if="initialLoading" class="grid gap-5 sm:grid-cols-2">
+        <div v-for="n in 4" :key="n" class="overflow-hidden rounded-[10px] border border-af-bordure bg-white">
+          <div class="aspect-video w-full animate-pulse bg-af-bordure" />
+          <div class="flex flex-col gap-3 p-4">
+            <div class="h-4 w-2/3 animate-pulse rounded bg-af-bordure" />
+            <div class="h-3 w-full animate-pulse rounded bg-af-bordure" />
+            <div class="h-10 w-full animate-pulse rounded-lg bg-af-bordure" />
+          </div>
+        </div>
+      </div>
+
+      <template v-else-if="salles.length">
+        <div class="grid gap-5 sm:grid-cols-2">
+          <template v-for="salle in salles" :key="salle.id">
+            <AfricansCarteSalle
+              :titre="salle.titre"
+              :description="salle.description || undefined"
+              :lieu="lieuDe(salle)"
+              :langue="salle.langue_cible || undefined"
+              :image="salle.image_couverture_url"
+              :en-direct="salle.sessions_en_cours > 0"
+              :metrique="metriqueDe(salle)"
+              :chargement="salleEnCoursEntree === salle.id"
+              :desactivee="!!salle.desactivee_admin"
+              @agir="entrerDansSalle(salle.id)"
+            >
+              <!-- Fermeture administrative : elle explique pourquoi le bouton
+                   d'entrée est inerte, elle doit donc être sur la carte. -->
+              <p
+                v-if="salle.desactivee_admin"
+                class="flex items-center gap-2 rounded border border-af-live/30 bg-af-live/[0.05] px-2 py-1.5 text-[12px]/[1.4] text-af-corps"
+              >
+                <font-awesome-icon icon="fa-solid fa-ban" class="text-af-live" />
+                Salle fermée par l'administration
+              </p>
+
+              <p
+                v-if="salle.administrateurs?.length"
+                class="flex items-center gap-2 text-[12px]/[1.4] text-af-atone"
+              >
+                <AfricansAvatar
+                  v-for="admin in salle.administrateurs.slice(0, 3)"
+                  :key="admin.utilisateur_id"
+                  :nom="`${admin.prenom} ${admin.nom}`"
+                  :src="admin.photo_url"
+                  :taille="24"
+                />
+                <span>
+                  {{ salle.administrateurs.length }} administrateur{{ salle.administrateurs.length > 1 ? 's' : '' }}
+                </span>
+              </p>
+
+              <template #actions>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px]/[1.4]">
+                  <button
+                    type="button"
+                    class="flex items-center gap-1.5 text-af-chocolat transition hover:opacity-70"
+                    @click="ouvrirInfos(salle)"
+                  >
+                    <font-awesome-icon icon="fa-solid fa-circle-info" />
+                    Détails de la salle
+                  </button>
+
+                  <button
+                    type="button"
+                    class="ml-auto flex items-center gap-1.5 transition hover:opacity-70"
+                    :class="expandedSalleId === salle.id ? 'font-bold text-af-chocolat' : 'text-af-corps'"
+                    :aria-expanded="expandedSalleId === salle.id"
+                    @click="togglePrivees(salle.id)"
+                  >
+                    <font-awesome-icon icon="fa-solid fa-door-open" />
+                    Canal privé ({{ salle.nombre_salles_privees }})
+                    <font-awesome-icon :icon="expandedSalleId === salle.id ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" />
+                  </button>
+                </div>
+              </template>
+            </AfricansCarteSalle>
+
+            <!-- Canal privé : déplié SOUS la carte cliquée, sur toute la
+                 largeur de la grille. Absent de la maquette : la fonctionnalité
+                 est postérieure, il reprend son vocabulaire visuel. -->
+            <Transition name="af-deplier">
+              <section
+                v-if="expandedSalleId === salle.id"
+                class="col-span-full rounded-[10px] border border-af-chocolat/30 bg-af-chocolat/[0.07] p-5"
+              >
+                <div v-if="loadingPrivees" class="flex items-center justify-center gap-3 py-8 text-[14px]/[1.4] text-af-corps">
+                  <font-awesome-icon icon="fa-solid fa-spinner" class="animate-spin text-af-chocolat" />
+                  Chargement des cours privés…
+                </div>
+
+                <template v-else>
+                  <header class="mb-4 flex flex-wrap items-center gap-4">
+                    <h3 class="flex items-center gap-3 text-[17px]/[1.4] font-bold">
+                      <font-awesome-icon icon="fa-solid fa-door-open" class="size-6 text-af-chocolat" />
+                      {{ (sallesPriveesCache[salle.id]?.length ?? 0) }}
+                      cours privé{{ (sallesPriveesCache[salle.id]?.length ?? 0) > 1 ? 's' : '' }}
+                      {{ salle.titre }}
+                    </h3>
+
+                    <!-- US4 : un membre n'a droit qu'à UNE salle privée par
+                         salle publique ; le bouton bascule selon qu'elle existe. -->
+                    <AfricansBouton
+                      v-if="userStore.isAuthenticated"
+                      class="ml-auto"
+                      :variante="maSallePriveeIciId ? 'primaire' : 'secondaire'"
+                      :icone="maSallePriveeIciId ? 'fa-solid fa-door-open' : 'fa-solid fa-plus'"
+                      :desactive="sallePriveeEnCours === (maSallePriveeIciId || 'creation')"
+                      @click="maSallePriveeIciId ? ouvrirMaSallePrivee(maSallePriveeIciId) : ouvrirCreationModal(salle.id)"
+                    >
+                      {{ maSallePriveeIciId ? 'Ouvrir ma salle privée' : 'Créer ma salle privée' }}
+                    </AfricansBouton>
+                  </header>
+
+                  <div
+                    v-if="(sallesPriveesCache[salle.id]?.length ?? 0) > 0"
+                    class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+                  >
+                    <AfricansCarteCoursPrive
+                      v-for="sp in (sallesPriveesCache[salle.id] ?? [])"
+                      :key="sp.id"
+                      :titre="sp.titre"
+                      :description="sp.description"
+                      :auteur-nom="sp.auteur_nom"
+                      :est-auteur="sp.est_auteur"
+                      :en-direct="sp.session_en_cours"
+                      :chargement="sallePriveeEnCours === sp.id"
+                      @rejoindre="ouvrirJoinModal(sp.id)"
+                      @ouvrir="ouvrirMaSallePrivee(sp.id)"
+                      @modifier-code="ouvrirModifCodeModal(sp.id)"
+                      @archiver="confirmerArchivage(sp.id)"
+                    />
+                  </div>
+
+                  <p v-else class="py-6 text-center text-[14px]/[1.4] text-af-atone">
+                    Aucun cours privé dans cette salle.
+                  </p>
+                </template>
+              </section>
+            </Transition>
+          </template>
+        </div>
+
+        <!-- Pagination : la grille est paginée CÔTÉ SERVEUR, le compteur du
+             rail porte donc sur l'ensemble, pas sur la page affichée. -->
+        <nav v-if="totalPages > 1" class="flex items-center justify-center gap-2" aria-label="Pagination des salles">
+          <button
+            type="button"
+            class="grid size-10 place-items-center rounded-lg border border-af-bordure bg-white text-af-corps transition hover:bg-af-chocolat/[0.07] disabled:opacity-40"
+            :disabled="currentPage === 1"
+            aria-label="Page précédente"
+            @click="goToPage(currentPage - 1)"
+          >
+            <font-awesome-icon icon="fa-solid fa-chevron-left" />
+          </button>
+
+          <template v-for="(page, i) in visiblePages" :key="`${page}-${i}`">
+            <span v-if="page === '...'" class="px-2 text-af-atone">…</span>
+            <button
+              v-else
+              type="button"
+              class="h-10 min-w-10 rounded-lg px-3 text-[14px]/[1.4] font-bold transition"
+              :class="currentPage === page
+                ? 'bg-af-degrade text-white'
+                : 'border border-af-bordure bg-white text-af-corps hover:bg-af-chocolat/[0.07]'"
+              :aria-current="currentPage === page ? 'page' : undefined"
+              @click="goToPage(page as number)"
+            >
+              {{ page }}
+            </button>
+          </template>
+
+          <button
+            type="button"
+            class="grid size-10 place-items-center rounded-lg border border-af-bordure bg-white text-af-corps transition hover:bg-af-chocolat/[0.07] disabled:opacity-40"
+            :disabled="currentPage === totalPages"
+            aria-label="Page suivante"
+            @click="goToPage(currentPage + 1)"
+          >
+            <font-awesome-icon icon="fa-solid fa-chevron-right" />
+          </button>
+        </nav>
+      </template>
+
+      <!-- Deux vides distincts : « rien ne correspond » n'est pas « rien
+           n'existe », et la sortie proposée n'est pas la même. -->
+      <div v-else class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+        <font-awesome-icon icon="fa-solid fa-door-open" class="text-4xl text-af-atone-2" />
+        <p class="mt-4 text-[16px]/[1.4] font-bold">
+          {{ aucunFiltreActif ? 'Aucune salle pour le moment' : 'Aucune salle ne correspond à vos critères' }}
+        </p>
+        <p class="mt-2 text-[14px]/[1.4] text-af-corps">
+          {{ aucunFiltreActif
+            ? 'Proposez la première salle pour la langue que vous souhaitez faire vivre.'
+            : 'Essayez une autre langue, un autre territoire, ou repartez de zéro.' }}
+        </p>
+        <AfricansBouton
+          class="mt-5"
+          :variante="aucunFiltreActif ? 'primaire' : 'secondaire'"
+          :icone="aucunFiltreActif ? 'fa-solid fa-lightbulb' : 'fa-solid fa-rotate-right'"
+          @click="aucunFiltreActif ? ouvrirProposition() : resetFilters()"
+        >
+          {{ aucunFiltreActif ? 'Proposer une salle' : 'Réinitialiser les filtres' }}
+        </AfricansBouton>
+      </div>
+    </div>
+
+    <template #rail>
+      <AfricansRecherche v-model="filtres.recherche" placeholder="Salle, langue…" />
+
+      <AfrolangSalleFiltresPanneau
+        v-model="filtres"
+        :langues="languesDisponibles"
+        :pays="paysDisponibles"
+        :total="totalSalles"
+        :resultats="total"
+        @reset="resetFilters"
+      />
+
+      <!-- Les trois compteurs de la maquette (salles créées, participations,
+           modérateurs suivis) n'ont pas d'équivalent servi par l'API : ceux-ci
+           sont ceux que `/afrolang/stats` renvoie réellement. -->
+      <AfricansPanneau titre="Statistiques" icone="fa-solid fa-chart-line">
+        <dl class="flex flex-col">
+          <div class="flex items-baseline justify-between gap-4 py-3">
+            <dt class="text-[14px]/[1.4] font-bold">Salles</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ surDeux(stats.total_salles) }}</dd>
+          </div>
+          <div class="flex items-baseline justify-between gap-4 border-t border-af-bordure py-3">
+            <dt class="text-[14px]/[1.4] font-bold">Cours privés</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ surDeux(stats.total_salles_privees) }}</dd>
+          </div>
+          <div class="flex items-baseline justify-between gap-4 border-t border-af-bordure py-3">
+            <dt class="text-[14px]/[1.4] font-bold">Sessions en cours</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ surDeux(stats.sessions_en_cours) }}</dd>
+          </div>
+          <div class="flex items-baseline justify-between gap-4 border-t border-af-bordure py-3">
+            <dt class="text-[14px]/[1.4] font-bold">Participants</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ surDeux(stats.total_participants_uniques) }}</dd>
+          </div>
+        </dl>
+      </AfricansPanneau>
+    </template>
+
+    <!-- ══════════════ Surcouches ══════════════ -->
+
+    <AfrolangSalleInfosModale
+      v-model="infosOuvertes"
+      :salle="salleAffichee"
+      @agir="entrerDepuisInfos"
+    />
+
+    <AfrolangDecouverteModale v-model="presentationOuverte" />
+
+    <AfrolangProposerSalleModal :open="proposerOuvert" @close="proposerOuvert = false" />
+
+    <AfrolangSallePriveeCreateModal
+      ref="createModalRef"
+      :is-open="createModalOpen"
+      :salle-id="createModalSalleId"
+      @close="createModalOpen = false"
+      @submit="soumettreCreationSallePrivee"
+      @existante="rediriger_vers_salle_existante"
+    />
+
+    <AfrolangSallePriveeJoinModal
+      ref="joinModalRef"
+      :is-open="joinModalOpen"
+      :salle-privee-titre="joinModalSalleTitre"
+      @close="joinModalOpen = false"
+      @submit="soumettreCodeAcces"
+    />
+
+    <AfricansModale v-model="modifCodeModalOpen" titre="Modifier le code secret" icone="fa-solid fa-key">
+      <form id="af-form-code" class="flex flex-col gap-2" @submit.prevent="soumettreNouveauCode">
+        <AfricansChamp
+          v-model="nouveauCode"
+          libelle="Nouveau code secret"
+          placeholder="nouveauCode!"
+          aide="4 à 16 caractères (lettres, chiffres ou !@#$%&*?-)."
+        />
+        <p v-if="erreurModifCode" class="text-[12px]/[1.4] text-af-live">{{ erreurModifCode }}</p>
+      </form>
+      <template #actions>
+        <button
+          type="button"
+          class="text-base font-bold text-af-corps transition hover:opacity-70"
+          @click="modifCodeModalOpen = false"
+        >
+          Annuler
+        </button>
+        <AfricansBouton
+          type="submit"
+          form="af-form-code"
+          :desactive="modifCodeEnCours"
+          :tourne="modifCodeEnCours"
+          :icone="modifCodeEnCours ? 'fa-solid fa-spinner' : undefined"
+        >
+          {{ modifCodeEnCours ? 'Enregistrement…' : 'Enregistrer' }}
+        </AfricansBouton>
+      </template>
+    </AfricansModale>
+
+    <!-- Le code n'est montré qu'ICI et qu'une fois : le serveur ne le renvoie
+         jamais en clair ensuite. Le message le dit explicitement. -->
+    <Transition name="af-surgir">
+      <div
+        v-if="toastCreation"
+        class="fixed right-6 bottom-6 z-100 max-w-sm rounded-[10px] border border-af-vert bg-white p-5 shadow-xl font-af"
+        role="status"
+      >
+        <div class="flex items-start gap-3">
+          <font-awesome-icon icon="fa-solid fa-circle-check" class="mt-1 text-af-vert" />
+          <div class="flex-1">
+            <p class="text-[14px]/[1.4] font-bold">Salle privée créée</p>
+            <p class="mt-1 text-[14px]/[1.4] text-af-corps">
+              Code secret :
+              <code class="rounded bg-af-bordure px-1.5 py-0.5 font-mono">{{ toastCreation.code }}</code>
+            </p>
+            <p class="mt-1 text-[12px]/[1.4] text-af-atone">Notez-le, il ne sera plus jamais affiché.</p>
+          </div>
+          <button
+            type="button"
+            class="text-af-atone transition hover:text-af-encre"
+            aria-label="Fermer"
+            @click="toastCreation = null"
+          >
+            <font-awesome-icon icon="fa-solid fa-xmark" />
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </NuxtLayout>
+</template>
+
 <style scoped>
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.3s ease;
-  overflow: hidden;
+.af-deplier-enter-active,
+.af-deplier-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
-.expand-enter-from,
-.expand-leave-to {
+.af-deplier-enter-from,
+.af-deplier-leave-to {
   opacity: 0;
-  max-height: 0;
   transform: translateY(-8px);
 }
-.expand-enter-to,
-.expand-leave-from {
-  opacity: 1;
-  max-height: 800px;
-  transform: translateY(0);
+
+.af-surgir-enter-active,
+.af-surgir-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
-.line-clamp-1 {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.af-surgir-enter-from,
+.af-surgir-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
 }
 </style>

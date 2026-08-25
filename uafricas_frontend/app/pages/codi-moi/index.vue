@@ -1,375 +1,47 @@
-<template>
-  <div class="min-h-screen pb-10 bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
-    >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
-
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Codimoi
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Préservons nos cultures les meilleures, codifier les récits, images et souvenirs de l'Afrique et des afro-descendants.
-          </p>
-        </div>
-
-        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <!-- Bouton d'aide : ouvre la présentation de Codimoi -->
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
-            aria-label="En savoir plus sur Codimoi"
-            @click="presentationOuverte = true"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
-            C'est quoi Codimoi&nbsp;?
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modale de présentation « C'est quoi Codimoi ? » -->
-    <CodiMoiPresentationModal
-      :open="presentationOuverte"
-      @close="presentationOuverte = false"
-    />
-
-    <!-- Barre de recherche flottante -->
-    <CodiMoiFilters
-      v-model:active-category="activeCategory"
-      v-model:search-keywords="searchKeywords"
-      v-model:search-pays="searchPays"
-    />
-
-    <!-- Breadcrumb -->
-    <div class="max-w-7xl mx-auto px-4 mt-6">
-      <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
-    </div>
-
-    <!-- Titre et bouton ajouter -->
-    <div class="max-w-7xl mx-auto px-4 mt-6 mb-4 flex justify-between items-center">
-      <h2 class="text-2xl font-bold text-gray-800">
-        Publications
-        <span v-if="hasActiveFilters" class="text-base font-normal text-gray-500 ml-2">
-          ({{ totalPosts }} résultat{{ totalPosts > 1 ? 's' : '' }})
-        </span>
-      </h2>
-      <div class="flex items-center gap-3">
-        <button
-          v-if="hasActiveFilters"
-          @click="resetFilters"
-          class="flex items-center gap-2 px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm"
-        >
-          <font-awesome-icon icon="fa-solid fa-xmark" />
-          <span class="hidden sm:inline">Effacer les filtres</span>
-        </button>
-        <button
-          @click="showCreateModal = true"
-          class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-custom-chocolat to-amber-700 text-white rounded-lg transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-        >
-          <font-awesome-icon icon="fa-solid fa-plus" />
-          <span>Nouveau post</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- État de chargement -->
-    <div v-if="loading && posts.length === 0" class="flex justify-center py-16">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-green"></div>
-    </div>
-
-    <!-- État d'erreur -->
-    <div v-else-if="pageErreur && posts.length === 0" class="max-w-7xl mx-auto px-4 py-16 text-center">
-      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-50 mb-4">
-        <font-awesome-icon icon="fa-solid fa-triangle-exclamation" class="text-3xl text-red-400" />
-      </div>
-      <h3 class="text-lg font-semibold text-gray-600">Erreur de chargement</h3>
-      <p class="text-gray-400 mt-1 text-sm">{{ pageErreur }}</p>
-      <button
-        @click="chargerPosts()"
-        class="mt-4 px-5 py-2.5 bg-gradient-to-r from-custom-green to-green-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 text-sm font-medium"
-      >
-        <font-awesome-icon icon="fa-solid fa-rotate-right" class="mr-2" />
-        Réessayer
-      </button>
-    </div>
-
-    <!-- Contenu principal -->
-    <div v-else class="max-w-7xl mx-auto px-4">
-      <div class="flex flex-col lg:flex-row gap-6">
-        <!-- Colonne principale -->
-        <div class="flex-1 min-w-0">
-          <!-- Liste des posts animée -->
-          <TransitionGroup
-            name="post-list"
-            tag="div"
-            class="space-y-5"
-          >
-            <CodiMoiCard
-              v-for="post in posts"
-              :key="post.id"
-              :post="post"
-              @click="openPostDetail(post.id)"
-              @like="handleReaction(post.id, 'like')"
-              @dislike="handleReaction(post.id, 'dislike')"
-              @comment="openPostDetail(post.id)"
-              @share="handleShare(post)"
-            />
-          </TransitionGroup>
-
-          <!-- État vide -->
-          <div v-if="posts.length === 0" class="text-center py-16">
-            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white shadow-md mb-4">
-              <font-awesome-icon icon="fa-solid fa-file-circle-xmark" class="text-3xl text-gray-300" />
-            </div>
-            <h3 class="text-lg font-semibold text-gray-600">Aucune publication trouvée</h3>
-            <p class="text-gray-400 mt-1 text-sm">Modifiez vos filtres ou partagez une nouvelle valeur</p>
-            <button
-              @click="showCreateModal = true"
-              class="mt-4 px-5 py-2.5 bg-gradient-to-r from-custom-green to-green-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 text-sm font-medium"
-            >
-              <font-awesome-icon icon="fa-solid fa-plus" class="mr-2" />
-              Créer un post
-            </button>
-          </div>
-
-          <!-- Pagination -->
-          <div v-if="hasMorePosts" class="mt-8 text-center">
-            <button
-              @click="loadMore"
-              :disabled="loadingMore"
-              class="px-6 py-2.5 bg-white text-custom-green border border-custom-green rounded-lg hover:bg-custom-green hover:text-white transition-all duration-300 text-sm font-medium disabled:opacity-50 transform hover:scale-105"
-            >
-              <font-awesome-icon v-if="loadingMore" icon="fa-solid fa-spinner" class="animate-spin mr-2" />
-              {{ loadingMore ? 'Chargement...' : 'Voir plus de publications' }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Sidebar -->
-        <CodiMoiSidebar
-          :amis="amis"
-          :stats="stats"
-          :popular-posts="popularPosts"
-          @go-to-post="(post: CodiMoiPostAPI) => openPostDetail(post.id)"
-          @envoyer-message="demanderOuverture"
-        />
-      </div>
-    </div>
-
-    <!-- Notification toast -->
-    <Transition name="toast">
-      <div
-        v-if="showToast"
-        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-800 text-white px-5 py-3 rounded-lg shadow-lg text-sm flex items-center gap-2"
-      >
-        <font-awesome-icon icon="fa-solid fa-check-circle" class="text-custom-green" />
-        {{ toastMessage }}
-      </div>
-    </Transition>
-
-    <!-- Modale détail de post -->
-    <CodiMoiPostModal
-      :post="selectedPost"
-      :commentaires="selectedPostCommentaires"
-      :chargement-commentaires="chargementCommentaires"
-      @close="closePostDetail"
-      @like="handleModalReaction('like')"
-      @dislike="handleModalReaction('dislike')"
-      @share="handleModalShare"
-      @commenter="handleModalComment"
-    />
-
-    <!-- Modale création de post -->
-    <Transition name="modal-fade">
-      <div v-if="showCreateModal" class="z-50 fixed inset-0 flex items-center justify-center">
-        <div @click="showCreateModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-xs"></div>
-
-        <div class="relative w-full max-w-2xl mx-4 md:mx-auto animate-slideIn">
-          <form
-            @submit.prevent="submitPost"
-            class="bg-white rounded-xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
-          >
-            <!-- En-tête -->
-            <div class="bg-gradient-to-r from-custom-green to-emerald-700 py-4 sticky top-0 z-10">
-              <h2 class="text-white text-center text-xl font-bold">
-                Partager une valeur africaine
-              </h2>
-            </div>
-
-            <div class="p-6">
-              <!-- Catégorie -->
-              <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Catégorie</label>
-                <select
-                  v-model="postForm.categorie"
-                  required
-                  class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
-                >
-                  <option value="">Sélectionnez une catégorie</option>
-                  <option
-                    v-for="cat in categoriesForm"
-                    :key="cat.value"
-                    :value="cat.value"
-                  >
-                    {{ cat.label }}
-                  </option>
-                </select>
-              </div>
-
-              <!-- Contenu -->
-              <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">
-                  {{ isQuoteCategory ? 'Proverbe / Citation' : 'Titre du contenu' }}
-                </label>
-                <textarea
-                  v-model="postForm.contenu"
-                  required
-                  class="w-full px-3 py-2 border rounded-lg resize-none focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
-                  :rows="isQuoteCategory ? 3 : 2"
-                  :placeholder="isQuoteCategory ? 'Saisissez le proverbe ou la citation...' : 'Titre de votre publication...'"
-                ></textarea>
-              </div>
-
-              <!-- Auteur (citations uniquement) -->
-              <div v-if="postForm.categorie === 'citation'" class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Auteur de la citation</label>
-                <input
-                  v-model="postForm.nomAuteur"
-                  type="text"
-                  class="w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
-                  placeholder="Ex : Nelson Mandela"
-                />
-              </div>
-
-              <!-- Couleur de fond (proverbes/citations) -->
-              <div v-if="isQuoteCategory" class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Couleur de fond</label>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    v-for="couleur in COULEURS_FOND"
-                    :key="couleur"
-                    type="button"
-                    @click="postForm.couleurFond = couleur"
-                    class="w-9 h-9 rounded-full border-2 transition-all duration-200"
-                    :class="postForm.couleurFond === couleur ? 'border-gray-800 scale-110 ring-2 ring-gray-300' : 'border-transparent hover:scale-105'"
-                    :style="{ backgroundColor: couleur }"
-                  ></button>
-                </div>
-              </div>
-
-              <!-- Explication -->
-              <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Explication / Contexte</label>
-                <textarea
-                  v-model="postForm.explication"
-                  required
-                  class="w-full px-3 py-2 border rounded-lg resize-none focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
-                  rows="3"
-                  placeholder="Expliquez le sens ou le contexte de cette valeur..."
-                ></textarea>
-              </div>
-
-              <!-- Pays et Groupe ethnique -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label class="block text-gray-700 text-sm font-bold mb-2">Territoire d'origine</label>
-                  <select
-                    v-model="postForm.pays"
-                    required
-                    class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
-                  >
-                    <option value="">Sélectionnez un territoire</option>
-                    <option v-for="pays in PAYS_AFRICAINS" :key="pays" :value="pays">{{ pays }}</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-gray-700 text-sm font-bold mb-2">Groupe ethnique (optionnel)</label>
-                  <select
-                    v-model="postForm.groupeEthnique"
-                    class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
-                  >
-                    <option value="">Aucun</option>
-                    <option v-for="groupe in GROUPES_ETHNIQUES" :key="groupe" :value="groupe">{{ groupe }}</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Hashtags -->
-              <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Hashtags (séparés par des virgules)</label>
-                <input
-                  v-model="postForm.hashtagsRaw"
-                  type="text"
-                  class="w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all duration-200"
-                  placeholder="sagesse, proverbe, afrique"
-                />
-              </div>
-
-              <!-- Boutons -->
-              <div class="flex justify-end space-x-3">
-                <button
-                  @click="showCreateModal = false"
-                  type="button"
-                  class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  :disabled="isSubmitting"
-                  class="px-4 py-2 bg-gradient-to-r from-custom-green to-green-600 text-white rounded-lg hover:from-custom-green hover:to-green-700 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {{ isSubmitting ? 'Publication...' : 'Publier' }}
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Transition>
-  </div>
-</template>
-
 <script setup lang="ts">
 import {
   CATEGORIES_POST,
-  COULEURS_FOND,
   PAYS_AFRICAINS,
-  GROUPES_ETHNIQUES,
   type CodiMoiPostAPI,
   type CommentaireAPI,
-  type CategoriePost,
 } from '~/composables/useCodiMoi'
+import type { BrouillonCodimoi } from '~/components/codi-moi/PublierModale.vue'
 import type { MembreLightAPI } from '~/composables/useAmis'
 import { useUserStore } from '~/stores/user'
 
+/**
+ * Codimoi : fil des publications, porté sur le gabarit de la refonte.
+ *
+ * Logique de données inchangée : mêmes endpoints, mêmes filtres serveur, même
+ * pagination « Voir plus ». Ce qui bouge est la présentation : la carte passe
+ * sur `AfricansCartePublication`, relevée sur cet écran précis au lot 2, et
+ * la place des commandes : la recherche monte dans le rail, les deux filtres
+ * servis par l'API restent en tête de colonne comme sur la maquette.
+ */
+definePageMeta({ layout: false })
+
 useHead({
-  title: 'Codimoi - Codification des valeurs | AfricanS'
+  title: 'Codimoi - Codification des valeurs | AfricanS',
 })
 
 const { erreur: apiErreur, listerPosts, creerPost, reagir, listerCommentaires, creerCommentaire } = useCodiMoi()
 const { listerAmis } = useAmis()
 const { demanderOuverture } = useMessagerie()
+// Composables appelés au SETUP et non dans les gestionnaires : hors de la
+// portée du composant, Nuxt ne sait plus à quelle instance les rattacher.
+const { initAuth, redirigerVersConnexion } = useAuth()
 const userStore = useUserStore()
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBaseUrl as string
 
-const breadcrumbs = [
-  { label: 'Codimoi', to: undefined }
-]
-
-// Modale de présentation « C'est quoi Codimoi ? »
-const presentationOuverte = ref(false)
+// Modale « C'est quoi Codimoi ? »
+const decouverteOuverte = ref(false)
 
 // Données : on utilise directement CodiMoiPostAPI (pas de mapping)
 const posts = ref<CodiMoiPostAPI[]>([])
 const totalPosts = ref(0)
 
-// Amis de l'utilisateur connecté (alimente la sidebar : profil + messagerie)
+// Amis de l'utilisateur connecté (alimente le rail : profil + messagerie)
 const amis = ref<MembreLightAPI[]>([])
 
 const chargerAmis = async () => {
@@ -381,25 +53,25 @@ const chargerAmis = async () => {
   amis.value = liste.map(a => a.utilisateur)
 }
 
-// Stats calculées depuis les posts chargés
-const stats = computed(() => {
+/**
+ * La ventilation par catégorie est calculée sur les posts CHARGÉS, pas sur le
+ * fonds : aucun endpoint ne la sert, et la liste est paginée. Le panneau le
+ * dit : un décompte présenté comme global serait faux dès la deuxième page.
+ */
+const ventilation = computed(() => {
   const p = posts.value
-  return {
-    totalPosts: totalPosts.value,
-    proverbesAdages: p.filter(x => x.type === 'proverbe_adage').length,
-    citations: p.filter(x => x.type === 'citation').length,
-    ressourcesHistoriques: p.filter(x => x.type === 'ressource_historique').length,
-    bonnesPratiques: p.filter(x => x.type === 'bonne_pratique').length,
+  return [
+    { libelle: 'Proverbes & adages', valeur: p.filter(x => x.type === 'proverbe_adage').length },
+    { libelle: 'Citations', valeur: p.filter(x => x.type === 'citation').length },
+    { libelle: 'Ressources historiques', valeur: p.filter(x => x.type === 'ressource_historique').length },
+    { libelle: 'Bonnes pratiques', valeur: p.filter(x => x.type === 'bonne_pratique').length },
     // Garde contre les valeurs manquantes/non numériques (constat #14 : total NaN)
-    totalLikes: p.reduce((sum, x) => sum + (Number(x.nombre_likes) || 0), 0),
-    totalVues: p.reduce((sum, x) => sum + (Number(x.nombre_vues) || 0), 0),
-  }
+    { libelle: 'Likes', valeur: p.reduce((s, x) => s + (Number(x.nombre_likes) || 0), 0) }]
 })
 
 // Posts populaires triés par likes
-const popularPosts = computed(() => {
-  return [...posts.value].sort((a, b) => b.nombre_likes - a.nombre_likes).slice(0, 5)
-})
+const popularPosts = computed(() =>
+  [...posts.value].sort((a, b) => b.nombre_likes - a.nombre_likes).slice(0, 5))
 
 // Modale détail de post
 const selectedPost = ref<CodiMoiPostAPI | null>(null)
@@ -407,7 +79,7 @@ const selectedPostCommentaires = ref<CommentaireAPI[]>([])
 const chargementCommentaires = ref(false)
 
 // UI state
-const showCreateModal = ref(false)
+const publierOuvert = ref(false)
 const loading = ref(false)
 const loadingMore = ref(false)
 const currentPage = ref(1)
@@ -423,13 +95,10 @@ const searchPays = ref('')
 const showToast = ref(false)
 const toastMessage = ref('')
 
-const hasActiveFilters = computed(() => {
-  return !!(activeCategory.value || searchKeywords.value || searchPays.value)
-})
+const hasActiveFilters = computed(() =>
+  !!(activeCategory.value || searchKeywords.value || searchPays.value))
 
-const hasMorePosts = computed(() => {
-  return posts.value.length < totalPosts.value
-})
+const hasMorePosts = computed(() => posts.value.length < totalPosts.value)
 
 // Charger les posts depuis l'API
 async function chargerPosts(append = false) {
@@ -445,13 +114,11 @@ async function chargerPosts(append = false) {
   })
 
   if (resultat) {
-    if (append) {
-      posts.value.push(...resultat.posts)
-    } else {
-      posts.value = resultat.posts
-    }
+    if (append) posts.value.push(...resultat.posts)
+    else posts.value = resultat.posts
     totalPosts.value = resultat.total
-  } else if (apiErreur.value) {
+  }
+  else if (apiErreur.value) {
     pageErreur.value = apiErreur.value
   }
 
@@ -467,9 +134,7 @@ const openPostDetail = async (postId: string) => {
   selectedPostCommentaires.value = []
 
   const resultat = await listerCommentaires(postId)
-  if (resultat) {
-    selectedPostCommentaires.value = resultat.commentaires
-  }
+  if (resultat) selectedPostCommentaires.value = resultat.commentaires
   chargementCommentaires.value = false
 }
 
@@ -485,9 +150,7 @@ const handleModalReaction = async (type: 'like' | 'dislike') => {
   if (updatedPost) {
     selectedPost.value = updatedPost
     const index = posts.value.findIndex(p => p.id === postId)
-    if (index !== -1) {
-      posts.value[index] = updatedPost
-    }
+    if (index !== -1) posts.value[index] = updatedPost
   }
 }
 
@@ -500,17 +163,15 @@ const handleModalComment = async (contenu: string) => {
     const found = posts.value.find(p => p.id === selectedPost.value?.id)
     if (found) found.nombre_commentaires++
     if (selectedPost.value) selectedPost.value.nombre_commentaires++
-  } else {
+  }
+  else {
     showNotification(apiErreur.value || 'Erreur lors de la publication du commentaire')
   }
 }
 
 const handleModalShare = () => {
   if (!selectedPost.value) return
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(`${window.location.origin}/codi-moi/${selectedPost.value.id}`)
-  }
-  showNotification('Lien copié dans le presse-papiers !')
+  copierLien(selectedPost.value.id)
 }
 
 // Actions : Carte (liste)
@@ -518,17 +179,17 @@ const handleReaction = async (postId: string, type: 'like' | 'dislike') => {
   const updatedPost = await reagir(postId, type)
   if (updatedPost) {
     const index = posts.value.findIndex(p => p.id === postId)
-    if (index !== -1) {
-      posts.value[index] = updatedPost
-    }
+    if (index !== -1) posts.value[index] = updatedPost
   }
 }
 
-const handleShare = (post: CodiMoiPostAPI) => {
+/** Codimoi n'ENREGISTRE pas les partages : l'action copie un lien. C'est
+ *  pourquoi la barre d'interactions n'affiche aucun compteur de partage. */
+const copierLien = (postId: string) => {
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(`${window.location.origin}/codi-moi/${post.id}`)
+    navigator.clipboard.writeText(`${window.location.origin}/codi-moi/${postId}`)
   }
-  showNotification('Lien copié dans le presse-papiers !')
+  showNotification('Lien copié dans le presse-papiers.')
 }
 
 const showNotification = (message: string) => {
@@ -537,71 +198,43 @@ const showNotification = (message: string) => {
   setTimeout(() => { showToast.value = false }, 2500)
 }
 
-// Formulaire de création
-const categoriesForm = CATEGORIES_POST.filter(c => c.value !== '')
+// Publication
 const isSubmitting = ref(false)
 
-const postForm = ref({
-  categorie: '' as CategoriePost | '',
-  contenu: '',
-  nomAuteur: '',
-  explication: '',
-  pays: '',
-  groupeEthnique: '',
-  couleurFond: COULEURS_FOND[0],
-  hashtagsRaw: ''
-})
-
-const isQuoteCategory = computed(() => {
-  return postForm.value.categorie === 'proverbe_adage' || postForm.value.categorie === 'citation'
-})
-
-const submitPost = async () => {
-  if (!postForm.value.categorie || !postForm.value.contenu || !postForm.value.pays) return
-
+const publier = async (brouillon: BrouillonCodimoi & { hashtags: string[] }) => {
   isSubmitting.value = true
 
-  const hashtags = postForm.value.hashtagsRaw
-    .split(',')
-    .map(h => h.trim())
-    .filter(Boolean)
-
   const nouveauPost = await creerPost({
-    type: postForm.value.categorie,
-    contenu: postForm.value.contenu,
-    explication: postForm.value.explication || undefined,
-    nom_auteur_originel: postForm.value.nomAuteur || undefined,
-    pays: postForm.value.pays || undefined,
-    groupe_ethnique: postForm.value.groupeEthnique || undefined,
-    couleur_fond: isQuoteCategory.value ? (postForm.value.couleurFond ?? '#2D5A27') : undefined,
-    hashtags: hashtags.length > 0 ? hashtags : undefined,
+    type: brouillon.categorie,
+    contenu: brouillon.contenu,
+    explication: brouillon.explication || undefined,
+    nom_auteur_originel: brouillon.nomAuteur || undefined,
+    pays: brouillon.pays || undefined,
+    groupe_ethnique: brouillon.groupeEthnique || undefined,
+    couleur_fond: brouillon.couleurFond || undefined,
+    hashtags: brouillon.hashtags.length > 0 ? brouillon.hashtags : undefined,
   })
 
-  showCreateModal.value = false
   isSubmitting.value = false
-  resetForm()
 
+  // La modale ne se referme QUE si la publication a abouti : la refermer sur
+  // un échec jetterait la saisie avec elle.
   if (nouveauPost) {
-    showNotification('Publication créée avec succès !')
-  } else {
+    publierOuvert.value = false
+    showNotification('Publication créée.')
+    await chargerPosts()
+  }
+  else {
     showNotification(apiErreur.value || 'Erreur lors de la création')
   }
-
-  // Recharger la liste depuis l'API
-  await chargerPosts()
 }
 
-const resetForm = () => {
-  postForm.value = {
-    categorie: '',
-    contenu: '',
-    nomAuteur: '',
-    explication: '',
-    pays: '',
-    groupeEthnique: '',
-    couleurFond: COULEURS_FOND[0],
-    hashtagsRaw: ''
+const ouvrirPublication = () => {
+  if (!userStore.isAuthenticated) {
+    redirigerVersConnexion()
+    return
   }
+  publierOuvert.value = true
 }
 
 const resetFilters = () => {
@@ -627,55 +260,266 @@ watch([activeCategory, searchKeywords, searchPays], () => {
   debounceTimer = setTimeout(() => chargerPosts(), 300)
 })
 
+const photoComplete = (url: string | null): string | null => {
+  if (!url) return null
+  return url.startsWith('http') ? url : `${apiBase}${url}`
+}
+
 onMounted(async () => {
   // Attendre que l'auth soit initialisee pour envoyer le token et recuperer user_reaction
-  const { initAuth } = useAuth()
   await initAuth()
   chargerPosts()
   chargerAmis()
 })
 </script>
 
+<template>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Codimoi"
+        image="/images/africans/heros/hero-codimoi.jpg"
+        aide="C'est quoi Codimoi ?"
+        @aide="decouverteOuverte = true"
+      />
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="[{ libelle: 'Africarise', vers: '/codi-moi' }, { libelle: 'Codimoi' }]">
+        <template #action>
+          <AfricansBouton icone="fa-solid fa-plus" @click="ouvrirPublication">
+            Nouvelle publication
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
+
+    <div class="flex flex-col gap-6">
+      <!-- Les deux filtres servis par l'API. La maquette en montre un
+           troisième, « Groupe Ethniques » : aucun paramètre serveur ne le
+           porte, et le filtrer côté client ne toucherait que la page
+           courante : il est donc omis plutôt que faussement proposé. -->
+      <div class="flex flex-wrap items-end gap-4">
+        <AfricansChamp v-model="searchPays" libelle="Territoire" type="select" class="min-w-52 flex-1">
+          <option value="">Tous les territoires</option>
+          <option v-for="p in PAYS_AFRICAINS" :key="p" :value="p">{{ p }}</option>
+        </AfricansChamp>
+
+        <AfricansChamp v-model="activeCategory" libelle="Catégorie" type="select" class="min-w-52 flex-1">
+          <option v-for="c in CATEGORIES_POST" :key="c.value" :value="c.value">{{ c.label }}</option>
+        </AfricansChamp>
+
+        <button
+          v-if="hasActiveFilters"
+          type="button"
+          class="flex h-11 items-center gap-2 text-[14px]/[1.4] font-bold text-af-chocolat transition hover:opacity-70"
+          @click="resetFilters"
+        >
+          <font-awesome-icon icon="fa-solid fa-xmark" />
+          Effacer les filtres
+        </button>
+      </div>
+
+      <h2 class="flex flex-wrap items-baseline gap-3 text-[20px]/[1.4] font-bold text-af-chocolat">
+        Publications
+        <span v-if="hasActiveFilters" class="text-[14px]/[1.4] font-normal text-af-atone">
+          {{ totalPosts }} résultat{{ totalPosts > 1 ? 's' : '' }}
+        </span>
+      </h2>
+
+      <!-- Chargement : squelettes aux dimensions d'une carte de publication. -->
+      <div v-if="loading && posts.length === 0" class="flex flex-col gap-6">
+        <div v-for="n in 3" :key="n" class="overflow-hidden rounded-[10px] border border-af-bordure bg-white">
+          <div class="flex items-center gap-3 p-4">
+            <div class="size-11 animate-pulse rounded-full bg-af-bordure" />
+            <div class="flex-1 space-y-2">
+              <div class="h-3 w-1/3 animate-pulse rounded bg-af-bordure" />
+              <div class="h-3 w-1/4 animate-pulse rounded bg-af-bordure" />
+            </div>
+          </div>
+          <div class="aspect-[16/10] w-full animate-pulse bg-af-bordure" />
+          <div class="h-10 animate-pulse bg-white" />
+        </div>
+      </div>
+
+      <!-- Erreur : le message technique est montré, pas masqué derrière un
+           « une erreur est survenue » qui n'aide personne à diagnostiquer. -->
+      <div
+        v-else-if="pageErreur && posts.length === 0"
+        class="rounded-[10px] border border-af-live/30 bg-af-live/[0.05] p-6"
+      >
+        <p class="flex items-center gap-3 text-[16px]/[1.4] font-bold">
+          <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="text-af-live" />
+          Les publications n'ont pas pu être chargées
+        </p>
+        <p class="mt-2 text-[14px]/[1.4] text-af-corps">{{ pageErreur }}</p>
+        <AfricansBouton class="mt-5" icone="fa-solid fa-rotate-right" @click="chargerPosts()">
+          Réessayer
+        </AfricansBouton>
+      </div>
+
+      <template v-else-if="posts.length">
+        <div class="flex flex-col gap-6">
+          <CodiMoiCartePost
+            v-for="post in posts"
+            :key="post.id"
+            :post="post"
+            @jaime="handleReaction(post.id, 'like')"
+            @jaime-pas="handleReaction(post.id, 'dislike')"
+            @commenter="openPostDetail(post.id)"
+            @partager="copierLien(post.id)"
+          />
+        </div>
+
+        <div v-if="hasMorePosts" class="flex justify-center">
+          <AfricansBouton
+            variante="secondaire"
+            :desactive="loadingMore"
+            :tourne="loadingMore"
+            :icone="loadingMore ? 'fa-solid fa-spinner' : 'fa-solid fa-arrow-down'"
+            @click="loadMore"
+          >
+            {{ loadingMore ? 'Chargement…' : 'Voir plus de publications' }}
+          </AfricansBouton>
+        </div>
+      </template>
+
+      <!-- Deux vides distincts : « rien ne correspond » n'est pas « rien
+           n'existe », et la sortie proposée n'est pas la même. -->
+      <div v-else class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+        <font-awesome-icon icon="fa-solid fa-file-circle-xmark" class="text-4xl text-af-atone-2" />
+        <p class="mt-4 text-[16px]/[1.4] font-bold">
+          {{ hasActiveFilters ? 'Aucune publication ne correspond à vos critères' : 'Aucune publication pour le moment' }}
+        </p>
+        <AfricansBouton
+          class="mt-5"
+          :variante="hasActiveFilters ? 'secondaire' : 'primaire'"
+          :icone="hasActiveFilters ? 'fa-solid fa-rotate-right' : 'fa-solid fa-plus'"
+          @click="hasActiveFilters ? resetFilters() : ouvrirPublication()"
+        >
+          {{ hasActiveFilters ? 'Effacer les filtres' : 'Publier la première valeur' }}
+        </AfricansBouton>
+      </div>
+    </div>
+
+    <template #rail>
+      <AfricansRecherche v-model="searchKeywords" placeholder="Proverbe, récit, mot-clé…" />
+
+      <AfricansPanneau titre="Statistiques Codimoi" icone="fa-solid fa-chart-line">
+        <dl class="flex flex-col">
+          <div class="flex items-baseline justify-between gap-4 pb-3">
+            <dt class="text-[14px]/[1.4] font-bold">Publications totales</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ totalPosts }}</dd>
+          </div>
+          <div
+            v-for="ligne in ventilation"
+            :key="ligne.libelle"
+            class="flex items-baseline justify-between gap-4 border-t border-af-bordure py-3"
+          >
+            <dt class="text-[14px]/[1.4] text-af-corps">{{ ligne.libelle }}</dt>
+            <dd class="text-[14px]/[1.4] font-bold">{{ ligne.valeur }}</dd>
+          </div>
+        </dl>
+        <p class="mt-3 text-[12px]/[1.4] text-af-atone">
+          Ventilation calculée sur les {{ posts.length }} publications affichées.
+        </p>
+      </AfricansPanneau>
+
+      <AfricansPanneau titre="Mes ami(e)s" icone="fa-solid fa-users">
+        <ul v-if="amis.length" class="flex flex-col">
+          <li
+            v-for="ami in amis"
+            :key="ami.id"
+            class="flex items-center gap-3 border-t border-af-bordure py-2.5 first:border-t-0"
+          >
+            <NuxtLink :to="`/profil/${ami.id}`" class="flex min-w-0 flex-1 items-center gap-3 hover:text-af-chocolat">
+              <AfricansAvatar :nom="`${ami.prenom} ${ami.nom}`" :src="photoComplete(ami.photoUrl)" :taille="32" />
+              <span class="truncate text-[14px]/[1.4] font-bold">{{ ami.prenom }} {{ ami.nom }}</span>
+            </NuxtLink>
+            <button
+              type="button"
+              class="grid size-8 shrink-0 place-items-center rounded-full bg-af-chocolat/15 text-af-chocolat transition hover:bg-af-chocolat hover:text-white"
+              :aria-label="`Envoyer un message à ${ami.prenom} ${ami.nom}`"
+              @click="demanderOuverture(ami)"
+            >
+              <font-awesome-icon icon="fa-solid fa-paper-plane" class="text-xs" />
+            </button>
+          </li>
+        </ul>
+        <p v-else class="text-[14px]/[1.4] text-af-atone">
+          {{ userStore.isAuthenticated ? 'Aucun ami pour le moment.' : 'Connectez-vous pour retrouver vos ami(e)s.' }}
+        </p>
+      </AfricansPanneau>
+
+      <AfricansPanneau titre="Posts populaires" icone="fa-solid fa-fire">
+        <ul v-if="popularPosts.length" class="flex flex-col gap-3">
+          <li v-for="post in popularPosts" :key="post.id">
+            <button
+              type="button"
+              class="w-full rounded-[10px] border border-af-bordure p-3 text-left transition hover:bg-af-chocolat/[0.07]"
+              @click="openPostDetail(post.id)"
+            >
+              <p class="line-clamp-2 text-[14px]/[1.4]">{{ post.contenu }}</p>
+              <p class="mt-2 flex items-center justify-between gap-3 text-[12px]/[1.4] text-af-atone">
+                <span class="truncate">{{ post.auteur.prenom || post.auteur.nom }}</span>
+                <span class="flex shrink-0 items-center gap-1.5">
+                  <font-awesome-icon icon="fa-solid fa-thumbs-up" />
+                  {{ post.nombre_likes }}
+                </span>
+              </p>
+            </button>
+          </li>
+        </ul>
+        <p v-else class="text-[14px]/[1.4] text-af-atone">Aucun post populaire.</p>
+      </AfricansPanneau>
+    </template>
+
+    <!-- ══════════════ Surcouches ══════════════ -->
+
+    <CodiMoiDecouverteModale v-model="decouverteOuverte" />
+
+    <CodiMoiPublierModale
+      v-model="publierOuvert"
+      :en-cours="isSubmitting"
+      @publier="publier"
+    />
+
+    <!-- Détail de post : la modale héritée, non encore portée, aucun cadre
+         Figma ne la décrit (« Infos Codimoi » est l'écran de découverte). -->
+    <CodiMoiPostModal
+      :post="selectedPost"
+      :commentaires="selectedPostCommentaires"
+      :chargement-commentaires="chargementCommentaires"
+      @close="closePostDetail"
+      @like="handleModalReaction('like')"
+      @dislike="handleModalReaction('dislike')"
+      @share="handleModalShare"
+      @commenter="handleModalComment"
+    />
+
+    <Transition name="af-surgir">
+      <div
+        v-if="showToast"
+        class="fixed right-6 bottom-6 z-100 max-w-sm rounded-[10px] border border-af-vert bg-white px-5 py-4 shadow-xl font-af"
+        role="status"
+      >
+        <p class="flex items-center gap-3 text-[14px]/[1.4]">
+          <font-awesome-icon icon="fa-solid fa-circle-check" class="text-af-vert" />
+          {{ toastMessage }}
+        </p>
+      </div>
+    </Transition>
+  </NuxtLayout>
+</template>
+
 <style scoped>
-.post-list-enter-active,
-.post-list-leave-active {
-  transition: all 0.5s ease;
+.af-surgir-enter-active,
+.af-surgir-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
-
-.post-list-enter-from,
-.post-list-leave-to {
+.af-surgir-enter-from,
+.af-surgir-leave-to {
   opacity: 0;
-  transform: translateY(30px);
-}
-
-.toast-enter-active {
-  transition: all 0.3s ease-out;
-}
-.toast-leave-active {
-  transition: all 0.2s ease-in;
-}
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translate(-50%, 20px);
-}
-
-@keyframes slideIn {
-  from { transform: translateY(-20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.animate-slideIn {
-  animation: slideIn 0.3s ease-out forwards;
-}
-
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
+  transform: translateY(12px);
 }
 </style>

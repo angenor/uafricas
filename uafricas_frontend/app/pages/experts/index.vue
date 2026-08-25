@@ -1,343 +1,3 @@
-<template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-    <!-- Mobile Sidebar Overlay -->
-    <div
-      v-if="sidebarOpen"
-      class="lg:hidden fixed inset-0 bg-black/50 z-40"
-      @click="sidebarOpen = false"
-    />
-
-    <!-- Mobile Sidebar for Filters -->
-    <ExpertsExpertFiltersMobile
-      v-model:selected-country="selectedCountry"
-      v-model:selected-specialty="selectedSpecialty"
-      v-model:zone="selectedZone"
-      :is-open="sidebarOpen"
-      :selected-profile="selectedProfile"
-      :specialites="specialites"
-      @close="sidebarOpen = false"
-      @filter-profile="filterByProfile"
-      @reset="resetFilters"
-    />
-
-    <!-- Main Content Area -->
-    <div class="w-full">
-      <!-- Mobile Sidebar Toggle -->
-      <div class="lg:hidden flex items-center p-4 bg-white shadow-xs">
-        <button
-          class="p-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
-          @click="sidebarOpen = !sidebarOpen"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </button>
-        <h1 class="ml-3 text-lg font-semibold text-gray-900">Experts</h1>
-      </div>
-
-      <!-- Hero Section -->
-      <ExpertsExpertHero
-        v-model:search-term="searchTerm"
-        v-model:category-selected="categorySelected"
-        :total-experts="totalExperts"
-        :categories="categories"
-        @search="handleSearch"
-        @presentation="presentationOuverte = true"
-      />
-
-      <!-- Main Content Section -->
-      <div class="max-w-7xl mx-auto px-4 -mt-10 relative z-10">
-        <!-- Structure avec sidebar a gauche et contenu principal -->
-        <div class="flex gap-8">
-          <!-- Left Sidebar - Profile Filters (Desktop uniquement) -->
-          <div class="hidden lg:block w-82 shrink-0">
-            <ExpertsExpertFilters
-              v-model:selected-country="selectedCountry"
-              v-model:selected-specialty="selectedSpecialty"
-              v-model:zone="selectedZone"
-              :selected-profile="selectedProfile"
-              :specialites="specialites"
-              @filter-profile="filterByProfile"
-              @reset="resetFilters"
-            />
-          </div>
-
-          <!-- Main Content Area -->
-          <div class="flex-1 min-w-0">
-            <!-- Boutons d'action : trouver un expert sur mesure + devenir expert -->
-            <div class="flex flex-wrap justify-center items-center gap-4 mb-10">
-              <button
-                type="button"
-                class="inline-flex items-center gap-3 bg-white px-8 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all group cursor-pointer"
-                @click="filtreSurMesureOuvert = true"
-              >
-                <div
-                  class="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform"
-                >
-                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-                    />
-                  </svg>
-                </div>
-                <span class="font-semibold text-gray-900">Trouver un(e) expert(e) sur mesure</span>
-                <svg
-                  class="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
-              </button>
-
-              <!-- CTA : soumettre sa demande pour devenir expert -->
-              <NuxtLink
-                to="/devenir-expert"
-                class="inline-flex items-center gap-3 bg-linear-to-r from-emerald-500 to-teal-500 text-white px-8 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all group"
-              >
-                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                    />
-                  </svg>
-                </div>
-                <span class="font-semibold">Faire connaître mon expertise</span>
-              </NuxtLink>
-            </div>
-
-            <!-- Filtres modernises (compacts) -->
-            <div class="bg-white rounded-2xl shadow-xl p-3 mb-8">
-              <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                <!-- Filtres par tags -->
-                <div class="flex-1">
-                  <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-                    Domaines d'expertise
-                  </h3>
-                  <div class="flex flex-wrap gap-2">
-                    <button
-                      :class="{
-                        'bg-gradient-to-r from-emerald-500 to-teal-500 text-white':
-                          categorySelected === 'Tout',
-                        'bg-gray-100 text-gray-700 hover:bg-gray-200':
-                          categorySelected !== 'Tout',
-                      }"
-                      class="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-                      @click="filterByCategory('Tout')"
-                    >
-                      Tout
-                    </button>
-                    <button
-                      v-for="category in categories.filter((cat) => cat !== 'Tout').slice(0, 4)"
-                      :key="category"
-                      :class="{
-                        'bg-gradient-to-r from-emerald-500 to-teal-500 text-white':
-                          categorySelected === category,
-                        'bg-gray-100 text-gray-700 hover:bg-gray-200':
-                          categorySelected !== category,
-                      }"
-                      class="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-                      @click="filterByCategory(category)"
-                    >
-                      {{ category }}
-                    </button>
-                    <div v-if="categories.length > 5" class="relative">
-                      <button
-                        class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all flex items-center gap-1"
-                        @click="showMoreCategories = !showMoreCategories"
-                      >
-                        Plus
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                      <!-- Dropdown pour plus de categories -->
-                      <div
-                        v-if="showMoreCategories"
-                        class="absolute top-full mt-2 bg-white rounded-xl shadow-xl p-2 z-20 min-w-[200px]"
-                      >
-                        <button
-                          v-for="category in categories.filter((cat) => cat !== 'Tout').slice(4)"
-                          :key="category"
-                          class="block w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-sm"
-                          @click="filterByCategory(category); showMoreCategories = false"
-                        >
-                          {{ category }}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Controles de tri -->
-                <div class="flex flex-col sm:flex-row gap-3">
-                  <!-- Boutons de tri -->
-                  <div class="flex gap-2">
-                    <button
-                      v-for="sortOption in sortOptions"
-                      :key="sortOption.id"
-                      :class="{
-                        'bg-emerald-500 text-white': sortOrder === sortOption.id,
-                        'bg-gray-50 text-gray-700 hover:bg-gray-100': sortOrder !== sortOption.id,
-                      }"
-                      :title="sortOption.label"
-                      class="p-2 rounded-xl transition-all group relative"
-                      @click="sortExperts(sortOption.id)"
-                    >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          :d="sortOption.icon"
-                        />
-                      </svg>
-                      <span
-                        class="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
-                      >
-                        {{ sortOption.label }}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Indicateur de chargement -->
-            <div v-if="chargement" class="flex justify-center py-12">
-              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
-            </div>
-
-            <!-- Expert Cards Grid avec design moderne -->
-            <div
-              v-else-if="experts.length > 0"
-              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12"
-            >
-              <ExpertsExpertCard
-                v-for="expert in experts"
-                :key="expert.id"
-                :expert="expert"
-                class="transform hover:scale-[1.02] transition-all"
-                @contact="contactExpert"
-              />
-            </div>
-
-            <!-- Empty State moderne -->
-            <div v-else class="bg-white rounded-2xl shadow-xl p-12 text-center">
-              <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                  />
-                </svg>
-              </div>
-              <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun(e) expert(e) trouvé(e)</h3>
-              <p class="text-gray-500 max-w-md mx-auto">
-                Essayez de modifier vos criteres de recherche ou explorez d'autres domaines
-                d'expertise.
-              </p>
-              <button
-                class="mt-6 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-medium hover:shadow-lg transition-all"
-                @click="resetFilters"
-              >
-                Reinitialiser les filtres
-              </button>
-            </div>
-
-            <!-- Pagination moderne -->
-            <div v-if="experts.length > 0 && totalPages > 1" class="flex justify-center mb-12">
-              <nav class="flex items-center gap-2">
-                <button
-                  :disabled="currentPage === 1"
-                  class="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  @click="currentPage--"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                </button>
-
-                <div class="flex gap-1">
-                  <button
-                    v-for="page in visiblePages"
-                    :key="page"
-                    :class="{
-                      'bg-gradient-to-r from-emerald-500 to-teal-500 text-white': page === currentPage,
-                      'bg-white text-gray-700 hover:bg-gray-50': page !== currentPage,
-                    }"
-                    class="w-10 h-10 rounded-xl font-medium transition-all"
-                    @click="currentPage = page"
-                  >
-                    {{ page }}
-                  </button>
-                </div>
-
-                <button
-                  :disabled="currentPage === totalPages"
-                  class="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  @click="currentPage++"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modale timeline : trouver un(e) expert(e) sur mesure -->
-    <ExpertsExpertFiltreSurMesureModal
-      :is-open="filtreSurMesureOuvert"
-      @close="filtreSurMesureOuvert = false"
-      @apply="appliquerFiltreSurMesure"
-    />
-
-    <!-- Modale de présentation « C'est quoi Diapertise ? » -->
-    <ExpertsPresentationModal
-      :open="presentationOuverte"
-      @close="presentationOuverte = false"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import {
   useExperts,
@@ -345,8 +5,23 @@ import {
   type ExpertAPI,
 } from '~/composables/useExperts'
 
+/**
+ * Diapertise : porté sur le gabarit de la refonte.
+ *
+ * Aucun critère de recherche n'est ajouté ni retiré : recherche libre, domaine,
+ * zone, territoire, spécialité, situation et tri, comme avant. Ce qui change :
+ *   - les filtres passent dans le rail (`ExpertsPanneauFiltres`), qui remplace
+ *     à la fois la colonne de gauche et le tiroir mobile, le gabarit empile
+ *     déjà le rail sous le contenu en dessous de 64rem ;
+ *   - les domaines d'expertise ne sont plus tronqués à cinq avec un menu
+ *     « Plus » : ils sont neuf en tout, ils tiennent en pastilles ;
+ *   - le tri à trois icônes muettes devient un menu déroulant nommé. Une icône
+ *     d'étoile pour « Note » se devine ; une horloge pour « Récent », non.
+ */
+definePageMeta({ layout: false })
+
 useHead({
-  title: 'Experts - AfricanS',
+  title: 'Diapertise : Le répertoire des expertises africaines | AfricanS',
   meta: [
     {
       name: 'description',
@@ -355,20 +30,18 @@ useHead({
   ],
 })
 
-// Composable API
 const { listerExperts, listerSpecialites, chargement } = useExperts()
 
-// State
+// ─── État ─────────────────────────────────────────────────────────────────
+
 const experts = ref<ExpertAPI[]>([])
 const totalExperts = ref(0)
 const totalPages = ref(1)
 const searchTerm = ref('')
 const categorySelected = ref('Tout')
 const selectedCountry = ref('')
-/**
- * Zone géographique du territoire : filtre aussi la liste des experts.
- * Défaut « Tout » : non transmis à l'API, donc aucune restriction de zone.
- */
+/** Zone géographique du territoire : filtre aussi la liste des experts.
+ *  Défaut « tout » : non restrictif. */
 const selectedZone = ref<'afrique' | 'hors_afrique' | 'tout'>('tout')
 const selectedProfile = ref('')
 /** Spécialité choisie dans les filtres ('' = toutes). */
@@ -376,35 +49,18 @@ const selectedSpecialty = ref('')
 /** Spécialités réellement déclarées par les experts (chargées au montage). */
 const specialites = ref<string[]>([])
 const sortOrder = ref<'recent' | 'experience' | 'rating'>('recent')
-const showMoreCategories = ref(false)
-const sidebarOpen = ref(false)
 const currentPage = ref(1)
 const parPage = 12
 const filtreSurMesureOuvert = ref(false)
+const decouverteOuverte = ref(false)
 
-// Modale de présentation « C'est quoi Diapertise ? »
-const presentationOuverte = ref(false)
+const TRIS = [
+  { id: 'recent' as const, libelle: 'Les plus récents' },
+  { id: 'experience' as const, libelle: 'Les plus expérimentés' },
+  { id: 'rating' as const, libelle: 'Les mieux notés' }]
 
-// Sort options
-const sortOptions = [
-  {
-    id: 'recent' as const,
-    icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-    label: 'Recent',
-  },
-  {
-    id: 'experience' as const,
-    icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z',
-    label: 'Experience',
-  },
-  {
-    id: 'rating' as const,
-    icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z',
-    label: 'Note',
-  },
-]
+// ─── Chargement (pagination côté serveur) ─────────────────────────────────
 
-// Charger les experts depuis l'API (pagination server-side)
 const chargerExperts = async () => {
   const result = await listerExperts({
     recherche: searchTerm.value || undefined,
@@ -427,40 +83,27 @@ const chargerExperts = async () => {
   }
 }
 
-// Pagination (pages visibles)
+// ─── Pagination ───────────────────────────────────────────────────────────
+
 const visiblePages = computed(() => {
   const pages: number[] = []
   const total = totalPages.value
   const current = currentPage.value
 
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) {
-      pages.push(i)
-    }
-  } else {
-    if (current <= 3) {
-      pages.push(1, 2, 3, 4, 5)
-    } else if (current >= total - 2) {
-      pages.push(total - 4, total - 3, total - 2, total - 1, total)
-    } else {
-      pages.push(current - 2, current - 1, current, current + 1, current + 2)
-    }
+    for (let i = 1; i <= total; i++) pages.push(i)
   }
+  else if (current <= 3) pages.push(1, 2, 3, 4, 5)
+  else if (current >= total - 2) pages.push(total - 4, total - 3, total - 2, total - 1, total)
+  else pages.push(current - 2, current - 1, current, current + 1, current + 2)
 
-  return pages.filter((p) => p >= 1 && p <= total)
+  return pages.filter(p => p >= 1 && p <= total)
 })
 
-// Methods
-const filterByCategory = (category: string) => {
-  categorySelected.value = category
-}
+// ─── Actions ──────────────────────────────────────────────────────────────
 
 const filterByProfile = (profileId: string) => {
   selectedProfile.value = profileId
-}
-
-const sortExperts = (order: 'recent' | 'experience' | 'rating') => {
-  sortOrder.value = order
 }
 
 const resetFilters = () => {
@@ -478,7 +121,7 @@ const handleSearch = () => {
   chargerExperts()
 }
 
-// Appliquer les critères choisis dans la modale timeline
+/** Critères choisis dans la modale « sur mesure ». */
 const appliquerFiltreSurMesure = (filtres: {
   domaine: string
   pays: string
@@ -500,20 +143,172 @@ const contactExpert = (expert: ExpertAPI) => {
   }
 }
 
-// Recharger quand les filtres changent (reset page + appel API)
+// Recharger quand les filtres changent (retour page 1 + appel API)
 watch([categorySelected, selectedCountry, selectedZone, selectedProfile, selectedSpecialty, sortOrder], () => {
   currentPage.value = 1
   chargerExperts()
 })
 
-// Recharger quand la page change
-watch(currentPage, () => {
-  chargerExperts()
-})
+watch(currentPage, chargerExperts)
 
-// Chargement initial
 onMounted(async () => {
   chargerExperts()
   specialites.value = await listerSpecialites()
 })
 </script>
+
+<template>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Diapertise"
+        sous-titre="Le répertoire des expertises africaines et afrodescendantes"
+        image="/images/apporter-expertise.png"
+        aide="C'est quoi Diapertise ?"
+        @aide="decouverteOuverte = true"
+      />
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="[{ libelle: 'Diapertise' }]">
+        <template #action>
+          <AfricansBouton icone="fa-solid fa-user-plus" vers="/devenir-expert">
+            Faire connaître mon expertise
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
+
+    <div class="flex flex-col gap-6">
+      <!-- Recherche libre : validée à l'entrée, comme avant (elle n'est pas dans
+           le watch des filtres : une frappe par requête serait de trop). -->
+      <form class="flex flex-wrap gap-3" @submit.prevent="handleSearch">
+        <label class="relative min-w-0 flex-1">
+          <span class="sr-only">Rechercher un(e) expert(e)</span>
+          <font-awesome-icon
+            icon="fa-solid fa-magnifying-glass"
+            class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-af-atone-2"
+          />
+          <input
+            v-model="searchTerm"
+            type="search"
+            placeholder="Nom, domaine, mot-clé…"
+            class="h-11 w-full rounded-[10px] border border-af-bordure bg-white pr-4 pl-11 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
+          />
+        </label>
+        <AfricansBouton type="submit" icone="fa-solid fa-magnifying-glass">Rechercher</AfricansBouton>
+        <AfricansBouton variante="secondaire" icone="fa-solid fa-wand-magic-sparkles" @click="filtreSurMesureOuvert = true">
+          Sur mesure
+        </AfricansBouton>
+      </form>
+
+      <!-- Domaines d'expertise -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          v-for="category in categories"
+          :key="category"
+          type="button"
+          class="rounded-full px-3 py-1.5 text-[12px]/[1.4] font-bold transition"
+          :class="categorySelected === category ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
+          :aria-pressed="categorySelected === category"
+          @click="categorySelected = category"
+        >
+          {{ category }}
+        </button>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="text-[14px]/[1.4] text-af-atone">
+          {{ totalExperts }} expert{{ totalExperts > 1 ? 's' : '' }}
+        </p>
+        <label class="flex items-center gap-2">
+          <span class="text-[14px]/[1.4] text-af-corps">Trier par</span>
+          <select
+            v-model="sortOrder"
+            class="h-10 rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
+          >
+            <option v-for="tri in TRIS" :key="tri.id" :value="tri.id">{{ tri.libelle }}</option>
+          </select>
+        </label>
+      </div>
+
+      <div v-if="chargement" class="grid gap-5 sm:grid-cols-2">
+        <div v-for="n in 4" :key="n" class="h-64 animate-pulse rounded-[10px] bg-af-bordure" />
+      </div>
+
+      <template v-else-if="experts.length > 0">
+        <div class="grid gap-5 sm:grid-cols-2">
+          <ExpertsExpertCard
+            v-for="expert in experts"
+            :key="expert.id"
+            :expert="expert"
+            @contact="contactExpert"
+          />
+        </div>
+
+        <nav v-if="totalPages > 1" class="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            :disabled="currentPage === 1"
+            class="grid size-10 place-items-center rounded-[10px] border border-af-bordure bg-white transition hover:border-af-chocolat disabled:opacity-40"
+            aria-label="Page précédente"
+            @click="currentPage--"
+          >
+            <font-awesome-icon icon="fa-solid fa-chevron-left" />
+          </button>
+          <button
+            v-for="p in visiblePages"
+            :key="p"
+            type="button"
+            class="size-10 rounded-[10px] text-[14px]/[1.4] font-bold transition"
+            :class="p === currentPage ? 'bg-af-chocolat text-white' : 'border border-af-bordure bg-white hover:border-af-chocolat'"
+            :aria-current="p === currentPage ? 'page' : undefined"
+            @click="currentPage = p"
+          >
+            {{ p }}
+          </button>
+          <button
+            type="button"
+            :disabled="currentPage === totalPages"
+            class="grid size-10 place-items-center rounded-[10px] border border-af-bordure bg-white transition hover:border-af-chocolat disabled:opacity-40"
+            aria-label="Page suivante"
+            @click="currentPage++"
+          >
+            <font-awesome-icon icon="fa-solid fa-chevron-right" />
+          </button>
+        </nav>
+      </template>
+
+      <div v-else class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+        <font-awesome-icon icon="fa-solid fa-user-slash" class="text-4xl text-af-atone-2" />
+        <p class="mt-4 text-[16px]/[1.4] font-bold">Aucun(e) expert(e) trouvé(e)</p>
+        <p class="mx-auto mt-2 max-w-md text-[14px]/[1.4] text-af-corps">
+          Essayez de modifier vos critères de recherche ou explorez d'autres domaines d'expertise.
+        </p>
+        <AfricansBouton class="mt-6" variante="secondaire" icone="fa-solid fa-rotate-left" @click="resetFilters">
+          Réinitialiser les filtres
+        </AfricansBouton>
+      </div>
+    </div>
+
+    <template #rail>
+      <ExpertsPanneauFiltres
+        v-model:selected-country="selectedCountry"
+        v-model:selected-specialty="selectedSpecialty"
+        v-model:zone="selectedZone"
+        :selected-profile="selectedProfile"
+        :specialites="specialites"
+        @filtrer-profil="filterByProfile"
+        @reset="resetFilters"
+      />
+    </template>
+
+    <ExpertsExpertFiltreSurMesureModal
+      :is-open="filtreSurMesureOuvert"
+      @close="filtreSurMesureOuvert = false"
+      @apply="appliquerFiltreSurMesure"
+    />
+
+    <ExpertsDecouverteModale v-model="decouverteOuverte" />
+  </NuxtLayout>
+</template>

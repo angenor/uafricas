@@ -322,7 +322,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Équipe éditoriale (010). Le composant est le MÊME que côté membre 
+      <!-- Équipe éditoriale (010). Le composant est le MÊME que côté membre, 
            les règles ne diffèrent pas, seule l'autorité change : d'où
            `base="admin"`. Il est en Tailwind pur, ce qui est assumé sur une page
            daisyUI : c'est le prix d'un composant unique, et le prix inverse

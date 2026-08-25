@@ -1,12 +1,28 @@
 <script setup lang="ts">
-definePageMeta({ middleware: 'auth' })
-
 import type { PersonneListe, CreerPersonneForm } from '~/mocks/arbre-genealogique'
 import { useArbreGenealogique } from '~/composables/useArbreGenealogique'
 import { useDecouvertes } from '~/composables/useDecouvertes'
 import PersonneForm from '~/components/arbre-genealogique/PersonneForm.vue'
 import PersonneCard from '~/components/arbre-genealogique/PersonneCard.vue'
 import AssistantAjoutPersonne from '~/components/arbre-genealogique/AssistantAjoutPersonne.vue'
+
+/**
+ * Rootstree : porté sur le gabarit de la refonte.
+ *
+ * La logique ne bouge pas : mêmes endpoints, même recherche débattue à 350 ms,
+ * même pagination serveur, mêmes deux modes de création (assistant et
+ * formulaire). Ce qui change est l'enveloppe : le hero à dégradé devient un
+ * bandeau de module, les deux boutons « Découvertes » et « Voir mon arbre »
+ * quittent l'en-tête pour le rail, et la modale de présentation passe sur la
+ * modale à étapes commune aux autres modules.
+ *
+ * Le bandeau n'a PAS d'image : aucune illustration de généalogie n'existe dans
+ * `public/images/`, et le Figma n'en fournit pas pour ce module. Le dégradé de
+ * marque est le repli prévu : en coller une sans rapport serait pire.
+ */
+definePageMeta({ middleware: 'auth', layout: false })
+
+useHead({ title: 'Rootstree : Mon arbre généalogique | AfricanS' })
 
 const { listerPersonnes, creerPersonne } = useArbreGenealogique()
 const { listerDecouvertes } = useDecouvertes()
@@ -38,9 +54,7 @@ let timerId: ReturnType<typeof setTimeout> | null = null
 
 const modeAjout = ref<'wizard' | 'classique' | null>(null)
 const creationEnCours = ref(false)
-
-// Modale de présentation « C'est quoi Rootstree ? »
-const presentationOuverte = ref(false)
+const decouverteOuverte = ref(false)
 
 // ─── Debounce recherche ───────────────────────────────────────────────────
 
@@ -70,7 +84,12 @@ async function charger() {
   }
 }
 
-watch([page, rechercheDebounce], charger, { immediate: true })
+// `immediate` côté CLIENT seulement. La page est derrière `middleware: 'auth'`,
+// mais ce middleware laisse passer le SSR (le jeton vit dans localStorage) :
+// charger la liste au rendu serveur remontait donc un 401 non rattrapé, et le
+// visiteur anonyme recevait une page d'erreur au lieu d'être renvoyé vers
+// /login. Le squelette est rendu côté serveur, la liste arrive côté client.
+watch([page, rechercheDebounce], charger, { immediate: import.meta.client })
 
 // ─── Navigation ────────────────────────────────────────────────────────────
 
@@ -122,84 +141,111 @@ const infoPagination = computed(() => {
 </script>
 
 <template>
-  <div class="mt-28">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div class="group bg-gradient-to-br from-[var(--color-custom-green)]/10 via-white to-[var(--color-custom-chocolat)]/5 px-4 pt-6 pb-6 text-center select-none">
-      <div class="mx-auto max-w-2xl">
-        <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-custom-green)]/20">
-          <font-awesome-icon :icon="['fas', 'tree']" class="text-2xl text-[var(--color-custom-green)]" />
-        </div>
-        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
-        <div class="relative flex items-center justify-center min-h-12 md:min-h-14">
-          <h1 class="absolute inset-0 flex items-center justify-center text-stone-800 text-2xl md:text-3xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Rootstree
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-stone-500 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Explorez votre arbre généalogique, découvrez vos origines et connectez-vous avec votre famille à travers les générations.
-          </p>
-        </div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Rootstree"
+        sous-titre="Construire, préserver et transmettre votre héritage familial"
+        aide="C'est quoi Rootstree ?"
+        @aide="decouverteOuverte = true"
+      />
+    </template>
 
-        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <!-- Bouton d'aide : ouvre la présentation de Rootstree (hero clair → variante chocolat) -->
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-full bg-white hover:bg-stone-50 text-custom-chocolat font-medium text-sm px-4 py-2.5 shadow-sm ring-1 ring-stone-200 transition-colors"
-            aria-label="En savoir plus sur Rootstree"
-            @click="presentationOuverte = true"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
-            C'est quoi Rootstree&nbsp;?
-          </button>
-        </div>
-      </div>
-    </div>
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="[{ libelle: 'Rootstree' }]">
+        <template #action>
+          <AfricansBouton icone="fa-solid fa-plus" @click="modeAjout = 'wizard'">
+            Ajouter une personne
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
 
-    <!-- Modale de présentation « C'est quoi Rootstree ? » -->
-    <ArbreGenealogiquePresentationModal
-      :open="presentationOuverte"
-      @close="presentationOuverte = false"
-    />
-
-    <div class="max-w-5xl mx-auto px-4 py-8">
-    <!-- En-tête -->
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h2 class="text-xl font-bold text-stone-800">Mon arbre</h2>
-        <p v-if="liste && liste.total > 0" class="text-sm text-stone-500 mt-1">
-          {{ liste.total }} personne{{ liste.total > 1 ? 's' : '' }} dans votre arbre
+    <div class="flex flex-col gap-6">
+      <div class="flex flex-wrap items-baseline justify-between gap-3">
+        <h2 class="text-[20px]/[1.4] font-bold text-af-chocolat">Mon arbre</h2>
+        <p v-if="liste && liste.total > 0" class="text-[14px]/[1.4] text-af-atone">
+          {{ liste.total }} personne{{ liste.total > 1 ? 's' : '' }} enregistrée{{ liste.total > 1 ? 's' : '' }}
         </p>
       </div>
-      <div class="flex items-center gap-3">
-        <NuxtLink
-          to="/arbre-genealogique/decouvertes"
-          class="relative flex items-center gap-2 px-4 py-2.5 border-2 border-amber-500 text-amber-600 font-semibold rounded-xl hover:bg-amber-50 transition-colors"
-        >
-          <font-awesome-icon :icon="['fas', 'users']" class="text-sm" />
-          Découvertes
-          <span
-            v-if="nbDecouvertes > 0"
-            class="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"
-          >
-            {{ nbDecouvertes }}
-          </span>
-        </NuxtLink>
-        <NuxtLink
-          to="/arbre-genealogique/visualisation"
-          class="flex items-center gap-2 px-5 py-2.5 border-2 border-[var(--color-custom-green)] text-[var(--color-custom-green)] font-semibold rounded-xl hover:bg-[var(--color-custom-green)]/10 transition-colors"
-        >
-          <font-awesome-icon :icon="['fas', 'project-diagram']" class="text-sm" />
-          Voir mon arbre
-        </NuxtLink>
-        <!-- <button
-          class="px-5 py-2.5 bg-custom-chocolat text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
-          @click="modeAjout = 'wizard'"
-        >
-          + Ajouter une personne
-        </button> -->
+
+      <label class="relative block">
+        <span class="sr-only">Rechercher une personne</span>
+        <font-awesome-icon
+          icon="fa-solid fa-magnifying-glass"
+          class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-af-atone-2"
+        />
+        <input
+          v-model="recherche"
+          type="search"
+          placeholder="Rechercher par nom ou prénom…"
+          class="h-11 w-full rounded-[10px] border border-af-bordure bg-white pr-4 pl-11 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
+        />
+      </label>
+
+      <!-- Chargement : autant de squelettes que de cartes par page visible. -->
+      <div v-if="chargement" class="grid gap-4 sm:grid-cols-2">
+        <div v-for="i in 6" :key="i" class="h-24 animate-pulse rounded-[10px] bg-af-bordure" />
+      </div>
+
+      <template v-else-if="liste && liste.personnes.length > 0">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <PersonneCard
+            v-for="personne in liste.personnes"
+            :key="personne.id"
+            :personne="personne"
+            @click="ouvrirFiche"
+          />
+        </div>
+
+        <div v-if="totalPages > 1" class="flex flex-wrap items-center justify-between gap-4">
+          <p class="text-[14px]/[1.4] text-af-atone">{{ infoPagination }}</p>
+          <div class="flex items-center gap-3">
+            <AfricansBouton variante="secondaire" :desactive="page <= 1" @click="page--">
+              Précédent
+            </AfricansBouton>
+            <span class="text-[14px]/[1.4] text-af-corps">{{ page }} / {{ totalPages }}</span>
+            <AfricansBouton variante="secondaire" :desactive="page >= totalPages" @click="page++">
+              Suivant
+            </AfricansBouton>
+          </div>
+        </div>
+      </template>
+
+      <div v-else class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+        <font-awesome-icon icon="fa-solid fa-users" class="text-4xl text-af-atone-2" />
+        <p class="mt-4 text-[16px]/[1.4] font-bold">
+          {{ recherche ? 'Aucune personne trouvée' : 'Votre arbre est vide' }}
+        </p>
+        <p class="mt-2 text-[14px]/[1.4] text-af-corps">
+          {{ recherche
+            ? `Aucun résultat pour « ${recherche} »`
+            : 'Ajoutez votre première personne pour commencer à construire votre arbre généalogique.'
+          }}
+        </p>
+        <AfricansBouton v-if="!recherche" class="mt-6" icone="fa-solid fa-plus" @click="modeAjout = 'wizard'">
+          Ajouter ma première personne
+        </AfricansBouton>
       </div>
     </div>
 
-    <!-- Wizard ajout -->
+    <template #rail>
+      <AfricansPanneau titre="Mon espace" icone="fa-solid fa-sitemap">
+        <div class="flex flex-col gap-3">
+          <AfricansBouton variante="secondaire" icone="fa-solid fa-diagram-project" vers="/arbre-genealogique/visualisation">
+            Voir mon arbre
+          </AfricansBouton>
+
+          <!-- Le compteur porte les découvertes EN ATTENTE et EN COURS : ce sont
+               celles qui appellent une action, pas l'historique. -->
+          <AfricansBouton variante="secondaire" icone="fa-solid fa-user-check" vers="/arbre-genealogique/decouvertes">
+            Découvertes<span v-if="nbDecouvertes > 0"> ({{ nbDecouvertes }})</span>
+          </AfricansBouton>
+        </div>
+      </AfricansPanneau>
+    </template>
+
+    <!-- Assistant conversationnel : le chemin par défaut de l'ajout. -->
     <AssistantAjoutPersonne
       v-if="modeAjout === 'wizard'"
       :loading="creationEnCours"
@@ -208,117 +254,18 @@ const infoPagination = computed(() => {
       @formulaire-classique="modeAjout = 'classique'"
     />
 
-    <!-- Modal classique -->
-    <div
-      v-if="modeAjout === 'classique'"
-      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      @click.self="modeAjout = null"
+    <AfricansModale
+      :model-value="modeAjout === 'classique'"
+      titre="Nouvelle personne"
+      @update:model-value="modeAjout = null"
     >
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-stone-800">Nouvelle personne</h2>
-          <button
-            class="text-stone-400 hover:text-stone-600 transition-colors"
-            @click="modeAjout = null"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <PersonneForm
-          :loading="creationEnCours"
-          @submit="ajouterPersonne"
-          @annuler="modeAjout = null"
-        />
-      </div>
-    </div>
-
-    <!-- Recherche -->
-    <div class="relative mb-6">
-      <svg
-        class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
-      </svg>
-      <input
-        v-model="recherche"
-        type="text"
-        placeholder="Rechercher par nom ou prénom…"
-        class="w-full pl-10 pr-4 py-2 text-sm border border-stone-300 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-custom-chocolat/50"
+      <PersonneForm
+        :loading="creationEnCours"
+        @submit="ajouterPersonne"
+        @annuler="modeAjout = null"
       />
-    </div>
+    </AfricansModale>
 
-    <!-- Chargement -->
-    <div v-if="chargement" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div
-        v-for="i in 6"
-        :key="i"
-        class="h-20 bg-stone-100 rounded-xl animate-pulse"
-      />
-    </div>
-
-    <!-- Liste -->
-    <div v-else-if="liste && liste.personnes.length > 0">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <PersonneCard
-          v-for="personne in liste.personnes"
-          :key="personne.id"
-          :personne="personne"
-          @click="ouvrirFiche"
-        />
-      </div>
-
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="flex items-center justify-between mt-8">
-        <p class="text-sm text-stone-500">{{ infoPagination }}</p>
-        <div class="flex items-center gap-2">
-          <button
-            :disabled="page <= 1"
-            class="px-4 py-2 text-sm font-semibold border border-stone-300 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            @click="page--"
-          >
-            Précédent
-          </button>
-          <span class="text-sm text-stone-600 px-2">{{ page }} / {{ totalPages }}</span>
-          <button
-            :disabled="page >= totalPages"
-            class="px-4 py-2 text-sm font-semibold border border-stone-300 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            @click="page++"
-          >
-            Suivant
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- État vide -->
-    <div v-else class="text-center py-20">
-      <div class="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg class="w-8 h-8 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      </div>
-      <p class="text-xl font-bold text-stone-700 mb-2">
-        {{ recherche ? 'Aucune personne trouvée' : 'Votre arbre est vide' }}
-      </p>
-      <p class="text-stone-500 mb-6">
-        {{ recherche
-          ? `Aucun résultat pour « ${recherche} »`
-          : 'Ajoutez votre première personne pour commencer à construire votre arbre généalogique.'
-        }}
-      </p>
-      <button
-        v-if="!recherche"
-        class="px-6 py-3 bg-custom-chocolat text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
-        @click="modeAjout = 'wizard'"
-      >
-        Ajouter ma première personne
-      </button>
-    </div>
-    </div>
-  </div>
+    <ArbreGenealogiqueDecouverteModale v-model="decouverteOuverte" />
+  </NuxtLayout>
 </template>

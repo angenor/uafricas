@@ -158,7 +158,7 @@ const enCours = computed(
             </NuxtLink>
             <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-white mb-2">
               <span v-if="emission.numeroEpisode" class="text-gray-400 font-normal">
-                Épisode {{ emission.numeroEpisode }} 
+                Épisode {{ emission.numeroEpisode }}, 
               </span>
               {{ emission.title }}
             </h1>

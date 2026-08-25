@@ -72,7 +72,7 @@
           lieu="Abidjan, Côte d'Ivoire"
           langue="Baoulé"
           en-direct
-          :participants="25"
+          :metrique="{ icone: 'fa-solid fa-user-shield', texte: '02 modérateurs' }"
           :image="'/images/africans/heros/hero-afripulse.jpg'"
         />
         <AfricansCarteTerritoire
@@ -260,7 +260,7 @@
         <p class="flex-1 text-[14px]/[1.4] text-af-corps">
           L'histoire, les traditions et les savoirs de l'Afrique et des peuples afro-descendants
           risquent parfois de se perdre au fil du temps. Codimoi est une mémoire collective en ligne
-          où chacun peut documenter, conserver et partager récits, proverbes, traditions et savoirs 
+          où chacun peut documenter, conserver et partager récits, proverbes, traditions et savoirs, 
           pour que rien de précieux ne disparaisse.
         </p>
         <img

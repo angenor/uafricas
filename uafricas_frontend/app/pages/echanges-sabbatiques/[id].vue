@@ -1,309 +1,208 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Loading state -->
-    <div v-if="chargement" class="flex items-center justify-center min-h-screen">
-      <font-awesome-icon
-        :icon="['fas', 'spinner']"
-        class="h-12 text-custom-green animate-spin"
-      />
-    </div>
-
-    <!-- Not found -->
-    <div v-else-if="!programme" class="flex flex-col items-center justify-center min-h-screen">
-      <font-awesome-icon
-        :icon="['fas', 'exclamation-triangle']"
-        class="h-16 text-gray-300 mb-4"
-      />
-      <p class="text-xl text-gray-600 mb-4">Programme non trouvé</p>
-      <NuxtLink
-        to="/echanges-sabbatiques"
-        class="text-custom-green hover:underline flex items-center gap-2"
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        :titre="programme?.titre ?? 'Programme'"
+        :sous-titre="programme ? `${programme.pays}${programme.ville ? ' · ' + programme.ville : ''}` : undefined"
+        :image="programme?.couverture_url ?? null"
       >
-        <font-awesome-icon :icon="['fas', 'arrow-left']" />
-        Retour à la liste
-      </NuxtLink>
+        <template v-if="programme" #action>
+          <span class="rounded-lg bg-af-vert px-4 py-2 text-[14px]/[1.4] font-bold text-white">
+            {{ programme.interafricain ? 'Interafricain' : 'Hors Afrique vers Afrique' }}
+          </span>
+        </template>
+      </AfricansBandeauModule>
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[{ libelle: 'Sabbafrica', vers: '/echanges-sabbatiques' }, { libelle: programme?.titre ?? 'Programme' }]"
+      />
+    </template>
+
+    <div v-if="!chargeFaite || (chargement && !programme)" class="flex flex-col gap-5">
+      <div v-for="n in 3" :key="n" class="h-40 animate-pulse rounded-[10px] bg-af-bordure" />
     </div>
 
-    <!-- Contenu -->
-    <template v-else>
-      <!-- Hero avec image -->
-      <div class="relative h-64 lg:h-80 w-full overflow-hidden">
-        <img
-          :src="programme.couverture_url || '/images/carte-afrique.jpg'"
-          :alt="programme.titre"
-          class="w-full h-full object-cover"
-        />
-        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+    <div v-else-if="!programme" class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+      <font-awesome-icon icon="fa-solid fa-plane" class="text-4xl text-af-atone-2" />
+      <p class="mt-4 text-[16px]/[1.4] font-bold">Programme introuvable</p>
+      <p class="mt-2 text-[14px]/[1.4] text-af-corps">Il a peut-être été retiré par son organisateur.</p>
+      <AfricansBouton class="mt-6" variante="secondaire" icone="fa-solid fa-arrow-left" vers="/echanges-sabbatiques">
+        Retour aux programmes
+      </AfricansBouton>
+    </div>
 
-        <!-- Badge type -->
-        <span
-          class="absolute top-4 right-4 px-4 py-2 rounded-full text-sm font-medium"
-          :class="programme.interafricain ? 'bg-custom-green text-white' : 'bg-custom-chocolat text-white'"
-        >
-          {{ programme.interafricain ? 'Programme Interafricain' : 'Hors Afrique vers Afrique' }}
+    <div v-else class="flex flex-col gap-5">
+      <div class="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-[10px] border border-af-bordure bg-white p-5 text-[12px]/[1.4] text-af-atone">
+        <span class="flex items-center gap-1.5">
+          <font-awesome-icon icon="fa-solid fa-location-dot" />
+          {{ programme.pays }}<template v-if="programme.ville"> · {{ programme.ville }}</template>
         </span>
+        <span class="flex items-center gap-1.5">
+          <font-awesome-icon icon="fa-solid fa-calendar-days" />
+          {{ formatDateSabbatique(programme.date_debut) }}
+        </span>
+        <span class="flex items-center gap-1.5">
+          <font-awesome-icon icon="fa-solid fa-clock" />
+          {{ programme.duree_label }}
+        </span>
+        <AfricansEtiquette class="ml-auto" :ton="programme.statut === 'ouvert' ? 'vert' : 'gris'">
+          {{ getStatutLabel(programme.statut) }}
+        </AfricansEtiquette>
       </div>
 
-      <!-- Contenu principal -->
-      <div class="bg-white mx-4 md:mx-16 lg:mx-72 -mt-16 relative z-10 rounded-t-lg shadow-xl">
-        <!-- Breadcrumb -->
-        <CommonBreadcrumbNav
-          class="px-7 pt-6"
-          :custom-breadcrumbs="[
-            { label: 'Échanges Sabbatiques', to: '/echanges-sabbatiques' },
-            { label: programme.titre },
-          ]"
-        />
+      <!-- Le candidat retenu est affiché publiquement : c'est un choix de
+           transparence de la feature, pas une fuite. -->
+      <p
+        v-if="programme.candidat_retenu"
+        class="flex items-center gap-3 rounded-[10px] border border-af-vert/30 bg-af-vert/5 p-4 text-[14px]/[1.4] text-af-vert"
+      >
+        <font-awesome-icon icon="fa-solid fa-user-check" />
+        <span>
+          Candidat retenu :
+          <strong class="font-bold">
+            {{ programme.candidat_retenu.prenom ? `${programme.candidat_retenu.prenom} ` : '' }}{{ programme.candidat_retenu.nom }}
+          </strong>
+        </span>
+      </p>
 
-        <!-- Info bar -->
-        <div
-          class="mx-7 mt-4 p-3 bg-slate-100 rounded-r-md shadow-md border-l-4 border-l-custom-green flex flex-wrap gap-4 text-sm text-gray-600"
-        >
-          <span class="flex items-center gap-1">
-            <font-awesome-icon :icon="['fas', 'location-dot']" class="text-custom-green" />
-            {{ programme.pays }}
-            <span v-if="programme.ville">({{ programme.ville }})</span>
-          </span>
-          <span class="border-l border-gray-300 pl-4 flex items-center gap-1">
-            <font-awesome-icon :icon="['fas', 'calendar-days']" class="text-custom-green" />
-            {{ formatDateSabbatique(programme.date_debut) }}
-          </span>
-          <span class="border-l border-gray-300 pl-4 flex items-center gap-1">
-            <font-awesome-icon :icon="['fas', 'clock']" class="text-custom-green" />
-            {{ programme.duree_label }}
-          </span>
-        </div>
+      <AfricansAccordeon titre="Description" icone="fa-solid fa-align-left" fond="blanc" par-defaut-ouvert>
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div class="prose-af text-[14px]/[1.6] text-af-corps" v-html="sanitiserHtml(programme.description)" />
+      </AfricansAccordeon>
 
-        <!-- Titre -->
-        <h1 class="px-7 pt-6 text-2xl lg:text-3xl font-bold text-gray-900">
-          {{ programme.titre }}
-        </h1>
-
-        <!-- Statut -->
-        <div class="px-7 pt-2">
-          <span
-            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-            :class="getStatutClasses(programme.statut)"
-          >
-            {{ getStatutLabel(programme.statut) }}
-          </span>
-        </div>
-
-        <!-- Image principale -->
-        <div class="px-7 pt-6">
-          <img
-            :src="programme.couverture_url || '/images/carte-afrique.jpg'"
-            :alt="programme.titre"
-            class="w-full h-64 lg:h-100 object-cover rounded-lg shadow-md"
-          />
-        </div>
-
-        <!-- Candidat retenu (affichage public, transparence) -->
-        <div v-if="programme.candidat_retenu" class="px-7 pt-6">
-          <div class="bg-custom-green/10 border border-custom-green rounded-lg p-4 flex items-center gap-3">
-            <font-awesome-icon :icon="['fas', 'award']" class="text-2xl text-custom-green" />
-            <div>
-              <p class="text-sm text-gray-500">Candidat retenu pour ce programme</p>
-              <p class="font-semibold text-custom-chocolat">
-                {{ programme.candidat_retenu.prenom ? `${programme.candidat_retenu.prenom} ` : '' }}{{ programme.candidat_retenu.nom }}
-              </p>
-            </div>
+      <AfricansAccordeon titre="Informations détaillées" icone="fa-solid fa-circle-info">
+        <dl class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <dt class="text-[12px]/[1.4] text-af-atone">Domaine d'intervention</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-encre">{{ programme.domaine || 'Non précisé' }}</dd>
           </div>
-        </div>
-
-        <!-- Action candidature -->
-        <div class="px-7 pt-6">
-          <!-- Organisateur : gestion des candidatures -->
-          <div v-if="programme.est_organisateur" class="bg-gray-50 p-4 rounded-lg">
-            <p class="text-gray-700 mb-3 flex items-center gap-2">
-              <font-awesome-icon :icon="['fas', 'user-tie']" class="text-custom-green" />
-              Vous êtes l'organisateur de ce programme.
-            </p>
-            <button
-              class="bg-custom-chocolat text-white px-5 py-2.5 rounded-lg font-medium hover:bg-custom-chocolat/90 transition-all flex items-center gap-2"
-              @click="ouvrirCandidatures"
-            >
-              <font-awesome-icon :icon="['fas', 'users']" />
-              Gérer les candidatures ({{ programme.nombre_candidatures }})
-            </button>
+          <div>
+            <dt class="text-[12px]/[1.4] text-af-atone">Durée</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-encre">{{ programme.duree_label }}</dd>
+          </div>
+          <div>
+            <dt class="text-[12px]/[1.4] text-af-atone">Période</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-encre">
+              Du {{ formatDateCourte(programme.date_debut) }}
+              <template v-if="programme.date_fin"> au {{ formatDateCourte(programme.date_fin) }}</template>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-[12px]/[1.4] text-af-atone">Lieu</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-encre">
+              {{ programme.ville ? `${programme.ville}, ` : '' }}{{ programme.pays }}
+            </dd>
           </div>
 
-          <!-- Candidat déjà inscrit -->
-          <div v-else-if="programme.a_deja_candidate" class="bg-green-50 border border-green-200 p-4 rounded-lg">
-            <p class="text-green-700 flex items-center gap-2">
-              <font-awesome-icon :icon="['fas', 'circle-check']" />
-              Vous avez déjà candidaté à ce programme.
-            </p>
-            <button
-              class="mt-3 text-sm text-custom-green hover:underline"
-              @click="modaleCandidature = true"
-            >
-              Modifier ma candidature
-            </button>
+          <div v-if="programme.prise_en_charge.length" class="sm:col-span-2">
+            <dt class="mb-2 text-[12px]/[1.4] text-af-atone">Prise en charge par l'organisation</dt>
+            <dd class="flex flex-wrap gap-2">
+              <AfricansEtiquette v-for="prise in programme.prise_en_charge" :key="prise" ton="vert">
+                {{ getPriseLabel(prise) }}
+              </AfricansEtiquette>
+            </dd>
           </div>
 
-          <!-- Bouton candidater -->
-          <div v-else-if="isAuthenticated" class="bg-gray-50 p-4 rounded-lg">
-            <button
-              class="w-full lg:w-auto bg-custom-green text-white px-6 py-3 rounded-lg font-medium hover:bg-custom-green/90 transition-all flex items-center justify-center gap-2"
-              @click="modaleCandidature = true"
-            >
-              <font-awesome-icon :icon="['fas', 'paper-plane']" />
-              Je candidate
-            </button>
-            <p class="text-sm text-gray-500 mt-2">
-              Réservé aux personnes en emploi ou retraitées.
-            </p>
+          <div v-if="programme.prerequis" class="sm:col-span-2">
+            <dt class="text-[12px]/[1.4] text-af-atone">Prérequis</dt>
+            <dd class="text-[14px]/[1.4] whitespace-pre-line text-af-encre">{{ programme.prerequis }}</dd>
           </div>
 
-          <!-- Non connecté -->
-          <div v-else class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-            <p class="text-gray-700 mb-3">
-              Connectez-vous pour candidater à ce programme.
-            </p>
-            <NuxtLink
-              to="/login"
-              class="inline-flex items-center gap-2 bg-custom-chocolat text-white px-4 py-2 rounded-lg hover:bg-custom-chocolat/90 transition-all"
-            >
-              <font-awesome-icon :icon="['fas', 'sign-in-alt']" />
-              Se connecter
-            </NuxtLink>
+          <div v-if="programme.langues_requises" class="sm:col-span-2">
+            <dt class="text-[12px]/[1.4] text-af-atone">Langues requises</dt>
+            <dd class="text-[14px]/[1.4] text-af-encre">{{ programme.langues_requises }}</dd>
           </div>
-        </div>
+        </dl>
+      </AfricansAccordeon>
 
-        <!-- Description -->
-        <section class="px-7 pt-8">
-          <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <font-awesome-icon :icon="['fas', 'info-circle']" class="text-custom-green" />
-            Description du programme
-          </h2>
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <div
-            class="text-gray-700 leading-relaxed prose prose-sm max-w-none"
-            v-html="sanitiserHtml(programme.description)"
-          />
-        </section>
-
-        <!-- Informations détaillées -->
-        <section class="px-7 pt-8 pb-12">
-          <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <font-awesome-icon :icon="['fas', 'list-check']" class="text-custom-green" />
-            Informations pratiques
-          </h2>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Domaine -->
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <p class="text-sm text-gray-500 mb-1">Domaine d'intervention</p>
-              <p class="font-medium text-gray-900">{{ programme.domaine || 'Non précisé' }}</p>
-            </div>
-
-            <!-- Durée -->
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <p class="text-sm text-gray-500 mb-1">Durée du programme</p>
-              <p class="font-medium text-gray-900">{{ programme.duree_label }}</p>
-            </div>
-
-            <!-- Dates -->
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <p class="text-sm text-gray-500 mb-1">Période</p>
-              <p class="font-medium text-gray-900">
-                Du {{ formatDateCourte(programme.date_debut) }}
-                <template v-if="programme.date_fin">
-                  au {{ formatDateCourte(programme.date_fin) }}
-                </template>
-              </p>
-            </div>
-
-            <!-- Lieu -->
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <p class="text-sm text-gray-500 mb-1">Lieu</p>
-              <p class="font-medium text-gray-900">
-                {{ programme.ville ? `${programme.ville}, ` : '' }}{{ programme.pays }}
-              </p>
-            </div>
-
-            <!-- Prise en charge -->
-            <div v-if="programme.prise_en_charge.length > 0" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
-              <p class="text-sm text-gray-500 mb-2">Prise en charge par l'organisation</p>
-              <div class="flex flex-wrap gap-2">
-                <span
-                  v-for="prise in programme.prise_en_charge"
-                  :key="prise"
-                  class="px-3 py-1 bg-custom-green/10 text-custom-green rounded-full text-sm font-medium"
-                >
-                  <font-awesome-icon :icon="['fas', 'check']" class="mr-1" />
-                  {{ getPriseLabel(prise) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Prérequis -->
-            <div v-if="programme.prerequis" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
-              <p class="text-sm text-gray-500 mb-1">Prérequis</p>
-              <p class="font-medium text-gray-900 whitespace-pre-line">{{ programme.prerequis }}</p>
-            </div>
-
-            <!-- Langues requises -->
-            <div v-if="programme.langues_requises" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
-              <p class="text-sm text-gray-500 mb-1">Langues requises</p>
-              <p class="font-medium text-gray-900">{{ programme.langues_requises }}</p>
-            </div>
-
-            <!-- Type d'organisation -->
-            <div v-if="programme.type_organisation_label" class="bg-gray-50 p-4 rounded-lg">
-              <p class="text-sm text-gray-500 mb-1">Type d'organisation</p>
-              <p class="font-medium text-gray-900">{{ programme.type_organisation_label }}</p>
-            </div>
-
-            <!-- Statut légal -->
-            <div v-if="programme.statut_legal" class="bg-gray-50 p-4 rounded-lg">
-              <p class="text-sm text-gray-500 mb-1">Statut légal de l'organisation</p>
-              <p class="font-medium text-gray-900">{{ programme.statut_legal }}</p>
-            </div>
-
-            <!-- Organisateur -->
-            <div v-if="programme.user" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
-              <p class="text-sm text-gray-500 mb-1">Organisateur</p>
-              <p class="font-medium text-gray-900">
-                {{ programme.user.prenom ? `${programme.user.prenom} ` : '' }}{{ programme.user.nom }}
-              </p>
-            </div>
-
-            <!-- Document -->
-            <div v-if="programme.document_url" class="bg-gray-50 p-4 rounded-lg md:col-span-2">
-              <p class="text-sm text-gray-500 mb-1">Document associé</p>
+      <AfricansAccordeon
+        v-if="programme.type_organisation_label || programme.statut_legal || programme.user || programme.document_url"
+        titre="L'organisation"
+        icone="fa-solid fa-building"
+      >
+        <dl class="grid gap-5 sm:grid-cols-2">
+          <div v-if="programme.type_organisation_label">
+            <dt class="text-[12px]/[1.4] text-af-atone">Type d'organisation</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-encre">{{ programme.type_organisation_label }}</dd>
+          </div>
+          <div v-if="programme.statut_legal">
+            <dt class="text-[12px]/[1.4] text-af-atone">Statut légal</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-encre">{{ programme.statut_legal }}</dd>
+          </div>
+          <div v-if="programme.user">
+            <dt class="text-[12px]/[1.4] text-af-atone">Organisateur</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-encre">
+              {{ programme.user.prenom ? `${programme.user.prenom} ` : '' }}{{ programme.user.nom }}
+            </dd>
+          </div>
+          <div v-if="programme.document_url" class="sm:col-span-2">
+            <dt class="text-[12px]/[1.4] text-af-atone">Document associé</dt>
+            <dd>
               <a
                 :href="programme.document_url"
                 target="_blank"
-                class="inline-flex items-center gap-2 text-custom-green hover:underline font-medium"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 text-[14px]/[1.4] font-bold text-af-chocolat transition hover:opacity-70"
               >
-                <font-awesome-icon :icon="['fas', 'file-pdf']" />
+                <font-awesome-icon icon="fa-solid fa-file-pdf" />
                 Télécharger le document
               </a>
-            </div>
+            </dd>
           </div>
-        </section>
+        </dl>
+      </AfricansAccordeon>
 
-        <!-- Bouton retour -->
-        <div class="px-7 pb-12">
-          <NuxtLink
-            to="/echanges-sabbatiques"
-            class="inline-flex items-center gap-2 text-custom-chocolat hover:underline"
-          >
-            <font-awesome-icon :icon="['fas', 'arrow-left']" />
-            Retour à la liste des programmes
-          </NuxtLink>
+      <AfricansBouton variante="secondaire" icone="fa-solid fa-arrow-left" vers="/echanges-sabbatiques" class="self-start">
+        Retour aux programmes
+      </AfricansBouton>
+    </div>
+
+    <template #rail>
+      <AfricansPanneau v-if="programme" titre="Candidature" icone="fa-solid fa-paper-plane">
+        <div v-if="programme.est_organisateur" class="flex flex-col gap-3">
+          <p class="text-[14px]/[1.4] text-af-corps">Vous êtes l'organisateur de ce programme.</p>
+          <AfricansBouton pleine-largeur icone="fa-solid fa-users" @click="ouvrirCandidatures">
+            Candidatures ({{ programme.nombre_candidatures }})
+          </AfricansBouton>
         </div>
-      </div>
 
-      <!-- Modale de candidature -->
-      <SabbatiqueCandidatureModal
-        :programme-id="programme.id"
-        :open="modaleCandidature"
-        @close="modaleCandidature = false"
-        @success="onCandidatureSuccess"
-      />
+        <div v-else-if="programme.a_deja_candidate" class="flex items-start gap-3 text-[14px]/[1.4] text-af-vert">
+          <font-awesome-icon icon="fa-solid fa-circle-check" class="mt-0.5" />
+          Vous avez déjà candidaté à ce programme.
+        </div>
+
+        <div v-else-if="isAuthenticated" class="flex flex-col gap-3">
+          <AfricansBouton
+            pleine-largeur
+            icone="fa-solid fa-paper-plane"
+            :desactive="programme.statut !== 'ouvert'"
+            @click="modaleCandidature = true"
+          >
+            {{ programme.statut === 'ouvert' ? 'Candidater' : getStatutLabel(programme.statut) }}
+          </AfricansBouton>
+          <p v-if="programme.statut !== 'ouvert'" class="text-[12px]/[1.4] text-af-atone">
+            Les candidatures ne sont pas ouvertes pour ce programme.
+          </p>
+        </div>
+
+        <div v-else class="flex flex-col gap-3">
+          <p class="text-[14px]/[1.4] text-af-corps">Connectez-vous pour candidater à ce programme.</p>
+          <AfricansBouton pleine-largeur icone="fa-solid fa-right-to-bracket" :vers="`/login?redirect=/echanges-sabbatiques/${programme.id}`">
+            Se connecter
+          </AfricansBouton>
+        </div>
+      </AfricansPanneau>
+    </template>
+
+    <SabbatiqueCandidatureModal
+      v-if="programme"
+      :programme-id="programme.id"
+      :open="modaleCandidature"
+      @close="modaleCandidature = false"
+      @success="onCandidatureSuccess"
+    />
 
       <!-- Modale gestion des candidatures (organisateur) -->
       <Teleport to="body">
@@ -393,8 +292,7 @@
           Votre candidature a bien été envoyée !
         </div>
       </Teleport>
-    </template>
-  </div>
+      </NuxtLayout>
 </template>
 
 <script setup lang="ts">
@@ -419,6 +317,13 @@ const {
 } = useSabbatiques()
 
 const programme = ref<SabbatiqueDetailAPI | null>(null)
+/**
+ * Le chargement se fait dans `onMounted` : au rendu serveur, `chargement` est
+ * encore faux et `programme` nul. Sans ce drapeau, la page affiche
+ * « Programme introuvable » AVANT même d'avoir essayé : ce que voient les
+ * robots d'indexation et l'utilisateur pendant un instant.
+ */
+const chargeFaite = ref(false)
 
 const isAuthenticated = computed(() => userStore.isAuthenticated)
 
@@ -488,6 +393,7 @@ onMounted(async () => {
   const id = route.params.id as string
   const result = await obtenirProgramme(id)
   programme.value = result
+  chargeFaite.value = true
 
   if (programme.value) {
     useHead({

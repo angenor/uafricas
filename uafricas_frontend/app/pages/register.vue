@@ -1,292 +1,11 @@
-<template>
-  <div
-    class="min-h-screen w-screen bg-font-login bg-cover bg-center relative flex items-center justify-center lg:justify-end"
-  >
-    <!-- Overlay sombre pour ameliorer la lisibilite -->
-    <div class="absolute inset-0 bg-black/30"></div>
-
-    <!-- Container principal -->
-    <div
-      class="relative z-10 w-full max-w-md mx-4 lg:mr-24 lg:mx-0 mt-10"
-      data-aos="fade-left"
-      data-aos-duration="1200"
-    >
-      <!-- Carte d'inscription avec effet glassmorphisme -->
-      <div
-        class="backdrop-blur-lg bg-white/95 rounded-2xl shadow-2xl border border-white/20 overflow-hidden"
-      >
-        <!-- Header avec logo -->
-        <div
-          class="bg-gradient-to-br from-gray-800 via-gray-900 to-black p-6 text-center relative overflow-hidden"
-        >
-          <!-- Motif decoratif en arriere-plan -->
-          <div
-            class="absolute inset-0 bg-gradient-to-r from-custom-green/10 to-custom-chocolat/10"
-          ></div>
-          <div
-            class="absolute top-0 right-0 w-32 h-32 bg-custom-green/5 rounded-full -translate-y-16 translate-x-16"
-          ></div>
-          <div
-            class="absolute bottom-0 left-0 w-24 h-24 bg-custom-chocolat/5 rounded-full translate-y-12 -translate-x-12"
-          ></div>
-
-          <div class="relative z-10">
-            <NuxtLink
-              to="/"
-              class="inline-block transform hover:scale-105 transition-transform duration-300"
-            >
-              <img
-                class="h-14 mx-auto filter drop-shadow-2xl"
-                src="/logos/logo_uafracas.png"
-                alt="AfricanS"
-              />
-            </NuxtLink>
-            <h1 class="text-white text-xl font-bold mt-3 tracking-wide">
-              Creer un compte
-            </h1>
-            <p class="text-gray-300 text-sm mt-1">
-              Rejoignez la communaute AfricanS
-            </p>
-          </div>
-        </div>
-
-        <!-- Formulaire -->
-        <div class="p-8">
-          <form @submit.prevent="handleRegister" class="space-y-5">
-            <!-- Prenom et Nom sur la meme ligne -->
-            <div class="grid grid-cols-2 gap-4">
-              <!-- Champ Prenom -->
-              <div class="space-y-2">
-                <label class="text-sm font-medium text-gray-700 block">Prenom</label>
-                <div class="relative">
-                  <div
-                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                  >
-                    <svg
-                      class="h-5 w-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                  </div>
-                  <input
-                    required
-                    v-model="form.prenom"
-                    type="text"
-                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="Votre prenom"
-                    :disabled="loading"
-                  />
-                </div>
-              </div>
-
-              <!-- Champ Nom -->
-              <div class="space-y-2">
-                <label class="text-sm font-medium text-gray-700 block">Nom</label>
-                <div class="relative">
-                  <div
-                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                  >
-                    <svg
-                      class="h-5 w-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                  </div>
-                  <input
-                    required
-                    v-model="form.nom"
-                    type="text"
-                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="Votre nom"
-                    :disabled="loading"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Champ Email -->
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700 block">Email</label>
-              <div class="relative">
-                <div
-                  class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                >
-                  <svg
-                    class="h-5 w-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
-                    />
-                  </svg>
-                </div>
-                <input
-                  required
-                  v-model="form.email"
-                  type="email"
-                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  placeholder="votre@email.com"
-                  :disabled="loading"
-                />
-              </div>
-            </div>
-
-            <!-- Champ Mot de passe -->
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700 block">Mot de passe</label>
-              <div class="relative">
-                <div
-                  class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                >
-                  <svg
-                    class="h-5 w-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                  </svg>
-                </div>
-                <input
-                  required
-                  v-model="form.mot_de_passe"
-                  type="password"
-                  minlength="6"
-                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  placeholder="Minimum 6 caracteres"
-                  :disabled="loading"
-                />
-              </div>
-            </div>
-
-            <!-- Champ Confirmation mot de passe -->
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700 block">Confirmer le mot de passe</label>
-              <div class="relative">
-                <div
-                  class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                >
-                  <svg
-                    class="h-5 w-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                  </svg>
-                </div>
-                <input
-                  required
-                  v-model="form.confirmation_mot_de_passe"
-                  type="password"
-                  minlength="6"
-                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  placeholder="Retapez votre mot de passe"
-                  :disabled="loading"
-                />
-              </div>
-            </div>
-
-            <!-- Message d'erreur -->
-            <div
-              v-if="displayError"
-              class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm"
-            >
-              <div class="flex items-center">
-                <svg
-                  class="h-4 w-4 mr-2 shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                {{ displayError }}
-              </div>
-            </div>
-
-            <!-- Bouton d'inscription -->
-            <button
-              type="submit"
-              class="w-full bg-gradient-to-r from-custom-chocolat to-custom-green text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none focus:outline-hidden focus:ring-2 focus:ring-custom-green focus:ring-offset-2"
-              :disabled="loading"
-            >
-              <div class="flex items-center justify-center">
-                <svg
-                  v-if="loading"
-                  class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-                <span v-if="loading">Inscription en cours...</span>
-                <span v-else>Creer mon compte</span>
-              </div>
-            </button>
-          </form>
-
-          <!-- Lien vers connexion -->
-          <div class="mt-6 text-center">
-            <div class="text-sm text-gray-600">
-              Deja un compte ?
-              <NuxtLink
-                to="/login"
-                class="text-custom-green hover:text-custom-chocolat font-semibold transition-colors duration-300 hover:underline ml-1"
-              >
-                Se connecter
-              </NuxtLink>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
+/**
+ * Inscription, reconstruite sur les éléments de la refonte.
+ *
+ * La logique est celle d'avant, inchangée : même `useAuth().register`, mêmes
+ * deux validations locales (longueur du mot de passe, correspondance des deux
+ * saisies), même redirection vers l'écran d'attente de vérification.
+ */
 definePageMeta({
   layout: 'auth',
 })
@@ -294,9 +13,6 @@ definePageMeta({
 useHead({
   title: 'Inscription - AfricanS',
 })
-
-// Initialiser AOS
-useAOS()
 
 const router = useRouter()
 const { register, loading, error } = useAuth()
@@ -309,15 +25,28 @@ const form = reactive({
   confirmation_mot_de_passe: '',
 })
 
+/** Longueur minimale exigée par le serveur, répétée ici pour que le refus
+ *  arrive avant l'aller-retour réseau, pas à la place de sa vérification. */
+const LONGUEUR_MINIMALE = 6
+
 const validationError = ref<string | null>(null)
 
 const displayError = computed(() => validationError.value || error.value)
 
+/**
+ * Signalé pendant la frappe, mais seulement une fois la confirmation
+ * commencée : le dire dès le premier caractère saisi ferait clignoter une
+ * erreur sur une saisie encore en cours.
+ */
+const motsDePasseDifferents = computed(() =>
+  form.confirmation_mot_de_passe.length > 0
+  && form.mot_de_passe !== form.confirmation_mot_de_passe)
+
 const handleRegister = async () => {
   validationError.value = null
 
-  if (form.mot_de_passe.length < 6) {
-    validationError.value = 'Le mot de passe doit contenir au moins 6 caracteres'
+  if (form.mot_de_passe.length < LONGUEUR_MINIMALE) {
+    validationError.value = `Le mot de passe doit contenir au moins ${LONGUEUR_MINIMALE} caractères`
     return
   }
 
@@ -329,38 +58,108 @@ const handleRegister = async () => {
   try {
     const email = await register(form)
     router.push({ path: '/verification-email-envoyee', query: { email } })
-  } catch (err) {
+  }
+  catch (err) {
     console.error('Erreur inscription:', err)
   }
 }
 </script>
 
-<style scoped>
-.bg-font-login {
-  background-image: url('/images/font_login.jpg');
-  background-attachment: fixed;
-}
+<template>
+  <AfricansCadreAuth titre="Créer un compte" sous-titre="Rejoignez la communauté AfricanS">
+    <form class="flex flex-col gap-5" @submit.prevent="handleRegister">
+      <div class="grid gap-5 sm:grid-cols-2">
+        <AfricansChamp
+          v-model="form.prenom"
+          libelle="Prénom"
+          icone="fa-solid fa-user"
+          placeholder="Votre prénom"
+          autocomplete="given-name"
+          obligatoire
+          :desactive="loading"
+        />
+        <AfricansChamp
+          v-model="form.nom"
+          libelle="Nom"
+          icone="fa-solid fa-user"
+          placeholder="Votre nom"
+          autocomplete="family-name"
+          obligatoire
+          :desactive="loading"
+        />
+      </div>
 
-/* Animation pour les inputs au focus */
-input:focus {
-  box-shadow: 0 0 0 3px rgba(34, 139, 34, 0.1);
-}
+      <AfricansChamp
+        v-model="form.email"
+        libelle="Email"
+        type="email"
+        icone="fa-solid fa-envelope"
+        placeholder="votre@email.com"
+        autocomplete="email"
+        aide="Un lien de vérification y sera envoyé : le compte reste inactif tant qu'il n'est pas ouvert."
+        obligatoire
+        :desactive="loading"
+      />
 
-/* Animation pour les boutons */
-button:not(:disabled):hover {
-  transform: translateY(-1px);
-}
+      <AfricansChamp
+        v-model="form.mot_de_passe"
+        libelle="Mot de passe"
+        type="password"
+        icone="fa-solid fa-lock"
+        :placeholder="`Minimum ${LONGUEUR_MINIMALE} caractères`"
+        autocomplete="new-password"
+        obligatoire
+        :desactive="loading"
+      />
 
-/* Effet glassmorphisme renforce */
-.backdrop-blur-lg {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
+      <AfricansChamp
+        v-model="form.confirmation_mot_de_passe"
+        libelle="Confirmer le mot de passe"
+        type="password"
+        icone="fa-solid fa-lock"
+        placeholder="Retapez votre mot de passe"
+        autocomplete="new-password"
+        obligatoire
+        :desactive="loading"
+      />
 
-/* Responsive design ameliore */
-@media (max-width: 768px) {
-  .bg-font-login {
-    background-attachment: scroll;
-  }
-}
-</style>
+      <!-- Dit pendant la frappe plutôt qu'à la soumission : découvrir au bout
+           du formulaire que les deux saisies divergent oblige à les refaire
+           toutes les deux, un gestionnaire de mots de passe ne les remplissant
+           pas deux fois. -->
+      <p
+        v-if="motsDePasseDifferents"
+        class="-mt-2 flex items-center gap-2 text-[12px]/[1.4] text-af-live"
+      >
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" />
+        Les deux mots de passe ne correspondent pas.
+      </p>
+
+      <div
+        v-if="displayError"
+        role="alert"
+        class="flex items-start gap-3 rounded-[10px] border border-af-live/30 bg-af-live/[0.05] px-4 py-3 text-[14px]/[1.4] text-af-corps"
+      >
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="mt-1 shrink-0 text-af-live" />
+        {{ displayError }}
+      </div>
+
+      <AfricansBouton
+        type="submit"
+        pleine-largeur
+        :desactive="loading"
+        :tourne="loading"
+        :icone="loading ? 'fa-solid fa-spinner' : undefined"
+      >
+        {{ loading ? 'Création en cours…' : 'Créer mon compte' }}
+      </AfricansBouton>
+    </form>
+
+    <p class="text-center text-[14px]/[1.4] text-af-corps">
+      Déjà un compte ?
+      <NuxtLink to="/login" class="font-bold text-af-chocolat hover:opacity-70">
+        Se connecter
+      </NuxtLink>
+    </p>
+  </AfricansCadreAuth>
+</template>

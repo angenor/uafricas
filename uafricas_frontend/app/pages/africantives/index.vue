@@ -1,200 +1,92 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
-    >
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Africantives"
+        sous-titre="Valoriser une initiative mettant en avant l'Afrique, les afrodescendants ou la diaspora africaine"
+        aide="C'est quoi Africantives ?"
+        @aide="presentationOuverte = true"
+      />
+    </template>
 
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Africantives
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Valoriser une initiative mettant en avant l’Afrique, les afrodescendants ou la diaspora africaine
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="[{ libelle: 'Africantives' }]">
+        <template #centre>
+          <p class="text-base font-bold text-af-encre">
+            {{ totalAfricantives }} initiative{{ totalAfricantives > 1 ? 's' : '' }}
           </p>
-        </div>
+        </template>
+        <template #action>
+          <AfricansBouton icone="fa-solid fa-plus" @click="handlePublish">
+            Publier une initiative
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
 
-        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <!-- Bouton d'aide : ouvre la présentation d'Africantives -->
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
-            aria-label="En savoir plus sur Africantives"
-            @click="presentationOuverte = true"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
-            C'est quoi Africantives&nbsp;?
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modale de présentation « C'est quoi Africantives ? » -->
-    <AfricantivesPresentationModal
-      :open="presentationOuverte"
-      @close="presentationOuverte = false"
-    />
-
-    <!-- Barre de recherche -->
-    <div class="max-w-4xl mx-auto -mt-5 relative z-10 px-4">
-      <div class="bg-white rounded-xl shadow-xl p-3 transform transition-all hover:shadow-2xl">
-        <div class="flex flex-col md:flex-row gap-2">
-          <div class="relative flex-1">
-            <font-awesome-icon
-              icon="fa-solid fa-search"
-              class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
-            />
-            <input
-              v-model="filtres.recherche"
-              type="text"
-              class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-custom-green transition-all"
-              placeholder="Rechercher une initiative..."
-              @keyup.enter="handleSearch"
-            />
-          </div>
-          <button
-            @click="handlePublish"
-            class="bg-linear-to-r from-custom-chocolat to-amber-700 hover:from-amber-700 hover:to-custom-chocolat text-white px-4 py-2 text-sm rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-custom-chocolat flex items-center justify-center"
-          >
-            <font-awesome-icon :icon="['fas', 'plus']" class="mr-2" />
-            Publier
-          </button>
-        </div>
-
-        <!-- Filtres domaines (ligne unique défilable, discrète) -->
-        <div class="flex flex-nowrap items-center mt-2 gap-1.5 overflow-x-auto scrollbar-none -mx-1 px-1">
-          <label
-            v-for="dom in domainesFiltre"
-            :key="dom.value"
-            class="shrink-0"
-          >
-            <input
-              type="radio"
-              name="domaine-filter"
-              v-model="filtres.domaine"
-              :value="dom.value"
-              class="hidden"
-            />
-            <div
-              class="px-2.5 py-1 rounded-full text-[11px] whitespace-nowrap cursor-pointer transition-colors duration-200"
-              :class="[
-                filtres.domaine === dom.value
-                  ? 'bg-custom-chocolat text-white'
-                  : 'text-gray-500 hover:bg-gray-100',
-              ]"
-            >
-              {{ dom.label }}
-            </div>
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <!-- Breadcrumb -->
-      <CommonBreadcrumbNav class="mb-8" :custom-breadcrumbs="[{ label: 'Africantives', to: undefined }]" />
-
-      <!-- Layout: Filtres + Grille -->
-      <div class="flex flex-col lg:flex-row gap-8">
-        <!-- Filtres lateraux (desktop) -->
-        <aside class="hidden lg:block w-72 shrink-0">
-          <AfricantivesFilters
-            v-model="filtres"
-            @reset="resetFilters"
+    <div class="flex flex-col gap-6">
+      <!-- Recherche libre : validée à l'entrée, mais aussi débattue à la frappe
+           (300 ms) par le watch : le bouton reste pour qui n'attend pas. -->
+      <form class="flex flex-wrap gap-3" @submit.prevent="handleSearch">
+        <label class="relative min-w-0 flex-1">
+          <span class="sr-only">Rechercher une initiative</span>
+          <font-awesome-icon
+            icon="fa-solid fa-magnifying-glass"
+            class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-af-atone-2"
           />
-        </aside>
+          <input
+            v-model="filtres.recherche"
+            type="search"
+            placeholder="Titre, mot-clé…"
+            class="h-11 w-full rounded-[10px] border border-af-bordure bg-white pr-4 pl-11 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
+          />
+        </label>
+        <AfricansBouton type="submit" icone="fa-solid fa-magnifying-glass">Rechercher</AfricansBouton>
+      </form>
 
-        <!-- Bouton filtres mobile -->
+      <!-- Domaines : le filtre le plus utilisé reste au-dessus de la grille,
+           où on le voit sans quitter les résultats des yeux. -->
+      <div class="flex flex-wrap items-center gap-2">
         <button
-          @click="showMobileFilters = true"
-          class="lg:hidden flex items-center justify-center gap-2 px-4 py-3 bg-white rounded-xl shadow-md text-gray-700 font-medium mb-4"
+          v-for="dom in domainesFiltre"
+          :key="dom.value"
+          type="button"
+          class="rounded-full px-3 py-1.5 text-[12px]/[1.4] font-bold transition"
+          :class="filtres.domaine === dom.value ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
+          :aria-pressed="filtres.domaine === dom.value"
+          @click="filtres.domaine = dom.value"
         >
-          <font-awesome-icon :icon="['fas', 'filter']" class="w-4 h-4" />
-          Filtres
-          <span
-            v-if="activeFiltersCount > 0"
-            class="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full"
-          >
-            {{ activeFiltersCount }}
-          </span>
+          {{ dom.label }}
         </button>
+      </div>
 
-        <!-- Section initiatives -->
-        <div class="flex-1 min-w-0">
-          <!-- Barre de resultats -->
-          <div class="flex items-center justify-between mb-6">
-            <p class="text-gray-600">
-              <span class="font-semibold text-gray-900">{{ totalAfricantives }}</span>
-              {{ totalAfricantives > 1 ? 'initiatives trouvées' : 'initiative trouvée' }}
-            </p>
+      <div ref="zoneListe" class="scroll-mt-24">
+        <div v-if="chargement" class="grid gap-5 sm:grid-cols-2">
+          <div v-for="n in 4" :key="n" class="h-72 animate-pulse rounded-[10px] bg-af-bordure" />
+        </div>
 
-            <!-- Tri mobile -->
-            <select
-              v-model="filtres.tri"
-              class="lg:hidden px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white"
-            >
-              <option value="recent">Plus récent</option>
-              <option value="ancien">Plus ancien</option>
-              <option value="titre">Titre (A-Z)</option>
-            </select>
-          </div>
+        <div v-else-if="erreur" class="rounded-[10px] border border-af-live/30 bg-white p-12 text-center">
+          <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="text-4xl text-af-live" />
+          <p class="mt-4 text-[16px]/[1.4] font-bold">Erreur de chargement</p>
+          <p class="mx-auto mt-2 max-w-md text-[14px]/[1.4] text-af-corps">{{ erreur }}</p>
+          <AfricansBouton class="mt-6" variante="secondaire" icone="fa-solid fa-rotate-right" @click="chargerAfricantives">
+            Réessayer
+          </AfricansBouton>
+        </div>
 
-          <!-- Chargement -->
-          <div
-            v-if="chargement"
-            class="text-center py-16"
-          >
-            <div class="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent mx-auto mb-4"></div>
-            <p class="text-gray-500">Chargement des initiatives...</p>
-          </div>
+        <div v-else-if="africantives.length === 0" class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+          <font-awesome-icon icon="fa-solid fa-lightbulb" class="text-4xl text-af-atone-2" />
+          <p class="mt-4 text-[16px]/[1.4] font-bold">Aucune initiative trouvée</p>
+          <p class="mx-auto mt-2 max-w-md text-[14px]/[1.4] text-af-corps">
+            Essayez de modifier vos critères de recherche, ou publiez la vôtre.
+          </p>
+          <AfricansBouton class="mt-6" variante="secondaire" icone="fa-solid fa-rotate-left" @click="resetFilters">
+            Réinitialiser les filtres
+          </AfricansBouton>
+        </div>
 
-          <!-- Erreur -->
-          <div
-            v-else-if="erreur"
-            class="text-center py-16 bg-white rounded-2xl shadow-xs"
-          >
-            <font-awesome-icon
-              :icon="['fas', 'circle-exclamation']"
-              class="w-16 h-16 text-red-300 mx-auto mb-4"
-            />
-            <h3 class="text-lg font-semibold text-gray-700 mb-2">Erreur de chargement</h3>
-            <p class="text-gray-500 mb-4">{{ erreur }}</p>
-            <button
-              @click="chargerAfricantives"
-              class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              Réessayer
-            </button>
-          </div>
-
-          <!-- Etat vide -->
-          <div
-            v-else-if="africantives.length === 0"
-            class="text-center py-16 bg-white rounded-2xl shadow-xs"
-          >
-            <font-awesome-icon
-              :icon="['fas', 'lightbulb']"
-              class="w-16 h-16 text-gray-300 mx-auto mb-4"
-            />
-            <h3 class="text-lg font-semibold text-gray-700 mb-2">Aucune initiative trouvée</h3>
-            <p class="text-gray-500 mb-4">Essayez de modifier vos critères de recherche</p>
-            <button
-              @click="resetFilters"
-              class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              Réinitialiser les filtres
-            </button>
-          </div>
-
-          <!-- Grille d'initiatives -->
-          <div
-            v-else
-            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
-          >
+        <div v-else class="flex flex-col gap-6">
+          <div class="grid gap-5 sm:grid-cols-2">
             <AfricantivesAfricantiveCard
               v-for="initiative in africantives"
               :key="initiative.id"
@@ -202,163 +94,78 @@
             />
           </div>
 
-          <!-- Pagination -->
-          <div
-            v-if="totalPages > 1"
-            class="mt-12 flex items-center justify-center gap-2"
-          >
-            <!-- Precedent -->
+          <nav v-if="totalPages > 1" class="flex items-center justify-center gap-2">
             <button
-              @click="goToPage(currentPage - 1)"
+              type="button"
               :disabled="currentPage === 1"
-              class="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="grid size-10 place-items-center rounded-[10px] border border-af-bordure bg-white transition hover:border-af-chocolat disabled:opacity-40"
+              aria-label="Page précédente"
+              @click="goToPage(currentPage - 1)"
             >
-              <font-awesome-icon :icon="['fas', 'chevron-left']" class="w-4 h-4" />
+              <font-awesome-icon icon="fa-solid fa-chevron-left" />
             </button>
-
-            <!-- Pages -->
-            <template v-for="page in visiblePages" :key="page">
-              <span
-                v-if="page === '...'"
-                class="px-3 py-2 text-gray-400"
-              >
-                ...
-              </span>
+            <template v-for="(p, i) in visiblePages" :key="`${p}-${i}`">
+              <span v-if="p === '...'" class="px-1 text-af-atone-2">…</span>
               <button
                 v-else
-                @click="goToPage(page as number)"
-                class="px-4 py-2 rounded-lg font-medium transition-colors"
-                :class="currentPage === page
-                  ? 'bg-orange-500 text-white shadow-lg'
-                  : 'border border-gray-200 text-gray-600 hover:bg-gray-50'"
+                type="button"
+                class="size-10 rounded-[10px] text-[14px]/[1.4] font-bold transition"
+                :class="currentPage === p ? 'bg-af-chocolat text-white' : 'border border-af-bordure bg-white hover:border-af-chocolat'"
+                :aria-current="currentPage === p ? 'page' : undefined"
+                @click="goToPage(p as number)"
               >
-                {{ page }}
+                {{ p }}
               </button>
             </template>
-
-            <!-- Suivant -->
             <button
-              @click="goToPage(currentPage + 1)"
+              type="button"
               :disabled="currentPage === totalPages"
-              class="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="grid size-10 place-items-center rounded-[10px] border border-af-bordure bg-white transition hover:border-af-chocolat disabled:opacity-40"
+              aria-label="Page suivante"
+              @click="goToPage(currentPage + 1)"
             >
-              <font-awesome-icon :icon="['fas', 'chevron-right']" class="w-4 h-4" />
+              <font-awesome-icon icon="fa-solid fa-chevron-right" />
             </button>
-          </div>
+          </nav>
         </div>
       </div>
     </div>
 
-    <!-- Modal filtres mobile -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition ease-out duration-300"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition ease-in duration-200"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div
-          v-if="showMobileFilters"
-          class="fixed inset-0 z-50 lg:hidden"
-        >
-          <!-- Overlay -->
-          <div
-            class="absolute inset-0 bg-black/50"
-            @click="showMobileFilters = false"
-          ></div>
+    <template #rail>
+      <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="resetFilters">
+        <div class="flex flex-col gap-4">
+          <AfricansChamp v-model="filtres.pays" libelle="Territoire" type="select">
+            <option value="">Tous les territoires</option>
+            <option v-for="p in paysAfricains" :key="p" :value="p">{{ p }}</option>
+          </AfricansChamp>
 
-          <!-- Panel -->
-          <div class="absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-xl">
-            <div class="flex items-center justify-between p-4 border-b">
-              <h2 class="text-lg font-semibold">Filtres</h2>
-              <button
-                @click="showMobileFilters = false"
-                class="p-2 text-gray-400 hover:text-gray-600"
-              >
-                <font-awesome-icon :icon="['fas', 'xmark']" class="w-5 h-5" />
-              </button>
-            </div>
-
-            <div class="p-4 overflow-y-auto h-[calc(100%-130px)]">
-              <AfricantivesFilters
-                v-model="filtres"
-                @reset="resetFilters"
-              />
-            </div>
-
-            <div class="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
-              <button
-                @click="showMobileFilters = false"
-                class="w-full py-3 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors"
-              >
-                Voir {{ totalAfricantives }} résultats
-              </button>
-            </div>
-          </div>
+          <AfricansChamp v-model="filtres.tri" libelle="Trier par" type="select">
+            <option value="recent">Plus récent</option>
+            <option value="ancien">Plus ancien</option>
+            <option value="titre">Titre (A-Z)</option>
+          </AfricansChamp>
         </div>
-      </Transition>
-    </Teleport>
+      </AfricansPanneau>
 
-    <!-- Modal publication -->
+      <AfricansPanneau titre="Publier" icone="fa-solid fa-lightbulb">
+        <p class="mb-4 text-[14px]/[1.4] text-af-corps">
+          Vous portez une initiative qui met en avant l'Afrique, les afrodescendants ou la diaspora ? Faites-la connaître.
+        </p>
+        <AfricansBouton pleine-largeur icone="fa-solid fa-plus" @click="handlePublish">
+          Publier une initiative
+        </AfricansBouton>
+      </AfricansPanneau>
+    </template>
+
+    <AfricantivesDecouverteModale v-model="presentationOuverte" />
+
     <AfricantivesPublierInitiativeModal
-      :is-open="showPublishModal"
       ref="publishModalRef"
+      :is-open="showPublishModal"
       @close="showPublishModal = false"
       @submit="handleSubmitInitiative"
     />
-
-    <!-- Modal connexion requise -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition ease-out duration-300"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition ease-in duration-200"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div
-          v-if="showLoginModal"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4"
-        >
-          <div
-            class="absolute inset-0 bg-black/50"
-            @click="showLoginModal = false"
-          ></div>
-
-          <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-center">
-            <font-awesome-icon
-              :icon="['fas', 'lock']"
-              class="w-16 h-16 text-amber-500 mx-auto mb-4"
-            />
-            <h2 class="text-xl font-bold text-gray-800 mb-2">
-              Connexion requise
-            </h2>
-            <p class="text-gray-600 mb-6">
-              Vous devez être connecté pour publier une initiative.
-            </p>
-            <div class="flex gap-3 justify-center">
-              <button
-                @click="showLoginModal = false"
-                class="px-5 py-2.5 bg-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-300 transition-colors"
-              >
-                Annuler
-              </button>
-              <NuxtLink
-                to="/login"
-                class="px-5 py-2.5 bg-custom-chocolat text-white font-medium rounded-xl hover:bg-custom-chocolat/90 transition-colors inline-flex items-center gap-2"
-              >
-                <font-awesome-icon :icon="['fas', 'right-to-bracket']" class="w-4 h-4" />
-                Se connecter
-              </NuxtLink>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-  </div>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
@@ -370,6 +177,22 @@ import {
   type AfricantiveFiltres,
 } from '~/composables/useAfricantives'
 import { useUserStore } from '~/stores/user'
+import { PAYS_AFRICAINS } from '~/composables/useAfricantives'
+
+/**
+ * Africantives : porté sur le gabarit de la refonte.
+ *
+ * Aucun critère n'est ajouté ni retiré : recherche libre, domaine, territoire
+ * et tri, comme avant. Ce qui change :
+ *   - territoire et tri passent dans le rail, qui remplace À LA FOIS la colonne
+ *     de filtres et le tiroir mobile : le gabarit empile déjà le rail sous le
+ *     contenu en dessous de 64rem, un tiroir en plus n'apporterait rien ;
+ *   - l'image de fond du bandeau, hébergée sur unsplash.com, est retirée ;
+ *   - la modale « Connexion requise » écrite à la main laisse place à la
+ *     redirection standard vers `/login`, qui, elle, ramène ici après connexion
+ *     (`?redirect=`). L'ancienne modale envoyait vers `/login` sans retour.
+ */
+definePageMeta({ layout: false })
 
 useHead({
   title: 'Africantives - Initiatives Africaines - AfricanS',
@@ -391,9 +214,10 @@ const africantives = ref<AfricantiveAPI[]>([])
 const totalAfricantives = ref(0)
 const totalPages = ref(1)
 const currentPage = ref(1)
-const showMobileFilters = ref(false)
 const showPublishModal = ref(false)
-const showLoginModal = ref(false)
+
+/** Ancre de la grille, pour y ramener le visiteur au changement de page. */
+const zoneListe = ref<HTMLElement | null>(null)
 
 // Modale de présentation « C'est quoi Africantives ? »
 const presentationOuverte = ref(false)
@@ -406,8 +230,9 @@ const filtres = ref({
   tri: 'recent',
 })
 
-// Domaines pour les filtres chips
+// Domaines pour les pastilles de filtre
 const domainesFiltre = DOMAINES_AFRICANTIVES
+const paysAfricains = PAYS_AFRICAINS
 
 // Debounce timer pour la recherche
 let rechercheTimer: ReturnType<typeof setTimeout> | null = null
@@ -456,14 +281,6 @@ const visiblePages = computed(() => {
   return pages
 })
 
-const activeFiltersCount = computed(() => {
-  let count = 0
-  if (filtres.value.domaine) count++
-  if (filtres.value.pays) count++
-  if (filtres.value.recherche.trim()) count++
-  return count
-})
-
 // Watchers
 watch(
   () => ({
@@ -497,9 +314,11 @@ const handleSearch = () => {
   chargerAfricantives()
 }
 
+const { redirigerVersConnexion } = useAuth()
+
 const handlePublish = () => {
   if (!userStore.isAuthenticated) {
-    showLoginModal.value = true
+    redirigerVersConnexion()
     return
   }
   showPublishModal.value = true
@@ -567,7 +386,10 @@ const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
     chargerAfricantives()
-    window.scrollTo({ top: 400, behavior: 'smooth' })
+    // Remonter en tête de liste : sans cela, changer de page laisse le
+    // visiteur au bas d'une grille qu'il n'a pas encore vue. La valeur en dur
+    // de 400 px était calée sur la hauteur de l'ancien bandeau.
+    zoneListe.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 }
 

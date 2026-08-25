@@ -56,6 +56,10 @@ const erreur = computed(() => fetchError.value?.message ?? null)
 
 const recherche = ref('')
 
+// Modale « C'est quoi Afroculture ? ». Le lien du bandeau existait depuis le
+// lot 3 sans rien derrière : il s'affichait, et cliquer ne faisait rien.
+const decouverteOuverte = ref(false)
+
 /**
  * Le filtre est appliqué côté client sur le jeu déjà chargé. `listerCentres`
  * du composable accepte bien un paramètre `recherche`, mais l'employer ici
@@ -91,6 +95,7 @@ const totalProgrammations = computed(() =>
         titre="Afroculture"
         image="/images/africans/heros/hero-afroculture.jpg"
         aide="C'est quoi Afroculture ?"
+        @aide="decouverteOuverte = true"
       />
     </template>
 
@@ -213,5 +218,7 @@ const totalProgrammations = computed(() =>
         </dl>
       </AfricansPanneau>
     </template>
+
+    <CentresCulturelsDecouverteModale v-model="decouverteOuverte" />
   </NuxtLayout>
 </template>

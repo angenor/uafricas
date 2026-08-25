@@ -230,10 +230,7 @@ onMounted(async () => {
           </button>
         </div>
 
-        <MediaTelePresentationModal
-          :open="presentationOuverte"
-          @close="presentationOuverte = false"
-        />
+        <MediaTeleDecouverteModale v-model="presentationOuverte" />
 
         <!-- Contenus interdits et conséquences d'un signalement (FR-048). -->
         <MediaReglesContenuModal

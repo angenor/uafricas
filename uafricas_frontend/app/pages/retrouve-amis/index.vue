@@ -1,14 +1,34 @@
 <script setup lang="ts">
 import type { AvisPublicResume, PaginationInfo, PaysInfo, TypeRelationRecherche } from '~/composables/useRetrouvAmis'
 import { TYPES_RELATION } from '~/composables/useRetrouvAmis'
-import { NOMS_PAYS_FR, normaliserNomPays } from '~/utils/carteAfrique'
+import { NOMS_PAYS_FR, PALIERS_CHALEUR, normaliserNomPays } from '~/utils/carteAfrique'
 
-definePageMeta({ layout: 'default' })
+/**
+ * Africonnect : avis de recherche, porté sur le gabarit de la refonte.
+ *
+ * Données inchangées : mêmes endpoints, mêmes filtres serveur, même carte de
+ * chaleur. La grille de quatre vignettes devient le FIL de cartes pleine
+ * largeur de la maquette, les filtres et le tableau de bord passent au rail.
+ *
+ * Le fil d'Ariane suit la NAVIGATION (Opafrica), pas le fil d'Ariane dessiné :
+ * la maquette écrit « Africarise / Africonnect » alors que sa propre barre
+ * latérale surligne Opafrica. Les deux ne peuvent pas être vrais.
+ */
+definePageMeta({ layout: false })
+
+useHead({
+  title: 'Africonnect : retrouver une personne perdue de vue | AfricanS',
+  meta: [
+    {
+      name: 'description',
+      content: 'Retrouvez vos amis, proches et connaissances perdus de vue grâce à la communauté panafricaine.',
+    }],
+})
 
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBaseUrl as string
 const userStore = useUserStore()
-const { tableauDeBord, basculerTrouvable, rechercherAvisPublics } = useRetrouvAmis()
+const { tableauDeBord, basculerTrouvable, rechercherAvisPublics, incrementerPartage } = useRetrouvAmis()
 
 const estConnecte = computed(() => userStore.isAuthenticated)
 
@@ -21,7 +41,9 @@ const viewMode = ref<'liste' | 'carte'>('liste')
 // ── Filtres ───────────────────────────────────────────────
 const filtreRelation = ref<TypeRelationRecherche | ''>('')
 const filtreRecherche = ref('')
-const filtresActifs = computed(() => filtreRelation.value !== '' || filtreRecherche.value.trim() !== '')
+const filtrePaysId = ref('')
+const filtresActifs = computed(() =>
+  filtreRelation.value !== '' || filtreRecherche.value.trim() !== '' || filtrePaysId.value !== '')
 
 // ── Avis publics ──────────────────────────────────────────
 const avisPublics = ref<AvisPublicResume[]>([])
@@ -35,6 +57,7 @@ const chargerAvisPublics = async (page: number = 1) => {
     const params: Record<string, any> = { page, par_page: 12 }
     if (filtreRelation.value) params.type_relation = filtreRelation.value
     if (filtreRecherche.value.trim()) params.recherche = filtreRecherche.value.trim()
+    if (filtrePaysId.value) params.pays_id = filtrePaysId.value
 
     const res = await rechercherAvisPublics(params)
     if (res) {
@@ -42,19 +65,46 @@ const chargerAvisPublics = async (page: number = 1) => {
       pagination.value = res.pagination
       pageActuelle.value = page
     }
-  } finally {
+  }
+  finally {
     chargementAvis.value = false
   }
 }
 
-const appliquerFiltres = () => {
-  chargerAvisPublics(1)
-}
+/**
+ * La recherche s'applique à la frappe, amortie, l'ancienne page exigeait un
+ * clic sur « Rechercher », seule de tous les modules à le faire.
+ */
+let rechercheTimer: ReturnType<typeof setTimeout> | null = null
+watch(filtreRecherche, () => {
+  if (rechercheTimer) clearTimeout(rechercheTimer)
+  rechercheTimer = setTimeout(() => chargerAvisPublics(1), 300)
+})
+
+watch([filtreRelation, filtrePaysId], () => chargerAvisPublics(1))
 
 const reinitialiserFiltres = () => {
   filtreRelation.value = ''
   filtreRecherche.value = ''
-  chargerAvisPublics(1)
+  filtrePaysId.value = ''
+}
+
+// ── Partage d'un avis ─────────────────────────────────────
+const messageCopie = ref<string | null>(null)
+
+const partagerAvis = async (avis: AvisPublicResume) => {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(`${window.location.origin}/retrouve-amis/public/${avis.slug}`)
+  }
+  messageCopie.value = 'Lien de l\'avis copié.'
+  setTimeout(() => { messageCopie.value = null }, 2500)
+
+  // Le compteur serveur est incrémenté ET reporté localement : recharger la
+  // liste entière pour un seul chiffre ferait sauter la position de lecture.
+  const res = await incrementerPartage(avis.slug)
+  if (!res) return
+  const i = avisPublics.value.findIndex(a => a.id === avis.id)
+  if (i !== -1) avisPublics.value[i] = { ...avisPublics.value[i]!, compteur_partages: res.compteur_partages }
 }
 
 // ── Statut « trouvable » utilisateur ──────────────────────
@@ -66,44 +116,45 @@ const chargerStatutTrouvable = async () => {
   try {
     const res = await tableauDeBord()
     estTrouvable.value = res?.est_trouvable ?? false
-  } catch {
+  }
+  catch {
     // silencieux sur page publique
   }
-}
-
-const onCreerAvis = () => {
-  navigateTo('/retrouve-amis/nouveau')
 }
 
 const onActiverTrouvable = async () => {
   chargementTrouvable.value = true
   try {
     const res = await basculerTrouvable(!estTrouvable.value)
-    if (res) {
-      estTrouvable.value = res.est_trouvable
-    }
-  } finally {
+    if (res) estTrouvable.value = res.est_trouvable
+  }
+  finally {
     chargementTrouvable.value = false
   }
 }
 
-const etapes = [
+const ETAPES = [
   {
-    icone: 'fa-pen-to-square',
+    icone: 'fa-solid fa-pen-to-square',
     titre: 'Déposez un avis',
-    description: 'Décrivez la personne que vous recherchez : nom, lieu de dernière rencontre, époque, détails physiques ou anecdotes.'
+    description: 'Décrivez la personne que vous recherchez : nom, lieu de dernière rencontre, époque, détails physiques ou anecdotes.',
   },
   {
-    icone: 'fa-magnifying-glass',
+    icone: 'fa-solid fa-magnifying-glass',
     titre: 'Le système compare',
-    description: 'Notre algorithme croise votre avis avec les profils et autres avis de recherche pour identifier des correspondances potentielles.'
+    description: 'Notre algorithme croise votre avis avec les profils et autres avis de recherche pour identifier des correspondances potentielles.',
   },
   {
-    icone: 'fa-handshake',
+    icone: 'fa-solid fa-handshake',
     titre: 'Acceptez le contact',
-    description: 'Quand une correspondance est trouvée, les deux parties doivent accepter avant que les coordonnées ne soient partagées.'
-  }
-]
+    description: 'Quand une correspondance est trouvée, les deux parties doivent accepter avant que les coordonnées ne soient partagées.',
+  }]
+
+const LIENS_ESPACE = [
+  { to: '/retrouve-amis/mon-profil', libelle: 'Mon profil', icone: 'fa-solid fa-user-shield' },
+  { to: '/retrouve-amis/nouveau', libelle: 'Nouvel avis', icone: 'fa-solid fa-plus' },
+  { to: '/retrouve-amis/mes-recherches', libelle: 'Mes recherches', icone: 'fa-solid fa-magnifying-glass' },
+  { to: '/retrouve-amis/correspondances', libelle: 'Correspondances', icone: 'fa-solid fa-handshake' }]
 
 // ── Mode carte : répartition géographique des avis ────────
 const chargementCarte = ref(false)
@@ -114,6 +165,8 @@ const avisCarteBrut = ref<AvisPublicResume[]>([])
 const isoParPaysId = ref<Record<string, string>>({})
 const isoParNomNorm = ref<Record<string, string>>({})
 const paysIdParIso = ref<Record<string, string>>({})
+/** Référentiel complet, trié : alimente le filtre « Territoire » du rail. */
+const paysReferentiel = ref<{ id: string, nom: string }[]>([])
 
 /** Résout le code ISO2 (minuscule) d'un pays d'avis via son id puis son nom. */
 const resoudreIso = (pays?: PaysInfo): string | null => {
@@ -135,11 +188,10 @@ const comptesParIso = computed<Record<string, number>>(() => {
 
 /** Charge le référentiel des pays (id, nom, code ISO2) une seule fois. */
 const chargerReferentielPays = async () => {
-  if (Object.keys(isoParPaysId.value).length > 0) return
+  if (paysReferentiel.value.length > 0) return
   try {
-    const rep = await $fetch<{ success: boolean; data: { id: string; nom: string; code_iso2: string | null }[] | null }>(
-      `${apiBase}/api/pays`,
-    )
+    const rep = await $fetch<{ success: boolean, data: { id: string, nom: string, code_iso2: string | null }[] | null }>(
+      `${apiBase}/api/pays`)
     const parId: Record<string, string> = {}
     const parNom: Record<string, string> = {}
     const idParIso: Record<string, string> = {}
@@ -153,7 +205,11 @@ const chargerReferentielPays = async () => {
     isoParPaysId.value = parId
     isoParNomNorm.value = parNom
     paysIdParIso.value = idParIso
-  } catch (e) {
+    paysReferentiel.value = (rep.data ?? [])
+      .map(p => ({ id: p.id, nom: p.nom }))
+      .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+  }
+  catch (e) {
     console.error('Erreur chargement référentiel pays:', e)
   }
 }
@@ -167,7 +223,8 @@ const chargerCarte = async () => {
     const res = await rechercherAvisPublics({ par_page: 300 })
     if (res) avisCarteBrut.value = res.avis
     carteChargee.value = true
-  } finally {
+  }
+  finally {
     chargementCarte.value = false
   }
 }
@@ -196,421 +253,351 @@ const onSelectPays = async (iso: string) => {
   try {
     const res = await rechercherAvisPublics({ pays_id: paysId, par_page: 60 })
     avisPaysSelectionne.value = res?.avis ?? []
-  } finally {
+  }
+  finally {
     chargementPaysSel.value = false
   }
 }
 
+const partagesCumules = computed(() =>
+  avisPublics.value.reduce((n, a) => n + (Number(a.compteur_partages) || 0), 0))
+
+const pagesVisibles = computed(() => {
+  const total = pagination.value?.pages ?? 0
+  return Array.from({ length: total }, (_, i) => i + 1).filter(
+    p => p === 1 || p === total || (p >= pageActuelle.value - 1 && p <= pageActuelle.value + 1))
+})
+
 onMounted(() => {
   chargerAvisPublics()
   chargerStatutTrouvable()
+  // Le référentiel alimente le filtre « Territoire » du rail, disponible dès
+  // le mode liste : il ne dépend donc plus du passage en vue carte.
+  chargerReferentielPays()
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
-    >
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70" />
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <!-- Conteneur fixe : titre et description se superposent (crossfade au survol) -->
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Retrouver une personne perdue de vue
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Retrouvez vos amis, proches et connaissances perdus de vue grâce à la communauté panafricaine.
-          </p>
-        </div>
-        <div class="flex flex-wrap items-center justify-center gap-3 mt-6">
-          <!-- Bouton d'aide : ouvre la présentation d'Africonnect -->
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
-            aria-label="En savoir plus sur Africonnect"
-            @click="presentationOuverte = true"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
-            C'est quoi Africonnect&nbsp;?
-          </button>
-          <button
-            v-if="estConnecte"
-            class="px-6 py-3 bg-white text-custom-chocolat font-semibold rounded-lg hover:bg-amber-50 transition-colors cursor-pointer"
-            @click="onCreerAvis"
-          >
-            <font-awesome-icon :icon="['fas', 'plus']" class="mr-2" />
-            Créer un avis de recherche
-          </button>
-          <button
-            v-if="estConnecte"
-            class="px-6 py-3 border-2 border-white rounded-lg font-semibold transition-colors cursor-pointer"
-            :class="estTrouvable ? 'bg-white/20 text-white' : 'bg-transparent text-white hover:bg-white/10'"
-            :disabled="chargementTrouvable"
-            @click="onActiverTrouvable"
-          >
-            <font-awesome-icon :icon="['fas', estTrouvable ? 'eye' : 'eye-slash']" class="mr-2" />
-            {{ estTrouvable ? 'Vous êtes trouvable' : 'Devenir trouvable' }}
-          </button>
-          <NuxtLink
-            v-if="!estConnecte"
-            to="/login"
-            class="px-6 py-3 bg-white text-custom-chocolat font-semibold rounded-lg hover:bg-amber-50 transition-colors"
-          >
-            Se connecter pour commencer
-          </NuxtLink>
-        </div>
-      </div>
-    </div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Africonnect"
+        sous-titre="Retrouvez vos amis, proches et connaissances perdus de vue grâce à la communauté panafricaine."
+        image="/images/africans/heros/hero-africonnect.jpg"
+        aide="C'est quoi Africonnect ?"
+        @aide="presentationOuverte = true"
+      />
+    </template>
 
-    <!-- Modale de présentation « C'est quoi Africonnect ? » -->
-    <RetrouveAmisPresentationModal
-      :open="presentationOuverte"
-      @close="presentationOuverte = false"
-    />
-
-    <!-- Comment ça marche (placé avant le listing : comprendre avant de commencer) -->
-    <section class="py-10 px-4 bg-white border-b border-gray-100">
-      <div class="max-w-5xl mx-auto">
-        <h2 class="text-xl font-bold text-center text-gray-800 mb-8 font-[Oswald]">
-          Comment ça marche ?
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
-          <div
-            v-for="(etape, index) in etapes"
-            :key="index"
-            class="flex items-start gap-3"
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="[{ libelle: 'Opafrica', vers: '/retrouve-amis' }, { libelle: 'Africonnect' }]">
+        <template #action>
+          <AfricansBouton
+            icone="fa-solid fa-plus"
+            :vers="estConnecte ? '/retrouve-amis/nouveau' : '/login'"
           >
-            <span class="shrink-0 w-7 h-7 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center text-sm font-bold">
+            {{ estConnecte ? 'Créer un avis' : 'Se connecter pour créer un avis' }}
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
+
+    <div class="flex flex-col gap-6">
+      <!-- Replié par défaut : c'est une explication, pas le contenu. En v-show,
+           donc toujours atteignable par la recherche du navigateur. -->
+      <AfricansAccordeon titre="Comment ça marche ?" icone="fa-solid fa-circle-info">
+        <ol class="grid gap-5 sm:grid-cols-3">
+          <li v-for="(etape, index) in ETAPES" :key="etape.titre" class="flex gap-3">
+            <span class="grid size-7 shrink-0 place-items-center rounded-full bg-af-chocolat text-[12px]/[1.4] font-bold text-white">
               {{ index + 1 }}
             </span>
             <div>
-              <h3 class="text-sm font-semibold text-gray-800 mb-0.5">
-                <font-awesome-icon :icon="['fas', etape.icone]" class="mr-1.5 text-amber-600" />
+              <p class="flex items-center gap-2 text-[14px]/[1.4] font-bold">
+                <font-awesome-icon :icon="etape.icone" class="text-af-chocolat" />
                 {{ etape.titre }}
-              </h3>
-              <p class="text-gray-500 text-xs leading-relaxed">{{ etape.description }}</p>
+              </p>
+              <p class="mt-1 text-[12px]/[1.4] text-af-corps">{{ etape.description }}</p>
             </div>
-          </div>
-        </div>
+          </li>
+        </ol>
+      </AfricansAccordeon>
+
+      <div class="flex flex-wrap items-center gap-4">
+        <p v-if="pagination && viewMode === 'liste'" class="text-[14px]/[1.4] text-af-corps">
+          <strong class="font-bold">{{ pagination.total }}</strong> avis de recherche
+          <template v-if="filtresActifs">correspondant à vos critères</template>
+        </p>
+        <p v-else-if="viewMode === 'carte'" class="flex items-center gap-2 text-[14px]/[1.4] text-af-corps">
+          <font-awesome-icon icon="fa-solid fa-location-dot" class="text-af-chocolat" />
+          Cliquez sur un territoire pour voir les avis qui y sont rattachés.
+        </p>
+
+        <AfricansBascule
+          v-model="viewMode"
+          class="ml-auto"
+          libelle="Mode d'affichage des avis"
+          :options="[
+            { valeur: 'liste', libelle: 'Liste', icone: 'fa-solid fa-list-check' },
+            { valeur: 'carte', libelle: 'Carte', icone: 'fa-solid fa-earth-africa' }]"
+        />
       </div>
-    </section>
 
-    <!-- Avis publics : listing principal (+ sidebar si connecté) -->
-    <section class="py-16 px-4">
-      <div class="max-w-7xl mx-auto lg:flex lg:gap-8">
-        <RetrouveAmisSideBar v-if="estConnecte" />
-        <div class="flex-1 min-w-0">
-        <!-- Barre de filtres compacte -->
-        <div class="mb-10 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-200/60">
-          <div class="flex flex-wrap items-center gap-2">
-            <!-- Toggle liste / carte -->
-            <div class="flex items-center rounded-xl bg-gray-100 p-1">
-              <button
-                class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer"
-                :class="viewMode === 'liste' ? 'bg-custom-chocolat text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-                title="Vue liste"
-                @click="viewMode = 'liste'"
-              >
-                <font-awesome-icon :icon="['fas', 'list-check']" />
-                <span class="hidden sm:inline">Liste</span>
-              </button>
-              <button
-                class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer"
-                :class="viewMode === 'carte' ? 'bg-custom-chocolat text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-                title="Vue carte"
-                @click="viewMode = 'carte'"
-              >
-                <font-awesome-icon :icon="['fas', 'earth-africa']" />
-                <span class="hidden sm:inline">Carte</span>
-              </button>
-            </div>
-
-            <!-- Recherche -->
-            <div v-if="viewMode === 'liste'" class="relative flex-1 min-w-56">
-              <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-              <input
-                v-model="filtreRecherche"
-                type="text"
-                placeholder="Rechercher un nom, un lieu, une école..."
-                class="w-full rounded-xl bg-gray-50 pl-9 pr-3 py-2 text-sm text-gray-700 placeholder-gray-400 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all"
-                @keyup.enter="appliquerFiltres"
-              >
-            </div>
-            <!-- Filtre relation -->
-            <div v-if="viewMode === 'liste'" class="min-w-44">
-              <select
-                v-model="filtreRelation"
-                class="w-full rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all appearance-none cursor-pointer"
-                @change="appliquerFiltres"
-              >
-                <option value="">Toutes les relations</option>
-                <option v-for="t in TYPES_RELATION" :key="t.value" :value="t.value">
-                  {{ t.label }}
-                </option>
-              </select>
-            </div>
-            <!-- Bouton recherche (input texte non réactif) -->
-            <button
-              v-if="viewMode === 'liste'"
-              class="flex items-center gap-2 rounded-xl bg-custom-chocolat px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md active:scale-95 cursor-pointer"
-              @click="appliquerFiltres"
-            >
-              <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
-              Rechercher
-            </button>
-            <button
-              v-if="viewMode === 'liste' && filtresActifs"
-              class="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 cursor-pointer"
-              @click="reinitialiserFiltres"
-            >
-              <font-awesome-icon :icon="['fas', 'xmark']" />
-              Réinitialiser
-            </button>
-
-            <!-- Aide mode carte -->
-            <p v-if="viewMode === 'carte'" class="flex items-center gap-2 px-2 text-sm text-gray-500">
-              <font-awesome-icon :icon="['fas', 'location-dot']" class="text-custom-chocolat" />
-              Cliquez sur un territoire pour voir les avis de recherche qui y sont rattachés.
-            </p>
-          </div>
+      <!-- ── Mode carte ── -->
+      <template v-if="viewMode === 'carte'">
+        <div v-if="chargementCarte" class="flex flex-col items-center gap-3 py-20">
+          <font-awesome-icon icon="fa-solid fa-spinner" class="animate-spin text-2xl text-af-chocolat" />
+          <p class="text-[14px]/[1.4] text-af-corps">Chargement de la carte…</p>
         </div>
 
-        <!-- Mode carte : répartition géographique des avis -->
-        <div v-if="viewMode === 'carte'" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <!-- Carte SVG d'Afrique -->
-          <div class="lg:col-span-3">
-            <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/60">
-              <!-- Chargement carte -->
-              <div v-if="chargementCarte" class="flex flex-col items-center justify-center py-20">
-                <div class="h-12 w-12 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
-                <p class="mt-4 text-sm text-gray-500">Chargement de la carte...</p>
-              </div>
-
-              <template v-else>
-                <RetrouveAmisCarteAfrique
-                  :comptes="comptesParIso"
-                  :selected-iso="paysSelectionneIso"
-                  @select="onSelectPays"
-                />
-
-                <!-- Légende (échelle de chaleur) -->
-                <div class="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-gray-100 pt-4">
-                  <span class="text-xs font-medium text-gray-500">Nombre d'avis :</span>
-                  <div class="flex items-center gap-1.5">
-                    <span class="h-3 w-3 rounded-full" style="background-color: #fbbf24" />
-                    <span class="text-xs text-gray-600">1-2</span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="h-3 w-3 rounded-full" style="background-color: #f59e0b" />
-                    <span class="text-xs text-gray-600">3-5</span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="h-3 w-3 rounded-full" style="background-color: #d97706" />
-                    <span class="text-xs text-gray-600">6-9</span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="h-3 w-3 rounded-full" style="background-color: #b45309" />
-                    <span class="text-xs text-gray-600">10+</span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="h-3 w-3 rounded-full" style="background-color: #e5e7eb" />
-                    <span class="text-xs text-gray-600">Aucun</span>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-
-          <!-- Panneau du territoire sélectionné -->
-          <div class="lg:col-span-2">
-            <div class="sticky top-4">
-              <!-- Aucun territoire sélectionné -->
-              <div
-                v-if="!paysSelectionneIso"
-                class="flex flex-col items-center justify-center rounded-2xl bg-white px-6 py-16 text-center shadow-sm ring-1 ring-gray-200/60"
-              >
-                <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50">
-                  <font-awesome-icon :icon="['fas', 'hand-pointer']" class="text-2xl text-amber-400" />
-                </div>
-                <h3 class="text-base font-semibold text-gray-700">Explorez la carte</h3>
-                <p class="mt-2 text-sm text-gray-400">
-                  Sélectionnez un territoire coloré pour afficher les avis de recherche qui y sont rattachés.
-                </p>
-              </div>
-
-              <!-- Territoire sélectionné -->
-              <div v-else>
-                <div class="mb-4 flex items-center justify-between">
-                  <h3 class="flex items-center gap-2 text-lg font-bold text-gray-800">
-                    <font-awesome-icon :icon="['fas', 'location-dot']" class="text-custom-chocolat" />
-                    {{ nomPaysSelectionne }}
-                  </h3>
-                  <button
-                    class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 cursor-pointer"
-                    title="Fermer"
-                    @click="paysSelectionneIso = null"
-                  >
-                    <font-awesome-icon :icon="['fas', 'xmark']" />
-                  </button>
-                </div>
-
-                <!-- Chargement des avis du territoire -->
-                <div v-if="chargementPaysSel" class="flex flex-col items-center justify-center py-16">
-                  <div class="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
-                </div>
-
-                <!-- Aucun avis (ne devrait pas arriver si sélectionnable) -->
-                <div
-                  v-else-if="avisPaysSelectionne.length === 0"
-                  class="rounded-2xl bg-white px-6 py-12 text-center text-sm text-gray-400 shadow-sm ring-1 ring-gray-200/60"
-                >
-                  Aucun avis de recherche pour ce territoire.
-                </div>
-
-                <!-- Liste des avis du territoire -->
-                <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-5">
-                  <RetrouveAmisCarteAvisPublic
-                    v-for="avis in avisPaysSelectionne"
-                    :key="avis.id"
-                    :avis="avis"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Mode liste -->
         <template v-else>
-        <!-- Chargement -->
-        <div v-if="chargementAvis" class="flex flex-col items-center justify-center py-20">
-          <div class="h-12 w-12 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
-          <p class="mt-4 text-sm text-gray-500">Chargement des avis...</p>
-        </div>
-
-        <!-- État vide : aucun résultat avec filtres actifs -->
-        <div v-else-if="avisPublics.length === 0 && filtresActifs" class="text-center py-20">
-          <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
-            <font-awesome-icon :icon="['fas', 'filter-circle-xmark']" class="text-4xl text-gray-300" />
-          </div>
-          <h3 class="text-xl font-semibold text-gray-700 mb-2">
-            Aucun résultat pour ces critères
-          </h3>
-          <p class="text-gray-400 max-w-md mx-auto mb-8 text-sm">
-            Essayez de modifier vos critères de recherche ou de réinitialiser les filtres.
-          </p>
-          <button
-            class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 transition-colors cursor-pointer"
-            @click="reinitialiserFiltres"
-          >
-            <font-awesome-icon :icon="['fas', 'rotate-left']" />
-            Réinitialiser les filtres
-          </button>
-        </div>
-
-        <!-- État vide : aucun avis disponible -->
-        <div v-else-if="avisPublics.length === 0" class="text-center py-20">
-          <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-amber-50">
-            <font-awesome-icon :icon="['fas', 'users']" class="text-4xl text-amber-300" />
-          </div>
-          <h3 class="text-xl font-semibold text-gray-700 mb-2">
-            Aucun avis de recherche pour le moment
-          </h3>
-          <p class="text-gray-400 max-w-md mx-auto mb-8 text-sm">
-            Soyez le premier à publier un avis de recherche et aidez à réunir des proches séparés.
-          </p>
-          <NuxtLink
-            v-if="estConnecte"
-            to="/retrouve-amis/nouveau"
-            class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 transition-colors"
-          >
-            <font-awesome-icon :icon="['fas', 'plus']" />
-            Créer le premier avis
-          </NuxtLink>
-          <NuxtLink
-            v-else
-            to="/login"
-            class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 transition-colors"
-          >
-            Se connecter pour créer un avis
-          </NuxtLink>
-        </div>
-
-        <!-- Grille des avis -->
-        <template v-else>
-          <!-- Compteur de résultats -->
-          <p v-if="pagination" class="mb-6 text-sm text-gray-500">
-            <span class="font-semibold text-gray-700">{{ pagination.total }}</span> avis de recherche
-            <span v-if="filtresActifs"> correspondant à vos critères</span>
-          </p>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <RetrouveAmisCarteAvisPublic
-              v-for="avis in avisPublics"
-              :key="avis.id"
-              :avis="avis"
+          <div class="rounded-[10px] border border-af-bordure bg-white p-4">
+            <RetrouveAmisCarteAfrique
+              :comptes="comptesParIso"
+              :selected-iso="paysSelectionneIso"
+              @select="onSelectPays"
             />
           </div>
 
-          <!-- Pagination -->
-          <div v-if="pagination && pagination.pages > 1" class="mt-12 flex items-center justify-center gap-1">
+          <section v-if="paysSelectionneIso" class="flex flex-col gap-5">
+            <h2 class="flex items-center gap-3 text-[20px]/[1.4] font-bold text-af-chocolat">
+              <font-awesome-icon icon="fa-solid fa-location-dot" class="size-6" />
+              {{ nomPaysSelectionne }}
+              <button
+                type="button"
+                class="ml-auto text-af-atone transition hover:text-af-encre"
+                aria-label="Fermer la sélection"
+                @click="paysSelectionneIso = null"
+              >
+                <font-awesome-icon icon="fa-solid fa-xmark" />
+              </button>
+            </h2>
+
+            <div v-if="chargementPaysSel" class="flex justify-center py-10">
+              <font-awesome-icon icon="fa-solid fa-spinner" class="animate-spin text-2xl text-af-chocolat" />
+            </div>
+
+            <p v-else-if="!avisPaysSelectionne.length" class="text-[14px]/[1.4] text-af-atone">
+              Aucun avis de recherche pour ce territoire.
+            </p>
+
+            <div v-else class="flex flex-col gap-6">
+              <RetrouveAmisCarteAvisFil
+                v-for="avis in avisPaysSelectionne"
+                :key="avis.id"
+                :avis="avis"
+                @partager="partagerAvis(avis)"
+              />
+            </div>
+          </section>
+        </template>
+      </template>
+
+      <!-- ── Mode liste ── -->
+      <template v-else>
+        <div v-if="chargementAvis" class="flex flex-col gap-6">
+          <div v-for="n in 2" :key="n" class="overflow-hidden rounded-[10px] border border-af-bordure bg-white">
+            <div class="flex items-center gap-3 p-4">
+              <div class="size-11 animate-pulse rounded-full bg-af-bordure" />
+              <div class="h-3 w-1/3 animate-pulse rounded bg-af-bordure" />
+            </div>
+            <div class="aspect-[16/10] w-full animate-pulse bg-af-bordure" />
+            <div class="h-10" />
+          </div>
+        </div>
+
+        <template v-else-if="avisPublics.length">
+          <div class="flex flex-col gap-6">
+            <RetrouveAmisCarteAvisFil
+              v-for="avis in avisPublics"
+              :key="avis.id"
+              :avis="avis"
+              @partager="partagerAvis(avis)"
+            />
+          </div>
+
+          <nav
+            v-if="pagination && pagination.pages > 1"
+            class="flex items-center justify-center gap-2"
+            aria-label="Pagination des avis"
+          >
             <button
-              class="flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              type="button"
+              class="grid size-10 place-items-center rounded-lg border border-af-bordure bg-white text-af-corps transition hover:bg-af-chocolat/[0.07] disabled:opacity-40"
               :disabled="pageActuelle <= 1"
+              aria-label="Page précédente"
               @click="chargerAvisPublics(pageActuelle - 1)"
             >
-              <font-awesome-icon :icon="['fas', 'chevron-left']" class="text-xs" />
-              Précédent
+              <font-awesome-icon icon="fa-solid fa-chevron-left" />
             </button>
-            <!-- Numéros de pages -->
-            <template v-for="p in pagination.pages" :key="p">
+
+            <template v-for="(p, i) in pagesVisibles" :key="p">
+              <span v-if="i > 0 && p - pagesVisibles[i - 1]! > 1" class="px-2 text-af-atone">…</span>
               <button
-                v-if="p === 1 || p === pagination.pages || (p >= pageActuelle - 1 && p <= pageActuelle + 1)"
-                class="h-10 w-10 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                :class="p === pageActuelle ? 'bg-custom-chocolat text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'"
+                type="button"
+                class="h-10 min-w-10 rounded-lg px-3 text-[14px]/[1.4] font-bold transition"
+                :class="p === pageActuelle
+                  ? 'bg-af-degrade text-white'
+                  : 'border border-af-bordure bg-white text-af-corps hover:bg-af-chocolat/[0.07]'"
+                :aria-current="p === pageActuelle ? 'page' : undefined"
                 @click="chargerAvisPublics(p)"
               >
                 {{ p }}
               </button>
-              <span
-                v-else-if="p === pageActuelle - 2 || p === pageActuelle + 2"
-                class="px-1 text-gray-400"
-              >...</span>
             </template>
+
             <button
-              class="flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              type="button"
+              class="grid size-10 place-items-center rounded-lg border border-af-bordure bg-white text-af-corps transition hover:bg-af-chocolat/[0.07] disabled:opacity-40"
               :disabled="pageActuelle >= pagination.pages"
+              aria-label="Page suivante"
               @click="chargerAvisPublics(pageActuelle + 1)"
             >
-              Suivant
-              <font-awesome-icon :icon="['fas', 'chevron-right']" class="text-xs" />
+              <font-awesome-icon icon="fa-solid fa-chevron-right" />
             </button>
-          </div>
+          </nav>
         </template>
-        </template>
-        </div>
-      </div>
-    </section>
 
-    <!-- CTA inscription -->
-    <section v-if="!estConnecte" class="py-16 px-4 bg-amber-50">
-      <div class="max-w-3xl mx-auto text-center">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 font-[Oswald]">
-          Rejoignez la communauté
-        </h2>
-        <p class="text-gray-600 mb-8">
-          Inscrivez-vous gratuitement pour déposer un avis de recherche et retrouver vos proches perdus de vue.
+        <!-- Deux vides distincts : « rien ne correspond » n'est pas « rien
+             n'existe », et la sortie proposée n'est pas la même. -->
+        <div v-else class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+          <font-awesome-icon
+            :icon="filtresActifs ? 'fa-solid fa-filter' : 'fa-solid fa-users'"
+            class="text-4xl text-af-atone-2"
+          />
+          <p class="mt-4 text-[16px]/[1.4] font-bold">
+            {{ filtresActifs ? 'Aucun résultat pour ces critères' : 'Aucun avis de recherche pour le moment' }}
+          </p>
+          <p class="mt-2 text-[14px]/[1.4] text-af-corps">
+            {{ filtresActifs
+              ? 'Essayez d\'autres critères, ou repartez de zéro.'
+              : 'Soyez le premier à publier un avis et aidez à réunir des proches séparés.' }}
+          </p>
+          <AfricansBouton
+            v-if="filtresActifs"
+            class="mt-5"
+            variante="secondaire"
+            icone="fa-solid fa-rotate-left"
+            @click="reinitialiserFiltres"
+          >
+            Réinitialiser les filtres
+          </AfricansBouton>
+          <AfricansBouton
+            v-else
+            class="mt-5"
+            icone="fa-solid fa-plus"
+            :vers="estConnecte ? '/retrouve-amis/nouveau' : '/login'"
+          >
+            {{ estConnecte ? 'Créer le premier avis' : 'Se connecter pour créer un avis' }}
+          </AfricansBouton>
+        </div>
+      </template>
+    </div>
+
+    <template #rail>
+      <AfricansRecherche v-model="filtreRecherche" placeholder="Nom, lieu, école…" />
+
+      <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="reinitialiserFiltres">
+        <div class="flex flex-col gap-5">
+          <AfricansChamp v-model="filtreRelation" libelle="Relation" type="select">
+            <option value="">Toutes les relations</option>
+            <option v-for="t in TYPES_RELATION" :key="t.value" :value="t.value">{{ t.label }}</option>
+          </AfricansChamp>
+
+          <!-- La maquette scinde les territoires en « Afrique / Hors Afrique ».
+               `rechercherAvisPublics` n'a pas de paramètre de zone, contrairement
+               à Afrolang : la scission serait une illusion, le référentiel est
+               donc servi d'une seule liste. -->
+          <AfricansChamp v-model="filtrePaysId" libelle="Territoire" type="select">
+            <option value="">Tous les territoires</option>
+            <option v-for="p in paysReferentiel" :key="p.id" :value="p.id">{{ p.nom }}</option>
+          </AfricansChamp>
+        </div>
+      </AfricansPanneau>
+
+      <AfricansPanneau v-if="estConnecte" titre="Votre visibilité" icone="fa-solid fa-user-shield">
+        <p class="text-[14px]/[1.4] text-af-corps">
+          {{ estTrouvable
+            ? 'Vous êtes trouvable : les avis de recherche peuvent vous être rapprochés.'
+            : 'Vous n\'êtes pas trouvable. Aucun avis ne peut vous être rapproché.' }}
         </p>
-        <NuxtLink
-          to="/login?mode=inscription"
-          class="inline-block px-8 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
+        <AfricansBouton
+          class="mt-4"
+          pleine-largeur
+          :variante="estTrouvable ? 'secondaire' : 'primaire'"
+          :desactive="chargementTrouvable"
+          :tourne="chargementTrouvable"
+          :icone="chargementTrouvable ? 'fa-solid fa-spinner' : (estTrouvable ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye')"
+          @click="onActiverTrouvable"
         >
-          Créer un compte gratuitement
-        </NuxtLink>
+          {{ estTrouvable ? 'Ne plus être trouvable' : 'Devenir trouvable' }}
+        </AfricansBouton>
+      </AfricansPanneau>
+
+      <AfricansPanneau v-if="estConnecte" titre="Mon espace" icone="fa-solid fa-folder-open">
+        <ul class="flex flex-col">
+          <li v-for="lien in LIENS_ESPACE" :key="lien.to" class="border-t border-af-bordure first:border-t-0">
+            <NuxtLink
+              :to="lien.to"
+              class="flex items-center gap-3 py-3 text-[14px]/[1.4] font-bold transition hover:text-af-chocolat"
+            >
+              <font-awesome-icon :icon="lien.icone" class="text-af-chocolat" />
+              {{ lien.libelle }}
+            </NuxtLink>
+          </li>
+        </ul>
+      </AfricansPanneau>
+
+      <!-- La maquette compte aussi les avis LUS : aucune donnée serveur ne
+           tient cette grandeur, elle n'est donc pas affichée. -->
+      <AfricansPanneau titre="Statistiques" icone="fa-solid fa-chart-line">
+        <dl class="flex flex-col">
+          <div class="flex items-baseline justify-between gap-4 pb-3">
+            <dt class="text-[14px]/[1.4] font-bold">Avis publiés</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ pagination?.total ?? 0 }}</dd>
+          </div>
+          <div class="flex items-baseline justify-between gap-4 border-t border-af-bordure py-3">
+            <dt class="text-[14px]/[1.4] text-af-corps">Partages (page affichée)</dt>
+            <dd class="text-[14px]/[1.4] font-bold">{{ partagesCumules }}</dd>
+          </div>
+        </dl>
+      </AfricansPanneau>
+
+      <AfricansPanneau v-if="viewMode === 'carte'" titre="Légende" icone="fa-solid fa-map-pin">
+        <ul class="flex flex-col gap-2">
+          <li v-for="palier in PALIERS_CHALEUR" :key="palier.libelle" class="flex items-center gap-2 text-[12px]/[1.4]">
+            <span class="size-3 shrink-0 rounded-full" :style="{ backgroundColor: palier.couleur }" />
+            {{ palier.libelle }}
+          </li>
+        </ul>
+      </AfricansPanneau>
+    </template>
+
+    <RetrouveAmisDecouverteModale v-model="presentationOuverte" />
+
+    <Transition name="af-surgir">
+      <div
+        v-if="messageCopie"
+        class="fixed right-6 bottom-6 z-100 rounded-[10px] border border-af-vert bg-white px-5 py-4 shadow-xl font-af"
+        role="status"
+      >
+        <p class="flex items-center gap-3 text-[14px]/[1.4]">
+          <font-awesome-icon icon="fa-solid fa-circle-check" class="text-af-vert" />
+          {{ messageCopie }}
+        </p>
       </div>
-    </section>
-  </div>
+    </Transition>
+  </NuxtLayout>
 </template>
+
+
+<style scoped>
+.af-surgir-enter-active,
+.af-surgir-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.af-surgir-enter-from,
+.af-surgir-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+</style>

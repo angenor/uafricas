@@ -6,6 +6,8 @@ import type { EtatRelation, MembreLightAPI } from '~/composables/useAmis'
 import type { BadgeObtenu } from '~/composables/useEngagement'
 import { useUserStore } from '~/stores/user'
 
+definePageMeta({ layout: false })
+
 const route = useRoute()
 const id = route.params.id as string
 
@@ -197,11 +199,6 @@ const photoComplete = computed(() => {
   return url.startsWith('http') ? url : `${apiBase}${url}`
 })
 
-const initiaux = computed(() => {
-  if (!profil.value) return ''
-  return (profil.value.prenom[0] ?? '') + (profil.value.nom[0] ?? '')
-})
-
 const dateInscriptionFormatee = computed(() => {
   if (!profil.value?.dateInscription) return ''
   return new Date(profil.value.dateInscription).toLocaleDateString('fr-FR', {
@@ -234,340 +231,328 @@ onMounted(async () => {
     if (rel) etatRelation.value = rel.etat
   }
 })
+
+/**
+ * Sur son PROPRE profil, le bloc « Entrer en contact » n'a pas de sens : il
+ * proposait un bouton « Envoyer un message » désactivé sous la mention
+ * « Connectez-vous pour échanger avec ce membre », adressée à un visiteur
+ * déconnecté, elle s'affichait aussi au membre connecté qui regardait sa propre
+ * fiche, puisque `peutAfficherAmitie` mêle les deux cas.
+ */
+const estVisiteurAnonyme = computed(() => !userStore.isAuthenticated)
 </script>
 
 <template>
-  <div class="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 pt-28 pb-16">
-    <div class="max-w-5xl mx-auto px-4">
-      <!-- Chargement -->
-      <div v-if="chargement" class="flex items-center justify-center py-32">
-        <font-awesome-icon icon="fa-solid fa-spinner" class="text-4xl text-custom-chocolat animate-spin" />
-      </div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        :titre="profil ? `${profil.prenom} ${profil.nom}` : 'Profil'"
+        :sous-titre="profil?.fonction || undefined"
+      />
+    </template>
 
-      <!-- Profil introuvable -->
-      <div v-else-if="!profil" class="text-center py-20">
-        <font-awesome-icon icon="fa-solid fa-user-slash" class="text-5xl text-gray-300 mb-4" />
-        <h1 class="text-2xl font-bold text-gray-700 mb-2">Profil introuvable</h1>
-        <p class="text-gray-500 text-sm mb-6">Ce profil n'existe pas ou n'est pas visible publiquement.</p>
-        <NuxtLink
-          to="/"
-          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-custom-chocolat text-white font-medium rounded-xl hover:shadow-lg transition"
-        >
-          <font-awesome-icon icon="fa-solid fa-house" />
-          Retour à l'accueil
-        </NuxtLink>
-      </div>
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Communauté', vers: '/profil' },
+          { libelle: profil ? `${profil.prenom} ${profil.nom}` : 'Profil' }]"
+      >
+        <template v-if="estMoi" #action>
+          <AfricansBouton variante="secondaire" icone="fa-solid fa-user-pen" vers="/mon-compte/profil">
+            Modifier mon profil
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
 
-      <template v-else>
-        <!-- Fil d'ariane -->
-        <nav class="text-sm text-gray-500 mb-4 flex items-center gap-2 flex-wrap">
-          <NuxtLink to="/" class="hover:text-custom-chocolat">Accueil</NuxtLink>
-          <font-awesome-icon icon="fa-solid fa-chevron-right" class="text-xs" />
-          <span class="text-gray-700 font-medium">{{ profil.prenom }} {{ profil.nom }}</span>
-        </nav>
+    <div v-if="chargement" class="flex flex-col gap-6">
+      <div class="h-40 animate-pulse rounded-[10px] bg-af-bordure" />
+      <div class="h-64 animate-pulse rounded-[10px] bg-af-bordure" />
+    </div>
 
-        <!-- En-tête profil -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-          <div class="h-32 bg-linear-to-r from-custom-chocolat via-amber-700 to-custom-green"></div>
-          <div class="px-6 pb-6 -mt-16 relative">
-            <div class="flex flex-col sm:flex-row items-center sm:items-end gap-5">
-              <div class="relative">
-                <img
-                  v-if="photoComplete"
-                  :src="photoComplete"
-                  :alt="profil.prenom + ' ' + profil.nom"
-                  class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
-                />
-                <div
-                  v-else
-                  class="w-32 h-32 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-4xl font-bold border-4 border-white shadow-lg"
-                >
-                  {{ initiaux }}
-                </div>
-              </div>
+    <div v-else-if="!profil" class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+      <font-awesome-icon icon="fa-solid fa-user-slash" class="text-4xl text-af-atone-2" />
+      <p class="mt-4 text-[16px]/[1.4] font-bold">Profil introuvable</p>
+      <p class="mx-auto mt-2 max-w-md text-[14px]/[1.4] text-af-corps">
+        Ce profil n'existe pas ou n'est pas visible publiquement.
+      </p>
+      <AfricansBouton class="mt-6" variante="secondaire" icone="fa-solid fa-users" vers="/profil">
+        Retour à l'annuaire
+      </AfricansBouton>
+    </div>
 
-              <div class="flex-1 text-center sm:text-left">
-                <div class="flex items-center justify-center sm:justify-start gap-2">
-                  <h1 class="text-3xl font-bold text-gray-800 font-display">{{ profil.prenom }} {{ profil.nom }}</h1>
-                  <EngagementBadgeStatut :utilisateur-id="id" taille="sm" />
-                </div>
-                <p class="text-lg text-custom-chocolat font-medium mt-1">{{ profil.fonction }}</p>
-                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
-                  <span
-                    v-if="estBiblio"
-                    class="inline-flex items-center gap-1.5 px-3 py-1 bg-custom-chocolat/10 text-custom-chocolat text-xs font-semibold rounded-full"
-                  >
-                    <font-awesome-icon icon="fa-solid fa-book-open" />
-                    Bibliothèque Humaine
-                  </span>
-                  <span
-                    v-if="estExpert"
-                    class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full"
-                  >
-                    <font-awesome-icon icon="fa-solid fa-briefcase" />
-                    Expert
-                  </span>
-                </div>
+    <div v-else class="flex flex-col gap-6">
+      <!-- Identité -->
+      <section class="flex flex-col items-center gap-5 rounded-[10px] border border-af-bordure bg-white p-6 text-center sm:flex-row sm:items-start sm:text-left">
+        <AfricansAvatar :nom="`${profil.prenom} ${profil.nom}`" :src="photoComplete" :taille="112" />
 
-                <!--
-                  Badges obtenus, à côté du badge de statut. Volontairement SANS
-                  solde, réputation ni journal : le détail chiffré de l'engagement
-                  reste privé (FR-014), seule la distinction est publique.
-                -->
-                <div
-                  v-if="badgesPublics.length > 0"
-                  class="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 mt-3"
-                >
-                  <span
-                    v-for="b in badgesPublics"
-                    :key="b.code"
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1"
-                    :class="classesBadge(b.couleur)"
-                    :title="b.description"
-                  >
-                    <font-awesome-icon :icon="`fa-solid fa-${b.icone || 'award'}`" />
-                    {{ b.libelle }}
-                  </span>
-                </div>
-                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3 text-sm text-gray-600">
-                  <span v-if="profil.pays" class="flex items-center gap-1.5">
-                    <font-awesome-icon icon="fa-solid fa-location-dot" class="text-custom-chocolat" />
-                    {{ profil.pays }}
-                  </span>
-                  <span v-if="profil.ville" class="flex items-center gap-1.5">
-                    <font-awesome-icon icon="fa-solid fa-city" class="text-custom-chocolat" />
-                    {{ profil.ville }}
-                  </span>
-                  <span v-if="dateInscriptionFormatee" class="flex items-center gap-1.5 text-gray-400">
-                    <font-awesome-icon icon="fa-solid fa-calendar" />
-                    Membre depuis {{ dateInscriptionFormatee }}
-                  </span>
-                </div>
-              </div>
-            </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+            <h1 class="text-[24px]/[1.3] font-bold text-af-encre">{{ profil.prenom }} {{ profil.nom }}</h1>
+            <EngagementBadgeStatut :utilisateur-id="id" taille="sm" />
           </div>
-        </div>
+          <p v-if="profil.fonction" class="mt-1 text-[16px]/[1.4] font-bold text-af-chocolat">
+            {{ profil.fonction }}
+          </p>
 
-        <!-- Onglets dynamiques selon rôles -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div class="flex border-b border-gray-200 overflow-x-auto">
-            <button
-              v-for="tab in onglets"
-              :key="tab.id"
-              class="flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-medium transition-all relative whitespace-nowrap"
-              :class="ongletActif === tab.id
-                ? 'text-custom-chocolat'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
-              @click="ongletActif = tab.id"
+          <div v-if="estBiblio || estExpert" class="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+            <AfricansEtiquette v-if="estExpert" ton="vert">Expert</AfricansEtiquette>
+            <AfricansEtiquette v-if="estBiblio">Bibliothèque humaine</AfricansEtiquette>
+          </div>
+
+          <!--
+            Badges obtenus. Volontairement SANS solde, réputation ni journal :
+            le détail chiffré de l'engagement reste privé (FR-014), seule la
+            distinction est publique.
+          -->
+          <div v-if="badgesPublics.length > 0" class="mt-3 flex flex-wrap justify-center gap-1.5 sm:justify-start">
+            <span
+              v-for="b in badgesPublics"
+              :key="b.code"
+              class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px]/[1.4] font-bold ring-1"
+              :class="classesBadge(b.couleur)"
+              :title="b.description"
             >
-              <font-awesome-icon :icon="tab.icon" />
-              {{ tab.label }}
-              <div
-                v-if="ongletActif === tab.id"
-                class="absolute bottom-0 left-0 right-0 h-0.5 bg-custom-chocolat"
-              ></div>
-            </button>
+              <font-awesome-icon :icon="`fa-solid fa-${b.icone || 'award'}`" />
+              {{ b.libelle }}
+            </span>
           </div>
 
-          <div class="p-6">
-            <!-- Onglet À propos -->
-            <div v-if="ongletActif === 'apropos'" class="space-y-4">
-              <h2 class="text-lg font-semibold text-gray-800">À propos</h2>
-              <p class="text-gray-700 leading-relaxed whitespace-pre-line">
-                {{ membre?.biographie || biblio?.biographie || expert?.expertiseInfo.biographie || 'Aucune biographie disponible.' }}
-              </p>
+          <div class="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-2 text-[14px]/[1.4] text-af-corps sm:justify-start">
+            <span v-if="profil.ville || profil.pays" class="flex items-center gap-1.5">
+              <font-awesome-icon icon="fa-solid fa-location-dot" class="text-af-chocolat" />
+              {{ [profil.ville, profil.pays].filter(Boolean).join(', ') }}
+            </span>
+            <span v-if="dateInscriptionFormatee" class="flex items-center gap-1.5 text-af-atone">
+              <font-awesome-icon icon="fa-solid fa-calendar" />
+              Membre depuis {{ dateInscriptionFormatee }}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Onglets : « À propos » toujours, les deux autres selon les rôles -->
+      <section class="overflow-hidden rounded-[10px] border border-af-bordure bg-white">
+        <AfricansOnglets
+          v-if="onglets.length > 1"
+          :model-value="ongletActif"
+          :onglets="onglets.map(o => ({ valeur: o.id, libelle: o.label }))"
+          @update:model-value="(v: string) => ongletActif = v as typeof ongletActif"
+        />
+
+        <div class="p-6">
+          <!-- À propos -->
+          <div v-if="ongletActif === 'apropos'" class="flex flex-col gap-3">
+            <h2 class="text-[17px]/[1.4] font-bold">À propos</h2>
+            <p
+              v-if="membre?.biographie || biblio?.biographie || expert?.expertiseInfo.biographie"
+              class="text-[14px]/[1.6] whitespace-pre-line text-af-corps"
+            >
+              {{ membre?.biographie || biblio?.biographie || expert?.expertiseInfo.biographie }}
+            </p>
+            <p v-else class="text-[14px]/[1.4] text-af-atone">
+              {{ estMoi ? "Vous n'avez pas encore renseigné de biographie." : 'Aucune biographie disponible.' }}
+            </p>
+            <AfricansBouton
+              v-if="estMoi && !membre?.biographie"
+              class="self-start"
+              variante="secondaire"
+              icone="fa-solid fa-pen"
+              vers="/mon-compte/profil"
+            >
+              Compléter mon profil
+            </AfricansBouton>
+          </div>
+
+          <!-- Bibliothèque humaine -->
+          <div v-else-if="ongletActif === 'biblio' && biblio" class="flex flex-col gap-5">
+            <h2 class="flex items-center gap-2 text-[17px]/[1.4] font-bold">
+              <font-awesome-icon icon="fa-solid fa-book-open" class="text-af-chocolat" />
+              Bibliothèque humaine
+            </h2>
+            <p class="text-[14px]/[1.6] whitespace-pre-line text-af-corps">{{ biblio.biographie }}</p>
+
+            <div v-if="biblio.specialites.length > 0">
+              <h3 class="mb-2 text-[12px]/[1.4] font-bold tracking-wide text-af-atone uppercase">
+                Domaines d'expertise
+              </h3>
+              <div class="flex flex-wrap gap-2">
+                <AfricansEtiquette v-for="s in biblio.specialites" :key="s">{{ s }}</AfricansEtiquette>
+              </div>
             </div>
 
-            <!-- Onglet Bibliothèque Humaine -->
-            <div v-if="ongletActif === 'biblio' && biblio" class="space-y-5">
-              <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <font-awesome-icon icon="fa-solid fa-book-open" class="text-custom-chocolat" />
-                Bibliothèque Humaine
-              </h2>
-              <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ biblio.biographie }}</p>
+            <BibliothequeInteractions :biblio="biblio" :peut-interagir="peutNoter" />
+          </div>
 
-              <div v-if="biblio.specialites.length > 0">
-                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Domaines d'expertise</h3>
-                <div class="flex flex-wrap gap-2">
-                  <span
-                    v-for="s in biblio.specialites"
-                    :key="s"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-custom-chocolat/10 text-custom-chocolat text-sm font-medium rounded-full"
-                  >
-                    <font-awesome-icon icon="fa-solid fa-star" class="text-xs" />
-                    {{ s }}
-                  </span>
-                </div>
+          <!-- Expertise -->
+          <div v-else-if="ongletActif === 'expert' && expert" class="flex flex-col gap-5">
+            <h2 class="flex items-center gap-2 text-[17px]/[1.4] font-bold">
+              <font-awesome-icon icon="fa-solid fa-briefcase" class="text-af-vert" />
+              Profil expert
+            </h2>
+
+            <div class="grid gap-4 sm:grid-cols-3">
+              <div class="rounded-[10px] bg-af-fond p-4">
+                <p class="mb-1 text-[12px]/[1.4] font-bold tracking-wide text-af-atone uppercase">Domaine</p>
+                <p class="text-[14px]/[1.4] font-bold">{{ expert.expertiseInfo.domaine }}</p>
               </div>
-
-              <!-- Interactions : aimer, commenter, recommander -->
-              <BibliothequeInteractions :biblio="biblio" :peut-interagir="peutNoter" />
+              <div class="rounded-[10px] bg-af-fond p-4">
+                <p class="mb-1 text-[12px]/[1.4] font-bold tracking-wide text-af-atone uppercase">Expérience</p>
+                <p class="text-[14px]/[1.4] font-bold">{{ expert.expertiseInfo.nbAnneesExperience }} ans</p>
+              </div>
+              <ExpertsNotationExpert
+                :utilisateur-id="expert.id"
+                :rating="expert.expertiseInfo.rating"
+                :nombre-notes="expert.expertiseInfo.nombreNotes"
+                :ma-note="expert.expertiseInfo.maNote"
+                :peut-noter="peutNoter"
+                @note="surNote"
+              />
             </div>
 
-            <!-- Onglet Expertise -->
-            <div v-if="ongletActif === 'expert' && expert" class="space-y-5">
-              <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <font-awesome-icon icon="fa-solid fa-briefcase" class="text-emerald-600" />
-                Profil Expert
-              </h2>
+            <div>
+              <h3 class="mb-2 text-[12px]/[1.4] font-bold tracking-wide text-af-atone uppercase">Biographie</h3>
+              <p class="text-[14px]/[1.6] whitespace-pre-line text-af-corps">{{ expert.expertiseInfo.biographie }}</p>
+            </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="bg-gray-50 rounded-xl p-4">
-                  <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Domaine</p>
-                  <p class="text-sm font-semibold text-gray-800">{{ expert.expertiseInfo.domaine }}</p>
-                </div>
-                <div class="bg-gray-50 rounded-xl p-4">
-                  <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Expérience</p>
-                  <p class="text-sm font-semibold text-gray-800">{{ expert.expertiseInfo.nbAnneesExperience }} ans</p>
-                </div>
-                <ExpertsNotationExpert
-                  :utilisateur-id="expert.id"
-                  :rating="expert.expertiseInfo.rating"
-                  :nombre-notes="expert.expertiseInfo.nombreNotes"
-                  :ma-note="expert.expertiseInfo.maNote"
-                  :peut-noter="peutNoter"
-                  @note="surNote"
-                />
+            <div v-if="expert.situationProfessionnelle.length > 0">
+              <h3 class="mb-2 text-[12px]/[1.4] font-bold tracking-wide text-af-atone uppercase">
+                Situation professionnelle
+              </h3>
+              <div class="flex flex-wrap gap-2">
+                <AfricansEtiquette v-for="s in expert.situationProfessionnelle" :key="s">{{ s }}</AfricansEtiquette>
               </div>
+            </div>
 
-              <div>
-                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Biographie</h3>
-                <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ expert.expertiseInfo.biographie }}</p>
-              </div>
-
-              <div v-if="expert.situationProfessionnelle.length > 0">
-                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Situation professionnelle</h3>
-                <div class="flex flex-wrap gap-2">
-                  <span
-                    v-for="s in expert.situationProfessionnelle"
-                    :key="s"
-                    class="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full"
-                  >{{ s }}</span>
-                </div>
-              </div>
-
-              <div v-if="expert.expertiseInfo.portfolio">
-                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Portfolio</h3>
-                <a
-                  :href="expert.expertiseInfo.portfolio"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-custom-chocolat hover:underline text-sm inline-flex items-center gap-1.5"
-                >
-                  <font-awesome-icon icon="fa-solid fa-link" />
-                  {{ expert.expertiseInfo.portfolio }}
-                </a>
-              </div>
+            <div v-if="expert.expertiseInfo.portfolio">
+              <h3 class="mb-2 text-[12px]/[1.4] font-bold tracking-wide text-af-atone uppercase">Portfolio</h3>
+              <a
+                :href="expert.expertiseInfo.portfolio"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1.5 text-[14px]/[1.4] font-bold text-af-chocolat transition hover:opacity-70"
+              >
+                <font-awesome-icon icon="fa-solid fa-link" />
+                {{ expert.expertiseInfo.portfolio }}
+              </a>
             </div>
           </div>
         </div>
+      </section>
+    </div>
 
-        <!-- Carte contact -->
-        <div class="mt-6 bg-white rounded-2xl shadow-lg p-6 text-center">
-          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Entrer en contact</h3>
+    <template #rail>
+      <template v-if="profil">
+      <!-- Sur son propre profil, ce panneau ne propose rien : il est remplacé
+           par le raccourci d'édition, seule action qui ait un sens ici. -->
+      <AfricansPanneau v-if="estMoi" titre="Mon profil" icone="fa-solid fa-user">
+        <p class="mb-4 text-[14px]/[1.4] text-af-corps">
+          Voici votre fiche telle que les autres membres la voient.
+        </p>
+        <AfricansBouton pleine-largeur icone="fa-solid fa-user-pen" vers="/mon-compte/profil">
+          Modifier mon profil
+        </AfricansBouton>
+      </AfricansPanneau>
 
-          <!-- Bouton d'amitié (membre connecté, hors propre profil) -->
-          <div v-if="peutAfficherAmitie" class="flex justify-center mb-4">
-            <SocialBoutonAmitie
-              :utilisateur-id="id"
-              :etat="etatRelation"
-              @update="(e) => etatRelation = e"
-            />
+      <AfricansPanneau v-else titre="Entrer en contact" icone="fa-solid fa-comments">
+        <div class="flex flex-col gap-3">
+          <div v-if="peutAfficherAmitie" class="flex justify-center">
+            <SocialBoutonAmitie :utilisateur-id="id" :etat="etatRelation" @update="(e: EtatRelation) => etatRelation = e" />
           </div>
 
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-custom-chocolat to-custom-green text-white font-semibold rounded-xl hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
-            :disabled="!peutEnvoyerMessage"
+          <AfricansBouton
+            pleine-largeur
+            icone="fa-solid fa-envelope"
+            :desactive="!peutEnvoyerMessage"
             @click="ouvrirMessagerie"
           >
-            <font-awesome-icon icon="fa-solid fa-envelope" />
             Envoyer un message
-          </button>
+          </AfricansBouton>
 
-          <!-- Proposer un rendez-vous (entre amis uniquement) -->
-          <button
+          <AfricansBouton
             v-if="peutEnvoyerMessage"
-            type="button"
-            class="mt-3 inline-flex items-center gap-2 px-5 py-2.5 border border-custom-chocolat text-custom-chocolat font-semibold rounded-xl hover:bg-custom-chocolat hover:text-white transition"
+            pleine-largeur
+            variante="secondaire"
+            icone="fa-solid fa-video"
             @click="afficherModalRdv = true"
           >
-            <font-awesome-icon icon="fa-solid fa-video" />
             Proposer un rendez-vous
+          </AfricansBouton>
+
+          <!-- Les deux mentions répondent à deux situations distinctes, que
+               l'ancienne condition confondait. -->
+          <p v-if="estVisiteurAnonyme" class="text-[12px]/[1.4] text-af-atone">
+            Connectez-vous pour échanger avec ce membre.
+          </p>
+          <p v-else-if="!peutEnvoyerMessage" class="text-[12px]/[1.4] text-af-atone">
+            Vous devez être ami(e)s pour envoyer un message.
+          </p>
+        </div>
+      </AfricansPanneau>
+
+      <AfricansPanneau v-if="peutNoter" titre="Actions" icone="fa-solid fa-ellipsis">
+        <div class="flex flex-col gap-3">
+          <AfricansBouton pleine-largeur variante="secondaire" icone="fa-solid fa-share-nodes" @click="afficherModalPartage = true">
+            Partager ce profil
+          </AfricansBouton>
+          <EngagementOffrirCadeauBouton
+            type-objet="profil"
+            :objet-id="id"
+            :destinataire="`${profil.prenom} ${profil.nom}`"
+            taille="sm"
+            @offert="cadeauxRef?.rafraichir()"
+          />
+          <button
+            type="button"
+            :disabled="profilSignale"
+            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border text-base font-bold transition"
+            :class="profilSignale
+              ? 'cursor-default border-af-live/40 text-af-live'
+              : 'border-af-bordure text-af-corps hover:border-af-live hover:text-af-live'"
+            @click="afficherModalSignalement = true"
+          >
+            <font-awesome-icon icon="fa-solid fa-flag" />
+            {{ profilSignale ? 'Profil signalé' : 'Signaler ce profil' }}
           </button>
-
-          <p v-if="!peutAfficherAmitie" class="text-xs text-gray-400 mt-3">Connectez-vous pour échanger avec ce membre.</p>
-          <p v-else-if="!peutEnvoyerMessage" class="text-xs text-gray-400 mt-3">Vous devez être amis pour envoyer un message.</p>
-
-          <!-- Partager / Signaler (membre connecté, hors propre profil) -->
-          <div v-if="peutNoter" class="mt-5 pt-4 border-t border-gray-100 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-custom-green text-custom-green font-semibold rounded-xl hover:bg-custom-green hover:text-white transition"
-              @click="afficherModalPartage = true"
-            >
-              <font-awesome-icon icon="fa-solid fa-share-nodes" />
-              Partager ce profil
-            </button>
-            <EngagementOffrirCadeauBouton
-              type-objet="profil"
-              :objet-id="id"
-              :destinataire="`${profil.prenom} ${profil.nom}`"
-              taille="sm"
-              @offert="cadeauxRef?.rafraichir()"
-            />
-            <button
-              type="button"
-              :disabled="profilSignale"
-              class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition"
-              :class="profilSignale
-                ? 'text-orange-600 cursor-default'
-                : 'border border-gray-200 text-gray-500 hover:border-orange-300 hover:text-orange-600'"
-              @click="afficherModalSignalement = true"
-            >
-              <font-awesome-icon icon="fa-solid fa-flag" />
-              {{ profilSignale ? 'Profil signalé' : 'Signaler ce profil' }}
-            </button>
-          </div>
         </div>
+      </AfricansPanneau>
 
-        <!--
-          Cadeaux reçus : HORS du bloc « peutNoter » : un visiteur déconnecté
-          doit voir la reconnaissance reçue par ce membre, même s'il ne peut pas
-          lui-même offrir. Le composant se masque seul quand il n'y a rien.
-        -->
-        <div class="mt-6 rounded-2xl bg-white p-6 shadow-lg">
-          <EngagementCadeauxRecus ref="cadeauxRef" type-objet="profil" :objet-id="id" />
-        </div>
-
-        <!-- Modale de proposition de rendez-vous -->
-        <SocialRendezVousProposerModal
-          v-if="afficherModalRdv && membreLight"
-          :membre="membreLight"
-          @fermer="afficherModalRdv = false"
-          @propose="afficherModalRdv = false"
-        />
-
-        <!-- Modale de partage du profil -->
-        <ProfilPartagerProfilModal
-          ref="modalPartageRef"
-          :is-open="afficherModalPartage"
-          :profil-nom="profil.nom"
-          :profil-prenom="profil.prenom"
-          @close="afficherModalPartage = false"
-          @submit="soumettrePartage"
-        />
-
-        <!-- Modale de signalement du profil -->
-        <ProfilSignalerProfilModal
-          ref="modalSignalementRef"
-          :is-open="afficherModalSignalement"
-          :profil-nom="profil.nom"
-          :profil-prenom="profil.prenom"
-          @close="afficherModalSignalement = false"
-          @submit="soumettreSignalement"
-        />
+      <!--
+        Cadeaux reçus : HORS du bloc « peutNoter » : un visiteur déconnecté doit
+        voir la reconnaissance reçue par ce membre, même s'il ne peut pas
+        lui-même offrir. Le composant se masque seul quand il n'y a rien.
+      -->
+      <AfricansPanneau>
+        <EngagementCadeauxRecus ref="cadeauxRef" type-objet="profil" :objet-id="id" />
+      </AfricansPanneau>
       </template>
-    </div>
-  </div>
+    </template>
+
+    <SocialRendezVousProposerModal
+      v-if="afficherModalRdv && membreLight"
+      :membre="membreLight"
+      @fermer="afficherModalRdv = false"
+      @propose="afficherModalRdv = false"
+    />
+
+    <ProfilPartagerProfilModal
+      v-if="profil"
+      ref="modalPartageRef"
+      :is-open="afficherModalPartage"
+      :profil-nom="profil.nom"
+      :profil-prenom="profil.prenom"
+      @close="afficherModalPartage = false"
+      @submit="soumettrePartage"
+    />
+
+    <ProfilSignalerProfilModal
+      v-if="profil"
+      ref="modalSignalementRef"
+      :is-open="afficherModalSignalement"
+      :profil-nom="profil.nom"
+      :profil-prenom="profil.prenom"
+      @close="afficherModalSignalement = false"
+      @submit="soumettreSignalement"
+    />
+  </NuxtLayout>
 </template>
