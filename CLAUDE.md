@@ -86,8 +86,10 @@ Mettre à jour ce fichier lors de : ajout/suppression service Docker ou dépenda
 **Recent Changes = index court (1 ligne/feature).** Ne pas y remettre de longs paragraphes : le détail est dans `git log`, `specs/` et le code. Une ligne cite au plus la migration SQL et les modules/composants clés.
 
 ## Test Users
-- `test-admin@test.com` / `Test1234`
-- `test-user@test.com` / `Test1234`
+Comptes **locaux uniquement**, semés par `uafricas_backend/doc/bd/seeds-locaux/99_seed_local_tests.sql`.
+Ce fichier est hors de `schemas/` : il n'est PAS inclus par `schema.sql`, donc jamais déployé.
+- `test-admin@test.com` / `Test1234` — rôles Administrateur + Utilisateur
+- `martialdjezou@gmail.com` / `Test1234` — Eric Martial Djezou, rôle Utilisateur. **Adresse réelle sur un mot de passe publié ici** : à ne jamais recréer ailleurs qu'en local.
 
 ## Tech Stack par feature
 Backend Rust Edition 2024 + Actix-Web 4 + sqlx (PostgreSQL) ; frontend Nuxt 4 / Vue 3 SSR + Pinia + Tailwind v4. Extensions notables : `pg_trgm` (matching arbres), LiveKit (afrolang temps réel + modération + événements streaming), SSE via `futures-util`/`tokio` (messagerie social), `image` crate (validation photos), `lettre` (SMTP), `peerjs` (visio P2P rendez-vous/appels), `@vue-flow/core` (arbre généalogique), `@excalidraw/excalidraw` (tableau blanc afrolang, MIT).
