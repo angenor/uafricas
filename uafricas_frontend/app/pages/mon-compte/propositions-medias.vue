@@ -1,84 +1,16 @@
-<script setup lang="ts">
-/**
- * Suivi de ses propositions de médias (FR-034).
- *
- * Comble le trou fonctionnel de vidafrica, qui n'offre aucun suivi : un
- * contributeur doit pouvoir savoir où en est sa soumission, et lire le motif
- * d'un refus.
- */
-import {
-  useMediaProposition,
-  LIBELLES_TYPE_OBJET,
-  LIBELLES_STATUT,
-  type PropositionMediaAPI,
-  type StatutProposition,
-} from '~/composables/useMediaProposition'
-
-definePageMeta({ middleware: 'auth' })
-
-useHead({ title: 'Mes propositions de médias | UAfricas' })
-
-const { mesPropositions, retirer, chargement } = useMediaProposition()
-
-const propositions = ref<PropositionMediaAPI[]>([])
-const filtreStatut = ref<StatutProposition | ''>('')
-const total = ref(0)
-
-const STYLES_STATUT: Record<StatutProposition, string> = {
-  en_attente: 'bg-amber-100 text-amber-800',
-  validee: 'bg-green-100 text-green-800',
-  rejetee: 'bg-red-100 text-red-800',
-  retiree: 'bg-gray-100 text-gray-600',
-}
-
-const charger = async () => {
-  const res = await mesPropositions({
-    statut: filtreStatut.value || undefined,
-    par_page: 50,
-  })
-  propositions.value = res?.propositions ?? []
-  total.value = res?.total ?? 0
-}
-
-watch(filtreStatut, charger)
-onMounted(charger)
-
-const retirerProposition = async (proposition: PropositionMediaAPI) => {
-  const maj = await retirer(proposition.id)
-  if (maj) {
-    const i = propositions.value.findIndex(p => p.id === proposition.id)
-    if (i !== -1) propositions.value[i] = maj
-  }
-}
-
-const dateFormatee = (iso: string) =>
-  new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-    .format(new Date(iso))
-
-const breadcrumbs = [
-  { label: 'Mon compte', to: '/mon-compte/profil' },
-  { label: 'Mes propositions de médias', to: undefined },
-]
-</script>
-
 <template>
-  <div class="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 pt-28 pb-16">
-    <div class="max-w-4xl mx-auto px-4">
-      <nav aria-label="Fil d'Ariane" class="mb-6 text-sm text-gray-500">
-        <template v-for="(fil, i) in breadcrumbs" :key="i">
-          <NuxtLink v-if="fil.to" :to="fil.to" class="hover:text-custom-chocolat">{{ fil.label }}</NuxtLink>
-          <span v-else class="text-gray-900">{{ fil.label }}</span>
-          <span v-if="i < breadcrumbs.length - 1" class="mx-2">/</span>
-        </template>
-      </nav>
+  <NuxtLayout name="africans">
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[{ libelle: 'Mon compte', vers: '/mon-compte/profil' }, { libelle: 'Propositions médias' }]"
+      />
+    </template>
 
-      <header class="mb-8">
-        <h1 class="font-oswald text-3xl font-bold text-gray-900 mb-2">Mes propositions de médias</h1>
-        <p class="text-gray-500">
-          Suivez l’examen de vos propositions de chaînes, stations et émissions.
-        </p>
+    <div class="flex flex-col gap-6">
+      <header>
+        <h1 class="text-[24px]/[1.3] font-bold text-af-encre">Mes propositions de médias</h1>
+        <p class="mt-1 text-[14px]/[1.5] text-af-corps">Suivez l’examen de vos propositions de chaînes, stations et émissions.</p>
       </header>
-
       <!-- Filtre -->
       <div class="flex flex-wrap gap-2 mb-6">
         <button
@@ -176,7 +108,11 @@ const breadcrumbs = [
         </li>
       </ul>
     </div>
-  </div>
+
+    <template #rail>
+      <ComptePanneauNavigation />
+    </template>
+  </NuxtLayout>
 </template>
 
 <style scoped>

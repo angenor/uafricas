@@ -174,6 +174,7 @@
 
 <script setup lang="ts">
 import { useUserStore } from '~/stores/user'
+import { NAV_COMPTE } from '~/utils/navigation-compte'
 
 const userStore = useUserStore()
 const { logout } = useAuth()
@@ -205,13 +206,15 @@ const surRaccourciRecherche = (e: KeyboardEvent) => {
   }
 }
 
+// Le menu déroulant offre un RACCOURCI, pas l'espace entier : huit entrées
+// surplombant chaque page ne seraient plus un raccourci. Le rail des pages de
+// compte, lui, les donne toutes. Une seule source les décrit.
 const liensCompte = computed(() => [
-  { libelle: 'Mon profil', vers: '/mon-compte/profil', icone: 'fa-solid fa-user' },
-  { libelle: 'Mon engagement', vers: '/mon-compte/engagement', icone: 'fa-solid fa-medal' },
-  { libelle: 'Mes ami(e)s', vers: '/mon-compte/amis', icone: 'fa-solid fa-user-check' },
-  { libelle: 'Mes contributions', vers: '/mon-compte/contributions', icone: 'fa-solid fa-clipboard-list' }, ...(userStore.isAdmin
+  ...NAV_COMPTE.filter(e => e.dansLeMenu),
+  ...(userStore.isAdmin
     ? [{ libelle: 'Administration', vers: '/admin', icone: 'fa-solid fa-shield-halved' }]
-    : [])])
+    : []),
+])
 
 const seDeconnecter = async () => {
   menuOuvert.value = false

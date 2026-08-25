@@ -285,6 +285,8 @@ const libelleTypeContribution = (t: string) => TYPES_CONTRIBUTION[t] ?? t
           modification du même élément : reproposez-la depuis la fiche.
         </p>
       </AfricansPanneau>
+
+      <ComptePanneauNavigation />
     </template>
   </NuxtLayout>
 </template>

@@ -17,9 +17,9 @@ import {
   type ActionRecompensee,
 } from '~/composables/useEngagement'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ layout: false, middleware: 'auth' })
 
-useHead({ title: 'Mon engagement | UAfricas' })
+useHead({ title: 'Mon engagement | AfricanS' })
 
 const { obtenirMonCompte, obtenirMesCategories, obtenirActionsRecompensees } = useEngagement()
 
@@ -29,10 +29,6 @@ const actions = ref<ActionRecompensee[]>([])
 const chargement = ref(true)
 const erreur = ref('')
 
-const breadcrumbs = [
-  { label: 'Mon compte', to: '/mon-compte/profil' },
-  { label: 'Mon engagement', to: undefined },
-]
 
 onMounted(async () => {
   chargement.value = true
@@ -77,55 +73,57 @@ const baremeParCategorie = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 pt-28 pb-16">
-    <div class="mx-auto max-w-5xl px-4">
-      <nav aria-label="Fil d'Ariane" class="mb-6 text-sm text-gray-500">
-        <template v-for="(fil, i) in breadcrumbs" :key="i">
-          <NuxtLink v-if="fil.to" :to="fil.to" class="hover:text-custom-chocolat">{{ fil.label }}</NuxtLink>
-          <span v-else class="text-gray-900">{{ fil.label }}</span>
-          <span v-if="i < breadcrumbs.length - 1" class="mx-2">/</span>
-        </template>
-      </nav>
+  <NuxtLayout name="africans">
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[{ libelle: 'Mon compte', vers: '/mon-compte/profil' }, { libelle: 'Mon engagement' }]"
+      />
+    </template>
 
-      <header class="mb-8">
-        <h1 class="mb-2 font-oswald text-3xl font-bold text-gray-900">Mon engagement</h1>
-        <p class="text-gray-500">
+    <div class="flex flex-col gap-6">
+      <header>
+        <h1 class="text-[24px]/[1.3] font-bold text-af-encre">Mon engagement</h1>
+        <p class="mt-1 text-[14px]/[1.5] text-af-corps">
           Vos points, votre statut, l'origine de vos points et l'historique complet de vos gains.
         </p>
       </header>
 
-      <p v-if="chargement" class="py-16 text-center text-gray-400">
-        <font-awesome-icon icon="fa-solid fa-spinner" class="animate-spin" /> Chargement…
-      </p>
+      <div v-if="chargement" class="flex flex-col gap-6">
+        <div v-for="n in 2" :key="n" class="h-40 animate-pulse rounded-[10px] bg-af-bordure" />
+      </div>
 
-      <p v-else-if="erreur" class="rounded-2xl bg-red-50 px-5 py-4 text-sm text-red-700">
+      <p
+        v-else-if="erreur"
+        class="flex items-center gap-2 rounded-[10px] border border-af-live/30 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
+      >
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" />
         {{ erreur }}
       </p>
 
-      <div v-else class="space-y-10">
+      <div v-else class="flex flex-col gap-8">
         <EngagementResumeEngagement :compte="compte" />
 
         <!-- État vide pédagogique : le barème vient de l'API, jamais du code front -->
         <section v-if="aucunPoint" class="space-y-4">
-          <div class="rounded-2xl border border-gray-100 bg-white p-6 text-center">
-            <font-awesome-icon icon="fa-solid fa-seedling" class="text-3xl text-custom-green" />
-            <h2 class="mt-3 font-oswald text-xl font-bold text-gray-900">
+          <div class="rounded-[10px] border border-af-bordure bg-white p-8 text-center">
+            <font-awesome-icon icon="fa-solid fa-seedling" class="text-4xl text-af-vert" />
+            <h2 class="mt-4 text-[17px]/[1.4] font-bold text-af-encre">
               Vous n'avez pas encore de points
             </h2>
-            <p class="mx-auto mt-1 max-w-xl text-sm text-gray-500">
+            <p class="mx-auto mt-2 max-w-xl text-[14px]/[1.5] text-af-corps">
               Voici tout ce qui rapporte des points sur la plateforme. Dès votre première action
               validée, votre solde, votre statut et votre historique apparaîtront ici.
             </p>
           </div>
 
-          <ul v-if="baremeParCategorie.length > 0" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <ul v-if="baremeParCategorie.length > 0" class="grid gap-3 sm:grid-cols-2">
             <li
               v-for="groupe in baremeParCategorie"
               :key="groupe.libelle"
-              class="rounded-2xl border border-gray-100 bg-white p-4"
+              class="rounded-[10px] border border-af-bordure bg-white p-4"
             >
-              <p class="flex items-center gap-2 text-sm font-semibold text-gray-800">
-                <font-awesome-icon :icon="`fa-solid fa-${groupe.icone || 'circle-nodes'}`" class="text-custom-chocolat" />
+              <p class="flex items-center gap-2 text-[14px]/[1.4] font-bold text-af-encre">
+                <font-awesome-icon :icon="`fa-solid fa-${groupe.icone || 'circle-nodes'}`" class="text-af-chocolat" />
                 {{ groupe.libelle }}
               </p>
               <ul class="mt-2 space-y-1.5">
@@ -134,13 +132,13 @@ const baremeParCategorie = computed(() => {
                   :key="a.type_action"
                   class="flex items-start justify-between gap-3 text-xs"
                 >
-                  <span class="text-gray-600">
+                  <span class="text-af-corps">
                     {{ a.libelle }}
-                    <span v-if="a.seuil_declencheur" class="text-gray-400">
+                    <span v-if="a.seuil_declencheur" class="text-af-atone">
                       (à partir de {{ a.seuil_declencheur }})
                     </span>
                   </span>
-                  <span class="shrink-0 font-semibold text-custom-green">+{{ a.points }}</span>
+                  <span class="shrink-0 font-bold text-af-vert">+{{ a.points }}</span>
                 </li>
               </ul>
             </li>
@@ -172,5 +170,9 @@ const baremeParCategorie = computed(() => {
         <EngagementMesBadges v-if="aucunPoint" />
       </div>
     </div>
-  </div>
+
+    <template #rail>
+      <ComptePanneauNavigation />
+    </template>
+  </NuxtLayout>
 </template>

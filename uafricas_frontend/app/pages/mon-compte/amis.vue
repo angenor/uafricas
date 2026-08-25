@@ -8,7 +8,7 @@ import type {
   NotificationSocialeAPI,
 } from '~/composables/useAmis'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ layout: false, middleware: 'auth' })
 
 useHead({ title: 'Mes amis | AfricanS' })
 
@@ -53,6 +53,10 @@ const onglets = computed(() => [
   { id: 'bloques' as const, label: 'Bloqués', icon: 'fa-solid fa-ban', badge: bloques.value.length },
   { id: 'notifications' as const, label: 'Notifications', icon: 'fa-solid fa-bell', badge: notifications.value.filter(n => !n.lu).length },
 ])
+
+/** L'onglet retenu, nommé dans la barre de contexte : les onglets ayant quitté
+ *  la colonne principale, rien d'autre ne dirait lequel est ouvert. */
+const ongletCourant = computed(() => onglets.value.find(o => o.id === ongletActif.value) ?? onglets.value[0]!)
 
 // ── Helpers ──
 const photoComplete = (url: string | null): string | null => {
@@ -172,38 +176,30 @@ onMounted(charger)
 </script>
 
 <template>
-  <div class="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 pt-28 pb-16">
-    <div class="max-w-3xl mx-auto px-4">
+  <NuxtLayout name="africans">
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[{ libelle: 'Mon compte', vers: '/mon-compte/profil' }, { libelle: 'Mes ami(e)s' }]"
+      >
+        <template #centre>
+          <p class="text-base font-bold text-af-encre">{{ ongletCourant.label }}</p>
+        </template>
+      </AfricansFilAriane>
+    </template>
 
-      <!-- En-tête -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-800 font-display">Mes amis</h1>
-        <p class="text-gray-500 mt-2 text-sm">
+    <div class="flex flex-col gap-6">
+      <header>
+        <h1 class="text-[24px]/[1.3] font-bold text-af-encre">Mes ami(e)s</h1>
+        <p class="mt-1 text-[14px]/[1.5] text-af-corps">
           Gérez vos amitiés, vos demandes et les membres que vous avez bloqués.
         </p>
-      </div>
+      </header>
 
-      <!-- Onglets -->
-      <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div class="flex border-b border-gray-200 overflow-x-auto">
-          <button
-            v-for="tab in onglets"
-            :key="tab.id"
-            class="flex items-center justify-center gap-2 px-5 py-4 text-sm font-medium transition-all relative whitespace-nowrap"
-            :class="ongletActif === tab.id ? 'text-custom-chocolat' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
-            @click="ongletActif = tab.id"
-          >
-            <font-awesome-icon :icon="tab.icon" />
-            {{ tab.label }}
-            <span
-              v-if="tab.badge > 0"
-              class="ml-1 bg-custom-chocolat text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-            >{{ tab.badge }}</span>
-            <div v-if="ongletActif === tab.id" class="absolute bottom-0 left-0 right-0 h-0.5 bg-custom-chocolat"></div>
-          </button>
-        </div>
-
-        <div class="p-6">
+      <!-- Les cinq onglets sont passés dans le rail. En barre horizontale ils
+           ne tenaient pas : le cinquième, « Notifications », était coupé au
+           bord du cadre, et son `overflow-x-auto` ne l'annonçait par aucune
+           ombre ni flèche — on ne pouvait le trouver qu'en tirant au hasard. -->
+      <div class="rounded-[10px] border border-af-bordure bg-white p-6">
           <!-- Chargement -->
           <div v-if="chargement" class="flex justify-center py-16">
             <font-awesome-icon icon="fa-solid fa-spinner" class="text-3xl text-custom-chocolat animate-spin" />
@@ -442,9 +438,36 @@ onMounted(charger)
               </li>
             </ul>
           </template>
-        </div>
       </div>
     </div>
+
+    <template #rail>
+      <AfricansPanneau titre="Mes relations" icone="fa-solid fa-user-group">
+        <nav class="flex flex-col gap-1" aria-label="Sections de mes ami(e)s">
+          <button
+            v-for="tab in onglets"
+            :key="tab.id"
+            type="button"
+            class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[14px]/[1.4] transition"
+            :class="ongletActif === tab.id
+              ? 'bg-af-chocolat/15 font-bold text-af-chocolat'
+              : 'text-af-corps hover:bg-af-chocolat/[0.07]'"
+            :aria-current="ongletActif === tab.id ? 'page' : undefined"
+            @click="ongletActif = tab.id"
+          >
+            <font-awesome-icon :icon="tab.icon" class="w-4 shrink-0 text-center" />
+            <span class="min-w-0 flex-1 truncate">{{ tab.label }}</span>
+            <span
+              v-if="tab.badge > 0"
+              class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-bold"
+              :class="ongletActif === tab.id ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-corps'"
+            >{{ tab.badge }}</span>
+          </button>
+        </nav>
+      </AfricansPanneau>
+
+      <ComptePanneauNavigation />
+    </template>
 
     <!-- Modale de confirmation (retrait / blocage) -->
     <Teleport to="body">
@@ -492,5 +515,5 @@ onMounted(charger)
         </div>
       </div>
     </Teleport>
-  </div>
+  </NuxtLayout>
 </template>

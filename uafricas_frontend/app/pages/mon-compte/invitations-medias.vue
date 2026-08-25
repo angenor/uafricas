@@ -1,113 +1,16 @@
-<script setup lang="ts">
-/**
- * Les invitations à co-détenir un support média, US5.
- *
- * Un propriétaire de chaîne ou de station invite par courriel ; l'invité
- * accepte ou refuse ici. Une acceptation le fait entrer dans l'équipe du
- * support, visible depuis « Mes supports ».
- */
-import {
-  useMediaDetention,
-  LIBELLES_ROLE_DETENTEUR,
-  DESCRIPTIONS_ROLE_DETENTEUR,
-  LIBELLES_STATUT_INVITATION,
-  type InvitationDetenteurAPI,
-} from '~/composables/useMediaDetention'
-
-definePageMeta({ middleware: 'auth' })
-
-useHead({ title: 'Mes invitations médias | UAfricas' })
-
-const { mesInvitations, repondreInvitation, chargement, erreur } = useMediaDetention()
-
-const invitations = ref<InvitationDetenteurAPI[]>([])
-
-/** Invitation en cours de traitement : évite le double clic sur Accepter/Refuser. */
-const enCours = ref<string | null>(null)
-
-/** Affiché après une acceptation, pour orienter vers le support fraîchement rejoint. */
-const acceptationReussie = ref(false)
-
-const charger = async () => {
-  invitations.value = await mesInvitations()
-}
-
-onMounted(charger)
-
-/**
- * Une invitation expirée n'est jamais basculée en base : aucune tâche de fond
- * ne périme les invitations, c'est la lecture qui tranche via le champ
- * `expiree` calculé par le serveur. Le statut peut donc valoir encore
- * `en_attente` alors que l'invitation n'est plus actionnable, `expiree` prime.
- */
-const estActionnable = (invitation: InvitationDetenteurAPI): boolean =>
-  invitation.statut === 'en_attente' && !invitation.expiree
-
-const libelleStatut = (invitation: InvitationDetenteurAPI): string =>
-  invitation.expiree && invitation.statut === 'en_attente'
-    ? LIBELLES_STATUT_INVITATION.expiree
-    : LIBELLES_STATUT_INVITATION[invitation.statut]
-
-const STYLES_STATUT: Record<string, string> = {
-  en_attente: 'bg-amber-100 text-amber-800',
-  acceptee: 'bg-green-100 text-green-800',
-  refusee: 'bg-red-100 text-red-800',
-  expiree: 'bg-gray-100 text-gray-600',
-}
-
-const styleStatut = (invitation: InvitationDetenteurAPI): string =>
-  invitation.expiree && invitation.statut === 'en_attente'
-    ? STYLES_STATUT.expiree!
-    : STYLES_STATUT[invitation.statut]!
-
-const LIBELLES_TYPE_SUPPORT: Record<InvitationDetenteurAPI['type_support'], string> = {
-  chaine_tv: 'Chaîne de télévision',
-  station_radio: 'Station de radio',
-}
-
-const invitant = (invitation: InvitationDetenteurAPI): string => {
-  const nom = [invitation.invite_par_prenom, invitation.invite_par_nom].filter(Boolean).join(' ')
-  return nom || 'Un détenteur du support'
-}
-
-const repondre = async (invitation: InvitationDetenteurAPI, reponse: 'accepter' | 'refuser') => {
-  enCours.value = invitation.id
-  const ok = await repondreInvitation(invitation.id, reponse)
-  enCours.value = null
-  if (!ok) return
-  if (reponse === 'accepter') acceptationReussie.value = true
-  // La liste est rechargée : le serveur est seul juge du statut résultant.
-  await charger()
-}
-
-const dateFormatee = (iso: string) =>
-  new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-    .format(new Date(iso))
-
-const breadcrumbs = [
-  { label: 'Mon compte', to: '/mon-compte/profil' },
-  { label: 'Mes invitations médias', to: undefined },
-]
-</script>
-
 <template>
-  <div class="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 pt-28 pb-16">
-    <div class="max-w-4xl mx-auto px-4">
-      <nav aria-label="Fil d'Ariane" class="mb-6 text-sm text-gray-500">
-        <template v-for="(fil, i) in breadcrumbs" :key="i">
-          <NuxtLink v-if="fil.to" :to="fil.to" class="hover:text-custom-chocolat">{{ fil.label }}</NuxtLink>
-          <span v-else class="text-gray-900">{{ fil.label }}</span>
-          <span v-if="i < breadcrumbs.length - 1" class="mx-2">/</span>
-        </template>
-      </nav>
+  <NuxtLayout name="africans">
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[{ libelle: 'Mon compte', vers: '/mon-compte/profil' }, { libelle: 'Invitations médias' }]"
+      />
+    </template>
 
-      <header class="mb-8">
-        <h1 class="font-oswald text-3xl font-bold text-gray-900 mb-2">Mes invitations médias</h1>
-        <p class="text-gray-500">
-          Les propositions de co-détenir une chaîne ou une station qui vous ont été adressées.
-        </p>
+    <div class="flex flex-col gap-6">
+      <header>
+        <h1 class="text-[24px]/[1.3] font-bold text-af-encre">Mes invitations médias</h1>
+        <p class="mt-1 text-[14px]/[1.5] text-af-corps">Les propositions de co-détenir une chaîne ou une station qui vous ont été adressées.</p>
       </header>
-
       <div v-if="acceptationReussie" class="mb-6 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-900">
         Invitation acceptée.
         <NuxtLink to="/mon-compte/mes-supports" class="font-semibold underline hover:no-underline">
@@ -202,5 +105,9 @@ const breadcrumbs = [
         </li>
       </ul>
     </div>
-  </div>
+
+    <template #rail>
+      <ComptePanneauNavigation />
+    </template>
+  </NuxtLayout>
 </template>

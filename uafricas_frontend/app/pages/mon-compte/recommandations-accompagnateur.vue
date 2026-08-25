@@ -1,14 +1,16 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 pt-28 pb-16">
-    <div class="max-w-3xl mx-auto px-4">
-      <!-- En-tête -->
-      <header class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-800 font-display">Mes recommandations d'accompagnateur</h1>
-        <p class="mt-2 text-gray-600 text-sm">
-          Vous avez été recommandé(e) pour accompagner certaines salles Afrolang. Acceptez ou refusez chaque proposition.
-        </p>
-      </header>
+  <NuxtLayout name="africans">
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[{ libelle: 'Mon compte', vers: '/mon-compte/profil' }, { libelle: 'Recommandations' }]"
+      />
+    </template>
 
+    <div class="flex flex-col gap-6">
+      <header>
+        <h1 class="text-[24px]/[1.3] font-bold text-af-encre">Mes recommandations d'accompagnateur</h1>
+        <p class="mt-1 text-[14px]/[1.5] text-af-corps">Vous avez été recommandé(e) pour accompagner certaines salles Afrolang. Acceptez ou refusez chaque proposition.</p>
+      </header>
       <!-- Filtres -->
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-wrap gap-2">
         <button v-for="f in filtres"
@@ -61,7 +63,11 @@
         {{ erreur }}
       </div>
     </div>
-  </div>
+
+    <template #rail>
+      <ComptePanneauNavigation />
+    </template>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
@@ -73,7 +79,7 @@ import {
 } from '~/composables/useAfrolangAccompagnateur'
 import type { StatutAccompagnateur } from '~/composables/useAfrolangRessources'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ layout: false, middleware: 'auth' })
 useHead({ title: 'Recommandations accompagnateur | AfricanS' })
 
 const userStore = useUserStore()
