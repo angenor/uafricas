@@ -70,6 +70,21 @@ const estConnecte = computed(() => userStore.isAuthenticated)
     grid-template-columns: var(--spacing-af-colonne) minmax(0, 1fr);
     align-content: start;
   }
+
+  /* La navigation reste à l'écran pendant que la colonne principale défile.
+     `align-self: start` est INDISPENSABLE : par défaut un élément de grille
+     s'étire à la hauteur de sa zone, et un élément aussi haut que sa zone n'a
+     aucune marge pour coller : la règle `sticky` serait sans effet.
+     Le décalage part sous la barre supérieure, elle-même collante. */
+  .af-zone-nav {
+    position: sticky;
+    top: calc(var(--spacing-af-barre) + 1rem);
+    align-self: start;
+    /* Une colonne plus haute que l'écran doit défiler pour elle-même, sinon
+       ses dernières entrées deviennent inatteignables. */
+    max-height: calc(100svh - var(--spacing-af-barre) - 2rem);
+    overflow-y: auto;
+  }
 }
 
 @media (min-width: 80rem) {
@@ -79,6 +94,17 @@ const estConnecte = computed(() => userStore.isAuthenticated)
       var(--spacing-af-colonne)
       minmax(0, 1fr)
       var(--spacing-af-colonne);
+  }
+
+  /* Le rail ne colle QU'À PARTIR DE 1280 px, là où il est une vraie colonne
+     latérale. En dessous il est empilé sous le contenu : l'y coller le ferait
+     flotter au milieu de la page, ce qui n'aurait aucun sens. */
+  .af-zone-rail {
+    position: sticky;
+    top: calc(var(--spacing-af-barre) + 1rem);
+    align-self: start;
+    max-height: calc(100svh - var(--spacing-af-barre) - 2rem);
+    overflow-y: auto;
   }
 }
 </style>

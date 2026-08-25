@@ -1,5 +1,5 @@
 <template>
-  <header class="absolute top-0 w-full z-50 bg-linear-to-t from-white shadow-md">
+  <header class="absolute top-0 z-50 w-full bg-white font-af shadow-sm">
     <!-- Mobile : Logo + hamburger -->
     <div class="flex items-center justify-between lg:hidden px-4 h-16">
       <NuxtLink to="/">
@@ -8,14 +8,14 @@
 
       <div class="flex items-center gap-1">
         <button
-          class="p-2 text-custom-chocolat"
+          class="p-2 text-af-chocolat"
           aria-label="Rechercher"
           @click="rechercheOuverte = true"
         >
           <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="text-xl" />
         </button>
         <button
-          class="p-2 text-custom-chocolat"
+          class="p-2 text-af-chocolat"
           aria-label="Ouvrir le menu"
           @click="mobileOpen = !mobileOpen"
         >
@@ -25,14 +25,14 @@
     </div>
 
     <!-- Desktop : Logo à gauche + Navigation + Auth -->
-    <nav class="hidden lg:flex items-center justify-center relative py-1.5 px-4 lg:px-6">
-      <!-- Logo à gauche (absolu pour ne pas décaler le centrage) -->
-      <NuxtLink to="/" class="absolute left-4 lg:left-6">
-        <img class="h-16" src="/logos/logo_uafracas.png" alt="AfricanS Logo" />
+    <nav class="mx-auto hidden h-af-barre max-w-af-conteneur items-center gap-6 px-6 lg:flex">
+      <NuxtLink to="/" class="shrink-0">
+        <img class="h-[59px] w-auto" src="/logos/logo_uafracas.png" alt="AfricanS" />
       </NuxtLink>
 
-      <!-- Menus principaux (centrés) -->
-      <div class="flex items-center gap-0.5 xl:gap-1">
+      <!-- Menus alignés à GAUCHE, à la suite du logo : la maquette ne les
+           centre pas, et centrer obligeait à sortir le logo du flux. -->
+      <div class="flex items-center gap-1">
         <div
           v-for="menu in menus"
           :key="menu.id"
@@ -40,19 +40,16 @@
           @mouseleave="pointer = null"
           class="relative"
         >
+          <!-- Le sous-titre (« Culture & identité »…) disparaît du bureau,
+               comme sur la maquette : il double la ligne et la vignette du
+               méga-menu le redit déjà, en plus long. Il reste au mobile, où il
+               n'y a pas de méga-menu pour le porter. -->
           <NuxtLink
             :to="menu.to"
-            class="flex flex-col items-center px-3 xl:px-4 py-1.5 rounded-lg hover:bg-gray-50 transition-all duration-150 cursor-pointer"
+            class="block rounded-lg px-4 py-2 text-[16px]/[1.4] font-bold whitespace-nowrap transition"
+            :class="pointer === menu.id ? 'bg-af-chocolat/[0.07] text-af-chocolat' : 'text-af-encre'"
           >
-            <span
-              class="text-base font-semibold whitespace-nowrap transition-colors duration-150"
-              :class="pointer === menu.id ? 'text-custom-green' : (menu.colorClass || 'text-custom-chocolat')"
-            >
-              {{ menu.label }}
-            </span>
-            <span class="text-xs text-gray-400 whitespace-nowrap font-normal">
-              {{ menu.subtitle }}
-            </span>
+            {{ menu.label }}
           </NuxtLink>
           <LayoutNavDropdown
             v-if="menu.items.length > 0"
@@ -67,8 +64,18 @@
         </div>
       </div>
 
-      <!-- Auth desktop - droite (absolu pour ne pas décaler le centrage) -->
-      <div class="absolute right-4 lg:right-6 flex items-center gap-3">
+      <!-- Auth desktop, à droite -->
+      <div class="ml-auto flex items-center gap-4">
+        <!-- Entrée de la maquette. Elle vise la RACINE : la plateforme démarre
+             sur le fil, `/publications` n'est plus qu'une redirection. -->
+        <NuxtLink
+          to="/"
+          class="flex items-center gap-2 text-[16px]/[1.4] font-bold whitespace-nowrap text-af-encre transition hover:text-af-chocolat"
+        >
+          <font-awesome-icon icon="fa-solid fa-home" />
+          Fil d'actualité
+        </NuxtLink>
+
         <!-- Bouton recherche compact -->
         <button
           @click="rechercheOuverte = true"
@@ -89,13 +96,13 @@
           <div class="flex items-center gap-2 cursor-pointer px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors">
             <img
               v-if="user?.photo_url"
-              :src="user.photo_url"
+              :src="urlMedia(user.photo_url)!"
               :alt="fullName"
-              class="w-8 h-8 rounded-full object-cover border-2 border-custom-chocolat"
+              class="w-8 h-8 rounded-full object-cover border-2 border-af-chocolat"
             />
             <div
               v-else
-              class="w-8 h-8 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-xs font-bold"
+              class="w-8 h-8 rounded-full bg-af-chocolat text-white flex items-center justify-center text-xs font-bold"
             >
               {{ user?.prenom?.charAt(0)?.toUpperCase() }}{{ user?.nom?.charAt(0)?.toUpperCase() }}
             </div>
@@ -123,13 +130,13 @@
               <div class="p-4 bg-gray-50/80 border-b border-gray-100 flex flex-col items-center gap-2">
                 <img
                   v-if="user?.photo_url"
-                  :src="user.photo_url"
+                  :src="urlMedia(user.photo_url)!"
                   :alt="fullName"
-                  class="w-14 h-14 rounded-full object-cover border-2 border-custom-chocolat"
+                  class="w-14 h-14 rounded-full object-cover border-2 border-af-chocolat"
                 />
                 <div
                   v-else
-                  class="w-14 h-14 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-lg font-bold"
+                  class="w-14 h-14 rounded-full bg-af-chocolat text-white flex items-center justify-center text-lg font-bold"
                 >
                   {{ user?.prenom?.charAt(0)?.toUpperCase() }}{{ user?.nom?.charAt(0)?.toUpperCase() }}
                 </div>
@@ -143,7 +150,7 @@
               <div class="py-1">
                 <NuxtLink
                   to="/mon-compte/profil"
-                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-af-vert transition-colors"
                 >
                   <font-awesome-icon icon="fa-solid fa-user" class="w-4 text-gray-400" />
                   Mon profil
@@ -151,7 +158,7 @@
 
                 <NuxtLink
                   to="/mon-compte/profil?onglet=mes-points"
-                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-af-vert transition-colors"
                 >
                   <font-awesome-icon icon="fa-solid fa-medal" class="w-4 text-gray-400" />
                   Mes points
@@ -159,7 +166,7 @@
 
                 <NuxtLink
                   to="/mon-compte/amis"
-                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-af-vert transition-colors"
                 >
                   <font-awesome-icon icon="fa-solid fa-user-check" class="w-4 text-gray-400" />
                   Mes amis
@@ -167,7 +174,7 @@
 
                 <NuxtLink
                   to="/mon-compte/contributions"
-                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-af-vert transition-colors"
                 >
                   <font-awesome-icon icon="fa-solid fa-clipboard-list" class="w-4 text-gray-400" />
                   Mes contributions
@@ -175,12 +182,12 @@
 
                 <NuxtLink
                   to="/mon-compte/recommandations-accompagnateur"
-                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-af-vert transition-colors"
                 >
                   <font-awesome-icon icon="fa-solid fa-user-graduate" class="w-4 text-gray-400" />
                   Recommandations
                   <span v-if="recommandationsAccompagnateurEnAttente > 0"
-                        class="ml-auto bg-custom-chocolat text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                        class="ml-auto bg-af-chocolat text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                     {{ recommandationsAccompagnateurEnAttente }}
                   </span>
                 </NuxtLink>
@@ -188,7 +195,7 @@
                 <NuxtLink
                   v-if="isAdmin"
                   to="/admin"
-                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-custom-green transition-colors"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-af-vert transition-colors"
                 >
                   <font-awesome-icon icon="fa-solid fa-shield-halved" class="w-4 text-gray-400" />
                   Administration
@@ -213,9 +220,9 @@
         <NuxtLink
           v-else
           to="/login"
-          class="bg-custom-chocolat text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
+          class="rounded-lg bg-af-degrade px-6 py-2.5 text-base font-bold whitespace-nowrap text-white transition hover:opacity-90"
         >
-          Se connecter
+          Se Connecter
         </NuxtLink>
       </div>
     </nav>
@@ -243,7 +250,7 @@
               @click="mobileSection = mobileSection === menu.id ? null : menu.id"
             >
               <div class="flex flex-col items-start">
-                <span class="font-semibold text-sm" :class="menu.colorClass || 'text-custom-chocolat'">
+                <span class="text-sm font-bold text-af-encre">
                   {{ menu.label }}
                 </span>
                 <span class="text-[11px] text-gray-400">{{ menu.subtitle }}</span>
@@ -262,7 +269,7 @@
               @click="mobileOpen = false"
             >
               <div class="flex flex-col items-start">
-                <span class="font-semibold text-sm" :class="menu.colorClass || 'text-custom-chocolat'">
+                <span class="text-sm font-bold text-af-encre">
                   {{ menu.label }}
                 </span>
                 <span class="text-[11px] text-gray-400">{{ menu.subtitle }}</span>
@@ -287,7 +294,7 @@
                   class="flex items-start gap-3 px-5 py-2.5 hover:bg-gray-100/50 transition-colors"
                   @click="mobileOpen = false"
                 >
-                  <div class="shrink-0 w-7 h-7 rounded-md bg-orange-50 text-custom-chocolat flex items-center justify-center mt-0.5">
+                  <div class="shrink-0 w-7 h-7 rounded-md bg-orange-50 text-af-chocolat flex items-center justify-center mt-0.5">
                     <font-awesome-icon :icon="item.icon" class="text-xs" />
                   </div>
                   <div>
@@ -306,13 +313,13 @@
               <div class="flex items-center gap-3 mb-3">
                 <img
                   v-if="user?.photo_url"
-                  :src="user.photo_url"
+                  :src="urlMedia(user.photo_url)!"
                   :alt="fullName"
-                  class="w-10 h-10 rounded-full object-cover border-2 border-custom-chocolat"
+                  class="w-10 h-10 rounded-full object-cover border-2 border-af-chocolat"
                 />
                 <div
                   v-else
-                  class="w-10 h-10 rounded-full bg-custom-chocolat text-white flex items-center justify-center text-sm font-bold"
+                  class="w-10 h-10 rounded-full bg-af-chocolat text-white flex items-center justify-center text-sm font-bold"
                 >
                   {{ user?.prenom?.charAt(0)?.toUpperCase() }}{{ user?.nom?.charAt(0)?.toUpperCase() }}
                 </div>
@@ -324,7 +331,7 @@
 
               <NuxtLink
                 to="/mon-compte/profil"
-                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-custom-green transition-colors"
+                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-af-vert transition-colors"
                 @click="mobileOpen = false"
               >
                 <font-awesome-icon icon="fa-solid fa-user" class="w-4 text-gray-400" />
@@ -333,7 +340,7 @@
 
               <NuxtLink
                 to="/mon-compte/profil?onglet=mes-points"
-                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-custom-green transition-colors"
+                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-af-vert transition-colors"
                 @click="mobileOpen = false"
               >
                 <font-awesome-icon icon="fa-solid fa-medal" class="w-4 text-gray-400" />
@@ -342,7 +349,7 @@
 
               <NuxtLink
                 to="/mon-compte/amis"
-                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-custom-green transition-colors"
+                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-af-vert transition-colors"
                 @click="mobileOpen = false"
               >
                 <font-awesome-icon icon="fa-solid fa-user-check" class="w-4 text-gray-400" />
@@ -351,7 +358,7 @@
 
               <NuxtLink
                 to="/mon-compte/contributions"
-                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-custom-green transition-colors"
+                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-af-vert transition-colors"
                 @click="mobileOpen = false"
               >
                 <font-awesome-icon icon="fa-solid fa-clipboard-list" class="w-4 text-gray-400" />
@@ -361,7 +368,7 @@
               <NuxtLink
                 v-if="isAdmin"
                 to="/admin"
-                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-custom-green transition-colors"
+                class="flex items-center gap-3 py-2 text-sm text-gray-700 hover:text-af-vert transition-colors"
                 @click="mobileOpen = false"
               >
                 <font-awesome-icon icon="fa-solid fa-shield-halved" class="w-4 text-gray-400" />
@@ -379,7 +386,7 @@
             <NuxtLink
               v-else
               to="/login"
-              class="block text-center bg-custom-chocolat text-white py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
+              class="block text-center bg-af-chocolat text-white py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
               @click="mobileOpen = false"
             >
               Se connecter
@@ -395,24 +402,9 @@
 </template>
 
 <script setup lang="ts">
-interface NavSubItem {
-  label: string
-  to: string
-  description: string
-  icon: string
-}
-
-interface NavMenu {
-  id: string
-  label: string
-  subtitle: string
-  description: string
-  to: string
-  gradient: string
-  image?: string
-  colorClass?: string
-  items: NavSubItem[]
-}
+// L'arborescence des univers est partagée avec la navigation latérale de la
+// refonte : elle vit dans `utils/navigation-modules.ts`.
+import { MODULES_AFRICANS } from '~/utils/navigation-modules'
 
 const pointer = ref<string | null>(null)
 const mobileOpen = ref(false)
@@ -457,92 +449,7 @@ const handleLogout = async () => {
   mobileOpen.value = false
 }
 
-const menus: NavMenu[] = [
-  {
-    id: 'africarise',
-    label: 'Africarise',
-    subtitle: 'Culture & identité',
-    description: 'Découvrez et célébrez la richesse culturelle et identitaire de l\'Afrique',
-    to: '/africa-culture',
-    gradient: 'bg-linear-to-br from-amber-700 to-orange-900',
-    image: '/images/danse-afrique.jpg',
-    items: [
-      { label: 'Afrolang', to: '/afrolang', description: 'Sauvons nos langues', icon: 'fa-solid fa-language' },
-      { label: 'Codimoi', to: '/codi-moi', description: 'Préservons nos cultures les meilleures', icon: 'fa-solid fa-book-open' },
-      { label: 'Afripulse', to: '/opportunite-afrique', description: 'Promouvons notre Afrique', icon: 'fa-solid fa-briefcase' },
-      { label: 'Afroculture', to: '/centres', description: 'Enrichissons-nous ici et ailleurs de notre culture diversifiée', icon: 'fa-solid fa-earth-africa' },
-    ]
-  },
-  {
-    id: 'opafrica',
-    label: 'Opafrica',
-    subtitle: 'Opportunités',
-    description: 'Saisir les opportunités et agir concrètement pour le développement du continent',
-    to: '/actions',
-    gradient: 'bg-linear-to-br from-teal-600 to-cyan-800',
-    image: '/images/fiche-opportunite.jpg',
-    items: [
-      { label: 'Rootstree', to: '/arbre-genealogique', description: 'Tracer son arbre généalogique', icon: 'fa-solid fa-tree' },
-      { label: 'Africonnect', to: '/retrouve-amis', description: 'Retrouver une personne perdue de vue', icon: 'fa-solid fa-users' },
-      { label: 'Diapertise', to: '/experts', description: 'Mobiliser une expertise de pointe', icon: 'fa-solid fa-user-tie' },
-      { label: 'Sabbafrica', to: '/echanges-sabbatiques', description: 'Offrir son expertise en volontariat et bénévolat', icon: 'fa-solid fa-plane' },
-      { label: 'Afromarket', to: '/marche-africain', description: 'Place de marché panafricaine', icon: 'fa-solid fa-store' },
-    ]
-  },
-  {
-    id: 'novagouv',
-    label: 'Novagouv',
-    subtitle: 'Gouvernance',
-    description: 'Promouvoir une gouvernance transparente et responsable en Afrique',
-    to: '/universite/gouvernance',
-    gradient: 'bg-linear-to-br from-violet-700 to-purple-900',
-    image: '/images/bonne_gouvernance.png',
-    items: [
-      { label: 'Factcheck', to: '/universite/gouvernance/factcheck', description: 'Vérifier des idées reçues sur l\'Afrique', icon: 'fa-solid fa-scale-balanced' },
-      { label: 'Ideaforces', to: '/universite/gouvernance/ideaforces', description: 'Partager des idées et orientations sur les enjeux de développement', icon: 'fa-solid fa-lightbulb' },
-      { label: 'BadGoodhabits', to: '/universite/gouvernance/bad-good-habits', description: 'Dénoncer ou féliciter des habitudes', icon: 'fa-solid fa-triangle-exclamation' },
-    ]
-  },
-  {
-    id: 'mindshiftlab',
-    label: 'Muniversa',
-    subtitle: 'Formation & savoir',
-    description: 'Se former et développer de nouvelles compétences pour le continent',
-    to: '/universite',
-    gradient: 'bg-linear-to-br from-blue-700 to-indigo-900',
-    image: '/images/education.png',
-    items: [
-      { label: 'Africalive', to: '/evenements/liste', description: 'Organiser un événement mettant en valeur l\'Afrique et son développement', icon: 'fa-solid fa-calendar-days' },
-      { label: 'Humantech', to: '/bibliotheque/humaine', description: 'Parler à une bibliothèque humaine', icon: 'fa-solid fa-chalkboard-user' },
-      { label: 'Librafrica', to: '/bibliotheque/numerique', description: 'Permettre aux Africains et aux écoles de consulter vos publications', icon: 'fa-solid fa-display' },
-      { label: 'Muniversa', to: '/universite', description: 'Mindshift University of Africa, éduquer sur les enjeux prioritaires', icon: 'fa-solid fa-graduation-cap' },
-    ]
-  },
-  {
-    id: 'africantives',
-    label: 'Africantives',
-    subtitle: 'Initiatives & projets',
-    description: 'Valoriser les initiatives et projets porteurs du développement du continent',
-    to: '/africantives',
-    gradient: 'bg-linear-to-br from-rose-600 to-pink-800',
-    items: []
-  },
-  {
-    id: 'africamood',
-    label: 'Africamood',
-    subtitle: 'Médias',
-    description: 'Suivre l\'actualité médiatique et culturelle du continent africain',
-    to: '/medias',
-    gradient: 'bg-linear-to-br from-emerald-600 to-green-800',
-    image: '/images/tele_baniere.png',
-    colorClass: 'text-custom-green',
-    items: [
-      { label: 'Vidafrica', to: '/vidafrica', description: 'Votre musique et des vidéos spéciales sur l\'Afrique à votre portée', icon: 'fa-solid fa-video' },
-      { label: 'Télé', to: '/medias/tele', description: 'La télé au service de l\'union et du développement de l\'Afrique', icon: 'fa-solid fa-tv' },
-      { label: 'Radio', to: '/medias/radios', description: 'La radio au service de l\'union et du développement de l\'Afrique', icon: 'fa-solid fa-radio' },
-    ]
-  },
-]
+const menus = MODULES_AFRICANS
 </script>
 
 <style scoped>

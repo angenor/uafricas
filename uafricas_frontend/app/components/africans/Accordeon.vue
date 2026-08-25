@@ -1,10 +1,14 @@
 <template>
-  <!-- Accordéon de fiche pays. Ouvert, le fond passe au pêche (chocolat à 15 %)
-       c'est le même signal que l'item de navigation actif, et c'est voulu :
-       dans les deux cas il marque « vous êtes ici ». -->
+  <!-- Accordéon de fiche pays. Ouvert, le fond passe par défaut au pêche
+       (chocolat à 15 %) : c'est le même signal que l'item de navigation actif,
+       et c'est voulu : dans les deux cas il marque « vous êtes ici ».
+       `fond="blanc"` le laisse blanc, pour les sections que la maquette ne
+       teinte pas. -->
   <section
     class="overflow-hidden rounded-[10px] border transition-colors"
-    :class="ouvert ? 'border-af-chocolat/30 bg-af-chocolat/15' : 'border-af-bordure bg-white'"
+    :class="[
+      ouvert ? 'border-af-chocolat/30' : 'border-af-bordure',
+      ouvert && fond === 'peche' ? 'bg-af-chocolat/15' : 'bg-white']"
   >
     <h3>
       <button
@@ -37,7 +41,24 @@ const props = withDefaults(defineProps<{
   /** Non contrôlé par défaut ; passer `modelValue` pour piloter de l'extérieur. */
   modelValue?: boolean
   parDefautOuvert?: boolean
-}>(), { parDefautOuvert: false })
+  /**
+   * Fond une fois ouvert. La maquette n'en donne pas qu'un : « Informations
+   * générales » reste blanche là où « Cultures et langues » passe au pêche.
+   * Le pêche est le défaut : c'est le cas le plus fréquent, et c'est le même
+   * signal que l'item de navigation actif.
+   */
+  fond?: 'peche' | 'blanc'
+}>(), {
+  // `modelValue: undefined` n'est PAS décoratif. Vue convertit toute prop de
+  // type Boolean absente en `false` : sauf si une valeur par défaut est
+  // déclarée. Sans cette ligne, `props.modelValue` valait `false` au lieu de
+  // `undefined`, le `??` ci-dessous ne se repliait jamais sur l'état interne,
+  // et l'accordéon non contrôlé restait fermé pour toujours : `parDefautOuvert`
+  // était ignoré et le clic n'ouvrait rien.
+  modelValue: undefined,
+  parDefautOuvert: false,
+  fond: 'peche',
+})
 
 const emit = defineEmits<{ 'update:modelValue': [boolean] }>()
 

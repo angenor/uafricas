@@ -1,12 +1,14 @@
 <template>
   <component
-    :is="vers ? 'NuxtLink' : 'button'"
-    :to="vers"
-    :type="vers ? undefined : type"
+    :is="composant"
+    :to="vers && !desactive ? vers : undefined"
+    :type="vers && !desactive ? undefined : type"
+    :disabled="composant === 'button' ? desactive : undefined"
+    :aria-disabled="desactive ? 'true' : undefined"
     class="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-6 text-base font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat disabled:opacity-50"
-    :class="[classesVariante, pleineLargeur && 'w-full']"
+    :class="[classesVariante, pleineLargeur && 'w-full', desactive && 'pointer-events-none opacity-50']"
   >
-    <font-awesome-icon v-if="icone" :icon="icone" />
+    <font-awesome-icon v-if="icone" :icon="icone" :class="tourne && 'animate-spin'" />
     <slot />
   </component>
 </template>
@@ -29,10 +31,28 @@ const props = withDefaults(defineProps<{
   icone?: string
   pleineLargeur?: boolean
   type?: 'button' | 'submit'
+  /** Action indisponible : salle fermée par l'administration, requête en vol… */
+  desactive?: boolean
+  /** Fait tourner l'icône : à combiner avec `desactive` pendant une attente. */
+  tourne?: boolean
 }>(), {
   variante: 'primaire',
   type: 'button',
 })
+
+/**
+ * Un NuxtLink désactivé reste cliquable : `disabled` n'existe pas sur une
+ * ancre. Quand l'action est indisponible on retombe donc sur un vrai <button>,
+ * qui, lui, refuse le clic ET sort du parcours de tabulation.
+ */
+/**
+ * `<component :is="'NuxtLink'">` ne résout PAS le composant : la chaîne est
+ * rendue telle quelle, et le navigateur reçoit une balise `<NuxtLink>` inerte
+ * un lien qui n'en est pas un. `resolveComponent` le résout pour de bon.
+ */
+const LienNuxt = resolveComponent('NuxtLink')
+
+const composant = computed(() => (props.vers && !props.desactive ? LienNuxt : 'button'))
 
 const classesVariante = computed(() => ({
   primaire: 'bg-af-degrade text-white hover:opacity-90',

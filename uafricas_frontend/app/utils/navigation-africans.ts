@@ -1,17 +1,26 @@
+import { MODULES_AFRICANS, type SousModuleAfricans } from './navigation-modules'
+
 /**
  * Navigation latérale de la refonte (maquette « Africans, Design »).
  *
- * La maquette introduit une arborescence à DEUX niveaux que le routage actuel
- * ne porte pas : des univers (Africarise, Opafrica, …) contenant des modules
- * (Codimoi, Afrolang, Afripulse, …). Les fils d'Ariane de la maquette en
- * donnent quatre de façon certaine :
+ * La maquette dessine onze entrées plates. Six d'entre elles sont en réalité
+ * des UNIVERS contenant des applications, Africarise contient Afrolang,
+ * Codimoi, Afripulse, Afroculture, etc. La maquette ne pouvait pas le montrer :
+ * un cadre statique ne rend pas un déroulé. C'est la barre supérieure du site
+ * qui porte cette arborescence depuis toujours, et c'est d'elle que les
+ * sous-entrées sont tirées, jamais recopiées.
  *
- *   Africarise / Codimoi · Africarise / Afrolang
- *   Africarise / Afripulse · Africarise / Afroculture · Africamood / Vidafrica
+ * Les rattachements marqués « à valider » au lot 1 sont donc tranchés : la
+ * cible d'un univers est celle que la barre supérieure lui donne.
  *
- * Les autres rattachements ne sont écrits nulle part. Les entrées marquées
- * `aValider: true` portent donc une cible déduite, pas confirmée : c'est le
- * seul fichier à corriger quand l'arbitrage sera rendu.
+ * Deux entrées de la maquette ont été retirées. « Explorez » ne menait nulle
+ * part et rien ne la définissait. « Messages » faisait doublon : la messagerie
+ * est un dock ancré, présent sur toutes les pages et à toute heure, une entrée
+ * de menu vers ce qui est déjà à l'écran n'ajoute qu'un clic.
+ *
+ * « Application African » mène à la page de découverte : c'est elle qui présente
+ * la plateforme depuis que le fil d'actualité occupe la racine. Reste incertaine
+ * la seule « Communauté ».
  */
 
 export interface EntreeNav {
@@ -23,19 +32,35 @@ export interface EntreeNav {
   vers: string | null
   /** true = rattachement déduit, à faire confirmer. */
   aValider?: boolean
+  /** Applications de l'univers, déroulées en accordéon. Vide = simple lien. */
+  sousEntrees?: SousModuleAfricans[]
+}
+
+/** Retrouve un univers par son identifiant dans la source partagée. */
+const module = (id: string) => MODULES_AFRICANS.find(m => m.id === id)
+
+/**
+ * Construit l'entrée d'un univers depuis la barre supérieure : même cible,
+ * mêmes applications. `libelle` permet de forcer le libellé de la maquette
+ * lorsqu'il diffère de celui de la source partagée.
+ */
+function universe(id: string, icone: string, libelle?: string): EntreeNav {
+  const m = module(id)
+  return {
+    libelle: libelle ?? m?.label ?? id,
+    icone,
+    vers: m?.to ?? null,
+    sousEntrees: m?.items?.length ? m.items : undefined,
+  }
 }
 
 export const NAV_AFRICANS: EntreeNav[] = [
-  { libelle: "Fil d'actualité", icone: 'fa-solid fa-home', vers: '/publications' },
-  { libelle: 'Africarise', icone: 'fa-solid fa-book-open', vers: '/codi-moi', aValider: true },
-  { libelle: 'Opafrica', icone: 'fa-solid fa-id-card', vers: '/retrouve-amis', aValider: true },
-  { libelle: 'Novagouv', icone: 'fa-solid fa-circle', vers: null, aValider: true },
-  // Renommé Muniversa par le commit 1daf61f ; la maquette dit encore « Mindshiftlab ».
-  { libelle: 'Muniversa', icone: 'fa-solid fa-shield-halved', vers: '/universite', aValider: true },
-  { libelle: 'Africantives', icone: 'fa-solid fa-arrows-rotate', vers: '/africantives' },
-  { libelle: 'Africamood', icone: 'fa-solid fa-photo-film', vers: '/vidafrica', aValider: true },
-  { libelle: 'Explorez', icone: 'fa-solid fa-paper-plane', vers: null, aValider: true },
-  { libelle: 'Messages', icone: 'fa-solid fa-envelope', vers: '/mon-compte', aValider: true },
+  { libelle: "Fil d'actualité", icone: 'fa-solid fa-home', vers: '/' },
+  universe('africarise', 'fa-solid fa-book-open'),
+  universe('opafrica', 'fa-solid fa-id-card'),
+  universe('novagouv', 'fa-solid fa-circle'),
+  universe('mindshiftlab', 'fa-solid fa-shield-halved'),
+  universe('africantives', 'fa-solid fa-arrows-rotate'),
+  universe('africamood', 'fa-solid fa-photo-film'),
   { libelle: 'Communauté', icone: 'fa-solid fa-user', vers: '/profil', aValider: true },
-  { libelle: 'Application African', icone: 'fa-solid fa-star', vers: null, aValider: true },
-]
+  { libelle: 'Application African', icone: 'fa-solid fa-star', vers: '/decouvrir' }]

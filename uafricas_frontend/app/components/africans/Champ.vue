@@ -24,15 +24,28 @@
       @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     />
 
-    <input
-      v-else
-      :id="id"
-      :type="type"
-      :value="modelValue"
-      :placeholder="placeholder"
-      class="h-11 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
-      @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-    />
+    <!-- L'icône est posée EN INCRUSTATION, pas devant le champ : elle doit
+         rester dans la boîte pour que le clic n'importe où la traverse et
+         atteigne l'input. -->
+    <div v-else class="relative">
+      <font-awesome-icon
+        v-if="icone"
+        :icon="icone"
+        class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-af-atone-2"
+      />
+      <input
+        :id="id"
+        :type="type"
+        :value="modelValue"
+        :placeholder="placeholder"
+        :required="obligatoire"
+        :disabled="desactive"
+        :autocomplete="autocomplete"
+        class="h-11 w-full rounded-md border border-af-bordure bg-white pr-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none disabled:opacity-50"
+        :class="icone ? 'pl-11' : 'pl-4'"
+        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+      />
+    </div>
 
     <p v-if="aide" class="text-[12px]/[1.4] text-af-atone">{{ aide }}</p>
   </div>
@@ -42,9 +55,14 @@
 withDefaults(defineProps<{
   libelle: string
   modelValue?: string
-  type?: 'text' | 'email' | 'select' | 'textarea'
+  type?: 'text' | 'email' | 'password' | 'select' | 'textarea'
   placeholder?: string
   aide?: string
+  /** Icône posée en tête du champ (types simples uniquement). */
+  icone?: string
+  obligatoire?: boolean
+  desactive?: boolean
+  autocomplete?: string
 }>(), { type: 'text' })
 
 defineEmits<{ 'update:modelValue': [string] }>()

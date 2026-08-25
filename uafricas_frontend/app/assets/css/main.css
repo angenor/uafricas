@@ -35,8 +35,11 @@
   --color-af-atone-2: #A8A8BD;   /* Grey/300, placeholders, inactif */
   --color-af-icone: #222222;     /* fill_icon */
 
-  /* Police de la maquette. Inter est le défaut de Figma Sites : si le choix
-     bascule sur Oswald + Open Sans, c'est cette ligne seule qui change. */
+  /* Police de la refonte : Inter, TRANCHÉ. Le gabarit et les composants ont été
+     dimensionnés au pixel contre elle (48/20/17/16/14/12, interlignage 1.4) ;
+     Oswald est condensé et les mêmes titres n'occuperaient plus les mêmes
+     largeurs. Oswald + Open Sans (`--font-display` / `--font-body`) restent en
+     service sur les écrans non encore portés et disparaîtront avec eux. */
   --font-af: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   /* Gabarit mesuré dans Figma (artboard 1920). */
