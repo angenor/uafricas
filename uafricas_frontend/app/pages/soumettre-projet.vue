@@ -82,6 +82,34 @@
         </button>
       </nav>
 
+      <!-- Restauration. Le message dit AUSSI ce qui n'a pas été retrouvé :
+           découvrir l'absence de l'image au moment d'envoyer serait pire que
+           de l'apprendre tout de suite. -->
+      <div
+        v-if="brouillonRestaure"
+        class="flex flex-wrap items-center gap-3 rounded-[10px] border border-af-vert/30 bg-af-vert/5 px-4 py-3 text-[14px]/[1.4] text-af-corps"
+      >
+        <font-awesome-icon icon="fa-solid fa-clock-rotate-left" class="shrink-0 text-af-vert" />
+        <span class="min-w-0 flex-1">
+          Votre saisie précédente a été retrouvée. L'image de couverture, elle, est à choisir de nouveau.
+        </span>
+        <button
+          type="button"
+          class="shrink-0 text-[14px]/[1.4] font-bold text-af-chocolat transition hover:opacity-70"
+          @click="abandonnerBrouillon"
+        >
+          Repartir de zéro
+        </button>
+        <button
+          type="button"
+          class="grid size-6 shrink-0 place-items-center text-af-atone transition hover:text-af-encre"
+          aria-label="Masquer ce message"
+          @click="brouillonRestaure = false"
+        >
+          <font-awesome-icon icon="fa-solid fa-xmark" />
+        </button>
+      </div>
+
       <div v-if="erreurMessage" class="flex items-center gap-2 rounded-[10px] border border-af-live/30 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live">
         <font-awesome-icon icon="fa-solid fa-circle-exclamation" />
         {{ erreurMessage }}
@@ -345,8 +373,8 @@
             Votre projet est examiné par l'équipe avant d'être publié.
           </li>
           <li class="flex gap-3">
-            <font-awesome-icon icon="fa-solid fa-triangle-exclamation" class="mt-1 size-3 shrink-0 text-af-live" />
-            La saisie n'est pas conservée si vous quittez la page.
+            <font-awesome-icon icon="fa-solid fa-floppy-disk" class="mt-1 size-3 shrink-0 text-af-vert" />
+            Votre saisie est conservée sur cet appareil si vous quittez la page. L'image de couverture fait exception.
           </li>
         </ul>
       </AfricansPanneau>
@@ -436,7 +464,13 @@ const precedent = () => allerA(etape.value - 1)
 const paysOptions = PAYS_PROJETS.filter(p => p.value !== '')
 
 // Form state
-const form = reactive({
+/**
+ * Valeurs par défaut, déclarées UNE fois. Elles servaient à trois endroits :
+ * l'état initial, la remise à zéro et, désormais, le test « ce brouillon
+ * vaut-il d'être conservé ». Trois listes de dix-huit champs recopiées à la
+ * main auraient fini par diverger d'un champ, en silence.
+ */
+const valeursInitiales = () => ({
   titre: '',
   description: '',
   nomOrganisation: '',
@@ -456,6 +490,8 @@ const form = reactive({
   contactEmail: '',
   contactTelephone: '',
 })
+
+const form = reactive(valeursInitiales())
 
 const objectifs = reactive<string[]>([''])
 const couvertureFile = ref<File | null>(null)
@@ -512,27 +548,144 @@ const supprimerCouverture = () => {
 
 // Reset
 const resetForm = () => {
-  form.titre = ''
-  form.description = ''
-  form.nomOrganisation = ''
-  form.descriptionOrganisation = ''
-  form.siteWeb = ''
-  form.pays = ''
-  form.ville = ''
-  form.coutTotal = null
-  form.devise = 'XOF'
-  form.dureeMois = null
-  form.dateDebutSouhaitee = ''
-  form.resultatsAttendus = ''
-  form.activitesProgrammees = ''
-  form.echeanciers = ''
-  form.contributionAutonomisation = ''
-  form.difficultesRisques = ''
-  form.contactEmail = ''
-  form.contactTelephone = ''
+  Object.assign(form, valeursInitiales())
   objectifs.splice(0, objectifs.length, '')
   supprimerCouverture()
 }
+
+// ─── Brouillon local ──────────────────────────────────────────────────────
+//
+// Un formulaire en quatre étapes fait passer plus de temps dessus, donc plus
+// à perdre : un rechargement, un lien cliqué par erreur, et dix-huit champs
+// disparaissaient.
+//
+// La clé porte l'identifiant du membre. Sur un poste partagé, une clé unique
+// ferait relire à quelqu'un le brouillon d'un autre — et le lui ferait
+// soumettre sous son propre compte.
+//
+// Elle porte aussi un numéro de version : si la forme du formulaire change,
+// un brouillon écrit par l'ancienne version ne doit pas être réinjecté
+// champ par champ dans la nouvelle.
+const CLE_BROUILLON = computed(
+  () => `africans:brouillon:projet:v1:${userStore.user?.id ?? 'anonyme'}`,
+)
+
+/** Vrai le temps d'annoncer au membre que sa saisie a été retrouvée. */
+const brouillonRestaure = ref(false)
+
+/**
+ * Un brouillon vide n'est pas un brouillon. Sans ce test, ouvrir la page puis
+ * la quitter écrirait dix-huit champs vides dans le stockage, et le bandeau
+ * « saisie retrouvée » s'afficherait à la visite suivante sans rien à montrer.
+ *
+ * La comparaison porte sur les valeurs par défaut RÉELLES, pas sur « chaîne
+ * vide ou nul » : `devise` vaut `XOF` d'emblée, et la traiter comme une saisie
+ * rendrait tout brouillon utile.
+ */
+const brouillonUtile = () => {
+  const defauts = valeursInitiales() as Record<string, unknown>
+  return Object.entries(form).some(([cle, valeur]) => valeur !== defauts[cle])
+    || objectifs.some(o => o.trim() !== '')
+}
+
+const enregistrerBrouillon = () => {
+  if (!import.meta.client || succes.value) return
+  try {
+    if (!brouillonUtile()) {
+      localStorage.removeItem(CLE_BROUILLON.value)
+      return
+    }
+    // La couverture est ABSENTE du brouillon : c'est un `File`, que JSON ne
+    // sait pas porter, et son aperçu en base64 pèse un tiers de plus que
+    // l'image — 5 Mo autorisés deviendraient 6,7 Mo, au-delà du quota de
+    // `localStorage`. Le membre en est prévenu à la restauration.
+    localStorage.setItem(CLE_BROUILLON.value, JSON.stringify({
+      form: { ...form },
+      objectifs: [...objectifs],
+      etape: etape.value,
+    }))
+  }
+  catch {
+    // Quota dépassé, ou stockage refusé par le navigateur. Le formulaire
+    // continue de fonctionner sans filet plutôt que de s'interrompre.
+  }
+}
+
+const effacerBrouillon = () => {
+  if (!import.meta.client) return
+  try {
+    localStorage.removeItem(CLE_BROUILLON.value)
+  }
+  catch { /* stockage indisponible */ }
+}
+
+const restaurerBrouillon = () => {
+  if (!import.meta.client) return
+  let brut: string | null = null
+  try {
+    brut = localStorage.getItem(CLE_BROUILLON.value)
+  }
+  catch { return }
+  if (!brut) return
+
+  try {
+    const donnees = JSON.parse(brut) as {
+      form?: Record<string, unknown>
+      objectifs?: unknown
+      etape?: unknown
+    }
+    // Recopie champ par champ, et seulement ceux que le formulaire connaît :
+    // un brouillon trafiqué ne doit pas pouvoir injecter de clé étrangère
+    // dans l'objet envoyé à l'API.
+    for (const cle of Object.keys(form) as (keyof typeof form)[]) {
+      const valeur = donnees.form?.[cle]
+      if (valeur !== undefined) (form as Record<string, unknown>)[cle] = valeur
+    }
+    if (Array.isArray(donnees.objectifs) && donnees.objectifs.length) {
+      objectifs.splice(0, objectifs.length, ...donnees.objectifs.map(o => String(o)))
+    }
+    if (typeof donnees.etape === 'number' && donnees.etape >= 0 && donnees.etape < ETAPES.length) {
+      etape.value = donnees.etape
+    }
+    brouillonRestaure.value = true
+  }
+  catch {
+    // Brouillon illisible : on le jette plutôt que de laisser un formulaire
+    // à moitié rempli d'on ne sait quoi.
+    effacerBrouillon()
+  }
+}
+
+/** Repart d'un formulaire vierge et oublie le brouillon. */
+const abandonnerBrouillon = () => {
+  resetForm()
+  effacerBrouillon()
+  brouillonRestaure.value = false
+  etape.value = 0
+}
+
+// L'enregistrement est différé : sans cela, chaque frappe écrirait dans
+// `localStorage`, une opération SYNCHRONE qui bloque le fil principal.
+let minuterieBrouillon: ReturnType<typeof setTimeout> | null = null
+watch([form, objectifs, etape], () => {
+  if (minuterieBrouillon) clearTimeout(minuterieBrouillon)
+  minuterieBrouillon = setTimeout(enregistrerBrouillon, 500)
+}, { deep: true })
+
+// Fermer l'onglet ne laisse pas le temps à la minuterie de se déclencher.
+const surFermeture = () => {
+  if (minuterieBrouillon) clearTimeout(minuterieBrouillon)
+  enregistrerBrouillon()
+}
+
+onMounted(() => {
+  restaurerBrouillon()
+  window.addEventListener('beforeunload', surFermeture)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', surFermeture)
+  surFermeture()
+})
 
 /** Relance une saisie après une confirmation. */
 const recommencer = () => {
@@ -580,6 +733,8 @@ const surSoumission = async () => {
 
     if (result) {
       succes.value = true
+      effacerBrouillon()
+      brouillonRestaure.value = false
       resetForm()
       etape.value = 0
       window.scrollTo({ top: 0, behavior: 'smooth' })
