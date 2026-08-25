@@ -38,10 +38,19 @@
       <!-- Hero image -->
       <div class="relative h-64 md:h-80 lg:h-96 bg-gray-900">
         <img
-          :src="initiative.image_couverture_url || '/images/placeholder.jpg'"
+          v-if="initiative.image_couverture_url"
+          :src="initiative.image_couverture_url"
           :alt="initiative.titre"
           class="w-full h-full object-cover opacity-90"
         />
+  <!-- Pas de `<img src="…placeholder.jpg">` : ce fichier n'a jamais existé, si
+       bien qu'une annonce sans photo affichait une image CASSÉE avec son texte
+       de remplacement en travers. Un repli qui doit exister sur le disque est un
+       repli qui peut manquer ; celui-ci est du balisage, il ne peut pas
+       échouer. -->
+        <div v-else class="grid h-full w-full place-items-center">
+          <font-awesome-icon icon="fa-solid fa-lightbulb" class="text-5xl text-white/30" />
+        </div>
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
 
         <!-- Badge domaine -->

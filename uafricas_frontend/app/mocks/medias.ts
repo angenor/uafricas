@@ -10,10 +10,6 @@ export interface MediaCard {
   link: string
 }
 
-export interface MediaStat {
-  value: string
-  label: string
-}
 
 export const mediaCards: MediaCard[] = [
   {
@@ -36,11 +32,4 @@ export const mediaCards: MediaCard[] = [
     badgeColor: 'chocolat',
     link: '/medias/radios',
   },
-]
-
-export const mediaStats: MediaStat[] = [
-  { value: '150+', label: 'Médias Disponibles' },
-  { value: '54', label: 'Territoires Couverts' },
-  { value: '24/7', label: 'En Continue' },
-  { value: 'HD+', label: 'Qualité Audio & Vidéo' },
 ]

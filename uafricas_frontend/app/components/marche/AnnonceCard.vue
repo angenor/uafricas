@@ -6,10 +6,19 @@
     <!-- Image container -->
     <div class="relative aspect-[16/10] overflow-hidden">
       <img
-        :src="annonce.photo_url || '/images/placeholder.jpg'"
+        v-if="annonce.photo_url"
+        :src="annonce.photo_url"
         :alt="annonce.titre"
         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
       />
+  <!-- Pas de `<img src="…placeholder.jpg">` : ce fichier n'a jamais existé, si
+       bien qu'une annonce sans photo affichait une image CASSÉE avec son texte
+       de remplacement en travers. Un repli qui doit exister sur le disque est un
+       repli qui peut manquer ; celui-ci est du balisage, il ne peut pas
+       échouer. -->
+      <div v-else class="grid h-full w-full place-items-center bg-af-fond">
+        <font-awesome-icon icon="fa-solid fa-image" class="text-4xl text-af-atone-2" />
+      </div>
 
       <!-- Badge type d'échange -->
       <span

@@ -59,7 +59,15 @@
           class="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col"
         >
           <div class="relative aspect-[16/10] bg-gray-100">
-            <img :src="a.photo_url || '/images/placeholder.jpg'" :alt="a.titre" class="w-full h-full object-cover" />
+            <img v-if="a.photo_url" :src="a.photo_url" :alt="a.titre" class="w-full h-full object-cover" />
+  <!-- Pas de `<img src="…placeholder.jpg">` : ce fichier n'a jamais existé, si
+       bien qu'une annonce sans photo affichait une image CASSÉE avec son texte
+       de remplacement en travers. Un repli qui doit exister sur le disque est un
+       repli qui peut manquer ; celui-ci est du balisage, il ne peut pas
+       échouer. -->
+            <div v-else class="grid h-full w-full place-items-center">
+              <font-awesome-icon icon="fa-solid fa-image" class="text-3xl text-af-atone-2" />
+            </div>
             <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold" :class="badgeEtat(a.etat)">
               {{ libelleEtat(a.etat) }}
             </span>

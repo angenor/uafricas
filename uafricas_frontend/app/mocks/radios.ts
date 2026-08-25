@@ -16,10 +16,6 @@ export interface RadioCategory {
   link: string
 }
 
-export interface RadioStats {
-  value: string
-  label: string
-}
 
 // Catégories de radios pour la page hub
 export const radioCategories: RadioCategory[] = [
@@ -41,12 +37,4 @@ export const radioCategories: RadioCategory[] = [
     badgeColor: 'chocolat',
     link: '/medias/radio/nationales'
   }
-]
-
-// Statistiques pour la page hub radios
-export const radioStats: RadioStats[] = [
-  { value: '150+', label: 'Stations Radio' },
-  { value: '54', label: 'Territoires Africains' },
-  { value: '24/7', label: 'Diffusion Continue' },
-  { value: 'HD', label: 'Qualité Audio' }
 ]

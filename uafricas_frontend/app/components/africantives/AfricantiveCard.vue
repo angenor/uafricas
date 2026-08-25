@@ -6,10 +6,19 @@
     <!-- Image container -->
     <div class="relative aspect-[16/10] overflow-hidden">
       <img
-        :src="africantive.image_couverture_url || '/images/placeholder.jpg'"
+        v-if="africantive.image_couverture_url"
+        :src="africantive.image_couverture_url"
         :alt="africantive.titre"
         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
       />
+  <!-- Pas de `<img src="…placeholder.jpg">` : ce fichier n'a jamais existé, si
+       bien qu'une annonce sans photo affichait une image CASSÉE avec son texte
+       de remplacement en travers. Un repli qui doit exister sur le disque est un
+       repli qui peut manquer ; celui-ci est du balisage, il ne peut pas
+       échouer. -->
+      <div v-else class="grid h-full w-full place-items-center bg-af-fond">
+        <font-awesome-icon icon="fa-solid fa-lightbulb" class="text-4xl text-af-atone-2" />
+      </div>
 
       <!-- Badge domaine -->
       <span
