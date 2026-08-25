@@ -28,7 +28,7 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <!-- Sidebar — Filtres par catégorie -->
+        <!-- Sidebar : Filtres par catégorie -->
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-lg overflow-hidden sticky top-4">
             <div class="bg-linear-to-r from-custom-chocolat to-amber-700 px-6 py-4">
@@ -278,7 +278,7 @@
                           « {{ pub.data.contenu }} »
                         </p>
                         <p v-if="pub.data.nom_auteur_originel" class="text-xs opacity-90 mt-2">
-                          — {{ pub.data.nom_auteur_originel }}
+                          {{ pub.data.nom_auteur_originel }}
                         </p>
                       </div>
 

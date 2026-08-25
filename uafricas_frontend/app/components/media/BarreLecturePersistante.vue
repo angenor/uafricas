@@ -2,7 +2,7 @@
 /**
  * Barre de lecture ancrée en bas de l'écran (FR-017).
  *
- * Montée dans le LAYOUT, hors du `<slot/>` : c'est ce placement — et lui seul —
+ * Montée dans le LAYOUT, hors du `<slot/>` : c'est ce placement, et lui seul 
  * qui fait survivre l'écoute au changement de page. Un lecteur monté dans une
  * page est démonté à la navigation, et le son se coupe.
  *

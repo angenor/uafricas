@@ -18,7 +18,7 @@ const colonnes: TableColumn[] = [
   { key: 'titre', label: 'Titre', sortable: true },
   { key: 'type_operation', label: 'Type', width: 'w-24' },
   { key: 'etat', label: 'Etat', width: 'w-28' },
-  { key: 'prix', label: 'Prix', sortable: true, width: 'w-28', align: 'right', format: (v: number, row: any) => v ? `${v.toLocaleString('fr-FR')} ${row.devise || 'XOF'}` : '—' },
+  { key: 'prix', label: 'Prix', sortable: true, width: 'w-28', align: 'right', format: (v: number, row: any) => v ? `${v.toLocaleString('fr-FR')} ${row.devise || 'XOF'}` : '-' },
   { key: 'categorie_nom', label: 'Categorie', width: 'w-28' },
   { key: 'pays_nom', label: 'Territoire', width: 'w-24' },
   { key: 'auteur_nom', label: 'Auteur', width: 'w-28', format: (_v: string, row: any) => `${row.auteur_prenom} ${row.auteur_nom}` },
@@ -176,12 +176,12 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
       <template #cell-categorie_nom="{ value }">
         <span v-if="value" class="text-sm">{{ value }}</span>
-        <span v-else class="text-base-content/30">—</span>
+        <span v-else class="text-base-content/30">-</span>
       </template>
 
       <template #cell-pays_nom="{ value }">
         <span v-if="value" class="text-sm">{{ value }}</span>
-        <span v-else class="text-base-content/30">—</span>
+        <span v-else class="text-base-content/30">-</span>
       </template>
 
       <template #actions="{ item }">

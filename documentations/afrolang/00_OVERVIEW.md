@@ -14,7 +14,7 @@
 | **Phase 3** | [03_WEBRTC_SIGNALING.md](./03_WEBRTC_SIGNALING.md) | `TERMINE` | 11/11 |
 | **Phase 4** | [04_TABLEAU_BLANC.md](./04_TABLEAU_BLANC.md) | `TERMINE` | 9/9 |
 
-**Progression totale : 46/46 taches — FEATURE COMPLET**
+**Progression totale : 46/46 taches : FEATURE COMPLET**
 
 ---
 
@@ -46,11 +46,11 @@ Salle publique (admin)         Salle privee (utilisateur)
 
 ## Hierarchie des entites
 
-1. **Salle publique** (`afrolang.salle`) — Canal par langue, cree par admin
-2. **Salle privee** (`afrolang.salle_privee`) — Sous-salle liee a une salle publique, creee par un utilisateur, acces par code
-3. **Session** (`afrolang.session`) — Conference WebRTC ephemere dans une salle privee
-4. **Participant** (`afrolang.session_participant`) — Tracking de presence par session
-5. **Tableau blanc** (`afrolang.tableau_blanc`) — Un par session, snapshot JSONB
+1. **Salle publique** (`afrolang.salle`), Canal par langue, cree par admin
+2. **Salle privee** (`afrolang.salle_privee`), Sous-salle liee a une salle publique, creee par un utilisateur, acces par code
+3. **Session** (`afrolang.session`) : Conference WebRTC ephemere dans une salle privee
+4. **Participant** (`afrolang.session_participant`), Tracking de presence par session
+5. **Tableau blanc** (`afrolang.tableau_blanc`), Un par session, snapshot JSONB
 
 ## Ordre chronologique strict
 

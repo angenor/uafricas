@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Modal de fermeture administrative d'une session pour abus.
-// Feature 001-ressources-fermeture-session — US2, T056. daisyUI v5.
+// Feature 001-ressources-fermeture-session, US2, T056. daisyUI v5.
 
 interface Props {
   open: boolean

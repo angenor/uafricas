@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Radio Africans — production propre de la plateforme (US2).
+ * Radio Africans : production propre de la plateforme (US2).
  *
  * Page DISTINCTE de `/medias/radio/nationales` : l'adresse est inchangée
  * (FR-012) et l'origine `africans` est fixée ici, en dur. C'est elle qui

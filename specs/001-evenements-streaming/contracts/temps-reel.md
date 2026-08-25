@@ -1,4 +1,4 @@
-# Contrat temps réel — DataPackets LiveKit & SSE
+# Contrat temps réel : DataPackets LiveKit & SSE
 
 Deux canaux temps réel coexistent :
 1. **DataPackets LiveKit** (in-room, client↔client via SFU) : chat, réactions, lever-la-main, modération. Éphémères, non stockés.
@@ -48,7 +48,7 @@ L'organisateur met à jour sa liste de demandes en direct (et la retrouve via `G
 { "type": "event_stream_demarre", "evenement_id": "<uuid>" }
 ```
 
-**Dispatch frontend** — branche à ajouter dans `app/plugins/messagerie.client.ts` :
+**Dispatch frontend** : branche à ajouter dans `app/plugins/messagerie.client.ts` :
 ```ts
 } else if (typeof evt?.type === 'string' && evt.type.startsWith('event_stream_')) {
   gererEvenementStream(evt)   // useEvenements : rafraîchit l'état du direct si la page concernée est ouverte

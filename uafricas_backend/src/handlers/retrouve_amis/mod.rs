@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Handlers publics — Retrouve Amis
+// Handlers publics : Retrouve Amis
 // ════════════════════════════════════════════════════════════════════════════
 //
 // Endpoints publics pour la fonctionnalité "Retrouve Amis", découpés par domaine :

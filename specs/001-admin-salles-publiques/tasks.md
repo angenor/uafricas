@@ -1,4 +1,4 @@
-# Tasks — Administrateurs de salle publique & propositions communautaires
+# Tasks : Administrateurs de salle publique & propositions communautaires
 
 **Feature** : `001-admin-salles-publiques`
 **Branch** : `001-admin-salles-publiques`
@@ -8,15 +8,15 @@
 
 ---
 
-## Phase 1 — Setup
+## Phase 1 : Setup
 
-- [X] T001 Vérifier l'état de la branche (`git status`) et que `docker compose up -d` lance bien PostgreSQL/Adminer ; relancer le backend proprement (`kill $(lsof -i :8080 -t) 2>/dev/null; cd uafricas_backend && RUST_LOG=info cargo run`) — pas de modification de fichier.
+- [X] T001 Vérifier l'état de la branche (`git status`) et que `docker compose up -d` lance bien PostgreSQL/Adminer ; relancer le backend proprement (`kill $(lsof -i :8080 -t) 2>/dev/null; cd uafricas_backend && RUST_LOG=info cargo run`), pas de modification de fichier.
 
 ---
 
-## Phase 2 — Foundational (BLOQUE toutes les user stories)
+## Phase 2 : Foundational (BLOQUE toutes les user stories)
 
-### Schéma SQL (Principe III — SQL source de vérité)
+### Schéma SQL (Principe III : SQL source de vérité)
 
 - [X] T002 Étendre `uafricas_backend/doc/bd/schemas/08b_afrolang.sql` : ajouter le `CREATE TYPE afrolang.statut_proposition_salle` (en_attente | validee | rejetee | retiree) en tête du fichier (après les autres enums existants).
 - [X] T003 Étendre `uafricas_backend/doc/bd/schemas/08b_afrolang.sql` : ajouter la table `afrolang.proposition_salle` avec les 4 CHECK contraintes et les 3 index (idx_proposition_salle_unique_attente, idx_proposition_salle_statut, idx_proposition_salle_auteur) tels que décrits dans `data-model.md` §2.
@@ -24,17 +24,17 @@
 - [X] T005 Étendre `uafricas_backend/doc/bd/schemas/13_contraintes_inter_schemas.sql` : ajouter les FK cross-schema sur `proposition_salle.auteur_id`, `proposition_salle.decideur`, `proposition_salle.groupe_ethnique_id`, `salle_administrateur.utilisateur_id`, `salle_administrateur.nomme_par`, `salle_administrateur.revoque_par` (toutes vers `iam.utilisateur` et `country_profile.groupe_ethnique`).
 - [X] T006 Recréer la base : `docker compose down -v && docker compose up -d` puis vérifier dans Adminer que les nouvelles tables existent dans le schéma `afrolang`.
 
-### Backend — modèles communs
+### Backend : modèles communs
 
 - [X] T007 Étendre `uafricas_backend/src/models/afrolang.rs` : ajouter les structs `PropositionSalle` (FromRow, snake_case français), `PropositionStatut` (enum mappé sur `afrolang.statut_proposition_salle`), `SalleAdministrateur`, `AdministrateurLight`, et leurs DTO `Response` correspondants tels que décrits dans `contracts/public.md` et `contracts/admin.md`. Ajouter la `const COLONNES_PROPOSITION` et `const COLONNES_SALLE_ADMIN`.
 - [X] T008 Étendre `uafricas_backend/src/models/afrolang.rs` : ajouter le DTO `SoumettrePropositionRequest`, `DecisionRequest` (champ `commentaire`), `NommerAdministrateurRequest` (`utilisateur_id`), `RevoquerAdministrateurRequest` (`motif`).
 - [X] T009 Étendre la struct `SalleResponse` / `SalleDetailResponse` / `AdminSalleDetailResponse` existantes dans `uafricas_backend/src/models/afrolang.rs` avec un champ `pub administrateurs: Vec<AdministrateurLight>`.
 
-### Backend — helper d'autorisation centralisé (FR-019)
+### Backend : helper d'autorisation centralisé (FR-019)
 
 - [X] T010 Ajouter dans `uafricas_backend/src/handlers/afrolang.rs` la fonction publique `pub async fn est_administrateur_salle(pool: &PgPool, salle_id: Uuid, user_id: Uuid) -> Result<bool, sqlx::Error>` qui retourne `EXISTS(SELECT 1 FROM afrolang.salle_administrateur WHERE salle_id=$1 AND utilisateur_id=$2 AND actif=TRUE)`. Ajouter un commentaire de file pointant FR-019.
 
-### Frontend — composables communs
+### Frontend : composables communs
 
 - [X] T011 [P] Étendre `uafricas_frontend/app/composables/useAfrolang.ts` : ajouter les interfaces TS `PropositionSalle`, `StatutProposition`, `AdministrateurLight` (alignées avec `models/afrolang.rs` et `contracts/public.md`).
 - [X] T012 [P] Étendre l'interface `SalleAPI` dans `uafricas_frontend/app/composables/useAfrolang.ts` avec `administrateurs: AdministrateurLight[]`.
@@ -43,7 +43,7 @@
 
 ---
 
-## Phase 3 — User Story 1 (P1) : Proposer une salle publique en tant que membre
+## Phase 3 : User Story 1 (P1) : Proposer une salle publique en tant que membre
 
 **Goal** : un utilisateur authentifié peut soumettre une proposition complète, la voir dans son espace perso, et est bloqué sur les doublons.
 
@@ -56,28 +56,28 @@
 - [X] T015 [US1] Implémenter `pub async fn retirer_ma_proposition` dans `uafricas_backend/src/handlers/afrolang.rs` : `SELECT FOR UPDATE` ; refuse 403 si pas auteur, 409 si statut ≠ `en_attente` ; UPDATE statut=`retiree` ; `audit::log_action('UPDATE','afrolang','proposition_salle', id)`. Retourne 200.
 - [X] T016 [US1] Étendre `uafricas_backend/src/routes.rs` : enregistrer les 3 routes `POST /api/afrolang/propositions`, `GET /api/afrolang/propositions/moi`, `PATCH /api/afrolang/propositions/{id}/retirer` derrière `auth_middleware`.
 
-### Frontend — composable
+### Frontend : composable
 
 - [X] T017 [US1] Étendre `uafricas_frontend/app/composables/useAfrolang.ts` avec les 3 méthodes : `proposerSalle(payload)`, `listerMesPropositions(filtres)`, `retirerProposition(id)`, mappant la réponse API vers les interfaces TS. Gérer les codes 409 et 429 avec messages utilisateur clairs.
 
-### Frontend — composants & page (Tailwind v4 pur, principe VI)
+### Frontend : composants & page (Tailwind v4 pur, principe VI)
 
 - [X] T018 [P] [US1] Créer `uafricas_frontend/app/components/afrolang/PropositionSalleForm.vue` : formulaire (titre, description, justification, langue cible, langue code, sélection groupe ethnique, multi-sélection pays d'origine), validation côté client, états submitting/error/success, Tailwind v4 pur (pas de classes `btn`/`card` daisyUI).
 - [X] T019 [P] [US1] Créer `uafricas_frontend/app/components/afrolang/PropositionSalleCard.vue` : carte affichant titre, statut (badge coloré), date, commentaire de décision si présent, bouton « Retirer » si `en_attente`. Tailwind v4 pur.
-- [X] T020 [US1] Créer la page `uafricas_frontend/app/pages/afrolang/proposer.vue` : middleware auth requis ; deux sections — formulaire en haut (`PropositionSalleForm`), liste de mes propositions paginée en dessous (`PropositionSalleCard`). Si non connecté : redirect `/login?redirect=/afrolang/proposer`.
+- [X] T020 [US1] Créer la page `uafricas_frontend/app/pages/afrolang/proposer.vue` : middleware auth requis ; deux sections, formulaire en haut (`PropositionSalleForm`), liste de mes propositions paginée en dessous (`PropositionSalleCard`). Si non connecté : redirect `/login?redirect=/afrolang/proposer`.
 - [X] T021 [US1] Ajouter un lien « Proposer une salle » dans `uafricas_frontend/app/components/layout/NavBar.vue` (ou la zone Afrolang appropriée), visible uniquement pour les utilisateurs connectés.
 
 **Checkpoint US1** : exécuter `quickstart.md` Scénario 1. ✅ FR-001..FR-007.
 
 ---
 
-## Phase 4 — User Story 2 (P1) : Valider ou rejeter une proposition (admin plateforme)
+## Phase 4 : User Story 2 (P1) : Valider ou rejeter une proposition (admin plateforme)
 
 **Goal** : l'administrateur de la plateforme peut traiter la file d'attente, valider (création atomique de la salle) ou rejeter (commentaire obligatoire).
 
 **Independent Test** : `quickstart.md` Scénario 2.
 
-### Backend — handlers admin
+### Backend : handlers admin
 
 - [X] T022 [US2] Créer `uafricas_backend/src/handlers/admin/propositions_salle.rs` (nouveau fichier) ; déclarer `pub mod propositions_salle;` dans `uafricas_backend/src/handlers/admin/mod.rs`.
 - [X] T023 [US2] Implémenter `pub async fn lister_propositions_admin` dans `propositions_salle.rs` : pagination + filtres (`statut`, `langue_code`, `groupe_ethnique_id`, `auteur_id`, `date_debut`, `date_fin`, `tri`), bornage `taille ≤ 100`, jointures complètes pour `PropositionResponse`.
@@ -86,11 +86,11 @@
 - [X] T026 [US2] Implémenter `pub async fn rejeter_proposition` dans `propositions_salle.rs` : valider `commentaire` ≥ 10 caractères (400 sinon), `SELECT FOR UPDATE`, refuser 409 si statut ≠ `en_attente`, UPDATE (`statut='rejetee'`, `decideur`, `decide_at`, `commentaire_decision`), `audit::log_action('REJECT','afrolang','proposition_salle', id)`, notification auteur.
 - [X] T027 [US2] Étendre `uafricas_backend/src/routes.rs` : enregistrer les 4 routes admin (`GET /api/admin/afrolang/propositions`, `GET /api/admin/afrolang/propositions/{id}`, `PATCH .../valider`, `PATCH .../rejeter`) derrière `admin_middleware`.
 
-### Frontend — composable admin
+### Frontend : composable admin
 
 - [X] T028 [US2] Créer `uafricas_frontend/app/composables/useAdminPropositionsSalle.ts` (basé sur le pattern `useAdmin` avec `adminFetch`/`listerPagine`/`pagination`/`sort`) : `listerPropositions(filtres)`, `obtenirProposition(id)`, `validerProposition(id, commentaire?)`, `rejeterProposition(id, commentaire)`.
 
-### Frontend — composants & pages admin (daisyUI v5 autorisé)
+### Frontend : composants & pages admin (daisyUI v5 autorisé)
 
 - [X] T029 [P] [US2] Créer `uafricas_frontend/app/components/admin/afrolang/PropositionRow.vue` : ligne de tableau avec titre, auteur, groupe ethnique, statut (badge daisyUI), date, lien « Détail ».
 - [X] T030 [P] [US2] Créer `uafricas_frontend/app/components/admin/afrolang/PropositionDetail.vue` : panneau détail avec toutes les infos + 2 actions (modal Valider avec commentaire facultatif, modal Rejeter avec commentaire obligatoire ≥ 10 car.). Vue lecture seule si statut ≠ `en_attente` (afficher décideur + date + commentaire).
@@ -104,28 +104,28 @@
 
 ---
 
-## Phase 5 — User Story 3 (P2) : Nommer un administrateur de salle publique
+## Phase 5 : User Story 3 (P2) : Nommer un administrateur de salle publique
 
 **Goal** : l'admin plateforme nomme/révoque des administrateurs sur une salle publique ; la liste apparaît publiquement sur la fiche de la salle ; un audit complet est conservé.
 
 **Independent Test** : `quickstart.md` Scénario 3.
 
-### Backend — extension `GET salles` (visibilité publique)
+### Backend : extension `GET salles` (visibilité publique)
 
 - [X] T034 [US3] Modifier `uafricas_backend/src/handlers/afrolang.rs` `lister_salles` et `obtenir_salle` : ajouter un `LEFT JOIN LATERAL` ou un sous-`SELECT json_agg` peuplant le champ `administrateurs` (filtre `actif=TRUE`, projection `AdministrateurLight`). Réutiliser le même pattern que `pays_origine` (feature 001-afrolang-pays-origine) pour cohérence.
 
-### Backend — handlers nomination/révocation
+### Backend : handlers nomination/révocation
 
-- [X] T035 [US3] Implémenter dans `uafricas_backend/src/handlers/admin/salles.rs` (fichier existant — vérifier le nom exact du module gérant `salle_publique`/`salle` côté admin) la fonction `pub async fn nommer_administrateur_salle` : 404 si salle inactive/supprimée ou utilisateur introuvable/inactif, 409 si nomination active déjà existante, INSERT `salle_administrateur` (`actif=TRUE`, `nomme_par`), `audit::log_action('CREATE','afrolang','salle_administrateur', id)`, notification utilisateur. Retourne 201 avec `SalleAdministrateurResponse`.
+- [X] T035 [US3] Implémenter dans `uafricas_backend/src/handlers/admin/salles.rs` (fichier existant, vérifier le nom exact du module gérant `salle_publique`/`salle` côté admin) la fonction `pub async fn nommer_administrateur_salle` : 404 si salle inactive/supprimée ou utilisateur introuvable/inactif, 409 si nomination active déjà existante, INSERT `salle_administrateur` (`actif=TRUE`, `nomme_par`), `audit::log_action('CREATE','afrolang','salle_administrateur', id)`, notification utilisateur. Retourne 201 avec `SalleAdministrateurResponse`.
 - [X] T036 [US3] Implémenter `pub async fn revoquer_administrateur_salle` : `SELECT FOR UPDATE` sur la ligne `actif=TRUE` du couple (404 sinon), UPDATE (`actif=FALSE`, `revoque_at`, `revoque_par`, `motif_revocation`), `audit::log_action('UPDATE','afrolang','salle_administrateur', id)`, notification utilisateur.
 - [X] T037 [US3] Implémenter `pub async fn lister_administrateurs_salle` : retourne historique complet (actif + inactif), tri `nomme_at DESC`, jointures `iam.utilisateur` pour `utilisateur`/`nomme_par`/`revoque_par`.
 - [X] T038 [US3] Étendre `uafricas_backend/src/routes.rs` : enregistrer `POST /api/admin/afrolang/salles/{salle_id}/administrateurs`, `DELETE /api/admin/afrolang/salles/{salle_id}/administrateurs/{utilisateur_id}`, `GET /api/admin/afrolang/salles/{salle_id}/administrateurs` derrière `admin_middleware`.
 
-### Frontend — composable admin
+### Frontend : composable admin
 
 - [X] T039 [US3] Étendre `uafricas_frontend/app/composables/useAdminAfrolangSalles.ts` : `listerAdministrateurs(salleId)`, `nommerAdministrateur(salleId, utilisateurId)`, `revoquerAdministrateur(salleId, utilisateurId, motif)`.
 
-### Frontend — composants & pages
+### Frontend : composants & pages
 
 - [X] T040 [P] [US3] Créer `uafricas_frontend/app/components/admin/afrolang/SalleAdministrateursPanel.vue` (daisyUI) : liste actuelle + recherche utilisateur + bouton « Nommer » + bouton « Révoquer » par ligne (modal motif), vue historique (lignes inactives grisées).
 - [X] T041 [US3] Étendre `uafricas_frontend/app/pages/admin/salles/[id].vue` (ou `pages/admin/afrolang/salles/[id].vue` selon l'emplacement existant) : ajouter un onglet « Administrateurs » utilisant `SalleAdministrateursPanel`. Distinguer visuellement du panneau « Modérateurs attitrés » existant (FR-018).
@@ -136,7 +136,7 @@
 
 ---
 
-## Phase 6 — Polish & Cross-cutting (Cascades, anti-spam, audit, doc)
+## Phase 6 : Polish & Cross-cutting (Cascades, anti-spam, audit, doc)
 
 ### Cascades automatiques (FR-021, FR-022, SC-008)
 
@@ -163,9 +163,9 @@
 ```
 Phase 1 (T001)
    ↓
-Phase 2 (T002→T003→T004→T005→T006) — SQL
+Phase 2 (T002→T003→T004→T005→T006) : SQL
    ↓
-Phase 2 (T007, T008, T009, T010) — Backend foundations [T011, T012 en parallèle après T009]
+Phase 2 (T007, T008, T009, T010), Backend foundations [T011, T012 en parallèle après T009]
    ↓
    ├──→ Phase 3 US1 (T013→T014→T015→T016→T017→[T018, T019, T020 // T020 dépend de T018+T019]→T021)
    │
@@ -178,7 +178,7 @@ Phase 2 (T007, T008, T009, T010) — Backend foundations [T011, T012 en parallè
                                                                   Phase 6 Polish (T044→T045 // T046 // T047 // T048→T049)
 ```
 
-**Indépendance des stories** : US1 et US2 forment un couple obligatoire (US1 sans US2 ne livre rien d'utile : les propositions resteraient bloquées en file d'attente). US3 est strictement indépendante de US1/US2 *sur le plan technique* (table dédiée), mais elle suppose qu'au moins une salle publique existe pour être nommable — donc en pratique, dérouler après US1+US2.
+**Indépendance des stories** : US1 et US2 forment un couple obligatoire (US1 sans US2 ne livre rien d'utile : les propositions resteraient bloquées en file d'attente). US3 est strictement indépendante de US1/US2 *sur le plan technique* (table dédiée), mais elle suppose qu'au moins une salle publique existe pour être nommable : donc en pratique, dérouler après US1+US2.
 
 ---
 
@@ -214,7 +214,7 @@ T044 cascade salle ⇄ T045 cascade compte ⇄ T046 anti-spam ⇄ T047 distincti
 ## Implementation Strategy
 
 1. **MVP (US1 + US2)** : T001 → T033. À ce stade, la boucle proposer→valider/rejeter est complète et utilisable en production. SC-001 à SC-004 et SC-007 sont mesurables.
-2. **Itération 2 (US3)** : T034 → T043. Ajoute la nomination d'administrateurs de salle (sans pouvoirs effectifs — c'est volontaire, FR-019).
+2. **Itération 2 (US3)** : T034 → T043. Ajoute la nomination d'administrateurs de salle (sans pouvoirs effectifs : c'est volontaire, FR-019).
 3. **Polish** : T044 → T049. Cascades, anti-spam confirmé, audit visuel des badges, documentation.
 
 ---

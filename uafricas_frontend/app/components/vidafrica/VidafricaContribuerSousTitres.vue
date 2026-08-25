@@ -272,7 +272,7 @@ onMounted(() => charger())
     <h2 class="text-lg font-bold text-gray-900 font-['Oswald'] mb-1">Contribuer des sous-titres</h2>
     <p class="text-sm text-gray-500 mb-3">
       Votre piste sera publiée après validation par un administrateur ; une fois publiée,
-      vous pouvez toujours la corriger — vos modifications sont prises en compte immédiatement.
+      vous pouvez toujours la corriger : vos modifications sont prises en compte immédiatement.
     </p>
 
     <!-- Stratégie de sous-titrage -->
@@ -294,7 +294,7 @@ onMounted(() => charger())
     </div>
     <p class="text-xs text-gray-400 mb-4">
       {{ modeSaisie === 'direct'
-        ? 'Lancez la vidéo, laissez-la jouer puis coupez pour sous-titrer chaque passage — les temps sont capturés automatiquement.'
+        ? 'Lancez la vidéo, laissez-la jouer puis coupez pour sous-titrer chaque passage, les temps sont capturés automatiquement.'
         : 'Saisissez chaque segment avec ses temps de début/fin, puis marquez le timing mot par mot.' }}
     </p>
 
@@ -371,7 +371,7 @@ onMounted(() => charger())
     <div v-if="pisteSelectionnee" class="mt-6 pt-6 border-t border-gray-100">
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-semibold text-gray-900">
-          Segments — {{ LANGUES_LABELS[pisteSelectionnee.langue] || pisteSelectionnee.langue }}
+          Segments, {{ LANGUES_LABELS[pisteSelectionnee.langue] || pisteSelectionnee.langue }}
         </h3>
         <button
           v-if="pisteEditable && modeSaisie === 'manuel'"
@@ -497,7 +497,7 @@ onMounted(() => charger())
               </button>
             </div>
             <div v-else-if="pisteEditable" class="text-xs text-amber-600 mt-1">
-              <font-awesome-icon icon="exclamation-triangle" /> Pas de timings mot — cliquez sur
+              <font-awesome-icon icon="exclamation-triangle" /> Pas de timings mot, cliquez sur
               <font-awesome-icon icon="stopwatch" /> pour les marquer
             </div>
           </div>

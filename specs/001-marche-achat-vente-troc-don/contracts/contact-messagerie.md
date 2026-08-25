@@ -1,8 +1,8 @@
-# Contrat API — Contact via messagerie (FR-011..FR-014, D2)
+# Contrat API : Contact via messagerie (FR-011..FR-014, D2)
 
 Met en relation un membre intéressé et l'auteur d'une annonce **via la messagerie privée existante** (`social.conversation` / `social.message`, SSE temps réel). JWT requis. Mutation auditée.
 
-## POST /api/annonces/{id}/contacter — Contacter l'auteur
+## POST /api/annonces/{id}/contacter : Contacter l'auteur
 
 - **Body** : `application/json` `{ "message": "<1..2000 car.>" }`
 - **Comportement** :
@@ -17,7 +17,7 @@ Met en relation un membre intéressé et l'auteur d'une annonce **via la message
 - **403** : blocage réciproque
 - **404** : annonce introuvable / non publiée
 
-## Modification associée — `envoyer_message` (handlers/messagerie.rs)
+## Modification associée : `envoyer_message` (handlers/messagerie.rs)
 
 Assouplir la règle d'envoi (D2) :
 

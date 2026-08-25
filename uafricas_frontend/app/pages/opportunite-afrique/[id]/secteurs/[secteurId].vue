@@ -44,7 +44,7 @@
               class="flex items-start gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 shadow-sm"
             >
               <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="w-4 h-4 mt-0.5 shrink-0" />
-              <span>Contribution suspendue — en cours de vérification par la modération.</span>
+              <span>Contribution suspendue : en cours de vérification par la modération.</span>
             </div>
 
             <!-- Description -->
@@ -211,7 +211,7 @@ const descriptionOg = computed(() =>
 
 useHead(() => {
   if (!secteur.value) return {}
-  const titre = `${secteur.value.nom} — Secteur d'opportunité — UAfricas`
+  const titre = `${secteur.value.nom}, Secteur d'opportunité | UAfricas`
   return {
     title: titre,
     meta: [

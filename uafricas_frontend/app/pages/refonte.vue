@@ -23,7 +23,7 @@
         <p class="text-sm/[1.4] text-af-corps">
           <strong class="text-af-chocolat">Page de recette de la refonte.</strong>
           Elle monte le gabarit et les composants de base avec les valeurs extraites
-          du Figma. Rien ici n'est branché sur l'API — c'est la fidélité visuelle
+          du Figma. Rien ici n'est branché sur l'API : c'est la fidélité visuelle
           qui est à juger, pas les données.
         </p>
       </div>
@@ -260,7 +260,7 @@
         <p class="flex-1 text-[14px]/[1.4] text-af-corps">
           L'histoire, les traditions et les savoirs de l'Afrique et des peuples afro-descendants
           risquent parfois de se perdre au fil du temps. Codimoi est une mémoire collective en ligne
-          où chacun peut documenter, conserver et partager récits, proverbes, traditions et savoirs —
+          où chacun peut documenter, conserver et partager récits, proverbes, traditions et savoirs 
           pour que rien de précieux ne disparaisse.
         </p>
         <img
@@ -278,7 +278,7 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: false })
-useHead({ title: 'Refonte — recette visuelle · AfricanS' })
+useHead({ title: 'Refonte : recette visuelle · AfricanS' })
 
 const ongletActif = ref('pour-vous')
 const modaleCreation = ref(false)
@@ -352,63 +352,63 @@ const couleurs = [
   { nom: 'Live', hex: '#FF0004', classe: 'bg-af-live' },
 ]
 
-// Actifs sortis du fichier « Africans — Design ». La définition d'origine est
+// Actifs sortis du fichier « Africans, Design ». La définition d'origine est
 // portée ici plutôt que déduite du fichier : c'est elle qui dit si l'image
 // tiendra à l'affichage, pas la taille après compression.
-const INSUFFISANT = 'Sous la largeur d\'affichage de 1443 px — sera flou'
+const INSUFFISANT = 'Sous la largeur d\'affichage de 1443 px, sera flou'
 
 const actifs = [
   {
-    nom: 'Bandeau — Accueil',
+    nom: 'Bandeau : Accueil',
     fichier: '/images/africans/heros/hero-accueil.jpg',
     source: '4000 × 2667 → 2400 px',
   },
   {
-    nom: 'Bandeau — Codimoi',
+    nom: 'Bandeau : Codimoi',
     fichier: '/images/africans/heros/hero-codimoi.jpg',
     source: '4096 × 2296 → 2400 px',
   },
   {
-    nom: 'Bandeau — Afripulse',
+    nom: 'Bandeau : Afripulse',
     fichier: '/images/africans/heros/hero-afripulse.jpg',
     source: '740 × 492, non redimensionnée',
     alerte: INSUFFISANT,
   },
   {
-    nom: 'Bandeau — Afrolang',
+    nom: 'Bandeau : Afrolang',
     fichier: '/images/africans/heros/hero-afrolang.jpg',
-    source: '810 × 1080 — image en PORTRAIT',
+    source: '810 × 1080 : image en PORTRAIT',
     alerte: 'Portrait recadré en bande de 1443 × 315 : cadrage à revoir',
   },
   {
-    nom: 'Bandeau — Africonnect',
+    nom: 'Bandeau : Africonnect',
     fichier: '/images/africans/heros/hero-africonnect.jpg',
     source: '748 × 420, non redimensionnée',
     alerte: INSUFFISANT,
   },
   {
-    nom: 'Bandeau — Vidafrica',
+    nom: 'Bandeau : Vidafrica',
     fichier: '/images/africans/heros/hero-vidafrica.jpg',
     source: '2000 × 1055 → 2000 px',
   },
   {
-    nom: 'Bandeau — Afroculture',
+    nom: 'Bandeau : Afroculture',
     fichier: '/images/africans/heros/hero-afroculture.jpg',
     source: '3569 × 2000 → 2400 px',
   },
   {
-    nom: 'Bandeau — Fiche pays',
+    nom: 'Bandeau : Fiche pays',
     fichier: '/images/africans/heros/hero-fiche-pays.jpg',
     source: '1920 × 1280 → 1920 px',
   },
   {
-    nom: 'Illustration — Codimoi',
+    nom: 'Illustration : Codimoi',
     fichier: '/images/africans/illustrations/codimoi-personnage.svg',
     source: 'vectoriel, 40 Ko, fonds opaques retirés',
     fond: 'bg-white',
   },
   {
-    nom: 'Motif — tressage',
+    nom: 'Motif : tressage',
     fichier: '/images/africans/motifs/motif-tresse.jpg',
     source: '4096 × 2304 → 2048 px',
   },

@@ -110,7 +110,7 @@ const localisation = computed(() =>
         class="mb-3 flex items-start gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-800"
       >
         <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="h-3.5 w-3.5 mt-0.5 shrink-0" />
-        <span>Contribution suspendue — en cours de vérification.</span>
+        <span>Contribution suspendue : en cours de vérification.</span>
       </div>
 
       <!-- Barre d'actions compacte -->

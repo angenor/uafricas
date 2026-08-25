@@ -37,7 +37,7 @@
           <p class="text-gray-700 leading-relaxed">
             En Afrique, on dit qu'un vieillard qui meurt est une bibliothèque qui brûle.
             <strong class="text-gray-900">HumanTech</strong> relie celles et ceux qui détiennent
-            un savoir — aînés, griots, experts, témoins de l'histoire — à celles et ceux qui
+            un savoir : aînés, griots, experts, témoins de l'histoire, à celles et ceux qui
             veulent apprendre. Ici, on ne prête pas des livres&nbsp;: on
             <strong class="text-gray-900">écoute des personnes</strong>, on recueille leurs
             expériences de vie et on garde vivante la mémoire du continent et de ses diasporas.

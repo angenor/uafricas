@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Handlers — Collaboration et partage d'arbres
+// Handlers : Collaboration et partage d'arbres
 // ════════════════════════════════════════════════════════════════════════════
 
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -118,7 +118,7 @@ pub async fn creer_invitation(req: HttpRequest, pool: web::Data<PgPool>, body: w
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// GET /api/arbre/invitations — Invitations reçues par l'utilisateur
+// GET /api/arbre/invitations : Invitations reçues par l'utilisateur
 // ════════════════════════════════════════════════════════════════════════════
 
 pub async fn lister_invitations_recues(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {

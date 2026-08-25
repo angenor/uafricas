@@ -65,7 +65,7 @@ const AUTRE = 'autre'
  * Chaînes ou stations publiées, pour rattacher une émission proposée. Une
  * émission sans support parent (`chaine_id`/`station_id` nul) n'apparaîtrait
  * sur aucune page : les pages Télé et Radio sont entièrement structurées par
- * support. Le rattachement est donc obligatoire — sauf si la proposition part
+ * support. Le rattachement est donc obligatoire, sauf si la proposition part
  * déjà d'une page de détail, qui fixe le parent par `targetId`.
  */
 const supportsParents = ref<{ id: string, nom: string }[]>([])
@@ -106,7 +106,7 @@ watch(parentSelection, (id) => {
 })
 
 // Le choix pilote les deux champs envoyés au serveur : un id, OU une précision
-// libre — jamais les deux, à l'image du CHECK « Autre exige une précision ».
+// libre : jamais les deux, à l'image du CHECK « Autre exige une précision ».
 watch(themeSelection, (valeur) => {
   if (valeur === AUTRE) {
     donnees.value.theme_phare_id = undefined
@@ -339,7 +339,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                 ></textarea>
               </div>
 
-              <!-- Territoire concerné — résolu en pays_id par nom côté serveur. -->
+              <!-- Territoire concerné : résolu en pays_id par nom côté serveur. -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
                   Territoire <span class="text-red-500">*</span>
@@ -355,7 +355,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                 </select>
               </div>
 
-              <!-- Rôle de partie prenante (supports) — FR-029 -->
+              <!-- Rôle de partie prenante (supports) : FR-029 -->
               <div v-if="estSupport">
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
                   À quel titre proposez-vous ce média ? <span class="text-red-500">*</span>
@@ -404,7 +404,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                 </p>
               </div>
 
-              <!-- Thème phare (contenus) — FR-030 -->
+              <!-- Thème phare (contenus) : FR-030 -->
               <div v-if="estContenu">
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
                   Thème phare <span class="text-red-500">*</span>
@@ -449,7 +449,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   placeholder="…ou collez un lien (YouTube, flux en ligne…)"
                 >
                 <p v-if="fichierMedia" class="mt-1 text-xs text-gray-500">
-                  Fichier choisi : {{ fichierMedia.name }} — le champ de lien est désactivé.
+                  Fichier choisi : {{ fichierMedia.name }}, le champ de lien est désactivé.
                 </p>
               </div>
 
@@ -498,7 +498,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   <p class="text-xs text-gray-500 mt-0.5">
                     Facultatif. Ces coordonnées seront affichées sur la page publique de
                     votre {{ typeObjet === 'chaine_tv' ? 'chaîne' : 'station' }} une fois
-                    la proposition validée — n’y mettez que ce que vous acceptez de rendre public.
+                    la proposition validée : n’y mettez que ce que vous acceptez de rendre public.
                   </p>
                 </div>
 

@@ -2,7 +2,7 @@
 
 **Branch**: `001-personnes-arbre` | **Date**: 2026-03-15
 
-## Décision 1 — Schema PostgreSQL bounded-context
+## Décision 1 : Schema PostgreSQL bounded-context
 
 **Décision**: Créer un nouveau schema `arbre_genealogique` (fichier `23_arbre_genealogique.sql`).
 
@@ -15,26 +15,26 @@
 La généalogie est un bounded context distinct avec ses propres entités (Personne réelle, Arbre, Rattachement, Lien familial) et ses propres règles métier (cycle detection, cascade soft delete). Créer un schema dédié est conforme au Principe III (SQL source de vérité) et à l'architecture Monolith-First du projet.
 
 **Alternatives considérées**:
-- Attacher à `retrouve_amis` : rejeté — le contexte "retrouve amis" concerne la recherche de personnes perdues, pas la modélisation d'arbres. Mélanger les deux compliquerait les futurs microservices.
-- Attacher à `iam` : rejeté — `iam` gère l'identité système (authentification, rôles), pas les données biographiques ancestrales.
+- Attacher à `retrouve_amis` : rejeté, le contexte "retrouve amis" concerne la recherche de personnes perdues, pas la modélisation d'arbres. Mélanger les deux compliquerait les futurs microservices.
+- Attacher à `iam` : rejeté : `iam` gère l'identité système (authentification, rôles), pas les données biographiques ancestrales.
 
 ---
 
-## Décision 2 — Représentation des dates à granularité variable
+## Décision 2 : Représentation des dates à granularité variable
 
 **Décision**: 3 colonnes SMALLINT nullable par date (`naissance_annee`, `naissance_mois`, `naissance_jour` / `deces_annee`, `deces_mois`, `deces_jour`).
 
 **Rationale**: Pour les données généalogiques ancestrales, la date complète est rarement connue (ex: arrière-grand-père né "vers 1850"). Trois options évaluées :
 
-- **Option A — Colonne TEXT** (`"1850"`, `"03/1850"`, `"15/03/1850"`) : flexible mais impossible à valider, comparer ou indexer efficacement.
-- **Option B — 3 colonnes SMALLINT** ← Choisie : permet de valider chaque composante (mois 1-12, jour 1-31), de comparer les dates partielles (ex: comparer les années pour FR-004), et d'indexer. Compatible avec la convention SQL du projet.
-- **Option C — Colonne DATE + colonne précision** (`precision = 'annee'|'mois'|'jour'`) : élégante mais introduit une redondance (la précision est déductible des colonnes non-NULL) et complique les queries.
+- **Option A : Colonne TEXT** (`"1850"`, `"03/1850"`, `"15/03/1850"`) : flexible mais impossible à valider, comparer ou indexer efficacement.
+- **Option B : 3 colonnes SMALLINT** ← Choisie : permet de valider chaque composante (mois 1-12, jour 1-31), de comparer les dates partielles (ex: comparer les années pour FR-004), et d'indexer. Compatible avec la convention SQL du projet.
+- **Option C : Colonne DATE + colonne précision** (`precision = 'annee'|'mois'|'jour'`) : élégante mais introduit une redondance (la précision est déductible des colonnes non-NULL) et complique les queries.
 
 **Contrainte de validation** (FR-004) : quand `deces_annee IS NOT NULL AND naissance_annee IS NOT NULL`, vérifier `deces_annee >= naissance_annee`. Si les années sont égales et les mois sont connus, comparer les mois. Si toujours égaux et jours connus, comparer les jours. Sinon, ne pas bloquer.
 
 ---
 
-## Décision 3 — Détection des cycles dans la hiérarchie parent-enfant
+## Décision 3 : Détection des cycles dans la hiérarchie parent-enfant
 
 **Décision**: Requête récursive CTE PostgreSQL avant insertion d'un lien parent-enfant.
 
@@ -58,11 +58,11 @@ Si count > 0 → cycle détecté → retourner 422 Unprocessable Entity.
 
 **Alternatives considérées**:
 - Trigger PostgreSQL pour la détection : possible mais rend l'erreur difficile à traduire en message UX clair côté Rust. La logique en Rust est plus lisible et testable.
-- Limite de profondeur (ex: max 50 générations) : rejeté — arbitraire, et la CTE s'arrête naturellement quand il n'y a plus de parent.
+- Limite de profondeur (ex: max 50 générations) : rejeté, arbitraire, et la CTE s'arrête naturellement quand il n'y a plus de parent.
 
 ---
 
-## Décision 4 — Soft delete en cascade pour la Personne orpheline
+## Décision 4 : Soft delete en cascade pour la Personne orpheline
 
 **Décision**: Logique applicative en Rust (dans le handler de suppression de rattachement), pas de trigger PostgreSQL.
 
@@ -76,15 +76,15 @@ Si count > 0 → cycle détecté → retourner 422 Unprocessable Entity.
   4. Si aucun → marquer la Personne réelle `deleted_at = NOW()`
   5. Tout dans une transaction sqlx pour garantir l'atomicité
 
-**Note**: Le tout dans une transaction `BEGIN/COMMIT` — en cas d'erreur, rollback automatique.
+**Note**: Le tout dans une transaction `BEGIN/COMMIT`, en cas d'erreur, rollback automatique.
 
 ---
 
-## Décision 5 — Création automatique de l'arbre utilisateur
+## Décision 5 : Création automatique de l'arbre utilisateur
 
 **Décision**: L'arbre de l'utilisateur est créé automatiquement (INSERT OR IGNORE / ON CONFLICT DO NOTHING) lors du premier appel à `POST /api/arbre/personnes`.
 
-**Rationale**: Exposer un endpoint séparé `POST /api/arbre` obligerait le frontend à gérer une étape supplémentaire (créer l'arbre avant d'y ajouter une personne). L'utilisateur ne devrait pas avoir à "initialiser" son arbre manuellement — c'est un détail d'implémentation transparent.
+**Rationale**: Exposer un endpoint séparé `POST /api/arbre` obligerait le frontend à gérer une étape supplémentaire (créer l'arbre avant d'y ajouter une personne). L'utilisateur ne devrait pas avoir à "initialiser" son arbre manuellement : c'est un détail d'implémentation transparent.
 
 **Implémentation** : Dans le handler `creer_personne` :
 ```sql
@@ -97,7 +97,7 @@ Puis utiliser l'`arbre_id` (existant ou nouvellement créé) pour créer le `rat
 
 ---
 
-## Décision 6 — Structure du Lien familial : directionnel vs symétrique
+## Décision 6 : Structure du Lien familial : directionnel vs symétrique
 
 **Décision**: Lien directionnel avec `rattachement_source_id` (parent) → `rattachement_cible_id` (enfant) pour les liens parent-enfant. Lien symétrique stocké une seule fois pour les conjoints (avec convention `rattachement_a_id < rattachement_b_id` par UUID).
 
@@ -112,7 +112,7 @@ WHERE (rattachement_source_id = $id OR rattachement_cible_id = $id) AND deleted_
 
 ---
 
-## Décision 7 — Nommage des colonnes de direction du lien
+## Décision 7 : Nommage des colonnes de direction du lien
 
 **Décision**: `rattachement_source_id` (le parent / le premier conjoint) et `rattachement_cible_id` (l'enfant / le second conjoint).
 
@@ -120,7 +120,7 @@ WHERE (rattachement_source_id = $id OR rattachement_cible_id = $id) AND deleted_
 
 ---
 
-## Décision 8 — Requête SQL pour le matching inter-arbres (fondation future)
+## Décision 8 : Requête SQL pour le matching inter-arbres (fondation future)
 
 **Décision**: La séparation `Personne réelle / Rattachement` permet d'identifier les personnes partagées entre deux arbres avec une requête CTE simple, **sans aucune migration de schéma**.
 
@@ -144,9 +144,9 @@ WHERE p.deleted_at IS NULL;
 **Exemple concret** : l'utilisateur A et l'utilisateur B ont tous les deux ajouté "Ibrahim Diallo, né en 1850 à Ségou" dans leur arbre respectif (deux `rattachements` distincts sur la même `personne.id`). La requête ci-dessus retourne "Ibrahim Diallo" comme ancêtre commun potentiel.
 
 **Pourquoi aucune migration ne sera nécessaire** : le schéma actuel contient déjà :
-1. `rattachements.arbre_id` — identifie l'arbre propriétaire du rattachement
-2. `rattachements.personne_id` — référence vers la Personne réelle partageable
-3. `UNIQUE(arbre_id, personne_id)` — garantit qu'un utilisateur ne peut rattacher la même personne réelle qu'une seule fois à son arbre
+1. `rattachements.arbre_id` : identifie l'arbre propriétaire du rattachement
+2. `rattachements.personne_id` : référence vers la Personne réelle partageable
+3. `UNIQUE(arbre_id, personne_id)`, garantit qu'un utilisateur ne peut rattacher la même personne réelle qu'une seule fois à son arbre
 
 La future feature de matching n'aura besoin que d'ajouter une table `correspondances_arbres` pour stocker les connexions confirmées entre arbres, sans toucher aux tables existantes.
 

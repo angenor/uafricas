@@ -9,10 +9,10 @@
 
 ### Session 2026-03-02
 
-- Q: Les avis publics sont-ils uniquement accessibles via lien direct ou existe-t-il une page de listing publique ? → A: Listing public + lien direct — une page publique `/retrouve-amis/rechercher` permet de parcourir et filtrer les avis publics (par pays, ville, école, période).
-- Q: Que se passe-t-il après qu'une personne demande le retrait d'un avis la concernant ? → A: Suspension immédiate + arbitrage admin — l'avis est automatiquement suspendu dès la demande, puis un administrateur tranche sous 72h (maintien ou retrait définitif).
-- Q: Comment comptabiliser les partages pour mesurer SC-003 ? → A: Compteur intégré par avis — chaque clic sur un bouton de partage incrémente un compteur persistant, visible sur la page publique (ex: "Partagé 12 fois").
-- Q: Les signalements d'avis publics doivent-ils être ouverts aux visiteurs non connectés ? → A: Connexion requise uniquement — seuls les utilisateurs connectés peuvent signaler. Élimine le risque de spam de signalements.
+- Q: Les avis publics sont-ils uniquement accessibles via lien direct ou existe-t-il une page de listing publique ? → A: Listing public + lien direct : une page publique `/retrouve-amis/rechercher` permet de parcourir et filtrer les avis publics (par pays, ville, école, période).
+- Q: Que se passe-t-il après qu'une personne demande le retrait d'un avis la concernant ? → A: Suspension immédiate + arbitrage admin, l'avis est automatiquement suspendu dès la demande, puis un administrateur tranche sous 72h (maintien ou retrait définitif).
+- Q: Comment comptabiliser les partages pour mesurer SC-003 ? → A: Compteur intégré par avis : chaque clic sur un bouton de partage incrémente un compteur persistant, visible sur la page publique (ex: "Partagé 12 fois").
+- Q: Les signalements d'avis publics doivent-ils être ouverts aux visiteurs non connectés ? → A: Connexion requise uniquement : seuls les utilisateurs connectés peuvent signaler. Élimine le risque de spam de signalements.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -20,7 +20,7 @@
 
 En tant qu'auteur d'un avis de recherche, je souhaite pouvoir rendre mon avis visible publiquement (sans nécessiter de connexion) afin que toute personne sur Internet puisse le consulter et potentiellement reconnaître la personne recherchée.
 
-**Why this priority**: C'est la fonctionnalité fondamentale — sans page publique, il n'y a rien à partager. C'est le prérequis de toutes les autres stories.
+**Why this priority**: C'est la fonctionnalité fondamentale, sans page publique, il n'y a rien à partager. C'est le prérequis de toutes les autres stories.
 
 **Independent Test**: Créer un avis, activer la visibilité publique, puis accéder à la page via un navigateur en navigation privée (non connecté) et vérifier que les informations autorisées sont visibles.
 
@@ -54,7 +54,7 @@ En tant qu'auteur ou visiteur de la page publique d'un avis, je souhaite partage
 
 En tant que visiteur ayant reconnu la personne recherchée (ou étant cette personne), je souhaite pouvoir contacter l'auteur de l'avis de manière sécurisée via la plateforme, sans avoir accès à ses informations personnelles.
 
-**Why this priority**: C'est l'objectif final du partage — permettre aux personnes touchées de répondre. Le contact doit obligatoirement passer par la plateforme pour protéger les deux parties.
+**Why this priority**: C'est l'objectif final du partage, permettre aux personnes touchées de répondre. Le contact doit obligatoirement passer par la plateforme pour protéger les deux parties.
 
 **Independent Test**: Accéder à une page publique, remplir le formulaire de réponse, puis vérifier que l'auteur de l'avis reçoit une notification avec le message.
 
@@ -71,16 +71,16 @@ En tant que visiteur ayant reconnu la personne recherchée (ou étant cette pers
 
 En tant que personne recherchée ou auteur d'un avis, je souhaite être protégé contre le harcèlement, l'usurpation d'identité et les abus rendus possibles par la visibilité publique des avis.
 
-**Why this priority**: Co-priorité P1 avec la page publique — la protection est indissociable de la mise en visibilité. Sans ces protections, la fonctionnalité présenterait des risques inacceptables.
+**Why this priority**: Co-priorité P1 avec la page publique, la protection est indissociable de la mise en visibilité. Sans ces protections, la fonctionnalité présenterait des risques inacceptables.
 
 **Independent Test**: Tenter d'accéder aux coordonnées de l'auteur depuis la page publique, vérifier qu'elles ne sont pas exposées. Tester le système de signalement et le blocage.
 
 **Acceptance Scenarios**:
 
-1. **Given** une page publique d'avis, **When** un visiteur consulte la page, **Then** aucune information permettant d'identifier ou contacter directement l'auteur n'est visible (pas de nom complet, pas d'email, pas de téléphone) — seul un pseudonyme ou prénom + initiale est affiché.
+1. **Given** une page publique d'avis, **When** un visiteur consulte la page, **Then** aucune information permettant d'identifier ou contacter directement l'auteur n'est visible (pas de nom complet, pas d'email, pas de téléphone), seul un pseudonyme ou prénom + initiale est affiché.
 2. **Given** un auteur qui reçoit des messages inappropriés via le formulaire de réponse, **When** il signale un message, **Then** le message est marqué pour modération et l'auteur peut bloquer l'expéditeur (ajout à la blacklist existante).
 3. **Given** un avis public qui reçoit plus de 3 signalements de visiteurs différents, **When** le seuil est atteint, **Then** l'avis est automatiquement suspendu et un administrateur est notifié pour examen.
-4. **Given** un utilisateur connecté, **When** il accède à un avis public le concernant et qu'il ne souhaite pas être retrouvé, **Then** il peut demander le retrait de l'avis via un bouton "Cet avis me concerne — demander le retrait", l'avis est immédiatement suspendu, et l'auteur + les administrateurs sont notifiés.
+4. **Given** un utilisateur connecté, **When** il accède à un avis public le concernant et qu'il ne souhaite pas être retrouvé, **Then** il peut demander le retrait de l'avis via un bouton "Cet avis me concerne, demander le retrait", l'avis est immédiatement suspendu, et l'auteur + les administrateurs sont notifiés.
 5a. **Given** une demande de retrait en cours, **When** un administrateur examine la demande dans les 72h, **Then** il peut décider du maintien (réactivation de l'avis) ou du retrait définitif (suppression de la page publique).
 5b. **Given** une demande de retrait sans décision admin après 72h, **When** le délai expire, **Then** l'avis reste suspendu jusqu'à décision manuelle (pas de réactivation automatique).
 6. **Given** un avis public, **When** un visiteur non connecté clique sur "Signaler", **Then** il est invité à se connecter ou créer un compte avant de pouvoir soumettre un signalement.
@@ -91,7 +91,7 @@ En tant que personne recherchée ou auteur d'un avis, je souhaite être protég�
 
 En tant que visiteur (connecté ou non), je souhaite pouvoir parcourir et rechercher parmi les avis de recherche publics sur une page dédiée, afin de découvrir si quelqu'un recherche une personne que je connais.
 
-**Why this priority**: Co-priorité P2 avec le partage social — le listing public augmente la découvrabilité organique et le référencement (SEO), créant un effet de réseau où un visiteur venu pour un avis peut en découvrir d'autres.
+**Why this priority**: Co-priorité P2 avec le partage social, le listing public augmente la découvrabilité organique et le référencement (SEO), créant un effet de réseau où un visiteur venu pour un avis peut en découvrir d'autres.
 
 **Independent Test**: Accéder à `/retrouve-amis/rechercher` sans être connecté, filtrer par pays et vérifier que seuls les avis publics et actifs apparaissent.
 
@@ -126,7 +126,7 @@ En tant que visiteur (connecté ou non), je souhaite pouvoir parcourir et recher
 - **FR-007**: Le système DOIT limiter chaque utilisateur à une seule réponse par avis public et à 10 réponses par jour maximum tous avis confondus.
 - **FR-008**: Le système DOIT afficher l'auteur de l'avis sous un format anonymisé (prénom + initiale du nom, ex: "Amadou D.") sur la page publique.
 - **FR-009**: Le système DOIT permettre aux utilisateurs connectés de signaler un avis public (motif + description) et suspendre automatiquement un avis ayant reçu 3 signalements ou plus d'utilisateurs distincts. Les visiteurs non connectés DOIVENT être redirigés vers la connexion avant de pouvoir signaler.
-- **FR-010**: Le système DOIT offrir un mécanisme "Cet avis me concerne — demander le retrait" qui suspend immédiatement l'avis, notifie l'auteur et les administrateurs. Un administrateur DOIT statuer sous 72h (maintien ou retrait définitif). En l'absence de décision, l'avis reste suspendu.
+- **FR-010**: Le système DOIT offrir un mécanisme "Cet avis me concerne, demander le retrait" qui suspend immédiatement l'avis, notifie l'auteur et les administrateurs. Un administrateur DOIT statuer sous 72h (maintien ou retrait définitif). En l'absence de décision, l'avis reste suspendu.
 - **FR-011**: Le système DOIT afficher un message adapté sur la page publique selon l'état de l'avis : actif (contenu complet), clôturé ("personne retrouvée"), suspendu ("avis temporairement retiré"), dépublié ("avis non disponible").
 - **FR-012**: Les visiteurs non connectés souhaitant répondre à un avis DOIVENT être redirigés vers l'inscription/connexion puis renvoyés vers l'avis après authentification.
 - **FR-013**: Le système DOIT empêcher l'indexation des pages publiques d'avis non actifs ou dépubliés via les directives `noindex, nofollow`.
@@ -151,7 +151,7 @@ En tant que visiteur (connecté ou non), je souhaite pouvoir parcourir et recher
 
 ## Assumptions
 
-- Les utilisateurs de la plateforme sont principalement en Afrique et utilisent WhatsApp comme moyen de communication principal — d'où la priorité donnée au partage WhatsApp.
+- Les utilisateurs de la plateforme sont principalement en Afrique et utilisent WhatsApp comme moyen de communication principal : d'où la priorité donnée au partage WhatsApp.
 - La plateforme dispose déjà d'un système d'authentification, de gestion des signalements et de blacklist réutilisables pour cette fonctionnalité.
 - Les pages publiques seront accessibles via le domaine principal de la plateforme (www.africans-world.org).
 - Le slug d'URL utilise un identifiant court non séquentiel pour des raisons de lisibilité et de prévention de l'énumération.

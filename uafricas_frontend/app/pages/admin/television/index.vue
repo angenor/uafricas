@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Chaînes de télévision — back-office.
+ * Chaînes de télévision : back-office.
  *
  * L'onglet « Programmes » a disparu d'ici : depuis 09q un programme est une
  * `emission_*` commune aux deux familles, gérée sur `/admin/medias/emissions`.

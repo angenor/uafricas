@@ -1,7 +1,7 @@
 <template>
   <!-- Une image : pleine largeur, ratio 16/10.
        Trois et plus : une grande à gauche, deux empilées à droite. Au-delà de
-       trois, la troisième vignette porte le compte restant — la maquette ne
+       trois, la troisième vignette porte le compte restant, la maquette ne
        montre jamais plus de trois pavés, et en ajouter casserait la hauteur
        constante de la carte dans le fil. -->
   <div v-if="images.length === 1" class="aspect-[16/10] w-full overflow-hidden bg-af-bordure">

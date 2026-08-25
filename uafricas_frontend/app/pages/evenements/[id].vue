@@ -240,7 +240,7 @@
             />
           </div>
 
-          <!-- Enregistrement vidéo (rediffusion) — affiché une fois l'événement terminé -->
+          <!-- Enregistrement vidéo (rediffusion) : affiché une fois l'événement terminé -->
           <div v-if="estTermine && enregistrementUrl" class="border-t border-gray-100 mt-2 pt-6">
             <h2 class="flex items-center gap-2 text-xl font-bold text-gray-800 mb-3">
               <font-awesome-icon icon="fa-brands fa-youtube" class="text-red-600 text-base" />
@@ -395,7 +395,7 @@ const userStore = useUserStore()
 
 const { obtenirEvenement, inscrireEvenement, obtenirEtatDirect, signalStream, chargement, erreur } = useEvenements()
 
-// Chargement SSR — indispensable pour que les balises Open Graph soient présentes
+// Chargement SSR : indispensable pour que les balises Open Graph soient présentes
 // dans le HTML lu par les robots des réseaux sociaux (aperçu lors du partage).
 const { data: evenementCharge } = await useAsyncData(
   `evenement-${evenementId}`,
@@ -405,7 +405,7 @@ const evenement = ref<EvenementDetailAPI | null>(evenementCharge.value)
 const isInscrit = ref(evenementCharge.value?.est_inscrit ?? false)
 const isAuthenticated = computed(() => !!userStore.accessToken)
 
-// État du direct (feature 001-evenements-streaming) — rafraîchi via SSE.
+// État du direct (feature 001-evenements-streaming), rafraîchi via SSE.
 const etatDirect = ref<EtatDirect | null>(null)
 const chargerEtatDirect = async (): Promise<void> => {
   etatDirect.value = await obtenirEtatDirect(evenementId)
@@ -449,7 +449,7 @@ const resoudreUrlImage = (url: string | null | undefined): string => {
 const imageOg = computed(() => resoudreUrlImage(evenement.value?.couverture_url))
 const descriptionOg = computed(() => {
   const e = evenement.value
-  if (!e) return 'Événements & ateliers panafricains — UAfricas'
+  if (!e) return 'Événements & ateliers panafricains | UAfricas'
   const lieu = [e.ville, e.pays].filter(Boolean).join(', ')
   const brut = (e.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
   const resume = brut.length > 160 ? `${brut.slice(0, 157)}…` : brut

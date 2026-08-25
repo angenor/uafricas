@@ -55,7 +55,7 @@ const pointsForts = champListe('points_forts')
           <select v-model="form.ecole_partenaire_id" class="select select-bordered" required>
             <option value="" disabled>Sélectionner une école partenaire</option>
             <option v-for="e in ecoles" :key="e.id" :value="e.id">
-              {{ e.nom }}{{ e.ville ? ` — ${e.ville}` : '' }}
+              {{ e.nom }}{{ e.ville ? `, ${e.ville}` : '' }}
             </option>
           </select>
           <label class="label">

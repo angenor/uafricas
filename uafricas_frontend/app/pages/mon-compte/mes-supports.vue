@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Page dédiée aux supports que je détiens — US5, US6.
+ * Page dédiée aux supports que je détiens, US5, US6.
  *
  * Le contenu vit dans `MediaMesSupports`, également monté en onglet de
  * `/mon-compte/profil` : cette URL reste le point d'arrivée des liens envoyés
@@ -8,7 +8,7 @@
  */
 definePageMeta({ middleware: 'auth' })
 
-useHead({ title: 'Mes supports médias — UAfricas' })
+useHead({ title: 'Mes supports médias | UAfricas' })
 
 const breadcrumbs = [
   { label: 'Mon compte', to: '/mon-compte/profil' },

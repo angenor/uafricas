@@ -2,7 +2,7 @@
 
 **Feature**: 001-demande-expertise | **Date**: 2026-05-24
 
-Scénarios de validation manuelle (aucun framework de test configuré — Constitution). Prérequis : backend (port 8080) + frontend (port 3000) + PostgreSQL Docker démarrés.
+Scénarios de validation manuelle (aucun framework de test configuré, Constitution). Prérequis : backend (port 8080) + frontend (port 3000) + PostgreSQL Docker démarrés.
 
 ## Démarrage
 
@@ -44,7 +44,7 @@ ON CONFLICT (slug) DO NOTHING;
 
 ---
 
-## Scénario 1 — Soumettre une demande (US1, P1)
+## Scénario 1 : Soumettre une demande (US1, P1)
 
 1. Se connecter en tant que membre.
 2. Ouvrir le menu latéral gauche → « Je m'engage » → cliquer **« Apporter mon expertise »**.
@@ -64,7 +64,7 @@ ON CONFLICT (slug) DO NOTHING;
 
 ---
 
-## Scénario 2 — Valider / refuser (US2, P1)
+## Scénario 2 : Valider / refuser (US2, P1)
 
 1. Se connecter en tant qu'admin → `/admin/experts`.
    - ✅ Liste des demandes filtrable par statut (en attente/validée/refusée) + recherche.
@@ -83,7 +83,7 @@ ON CONFLICT (slug) DO NOTHING;
 
 ---
 
-## Scénario 3 — Suivi & re-soumission (US3, P2)
+## Scénario 3 : Suivi & re-soumission (US3, P2)
 
 1. Membre dont la demande a été refusée → onglet « Expertise » de `mon-compte/profil`.
    - ✅ Statut « refusée » + commentaire de l'admin affichés.

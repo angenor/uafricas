@@ -11,8 +11,8 @@ Affichage graphique interactif de l'arbre généalogique de l'utilisateur connec
 
 **Language/Version**: Rust Edition 2024 (backend), TypeScript / Nuxt 4 / Vue 3 (frontend)
 **Primary Dependencies**: Actix-Web 4, sqlx (backend) ; @vue-flow/core, @vue-flow/controls, @vue-flow/minimap, relatives-tree (frontend)
-**Storage**: PostgreSQL 16 — schema `arbre_genealogique` existant (aucune migration)
-**Testing**: Pas de CI/CD configuré — vérification manuelle
+**Storage**: PostgreSQL 16 : schema `arbre_genealogique` existant (aucune migration)
+**Testing**: Pas de CI/CD configuré : vérification manuelle
 **Target Platform**: Web (SSR Nuxt 4, rendu graphe client-only via `<ClientOnly>`)
 **Project Type**: Web application (monorepo frontend + backend)
 **Performance Goals**: Chargement interactif < 3s pour 50 personnes, fluide jusqu'à 200 personnes
@@ -90,4 +90,4 @@ uafricas_frontend/
 
 ## Complexity Tracking
 
-Aucune violation de la constitution — pas de justification de complexité nécessaire.
+Aucune violation de la constitution, pas de justification de complexité nécessaire.

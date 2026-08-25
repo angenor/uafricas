@@ -23,7 +23,7 @@
       @resize="majRatioSource"
     />
 
-    <!-- Video camera (tuile normale) — monté tant qu'un track existe, caché via v-show
+    <!-- Video camera (tuile normale) : monté tant qu'un track existe, caché via v-show
          si la caméra est coupée. Évite le démontage/remontage qui cassait srcObject
          au cycle mute → unmute du correspondant (MediaStreamTrack identique).
          En mode « mis en évidence » : object-contain pour respecter le ratio source
@@ -108,7 +108,7 @@
     </div>
 
     <!-- Contenu superposé fourni par le parent (ex. badge « En train de parler »
-         en mode mis en évidence) — positionné dans la tuile, pas dans le conteneur. -->
+         en mode mis en évidence) : positionné dans la tuile, pas dans le conteneur. -->
     <slot />
   </div>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Page Télé — vitrine éditorialisée (US1).
+ * Page Télé : vitrine éditorialisée (US1).
  *
  * Une vedette occupe tout l'écran à l'ouverture, puis le défilement révèle une
  * section par chaîne, chargée par pages successives. La grille de vignettes
@@ -37,7 +37,7 @@ const sections = ref<TeleSection[]>([])
  * Un seul appel au montage, plutôt qu'une interrogation par section : la liste
  * de ses propres supports est courte, et les sections arrivent par pages
  * successives. C'est ce qui laisse `SectionChaine` révéler l'accès à la gestion
- * sur les seules chaînes qui lui appartiennent — le serveur restant seul juge
+ * sur les seules chaînes qui lui appartiennent, le serveur restant seul juge
  * des droits réels (`garde_detenteur`).
  */
 const rolesParChaine = ref<Record<string, RoleDetenteur>>({})
@@ -69,7 +69,7 @@ const enDirect = ref(false)
 const thematiquesSelectionnees = ref<string[]>([])
 
 /** Référentiel de FILTRE : tout le catalogue de thèmes, chacun avec son nombre
- * de chaînes publiées — un thème encore vide s'affiche « (0) » plutôt que de
+ * de chaînes publiées : un thème encore vide s'affiche « (0) » plutôt que de
  * disparaître, ce qui laisserait croire qu'il n'existe pas. */
 const thematiquesDisponibles = ref<ThematiqueDecompte[]>([])
 
@@ -263,7 +263,7 @@ onMounted(async () => {
         <!-- Aucune chaîne publiée, ou les filtres de la barre ne laissent
              rien passer : les deux cas ne se soignent pas de la même façon, ils
              ne se disent donc pas pareil. Depuis la feature 010, une chaîne sans
-             contenu N'EST PLUS filtrée — ce message ne parle donc plus de
+             contenu N'EST PLUS filtrée : ce message ne parle donc plus de
              contenu mais de publication. -->
         <div v-else-if="!sections.length" class="text-center py-16">
           <p class="text-gray-400 text-lg">

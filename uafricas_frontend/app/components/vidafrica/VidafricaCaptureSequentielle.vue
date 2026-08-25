@@ -11,7 +11,7 @@ import { formaterTimestamp } from '~/mocks/vidafrica'
  * met en pause pile sur la coupe, il saisit le texte du passage écoulé
  * [curseurMs → finMs], valide, et la lecture reprend exactement à la coupe.
  * Les segments sont donc strictement contigus et tous les timings proviennent
- * de la lecture — aucune saisie de millisecondes.
+ * de la lecture : aucune saisie de millisecondes.
  */
 
 const props = defineProps<{
@@ -104,7 +104,7 @@ const validerDirect = async () => {
     props.lecteur?.seek(fin, true)
   } catch (e: any) {
     // Curseur et texte préservés pour réessayer sans rien perdre.
-    emit('erreur', e?.data?.error || e?.message || 'Échec de l\'enregistrement — réessayez.')
+    emit('erreur', e?.data?.error || e?.message || 'Échec de l\'enregistrement, réessayez.')
   } finally {
     enregistrement.value = false
   }
@@ -136,7 +136,7 @@ const onKeydown = (e: KeyboardEvent) => {
   }
   // Espace coupe, SAUF si un vrai contrôle a le focus (on ne vole pas son action
   // native). La vidéo focalisée est admise : preventDefault bloque le play/pause
-  // natif et déclenche la coupe à la place — sinon le raccourci serait inopérant
+  // natif et déclenche la coupe à la place, sinon le raccourci serait inopérant
   // dès qu'on démarre via les contrôles natifs.
   if (e.code === 'Space' && props.enLecture && finMs.value === null) {
     const ae = document.activeElement as HTMLElement | null
@@ -149,7 +149,7 @@ const onKeydown = (e: KeyboardEvent) => {
 
 // ── Repositionnement au repère de reprise ───────────────────
 // `curseurInitial` reflète max(fin_ms) côté parent. Au sein d'UNE session (même
-// piste — le composant est keyé par piste et remonté à tout changement), le
+// piste : le composant est keyé par piste et remonté à tout changement), le
 // repère ne fait qu'avancer. On ne repositionne donc que vers l'AVANT : cela
 // neutralise à la fois le no-op post-validation (micro-rembobinage) et un
 // éventuel retour en arrière dû à des réponses chargerSegments arrivées hors

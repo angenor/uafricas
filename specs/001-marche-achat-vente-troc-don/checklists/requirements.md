@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Marché Africain — acheter, vendre, troquer, donner
+# Specification Quality Checklist: Marché Africain, acheter, vendre, troquer, donner
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-05-26

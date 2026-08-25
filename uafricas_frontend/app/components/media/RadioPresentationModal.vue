@@ -37,7 +37,7 @@
           <p class="text-gray-700 leading-relaxed">
             L'Afrique a mille voix, mille langues et mille histoires.
             <strong class="text-gray-900">Africans Radio</strong> réunit les stations de radio
-            du continent — nationales, locales et internationales — à écouter en direct depuis
+            du continent : nationales, locales et internationales, à écouter en direct depuis
             un simple lecteur, dans nos langues et nos musiques,
             <strong class="text-gray-900">pour rapprocher l'Afrique et sa diaspora</strong>.
           </p>
@@ -89,7 +89,7 @@
             </h3>
             <p class="text-gray-700 text-sm leading-relaxed">
               Faire rayonner les langues et les cultures africaines, nourrir le dialogue citoyen
-              et panafricain, et diffuser à tous des informations et des savoirs utiles — sur les
+              et panafricain, et diffuser à tous des informations et des savoirs utiles, sur les
               ondes, partout.
             </p>
           </div>

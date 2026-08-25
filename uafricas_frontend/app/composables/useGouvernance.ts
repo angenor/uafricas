@@ -343,7 +343,7 @@ export interface CreerBadHabitPayload {
   region?: string
   ville_quartier_zone?: string
   medias_urls?: string[]
-  /** Preuves (photos) — URLs relatives uploadées (mauvaise pratique) */
+  /** Preuves (photos) : URLs relatives uploadées (mauvaise pratique) */
   preuves_photos?: string[]
   /** Solutions proposées (10 propositions maximum) */
   solutions_propositions?: string[]

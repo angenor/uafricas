@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Modal de réactivation d'une salle désactivée par administration.
-// Feature 001-ressources-fermeture-session — US2, T057. daisyUI v5.
+// Feature 001-ressources-fermeture-session, US2, T057. daisyUI v5.
 
 interface Props {
   open: boolean

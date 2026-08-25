@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Back-office — journal comptable des cadeaux et purge de fin de phase de test.
+ * Back-office : journal comptable des cadeaux et purge de fin de phase de test.
  *
  * daisyUI autorisé (Principe VI : administration seulement).
  *
@@ -15,7 +15,7 @@ import {
 import { formaterMontant } from '~/composables/useCadeaux'
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
-useHead({ title: 'Journal des cadeaux — Administration' })
+useHead({ title: 'Journal des cadeaux, Administration' })
 
 const { listerTransactions, obtenirParametres, purgerPhaseTest } = useAdminCadeaux()
 
@@ -100,7 +100,7 @@ const lancerPurge = async () => {
   try {
     const res = await purgerPhaseTest()
     message.value = res
-      ? `Purge effectuée — ${res.transactions_purgees} transaction(s), `
+      ? `Purge effectuée, ${res.transactions_purgees} transaction(s), `
         + `${res.mouvements_supprimes} mouvement(s) supprimé(s), `
         + `${res.comptes_recalcules} compte(s) recalculé(s), `
         + `${formaterMontant(res.montant_cagnottes_annule, devise.value)} de cagnottes annulés.`
@@ -237,7 +237,7 @@ const formaterDate = (iso: string) =>
               <td class="text-xs">{{ t.offreur.nom_affiche }}</td>
               <td class="text-xs">{{ t.beneficiaire.nom_affiche }}</td>
               <td class="max-w-40 truncate text-xs" :title="t.cible.titre || t.cible.type_objet">
-                {{ t.cible.titre || '—' }}
+                {{ t.cible.titre || '-' }}
                 <span class="block font-mono opacity-50">{{ t.cible.type_objet }}</span>
               </td>
               <td class="text-xs">{{ t.cadeau.libelle }}</td>
@@ -278,7 +278,7 @@ const formaterDate = (iso: string) =>
         </button>
         <span class="text-sm opacity-60">
           Page {{ journal.pagination.page }} sur {{ totalPages }}
-          — {{ journal.pagination.total }} transaction(s)
+          {{ journal.pagination.total }} transaction(s)
         </span>
         <button
           class="btn btn-sm btn-ghost"
@@ -306,7 +306,7 @@ const formaterDate = (iso: string) =>
           <br>
           Aucun point de <strong>j'aime</strong> ni de <strong>partage</strong> n'est touché :
           la suppression cible le motif de clé des cadeaux, jamais une plage de dates.
-          L'opération est <strong>irréversible</strong> mais idempotente — la rejouer ne fait rien.
+          L'opération est <strong>irréversible</strong> mais idempotente, la rejouer ne fait rien.
         </span>
       </div>
 

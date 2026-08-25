@@ -1,4 +1,4 @@
-# Phase 1 — Modèle de données : Refonte des pages Télé et Radio Africans
+# Phase 1 : Modèle de données : Refonte des pages Télé et Radio Africans
 
 **Feature** : `001-refonte-tele-radio` | **Date** : 2026-07-19
 **Schéma cible** : `media_content` | **Migrations** : `09j` → `09n` sous `uafricas_backend/doc/bd/schemas/`
@@ -36,7 +36,7 @@ Les tables existantes concernées sont `media_content.chaine_tv`, `station_radio
 
 ---
 
-## 1. Migration `09j` — Éditorial, origine, référentiels
+## 1. Migration `09j` : Éditorial, origine, référentiels
 
 ### 1.1 Origine de publication des stations (FR-014)
 
@@ -61,7 +61,7 @@ CREATE INDEX IF NOT EXISTS idx_station_radio_origine
 **Reprise de données** : le défaut `'territoire'` qualifie tout l'existant du côté Nationales. Aucun seed
 radio n'existe (vérifié), donc la reprise porte uniquement sur ce que les administrateurs ont saisi
 manuellement ; elle se fait par `UPDATE … SET origine_publication = 'africans' WHERE id IN (…)` après
-livraison. **Invariant** : une station relève d'exactement une page — garanti par le `NOT NULL` + `CHECK`.
+livraison. **Invariant** : une station relève d'exactement une page, garanti par le `NOT NULL` + `CHECK`.
 
 ### 1.2 FK manquantes sur `station_radio`
 
@@ -89,8 +89,8 @@ Deux portées de mise en avant coexistent, sans interférence :
 | Portée | Colonne | Unicité | Exigence |
 |---|---|---|---|
 | Générale (page Télé) | `a_la_une_globale` | 1 pour toute la table | FR-001, FR-002 |
-| Par chaîne | `a_la_une` (existant) | 1 par `chaine_id` — `uq_programme_tele_a_la_une_par_chaine` (`09g:82`) | FR-005 |
-| Par station | `a_la_une` (existant) | 1 par `station_id` — `uq_programme_radio_a_la_une_par_station` (`09g:48`) | FR-013 |
+| Par chaîne | `a_la_une` (existant) | 1 par `chaine_id`, `uq_programme_tele_a_la_une_par_chaine` (`09g:82`) | FR-005 |
+| Par station | `a_la_une` (existant) | 1 par `station_id`, `uq_programme_radio_a_la_une_par_station` (`09g:48`) | FR-013 |
 
 **Repli déterministe** (FR-007, edge case « vedette indisponible ») : à défaut de programme portant
 `a_la_une_globale = TRUE` **et** `etat = 'publie'`, servir
@@ -120,7 +120,7 @@ ALTER TABLE media_content.chaine_tv
 `role_partie_prenante ∈ ('chaine_tele','radio','journaliste','communicateur','createur_contenu',
 'influenceur','realisateur','producteur','autre')`.
 
-**Règle de validation commune** (FR-029, FR-030, edge case « Contribution avec Autre ») — exprimée en SQL,
+**Règle de validation commune** (FR-029, FR-030, edge case « Contribution avec Autre »), exprimée en SQL,
 pas seulement applicative :
 
 ```sql
@@ -149,7 +149,7 @@ ALTER TABLE media_content.programme_tele
 > **Conséquence de conception à valider** : un contenu dont le média est remplacé passe en `'en_attente'` et
 > **cesse d'être diffusé** jusqu'à revalidation. La spec (FR-032) exige la revalidation mais ne tranche pas
 > le sort de la diffusion pendant l'attente. Le choix retenu est le plus sûr : rien de non validé n'est
-> public (FR-031). L'alternative — conserver l'ancien média en ligne — imposerait un versionnement du média.
+> public (FR-031). L'alternative : conserver l'ancien média en ligne, imposerait un versionnement du média.
 
 ### 1.6 Corrections de dette bloquantes
 
@@ -168,7 +168,7 @@ ALTER TABLE arbre_genealogique.notifications ALTER COLUMN type TYPE VARCHAR(80);
 
 ---
 
-## 2. Migration `09k` — Interactions communautaires (US3, US7)
+## 2. Migration `09k` : Interactions communautaires (US3, US7)
 
 Discriminant local, en `VARCHAR + CHECK` pour rester extensible sans `ALTER TYPE` (patron
 `governance.partage_contribution:16-18`) :
@@ -188,12 +188,12 @@ type_media ∈ ('chaine_tv', 'station_radio', 'programme_tele', 'programme_radio
 | `type_reaction` | VARCHAR(10) NOT NULL | CHECK `IN ('like','dislike')` |
 | `created_at` / `updated_at` | TIMESTAMPTZ | |
 
-`UNIQUE (type_media, media_id, utilisateur_id)` — une seule réaction retenue par membre et par contenu ;
+`UNIQUE (type_media, media_id, utilisateur_id)`, une seule réaction retenue par membre et par contenu ;
 le changement se fait par `ON CONFLICT … DO UPDATE`, le retrait par `DELETE`.
 
 ### 2.2 `media_content.media_commentaire` (FR-024)
 
-Modèle : `iam.biblio_commentaire` (`04g:41-55`), **liste plate** — FR-024 ne demande pas de fil de réponses.
+Modèle : `iam.biblio_commentaire` (`04g:41-55`), **liste plate**, FR-024 ne demande pas de fil de réponses.
 
 `id`, `type_media`, `media_id`, `auteur_id` (→ `iam.utilisateur` CASCADE),
 `contenu TEXT NOT NULL CHECK (char_length BETWEEN 1 AND 2000)`, `created_at`, `updated_at`, `deleted_at`.
@@ -209,7 +209,7 @@ projet et la spec n'en demande pas.
 
 `id`, `type_media`, `media_id`, `signale_par` (→ `iam.utilisateur` CASCADE),
 `motif VARCHAR(50)`, `description TEXT CHECK (char_length <= 1000)`, `created_at`,
-`UNIQUE (type_media, media_id, signale_par)` — idempotence : un membre ne peut pas gonfler le compteur.
+`UNIQUE (type_media, media_id, signale_par)`, idempotence : un membre ne peut pas gonfler le compteur.
 
 **Algorithme** (calqué sur `contribution_signalement.rs:100-175`, adapté à `etat`) :
 
@@ -224,7 +224,7 @@ Jamais de désuspension automatique : le rétablissement est administratif et re
 
 ---
 
-## 3. Migration `09l` — Propositions et modération (US4)
+## 3. Migration `09l` : Propositions et modération (US4)
 
 ```sql
 CREATE TYPE media_content.type_objet_propose AS ENUM (
@@ -277,12 +277,12 @@ CONSTRAINT ck_prop_media_cible_requise CHECK (
 | `chaine_tv`, `station_radio` | la chaîne ou station créée | + 1 ligne `support_detenteur` en `proprietaire` |
 | `programme_tele`, `programme_radio` | le contenu créé | rattaché au support de `target_id` |
 | `animation_programme` | la ligne `support_detenteur` créée | ajoute le demandeur aux co-détenteurs (FR-045) |
-| `idee_contenu` | *aucun* — exempté par le CHECK | l'idée est marquée retenue, rien n'est créé (FR-044) |
+| `idee_contenu` | *aucun* : exempté par le CHECK | l'idée est marquée retenue, rien n'est créé (FR-044) |
 
 Index : `(statut, created_at DESC)` pour la file admin, `(auteur_id, created_at DESC)` pour « mes
 soumissions », `(type_objet, statut)`.
 
-**Aucune décharge de droits n'est stockée** — décision explicite du commanditaire (H-012). La colonne
+**Aucune décharge de droits n'est stockée**, décision explicite du commanditaire (H-012). La colonne
 `decharge_droits` de vidafrica (`27c:18`) n'est donc **pas** reprise. L'examen de licéité incombe à
 l'administrateur au moment de la validation (FR-033).
 
@@ -313,7 +313,7 @@ décidée. Le rejet exige un motif d'au moins 10 caractères (garde applicative,
 
 ---
 
-## 4. Migration `09m` — Co-détention (FR-037, FR-045)
+## 4. Migration `09m` : Co-détention (FR-037, FR-045)
 
 ```sql
 CREATE TYPE media_content.type_support_media AS ENUM ('chaine_tv', 'station_radio');
@@ -327,11 +327,11 @@ Modèle : `afrolang.salle_moderateur` (`08b:224-242`), enrichi du rôle.
 `id`, `type_support`, `support_id`, `utilisateur_id`, `role` (DEFAULT `'co_detenteur'`),
 `designe_par`, `designe_at`, `actif BOOLEAN NOT NULL DEFAULT TRUE`, `retire_at`, `created_at`, `updated_at`.
 
-- `UNIQUE (type_support, support_id, utilisateur_id)` — **sans filtre** : une seule ligne par paire, jamais
+- `UNIQUE (type_support, support_id, utilisateur_id)`, **sans filtre** : une seule ligne par paire, jamais
   de doublon historique. Le retrait est un soft-delete (`actif = FALSE`, `retire_at = NOW()`), l'ajout un
   upsert-réactivation à trois branches (`admin/moderateurs_afrolang.rs:59-190`).
 - `CREATE UNIQUE INDEX uq_support_un_proprietaire ON …(type_support, support_id) WHERE role = 'proprietaire'
-  AND actif = TRUE` — un seul propriétaire actif par support.
+  AND actif = TRUE` : un seul propriétaire actif par support.
 - Index partiels sur `(type_support, support_id) WHERE actif` et `(utilisateur_id) WHERE actif`.
 
 | Rôle | Droits |
@@ -341,7 +341,7 @@ Modèle : `afrolang.salle_moderateur` (`08b:224-242`), enrichi du rôle.
 | `programmateur` | programmer uniquement |
 
 **Edge case « dernier co-détenteur retiré »** : aucune contrainte n'impose au moins un détenteur actif. Le
-support reste diffusé et sa grille modifiable par un administrateur — conforme à l'exigence.
+support reste diffusé et sa grille modifiable par un administrateur, conforme à l'exigence.
 
 ### `media_content.invitation_detenteur`
 
@@ -359,7 +359,7 @@ que les co-détenteurs puissent publier sur leur chaîne.
 
 ---
 
-## 5. Migration `09n` — Grille de programmation (US5)
+## 5. Migration `09n` : Grille de programmation (US5)
 
 ### `media_content.creneau_programmation`
 
@@ -391,7 +391,7 @@ CONSTRAINT ck_creneau_pas_minuit CHECK (
 couple `TIME` + `jour_semaine` + `fuseau` est le seul moyen de l'exprimer sans matérialiser des lignes à
 l'infini.
 
-### Résolution du créneau courant — paresseuse, sans worker (R7)
+### Résolution du créneau courant : paresseuse, sans worker (R7)
 
 Le patron maison est le calcul à la lecture (`rendez_vous.rs:184,190`, `afrolang.rs:422`). Aucune tâche de
 fond n'est introduite :
@@ -419,7 +419,7 @@ Ce verrou sérialise toutes les modifications de grille d'un même support et co
 existants ne verrouillerait pas.
 
 > Une contrainte d'exclusion GiST serait plus élégante mais imposerait l'extension `btree_gist`, un type
-> range sur `TIME` et le traitement du franchissement de minuit — pour une garantie qu'un verrou de ligne
+> range sur `TIME` et le traitement du franchissement de minuit, pour une garantie qu'un verrou de ligne
 > apporte déjà à cette volumétrie. Le projet n'utilise aucune contrainte d'exclusion aujourd'hui.
 
 ---
@@ -440,9 +440,9 @@ existants ne verrouillerait pas.
 | Proposition d'engagement | `proposition_media` (`type_objet = 'animation_programme'` pour les demandes) |
 | Signalement | `signalement_media` + `nombre_signalements` + `etat = 'suspendu'` |
 
-## 7. Récapitulatif — ce qui est créé, modifié, non touché
+## 7. Récapitulatif : ce qui est créé, modifié, non touché
 
-**Créé** : 8 tables — `media_reaction`, `media_commentaire`, `partage_media`, `signalement_media`
+**Créé** : 8 tables : `media_reaction`, `media_commentaire`, `partage_media`, `signalement_media`
 (`09k`) ; `proposition_media` (`09l`) ; `support_detenteur`, `invitation_detenteur` (`09m`) ;
 `creneau_programmation` (`09n`). Plus 4 types ENUM (`type_objet_propose`, `statut_proposition_media`,
 `type_support_media`, `role_detenteur`) et 1 référentiel peuplé dans `shared.categorie`.

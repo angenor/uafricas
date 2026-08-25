@@ -2,10 +2,10 @@ import type { CompteursInteraction } from '~/composables/useMediaSocial'
 import type { MembreEquipeAPI } from '~/composables/useMediaEquipe'
 
 /**
- * Programmes conteneurs et épisodes — feature 009.
+ * Programmes conteneurs et épisodes : feature 009.
  *
  * Vocabulaire : `emission` côté API = « **Programme** » à l'écran ; `episode` =
- * « **Épisode** ». Le décalage est délibéré — le mot « programme » désignait
+ * « **Épisode** ». Le décalage est délibéré : le mot « programme » désignait
  * l'unité diffusable avant la migration 09q, et réutiliser l'identifiant aurait
  * fait lire silencieusement des données de sens opposé.
  *
@@ -54,10 +54,10 @@ export interface EmissionAPI {
   cree_par: string
   created_at: string
   updated_at: string
-  /** Équipe éditoriale DU PROGRAMME (010) — distincte de celle de son support,
+  /** Équipe éditoriale DU PROGRAMME (010), distincte de celle de son support,
    *  jamais un repli sur elle. Absente quand le programme n'en déclare aucune. */
   equipe?: MembreEquipeAPI[]
-  /** Compteurs du PROGRAMME seul — jamais la somme de ceux de ses épisodes. */
+  /** Compteurs du PROGRAMME seul : jamais la somme de ceux de ses épisodes. */
   interactions?: CompteursInteraction | null
 }
 
@@ -69,11 +69,11 @@ export interface EpisodeAPI {
   slug: string | null
   description: string
   image_couverture_url: string | null
-  /** Champ uniforme des deux familles — c'est celui que consomment les composants. */
+  /** Champ uniforme des deux familles : c'est celui que consomment les composants. */
   media_url: string | null
   video_url?: string | null
   audio_url?: string | null
-  /** `hebergee` | `externe` | `aucune` — décide du lecteur employé. */
+  /** `hebergee` | `externe` | `aucune` : décide du lecteur employé. */
   source_media: string
   numero_episode: number | null
   ordre: number
@@ -110,7 +110,7 @@ interface ApiResponse<T> {
 }
 
 /**
- * Libellé lisible d'une cadence — l'API ne renvoie que la valeur brute.
+ * Libellé lisible d'une cadence : l'API ne renvoie que la valeur brute.
  *
  * **Source UNIQUE des libellés de périodicité** (010, FR-041) : le back-office
  * entretenait les siens dans `useAdminMediaEmissions`, ce qui garantissait qu'ils
@@ -127,7 +127,7 @@ export const LIBELLES_CADENCE: Record<string, string> = {
 }
 
 /**
- * Ordre d'affichage dans les sélecteurs — « non périodique » en tête, parce que
+ * Ordre d'affichage dans les sélecteurs, « non périodique » en tête, parce que
  * c'est le défaut d'un programme neuf (FR-042).
  */
 export const CADENCES_ORDONNEES = [
@@ -140,9 +140,9 @@ export const CADENCES_ORDONNEES = [
 /** Ce que la cadence engage, dit au moment de la choisir. */
 export const AIDES_CADENCE: Record<string, string> = {
   ponctuelle: 'Aucune périodicité déclarée : aucune alerte de cadence.',
-  quotidienne: 'Un épisode attendu chaque jour — alerte 6 h avant l’échéance.',
-  hebdomadaire: 'Un épisode attendu chaque semaine — alerte 48 h avant l’échéance.',
-  mensuelle: 'Un épisode attendu chaque mois — alerte 7 jours avant l’échéance.',
+  quotidienne: 'Un épisode attendu chaque jour, alerte 6 h avant l’échéance.',
+  hebdomadaire: 'Un épisode attendu chaque semaine, alerte 48 h avant l’échéance.',
+  mensuelle: 'Un épisode attendu chaque mois, alerte 7 jours avant l’échéance.',
 }
 
 /** Libellé d'un état d'épisode, tel que l'auteur doit le lire. */
@@ -170,7 +170,7 @@ export const useMediaEmissions = () => {
     return {}
   }
 
-  /** Préfixe public d'une famille — les deux espaces exposent les mêmes routes. */
+  /** Préfixe public d'une famille : les deux espaces exposent les mêmes routes. */
   const prefixePublic = (type: TypeSupportMedia): string =>
     type === 'station_radio' ? '/api/stations-radio' : '/api/television'
 
@@ -210,7 +210,7 @@ export const useMediaEmissions = () => {
     }
   }
 
-  /** Épisodes publiés d'un programme, paginés — 24 par défaut. */
+  /** Épisodes publiés d'un programme, paginés, 24 par défaut. */
   const listerEpisodes = async (
     type: TypeSupportMedia,
     emissionId: string,

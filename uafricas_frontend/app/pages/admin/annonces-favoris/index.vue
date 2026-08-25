@@ -64,7 +64,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
         </div>
         <div class="stat-title">Top annonce</div>
         <div class="stat-value text-secondary text-lg">
-          {{ stats.top_annonces[0]?.annonce_titre || '—' }}
+          {{ stats.top_annonces[0]?.annonce_titre || '-' }}
         </div>
         <div v-if="stats.top_annonces[0]" class="stat-desc">{{ stats.top_annonces[0].nombre_favoris }} favoris</div>
       </div>

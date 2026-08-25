@@ -126,7 +126,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
 <template>
   <div>
-    <AdminPageHeader titre="Signalements — Retrouve Amis" sous-titre="Moderation des signalements d'avis de recherche">
+    <AdminPageHeader titre="Signalements, Retrouve Amis" sous-titre="Moderation des signalements d'avis de recherche">
       <template #actions>
         <NuxtLink to="/admin/retrouve-amis" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour aux avis

@@ -1,4 +1,4 @@
-//! Handlers publics Afripulse — lectures des 4 sections enrichies
+//! Handlers publics Afripulse : lectures des 4 sections enrichies
 //! (sites touristiques, secteurs d'opportunités, personnalités, savoirs pratiques).
 //! Contient aussi :
 //!   • US3 : soumission d'une **nouvelle fiche pays** (contribution `type_objet=fiche_pays`)
@@ -115,7 +115,7 @@ pub async fn lister_sites_touristiques(
     let fiche_id = Uuid::parse_str(&chemin.into_inner())
         .map_err(|_| ApiErreur::Validation("ID de fiche invalide".to_string()))?;
 
-    // Filtres optionnels — ignorés si valeur invalide (cohérence avec l'existant).
+    // Filtres optionnels : ignorés si valeur invalide (cohérence avec l'existant).
     let categorie_filtre = params
         .categorie
         .as_deref()
@@ -707,7 +707,7 @@ fn extraire_utilisateur_id(req: &HttpRequest) -> Option<Uuid> {
 }
 
 // ════════════════════════════════════════════════════════════════
-// US3 — Création d'une nouvelle fiche pays
+// US3 : Création d'une nouvelle fiche pays
 // ════════════════════════════════════════════════════════════════
 
 #[derive(Debug, Deserialize)]
@@ -729,7 +729,7 @@ pub struct CreerFichePaysBody {
     pub justification: Option<String>,
 }
 
-/// POST /api/fiches-pays — T047/T048
+/// POST /api/fiches-pays : T047/T048
 ///
 /// Soumission d'une nouvelle fiche pays par un utilisateur authentifié.
 ///
@@ -738,7 +738,7 @@ pub struct CreerFichePaysBody {
 ///   • 422 si `code_iso2` hors périmètre africain (54 codes ISO)
 ///   • 409 si une fiche existe déjà (retourne `fiche_pays_id` existant)
 ///   • 429 rate-limit (5 en attente par pays, 20 textes/24 h)
-///   • 202 sur succès — `{id, etat:"en_attente", created_at}`
+///   • 202 sur succès : `{id, etat:"en_attente", created_at}`
 pub async fn creer_fiche_pays(
     pool: web::Data<PgPool>,
     body: web::Json<CreerFichePaysBody>,
@@ -892,7 +892,7 @@ pub async fn creer_fiche_pays(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US4 — Lecture publique : recommandations + galerie photos
+// US4 : Lecture publique : recommandations + galerie photos
 // ════════════════════════════════════════════════════════════════
 
 #[derive(Debug, Deserialize)]
@@ -1041,7 +1041,7 @@ pub async fn lister_galerie_photos(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US5 — Avis de visiteurs sur un site (note 1–5, écriture directe)
+// US5 : Avis de visiteurs sur un site (note 1–5, écriture directe)
 // ════════════════════════════════════════════════════════════════
 
 #[derive(Debug, Serialize)]
@@ -1086,7 +1086,7 @@ pub struct CreerAvisBody {
     pub commentaire: String,
 }
 
-/// GET /api/sites-touristiques/{site_id}/avis — liste paginée + agrégats (public).
+/// GET /api/sites-touristiques/{site_id}/avis, liste paginée + agrégats (public).
 pub async fn lister_avis_site(
     pool: web::Data<PgPool>,
     chemin: web::Path<String>,
@@ -1154,7 +1154,7 @@ pub async fn lister_avis_site(
     }))
 }
 
-/// POST /api/sites-touristiques/{site_id}/avis — dépose/met à jour l'avis (auth).
+/// POST /api/sites-touristiques/{site_id}/avis, dépose/met à jour l'avis (auth).
 /// Upsert sur l'avis actif (un seul par utilisateur/site). 201 création, 200 MAJ.
 pub async fn soumettre_avis_site(
     pool: web::Data<PgPool>,
@@ -1229,7 +1229,7 @@ pub async fn soumettre_avis_site(
 }
 
 // ════════════════════════════════════════════════════════════════
-// T071 — Mes contributions (utilisateur connecté)
+// T071 : Mes contributions (utilisateur connecté)
 // ════════════════════════════════════════════════════════════════
 
 #[derive(Debug, Deserialize)]

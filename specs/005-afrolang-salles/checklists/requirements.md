@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Afrolang — Ajustements salles publiques et privées
+# Specification Quality Checklist: Afrolang, Ajustements salles publiques et privées
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-04-14

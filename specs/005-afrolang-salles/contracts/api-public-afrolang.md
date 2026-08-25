@@ -1,4 +1,4 @@
-# Contract — Afrolang Public API
+# Contract : Afrolang Public API
 
 **Feature**: 005-afrolang-salles
 **Scope**: Endpoints publics (authentification JWT du membre). Tous sont montés sous `/api/afrolang/**`.
@@ -115,7 +115,7 @@ Bascule `fermee` ↔ `visible` (FR-019).
 | Méthode | Endpoint | Rôle appelant | Action |
 |--------:|----------|---------------|--------|
 | POST | `/api/afrolang/salles-privees/{id}/demandes` | Membre | Demande d'adhésion à une salle `visible` (FR-021). Si `max_participants` atteint → insertion `etat='groupe_complet'` automatique (FR-024). |
-| POST | `/api/afrolang/salles-privees/{id}/invitations` | Créateur | Invite un membre (`{ utilisateur_id }`) — fonctionne en `fermee` et `visible` (FR-020 + FR-025). |
+| POST | `/api/afrolang/salles-privees/{id}/invitations` | Créateur | Invite un membre (`{ utilisateur_id }`), fonctionne en `fermee` et `visible` (FR-020 + FR-025). |
 | GET | `/api/afrolang/salles-privees/{id}/adhesions` | Créateur | Liste des lignes (demandes, invitations, abonnés). |
 | PATCH | `/api/afrolang/adhesions/{id}/decision` | Créateur (pour `demande`) ou membre (pour `invitation`) | Body `{ decision: "acceptee" \| "refusee" }`. Sur `acceptee` : transition atomique + UPDATE type=`abonne` sous `SELECT ... FOR UPDATE` (SC-006). |
 | DELETE | `/api/afrolang/adhesions/{id}` | Créateur | Retire un abonné (soft-delete). |

@@ -435,7 +435,7 @@ onBeforeUnmount(() => {
 const lignesRecapitulatif = computed(() => {
   const lignes: { label: string; valeur: string; etape: number }[] = []
 
-  lignes.push({ label: 'Nom', valeur: formulaire.nom || '—', etape: 1 })
+  lignes.push({ label: 'Nom', valeur: formulaire.nom || '-', etape: 1 })
   lignes.push({ label: 'Prénoms', valeur: formulaire.prenoms || 'Non renseigné', etape: 2 })
 
   const genreLibelle: Record<string, string> = {

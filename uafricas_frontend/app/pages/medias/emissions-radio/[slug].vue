@@ -2,8 +2,8 @@
 /**
  * Page d'un **programme** de radio (feature 009, US1 §3 et US5).
  *
- * Elle existe pour deux raisons : donner une adresse propre à une série — un
- * aperçu social sur un épisode ne dit rien du programme — et porter la vie
+ * Elle existe pour deux raisons : donner une adresse propre à une série, un
+ * aperçu social sur un épisode ne dit rien du programme, et porter la vie
  * communautaire du programme lui-même. Ses compteurs sont ceux du **programme
  * seul**, jamais la somme de ceux de ses épisodes (FR-048) : additionner les
  * deux ferait passer 40 commentaires d'épisodes pour un débat sur la série.
@@ -11,7 +11,7 @@
  * `useAsyncData` au niveau racine ⇒ rendu côté serveur, donc lisible par les
  * robots des réseaux sociaux.
  *
- * Tailwind v4 pur — page publique, aucune classe daisyUI (principe VI).
+ * Tailwind v4 pur : page publique, aucune classe daisyUI (principe VI).
  */
 import { LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
 
@@ -49,7 +49,7 @@ const descriptionOg = computed(() =>
 
 useHead(() => {
   if (!emission.value) return {}
-  const titre = `${emission.value.titre} — Radio — UAfricas`
+  const titre = `${emission.value.titre}, Radio | UAfricas`
   return {
     title: titre,
     meta: [
@@ -194,7 +194,7 @@ useHead(() => {
 
       <!-- Les épisodes, paginés (SC-009) : leurs compteurs sont les leurs.
            Un programme sans aucun épisode publié RESTE consultable (FR-033) et
-           le dit explicitement — il renvoyait un 404 avant la feature 010. -->
+           le dit explicitement : il renvoyait un 404 avant la feature 010. -->
       <p v-if="!emission.nombre_episodes" class="mb-12 text-sm text-gray-500">
         Aucun enregistrement n'est encore publié pour ce programme.
       </p>

@@ -1,10 +1,10 @@
-//! Espace Télé — chaînes, programmes et épisodes
+//! Espace Télé : chaînes, programmes et épisodes
 //! (feature 001-refonte-tele-radio ; recadré par 009-medias-programmes-episodes).
 //!
 //! La page ne présente plus une vignette par vidéo mais **une rangée par
 //! programme** : chaque chaîne porte ses programmes publiés, chaque programme
 //! annonce son nombre d'épisodes et un aperçu borné. Au-delà, la page du
-//! programme prend le relais — c'est ce qui tient la promesse de navigabilité à
+//! programme prend le relais : c'est ce qui tient la promesse de navigabilité à
 //! 500 épisodes.
 
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -277,7 +277,7 @@ pub async fn creer_chaine(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PAGE TÉLÉ — VEDETTE ET SECTIONS
+// PAGE TÉLÉ : VEDETTE ET SECTIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ── GET /api/television/vedette ───────────────────────────────────────
@@ -356,7 +356,7 @@ pub async fn obtenir_vedette(
 /// **Aucune requête N+1** : les programmes de toutes les chaînes de la page sont
 /// chargés en une passe (fenêtre `ROW_NUMBER() OVER (PARTITION BY chaine)`),
 /// leurs aperçus d'épisodes en une seconde, et les compteurs d'interaction en
-/// deux — quel que soit le nombre de chaînes affichées (SC-010).
+/// deux : quel que soit le nombre de chaînes affichées (SC-010).
 pub async fn lister_sections(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -366,14 +366,14 @@ pub async fn lister_sections(
     let page = params.page.unwrap_or(1).max(1);
     let par_page = params.par_page.unwrap_or(6).clamp(1, 20);
     let offset = (page - 1) * par_page;
-    // 010 — ce plafond bornait un APERÇU d'épisodes ; il borne désormais le
+    // 010 : ce plafond bornait un APERÇU d'épisodes ; il borne désormais le
     // contenu PRINCIPAL de la section, la liste de programmes. Le laisser à 12
     // cacherait un programme sur treize sans le dire, aucune page ne
     // transmettant ce paramètre. Au-delà du plafond, la section annonce le
     // total et mène à la page du support (FR-008).
     let emissions_par_section = params.contenus_par_section.unwrap_or(30).clamp(1, 60);
 
-    // 010 — l'`EXISTS` sur les épisodes publiés a disparu (FR-005) : une chaîne
+    // 010 : l'`EXISTS` sur les épisodes publiés a disparu (FR-005) : une chaîne
     // publiée a une identité, une équipe et une grille annoncée bien avant
     // d'avoir une vidéo en ligne. Conséquence assumée et visible : des chaînes
     // jusqu'ici filtrées apparaissent, le décompte de la page augmente.
@@ -406,7 +406,7 @@ pub async fn lister_sections(
     }
 
     // « Africans Télé International » : les chaînes produites par la plateforme
-    // (09o). Une valeur hors référentiel est ignorée plutôt que rejetée — un
+    // (09o). Une valeur hors référentiel est ignorée plutôt que rejetée, un
     // filtre inconnu ne doit pas casser la page.
     if let Some(ref origine) = params.origine {
         let o = origine.trim();
@@ -419,7 +419,7 @@ pub async fn lister_sections(
 
     // « Chaînes thématiques » : le thème phare est porté par les PROGRAMMES. Une
     // chaîne remonte dès qu'elle diffuse au moins un programme publié sur ce
-    // thème — la section décrit la chaîne, pas le thème.
+    // thème : la section décrit la chaîne, pas le thème.
     if let Some(theme_id) = params.theme {
         conditions.push(format!(
             "EXISTS (SELECT 1 FROM media_content.emission_tele m2
@@ -435,7 +435,7 @@ pub async fn lister_sections(
 
     // Thématiques DÉCLARÉES par la chaîne (US3), entendues comme un **OU** :
     // la barre de filtres affiche un décompte par thème, cocher deux thèmes doit
-    // donc élargir la sélection, non la restreindre à leur intersection — qui
+    // donc élargir la sélection, non la restreindre à leur intersection, qui
     // serait vide presque à coup sûr.
     //
     // Un seul `EXISTS` sur `= ANY(...)` plutôt qu'un `EXISTS` par thème joint en
@@ -462,7 +462,7 @@ pub async fn lister_sections(
     }
 
     // Territoire couvert (US4) : les chaînes continentales remontent sur
-    // **chaque** territoire — c'est FR-036 en une clause.
+    // **chaque** territoire : c'est FR-036 en une clause.
     if let Some(territoire) = params.territoire {
         conditions.push(format!(
             "(ct.couverture_continentale = TRUE
@@ -563,10 +563,10 @@ pub async fn lister_sections(
         });
     }
 
-    // 010 — plus aucun aperçu d'épisode : la section ne rend plus de vidéo
+    // 010 : plus aucun aperçu d'épisode : la section ne rend plus de vidéo
     // (FR-002). Jusqu'à 12 épisodes × 30 programmes × 6 chaînes cessent d'être
     // sérialisés, ce qui est le levier de SC-008. Les compteurs d'interaction
-    // du SUPPORT, eux, restent — la barre de réactions de la chaîne n'est pas
+    // du SUPPORT, eux, restent, la barre de réactions de la chaîne n'est pas
     // retirée.
     let ids_chaines: Vec<Uuid> = sections.iter().map(|s| s.chaine.id).collect();
     let compteurs_chaines =
@@ -594,7 +594,7 @@ pub async fn lister_sections(
 
 // ── GET /api/television/chaines-slug/{slug} ───────────────────────────
 
-/// Détail d'une chaîne par son slug — les pages SSR et les aperçus sociaux
+/// Détail d'une chaîne par son slug : les pages SSR et les aperçus sociaux
 /// exigent une URL lisible, que la résolution par identifiant ne donne pas.
 pub async fn obtenir_chaine_par_slug(
     req: HttpRequest,
@@ -637,7 +637,7 @@ pub async fn obtenir_chaine_par_slug(
     let mut refs: Vec<&mut EmissionResponse> = emissions.iter_mut().collect();
     greffer_apercus_et_compteurs(pool.get_ref(), TYPE_SUPPORT, &mut refs, moi).await?;
 
-    // 010 — l'équipe de la chaîne ET celle de chacun de ses programmes (FR-025).
+    // 010 : l'équipe de la chaîne ET celle de chacun de ses programmes (FR-025).
     // Deux appels, un par discriminant : deux requêtes au total, jamais une par
     // programme.
     reponse.equipe =
@@ -842,7 +842,7 @@ pub async fn obtenir_stats_television(pool: web::Data<PgPool>) -> Result<HttpRes
 // Greffes de fiche support (thématiques et couverture)
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Deux requêtes pour toute une liste — jamais une par chaîne.
+/// Deux requêtes pour toute une liste : jamais une par chaîne.
 async fn greffer_fiche_support(
     pool: &PgPool,
     chaines: &mut [ChaineTvResponse],
@@ -871,7 +871,7 @@ async fn greffer_fiche_support_sections(
     }
     let thematiques = thematiques_par_supports(pool, TYPE_SUPPORT, &ids).await?;
     let couvertures = couverture_par_supports(pool, TYPE_SUPPORT, &ids).await?;
-    // 010 — l'équipe du SUPPORT, et elle seule : la carte de programme
+    // 010 : l'équipe du SUPPORT, et elle seule : la carte de programme
     // n'affiche pas d'équipe en vitrine (FR-004). Une requête pour toute la
     // page, comme les thématiques.
     let equipes = crate::handlers::media_equipe::equipes_par_porteurs(pool, TYPE_SUPPORT, &ids).await?;

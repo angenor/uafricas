@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
  * Les idées de contenu et demandes d'animation reçues par un support, arbitrées
- * par ses co-détenteurs (US6 — FR-045, FR-047).
+ * par ses co-détenteurs (US6 : FR-045, FR-047).
  *
  * L'API et le composable existaient déjà ; il manquait ce point de montage, si
  * bien qu'une demande d'animation ne pouvait être acceptée depuis nulle part et
  * que FR-045 restait inatteignable.
  *
  * Deux natures de demande, deux conséquences :
- *   • une IDÉE acceptée ne crée aucun objet — elle vaut accusé de réception ;
+ *   • une IDÉE acceptée ne crée aucun objet : elle vaut accusé de réception ;
  *   • une DEMANDE D'ANIMATION acceptée ajoute son auteur aux co-détenteurs du
  *     support, et lui ouvre donc la grille. C'est une décision d'équipe, pas un
  *     simple accusé de réception : le libellé du bouton le dit.

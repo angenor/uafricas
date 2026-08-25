@@ -876,7 +876,7 @@ onMounted(async () => {
       <!-- ══════ Modal ajout/edition sous-entite ══════ -->
       <div v-if="showModal" class="modal modal-open">
         <div class="modal-box max-w-2xl">
-          <h3 class="font-bold text-lg mb-4">{{ editMode ? 'Modifier' : 'Ajouter' }} — {{ modalTitres[ongletActif] }}</h3>
+          <h3 class="font-bold text-lg mb-4">{{ editMode ? 'Modifier' : 'Ajouter' }} - {{ modalTitres[ongletActif] }}</h3>
 
           <div v-if="modalError" class="alert alert-error mb-4">
             <font-awesome-icon icon="circle-exclamation" />

@@ -174,7 +174,7 @@ export const useAdminProfilsPays = () => {
     await adminFetch<ApiResponse<null>>(`/api/admin/profils-pays/${ficheId}/sites-touristiques/${siteId}`, { method: 'DELETE' })
   }
 
-  /** Active ou retire le badge « Vérifié » d'un site (US3 — réservé admin). */
+  /** Active ou retire le badge « Vérifié » d'un site (US3, réservé admin). */
   const definirVerificationSite = async (ficheId: string, siteId: string, verifie: boolean) => {
     const response = await adminFetch<ApiResponse<{ id: string, verifie: boolean, verifie_at: string | null }>>(
       `/api/admin/profils-pays/${ficheId}/sites-touristiques/${siteId}/verification`,

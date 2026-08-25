@@ -683,10 +683,10 @@ watch(() => props.legacyContext, (ctx) => {
               <OpportuniteAfriqueMultiImageUploadField
                 v-model="formAfripulse.images"
                 :max="5"
-                label="Images du site (5 max) — la 1re sert de couverture"
+                label="Images du site (5 max) : la 1re sert de couverture"
               />
 
-              <!-- Constitution légale (facultatif — US4) -->
+              <!-- Constitution légale (facultatif : US4) -->
               <fieldset class="border border-gray-200 rounded-md p-4">
                 <legend class="text-sm font-medium text-gray-700 px-2">Constitution légale (optionnel)</legend>
                 <div class="space-y-3">

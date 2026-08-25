@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Composable — Assistant conversationnel de construction d'arbre
+// Composable : Assistant conversationnel de construction d'arbre
 // Guide l'utilisateur, question par question, pour bâtir son arbre généalogique :
 //   1. Lui-même  →  2. Ses deux parents  →  3. Les parents de ses parents (et
 //   ainsi de suite, en remontant)  →  4. Ses enfants  →  5. Ses petits-enfants.

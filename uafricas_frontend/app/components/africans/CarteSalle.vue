@@ -1,7 +1,7 @@
 <template>
   <article class="flex flex-col overflow-hidden rounded-[10px] border border-af-bordure bg-white">
     <!-- Vignette 16/9 : la pastille de langue en haut à droite, l'état et le
-         nombre de participants en pied, posés sur un voile noir à 65 % — sans
+         nombre de participants en pied, posés sur un voile noir à 65 %, sans
          ce voile, le texte blanc devient illisible sur une vignette claire. -->
     <div class="relative aspect-video w-full overflow-hidden bg-af-bordure">
       <img v-if="image" :src="image" alt="" class="size-full object-cover" />

@@ -1,4 +1,4 @@
-# Phase 0 — Recherche et décisions techniques
+# Phase 0 : Recherche et décisions techniques
 
 **Feature**: 009-medias-programmes-episodes · **Date**: 2026-08-08
 
@@ -8,20 +8,20 @@ périmètre ont été tranchées par le commanditaire le 2026-08-08 (section `##
 
 ---
 
-## R1 — Nommage des tables : `emission_*` / `episode_*`, `programme_*` supprimées
+## R1 : Nommage des tables : `emission_*` / `episode_*`, `programme_*` supprimées
 
 **Decision**: Créer `media_content.emission_tele` et `emission_radio` (conteneurs). Renommer le contenu
 des tables `programme_tele` / `programme_radio` vers `episode_tele` / `episode_radio` en **conservant
 identifiants et slugs**, puis supprimer les tables `programme_*`. L'interface publique et le back-office
 affichent « Programme » pour l'émission et « Épisode » pour l'unité diffusable.
 
-**Rationale**: Le commanditaire appelle « programme » le **groupe** — l'inverse exact du sens que porte
+**Rationale**: Le commanditaire appelle « programme » le **groupe**, l'inverse exact du sens que porte
 aujourd'hui la table `programme_tele`. Réutiliser l'identifiant `programme_tele` pour le nouveau
 conteneur serait le piège le plus coûteux de cette migration : le projet interroge PostgreSQL par
 `sqlx::query_as` (requêtes **runtime**, pas de `query!` vérifiée à la compilation), donc toute requête
 non portée continuerait de compiler, s'exécuterait sans erreur contre une table homonyme de sens
 opposé, et renverrait des résultats silencieusement faux. Avec des noms neufs, chaque référence oubliée
-échoue bruyamment (`relation "media_content.programme_tele" does not exist`) au premier appel — 137
+échoue bruyamment (`relation "media_content.programme_tele" does not exist`) au premier appel, 137
 occurrences Rust et 24 fichiers frontend rendent cette garantie décisive.
 
 Le décalage libellé↔code n'est pas une nouveauté : le projet affiche déjà « territoire » là où la base
@@ -30,7 +30,7 @@ l'identité stricte des termes métier et techniques.
 
 **Alternatives considered**:
 - *`ALTER TABLE programme_tele RENAME TO episode_tele` puis `CREATE TABLE programme_tele` (conteneur)* :
-  colle au vocabulaire du commanditaire jusque dans le schéma, mais crée exactement le piège décrit —
+  colle au vocabulaire du commanditaire jusque dans le schéma, mais crée exactement le piège décrit 
   une requête non portée lit la nouvelle table vide au lieu d'échouer. Rejeté.
 - *Garder `programme_tele` comme conteneur et y ajouter une table `contenu_programme_tele`* : conserve
   les identifiants sur le **conteneur**, ce qui contredit FR-051 (les interactions doivent suivre
@@ -39,7 +39,7 @@ l'identité stricte des termes métier et techniques.
 
 ---
 
-## R2 — Conservation des identifiants, des slugs et des interactions
+## R2 : Conservation des identifiants, des slugs et des interactions
 
 **Decision**: `episode_tele.id` et `episode_tele.slug` reprennent **à l'identique** ceux de la ligne
 `programme_tele` d'origine. Les émissions reçoivent des identifiants neufs. Sur les quatre tables
@@ -63,7 +63,7 @@ Le discriminant est un `VARCHAR(20)` + CHECK, choisi précisément pour rester e
 
 ---
 
-## R3 — Rotation déterministe, calculée à la lecture
+## R3 : Rotation déterministe, calculée à la lecture
 
 **Decision**: Le créneau porte une `date_effet DATE`. Le rang de l'occurrence courante se calcule en SQL
 dans le fuseau du créneau, et l'épisode retenu est celui de ce rang **modulo** le nombre d'épisodes
@@ -111,26 +111,26 @@ de PostgreSQL conserve le signe du dividende, un rang négatif produirait sinon 
 - *Date de diffusion saisie par épisode* : c'était l'option A de la clarification Q1, écartée par le
   commanditaire. Elle imposait une saisie par épisode et laissait des trous de grille.
 - *Matérialiser les occurrences dans une table* : permettrait de fixer un épisode par date, mais exige
-  une tâche de fond ou une génération glissante — contraire au principe posé par 09n et au principe V.
+  une tâche de fond ou une génération glissante, contraire au principe posé par 09n et au principe V.
 - *Curseur `dernier_episode_diffuse` stocké sur le créneau* : rend la rotation dépendante de l'ordre des
   lectures, donc non déterministe et sensible à la concurrence. Rejeté.
 
 ---
 
-## R4 — Origine du comptage : `date_effet DATE`
+## R4 : Origine du comptage : `date_effet DATE`
 
 **Decision**: `date_effet DATE NOT NULL DEFAULT CURRENT_DATE`, interprétée dans le fuseau du créneau.
 Les créneaux repris par la migration reçoivent la date de reprise.
 
 **Rationale**: Le rang d'occurrence doit se calculer dans le **même référentiel local** que
 `heure_debut` et `jour_semaine`. Un `TIMESTAMPTZ` réintroduirait une conversion de fuseau au moment de
-la soustraction de dates et pourrait décaler le rang d'un cran selon l'instant de lecture — exactement
+la soustraction de dates et pourrait décaler le rang d'un cran selon l'instant de lecture, exactement
 ce que FR-017 interdit. L'écart au principe III est de même nature que celui déjà assumé et documenté
 par 09n : « une récurrence n'est pas un instant ».
 
 ---
 
-## R5 — Thématiques multiples : table de liaison polymorphe
+## R5 : Thématiques multiples : table de liaison polymorphe
 
 **Decision**: `media_content.support_thematique (type_support, support_id, categorie_id)`, avec
 `categorie_id` en référence **logique** `[xref]` vers `shared.categorie` (contexte `media`), sans clé
@@ -139,7 +139,7 @@ par 09n : « une récurrence n'est pas un instant ».
 reprise puis cessent d'être écrites.
 
 **Rationale**: Le référentiel des 44 thèmes média existe déjà (`shared.categorie`, contexte `media`,
-seedé par 09j §7) et `theme_phare_id` l'utilise déjà en `[xref]` sans FK — convention explicite du
+seedé par 09j §7) et `theme_phare_id` l'utilise déjà en `[xref]` sans FK, convention explicite du
 projet. Le polymorphisme `(type_support, support_id)` est le patron maison, employé identiquement par
 `support_detenteur` (09m), `creneau_programmation` (09n) et les quatre tables d'interactions (09k) : une
 seule table sert la télé et la radio, une seule requête sert les deux filtres.
@@ -153,7 +153,7 @@ seule table sert la télé et la radio, une seule requête sert les deux filtres
 
 ---
 
-## R6 — Couverture territoriale : liaison + drapeau, exclusivité garantie par trigger
+## R6 : Couverture territoriale : liaison + drapeau, exclusivité garantie par trigger
 
 **Decision**: `media_content.support_territoire (type_support, support_id, pays_id)` +
 `couverture_continentale BOOLEAN NOT NULL DEFAULT FALSE` sur `chaine_tv` et `station_radio`.
@@ -162,7 +162,7 @@ L'exclusivité mutuelle (FR-034) est garantie **en base** par un trigger `BEFORE
 de territoire lors du passage à `couverture_continentale = TRUE` dans la même transaction.
 
 **Rationale**: Une contrainte `CHECK` ne peut pas porter sur deux tables ; sans trigger, l'exclusivité
-resterait une convention applicative — or le projet privilégie systématiquement les invariants
+resterait une convention applicative : or le projet privilégie systématiquement les invariants
 exprimés en SQL (cinq CHECK sur `transaction_cadeau`, quatre sur `proposition_media`). Le trigger est
 la seule expression SQL possible de cet invariant, et il reste peu coûteux : il ne se déclenche qu'à
 l'écriture d'un territoire.
@@ -178,7 +178,7 @@ en une clause.
 
 ---
 
-## R7 — Modération des épisodes : état sur l'objet, pas proposition JSONB
+## R7 : Modération des épisodes : état sur l'objet, pas proposition JSONB
 
 **Decision**: L'épisode versé par un co-détenteur est **créé réellement** avec `etat = 'en_attente'`.
 L'état gagne la valeur `'rejete'` et l'épisode une colonne `motif_rejet TEXT`. La file admin lit
@@ -202,7 +202,7 @@ correction (FR-041 = repasser `rejete` → `en_attente`).
 
 ---
 
-## R8 — Discriminant des interactions élargi à six valeurs
+## R8 : Discriminant des interactions élargi à six valeurs
 
 **Decision**: Les CHECK `type_media` de `media_reaction`, `media_commentaire`, `partage_media` et
 `signalement_media` passent de 4 à 6 valeurs : `chaine_tv`, `station_radio`, `emission_tele`,
@@ -219,7 +219,7 @@ filtré sur `(type_media, media_id)`.
 
 ---
 
-## R9 — Mise en avant et vedette : portées sur l'épisode
+## R9 : Mise en avant et vedette : portées sur l'épisode
 
 **Decision**: `a_la_une` (une par chaîne/station) et `a_la_une_globale` (une pour tout l'espace Télé)
 migrent de `programme_tele` vers `episode_tele`, avec leurs index uniques partiels. Le pendant radio
@@ -233,7 +233,7 @@ déjà documentée : la bascule de l'ancienne vedette et la désignation de la n
 
 ---
 
-## R10 — Ordre des épisodes : colonne `ordre` + endpoint de réordonnancement
+## R10 : Ordre des épisodes : colonne `ordre` + endpoint de réordonnancement
 
 **Decision**: `episode_*.ordre INT NOT NULL DEFAULT 0`, tri `(ordre, created_at, id)`. À la création,
 `ordre = COALESCE(MAX(ordre), -1) + 1` sur l'émission. Un endpoint
@@ -244,7 +244,7 @@ Pas de contrainte d'unicité sur `(emission_id, ordre)`.
 `COALESCE(MAX(ordre), -1) + 1` à la création, réordonnancement atomique commenté « tout réordonner ou
 rien »). Le réutiliser à l'identique évite d'inventer une seconde façon d'ordonner dans le même schéma.
 L'unicité est volontairement omise : elle imposerait un réordonnancement en deux passes (décalage
-temporaire) pour éviter les collisions transitoires, sans bénéfice — le tri secondaire par
+temporaire) pour éviter les collisions transitoires, sans bénéfice, le tri secondaire par
 `created_at, id` rend l'ordre total et stable même en cas d'ex æquo.
 
 FR-007 (« un épisode ajouté prend rang à la fin ») et FR-019 (« le recalcul ne change pas l'occurrence
@@ -253,7 +253,7 @@ aucun rang déjà atteint par la rotation.
 
 ---
 
-## R11 — Périmètre du portage : ce qui casse et où
+## R11 : Périmètre du portage : ce qui casse et où
 
 **Decision**: Recenser explicitement les points de bascule, pour que `/speckit-tasks` n'en omette aucun.
 

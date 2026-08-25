@@ -114,7 +114,7 @@ const props = defineProps<{
 // Feature 001-session-moderation : mise en évidence (spotlight)
 const { spotlightActif } = useAfrolang()
 
-// Spotlight manuel défini par un modérateur (FR-023) — prioritaire.
+// Spotlight manuel défini par un modérateur (FR-023), prioritaire.
 const participantSpotlightManuel = computed<RoomParticipant | null>(() => {
   const id = spotlightActif.value?.utilisateur_id
   if (!id) return null
@@ -144,7 +144,7 @@ const participantSpotlight = computed<RoomParticipant | null>(() =>
 )
 
 // Vrai quand la mise en évidence provient du repli automatique (orateur) et non
-// d'un modérateur — sert à différencier le libellé/couleur du badge.
+// d'un modérateur : sert à différencier le libellé/couleur du badge.
 const spotlightEstAuto = computed(() =>
   !participantSpotlightManuel.value && !!participantOrateurAuto.value,
 )

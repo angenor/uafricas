@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * File de modération des **épisodes** (feature 009, US1 — FR-040 à FR-043).
+ * File de modération des **épisodes** (feature 009, US1, FR-040 à FR-043).
  *
  * Triée par **échéance** et non par ancienneté : un épisode attendu à l'antenne
  * samedi ne doit pas être traité au même rang qu'un contenu sans date. Les
@@ -13,7 +13,7 @@
 import { MOTIF_REJET_MIN, type EpisodeAModerer } from '~/composables/useAdminMediaModeration'
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
-useHead({ title: 'Épisodes à valider — Administration' })
+useHead({ title: 'Épisodes à valider, Administration' })
 
 const {
   file, total, pagination, filtres, loading, error,
@@ -163,9 +163,9 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pagination
               <span v-else class="text-xs text-error">Média manquant</span>
             </td>
             <td>
-              <div>{{ episode.emission?.nom || '—' }}</div>
+              <div>{{ episode.emission?.nom || '-' }}</div>
               <div class="text-xs opacity-60">
-                {{ episode.support?.nom || '—' }}
+                {{ episode.support?.nom || '-' }}
                 <span class="badge badge-xs ml-1" :class="episode.type_support === 'chaine_tv' ? 'badge-info' : 'badge-accent'">
                   {{ episode.type_support === 'chaine_tv' ? 'Télé' : 'Radio' }}
                 </span>

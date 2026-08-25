@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Badges du membre — sections « obtenus » et « à débloquer ». Tailwind v4 pur.
+ * Badges du membre : sections « obtenus » et « à débloquer ». Tailwind v4 pur.
  *
  * Le composant charge lui-même ses données : l'appel `mes-badges` réévalue les
  * conditions côté serveur, ce qui est précisément ce qu'on veut au moment où le

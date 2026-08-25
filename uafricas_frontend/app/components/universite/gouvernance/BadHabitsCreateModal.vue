@@ -228,7 +228,7 @@
             </div>
           </div>
 
-          <!-- Témoignages (texte) — distinct des preuves -->
+          <!-- Témoignages (texte) : distinct des preuves -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
               {{ estBonne ? 'Témoignages / Preuves' : 'Témoignages' }}
@@ -257,7 +257,7 @@
             />
           </div>
 
-          <!-- Preuves (images ou PDF) — partagé Goodhabits / Badhabits -->
+          <!-- Preuves (images ou PDF) : partagé Goodhabits / Badhabits -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">Preuves (images ou PDF)</label>
             <div class="flex flex-wrap items-center gap-3">
@@ -590,13 +590,13 @@ const paysListe = ref<PaysPublic[]>([])
 const enCours = ref(false)
 const erreurMessage = ref<string | null>(null)
 
-// Solutions proposées (mauvaise pratique) — liste de 10 propositions max
+// Solutions proposées (mauvaise pratique), liste de 10 propositions max
 const solutions = ref<string[]>([])
 
-// Modalités pratiques de reproductibilité (bonne pratique) — liste de 10 modalités max
+// Modalités pratiques de reproductibilité (bonne pratique), liste de 10 modalités max
 const modalitesReproductibilite = ref<string[]>([])
 
-// Preuves (Goodhabits & Badhabits) — fichiers uploadés (images ou PDF), max 5
+// Preuves (Goodhabits & Badhabits) : fichiers uploadés (images ou PDF), max 5
 const preuvesFichiers = ref<{ url: string; type: TypePreuve }[]>([])
 const photoEnCours = ref(false)
 const erreurPhoto = ref<string | null>(null)
@@ -819,7 +819,7 @@ async function soumettre() {
       const sols = solutions.value.map(s => s.trim()).filter(s => s.length > 0).slice(0, 10)
       if (sols.length > 0) payload.solutions_propositions = sols
     }
-    // Preuves (images ou PDF) — partagées Goodhabits / Badhabits
+    // Preuves (images ou PDF) : partagées Goodhabits / Badhabits
     if (preuvesFichiers.value.length > 0) {
       payload.preuves_photos = preuvesFichiers.value.map(p => p.url).slice(0, 5)
     }

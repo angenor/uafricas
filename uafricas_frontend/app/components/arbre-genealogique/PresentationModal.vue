@@ -38,7 +38,7 @@
             L'histoire de nos familles se perd parfois avec le temps, les distances et les migrations.
             <strong class="text-gray-900">Rootstree</strong> vous aide à reconstituer votre arbre
             généalogique africain ou afrodescendant, à <strong class="text-gray-900">préserver la
-            mémoire des vôtres</strong> et à transmettre votre héritage aux générations futures —
+            mémoire des vôtres</strong> et à transmettre votre héritage aux générations futures 
             ensemble, en famille.
           </p>
 

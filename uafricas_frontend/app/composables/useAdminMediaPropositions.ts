@@ -72,7 +72,7 @@ export const useAdminMediaPropositions = () => {
 
   /**
    * Valide la proposition : le serveur crée l'objet métier, désigne son auteur
-   * propriétaire et notifie — le tout dans une seule transaction.
+   * propriétaire et notifie : le tout dans une seule transaction.
    */
   const valider = async (
     id: string,

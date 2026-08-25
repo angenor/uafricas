@@ -9,11 +9,11 @@
 
 ### Session 2026-05-24
 
-- Q: La liste d'amis d'un membre est-elle visible par les autres, ou privée ? → A: Privée — seul le membre voit sa propre liste d'amis ; personne d'autre ne la voit.
-- Q: Le « ne plus me solliciter » est-il anti-resollicitation seule ou un blocage plus large ? → A: Blocage utilisateur dédié — un membre peut bloquer un autre à tout moment (empêche demandes + rompt/empêche amitié et messagerie) ; le refus reste distinct (simple clôture).
+- Q: La liste d'amis d'un membre est-elle visible par les autres, ou privée ? → A: Privée : seul le membre voit sa propre liste d'amis ; personne d'autre ne la voit.
+- Q: Le « ne plus me solliciter » est-il anti-resollicitation seule ou un blocage plus large ? → A: Blocage utilisateur dédié : un membre peut bloquer un autre à tout moment (empêche demandes + rompt/empêche amitié et messagerie) ; le refus reste distinct (simple clôture).
 - Q: Quelle longueur maximale pour un message du chat ? → A: 2000 caractères.
 - Q: Peut-on éditer/supprimer un message envoyé ? → A: Suppression seule de ses propres messages ; pas d'édition.
-- Q: Un nouveau message crée-t-il une notification persistante ? → A: Non — indicateur du bouton flottant seul ; le centre de notifications reste réservé aux évènements de relation (demandes, acceptations).
+- Q: Un nouveau message crée-t-il une notification persistante ? → A: Non : indicateur du bouton flottant seul ; le centre de notifications reste réservé aux évènements de relation (demandes, acceptations).
 
 ## User Scenarios & Testing *(mandatory)*
 

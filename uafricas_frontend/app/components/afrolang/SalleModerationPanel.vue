@@ -85,9 +85,7 @@
             v-else
             class="text-[11px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-400 font-medium shrink-0"
             :title="p.isLocal ? 'Utilisez votre bouton micro' : 'Rang insuffisant'"
-          >
-            —
-          </span>
+          >-</span>
         </li>
       </ul>
 
@@ -167,7 +165,7 @@
       </div>
 
       <p class="px-4 pb-2 text-[11px] text-gray-500">
-        Les modérateurs écrivent d'office — seuls les autres participants sont listés ici.
+        Les modérateurs écrivent d'office : seuls les autres participants sont listés ici.
       </p>
 
       <ul class="divide-y divide-gray-100">
@@ -283,7 +281,7 @@ import type { RoomParticipant } from '~/components/afrolang/AfrolangRoom.vue'
 const props = defineProps<{
   sessionId: string
   participants: RoomParticipant[]
-  /** Session publique (FR-027 — spotlight indisponible en privé). */
+  /** Session publique (FR-027 : spotlight indisponible en privé). */
   estSessionPublique: boolean
 }>()
 
@@ -313,7 +311,7 @@ const microEnCours = ref(new Set<string>())
 const erreurMicro = ref('')
 const infoMicro = ref('')
 
-/** Rang hiérarchique — miroir de `NiveauModerateur::rang()` côté serveur. Sert
+/** Rang hiérarchique : miroir de `NiveauModerateur::rang()` côté serveur. Sert
  *  seulement à masquer une action que le backend refuserait ; l'autorisation,
  *  elle, reste tranchée par le serveur. */
 function rangNiveau(n: NiveauModerateur | null | undefined): number {

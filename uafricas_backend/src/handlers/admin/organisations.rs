@@ -11,7 +11,7 @@ use crate::verifier_permission;
 use crate::ApiResponse;
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/admin/organisations — Liste paginee
+// GET /api/admin/organisations : Liste paginee
 // ────────────────────────────────────────────────────────────────
 
 pub async fn lister_organisations(
@@ -126,7 +126,7 @@ pub async fn lister_organisations(
 }
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/admin/organisations/{id} — Detail
+// GET /api/admin/organisations/{id} : Detail
 // ────────────────────────────────────────────────────────────────
 
 pub async fn obtenir_organisation(
@@ -211,7 +211,7 @@ pub async fn obtenir_organisation(
 }
 
 // ────────────────────────────────────────────────────────────────
-// POST /api/admin/organisations — Creation
+// POST /api/admin/organisations : Creation
 // ────────────────────────────────────────────────────────────────
 
 pub async fn creer_organisation(
@@ -275,7 +275,7 @@ pub async fn creer_organisation(
 }
 
 // ────────────────────────────────────────────────────────────────
-// PUT /api/admin/organisations/{id} — Modification
+// PUT /api/admin/organisations/{id} : Modification
 // ────────────────────────────────────────────────────────────────
 
 pub async fn modifier_organisation(
@@ -375,7 +375,7 @@ pub async fn modifier_organisation(
 }
 
 // ────────────────────────────────────────────────────────────────
-// DELETE /api/admin/organisations/{id} — Soft delete
+// DELETE /api/admin/organisations/{id}, Soft delete
 // ────────────────────────────────────────────────────────────────
 
 pub async fn supprimer_organisation(

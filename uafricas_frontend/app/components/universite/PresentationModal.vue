@@ -39,7 +39,7 @@
             qui met la formation <strong class="text-gray-900">à la portée de tous</strong>. Elle
             diffuse à grande échelle des cours, des programmes et des ateliers pensés pour les grands
             défis du continent, afin de renforcer les compétences des citoyens, des professionnels et
-            des organisations — et d'ouvrir de meilleures perspectives d'emploi et de réussite.
+            des organisations : et d'ouvrir de meilleures perspectives d'emploi et de réussite.
           </p>
 
           <!-- Ce que vous pouvez faire -->

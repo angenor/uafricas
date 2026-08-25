@@ -1,16 +1,16 @@
 <script setup lang="ts">
 /**
- * Section d'une chaîne sur la page Télé — refondue par la feature 010.
+ * Section d'une chaîne sur la page Télé, refondue par la feature 010.
  *
  * La vitrine annonce une **offre éditoriale**, plus un catalogue de fichiers :
  * identité → extrait de description → équipe → bandeau de programmation →
- * cartes de programme (FR-001). Aucun média n'y est lisible (FR-002) — le
+ * cartes de programme (FR-001). Aucun média n'y est lisible (FR-002), le
  * lecteur inline, l'épisode mis en avant, les rangées d'épisodes et la barre de
  * réactions sur épisode ont disparu ; ils vivent sur les pages de détail.
  *
  * Deux conséquences visibles et voulues : une chaîne sans aucun programme
  * s'affiche quand même, avec son identité et son équipe (FR-005), et la
- * description est coupée par une **ellipse figée** — le dépliage « voir plus »
+ * description est coupée par une **ellipse figée**, le dépliage « voir plus »
  * appartient à la page de la chaîne (FR-003 vs FR-021).
  *
  * Tailwind v4 pur (Principe VI).
@@ -21,7 +21,7 @@ import { LIBELLES_ROLE_DETENTEUR, type RoleDetenteur } from '~/composables/useMe
 const props = defineProps<{
   section: TeleSection
   /**
-   * Rôle du visiteur sur cette chaîne, s'il la détient — renseigné par la page,
+   * Rôle du visiteur sur cette chaîne, s'il la détient, renseigné par la page,
    * qui connaît ses supports (un appel pour toutes les sections). `null` pour
    * un visiteur ordinaire : la vitrine reste alors strictement publique.
    */
@@ -61,7 +61,7 @@ const lienGestion = computed(() =>
 )
 
 /**
- * **Tous** les programmes servis sont affichés — y compris ceux qui n'ont
+ * **Tous** les programmes servis sont affichés, y compris ceux qui n'ont
  * encore aucun épisode publié (FR-005). Le filtre `episodes.length > 0` qui
  * régnait ici n'avait de sens que tant que la section montrait des vidéos.
  */
@@ -69,7 +69,7 @@ const programmes = computed(() => props.section.emissions)
 
 /**
  * La section n'affiche pas tout : le plafond serveur borne la liste à 30
- * programmes. Le dire est une exigence (FR-008) — une troncature silencieuse du
+ * programmes. Le dire est une exigence (FR-008) : une troncature silencieuse du
  * contenu principal serait pire que le plafond lui-même.
  */
 const programmesMasques = computed(() =>
@@ -140,7 +140,7 @@ const programmesMasques = computed(() =>
       </div>
     </header>
 
-    <!-- Extrait de description : ellipse figée, sans commande de dépliage —
+    <!-- Extrait de description : ellipse figée, sans commande de dépliage 
          c'est la page de la chaîne qui déplie (FR-003). -->
     <CommonTexteRepliable
       v-if="section.chaine.description"
@@ -160,7 +160,7 @@ const programmesMasques = computed(() =>
       class="mb-6 px-1"
     />
 
-    <!-- Ce que la grille programme à cet instant (US5, FR-039) — texte seul,
+    <!-- Ce que la grille programme à cet instant (US5, FR-039), texte seul,
          aucun lecteur : l'exigence « aucun média lisible » ne vise que les
          lecteurs et les vignettes (Q3 → A). -->
     <MediaBandeauDiffusion

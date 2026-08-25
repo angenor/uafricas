@@ -26,17 +26,17 @@ export interface StationRadioAPI {
   ville: string | null
   type_station: string
   a_la_une: boolean
-  /** 'africans' | 'territoire' — départage les deux pages Radio (FR-014). */
+  /** 'africans' | 'territoire' : départage les deux pages Radio (FR-014). */
   origine_publication: string
   role_partie_prenante: string | null
   role_partie_prenante_autre: string | null
-  /** Coordonnées publiques de l'équipe (09p) — absent quand aucune. */
+  /** Coordonnées publiques de l'équipe (09p), absent quand aucune. */
   contacts?: ContactsSupport | null
-  /** Thématiques déclarées (US3) — absent quand la station n'en déclare aucune. */
+  /** Thématiques déclarées (US3) : absent quand la station n'en déclare aucune. */
   thematiques?: ThematiquePublique[]
   /** Couverture territoriale déclarée (US4). */
   couverture?: CouverturePublique | null
-  /** Équipe éditoriale déclarée (010) — absent quand la station n'en a aucune. */
+  /** Équipe éditoriale déclarée (010) : absent quand la station n'en a aucune. */
   equipe?: MembreEquipeAPI[]
   created_at: string
   /** Réactions, commentaires et partages agrégés (FR-027). */
@@ -44,7 +44,7 @@ export interface StationRadioAPI {
 }
 
 /**
- * Une section = une station et ses **programmes** publiés — et non plus une
+ * Une section = une station et ses **programmes** publiés, et non plus une
  * vignette par émission enregistrée. Chaque programme annonce son nombre
  * d'épisodes et un aperçu borné à 12.
  */
@@ -53,7 +53,7 @@ export interface StationSectionAPI {
   direct_disponible: boolean
   emissions: EmissionAPI[]
   total_emissions: number
-  /** Grille du moment (US2) — absents quand la station n'en a aucune. */
+  /** Grille du moment (US2) : absents quand la station n'en a aucune. */
   diffusion_en_cours?: CreneauAPI | null
   creneau_suivant?: CreneauAPI | null
 }
@@ -83,7 +83,7 @@ export interface RadioStation {
   description: string
   /** URL audio à jouer : fichier/lien audio en priorité, sinon flux live */
   streamUrl: string
-  /** Audio dédié (fichier uploadé ou lien) — prioritaire sur le flux live */
+  /** Audio dédié (fichier uploadé ou lien), prioritaire sur le flux live */
   audioUrl: string
   cover: string
   genre: string
@@ -95,7 +95,7 @@ export interface RadioStation {
   origine: 'africans' | 'territoire'
   /** Coordonnées publiques de l'équipe, `null` quand elle n'en publie aucune. */
   contacts: ContactsSupport | null
-  /** Thématiques déclarées (US3) — vide tant que l'API ne les greffe pas. */
+  /** Thématiques déclarées (US3) : vide tant que l'API ne les greffe pas. */
   thematiques: ThematiquePublique[]
   /** Couverture territoriale déclarée (US4). */
   couverture: CouverturePublique | null
@@ -146,7 +146,7 @@ export interface EmissionRadio {
   /** Aperçu borné à 12 ; au-delà, la page du programme. Vide sur les sections
    *  de vitrine, qui ne rendent plus d'audio (010, FR-002). */
   episodes: ProgrammeRadio[]
-  /** Équipe éditoriale DU PROGRAMME (010) — jamais celle de sa station. */
+  /** Équipe éditoriale DU PROGRAMME (010), jamais celle de sa station. */
   equipe: MembreEquipeAPI[]
   interactions: CompteursInteraction | null
 }
@@ -190,10 +190,10 @@ export interface StationRadioFiltres {
  */
 export interface StationSectionsFiltres extends StationRadioFiltres {
   origine: 'africans' | 'territoire'
-  /** Thématiques DÉCLARÉES par la station (US3) — envoyées en liste séparée
+  /** Thématiques DÉCLARÉES par la station (US3), envoyées en liste séparée
    * par des virgules, entendues comme un OU. */
   thematiques?: string[]
-  /** Territoire couvert (US4) — remonte aussi les stations continentales. */
+  /** Territoire couvert (US4) : remonte aussi les stations continentales. */
   territoire?: string
 }
 
@@ -541,7 +541,7 @@ export const useStationsRadio = () => {
   }
 
   /**
-   * Détail d'une station par son slug, **avec ses programmes** — requis par les
+   * Détail d'une station par son slug, **avec ses programmes**, requis par les
    * pages SSR. La page déplie ainsi le catalogue à deux niveaux sans second
    * appel.
    */
@@ -596,7 +596,7 @@ export const useStationsRadio = () => {
   }
 
   /**
-   * **Programmes** d'une station détenue — alimente le sélecteur de la grille de
+   * **Programmes** d'une station détenue : alimente le sélecteur de la grille de
    * programmation, qui désigne désormais une série et non un fichier (FR-014).
    */
   const listerContenusStation = async (stationId: string): Promise<EmissionRadio[]> => {

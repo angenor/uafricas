@@ -7,7 +7,7 @@
 
 ## User Scenarios & Testing
 
-### User Story 1 — Proposer une salle publique en tant que membre (Priority: P1)
+### User Story 1 : Proposer une salle publique en tant que membre (Priority: P1)
 
 Tout utilisateur authentifié de la plateforme peut soumettre une proposition de nouvelle salle publique (langue cible, groupe ethnique, pays d'origine, description, justification). La proposition entre en file d'attente et reste invisible des autres utilisateurs jusqu'à validation par un administrateur de la plateforme.
 
@@ -24,7 +24,7 @@ Tout utilisateur authentifié de la plateforme peut soumettre une proposition de
 
 ---
 
-### User Story 2 — Valider ou rejeter une proposition (administrateur de la plateforme) (Priority: P1)
+### User Story 2 : Valider ou rejeter une proposition (administrateur de la plateforme) (Priority: P1)
 
 L'administrateur de la plateforme consulte la file d'attente des propositions de salles publiques, examine chaque dossier, puis valide ou rejette la proposition. Une validation crée la salle publique correspondante. Un rejet est accompagné d'un commentaire transmis à l'auteur.
 
@@ -41,13 +41,13 @@ L'administrateur de la plateforme consulte la file d'attente des propositions de
 
 ---
 
-### User Story 3 — Nommer un administrateur de salle publique (Priority: P2)
+### User Story 3 : Nommer un administrateur de salle publique (Priority: P2)
 
 L'administrateur de la plateforme désigne, pour une salle publique existante, un ou plusieurs utilisateurs comme « administrateurs de cette salle ». Ce statut est porté par un rôle distinct, visible dans l'interface, et constitue le réceptacle de pouvoirs futurs (dont la définition est hors du périmètre de cette spécification).
 
 **Why this priority**: C'est la deuxième moitié de la demande utilisateur, mais elle peut être livrée après la boucle proposition/validation et reste fonctionnelle même sans capacités opérationnelles attachées (la nomination est elle-même un acte significatif et auditable).
 
-**Independent Test**: Sur une salle publique donnée, l'administrateur de la plateforme nomme un membre comme administrateur de la salle. Le membre voit son nouveau statut dans la salle ; les autres visiteurs voient la liste des administrateurs de la salle. Aucun nouveau pouvoir opérationnel n'est requis pour valider ce flux — la nomination en elle-même suffit.
+**Independent Test**: Sur une salle publique donnée, l'administrateur de la plateforme nomme un membre comme administrateur de la salle. Le membre voit son nouveau statut dans la salle ; les autres visiteurs voient la liste des administrateurs de la salle. Aucun nouveau pouvoir opérationnel n'est requis pour valider ce flux, la nomination en elle-même suffit.
 
 **Acceptance Scenarios**:
 
@@ -108,11 +108,11 @@ L'administrateur de la plateforme désigne, pour une salle publique existante, u
 
 ### Key Entities
 
-- **Proposition de salle publique** : demande créée par un utilisateur authentifié pour obtenir la création d'une salle publique. Porte les informations de la salle souhaitée (langue, groupe ethnique, pays d'origine, titre, description, justification), un statut (en attente / validée / rejetée / retirée), un auteur, une date de soumission, et — après décision — un décideur, une date de décision et un commentaire.
+- **Proposition de salle publique** : demande créée par un utilisateur authentifié pour obtenir la création d'une salle publique. Porte les informations de la salle souhaitée (langue, groupe ethnique, pays d'origine, titre, description, justification), un statut (en attente / validée / rejetée / retirée), un auteur, une date de soumission, et, après décision, un décideur, une date de décision et un commentaire.
 - **Salle publique** : entité existante de la plateforme. Étendue ici par la possibilité d'avoir une liste d'administrateurs propres, et par une trace de la proposition d'origine (le cas échéant).
 - **Nomination d'administrateur de salle** : lien entre un utilisateur et une salle publique, traduisant l'attribution du rôle « administrateur de cette salle ». Porte un statut (active / révoquée / suspendue), une date de nomination, le décideur, une éventuelle date de révocation et un motif.
 - **Notification** : message envoyé à l'auteur d'une proposition (décision) ou à un utilisateur nommé/révoqué (changement de rôle de salle).
-- **Entrée d'audit** : enregistrement traçant toute action structurante (soumission, retrait, validation, rejet, nomination, révocation, suspension automatique) — réutilise le mécanisme d'audit existant.
+- **Entrée d'audit** : enregistrement traçant toute action structurante (soumission, retrait, validation, rejet, nomination, révocation, suspension automatique), réutilise le mécanisme d'audit existant.
 
 ## Success Criteria
 

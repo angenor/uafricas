@@ -148,12 +148,12 @@ pub async fn lister_avis_admin(
     let rows = select_q.fetch_all(pool.get_ref()).await?;
 
     // Convertir les lignes en DTOs de réponse
-    // On a besoin du pays_id pour la conversion — on le récupère depuis la ligne SQL
+    // On a besoin du pays_id pour la conversion : on le récupère depuis la ligne SQL
     // Malheureusement la struct de listing n'a pas pays_id, on reconstruit depuis les params
     // En fait, la ligne n'a pas pays_id directement, mais on peut le déduire du filtre
     // ou simplement passer None et utiliser un pays_id optionnel
-    // Le modèle to_response prend un Option<Uuid> pays_id — on fait une requête complémentaire
-    // Solution: on query aussi a.pays_id dans une struct intermédiaire — mais le modèle existant
+    // Le modèle to_response prend un Option<Uuid> pays_id : on fait une requête complémentaire
+    // Solution: on query aussi a.pays_id dans une struct intermédiaire, mais le modèle existant
     // ne l'inclut pas. On passe None quand pas de filtre pays, sinon le filtre pays.
     // Pour une liste, le pays_id de chaque avis peut varier. On fait un workaround:
     // on query a.pays_id séparément ou on utilise le fait que pays_nom est déjà dans la row.

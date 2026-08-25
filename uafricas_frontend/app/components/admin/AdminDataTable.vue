@@ -189,7 +189,7 @@ const pages = computed(() => {
               ]"
             >
               <slot :name="`cell-${col.key}`" :item="item" :value="getCellValue(item, col)">
-                {{ getCellValue(item, col) ?? '—' }}
+                {{ getCellValue(item, col) ?? '-' }}
               </slot>
             </td>
             <td v-if="$slots.actions" class="text-center">
@@ -207,7 +207,7 @@ const pages = computed(() => {
     >
       <p class="text-sm text-base-content/60">
         {{ pagination.total }} element{{ pagination.total > 1 ? 's' : '' }}
-        — Page {{ pagination.page }} / {{ pagination.totalPages }}
+        Page {{ pagination.page }} / {{ pagination.totalPages }}
       </p>
       <div class="join">
         <button

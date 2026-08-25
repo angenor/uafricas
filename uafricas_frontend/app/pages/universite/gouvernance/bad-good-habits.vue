@@ -83,8 +83,8 @@
               Nos gestes du quotidien façonnent l'Afrique de demain.
               <strong class="text-gray-900">BadGoodhabits</strong> est un espace citoyen pour
               <strong class="text-gray-900">mettre en lumière les bonnes pratiques</strong> et
-              <strong class="text-gray-900">signaler ce qui nuit</strong> à l'intérêt commun — sur
-              la base de faits vérifiables — afin de cultiver ensemble responsabilité, transparence
+              <strong class="text-gray-900">signaler ce qui nuit</strong> à l'intérêt commun, sur
+              la base de faits vérifiables : afin de cultiver ensemble responsabilité, transparence
               et citoyenneté active.
             </p>
 

@@ -116,7 +116,7 @@ L'utilisateur ayant soumis une demande reçoit une notification in-app lorsque s
 
 - **Demande Bibliothèque Humaine**: Représente une candidature soumise par un utilisateur. Attributs : identifiant candidat, fonction, pays, biographie, spécialités choisies, statut (en_attente/validé/rejeté), date de soumission, date de traitement, commentaire administrateur
 - **Bibliothèque Humaine (profil actif)**: Profil public affiché sur la page `/bibliotheque/humaine`. N'existe que si la demande associée est en statut `validé`. Lié à l'identifiant utilisateur du candidat
-- **Administrateur**: Utilisateur avec le rôle `admin` (rôle IAM existant) ayant accès au backoffice pour traiter les demandes — aucun nouveau rôle à créer
+- **Administrateur**: Utilisateur avec le rôle `admin` (rôle IAM existant) ayant accès au backoffice pour traiter les demandes, aucun nouveau rôle à créer
 
 ## Success Criteria *(mandatory)*
 
@@ -132,16 +132,16 @@ L'utilisateur ayant soumis une demande reçoit une notification in-app lorsque s
 
 ### Session 2026-04-22
 
-- Q: Quel statut attribuer aux inscriptions déjà existantes avant cette feature ? → A: Aucune inscription existante — le projet n'est pas en production, démarrage à zéro, aucune migration nécessaire.
-- Q: Un utilisateur rejeté peut-il resoumettre une nouvelle demande ? → A: Oui, sans délai — un utilisateur rejeté peut resoumettre librement une nouvelle candidature.
-- Q: Quel rôle admin peut accéder à la validation des Bibliothèques Humaines ? → A: Tout utilisateur avec le rôle `admin` existant — pas de nouveau rôle à créer.
-- Q: L'utilisateur peut-il voir le statut de sa demande dans son espace personnel ? → A: Oui — le statut est visible sur son profil ou tableau de bord.
-- Q: Faut-il enregistrer un historique des décisions admin ? → A: Oui — via le service d'audit existant (`audit::log_action`), cohérent avec le reste du projet.
+- Q: Quel statut attribuer aux inscriptions déjà existantes avant cette feature ? → A: Aucune inscription existante : le projet n'est pas en production, démarrage à zéro, aucune migration nécessaire.
+- Q: Un utilisateur rejeté peut-il resoumettre une nouvelle demande ? → A: Oui, sans délai, un utilisateur rejeté peut resoumettre librement une nouvelle candidature.
+- Q: Quel rôle admin peut accéder à la validation des Bibliothèques Humaines ? → A: Tout utilisateur avec le rôle `admin` existant, pas de nouveau rôle à créer.
+- Q: L'utilisateur peut-il voir le statut de sa demande dans son espace personnel ? → A: Oui : le statut est visible sur son profil ou tableau de bord.
+- Q: Faut-il enregistrer un historique des décisions admin ? → A: Oui : via le service d'audit existant (`audit::log_action`), cohérent avec le reste du projet.
 
 ## Assumptions
 
 - L'authentification et la gestion des rôles admin existent déjà dans le système (backoffice UAfricas existant)
-- Le formulaire de soumission côté public (`/bibliotheque/humaine`) existe déjà côté frontend (mock) mais le backend n'a pas encore de table `biblio_humaine` — démarrage à zéro, aucune migration de données existantes nécessaire
+- Le formulaire de soumission côté public (`/bibliotheque/humaine`) existe déjà côté frontend (mock) mais le backend n'a pas encore de table `biblio_humaine`, démarrage à zéro, aucune migration de données existantes nécessaire
 - La notification "in-app" est suffisante pour P3 ; les notifications email sont hors scope pour cette feature
 - La décision de l'admin est réversible (possibilité de re-valider ou re-rejeter après traitement initial)
 - Un seul administrateur peut traiter une demande (pas de workflow multi-approbateurs)

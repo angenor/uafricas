@@ -11,13 +11,13 @@ import type {
 interface Props {
   ficheId: string
   estAuthentifie: boolean
-  /** Fiche territoire — fournit les valeurs du bloc « infos pratiques » */
+  /** Fiche territoire : fournit les valeurs du bloc « infos pratiques » */
   fiche?: FichePaysDetailAPI | null
 }
 
 const props = defineProps<Props>()
 
-// Section rétractable — repliée par défaut
+// Section rétractable : repliée par défaut
 const replie = ref(true)
 
 type OpenContributionPayload = {
@@ -42,7 +42,7 @@ const emit = defineEmits<{
   (e: 'require-login'): void
 }>()
 
-/** Champs « infos pratiques » du bloc — chaque clé est une colonne fiche_pays */
+/** Champs « infos pratiques » du bloc : chaque clé est une colonne fiche_pays */
 const champsVoyage = [
   { section: 'voyage_langue_internationale', label: 'Langue internationale' },
   { section: 'voyage_langue_locale', label: 'Langue locale la plus utilisée' },
@@ -168,7 +168,7 @@ const proposerSavoir = () => {
 
       <div v-show="!replie">
 
-      <!-- Bloc « Infos pratiques » — champs structurés contribuables par tous -->
+      <!-- Bloc « Infos pratiques » : champs structurés contribuables par tous -->
       <div class="bg-white rounded-lg shadow-sm p-5 mb-6">
         <h3 class="font-oswald text-xl font-semibold text-gray-900 mb-1">Infos pratiques</h3>
         <p class="text-sm text-gray-500 mb-5">
@@ -197,7 +197,7 @@ const proposerSavoir = () => {
               {{ info.valeur }}
             </p>
             <p v-else class="mt-1 text-sm italic text-gray-400">
-              Non renseigné — proposez cette information.
+              Non renseigné : proposez cette information.
             </p>
           </div>
         </div>

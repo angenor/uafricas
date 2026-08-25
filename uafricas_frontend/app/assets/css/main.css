@@ -18,21 +18,21 @@
 }
 
 @theme {
-  /* ===== Refonte AfricanS — valeurs extraites du Figma « Africans — Design » =====
+  /* ===== Refonte AfricanS : valeurs extraites du Figma « Africans, Design » =====
      Espace de noms `af-*` SÉPARÉ de `custom-*` : la refonte se déploie écran par
      écran, et redéfinir `custom-chocolat` (#A54A1C) repeindrait d'un coup toutes
      les pages non encore reprises. Les deux jeux cohabitent le temps du chantier ;
      `custom-*` disparaîtra quand le dernier écran sera porté. */
-  --color-af-chocolat: #A74916;  /* couleur de marque — titres de section, actions */
+  --color-af-chocolat: #A74916;  /* couleur de marque, titres de section, actions */
   --color-af-orange: #FF8746;    /* extrémité claire du dégradé, jamais en aplat */
   --color-af-vert: #1C8C1C;      /* badges de catégorie et de région, vérifié */
   --color-af-fond: #F5F5F5;      /* ground applicatif */
   --color-af-bordure: #D9D9D9;   /* contours, filets, fonds d'étiquette */
-  --color-af-live: #FF0004;      /* pastille direct — usage unique */
+  --color-af-live: #FF0004;      /* pastille direct, usage unique */
   --color-af-encre: #16161D;     /* Grey/900 */
   --color-af-corps: #33363F;     /* Line_icon, texte courant */
-  --color-af-atone: #8B8BA7;     /* Grey/400 — métadonnées */
-  --color-af-atone-2: #A8A8BD;   /* Grey/300 — placeholders, inactif */
+  --color-af-atone: #8B8BA7;     /* Grey/400, métadonnées */
+  --color-af-atone-2: #A8A8BD;   /* Grey/300, placeholders, inactif */
   --color-af-icone: #222222;     /* fill_icon */
 
   /* Police de la maquette. Inter est le défaut de Figma Sites : si le choix

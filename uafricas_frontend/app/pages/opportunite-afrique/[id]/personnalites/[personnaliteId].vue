@@ -45,7 +45,7 @@
               class="flex items-start gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 shadow-sm"
             >
               <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="w-4 h-4 mt-0.5 shrink-0" />
-              <span>Contribution suspendue — en cours de vérification par la modération.</span>
+              <span>Contribution suspendue : en cours de vérification par la modération.</span>
             </div>
 
             <!-- Biographie -->
@@ -224,7 +224,7 @@ const periodeVie = computed(() => {
   const p = personnalite.value
   if (!p) return null
   if (!p.annee_naissance && !p.annee_deces) return null
-  return `${p.annee_naissance ?? '?'} — ${p.annee_deces ?? 'présent'}`
+  return `${p.annee_naissance ?? '?'} - ${p.annee_deces ?? 'présent'}`
 })
 
 const initiales = computed(() => {
@@ -249,7 +249,7 @@ const descriptionOg = computed(() => (personnalite.value?.biographie_courte ?? '
 
 useHead(() => {
   if (!personnalite.value) return {}
-  const titre = `${personnalite.value.nom_complet} — Personnalité — UAfricas`
+  const titre = `${personnalite.value.nom_complet}, Personnalité | UAfricas`
   return {
     title: titre,
     meta: [

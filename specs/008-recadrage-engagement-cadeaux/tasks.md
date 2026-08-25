@@ -1,9 +1,9 @@
 ---
 
-description: "Liste de tâches — recadrage de l'engagement & cadeaux virtuels"
+description: "Liste de tâches : recadrage de l'engagement & cadeaux virtuels"
 ---
 
-# Tasks: Recadrage de l'engagement — 3 sources de points, 4 statuts, cadeaux virtuels
+# Tasks: Recadrage de l'engagement : 3 sources de points, 4 statuts, cadeaux virtuels
 
 **Input**: Documents de conception dans `/specs/008-recadrage-engagement-cadeaux/`
 
@@ -60,13 +60,13 @@ description: "Liste de tâches — recadrage de l'engagement & cadeaux virtuels"
 
 ---
 
-## Phase 3: User Story 1 — Recadrer le barème et les statuts depuis le back-office (P1) 🎯 MVP
+## Phase 3: User Story 1 : Recadrer le barème et les statuts depuis le back-office (P1) 🎯 MVP
 
 **Goal** : un administrateur constate et pilote le nouveau barème ; les règles écartées sont inactives mais réactivables, la grille affiche les quatre statuts.
 
 **Independent Test** : ouvrir le module d'engagement, constater 3 règles actives / 8 inactives et les 4 statuts aux seuils 0 / 500 / 2 000 / 10 000 ; déclencher une action écartée et vérifier qu'elle ne crédite rien tout en aboutissant ; réactiver une règle et constater le crédit immédiat.
 
-- [X] T013 [US1] Ajuster `uafricas_backend/src/handlers/engagement.rs::actions_recompensees` pour ne renvoyer que les règles `actif = TRUE` — c'est cette route qui alimente l'état vide pédagogique, le recadrage doit s'y refléter sans code frontal (contrats §A).
+- [X] T013 [US1] Ajuster `uafricas_backend/src/handlers/engagement.rs::actions_recompensees` pour ne renvoyer que les règles `actif = TRUE` : c'est cette route qui alimente l'état vide pédagogique, le recadrage doit s'y refléter sans code frontal (contrats §A).
 - [X] T014 [P] [US1] Mettre à jour `uafricas_frontend/app/components/engagement/BadgeStatut.vue` : 4 statuts (Membre Africans, Premium, Gold, Platinum), couleurs et icônes lues depuis l'API, aucune valeur codée en dur (FR-032).
 - [X] T015 [P] [US1] Rendre l'état actif/inactif immédiatement lisible dans `uafricas_frontend/app/pages/admin/engagement/regles.vue` : pastille d'état, filtre « actives / inactives / toutes », tri des inactives en fin de liste.
 - [X] T016 [P] [US1] Ajouter dans `uafricas_frontend/app/pages/admin/engagement/paliers.vue` un encart expliquant que les paliers sont remplacés par le crédit unitaire du j'aime et que la liste est conservée pour réactivation éventuelle.
@@ -74,11 +74,11 @@ description: "Liste de tâches — recadrage de l'engagement & cadeaux virtuels"
 - [X] T018 [P] [US1] Dans `uafricas_frontend/app/components/engagement/ResumeEngagement.vue` et `VentilationCategories.vue` : masquer les catégories à 0 point, employer le terme « statut » côté interface (la base garde `niveau`), afficher l'écart au statut suivant ou la mention de statut maximal.
 - [X] T019 [US1] Exécuter les scénarios **S1** et **S2** de [quickstart.md](./quickstart.md) et consigner les écarts éventuels.
 
-**Checkpoint** : US1 est complète et démontrable seule — le barème est recadré et pilotable.
+**Checkpoint** : US1 est complète et démontrable seule, le barème est recadré et pilotable.
 
 ---
 
-## Phase 4: User Story 2 — Gagner des points grâce aux j'aime reçus (P1)
+## Phase 4: User Story 2 : Gagner des points grâce aux j'aime reçus (P1)
 
 **Goal** : chaque j'aime reçu sur l'une des 7 familles crédite 1 point à l'auteur/propriétaire, une seule fois par membre et par contenu.
 
@@ -87,11 +87,11 @@ description: "Liste de tâches — recadrage de l'engagement & cadeaux virtuels"
 > Les 7 branchements portent sur des fichiers distincts : **tous parallélisables**.
 
 - [X] T020 [P] [US2] Remplacer l'appel à `evaluer_popularite` par `crediter_jaime` dans `uafricas_backend/src/handlers/codimoi.rs` (`type_objet = "codimoi"`, réaction `like`, auteur `cree_par`) ; supprimer le décompte de likes devenu inutile.
-- [X] T021 [P] [US2] Idem dans `uafricas_backend/src/handlers/gouvernance.rs` pour le fact-check (`type_objet = "factcheck"`, réaction **`coeur`** uniquement — research R2 —, auteur `cree_par`).
+- [X] T021 [P] [US2] Idem dans `uafricas_backend/src/handlers/gouvernance.rs` pour le fact-check (`type_objet = "factcheck"`, réaction **`coeur`** uniquement, research R2 , auteur `cree_par`).
 - [X] T022 [P] [US2] Idem dans `uafricas_backend/src/handlers/bibliotheques_humaines.rs` (`type_objet = "biblio_humaine"`, réaction `like`, bénéficiaire = titulaire de la fiche).
-- [X] T023 [P] [US2] Dans `uafricas_backend/src/handlers/media_social.rs` : supprimer la fonction locale `evaluer_popularite_media` et appeler `crediter_jaime` avec le bénéficiaire issu de `resoudre_beneficiaire` — **changement de bénéficiaire assumé** : le propriétaire du support, plus `cree_par` (FR-008a).
+- [X] T023 [P] [US2] Dans `uafricas_backend/src/handlers/media_social.rs` : supprimer la fonction locale `evaluer_popularite_media` et appeler `crediter_jaime` avec le bénéficiaire issu de `resoudre_beneficiaire`, **changement de bénéficiaire assumé** : le propriétaire du support, plus `cree_par` (FR-008a).
 - [X] T024 [P] [US2] **Nouveau branchement** dans `uafricas_backend/src/handlers/vidafrica_contribution.rs::reagir_video` (`type_objet = "video"`, réaction `like`).
-- [X] T025 [P] [US2] **Nouveau branchement** dans `uafricas_backend/src/handlers/element_social.rs::reagir_element` : transmettre le **sous-type reçu dans l'URL** comme `type_objet` (jamais la valeur générique `element` — sans le sous-type, l'auteur est irrésolvable, research R4), réaction `like`. `personnalite_connue` et `recette_culinaire` créditent leur `cree_par` ; `site_touristique` et `secteur_developpement` ne créditent personne et ne doivent produire **aucune erreur** (FR-008c).
+- [X] T025 [P] [US2] **Nouveau branchement** dans `uafricas_backend/src/handlers/element_social.rs::reagir_element` : transmettre le **sous-type reçu dans l'URL** comme `type_objet` (jamais la valeur générique `element`, sans le sous-type, l'auteur est irrésolvable, research R4), réaction `like`. `personnalite_connue` et `recette_culinaire` créditent leur `cree_par` ; `site_touristique` et `secteur_developpement` ne créditent personne et ne doivent produire **aucune erreur** (FR-008c).
 - [X] T026 [P] [US2] **Nouveau branchement** dans `uafricas_backend/src/handlers/fiche_pays_social.rs::reagir_fiche` (`type_objet = "fiche_pays"`, réaction `like`, bénéficiaire = `country_profile.fiche_pays.cree_par`).
 - [X] T027 [US2] Adapter `uafricas_frontend/app/components/engagement/HistoriquePoints.vue` pour rendre lisible le contenu concerné par un mouvement `jaime_recu` (famille + titre résolu), et conserver la mention d'écrêtage.
 - [X] T028 [US2] Exécuter le scénario **S3** de [quickstart.md](./quickstart.md), y compris le contrôle SQL vérifiant que le crédité d'une chaîne TV est bien son propriétaire.
@@ -100,39 +100,39 @@ description: "Liste de tâches — recadrage de l'engagement & cadeaux virtuels"
 
 ---
 
-## Phase 5: User Story 3 — Offrir et recevoir un cadeau virtuel (P1)
+## Phase 5: User Story 3 : Offrir et recevoir un cadeau virtuel (P1)
 
 **Goal** : un membre offre un cadeau depuis un contenu ou un profil, paie de façon simulée, et le bénéficiaire reçoit points (les deux modes) et cagnotte (mode soutien financier).
 
 **Independent Test** : offrir un « Drapeau de l'Union Africaine » en soutien financier avec paiement abouti → +20 points, répartition 1 800 / 200 journalisée, cadeau visible sur le contenu ; rejouer avec un paiement en échec → aucun point, aucune répartition.
 
 - [X] T029 [US3] Créer `uafricas_backend/src/handlers/engagement_cadeau.rs` avec `GET /cadeaux` : catalogue actif trié par `ordre`, enrichi de `devise`, `taux_commission` et `paiement_simule` (= `NOT paiement_reel_actif`). Contrat : [api-cadeaux-membre.md](./contracts/api-cadeaux-membre.md) §1.
-- [X] T030 [US3] Implémenter `POST /cadeaux/envoyer` dans `uafricas_backend/src/handlers/engagement_cadeau.rs` : offreur issu du JWT, cible sous la forme unique `{ type_objet, objet_id }` — dont `type_objet = 'profil'` avec `objet_id = utilisateur_id` pour un cadeau offert depuis un profil, par cohérence avec le partage de profil —, bénéficiaire par `resoudre_beneficiaire`, refus `403` sur auto-cadeau et `409` si aucun bénéficiaire (support sans propriétaire, élément éditorial sans auteur), **gel** du prix / des points / du taux, répartition **par différence** (research R8), appel à `paiement::initier`, insertion en `etat = 'en_attente'`. Aucun montant ni bénéficiaire accepté du client.
+- [X] T030 [US3] Implémenter `POST /cadeaux/envoyer` dans `uafricas_backend/src/handlers/engagement_cadeau.rs` : offreur issu du JWT, cible sous la forme unique `{ type_objet, objet_id }`, dont `type_objet = 'profil'` avec `objet_id = utilisateur_id` pour un cadeau offert depuis un profil, par cohérence avec le partage de profil , bénéficiaire par `resoudre_beneficiaire`, refus `403` sur auto-cadeau et `409` si aucun bénéficiaire (support sans propriétaire, élément éditorial sans auteur), **gel** du prix / des points / du taux, répartition **par différence** (research R8), appel à `paiement::initier`, insertion en `etat = 'en_attente'`. Aucun montant ni bénéficiaire accepté du client.
 - [X] T031 [US3] Implémenter `POST /paiements/{reference}/confirmer` dans `uafricas_backend/src/handlers/engagement_cadeau.rs` en respectant strictement la séquence research R10 : `UPDATE … WHERE etat = 'en_attente'` (verrou d'idempotence), cagnotte créditée dans la **même transaction** en mode soutien financier, `COMMIT`, puis `crediter_cadeau` et la notification `CADEAU_RECU` **après** le commit. Gérer l'expiration paresseuse à 30 minutes et le rejeu (réponse identique, 0 point supplémentaire).
 - [X] T032 [US3] Implémenter `GET /cadeaux/{type_objet}/{objet_id}` dans `uafricas_backend/src/handlers/engagement_cadeau.rs` : total, résumé par type de cadeau, 10 derniers offreurs. **Aucun montant en argent exposé** (FR-027).
 - [X] T033 [US3] Implémenter `GET /mes-cadeaux` (paginé, `sens=recus|offerts`) et `GET /ma-cagnotte` (dont `part_simulee`) dans `uafricas_backend/src/handlers/engagement_cadeau.rs`, et enrichir `GET /mon-compte` de `cagnotte` et `cadeaux_recus` dans `uafricas_backend/src/handlers/engagement.rs`.
 - [X] T034 [US3] Déclarer les 6 routes membre/publiques dans `uafricas_backend/src/routes.rs`, sous le scope `/api/engagement` existant.
 - [X] T035 [P] [US3] Créer `uafricas_frontend/app/composables/useCadeaux.ts` : catalogue, envoi, confirmation, cadeaux d'un contenu, mes cadeaux, ma cagnotte. Formatage monétaire **exclusivement frontal** (contrats §E).
-- [X] T036 [P] [US3] Créer `uafricas_frontend/app/components/engagement/BandeauPaiementSimule.vue` — avertissement « paiement simulé, phase de test » et mention de la purge à venir (FR-020a). Tailwind v4 pur.
+- [X] T036 [P] [US3] Créer `uafricas_frontend/app/components/engagement/BandeauPaiementSimule.vue`, avertissement « paiement simulé, phase de test » et mention de la purge à venir (FR-020a). Tailwind v4 pur.
 - [X] T037 [US3] Créer `uafricas_frontend/app/components/engagement/OffrirCadeauModal.vue` : catalogue, choix du mode (soutien financier / points) avec explication de la répartition, message facultatif, parcours de paiement simulé offrant **explicitement** l'aboutissement et l'échec (exigé par SC-005), états de chargement et d'erreur. Tailwind v4 pur.
-- [X] T038 [P] [US3] Créer `uafricas_frontend/app/components/engagement/OffrirCadeauBouton.vue` — point d'entrée réutilisable prenant `type_objet` et `objet_id` (dont `type_objet = 'profil'`), masqué pour l'auteur du contenu et pour les familles sans auteur (`site_touristique`, `secteur_developpement`).
-- [X] T039 [P] [US3] Créer `uafricas_frontend/app/components/engagement/CadeauxRecus.vue` — cadeaux affichés sur un contenu ou un profil (icônes, compteurs, derniers offreurs), sans montant.
-- [X] T040 [P] [US3] Créer `uafricas_frontend/app/components/engagement/MaCagnotte.vue` — cumul, part simulée, mention explicite que le versement n'est pas disponible (FR-026).
-- [X] T041 [US3] Monter `OffrirCadeauBouton` et `CadeauxRecus` sur les points d'entrée réels de chaque famille. **Codi-moi et le fact-check n'ont pas de page de détail** — leurs contenus vivent dans des cartes et des modales, c'est donc là qu'il faut monter les composants :
+- [X] T038 [P] [US3] Créer `uafricas_frontend/app/components/engagement/OffrirCadeauBouton.vue`, point d'entrée réutilisable prenant `type_objet` et `objet_id` (dont `type_objet = 'profil'`), masqué pour l'auteur du contenu et pour les familles sans auteur (`site_touristique`, `secteur_developpement`).
+- [X] T039 [P] [US3] Créer `uafricas_frontend/app/components/engagement/CadeauxRecus.vue`, cadeaux affichés sur un contenu ou un profil (icônes, compteurs, derniers offreurs), sans montant.
+- [X] T040 [P] [US3] Créer `uafricas_frontend/app/components/engagement/MaCagnotte.vue`, cumul, part simulée, mention explicite que le versement n'est pas disponible (FR-026).
+- [X] T041 [US3] Monter `OffrirCadeauBouton` et `CadeauxRecus` sur les points d'entrée réels de chaque famille. **Codi-moi et le fact-check n'ont pas de page de détail**, leurs contenus vivent dans des cartes et des modales, c'est donc là qu'il faut monter les composants :
   - `uafricas_frontend/app/components/codi-moi/CodiMoiCard.vue` (et `CodiMoiPostModal.vue` si elle affiche un contenu existant) ;
   - `uafricas_frontend/app/components/universite/gouvernance/ContributionCard.vue` (fact-check) ;
-  - `uafricas_frontend/app/pages/profil/[id].vue` — sert à la fois la bibliothèque humaine et le profil membre (`type_objet = 'profil'`) ;
+  - `uafricas_frontend/app/pages/profil/[id].vue`, sert à la fois la bibliothèque humaine et le profil membre (`type_objet = 'profil'`) ;
   - `uafricas_frontend/app/pages/medias/{chaines,stations,programmes-tele,programmes-radio}/[slug].vue` ;
   - `uafricas_frontend/app/pages/vidafrica/[slug].vue` ;
-  - `uafricas_frontend/app/pages/opportunite-afrique/[id]/index.vue` et les routes sœurs `personnalites/[itemId].vue` et `recettes/[itemId].vue` **uniquement** — `sites/[itemId].vue` et `secteurs/[itemId].vue` sont exclus, ces éléments n'ayant pas d'auteur (FR-008c).
+  - `uafricas_frontend/app/pages/opportunite-afrique/[id]/index.vue` et les routes sœurs `personnalites/[itemId].vue` et `recettes/[itemId].vue` **uniquement**, `sites/[itemId].vue` et `secteurs/[itemId].vue` sont exclus, ces éléments n'ayant pas d'auteur (FR-008c).
 - [X] T042 [US3] Ajouter les sections « Cadeaux reçus » et « Ma cagnotte » dans `uafricas_frontend/app/pages/mon-compte/engagement.vue`, accessibles en au plus 2 clics depuis le profil (SC-010).
 - [X] T043 [US3] Exécuter les scénarios **S5**, **S6** et **S7** de [quickstart.md](./quickstart.md), dont les contrôles SQL de répartition et d'absence d'auto-cadeau.
 
-**Checkpoint** : US1, US2 et US3 fonctionnent indépendamment — les trois sources P1 sont livrées.
+**Checkpoint** : US1, US2 et US3 fonctionnent indépendamment, les trois sources P1 sont livrées.
 
 ---
 
-## Phase 6: User Story 4 — Gagner des points quand les autres partagent mes contenus (P2)
+## Phase 6: User Story 4 : Gagner des points quand les autres partagent mes contenus (P2)
 
 **Goal** : tout partage d'un contenu par un autre membre crédite l'auteur, une seule fois par partageur et par contenu, tous canaux confondus.
 
@@ -146,7 +146,7 @@ description: "Liste de tâches — recadrage de l'engagement & cadeaux virtuels"
 - [X] T047 [P] [US4] Appeler `crediter_partage` dans `uafricas_backend/src/handlers/fiche_pays_social.rs::partager_fiche`.
 - [X] T048 [P] [US4] Appeler `crediter_partage` dans `uafricas_backend/src/handlers/profil_social.rs::partager_profil` (`type_objet = "profil"`, `objet_id = utilisateur_id` du profil partagé).
 - [X] T049 [P] [US4] Appeler `crediter_partage` dans `uafricas_backend/src/handlers/gouvernance.rs::partager_contribution`.
-- [X] T050 [US4] Adapter `uafricas_backend/src/handlers/engagement.rs::tracer_partage_externe` au nouveau `ResultatPartageExterne { enregistre, auteur_credite }` (contrats §7) — dépend de T009.
+- [X] T050 [US4] Adapter `uafricas_backend/src/handlers/engagement.rs::tracer_partage_externe` au nouveau `ResultatPartageExterne { enregistre, auteur_credite }` (contrats §7), dépend de T009.
 - [X] T051 [US4] Simplifier `uafricas_frontend/app/composables/usePartageExterne.ts` (suppression du retour de bonus) et retirer le message « encore N réseaux » des 6 modales : `components/media/MediaPartagerModal.vue`, `components/opportunite-afrique/PartagerElementModal.vue`, `components/opportunite-afrique/PartagerFicheModal.vue`, `components/profil/PartagerProfilModal.vue`, `components/universite/gouvernance/PartagerContributionModal.vue`, `components/vidafrica/VidafricaPartagerModal.vue`.
 - [X] T052 [US4] Exécuter le scénario **S4** de [quickstart.md](./quickstart.md), y compris le contrôle vérifiant que la trace par canal reste complète alors que le crédit est unique.
 
@@ -154,7 +154,7 @@ description: "Liste de tâches — recadrage de l'engagement & cadeaux virtuels"
 
 ---
 
-## Phase 7: User Story 5 — Administrer le catalogue et suivre les recettes (P2)
+## Phase 7: User Story 5 : Administrer le catalogue et suivre les recettes (P2)
 
 **Goal** : l'administration crée et ajuste les cadeaux, consulte le journal des transactions avec ses totaux, règle le taux de commission et exécute la purge de fin de phase de test.
 
@@ -168,7 +168,7 @@ description: "Liste de tâches — recadrage de l'engagement & cadeaux virtuels"
 - [X] T058 [P] [US5] Créer `uafricas_frontend/app/composables/useAdminCadeaux.ts` sur la base `useAdmin` (adminFetch, listerPagine, pagination, tri) : catalogue, journal, paramètres, purge.
 - [X] T059 [P] [US5] Créer `uafricas_frontend/app/pages/admin/engagement/cadeaux.vue` (daisyUI) : table du catalogue, formulaire de création/édition, désactivation, section « Paramètres de monétisation » (taux, devise, bascule paiement réel).
 - [X] T060 [P] [US5] Créer `uafricas_frontend/app/pages/admin/engagement/transactions.vue` (daisyUI) : journal filtrable et paginé, bandeau de totaux, et action de purge protégée par une confirmation explicite affichant l'impact attendu.
-- [X] T061 [US5] Exécuter les scénarios **S8** et **S9** de [quickstart.md](./quickstart.md) — S9 étant destructif, l'exécuter en dernier sur un environnement de recette.
+- [X] T061 [US5] Exécuter les scénarios **S8** et **S9** de [quickstart.md](./quickstart.md), S9 étant destructif, l'exécuter en dernier sur un environnement de recette.
 
 **Checkpoint** : les cinq stories sont livrées et indépendamment vérifiables.
 
@@ -177,7 +177,7 @@ description: "Liste de tâches — recadrage de l'engagement & cadeaux virtuels"
 ## Phase 8: Polish & Cross-Cutting Concerns
 
 - [X] T062 [P] Ajouter une ligne d'index dans la section « Recent Changes » de `CLAUDE.md` (une seule ligne, détail laissé au `git log` et aux specs) et compléter « Active Technologies » si nécessaire.
-- [X] T063 Passer `getDiagnostics` (rust-analyzer et Volar) sur tous les fichiers modifiés et corriger les avertissements — notamment les imports devenus inutiles après la suppression d'`evaluer_popularite`.
+- [X] T063 Passer `getDiagnostics` (rust-analyzer et Volar) sur tous les fichiers modifiés et corriger les avertissements, notamment les imports devenus inutiles après la suppression d'`evaluer_popularite`.
 - [X] T064 Vérifier la couverture d'audit (Principe VII) : les 4 mutations d'administration des cadeaux, la modification du taux et la purge produisent bien une entrée dans `/admin/audit`.
 - [X] T065 [P] Revue de conformité constitutionnelle VI : aucune classe daisyUI dans les composants `engagement/` montés sur les pages publiques, daisyUI autorisé sur les deux écrans `/admin/engagement/`.
 - [X] T066 [P] Revue de conformité SC-012 : vérifier qu'un basculement vers CinetPay ne toucherait que `uafricas_backend/src/services/paiement.rs` (plus l'ajout d'un webhook), et aucunement le catalogue, le journal, la répartition ni l'attribution des points.
@@ -196,11 +196,11 @@ description: "Liste de tâches — recadrage de l'engagement & cadeaux virtuels"
 
 ### Dépendances entre stories
 
-- **US1 (P1)** — démarre après la Phase 2, aucune dépendance sur une autre story.
-- **US2 (P1)** — démarre après la Phase 2 ; dépend de T005 (`resoudre_beneficiaire`) et T006 (`crediter_jaime`), tous deux en Phase 2.
-- **US3 (P1)** — démarre après la Phase 2 ; dépend de T008, T010, T012. Indépendante d'US5 : le catalogue est seedé par la migration.
-- **US4 (P2)** — démarre après la Phase 2 ; dépend de T007 et T009.
-- **US5 (P2)** — démarre après la Phase 2. Le CRUD et les paramètres sont testables sans US3 ; le journal et la purge ne deviennent démontrables qu'une fois des transactions produites par US3.
+- **US1 (P1)** : démarre après la Phase 2, aucune dépendance sur une autre story.
+- **US2 (P1)** : démarre après la Phase 2 ; dépend de T005 (`resoudre_beneficiaire`) et T006 (`crediter_jaime`), tous deux en Phase 2.
+- **US3 (P1)** : démarre après la Phase 2 ; dépend de T008, T010, T012. Indépendante d'US5 : le catalogue est seedé par la migration.
+- **US4 (P2)** : démarre après la Phase 2 ; dépend de T007 et T009.
+- **US5 (P2)** : démarre après la Phase 2. Le CRUD et les paramètres sont testables sans US3 ; le journal et la purge ne deviennent démontrables qu'une fois des transactions produites par US3.
 
 ### Au sein d'une story
 
@@ -224,7 +224,7 @@ description: "Liste de tâches — recadrage de l'engagement & cadeaux virtuels"
 ## Parallel Example: User Story 2
 
 ```bash
-# Les 7 branchements de j'aime touchent 7 fichiers distincts — à lancer ensemble :
+# Les 7 branchements de j'aime touchent 7 fichiers distincts, à lancer ensemble :
 Task: "crediter_jaime dans uafricas_backend/src/handlers/codimoi.rs"
 Task: "crediter_jaime (réaction coeur) dans uafricas_backend/src/handlers/gouvernance.rs"
 Task: "crediter_jaime dans uafricas_backend/src/handlers/bibliotheques_humaines.rs"
@@ -252,7 +252,7 @@ Task: "Créer uafricas_frontend/app/components/engagement/MaCagnotte.vue"
 ### MVP d'abord (US1 seule)
 
 1. Phase 1 : Setup (T001–T004).
-2. Phase 2 : Foundational (T005–T012) — **bloque tout**.
+2. Phase 2 : Foundational (T005–T012) : **bloque tout**.
 3. Phase 3 : US1 (T013–T019).
 4. **ARRÊT et VALIDATION** : S1 et S2 du quickstart.
 5. À ce stade, le barème est recadré et pilotable, mais **aucune** nouvelle source ne crédite encore : c'est un MVP défendable, car il rend le système administrable avant de l'ouvrir.
@@ -276,7 +276,7 @@ Task: "Créer uafricas_frontend/app/components/engagement/MaCagnotte.vue"
    - Développeur A : US2 puis US4 (branchements backend, tous parallèles entre eux).
    - Développeur B : US3 (module cadeaux de bout en bout).
    - Développeur C : US1 puis US5 (back-office).
-3. Point de contact unique entre A et B : `services/engagement.rs`, stabilisé dès la Phase 2 — d'où l'importance de ne pas commencer les stories avant sa fin.
+3. Point de contact unique entre A et B : `services/engagement.rs`, stabilisé dès la Phase 2 : d'où l'importance de ne pas commencer les stories avant sa fin.
 
 ---
 

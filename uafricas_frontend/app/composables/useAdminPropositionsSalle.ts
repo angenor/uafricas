@@ -1,4 +1,4 @@
-// Composable admin — Propositions de salles publiques (feature 001-admin-salles-publiques, US2)
+// Composable admin : Propositions de salles publiques (feature 001-admin-salles-publiques, US2)
 import type { ApiResponse } from '~/types/admin'
 import type {
   PropositionSalle,

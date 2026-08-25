@@ -1,4 +1,4 @@
-# Feature Specification: Médias — programmes conteneurs, épisodes, thématiques multiples et couverture panafricaine
+# Feature Specification: Médias : programmes conteneurs, épisodes, thématiques multiples et couverture panafricaine
 
 **Feature Branch**: `009-medias-programmes-episodes`
 
@@ -18,15 +18,15 @@
 
 ### Session 2026-08-08
 
-- **Q1 — Quel épisode passe à une occurrence de créneau ?** → **Rotation** dans l'ordre des épisodes de
+- **Q1 : Quel épisode passe à une occurrence de créneau ?** → **Rotation** dans l'ordre des épisodes de
   l'émission, calculée depuis la date d'entrée en vigueur du créneau. Aucune date de diffusion n'est
   saisie par le détenteur : l'ordre de l'émission suffit, et l'antenne ne connaît jamais de trou dès
   qu'il existe un épisode publié.
-- **Q2 — Un épisode ajouté par un co-détenteur est-il diffusé immédiatement ?** → **Non : modération
+- **Q2 : Un épisode ajouté par un co-détenteur est-il diffusé immédiatement ?** → **Non : modération
   systématique.** Chaque épisode passe par la file de validation administrative avant d'entrer en
   diffusion. La cadence hebdomadaire dépend donc du délai de traitement, ce que la spécification prend
   en charge explicitement (anticipation de l'échéance, suivi de l'état par le détenteur).
-- **Q3 — Sur quoi portent réactions, commentaires, partages et signalements ?** → **Sur les deux
+- **Q3 : Sur quoi portent réactions, commentaires, partages et signalements ?** → **Sur les deux
   niveaux, indépendamment.** Une émission se suit et se commente en tant que série ; un épisode se
   commente pour lui-même. Deux jeux de compteurs distincts, deux surfaces de modération.
 
@@ -49,8 +49,8 @@ Cette évolution recadre le modèle éditorial des espaces Télé et Radio, côt
 
 ### User Story 1 - Regrouper les vidéos et audios sous un programme (Priority: P1)
 
-Un co-détenteur de chaîne TV (ou de station radio) crée une **émission** — par exemple « Journal de
-l'Afrique » — puis y verse ses **épisodes** successifs (une vidéo pour la télé, un audio pour la radio).
+Un co-détenteur de chaîne TV (ou de station radio) crée une **émission**, par exemple « Journal de
+l'Afrique » : puis y verse ses **épisodes** successifs (une vidéo pour la télé, un audio pour la radio).
 Le public qui visite la chaîne découvre d'abord la liste des émissions, puis, en ouvrant une émission,
 la collection de ses épisodes du plus récent au plus ancien. L'administrateur retrouve la même
 hiérarchie dans le back-office.
@@ -74,7 +74,7 @@ de données restent accessibles et rattachés à une émission.
    **Then** l'épisode prend rang à la fin de l'ordre de l'émission, part en attente de validation
    administrative, et n'est ni lisible par le public ni diffusé tant qu'il n'est pas validé.
 3. **Given** une chaîne comportant trois émissions et douze épisodes, **When** un visiteur ouvre la page
-   de la chaîne, **Then** il voit trois blocs d'émissions — et non douze vignettes indifférenciées — et
+   de la chaîne, **Then** il voit trois blocs d'émissions, et non douze vignettes indifférenciées, et
    chaque bloc annonce son nombre d'épisodes disponibles.
 4. **Given** un épisode publié, **When** un visiteur l'ouvre, **Then** la page de l'épisode indique
    l'émission dont il relève et la chaîne (ou station) qui le diffuse, et propose les autres épisodes de
@@ -89,14 +89,14 @@ de données restent accessibles et rattachés à une émission.
 7. **Given** une station radio, **When** j'y crée une émission et j'y verse des audios, **Then** le
    comportement est identique à celui de la télé, à la nature du fichier près.
 8. **Given** un épisode que j'ai soumis, **When** l'administrateur le valide ou le rejette, **Then** je
-   suis notifié de la décision — assortie du motif en cas de rejet — et je retrouve l'état de chacun de
+   suis notifié de la décision : assortie du motif en cas de rejet, et je retrouve l'état de chacun de
    mes épisodes soumis depuis l'espace de gestion de mon support.
 
 ---
 
 ### User Story 2 - Programmer une émission au rythme quotidien ou hebdomadaire (Priority: P2)
 
-Un co-détenteur inscrit une **émission** — et non plus un fichier isolé — dans la grille de sa chaîne :
+Un co-détenteur inscrit une **émission**, et non plus un fichier isolé, dans la grille de sa chaîne :
 « Journal de l'Afrique, tous les jours à 20h00 », « Débats africains, chaque samedi à 18h00 ». L'émission
 déclare sa cadence, et le détenteur y ajoute un nouvel épisode à chaque échéance. À chaque occurrence du
 créneau, l'antenne avance d'un cran dans l'ordre des épisodes de l'émission et reprend au premier une
@@ -148,7 +148,7 @@ rotation revient au premier en signalant une rediffusion.
 
 ### User Story 3 - Déclarer plusieurs thématiques par chaîne ou station (Priority: P3)
 
-Un administrateur — ou le membre qui soumet sa chaîne — sélectionne une ou plusieurs thématiques parmi
+Un administrateur : ou le membre qui soumet sa chaîne, sélectionne une ou plusieurs thématiques parmi
 le référentiel éditorial de la plateforme. Le public filtre les chaînes et stations par thématique et
 retrouve toutes celles qui la traitent, même partiellement.
 
@@ -183,7 +183,7 @@ Une chaîne ou une station déclare soit une liste de territoires africains qu'e
 couverture continentale (« toute l'Afrique »). Le public filtre par territoire et retrouve les supports
 locaux comme les supports panafricains.
 
-**Why this priority**: Corrige une limite réelle du modèle actuel, mais sans elle l'espace fonctionne —
+**Why this priority**: Corrige une limite réelle du modèle actuel, mais sans elle l'espace fonctionne, 
 avec une couverture approximative.
 
 **Independent Test**: Déclarer une chaîne couvrant trois territoires et une autre en couverture
@@ -213,7 +213,7 @@ Un visiteur commente un épisode qu'il vient de regarder, et commente séparéme
 tant que série suivie. Les deux conversations coexistent sans se mélanger, chacune avec ses propres
 compteurs. Un modérateur traite les signalements déposés à l'un comme à l'autre niveau.
 
-**Why this priority**: Prolonge l'existant plutôt qu'il ne le crée — les interactions fonctionnent déjà,
+**Why this priority**: Prolonge l'existant plutôt qu'il ne le crée, les interactions fonctionnent déjà,
 elles doivent seulement gagner un second point d'ancrage. Livrable après le recadrage structurel.
 
 **Independent Test**: Déposer une réaction et un commentaire sur un épisode, puis sur son émission, et
@@ -232,7 +232,7 @@ l'autre.
 4. **Given** un épisode déplacé vers une autre émission, **When** je consulte ses interactions, **Then**
    elles l'ont suivi intégralement, et les fils des deux émissions sont inchangés.
 5. **Given** un contenu signalé, **When** le seuil de suspension automatique est franchi, **Then** seul
-   le niveau signalé est suspendu — signaler un épisode ne suspend pas son émission, signaler une
+   le niveau signalé est suspendu : signaler un épisode ne suspend pas son émission, signaler une
    émission retire ses épisodes de l'espace public sans les supprimer.
 6. **Given** les interactions déposées avant la mise à jour, **When** la reprise de données est
    appliquée, **Then** elles restent rattachées à l'épisode issu du contenu qu'elles visaient.
@@ -252,8 +252,8 @@ l'autre.
   épisodes publiés ; le retrait exige de déplacer ou de retirer les épisodes au préalable.
 - **Suspension** : suspendre une émission retire du public tous ses épisodes sans les supprimer ;
   suspendre un support retire ses émissions et leurs épisodes.
-- **Émission programmée sans aucun épisode validé** : le créneau n'est pas annoncé au public — la
-  rotation n'a rien à faire tourner — et les co-détenteurs sont alertés.
+- **Émission programmée sans aucun épisode validé** : le créneau n'est pas annoncé au public, la
+  rotation n'a rien à faire tourner : et les co-détenteurs sont alertés.
 - **Rotation épuisée** : quand le cycle repasse sur un épisode déjà diffusé, l'antenne le signale comme
   rediffusion et alerte les co-détenteurs de l'échéance dépassée ; il n'y a jamais d'espace vide dès
   qu'un épisode existe.
@@ -275,7 +275,7 @@ l'autre.
 - **Volume** : une chaîne comptant plusieurs dizaines d'émissions et plusieurs centaines d'épisodes reste
   navigable, la liste des épisodes d'une émission étant paginée ou chargée progressivement.
 - **Signalement** : le seuil de suspension automatique déjà en vigueur s'applique au niveau où le
-  signalement est déposé, sans retirer mécaniquement les contenus voisins — signaler un épisode ne
+  signalement est déposé, sans retirer mécaniquement les contenus voisins, signaler un épisode ne
   suspend pas son émission.
 - **File de modération engorgée** : les épisodes en attente s'accumulent sans bloquer l'antenne, la
   rotation continuant sur les épisodes déjà validés ; l'administration voit l'ancienneté de chaque
@@ -283,7 +283,7 @@ l'autre.
 
 ## Requirements *(mandatory)*
 
-### Structure éditoriale — émissions et épisodes
+### Structure éditoriale : émissions et épisodes
 
 - **FR-001**: Le système MUST distinguer deux niveaux distincts sous un support (chaîne TV ou station
   radio) : l'**émission** (autrefois nommée « programme »), qui est un regroupement, et l'**épisode**,
@@ -381,8 +381,8 @@ l'autre.
 - **FR-040**: Tout épisode ajouté par un co-détenteur MUST être placé en **attente de validation
   administrative** : il n'est ni visible du public, ni compté, ni intégré à la rotation tant qu'un
   administrateur ne l'a pas validé.
-- **FR-041**: Le système MUST notifier l'auteur de la décision de modération — validation ou rejet
-  motivé — et MUST permettre de corriger puis resoumettre un épisode rejeté.
+- **FR-041**: Le système MUST notifier l'auteur de la décision de modération, validation ou rejet
+  motivé : et MUST permettre de corriger puis resoumettre un épisode rejeté.
 - **FR-042**: Le co-détenteur MUST pouvoir suivre, depuis l'espace de gestion de son support, l'état de
   chacun de ses épisodes soumis (en attente, validé, rejeté) et la date de soumission.
 - **FR-043**: La file de modération MUST présenter les épisodes en attente avec leur ancienneté, leur
@@ -446,7 +446,7 @@ l'autre.
   déclaration d'une portée continentale exclusive de toute liste.
 - **Créneau de programmation** : inscription d'une **émission** dans la grille d'un support, avec
   récurrence (quotidienne ou hebdomadaire), jour le cas échéant, heure de début, durée, référentiel
-  horaire et date d'entrée en vigueur — cette dernière servant d'origine au comptage des occurrences. Ne
+  horaire et date d'entrée en vigueur, cette dernière servant d'origine au comptage des occurrences. Ne
   matérialise aucune occurrence à l'avance.
 - **Occurrence** : une survenue datée d'un créneau, déduite à la consultation et jamais enregistrée. Son
   rang détermine, par rotation, l'épisode diffusé.
@@ -472,7 +472,7 @@ l'autre.
   territoriale explicite.
 - **SC-005**: Pour 100 % des créneaux actifs dont l'émission compte au moins un épisode publié, la
   mention « à l'antenne » désigne l'émission attendue et un épisode existant, ou une rediffusion
-  explicitement signalée — jamais un emplacement vide. Les créneaux dont l'émission n'a aucun épisode
+  explicitement signalée : jamais un emplacement vide. Les créneaux dont l'émission n'a aucun épisode
   publié ne sont pas annoncés.
 - **SC-006**: Deux consultations de la même occurrence désignent le même épisode dans 100 % des cas, et
   l'ajout d'un épisode ne modifie jamais l'épisode annoncé pour l'occurrence en cours.
@@ -510,7 +510,7 @@ l'autre.
 - La **modération systématique des épisodes** s'appuie sur la file de validation des médias déjà en
   place, élargie aux épisodes soumis par les co-détenteurs. Elle suppose une administration réactive :
   les alertes d'échéance sont calées en amont pour absorber ce délai, et un retard de modération ne
-  coupe jamais l'antenne — la rotation continue sur les épisodes déjà validés.
+  coupe jamais l'antenne : la rotation continue sur les épisodes déjà validés.
 - La **reprise de données** est réalisée en même temps que la livraison, sans période intermédiaire où
   les deux modèles coexisteraient. Les contenus repris sont considérés comme déjà validés.
 - Les mécanismes existants de **détention de supports**, de **modération sur signalement**, d'**audit**

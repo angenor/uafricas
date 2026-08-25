@@ -20,12 +20,12 @@ export const ORIGINES_PUBLICATION_TELE: { valeur: OriginePublicationTele; libell
   {
     valeur: 'africans',
     libelle: 'Africans Télé International',
-    aide: 'Chaîne produite par la plateforme — remontée par le filtre « Africans Télé International » sur /medias/tele.',
+    aide: 'Chaîne produite par la plateforme, remontée par le filtre « Africans Télé International » sur /medias/tele.',
   },
   {
     valeur: 'territoire',
     libelle: 'Chaîne de territoire',
-    aide: 'Chaîne rattachée à un territoire africain — visible sur /medias/tele hors filtre Africans.',
+    aide: 'Chaîne rattachée à un territoire africain, visible sur /medias/tele hors filtre Africans.',
   },
 ]
 

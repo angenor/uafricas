@@ -33,4 +33,4 @@
 
 - La spécification réutilise une infrastructure existante (notion d'expertise avec statut de modération, soumission de candidature, filtrage de la liste publique). Cela est documenté dans la section Assumptions sans introduire de détails d'implémentation dans les exigences.
 - Aucun marqueur [NEEDS CLARIFICATION] : les décisions de portée (re-soumission après refus, commentaire de refus obligatoire, notifications) sont alignées sur le workflow « Bibliothèque Humaine » déjà en place et documentées comme hypothèses.
-- Tous les items passent — la spec est prête pour `/speckit.clarify` ou `/speckit.plan`.
+- Tous les items passent : la spec est prête pour `/speckit.clarify` ou `/speckit.plan`.

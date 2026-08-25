@@ -1,5 +1,5 @@
 //! File de modération des propositions de médias
-//! (feature 001-refonte-tele-radio, US4 — migration 09l).
+//! (feature 001-refonte-tele-radio, US4, migration 09l).
 //!
 //! Endpoints :
 //!   GET   /api/admin/medias/propositions
@@ -8,7 +8,7 @@
 //!   PATCH /api/admin/medias/propositions/{id}/rejeter
 //!
 //! Garde : `verifier_permission!(admin, "media", …)`. Attention au piège de
-//! nommage — `"media"` couvre radio et télé, `"media_content"` couvre vidafrica
+//! nommage : `"media"` couvre radio et télé, `"media_content"` couvre vidafrica
 //! et `"programme"` désigne les programmes d'échange.
 
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -336,7 +336,7 @@ pub async fn valider_proposition(
     // ── Points d'engagement, APRÈS le COMMIT (US4) ───────────────────────────
     // `attribuer` prend un `&PgPool` et doit rester hors de la transaction
     // métier : une erreur d'attribution ne doit jamais annuler une validation
-    // déjà décidée. L'anti-auto-attribution est explicite — un administrateur
+    // déjà décidée. L'anti-auto-attribution est explicite, un administrateur
     // qui valide sa propre proposition ne se crédite pas.
     if auteur_id != admin.id {
         match type_objet.as_str() {
@@ -405,7 +405,7 @@ pub async fn valider_proposition(
 
 /// Crée l'objet métier correspondant au type validé.
 ///
-/// Renvoie `None` pour les types qui n'en créent aucun — le CHECK
+/// Renvoie `None` pour les types qui n'en créent aucun, le CHECK
 /// `ck_prop_media_validation_a_objet` n'exempte que `idee_contenu`.
 async fn creer_objet(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
@@ -527,7 +527,7 @@ async fn creer_objet(
         // ── Programmes conteneurs (009) ─────────────────────────────────
         // L'émission naît directement `publie` : c'est la décision
         // administrative qui vaut validation. Son support est celui désigné par
-        // la proposition — `chaine_id` est NOT NULL depuis 09q.
+        // la proposition : `chaine_id` est NOT NULL depuis 09q.
         "emission_tele" => {
             let chaine_id = donnees.chaine_id.or(target_id).ok_or_else(|| {
                 ApiErreur::Validation("Cette proposition ne désigne aucune chaîne".into())
@@ -763,7 +763,7 @@ pub async fn rejeter_proposition(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CO-DÉTENTEURS — vue et intervention administratives (US5)
+// CO-DÉTENTEURS : vue et intervention administratives (US5)
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // Les co-détenteurs se gèrent normalement entre eux, par invitation
@@ -806,8 +806,8 @@ pub async fn lister_detenteurs_admin(
 /// POST /api/admin/medias/{type_support}/{support_id}/detenteurs
 ///
 /// Désignation directe, sans invitation : c'est le recours quand plus personne
-/// ne détient le support. Le rôle `proprietaire` est admis ici — contrairement
-/// à l'invitation entre membres —, mais l'index unique
+/// ne détient le support. Le rôle `proprietaire` est admis ici, contrairement
+/// à l'invitation entre membres , mais l'index unique
 /// `uq_support_un_proprietaire` en refusera un second.
 pub async fn ajouter_detenteur_admin(
     admin: AdminUtilisateur,
@@ -967,7 +967,7 @@ pub async fn retirer_detenteur_admin(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FILE DES CONTENUS SIGNALÉS (US7 — FR-051)
+// FILE DES CONTENUS SIGNALÉS (US7 : FR-051)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// GET /api/admin/medias/signalements
@@ -977,7 +977,7 @@ pub async fn retirer_detenteur_admin(
 ///
 /// Les quatre tables médias étant hétérogènes (colonne de titre différente),
 /// chacune est interrogée séparément puis les résultats sont fusionnés en
-/// mémoire — le volume d'un contenu signalé restant faible par nature.
+/// mémoire : le volume d'un contenu signalé restant faible par nature.
 pub async fn lister_signalements(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
@@ -1150,7 +1150,7 @@ pub async fn detail_signalements(
 /// **Le rétablissement remet `nombre_signalements = 0`** : sans cette remise à
 /// zéro, le seuil resterait franchi et le contenu serait resuspendu au premier
 /// signalement suivant. Les lignes de `signalement_media` sont conservées pour
-/// l'historique — l'unicité par membre empêche toute inflation artificielle du
+/// l'historique : l'unicité par membre empêche toute inflation artificielle du
 /// nouveau compteur.
 ///
 /// `supprime` est un soft delete : le contenu quitte l'antenne définitivement

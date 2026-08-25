@@ -48,7 +48,7 @@ const props = withDefaults(defineProps<{
 }>(), { programmations: 0 })
 
 /**
- * La maquette écrit « 02 évènements à venir » — deux chiffres, et le pluriel
+ * La maquette écrit « 02 évènements à venir », deux chiffres, et le pluriel
  * même à zéro. Le zéro pluriel est correct en français ; le zéro padding est
  * conservé parce qu'il aligne les compteurs d'une carte à l'autre dans la
  * grille, ce qu'un « 2 » nu ne ferait pas.

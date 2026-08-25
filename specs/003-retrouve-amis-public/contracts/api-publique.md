@@ -52,7 +52,7 @@
 }
 ```
 
-**Champs anciens conservés mais optionnels** : `ecole`, `ville`, `pays_id`, `periode_debut`, `periode_fin` — restent dans le schéma pour rétrocompatibilité avec les avis existants mais ne sont plus dans le formulaire principal.
+**Champs anciens conservés mais optionnels** : `ecole`, `ville`, `pays_id`, `periode_debut`, `periode_fin`, restent dans le schéma pour rétrocompatibilité avec les avis existants mais ne sont plus dans le formulaire principal.
 
 ---
 
@@ -77,7 +77,7 @@ Mêmes champs que POST. Passe aussi en multipart pour l'upload photo.
 
 **Paramètres existants conservés** : `recherche`, `pays_id`, `ville`, `ecole`, `tri`, `ordre`, `page`, `par_page`
 
-**Réponse** — champs ajoutés dans chaque élément :
+**Réponse** : champs ajoutés dans chaque élément :
 
 ```json
 {
@@ -118,7 +118,7 @@ Mêmes champs que POST. Passe aussi en multipart pour l'upload photo.
 
 ### GET `/api/retrouve-amis/public/{slug}`
 
-**Réponse** — champs ajoutés :
+**Réponse** : champs ajoutés :
 
 ```json
 {
@@ -154,7 +154,7 @@ Mêmes champs que POST. Passe aussi en multipart pour l'upload photo.
 
 ### ~~PATCH `/api/retrouve-amis/avis/{id}/publier`~~
 
-Supprimé — la publication est automatique à la création. Le champ `est_public` est toujours `true` par défaut.
+Supprimé : la publication est automatique à la création. Le champ `est_public` est toujours `true` par défaut.
 
 ## Endpoints inchangés
 

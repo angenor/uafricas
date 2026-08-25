@@ -50,7 +50,7 @@ onMounted(recharger)
 
     <p v-if="chargement" class="text-sm text-base-content/70">Chargement...</p>
     <p v-else-if="liens.length === 0" class="text-sm text-base-content/70">
-      Aucun lien en attente — tout est à jour.
+      Aucun lien en attente : tout est à jour.
     </p>
 
     <ul v-else class="space-y-3">
@@ -108,7 +108,7 @@ onMounted(recharger)
       <div class="modal-box">
         <h4 class="text-lg font-bold">Refuser le lien</h4>
         <p class="py-2 text-sm">
-          Motif (obligatoire, minimum 5 caractères) — sera transmis à l'auteur.
+          Motif (obligatoire, minimum 5 caractères), sera transmis à l'auteur.
         </p>
         <textarea
           v-model="motifRefus"

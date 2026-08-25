@@ -20,7 +20,7 @@ const { data: detail, pending: chargement } = await useAsyncData(
 )
 
 /**
- * Cette page est désormais la page d'un **ÉPISODE** — son emplacement et son
+ * Cette page est désormais la page d'un **ÉPISODE**, son emplacement et son
  * slug sont conservés, ce qui préserve les adresses publiques déjà indexées
  * (FR-056). Ce qui change, c'est qu'elle nomme la série à laquelle il appartient
  * et propose les autres épisodes (US1 §4). La variable garde son nom `emission`
@@ -61,7 +61,7 @@ const descriptionOg = computed(() =>
 
 useHead(() => {
   if (!emission.value) return {}
-  const titre = `${emission.value.title} — Radio — UAfricas`
+  const titre = `${emission.value.title}, Radio | UAfricas`
   return {
     title: titre,
     meta: [
@@ -158,7 +158,7 @@ const enCours = computed(
             </NuxtLink>
             <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-white mb-2">
               <span v-if="emission.numeroEpisode" class="text-gray-400 font-normal">
-                Épisode {{ emission.numeroEpisode }} —
+                Épisode {{ emission.numeroEpisode }} 
               </span>
               {{ emission.title }}
             </h1>

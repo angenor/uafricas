@@ -33,6 +33,6 @@
 
 - All items passed validation on first iteration.
 - Feature avec impact majeur sur l'architecture (nouvelles tables: invitations, collaborateurs, paramètres confidentialité).
-- L'historique réutilise le système d'audit existant — pas de nouvelle infrastructure.
+- L'historique réutilise le système d'audit existant, pas de nouvelle infrastructure.
 - Les paramètres de confidentialité doivent être intégrés dans le matching (Feature 4) et la recherche publique (Feature 5).
 - La limite de 20 collaborateurs par arbre est un garde-fou initial.

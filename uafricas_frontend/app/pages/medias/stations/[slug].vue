@@ -19,7 +19,7 @@ const { data: detail, pending: chargement } = await useAsyncData(
 
 /**
  * La fiche et ses **programmes** arrivent d'un seul appel : la page déplie le
- * catalogue à deux niveaux — la série, puis ses épisodes (US1 §3).
+ * catalogue à deux niveaux : la série, puis ses épisodes (US1 §3).
  */
 const station = computed(() => detail.value?.station ?? null)
 const programmes = computed<EmissionRadio[]>(() => detail.value?.emissions ?? [])
@@ -52,7 +52,7 @@ const descriptionOg = computed(() =>
 
 useHead(() => {
   if (!station.value) return {}
-  const titre = `${station.value.name} — Station de radio — UAfricas`
+  const titre = `${station.value.name}, Station de radio | UAfricas`
   return {
     title: titre,
     meta: [
@@ -81,7 +81,7 @@ const ecouterDirect = () => {
   lire({
     id: `direct-${station.value.id}`,
     type: 'station_radio',
-    titre: `${station.value.name} — en direct`,
+    titre: `${station.value.name} : en direct`,
     support: station.value.name,
     supportSlug: station.value.slug,
     url: station.value.streamUrl,
@@ -247,7 +247,7 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
         <MediaBlocContacts :contacts="station.contacts" :nom-support="station.name" />
 
         <!-- Les PROGRAMMES de la station (FR-025, FR-060). Rendu ALIGNÉ sur la
-             page chaîne : une grille et non un carrousel — deux pages jumelles
+             page chaîne : une grille et non un carrousel, deux pages jumelles
              qui ne se lisent pas de la même façon sont deux pages à maintenir
              deux fois. -->
         <section v-if="programmes.length" class="mb-12">

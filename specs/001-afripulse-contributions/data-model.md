@@ -1,6 +1,6 @@
-# Data Model — Afripulse Enrichissement collaboratif
+# Data Model : Afripulse Enrichissement collaboratif
 
-**Feature**: Afripulse — Enrichissement collaboratif des fiches pays
+**Feature**: Afripulse : Enrichissement collaboratif des fiches pays
 **Branch**: `001-afripulse-contributions`
 **Date**: 2026-04-18
 
@@ -11,15 +11,15 @@ Ce document décrit le modèle de données étendu. Il est la source de vérité
 ## Fichier SQL cible
 
 Nouveau fichier : `uafricas_backend/doc/bd/schemas/11c_country_profile_afripulse.sql`
-Orchestrateur : `uafricas_backend/doc/bd/schema.sql` — ajouter `\ir schemas/11c_country_profile_afripulse.sql` après la ligne `\ir schemas/11b_country_profile_contributions.sql`.
+Orchestrateur : `uafricas_backend/doc/bd/schema.sql`, ajouter `\ir schemas/11c_country_profile_afripulse.sql` après la ligne `\ir schemas/11b_country_profile_contributions.sql`.
 
 Les ALTER sur tables existantes (site_touristique, contribution_fiche) sont groupés dans ce même fichier en tête (section A), suivis des CREATE TYPE (section B), CREATE TABLE (section C), INDEX (section D), TRIGGERS (section E).
 
 ---
 
-## Section A — Extensions des tables existantes
+## Section A : Extensions des tables existantes
 
-### A.1 `country_profile.site_touristique` — colonne `categorie`
+### A.1 `country_profile.site_touristique`, colonne `categorie`
 
 ```sql
 -- Distinction site emblématique (patrimoine public) / site privé
@@ -35,7 +35,7 @@ CREATE INDEX IF NOT EXISTS idx_site_touristique_categorie
     WHERE deleted_at IS NULL;
 ```
 
-### A.2 `country_profile.contribution_fiche` — colonnes manquantes
+### A.2 `country_profile.contribution_fiche`, colonnes manquantes
 
 ```sql
 -- Typage strict + champ JSONB pour valeurs et pièces jointes
@@ -61,7 +61,7 @@ ALTER TABLE country_profile.contribution_fiche
 
 Note : les colonnes texte `ancienne_valeur TEXT` et `nouvelle_valeur TEXT` existantes sont **conservées** pour rétrocompatibilité avec les contributions existantes. Les nouvelles contributions Afripulse utilisent exclusivement les variantes JSONB.
 
-### A.3 `country_profile.etat_contribution` — valeur `obsolete`
+### A.3 `country_profile.etat_contribution`, valeur `obsolete`
 
 ```sql
 ALTER TYPE country_profile.etat_contribution ADD VALUE IF NOT EXISTS 'obsolete';
@@ -69,7 +69,7 @@ ALTER TYPE country_profile.etat_contribution ADD VALUE IF NOT EXISTS 'obsolete';
 
 ---
 
-## Section B — Nouveaux enums
+## Section B : Nouveaux enums
 
 ```sql
 -- Catégorie de site touristique
@@ -126,7 +126,7 @@ CREATE TYPE country_profile.domaine_personnalite AS ENUM (
 
 ---
 
-## Section C — Nouvelles tables
+## Section C : Nouvelles tables
 
 ### C.1 `country_profile.personnalite_connue`
 
@@ -219,7 +219,7 @@ CREATE INDEX idx_photo_utilisateur ON country_profile.photo_visiteur (utilisateu
 
 ---
 
-## Section D — Index additionnels sur `contribution_fiche` (pour rate-limit)
+## Section D : Index additionnels sur `contribution_fiche` (pour rate-limit)
 
 ```sql
 -- Support du rate-limit 20 textes/j et 10 photos/j (cf. D5 research)
@@ -240,7 +240,7 @@ CREATE INDEX IF NOT EXISTS idx_contribution_type_section
 
 ---
 
-## Section E — Triggers
+## Section E : Triggers
 
 ### E.1 `updated_at` auto-update (pattern standard du projet)
 
@@ -263,11 +263,11 @@ Note : `photo_visiteur` n'a pas d'`updated_at` (immuable après création ; si l
 
 ### E.2 Désactivation de l'ancienne recommandation lors d'un remplacement
 
-La logique de remplacement d'une recommandation est **applicative** (dans le handler `moderer_contribution`, cf. D3), pas un trigger DB — pour garder le flux métier lisible et testable. Voir pseudo-code dans `quickstart.md`.
+La logique de remplacement d'une recommandation est **applicative** (dans le handler `moderer_contribution`, cf. D3), pas un trigger DB, pour garder le flux métier lisible et testable. Voir pseudo-code dans `quickstart.md`.
 
 ---
 
-## Mapping Rust `FromRow` (extrait — à placer dans `src/models/afripulse.rs`)
+## Mapping Rust `FromRow` (extrait : à placer dans `src/models/afripulse.rs`)
 
 ```rust
 #[derive(sqlx::FromRow, serde::Serialize, serde::Deserialize, Clone, Debug)]
@@ -360,7 +360,7 @@ pub enum SectionAfripulse {
 
 ---
 
-## Mapping TypeScript (extrait — à placer dans `useOpportuniteAfrique.ts`)
+## Mapping TypeScript (extrait : à placer dans `useOpportuniteAfrique.ts`)
 
 ```typescript
 export type TypeObjetContribution =
@@ -473,15 +473,15 @@ contribution_fiche: target_id ─ ─> id de la table cible (site_touristique | 
 2. **Photo** : formats `jpeg|png` (CHECK DB `format IN ('jpeg','png')`) ; taille ≤ 2 Mo (CHECK DB) ; dimensions ≤ 2048×2048 (CHECK DB).
 3. **Site touristique** : `categorie IN ('emblematique','prive')` (enum DB).
 4. **Personnalité** : `annee_deces >= annee_naissance` si les deux sont renseignés (CHECK DB).
-5. **Contribution approuvée** : `pieces_jointes` JSONB non modifiable après approbation — enforcement applicatif dans `moderer_contribution`.
-6. **Périmètre ISO** : `fiche_pays.pays_id` référence un pays dont `shared.pays.code_iso2` appartient à la liste figée de 54 codes africains — vérifié au handler `creer_fiche_pays` en amont de l'insertion.
-7. **Crédit contributeur** : un utilisateur ayant un compte supprimé (`iam.utilisateur.deleted_at IS NOT NULL`) voit ses contributions validées conservées mais est affiché comme « Contributeur retiré » — résolution à la requête de listing des contributeurs (JOIN + COALESCE).
+5. **Contribution approuvée** : `pieces_jointes` JSONB non modifiable après approbation, enforcement applicatif dans `moderer_contribution`.
+6. **Périmètre ISO** : `fiche_pays.pays_id` référence un pays dont `shared.pays.code_iso2` appartient à la liste figée de 54 codes africains, vérifié au handler `creer_fiche_pays` en amont de l'insertion.
+7. **Crédit contributeur** : un utilisateur ayant un compte supprimé (`iam.utilisateur.deleted_at IS NOT NULL`) voit ses contributions validées conservées mais est affiché comme « Contributeur retiré », résolution à la requête de listing des contributeurs (JOIN + COALESCE).
 
 ---
 
 ## Évolution future (hors scope Afripulse)
 
-- Ajouter un flag `est_africain BOOLEAN NOT NULL DEFAULT FALSE` sur `shared.pays` pour éliminer la duplication frontend/backend des 54 codes. Non fait maintenant pour limiter le blast radius du principe V (YAGNI) — la liste figée actuelle suffit.
+- Ajouter un flag `est_africain BOOLEAN NOT NULL DEFAULT FALSE` sur `shared.pays` pour éliminer la duplication frontend/backend des 54 codes. Non fait maintenant pour limiter le blast radius du principe V (YAGNI), la liste figée actuelle suffit.
 - Ajouter une vue matérialisée `country_profile.vm_contributeurs_par_pays` si la requête agrégée de listing devient coûteuse à grande échelle (> 100 k contributions validées).
 
 ---
@@ -489,7 +489,7 @@ contribution_fiche: target_id ─ ─> id de la table cible (site_touristique | 
 ## Checklist de conformité
 
 - [x] Conventions SQL respectées (UUID v4, TIMESTAMPTZ, `deleted_at`, snake_case français, enums).
-- [x] Aucune donnée en dur (les 54 codes ISO sont gérés côté application — D6).
+- [x] Aucune donnée en dur (les 54 codes ISO sont gérés côté application, D6).
 - [x] Indexes partiels pour les requêtes chaudes (rate-limit, section admin).
 - [x] Tous les CHECKs applicatifs critiques ont un équivalent DB pour défense en profondeur.
 - [x] Chaque table a un `fiche_pays_id` + `deleted_at` permettant cascade et soft delete.

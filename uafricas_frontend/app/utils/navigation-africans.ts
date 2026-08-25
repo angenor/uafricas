@@ -1,5 +1,5 @@
 /**
- * Navigation latérale de la refonte (maquette « Africans — Design »).
+ * Navigation latérale de la refonte (maquette « Africans, Design »).
  *
  * La maquette introduit une arborescence à DEUX niveaux que le routage actuel
  * ne porte pas : des univers (Africarise, Opafrica, …) contenant des modules
@@ -10,7 +10,7 @@
  *   Africarise / Afripulse · Africarise / Afroculture · Africamood / Vidafrica
  *
  * Les autres rattachements ne sont écrits nulle part. Les entrées marquées
- * `aValider: true` portent donc une cible déduite, pas confirmée — c'est le
+ * `aValider: true` portent donc une cible déduite, pas confirmée : c'est le
  * seul fichier à corriger quand l'arbitrage sera rendu.
  */
 

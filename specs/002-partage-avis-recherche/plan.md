@@ -33,13 +33,13 @@ Rendre les avis de recherche "Retrouve Amis" publiquement accessibles et partage
 | VI. Tailwind CSS v4 (daisyUI back-office) | ✅ PASS | Pages publiques = Tailwind CSS v4 pur (pas de daisyUI). Admin = daisyUI autorisé |
 | VII. Audit & Traçabilité | ✅ PASS | Toutes les nouvelles mutations (partage, réponse, retrait, modération) auditées via `audit::log_action` |
 
-**Gate Result (pré-Phase 0)**: ✅ ALL PASS — Aucune violation. Procéder à Phase 0.
+**Gate Result (pré-Phase 0)**: ✅ ALL PASS, Aucune violation. Procéder à Phase 0.
 
 ### Re-check post-Phase 1 Design
 
 | Principe | Statut | Vérification post-design |
 |----------|--------|--------------------------|
-| I. Français d'Abord | ✅ PASS | Tables `reponse_publique`, `demande_retrait`, enums `type_reponse_publique`, `etat_demande_retrait`, colonnes `est_public`, `compteur_partages` — tout en français |
+| I. Français d'Abord | ✅ PASS | Tables `reponse_publique`, `demande_retrait`, enums `type_reponse_publique`, `etat_demande_retrait`, colonnes `est_public`, `compteur_partages`, tout en français |
 | II. Monorepo Cohérent | ✅ PASS | data-model.md (SQL) + contracts/ (REST API) + quickstart.md (frontend+backend) cohérents |
 | III. SQL Source de Vérité | ✅ PASS | data-model.md définit le schema en premier → contrats API dérivés → types TS à dériver |
 | IV. Sécurité par Défaut | ✅ PASS | Anonymisation (FR-008), JWT pour mutations, rate limits (1/avis + 10/jour), UNIQUE constraints anti-spam, suspension immédiate retrait |
@@ -47,7 +47,7 @@ Rendre les avis de recherche "Retrouve Amis" publiquement accessibles et partage
 | VI. Tailwind CSS v4 | ✅ PASS | Composants publics spécifiés sans daisyUI. Admin demandes-retrait = daisyUI autorisé |
 | VII. Audit & Traçabilité | ✅ PASS | 7 nouvelles mutations identifiées : publier, répondre, signaler, retrait, partage, statuer_retrait×2 sens |
 
-**Gate Result (post-Phase 1)**: ✅ ALL PASS — Design conforme à la constitution.
+**Gate Result (post-Phase 1)**: ✅ ALL PASS, Design conforme à la constitution.
 
 ## Project Structure
 
@@ -57,13 +57,13 @@ Rendre les avis de recherche "Retrouve Amis" publiquement accessibles et partage
 specs/002-partage-avis-recherche/
 ├── spec.md              # Spécification fonctionnelle (complétée)
 ├── plan.md              # Ce fichier
-├── research.md          # Phase 0 — recherche et décisions techniques
-├── data-model.md        # Phase 1 — modèle de données (extensions SQL)
-├── quickstart.md        # Phase 1 — guide de démarrage rapide
-├── contracts/           # Phase 1 — contrats d'API (endpoints REST)
+├── research.md          # Phase 0 : recherche et décisions techniques
+├── data-model.md        # Phase 1 : modèle de données (extensions SQL)
+├── quickstart.md        # Phase 1 : guide de démarrage rapide
+├── contracts/           # Phase 1 : contrats d'API (endpoints REST)
 │   ├── public-api.md    # Endpoints publics (sans auth)
 │   └── auth-api.md      # Endpoints authentifiés (réponse, signalement, retrait)
-└── tasks.md             # Phase 2 — tâches ordonnées (/speckit.tasks)
+└── tasks.md             # Phase 2 : tâches ordonnées (/speckit.tasks)
 ```
 
 ### Source Code (repository root)

@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Composable — Recherche et exploration de l'arbre
+// Composable : Recherche et exploration de l'arbre
 // Recherche locale, chemin de parenté (BFS/LCA), filtres, terminologie
 // ════════════════════════════════════════════════════════════════════════════
 

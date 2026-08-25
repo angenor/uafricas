@@ -22,7 +22,7 @@ pnpm dev
 
 # 4. Ouvrir dans le navigateur
 # http://localhost:3000/retrouve-amis/nouveau
-# (Necessite d'etre connecte — utiliser admin@test.com / Test1234)
+# (Necessite d'etre connecte : utiliser admin@test.com / Test1234)
 ```
 
 ## Fichiers a modifier

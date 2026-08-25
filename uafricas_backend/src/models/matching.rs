@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Modèles — Matching inter-arbres et découvertes
+// Modèles : Matching inter-arbres et découvertes
 // ════════════════════════════════════════════════════════════════════════════
 
 use chrono::{DateTime, Utc};

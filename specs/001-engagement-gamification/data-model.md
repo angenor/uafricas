@@ -1,14 +1,14 @@
-# Data Model — Phase 1 : schéma `engagement`
+# Data Model : Phase 1 : schéma `engagement`
 
 Source de vérité = SQL (Principe III). Nouveau schéma bounded-context **`engagement`**. Migration idempotente unique : `uafricas_backend/doc/bd/schemas/NN_engagement.sql` (prochain numéro libre, ≈ `33`), branchée dans l'orchestrateur `schema.sql` via `\ir`. Conventions : UUID v4 PK, TIMESTAMPTZ, snake_case français, enums PostgreSQL, `IF NOT EXISTS` / blocs `DO` conditionnels pour l'idempotence.
 
-> **Soft-delete** : volontairement **absent** de `compte` (entité 1‑1 vivant avec l'utilisateur) et de `mouvement_points` (journal **append-only**, immuable — jamais supprimé). Les tables de config (`regle_points`, `palier_popularite`, `niveau`) utilisent un drapeau `actif` plutôt que `deleted_at` (une règle désactivée reste référencée par l'historique). Écart au Principe III justifié : aucune de ces entités n'est un contenu utilisateur supprimable.
+> **Soft-delete** : volontairement **absent** de `compte` (entité 1‑1 vivant avec l'utilisateur) et de `mouvement_points` (journal **append-only**, immuable, jamais supprimé). Les tables de config (`regle_points`, `palier_popularite`, `niveau`) utilisent un drapeau `actif` plutôt que `deleted_at` (une règle désactivée reste référencée par l'historique). Écart au Principe III justifié : aucune de ces entités n'est un contenu utilisateur supprimable.
 
 ---
 
 ## Entités
 
-### 1. `engagement.compte` — compte d'engagement (1‑1 utilisateur)
+### 1. `engagement.compte` : compte d'engagement (1‑1 utilisateur)
 
 | Colonne | Type | Contraintes | Rôle |
 |---------|------|-------------|------|
@@ -24,7 +24,7 @@ Source de vérité = SQL (Principe III). Nouveau schéma bounded-context **`enga
 
 - Le compte est **créé paresseusement** au premier mouvement (`INSERT ... ON CONFLICT (utilisateur_id) DO ...`), pas besoin de back-fill au lancement (non-rétroactif, FR-024).
 
-### 2. `engagement.mouvement_points` — journal (append-only)
+### 2. `engagement.mouvement_points` : journal (append-only)
 
 | Colonne | Type | Contraintes | Rôle |
 |---------|------|-------------|------|
@@ -43,10 +43,10 @@ Source de vérité = SQL (Principe III). Nouveau schéma bounded-context **`enga
 Index : `idx_mouvement_utilisateur (utilisateur_id, created_at DESC)`, `idx_mouvement_type_action (type_action, created_at)` (pour le calcul des plafonds).
 
 **Règles** :
-- Insertion en `ON CONFLICT (cle_idempotence) DO NOTHING` — si aucune ligne insérée, le compte n'est pas modifié.
+- Insertion en `ON CONFLICT (cle_idempotence) DO NOTHING` : si aucune ligne insérée, le compte n'est pas modifié.
 - Ligne **immuable** : jamais d'UPDATE/DELETE. Une correction admin est un **nouveau** mouvement (`type_action = 'ajustement_admin'`).
 
-### 3. `engagement.regle_points` — barème paramétrable
+### 3. `engagement.regle_points` : barème paramétrable
 
 | Colonne | Type | Contraintes | Rôle |
 |---------|------|-------------|------|
@@ -64,16 +64,16 @@ Index : `idx_mouvement_utilisateur (utilisateur_id, created_at DESC)`, `idx_mouv
 
 | type_action | libelle | points | reputation_delta | plafonds |
 |-------------|---------|:------:|:----------------:|----------|
-| `contribution_validee` | Contribution validée par modération | +2 | 0 | — |
-| `contribution_mise_en_avant` | Contribution mise en avant par l'équipe | +5 | 0 | — |
-| `factcheck_valide` | FactCheck jugé correct | +3 | +1 | — |
-| `factcheck_faux` | FactCheck jugé faux/abusif | −2 | −3 | — |
-| `popularite_palier` | Palier de popularité franchi | *(voir palier)* | 0 | — |
-| `ajustement_admin` | Correction manuelle admin | *(variable)* | 0 | — |
+| `contribution_validee` | Contribution validée par modération | +2 | 0 |, |
+| `contribution_mise_en_avant` | Contribution mise en avant par l'équipe | +5 | 0 |, |
+| `factcheck_valide` | FactCheck jugé correct | +3 | +1 |, |
+| `factcheck_faux` | FactCheck jugé faux/abusif | −2 | −3 |, |
+| `popularite_palier` | Palier de popularité franchi | *(voir palier)* | 0 |, |
+| `ajustement_admin` | Correction manuelle admin | *(variable)* | 0 |, |
 
 > `popularite_palier` : le montant réel provient de `palier_popularite.points` ; la règle sert de libellé/traçabilité commune. `ajustement_admin` : montant saisi par l'admin, non plafonné.
 
-### 4. `engagement.palier_popularite` — paliers de « j'aime »
+### 4. `engagement.palier_popularite` : paliers de « j'aime »
 
 | Colonne | Type | Contraintes |
 |---------|------|-------------|
@@ -84,7 +84,7 @@ Index : `idx_mouvement_utilisateur (utilisateur_id, created_at DESC)`, `idx_mouv
 
 **Seed** : `(100, +10)`, `(500, +30)`, `(1000, +50)`.
 
-### 5. `engagement.niveau` — seuils de statut
+### 5. `engagement.niveau` : seuils de statut
 
 | Colonne | Type | Contraintes |
 |---------|------|-------------|
@@ -104,7 +104,7 @@ Le niveau d'un solde = ligne active de plus grand `seuil_min` tel que `seuil_min
 
 ## Contrat du service (`src/services/engagement.rs`)
 
-Toutes non-bloquantes (erreurs loguées, jamais propagées — D1) :
+Toutes non-bloquantes (erreurs loguées, jamais propagées, D1) :
 
 ```
 attribuer(pool, utilisateur_id, type_action, type_objet, objet_id, cle_idempotence)
@@ -128,18 +128,18 @@ L'appelant fournit toujours `auteur_id` = auteur du contenu et garantit `auteur_
 
 ---
 
-## Intégration (call-sites à ajouter — non-bloquants)
+## Intégration (call-sites à ajouter : non-bloquants)
 
 Voir `research.md §D9` pour le tableau complet. Résumé des fichiers backend touchés (ajout d'un appel en fin de mutation réussie) :
 
-- `handlers/admin/codimoi_admin.rs` — validation Codimoi.
-- `handlers/admin/gouvernance.rs` — validation Ideaforce, BadHabit ; jugement FactCheck (validé/faux) ; mise en avant.
-- `handlers/admin/vidafrica.rs` — `changer_etat_piste` (publie).
-- Handlers de réaction « like » (Codimoi, FactCheck, biblio humaine, VidAfrica, fiche pays) — appel `evaluer_popularite` après ajout d'un like.
-- `routes.rs` — enregistrement des scopes `/api/engagement` (public) et `/api/admin/engagement` (admin).
-- Référentiel IAM — seed de la permission admin `engagement`.
+- `handlers/admin/codimoi_admin.rs` : validation Codimoi.
+- `handlers/admin/gouvernance.rs` : validation Ideaforce, BadHabit ; jugement FactCheck (validé/faux) ; mise en avant.
+- `handlers/admin/vidafrica.rs` : `changer_etat_piste` (publie).
+- Handlers de réaction « like » (Codimoi, FactCheck, biblio humaine, VidAfrica, fiche pays), appel `evaluer_popularite` après ajout d'un like.
+- `routes.rs` : enregistrement des scopes `/api/engagement` (public) et `/api/admin/engagement` (admin).
+- Référentiel IAM : seed de la permission admin `engagement`.
 
-Aucune table existante n'est modifiée ; seuls des appels sont ajoutés. Le badge de statut à afficher « sous les contenus » (FR-019) est obtenu côté frontend via l'endpoint public `GET /api/engagement/niveau/{utilisateur_id}` (ou enrichissement ultérieur des réponses de contenu — décision d'implémentation, hors périmètre du modèle de données).
+Aucune table existante n'est modifiée ; seuls des appels sont ajoutés. Le badge de statut à afficher « sous les contenus » (FR-019) est obtenu côté frontend via l'endpoint public `GET /api/engagement/niveau/{utilisateur_id}` (ou enrichissement ultérieur des réponses de contenu, décision d'implémentation, hors périmètre du modèle de données).
 
 ---
 

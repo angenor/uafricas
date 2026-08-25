@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Fil de commentaires d'un contenu média (FR-024).
-// Liste PLATE et paginée — la spécification ne demande pas de fil de réponses,
+// Liste PLATE et paginée : la spécification ne demande pas de fil de réponses,
 // et aucun précédent du projet n'en propose. La suppression est réservée à
 // l'auteur, le serveur refusant toute autre demande.
 
@@ -176,7 +176,7 @@ onMounted(() => charger(1))
       class="text-sm py-6 text-center"
       :class="sombre ? 'text-white/60' : 'text-gray-500'"
     >
-      Aucun commentaire pour l’instant — soyez le premier à réagir.
+      Aucun commentaire pour l’instant : soyez le premier à réagir.
     </p>
 
     <ul v-else class="space-y-4">

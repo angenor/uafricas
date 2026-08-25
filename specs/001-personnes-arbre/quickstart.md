@@ -1,4 +1,4 @@
-# Quickstart — Arbre généalogique
+# Quickstart : Arbre généalogique
 
 **Branch**: `001-personnes-arbre` | **Date**: 2026-03-15
 
@@ -23,7 +23,7 @@ Suivre cet ordre strict (SQL → Backend → Frontend) conformément au Principe
 
 ---
 
-## Étape 1 — Appliquer le schéma SQL
+## Étape 1 : Appliquer le schéma SQL
 
 Créer le fichier `uafricas_backend/doc/bd/schemas/23_arbre_genealogique.sql` avec le contenu défini dans [data-model.md](./data-model.md).
 
@@ -43,7 +43,7 @@ Vérifier dans Adminer (`http://localhost:8088`) que le schema `arbre_genealogiq
 
 ---
 
-## Étape 2 — Modèles Rust
+## Étape 2 : Modèles Rust
 
 Créer `uafricas_backend/src/models/arbre_genealogique.rs` avec les structs définies dans [data-model.md](./data-model.md).
 
@@ -60,7 +60,7 @@ cargo check
 
 ---
 
-## Étape 3 — Handler Rust
+## Étape 3 : Handler Rust
 
 Créer `uafricas_backend/src/handlers/arbre_genealogique.rs`.
 
@@ -88,7 +88,7 @@ pub mod arbre_genealogique;
 
 ---
 
-## Étape 4 — Routes
+## Étape 4 : Routes
 
 Dans `uafricas_backend/src/routes.rs`, ajouter dans `configurer_routes()` :
 ```rust
@@ -124,13 +124,13 @@ curl -X POST http://localhost:8080/api/arbre/personnes \
 
 ---
 
-## Étape 5 — Mock frontend
+## Étape 5 : Mock frontend
 
 Créer `uafricas_frontend/app/mocks/arbre-genealogique.ts` avec le contenu défini dans [data-model.md](./data-model.md).
 
 ---
 
-## Étape 6 — Composable
+## Étape 6 : Composable
 
 Créer `uafricas_frontend/app/composables/useArbreGenealogique.ts` :
 
@@ -201,18 +201,18 @@ export const useArbreGenealogique = () => {
 
 ---
 
-## Étape 7 — Pages et composants
+## Étape 7 : Pages et composants
 
 Créer les pages :
-- `app/pages/arbre-genealogique/index.vue` — liste paginée avec recherche
-- `app/pages/arbre-genealogique/[id].vue` — fiche détail avec liens
+- `app/pages/arbre-genealogique/index.vue`, liste paginée avec recherche
+- `app/pages/arbre-genealogique/[id].vue`, fiche détail avec liens
 
 Créer les composants :
 - `app/components/arbre-genealogique/PersonneCard.vue`
 - `app/components/arbre-genealogique/PersonneForm.vue`
 - `app/components/arbre-genealogique/LienFamilialForm.vue`
 
-**Rappel Tailwind** : ces pages sont publiques (accessibles avec auth utilisateur standard). Utiliser Tailwind CSS v4 pur — pas de classes daisyUI (`btn`, `card`, `modal`, etc.).
+**Rappel Tailwind** : ces pages sont publiques (accessibles avec auth utilisateur standard). Utiliser Tailwind CSS v4 pur : pas de classes daisyUI (`btn`, `card`, `modal`, etc.).
 
 ---
 

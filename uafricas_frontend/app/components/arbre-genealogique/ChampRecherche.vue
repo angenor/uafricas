@@ -138,7 +138,7 @@ const fermer = () => {
           </p>
           <p class="truncate text-xs text-stone-500">
             <span v-if="r.naissance_annee">{{ r.naissance_annee }}</span>
-            <span v-if="r.naissance_lieu"> — {{ r.naissance_lieu }}</span>
+            <span v-if="r.naissance_lieu">, {{ r.naissance_lieu }}</span>
           </p>
         </div>
         <span

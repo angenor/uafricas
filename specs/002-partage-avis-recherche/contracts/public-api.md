@@ -85,10 +85,10 @@ Ces endpoints sont accessibles sans JWT. Ils sont enregistrés hors du scope d'a
 |-------|------|--------|-------------|
 | `page` | u32 | 1 | Numéro de page |
 | `par_page` | u32 | 12 | Résultats par page (max 50) |
-| `recherche` | String | — | Recherche full-text (TSVECTOR) |
-| `pays_id` | UUID | — | Filtrer par pays |
-| `ville` | String | — | Filtrer par ville (ILIKE) |
-| `ecole` | String | — | Filtrer par école (ILIKE) |
+| `recherche` | String | : | Recherche full-text (TSVECTOR) |
+| `pays_id` | UUID | : | Filtrer par pays |
+| `ville` | String | : | Filtrer par ville (ILIKE) |
+| `ecole` | String | : | Filtrer par école (ILIKE) |
 | `tri` | String | "created_at" | Champ de tri (created_at, compteur_partages) |
 | `ordre` | String | "desc" | Ordre (asc, desc) |
 

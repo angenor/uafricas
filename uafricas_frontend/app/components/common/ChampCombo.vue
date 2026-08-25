@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
- * Champ de saisie libre assisté par une liste de suggestions — feature 010.
+ * Champ de saisie libre assisté par une liste de suggestions, feature 010.
  *
  * **La valeur hors liste est acceptée** (FR-015) : les suggestions proposent, la
  * saisie décide. C'est ce qui distingue ce composant d'un `<select>` et de
  * `arbre-genealogique/ChampRecherche.vue`, qui vide le champ à la sélection.
- * Le contournement jusqu'ici en usage — un `<select>` doublé d'une option
- * « AUTRE » qui révèle un `<input>` — demandait deux gestes pour une valeur
+ * Le contournement jusqu'ici en usage, un `<select>` doublé d'une option
+ * « AUTRE » qui révèle un `<input>` : demandait deux gestes pour une valeur
  * inédite, et rendait la nouveauté visiblement moins légitime que le catalogue.
  *
  * Tailwind v4 pur (Principe VI) : monté sur des surfaces membres et

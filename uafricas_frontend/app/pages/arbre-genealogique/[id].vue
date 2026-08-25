@@ -259,14 +259,14 @@ async function supprimerUnLien(lienId: string) {
             <span class="text-stone-500">Naissance :</span>
             <span class="ml-1 text-stone-800">{{ dateNaissance }}</span>
             <span v-if="detail.personne.naissance_lieu" class="ml-1 text-stone-500">
-              — {{ detail.personne.naissance_lieu }}
+              {{ detail.personne.naissance_lieu }}
             </span>
           </div>
           <div v-if="detail.personne.deces">
             <span class="text-stone-500">Décès :</span>
             <span class="ml-1 text-stone-800">{{ dateDeces }}</span>
             <span v-if="detail.personne.deces_lieu" class="ml-1 text-stone-500">
-              — {{ detail.personne.deces_lieu }}
+              {{ detail.personne.deces_lieu }}
             </span>
           </div>
         </div>

@@ -1,19 +1,19 @@
 <script setup lang="ts">
 /**
- * Épisodes d'un programme, **paginés** (feature 009, US1 — SC-009).
+ * Épisodes d'un programme, **paginés** (feature 009, US1, SC-009).
  *
  * La pagination n'est pas un confort : c'est ce qui rend un programme de
  * 500 épisodes navigable. Charger la série entière d'un bloc ferait exactement
  * ce que la refonte cherche à éviter.
  *
- * Tailwind v4 pur — page publique, aucune classe daisyUI (principe VI).
+ * Tailwind v4 pur : page publique, aucune classe daisyUI (principe VI).
  */
 import type { EpisodeAPI, TypeSupportMedia } from '~/composables/useMediaEmissions'
 
 const props = withDefaults(defineProps<{
   typeSupport: TypeSupportMedia
   emissionId: string
-  /** Épisodes déjà chargés par la page — évite un aller-retour au montage. */
+  /** Épisodes déjà chargés par la page : évite un aller-retour au montage. */
   initiaux?: EpisodeAPI[]
   total?: number
   taille?: number

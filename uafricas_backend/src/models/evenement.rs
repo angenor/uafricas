@@ -102,7 +102,7 @@ pub struct EvenementDetailResponse {
     pub couverture_url: Option<String>,
     pub lien_en_ligne: Option<String>,
     pub statut: String,
-    /// Etat brut du cycle de vie (brouillon/publie/annule/termine/suspendu) — utile a l'organisateur.
+    /// Etat brut du cycle de vie (brouillon/publie/annule/termine/suspendu), utile a l'organisateur.
     pub etat: String,
     pub nombre_places: Option<i32>,
     pub nombre_inscrits: i64,
@@ -112,7 +112,7 @@ pub struct EvenementDetailResponse {
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
     pub contact_site_web: Option<String>,
-    /// Lien d'enregistrement video (rediffusion YouTube) — affiche quand l'evenement est termine.
+    /// Lien d'enregistrement video (rediffusion YouTube), affiche quand l'evenement est termine.
     pub enregistrement_url: Option<String>,
     pub user: OrganisateurResponse,
     pub created_at: DateTime<Utc>,

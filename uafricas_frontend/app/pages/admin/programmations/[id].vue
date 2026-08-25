@@ -231,9 +231,9 @@ onMounted(async () => {
               <tbody>
                 <tr v-for="ins in inscriptions" :key="ins.id">
                   <td>{{ ins.prenom }} {{ ins.nom }}</td>
-                  <td>{{ ins.titre || '—' }}</td>
-                  <td>{{ ins.pays || '—' }}</td>
-                  <td>{{ ins.lieu_residence || '—' }}</td>
+                  <td>{{ ins.titre || '-' }}</td>
+                  <td>{{ ins.pays || '-' }}</td>
+                  <td>{{ ins.lieu_residence || '-' }}</td>
                   <td>{{ ins.email }}</td>
                   <td><span class="badge badge-sm badge-outline">{{ ins.statut }}</span></td>
                   <td>{{ new Date(ins.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }}</td>

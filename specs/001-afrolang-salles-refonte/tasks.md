@@ -1,8 +1,8 @@
 ---
-description: "Tasks — Refonte salles Afrolang (streaming direct & code secret)"
+description: "Tasks : Refonte salles Afrolang (streaming direct & code secret)"
 ---
 
-# Tasks: Refonte salles Afrolang — streaming direct & salles privées par code secret
+# Tasks: Refonte salles Afrolang : streaming direct & salles privées par code secret
 
 **Input** : Design documents from `/specs/001-afrolang-salles-refonte/`
 **Prerequisites** : [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md), [data-model.md](./data-model.md), [contracts/salles-privees-public-api.md](./contracts/salles-privees-public-api.md), [quickstart.md](./quickstart.md)
@@ -46,7 +46,7 @@ description: "Tasks — Refonte salles Afrolang (streaming direct & code secret)
 - [X] T004 Réécrire `uafricas_backend/doc/bd/schemas/08b_afrolang.sql` selon [data-model.md](./data-model.md) : retirer `CREATE TABLE afrolang.salle_privee_adhesion`, `afrolang.proposition_salle` ; retirer les `CREATE TYPE` `motif_salle_privee`, `visibilite_salle_privee`, `type_adhesion`, `etat_adhesion`, `etat_proposition` ; modifier `CREATE TABLE afrolang.salle_privee` (retirer `motif`, `declaration_adulte_at`, `visibilite`, `code_acces` ; ajouter `code_acces_hash CHAR(60) NOT NULL`) ; ajouter `CREATE TABLE afrolang.tentative_code_acces` + ses 2 indexes
 - [ ] T005 Réinitialiser la BDD pour appliquer le schéma refondu : `docker compose down -v && docker compose up -d`, attendre ~10 s puis vérifier dans Adminer (`http://localhost:8088`) que `afrolang.salle_privee_adhesion` n'existe plus, que `afrolang.salle_privee` contient `code_acces_hash` et que `afrolang.tentative_code_acces` existe
 
-### Backend — suppression code legacy
+### Backend : suppression code legacy
 
 - [X] T006 [P] Supprimer `uafricas_backend/src/handlers/admin/propositions_afrolang.rs` (création publique = admin uniquement)
 - [X] T007 [P] Supprimer `uafricas_backend/src/models/admin/propositions_afrolang.rs`
@@ -55,20 +55,20 @@ description: "Tasks — Refonte salles Afrolang (streaming direct & code secret)
 - [X] T010 Mettre à jour `uafricas_backend/src/models/admin/salle_privee.rs` : struct `SallePrivee` retire `motif`, `declaration_adulte_at`, `visibilite`, `code_acces` ; ajoute `code_acces_hash: String`
 - [X] T011 Mettre à jour `uafricas_backend/src/routes.rs` pour retirer toutes les routes legacy listées dans [contracts/salles-privees-public-api.md](./contracts/salles-privees-public-api.md) section « Endpoints SUPPRIMÉS » (adhesions, inviter, visibilite, propositions-salle, moderateurs salle privée)
 
-### Backend — utilitaires partagés
+### Backend : utilitaires partagés
 
 - [X] T012 [P] Ajouter dans `uafricas_backend/src/handlers/afrolang.rs` les fonctions helper `hasher_code_acces(code: &str) -> Result<String>` et `verifier_code_acces_plain(code: &str, hash: &str) -> Result<bool>` utilisant `bcrypt` cost 10 (cf. [research.md](./research.md) R3)
 - [X] T013 [P] Ajouter dans `uafricas_backend/src/handlers/afrolang.rs` la fonction `valider_format_code_acces(code: &str) -> Result<()>` appliquant la regex `^[A-Za-z0-9!@#$%&*?-]{4,16}$` (cf. R2)
 
-### Backend — module rate limit
+### Backend : module rate limit
 
 - [X] T014 Créer `uafricas_backend/src/services/afrolang_rate_limit.rs` exposant `est_verrouillee(pool, salle_privee_id, utilisateur_id) -> Result<bool>` (5 échecs / 60 s + dernière < 5 min) et `enregistrer_tentative(pool, salle_privee_id, utilisateur_id, succes, ip, user_agent) -> Result<()>` (cf. R4) ; déclarer le module dans `uafricas_backend/src/services/mod.rs`
 
-### Backend — token d'accès court
+### Backend : token d'accès court
 
 - [X] T015 Étendre `uafricas_backend/src/jwt.rs` (ou créer `uafricas_backend/src/handlers/afrolang_acces_jeton.rs`) avec `creer_acces_jeton(salle_privee_id, utilisateur_id, ttl_secondes) -> String` et `valider_acces_jeton(jeton, salle_privee_id, utilisateur_id) -> Result<()>` (claim `salle_privee_id`, exp 4 h, signature avec `JWT_SECRET` existant)
 
-### Frontend — suppression code legacy
+### Frontend : suppression code legacy
 
 - [X] T016 [P] Supprimer le dossier `uafricas_frontend/app/pages/afrolang/salle-privee/` (FR-006)
 - [X] T017 [P] Supprimer `uafricas_frontend/app/pages/afrolang/proposer.vue`
@@ -86,11 +86,11 @@ description: "Tasks — Refonte salles Afrolang (streaming direct & code secret)
 
 ---
 
-## Phase 3 : User Story 1 — Lancer/rejoindre un livestream public en un clic (Priority: P1) 🎯 MVP
+## Phase 3 : User Story 1 : Lancer/rejoindre un livestream public en un clic (Priority: P1) 🎯 MVP
 
 **Goal** : depuis `/afrolang`, le clic sur « Démarrer / Rejoindre » d'une salle publique entre directement dans la session live LiveKit. La section « Annuaire des groupes ethniques » disparaît.
 
-**Independent Test** : scénario 1 du quickstart — connecté en `user2`, cliquer sur « Démarrer » sur une carte salle publique → entrée directe dans `/afrolang/session/{salleId}` avec LiveKit chargé. Vérifier en parallèle l'absence de la section annuaire dans le DOM de `/afrolang`.
+**Independent Test** : scénario 1 du quickstart, connecté en `user2`, cliquer sur « Démarrer » sur une carte salle publique → entrée directe dans `/afrolang/session/{salleId}` avec LiveKit chargé. Vérifier en parallèle l'absence de la section annuaire dans le DOM de `/afrolang`.
 
 ### Backend US1
 
@@ -104,15 +104,15 @@ description: "Tasks — Refonte salles Afrolang (streaming direct & code secret)
 - [X] T031 [US1] Si la page `uafricas_frontend/app/pages/afrolang/[id].vue` (fiche salle publique) impose un détour avant le live, soit la supprimer, soit y ajouter en `onMounted` `navigateTo(`/afrolang/session/${route.params.id}`, { replace: true })` pour respecter FR-003 (1 navigation max)
 - [X] T032 [US1] Vérifier que `uafricas_frontend/app/pages/afrolang/session/[id].vue` (livestream LiveKit) gère correctement le cas « session non existante → démarrage à la volée par n'importe quel utilisateur connecté » : ajuster l'appel composable pour cibler l'endpoint backend de T027
 
-**Checkpoint US1 livré** : MVP fonctionnel — n'importe qui démarre/rejoint un live public en 1 clic, page d'accueil épurée.
+**Checkpoint US1 livré** : MVP fonctionnel, n'importe qui démarre/rejoint un live public en 1 clic, page d'accueil épurée.
 
 ---
 
-## Phase 4 : User Story 2 — Créer sa salle privée depuis un live en un modale (Priority: P1)
+## Phase 4 : User Story 2 : Créer sa salle privée depuis un live en un modale (Priority: P1)
 
 **Goal** : depuis l'interface de session livestream publique, l'utilisateur ouvre un modale, saisit titre + code secret, valide, et sa salle privée est créée et listée.
 
-**Independent Test** : scénario 2 du quickstart — depuis une session live publique, ouvrir le modale « Créer ma salle privée », saisir titre et code, soumettre, vérifier `POST /api/afrolang/salles-privees → 201` puis présence dans le widget Canal privé.
+**Independent Test** : scénario 2 du quickstart, depuis une session live publique, ouvrir le modale « Créer ma salle privée », saisir titre et code, soumettre, vérifier `POST /api/afrolang/salles-privees → 201` puis présence dans le widget Canal privé.
 
 ### Backend US2
 
@@ -132,11 +132,11 @@ description: "Tasks — Refonte salles Afrolang (streaming direct & code secret)
 
 ---
 
-## Phase 5 : User Story 3 — Accéder à une salle privée par code secret (Priority: P1)
+## Phase 5 : User Story 3 : Accéder à une salle privée par code secret (Priority: P1)
 
 **Goal** : depuis le widget Canal privé sur une carte salle publique, choisir une salle privée, saisir le code secret correct, entrer dans la session live privée. Code incorrect → message clair. Auteur entre sans code.
 
-**Independent Test** : scénarios 4, 5, 6 du quickstart — listing widget, saisie code (correct/incorrect), court-circuit auteur, rate limit après 5 échecs.
+**Independent Test** : scénarios 4, 5, 6 du quickstart, listing widget, saisie code (correct/incorrect), court-circuit auteur, rate limit après 5 échecs.
 
 ### Backend US3
 
@@ -160,17 +160,17 @@ description: "Tasks — Refonte salles Afrolang (streaming direct & code secret)
 
 ---
 
-## Phase 6 : User Story 4 — Créer/ouvrir sa salle privée depuis le widget Canal privé (Priority: P2)
+## Phase 6 : User Story 4 : Créer/ouvrir sa salle privée depuis le widget Canal privé (Priority: P2)
 
 **Goal** : depuis le dropdown Canal privé sur une carte salle publique (sans entrer en live), bouton « Créer ma salle privée » ouvre le même modale qu'en live. Si l'utilisateur en a déjà une, le bouton devient « Ouvrir ma salle privée ».
 
-**Independent Test** : scénario 2 du quickstart adapté — depuis `/afrolang` (sans entrer en session), ouvrir le dropdown, cliquer « Créer ma salle privée », vérifier création ; recharger, vérifier que le bouton bascule vers « Ouvrir ma salle privée ».
+**Independent Test** : scénario 2 du quickstart adapté, depuis `/afrolang` (sans entrer en session), ouvrir le dropdown, cliquer « Créer ma salle privée », vérifier création ; recharger, vérifier que le bouton bascule vers « Ouvrir ma salle privée ».
 
 ### Frontend US4
 
 - [X] T053 [US4] Ajouter dans le widget Canal privé (dropdown existant sur `SalleCard.vue`) un bouton conditionnel : si la liste des salles privées contient une entrée avec `est_auteur=true` → « Ouvrir ma salle privée » (action = même que `SallePriveeCard` auteur de T050) ; sinon « Créer ma salle privée » qui ouvre `SallePriveeCreateModal` avec `salle_id` pré-rempli (FR-008 b, US4 acceptance scenarios 1 & 2)
 - [X] T054 [P] [US4] Sur fermeture réussie de `SallePriveeCreateModal` depuis ce point d'entrée, rafraîchir la liste du widget (`listerSallesPriveesParSallePublique`) pour faire apparaître la salle nouvellement créée et basculer le bouton vers « Ouvrir ma salle privée »
-- [X] T055 [US4] Cohérence visuelle : s'assurer que le widget est bien en Tailwind v4 pur (aucune classe daisyUI `btn`, `card`, `dropdown`, etc.) — Constitution Principe VI
+- [X] T055 [US4] Cohérence visuelle : s'assurer que le widget est bien en Tailwind v4 pur (aucune classe daisyUI `btn`, `card`, `dropdown`, etc.), Constitution Principe VI
 
 **Checkpoint US4 livré** : double point d'entrée création (live + widget) opérationnel.
 
@@ -218,17 +218,17 @@ Phase 2 (Foundational T004→T026)
   └─ T016-T024 [P] entre eux ; T025 dépend de T016-T024 ; T026 indépendant
   ↓
 ┌─────────────────────────┬─────────────────────────┬─────────────────────────┐
-│ Phase 3 — US1 (P1) MVP  │ Phase 4 — US2 (P1)      │ Phase 5 — US3 (P1)      │
+│ Phase 3 : US1 (P1) MVP  │ Phase 4, US2 (P1)      │ Phase 5, US3 (P1)      │
 │ T027→T032               │ T033→T040               │ T041→T052               │
 │ Indépendante            │ Dépend de T012, T013    │ Dépend de T012, T014,   │
 │                         │ (Foundational helpers)  │ T015 (Foundational)     │
 └─────────────────────────┴─────────────────────────┴─────────────────────────┘
   ↓
-Phase 6 — US4 (P2) T053→T055   (dépend de US2 + US3 frontend modales/composables)
+Phase 6 : US4 (P2) T053→T055   (dépend de US2 + US3 frontend modales/composables)
   ↓
-Phase 7 — Endpoints additionnels T056→T060   (peuvent démarrer en parallèle de US3 si T012/T013 ok)
+Phase 7 : Endpoints additionnels T056→T060   (peuvent démarrer en parallèle de US3 si T012/T013 ok)
   ↓
-Phase 8 — Polish T061→T067
+Phase 8 : Polish T061→T067
 ```
 
 ### Story dependencies
@@ -238,9 +238,9 @@ Phase 8 — Polish T061→T067
 
 ### Parallel execution opportunities
 
-**Phase 2 — frontend cleanup** : T016 à T024 peuvent être exécutées en parallèle (suppressions de fichiers indépendants).
+**Phase 2 : frontend cleanup** : T016 à T024 peuvent être exécutées en parallèle (suppressions de fichiers indépendants).
 
-**Phase 2 — backend helpers** : T012 / T013 / T014 / T015 sont [P] entre elles.
+**Phase 2 : backend helpers** : T012 / T013 / T014 / T015 sont [P] entre elles.
 
 **Phase 3 (US1) en parallèle de Phase 4 (US2)** une fois Foundational terminé : les fichiers touchés sont disjoints (T029-T032 frontend US1 vs T037-T040 frontend US2 ; T027-T028 backend US1 vs T033-T036 backend US2).
 
@@ -273,9 +273,9 @@ C'est déjà le cœur de la promesse produit selon la spec (US1 = P1 « cœur de
 ### Risques / points d'attention
 
 - **T005 (reset BDD)** : action destructive locale ; valider que l'environnement Docker n'héberge pas de données utiles avant `down -v`.
-- **T031** : décision à clarifier en cours de route — supprimer `/afrolang/[id].vue` ou la garder en redirecteur. Trancher avant l'implémentation.
+- **T031** : décision à clarifier en cours de route, supprimer `/afrolang/[id].vue` ou la garder en redirecteur. Trancher avant l'implémentation.
 - **T046 (verrou session)** : utiliser `SELECT … FOR UPDATE` pour éviter la création concurrente de 2 sessions live sur la même salle privée.
-- **T049 (mémorisation acces_jeton)** : conserver en mémoire JS (Pinia ou Map du composable) — ne PAS écrire dans `localStorage` (le jeton ne doit pas survivre à la fermeture du navigateur, A2).
+- **T049 (mémorisation acces_jeton)** : conserver en mémoire JS (Pinia ou Map du composable), ne PAS écrire dans `localStorage` (le jeton ne doit pas survivre à la fermeture du navigateur, A2).
 
 ---
 

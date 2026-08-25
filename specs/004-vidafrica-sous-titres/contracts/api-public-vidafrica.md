@@ -1,11 +1,11 @@
-# Contrats API — Public Vidafrica
+# Contrats API : Public Vidafrica
 
 **Base**: `/api/vidafrica`  
 **Auth**: Aucune (endpoints publics)
 
 ## Vidéos
 
-### `GET /videos` — Lister les vidéos publiées (paginé)
+### `GET /videos` : Lister les vidéos publiées (paginé)
 
 Retourne uniquement les vidéos avec `etat = 'publie'`.
 
@@ -42,7 +42,7 @@ Retourne uniquement les vidéos avec `etat = 'publie'`.
 }
 ```
 
-### `GET /videos/{slug}` — Détail d'une vidéo publiée (par slug)
+### `GET /videos/{slug}` : Détail d'une vidéo publiée (par slug)
 
 **Response** : `200 OK`
 ```json
@@ -62,7 +62,7 @@ Retourne uniquement les vidéos avec `etat = 'publie'`.
 }
 ```
 
-### `GET /videos/{video_id}/sous-titres/{langue}` — Récupérer les sous-titres d'une vidéo dans une langue
+### `GET /videos/{video_id}/sous-titres/{langue}`, Récupérer les sous-titres d'une vidéo dans une langue
 
 Retourne tous les segments avec leurs timings mot pour une piste donnée.
 
@@ -92,7 +92,7 @@ Retourne tous les segments avec leurs timings mot pour une piste donnée.
 
 Note : si `mots` est un tableau vide pour un segment, le frontend affiche le segment entier sans effet karaoké.
 
-### `GET /langues-sous-titres` — Lister les langues disponibles
+### `GET /langues-sous-titres` : Lister les langues disponibles
 
 Retourne la liste des langues pour lesquelles au moins une vidéo publiée a une piste de sous-titres.
 

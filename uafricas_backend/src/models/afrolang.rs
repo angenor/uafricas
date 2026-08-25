@@ -4,7 +4,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 // ══════════════════════════════════════════════════════════════════════════
-// Enums (feature 005 — conservés après refonte 001-afrolang-salles-refonte)
+// Enums (feature 005 : conservés après refonte 001-afrolang-salles-refonte)
 // ══════════════════════════════════════════════════════════════════════════
 //
 // Les enums `EtatProposition`, `MotifSallePrivee`, `VisibiliteSallePrivee`,
@@ -462,7 +462,7 @@ pub struct ModerateurAttitreResponse {
 /// Réponse détaillée d'une salle privée (refonte 2026-04).
 ///
 /// Ne contient jamais `code_acces_hash`. Toute salle privée est protégée par
-/// un code secret — le flag `est_protegee` est donc toujours vrai et a été
+/// un code secret : le flag `est_protegee` est donc toujours vrai et a été
 /// supprimé du DTO.
 #[derive(Debug, Serialize)]
 pub struct SallePriveeResponse {
@@ -513,7 +513,7 @@ pub struct SallePriveeDetailResponse {
 ///
 /// Ce DTO n'expose que les champs nécessaires à l'affichage côté front et
 /// permet de signaler si l'utilisateur courant est l'auteur (pour le
-/// court-circuit du code secret — FR-014).
+/// court-circuit du code secret : FR-014).
 #[derive(Debug, Serialize)]
 pub struct SallePriveeAPI {
     pub id: Uuid,
@@ -566,7 +566,7 @@ pub struct SessionDetailResponse {
     pub spotlight: Option<SpotlightInfo>,
     pub permissions_tableau_blanc_count: i64,
     /// Demande de passation de modération en cours (filet de lecture si le
-    /// DataPacket LiveKit `passation_demande` a été perdu — FR temps réel).
+    /// DataPacket LiveKit `passation_demande` a été perdu, FR temps réel).
     /// Non-NULL uniquement pour une session publique avec placeholder présent
     /// et ≥ 1 modérateur attitré présent en attente d'activation.
     pub passation_en_attente: Option<PassationEnAttenteResponse>,
@@ -861,7 +861,7 @@ impl SalleRow {
     }
 
     /// Construit l'info de désactivation administrative pour un appelant non admin
-    /// (le motif reste `None` côté public — voir [`Self::to_desactivation_admin`]).
+    /// (le motif reste `None` côté public : voir [`Self::to_desactivation_admin`]).
     pub fn to_desactivation_public(&self) -> Option<DesactivationAdminInfo> {
         self.desactivee_admin_at
             .map(|desactivee_at| DesactivationAdminInfo {
@@ -1075,7 +1075,7 @@ impl MessageSessionRow {
 // ══════════════════════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════════════════════════
-// Feature 001-admin-salles-publiques — Propositions & administrateurs salle
+// Feature 001-admin-salles-publiques : Propositions & administrateurs salle
 // ══════════════════════════════════════════════════════════════════════════
 
 /// Ligne brute lue de `afrolang.proposition_salle` (avec jointures auteur,
@@ -1480,7 +1480,7 @@ pub enum NiveauModerateur {
     /// Capacités minimales (ni spotlight, ni fermeture pour abus).
     Demarreur,
     /// Co-modérateur promu EN SESSION par un modérateur en place. Capacités
-    /// identiques au démarreur, mais révocable — c'est le seul niveau qu'un
+    /// identiques au démarreur, mais révocable : c'est le seul niveau qu'un
     /// modérateur peut retirer, les autres découlant d'un rôle (admin de salle,
     /// attitré, créateur) qui ne se défait pas depuis une session.
     PromuSession,
@@ -1505,7 +1505,7 @@ impl NiveauModerateur {
 
     /// Rang hiérarchique, du plus fort au plus faible. Sert à empêcher une
     /// guerre de modérateurs : on ne coupe le micro d'un modérateur qu'avec un
-    /// rang STRICTEMENT supérieur — sinon un promu pourrait faire taire l'admin
+    /// rang STRICTEMENT supérieur : sinon un promu pourrait faire taire l'admin
     /// de salle qui vient de le promouvoir.
     pub fn rang(&self) -> u8 {
         match self {

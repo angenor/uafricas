@@ -126,7 +126,7 @@ async fn construire_detail_response(
 // Endpoints
 // ────────────────────────────────────────────────────────────────
 
-/// GET /api/fiches-pays — Liste paginee des fiches pays avec filtres
+/// GET /api/fiches-pays : Liste paginee des fiches pays avec filtres
 pub async fn lister_fiches(
     pool: web::Data<PgPool>,
     params: web::Query<FichePaysQueryParams>,
@@ -136,7 +136,7 @@ pub async fn lister_fiches(
     let par_page = params.par_page.unwrap_or(20).clamp(1, 60);
     let offset = (page - 1) * par_page;
 
-    // Construction dynamique du WHERE — exclut toujours les fiches bloquées
+    // Construction dynamique du WHERE : exclut toujours les fiches bloquées
     let mut conditions: Vec<String> = vec!["fp.bloquee = FALSE".to_string()];
     let mut bind_index = 1u32;
     let mut bind_values: Vec<String> = Vec::new();
@@ -228,7 +228,7 @@ pub async fn lister_fiches(
     }))
 }
 
-/// GET /api/fiches-pays/{id} — Detail d'une fiche pays (par UUID ou code ISO)
+/// GET /api/fiches-pays/{id} : Detail d'une fiche pays (par UUID ou code ISO)
 pub async fn obtenir_fiche(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -268,7 +268,7 @@ pub async fn obtenir_fiche(
     }))
 }
 
-/// GET /api/fiches-pays/regions — Liste des regions disponibles
+/// GET /api/fiches-pays/regions : Liste des regions disponibles
 pub async fn lister_regions(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ApiErreur> {

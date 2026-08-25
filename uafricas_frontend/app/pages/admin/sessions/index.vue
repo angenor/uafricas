@@ -31,7 +31,7 @@ const filterDefs: FilterDefinition[] = [
 ]
 
 const formatDuree = (secondes: number | null) => {
-  if (!secondes) return '—'
+  if (!secondes) return '-'
   const h = Math.floor(secondes / 3600)
   const m = Math.floor((secondes % 3600) / 60)
   if (h > 0) return `${h}h ${m}min`
@@ -44,7 +44,7 @@ const sessionsAvecDisplay = computed(() =>
     titre_display: s.titre || 'Sans titre',
     moderateur_display: s.moderateur_prenom && s.moderateur_nom
       ? `${s.moderateur_prenom} ${s.moderateur_nom}`
-      : '—',
+      : '-',
     duree_display: formatDuree(s.duree_secondes),
   }))
 )
@@ -92,7 +92,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
           'badge-neutral': value === 'terminee',
           'badge-error': value === 'annulee',
         }">
-          {{ value || '—' }}
+          {{ value || '-' }}
         </span>
       </template>
       <template #actions="{ item }">

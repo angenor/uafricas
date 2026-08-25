@@ -1,6 +1,6 @@
 <template>
   <!-- Accordéon de fiche pays. Ouvert, le fond passe au pêche (chocolat à 15 %)
-       — c'est le même signal que l'item de navigation actif, et c'est voulu :
+       c'est le même signal que l'item de navigation actif, et c'est voulu :
        dans les deux cas il marque « vous êtes ici ». -->
   <section
     class="overflow-hidden rounded-[10px] border transition-colors"

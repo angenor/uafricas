@@ -6,7 +6,7 @@ import type {
 } from '~/types/admin'
 
 // L'origine de publication n'est pas une étiquette : elle décide de la page publique
-// sur laquelle la station apparaît — une station relève d'exactement une des deux.
+// sur laquelle la station apparaît : une station relève d'exactement une des deux.
 export type OriginePublicationRadio = 'africans' | 'territoire'
 
 export const ORIGINES_PUBLICATION_RADIO: { valeur: OriginePublicationRadio; libelle: string; page: string; aide: string }[] = [
@@ -14,13 +14,13 @@ export const ORIGINES_PUBLICATION_RADIO: { valeur: OriginePublicationRadio; libe
     valeur: 'africans',
     libelle: 'Radio Africans',
     page: '/medias/radio/africans',
-    aide: 'Production propre de la plateforme — publiée sur la page Radio Africans.',
+    aide: 'Production propre de la plateforme, publiée sur la page Radio Africans.',
   },
   {
     valeur: 'territoire',
     libelle: 'Radio de territoire',
     page: '/medias/radio/nationales',
-    aide: 'Station rattachée à un territoire africain — publiée sur la page Radios nationales.',
+    aide: 'Station rattachée à un territoire africain, publiée sur la page Radios nationales.',
   },
 ]
 

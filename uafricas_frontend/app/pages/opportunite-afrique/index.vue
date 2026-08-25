@@ -10,7 +10,7 @@
         <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
         <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
           <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Afripulse — Promouvons notre Afrique
+            Afripulse : Promouvons notre Afrique
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             Rendre visible pour chaque territoire africain les opportunités touristiques, d'investissement et toute autre opportunité pertinente.

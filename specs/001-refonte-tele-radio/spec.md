@@ -9,7 +9,7 @@
 
 Africans expose aujourd'hui trois pages médias : une page Télé et deux pages Radio (« Africans » et « Nationales »). Elles présentent chaînes ou stations sous forme d'une grille de vignettes filtrable, surmontée d'un lecteur unique. Les deux pages Radio sont identiques à leur filtre près.
 
-Le concept « Télé et radio Africans » vise une expérience différente : un contenu vedette qui s'impose à l'ouverture de la page Télé, puis une découverte **chaîne par chaîne au défilement**, et une plateforme **participative** où les acteurs des médias africains proposent, programment et diffusent des contenus au service de l'union et du développement de l'Afrique — chaque publication étant validée par un administrateur avant diffusion.
+Le concept « Télé et radio Africans » vise une expérience différente : un contenu vedette qui s'impose à l'ouverture de la page Télé, puis une découverte **chaîne par chaîne au défilement**, et une plateforme **participative** où les acteurs des médias africains proposent, programment et diffusent des contenus au service de l'union et du développement de l'Afrique, chaque publication étant validée par un administrateur avant diffusion.
 
 Les deux pages Radio doivent **rester deux pages distinctes**, différenciées par leur périmètre éditorial : leur fusion est explicitement exclue.
 
@@ -18,16 +18,16 @@ Les deux pages Radio doivent **rester deux pages distinctes**, différenciées p
 ### Session 2026-07-19
 
 - Q: Comment traiter les droits de diffusion des contenus soumis par les membres et les organes de presse ? → A: Aucune déclaration de droits n'est demandée au contributeur ; la vérification de la licéité de diffusion incombe à l'administrateur au moment de la validation.
-- Q: Qui est le « détenteur » d'une chaîne ou d'une station — celui qui gère ses contenus, établit sa grille et reçoit les propositions d'idées ? → A: Co-détention : une chaîne ou une station peut compter plusieurs co-détenteurs, chacun pouvant y programmer des contenus.
+- Q: Qui est le « détenteur » d'une chaîne ou d'une station, celui qui gère ses contenus, établit sa grille et reçoit les propositions d'idées ? → A: Co-détention : une chaîne ou une station peut compter plusieurs co-détenteurs, chacun pouvant y programmer des contenus.
 - Q: Un contenu déjà validé et diffusé peut-il être modifié par ses co-détenteurs, et cela déclenche-t-il une revalidation ? → A: Les métadonnées (titre, description, image, thème) sont modifiables immédiatement ; seul le remplacement du fichier média replace le contenu en attente de validation.
 - Q: Les contenus diffusés doivent-ils être hébergés par la plateforme, pointés par un lien externe, ou les deux ? → A: Les deux, sans restriction d'usage : un média externe peut être mis en vedette et programmé au même titre qu'un fichier hébergé.
 - Q: Où vit le lecteur audio sur les pages Radio, et que met-on en tête de page ? → A: Une barre de lecture persistante ancrée en bas de l'écran, visible en permanence ; la tête de page accueille un bandeau d'accroche, sans lecteur.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 — La page Télé : un programme vedette plein écran, puis les chaînes en sections (Priority: P1)
+### User Story 1 : La page Télé : un programme vedette plein écran, puis les chaînes en sections (Priority: P1)
 
-Un visiteur ouvre la page Télé. Un programme vidéo, choisi éditorialement comme vedette de **toute la page**, occupe immédiatement la totalité de l'écran — toute la hauteur et toute la largeur — et commence à jouer. Aucune grille, aucun filtre, aucune statistique ne vient le concurrencer à ce stade. C'est en faisant défiler que le visiteur découvre les chaînes, présentées les unes après les autres, chacune dans **sa propre section** portant son identité et **son propre contenu mis en évidence**. Depuis une section, il peut lancer un autre programme de la chaîne sans quitter la page.
+Un visiteur ouvre la page Télé. Un programme vidéo, choisi éditorialement comme vedette de **toute la page**, occupe immédiatement la totalité de l'écran, toute la hauteur et toute la largeur, et commence à jouer. Aucune grille, aucun filtre, aucune statistique ne vient le concurrencer à ce stade. C'est en faisant défiler que le visiteur découvre les chaînes, présentées les unes après les autres, chacune dans **sa propre section** portant son identité et **son propre contenu mis en évidence**. Depuis une section, il peut lancer un autre programme de la chaîne sans quitter la page.
 
 **Why this priority**: C'est la demande structurante du concept et le premier contact du visiteur avec la Télé Africans. Sans cette bascule d'une grille de vignettes vers une expérience éditorialisée plein écran, le remaniement n'a pas eu lieu. Livrée seule, cette story transforme déjà la page en vitrine immersive.
 
@@ -40,18 +40,18 @@ Un visiteur ouvre la page Télé. Un programme vidéo, choisi éditorialement co
 3. **Given** une section de chaîne affichée, **When** le visiteur la consulte, **Then** elle présente le nom de la chaîne, son territoire et sa catégorie, le contenu mis en évidence pour cette chaîne, et l'accès à ses autres programmes.
 4. **Given** une section de chaîne, **When** le visiteur choisit un autre programme de cette chaîne, **Then** ce programme se lit dans la section sans recharger la page ni faire perdre la position de défilement.
 5. **Given** aucun programme n'est désigné comme vedette générale, **When** le visiteur ouvre la page, **Then** le système met en avant à sa place le programme publié le plus récent, toutes chaînes confondues, sans jamais afficher d'écran vide.
-6. **Given** la vedette démarre automatiquement, **When** le visiteur arrive sur la page, **Then** le son est coupé par défaut et des commandes visibles — activation du son, pause — sont utilisables à la souris comme au clavier dès l'ouverture.
+6. **Given** la vedette démarre automatiquement, **When** le visiteur arrive sur la page, **Then** le son est coupé par défaut et des commandes visibles, activation du son, pause, sont utilisables à la souris comme au clavier dès l'ouverture.
 7. **Given** la vedette occupe tout l'écran, **When** le visiteur cherche la suite du contenu, **Then** un repère visuel lui indique que la page se poursuit vers le bas et permet d'atteindre la première section de chaîne.
 8. **Given** un visiteur sur téléphone, **When** il ouvre la page Télé, **Then** il bénéficie de la même mise en avant plein écran que sur ordinateur, adaptée au format de son écran.
 9. **Given** une chaîne publiée ne possédant aucun programme publié, **When** la page s'affiche, **Then** cette chaîne n'occupe pas de section vide.
 
 ---
 
-### User Story 2 — Les pages Radio Africans et Radio Nationales : les stations en sections, deux pages distinctes (Priority: P1)
+### User Story 2 : Les pages Radio Africans et Radio Nationales : les stations en sections, deux pages distinctes (Priority: P1)
 
 Un auditeur ouvre Radio Africans ou Radio Nationales. Chaque page conserve son adresse, son titre et **son périmètre éditorial propre**, mais toutes deux adoptent la même structure de découverte : **une section par station**, chacune portant l'identité de la station et **son contenu mis en évidence**, avec ses autres contenus accessibles dans la même section. L'écoute se poursuit sans interruption pendant que l'auditeur fait défiler la page ou passe d'une section à l'autre.
 
-**Why this priority**: Les deux pages Radio constituent la moitié du périmètre demandé et souffrent du même défaut que la Télé : une grille indifférenciée sans éditorialisation. Surtout, leur différenciation n'est aujourd'hui pas effective — Radio Africans n'applique aucun filtre et affiche donc aussi les stations nationales. La contrainte de non-fusion étant explicite, la distinction doit devenir réelle dès la première livraison.
+**Why this priority**: Les deux pages Radio constituent la moitié du périmètre demandé et souffrent du même défaut que la Télé : une grille indifférenciée sans éditorialisation. Surtout, leur différenciation n'est aujourd'hui pas effective, Radio Africans n'applique aucun filtre et affiche donc aussi les stations nationales. La contrainte de non-fusion étant explicite, la distinction doit devenir réelle dès la première livraison.
 
 **Independent Test**: Peut être testé en ouvrant chacune des deux pages et en vérifiant qu'elles présentent des ensembles de stations conformes à leur périmètre respectif, sous forme de sections avec contenu mis en évidence, et que la lecture audio survit au défilement et au changement de section.
 
@@ -59,7 +59,7 @@ Un auditeur ouvre Radio Africans ou Radio Nationales. Chaque page conserve son a
 
 1. **Given** des stations et contenus publiés par Africans elle-même, **When** l'auditeur ouvre Radio Africans, **Then** il voit une section par station, chacune présentant l'identité de la station et son contenu mis en évidence.
 2. **Given** des stations rattachées à des territoires africains, **When** l'auditeur ouvre Radio Nationales, **Then** seules ces stations sont présentées, à l'adresse et sous le titre propres à cette page.
-3. **Given** les deux pages livrées, **When** on compare leurs contenus, **Then** aucune station n'apparaît sur les deux : son origine — publication propre de la plateforme ou rattachement à un territoire — tranche seule son rattachement.
+3. **Given** les deux pages livrées, **When** on compare leurs contenus, **Then** aucune station n'apparaît sur les deux : son origine, publication propre de la plateforme ou rattachement à un territoire, tranche seule son rattachement.
 4. **Given** les deux pages livrées, **When** on compare leurs adresses, **Then** elles restent deux pages séparées conservant leurs adresses actuelles, sans redirection de l'une vers l'autre, et restent atteignables depuis le hub Radios.
 5. **Given** un contenu audio en cours d'écoute, **When** l'auditeur fait défiler la page ou ouvre une autre section, **Then** la lecture se poursuit sans coupure et la barre de lecture ancrée en bas d'écran continue d'afficher le contenu écouté et ses commandes.
 6. **Given** une section de station, **When** l'auditeur choisit un autre contenu de cette station, **Then** ce contenu remplace l'écoute en cours sans recharger la page et sans superposition sonore.
@@ -68,7 +68,7 @@ Un auditeur ouvre Radio Africans ou Radio Nationales. Chaque page conserve son a
 
 ---
 
-### User Story 3 — Réagir, commenter et partager un contenu (Priority: P2)
+### User Story 3 : Réagir, commenter et partager un contenu (Priority: P2)
 
 Un membre connecté regarde ou écoute un programme. Sous ce programme, il peut exprimer une réaction, laisser un commentaire lisible par les autres, partager le contenu dans l'espace communautés d'Africans avec une légende de son choix, et le relayer vers les réseaux sociaux externes. Les compteurs de réactions et le fil de commentaires sont visibles de tous, y compris des visiteurs non connectés, qui sont invités à se connecter s'ils tentent de participer.
 
@@ -88,7 +88,7 @@ Un membre connecté regarde ou écoute un programme. Sous ce programme, il peut 
 
 ---
 
-### User Story 4 — Proposer une chaîne ou un contenu en tant que partie prenante, validé par l'administrateur (Priority: P2)
+### User Story 4 : Proposer une chaîne ou un contenu en tant que partie prenante, validé par l'administrateur (Priority: P2)
 
 Un organe de presse, un journaliste, un communicateur, un créateur de contenu, un influenceur, un réalisateur ou un producteur souhaite diffuser sur Africans. Il déclare la chaîne ou la station qu'il représente en précisant **son rôle de partie prenante** (choisi dans une liste, avec une option « Autre » suivie d'un champ de précision), puis soumet ses contenus vidéo ou audio en indiquant **le thème phare** auquel ils se rattachent (liste de référence, également avec « Autre » et précision). Rien n'est diffusé tant qu'un administrateur n'a pas validé la soumission ; le contributeur suit l'avancement de sa demande et reçoit le motif en cas de refus.
 
@@ -103,7 +103,7 @@ Un organe de presse, un journaliste, un communicateur, un créateur de contenu, 
 3. **Given** une chaîne ou un contenu soumis, **When** on consulte les pages publiques Télé et Radio, **Then** la soumission n'y apparaît pas tant qu'elle n'est pas validée.
 4. **Given** une soumission en attente, **When** un administrateur la valide, **Then** elle devient visible publiquement dans la section de sa chaîne ou station.
 5. **Given** une soumission en attente, **When** un administrateur la refuse en indiquant un motif, **Then** le contributeur voit sa soumission refusée accompagnée du motif, et le contenu ne devient jamais public.
-6. **Given** un contributeur, **When** il consulte ses soumissions, **Then** il en voit l'état — en attente, validée, refusée — sans ambiguïté.
+6. **Given** un contributeur, **When** il consulte ses soumissions, **Then** il en voit l'état, en attente, validée, refusée, sans ambiguïté.
 7. **Given** un contenu déjà diffusé, **When** un administrateur le retire de l'antenne, **Then** il disparaît des pages publiques tout en restant consultable et réactivable dans le back-office.
 8. **Given** une soumission de contenu, **When** elle est enregistrée, **Then** son auteur, sa date et l'auteur de la décision de modération sont conservés à des fins de traçabilité.
 9. **Given** un contenu validé et diffusé, **When** un co-détenteur en modifie le titre, la description, l'image ou le thème, **Then** la modification est visible publiquement sans nouvelle validation.
@@ -111,7 +111,7 @@ Un organe de presse, un journaliste, un communicateur, un créateur de contenu, 
 
 ---
 
-### User Story 5 — Programmer des contenus qui se diffusent automatiquement (Priority: P3)
+### User Story 5 : Programmer des contenus qui se diffusent automatiquement (Priority: P3)
 
 L'un des co-détenteurs d'une chaîne ou d'une station dispose de contenus déjà téléversés. Il établit une grille : tel contenu passe tous les jours à telle heure, tel autre chaque semaine à tel jour et telle heure. À l'heure dite, la section de la chaîne ou de la station diffuse automatiquement le contenu prévu, sans intervention humaine. Le visiteur voit ce qui passe « en ce moment » et ce qui suit.
 
@@ -132,13 +132,13 @@ L'un des co-détenteurs d'une chaîne ou d'une station dispose de contenus déj�
 
 ---
 
-### User Story 6 — S'engager : proposer une idée, demander l'animation d'un programme, trouver un réalisateur ou un producteur (Priority: P3)
+### User Story 6 : S'engager : proposer une idée, demander l'animation d'un programme, trouver un réalisateur ou un producteur (Priority: P3)
 
-Un visiteur ou une partie prenante veut peser sur la programmation. Il propose une idée de contenu pour une chaîne ou un programme donné. Une chaîne ou un individu — journaliste, communicateur, créateur, influenceur, réalisateur, producteur — demande l'acquisition et l'animation d'un programme existant. Un porteur de projet recherche des réalisateurs ou des producteurs pour de nouveaux contenus et les contacte.
+Un visiteur ou une partie prenante veut peser sur la programmation. Il propose une idée de contenu pour une chaîne ou un programme donné. Une chaîne ou un individu : journaliste, communicateur, créateur, influenceur, réalisateur, producteur, demande l'acquisition et l'animation d'un programme existant. Un porteur de projet recherche des réalisateurs ou des producteurs pour de nouveaux contenus et les contacte.
 
 **Why this priority**: L'engagement des parties prenantes et des citoyens africains enrichit fortement le dispositif, mais il n'a d'objet qu'une fois les chaînes, les contenus et la communauté en place.
 
-**Independent Test**: Peut être testé en déposant une idée de contenu sur une chaîne, en soumettant une demande d'animation de programme, et en recherchant un réalisateur puis en le contactant — chacune de ces actions devant aboutir à une trace consultable par son destinataire.
+**Independent Test**: Peut être testé en déposant une idée de contenu sur une chaîne, en soumettant une demande d'animation de programme, et en recherchant un réalisateur puis en le contactant, chacune de ces actions devant aboutir à une trace consultable par son destinataire.
 
 **Acceptance Scenarios**:
 
@@ -150,7 +150,7 @@ Un visiteur ou une partie prenante veut peser sur la programmation. Il propose u
 
 ---
 
-### User Story 7 — Signaler un contenu contraire aux règles (Priority: P3)
+### User Story 7 : Signaler un contenu contraire aux règles (Priority: P3)
 
 Tout visiteur connecté peut signaler un contenu qui promeut la violence, le racisme, la discrimination, la mauvaise gouvernance ou la corruption. Les règles de contenu sont énoncées clairement sur les pages. Au-delà d'un seuil de signalements distincts, le contenu est automatiquement retiré de l'antenne publique en attendant l'arbitrage d'un administrateur, qui peut le rétablir ou le supprimer définitivement.
 
@@ -174,7 +174,7 @@ Tout visiteur connecté peut signaler un contenu qui promeut la violence, le rac
 - **Aucune chaîne ni station publiée** : la page ne doit ni rester blanche ni afficher un lecteur vide, mais expliquer la situation.
 - **Chaîne ou station sans contenu mis en évidence désigné** : le système en choisit un selon une règle déterministe plutôt que de laisser la section muette.
 - **Contenu sans fichier média exploitable** : un programme dont le fichier vidéo ou audio est absent ou illisible ne doit jamais être proposé publiquement.
-- **Média externe défaillant** : un contenu hébergé chez un tiers dont le lecteur refuse la lecture automatique, devient indisponible ou est retiré à la source doit basculer sur un repli explicite, sans lecteur en erreur ni section muette — y compris lorsqu'il est vedette ou programmé.
+- **Média externe défaillant** : un contenu hébergé chez un tiers dont le lecteur refuse la lecture automatique, devient indisponible ou est retiré à la source doit basculer sur un repli explicite, sans lecteur en erreur ni section muette, y compris lorsqu'il est vedette ou programmé.
 - **Volumétrie élevée** : une page comportant plusieurs dizaines de chaînes ou de stations doit rester fluide au défilement et ne pas précharger simultanément tous les médias.
 - **Connexion lente ou forfait de données limité** : la lecture automatique plein écran ne doit pas consommer inutilement de données avant que le visiteur n'ait manifesté son intérêt.
 - **Accessibilité** : un média qui démarre seul doit être arrêtable ; la navigation entre sections et le pilotage de la lecture doivent être possibles au clavier et compréhensibles par un lecteur d'écran.
@@ -194,13 +194,13 @@ Tout visiteur connecté peut signaler un contenu qui promeut la violence, le rac
 
 ### Functional Requirements
 
-#### Page Télé — mise en avant générale et sections (US1)
+#### Page Télé : mise en avant générale et sections (US1)
 
 - **FR-001**: Le système DOIT permettre de désigner **un** programme vidéo comme vedette générale de la page Télé, indépendamment des mises en avant propres à chaque chaîne.
 - **FR-002**: La page Télé DOIT afficher la vedette générale à l'ouverture sur la totalité de la hauteur et de la largeur de la fenêtre, avant tout autre contenu.
 - **FR-003**: La vedette générale DOIT démarrer sa lecture sans action du visiteur, son coupé par défaut, et offrir dès l'ouverture des commandes visibles d'activation du son et de pause, utilisables à la souris et au clavier.
 - **FR-004**: La page Télé DOIT révéler les chaînes au défilement, à raison d'**une section par chaîne**, dans un ordre stable entre deux visites.
-- **FR-005**: Chaque section de chaîne DOIT présenter l'identité de la chaîne — nom, description, territoire, catégorie — et **un contenu mis en évidence propre à cette chaîne**, selon la forme définie en FR-022.
+- **FR-005**: Chaque section de chaîne DOIT présenter l'identité de la chaîne, nom, description, territoire, catégorie, et **un contenu mis en évidence propre à cette chaîne**, selon la forme définie en FR-022.
 - **FR-006**: Chaque section de chaîne DOIT donner accès aux autres programmes publiés de cette chaîne et permettre d'en lancer un sans recharger la page ni perdre la position de défilement.
 - **FR-007**: En l'absence de vedette générale désignée, le système DOIT mettre en avant le programme publié le plus récent, toutes chaînes confondues.
 - **FR-008**: Le système NE DOIT PAS créer de section pour une chaîne dépourvue de programme publié.
@@ -208,11 +208,11 @@ Tout visiteur connecté peut signaler un contenu qui promeut la violence, le rac
 - **FR-010**: Le système DOIT retirer de la page Télé le contenu vedette codé en dur actuellement en place, la mise en avant devenant pilotable depuis le back-office.
 - **FR-011**: La mise en avant plein écran DOIT être servie aussi bien sur téléphone que sur ordinateur, adaptée au format de l'écran ; le comportement actuel qui prive les visiteurs mobiles de tout contenu vedette DOIT cesser.
 
-#### Pages Radio — sections et distinction des deux pages (US2)
+#### Pages Radio : sections et distinction des deux pages (US2)
 
 - **FR-012**: Les pages Radio Africans et Radio Nationales DOIVENT rester **deux pages distinctes**, conserver leurs adresses actuelles et leurs titres propres, rester atteignables depuis le hub Radios ; aucune fusion ni redirection de l'une vers l'autre n'est autorisée.
 - **FR-013**: Chaque page Radio DOIT présenter les stations de son périmètre éditorial à raison d'**une section par station**, chaque section portant l'identité de la station et **son contenu mis en évidence**. Elle DOIT être coiffée d'un bandeau d'accroche portant son identité éditoriale propre, sans lecteur en tête de page.
-- **FR-014**: La répartition entre les deux pages Radio DOIT suivre l'**origine de la publication** : **Radio Africans** ne présente que les stations et contenus publiés par Africans elle-même — production propre de la plateforme, relevant d'une décision éditoriale de ses créateurs ; **Radio Nationales** ne présente que les stations et contenus rattachés à un territoire africain. Une station relève d'une seule des deux pages et NE DOIT PAS apparaître sur les deux.
+- **FR-014**: La répartition entre les deux pages Radio DOIT suivre l'**origine de la publication** : **Radio Africans** ne présente que les stations et contenus publiés par Africans elle-même, production propre de la plateforme, relevant d'une décision éditoriale de ses créateurs ; **Radio Nationales** ne présente que les stations et contenus rattachés à un territoire africain. Une station relève d'une seule des deux pages et NE DOIT PAS apparaître sur les deux.
 - **FR-015**: Chaque section de station DOIT donner accès aux autres contenus publiés de cette station et permettre d'en lancer un sans recharger la page.
 - **FR-016**: Une station disposant d'un flux en direct DOIT rester écoutable en direct, celui-ci étant proposé dans sa section au même titre que ses contenus enregistrés.
 - **FR-017**: La lecture audio DOIT se poursuivre sans coupure lorsque l'auditeur fait défiler la page ou change de section. Une **barre de lecture persistante ancrée en bas de l'écran** DOIT rester visible en permanence dès qu'une écoute est en cours et présenter le contenu écouté, sa station et les commandes de lecture, de pause et de volume.
@@ -236,9 +236,9 @@ Tout visiteur connecté peut signaler un contenu qui promeut la violence, le rac
 - **FR-029**: Le système DOIT proposer, à la déclaration d'une chaîne ou d'une station, un **rôle de partie prenante** choisi dans la liste de référence, assorti d'une option « Autre » ouvrant un champ de précision obligatoire.
 - **FR-030**: Le système DOIT proposer, à la soumission d'un contenu, un **thème phare** choisi dans la liste de référence, assorti d'une option « Autre » ouvrant un champ de précision obligatoire.
 - **FR-031**: Toute chaîne, station ou contenu soumis DOIT rester invisible du public tant qu'un administrateur ne l'a pas validé.
-- **FR-032**: Le système NE DOIT PAS permettre la publication publique directe d'une chaîne, d'une station ou d'un contenu sans passage par la validation administrative. Après validation, les co-détenteurs DOIVENT pouvoir modifier librement les métadonnées d'un contenu — titre, description, image, thème phare — sans nouvelle validation ; en revanche, le remplacement de son fichier vidéo ou audio DOIT replacer le contenu en attente de validation.
-- **FR-033**: Un administrateur DOIT pouvoir valider ou refuser une soumission en motivant son refus, et retirer de l'antenne un contenu déjà diffusé sans le supprimer. Aucune déclaration de droits n'étant demandée au contributeur, l'examen de la licéité de diffusion — droits d'auteur, autorisation de rediffusion — incombe à l'administrateur au moment de cette validation.
-- **FR-034**: Un contributeur DOIT pouvoir consulter l'état de ses soumissions — en attente, validée, refusée — et le motif d'un refus.
+- **FR-032**: Le système NE DOIT PAS permettre la publication publique directe d'une chaîne, d'une station ou d'un contenu sans passage par la validation administrative. Après validation, les co-détenteurs DOIVENT pouvoir modifier librement les métadonnées d'un contenu, titre, description, image, thème phare, sans nouvelle validation ; en revanche, le remplacement de son fichier vidéo ou audio DOIT replacer le contenu en attente de validation.
+- **FR-033**: Un administrateur DOIT pouvoir valider ou refuser une soumission en motivant son refus, et retirer de l'antenne un contenu déjà diffusé sans le supprimer. Aucune déclaration de droits n'étant demandée au contributeur, l'examen de la licéité de diffusion, droits d'auteur, autorisation de rediffusion, incombe à l'administrateur au moment de cette validation.
+- **FR-034**: Un contributeur DOIT pouvoir consulter l'état de ses soumissions, en attente, validée, refusée, et le motif d'un refus.
 - **FR-035**: Le système DOIT conserver, pour chaque soumission, son auteur, sa date et l'auteur de la décision de modération.
 - **FR-036**: Tout membre connecté DOIT pouvoir soumettre une chaîne, une station ou un contenu sans accréditation préalable, la maîtrise reposant intégralement sur la validation administrative exigée en FR-031 et FR-032. Ces soumissions portent sur des chaînes, stations et contenus rattachés à un territoire : la publication sous la bannière Radio Africans reste une décision éditoriale de la plateforme (FR-014).
 
@@ -272,16 +272,16 @@ Tout visiteur connecté peut signaler un contenu qui promeut la violence, le rac
 - **FR-053**: Les commandes de lecture, la navigation entre sections et les actions communautaires DOIVENT être accessibles au clavier et compréhensibles par un lecteur d'écran.
 - **FR-054**: Une page comportant plusieurs dizaines de chaînes ou de stations NE DOIT PAS précharger simultanément l'ensemble des médias.
 - **FR-055**: Toute décision de modération, de validation ou de retrait, ainsi que toute modification de grille de programmation ou de la liste des co-détenteurs, DOIT être tracée avec son auteur, sa date et l'objet concerné.
-- **FR-056**: Un contenu DOIT pouvoir être indifféremment téléversé sur la plateforme ou désigné par un lien vers un hébergement externe, **sans restriction d'usage** : les deux formes peuvent être mises en vedette et programmées en grille. Lorsque le média provient d'un hébergement externe, le système DOIT appliquer le comportement attendu — lecture automatique, son coupé, démarrage à l'échéance — dans la limite de ce que permet le lecteur tiers, et présenter un repli explicite lorsque celui-ci refuse la lecture ou devient indisponible.
+- **FR-056**: Un contenu DOIT pouvoir être indifféremment téléversé sur la plateforme ou désigné par un lien vers un hébergement externe, **sans restriction d'usage** : les deux formes peuvent être mises en vedette et programmées en grille. Lorsque le média provient d'un hébergement externe, le système DOIT appliquer le comportement attendu, lecture automatique, son coupé, démarrage à l'échéance, dans la limite de ce que permet le lecteur tiers, et présenter un repli explicite lorsque celui-ci refuse la lecture ou devient indisponible.
 
 ### Key Entities
 
 - **Chaîne (télé)** : entité éditoriale regroupant des programmes vidéo. Porte un nom, une description, un territoire, une catégorie, une langue, un rôle de partie prenante déclaré, un état de publication et un contenu mis en évidence.
 - **Station (radio)** : équivalent radio de la chaîne, rattachée à un périmètre éditorial qui détermine la page sur laquelle elle apparaît. Porte également un contenu mis en évidence, et éventuellement un flux en direct.
-- **Programme (contenu)** : unité diffusable, vidéo pour la télé ou audio pour la radio. Porte un titre, une description, une image, un média, un thème phare, un rattachement à une chaîne ou une station, l'identité de son contributeur et un état de publication — en attente, validé, refusé, retiré. Le remplacement de son média le ramène en attente.
-- **Mise en avant** : désignation éditoriale d'un contenu. Deux portées coexistent — **la vedette générale**, unique pour toute la page Télé, et **la mise en évidence par chaîne ou station**, unique au sein de chacune.
+- **Programme (contenu)** : unité diffusable, vidéo pour la télé ou audio pour la radio. Porte un titre, une description, une image, un média, un thème phare, un rattachement à une chaîne ou une station, l'identité de son contributeur et un état de publication, en attente, validé, refusé, retiré. Le remplacement de son média le ramène en attente.
+- **Mise en avant** : désignation éditoriale d'un contenu. Deux portées coexistent : **la vedette générale**, unique pour toute la page Télé, et **la mise en évidence par chaîne ou station**, unique au sein de chacune.
 - **Rôle de partie prenante** : qualité déclarée du porteur d'une chaîne ou d'une station. Valeurs de référence : chaîne de télé africaine, radio africaine, journaliste, communicateur, créateur de contenu, influenceur, réalisateur, producteur, **Autre** (avec précision obligatoire). Le visiteur constitue une partie prenante du dispositif sans être porteur de chaîne : il suit les contenus et propose des sujets.
-- **Thème phare (émission)** : sujet éditorial d'un contenu, choisi dans une liste de référence assortie d'une option **Autre** avec précision. Valeurs de référence : Retour des cerveaux ; Histoire de l'Afrique ; Valeurs africaines et développement ; Journal de l'Afrique ; Haro sur les hommes de l'Afrique ; L'intellectuel africain et développement ; Afrique et technologies ; Savoirs faire d'Afrique ; Cuisine de chez nous ; Politique africaine ; De la thèse à l'action locale ; La voix du terrain en Afrique ; Débats africains ; Mystères africains ; Droit africain ; Environnement d'Afrique ; Regards de la jeunesse africaine ; Femmes d'Afrique ; Gouvernance d'Afrique aux défis ; Infrastructures d'Afrique ; Santé et développement ; Numérique et développement africain ; Traditions d'Afrique ; Mondialisation et coopération africaine ; Commerce africain et unité africaine ; Développement durable ; Le monde de demain et mondialisation ; Immigration et l'avenir de l'Afrique ; Sports d'Afrique ; Rendez-vous des hauts et des bas ; Éducation — Les carrés de l'instruction en Afrique ; Éducation — Les carrés de l'école de la vie ; Éducation — Les carrés de l'éducation à l'africaine ; L'Afrique que nous voulons ; Messages aux gouvernants ; Cinéma africain ; Séries d'Afrique ; Documentaires africains ; Safari d'Afrique ; Futurs génies d'Afrique ; Innovations simples chez nous ; Complexes d'Afrique ; Afrique Société ; Afrique Solidarité.
+- **Thème phare (émission)** : sujet éditorial d'un contenu, choisi dans une liste de référence assortie d'une option **Autre** avec précision. Valeurs de référence : Retour des cerveaux ; Histoire de l'Afrique ; Valeurs africaines et développement ; Journal de l'Afrique ; Haro sur les hommes de l'Afrique ; L'intellectuel africain et développement ; Afrique et technologies ; Savoirs faire d'Afrique ; Cuisine de chez nous ; Politique africaine ; De la thèse à l'action locale ; La voix du terrain en Afrique ; Débats africains ; Mystères africains ; Droit africain ; Environnement d'Afrique ; Regards de la jeunesse africaine ; Femmes d'Afrique ; Gouvernance d'Afrique aux défis ; Infrastructures d'Afrique ; Santé et développement ; Numérique et développement africain ; Traditions d'Afrique ; Mondialisation et coopération africaine ; Commerce africain et unité africaine ; Développement durable ; Le monde de demain et mondialisation ; Immigration et l'avenir de l'Afrique ; Sports d'Afrique ; Rendez-vous des hauts et des bas ; Éducation, Les carrés de l'instruction en Afrique ; Éducation, Les carrés de l'école de la vie ; Éducation, Les carrés de l'éducation à l'africaine ; L'Afrique que nous voulons ; Messages aux gouvernants ; Cinéma africain ; Séries d'Afrique ; Documentaires africains ; Safari d'Afrique ; Futurs génies d'Afrique ; Innovations simples chez nous ; Complexes d'Afrique ; Afrique Société ; Afrique Solidarité.
 - **Co-détention** : rattachement d'un membre à une chaîne ou une station, lui ouvrant la gestion de ses contenus, de sa grille et la réception des propositions d'idées. Une chaîne ou une station en compte un ou plusieurs. Le premier co-détenteur est le membre dont la déclaration a été validée ; les suivants entrent par acceptation d'une demande d'animation ou par décision d'un administrateur.
 - **Créneau de programmation** : planification de la diffusion d'un contenu sur une chaîne ou une station, avec une récurrence quotidienne ou hebdomadaire, un jour le cas échéant, un horaire, une durée et l'identité du co-détenteur qui l'a posée.
 - **Interaction communautaire** : réaction, commentaire ou partage émis par un membre sur un contenu. Une seule réaction retenue par membre et par contenu.
@@ -308,8 +308,8 @@ Tout visiteur connecté peut signaler un contenu qui promeut la violence, le rac
 
 ## Hypothèses
 
-- **H-001**: Le MVP correspond aux deux stories P1 — la page Télé et les deux pages Radio remaniées. Chaque story ultérieure est livrable indépendamment et apporte de la valeur seule.
-- **H-002**: Les pages Télé et Radio restent consultables sans connexion ; seules les actions de participation — réagir, commenter, partager, proposer, signaler — exigent un compte.
+- **H-001**: Le MVP correspond aux deux stories P1, la page Télé et les deux pages Radio remaniées. Chaque story ultérieure est livrable indépendamment et apporte de la valeur seule.
+- **H-002**: Les pages Télé et Radio restent consultables sans connexion ; seules les actions de participation, réagir, commenter, partager, proposer, signaler, exigent un compte.
 - **H-003**: L'« espace communautés » désigne l'espace de publications déjà existant sur la plateforme ; les partages de contenus télé et radio s'y ajoutent aux sources déjà présentes plutôt que de constituer un espace nouveau.
 - **H-004**: Les mécanismes de réaction, de partage, de signalement avec seuil et de contribution modérée déjà éprouvés ailleurs sur la plateforme servent de référence de comportement, pour la cohérence de l'expérience.
 - **H-005**: La déclaration d'une chaîne ou d'une station reste un acte encadré : elle n'est jamais visible publiquement avant validation, quel que soit l'arbitrage retenu sur le périmètre des contributeurs autorisés.
@@ -323,7 +323,7 @@ Tout visiteur connecté peut signaler un contenu qui promeut la violence, le rac
 
 ## Dépendances
 
-- **D-001**: L'origine de publication qui répartit les stations entre les deux pages Radio — production propre de la plateforme ou rattachement à un territoire — doit être portée de façon fiable par les données et vérifiable de bout en bout. Elle n'est aujourd'hui pas effective : la page Radio Africans n'applique aucun filtre. Les stations déjà enregistrées devront être qualifiées.
+- **D-001**: L'origine de publication qui répartit les stations entre les deux pages Radio, production propre de la plateforme ou rattachement à un territoire, doit être portée de façon fiable par les données et vérifiable de bout en bout. Elle n'est aujourd'hui pas effective : la page Radio Africans n'applique aucun filtre. Les stations déjà enregistrées devront être qualifiées.
 - **D-002**: Les contenus des stations radio doivent être exposés publiquement, ce qui n'est pas le cas aujourd'hui alors que leur équivalent télévision l'est.
 - **D-003**: L'espace de publications communautaires doit pouvoir accueillir une nouvelle source de partage correspondant aux contenus télé et radio.
 - **D-004**: Les profils de réalisateurs et de producteurs recherchés en US6 supposent que cette qualité soit déclarée et exploitable sur les profils membres.

@@ -2,10 +2,10 @@
  * État de lecture média partagé par toute l'application.
  *
  * Deux exigences imposent que cet état vive HORS des composants :
- *   • FR-017 — l'écoute d'une radio survit au défilement ET au changement de
+ *   • FR-017 : l'écoute d'une radio survit au défilement ET au changement de
  *     page. La barre de lecture est montée dans le layout, hors du `<slot/>` ;
  *     l'état qu'elle pilote doit donc être partagé, pas local.
- *   • FR-018 — un seul flux à la fois. Lancer un contenu coupe le précédent,
+ *   • FR-018 : un seul flux à la fois. Lancer un contenu coupe le précédent,
  *     ce qu'un état par composant ne peut pas garantir.
  *
  * `useState` (et non `ref`) : partage l'instance entre tous les appelants et
@@ -17,7 +17,7 @@ export interface ContenuEnLecture {
   id: string
   type: 'episode_radio' | 'episode_tele' | 'station_radio' | 'chaine_tv'
   titre: string
-  /** Chaîne ou station d'origine — affichée dans la barre de lecture (SC-004). */
+  /** Chaîne ou station d'origine : affichée dans la barre de lecture (SC-004). */
   support?: string | null
   supportSlug?: string | null
   url: string
@@ -39,7 +39,7 @@ export const useLecteurMedia = () => {
 
   /**
    * Lance un contenu. S'il joue déjà, bascule simplement lecture/pause plutôt
-   * que de le relancer depuis le début — un clic répété ne doit pas rembobiner.
+   * que de le relancer depuis le début : un clic répété ne doit pas rembobiner.
    */
   const lire = (nouveau: ContenuEnLecture) => {
     if (contenu.value?.id === nouveau.id) {
@@ -63,7 +63,7 @@ export const useLecteurMedia = () => {
     enLecture.value = !enLecture.value
   }
 
-  /** Arrête et vide le lecteur — la barre persistante disparaît alors. */
+  /** Arrête et vide le lecteur : la barre persistante disparaît alors. */
   const arreter = () => {
     enLecture.value = false
     contenu.value = null

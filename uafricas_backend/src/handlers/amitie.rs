@@ -205,10 +205,10 @@ async fn pousser_demande_acceptee(sse: &RegistreSse, pool: &PgPool, dest: Uuid, 
 }
 
 // ════════════════════════════════════════════════════════════════
-// US1 — Envoyer une demande / consulter l'état
+// US1 : Envoyer une demande / consulter l'état
 // ════════════════════════════════════════════════════════════════
 
-/// POST /api/amities/demandes — Envoyer une demande d'amitié (FR-001).
+/// POST /api/amities/demandes : Envoyer une demande d'amitié (FR-001).
 pub async fn creer_demande(
     pool: web::Data<PgPool>,
     sse: web::Data<RegistreSse>,
@@ -385,7 +385,7 @@ pub async fn creer_demande(
     }))
 }
 
-/// GET /api/amities/etat/{utilisateur_id} — État de la relation (FR-016).
+/// GET /api/amities/etat/{utilisateur_id}, État de la relation (FR-016).
 pub async fn etat_relation(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -407,7 +407,7 @@ pub async fn etat_relation(
     }))
 }
 
-/// POST /api/amities/etats — États relationnels en lot pour l'annuaire (FR-016).
+/// POST /api/amities/etats : États relationnels en lot pour l'annuaire (FR-016).
 pub async fn etats_relation_lot(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -436,7 +436,7 @@ pub async fn etats_relation_lot(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US2 — Répondre à une demande / lister / notifications
+// US2 : Répondre à une demande / lister / notifications
 // ════════════════════════════════════════════════════════════════
 
 #[derive(sqlx::FromRow)]
@@ -459,7 +459,7 @@ async fn charger_demande(pool: &PgPool, demande_id: Uuid) -> Result<DemandePourD
     .ok_or_else(|| ApiErreur::NonTrouve("Demande introuvable".to_string()))
 }
 
-/// POST /api/amities/demandes/{id}/accepter — Accepter (FR-007).
+/// POST /api/amities/demandes/{id}/accepter, Accepter (FR-007).
 pub async fn accepter_demande(
     pool: web::Data<PgPool>,
     sse: web::Data<RegistreSse>,
@@ -526,7 +526,7 @@ pub async fn accepter_demande(
     }))
 }
 
-/// POST /api/amities/demandes/{id}/refuser — Refuser (FR-008, pas de notification).
+/// POST /api/amities/demandes/{id}/refuser, Refuser (FR-008, pas de notification).
 pub async fn refuser_demande(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -583,7 +583,7 @@ pub struct PaginationParams {
     pub par_page: Option<i64>,
 }
 
-/// GET /api/amities/demandes/recues — Demandes en attente reçues (US2).
+/// GET /api/amities/demandes/recues : Demandes en attente reçues (US2).
 pub async fn lister_demandes_recues(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -626,7 +626,7 @@ pub async fn lister_demandes_recues(
     }))
 }
 
-/// GET /api/amities/demandes/envoyees — Demandes en attente envoyées (US4 anticipé).
+/// GET /api/amities/demandes/envoyees : Demandes en attente envoyées (US4 anticipé).
 pub async fn lister_demandes_envoyees(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -671,7 +671,7 @@ pub async fn lister_demandes_envoyees(
 
 // ── Notifications relationnelles (FR-017) ────────────────────────
 
-/// GET /api/amities/notifications — Notifications sociales paginées.
+/// GET /api/amities/notifications : Notifications sociales paginées.
 pub async fn lister_notifications(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -709,7 +709,7 @@ pub async fn lister_notifications(
     }))
 }
 
-/// PATCH /api/amities/notifications/{id}/lu — Marquer une notification lue.
+/// PATCH /api/amities/notifications/{id}/lu, Marquer une notification lue.
 pub async fn marquer_notification_lue(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -733,7 +733,7 @@ pub async fn marquer_notification_lue(
     }))
 }
 
-/// PATCH /api/amities/notifications/tout-lu — Tout marquer lu.
+/// PATCH /api/amities/notifications/tout-lu, Tout marquer lu.
 pub async fn marquer_tout_lu(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -755,10 +755,10 @@ pub async fn marquer_tout_lu(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US4 — Gérer ses relations & blocage
+// US4 : Gérer ses relations & blocage
 // ════════════════════════════════════════════════════════════════
 
-/// DELETE /api/amities/demandes/{id} — Annuler une demande émise en attente (FR-010).
+/// DELETE /api/amities/demandes/{id} : Annuler une demande émise en attente (FR-010).
 pub async fn annuler_demande(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -817,7 +817,7 @@ pub struct ListeAmisParams {
     pub recherche: Option<String>,
 }
 
-/// GET /api/amities — Liste des amis de l'utilisateur courant (FR-011, FR-026 — privée).
+/// GET /api/amities : Liste des amis de l'utilisateur courant (FR-011, FR-026, privée).
 pub async fn lister_amis(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -870,7 +870,7 @@ pub async fn lister_amis(
     }))
 }
 
-/// DELETE /api/amities/{utilisateur_id} — Retirer un ami (FR-012).
+/// DELETE /api/amities/{utilisateur_id}, Retirer un ami (FR-012).
 /// La conversation est conservée mais devient verrouillée (FR-025, verrouillage
 /// implicite : `lister_conversations` la marque `verrouillee` dès que l'amitié n'existe plus).
 pub async fn retirer_ami(
@@ -921,7 +921,7 @@ pub async fn retirer_ami(
 
 // ── Blocages (FR-013) ─────────────────────────────────────────────
 
-/// POST /api/blocages — Bloquer un membre (FR-013, R4).
+/// POST /api/blocages : Bloquer un membre (FR-013, R4).
 /// Transaction : crée le blocage, supprime l'amitié, annule les demandes actives
 /// entre les deux membres ; la conversation est de fait verrouillée.
 pub async fn bloquer(
@@ -1003,7 +1003,7 @@ pub async fn bloquer(
     }))
 }
 
-/// DELETE /api/blocages/{utilisateur_id} — Débloquer un membre (FR-013).
+/// DELETE /api/blocages/{utilisateur_id}, Débloquer un membre (FR-013).
 pub async fn debloquer(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -1048,7 +1048,7 @@ pub async fn debloquer(
     }))
 }
 
-/// GET /api/blocages — Liste des membres bloqués par l'utilisateur courant (FR-013).
+/// GET /api/blocages : Liste des membres bloqués par l'utilisateur courant (FR-013).
 pub async fn lister_blocages(
     pool: web::Data<PgPool>,
     req: HttpRequest,

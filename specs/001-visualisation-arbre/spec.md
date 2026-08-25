@@ -3,7 +3,7 @@
 **Feature Branch**: `001-visualisation-arbre`
 **Created**: 2026-03-15
 **Status**: Draft
-**Input**: User description: "Feature 2 — Visualisation et navigation de l'arbre. Affichage graphique de l'arbre de l'utilisateur connecté. Navigation ascendante (ancêtres) et descendante (descendants). Vue centrée sur une personne avec ses liens directs. Responsive pour mobile. À ce stade, chaque utilisateur ne voit que son propre arbre."
+**Input**: User description: "Feature 2, Visualisation et navigation de l'arbre. Affichage graphique de l'arbre de l'utilisateur connecté. Navigation ascendante (ancêtres) et descendante (descendants). Vue centrée sur une personne avec ses liens directs. Responsive pour mobile. À ce stade, chaque utilisateur ne voit que son propre arbre."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -11,7 +11,7 @@
 
 L'utilisateur connecté accède à la page dédiée de visualisation (`/arbre-genealogique/visualisation`) depuis la page index de son arbre, et voit un rendu graphique de l'ensemble de ses personnes et liens familiaux. Chaque personne est représentée par un nœud visuel (photo ou initiales, nom, dates de vie). Les liens familiaux (parent-enfant, conjoint) sont représentés par des connexions visuelles entre les nœuds. L'arbre s'affiche automatiquement centré sur la première personne ajoutée ou sur une personne choisie par défaut.
 
-**Why this priority**: Sans visualisation graphique, la fonctionnalité n'a aucune valeur — c'est le cœur de cette feature. L'utilisateur a déjà une liste (Feature 1) ; ici il obtient enfin une représentation spatiale de sa famille.
+**Why this priority**: Sans visualisation graphique, la fonctionnalité n'a aucune valeur : c'est le cœur de cette feature. L'utilisateur a déjà une liste (Feature 1) ; ici il obtient enfin une représentation spatiale de sa famille.
 
 **Independent Test**: Peut être testé en ajoutant 5-10 personnes avec des liens parent-enfant et conjoint via Feature 1, puis en accédant à la page de visualisation pour vérifier que toutes les personnes et connexions apparaissent correctement.
 
@@ -131,7 +131,7 @@ L'utilisateur peut zoomer et se déplacer librement dans la visualisation de l'a
 - **FR-009**: Le système DOIT supporter les gestes tactiles sur mobile : pincement pour zoomer, glisser pour déplacer, tapotement pour sélectionner.
 - **FR-010**: Le système DOIT afficher un état vide informatif quand l'utilisateur n'a aucune personne dans son arbre, avec une action pour en ajouter une.
 - **FR-011**: Le système DOIT être responsive et utilisable sur les écrans de 320px à 2560px de largeur.
-- **FR-012**: Chaque utilisateur ne DOIT voir que son propre arbre — aucun accès aux arbres d'autres utilisateurs.
+- **FR-012**: Chaque utilisateur ne DOIT voir que son propre arbre, aucun accès aux arbres d'autres utilisateurs.
 - **FR-013**: Le système DOIT proposer un bouton de réinitialisation pour revenir à la vue initiale (zoom et position par défaut).
 - **FR-014**: La transition lors du recentrage sur une personne DOIT être animée de façon fluide pour maintenir le contexte spatial.
 - **FR-015**: Le système DOIT permettre de naviguer depuis la visualisation vers la fiche détail d'une personne (page existante de Feature 1). Un clic sur un nœud ouvre un panneau contextuel (mini-fiche) affichant les informations clés de la personne, avec un bouton « Voir détail » pour naviguer vers la page complète.
@@ -141,7 +141,7 @@ L'utilisateur peut zoomer et se déplacer librement dans la visualisation de l'a
 - **Personne (nœud)** : Représentation visuelle d'un individu dans l'arbre. Attributs affichés : photo/initiales, nom complet, années de vie. Sert de point d'interaction pour la navigation.
 - **Lien familial (arête)** : Connexion visuelle entre deux personnes. Quatre types : père, mère, parent (générique), conjoint. Orientation et style visuels distincts selon le type.
 - **Arbre (conteneur)** : L'ensemble des personnes et liens d'un utilisateur, structuré en générations. Un seul arbre par utilisateur. Sert de périmètre de données pour la visualisation.
-- **Vue (mode d'affichage)** : Trois modes possibles — vue complète (tout l'arbre), vue ascendante (ancêtres d'une personne), vue descendante (descendants d'une personne). Chaque mode filtre les nœuds et arêtes affichés.
+- **Vue (mode d'affichage)** : Trois modes possibles, vue complète (tout l'arbre), vue ascendante (ancêtres d'une personne), vue descendante (descendants d'une personne). Chaque mode filtre les nœuds et arêtes affichés.
 
 ## Assumptions
 
@@ -157,7 +157,7 @@ L'utilisateur peut zoomer et se déplacer librement dans la visualisation de l'a
 ### Session 2026-03-15
 
 - Q: Comment l'utilisateur accède-t-il à la visualisation graphique (remplacement de l'index, nouvelle page dédiée, ou onglet sur l'index) ? → A: Nouvelle page dédiée (`/arbre-genealogique/visualisation`) accessible depuis la page index.
-- Q: Pour les grands arbres (100+ personnes), toutes les générations sont-elles visibles simultanément ou l'affichage est-il progressif ? → A: Progressif par génération — 3 générations autour de la personne centrée, expansion à la demande.
+- Q: Pour les grands arbres (100+ personnes), toutes les générations sont-elles visibles simultanément ou l'affichage est-il progressif ? → A: Progressif par génération : 3 générations autour de la personne centrée, expansion à la demande.
 - Q: Comment distinguer le clic pour recentrer la vue (FR-004) du clic pour naviguer vers la fiche détail (FR-015) ? → A: Un clic ouvre un panneau contextuel (mini-fiche) avec bouton « Voir détail » pour naviguer vers la page complète. Le recentrage se fait simultanément.
 
 ## Success Criteria *(mandatory)*
@@ -167,6 +167,6 @@ L'utilisateur peut zoomer et se déplacer librement dans la visualisation de l'a
 - **SC-001**: L'utilisateur peut identifier visuellement les relations familiales entre toutes les personnes de son arbre en moins de 10 secondes après le chargement.
 - **SC-002**: L'utilisateur peut naviguer de n'importe quelle personne à n'importe quelle autre personne de son arbre en moins de 5 clics/tapotements.
 - **SC-003**: La visualisation se charge et s'affiche de façon interactive en moins de 3 secondes pour un arbre de 50 personnes.
-- **SC-004**: L'utilisateur peut accomplir les actions de zoom, déplacement et recentrage sur mobile aussi facilement que sur desktop — aucune fonctionnalité n'est perdue sur petit écran.
+- **SC-004**: L'utilisateur peut accomplir les actions de zoom, déplacement et recentrage sur mobile aussi facilement que sur desktop, aucune fonctionnalité n'est perdue sur petit écran.
 - **SC-005**: 90% des utilisateurs testés parviennent à trouver les ancêtres d'une personne donnée sans aide ni instruction préalable.
 - **SC-006**: Le basculement entre les modes de vue (complète, ascendante, descendante) se fait en moins de 1 seconde.

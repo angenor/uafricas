@@ -1,15 +1,15 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Handlers — Matching inter-arbres et découvertes
+// Handlers : Matching inter-arbres et découvertes
 // ════════════════════════════════════════════════════════════════════════════
 //
 // Endpoints :
-//   GET    /api/arbre/decouvertes                          — lister_decouvertes
-//   POST   /api/arbre/decouvertes/{id}/confirmer           — confirmer_suggestion
-//   POST   /api/arbre/decouvertes/{id}/rejeter             — rejeter_suggestion
-//   GET    /api/arbre/decouvertes/{id}/branches            — obtenir_branches
-//   POST   /api/arbre/decouvertes/{id}/demande-contact     — demander_contact
-//   POST   /api/arbre/demandes-contact/{id}/accepter       — accepter_demande
-//   POST   /api/arbre/demandes-contact/{id}/refuser        — refuser_demande
+//   GET    /api/arbre/decouvertes : lister_decouvertes
+//   POST   /api/arbre/decouvertes/{id}/confirmer, confirmer_suggestion
+//   POST   /api/arbre/decouvertes/{id}/rejeter, rejeter_suggestion
+//   GET    /api/arbre/decouvertes/{id}/branches, obtenir_branches
+//   POST   /api/arbre/decouvertes/{id}/demande-contact, demander_contact
+//   POST   /api/arbre/demandes-contact/{id}/accepter, accepter_demande
+//   POST   /api/arbre/demandes-contact/{id}/refuser, refuser_demande
 // ════════════════════════════════════════════════════════════════════════════
 
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -157,7 +157,7 @@ pub async fn lister_decouvertes(
                     naissance_lieu: row.a_naissance_lieu,
                     genre: row.a_genre,
                 },
-                row.b_utilisateur_id, // simplifié — en réalité il faut l'user de l'autre arbre
+                row.b_utilisateur_id, // simplifié, en réalité il faut l'user de l'autre arbre
             )
         };
 

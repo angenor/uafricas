@@ -16,7 +16,7 @@
  * Trois variantes seulement, relevées sur la maquette :
  *  - primaire   : dégradé orange → chocolat, texte blanc
  *  - secondaire : fond blanc, bordure et texte chocolat
- *  - vert       : aplat vert — n'apparaît QUE sur la page publique.
+ *  - vert       : aplat vert : n'apparaît QUE sur la page publique.
  *
  * Le vert reste disponible parce que la page publique l'emploie, mais il porte
  * là-bas un rôle d'action alors qu'il sert de marquage dans l'application.

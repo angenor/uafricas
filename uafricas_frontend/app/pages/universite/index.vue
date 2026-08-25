@@ -13,7 +13,7 @@
             Muniversa
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Institut universitaire pour le développement de l'Afrique — vulgariser des formations de masse sur des enjeux d'intérêt pour le développement et le renforcement de gouvernance en Afrique.
+            Institut universitaire pour le développement de l'Afrique, vulgariser des formations de masse sur des enjeux d'intérêt pour le développement et le renforcement de gouvernance en Afrique.
           </p>
         </div>
 

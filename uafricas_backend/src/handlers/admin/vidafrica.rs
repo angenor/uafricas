@@ -25,7 +25,7 @@ const ETATS_VALIDES: &[&str] = &["brouillon", "publie", "suspendu", "supprime"];
 const ETATS_PISTE_VALIDES: &[&str] = &["brouillon", "publie", "masque"];
 
 // ══════════════════════════════════════════════════════════════
-// VIDÉOS — CRUD
+// VIDÉOS : CRUD
 // ══════════════════════════════════════════════════════════════
 
 /// GET /api/admin/vidafrica/videos
@@ -363,7 +363,7 @@ pub async fn modifier_video(
     let mut bind_values: Vec<String> = Vec::new();
     let mut bind_index: u32 = 1;
     let mut nouvelle_vignette_url: Option<String> = None;
-    // Champs typés (hors builder dynamique String) — appliqués séparément.
+    // Champs typés (hors builder dynamique String), appliqués séparément.
     let mut nouveaux_territoires: Vec<String> = Vec::new();
     let mut territoires_modifies = false;
     let mut nouvelle_decharge: Option<bool> = None;
@@ -710,7 +710,7 @@ pub async fn creer_piste(
 }
 
 /// PATCH /api/admin/vidafrica/pistes/{id}/etat
-/// Valide (publie) ou masque une piste — notamment celles proposées par les membres.
+/// Valide (publie) ou masque une piste, notamment celles proposées par les membres.
 pub async fn changer_etat_piste(
     admin: AdminUtilisateur,
     req: HttpRequest,

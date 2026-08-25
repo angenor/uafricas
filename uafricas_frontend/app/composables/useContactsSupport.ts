@@ -1,5 +1,5 @@
 /**
- * Coordonnées publiques d'un support média (chaîne TV, station radio) — 09p.
+ * Coordonnées publiques d'un support média (chaîne TV, station radio), 09p.
  *
  * Le bloc est servi tel quel par l'API (`contacts`), absent du JSON quand le
  * support n'en publie aucune : côté front, `contacts == null` suffit à décider
@@ -16,7 +16,7 @@ export interface ContactsSupport {
 /**
  * `wa.me` n'accepte qu'une suite de chiffres commençant par l'indicatif pays :
  * espaces, tirets, parenthèses et le « + » font échouer le lien silencieusement
- * — la page WhatsApp s'ouvre alors sur « numéro invalide ».
+ * la page WhatsApp s'ouvre alors sur « numéro invalide ».
  *
  * Le « 00 » initial est retiré au même titre que le « + » : c'est l'autre
  * écriture de l'indicatif international, et la laisser produirait un numéro

@@ -1,5 +1,5 @@
 //! Grille de programmation d'un support média
-//! (feature 001-refonte-tele-radio US5 — migration 09n ; recadrée par 09q, US2).
+//! (feature 001-refonte-tele-radio US5, migration 09n ; recadrée par 09q, US2).
 //!
 //! Endpoints :
 //!   GET    /api/medias/{type_support}/{support_id}/grille      (public + `?vue=detenteur`)
@@ -11,7 +11,7 @@
 //!
 //! **Aucune tâche de fond.** Le créneau courant est résolu à la lecture par
 //! `(NOW() AT TIME ZONE fuseau)`, et l'épisode diffusé par **rotation** depuis
-//! `date_effet` — patron maison de la résolution paresseuse
+//! `date_effet` : patron maison de la résolution paresseuse
 //! (`rendez_vous.rs:184,190`).
 
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -32,7 +32,7 @@ use crate::services::audit;
 use crate::ApiResponse;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Résolution paresseuse et rotation — le cœur d'US2
+// Résolution paresseuse et rotation : le cœur d'US2
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Rang de l'occurrence courante, dans le **référentiel horaire du créneau**.
@@ -56,7 +56,7 @@ const SQL_RANG_OCCURRENCE: &str = "
 ///
 /// La jointure latérale est **intérieure** : une émission sans épisode publié
 /// (`total = 0`) ne produit aucune ligne, ce qui réalise FR-021 sans branche
-/// supplémentaire — rien n'est annoncé plutôt qu'un créneau vide.
+/// supplémentaire : rien n'est annoncé plutôt qu'un créneau vide.
 ///
 /// Le double modulo `((r % t) + t) % t` couvre une `date_effet` postérieure à
 /// aujourd'hui : l'opérateur `%` de PostgreSQL conserve le signe du dividende,
@@ -105,7 +105,7 @@ const SQL_DIFFUSION_EN_COURS: &str = "
      ORDER BY c.heure_debut DESC
      LIMIT 1";
 
-/// Le prochain créneau du jour ; à défaut, le premier de la grille — qui
+/// Le prochain créneau du jour ; à défaut, le premier de la grille, qui
 /// reviendra demain.
 const SQL_CRENEAU_SUIVANT: &str = "
     SELECT {COLONNES}, {CHAMPS}
@@ -197,7 +197,7 @@ pub async fn obtenir_diffusion(
 
 #[derive(Debug, Deserialize)]
 pub struct GrilleQuery {
-    /// `detenteur` remonte aussi les créneaux **en défaut** — ceux dont
+    /// `detenteur` remonte aussi les créneaux **en défaut**, ceux dont
     /// l'émission n'a aucun épisode publié (FR-021, FR-024).
     pub vue: Option<String>,
 }
@@ -240,7 +240,7 @@ pub async fn lister_grille(
     .await?;
 
     // Un détenteur voit la grille entière, y compris ce qui a été retiré de
-    // l'antenne — c'est à lui que l'alerte doit signaler un créneau en défaut.
+    // l'antenne : c'est à lui que l'alerte doit signaler un créneau en défaut.
     let est_detenteur = match crate::handlers::media_social::extraire_utilisateur_id(&req) {
         Some(moi) => garde_detenteur(
             pool.get_ref(),
@@ -283,7 +283,7 @@ pub async fn lister_grille(
 /// Séquence obligatoire (FR-022, edge case « co-détenteurs en concurrence ») :
 ///
 /// 1. `BEGIN`
-/// 2. `SELECT id FROM <support> WHERE id = $1 FOR UPDATE` — verrou sur le
+/// 2. `SELECT id FROM <support> WHERE id = $1 FOR UPDATE`, verrou sur le
 ///    **support parent**, qui sérialise toutes les modifications de sa grille,
 ///    y compris les insertions concurrentes qu'un `FOR UPDATE` sur les créneaux
 ///    existants ne verrouillerait pas
@@ -399,7 +399,7 @@ fn colonne_support(type_support: &str) -> &'static str {
 /// Épisode que la rotation désignera à la prochaine occurrence de ce créneau.
 ///
 /// Requête **hors plage horaire** : contrairement à `diffusion_pour_support`,
-/// elle ne demande pas que l'heure courante tombe dans le créneau — c'est un
+/// elle ne demande pas que l'heure courante tombe dans le créneau : c'est un
 /// aperçu, pas une diffusion.
 async fn episode_actuel_du_creneau(
     pool: &PgPool,
@@ -495,7 +495,7 @@ fn position_utc(
 ///
 /// **Les fuseaux sont pris en compte.** Une comparaison d'heures locales naïves
 /// diverge de `SQL_DIFFUSION_EN_COURS`, qui résout lui le créneau courant par
-/// `NOW() AT TIME ZONE fuseau` — et elle se trompe dans les deux sens.
+/// `NOW() AT TIME ZONE fuseau` : et elle se trompe dans les deux sens.
 async fn chevauchement(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     type_support: &str,
@@ -715,7 +715,7 @@ pub async fn supprimer_creneau(
     }))
 }
 
-/// Support porteur du créneau et instantané de son état — la garde ne peut
+/// Support porteur du créneau et instantané de son état, la garde ne peut
 /// s'exercer qu'après avoir su de quel support il relève.
 async fn charger_contexte(
     pool: &PgPool,
@@ -767,7 +767,7 @@ async fn charger_contexte(
 ///
 /// Calcul **à la lecture**, aucune tâche de fond : pour chaque émission
 /// périodique d'un support détenu, on compare la date du dernier épisode publié
-/// à la cadence déclarée. `episodes_en_attente` évite l'alerte trompeuse — le
+/// à la cadence déclarée. `episodes_en_attente` évite l'alerte trompeuse, le
 /// détenteur a fait sa part, la file de modération n'a pas suivi.
 pub async fn mes_alertes_cadence(
     req: HttpRequest,
@@ -826,7 +826,7 @@ pub async fn mes_alertes_cadence(
                 Some(h) => h,
                 None => continue,
             };
-            // 010 — la période vient de la cadence et n'est plus déduite d'un
+            // 010 : la période vient de la cadence et n'est plus déduite d'un
             // « sinon » à deux branches. Le calcul précédent traitait TOUT ce
             // qui n'était pas quotidien comme hebdomadaire : un programme
             // mensuel aurait été signalé en retard dès le 8ᵉ jour.

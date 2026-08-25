@@ -20,7 +20,7 @@ const { data: detail, pending: chargement } = await useAsyncData(
 
 /**
  * La fiche et ses **programmes** arrivent d'un seul appel : la page déplie le
- * catalogue à deux niveaux — la série, puis ses épisodes — sans second
+ * catalogue à deux niveaux : la série, puis ses épisodes, sans second
  * aller-retour (US1 §3).
  */
 const chaine = computed(() => detail.value?.chaine ?? null)
@@ -57,7 +57,7 @@ const descriptionOg = computed(() =>
 
 useHead(() => {
   if (!chaine.value) return {}
-  const titre = `${chaine.value.name} — Chaîne de télévision — UAfricas`
+  const titre = `${chaine.value.name}, Chaîne de télévision | UAfricas`
   return {
     title: titre,
     meta: [

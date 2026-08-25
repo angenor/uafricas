@@ -61,7 +61,7 @@ const heure = (iso: string): string =>
             <font-awesome-icon icon="fa-solid fa-ban" class="mr-1" />Conversation verrouillée
           </span>
           <template v-else-if="c.dernier_message">{{ c.dernier_message.extrait }}</template>
-          <span v-else class="italic text-gray-400">Aucun message — démarrez la conversation</span>
+          <span v-else class="italic text-gray-400">Aucun message, démarrez la conversation</span>
         </p>
       </div>
     </li>

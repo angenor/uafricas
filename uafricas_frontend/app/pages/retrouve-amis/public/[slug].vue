@@ -14,7 +14,7 @@ const apiBase = import.meta.server
   ? ((config as any).ssrApiBaseUrl || config.public.apiBaseUrl || '')
   : (config.public.apiBaseUrl as string)
 
-// Charger les donnees cote serveur via useFetch (SSR) — endpoint public sans auth
+// Charger les donnees cote serveur via useFetch (SSR), endpoint public sans auth
 const { data, error: fetchError } = await useFetch<{ success: boolean; data: AvisPublicDetail | AvisPublicEtat | null; error: string | null }>(
   `/api/retrouve-amis/public/${slug}`,
   { baseURL: apiBase },
@@ -25,7 +25,7 @@ const estActif = computed(() => avis.value && 'auteur_anonyme' in avis.value)
 const estNonActif = computed(() => avis.value && 'message' in avis.value && !('auteur_anonyme' in avis.value))
 const nonDisponible = computed(() => fetchError.value || !data.value?.success)
 
-// SEO — balises completes (Open Graph + Twitter Card pour apercu riche)
+// SEO : balises completes (Open Graph + Twitter Card pour apercu riche)
 const ogImageDefault = 'https://www.africans-world.org/images/og-retrouve-amis.png'
 const ogImageUrl = computed(() => {
   if (estActif.value) {
@@ -42,9 +42,9 @@ useSeoMeta({
   title: () => {
     if (estActif.value) {
       const a = avis.value as AvisPublicDetail
-      return `Recherche : ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''} — AfricanS`
+      return `Recherche : ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''} | AfricanS`
     }
-    return 'Avis de recherche — AfricanS'
+    return 'Avis de recherche | AfricanS'
   },
   description: () => {
     if (estActif.value) {
@@ -55,14 +55,14 @@ useSeoMeta({
       if (a.ecole) parties.push(a.ecole)
       return `Aidez ${a.auteur_anonyme} a retrouver ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''}${parties.length ? ' (' + parties.join(', ') + ')' : ''}. Partagez cet avis de recherche.`
     }
-    return 'Avis de recherche sur AfricanS — Retrouver des amis perdus de vue.'
+    return 'Avis de recherche sur AfricanS, Retrouver des amis perdus de vue.'
   },
   ogTitle: () => {
     if (estActif.value) {
       const a = avis.value as AvisPublicDetail
       return `Recherche : ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''}`
     }
-    return 'Avis de recherche — AfricanS'
+    return 'Avis de recherche | AfricanS'
   },
   ogDescription: () => {
     if (estActif.value) {
@@ -80,7 +80,7 @@ useSeoMeta({
       const a = avis.value as AvisPublicDetail
       return `Recherche : ${a.nom_recherche}${a.prenom_recherche ? ' ' + a.prenom_recherche : ''}`
     }
-    return 'Avis de recherche — AfricanS'
+    return 'Avis de recherche | AfricanS'
   },
   twitterDescription: () => {
     if (estActif.value) {

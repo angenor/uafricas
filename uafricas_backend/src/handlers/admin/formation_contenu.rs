@@ -140,7 +140,7 @@ async fn recalculer_progression_mooc(pool: &PgPool, mooc_id: Uuid) -> Result<(),
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/admin/mooc/{id}/chapitres — Programme complet
+// GET /api/admin/mooc/{id}/chapitres : Programme complet
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_contenu(
     admin: AdminUtilisateur,
@@ -207,7 +207,7 @@ pub async fn lister_contenu(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/admin/mooc/{id}/chapitres — Créer un chapitre
+// POST /api/admin/mooc/{id}/chapitres, Créer un chapitre
 // ──────────────────────────────────────────────────────────────
 pub async fn creer_chapitre(
     admin: AdminUtilisateur,
@@ -256,7 +256,7 @@ pub async fn creer_chapitre(
 }
 
 // ──────────────────────────────────────────────────────────────
-// PUT /api/admin/chapitres/{chapitre_id} — Modifier un chapitre
+// PUT /api/admin/chapitres/{chapitre_id}, Modifier un chapitre
 // ──────────────────────────────────────────────────────────────
 pub async fn modifier_chapitre(
     admin: AdminUtilisateur,
@@ -295,7 +295,7 @@ pub async fn modifier_chapitre(
 }
 
 // ──────────────────────────────────────────────────────────────
-// DELETE /api/admin/chapitres/{chapitre_id} — Supprimer (soft) un chapitre
+// DELETE /api/admin/chapitres/{chapitre_id}, Supprimer (soft) un chapitre
 // + ses leçons
 // ──────────────────────────────────────────────────────────────
 pub async fn supprimer_chapitre(
@@ -335,7 +335,7 @@ pub async fn supprimer_chapitre(
 }
 
 // ──────────────────────────────────────────────────────────────
-// PUT /api/admin/mooc/{id}/chapitres/reordonner — Réordonner les chapitres
+// PUT /api/admin/mooc/{id}/chapitres/reordonner, Réordonner les chapitres
 // ──────────────────────────────────────────────────────────────
 pub async fn reordonner_chapitres(
     admin: AdminUtilisateur,
@@ -370,7 +370,7 @@ pub async fn reordonner_chapitres(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/admin/chapitres/{chapitre_id}/lecons — Créer une leçon
+// POST /api/admin/chapitres/{chapitre_id}/lecons, Créer une leçon
 // ──────────────────────────────────────────────────────────────
 pub async fn creer_lecon(
     admin: AdminUtilisateur,
@@ -424,7 +424,7 @@ pub async fn creer_lecon(
 }
 
 // ──────────────────────────────────────────────────────────────
-// PUT /api/admin/lecons/{lecon_id} — Modifier (remplacement complet)
+// PUT /api/admin/lecons/{lecon_id} : Modifier (remplacement complet)
 // ──────────────────────────────────────────────────────────────
 pub async fn modifier_lecon(
     admin: AdminUtilisateur,
@@ -467,7 +467,7 @@ pub async fn modifier_lecon(
 }
 
 // ──────────────────────────────────────────────────────────────
-// DELETE /api/admin/lecons/{lecon_id} — Supprimer (soft)
+// DELETE /api/admin/lecons/{lecon_id}, Supprimer (soft)
 // ──────────────────────────────────────────────────────────────
 pub async fn supprimer_lecon(
     admin: AdminUtilisateur,
@@ -534,7 +534,7 @@ pub async fn reordonner_lecons(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/admin/mooc/upload — Téléverser une vidéo ou un PDF de leçon
+// POST /api/admin/mooc/upload : Téléverser une vidéo ou un PDF de leçon
 // Renvoie { url } (chemin relatif /uploads/formations/...)
 // ──────────────────────────────────────────────────────────────
 pub async fn uploader_fichier_formation(

@@ -148,7 +148,7 @@
         >
           <nav aria-label="Sections de mon compte" class="lg:sticky lg:top-28 lg:self-start">
             <!-- Mobile : rangée horizontale, tout est visible d'un coup d'œil
-                 ou d'un glissement — les marges négatives laissent les pilules
+                 ou d'un glissement : les marges négatives laissent les pilules
                  défiler jusqu'aux bords de l'écran. -->
             <div class="lg:hidden -mx-4 px-4 overflow-x-auto">
               <div class="flex w-max gap-2 pb-1">
@@ -931,7 +931,7 @@ const allerAuxSupports = () => {
 
 // ── Sections du compte ──
 // Groupées : dix entrées d'affilée ne se parcourent pas, on les balaie. Le
-// regroupement dit aussi *pourquoi* on chercherait chaque section — réglages du
+// regroupement dit aussi *pourquoi* on chercherait chaque section, réglages du
 // compte, statut d'une candidature, ou ce qu'on anime sur la plateforme.
 interface OngletProfil { id: string, label: string, icon: string }
 

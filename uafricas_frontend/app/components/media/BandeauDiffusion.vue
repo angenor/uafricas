@@ -4,11 +4,11 @@
  *
  * Les deux créneaux sont résolus par le serveur à l'instant de la requête : ce
  * composant n'entretient aucune minuterie et ne recalcule rien. Un support sans
- * grille active ne renvoie ni l'un ni l'autre — le bandeau disparaît alors
+ * grille active ne renvoie ni l'un ni l'autre, le bandeau disparaît alors
  * entièrement et la section retombe sur son contenu mis en évidence (FR-041).
  *
  * Depuis 09q le créneau désigne un **programme** et l'épisode se déduit de la
- * rotation : le bandeau nomme donc les deux. Le lien pointe vers l'épisode —
+ * rotation : le bandeau nomme donc les deux. Le lien pointe vers l'épisode 
  * c'est lui qu'on regarde ; le nom du programme le surmonte pour situer la série.
  */
 import type { CreneauAPI } from '~/composables/useMediaProgrammation'

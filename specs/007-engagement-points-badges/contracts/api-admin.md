@@ -1,8 +1,8 @@
-# Contrat — API back-office
+# Contrat : API back-office
 
 **Feature** : `007-engagement-points-badges`
 Extracteur : `AdminUtilisateur` · Garde : **`verifier_permission!(admin, "engagement", "gerer")`**
-La permission `engagement.gerer` est **déjà seedée** par `35_engagement.sql` et attribuée à `super_admin`. Aucun seed de permission supplémentaire — mais tout autre rôle devant administrer le barème devra la recevoir explicitement (`/admin/roles`), sinon seul `super_admin` (wildcard `all.all`) franchira ces gardes.
+La permission `engagement.gerer` est **déjà seedée** par `35_engagement.sql` et attribuée à `super_admin`. Aucun seed de permission supplémentaire, mais tout autre rôle devant administrer le barème devra la recevoir explicitement (`/admin/roles`), sinon seul `super_admin` (wildcard `all.all`) franchira ces gardes.
 Audit : **`audit::log_action` sur chacune des 15 routes mutantes** (Principe VII), avec état avant/après en JSONB.
 Scope Actix : à la suite des 13 routes existantes du scope `/api/admin`.
 
@@ -36,7 +36,7 @@ Scope Actix : à la suite des 13 routes existantes du scope `/api/admin`.
 
 ---
 
-## 1. `GET /actions-disponibles` (R3) — l'antidote à la règle orpheline
+## 1. `GET /actions-disponibles` (R3) : l'antidote à la règle orpheline
 
 Catalogue **déclaré par le code** (const Rust dans `handlers/admin/engagement.rs`), pas une table :
 
@@ -51,19 +51,19 @@ Catalogue **déclaré par le code** (const Rust dans `handlers/admin/engagement.
 ] }
 ```
 
-L'écran de création propose ce catalogue en premier ; toute règle dont le `type_action` **n'y figure pas** est affichée avec la mention « non instrumentée — aucun point ne sera attribué tant que le code n'émet pas cette action ». La liste des règles renvoie donc aussi, par règle, `instrumentee: bool` et `nombre_mouvements: i64` : une règle active, instrumentée et à 0 mouvement depuis des semaines est un signal de branchement cassé.
+L'écran de création propose ce catalogue en premier ; toute règle dont le `type_action` **n'y figure pas** est affichée avec la mention « non instrumentée, aucun point ne sera attribué tant que le code n'émet pas cette action ». La liste des règles renvoie donc aussi, par règle, `instrumentee: bool` et `nombre_mouvements: i64` : une règle active, instrumentée et à 0 mouvement depuis des semaines est un signal de branchement cassé.
 
 ## 2. Règles de points
 
-**`POST /regles`** — corps : `type_action`, `libelle`, `points`, `reputation_delta`, `plafond_journalier?`, `plafond_mensuel?`, `seuil_declencheur?`, `categorie_id?`, `actif?`.
+**`POST /regles`** : corps : `type_action`, `libelle`, `points`, `reputation_delta`, `plafond_journalier?`, `plafond_mensuel?`, `seuil_declencheur?`, `categorie_id?`, `actif?`.
 
-- `type_action` : trim, `^[a-z0-9_]{3,50}$` (c'est une clé, pas une phrase) ; **409** si déjà pris (FR-003) — message explicite, pas une erreur SQL brute.
+- `type_action` : trim, `^[a-z0-9_]{3,50}$` (c'est une clé, pas une phrase) ; **409** si déjà pris (FR-003), message explicite, pas une erreur SQL brute.
 - `points` peut être négatif (malus).
 - Effet immédiat : la règle est lue à chaque attribution (`charger_regle`), sans cache ni redéploiement (FR-007).
 
-**`PUT /regles/{id}`** — accepte en plus `categorie_id` et `seuil_declencheur`. `type_action` **immuable** (le modifier orphelinerait tous les mouvements passés qui le référencent par chaîne).
+**`PUT /regles/{id}`** : accepte en plus `categorie_id` et `seuil_declencheur`. `type_action` **immuable** (le modifier orphelinerait tous les mouvements passés qui le référencent par chaîne).
 
-**`DELETE /regles/{id}`** — **409** si `EXISTS(SELECT 1 FROM mouvement_points WHERE type_action = …)` (FR-002), avec le message « Cette règle a déjà attribué des points : désactivez-la au lieu de la supprimer ». Sinon suppression réelle (règle créée par erreur, jamais utilisée).
+**`DELETE /regles/{id}`** : **409** si `EXISTS(SELECT 1 FROM mouvement_points WHERE type_action = …)` (FR-002), avec le message « Cette règle a déjà attribué des points : désactivez-la au lieu de la supprimer ». Sinon suppression réelle (règle créée par erreur, jamais utilisée).
 
 > ⚠️ **Piège de paramétrage à documenter dans l'UI** : `plafond_journalier` / `plafond_mensuel` sont exprimés **en points**, pas en nombre d'actions (le moteur compare `SUM(points)`). « 3 bonus de 10 points par jour » = plafond **30**.
 
@@ -82,17 +82,17 @@ L'écran affiche les paliers **groupés par famille**, avec un rappel de la règ
 
 ## 5. Niveaux (FR-006)
 
-**`POST /niveaux`** — `code` (`^[a-z0-9_]{3,30}$`, unique), `libelle`, `seuil_min`, `badge_couleur?`, `badge_icone?`.
-**`PUT /niveaux/{id}`** — `libelle`, `seuil_min`, apparence. `code` immuable (`compte.niveau_code` le référence par valeur).
-**`DELETE /niveaux/{id}`** — **409** si `seuil_min = 0` (niveau plancher) ou s'il ne resterait qu'un niveau.
+**`POST /niveaux`** : `code` (`^[a-z0-9_]{3,30}$`, unique), `libelle`, `seuil_min`, `badge_couleur?`, `badge_icone?`.
+**`PUT /niveaux/{id}`** : `libelle`, `seuil_min`, apparence. `code` immuable (`compte.niveau_code` le référence par valeur).
+**`DELETE /niveaux/{id}`** : **409** si `seuil_min = 0` (niveau plancher) ou s'il ne resterait qu'un niveau.
 
-Les trois routes exécutent, **dans la même transaction**, le recalcul ensembliste de `ordre` (d'après `seuil_min` croissant) **et** de `compte.niveau_code` pour tous les comptes (R5). Réponse : `{ niveaux: [...], comptes_recalcules: 1423 }` — le nombre est affiché à l'administrateur, qui voit ainsi l'effet réel de son geste.
+Les trois routes exécutent, **dans la même transaction**, le recalcul ensembliste de `ordre` (d'après `seuil_min` croissant) **et** de `compte.niveau_code` pour tous les comptes (R5). Réponse : `{ niveaux: [...], comptes_recalcules: 1423 }`, le nombre est affiché à l'administrateur, qui voit ainsi l'effet réel de son geste.
 
 ## 6. Badges (FR-017, FR-019)
 
 **`GET /badges`** : catalogue complet + `nombre_detenteurs` par badge.
 
-**`POST /badges`** / **`PUT /badges/{id}`** — corps :
+**`POST /badges`** / **`PUT /badges/{id}`**, corps :
 
 ```jsonc
 { "code": "batisseur_medias", "libelle": "Bâtisseur de médias",
@@ -105,14 +105,14 @@ Les trois routes exécutent, **dans la même transaction**, le recalcul ensembli
 
 Validation applicative **miroir du CHECK SQL** `ck_badge_condition` (400 avec un message en français plutôt qu'une violation de contrainte remontée telle quelle). `code` immuable après création.
 
-**`DELETE /badges/{id}`** — **409** si des `badge_obtenu` existent (« désactivez-le : les membres qui l'ont obtenu doivent le conserver », FR-020). Sinon suppression réelle.
+**`DELETE /badges/{id}`** : **409** si des `badge_obtenu` existent (« désactivez-le : les membres qui l'ont obtenu doivent le conserver », FR-020). Sinon suppression réelle.
 
-**`POST /badges/{id}/attribuer`** — corps `{ "utilisateur_id": "uuid", "motif": "…" }` :
+**`POST /badges/{id}/attribuer`** : corps `{ "utilisateur_id": "uuid", "motif": "…" }` :
 `INSERT … origine = 'manuel', attribue_par = admin.id … ON CONFLICT DO NOTHING`, notification `engagement.badge_debloque` **si** une ligne a été créée, audit avec le motif.
 
-**`DELETE /badges/{id}/attribuer/{utilisateur_id}`** — retrait, audité. **Aucune** notification (on n'annonce pas un retrait à un membre ; c'est un geste de correction).
+**`DELETE /badges/{id}/attribuer/{utilisateur_id}`**, retrait, audité. **Aucune** notification (on n'annonce pas un retrait à un membre ; c'est un geste de correction).
 
-## 7. Journal global — filtre ajouté
+## 7. Journal global : filtre ajouté
 
 `GET /journal` accepte en plus **`categorie`** (code), aux côtés de `utilisateur_id`, `type_action`, `depuis`, `jusqu_a`, `page`, `taille`. Chaque ligne gagne `categorie_code` / `categorie_libelle` (FR-009).
 
@@ -126,15 +126,15 @@ Validation applicative **miroir du CHECK SQL** `ck_badge_condition` (400 avec un
 | 201 | Création (`POST` de règle, catégorie, niveau, badge) |
 | 400 | Corps invalide : `code`/`type_action` malformé, condition de badge incohérente, réseau inconnu |
 | 401 | JWT absent ou expiré |
-| 403 | Permission `engagement.gerer` manquante — message nommant la permission requise |
+| 403 | Permission `engagement.gerer` manquante, message nommant la permission requise |
 | 404 | Identifiant inexistant |
 | 409 | Doublon (`type_action`, `code`, `(seuil_likes, type_objet)`, `seuil_min`) ou suppression refusée (règle/catégorie/badge/niveau encore utilisés) |
 
-> **Ce que le 403 ne fait pas** : `verifier_permission!` (`middleware/admin.rs:142-150`) renvoie `AccesInterdit` **sans écrire dans la piste d'audit** — l'audit ne consigne que les opérations appliquées. Un refus se constate donc dans les journaux techniques du serveur, pas dans `/admin/audit`. **Ne pas** instrumenter les refus dans la macro pour cette feature : elle est partagée par la totalité des routes d'administration de la plateforme (une centaine), et ce serait un changement transverse hors périmètre.
+> **Ce que le 403 ne fait pas** : `verifier_permission!` (`middleware/admin.rs:142-150`) renvoie `AccesInterdit` **sans écrire dans la piste d'audit**, l'audit ne consigne que les opérations appliquées. Un refus se constate donc dans les journaux techniques du serveur, pas dans `/admin/audit`. **Ne pas** instrumenter les refus dans la macro pour cette feature : elle est partagée par la totalité des routes d'administration de la plateforme (une centaine), et ce serait un changement transverse hors périmètre.
 
 ## Invariants de sécurité
 
-1. Aucune route de ce contrat n'est accessible sans `AdminUtilisateur` **et** `engagement.gerer` — y compris les `GET` (le catalogue des règles révèle la mécanique anti-abus).
+1. Aucune route de ce contrat n'est accessible sans `AdminUtilisateur` **et** `engagement.gerer`, y compris les `GET` (le catalogue des règles révèle la mécanique anti-abus).
 2. Aucune interpolation de valeur utilisateur dans du SQL : les filtres sont des `$n` castés, les noms de table proviennent de `match` sur littéraux.
 3. L'attribution manuelle de badge et l'ajustement de points ne peuvent pas être auto-appliqués silencieusement : `attribue_par` / l'audit conservent l'identité de l'administrateur, y compris s'il se cible lui-même.
-4. Aucune route n'écrit dans `mouvement_points` autrement que par `services::engagement` — pas de crédit « à la main » en SQL depuis un handler.
+4. Aucune route n'écrit dans `mouvement_points` autrement que par `services::engagement`, pas de crédit « à la main » en SQL depuis un handler.

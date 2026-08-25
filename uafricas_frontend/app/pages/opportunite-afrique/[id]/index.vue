@@ -188,7 +188,7 @@
               </div>
             </div>
 
-            <!-- Afripulse — sections enrichies (US1) -->
+            <!-- Afripulse : sections enrichies (US1) -->
             <OpportuniteAfriqueSecteursOpportunitesSection
               :fiche-id="pays.id"
               :est-authentifie="userStore.isAuthenticated"
@@ -414,7 +414,7 @@ interface LegacyFieldContext {
 
 const idFiche = route.params.id as string
 
-// Chargement côté serveur (SSR) — indispensable pour que les balises Open Graph
+// Chargement côté serveur (SSR) : indispensable pour que les balises Open Graph
 // soient présentes dans le HTML lu par les robots des réseaux sociaux (aperçu de partage).
 const { data: ficheChargee } = await useAsyncData(
   `fiche-pays-${idFiche}`,
@@ -433,7 +433,7 @@ const imageOg = computed(() => {
 const descriptionOg = computed(() =>
   pays.value
     ? `Découvrez ${pays.value.nom} : capitale ${pays.value.capitale}, population ${pays.value.population}, culture, langues et opportunités sur AfricanS.`
-    : 'Opportunités en Afrique — AfricanS',
+    : 'Opportunités en Afrique | AfricanS',
 )
 
 useHead(() => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Liste des supports (chaînes et stations) que je détiens, et leur gestion —
+ * Liste des supports (chaînes et stations) que je détiens, et leur gestion 
  * grille de programmation, demandes reçues, équipe (US5, US6).
  *
  * Extrait de la page `/mon-compte/mes-supports` pour être également monté en
@@ -43,7 +43,7 @@ const gestionOuverte = ref<string | null>(null)
  * de la grille.
  *
  * Chargés à l'ouverture du panneau et mémorisés : sans eux le sélecteur reste
- * vide et aucun créneau n'est créable — la grille n'a alors rien à programmer.
+ * vide et aucun créneau n'est créable, la grille n'a alors rien à programmer.
  * Ce sont **tous** les programmes du détenteur, brouillons compris : ne montrer
  * que les publiés lui cacherait ce qu'il vient de créer.
  * Clé : l'identifiant du support.
@@ -102,7 +102,7 @@ const charger = async () => {
  * C'est ce que visent les passerelles venues des vitrines publiques (« Gérer ma
  * chaîne » dans une section de `/medias/tele`) : sans cela le détenteur
  * atterrit sur une liste refermée et doit y retrouver le support qu'il vient de
- * quitter. Un identifiant inconnu — support retiré entre-temps, lien recopié —
+ * quitter. Un identifiant inconnu : support retiré entre-temps, lien recopié 
  * est simplement ignoré.
  */
 const route = useRoute()
@@ -199,7 +199,7 @@ const alertesDuSupport = (supportId: string) =>
   alertes.value.filter(a => a.support.id === supportId)
 
 const dateCourte = (iso: string | null) =>
-  iso ? new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(new Date(iso)) : '—' 
+  iso ? new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(new Date(iso)) : '-' 
 
 const LIBELLES_TYPE_SUPPORT: Record<DetenteurAPI['type_support'], string> = {
   chaine_tv: 'Chaîne de télévision',
@@ -237,7 +237,7 @@ const dateFormatee = (iso: string) =>
       <p class="text-gray-600 mb-1">Vous ne détenez aucun support pour l’instant.</p>
       <p class="text-sm text-gray-400 max-w-md mx-auto">
         On devient détenteur en faisant valider une proposition de chaîne ou de
-        station — vous en êtes alors le propriétaire — ou en acceptant
+        station : vous en êtes alors le propriétaire, ou en acceptant
         l’invitation d’un propriétaire.
       </p>
       <div class="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm">
@@ -526,7 +526,7 @@ const dateFormatee = (iso: string) =>
             />
           </section>
 
-          <!-- Anciennement « Équipe du support » — renommé par la feature 010 :
+          <!-- Anciennement « Équipe du support » : renommé par la feature 010 :
                ce panneau ne décrit personne, il ouvre des accès. Deux blocs
                « équipe » sans rapport dans la même page étaient une invitation
                à se tromper de formulaire. -->

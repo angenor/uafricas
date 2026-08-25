@@ -4,7 +4,7 @@
  *
  * La messagerie n'autorise normalement l'envoi qu'entre membres amis : seul
  * l'endpoint métier `POST /api/medias/{type}/{id}/contacter` peut ouvrir ce
- * canal. Le message part vers le propriétaire du support — ou, s'il n'y en a
+ * canal. Le message part vers le propriétaire du support, ou, s'il n'y en a
  * plus, vers son co-détenteur actif le plus ancien.
  */
 import type { TypeSupportMedia } from '~/composables/useMediaDetention'

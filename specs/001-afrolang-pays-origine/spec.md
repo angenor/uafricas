@@ -10,7 +10,7 @@
 ### Session 2026-05-10
 
 - Q: Faut-il pré-remplir les pays d'origine des salles existantes à partir du pays de leur groupe ethnique ? → A: Non, laisser toutes les listes vides au déploiement ; enrichissement 100 % manuel par les admins.
-- Q: Le filtre public par pays doit-il être mono ou multi-sélection ? → A: Mono-pays — un seul pays sélectionnable à la fois (radio / select simple). La multi-sélection est explicitement reportée à une itération ultérieure.
+- Q: Le filtre public par pays doit-il être mono ou multi-sélection ? → A: Mono-pays : un seul pays sélectionnable à la fois (radio / select simple). La multi-sélection est explicitement reportée à une itération ultérieure.
 - Q: Comment traiter un pays archivé/désactivé dans le référentiel `shared.pays` ? → A: Masqué côté public (réponse API + filtre) ; toujours visible côté admin avec mention « archivé », l'association est conservée pour permettre un éventuel nettoyage ciblé.
 - Q: Comment afficher les pays sur une carte de salle quand la liste est longue ? → A: De 1 à 3 pays, drapeau + nom ; au-delà de 3, basculer en mode drapeaux seuls alignés en ligne (sans nom), liste complète accessible au survol/tooltip.
 
@@ -20,7 +20,7 @@
 
 Un visiteur (anonyme ou connecté) parcourt la page `/afrolang` qui liste les salles publiques d'apprentissage de langues africaines. Pour chaque salle (ex. « Wolof », « Swahili », « Lingala »), il souhaite voir clairement le ou les pays d'origine de la langue afin de choisir une salle qui l'intéresse géographiquement et culturellement.
 
-**Why this priority**: C'est la valeur métier principale. Sans cette information visible, l'utilisateur ne peut pas relier une langue à son territoire d'origine — l'objectif éducatif et culturel d'Afrolang en dépend. Aujourd'hui, le modèle ne permet de rattacher qu'un seul pays implicite (via le groupe ethnique) alors qu'une même langue couvre fréquemment plusieurs pays (le wolof : Sénégal + Gambie + Mauritanie ; le swahili : Tanzanie, Kenya, Ouganda, RDC, etc.).
+**Why this priority**: C'est la valeur métier principale. Sans cette information visible, l'utilisateur ne peut pas relier une langue à son territoire d'origine, l'objectif éducatif et culturel d'Afrolang en dépend. Aujourd'hui, le modèle ne permet de rattacher qu'un seul pays implicite (via le groupe ethnique) alors qu'une même langue couvre fréquemment plusieurs pays (le wolof : Sénégal + Gambie + Mauritanie ; le swahili : Tanzanie, Kenya, Ouganda, RDC, etc.).
 
 **Independent Test**: Une administratrice associe deux pays d'origine à la salle « Wolof » ; un visiteur ouvre `/afrolang` et voit la liste des deux pays (drapeau + nom) sur la carte de la salle. Les filtres et le compteur de salles fonctionnent toujours.
 
@@ -84,7 +84,7 @@ Une administratrice ouvre la fiche d'édition d'une salle publique dans le back-
 - **FR-006**: L'API publique MUST accepter un paramètre de filtre par pays d'origine **mono-valué** (un seul pays par requête) et renvoyer uniquement les salles dont la liste de pays d'origine contient ce pays, en respectant la pagination existante. La multi-sélection est hors périmètre de la v1.
 - **FR-007**: L'interface d'administration des salles publiques MUST permettre à un administrateur autorisé d'ajouter et de retirer des pays d'origine pour une salle, en sélectionnant parmi le référentiel des pays existants.
 - **FR-008**: Toute modification (ajout/retrait) des pays d'origine d'une salle MUST être enregistrée dans le journal d'audit (qui, quand, salle, pays ajoutés, pays retirés).
-- **FR-009**: Les salles publiques existantes au moment du déploiement MUST rester fonctionnelles avec une liste de pays d'origine initialement vide ; aucun pré-remplissage automatique (notamment depuis le pays du groupe ethnique) n'est effectué — l'enrichissement est intégralement manuel via l'administration.
+- **FR-009**: Les salles publiques existantes au moment du déploiement MUST rester fonctionnelles avec une liste de pays d'origine initialement vide ; aucun pré-remplissage automatique (notamment depuis le pays du groupe ethnique) n'est effectué, l'enrichissement est intégralement manuel via l'administration.
 - **FR-010**: La suppression (ou désactivation durable) d'un pays dans le référentiel MUST nettoyer automatiquement les associations correspondantes pour éviter les liens orphelins.
 - **FR-011**: Le système MUST réserver la modification des pays d'origine d'une salle aux administrateurs disposant des permissions existantes de gestion des salles Afrolang.
 

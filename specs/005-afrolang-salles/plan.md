@@ -1,4 +1,4 @@
-# Implementation Plan: Afrolang — Ajustements salles publiques et privées
+# Implementation Plan: Afrolang : Ajustements salles publiques et privées
 
 **Branch**: `005-afrolang-salles` | **Date**: 2026-04-14 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/005-afrolang-salles/spec.md`
@@ -22,13 +22,13 @@ L'approche technique : nouvelles tables dans le schema `afrolang` et une FK vers
 
 **Language/Version**: Rust Edition 2024 (backend), TypeScript / Nuxt 4 / Vue 3 SSR (frontend)
 **Primary Dependencies**: Actix-Web 4, actix-multipart, sqlx (PostgreSQL), uuid, chrono, serde, sanitize-filename, livekit-api (backend) ; Pinia, $fetch, FontAwesome, GSAP, AOS (frontend) ; tableau blanc & chat temps réel via canal data LiveKit déjà configuré
-**Storage**: PostgreSQL 16 — schema `afrolang` étendu (3 nouvelles tables + ajout de colonnes sur 2 tables existantes) ; FK vers `country_profile.groupe_ethnique` existant ; stockage local `./uploads/afrolang/ressources/` pour fichiers ressources
-**Testing**: Aucun framework de tests configuré dans le projet (constitution « pas de linting, testing ni CI/CD configuré ») — validation par scénarios manuels documentés dans quickstart.md
+**Storage**: PostgreSQL 16 : schema `afrolang` étendu (3 nouvelles tables + ajout de colonnes sur 2 tables existantes) ; FK vers `country_profile.groupe_ethnique` existant ; stockage local `./uploads/afrolang/ressources/` pour fichiers ressources
+**Testing**: Aucun framework de tests configuré dans le projet (constitution « pas de linting, testing ni CI/CD configuré »), validation par scénarios manuels documentés dans quickstart.md
 **Target Platform**: Serveur Linux (backend Actix-Web port 8080) + navigateurs modernes via Nuxt 4 SSR (port 3000), déploiement Docker sur VPS
 **Project Type**: Web application monorepo (frontend Nuxt 4 + backend Rust Actix-Web 4)
 **Performance Goals**: Latence perçue comme instantanée pour tableau blanc (<500 ms pour 95 % des tracés en session ≤10 participants, SC-004) ; accès à une salle publique en <10 s post-clic (SC-001) ; délai de validation médiane <72 h pour liens externes (SC-009)
-**Constraints**: Conformité Constitution UAfricas v1.1.0 — français strict, SQL source de vérité, JWT access 15 min + refresh 7 j, bcrypt cost 12, audit::log_action non-bloquant sur toute mutation, Tailwind v4 pur pour pages publiques (pas de daisyUI), daisyUI v5 autorisé sur back-office admin uniquement, soft deletion par `deleted_at`, UUID v4 PK, snake_case français
-**Scale/Scope**: Ordre de grandeur plateforme panafricaine — plusieurs centaines de groupes ethniques, quelques milliers de membres inscrits, sessions simultanées dans la dizaine à faible centaine ; salle privée plafonnée à 50 participants (valeur existante) ; nouvelle contrainte « 1 salle privée active par membre par salle publique »
+**Constraints**: Conformité Constitution UAfricas v1.1.0, français strict, SQL source de vérité, JWT access 15 min + refresh 7 j, bcrypt cost 12, audit::log_action non-bloquant sur toute mutation, Tailwind v4 pur pour pages publiques (pas de daisyUI), daisyUI v5 autorisé sur back-office admin uniquement, soft deletion par `deleted_at`, UUID v4 PK, snake_case français
+**Scale/Scope**: Ordre de grandeur plateforme panafricaine, plusieurs centaines de groupes ethniques, quelques milliers de membres inscrits, sessions simultanées dans la dizaine à faible centaine ; salle privée plafonnée à 50 participants (valeur existante) ; nouvelle contrainte « 1 salle privée active par membre par salle publique »
 
 ## Constitution Check
 
@@ -44,7 +44,7 @@ L'approche technique : nouvelles tables dans le schema `afrolang` et une FK vers
 | VI. Tailwind v4 / daisyUI v5 | Oui | ✅ Conforme | Pages publiques `/afrolang/...` = Tailwind v4 pur (déjà le cas dans les composants existants) ; pages admin `/admin/afrolang/...` = daisyUI v5 autorisé |
 | VII. Audit & Traçabilité | Oui | ✅ Conforme | Chaque nouvelle mutation admin (validation/refus proposition, désignation modérateur Afrolang, validation lien externe, archivage salle privée) sera instrumentée avec `audit::log_action` non-bloquant |
 
-**Gate**: PASS — aucune violation, aucune justification de complexité requise.
+**Gate**: PASS : aucune violation, aucune justification de complexité requise.
 
 ## Project Structure
 
@@ -62,7 +62,7 @@ specs/005-afrolang-salles/
 │   └── api-admin-afrolang.md
 ├── checklists/
 │   └── requirements.md  # Qualité du spec (existant)
-└── tasks.md             # Phase 2 (/speckit.tasks — non créé ici)
+└── tasks.md             # Phase 2 (/speckit.tasks, non créé ici)
 ```
 
 ### Source Code (repository root)
@@ -127,7 +127,7 @@ uafricas_frontend/
 │               └── liens-externes.vue            # [NOUVEAU] validation des liens externes
 ```
 
-**Structure Decision**: Monorepo web (Option 2) — `uafricas_backend/` Rust Actix-Web 4 + `uafricas_frontend/` Nuxt 4, structure déjà en place. Aucun nouveau projet, aucun nouveau schema PostgreSQL. Extension du schema existant `afrolang` et liaison à `country_profile.groupe_ethnique` (source unique validée en clarification Q1).
+**Structure Decision**: Monorepo web (Option 2), `uafricas_backend/` Rust Actix-Web 4 + `uafricas_frontend/` Nuxt 4, structure déjà en place. Aucun nouveau projet, aucun nouveau schema PostgreSQL. Extension du schema existant `afrolang` et liaison à `country_profile.groupe_ethnique` (source unique validée en clarification Q1).
 
 ## Complexity Tracking
 
@@ -135,4 +135,4 @@ Aucune violation de la Constitution détectée → tableau laissé vide.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| _(aucune)_ | — | — |
+| _(aucune)_ | : | : |

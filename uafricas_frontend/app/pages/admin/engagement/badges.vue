@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Back-office — badges et succès (daisyUI autorisé ici).
+ * Back-office : badges et succès (daisyUI autorisé ici).
  *
  * Le formulaire de condition n'affiche que les champs de paramètres du
  * `type_condition` choisi : les 5 conditions n'utilisent pas les mêmes, et tout
@@ -67,7 +67,7 @@ const champsPour = (typeCondition: string | null): readonly string[] =>
 
 const libelleCondition = (b: AdminBadge) => {
   if (b.manuel) return 'Attribution manuelle'
-  return CONDITIONS.find(c => c.valeur === b.type_condition)?.libelle ?? b.type_condition ?? '—'
+  return CONDITIONS.find(c => c.valeur === b.type_condition)?.libelle ?? b.type_condition ?? '-'
 }
 
 // Attribution / retrait manuels
@@ -176,7 +176,7 @@ const soumettreAttribution = async () => {
     const attribue = await attribuerBadge(c.badge.id, c.utilisateur_id.trim(), c.motif)
     await rafraichir()
     notifier(attribue
-      ? `Badge « ${c.badge.libelle} » attribué — le membre a été notifié.`
+      ? `Badge « ${c.badge.libelle} » attribué, le membre a été notifié.`
       : 'Ce membre détenait déjà ce badge : rien n\'a changé, aucune notification envoyée.')
     cible.value = { badge: null, utilisateur_id: '', motif: '' }
   } catch (e) { signaler(e) }
@@ -203,7 +203,7 @@ const soumettreRetrait = async () => {
 <template>
   <div class="p-6 space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-2xl font-bold">Engagement — Badges & succès</h1>
+      <h1 class="text-2xl font-bold">Engagement, Badges & succès</h1>
       <div class="flex flex-wrap gap-2">
         <NuxtLink to="/admin/engagement/regles" class="btn btn-sm btn-outline">
           <font-awesome-icon icon="fa-solid fa-sliders" /> Barème
@@ -248,13 +248,13 @@ const soumettreRetrait = async () => {
               <input v-model.number="nouveau.ordre" type="number" class="input input-sm input-bordered">
             </label>
             <label class="form-control md:col-span-3">
-              <span class="label-text text-xs">Description — la condition en langage clair, lue par le membre</span>
+              <span class="label-text text-xs">Description, la condition en langage clair, lue par le membre</span>
               <textarea v-model="nouveau.description" rows="2" class="textarea textarea-sm textarea-bordered" placeholder="ex. 10 contributions validées." />
             </label>
             <label class="form-control">
               <span class="label-text text-xs">Couleur</span>
               <select v-model="nouveau.couleur" class="select select-sm select-bordered">
-                <option value="">— par défaut —</option>
+                <option value="">par défaut</option>
                 <option v-for="c in COULEURS" :key="c" :value="c">{{ c }}</option>
               </select>
             </label>
@@ -280,7 +280,7 @@ const soumettreRetrait = async () => {
             <label v-if="champsCondition.includes('action')" class="form-control">
               <span class="label-text text-xs">Action à compter</span>
               <select v-model="nouveau.parametre_action" class="select select-sm select-bordered">
-                <option value="">— choisir —</option>
+                <option value="">choisir</option>
                 <option v-for="a in actions" :key="a" :value="a">{{ a }}</option>
               </select>
             </label>
@@ -288,7 +288,7 @@ const soumettreRetrait = async () => {
             <label v-if="champsCondition.includes('categorie')" class="form-control">
               <span class="label-text text-xs">Catégorie visée</span>
               <select v-model="nouveau.parametre_categorie_id" class="select select-sm select-bordered">
-                <option value="">— choisir —</option>
+                <option value="">choisir</option>
                 <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.libelle }}</option>
               </select>
             </label>
@@ -296,7 +296,7 @@ const soumettreRetrait = async () => {
             <label v-if="champsCondition.includes('niveau')" class="form-control">
               <span class="label-text text-xs">Niveau visé</span>
               <select v-model="nouveau.parametre_niveau_code" class="select select-sm select-bordered">
-                <option value="">— choisir —</option>
+                <option value="">choisir</option>
                 <option v-for="n in niveaux" :key="n.id" :value="n.code">{{ n.libelle }}</option>
               </select>
             </label>
@@ -346,7 +346,7 @@ const soumettreRetrait = async () => {
                     v-model="b.parametre_action"
                     class="select select-sm select-bordered w-44"
                   >
-                    <option :value="null">— action —</option>
+                    <option :value="null">action</option>
                     <option v-for="a in actions" :key="a" :value="a">{{ a }}</option>
                   </select>
                   <select
@@ -354,7 +354,7 @@ const soumettreRetrait = async () => {
                     v-model="b.parametre_categorie_id"
                     class="select select-sm select-bordered w-44"
                   >
-                    <option :value="null">— catégorie —</option>
+                    <option :value="null">catégorie</option>
                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.libelle }}</option>
                   </select>
                   <select
@@ -362,7 +362,7 @@ const soumettreRetrait = async () => {
                     v-model="b.parametre_niveau_code"
                     class="select select-sm select-bordered w-44"
                   >
-                    <option :value="null">— niveau —</option>
+                    <option :value="null">niveau</option>
                     <option v-for="n in niveaux" :key="n.id" :value="n.code">{{ n.libelle }}</option>
                   </select>
                   <input
@@ -373,11 +373,11 @@ const soumettreRetrait = async () => {
                     placeholder="seuil"
                   >
                 </template>
-                <span v-else class="text-xs opacity-60">—</span>
+                <span v-else class="text-xs opacity-60">-</span>
               </td>
               <td class="space-y-1">
                 <select v-model="b.couleur" class="select select-sm select-bordered w-28">
-                  <option :value="null">—</option>
+                  <option :value="null">-</option>
                   <option v-for="c in COULEURS" :key="c" :value="c">{{ c }}</option>
                 </select>
                 <input v-model="b.icone" class="input input-sm input-bordered w-28 font-mono" placeholder="icône">
@@ -407,7 +407,7 @@ const soumettreRetrait = async () => {
       <div v-if="cible.badge" class="card bg-base-200">
         <div class="card-body gap-3">
           <h2 class="font-semibold">
-            Attribution manuelle — « {{ cible.badge.libelle }} »
+            Attribution manuelle : « {{ cible.badge.libelle }} »
           </h2>
           <div class="flex flex-wrap items-end gap-3">
             <label class="form-control">
@@ -425,7 +425,7 @@ const soumettreRetrait = async () => {
             </button>
           </div>
           <p class="text-xs opacity-70">
-            L'attribution notifie le membre ; le <strong>retrait ne le notifie pas</strong> — c'est
+            L'attribution notifie le membre ; le <strong>retrait ne le notifie pas</strong> : c'est
             un geste de correction, tracé dans la piste d'audit.
           </p>
         </div>

@@ -22,7 +22,7 @@ const showContribution = ref(false)
 // Lecteur + synchronisation avec la transcription latérale
 const lecteurRef = ref<LecteurControl | null>(null)
 const positionActive = ref<number | null>(null)
-// État réel de lecture (relayé par le lecteur) — pilote le mode « au fil de la lecture ».
+// État réel de lecture (relayé par le lecteur), pilote le mode « au fil de la lecture ».
 const lectureEnCours = ref(false)
 // La vidéo a atteint sa fin (permet de sous-titrer le dernier passage jusqu'au bout).
 // Pilotée par l'événement `fin` du lecteur : vrai à la fin, faux dès qu'on relit

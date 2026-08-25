@@ -2,7 +2,7 @@
 // réactions, commentaires et partages vers le mur /publications.
 //
 // Les quatre types de média partagent les mêmes endpoints, discriminés par
-// (type_media, media_id) — cf. migration 09k et handlers/media_social.rs.
+// (type_media, media_id), cf. migration 09k et handlers/media_social.rs.
 //
 // La LECTURE est publique ; le JWT n'est indispensable qu'aux mutations, mais
 // il est envoyé dès qu'il existe pour renseigner `maReaction`.
@@ -191,7 +191,7 @@ export const useMediaSocial = () => {
     return reponse.success ? reponse.data : null
   }
 
-  // Soft delete, réservé à l'auteur — le serveur renvoie 403 pour tout autre.
+  // Soft delete, réservé à l'auteur, le serveur renvoie 403 pour tout autre.
   const supprimerCommentaire = async (commentaireId: string): Promise<boolean> => {
     try {
       const reponse = await $fetch<ApiResponse<unknown>>(
@@ -223,7 +223,7 @@ export const useMediaSocial = () => {
     return reponse.success ? reponse.data : null
   }
 
-  // Public et paginé — 8ᵉ source du mur /publications.
+  // Public et paginé : 8ᵉ source du mur /publications.
   const listerPartages = async (
     page = 1,
     parPage = 20,

@@ -1,5 +1,5 @@
 ---
-description: "Task list — Demande d'amitié & messagerie temps réel"
+description: "Task list : Demande d'amitié & messagerie temps réel"
 ---
 
 # Tasks: Demande d'amitié entre membres
@@ -36,16 +36,16 @@ description: "Task list — Demande d'amitié & messagerie temps réel"
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Données et fondations partagées — **bloque toutes les user stories**
+**Purpose**: Données et fondations partagées, **bloque toutes les user stories**
 
 **⚠️ CRITICAL**: Aucune user story ne peut démarrer avant la fin de cette phase
 
-- [X] T004 Écrire `uafricas_backend/doc/bd/schemas/29_social.sql` : enums `social.statut_demande_amitie` et `social.type_notification_social` ; tables `demande_amitie`, `amitie`, `blocage`, `conversation`, `message`, `notification` avec PK UUID, FK `iam.utilisateur`, CHECK (`ck_demande_pas_soi`, `ck_amitie_ordre`, `ck_blocage_pas_soi`, `ck_conversation_ordre`, contenu 1..2000), index et index uniques partiels — strictement selon [data-model.md](./data-model.md)
+- [X] T004 Écrire `uafricas_backend/doc/bd/schemas/29_social.sql` : enums `social.statut_demande_amitie` et `social.type_notification_social` ; tables `demande_amitie`, `amitie`, `blocage`, `conversation`, `message`, `notification` avec PK UUID, FK `iam.utilisateur`, CHECK (`ck_demande_pas_soi`, `ck_amitie_ordre`, `ck_blocage_pas_soi`, `ck_conversation_ordre`, contenu 1..2000), index et index uniques partiels, strictement selon [data-model.md](./data-model.md)
 - [X] T005 Ajouter `\ir schemas/29_social.sql` dans `uafricas_backend/doc/bd/schema.sql` après la ligne `\ir schemas/26_notifications.sql` ; recréer le volume Docker en dev (`docker compose down -v && docker compose up -d`) pour appliquer le schéma
-- [X] T006 Dans `uafricas_backend/src/models/amitie.rs` : DTO partagé `MembreLight` (champs publics uniquement : id, nom, prenom, slug, photo_url, fonction, pays — jamais d'email/téléphone) + helper `paire_canonique(a, b) -> (min, max)` pour l'ordre canonique des paires (Décision 4)
+- [X] T006 Dans `uafricas_backend/src/models/amitie.rs` : DTO partagé `MembreLight` (champs publics uniquement : id, nom, prenom, slug, photo_url, fonction, pays, jamais d'email/téléphone) + helper `paire_canonique(a, b) -> (min, max)` pour l'ordre canonique des paires (Décision 4)
 - [X] T007 Déclarer les scopes de routes vides `/api/amities` et `/api/messagerie` dans `uafricas_backend/src/routes.rs` (configuration prête à recevoir les handlers par story)
 
-**Checkpoint**: Schéma `social` en base, modules câblés — les user stories peuvent démarrer
+**Checkpoint**: Schéma `social` en base, modules câblés, les user stories peuvent démarrer
 
 ---
 
@@ -61,7 +61,7 @@ description: "Task list — Demande d'amitié & messagerie temps réel"
 - [X] T009 [P] [US1] Modèle notification dans `uafricas_backend/src/models/amitie.rs` : struct `NotificationSociale` + helper d'insertion `creer_notification(tx, destinataire, type, demande_id, acteur)`
 - [X] T010 [US1] Handler `creer_demande` (`POST /api/amities/demandes`) dans `uafricas_backend/src/handlers/amitie.rs` : extraction utilisateur courant (JWT), validations FR-002 (pas soi), FR-015 (destinataire actif), FR-003 (pas de doublon/amitié), FR-013 (403 si blocage), rate-limit FR-014 (≤30/24 h → 429), auto-acceptation croisée FR-009 en **transaction**, notification `demande_recue`, `audit::log_action("CREATE","social","demande_amitie",...)`
 - [X] T011 [US1] Handler `etat_relation` (`GET /api/amities/etat/{utilisateur_id}`) dans `uafricas_backend/src/handlers/amitie.rs` : renvoie `aucune|demande_envoyee|demande_recue|amis|bloque_par_moi|indisponible` (FR-016)
-- [X] T011b [US1] Handler `etats_relation_lot` (`POST /api/amities/etats`) dans `uafricas_backend/src/handlers/amitie.rs` : états relationnels pour une liste d'ids (≤ 50) en **une seule requête** — évite le N+1 sur l'annuaire (FR-016)
+- [X] T011b [US1] Handler `etats_relation_lot` (`POST /api/amities/etats`) dans `uafricas_backend/src/handlers/amitie.rs` : états relationnels pour une liste d'ids (≤ 50) en **une seule requête**, évite le N+1 sur l'annuaire (FR-016)
 - [X] T012 [US1] Brancher les routes US1 (`POST /api/amities/demandes`, `GET /api/amities/etat/{id}`, `POST /api/amities/etats`) dans `uafricas_backend/src/routes.rs`
 
 ### Implementation (Frontend)
@@ -71,7 +71,7 @@ description: "Task list — Demande d'amitié & messagerie temps réel"
 - [X] T015 [US1] Intégrer `BoutonAmitie` sur les cartes membres de `uafricas_frontend/app/pages/profil/index.vue` (masqué sur sa propre carte) ; charger les états des cartes visibles en **un seul appel** `obtenirEtatsRelationLot` (anti N+1, FR-016)
 - [X] T016 [US1] Intégrer `BoutonAmitie` + chargement de l'état relation sur `uafricas_frontend/app/pages/profil/[id].vue`
 
-**Checkpoint**: US1 fonctionnelle — un membre peut envoyer une demande et voir l'état ; le destinataire a une notification en base
+**Checkpoint**: US1 fonctionnelle : un membre peut envoyer une demande et voir l'état ; le destinataire a une notification en base
 
 ---
 
@@ -95,7 +95,7 @@ description: "Task list — Demande d'amitié & messagerie temps réel"
 - [X] T023 [P] [US2] Dans `uafricas_frontend/app/composables/useAmis.ts` : `listerDemandesRecues()`, `accepterDemande(id)`, `refuserDemande(id)`, `listerNotifications()`, `marquerNotificationLue(id)`
 - [X] T024 [US2] Créer `uafricas_frontend/app/pages/mon-compte/amis.vue` (Tailwind v4 pur) avec un onglet « Demandes reçues » : liste des demandeurs (`MembreLight`) + boutons Accepter/Refuser ; ajouter le lien « Mes amis » dans la NavBar (`app/components/layout/NavBar.vue`)
 
-**Checkpoint**: US1 + US2 — cycle complet envoyer → accepter/refuser → amitié établie, testable de bout en bout
+**Checkpoint**: US1 + US2 : cycle complet envoyer → accepter/refuser → amitié établie, testable de bout en bout
 
 ---
 
@@ -113,7 +113,7 @@ description: "Task list — Demande d'amitié & messagerie temps réel"
 - [X] T028 [US3] Handler flux SSE `flux` (`GET /api/messagerie/flux?token=`) dans `uafricas_backend/src/handlers/messagerie.rs` : auth par token query (Décision 3), `HttpResponse` streaming `text/event-stream`, keep-alive périodique, abonnement au registre
 - [X] T029 [US3] Handler `lister_conversations` (`GET /api/messagerie/conversations`) : tri `dernier_message_at` desc, `non_lus`, `verrouillee` (amitié absente/blocage)
 - [X] T030 [US3] Handler `lister_messages` (`GET /api/messagerie/conversations/{ami_id}/messages`) : pagination `avant`/`limite≤50`, création conversation à la volée si amis, 403 si non amis/bloqué (FR-022), contenu `null`+`supprime` si soft-deleted
-- [X] T031 [US3] Handler `envoyer_message` (`POST /api/messagerie/conversations/{ami_id}/messages`) : validation 1..2000 (FR-027), vérif **amitié active** (FR-022/R5), persistance + MAJ `dernier_message_at`, **push SSE** `message` au destinataire et aux autres connexions de l'expéditeur ; `audit::log_action("CREATE","social","message",...)` avec **métadonnées uniquement** (id message/conversation/expéditeur, longueur — jamais le contenu, Décision 9)
+- [X] T031 [US3] Handler `envoyer_message` (`POST /api/messagerie/conversations/{ami_id}/messages`) : validation 1..2000 (FR-027), vérif **amitié active** (FR-022/R5), persistance + MAJ `dernier_message_at`, **push SSE** `message` au destinataire et aux autres connexions de l'expéditeur ; `audit::log_action("CREATE","social","message",...)` avec **métadonnées uniquement** (id message/conversation/expéditeur, longueur, jamais le contenu, Décision 9)
 - [X] T032 [P] [US3] Handlers `marquer_conversation_lue` (`POST .../{ami_id}/lu` → push `non_lus`), `supprimer_message` (`DELETE /api/messagerie/messages/{id}` → soft delete + push `message_supprime`, 403 si non expéditeur, `audit::log_action("DELETE","social","message",...)` métadonnées seules), `compteur_non_lus` (`GET /api/messagerie/non-lus`)
 - [X] T033 [US3] Étendre `creer_demande`/`accepter_demande` (handlers/amitie.rs) pour **publier via SSE** les évènements `demande_recue` (T010) et `demande_acceptee` (T018) en plus de la notification persistée
 - [X] T034 [US3] Brancher toutes les routes `/api/messagerie/*` dans `uafricas_backend/src/routes.rs`
@@ -128,7 +128,7 @@ description: "Task list — Demande d'amitié & messagerie temps réel"
 - [X] T039 [US3] Composant `uafricas_frontend/app/components/social/MessagerieFlottante.vue` (Tailwind v4 pur) : bouton flottant fixe + badge non-lus, ouvre une fenêtre flottante intégrant `ListeAmis` puis `FenetreConversation` ; état vide « faites-vous des amis »
 - [X] T040 [US3] Monter `<SocialMessagerieFlottante>` dans `uafricas_frontend/app/layouts/default.vue`, **client-only et seulement si connecté** (présent sur toutes les pages)
 
-**Checkpoint**: US1 + US2 + US3 — les amis discutent en temps réel via le bouton flottant global
+**Checkpoint**: US1 + US2 + US3 : les amis discutent en temps réel via le bouton flottant global
 
 ---
 
@@ -161,11 +161,11 @@ description: "Task list — Demande d'amitié & messagerie temps réel"
 
 **Purpose**: Cohérence, sécurité, conformité constitution, documentation
 
-- [X] T050 [P] Vérifier que **toutes** les mutations (demande create/accept/refus/annul, amitié retrait, blocage/déblocage **et** message create/delete) appellent `audit::log_action` ; pour les messages, confirmer que le payload d'audit ne contient **que des métadonnées** (jamais le contenu textuel) — Principe VII / Décision 9 → **vérifié** : annuler/retirer/bloquer/débloquer audités (UPDATE/DELETE/CREATE/DELETE), message create/delete = métadonnées seules
+- [X] T050 [P] Vérifier que **toutes** les mutations (demande create/accept/refus/annul, amitié retrait, blocage/déblocage **et** message create/delete) appellent `audit::log_action` ; pour les messages, confirmer que le payload d'audit ne contient **que des métadonnées** (jamais le contenu textuel), Principe VII / Décision 9 → **vérifié** : annuler/retirer/bloquer/débloquer audités (UPDATE/DELETE/CREATE/DELETE), message create/delete = métadonnées seules
 - [X] T051 [P] Sécurité : confirmer le filtrage de confidentialité FR-026 (aucun endpoint n'expose la liste d'amis d'autrui) et exclure la query string du flux SSE des logs (Décision 3) → **vérifié** : `lister_amis`/`lister_blocages` dérivent `moi` du JWT ; aucun `middleware::Logger` configuré dans `main.rs` (le token query n'est donc pas journalisé)
 - [X] T052 [P] Vérifier la cohérence des types cross-stack (structs Rust ↔ DTO ↔ interfaces TS) selon `contracts/api.md` (Principe II) → **vérifié** : `AmiResponse{utilisateur,ami_depuis}`↔`AmiAPI`, `BlocageResponse{utilisateur,depuis}`↔`BlocageAPI`
 - [X] T053 Mettre à jour `CLAUDE.md` (section Recent Changes + tableau API Routes : domaines Amitié et Messagerie) et la documentation du schéma `social`
-- [ ] T054 Exécuter le parcours de validation complet de [quickstart.md](./quickstart.md) (US1→US4 + vérifications transverses) — **validation manuelle requise** (stack lancée + deux navigateurs)
+- [ ] T054 Exécuter le parcours de validation complet de [quickstart.md](./quickstart.md) (US1→US4 + vérifications transverses), **validation manuelle requise** (stack lancée + deux navigateurs)
 
 ---
 
@@ -174,7 +174,7 @@ description: "Task list — Demande d'amitié & messagerie temps réel"
 ### Phase Dependencies
 
 - **Setup (Phase 1)** : aucune dépendance
-- **Foundational (Phase 2)** : dépend de Setup — **bloque toutes les user stories** (schéma `social` requis)
+- **Foundational (Phase 2)** : dépend de Setup, **bloque toutes les user stories** (schéma `social` requis)
 - **User Stories (Phases 3-6)** : dépendent de Foundational
   - US1 (P1) → US2 (P1) : US2 suppose des demandes créées (US1) mais testable via insertion manuelle d'une demande
   - US3 (P2) : suppose une amitié (US1+US2) mais testable via insertion manuelle d'une `amitie`
@@ -215,7 +215,7 @@ Task: "Modèle notification dans src/models/amitie.rs"             # T009  (mêm
 Task: "useAmis.envoyerDemande + obtenirEtatRelation"             # T013
 ```
 
-> Note : T008 et T009 modifient le même fichier `models/amitie.rs` — les exécuter séquentiellement ou en sections distinctes pour éviter les conflits.
+> Note : T008 et T009 modifient le même fichier `models/amitie.rs`, les exécuter séquentiellement ou en sections distinctes pour éviter les conflits.
 
 ---
 
@@ -240,7 +240,7 @@ Task: "useAmis.envoyerDemande + obtenirEtatRelation"             # T013
 ## Notes
 
 - `[P]` = fichiers différents, sans dépendance bloquante
-- UI **Tailwind v4 pur** partout (public + espace membre) — pas de daisyUI (Principe VI)
+- UI **Tailwind v4 pur** partout (public + espace membre), pas de daisyUI (Principe VI)
 - Temps réel **mono-instance** (registre SSE en mémoire)
 - Schéma SQL d'abord, puis backend, puis frontend (Principe III)
 - Commit en français après chaque tâche ou groupe logique

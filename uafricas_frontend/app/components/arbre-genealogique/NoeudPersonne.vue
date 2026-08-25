@@ -110,7 +110,7 @@ const surClicBadge = (e: MouseEvent) => {
       <p v-if="anneesVie" class="truncate text-[10px] leading-tight text-stone-500">{{ anneesVie }}</p>
     </div>
 
-    <!-- Handles (connexions branches) — IDs explicites pour un routage net -->
+    <!-- Handles (connexions branches) : IDs explicites pour un routage net -->
     <!-- Parenté : entrée par le haut du médaillon, sortie par le bas du bloc -->
     <Handle id="haut" type="target" :position="Position.Top" class="!h-1.5 !w-1.5 !border-0 !bg-[#8a5a2b] !opacity-0" />
     <Handle id="bas" type="source" :position="Position.Bottom" class="!h-1.5 !w-1.5 !border-0 !bg-[#8a5a2b] !opacity-0" />

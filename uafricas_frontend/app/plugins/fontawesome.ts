@@ -469,7 +469,7 @@ library.add(
   faTrophy,
   faLockOpen,
   faCircleNodes,
-  // Cadeaux virtuels (feature 008) — catalogue seedé + back-office
+  // Cadeaux virtuels (feature 008) : catalogue seedé + back-office
   faGift,
   faCertificate,
   faHatCowboy,

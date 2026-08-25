@@ -3,7 +3,7 @@
 //! Permet à tout utilisateur connecté (JWT) de :
 //!   - proposer une nouvelle vidéo (créée en `brouillon`, validée ensuite par un admin) ;
 //!   - contribuer une piste de sous-titres sur une vidéo (piste créée en `brouillon`,
-//!     invisible au public jusqu'à publication par un admin) — segments + timings karaoké.
+//!     invisible au public jusqu'à publication par un admin), segments + timings karaoké.
 //!
 //! L'authentification suit le même schéma que le marché membre (`handlers/annonces.rs`) :
 //! le JWT n'est émis qu'aux comptes `actif`, l'`id` est extrait du header `Authorization`.
@@ -103,7 +103,7 @@ async fn verifier_segment_modifiable(
 // PROPOSITION DE VIDÉO (multipart)
 // ══════════════════════════════════════════════════════════════
 
-/// POST /api/vidafrica/videos — un membre propose une vidéo (état initial `brouillon`).
+/// POST /api/vidafrica/videos : un membre propose une vidéo (état initial `brouillon`).
 pub async fn proposer_video(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -140,7 +140,7 @@ pub async fn proposer_video(
             "auteur_reel" => auteur_reel = Some(lire_champ_texte(&mut field).await?),
             // Langue parlée/chantée dans la vidéo (texte libre : langues Afrolang + « Autre »).
             "langue_originale" => langue_originale = Some(lire_champ_texte(&mut field).await?),
-            // Décharge : « Je ne suis pas l'auteur de cette chanson… » — accepté si "true".
+            // Décharge : « Je ne suis pas l'auteur de cette chanson… », accepté si "true".
             "decharge_droits" => {
                 let v = lire_champ_texte(&mut field).await?;
                 decharge_droits = matches!(v.trim(), "true" | "1" | "on");
@@ -325,7 +325,7 @@ async fn compter_reactions_video(pool: &PgPool, video_id: Uuid) -> Result<(i64, 
     Ok(counts)
 }
 
-/// POST /api/vidafrica/videos/{id}/reaction — aimer / ne pas aimer (toggle).
+/// POST /api/vidafrica/videos/{id}/reaction, aimer / ne pas aimer (toggle).
 pub async fn reagir_video(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -428,7 +428,7 @@ pub async fn reagir_video(
     }))
 }
 
-/// POST /api/vidafrica/videos/{id}/partage — partager une vidéo sur le mur.
+/// POST /api/vidafrica/videos/{id}/partage, partager une vidéo sur le mur.
 pub async fn partager_video(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -552,7 +552,7 @@ pub async fn mes_pistes(
     }))
 }
 
-/// POST /api/vidafrica/videos/{video_id}/pistes — créer une piste membre (`brouillon`).
+/// POST /api/vidafrica/videos/{video_id}/pistes, créer une piste membre (`brouillon`).
 pub async fn creer_piste_membre(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -583,7 +583,7 @@ pub async fn creer_piste_membre(
 
     // Un même membre ne peut avoir qu'une seule piste par langue ; d'autres membres
     // peuvent proposer leur propre version dans cette langue (l'admin arbitre laquelle
-    // est publiée — une seule piste publiée par langue).
+    // est publiée : une seule piste publiée par langue).
     let doublon = sqlx::query_scalar::<_, bool>(
         "SELECT EXISTS(SELECT 1 FROM media_content.piste_sous_titre
          WHERE video_id = $1 AND langue::TEXT = $2 AND cree_par = $3 AND deleted_at IS NULL)",
@@ -632,7 +632,7 @@ pub async fn creer_piste_membre(
     }))
 }
 
-/// DELETE /api/vidafrica/pistes/{id} — supprimer sa propre piste (encore `brouillon`).
+/// DELETE /api/vidafrica/pistes/{id} : supprimer sa propre piste (encore `brouillon`).
 pub async fn supprimer_piste_membre(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -672,7 +672,7 @@ pub async fn supprimer_piste_membre(
 // SEGMENTS (membre)
 // ══════════════════════════════════════════════════════════════
 
-/// GET /api/vidafrica/pistes/{piste_id}/segments — segments de sa propre piste.
+/// GET /api/vidafrica/pistes/{piste_id}/segments, segments de sa propre piste.
 pub async fn lister_segments_membre(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -722,7 +722,7 @@ pub async fn lister_segments_membre(
     }))
 }
 
-/// POST /api/vidafrica/pistes/{piste_id}/segments — ajouter un segment à sa piste.
+/// POST /api/vidafrica/pistes/{piste_id}/segments, ajouter un segment à sa piste.
 pub async fn creer_segment_membre(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -812,7 +812,7 @@ pub async fn creer_segment_membre(
     }))
 }
 
-/// PUT /api/vidafrica/segments/{id} — modifier un segment de sa piste.
+/// PUT /api/vidafrica/segments/{id} : modifier un segment de sa piste.
 pub async fn modifier_segment_membre(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -906,7 +906,7 @@ pub async fn modifier_segment_membre(
     }))
 }
 
-/// DELETE /api/vidafrica/segments/{id} — supprimer un segment de sa piste.
+/// DELETE /api/vidafrica/segments/{id}, supprimer un segment de sa piste.
 pub async fn supprimer_segment_membre(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -941,10 +941,10 @@ pub async fn supprimer_segment_membre(
 }
 
 // ══════════════════════════════════════════════════════════════
-// TIMINGS MOT (membre — tap-to-mark)
+// TIMINGS MOT (membre : tap-to-mark)
 // ══════════════════════════════════════════════════════════════
 
-/// POST /api/vidafrica/segments/{segment_id}/timings-mot — enregistrer les timings mot.
+/// POST /api/vidafrica/segments/{segment_id}/timings-mot, enregistrer les timings mot.
 pub async fn enregistrer_timings_mot_membre(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -1044,7 +1044,7 @@ pub async fn enregistrer_timings_mot_membre(
     }))
 }
 
-/// DELETE /api/vidafrica/segments/{segment_id}/timings-mot — supprimer les timings mot.
+/// DELETE /api/vidafrica/segments/{segment_id}/timings-mot, supprimer les timings mot.
 pub async fn supprimer_timings_mot_membre(
     req: HttpRequest,
     pool: web::Data<PgPool>,

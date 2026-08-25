@@ -5,7 +5,7 @@
  * **Examen de licéité** : aucune décharge de droits n'est recueillie du
  * contributeur (H-012, décision explicite du commanditaire). L'administrateur
  * est donc SEUL à se prononcer sur les droits d'auteur et l'autorisation de
- * rediffusion — d'où la source et l'auteur déclaré présentés en évidence, avant
+ * rediffusion : d'où la source et l'auteur déclaré présentés en évidence, avant
  * même les boutons de décision (FR-033).
  */
 import {
@@ -30,7 +30,7 @@ const messageLocal = ref('')
 const LONGUEUR_MIN_MOTIF = 10
 
 useHead(() => ({
-  title: `${proposition.value?.donnees.nom || 'Proposition'} — Modération — Administration`,
+  title: `${proposition.value?.donnees.nom || 'Proposition'}, Modération, Administration`,
 }))
 
 const charger = async () => {
@@ -44,7 +44,7 @@ const libelleRole = computed(() => {
   const valeur = proposition.value?.donnees.role_partie_prenante
   if (!valeur) return null
   if (valeur === 'autre') {
-    return `Autre — ${proposition.value?.donnees.role_partie_prenante_autre ?? '(non précisé)'}`
+    return `Autre, ${proposition.value?.donnees.role_partie_prenante_autre ?? '(non précisé)'}`
   }
   return ROLES_PARTIE_PRENANTE.find(r => r.valeur === valeur)?.libelle ?? valeur
 })
@@ -70,7 +70,7 @@ const rejeterProposition = async () => {
   if (enCours.value) return
   const motif = commentaire.value.trim()
   if (motif.length < LONGUEUR_MIN_MOTIF) {
-    messageLocal.value = `Le motif du refus doit compter au moins ${LONGUEUR_MIN_MOTIF} caractères — l’auteur doit pouvoir comprendre la décision.`
+    messageLocal.value = `Le motif du refus doit compter au moins ${LONGUEUR_MIN_MOTIF} caractères, l’auteur doit pouvoir comprendre la décision.`
     return
   }
   enCours.value = true
@@ -115,7 +115,7 @@ const dateFormatee = (iso: string) =>
         </div>
       </header>
 
-      <!-- ═══ Examen de licéité — en tête, avant toute décision (FR-033) ═══ -->
+      <!-- ═══ Examen de licéité : en tête, avant toute décision (FR-033) ═══ -->
       <section class="card bg-base-200 border-2 border-warning mb-6">
         <div class="card-body">
           <h2 class="card-title text-base">
@@ -129,11 +129,11 @@ const dateFormatee = (iso: string) =>
           <dl class="grid sm:grid-cols-2 gap-4 text-sm">
             <div>
               <dt class="font-semibold opacity-70">Source déclarée</dt>
-              <dd class="mt-0.5">{{ proposition.donnees.source_declaree || '— non renseignée —' }}</dd>
+              <dd class="mt-0.5">{{ proposition.donnees.source_declaree || ', non renseignée, ' }}</dd>
             </div>
             <div>
               <dt class="font-semibold opacity-70">Auteur déclaré</dt>
-              <dd class="mt-0.5">{{ proposition.donnees.auteur_declare || '— non renseigné —' }}</dd>
+              <dd class="mt-0.5">{{ proposition.donnees.auteur_declare || ', non renseigné, ' }}</dd>
             </div>
             <div class="sm:col-span-2">
               <dt class="font-semibold opacity-70">Média proposé</dt>
@@ -141,7 +141,7 @@ const dateFormatee = (iso: string) =>
                 <a v-if="media" :href="media" target="_blank" rel="noopener noreferrer" class="link link-primary">
                   {{ media }}
                 </a>
-                <span v-else>— aucun média joint —</span>
+                <span v-else>aucun média joint</span>
               </dd>
             </div>
           </dl>
@@ -208,7 +208,7 @@ const dateFormatee = (iso: string) =>
           <h2 class="card-title text-base">Décision</h2>
           <label class="label">
             <span class="label-text">
-              Commentaire — facultatif pour une validation,
+              Commentaire : facultatif pour une validation,
               <strong>obligatoire et motivé</strong> pour un refus
             </span>
           </label>

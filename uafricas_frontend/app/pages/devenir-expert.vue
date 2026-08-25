@@ -189,7 +189,7 @@ async function soumettre() {
       pays_residence_id: form.paysId,
     })
 
-    // 3. CV (optionnel, PDF) — uploadé avant la création de la candidature
+    // 3. CV (optionnel, PDF), uploadé avant la création de la candidature
     let cvUrl: string | undefined
     if (cvFile.value) {
       cvUrl = (await uploaderCV(cvFile.value)) ?? undefined
@@ -449,7 +449,7 @@ onMounted(async () => {
               v-model="form.paysId"
               class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
             >
-              <option value="">— Sélectionner —</option>
+              <option value="">Sélectionner</option>
               <option v-for="p in listePays" :key="p.id" :value="p.id">{{ p.nom }}</option>
             </select>
             <p v-if="erreurs.paysId" class="text-xs text-red-500 mt-1">{{ erreurs.paysId }}</p>
@@ -470,7 +470,7 @@ onMounted(async () => {
               v-model="form.domaine"
               class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
             >
-              <option value="">— Sélectionner —</option>
+              <option value="">Sélectionner</option>
               <option v-for="d in domainesDisponibles" :key="d" :value="d">{{ d }}</option>
               <option :value="DOMAINE_AUTRE">Autre…</option>
             </select>

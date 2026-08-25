@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 // ────────────────────────────────────────────────────────────────
 // Enums Afripulse (alignés sur country_profile.type_objet_contribution
-// et country_profile.section_afripulse — cf. 11c_country_profile_afripulse.sql)
+// et country_profile.section_afripulse, cf. 11c_country_profile_afripulse.sql)
 // ────────────────────────────────────────────────────────────────
 
 #[derive(sqlx::Type, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]

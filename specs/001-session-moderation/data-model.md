@@ -1,4 +1,4 @@
-# Phase 1 — Data Model : Modération de session Afrolang
+# Phase 1 : Data Model : Modération de session Afrolang
 
 **Date** : 2026-05-10
 **Schema cible** : `afrolang` (existant)
@@ -8,7 +8,7 @@
 
 ### 1. Nouvelle table : `afrolang.session_permission_tableau_blanc`
 
-État éphémère des permissions d'écriture sur le tableau blanc, accordées explicitement par un modérateur de session. Les modérateurs eux-mêmes (admin plateforme, admin salle, modérateur attitré, créateur salle privée) **ne sont pas** stockés dans cette table — leur droit d'écriture est calculé à la volée par `est_moderateur_session()` (R6).
+État éphémère des permissions d'écriture sur le tableau blanc, accordées explicitement par un modérateur de session. Les modérateurs eux-mêmes (admin plateforme, admin salle, modérateur attitré, créateur salle privée) **ne sont pas** stockés dans cette table, leur droit d'écriture est calculé à la volée par `est_moderateur_session()` (R6).
 
 ```sql
 CREATE TABLE afrolang.session_permission_tableau_blanc (
@@ -61,11 +61,11 @@ ALTER TABLE afrolang.session
 
 ### 3. Aucune nouvelle valeur d'ENUM, aucun nouveau type
 
-Le rôle « modérateur de session » est calculé applicatif (R6) — pas de matérialisation SQL.
+Le rôle « modérateur de session » est calculé applicatif (R6), pas de matérialisation SQL.
 
 ## Entités modèle (Rust / TypeScript)
 
-### Rust — `uafricas_backend/src/models/afrolang.rs` (extension)
+### Rust : `uafricas_backend/src/models/afrolang.rs` (extension)
 
 ```rust
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -118,7 +118,7 @@ impl NiveauModerateur {
 }
 ```
 
-### TypeScript — `uafricas_frontend/app/composables/useAfrolang.ts` (extension)
+### TypeScript : `uafricas_frontend/app/composables/useAfrolang.ts` (extension)
 
 ```ts
 export interface PermissionTableauBlancAPI {
@@ -169,7 +169,7 @@ ACCORDEE  --(session terminée → CASCADE)-->  ABSENT
                             ▼             ▼
                        B_EN_VEDETTE     AUCUN
 
-  (cible quitte la session)─► AUCUN  (FR-025 — handler quitter session)
+  (cible quitte la session)─► AUCUN  (FR-025, handler quitter session)
   (session terminée)         ─► AUCUN  (handler fermeture)
 ```
 
@@ -177,7 +177,7 @@ ACCORDEE  --(session terminée → CASCADE)-->  ABSENT
 
 | Principe | Application |
 |---|---|
-| III — SQL source de vérité | DDL écrit en premier ; structs Rust et types TS dérivent exactement de ce DDL |
-| I — Français | Tous les noms : `session_permission_tableau_blanc`, `participant_mis_en_evidence_id`, `accorde_par`, `mis_en_evidence_at` |
-| V — Simplicité | Aucune nouvelle table pour le spotlight (3 colonnes nullables) ; aucun trigger, aucun ENUM |
-| VII — Audit | Toutes les mutations passent par les handlers Rust → `audit::log_action` systématique |
+| III : SQL source de vérité | DDL écrit en premier ; structs Rust et types TS dérivent exactement de ce DDL |
+| I : Français | Tous les noms : `session_permission_tableau_blanc`, `participant_mis_en_evidence_id`, `accorde_par`, `mis_en_evidence_at` |
+| V : Simplicité | Aucune nouvelle table pour le spotlight (3 colonnes nullables) ; aucun trigger, aucun ENUM |
+| VII : Audit | Toutes les mutations passent par les handlers Rust → `audit::log_action` systématique |

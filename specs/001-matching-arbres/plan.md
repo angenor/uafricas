@@ -10,9 +10,9 @@ Feature clé de la plateforme. Algorithme de matching inter-arbres comparant les
 ## Technical Context
 
 **Language/Version**: Rust Edition 2024 (backend) + TypeScript / Nuxt 4 / Vue 3 (frontend)
-**Primary Dependencies**: Actix-Web 4, sqlx, pg_trgm (PostgreSQL extension), tokio::spawn — frontend: @vue-flow/core (existant)
-**Storage**: PostgreSQL 16 — schema `arbre_genealogique` étendu (2 nouvelles tables + 2 colonnes + 3 indexes)
-**Testing**: Pas de CI/CD — vérification manuelle avec 2 comptes test
+**Primary Dependencies**: Actix-Web 4, sqlx, pg_trgm (PostgreSQL extension), tokio::spawn, frontend: @vue-flow/core (existant)
+**Storage**: PostgreSQL 16 : schema `arbre_genealogique` étendu (2 nouvelles tables + 2 colonnes + 3 indexes)
+**Testing**: Pas de CI/CD : vérification manuelle avec 2 comptes test
 **Target Platform**: Web (SSR Nuxt 4)
 **Project Type**: Web application (monorepo frontend + backend)
 **Performance Goals**: Matching rapide <10ms, matching profond <30s pour 10k personnes, branches visibles <5s après confirmation

@@ -1,6 +1,6 @@
-# Phase 1 — Data Model
+# Phase 1 : Data Model
 
-**Feature**: Afrolang — Ajustements salles publiques et privées
+**Feature**: Afrolang : Ajustements salles publiques et privées
 **Schema cible**: `afrolang` (étendu) + FK vers `country_profile.groupe_ethnique`
 **Principe constitution III**: le SQL est la source de vérité ; les structs Rust et interfaces TS reflètent fidèlement ce modèle.
 
@@ -17,11 +17,11 @@
 
 ### Nouvelles tables
 
-1. `afrolang.proposition_salle` — propositions de salles publiques à valider.
-2. `afrolang.salle_moderateur` — affectation many-to-many modérateurs Afrolang attitrés ↔ salle publique.
-3. `afrolang.salle_privee_adhesion` — demandes d'adhésion, invitations et abonnés d'une salle privée.
-4. `afrolang.ressource_salle` — ressources pédagogiques (fichiers internes + liens externes modérés).
-5. `afrolang.message_session` — messages de la messagerie instantanée écrite.
+1. `afrolang.proposition_salle` : propositions de salles publiques à valider.
+2. `afrolang.salle_moderateur` : affectation many-to-many modérateurs Afrolang attitrés ↔ salle publique.
+3. `afrolang.salle_privee_adhesion` : demandes d'adhésion, invitations et abonnés d'une salle privée.
+4. `afrolang.ressource_salle` : ressources pédagogiques (fichiers internes + liens externes modérés).
+5. `afrolang.message_session` : messages de la messagerie instantanée écrite.
 
 ### Nouveaux types (enums)
 
@@ -258,15 +258,15 @@ CREATE INDEX idx_afrolang_message_session
 | `description` | TEXT | |
 | `image_couverture_url` | VARCHAR(500) | |
 | `langue_cible` | VARCHAR(100) | (existant) |
-| **`langue_code`** | **VARCHAR(40)** | **nouveau** — ISO ou code métier de la langue |
-| **`alphabet`** | **TEXT** | **nouveau** — alphabet affiché dans Ressources |
-| **`dictionnaire_url`** | **VARCHAR(500)** | **nouveau** — lien direct vers le dictionnaire intégré (le lien externe validé passe par `ressource_salle`) |
-| **`groupe_ethnique_id`** | **UUID NOT NULL FK** | **nouveau** — référentiel unique (Décision 1) |
-| ~~`moderateur_id`~~ | ~~UUID~~ | **supprimé** — remplacé par `salle_moderateur` |
+| **`langue_code`** | **VARCHAR(40)** | **nouveau**, ISO ou code métier de la langue |
+| **`alphabet`** | **TEXT** | **nouveau**, alphabet affiché dans Ressources |
+| **`dictionnaire_url`** | **VARCHAR(500)** | **nouveau**, lien direct vers le dictionnaire intégré (le lien externe validé passe par `ressource_salle`) |
+| **`groupe_ethnique_id`** | **UUID NOT NULL FK** | **nouveau**, référentiel unique (Décision 1) |
+| ~~`moderateur_id`~~ | ~~UUID~~ | **supprimé**, remplacé par `salle_moderateur` |
 | `actif` | BOOLEAN | DEFAULT TRUE |
 | `cree_par` | UUID NOT NULL | admin créateur |
 | `created_at` / `updated_at` | TIMESTAMPTZ | |
-| **`deleted_at`** | **TIMESTAMPTZ** | **nouveau** — soft deletion |
+| **`deleted_at`** | **TIMESTAMPTZ** | **nouveau**, soft deletion |
 
 **Règles métier** :
 - Au plus une salle active par groupe ethnique (index unique partiel).
@@ -278,7 +278,7 @@ CREATE INDEX idx_afrolang_message_session
 |-------|------|--------|
 | (champs existants conservés) | | |
 | **`motif`** | **enum `motif_salle_privee`** | **NOT NULL** |
-| **`declaration_adulte_at`** | **TIMESTAMPTZ** | **NOT NULL** — capture de la case cochée (FR-033) |
+| **`declaration_adulte_at`** | **TIMESTAMPTZ** | **NOT NULL**, capture de la case cochée (FR-033) |
 | **`visibilite`** | **enum `visibilite_salle_privee`** | **DEFAULT `fermee`** |
 | **`archivee_at`** | **TIMESTAMPTZ NULL** | archivage automatique si créateur supprimé (FR-034) ou en cascade lors de la désactivation de la salle publique de rattachement (Edge Case) |
 | **`deleted_at`** | **TIMESTAMPTZ NULL** | soft deletion explicite |
@@ -384,7 +384,7 @@ Modèle unifié pour demandes, invitations et abonnés confirmés.
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Règle d'atomicité de la limite de participants** (évite conditions de course — SC-006) :
+**Règle d'atomicité de la limite de participants** (évite conditions de course, SC-006) :
 ```sql
 BEGIN;
 SELECT max_participants FROM salle_privee WHERE id = $1 FOR UPDATE;
@@ -465,8 +465,8 @@ en_attente ─► approuvee ─► (salle créée, salle_id_creee rempli)
 ```
 actif (archivee_at=NULL, deleted_at=NULL)
   │
-  ├─► archivée  (archivee_at=NOW())   — créateur désactivé ou supprimé (FR-034)
-  └─► supprimée (deleted_at=NOW())    — soft delete admin/créateur
+  ├─► archivée  (archivee_at=NOW()) : créateur désactivé ou supprimé (FR-034)
+  └─► supprimée (deleted_at=NOW()) : soft delete admin/créateur
 ```
 
 ### Adhésion à une salle privée
@@ -506,4 +506,4 @@ Dans `uafricas_frontend/app/mocks/afrolang.ts` :
 
 ## Statut Phase 1 (data model)
 
-**Complet** — schéma SQL spécifié, contraintes métier exprimées par index partiels + CHECK + transactions, mappings Rust/TS documentés.
+**Complet** : schéma SQL spécifié, contraintes métier exprimées par index partiels + CHECK + transactions, mappings Rust/TS documentés.

@@ -37,7 +37,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
     </AdminPageHeader>
     <AdminFilters :filtres="filterDefs" v-model="filtres" @rechercher="() => { reinitialiserPagination(); chargerListe() }" @reinitialiser="reinitialiser" />
     <AdminDataTable :colonnes="colonnes" :donnees="categories" :pagination="pagination" :tri-colonne="sort.column" :tri-direction="sort.direction" :loading="loading" @trier="changerTri" @aller-page="allerPage">
-      <template #cell-contexte="{ value }"><span v-if="value" class="badge badge-info badge-sm">{{ value }}</span><span v-else class="text-base-content/30">—</span></template>
+      <template #cell-contexte="{ value }"><span v-if="value" class="badge badge-info badge-sm">{{ value }}</span><span v-else class="text-base-content/30">-</span></template>
       <template #cell-parent_id="{ value }"><span v-if="value" class="badge badge-outline badge-sm">Enfant</span><span v-else class="badge badge-primary badge-sm">Racine</span></template>
       <template #cell-actif="{ value }"><span :class="value ? 'badge badge-success badge-sm' : 'badge badge-neutral badge-sm'">{{ value ? 'Oui' : 'Non' }}</span></template>
       <template #actions="{ item }">

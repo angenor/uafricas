@@ -1,4 +1,4 @@
-# Contrats API — Système d'engagement (Phase 1)
+# Contrats API : Système d'engagement (Phase 1)
 
 Toutes les réponses suivent le wrapper projet `ApiResponse<T>` (`{ success, data, message }`). Auth : JWT (`Authorization: Bearer …`). Erreurs standard : 401 (non authentifié), 403 (permission manquante / auto-attribution interdite), 404, 409 (conflit), 422 (validation).
 
@@ -6,7 +6,7 @@ Toutes les réponses suivent le wrapper projet `ApiResponse<T>` (`{ success, dat
 
 ---
 
-## Public — `/api/engagement` (JWT requis sauf mention)
+## Public : `/api/engagement` (JWT requis sauf mention)
 
 ### `GET /api/engagement/mon-compte`
 Compte d'engagement du membre connecté.
@@ -41,7 +41,7 @@ Historique paginé des mouvements du membre connecté (le plus récent d'abord).
 }
 ```
 
-### `GET /api/engagement/niveau/{utilisateur_id}`  *(public, léger — badge)*
+### `GET /api/engagement/niveau/{utilisateur_id}`  *(public, léger, badge)*
 Niveau + code d'un membre, pour afficher le **badge** sur son profil public et **sous ses contenus**. N'expose **pas** le solde exact ni le journal (FR-019).
 ```json
 { "success": true, "data": { "code": "platinum", "libelle": "Influenceur Platinum", "badge_couleur": "slate", "badge_icone": "crown" } }
@@ -49,11 +49,11 @@ Niveau + code d'un membre, pour afficher le **badge** sur son profil public et *
 
 ---
 
-## Admin — `/api/admin/engagement` (JWT + permission `engagement`)
+## Admin : `/api/admin/engagement` (JWT + permission `engagement`)
 
 ### Règles de barème
-- `GET /api/admin/engagement/regles` — liste des règles.
-- `PUT /api/admin/engagement/regles/{id}` — modifier `points`, `reputation_delta`, `plafond_journalier`, `plafond_mensuel`, `actif`, `libelle`. Audité (`log_action`, schema `engagement`).
+- `GET /api/admin/engagement/regles` : liste des règles.
+- `PUT /api/admin/engagement/regles/{id}`, modifier `points`, `reputation_delta`, `plafond_journalier`, `plafond_mensuel`, `actif`, `libelle`. Audité (`log_action`, schema `engagement`).
 
 ```json
 // PUT body
@@ -63,13 +63,13 @@ Niveau + code d'un membre, pour afficher le **badge** sur son profil public et *
 
 ### Paliers de popularité
 - `GET /api/admin/engagement/paliers`
-- `POST /api/admin/engagement/paliers` — `{ "seuil_likes": 2000, "points": 80, "actif": true }`
-- `PUT /api/admin/engagement/paliers/{id}` — modifier `points` / `actif` (le seuil est unique).
-- `DELETE /api/admin/engagement/paliers/{id}` — désactivation (`actif=false`) plutôt que suppression physique (référencé par le journal).
+- `POST /api/admin/engagement/paliers`, `{ "seuil_likes": 2000, "points": 80, "actif": true }`
+- `PUT /api/admin/engagement/paliers/{id}`, modifier `points` / `actif` (le seuil est unique).
+- `DELETE /api/admin/engagement/paliers/{id}`, désactivation (`actif=false`) plutôt que suppression physique (référencé par le journal).
 
 ### Seuils de niveaux
 - `GET /api/admin/engagement/niveaux`
-- `PUT /api/admin/engagement/niveaux/{id}` — modifier `seuil_min`, `libelle`, `badge_couleur`, `badge_icone`. Audité. (Le `code` et l'`ordre` restent fixes.)
+- `PUT /api/admin/engagement/niveaux/{id}`, modifier `seuil_min`, `libelle`, `badge_couleur`, `badge_icone`. Audité. (Le `code` et l'`ordre` restent fixes.)
 
 ### Journal global
 - `GET /api/admin/engagement/journal?utilisateur_id={?}&type_action={?}&depuis={?}&jusqu_a={?}&page&taille`

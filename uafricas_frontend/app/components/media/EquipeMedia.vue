@@ -2,7 +2,7 @@
 import type { MembreEquipeAPI } from '~/composables/useMediaEquipe'
 
 /**
- * Rendu public d'une équipe éditoriale — feature 010.
+ * Rendu public d'une équipe éditoriale, feature 010.
  *
  * **Seuls les champs renseignés sont affichés** (FR-007) : une personne sans
  * territoire ni contact ne laisse aucun libellé creux derrière elle, et une
@@ -14,7 +14,7 @@ import type { MembreEquipeAPI } from '~/composables/useMediaEquipe'
  * lien, et un compte fermé donne du texte simple plutôt qu'un lien mort.
  *
  * Le repli au-delà d'un seuil (FR-024) est **interne à ce composant** : il plie
- * des fiches, non du texte — `TexteRepliable` n'a rien à y faire.
+ * des fiches, non du texte, `TexteRepliable` n'a rien à y faire.
  *
  * Tailwind v4 pur (Principe VI).
  */

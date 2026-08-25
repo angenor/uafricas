@@ -9,8 +9,8 @@
 
 ### Session 2026-04-07
 
-- Q: Quel style visuel pour les animations (fun/cartoon, fluide/moderne, gamifie) ? → A: Fluide/moderne avec touche festive — transitions douces et elegantes, confettis subtils aux couleurs du site (chocolat/vert), rebond leger uniquement sur le succes.
-- Q: Duree et intensite de l'effet confettis au succes ? → A: Moyen (3-4s) — confettis qui retombent naturellement avec gravite, puis fade-out.
+- Q: Quel style visuel pour les animations (fun/cartoon, fluide/moderne, gamifie) ? → A: Fluide/moderne avec touche festive, transitions douces et elegantes, confettis subtils aux couleurs du site (chocolat/vert), rebond leger uniquement sur le succes.
+- Q: Duree et intensite de l'effet confettis au succes ? → A: Moyen (3-4s) : confettis qui retombent naturellement avec gravite, puis fade-out.
 
 ## User Scenarios & Testing *(mandatory)*
 

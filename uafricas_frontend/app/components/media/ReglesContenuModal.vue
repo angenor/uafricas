@@ -91,7 +91,7 @@
                   Tout membre connecté peut signaler un contenu, une fois par contenu.
                   Au-delà d'un certain nombre de signalements distincts, le contenu est
                   <strong class="text-gray-900">automatiquement retiré de l'antenne</strong>
-                  le temps qu'un administrateur l'examine — il peut alors le rétablir ou le
+                  le temps qu'un administrateur l'examine : il peut alors le rétablir ou le
                   supprimer définitivement.
                 </p>
               </div>

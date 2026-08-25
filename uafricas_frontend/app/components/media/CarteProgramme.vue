@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * Carte d'un **programme** dans une section de vitrine — feature 010.
+ * Carte d'un **programme** dans une section de vitrine, feature 010.
  *
  * Trois informations, pas une de plus : couverture, nom, description tronquée
  * par des points de suspension (FR-004). La vitrine annonce une offre
- * éditoriale ; le détail — périodicité, équipe, vidéos — appartient à la page du
+ * éditoriale ; le détail : périodicité, équipe, vidéos, appartient à la page du
  * programme, vers laquelle la carte mène (FR-006).
  *
  * Remplace `CarteEmission.vue`, qui annonçait un décompte d'épisodes et une
@@ -16,7 +16,7 @@
 import type { TvEmission } from '~/composables/useTelevision'
 import type { EmissionRadio } from '~/composables/useStationsRadio'
 
-/** Forme minimale commune aux deux familles — la carte n'a besoin de rien d'autre. */
+/** Forme minimale commune aux deux familles, la carte n'a besoin de rien d'autre. */
 type ProgrammeCarte = Pick<TvEmission | EmissionRadio, 'id' | 'slug' | 'titre' | 'description'> & {
   banner?: string
   cover?: string
@@ -24,7 +24,7 @@ type ProgrammeCarte = Pick<TvEmission | EmissionRadio, 'id' | 'slug' | 'titre' |
 
 const props = withDefaults(defineProps<{
   programme: ProgrammeCarte
-  /** `chaine_tv` ou `station_radio` — décide de l'adresse et de l'icône de repli. */
+  /** `chaine_tv` ou `station_radio` : décide de l'adresse et de l'icône de repli. */
   typeSupport?: 'chaine_tv' | 'station_radio'
 }>(), {
   typeSupport: 'chaine_tv',
@@ -74,7 +74,7 @@ const iconeRepli = computed<[string, string]>(() =>
     </h4>
 
     <!-- Ellipse figée, sans commande de dépliage : en vitrine, FR-003 demande
-         des points de suspension et non un « voir plus » — celui-là est réservé
+         des points de suspension et non un « voir plus », celui-là est réservé
          aux pages de détail. -->
     <p v-if="programme.description" class="mt-1 text-sm leading-snug text-gray-400 line-clamp-3">
       {{ programme.description }}

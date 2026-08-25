@@ -8,10 +8,10 @@
  * sous le pli.
  *
  * Trois entrées, toutes résolues côté serveur (`GET /television/sections`) :
- *   • Africans Télé International — chaînes produites par la plateforme (09o),
+ *   • Africans Télé International : chaînes produites par la plateforme (09o),
  *     qui PORTE aussi le choix des thématiques déclarées (US3, multiple) ;
- *   • Territoire — pays de rattachement de la chaîne ;
- *   • En direct — chaînes actuellement à l'antenne.
+ *   • Territoire : pays de rattachement de la chaîne ;
+ *   • En direct : chaînes actuellement à l'antenne.
  *
  * Les thématiques n'ont plus de pastille à elles : elles ne qualifient que les
  * chaînes de la plateforme, donc ouvrir leur panneau active `origine=africans`
@@ -21,7 +21,7 @@
  *
  * Deux entrées ont été retirées avant elles parce qu'elles faisaient DOUBLON :
  *   • « Chaînes thématiques » interrogeait le thème phare des PROGRAMMES là où
- *     « Thématiques » interroge ce que la chaîne déclare — deux mécanismes
+ *     « Thématiques » interroge ce que la chaîne déclare, deux mécanismes
  *     distincts, mais qui puisent depuis 09s dans le même référentiel de genres
  *     et renvoient donc presque toujours le même résultat. Le déclaré l'emporte :
  *     il est explicite, multiple, et exigé pour publier.
@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<{
   /** Thématiques déclarées, sélection multiple (US3). */
   thematiques?: string[]
   /** Référentiel `media` complet, chaque thème avec son nombre de chaînes
-   * publiées — `0` compris, pour donner à voir l'étendue du catalogue. */
+   * publiées : `0` compris, pour donner à voir l'étendue du catalogue. */
   thematiquesDisponibles?: ThematiqueDecompte[]
   /** Nombre de chaînes remontées, affiché dès qu'un filtre est actif. */
   nombreChaines?: number
@@ -140,7 +140,7 @@ const classePastille = (actif: boolean) => [
 /**
  * Les listes déroulantes natives héritent du fond clair : on les force en
  * sombre. La largeur est fixée : sans elle, le sélecteur s'étire à la largeur
- * de son option la plus longue — « Valeurs africaines et développement » y
+ * de son option la plus longue : « Valeurs africaines et développement » y
  * suffit à faire déborder la barre.
  */
 const classeSelect = [
@@ -168,7 +168,7 @@ const classeSelect = [
       >
         <!-- Africans Télé International (chaînes de la plateforme) : porte aussi
              le panneau des thématiques déclarées. Le panneau lui-même est
-             TÉLÉPORTÉ hors de la barre — voir plus bas. -->
+             TÉLÉPORTÉ hors de la barre : voir plus bas. -->
         <button
           type="button"
           :class="classePastille(estAfricans)"
@@ -250,7 +250,7 @@ const classeSelect = [
       Il ne peut pas vivre dans la barre : celle-ci est collée au bas d'une
       vedette qui occupe tout l'écran, donc un panneau ouvert vers le bas sort
       du champ ; et la rangée de pastilles porte `overflow-x-auto`, qui le
-      rogne. Un simple `fixed` ne suffirait pas non plus — le `backdrop-blur`
+      rogne. Un simple `fixed` ne suffirait pas non plus, le `backdrop-blur`
       de la barre crée un bloc conteneur qui capture jusqu'aux éléments fixes.
       Sortir du sous-arbre est le seul remède qui tienne dans les trois cas.
 
@@ -263,7 +263,7 @@ const classeSelect = [
 
         <div
           role="dialog"
-          aria-label="Africans Télé International — filtrer par thématique"
+          aria-label="Africans Télé International, filtrer par thématique"
           class="absolute inset-x-3 bottom-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[36rem] max-h-[65vh] flex flex-col rounded-2xl bg-neutral-900 ring-1 ring-white/15 shadow-2xl"
         >
           <div class="flex items-center justify-between gap-3 px-4 pt-4 pb-3 border-b border-white/10">
@@ -298,8 +298,8 @@ const classeSelect = [
                doivent rester visibles quand la liste est longue. -->
           <div class="flex flex-wrap gap-2 overflow-y-auto px-4 py-4">
             <!-- Les thèmes sans chaîne restent proposés et cliquables : leur
-                 `(0)` est une information — il dit que le thème existe et
-                 n'attend qu'un contenu —, là où les masquer laisserait croire
+                 `(0)` est une information : il dit que le thème existe et
+                 n'attend qu'un contenu , là où les masquer laisserait croire
                  à un catalogue plus étroit qu'il n'est. Ils sont simplement
                  estompés pour ne pas concurrencer les thèmes servis. -->
             <button

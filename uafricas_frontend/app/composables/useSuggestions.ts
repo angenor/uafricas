@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Composable — Suggestions proactives de complétion d'arbre (côté client)
+// Composable : Suggestions proactives de complétion d'arbre (côté client)
 // ════════════════════════════════════════════════════════════════════════════
 
 import type { NoeudArbre } from '~/composables/useLayoutArbre'

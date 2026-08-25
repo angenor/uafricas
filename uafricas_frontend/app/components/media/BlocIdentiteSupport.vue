@@ -5,9 +5,9 @@
  * La couverture est annoncée en clair : « Toute l'Afrique » n'est pas la même
  * chose qu'une liste vide, et une fiche muette laisserait croire qu'un support
  * panafricain ne rayonne nulle part. Terminologie « territoire » à l'écran,
- * `pays` dans l'API — convention du projet.
+ * `pays` dans l'API : convention du projet.
  *
- * Tailwind v4 pur — page publique (principe VI).
+ * Tailwind v4 pur : page publique (principe VI).
  */
 import type { ThematiquePublique, CouverturePublique } from '~/composables/useMediaSupport'
 

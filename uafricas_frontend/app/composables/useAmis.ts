@@ -105,7 +105,7 @@ export const useAmis = () => {
   /**
    * Envoyer une demande d'amitié (FR-001). Renvoie la demande créée
    * (ou `{ statut: 'amis' }` en cas d'auto-acceptation croisée), ou `null`
-   * en cas d'erreur — `codeErreur` est alors renseigné.
+   * en cas d'erreur : `codeErreur` est alors renseigné.
    */
   const envoyerDemande = async (destinataireId: string): Promise<DemandeResponse | null> => {
     chargement.value = true
@@ -281,7 +281,7 @@ export const useAmis = () => {
     }
   }
 
-  // ── US4 — Gérer ses relations & blocage ──────────────────────
+  // ── US4 : Gérer ses relations & blocage ──────────────────────
 
   /** Demandes d'amitié envoyées en attente (FR-010). */
   const listerDemandesEnvoyees = async (): Promise<DemandeEnvoyeeAPI[]> => {

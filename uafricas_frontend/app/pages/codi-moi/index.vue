@@ -14,7 +14,7 @@
             Codimoi
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Préservons nos cultures les meilleures — codifier les récits, images et souvenirs de l'Afrique et des afro-descendants.
+            Préservons nos cultures les meilleures, codifier les récits, images et souvenirs de l'Afrique et des afro-descendants.
           </p>
         </div>
 
@@ -365,7 +365,7 @@ const breadcrumbs = [
 // Modale de présentation « C'est quoi Codimoi ? »
 const presentationOuverte = ref(false)
 
-// Données — on utilise directement CodiMoiPostAPI (pas de mapping)
+// Données : on utilise directement CodiMoiPostAPI (pas de mapping)
 const posts = ref<CodiMoiPostAPI[]>([])
 const totalPosts = ref(0)
 
@@ -458,7 +458,7 @@ async function chargerPosts(append = false) {
   loading.value = false
 }
 
-// Actions — Modale détail
+// Actions : Modale détail
 const openPostDetail = async (postId: string) => {
   const post = posts.value.find(p => p.id === postId)
   if (!post) return
@@ -513,7 +513,7 @@ const handleModalShare = () => {
   showNotification('Lien copié dans le presse-papiers !')
 }
 
-// Actions — Carte (liste)
+// Actions : Carte (liste)
 const handleReaction = async (postId: string, type: 'like' | 'dislike') => {
   const updatedPost = await reagir(postId, type)
   if (updatedPost) {

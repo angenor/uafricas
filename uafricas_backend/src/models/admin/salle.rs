@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::models::afrolang::{AdministrateurLight, DesactivationAdminInfo, PaysOrigineLight};
 
 // ── Colonnes SQL ──────────────────────────────────────────────
-// feature 005 : la colonne `salle.moderateur_id` est supprimée —
+// feature 005 : la colonne `salle.moderateur_id` est supprimée, 
 // la modération attitrée passe désormais par `salle_moderateur`.
 
 pub const ADMIN_SALLE_LISTE_COLONNES: &str =

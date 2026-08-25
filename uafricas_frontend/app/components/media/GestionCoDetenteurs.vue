@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Détenteurs d'un support média — chaîne ou station (US5, T099).
+ * Détenteurs d'un support média : chaîne ou station (US5, T099).
  *
  * Le retrait est un soft delete côté serveur : les anciens détenteurs restent
  * listés à part. Savoir qui a tenu un support, et jusqu'à quand, fait partie de
@@ -30,7 +30,7 @@ onMounted(charger)
 const actifs = computed(() => detenteurs.value.filter(d => d.actif))
 const anciens = computed(() => detenteurs.value.filter(d => !d.actif))
 
-/** Seul le propriétaire invite et révoque — la garde réelle est côté serveur. */
+/** Seul le propriétaire invite et révoque, la garde réelle est côté serveur. */
 const peutGerer = computed(() => roleAuMoins(props.monRole, 'proprietaire'))
 
 const nomComplet = (d: DetenteurAPI) =>

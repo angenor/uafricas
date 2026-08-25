@@ -2,7 +2,7 @@
 //
 // Garde côté serveur : `verifier_permission!(admin, "media", …)`, comme la file
 // des propositions. Le rétablissement d'un contenu remet son compteur de
-// signalements à zéro (FR-051) — sans quoi le seuil resterait franchi et le
+// signalements à zéro (FR-051) : sans quoi le seuil resterait franchi et le
 // contenu serait resuspendu au premier signalement suivant.
 
 import type { ApiResponse } from '~/types/admin'

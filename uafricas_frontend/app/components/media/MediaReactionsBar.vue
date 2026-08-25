@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Réactions, commentaires et partages d'un contenu média (US3).
 // Modèle : opportunite-afrique/ReactionsBar.vue, enrichi des deux compteurs
-// annexes — un contenu a plus d'affordances qu'un sous-objet afripulse.
+// annexes : un contenu a plus d'affordances qu'un sous-objet afripulse.
 
 import { useMediaSocial, type TypeMedia, type TypeReaction } from '~/composables/useMediaSocial'
 
@@ -31,7 +31,7 @@ const dislikes = ref(props.nombreDislikes)
 const maReaction = ref<TypeReaction | null>(props.maReaction)
 const enCours = ref(false)
 
-// Resynchronise si le parent recharge la donnée — la mise à jour optimiste
+// Resynchronise si le parent recharge la donnée, la mise à jour optimiste
 // ci-dessous serait sinon écrasée par un état périmé.
 watch(
   () => [props.nombreLikes, props.nombreDislikes, props.maReaction] as const,
@@ -51,7 +51,7 @@ const basculer = async (type: TypeReaction) => {
   enCours.value = true
 
   // Mise à jour optimiste : le compteur réagit au clic, puis se resynchronise
-  // sur la réponse du serveur — qui fait foi.
+  // sur la réponse du serveur : qui fait foi.
   const ancienne = maReaction.value
   const retrait = ancienne === type
   maReaction.value = retrait ? null : type

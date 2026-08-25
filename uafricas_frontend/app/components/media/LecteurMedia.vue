@@ -56,7 +56,7 @@ const estJouable = computed(() => estMediaJouable(props.url, props.sourceMedia))
 
 /**
  * Paramètres d'intégration YouTube. `mute=1` est indispensable dès que la
- * lecture automatique est demandée — c'est la condition posée par les
+ * lecture automatique est demandée : c'est la condition posée par les
  * navigateurs pour l'autoriser.
  */
 const srcIframe = computed(() => {
@@ -87,7 +87,7 @@ const lire = async () => {
   try {
     await element.value.play()
   } catch {
-    // Lecture automatique refusée par le navigateur — cas normal, pas une
+    // Lecture automatique refusée par le navigateur, cas normal, pas une
     // erreur à remonter à l'utilisateur.
   }
 }

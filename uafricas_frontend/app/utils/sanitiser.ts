@@ -1,4 +1,4 @@
-// Assainissement HTML avant tout rendu `v-html` (audit #29 — XSS stockée).
+// Assainissement HTML avant tout rendu `v-html` (audit #29, XSS stockée).
 // isomorphic-dompurify fonctionne au SSR (jsdom) comme au client.
 // Auto-importé par Nuxt (app/utils/).
 import DOMPurify from 'isomorphic-dompurify'

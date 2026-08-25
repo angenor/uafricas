@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * Back-office — seuils de niveaux (daisyUI autorisé ici).
+ * Back-office : seuils de niveaux (daisyUI autorisé ici).
  *
  * Extrait de `regles.vue` parce que ces mutations ont un effet ensembliste :
  * chacune rebascule le niveau de tous les comptes concernés, en une seule
  * transaction serveur. Le nombre de comptes recalculés est affiché après chaque
- * geste — sans ce retour, l'administrateur ne verrait pas l'effet réel.
+ * geste : sans ce retour, l'administrateur ne verrait pas l'effet réel.
  */
 import { ref, onMounted } from 'vue'
 import { useAdminEngagement, type AdminNiveau } from '~/composables/useAdminEngagement'
@@ -28,7 +28,7 @@ const COULEURS = ['gray', 'green', 'amber', 'yellow', 'slate', 'rose', 'sky', 'v
 /**
  * Plage effective de chaque statut : la borne haute n'est JAMAIS stockée, elle
  * se déduit du seuil suivant. C'est ce qui rend une grille incohérente
- * impossible à exprimer — mais aussi ce qui la rend difficile à lire tant qu'on
+ * impossible à exprimer : mais aussi ce qui la rend difficile à lire tant qu'on
  * ne l'affiche pas explicitement.
  */
 const plages = computed(() => {
@@ -78,8 +78,8 @@ const signaler = (e: unknown) => {
 const notifierRecalcul = (action: string, comptes: number) =>
   notifier(
     comptes > 0
-      ? `${action} — ${comptes} compte${comptes > 1 ? 's' : ''} ont changé de niveau.`
-      : `${action} — aucun compte n'a changé de niveau.`,
+      ? `${action} - ${comptes} compte${comptes > 1 ? 's' : ''} ont changé de niveau.`
+      : `${action} : aucun compte n'a changé de niveau.`,
   )
 
 const ajouter = async () => {
@@ -137,7 +137,7 @@ const supprimer = async (n: AdminNiveau) => {
 <template>
   <div class="p-6 space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-2xl font-bold">Engagement — Niveaux</h1>
+      <h1 class="text-2xl font-bold">Engagement, Niveaux</h1>
       <div class="flex flex-wrap gap-2">
         <NuxtLink to="/admin/engagement/regles" class="btn btn-sm btn-outline">
           <font-awesome-icon icon="fa-solid fa-sliders" /> Barème
@@ -182,7 +182,7 @@ const supprimer = async (n: AdminNiveau) => {
             <label class="form-control">
               <span class="label-text text-xs">Couleur du badge</span>
               <select v-model="nouveau.badge_couleur" class="select select-sm select-bordered">
-                <option value="">— par défaut —</option>
+                <option value="">par défaut</option>
                 <option v-for="c in COULEURS" :key="c" :value="c">{{ c }}</option>
               </select>
             </label>
@@ -232,7 +232,7 @@ const supprimer = async (n: AdminNiveau) => {
               <td class="whitespace-nowrap text-xs opacity-70">{{ plages.get(n.id) }}</td>
               <td class="flex gap-1">
                 <select v-model="n.badge_couleur" class="select select-sm select-bordered w-28">
-                  <option :value="null">—</option>
+                  <option :value="null">-</option>
                   <option v-for="c in COULEURS" :key="c" :value="c">{{ c }}</option>
                 </select>
                 <input v-model="n.badge_icone" class="input input-sm input-bordered w-28 font-mono" placeholder="icône">

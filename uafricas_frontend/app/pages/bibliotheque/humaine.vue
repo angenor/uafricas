@@ -66,7 +66,7 @@
           <div>
             <p class="font-semibold text-sm">Votre demande est en cours d'examen</p>
             <p class="text-xs mt-0.5 text-amber-700">
-              Soumise le {{ new Date(maDemande.dateSubmission).toLocaleDateString('fr-FR') }} — un administrateur la traitera prochainement.
+              Soumise le {{ new Date(maDemande.dateSubmission).toLocaleDateString('fr-FR') }}, un administrateur la traitera prochainement.
             </p>
           </div>
         </div>

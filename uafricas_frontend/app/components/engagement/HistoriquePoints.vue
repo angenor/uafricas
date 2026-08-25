@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Historique des points — liste paginée, filtres catégorie + période.
+ * Historique des points : liste paginée, filtres catégorie + période.
  * Tailwind v4 pur (Principe VI).
  *
  * Aucun libellé du barème n'est écrit ici : `libelle` vient de la règle, la
@@ -82,7 +82,7 @@ const signe = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
 /**
  * Mention d'écrêtage (R14). `plafond_atteint` couvre deux situations très
- * différentes pour le membre — les confondre ferait croire à une perte de points
+ * différentes pour le membre : les confondre ferait croire à une perte de points
  * là où il n'y en a pas, ou l'inverse.
  */
 /**
@@ -277,7 +277,7 @@ const mentionPlafond = (m: MouvementPoints): string | null => {
         >
           <font-awesome-icon icon="fa-solid fa-chevron-left" /> Précédent
         </button>
-        <span class="text-xs text-gray-400">Page {{ page }} / {{ totalPages }} — {{ total }} mouvement{{ total > 1 ? 's' : '' }}</span>
+        <span class="text-xs text-gray-400">Page {{ page }} / {{ totalPages }} - {{ total }} mouvement{{ total > 1 ? 's' : '' }}</span>
         <button
           type="button"
           class="text-sm text-gray-500 transition hover:text-gray-900 disabled:opacity-40"

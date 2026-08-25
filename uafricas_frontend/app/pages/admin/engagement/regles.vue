@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Back-office — règles de points et paliers de popularité (daisyUI autorisé ici).
+ * Back-office : règles de points et paliers de popularité (daisyUI autorisé ici).
  *
  * Les niveaux ont leur écran dédié (`/admin/engagement/niveaux`) : leurs mutations
  * rebasculent tous les comptes et méritent leur propre retour d'information.
@@ -150,7 +150,7 @@ const retirerRegle = async (r: AdminRegle) => {
 // qu'une case à cocher perdue en avant-dernière colonne.
 const filtreEtat = ref<'toutes' | 'actives' | 'inactives'>('toutes')
 
-/** Les actives d'abord — une règle inactive ne doit pas se lire comme une active. */
+/** Les actives d'abord : une règle inactive ne doit pas se lire comme une active. */
 const reglesAffichees = computed(() => {
   const filtrees = regles.value.filter((r) =>
     filtreEtat.value === 'actives' ? r.actif
@@ -213,7 +213,7 @@ const retirerPalier = async (p: AdminPalier) => {
 <template>
   <div class="p-6 space-y-8">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-2xl font-bold">Engagement — Barème</h1>
+      <h1 class="text-2xl font-bold">Engagement, Barème</h1>
       <div class="flex flex-wrap gap-2">
         <NuxtLink to="/admin/engagement/categories" class="btn btn-sm btn-outline">
           <font-awesome-icon icon="fa-solid fa-layer-group" /> Catégories
@@ -256,7 +256,7 @@ const retirerPalier = async (p: AdminPalier) => {
         <!--
           Une règle désactivée n'est PAS supprimée : son montant d'origine est
           conservé et la réactiver rétablit le crédit sans redéploiement. C'est
-          la contrepartie exacte du recadrage — encore faut-il que le lecteur de
+          la contrepartie exacte du recadrage, encore faut-il que le lecteur de
           l'écran le sache avant de conclure que le barème a été amputé.
         -->
         <div class="alert alert-info py-2 text-sm">
@@ -326,7 +326,7 @@ const retirerPalier = async (p: AdminPalier) => {
               <label class="form-control">
                 <span class="label-text text-xs">Catégorie</span>
                 <select v-model="nouvelleRegle.categorie_id" class="select select-sm select-bordered">
-                  <option value="">— aucune —</option>
+                  <option value="">aucune</option>
                   <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.libelle }}</option>
                 </select>
               </label>
@@ -373,7 +373,7 @@ const retirerPalier = async (p: AdminPalier) => {
                   <span
                     class="mr-1.5 inline-block size-2 rounded-full align-middle"
                     :class="r.actif ? 'bg-success' : 'bg-base-300'"
-                    :title="r.actif ? 'Règle active' : 'Règle inactive — ne crédite rien'"
+                    :title="r.actif ? 'Règle active' : 'Règle inactive : ne crédite rien'"
                   />
                   {{ r.type_action }}
                   <!--
@@ -385,13 +385,13 @@ const retirerPalier = async (p: AdminPalier) => {
                     v-if="!r.instrumentee"
                     class="badge badge-warning badge-sm mt-1 block whitespace-normal text-left"
                   >
-                    non instrumentée — aucun point ne sera attribué tant que le code n'émet pas cette action
+                    non instrumentée : aucun point ne sera attribué tant que le code n'émet pas cette action
                   </span>
                 </td>
                 <td><input v-model="r.libelle" class="input input-sm input-bordered w-44"></td>
                 <td>
                   <select v-model="r.categorie_id" class="select select-sm select-bordered w-36">
-                    <option :value="null">— aucune —</option>
+                    <option :value="null">aucune</option>
                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.libelle }}</option>
                   </select>
                 </td>
@@ -399,7 +399,7 @@ const retirerPalier = async (p: AdminPalier) => {
                 <td><input v-model.number="r.reputation_delta" type="number" class="input input-sm input-bordered w-20"></td>
                 <td><input v-model.number="r.plafond_journalier" type="number" class="input input-sm input-bordered w-24" placeholder="∞"></td>
                 <td><input v-model.number="r.plafond_mensuel" type="number" class="input input-sm input-bordered w-24" placeholder="∞"></td>
-                <td><input v-model.number="r.seuil_declencheur" type="number" class="input input-sm input-bordered w-20" placeholder="—"></td>
+                <td><input v-model.number="r.seuil_declencheur" type="number" class="input input-sm input-bordered w-20" placeholder="-"></td>
                 <td class="text-xs">
                   {{ r.nombre_mouvements }}
                   <span v-if="r.actif && r.instrumentee && r.nombre_mouvements === 0" class="block text-warning">
@@ -446,7 +446,7 @@ const retirerPalier = async (p: AdminPalier) => {
             fois par membre et par contenu. Tous les paliers ci-dessous sont inactifs et la règle
             <code class="font-mono">popularite_palier</code> est désactivée ; la liste n'est
             conservée que pour une réactivation éventuelle. Un palier ne se déclenche qu'une fois
-            <em>par contenu</em>, jamais par membre — c'est ce qui l'a rendu inutilisable pour
+            <em>par contenu</em>, jamais par membre : c'est ce qui l'a rendu inutilisable pour
             récompenser la popularité réelle.
           </span>
         </div>
@@ -459,7 +459,7 @@ const retirerPalier = async (p: AdminPalier) => {
           <font-awesome-icon icon="fa-solid fa-triangle-exclamation" />
           <span>
             Les paliers d'une famille <strong>remplacent</strong> les paliers globaux pour cette
-            famille — ils ne s'y ajoutent pas. Une famille sans palier propre suit les globaux.
+            famille : ils ne s'y ajoutent pas. Une famille sans palier propre suit les globaux.
           </span>
         </div>
 

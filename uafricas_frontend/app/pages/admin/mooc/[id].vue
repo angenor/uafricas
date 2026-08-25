@@ -364,7 +364,7 @@ onMounted(async () => {
       <!-- Onglet Programme -->
       <div v-else-if="ongletActif === 'programme'" class="card bg-base-100 shadow-sm">
         <div class="card-body">
-          <h3 class="text-lg font-semibold border-b pb-2 mb-2">Programme — chapitres & leçons</h3>
+          <h3 class="text-lg font-semibold border-b pb-2 mb-2">Programme, chapitres & leçons</h3>
           <p class="text-sm text-base-content/60 mb-4">
             Structurez la formation en chapitres et leçons. Le contenu des leçons (vidéo, support, document)
             n'est accessible qu'aux membres inscrits ; sa structure reste visible publiquement.

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Ressources d'une salle publique (US6)
-// Tailwind v4 pur — accepte fichiers (admin/modérateur attitré) ou liens (tout membre, modérés)
+// Tailwind v4 pur : accepte fichiers (admin/modérateur attitré) ou liens (tout membre, modérés)
 import type { RessourceSalleAPI } from '~/composables/useAfrolang'
 
 interface Props {
@@ -252,7 +252,7 @@ watch(() => props.salleId, recharger)
               />
             </label>
             <label v-if="modaleOuvert === 'fichier'" class="block">
-              <span class="text-sm font-medium text-gray-700">Fichier (PDF, images, audio, vidéo — max 50 Mo)</span>
+              <span class="text-sm font-medium text-gray-700">Fichier (PDF, images, audio, vidéo, max 50 Mo)</span>
               <input
                 type="file"
                 accept=".pdf,.png,.jpg,.jpeg,.mp3,.mp4,.webm,.ogg,.wav"

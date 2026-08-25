@@ -257,7 +257,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
           <h3 class="font-bold text-lg mb-1">Detail de la contribution</h3>
           <p class="text-sm text-base-content/70 mb-4">
             <font-awesome-icon icon="clipboard-list" class="mr-1" />
-            {{ contributionDetail.pays_nom }} — {{ contributionDetail.section }}
+            {{ contributionDetail.pays_nom }} - {{ contributionDetail.section }}
           </p>
 
           <!-- Infos principales -->

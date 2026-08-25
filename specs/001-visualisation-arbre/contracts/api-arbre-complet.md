@@ -13,7 +13,7 @@ Authorization: Bearer <access_token>
 
 **Paramètres** : Aucun.
 
-## Réponse — Succès (200)
+## Réponse : Succès (200)
 
 ```json
 {
@@ -46,7 +46,7 @@ Authorization: Bearer <access_token>
 }
 ```
 
-## Réponse — Arbre vide (200)
+## Réponse : Arbre vide (200)
 
 Si l'utilisateur n'a pas encore créé d'arbre ou n'a aucune personne :
 
@@ -61,7 +61,7 @@ Si l'utilisateur n'a pas encore créé d'arbre ou n'a aucune personne :
 }
 ```
 
-## Réponse — Non authentifié (401)
+## Réponse : Non authentifié (401)
 
 ```json
 {
@@ -109,5 +109,5 @@ Si l'utilisateur n'a pas encore créé d'arbre ou n'a aucune personne :
 - L'endpoint suit le pattern `ApiResponse<T>` existant.
 - L'arbre est automatiquement créé si l'utilisateur n'en a pas (via `obtenir_ou_creer_arbre`).
 - Seules les entrées avec `deleted_at IS NULL` sont retournées.
-- Pas de pagination — la taille attendue est < 200 personnes par arbre.
+- Pas de pagination : la taille attendue est < 200 personnes par arbre.
 - Les liens conjoint suivent la convention existante : `rattachement_source_id < rattachement_cible_id` (tri UUID).

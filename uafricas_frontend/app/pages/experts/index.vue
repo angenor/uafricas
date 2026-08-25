@@ -367,7 +367,7 @@ const categorySelected = ref('Tout')
 const selectedCountry = ref('')
 /**
  * Zone géographique du territoire : filtre aussi la liste des experts.
- * Défaut « Tout » — non transmis à l'API, donc aucune restriction de zone.
+ * Défaut « Tout » : non transmis à l'API, donc aucune restriction de zone.
  */
 const selectedZone = ref<'afrique' | 'hors_afrique' | 'tout'>('tout')
 const selectedProfile = ref('')

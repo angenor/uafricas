@@ -1,9 +1,9 @@
-//! Prestataire de paiement — **unique point de bascule vers CinetPay**.
+//! Prestataire de paiement : **unique point de bascule vers CinetPay**.
 //!
 //! Ce module est délibérément le fichier le plus court du domaine « cadeaux » :
 //! c'est son intérêt. Le jour où l'encaissement réel arrive, seuls les corps de
 //! `initier` et `confirmer` changent (plus l'ajout d'un handler de webhook
-//! signé) — le catalogue, le journal comptable, la répartition 90/10 et
+//! signé) : le catalogue, le journal comptable, la répartition 90/10 et
 //! l'attribution des points sont déjà définitifs et n'ont pas à bouger.
 //!
 //! **Pas de trait `PrestatairePaiement`.** Une abstraction à implémentation
@@ -19,7 +19,7 @@ use chrono::Utc;
 use uuid::Uuid;
 
 /// Durée de validité d'une intention de paiement. Au-delà, la confirmation est
-/// refusée et la transaction bascule en `expire` — par résolution **paresseuse**
+/// refusée et la transaction bascule en `expire`, par résolution **paresseuse**
 /// à la lecture, jamais par une tâche de fond.
 pub const EXPIRATION_MINUTES: i64 = 30;
 
@@ -44,7 +44,7 @@ pub enum EtatPaiement {
 /// l'œil nu** dans le journal d'administration, ce qui vaut mieux qu'un drapeau
 /// booléen isolé quand on relit une ligne de comptabilité.
 ///
-/// `montant` et `reference_metier` ne servent pas encore — ils sont ce que
+/// `montant` et `reference_metier` ne servent pas encore : ils sont ce que
 /// CinetPay exigera, et les recevoir dès maintenant évite d'avoir à remonter la
 /// signature dans le handler le jour du basculement.
 pub fn initier(montant: i32, reference_metier: Uuid) -> IntentionPaiement {

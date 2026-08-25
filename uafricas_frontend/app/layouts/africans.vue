@@ -47,7 +47,7 @@ const estConnecte = computed(() => userStore.isAuthenticated)
 <style>
 /* Grille en zones nommées : le rail passe sous le contenu avant de disparaître,
    et la navigation devient une bande horizontale en mobile sans changer d'ordre
-   dans le DOM — l'ordre de lecture reste celui de la maquette. */
+   dans le DOM : l'ordre de lecture reste celui de la maquette. */
 .af-grille {
   display: grid;
   gap: 2.5rem;

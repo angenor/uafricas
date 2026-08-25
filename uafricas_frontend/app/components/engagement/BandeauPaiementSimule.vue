@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Avertissement de phase de test — Tailwind v4 pur (Principe VI).
+ * Avertissement de phase de test : Tailwind v4 pur (Principe VI).
  *
  * Ouvrir un parcours de paiement sans dire qu'aucun argent ne circule serait
  * trompeur : le membre croirait soutenir financièrement un auteur. Ce bandeau
@@ -34,7 +34,7 @@ withDefaults(defineProps<{
       class="mt-0.5 shrink-0 text-amber-600"
     />
     <div :class="compact ? 'text-[11px] leading-relaxed' : 'text-xs leading-relaxed'">
-      <p class="font-semibold">Paiement simulé — phase de test</p>
+      <p class="font-semibold">Paiement simulé, phase de test</p>
       <p class="mt-0.5">
         Aucun montant n'est réellement prélevé et aucune somme n'est réellement versée.
         <template v-if="!compact">

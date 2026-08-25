@@ -1,4 +1,4 @@
-# Data Model — Vidafrica (sous-titrage vidéo multilingue karaoke)
+# Data Model : Vidafrica (sous-titrage vidéo multilingue karaoke)
 
 **Branch**: `004-vidafrica-sous-titres` | **Date**: 2026-04-13 | **Schema**: `media_content`
 
@@ -59,7 +59,7 @@ Piste de sous-titres dans une langue donnée, associée à une vidéo.
 | `deleted_at` | TIMESTAMPTZ | | Soft delete |
 
 **Contraintes** :
-- UNIQUE (`video_id`, `langue`) WHERE `deleted_at IS NULL` — une seule piste par langue par vidéo
+- UNIQUE (`video_id`, `langue`) WHERE `deleted_at IS NULL`, une seule piste par langue par vidéo
 
 **Indexes** :
 - `idx_piste_sous_titre_video` : sur `video_id` WHERE `deleted_at IS NULL`
@@ -83,9 +83,9 @@ Segment individuel (cue) d'une piste de sous-titres.
 | `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | Dernière modification |
 
 **Contraintes** :
-- CHECK (`debut_ms` < `fin_ms`) — le début doit précéder la fin
-- CHECK (`debut_ms` >= 0) — pas de timestamp négatif
-- UNIQUE (`piste_id`, `position`) — pas de doublons de position
+- CHECK (`debut_ms` < `fin_ms`) : le début doit précéder la fin
+- CHECK (`debut_ms` >= 0) : pas de timestamp négatif
+- UNIQUE (`piste_id`, `position`), pas de doublons de position
 
 **Indexes** :
 - `idx_segment_piste_position` : sur (`piste_id`, `position`)
@@ -109,7 +109,7 @@ Timing individuel d'un mot dans un segment, pour l'effet karaoké.
 **Contraintes** :
 - CHECK (`debut_ms` < `fin_ms`)
 - CHECK (`debut_ms` >= 0)
-- UNIQUE (`segment_id`, `position`) — pas de doublons de position
+- UNIQUE (`segment_id`, `position`), pas de doublons de position
 
 **Indexes** :
 - `idx_timing_mot_segment_position` : sur (`segment_id`, `position`)
@@ -128,7 +128,7 @@ media_content.video (1) ──── (N) media_content.piste_sous_titre
 
 - Une **vidéo** possède 0 à N **pistes de sous-titres** (une par langue, max 1 par langue)
 - Une **piste** possède 0 à N **segments** ordonnés par `position`
-- Un **segment** possède 0 à N **timings mot** ordonnés par `position` (optionnel — si absent, affichage en bloc)
+- Un **segment** possède 0 à N **timings mot** ordonnés par `position` (optionnel : si absent, affichage en bloc)
 
 ## Transitions d'état
 

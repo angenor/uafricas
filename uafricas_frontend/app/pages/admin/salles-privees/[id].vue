@@ -52,7 +52,7 @@ onMounted(() => chargerDetail(id))
         <div>
           <h2 class="text-lg font-bold">{{ sallePriveeDetail.titre }}</h2>
           <p class="text-sm text-base-content/60">
-            Salle parente : {{ sallePriveeDetail.salle_titre || '—' }}
+            Salle parente : {{ sallePriveeDetail.salle_titre || '-' }}
             {{ sallePriveeDetail.salle_langue ? ` (${sallePriveeDetail.salle_langue})` : '' }}
           </p>
           <div class="flex gap-2 mt-1">
@@ -87,7 +87,7 @@ onMounted(() => chargerDetail(id))
             </div>
             <div>
               <h4 class="font-semibold text-sm text-base-content/60 mb-1">Createur</h4>
-              <p>{{ sallePriveeDetail.cree_par_nom || '—' }}</p>
+              <p>{{ sallePriveeDetail.cree_par_nom || '-' }}</p>
             </div>
             <div>
               <h4 class="font-semibold text-sm text-base-content/60 mb-1">Code d'acces</h4>
@@ -133,11 +133,11 @@ onMounted(() => chargerDetail(id))
                     'badge-neutral': session.etat === 'terminee',
                     'badge-error': session.etat === 'annulee',
                   }">
-                    {{ session.etat || '—' }}
+                    {{ session.etat || '-' }}
                   </span>
                 </td>
-                <td>{{ session.demarre_at ? new Date(session.demarre_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' }}</td>
-                <td class="text-center">{{ session.nombre_participants_pic ?? '—' }}</td>
+                <td>{{ session.demarre_at ? new Date(session.demarre_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-' }}</td>
+                <td class="text-center">{{ session.nombre_participants_pic ?? '-' }}</td>
                 <td>
                   <NuxtLink :to="`/admin/sessions/${session.id}`" class="btn btn-ghost btn-xs">
                     <font-awesome-icon icon="eye" />

@@ -4,7 +4,7 @@
  *
  * Deux modes **exclusifs** (FR-034) : « toute l'Afrique » ou une liste de
  * territoires. La bascule continentale neutralise la liste à l'écran, comme la
- * transaction serveur la vide en base — laisser les deux cochables aurait
+ * transaction serveur la vide en base, laisser les deux cochables aurait
  * produit une fiche affichant deux couvertures contradictoires jusqu'à la
  * prochaine écriture, que le trigger rejetterait.
  *
@@ -16,7 +16,7 @@
 import type { TerritoirePublic } from '~/composables/useMediaSupport'
 
 const props = withDefaults(defineProps<{
-  /** `true` : couverture continentale — la liste est alors ignorée. */
+  /** `true` : couverture continentale : la liste est alors ignorée. */
   continentale: boolean
   /** Identifiants des territoires couverts. */
   territoires: string[]

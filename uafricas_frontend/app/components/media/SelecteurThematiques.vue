@@ -2,7 +2,7 @@
 /**
  * Sélection **multiple** des thématiques d'un support (feature 009, US3).
  *
- * Tailwind v4 pur, sans daisyUI : le composant sert les deux mondes — l'espace
+ * Tailwind v4 pur, sans daisyUI : le composant sert les deux mondes, l'espace
  * membre `/mon-compte/mes-supports` (page publique, principe VI) et le
  * back-office. Une variante daisyUI aurait dupliqué la logique de sélection
  * pour n'en changer que la peinture.
@@ -81,7 +81,7 @@ const enDefaut = computed(() => props.requis && props.modelValue.length === 0)
         Thématiques
         <span v-if="requis" class="text-red-500">*</span>
         <span :class="sombre ? 'text-gray-500' : 'text-gray-400'">
-          — {{ modelValue.length }} sélectionnée{{ modelValue.length > 1 ? 's' : '' }}
+          {{ modelValue.length }} sélectionnée{{ modelValue.length > 1 ? 's' : '' }}
         </span>
       </p>
       <button

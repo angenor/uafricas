@@ -5,7 +5,7 @@
  * de cinquante sections déclencherait autant de requêtes réseau pour des
  * contenus que le visiteur ne verra peut-être jamais (FR-054, SC-011).
  *
- * Aucun mécanisme de ce genre n'existait dans le projet — `useAOS` n'anime que
+ * Aucun mécanisme de ce genre n'existait dans le projet, `useAOS` n'anime que
  * l'apparition et ne diffère aucun chargement.
  */
 

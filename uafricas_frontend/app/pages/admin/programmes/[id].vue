@@ -259,14 +259,14 @@ onMounted(async () => {
                 <div class="form-control">
                   <label class="label"><span class="label-text">Territoire de destination</span></label>
                   <select v-model="form.pays_id" class="select select-bordered">
-                    <option value="">— Sélectionner un territoire —</option>
+                    <option value="">Sélectionner un territoire</option>
                     <option v-for="p in paysListe" :key="p.id" :value="p.id">{{ p.nom }}</option>
                   </select>
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text">Domaine</span></label>
                   <select v-model="form.domaine_id" class="select select-bordered">
-                    <option value="">— Sélectionner un domaine —</option>
+                    <option value="">Sélectionner un domaine</option>
                     <option v-for="d in domainesListe" :key="d.id" :value="d.id">{{ d.nom }}</option>
                   </select>
                 </div>

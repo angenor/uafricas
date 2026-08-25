@@ -1,4 +1,4 @@
-// Composable public — Système d'engagement (gamification)
+// Composable public : Système d'engagement (gamification)
 import { useUserStore } from '~/stores/user'
 
 // ──────────────────────────────────────────────────────────────
@@ -200,7 +200,7 @@ export const useEngagement = () => {
     return res.data
   }
 
-  /** GET /api/engagement/mes-categories — ventilation des points gagnés */
+  /** GET /api/engagement/mes-categories : ventilation des points gagnés */
   const obtenirMesCategories = async (): Promise<VentilationPoints | null> => {
     const res = await $fetch<ApiResponse<VentilationPoints>>(
       `${apiBase}/api/engagement/mes-categories`,
@@ -210,7 +210,7 @@ export const useEngagement = () => {
   }
 
   /**
-   * GET /api/engagement/actions-recompensees — barème public.
+   * GET /api/engagement/actions-recompensees, barème public.
    * Source unique des libellés et montants : ne jamais les recopier dans un composant.
    */
   const obtenirActionsRecompensees = async (): Promise<ActionRecompensee[]> => {
@@ -221,7 +221,7 @@ export const useEngagement = () => {
   }
 
   /**
-   * GET /api/engagement/mes-badges — obtenus + à débloquer.
+   * GET /api/engagement/mes-badges : obtenus + à débloquer.
    * Le serveur réévalue les conditions avant de répondre : un badge devenu
    * atteignable entre-temps apparaît dès cet appel.
    */
@@ -234,7 +234,7 @@ export const useEngagement = () => {
   }
 
   /**
-   * GET /api/engagement/badges/{utilisateurId} — badges publics d'un membre.
+   * GET /api/engagement/badges/{utilisateurId}, badges publics d'un membre.
    * Uniquement les badges obtenus : jamais de solde ni de journal (FR-014).
    */
   const obtenirBadgesPublics = async (utilisateurId: string): Promise<BadgeObtenu[]> => {
@@ -244,7 +244,7 @@ export const useEngagement = () => {
     return res.data ?? []
   }
 
-  /** GET /api/engagement/niveau/{utilisateurId} — badge public léger */
+  /** GET /api/engagement/niveau/{utilisateurId}, badge public léger */
   const obtenirNiveau = async (utilisateurId: string): Promise<NiveauInfo | null> => {
     const res = await $fetch<ApiResponse<NiveauInfo>>(
       `${apiBase}/api/engagement/niveau/${utilisateurId}`,

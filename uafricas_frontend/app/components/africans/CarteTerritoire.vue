@@ -39,7 +39,7 @@
  * (« 63.2 millions ») : le formatage dépend de la source de la donnée, pas de
  * l'affichage, et le faire ici obligerait à deviner l'unité.
  *
- * Le compteur de contributions s'accorde — la maquette écrit « 0 Contibution »
+ * Le compteur de contributions s'accorde, la maquette écrit « 0 Contibution »
  * au singulier ET avec une faute ; les deux sont corrigés.
  */
 withDefaults(defineProps<{

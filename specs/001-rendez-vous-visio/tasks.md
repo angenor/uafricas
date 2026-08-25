@@ -1,5 +1,5 @@
 ---
-description: "Task list — Rendez-vous en visioconférence entre membres amis"
+description: "Task list : Rendez-vous en visioconférence entre membres amis"
 ---
 
 # Tasks: Rendez-vous en visioconférence entre membres amis
@@ -7,7 +7,7 @@ description: "Task list — Rendez-vous en visioconférence entre membres amis"
 **Input**: Design documents from `/specs/001-rendez-vous-visio/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/rendez-vous.md, quickstart.md
 
-**Tests**: Aucune tâche de test automatisé — le projet n'a pas de framework de test configuré (Constitution) et la spec ne demande pas de TDD. La validation se fait manuellement via `quickstart.md` (phase Polish).
+**Tests**: Aucune tâche de test automatisé, le projet n'a pas de framework de test configuré (Constitution) et la spec ne demande pas de TDD. La validation se fait manuellement via `quickstart.md` (phase Polish).
 
 **Organization**: Tâches groupées par user story (P1→P4) pour une implémentation et une validation incrémentales.
 
@@ -25,7 +25,7 @@ description: "Task list — Rendez-vous en visioconférence entre membres amis"
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Dépendances et configuration nécessaires à la visioconférence (US4) — n'impactent pas le MVP (US1).
+**Purpose**: Dépendances et configuration nécessaires à la visioconférence (US4), n'impactent pas le MVP (US1).
 
 - [X] T001 [P] Ajouter la dépendance PeerJS : `cd uafricas_frontend && pnpm add peerjs` (vérifier l'entrée dans `uafricas_frontend/package.json`)
 - [X] T002 [P] Déclarer la configuration runtime WebRTC dans `uafricas_frontend/nuxt.config.ts` → `runtimeConfig.public` : `peerjsHost` (vide = cloud public), `peerjsPort` (443), `peerjsPath` ('/'), `peerjsSecure` (true), `iceServers` (défaut `[{ urls: 'stun:stun.l.google.com:19302' }]`), surchargeables via `NUXT_PUBLIC_*`
@@ -38,7 +38,7 @@ description: "Task list — Rendez-vous en visioconférence entre membres amis"
 
 **⚠️ CRITICAL**: Aucune user story ne peut commencer avant la fin de cette phase.
 
-- [X] T003 Créer le schéma SQL `uafricas_backend/doc/bd/schemas/31_social_rendez_vous.sql` (idempotent) : enum `social.statut_rendez_vous` (`propose`/`accepte`/`refuse`/`annule`), table `social.rendez_vous` (colonnes + contraintes `ck_rdv_pas_soi`, `duree_minutes IN (15,30,45,60)`, `sujet` 1..150, `deleted_at`) et index (`idx_rdv_initiateur`, `idx_rdv_destinataire`, `idx_rdv_tour`, `idx_rdv_date`) — conformément à `data-model.md`
+- [X] T003 Créer le schéma SQL `uafricas_backend/doc/bd/schemas/31_social_rendez_vous.sql` (idempotent) : enum `social.statut_rendez_vous` (`propose`/`accepte`/`refuse`/`annule`), table `social.rendez_vous` (colonnes + contraintes `ck_rdv_pas_soi`, `duree_minutes IN (15,30,45,60)`, `sujet` 1..150, `deleted_at`) et index (`idx_rdv_initiateur`, `idx_rdv_destinataire`, `idx_rdv_tour`, `idx_rdv_date`), conformément à `data-model.md`
 - [X] T004 Intégrer la migration à l'orchestrateur : ajouter `\ir schemas/31_social_rendez_vous.sql` dans `uafricas_backend/doc/bd/schema.sql` juste après la ligne `30_social_conversation_annonce.sql` (dépend de T003)
 - [X] T005 Appliquer la migration à la BDD dev : `docker compose exec -T postgres psql -U uafricas -d africans_db < uafricas_backend/doc/bd/schemas/31_social_rendez_vous.sql` (ou `docker compose down -v && docker compose up -d`) (dépend de T004)
 - [X] T006 [P] Créer le squelette du model `uafricas_backend/src/models/rendez_vous.rs` : struct `RendezVous` (`FromRow`), const `COLONNES`, DTO `RendezVousResponse` (avec `autre: MembreLight`, `mon_tour`, `suis_initiateur`, `etat_derive`, `peut_rejoindre`), helpers de calcul (`etat_derive`, fenêtre `peut_rejoindre` = `[date_heure−5min, date_heure+duree+15min]`), réutilisation de `obtenir_membre_light` (de `models/amitie.rs`) ; déclarer `pub mod rendez_vous;` dans `uafricas_backend/src/models/mod.rs`
@@ -47,7 +47,7 @@ description: "Task list — Rendez-vous en visioconférence entre membres amis"
 - [X] T009 Enregistrer le scope `web::scope("/rendez-vous")` (routes lecture) dans `uafricas_backend/src/routes.rs`, calqué sur le scope `/amities` (dépend de T008)
 - [X] T010 Étendre `uafricas_frontend/app/plugins/messagerie.client.ts` : sur réception d'un événement SSE dont `type` commence par `rdv_`, appeler `useRendezVous().gererEvenement(evt)` ET `useNotifications().compteurNonLues()` (rafraîchissement du badge cloche) (dépend de T007)
 
-**Checkpoint**: Schéma en base, lecture des rendez-vous opérationnelle, temps réel branché — les user stories peuvent démarrer.
+**Checkpoint**: Schéma en base, lecture des rendez-vous opérationnelle, temps réel branché, les user stories peuvent démarrer.
 
 ---
 
@@ -64,7 +64,7 @@ description: "Task list — Rendez-vous en visioconférence entre membres amis"
 - [X] T013 [P] [US1] Créer `uafricas_frontend/app/components/social/RendezVousProposerModal.vue` (Tailwind v4 pur) : formulaire sujet (obligatoire ≤150), description (option), date+heure (future), durée (boutons 15/30/45/60), validation client + messages d'erreur en français
 - [X] T014 [US1] Modifier `uafricas_frontend/app/pages/profil/[id].vue` : ajouter le bouton « Proposer un rendez-vous » dans la carte « Entrer en contact » (visible ssi `etatRelation === 'amis'`), ouvrant `RendezVousProposerModal` et appelant `useRendezVous().proposer` (dépend de T012, T013)
 
-**Checkpoint**: US1 fonctionnelle — proposition + notification opérationnelles.
+**Checkpoint**: US1 fonctionnelle : proposition + notification opérationnelles.
 
 ---
 
@@ -82,7 +82,7 @@ description: "Task list — Rendez-vous en visioconférence entre membres amis"
 - [X] T018 [P] [US2] Créer `uafricas_frontend/app/components/social/RendezVousCarte.vue` (Tailwind v4 pur) : affiche l'autre membre (photo/nom/fonction/pays via MembreLight), sujet, date/heure, durée, statut + badge `etat_derive` ; calcule les actions disponibles et émet les événements (`accepter`/`refuser`/`contre`/`annuler`/`rejoindre`) ; boutons accepter/refuser/contre visibles ssi `statut==='propose' && mon_tour`
 - [X] T019 [US2] Créer `uafricas_frontend/app/components/social/RendezVousContreModal.vue` (date+heure future, durée 15/30/45/60) câblée sur `useRendezVous().contreProposer` (dépend de T017)
 
-**Checkpoint**: US2 fonctionnelle — accepter/refuser/contre-proposer opérationnels (testables via API ; surfacés dans l'UI dès US3).
+**Checkpoint**: US2 fonctionnelle : accepter/refuser/contre-proposer opérationnels (testables via API ; surfacés dans l'UI dès US3).
 
 ---
 
@@ -99,7 +99,7 @@ description: "Task list — Rendez-vous en visioconférence entre membres amis"
 - [X] T022 [US3] Créer `uafricas_frontend/app/components/social/RendezVousListe.vue` (Tailwind v4 pur) : onglets/filtres (4), liste de `RendezVousCarte`, gestion des événements émis (annuler → `useRendezVous().annuler` ; lien messagerie → `useMessagerie().demanderOuverture(autre)`), états vide/chargement (dépend de T018, T021)
 - [X] T023 [US3] Ajouter un 3e onglet « Rendez-vous » (avec pastille) dans `uafricas_frontend/app/components/social/MessagerieFlottante.vue` montant `RendezVousListe` aux côtés de « Discussions » et « Membres » (dépend de T022)
 
-**Checkpoint**: US3 fonctionnelle — vue de gestion complète + annulation + lien messagerie.
+**Checkpoint**: US3 fonctionnelle : vue de gestion complète + annulation + lien messagerie.
 
 ---
 
@@ -134,7 +134,7 @@ description: "Task list — Rendez-vous en visioconférence entre membres amis"
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)** : sans dépendance — peut démarrer immédiatement (n'impacte que US4).
+- **Setup (Phase 1)** : sans dépendance, peut démarrer immédiatement (n'impacte que US4).
 - **Foundational (Phase 2)** : T003→T004→T005 (chaîne SQL) ; T006/T007 en parallèle ; T008 dépend de T006 ; T009 dépend de T008 ; T010 dépend de T007. **Bloque toutes les user stories.**
 - **User Stories (Phases 3–6)** : dépendent de Foundational. Ordre de priorité P1→P2→P3→P4.
 - **Polish (Phase 7)** : après les stories visées.
@@ -175,7 +175,7 @@ Task: "T013 [US1] Créer RendezVousProposerModal.vue"
 
 ### MVP First (User Story 1 uniquement)
 
-1. Phase 2 Foundational (T003–T010) — le Setup (T001/T002) peut être différé (US4).
+1. Phase 2 Foundational (T003–T010) : le Setup (T001/T002) peut être différé (US4).
 2. Phase 3 US1 (T011–T014).
 3. **STOP & VALIDATE** : proposer un RDV depuis un profil ami, vérifier la cloche du destinataire.
 4. Démo/déploiement possible.
@@ -194,7 +194,7 @@ Task: "T013 [US1] Créer RendezVousProposerModal.vue"
 
 - [P] = fichiers différents, sans dépendance bloquante.
 - Couplage assumé : `RendezVousCarte.vue` (T018, US2) est réutilisé par US3 (T022) et US4 (T027) ; US2 reste testable via l'API avant que l'UI ne soit surfacée par US3.
-- Réutilisation maximale du domaine social : `obtenir_membre_light`, `amitie_existe`/`blocage_existe`, `RegistreSse`, `creer_notification`, `demanderOuverture` — pas de réécriture (Principe V).
+- Réutilisation maximale du domaine social : `obtenir_membre_light`, `amitie_existe`/`blocage_existe`, `RegistreSse`, `creer_notification`, `demanderOuverture`, pas de réécriture (Principe V).
 - Conformité Constitution à chaque mutation : `audit::log_action` sans contenu sensible (FR-033), revérif amitié/blocage (FR-034), Tailwind v4 pur côté membre (Principe VI), snake_case français en SQL/Rust.
 - `getDiagnostics` après chaque modification (rust-analyzer / Volar) ; relancer le backend proprement (`kill $(lsof -i :8082 -t)`).
 - Commit par tâche ou groupe logique, messages en français.

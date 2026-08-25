@@ -186,8 +186,8 @@ const onglets = computed(() => {
 useHead({
   title: computed(() =>
     profil.value
-      ? `${profil.value.prenom} ${profil.value.nom} — AfricanS`
-      : 'Profil — AfricanS',
+      ? `${profil.value.prenom} ${profil.value.nom} | AfricanS`
+      : 'Profil | AfricanS',
   ),
 })
 
@@ -532,7 +532,7 @@ onMounted(async () => {
         </div>
 
         <!--
-          Cadeaux reçus — HORS du bloc « peutNoter » : un visiteur déconnecté
+          Cadeaux reçus : HORS du bloc « peutNoter » : un visiteur déconnecté
           doit voir la reconnaissance reçue par ce membre, même s'il ne peut pas
           lui-même offrir. Le composant se masque seul quand il n'y a rien.
         -->

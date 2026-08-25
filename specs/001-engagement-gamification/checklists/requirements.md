@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Système d'engagement / gamification AFRICANS — Phase 1
+# Specification Quality Checklist: Système d'engagement / gamification AFRICANS, Phase 1
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-07-06

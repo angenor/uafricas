@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Vidafrica — Sous-titrage vidéo multilingue karaoke
+# Specification Quality Checklist: Vidafrica, Sous-titrage vidéo multilingue karaoke
 
 **Purpose**: Valider la complétude et la qualité de la spécification avant de passer à la planification
 **Created**: 2026-04-13

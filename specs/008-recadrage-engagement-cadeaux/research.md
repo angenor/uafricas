@@ -1,4 +1,4 @@
-# Phase 0 — Research : recadrage de l'engagement & cadeaux virtuels
+# Phase 0 : Research : recadrage de l'engagement & cadeaux virtuels
 
 **Feature**: `008-recadrage-engagement-cadeaux` | **Date**: 2026-08-08
 
@@ -6,11 +6,11 @@ Ce document tranche les décisions techniques laissées ouvertes par la spécifi
 
 ---
 
-## R1 — Le recadrage du barème est une migration de données, pas une suppression de code
+## R1 : Le recadrage du barème est une migration de données, pas une suppression de code
 
 **Décision.** Les 8 règles écartées (`contribution_validee`, `contribution_mise_en_avant`, `factcheck_valide`, `factcheck_faux`, `proposition_media_validee`, `media_a_la_une`, `animation_support_acceptee`, `partage_externe_5reseaux`) sont passées à `actif = FALSE` par la migration `35f`. **Les appels correspondants dans les handlers restent en place.**
 
-**Justification.** `services::engagement::appliquer` commence par `charger_regle(… WHERE actif = TRUE)` et retourne sans rien écrire quand la règle est absente ou inactive. Un appel resté en place sur une règle désactivée ne coûte donc qu'une requête indexée et **ne crédite rien** — c'est exactement le comportement demandé par FR-002 et par le scénario 3 de l'US1. Retirer les appels aurait rendu la réactivation impossible sans livraison technique, ce que FR-002 interdit explicitement.
+**Justification.** `services::engagement::appliquer` commence par `charger_regle(… WHERE actif = TRUE)` et retourne sans rien écrire quand la règle est absente ou inactive. Un appel resté en place sur une règle désactivée ne coûte donc qu'une requête indexée et **ne crédite rien** : c'est exactement le comportement demandé par FR-002 et par le scénario 3 de l'US1. Retirer les appels aurait rendu la réactivation impossible sans livraison technique, ce que FR-002 interdit explicitement.
 
 **Alternatives écartées.**
 - *Supprimer les appels et les règles* : contredit la réponse de clarification (« désactivées, réactivables ») et exigerait une livraison pour tout retour arrière.
@@ -20,7 +20,7 @@ Ce document tranche les décisions techniques laissées ouvertes par la spécifi
 
 ---
 
-## R2 — Réactions du fact-check : contradiction de la spécification, résolue
+## R2 : Réactions du fact-check : contradiction de la spécification, résolue
 
 **Problème.** La clarification Q1 retient « les contributions de gouvernance » parmi les familles créditées, **et** exclut « les réactions emoji du fact-check ». Or l'unique système de réaction du schéma `governance` est `factcheck_reaction`, devenu emoji (`coeur`, `pouce`, `rire`, `jaime_pas`) avec la migration `10f` ; c'est `coeur` que le branchement existant traite comme un « j'aime ». Les deux membres de la réponse se contredisent.
 
@@ -36,7 +36,7 @@ Ce document tranche les décisions techniques laissées ouvertes par la spécifi
 
 ---
 
-## R3 — `evaluer_popularite` est remplacée par `crediter_jaime`, à l'unité
+## R3 : `evaluer_popularite` est remplacée par `crediter_jaime`, à l'unité
 
 **Décision.** Une nouvelle fonction publique du service remplace les paliers :
 
@@ -55,12 +55,12 @@ crediter_jaime(pool, type_objet, objet_id, auteur_id, membre_qui_aime_id)
 Le modèle par paliers exigeait au contraire un **recomptage complet** des j'aime à chaque réaction (`COUNT(*)` sur toute la table) pour détecter un franchissement ; le crédit unitaire ne lit plus rien. C'est à la fois plus simple et moins coûteux.
 
 **Alternatives écartées.**
-- *Conserver les paliers avec un palier à 1 j'aime* : un palier ne se déclenche qu'une fois par contenu, jamais par membre — il crédite 1 point pour le 1ᵉʳ j'aime et plus rien ensuite. Inutilisable.
+- *Conserver les paliers avec un palier à 1 j'aime* : un palier ne se déclenche qu'une fois par contenu, jamais par membre : il crédite 1 point pour le 1ᵉʳ j'aime et plus rien ensuite. Inutilisable.
 - *Recalculer le solde comme `COUNT` de j'aime* : casserait le journal immuable, les plafonds et la réconciliation par catégorie (SC-005).
 
 ---
 
-## R4 — Bénéficiaire sur un support média : le propriétaire, avec repli sur le créateur
+## R4 : Bénéficiaire sur un support média : le propriétaire, avec repli sur le créateur
 
 **Décision.** Une fonction `resoudre_beneficiaire(pool, type_objet, objet_id)` centralise la résolution :
 
@@ -75,24 +75,24 @@ Le modèle par paliers exigeait au contraire un **recomptage complet** des j'aim
 | `biblio_humaine` | `iam.biblio_*` | le membre titulaire de la fiche |
 | `personnalite_connue` | `country_profile.personnalite_connue` | `cree_par` |
 | `recette_culinaire` | `country_profile.recette_culinaire` | `cree_par` |
-| `site_touristique`, `secteur_developpement` | `country_profile.{site_touristique, secteur_developpement}` | **aucun** — voir ci-dessous |
-| Aucun bénéficiaire résolu | — | **aucun crédit**, aucune erreur (cadeau : refus explicite) |
+| `site_touristique`, `secteur_developpement` | `country_profile.{site_touristique, secteur_developpement}` | **aucun** : voir ci-dessous |
+| Aucun bénéficiaire résolu | : | **aucun crédit**, aucune erreur (cadeau : refus explicite) |
 
-**Justification — supports médias.** FR-008a impose le propriétaire unique. Le schéma `09m` garantit déjà structurellement l'unicité par `idx … WHERE role = 'proprietaire' AND actif = TRUE` : aucune agrégation n'est nécessaire, la requête retourne 0 ou 1 ligne. Le repli sur `cree_par` couvre les supports créés par l'administration avant l'existence de `support_detenteur`, sans quoi ces contenus cesseraient silencieusement de rapporter.
+**Justification : supports médias.** FR-008a impose le propriétaire unique. Le schéma `09m` garantit déjà structurellement l'unicité par `idx … WHERE role = 'proprietaire' AND actif = TRUE` : aucune agrégation n'est nécessaire, la requête retourne 0 ou 1 ligne. Le repli sur `cree_par` couvre les supports créés par l'administration avant l'existence de `support_detenteur`, sans quoi ces contenus cesseraient silencieusement de rapporter.
 
-**Justification — éléments Opportunité-Afrique.** Le « j'aime » d'un élément n'est **pas** une famille unique : `element_social` est générique par `(type_objet, objet_id)` sur l'enum `country_profile.type_objet_contribution`, et `TYPES_ELEMENT_AUTORISES` en compte **quatre**, chacun dans sa propre table (`table_pour_type`). Une valeur `type_objet = "element"` serait donc **irrésolvable** : rien ne dirait quelle table interroger. Le `type_objet` porte par conséquent le sous-type réel.
+**Justification : éléments Opportunité-Afrique.** Le « j'aime » d'un élément n'est **pas** une famille unique : `element_social` est générique par `(type_objet, objet_id)` sur l'enum `country_profile.type_objet_contribution`, et `TYPES_ELEMENT_AUTORISES` en compte **quatre**, chacun dans sa propre table (`table_pour_type`). Une valeur `type_objet = "element"` serait donc **irrésolvable** : rien ne dirait quelle table interroger. Le `type_objet` porte par conséquent le sous-type réel.
 
-Or seuls **deux** de ces quatre sous-types portent un auteur : `personnalite_connue` (migration `11c`) et `recette_culinaire` (migration `11i`) ont `cree_par NOT NULL`. `site_touristique` et `secteur_developpement`, créés par `11_country_profile.sql`, sont des contenus **éditoriaux rattachés à une fiche pays, sans colonne d'auteur**. Ils tombent donc dans le cas limite déjà prévu par la spécification (« contenu sans auteur identifiable ») et ne créditent personne — la réaction et le partage continuant de fonctionner normalement (FR-008c).
+Or seuls **deux** de ces quatre sous-types portent un auteur : `personnalite_connue` (migration `11c`) et `recette_culinaire` (migration `11i`) ont `cree_par NOT NULL`. `site_touristique` et `secteur_developpement`, créés par `11_country_profile.sql`, sont des contenus **éditoriaux rattachés à une fiche pays, sans colonne d'auteur**. Ils tombent donc dans le cas limite déjà prévu par la spécification (« contenu sans auteur identifiable ») et ne créditent personne, la réaction et le partage continuant de fonctionner normalement (FR-008c).
 
 **Alternatives écartées.**
 - *Garder `cree_par` seul* (comportement actuel de `media_social`) : viole FR-008a dès qu'un support change de mains.
 - *Répartir entre co-détenteurs* : écarté par la clarification, et introduirait des arrondis sur l'argent.
-- *Traiter `element` comme une famille unique* : impossible — la résolution de l'auteur exige la table, donc le sous-type.
+- *Traiter `element` comme une famille unique* : impossible, la résolution de l'auteur exige la table, donc le sous-type.
 - *Remonter l'auteur d'un site touristique via `contribution_fiche.target_id`* : `target_id` désigne la cible d'une **modification**, pas le créateur d'un objet ; l'archéologie serait fragile, non garantie par une contrainte, et ferait dépendre un crédit d'une table de workflow. Écarté au profit du cas limite explicite.
 
 ---
 
-## R5 — Un seul crédit de partage, garanti par la clé, sans aucun comptage
+## R5 : Un seul crédit de partage, garanti par la clé, sans aucun comptage
 
 **Décision.** Les 6 handlers de partage interne et le traçage de partage externe appellent tous :
 
@@ -103,9 +103,9 @@ crediter_partage(pool, type_objet, objet_id, auteur_id, partageur_id)
 
 Le **canal n'apparaît pas dans la clé**. Il reste enregistré dans sa table d'origine (`partage_media`, `partage_video`, `partage_element`, `partage_fiche`, `partage_profil`, `partage_contribution`) et dans `engagement.partage_externe` pour la statistique (FR-015).
 
-**Justification.** FR-013 demande l'unicité par `(contenu, partageur)` tous canaux confondus. La clé la réalise **structurellement** : le premier geste crédite, tous les suivants — autre réseau, mur interne, répétition — retombent sur le `ON CONFLICT DO NOTHING`. Aucun `COUNT(DISTINCT …)`, aucune fenêtre de concurrence, aucun code de comptage à maintenir. C'est le même mécanisme que R3, appliqué à une autre dimension.
+**Justification.** FR-013 demande l'unicité par `(contenu, partageur)` tous canaux confondus. La clé la réalise **structurellement** : le premier geste crédite, tous les suivants, autre réseau, mur interne, répétition, retombent sur le `ON CONFLICT DO NOTHING`. Aucun `COUNT(DISTINCT …)`, aucune fenêtre de concurrence, aucun code de comptage à maintenir. C'est le même mécanisme que R3, appliqué à une autre dimension.
 
-**Conséquence sur `enregistrer_partage_externe`.** La fonction perd sa logique de seuil (`seuil_declencheur`, `reseaux_distincts`, `bonus_attribue`) et son commentaire « le bénéficiaire est le partageur ». Elle conserve l'`INSERT` de traçage puis appelle `crediter_partage` avec l'auteur résolu. Le DTO de réponse perd `seuil` et `bonus_attribue` — impact frontal documenté dans `contracts/api-engagement-recadre.md`.
+**Conséquence sur `enregistrer_partage_externe`.** La fonction perd sa logique de seuil (`seuil_declencheur`, `reseaux_distincts`, `bonus_attribue`) et son commentaire « le bénéficiaire est le partageur ». Elle conserve l'`INSERT` de traçage puis appelle `crediter_partage` avec l'auteur résolu. Le DTO de réponse perd `seuil` et `bonus_attribue`, impact frontal documenté dans `contracts/api-engagement-recadre.md`.
 
 **Alternatives écartées.**
 - *Clé incluant le canal* : correspondait à l'option A de la clarification, écartée par l'utilisateur.
@@ -113,7 +113,7 @@ Le **canal n'apparaît pas dans la clé**. Il reste enregistré dans sa table d'
 
 ---
 
-## R6 — Refonte des niveaux : réutilisation des codes existants, jamais de suppression
+## R6 : Refonte des niveaux : réutilisation des codes existants, jamais de suppression
 
 **Décision.** La migration `35f` fait évoluer `engagement.niveau` ainsi :
 
@@ -134,7 +134,7 @@ Puis un `UPDATE engagement.compte SET niveau_code = (plus grand seuil ≤ solde)
 
 ---
 
-## R7 — `services::paiement` : deux fonctions concrètes, aucun trait
+## R7 : `services::paiement` : deux fonctions concrètes, aucun trait
 
 **Décision.** Un module `src/services/paiement.rs` expose :
 
@@ -155,7 +155,7 @@ Le drapeau `simule` est stocké **sur la transaction**, pas déduit de la config
 
 ---
 
-## R8 — Répartition monétaire : entiers, part plateforme calculée par différence
+## R8 : Répartition monétaire : entiers, part plateforme calculée par différence
 
 **Décision.** Les montants sont des `INTEGER` en **unité entière de la devise** (FCFA, sans subdivision). La répartition s'écrit :
 
@@ -176,11 +176,11 @@ Le mode `points` s'exprime dans le même schéma sans cas particulier : `part_be
 
 ---
 
-## R9 — Le crédit du cadeau réutilise le moteur, avec `montant_override`
+## R9 : Le crédit du cadeau réutilise le moteur, avec `montant_override`
 
 **Décision.** Une fonction `crediter_cadeau(pool, beneficiaire_id, transaction_id, points)` appelle le cœur existant `appliquer(…)` avec :
 - `type_action = "cadeau_recu"` (règle créée par `35f`, catégorie « Cadeaux ») ;
-- `montant_override = Some(points)` — les points viennent du **catalogue figé sur la transaction**, pas de la règle ;
+- `montant_override = Some(points)` : les points viennent du **catalogue figé sur la transaction**, pas de la règle ;
 - clé d'idempotence `"cadeau:{transaction_id}"`.
 
 La règle `cadeau_recu` porte `points = 0` : elle sert de porte (activable/désactivable, FR-020 scénario 8) et de porteuse de catégorie et de plafonds, pas de montant.
@@ -191,16 +191,16 @@ La règle `cadeau_recu` porte `points = 0` : elle sert de porte (activable/désa
 
 ---
 
-## R10 — Ordre d'écriture du cadeau : la transaction d'abord, les points après le COMMIT
+## R10 : Ordre d'écriture du cadeau : la transaction d'abord, les points après le COMMIT
 
 **Décision.** Séquence d'un envoi abouti :
 
-1. `UPDATE transaction_cadeau SET etat = 'abouti', finalise_at = NOW() WHERE id = $1 AND etat = 'en_attente'` — si `rows_affected = 0`, on s'arrête (rejeu ou état incompatible).
+1. `UPDATE transaction_cadeau SET etat = 'abouti', finalise_at = NOW() WHERE id = $1 AND etat = 'en_attente'` : si `rows_affected = 0`, on s'arrête (rejeu ou état incompatible).
 2. `INSERT`/`UPDATE` de la cagnotte du bénéficiaire, **dans la même transaction** (uniquement en mode `soutien_financier`).
 3. `COMMIT`.
 4. **Après le COMMIT** : `crediter_cadeau(…)` puis la notification « cadeau reçu ».
 
-**Justification.** L'`UPDATE` conditionné sur `etat = 'en_attente'` est le verrou d'idempotence de la confirmation : deux requêtes concurrentes ne peuvent pas toutes deux passer l'étape 1. La comptabilité (transaction + cagnotte) doit être atomique — une cagnotte créditée sans transaction aboutie serait de l'argent inventé. Les points, eux, sont accessoires et non bloquants (FR-034) : les mettre dans la transaction comptable ferait échouer un envoi payé à cause d'une erreur du moteur de points. C'est le motif déjà appliqué par `appliquer`, qui notifie et évalue les badges après son propre `COMMIT`.
+**Justification.** L'`UPDATE` conditionné sur `etat = 'en_attente'` est le verrou d'idempotence de la confirmation : deux requêtes concurrentes ne peuvent pas toutes deux passer l'étape 1. La comptabilité (transaction + cagnotte) doit être atomique, une cagnotte créditée sans transaction aboutie serait de l'argent inventé. Les points, eux, sont accessoires et non bloquants (FR-034) : les mettre dans la transaction comptable ferait échouer un envoi payé à cause d'une erreur du moteur de points. C'est le motif déjà appliqué par `appliquer`, qui notifie et évalue les badges après son propre `COMMIT`.
 
 **Alternatives écartées.**
 - *Tout dans une transaction* : viole FR-034 et SC-007.
@@ -208,7 +208,7 @@ La règle `cadeau_recu` porte `points = 0` : elle sert de porte (activable/désa
 
 ---
 
-## R11 — Purge de fin de phase de test : une route d'administration, jamais un script
+## R11 : Purge de fin de phase de test : une route d'administration, jamais un script
 
 **Décision.** `POST /api/admin/engagement/purger-phase-test` exécute, en une transaction :
 1. sélection des `transaction_cadeau` où `simule = TRUE AND etat = 'abouti'` ;

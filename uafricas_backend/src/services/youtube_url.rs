@@ -60,7 +60,7 @@ pub fn extraire_id_youtube(url: &str) -> Option<String> {
         return valider_id(segment);
     }
 
-    // youtube.com — distinguer /watch, /embed/<ID>, /shorts/<ID>
+    // youtube.com : distinguer /watch, /embed/<ID>, /shorts/<ID>
     let (chemin, query) = reste.split_once('?').unwrap_or((reste, ""));
     let mut segments = chemin.split('/').filter(|s| !s.is_empty());
 

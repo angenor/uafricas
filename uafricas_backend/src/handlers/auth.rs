@@ -619,7 +619,7 @@ pub async fn renvoyer_verification(
 }
 
 // ──────────────────────────────────────────────────────────────
-// PUT /api/auth/profil — Modifier son propre profil
+// PUT /api/auth/profil : Modifier son propre profil
 // ──────────────────────────────────────────────────────────────
 pub async fn modifier_profil(
     pool: web::Data<PgPool>,
@@ -811,7 +811,7 @@ pub async fn modifier_profil(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/auth/profil/photo — Uploader une photo de profil
+// POST /api/auth/profil/photo : Uploader une photo de profil
 // ──────────────────────────────────────────────────────────────
 pub async fn uploader_photo_profil(
     pool: web::Data<PgPool>,
@@ -937,7 +937,7 @@ pub async fn uploader_photo_profil(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/auth/changer-mot-de-passe — Changer son mot de passe
+// POST /api/auth/changer-mot-de-passe, Changer son mot de passe
 // ──────────────────────────────────────────────────────────────
 pub async fn changer_mot_de_passe(
     pool: web::Data<PgPool>,

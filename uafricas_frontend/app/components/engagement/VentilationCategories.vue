@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * Ventilation des points par catégorie — Tailwind v4 pur.
+ * Ventilation des points par catégorie, Tailwind v4 pur.
  *
  * Distingue explicitement deux notions que le plancher 0 peut faire diverger :
- * — « points gagnés » : cumul du journal, toutes catégories confondues ;
- * — « solde courant » : `engagement.compte.solde_points`.
+ * « points gagnés » : cumul du journal, toutes catégories confondues ;
+ * « solde courant » : `engagement.compte.solde_points`.
  * Sans cette distinction, l'écart serait perçu comme un bug (R2, SC-005).
  */
 import { computed } from 'vue'
@@ -28,8 +28,8 @@ const classes = (couleur: string | null) => CLASSES[couleur || 'gray'] || CLASSE
 
 /**
  * Catégories réellement alimentées. L'API renvoie aussi celles restées à zéro
- * — `contributions`, `medias`, `factcheck` n'ont plus de règle active depuis le
- * recadrage — et les afficher vides donnerait à croire que le membre a « raté »
+ * `contributions`, `medias`, `factcheck` n'ont plus de règle active depuis le
+ * recadrage : et les afficher vides donnerait à croire que le membre a « raté »
  * des sources qui n'existent plus. Elles restent en base, prêtes à revenir si
  * une règle écartée est réactivée.
  */

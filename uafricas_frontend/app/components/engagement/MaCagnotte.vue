@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * Cagnotte de soutien du membre — Tailwind v4 pur.
+ * Cagnotte de soutien du membre : Tailwind v4 pur.
  *
  * Deux mentions y sont **obligatoires**, pas décoratives :
- * — le versement n'est pas disponible : afficher un solde sans le dire
+ * le versement n'est pas disponible : afficher un solde sans le dire
  *   laisserait croire à un retrait imminent ;
- * — la part issue de paiements simulés, qui disparaîtra à la mise en service du
+ * la part issue de paiements simulés, qui disparaîtra à la mise en service du
  *   paiement réel. La purge ne doit surprendre personne.
  */
 import { onMounted, ref } from 'vue'

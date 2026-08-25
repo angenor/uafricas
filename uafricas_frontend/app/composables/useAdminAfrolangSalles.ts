@@ -1,4 +1,4 @@
-// Composable admin Afrolang — modérateurs attitrés, liens externes, archivage
+// Composable admin Afrolang : modérateurs attitrés, liens externes, archivage
 import type { ApiResponse } from '~/types/admin'
 import type {
   ModerateurAttitre,

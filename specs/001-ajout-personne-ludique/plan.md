@@ -11,10 +11,10 @@ Transformer l'ajout de personnes à l'arbre généalogique en parcours ludique p
 
 **Language/Version**: TypeScript (Nuxt 4 / Vue 3 SSR)
 **Primary Dependencies**: GSAP 3.14.2 (existant), Tailwind CSS v4 (existant)
-**Storage**: N/A — aucune modification backend/BDD
+**Storage**: N/A : aucune modification backend/BDD
 **Testing**: Non configuré (pas de CI/CD)
 **Target Platform**: Web responsive (desktop + mobile 320px+)
-**Project Type**: Web application — frontend uniquement
+**Project Type**: Web application : frontend uniquement
 **Performance Goals**: Transitions < 600ms, 60fps sur mobile
 **Constraints**: Tailwind CSS v4 pur (pas de daisyUI), même DTO `CreerPersonneForm` en sortie
 **Scale/Scope**: 1 nouveau composant, 2 pages modifiées
@@ -44,9 +44,9 @@ specs/001-ajout-personne-ludique/
 ├── spec.md              # Spécification
 ├── plan.md              # Ce fichier
 ├── research.md          # Recherche GSAP + patterns
-├── data-model.md        # Pas de changement — DTOs réutilisés
+├── data-model.md        # Pas de changement, DTOs réutilisés
 ├── quickstart.md        # Guide de démarrage rapide
-└── tasks.md             # (Phase 2 — /speckit.tasks)
+└── tasks.md             # (Phase 2, /speckit.tasks)
 ```
 
 ### Source Code (repository root)
@@ -54,17 +54,17 @@ specs/001-ajout-personne-ludique/
 ```text
 uafricas_frontend/app/
 ├── components/arbre-genealogique/
-│   ├── AssistantAjoutPersonne.vue    # NOUVEAU — Composant wizard principal
-│   ├── PersonneForm.vue              # EXISTANT — Formulaire classique (inchangé)
-│   ├── PersonneCard.vue              # EXISTANT — Inchangé
-│   └── LienFamilialForm.vue          # EXISTANT — Inchangé
+│   ├── AssistantAjoutPersonne.vue    # NOUVEAU, Composant wizard principal
+│   ├── PersonneForm.vue              # EXISTANT, Formulaire classique (inchangé)
+│   ├── PersonneCard.vue              # EXISTANT, Inchangé
+│   └── LienFamilialForm.vue          # EXISTANT, Inchangé
 ├── pages/arbre-genealogique/
-│   ├── index.vue                     # MODIFIÉ — Intégration du wizard
-│   └── visualisation.vue             # MODIFIÉ — Intégration du wizard contextuel
-└── mocks/arbre-genealogique.ts       # EXISTANT — Inchangé (DTOs réutilisés)
+│   ├── index.vue                     # MODIFIÉ, Intégration du wizard
+│   └── visualisation.vue             # MODIFIÉ, Intégration du wizard contextuel
+└── mocks/arbre-genealogique.ts       # EXISTANT, Inchangé (DTOs réutilisés)
 ```
 
-**Structure Decision** : Un seul nouveau composant `AssistantAjoutPersonne.vue` dans le dossier feature existant. Pas de nouveau composable — la logique d'animation est locale au composant (principe V Simplicité). Les deux pages consommatrices l'intègrent via import direct.
+**Structure Decision** : Un seul nouveau composant `AssistantAjoutPersonne.vue` dans le dossier feature existant. Pas de nouveau composable : la logique d'animation est locale au composant (principe V Simplicité). Les deux pages consommatrices l'intègrent via import direct.
 
 ## Architecture du composant AssistantAjoutPersonne
 
@@ -81,8 +81,8 @@ uafricas_frontend/app/
 | Event | Payload | Description |
 |-------|---------|-------------|
 | `submit` | `CreerPersonneForm` | Données du formulaire (même DTO qu'avant) |
-| `annuler` | — | Fermeture du wizard |
-| `formulaire-classique` | — | Bascule vers PersonneForm |
+| `annuler` | : | Fermeture du wizard |
+| `formulaire-classique` | : | Bascule vers PersonneForm |
 
 ### Étapes du parcours
 
@@ -94,7 +94,7 @@ uafricas_frontend/app/
 | 4 | est_decede | Non | "Cette personne est-elle toujours parmi nous ?" |
 | 5 | naissance (année) | Non | "Savez-vous quand il/elle est né(e) ?" |
 | 6 | naissance_lieu | Non | "Et où a-t-il/elle vu le jour ?" |
-| 7 | récapitulatif | — | "Voici le portrait de votre proche !" |
+| 7 | récapitulatif | : | "Voici le portrait de votre proche !" |
 
 > Les textes s'adaptent au contexte : si `typeLien` est fourni, l'étape 1 mentionne le lien ("Qui est la mère de {nom} ?"). Si `est_decede` est vrai, les textes suivants adoptent un ton respectueux.
 

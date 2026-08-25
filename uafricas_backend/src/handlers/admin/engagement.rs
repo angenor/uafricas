@@ -149,7 +149,7 @@ pub const ACTIONS_INSTRUMENTEES: &[CatalogueAction] = &[
 
 // ⚠️ `popularite_palier` et `partage_externe_5reseaux` ont été RETIRÉS de ce
 // catalogue par la feature 008 : plus aucun code ne les émet. Leurs règles
-// restent en base, inactives et réactivables — mais le back-office doit les
+// restent en base, inactives et réactivables, mais le back-office doit les
 // afficher « non instrumentées », car les réactiver ne créditerait plus rien
 // tant qu'aucun appel n'est reposé. C'est précisément ce que ce catalogue sert
 // à révéler : une règle activable dont personne n'émet l'action est un piège.
@@ -186,7 +186,7 @@ pub async fn lister_regles(
     Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(regles), error: None }))
 }
 
-/// GET /api/admin/engagement/actions-disponibles — l'antidote à la règle orpheline.
+/// GET /api/admin/engagement/actions-disponibles, l'antidote à la règle orpheline.
 ///
 /// Le catalogue vient du code (`ACTIONS_INSTRUMENTEES`) : l'écran de création le
 /// propose en priorité, de sorte que l'administrateur ne crée jamais à son insu
@@ -217,7 +217,7 @@ pub async fn actions_disponibles(
 }
 
 /// Valide un identifiant technique (`type_action`, `code`) : c'est une **clé**,
-/// pas une phrase — le front s'en sert pour ses icônes et le journal le référence
+/// pas une phrase : le front s'en sert pour ses icônes et le journal le référence
 /// par valeur.
 fn valider_cle(valeur: &str, champ: &str, max: usize) -> Result<String, ApiErreur> {
     let cle = valeur.trim().to_string();
@@ -234,7 +234,7 @@ fn valider_cle(valeur: &str, champ: &str, max: usize) -> Result<String, ApiErreu
     Ok(cle)
 }
 
-/// POST /api/admin/engagement/regles — création d'une règle de barème.
+/// POST /api/admin/engagement/regles : création d'une règle de barème.
 pub async fn creer_regle(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -513,7 +513,7 @@ pub async fn creer_categorie(
     }))
 }
 
-/// PUT /api/admin/engagement/categories/{id} — `code` immuable.
+/// PUT /api/admin/engagement/categories/{id}, `code` immuable.
 pub async fn modifier_categorie(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -768,7 +768,7 @@ pub async fn modifier_palier(
     Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
 }
 
-/// DELETE /api/admin/engagement/paliers/{id} — désactivation (référencé par le journal).
+/// DELETE /api/admin/engagement/paliers/{id}, désactivation (référencé par le journal).
 pub async fn desactiver_palier(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -817,7 +817,7 @@ pub async fn lister_niveaux(
 /// Pourquoi c'est indispensable : `compte.niveau_code` n'est recalculé qu'au
 /// prochain mouvement du membre. Sans ce recalcul ensembliste, insérer un niveau
 /// intermédiaire laisserait des milliers de comptes sur un code périmé jusqu'à
-/// leur prochaine action — alors que la spec exige la bascule immédiate, sans
+/// leur prochaine action : alors que la spec exige la bascule immédiate, sans
 /// opération manuelle membre par membre.
 ///
 /// Une seule requête pour toute la table : `ordre` est réaligné sur `seuil_min`
@@ -939,7 +939,7 @@ pub async fn creer_niveau(
     }))
 }
 
-/// PUT /api/admin/engagement/niveaux/{id} — `code` immuable, recalcul inclus.
+/// PUT /api/admin/engagement/niveaux/{id}, `code` immuable, recalcul inclus.
 pub async fn modifier_niveau(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -1021,7 +1021,7 @@ pub async fn modifier_niveau(
 /// DELETE /api/admin/engagement/niveaux/{id}
 ///
 /// Deux garde-fous : le **niveau plancher** (`seuil_min = 0`) et le **dernier**
-/// niveau restant ne peuvent pas être retirés — sans plancher, aucun compte ne
+/// niveau restant ne peuvent pas être retirés, sans plancher, aucun compte ne
 /// pourrait plus être classé. Les membres portés par un niveau retiré retombent
 /// au niveau inférieur, ce que `recalculer_niveaux` applique immédiatement.
 pub async fn supprimer_niveau(
@@ -1152,7 +1152,7 @@ pub async fn lister_journal(
     }))
 }
 
-/// POST /api/admin/engagement/ajustement — crédit/débit manuel motivé.
+/// POST /api/admin/engagement/ajustement, crédit/débit manuel motivé.
 pub async fn ajuster_points(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -1388,7 +1388,7 @@ pub async fn creer_badge(
     }))
 }
 
-/// PUT /api/admin/engagement/badges/{id} — `code` immuable.
+/// PUT /api/admin/engagement/badges/{id}, `code` immuable.
 pub async fn modifier_badge(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -1400,7 +1400,7 @@ pub async fn modifier_badge(
     let id = path.into_inner();
 
     // Le patch est partiel : la cohérence doit être validée sur l'état FUSIONNÉ,
-    // pas sur les seuls champs transmis — sinon on refuserait des patchs valides
+    // pas sur les seuls champs transmis : sinon on refuserait des patchs valides
     // et on accepterait des combinaisons cassées.
     let actuel = sqlx::query_as::<_, BadgeAdmin>(
         "SELECT b.id, b.code, b.libelle, b.description, b.couleur, b.icone, b.manuel,
@@ -1555,7 +1555,7 @@ pub async fn supprimer_badge(
     Ok(HttpResponse::Ok().json(ApiResponse::<()> { success: true, data: None, error: None }))
 }
 
-/// POST /api/admin/engagement/badges/{id}/attribuer — attribution manuelle.
+/// POST /api/admin/engagement/badges/{id}/attribuer, attribution manuelle.
 pub async fn attribuer_badge_manuel(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -1619,7 +1619,7 @@ pub async fn attribuer_badge_manuel(
     }))
 }
 
-/// DELETE /api/admin/engagement/badges/{id}/attribuer/{utilisateur_id} — retrait.
+/// DELETE /api/admin/engagement/badges/{id}/attribuer/{utilisateur_id}, retrait.
 ///
 /// **Aucune notification** : on n'annonce pas un retrait à un membre, c'est un
 /// geste de correction. La trace vit dans l'audit.
@@ -1704,7 +1704,7 @@ pub async fn statut_mise_en_avant(
     }))
 }
 
-/// POST /api/admin/engagement/mise-en-avant — met une contribution en avant et
+/// POST /api/admin/engagement/mise-en-avant, met une contribution en avant et
 /// crédite son auteur du +5 (idempotent, anti‑auto‑attribution, non‑bloquant).
 pub async fn mettre_en_avant(
     admin: AdminUtilisateur,
@@ -1740,7 +1740,7 @@ pub async fn mettre_en_avant(
 
     // +5 uniquement à la première mise en avant et hors auto‑attribution.
     // La clé d'idempotence rend tout rejeu inoffensif (pas de double crédit même
-    // après retrait puis remise en avant — cohérent avec « pas de clawback »).
+    // après retrait puis remise en avant : cohérent avec « pas de clawback »).
     if res.rows_affected() > 0 && auteur_id != admin.id {
         crate::services::engagement::attribuer(
             pool.get_ref(),

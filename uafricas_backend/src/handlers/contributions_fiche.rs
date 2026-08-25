@@ -138,7 +138,7 @@ async fn obtenir_valeur_actuelle(
             .fetch_one(pool)
             .await?
         }
-        // Bloc « À savoir avant de voyager » — colonnes TEXT (liste fermée de littéraux)
+        // Bloc « À savoir avant de voyager » : colonnes TEXT (liste fermée de littéraux)
         s @ ("voyage_langue_internationale"
         | "voyage_langue_locale"
         | "voyage_infos_visa"
@@ -167,7 +167,7 @@ async fn obtenir_valeur_actuelle(
 // Endpoints
 // ══════════════════════════════════════════════════════════════════════════
 
-/// POST /api/fiches-pays/{id}/contributions — Soumettre une contribution
+/// POST /api/fiches-pays/{id}/contributions, Soumettre une contribution
 ///
 /// Deux modes :
 ///   • Legacy (rétrocompatibilité) : body JSON scalaire (section texte +
@@ -388,7 +388,7 @@ async fn soumettre_contribution_afripulse(
         ));
     }
 
-    // Validation enrichie des sites touristiques (US1/US2) — ajout & édition.
+    // Validation enrichie des sites touristiques (US1/US2), ajout & édition.
     if matches!(type_objet, TypeObjetContribution::SiteTouristique)
         && type_contribution_sql != "suppression"
     {
@@ -445,7 +445,7 @@ async fn soumettre_contribution_afripulse(
         None
     };
 
-    // Section Afripulse (optionnelle — utile pour filtres admin)
+    // Section Afripulse (optionnelle : utile pour filtres admin)
     let section_afripulse = body
         .section_afripulse
         .as_deref()
@@ -717,7 +717,7 @@ fn valider_lien_web(payload: &serde_json::Value) -> Result<(), ApiErreur> {
     Ok(())
 }
 
-/// GET /api/fiches-pays/{id}/contributions — Lister les contributions d'une fiche
+/// GET /api/fiches-pays/{id}/contributions, Lister les contributions d'une fiche
 pub async fn lister_contributions(
     pool: web::Data<PgPool>,
     chemin: web::Path<String>,
@@ -824,7 +824,7 @@ pub async fn lister_contributions(
     }))
 }
 
-/// GET /api/fiches-pays/{id}/contributeurs — T066/T068
+/// GET /api/fiches-pays/{id}/contributeurs, T066/T068
 ///
 /// Liste agregee des contributeurs ayant au moins 1 contribution approuvee
 /// sur la fiche pays. Anonymise les utilisateurs supprimes (`iam.utilisateur.deleted_at IS NOT NULL`) :
@@ -998,7 +998,7 @@ pub async fn soumettre_contribution_multipart(
     }
     if legendes.len() != photos.len() {
         return Err(ApiErreur::Validation(format!(
-            "{} photo(s) mais {} legende(s) — chaque photo doit avoir sa legende.",
+            "{} photo(s) mais {} legende(s) : chaque photo doit avoir sa legende.",
             photos.len(),
             legendes.len()
         )));
@@ -1041,7 +1041,7 @@ pub async fn soumettre_contribution_multipart(
         });
     }
 
-    // Validation en memoire de toutes les photos — AVANT tout write disque (T056)
+    // Validation en memoire de toutes les photos, AVANT tout write disque (T056)
     let mut valides: Vec<(Vec<u8>, String, image_validation::DimensionsValides)> = Vec::new();
     for (bytes, filename) in photos.into_iter() {
         match image_validation::valider_photo_contribution(&bytes) {

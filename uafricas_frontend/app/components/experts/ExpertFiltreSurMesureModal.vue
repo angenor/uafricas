@@ -248,7 +248,7 @@ onBeforeUnmount(() => {
             <div class="mt-3 inline-flex items-center gap-2 bg-white/15 rounded-full px-4 py-1.5 text-sm font-semibold">
               <span v-if="chargementCompte" class="inline-block w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
               <template v-else>
-                <span class="text-base">{{ nombreCorrespondances ?? '—' }}</span>
+                <span class="text-base">{{ nombreCorrespondances ?? '-' }}</span>
                 <span class="text-white/85 font-normal">
                   expert{{ (nombreCorrespondances ?? 0) > 1 ? 's' : '' }} correspond{{ (nombreCorrespondances ?? 0) > 1 ? 'ent' : '' }}
                 </span>

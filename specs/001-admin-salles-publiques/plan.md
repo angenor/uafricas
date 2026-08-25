@@ -15,15 +15,15 @@ Approche technique : nouvelle table `afrolang.proposition_salle` (workflow en_at
 ## Technical Context
 
 **Language/Version** : Rust Edition 2024 (backend), TypeScript / Nuxt 4 / Vue 3 SSR (frontend)
-**Primary Dependencies** : Actix-Web 4, sqlx (PostgreSQL async), uuid, chrono, serde (backend) ; Pinia, $fetch, FontAwesome (frontend) — **aucune nouvelle dépendance**
-**Storage** : PostgreSQL 16 — schéma `afrolang` étendu (2 nouvelles tables + 1 enum) ; aucun nouveau bounded-context (Principe III)
+**Primary Dependencies** : Actix-Web 4, sqlx (PostgreSQL async), uuid, chrono, serde (backend) ; Pinia, $fetch, FontAwesome (frontend), **aucune nouvelle dépendance**
+**Storage** : PostgreSQL 16 : schéma `afrolang` étendu (2 nouvelles tables + 1 enum) ; aucun nouveau bounded-context (Principe III)
 **Testing** : Aucune infra de test configurée à ce jour (CLAUDE.md). Validation manuelle via `quickstart.md` et inspection Adminer/curl.
 **Target Platform** : Linux server (backend Actix), web SSR Nuxt 4
 **Project Type** : Web application (monorepo `uafricas_frontend/` + `uafricas_backend/`)
 **Performance Goals** : SC-004 notification < 60 s post-décision, SC-008 suspension cascade < 60 s. Charge attendue : < 10 décisions modération / jour. Indexation pour file d'attente paginée < 100 ms.
 **Constraints** :
 - Réutiliser `audit::log_action` (Principe VII) pour toute mutation
-- Ne jamais fusionner sémantiquement avec `salle_moderateur` (FR-018) — table séparée obligatoire
+- Ne jamais fusionner sémantiquement avec `salle_moderateur` (FR-018), table séparée obligatoire
 - Backend : pas de modification du JWT, pas de nouveau secret, pas de service externe
 - Frontend public : Tailwind v4 pur (Principe VI) ; admin : daisyUI v5 autorisé
 **Scale/Scope** : ~6 endpoints REST (3 publics, 3 admin), 2 tables, 1 enum, 1 page publique + suivi perso, 2 pages admin, 1 widget public sur fiche salle, 1 composable public + 1 composable admin.
@@ -36,7 +36,7 @@ Approche technique : nouvelle table `afrolang.proposition_salle` (workflow en_at
 |----------|-----------|--------------|
 | I. Français d'abord | ✅ | Tables `proposition_salle`, `salle_administrateur` ; colonnes en snake_case français ; enum `statut_proposition_salle` (en_attente / validee / rejetee / retiree) ; UI fr-FR. |
 | II. Monorepo cohérent | ✅ | Frontend + backend livrés dans la même PR. Types TS ↔ structs Rust ↔ schéma SQL alignés. |
-| III. SQL source de vérité | ✅ | Modification SQL d'abord (`schemas/08b_afrolang.sql`), puis `models/`, puis `handlers/`, puis composables, puis pages. Tables placées dans schéma existant `afrolang` — pas de nouveau bounded-context. |
+| III. SQL source de vérité | ✅ | Modification SQL d'abord (`schemas/08b_afrolang.sql`), puis `models/`, puis `handlers/`, puis composables, puis pages. Tables placées dans schéma existant `afrolang`, pas de nouveau bounded-context. |
 | IV. Sécurité par défaut | ✅ | JWT existant, requêtes paramétrées sqlx, validation côté backend. Endpoints publics protégés par `auth_middleware` (utilisateur connecté + état actif). Endpoints admin sous `admin_middleware` existant. Aucune élévation de privilège : la nomination admin de salle n'octroie aucun pouvoir effectif (FR-019). |
 | V. Simplicité (YAGNI) | ✅ | Pas d'abstraction nouvelle : pattern `ApiResponse<T>` + `COLONNES` const + handlers plats déjà en place. Pas de couche service additionnelle. La table `salle_administrateur` est un simple lien N-N avec champs d'audit. Aucune capacité effective implémentée → aucun code spéculatif. |
 | VI. Tailwind v4 (daisyUI back-office uniquement) | ✅ | Page publique de proposition (`pages/afrolang/proposer.vue`) et widget « Administrateurs » sur fiche salle publique : Tailwind v4 pur. Pages admin (`pages/admin/afrolang/propositions/...` et onglet sur `pages/admin/salles/[id]`) : daisyUI v5. |
@@ -51,15 +51,15 @@ Approche technique : nouvelle table `afrolang.proposition_salle` (workflow en_at
 ```text
 specs/001-admin-salles-publiques/
 ├── plan.md              # Ce fichier
-├── research.md          # Phase 0 — décisions techniques
-├── data-model.md        # Phase 1 — entités SQL + transitions
-├── quickstart.md        # Phase 1 — scénarios manuels de validation
-├── contracts/           # Phase 1 — contrats REST
+├── research.md          # Phase 0 : décisions techniques
+├── data-model.md        # Phase 1 : entités SQL + transitions
+├── quickstart.md        # Phase 1 : scénarios manuels de validation
+├── contracts/           # Phase 1 : contrats REST
 │   ├── public.md
 │   └── admin.md
 ├── checklists/
 │   └── requirements.md  # Quality checklist (déjà créée par /speckit.specify)
-└── tasks.md             # Phase 2 — généré par /speckit.tasks (NON créé ici)
+└── tasks.md             # Phase 2 : généré par /speckit.tasks (NON créé ici)
 ```
 
 ### Source Code (repository root)
@@ -107,4 +107,4 @@ uafricas_frontend/
 
 ## Complexity Tracking
 
-> Aucune violation à justifier — section omise volontairement.
+> Aucune violation à justifier : section omise volontairement.

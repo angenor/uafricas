@@ -1,7 +1,7 @@
-# Système d'engagement AFRICANS — Résumé opérationnel pour les équipes
+# Système d'engagement AFRICANS : Résumé opérationnel pour les équipes
 
 > Développement de la section **6. Résumé opérationnel** du document source, mis en regard de ce qui existe déjà sur la plateforme.
-> **Point de départ essentiel : le socle d'engagement est déjà construit.** Ne pas repartir de zéro — étendre l'existant.
+> **Point de départ essentiel : le socle d'engagement est déjà construit.** Ne pas repartir de zéro, étendre l'existant.
 
 ---
 
@@ -21,7 +21,7 @@
 
 ---
 
-## 1. Actions donnant des points — figer la liste (point 6.1)
+## 1. Actions donnant des points : figer la liste (point 6.1)
 
 Statut par action du barème du document :
 
@@ -30,29 +30,29 @@ Statut par action du barème du document :
   - Partages externes : `+10 pts` / 5 partages sur réseaux distincts, plafond 3×/jour. → **nécessite un nouveau log** (voir §5-a).
   - Contribution « mise en avant » : `+5 pts` (réutiliser `engagement.mise_en_avant`).
   - **Télé / radio (refonte lot 1→3)** : proposition de média validée (`admin/media_proposition::valider`) → `+5` ; média mis « à la une » → `+8` ; demande d'animation/co-détention acceptée (`support_detenteur` créé via `appliquer_acceptation_engagement`) → `+15`.
-  - **Popularité télé/radio** : réactions / commentaires / partages des 4 types de médias (`media_reaction`, `media_commentaire`, `partage_media`) alimentent déjà les compteurs `evaluer_popularite()` — il suffit d'ajouter des `palier_popularite` pour ces objets.
+  - **Popularité télé/radio** : réactions / commentaires / partages des 4 types de médias (`media_reaction`, `media_commentaire`, `partage_media`) alimentent déjà les compteurs `evaluer_popularite()` : il suffit d'ajouter des `palier_popularite` pour ces objets.
 - **Décision produit attendue :** valeurs et plafonds définitifs (le doc les donne comme indicatifs). Aucun hard-coding : tout passe par `regle_points`.
 
 ### Barème proposé (à seeder dans `engagement.regle_points`)
 
-Valeurs concrètes recommandées — cohérentes avec le doc source et le barème déjà seedé. Colonnes : `type_action` (clé), points, réputation, plafond.
+Valeurs concrètes recommandées : cohérentes avec le doc source et le barème déjà seedé. Colonnes : `type_action` (clé), points, réputation, plafond.
 
 | `type_action` | Points | Réput. | Plafond | État |
 |---------------|:------:|:------:|---------|------|
-| `partage_externe_5reseaux` | +10 | — | **3×/jour** (30 pts/j) | à créer (§5-a) |
-| `popularite_palier` — 100 likes | +10 | — | 1×/palier/objet | ✅ existe |
-| `popularite_palier` — 500 likes | +30 | — | 1×/palier/objet | ✅ existe |
-| `popularite_palier` — 1 000 likes | +50 | — | 1×/palier/objet | ✅ existe |
-| `contribution_validee` | +2 | — | — | ✅ branché |
-| `contribution_mise_en_avant` | +5 | +1 | — | à brancher |
-| `factcheck_valide` | +3 | +1 | — | ✅ branché |
-| `factcheck_faux` | −2 | −3 | — | ✅ branché |
-| `proposition_media_validee` | +5 | +1 | — | **à brancher (télé/radio)** |
+| `partage_externe_5reseaux` | +10 | : | **3×/jour** (30 pts/j) | à créer (§5-a) |
+| `popularite_palier` : 100 likes | +10 |, | 1×/palier/objet | ✅ existe |
+| `popularite_palier` : 500 likes | +30 |, | 1×/palier/objet | ✅ existe |
+| `popularite_palier` : 1 000 likes | +50 |, | 1×/palier/objet | ✅ existe |
+| `contribution_validee` | +2 | : | : | ✅ branché |
+| `contribution_mise_en_avant` | +5 | +1 |, | à brancher |
+| `factcheck_valide` | +3 | +1 | : | ✅ branché |
+| `factcheck_faux` | −2 | −3 | : | ✅ branché |
+| `proposition_media_validee` | +5 | +1 |, | **à brancher (télé/radio)** |
 | `media_a_la_une` | +8 | +1 | 1×/média | **à brancher (télé/radio)** |
-| `animation_support_acceptee` | +15 | +2 | — | **à brancher (télé/radio)** |
+| `animation_support_acceptee` | +15 | +2 |, | **à brancher (télé/radio)** |
 | `ajustement_admin` | libre | libre | permission `engagement.gerer` | ✅ existe |
 
-**Seuils de niveaux (`engagement.niveau`)** — proposition de départ, ajustable :
+**Seuils de niveaux (`engagement.niveau`)**, proposition de départ, ajustable :
 
 | Niveau | Seuil (pts cumulés) | Avantage principal |
 |--------|:-------------------:|--------------------|
@@ -61,7 +61,7 @@ Valeurs concrètes recommandées — cohérentes avec le doc source et le barèm
 | Influenceur Gold | 1 000 | Mise en avant régulière (« à la une ») |
 | Influenceur Diamant | 3 000 | + invitations privilégiées (Africalive/Télé/Radio) |
 
-**Cadeaux entre utilisateurs** — coût (Modèle A = transfert intégral / Modèle B = coût réduit + bonus symbolique) :
+**Cadeaux entre utilisateurs** : coût (Modèle A = transfert intégral / Modèle B = coût réduit + bonus symbolique) :
 
 | Cadeau | Valeur | Modèle A (émetteur −) | Modèle B (émetteur −) |
 |--------|:------:|:---------------------:|:---------------------:|
@@ -86,7 +86,7 @@ Valeurs concrètes recommandées — cohérentes avec le doc source et le barèm
 
 ## 3. Statuts & visibilité
 
-- 3 niveaux seedés (`membre` / `premium` / `platinum`) via `engagement.niveau`. **Décider les seuils exacts** (200 / 1000 = exemples) et l'**impact algorithmique** sur les fils (poids ranking, slots « à la une » — s'appuyer sur `engagement.mise_en_avant`).
+- 3 niveaux seedés (`membre` / `premium` / `platinum`) via `engagement.niveau`. **Décider les seuils exacts** (200 / 1000 = exemples) et l'**impact algorithmique** sur les fils (poids ranking, slots « à la une », s'appuyer sur `engagement.mise_en_avant`).
 - **Badges nominatifs / succès débloquables** au-delà des 3 niveaux : **n'existent pas** → table à créer si retenu.
 
 ## 4. Cadeaux entre utilisateurs (point 6.4)
@@ -114,7 +114,7 @@ Valeurs concrètes recommandées — cohérentes avec le doc source et le barèm
 2. Seuils exacts des niveaux + impact algorithmique sur la visibilité.
 3. Modèle de cadeaux entre utilisateurs (A / B / mixte) + anti-abus.
 4. Créer ou non des badges/succès nominatifs.
-5. Règles publicité (formats, emplacements, limites UX) — chantier distinct.
+5. Règles publicité (formats, emplacements, limites UX), chantier distinct.
 
 ## Priorisation d'implémentation suggérée
 

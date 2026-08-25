@@ -1,6 +1,6 @@
 //! Interactions communautaires sur les médias radio et télé : réactions,
 //! commentaires, partages et signalements (feature 001-refonte-tele-radio,
-//! US3 et US7 — migration 09k).
+//! US3 et US7 : migration 09k).
 //!
 //! Les quatre tables sont génériques, discriminées par `(type_media, media_id)`
 //! sur les quatre supports et contenus. Calqué sur `element_social`, qui rend
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-/// Les six cibles possibles d'une interaction — les deux supports, les deux
+/// Les six cibles possibles d'une interaction, les deux supports, les deux
 /// niveaux de contenu (émission et épisode) de chaque famille.
 ///
 /// Les anciennes valeurs `programme_tele` / `programme_radio` sont **absentes**
@@ -20,7 +20,7 @@ use uuid::Uuid;
 ///
 /// **Whitelist de littéraux** : ces valeurs sont interpolées dans le SQL des
 /// requêtes UNION du mur communautaire. Elles ne proviennent JAMAIS directement
-/// de l'entrée client — celle-ci est d'abord confrontée à cette liste, et
+/// de l'entrée client : celle-ci est d'abord confrontée à cette liste, et
 /// rejetée si elle n'y figure pas.
 pub const TYPES_MEDIA_AUTORISES: [&str; 6] = [
     "chaine_tv",
@@ -171,7 +171,7 @@ pub struct CommentaireMediaResponse {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub auteur: AuteurApercu,
-    /// Vrai si le membre courant peut supprimer ce commentaire — la suppression
+    /// Vrai si le membre courant peut supprimer ce commentaire, la suppression
     /// est réservée à son auteur.
     pub est_mien: bool,
 }
@@ -287,7 +287,7 @@ pub struct SignalementsAdminFiltres {
 /// Une ligne de la file : le contenu visé, son état et ses signalements.
 ///
 /// Les quatre tables n'ayant pas la même colonne de titre, la requête l'aliase
-/// en `titre` — d'où une struct unique quel que soit `type_media`.
+/// en `titre` : d'où une struct unique quel que soit `type_media`.
 #[derive(Debug, FromRow)]
 pub struct ContenuSignaleRow {
     pub id: Uuid,

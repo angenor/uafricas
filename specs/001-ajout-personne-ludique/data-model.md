@@ -22,7 +22,7 @@ Cette feature est purement frontend (UI/UX). Aucune table, colonne ou schema Pos
 ### DTOs frontend existants réutilisés
 
 ```typescript
-// Création — utilisé par le wizard ET le formulaire classique
+// Création : utilisé par le wizard ET le formulaire classique
 interface CreerPersonneForm {
   nom: string              // obligatoire
   prenoms?: string

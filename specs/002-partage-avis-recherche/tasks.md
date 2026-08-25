@@ -2,7 +2,7 @@
 
 **Input**: Design documents from `/specs/002-partage-avis-recherche/`
 **Prerequisites**: plan.md (required), spec.md (required), research.md, data-model.md, contracts/
-**Tests**: Non inclus (pas de framework de test configuré — cf. plan.md)
+**Tests**: Non inclus (pas de framework de test configuré, cf. plan.md)
 **Organization**: Tasks groupées par user story. Chaque story est indépendamment implémentable et testable.
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -19,7 +19,7 @@
 
 ---
 
-## Phase 1: Setup — Schema SQL (Source de Vérité)
+## Phase 1: Setup : Schema SQL (Source de Vérité)
 
 **Purpose**: Étendre le schema `retrouve_amis` existant avec les nouvelles structures de données conformément à `data-model.md`
 
@@ -34,9 +34,9 @@
 
 ---
 
-## Phase 2: Foundational — Backend Types & Module Setup
+## Phase 2: Foundational : Backend Types & Module Setup
 
-**Purpose**: Structs Rust, DTOs et module public handler — bloque toutes les user stories
+**Purpose**: Structs Rust, DTOs et module public handler, bloque toutes les user stories
 
 **CRITICAL**: Aucune user story ne peut commencer avant la fin de cette phase
 
@@ -48,7 +48,7 @@
 
 ---
 
-## Phase 3: User Story 1 — Rendre un avis public (Priority: P1) MVP
+## Phase 3: User Story 1 : Rendre un avis public (Priority: P1) MVP
 
 **Goal**: Permettre à l'auteur d'activer la visibilité publique et créer une page publique accessible sans authentification avec affichage conditionnel selon l'état
 
@@ -69,7 +69,7 @@
 
 ---
 
-## Phase 4: User Story 4 — Protections anti-harcèlement (Priority: P1)
+## Phase 4: User Story 4 : Protections anti-harcèlement (Priority: P1)
 
 **Goal**: Permettre le signalement depuis la page publique (avec auto-suspension à 3), la demande de retrait avec suspension immédiate, et l'arbitrage admin
 
@@ -85,14 +85,14 @@
 - [x] T023 [US4] Compiler et tester le backend US4 : `cargo check` puis tester avec curl les 4 endpoints
 - [x] T024 [P] [US4] Ajouter les fonctions API `signalerAvisPublic(slug, data)`, `demanderRetrait(slug, motif)` dans `uafricas_frontend/app/composables/useRetrouvAmis.ts`
 - [x] T025 [P] [US4] Ajouter les fonctions admin `listerDemandesRetrait(params)`, `statuerDemandeRetrait(id, data)` dans `uafricas_frontend/app/composables/useAdminRetrouvAmis.ts`
-- [x] T026 [US4] Créer le composant `DemandeRetrait.vue` dans `uafricas_frontend/app/components/retrouve-amis/DemandeRetrait.vue` : bouton "Cet avis me concerne — demander le retrait" + formulaire motif + bouton "Signaler cet avis" avec formulaire motif/description. Redirection vers connexion si non connecté. Tailwind CSS v4 pur
+- [x] T026 [US4] Créer le composant `DemandeRetrait.vue` dans `uafricas_frontend/app/components/retrouve-amis/DemandeRetrait.vue` : bouton "Cet avis me concerne, demander le retrait" + formulaire motif + bouton "Signaler cet avis" avec formulaire motif/description. Redirection vers connexion si non connecté. Tailwind CSS v4 pur
 - [x] T027 [US4] Intégrer `DemandeRetrait.vue` dans `uafricas_frontend/app/pages/retrouve-amis/public/[slug].vue` : afficher uniquement quand etat = actif et utilisateur connecté (pas l'auteur)
 
 **Checkpoint**: Les signalements et demandes de retrait fonctionnent. L'admin peut statuer sur les demandes.
 
 ---
 
-## Phase 5: User Story 2 — Partage social (Priority: P2)
+## Phase 5: User Story 2 : Partage social (Priority: P2)
 
 **Goal**: Proposer des boutons de partage (WhatsApp, Facebook, X/Twitter, LinkedIn, copier lien) avec compteur et enrichir les balises Open Graph/Twitter Card pour un aperçu riche
 
@@ -110,7 +110,7 @@
 
 ---
 
-## Phase 6: User Story 5 — Parcourir les avis publics (Priority: P2)
+## Phase 6: User Story 5 : Parcourir les avis publics (Priority: P2)
 
 **Goal**: Créer une page publique de listing/recherche avec pagination, filtres (pays, ville, école) et recherche full-text
 
@@ -128,7 +128,7 @@
 
 ---
 
-## Phase 7: User Story 3 — Répondre à un avis public (Priority: P3)
+## Phase 7: User Story 3 : Répondre à un avis public (Priority: P3)
 
 **Goal**: Permettre aux utilisateurs connectés de répondre à un avis public via un formulaire structuré, créant automatiquement une correspondance
 
@@ -139,7 +139,7 @@
 - [x] T038 [US3] Implémenter le handler `repondre_avis_public` (POST `/api/retrouve-amis/public/{slug}/repondre`) dans `uafricas_backend/src/handlers/retrouve_amis.rs` : vérifier JWT + avis public+actif + pas l'auteur + pas déjà répondu (UNIQUE) + pas dans blacklist + rate limit 10/jour (COUNT reponse_publique WHERE repondeur_id AND created_at > now()-1day), insérer `reponse_publique`, créer `correspondance` (type_cible='profil', score=70, details_score={"source":"reponse_publique","type_reponse":"..."}), créer notification `reponse_publique` pour l'auteur, audit. Contrat: `contracts/auth-api.md` section POST repondre
 - [x] T039 [US3] Enregistrer la route POST repondre (dans scope JWT) dans `uafricas_backend/src/routes.rs`
 - [x] T040 [P] [US3] Ajouter la fonction API `repondreAvisPublic(slug, data)` dans `uafricas_frontend/app/composables/useRetrouvAmis.ts`
-- [x] T041 [US3] Créer le composant `FormulaireReponse.vue` dans `uafricas_frontend/app/components/retrouve-amis/FormulaireReponse.vue` : sélection type de réponse (radio: "Je suis cette personne", "Je la connais", "J'ai des informations"), champ message textarea, bouton envoyer. Redirection vers connexion si non connecté (avec retour automatique vers l'avis après auth — FR-012). Gestion erreur 409 "Vous avez déjà répondu" + erreur 429 "Limite atteinte". Tailwind CSS v4 pur
+- [x] T041 [US3] Créer le composant `FormulaireReponse.vue` dans `uafricas_frontend/app/components/retrouve-amis/FormulaireReponse.vue` : sélection type de réponse (radio: "Je suis cette personne", "Je la connais", "J'ai des informations"), champ message textarea, bouton envoyer. Redirection vers connexion si non connecté (avec retour automatique vers l'avis après auth, FR-012). Gestion erreur 409 "Vous avez déjà répondu" + erreur 429 "Limite atteinte". Tailwind CSS v4 pur
 - [x] T042 [US3] Intégrer `FormulaireReponse.vue` dans `uafricas_frontend/app/pages/retrouve-amis/public/[slug].vue` : afficher uniquement quand etat = actif, masquer si l'utilisateur connecté est l'auteur de l'avis
 
 **Checkpoint**: Les réponses publiques créent des correspondances visibles dans l'espace de l'auteur.
@@ -150,8 +150,8 @@
 
 **Purpose**: Vérifications finales, intégration et validation
 
-- [x] T043 Vérifier que toutes les mutations sont auditées via `audit::log_action` (publier, signaler, demander_retrait, statuer_retrait, repondre, incrementer_partage) — revue de code dans `uafricas_backend/src/handlers/retrouve_amis.rs`, `retrouve_amis_public.rs` et `admin/retrouve_amis.rs`
-- [x] T044 Vérifier que toutes les pages publiques utilisent Tailwind CSS v4 pur (aucune classe daisyUI) — revue de `[slug].vue`, `rechercher.vue`, `PagePublique.vue`, `BoutonsPartage.vue`, `FormulaireReponse.vue`, `CarteAvisPublic.vue`, `DemandeRetrait.vue`
+- [x] T043 Vérifier que toutes les mutations sont auditées via `audit::log_action` (publier, signaler, demander_retrait, statuer_retrait, repondre, incrementer_partage), revue de code dans `uafricas_backend/src/handlers/retrouve_amis.rs`, `retrouve_amis_public.rs` et `admin/retrouve_amis.rs`
+- [x] T044 Vérifier que toutes les pages publiques utilisent Tailwind CSS v4 pur (aucune classe daisyUI), revue de `[slug].vue`, `rechercher.vue`, `PagePublique.vue`, `BoutonsPartage.vue`, `FormulaireReponse.vue`, `CarteAvisPublic.vue`, `DemandeRetrait.vue`
 - [x] T045 Exécuter la validation quickstart.md complète : compiler backend (`cargo run`), démarrer frontend (`pnpm dev`), test E2E manuel (créer avis → rendre public → accéder en privé → partager → répondre → signaler → demander retrait → admin statuer)
 
 ---
@@ -160,9 +160,9 @@
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: Aucune dépendance — commence immédiatement
-- **Foundational (Phase 2)**: Dépend de Phase 1 (schema SQL doit exister) — **BLOQUE toutes les user stories**
-- **US1 (Phase 3)**: Dépend de Phase 2 — **MVP, doit être complété en premier**
+- **Setup (Phase 1)**: Aucune dépendance, commence immédiatement
+- **Foundational (Phase 2)**: Dépend de Phase 1 (schema SQL doit exister), **BLOQUE toutes les user stories**
+- **US1 (Phase 3)**: Dépend de Phase 2 : **MVP, doit être complété en premier**
 - **US4 (Phase 4)**: Dépend de Phase 3 (la page publique doit exister pour signaler/demander retrait)
 - **US2 (Phase 5)**: Dépend de Phase 3 (les boutons de partage sont sur la page publique)
 - **US5 (Phase 6)**: Dépend de Phase 2 seulement (le listing est une page indépendante)
@@ -203,29 +203,29 @@ Phase 1 (Setup) → Phase 2 (Foundational)
 
 **Phase 2** (après Phase 1):
 ```
-T007 (models publics) ║ T008 (models admin) — fichiers différents
+T007 (models publics) ║ T008 (models admin), fichiers différents
 ```
 
-**Phase 3 — US1** (après Phase 2):
+**Phase 3 : US1** (après Phase 2):
 ```
-T010 (handler publier) ║ T011 (handler detail) — fichiers différents
-T014 (composable)      ║ T015 (PagePublique.vue) — fichiers différents
-```
-
-**Phase 4 — US4** (après Phase 3):
-```
-T018 (signaler)      ║ T020 (admin lister)  — fichiers différents
-T024 (composable)    ║ T025 (admin composable) — fichiers différents
+T010 (handler publier) ║ T011 (handler detail), fichiers différents
+T014 (composable)      ║ T015 (PagePublique.vue), fichiers différents
 ```
 
-**Phase 5 — US2** (après Phase 3):
+**Phase 4 : US4** (après Phase 3):
+```
+T018 (signaler)      ║ T020 (admin lister), fichiers différents
+T024 (composable)    ║ T025 (admin composable), fichiers différents
+```
+
+**Phase 5 : US2** (après Phase 3):
 ```
 T030 (composable) ║ (aucun autre parallélisable dans cette phase)
 ```
 
-**Phase 6 — US5** (après Phase 2):
+**Phase 6 : US5** (après Phase 2):
 ```
-T035 (composable) ║ T036 (CarteAvisPublic) — fichiers différents
+T035 (composable) ║ T036 (CarteAvisPublic), fichiers différents
 ```
 
 ---
@@ -268,7 +268,7 @@ T035 (composable) ║ T036 (CarteAvisPublic) — fichiers différents
 
 ## Notes
 
-- [P] tasks = fichiers différents, pas de dépendances — exécutables en parallèle
+- [P] tasks = fichiers différents, pas de dépendances, exécutables en parallèle
 - [Story] label = lien vers la user story pour traçabilité
 - **Constitution VI**: Pages publiques = Tailwind CSS v4 pur. AUCUNE classe daisyUI (btn, card, modal, etc.)
 - **Constitution VII**: Toute mutation doit appeler `audit::log_action` (7 mutations identifiées)

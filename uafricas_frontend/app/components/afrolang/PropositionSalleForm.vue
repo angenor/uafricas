@@ -78,7 +78,7 @@
           required
           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
         >
-          <option value="" disabled>— Sélectionner un groupe ethnique —</option>
+          <option value="" disabled>Sélectionner un groupe ethnique</option>
           <option
             v-for="g in groupesDisponibles"
             :key="g.id"
@@ -152,7 +152,7 @@
           </fieldset>
         </div>
         <p class="text-xs text-gray-500 mt-1">
-          Sélectionnez au moins un territoire où la langue cible est parlée — y
+          Sélectionnez au moins un territoire où la langue cible est parlée, y
           compris hors d'Afrique (diaspora, créoles, langues afro-descendantes).
           {{ form.pays_origine_ids.length }} sélectionné(s).
         </p>

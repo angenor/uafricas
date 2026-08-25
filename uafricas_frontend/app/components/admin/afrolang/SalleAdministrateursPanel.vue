@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Panneau admin — gestion des administrateurs d'une salle publique
+// Panneau admin : gestion des administrateurs d'une salle publique
 // Feature 001-admin-salles-publiques, US3
 import type { SalleAdministrateurAPI } from '~/composables/useAdminAfrolangSalles'
 
@@ -96,7 +96,7 @@ const confirmerRevocation = async () => {
       motif,
     )
     if (!res) throw new Error('Échec de la révocation')
-    success.value = 'Administrateur révoqué — l\'utilisateur a été notifié.'
+    success.value = 'Administrateur révoqué, l\'utilisateur a été notifié.'
     showRevokeModal.value = false
     cibleRevocation.value = null
     motifRevocation.value = ''
@@ -115,7 +115,7 @@ const formatDate = (iso: string | null) =>
     ? new Date(iso).toLocaleDateString('fr-FR', {
         day: '2-digit', month: '2-digit', year: 'numeric',
       })
-    : '—'
+    : '-'
 
 onMounted(charger)
 </script>
@@ -165,7 +165,7 @@ onMounted(charger)
                 :key="u.id"
                 :value="u.id"
               >
-                {{ u.prenom }} {{ u.nom }} — {{ u.email }}
+                {{ u.prenom }} {{ u.nom }} - {{ u.email }}
               </option>
             </select>
           </div>
@@ -233,7 +233,7 @@ onMounted(charger)
               <td class="text-xs text-base-content/60">
                 <div v-if="a.suspendu_at">
                   Suspendu le {{ formatDate(a.suspendu_at) }}
-                  <span v-if="a.motif_suspension"> — {{ a.motif_suspension }}</span>
+                  <span v-if="a.motif_suspension">, {{ a.motif_suspension }}</span>
                 </div>
                 <div v-else-if="a.revoque_at">
                   Révoqué le {{ formatDate(a.revoque_at) }}

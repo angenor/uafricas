@@ -16,7 +16,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Section rétractable — repliée par défaut
+// Section rétractable : repliée par défaut
 const replie = ref(true)
 
 type OpenContributionPayload = {

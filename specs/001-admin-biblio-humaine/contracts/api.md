@@ -4,7 +4,7 @@
 
 ## Endpoints modifiés
 
-### `POST /api/bibliotheques-humaines/inscription` — modifié
+### `POST /api/bibliotheques-humaines/inscription`, modifié
 
 **Avant** : créait directement `bibliotheque_humain = TRUE`.
 **Après** : crée une `demande_biblio_humaine` en statut `en_attente`.
@@ -35,13 +35,13 @@
 ```
 
 **Erreurs** :
-- `409 Conflict` — demande déjà active (en_attente ou valide)
-- `401 Unauthorized` — non authentifié
-- `422 Unprocessable` — biographie < 20 car., fonction vide, aucune spécialité
+- `409 Conflict` : demande déjà active (en_attente ou valide)
+- `401 Unauthorized` : non authentifié
+- `422 Unprocessable` : biographie < 20 car., fonction vide, aucune spécialité
 
 ---
 
-### `GET /api/bibliotheques-humaines` — signature inchangée, filtrage interne modifié
+### `GET /api/bibliotheques-humaines` : signature inchangée, filtrage interne modifié
 
 La liste publique ne retourne que les utilisateurs avec une demande `valide`. La réponse reste identique au format actuel.
 

@@ -1,5 +1,5 @@
 // Soumission de médias par les parties prenantes et suivi de ses propositions
-// (US4 — migration 09l, handlers/media_proposition.rs).
+// (US4 : migration 09l, handlers/media_proposition.rs).
 //
 // **Trois garde-fous sont côté serveur, pas ici** : `statut` naît toujours
 // `'en_attente'`, `origine_publication` est forcée à `'territoire'`, et
@@ -49,7 +49,7 @@ export const LIBELLES_STATUT: Record<StatutProposition, string> = {
   retiree: 'Retirée',
 }
 
-/** Un thème phare proposable — catégorie média (FR-030). */
+/** Un thème phare proposable : catégorie média (FR-030). */
 export interface ThemePhareAPI {
   id: string
   nom: string
@@ -61,7 +61,7 @@ export interface TerritoireAPI {
   nom: string
 }
 
-/** Payload métier de la proposition — miroir de `DonneesProposition` (Rust). */
+/** Payload métier de la proposition : miroir de `DonneesProposition` (Rust). */
 export interface DonneesProposition {
   nom?: string
   description?: string
@@ -85,7 +85,7 @@ export interface DonneesProposition {
   /**
    * Coordonnées publiques de l'équipe, pour les supports uniquement (09p).
    * Comme le reste de la proposition, elles n'atteignent le public qu'à la
-   * validation — jusque-là seul l'administrateur les voit.
+   * validation : jusque-là seul l'administrateur les voit.
    */
   contact_email?: string
   contact_telephone?: string
@@ -221,7 +221,7 @@ export const useMediaProposition = () => {
     }
   }
 
-  /** Retrait par l'auteur — refusé dès que la proposition a été tranchée. */
+  /** Retrait par l'auteur : refusé dès que la proposition a été tranchée. */
   const retirer = async (id: string): Promise<PropositionMediaAPI | null> => {
     erreur.value = null
     try {

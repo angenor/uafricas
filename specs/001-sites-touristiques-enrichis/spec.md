@@ -8,7 +8,7 @@
 ## Contexte
 
 La page de détail d'un territoire (`/opportunite-afrique/[id]`) présente déjà deux familles de
-sites touristiques — **emblématiques** et **privés** — alimentées par des contributions
+sites touristiques : **emblématiques** et **privés**, alimentées par des contributions
 communautaires validées par un administrateur. Chaque site se limite aujourd'hui à un nom, une
 description, une image et des coordonnées GPS.
 
@@ -251,13 +251,13 @@ sans créer de doublon.
 - **Site touristique** : représente un lieu emblématique ou privé d'un territoire. Attributs :
   famille (emblématique / privé), sous-type (selon la famille), nom, gestionnaire, localisation
   textuelle (ville, village, territoire), localisation GPS (latitude, longitude), information
-  pertinente, contacts du gestionnaire (téléphone, courriel, adresse — requis si privé),
+  pertinente, contacts du gestionnaire (téléphone, courriel, adresse, requis si privé),
   informations de constitution légale (facultatives), indicateur « Vérifié », image.
 - **Avis de visiteur sur un site** : note de 1 à 5 et commentaire laissés par un visiteur
   authentifié sur un site. Un avis actif au plus par couple (visiteur, site). Relié au site et à
   l'auteur. Peut être masqué par un administrateur.
 - **Informations de constitution légale** : forme / statut juridique, numéro d'enregistrement,
-  document justificatif éventuel — rattachées à un site.
+  document justificatif éventuel : rattachées à un site.
 
 ## Success Criteria *(mandatory)*
 
@@ -265,8 +265,8 @@ sans créer de doublon.
 
 - **SC-001**: 100 % des sites nouvellement proposés portent un sous-type valide cohérent avec leur
   famille.
-- **SC-002**: Un visiteur peut identifier la nature (sous-type), la localisation et — pour un site
-  privé — un moyen de contact d'un site en moins de 10 secondes de consultation de la fiche.
+- **SC-002**: Un visiteur peut identifier la nature (sous-type), la localisation et, pour un site
+  privé : un moyen de contact d'un site en moins de 10 secondes de consultation de la fiche.
 - **SC-003**: 100 % des sites privés validés disposent d'au moins un contact de gestionnaire
   renseigné.
 - **SC-004**: Un administrateur peut attribuer ou retirer le badge « Vérifié » sur un site en moins

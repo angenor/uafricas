@@ -1,5 +1,5 @@
 //! Soumission de médias par les parties prenantes et modération administrative
-//! (feature 001-refonte-tele-radio, US4 — migration 09l).
+//! (feature 001-refonte-tele-radio, US4, migration 09l).
 //!
 //! Une seule table polymorphe porte les six types de proposition : le workflow
 //! est identique pour une chaîne, une station ou un contenu, et le
@@ -22,7 +22,7 @@ use crate::errors::ApiErreur;
 /// Depuis 09q, les contenus se proposent à deux niveaux : une **émission**
 /// (programme conteneur) ou un **épisode** versé dans une émission existante.
 /// Les anciennes valeurs `programme_tele` / `programme_radio` subsistent dans
-/// l'enum pour l'historique — PostgreSQL ne sait pas retirer une valeur — mais
+/// l'enum pour l'historique : PostgreSQL ne sait pas retirer une valeur, mais
 /// ne sont plus produites, d'où leur absence de cette liste.
 pub const TYPES_OBJET_PROPOSE: [&str; 8] = [
     "chaine_tv",
@@ -63,7 +63,7 @@ pub const ROLES_PARTIE_PRENANTE: [&str; 9] = [
     "autre",
 ];
 
-/// Longueur minimale du motif de rejet — l'auteur doit pouvoir comprendre le
+/// Longueur minimale du motif de rejet, l'auteur doit pouvoir comprendre le
 /// refus depuis son écran de suivi (FR-033).
 pub const LONGUEUR_MIN_MOTIF_REJET: usize = 10;
 
@@ -96,7 +96,7 @@ pub fn support_pour_type_objet(type_objet: &str) -> Option<&'static str> {
 }
 
 // ────────────────────────────────────────────────────────────────
-// Payload métier — le contenu de `donnees`
+// Payload métier : le contenu de `donnees`
 // ────────────────────────────────────────────────────────────────
 
 /// Champs de l'objet proposé, communs aux quatre types créateurs.
@@ -126,7 +126,7 @@ pub struct DonneesProposition {
     pub image_couverture_url: Option<String>,
     pub info_animateur: Option<String>,
     pub info_producteur: Option<String>,
-    /// Source déclarée du média et auteur réel — présentés en évidence à
+    /// Source déclarée du média et auteur réel, présentés en évidence à
     /// l'administrateur, seul à se prononcer sur la licéité (H-012, FR-033).
     pub source_declaree: Option<String>,
     pub auteur_declare: Option<String>,
@@ -156,7 +156,7 @@ impl DonneesProposition {
             ));
         }
 
-        // Rôle de partie prenante — supports uniquement.
+        // Rôle de partie prenante : supports uniquement.
         if matches!(type_objet, "chaine_tv" | "station_radio") {
             match self.role_partie_prenante.as_deref().map(str::trim) {
                 None | Some("") => {
@@ -186,7 +186,7 @@ impl DonneesProposition {
             }
         }
 
-        // Thème phare — émissions uniquement. Un épisode hérite du thème de son
+        // Thème phare : émissions uniquement. Un épisode hérite du thème de son
         // programme : le lui redemander à chaque versement serait du bruit.
         if matches!(type_objet, "emission_tele" | "emission_radio") {
             let autre_renseigne = !self
@@ -253,7 +253,7 @@ pub struct DecisionMediaRequest {
 // Édition d'un contenu par son détenteur (FR-032)
 // ────────────────────────────────────────────────────────────────
 
-/// Métadonnées éditables sans revalidation — publiées immédiatement.
+/// Métadonnées éditables sans revalidation, publiées immédiatement.
 #[derive(Debug, Deserialize)]
 pub struct MetadonneesRequest {
     pub nom: Option<String>,
@@ -263,7 +263,7 @@ pub struct MetadonneesRequest {
     pub theme_phare_autre: Option<String>,
 }
 
-/// Remplacement du fichier ou du lien média — bascule le contenu en
+/// Remplacement du fichier ou du lien média, bascule le contenu en
 /// `'en_attente'` et ouvre une proposition de modification.
 #[derive(Debug, Deserialize)]
 pub struct RemplacerMediaRequest {

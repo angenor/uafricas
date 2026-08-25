@@ -56,7 +56,7 @@ const soumettre = async (payload: { motif: string, description: string }) => {
     if (etat.suspendu) emit('suspendu')
     // Le signaleur reste devant un contenu d'apparence intacte : sans énoncer
     // ce qui vient de se produire, il en déduit soit que son signalement n'est
-    // pas passé, soit que la plateforme n'agit pas — les deux inférences allant
+    // pas passé, soit que la plateforme n'agit pas, les deux inférences allant
     // contre l'objectif de FR-049/050, qui est de rendre la modération
     // communautaire lisible par celui qui l'exerce.
     modalRef.value?.setSuccess(

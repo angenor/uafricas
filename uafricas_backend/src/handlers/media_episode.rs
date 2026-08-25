@@ -1,7 +1,7 @@
-//! Épisodes — versement, ordre, déplacement et mise en avant
+//! Épisodes : versement, ordre, déplacement et mise en avant
 //! (feature 009-medias-programmes-episodes, US1).
 //!
-//! Routes membres, gardées par `garde_detenteur` — **jamais**
+//! Routes membres, gardées par `garde_detenteur`, **jamais**
 //! `AdminUtilisateur` :
 //!
 //!   POST   /api/medias/emissions/{id}/episodes
@@ -13,7 +13,7 @@
 //!   GET    /api/medias/emissions/{id}/episodes            (vue détenteur)
 //!
 //! **Invariant central (FR-040)** : un épisode versé par un co-détenteur naît
-//! `en_attente`. Le client ne décide pas de l'état — toute valeur transmise est
+//! `en_attente`. Le client ne décide pas de l'état : toute valeur transmise est
 //! ignorée. C'est ce qui ferme le trou de l'ancien modèle, où un co-détenteur
 //! publiait sans revue.
 
@@ -42,7 +42,7 @@ use crate::ApiResponse;
 /// Deux invariants, tenus par le SERVEUR et non par le client (FR-007, FR-040) :
 ///
 /// - `etat = 'en_attente'` **toujours** ;
-/// - `ordre = COALESCE(MAX(ordre), -1) + 1` sur l'émission — l'épisode prend
+/// - `ordre = COALESCE(MAX(ordre), -1) + 1` sur l'émission, l'épisode prend
 ///   rang **à la fin**, sans déplacer les existants ni altérer l'occurrence en
 ///   cours de la rotation (FR-019). Patron déjà en production dans
 ///   `admin/formation_contenu.rs`.
@@ -123,12 +123,12 @@ pub async fn creer_episode(
 ///
 /// Deux bascules d'état, et elles seules :
 ///
-/// - un épisode **publié dont le média change** repasse `en_attente` — c'est le
+/// - un épisode **publié dont le média change** repasse `en_attente` : c'est le
 ///   même principe que `PUT …/media` sur les propositions : ce qui a été validé,
 ///   c'est le fichier, pas seulement le titre. Une modification purement
 ///   éditoriale (titre, description, image) reste publiée ;
 /// - un épisode **rejeté** que l'on modifie repasse `en_attente` et son
-///   `motif_rejet` est effacé — c'est le parcours de correction-resoumission de
+///   `motif_rejet` est effacé : c'est le parcours de correction-resoumission de
 ///   FR-041.
 pub async fn modifier_episode(
     req: HttpRequest,
@@ -217,7 +217,7 @@ pub async fn modifier_episode(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Suppression douce. Le cycle de rotation se recalcule à la lecture suivante
-/// (FR-019) — aucune action supplémentaire n'est requise, et c'est bien tout
+/// (FR-019) : aucune action supplémentaire n'est requise, et c'est bien tout
 /// l'intérêt d'une rotation calculée plutôt que matérialisée.
 pub async fn supprimer_episode(
     req: HttpRequest,
@@ -262,7 +262,7 @@ pub async fn supprimer_episode(
 // PUT /api/medias/emissions/{id}/episodes/reordonner
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Réécriture **atomique** de l'ordre — tout réordonner ou rien (patron de
+/// Réécriture **atomique** de l'ordre : tout réordonner ou rien (patron de
 /// `admin/formation_contenu.rs`).
 ///
 /// `400` si la liste ne couvre pas **exactement** les épisodes de l'émission :
@@ -343,7 +343,7 @@ pub async fn reordonner_episodes(
 /// Déplacer un épisode vers un autre programme **du même support** (`400`
 /// sinon).
 ///
-/// L'épisode conserve intégralement ses interactions — rien à faire : elles sont
+/// L'épisode conserve intégralement ses interactions, rien à faire : elles sont
 /// indexées par `(type_media, media_id)` et ni l'un ni l'autre ne change
 /// (FR-009). Il prend rang **en fin** du nouveau programme ; les deux cycles de
 /// rotation se recalculent d'eux-mêmes à la lecture suivante.
@@ -497,7 +497,7 @@ pub async fn basculer_a_la_une(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GET /api/medias/emissions/{id}/episodes — vue détenteur
+// GET /api/medias/emissions/{id}/episodes, vue détenteur
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// **Tous** les épisodes du programme, quel que soit leur état, avec le motif

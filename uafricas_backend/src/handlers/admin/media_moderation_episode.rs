@@ -1,5 +1,5 @@
 //! File de modération des épisodes
-//! (feature 009-medias-programmes-episodes, US1 — FR-040 à FR-043).
+//! (feature 009-medias-programmes-episodes, US1, FR-040 à FR-043).
 //!
 //! Endpoints :
 //!   GET   /api/admin/medias/episodes
@@ -7,7 +7,7 @@
 //!   PATCH /api/admin/medias/episodes/{id}/rejeter
 //!
 //! Garde : `verifier_permission!(admin, "media", …)`. Attention au piège de
-//! nommage — `"media"` couvre radio et télé, `"media_content"` couvre vidafrica
+//! nommage : `"media"` couvre radio et télé, `"media_content"` couvre vidafrica
 //! et `"programme"` désigne les programmes d'échange.
 //!
 //! **Pourquoi l'objet et non une proposition JSONB** : `proposition_media` (09l)
@@ -50,7 +50,7 @@ const FAMILLES: [&str; 2] = ["tele", "radio"];
 /// samedi soit traité au même rang qu'un contenu sans date.
 ///
 /// `prochaine_echeance` se calcule **à la lecture** depuis les créneaux du
-/// programme — aucune tâche de fond, aucune colonne à maintenir.
+/// programme : aucune tâche de fond, aucune colonne à maintenir.
 pub async fn lister_episodes(
     pool: web::Data<PgPool>,
     admin: AdminUtilisateur,
@@ -258,8 +258,8 @@ pub async fn valider_episode(
 
 /// Rejet **motivé** (FR-041, SC-008).
 ///
-/// Le motif fait au moins 10 caractères — même garde applicative que le rejet
-/// d'une proposition (09l) — et le CHECK `ck_episode_*_rejet_motive` interdit de
+/// Le motif fait au moins 10 caractères, même garde applicative que le rejet
+/// d'une proposition (09l) : et le CHECK `ck_episode_*_rejet_motive` interdit de
 /// toute façon un rejet vide en base. L'auteur est notifié **avec le motif** :
 /// sans lui, il n'a rien à corriger.
 pub async fn rejeter_episode(

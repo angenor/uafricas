@@ -38,7 +38,7 @@
             La vie, les migrations et le temps nous éloignent parfois de personnes qui comptent.
             <strong class="text-gray-900">Africonnect</strong> vous aide à
             <strong class="text-gray-900">retrouver familles, amis et connaissances perdus de vue</strong>,
-            partout en Afrique et dans la diaspora — et à renouer le contact en toute confiance.
+            partout en Afrique et dans la diaspora, et à renouer le contact en toute confiance.
           </p>
 
           <!-- Ce que vous pouvez faire -->

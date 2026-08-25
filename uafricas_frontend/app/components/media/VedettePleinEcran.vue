@@ -32,7 +32,7 @@ const basculerLecture = () => {
  * Un média tiers est joué dans une iframe, que nous ne pilotons pas : proposer
  * nos propres commandes tromperait le visiteur, elles resteraient sans effet.
  *
- * Dans ce cas — et dans ce cas seulement — les contrôles natifs du lecteur
+ * Dans ce cas : et dans ce cas seulement, les contrôles natifs du lecteur
  * d'origine sont affichés. Les masquer AUSSI priverait le visiteur de tout
  * moyen de rétablir le son, que la lecture automatique impose de couper (FR-003).
  */

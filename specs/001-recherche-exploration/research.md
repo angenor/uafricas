@@ -9,7 +9,7 @@
 
 **Raisonnement** :
 - Les données complètes de l'arbre sont déjà en mémoire (endpoint `arbre-complet`). Pour 200 personnes, un filtre JavaScript est instantané (< 1ms).
-- Recherche multi-critères : nom, prénoms, lieu, date — filtre `.filter()` avec normalisation de casse et diacritiques.
+- Recherche multi-critères : nom, prénoms, lieu, date, filtre `.filter()` avec normalisation de casse et diacritiques.
 - Debounce 300ms pour éviter les calculs inutiles à chaque frappe.
 
 ## Décision 2 : Recherche publique via endpoint dédié
@@ -17,7 +17,7 @@
 **Décision** : Nouvel endpoint `GET /api/arbre/recherche-publique?q=...` utilisant pg_trgm sur les colonnes normalisées (Feature 4).
 
 **Raisonnement** :
-- La recherche publique compare contre toutes les personnes de tous les arbres — impossible côté client.
+- La recherche publique compare contre toutes les personnes de tous les arbres, impossible côté client.
 - Réutilise les indexes GIN trigram et les colonnes `nom_normalise`/`prenoms_normalise` de Feature 4.
 - Résultats anonymisés (pas d'identité du propriétaire, juste "Membre #XXXX").
 - Limite à 20 résultats pour la performance.

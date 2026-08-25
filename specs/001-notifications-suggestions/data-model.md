@@ -52,7 +52,7 @@ SuggestionProactive
 ├── personneNom: string
 ├── message: string
 ├── action: string (URL ou action interne)
-└── priorite: number (nb liens de la personne — plus connectée = plus prioritaire)
+└── priorite: number (nb liens de la personne, plus connectée = plus prioritaire)
 ```
 
 ### Formulaire de fusion

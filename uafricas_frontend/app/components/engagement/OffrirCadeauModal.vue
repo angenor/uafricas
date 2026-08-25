@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Offrir un cadeau virtuel — Tailwind v4 pur (Principe VI, jamais daisyUI côté
+ * Offrir un cadeau virtuel : Tailwind v4 pur (Principe VI, jamais daisyUI côté
  * membre). Reprend la coque des modales de partage de la plateforme.
  *
  * Trois étapes, dans cet ordre : choisir le cadeau et le mode → payer → issue.

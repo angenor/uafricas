@@ -90,7 +90,7 @@ Règles :
 | `portfolio` | Optionnel ; URL ≤ 500 caractères |
 | `commentaire_admin` (refus) | Obligatoire, non vide (ex. ≥ 10 caractères) |
 
-## Table `iam.utilisateur` (existante) — profil de base
+## Table `iam.utilisateur` (existante), profil de base
 
 Mise à jour via les endpoints profil existants. Extension requise : prise en charge de `pays_residence_id` dans `ModifierProfilRequest` / `modifier_profil`.
 
@@ -113,18 +113,18 @@ Le rôle `super_admin` les couvre déjà via le wildcard `all.all`.
 
 ## DTO (mappage cross-stack)
 
-### Backend — `models/admin/expertise.rs` (nouveau)
+### Backend : `models/admin/expertise.rs` (nouveau)
 
 - `AdminDemandeExpertiseRow` (`FromRow`) : jointure `iam.expertise` + `iam.utilisateur` + `shared.pays` (nom, prénom, email, photo, domaine, biographie, expérience, situations, statut, commentaire_admin, valide_par_nom, date_validation, created_at).
 - `AdminDemandeExpertiseListeResponse` : enveloppe paginée (items + total + page + par_page).
 - `AdminDemandeExpertiseResponse` : DTO détail.
 - `RejeterExpertiseBody { commentaire_admin: String }` (validation non vide).
 
-### Backend — `models/expert.rs` (modifié)
+### Backend : `models/expert.rs` (modifié)
 
-- DTO « ma candidature » exposant au membre : `statut`, `commentaire_admin` (si refusé), `date_validation`, champs d'expertise — pour le suivi (US3).
+- DTO « ma candidature » exposant au membre : `statut`, `commentaire_admin` (si refusé), `date_validation`, champs d'expertise, pour le suivi (US3).
 
-### Frontend — types TS
+### Frontend : types TS
 
 - `useAdminExperts.ts` : `DemandeExpertiseAPI`, `DemandeExpertiseListe`, paramètres de filtre (`statut`, `recherche`, `page`, `par_page`).
 - `useExperts.ts` : extension du type retour de `obtenirMaCandidature` (statut + commentaire).

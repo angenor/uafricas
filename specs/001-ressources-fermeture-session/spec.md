@@ -17,7 +17,7 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 — Partage de ressources pédagogiques au niveau de la salle (Priority: P1)
+### User Story 1 : Partage de ressources pédagogiques au niveau de la salle (Priority: P1)
 
 Pendant qu'une session livestream Afrolang est en cours (ou consultable dans son historique), n'importe quel utilisateur authentifié peut alimenter une section « Ressources » affichée dans l'écran de la session. Les éléments déposés (document écrit PDF/traitement de texte, vidéo YouTube, accompagnateur recommandé, lien web complémentaire) sont **rattachés à la salle hôte**, pas à la session : ils restent visibles dans toutes les sessions futures de la même salle et constituent ainsi un corpus pédagogique cumulatif. Les participants, présents ou futurs, voient instantanément ces ressources et peuvent les consulter, télécharger les fichiers et contacter les accompagnateurs recommandés.
 
@@ -36,7 +36,7 @@ Pendant qu'une session livestream Afrolang est en cours (ou consultable dans son
 
 ---
 
-### User Story 2 — Fermeture administrative d'une session pour abus (Priority: P1)
+### User Story 2 : Fermeture administrative d'une session pour abus (Priority: P1)
 
 Un administrateur de la plateforme constate (par signalement ou par observation directe) qu'une session livestream Afrolang fait l'objet de comportements abusifs répétés (propos haineux, harcèlement, contenu illicite, débordements). Pour protéger la communauté, il déclenche une **fermeture administrative** de la session. Cette action interrompt immédiatement la session en cours si elle est active, désactive l'accès à la salle qui hébergeait cette session, et empêche le démarrage de toute nouvelle session dans cette salle. La salle reste désactivée tant qu'un administrateur (pas nécessairement le même) ne procède pas explicitement à sa réactivation. Aucun autre rôle (modérateur attitré, créateur de salle privée, administrateur de salle publique) ne peut lever cette désactivation.
 
@@ -48,14 +48,14 @@ Un administrateur de la plateforme constate (par signalement ou par observation 
 
 1. **Given** une session livestream Afrolang en cours avec N participants et un compte administrateur plateforme, **When** l'administrateur déclenche « Fermer la session pour abus » en saisissant un motif obligatoire (≥ 10 caractères), **Then** la session est interrompue instantanément, tous les participants sont déconnectés du flux live et reçoivent une notification persistante « Session fermée par l'administration » (sans motif détaillé), les administrateurs nommés / créateur de la salle reçoivent une notification détaillée avec motif, la salle hôte passe à l'état « désactivée par administration », et l'événement est journalisé dans l'audit avec auteur, horodatage et motif.
 2. **Given** une salle désactivée par administration, **When** un utilisateur tente d'y entrer ou de démarrer une nouvelle session, **Then** l'action est refusée avec un message clair (« Salle temporairement désactivée par l'administration ») et la possibilité de signaler ou contacter le support.
-3. **Given** une salle désactivée par administration, **When** un modérateur attitré, l'administrateur de salle publique nommé, ou le créateur de la salle privée tente de la réactiver, **Then** l'action est refusée — seul un compte administrateur plateforme peut réactiver.
+3. **Given** une salle désactivée par administration, **When** un modérateur attitré, l'administrateur de salle publique nommé, ou le créateur de la salle privée tente de la réactiver, **Then** l'action est refusée, seul un compte administrateur plateforme peut réactiver.
 4. **Given** une salle désactivée par administration et un compte administrateur plateforme, **When** ce dernier déclenche la « Réactivation » avec un commentaire facultatif, **Then** la salle redevient accessible, l'événement de réactivation est journalisé, et les administrateurs de la salle (s'il y en a) sont notifiés.
 5. **Given** une salle désactivée par administration, **When** on consulte l'annuaire public ou la fiche détaillée, **Then** la salle reste visible mais clairement marquée comme désactivée, sans exposer le motif détaillé au grand public (le motif n'est lisible que par les administrateurs).
 6. **Given** une salle déjà désactivée par administration, **When** un administrateur tente une nouvelle fermeture, **Then** l'action est refusée comme redondante (idempotence).
 
 ---
 
-### User Story 3 — Consultation et historique de l'état d'une salle (Priority: P2)
+### User Story 3 : Consultation et historique de l'état d'une salle (Priority: P2)
 
 Les administrateurs de la plateforme et, dans une moindre mesure, les administrateurs d'une salle publique ou créateurs de salle privée, doivent pouvoir consulter l'historique des fermetures et réactivations administratives d'une salle pour comprendre les motifs récurrents, ajuster leurs propres pratiques de modération, ou contester une décision auprès du support.
 
@@ -72,16 +72,16 @@ Les administrateurs de la plateforme et, dans une moindre mesure, les administra
 
 ### Edge Cases
 
-- **Ressource trop volumineuse** : l'utilisateur tente d'envoyer un PDF/document de plus de 20 Mo — le système rejette le téléversement avec un message expliquant la limite, sans bloquer la session.
-- **Type de fichier non autorisé** : un utilisateur essaie d'envoyer un exécutable ou un format hors liste blanche — refus immédiat avec message explicite.
-- **URL vidéo non YouTube** : l'utilisateur colle un lien Vimeo, Dailymotion, TikTok, MP4 direct, etc. — refus immédiat avec message indiquant que seules les URLs YouTube sont acceptées dans cette version, et suggestion de re-héberger sur YouTube si la vidéo lui appartient.
-- **URL YouTube malformée ou identifiant introuvable** : l'URL contient le bon domaine mais l'identifiant vidéo (11 caractères) n'est pas extractible — refus avec message demandant de coller l'URL complète depuis la barre d'adresse YouTube.
-- **Auto-recommandation comme accompagnateur** : un utilisateur tente de se recommander lui-même — refus, l'utilisateur doit recommander une autre personne.
-- **Recommandation d'un utilisateur inactif/suspendu** : l'accompagnateur recommandé est dans un état incompatible — refus avec message neutre.
+- **Ressource trop volumineuse** : l'utilisateur tente d'envoyer un PDF/document de plus de 20 Mo, le système rejette le téléversement avec un message expliquant la limite, sans bloquer la session.
+- **Type de fichier non autorisé** : un utilisateur essaie d'envoyer un exécutable ou un format hors liste blanche, refus immédiat avec message explicite.
+- **URL vidéo non YouTube** : l'utilisateur colle un lien Vimeo, Dailymotion, TikTok, MP4 direct, etc., refus immédiat avec message indiquant que seules les URLs YouTube sont acceptées dans cette version, et suggestion de re-héberger sur YouTube si la vidéo lui appartient.
+- **URL YouTube malformée ou identifiant introuvable** : l'URL contient le bon domaine mais l'identifiant vidéo (11 caractères) n'est pas extractible, refus avec message demandant de coller l'URL complète depuis la barre d'adresse YouTube.
+- **Auto-recommandation comme accompagnateur** : un utilisateur tente de se recommander lui-même, refus, l'utilisateur doit recommander une autre personne.
+- **Recommandation d'un utilisateur inactif/suspendu** : l'accompagnateur recommandé est dans un état incompatible, refus avec message neutre.
 - **Suppression de la ressource par son auteur après que d'autres l'ont consultée** : la ressource disparaît de la session ; les utilisateurs ayant déjà téléchargé conservent leur copie locale.
 - **Auteur de ressource suspendu après dépôt** : les ressources qu'il a déposées restent visibles mais marquées « auteur indisponible » ; un administrateur peut les retirer manuellement.
 - **Fermeture pendant qu'une autre opération de modération est en cours** (ex : un modérateur de session vient de muter quelqu'un) : la fermeture administrative prime et termine immédiatement la session, indépendamment des actions en cours.
-- **Salle privée fermée par administration** : même comportement qu'une salle publique — le code d'accès continue d'exister mais toute tentative d'entrée est refusée tant que la salle reste désactivée.
+- **Salle privée fermée par administration** : même comportement qu'une salle publique, le code d'accès continue d'exister mais toute tentative d'entrée est refusée tant que la salle reste désactivée.
 - **Tentative concurrente de réactivation par deux administrateurs** : la première opération prend effet, la seconde est traitée comme idempotente.
 - **Salle déjà supprimée (soft-delete)** : ni fermeture, ni réactivation possibles ; les actions retournent un message indiquant que la salle n'existe plus.
 - **Ressource ajoutée par un utilisateur de la session, puis session fermée pour abus** : les ressources non illicites restent attachées à la session pour consultation par les administrateurs ; après réactivation de la salle, elles redeviennent visibles aux utilisateurs.
@@ -100,7 +100,7 @@ Les administrateurs de la plateforme et, dans une moindre mesure, les administra
 - **FR-002**: Tout utilisateur authentifié dont le compte est en état actif DOIT pouvoir ajouter une ressource à la section « Ressources contribuées » depuis l'écran d'une session de la salle, indépendamment de son rôle (apprenant, contributeur, animateur, modérateur, administrateur). La ressource est rattachée à la **salle hôte** de la session (FR-001) et devient instantanément visible dans toutes les sessions de cette salle.
 - **FR-003**: Le système DOIT prendre en charge au minimum quatre types de ressources : (a) document écrit (PDF, traitement de texte type `.doc`/`.docx`/`.odt`), (b) vidéo référencée par URL d'une plateforme publique reconnue, (c) accompagnateur (référence à un autre membre actif de la plateforme), (d) lien web complémentaire.
 - **FR-004**: Pour un document, le système DOIT exiger un titre (≤ 120 caractères), accepter une description optionnelle (≤ 500 caractères), valider la taille du fichier (≤ 20 Mo) et restreindre les formats à une liste blanche (au minimum : PDF, DOC, DOCX, ODT).
-- **FR-005**: Pour une vidéo, le système DOIT exiger un titre et une URL au format valide pointant vers **YouTube uniquement** (domaines acceptés : `youtube.com`, `www.youtube.com`, `m.youtube.com`, `youtu.be` — URLs `watch?v=`, `youtu.be/<id>`, `embed/<id>` et `shorts/<id>`). Le système DOIT extraire l'identifiant vidéo à partir de l'URL, le stocker en plus de l'URL d'origine pour permettre un embed standardisé, et rejeter avec un message explicite toute URL ne correspondant pas à ce schéma (autres plateformes vidéo non acceptées dans cette version). Aucun flux vidéo n'est copié ni rehébergé.
+- **FR-005**: Pour une vidéo, le système DOIT exiger un titre et une URL au format valide pointant vers **YouTube uniquement** (domaines acceptés : `youtube.com`, `www.youtube.com`, `m.youtube.com`, `youtu.be`, URLs `watch?v=`, `youtu.be/<id>`, `embed/<id>` et `shorts/<id>`). Le système DOIT extraire l'identifiant vidéo à partir de l'URL, le stocker en plus de l'URL d'origine pour permettre un embed standardisé, et rejeter avec un message explicite toute URL ne correspondant pas à ce schéma (autres plateformes vidéo non acceptées dans cette version). Aucun flux vidéo n'est copié ni rehébergé.
 - **FR-006**: Pour un accompagnateur, le système DOIT exiger la sélection d'un membre tiers actif distinct de l'auteur de la recommandation, accompagnée d'un motif (≥ 20 caractères) expliquant la pertinence de la recommandation. La recommandation est créée à l'état **`en_attente`** et N'EST PAS publiquement visible. Une notification (`afrolang.accompagnateur.recommandation_recue`) est envoyée à la personne recommandée, qui DOIT explicitement **accepter** ou **refuser** :
   - **Acceptation** → l'état passe à `acceptee`, la recommandation devient visible dans la section « Ressources contribuées » de la salle, et une notification est envoyée à l'auteur.
   - **Refus** → l'état passe à `refusee`, la recommandation reste invisible et une notification neutre est envoyée à l'auteur (le motif de refus est facultatif et n'est pas exposé).
@@ -156,13 +156,13 @@ Les administrateurs de la plateforme et, dans une moindre mesure, les administra
 
 ## Assumptions
 
-- **A-1**: L'« administrateur » habilité à fermer une session pour abus et à réactiver une salle désigne le rôle « administrateur de la plateforme » au sens IAM existant, et non l'administrateur d'une salle publique ni le créateur d'une salle privée — cohérent avec le contexte « cas d'abus / niveau plateforme ».
+- **A-1**: L'« administrateur » habilité à fermer une session pour abus et à réactiver une salle désigne le rôle « administrateur de la plateforme » au sens IAM existant, et non l'administrateur d'une salle publique ni le créateur d'une salle privée, cohérent avec le contexte « cas d'abus / niveau plateforme ».
 - **A-2**: Les ressources contribuées sont rattachées à la **salle** Afrolang (corpus cumulatif partagé par toutes les sessions de la salle), et non à une session individuelle. L'écran de chaque session affiche l'agrégat de la salle hôte. La session d'origine est conservée comme métadonnée informative mais ne sert pas de filtre.
 - **A-3**: La table `afrolang.ressource_salle` modérée (livrée en `005-afrolang-salles`) reste en place et indépendante. La nouvelle table de ressources contribuées s'y ajoute : les deux listes coexistent dans l'écran de la session avec des étiquetages distincts (« Ressources officielles » vs « Ressources contribuées par la communauté »).
 - **A-4**: « Accompagnateur » désigne un membre actif de la plateforme recommandé pour partager son expertise sur la langue/culture de la salle. La recommandation requiert le **consentement explicite a posteriori** de la personne recommandée (acceptation via notification) avant publication ; sans acceptation, elle n'apparaît pas dans la liste publique. Aucun engagement contractuel ni obligation de réponse aux sollicitations qui en découleraient.
-- **A-5**: Les types de fichiers de documents acceptés couvrent au minimum PDF, DOC, DOCX, ODT ; les formats média natifs (vidéos uploadées) ne sont pas pris en charge dans cette version — la vidéo passe par URL externe pour éviter la surcharge de stockage et de modération.
+- **A-5**: Les types de fichiers de documents acceptés couvrent au minimum PDF, DOC, DOCX, ODT ; les formats média natifs (vidéos uploadées) ne sont pas pris en charge dans cette version, la vidéo passe par URL externe pour éviter la surcharge de stockage et de modération.
 - **A-6**: La limite par défaut de 10 ressources / salle / utilisateur / 24 h glissantes est un garde-fou ajustable ultérieurement par configuration, non un choix produit définitif.
-- **A-7**: La désactivation d'une salle par administration suspend la jointure et la création de nouvelles sessions, mais ne supprime ni la salle ni ses contenus historiques (ressources, messages persistés) — elle reste « gelée » jusqu'à réactivation.
+- **A-7**: La désactivation d'une salle par administration suspend la jointure et la création de nouvelles sessions, mais ne supprime ni la salle ni ses contenus historiques (ressources, messages persistés) : elle reste « gelée » jusqu'à réactivation.
 - **A-8**: Les ressources ajoutées sont publiées immédiatement sans modération a priori (cohérent avec « ajoutable par tout utilisateur connecté ») ; la modération est a posteriori via la capacité de retrait administratif (FR-008) et la fermeture administrative en cas de dérive systémique.
 
 ## Dependencies

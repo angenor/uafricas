@@ -11,7 +11,7 @@
  * L'épisode qui passera se déduit de la rotation, calculée à la lecture à
  * partir de `date_effet` : déplacer cette date est le seul levier du détenteur
  * pour choisir quel épisode passe quand. Le formulaire en montre donc
- * immédiatement l'effet — sans cet aperçu, la rotation resterait une
+ * immédiatement l'effet : sans cet aperçu, la rotation resterait une
  * abstraction que personne ne saurait piloter.
  */
 import type { CreneauAPI, CreneauFormulaire, RefContenu } from '~/composables/useMediaProgrammation'
@@ -28,7 +28,7 @@ export interface EmissionProgrammable {
 const props = withDefaults(defineProps<{
   typeSupport: TypeSupportMedia
   supportId: string
-  /** Programmes du support — la seule source du sélecteur. */
+  /** Programmes du support : la seule source du sélecteur. */
   emissions: EmissionProgrammable[]
   modifiable?: boolean
 }>(), { modifiable: false })
@@ -56,7 +56,7 @@ onMounted(charger)
 
 /**
  * Fuseau de référence de la grille : celui du plus grand nombre de créneaux.
- * Les autres sont annotés créneau par créneau (FR-026) — annoter les vingt
+ * Les autres sont annotés créneau par créneau (FR-026), annoter les vingt
  * lignes d'une grille homogène n'apprendrait rien à personne.
  */
 const fuseauMajoritaire = computed(() => {
@@ -102,7 +102,7 @@ const LIBELLES_CADENCE_COURTE: Record<string, string> = {
 const panneauOuvert = ref(false)
 const creneauEdite = ref<CreneauAPI | null>(null)
 const enregistrement = ref(false)
-/** Épisode que le serveur a retenu au dernier enregistrement — l'aperçu. */
+/** Épisode que le serveur a retenu au dernier enregistrement, l'aperçu. */
 const apercuEpisode = ref<RefContenu | null>(null)
 
 const formulaire = reactive<CreneauFormulaire>({
@@ -332,7 +332,7 @@ const dateLisible = (iso: string) => {
 
             <p v-if="creneau.emission_indisponible" class="mt-1.5 text-[11px] text-red-400 leading-snug">
               <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="mr-1" />
-              {{ creneau.alerte || 'Programme indisponible — ce créneau n’annonce rien.' }}
+              {{ creneau.alerte || 'Programme indisponible : ce créneau n’annonce rien.' }}
             </p>
           </li>
         </ul>
@@ -495,7 +495,7 @@ const dateLisible = (iso: string) => {
             </p>
             <p class="text-sm text-white">
               <span v-if="apercuEpisode.numero_episode" class="text-gray-400">
-                Épisode {{ apercuEpisode.numero_episode }} —
+                Épisode {{ apercuEpisode.numero_episode }} 
               </span>
               {{ apercuEpisode.titre }}
             </p>

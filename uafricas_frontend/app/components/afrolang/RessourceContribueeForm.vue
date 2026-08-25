@@ -218,7 +218,7 @@ const onglets: { code: TypeRessourceContribuee; libelle: string; icone: string }
 
             <!-- Variant : document -->
             <div v-if="ongletActif === 'document'">
-              <label class="block text-xs font-medium text-gray-700 mb-1">Fichier (PDF, DOC, DOCX, ODT — max 20 Mo) <span class="text-red-500">*</span></label>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Fichier (PDF, DOC, DOCX, ODT, max 20 Mo) <span class="text-red-500">*</span></label>
               <input type="file"
                      accept=".pdf,.doc,.docx,.odt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text"
                      class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-custom-chocolat file:text-white hover:file:bg-custom-chocolat/90 file:cursor-pointer"
@@ -256,7 +256,7 @@ const onglets: { code: TypeRessourceContribuee; libelle: string; icone: string }
                        maxlength="36"
                        placeholder="00000000-0000-0000-0000-000000000000"
                        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-custom-chocolat focus:border-transparent">
-                <p class="text-xs text-gray-400 mt-1">Recherche utilisateur — à brancher dans une version ultérieure.</p>
+                <p class="text-xs text-gray-400 mt-1">Recherche utilisateur, à brancher dans une version ultérieure.</p>
               </div>
               <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">Motif de recommandation (≥ 20 caractères) <span class="text-red-500">*</span></label>

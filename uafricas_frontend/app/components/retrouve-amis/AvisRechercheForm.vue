@@ -405,7 +405,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
     <div v-if="etapeCourante === 1" class="space-y-5">
       <p class="text-sm text-gray-500">Definissez vos preferences de confidentialite avant de commencer.</p>
 
-      <!-- Anonymat — masqué pour le moment, seuls les avis publics sont permis -->
+      <!-- Anonymat : masqué pour le moment, seuls les avis publics sont permis -->
       <!-- <div class="rounded-lg border border-gray-200 p-4">
         <label class="flex items-start gap-3 cursor-pointer">
           <input
@@ -675,7 +675,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
         <label :class="labelClass">Photo (optionnelle)</label>
         <div v-if="!photoPreview" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
           <font-awesome-icon :icon="['fas', 'camera']" class="text-3xl text-gray-400 mb-2" />
-          <p class="text-sm text-gray-500 mb-2">JPEG, PNG ou WebP — max 5 Mo</p>
+          <p class="text-sm text-gray-500 mb-2">JPEG, PNG ou WebP, max 5 Mo</p>
           <label class="inline-block px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
             Choisir une photo
             <input type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="onPhotoChange">

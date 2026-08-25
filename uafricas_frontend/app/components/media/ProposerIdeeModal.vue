@@ -4,7 +4,7 @@
  *
  * Une idée n'est **pas** un contenu : elle est adressée à l'équipe du support
  * visé, qui reste seule juge de la retenir. Même retenue, elle ne crée aucune
- * émission automatiquement — le formulaire le dit, pour ne pas laisser croire
+ * émission automatiquement : le formulaire le dit, pour ne pas laisser croire
  * à une publication.
  *
  * `target_id` est obligatoire : le CHECK `ck_prop_media_cible_requise` refuse
@@ -17,7 +17,7 @@ import {
 
 const props = defineProps<{
   isOpen: boolean
-  /** Nature du support visé — sert uniquement à formuler les libellés. */
+  /** Nature du support visé : sert uniquement à formuler les libellés. */
   typeSupport: 'chaine_tv' | 'station_radio'
   /** Identifiant du support destinataire (obligatoire côté serveur). */
   supportId: string
@@ -150,7 +150,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             </div>
 
             <form v-else class="space-y-5" @submit.prevent="soumettreFormulaire">
-              <!-- Ce que fait — et ne fait pas — une idée retenue. -->
+              <!-- Ce que fait : et ne fait pas : une idée retenue. -->
               <p class="flex gap-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
                 <font-awesome-icon :icon="['fas', 'circle-info']" class="w-4 h-4 mt-0.5 shrink-0" />
                 <span>

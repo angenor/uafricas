@@ -1,4 +1,4 @@
-# Contract — Routes frontend (Nuxt 4)
+# Contract : Routes frontend (Nuxt 4)
 
 **Feature**: `001-centres-reorganisation` | **Date**: 2026-04-19
 
@@ -103,7 +103,7 @@ Un `grep -rn "'/africain-afro-americain\|'/site/" uafricas_frontend/app/` final 
 
 ---
 
-## 5. Routes admin — inchangées
+## 5. Routes admin : inchangées
 
 Les routes suivantes restent strictement identiques (FR-015, Décision 5 de research.md) :
 

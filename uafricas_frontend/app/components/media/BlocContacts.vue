@@ -3,7 +3,7 @@
  * Coordonnées publiques d'un support média (09p), affichées sur la page de la
  * chaîne ou de la station une fois celle-ci validée.
  *
- * Complète — sans remplacer — le bouton « Contacter » de la messagerie interne
+ * Complète : sans remplacer : le bouton « Contacter » de la messagerie interne
  * (US6, FR-046) : celui-ci exige un compte et ne joint que les co-détenteurs
  * inscrits, là où ces coordonnées s'adressent à un visiteur de passage, un
  * annonceur ou un partenaire.

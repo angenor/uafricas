@@ -191,7 +191,7 @@ pub struct ContreProposerBody {
 }
 
 // ────────────────────────────────────────────────────────────────
-// Calculs dérivés (lecture seule — pas de transition d'état)
+// Calculs dérivés (lecture seule : pas de transition d'état)
 // ────────────────────────────────────────────────────────────────
 
 /// Fin prévue du créneau.
@@ -247,7 +247,7 @@ pub fn peer_id(rendez_vous_id: Uuid, participant_id: Uuid) -> String {
 }
 
 // ────────────────────────────────────────────────────────────────
-// Évènements SSE (forme générique, sans contenu sensible — research §6)
+// Évènements SSE (forme générique, sans contenu sensible, research §6)
 // ────────────────────────────────────────────────────────────────
 
 fn evt(type_: &str, rendez_vous_id: Uuid) -> serde_json::Value {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Filtre de **fiche de support** — thématiques déclarées (US3).
+ * Filtre de **fiche de support** : thématiques déclarées (US3).
  *
  * Complément de `MediaFilters` sur les pages Radio, qui ne porte que les
  * critères d'avant 09r (type, pays de rattachement, genre). La thématique est
@@ -12,7 +12,7 @@
  * sur la fiche et exigée pour publier ; c'est seulement l'entrée de filtre qui
  * disparaît. Le paramètre `territoire` reste servi par l'API.
  *
- * Tailwind v4 pur — page publique (principe VI).
+ * Tailwind v4 pur : page publique (principe VI).
  */
 import type { ThematiqueDecompte } from '~/composables/useMediaSupport'
 
@@ -39,7 +39,7 @@ const basculer = (id: string) => {
 }
 
 /** Référentiel `media` vide : la barre disparaît plutôt que d'offrir un menu
- * sans entrée. Un thème sans support, lui, reste proposé — il s'affiche
+ * sans entrée. Un thème sans support, lui, reste proposé : il s'affiche
  * « (0) », ce qui donne à voir l'étendue du catalogue. */
 const utile = computed(() => props.thematiquesDisponibles.length > 0)
 </script>

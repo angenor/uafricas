@@ -33,7 +33,7 @@
         <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
         <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
           <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Afrolang — Sauvons nos langues
+            Afrolang : Sauvons nos langues
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             Apprendre une langue africaine ou afro-descendante à distance et rencontrer des personnes qui pratiquent la langue et souhaitent l'apprendre.
@@ -174,7 +174,7 @@
                           <font-awesome-icon :icon="['fas', 'door-open']" class="w-4 h-4 text-blue-500" />
                           {{ (sallesPriveesCache[salle.id]?.length ?? 0) }}
                           cours privé{{ (sallesPriveesCache[salle.id]?.length ?? 0) > 1 ? 's' : '' }}
-                          — {{ salle.titre }}
+                          {{ salle.titre }}
                         </h4>
 
                         <!-- US4 : bouton Créer ma salle privée / Ouvrir ma salle privée -->
@@ -466,7 +466,7 @@ const filtres = ref<SalleFiltres>({
 
 // Pays d'origine disponibles (feature 001-afrolang-pays-origine).
 // Source = endpoint dédié `/pays-disponibles` (tous les territoires de toutes
-// les salles), indépendant de la pagination et des filtres en cours — sinon la
+// les salles), indépendant de la pagination et des filtres en cours, sinon la
 // liste se restreindrait aux seules salles de la page courante.
 const paysDisponibles = ref<PaysOrigineLight[]>([])
 
@@ -493,7 +493,7 @@ const chargerSalles = async () => {
   }
 }
 
-// US1 — Entrer dans le livestream public en 1 clic.
+// US1 : Entrer dans le livestream public en 1 clic.
 const entrerDansSalle = async (salleId: string) => {
   erreurEntrer.value = null
 
@@ -575,7 +575,7 @@ const soumettreCreationSallePrivee = async (payload: { titre: string; descriptio
   })
 
   if (!resultat) {
-    createModalRef.value?.setError('Échec de la création — veuillez réessayer.')
+    createModalRef.value?.setError('Échec de la création, veuillez réessayer.')
     return
   }
   if ('erreur' in resultat && resultat.erreur === 'salle_privee_unicite') {
@@ -618,7 +618,7 @@ const soumettreCodeAcces = async (code: string) => {
   const resultat = await verifierCodeAcces(joinModalSallePriveeId.value, code)
 
   if (!resultat) {
-    joinModalRef.value?.setError('Erreur réseau — veuillez réessayer.')
+    joinModalRef.value?.setError('Erreur réseau, veuillez réessayer.')
     return
   }
   if ('erreur' in resultat && resultat.erreur === 'code_incorrect') {

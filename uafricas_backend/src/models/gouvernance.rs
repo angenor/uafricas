@@ -36,15 +36,15 @@ pub struct ContributionRow {
     pub categorie: Option<String>,
     pub gravite: Option<String>,
     // Type de publication factcheck (on_dit | adage_legende | fait_vecu) + preuve
-    // — NULL pour badhabits/ideaforces
+    // NULL pour badhabits/ideaforces
     pub type_publication: Option<String>,
     pub preuve_url: Option<String>,
     pub preuve_type: Option<String>,
-    // Image illustrative (couverture) — factcheck uniquement
+    // Image illustrative (couverture) : factcheck uniquement
     pub image_couverture_url: Option<String>,
     // Images additionnelles à visualiser (preuves photos d'une mauvaise pratique)
     pub images: Option<Vec<String>>,
-    // Volets factcheck (préjugé / réalité) — NULL pour badhabits/ideaforces
+    // Volets factcheck (préjugé / réalité), NULL pour badhabits/ideaforces
     pub prejuge_titre: Option<String>,
     pub prejuge_description: Option<String>,
     pub prejuge_likes: i32,
@@ -140,7 +140,7 @@ pub struct ContributionResponse {
     pub preuve_url: Option<String>,
     /// Type de preuve : 'image' | 'pdf'
     pub preuve_type: Option<String>,
-    /// Image illustrative (couverture) — factcheck uniquement
+    /// Image illustrative (couverture) : factcheck uniquement
     pub image_couverture_url: Option<String>,
     /// Images à visualiser (preuves photos d'une mauvaise pratique)
     pub images: Option<Vec<String>>,

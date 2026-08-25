@@ -88,7 +88,7 @@
                 v-model="form.pays_id"
                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition text-sm bg-white"
               >
-                <option :value="undefined">— Sélectionner un territoire —</option>
+                <option :value="undefined">Sélectionner un territoire</option>
                 <option v-for="p in pays" :key="p.id" :value="p.id">{{ p.nom }}</option>
               </select>
             </div>

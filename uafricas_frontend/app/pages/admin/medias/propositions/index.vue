@@ -15,7 +15,7 @@ import {
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
-useHead({ title: 'Propositions de médias — Administration' })
+useHead({ title: 'Propositions de médias, Administration' })
 
 const { lister, chargement, erreur } = useAdminMediaPropositions()
 
@@ -115,7 +115,7 @@ const auteur = (p: PropositionMediaAPI) =>
         <tbody>
           <tr v-for="proposition in propositions" :key="proposition.id">
             <td class="font-medium">
-              {{ proposition.donnees.nom || '—' }}
+              {{ proposition.donnees.nom || '-' }}
             </td>
             <td>{{ LIBELLES_TYPE_OBJET[proposition.type_objet] }}</td>
             <td>

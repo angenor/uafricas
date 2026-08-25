@@ -73,8 +73,8 @@
             <p class="text-gray-700 leading-relaxed">
               Sur Internet, beaucoup d'idées reçues et de fausses informations circulent sur
               l'Afrique. <strong class="text-gray-900">FactCheck</strong> est un espace où l'on
-              vérifie <strong class="text-gray-900">ensemble</strong> les contenus qui circulent —
-              articles, images, vidéos, rumeurs — pour distinguer le vrai du faux et raconter une
+              vérifie <strong class="text-gray-900">ensemble</strong> les contenus qui circulent 
+              articles, images, vidéos, rumeurs, pour distinguer le vrai du faux et raconter une
               Afrique <strong class="text-gray-900">fiable, nuancée et vérifiée</strong>.
             </p>
 

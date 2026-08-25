@@ -59,7 +59,7 @@
               class="flex items-start gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 shadow-sm"
             >
               <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="w-4 h-4 mt-0.5 shrink-0" />
-              <span>Contribution suspendue — en cours de vérification par la modération.</span>
+              <span>Contribution suspendue : en cours de vérification par la modération.</span>
             </div>
 
             <!-- Galerie -->
@@ -349,7 +349,7 @@ const descriptionOg = computed(() =>
 
 useHead(() => {
   if (!site.value) return {}
-  const titre = `${site.value.nom} — Site touristique — UAfricas`
+  const titre = `${site.value.nom} : Site touristique | UAfricas`
   return {
     title: titre,
     meta: [

@@ -114,7 +114,7 @@ const fermerTout = () => {
         @click="ouvrirRetrait"
       >
         <font-awesome-icon :icon="['fas', 'user-shield']" />
-        Cet avis me concerne — demander le retrait
+        Cet avis me concerne : demander le retrait
       </button>
 
       <!-- Bouton signalement -->

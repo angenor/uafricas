@@ -1,11 +1,11 @@
 //! Grille de programmation récurrente d'un support média
-//! (feature 001-refonte-tele-radio, US5 — migration 09n ; recadrée par 09q).
+//! (feature 001-refonte-tele-radio, US5, migration 09n ; recadrée par 09q).
 //!
 //! Un créneau n'est pas un instant mais une règle : « tous les jours à 20h30 »
 //! ou « chaque mercredi à 18h ». Depuis 09q il désigne une **émission** et non
 //! plus un fichier : l'épisode diffusé se déduit par **rotation**, calculée à la
 //! lecture depuis `date_effet`. Aucune tâche de fond, aucune occurrence
-//! matérialisée — le déterminisme exigé par FR-017 découle du fait que **rien
+//! matérialisée : le déterminisme exigé par FR-017 découle du fait que **rien
 //! n'est stocké** : deux lectures d'une même occurrence recalculent le même
 //! rang.
 
@@ -41,12 +41,12 @@ pub struct CreneauRequest {
     pub duree_minutes: i32,
     pub fuseau: Option<String>,
     /// Origine du comptage des occurrences, au format « AAAA-MM-JJ ». Défaut :
-    /// aujourd'hui. La déplacer **redéfinit la rotation** — c'est le seul levier
+    /// aujourd'hui. La déplacer **redéfinit la rotation** : c'est le seul levier
     /// dont dispose un détenteur pour choisir quel épisode passe quand.
     pub date_effet: Option<String>,
 }
 
-/// Requête validée — les CHECK SQL disent la même chose, c'est ici que les
+/// Requête validée : les CHECK SQL disent la même chose, c'est ici que les
 /// messages sont en français.
 pub struct CreneauValide {
     pub emission_id: Uuid,
@@ -237,7 +237,7 @@ pub struct CreneauResponse {
     /// Nombre d'occurrences écoulées depuis `date_effet` (FR-016).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rang_occurrence: Option<i64>,
-    /// `rang_occurrence >= nombre_episodes_publies` — la rotation a bouclé et
+    /// `rang_occurrence >= nombre_episodes_publies`, la rotation a bouclé et
     /// rejoue la série depuis le début (FR-020).
     pub est_rediffusion: bool,
     /// Le programme n'est plus diffusable (retiré, suspendu), ou n'a aucun
@@ -254,7 +254,7 @@ pub struct CreneauResponse {
 impl CreneauRow {
     /// Variante servie aux visiteurs qui ne détiennent pas le support.
     ///
-    /// La grille reste publique — c'est une grille de programmes — mais les
+    /// La grille reste publique : c'est une grille de programmes, mais les
     /// champs décrivant un programme RETIRÉ de l'antenne sont tus : les laisser
     /// exposerait le titre et la vignette de ce qui vient d'être suspendu pour
     /// violence ou racisme, faisant du signalement massif un révélateur.
@@ -348,7 +348,7 @@ impl CreneauRow {
     }
 }
 
-/// Ce qui passe maintenant, et ce qui suit — greffé sur les sections des pages
+/// Ce qui passe maintenant, et ce qui suit, greffé sur les sections des pages
 /// Télé et Radio.
 #[derive(Debug, Serialize)]
 pub struct DiffusionResponse {

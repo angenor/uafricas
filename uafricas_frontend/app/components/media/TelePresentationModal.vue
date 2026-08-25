@@ -37,7 +37,7 @@
           <p class="text-gray-700 leading-relaxed">
             L'Afrique se raconte et se filme.
             <strong class="text-gray-900">Africans Télé</strong> rassemble les télés et les
-            programmes africains — du documentaire au débat, de la chronique au magazine — pour
+            programmes africains : du documentaire au débat, de la chronique au magazine, pour
             regarder et faire rayonner la culture, le développement, l'innovation et
             <strong class="text-gray-900">l'unité du continent</strong>.
           </p>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Modale « Proposer une salle » + suivi de mes propositions.
-// Feature 001-admin-salles-publiques, US1 — refactor en modale (UX choix).
+// Feature 001-admin-salles-publiques, US1, refactor en modale (UX choix).
 import type {
   PropositionSalle,
   StatutProposition,

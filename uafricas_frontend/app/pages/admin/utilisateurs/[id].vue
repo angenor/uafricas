@@ -343,7 +343,7 @@ onMounted(() => charger())
             <tbody>
               <tr v-for="role in utilisateurDetail.roles" :key="role.id">
                 <td><span class="badge badge-sm badge-outline">{{ role.slug }}</span> {{ role.nom }}</td>
-                <td>{{ role.attribue_par_nom || '—' }}</td>
+                <td>{{ role.attribue_par_nom || '-' }}</td>
                 <td>{{ new Date(role.created_at).toLocaleDateString('fr-FR') }}</td>
                 <td>
                   <button class="btn btn-ghost btn-xs text-error" @click="supprimerRole(role.id)">
@@ -418,7 +418,7 @@ onMounted(() => charger())
               <tr v-for="perm in utilisateurDetail.permissions_specifiques" :key="perm.id">
                 <td><code class="text-xs">{{ perm.permission_slug }}</code></td>
                 <td><code class="text-xs">{{ perm.ressource_type }}:{{ perm.ressource_id }}</code></td>
-                <td>{{ perm.expire_at ? new Date(perm.expire_at).toLocaleDateString('fr-FR') : '—' }}</td>
+                <td>{{ perm.expire_at ? new Date(perm.expire_at).toLocaleDateString('fr-FR') : '-' }}</td>
                 <td>
                   <button class="btn btn-ghost btn-xs text-error" @click="retirerPermission(id, perm.id)">
                     <font-awesome-icon icon="trash" />

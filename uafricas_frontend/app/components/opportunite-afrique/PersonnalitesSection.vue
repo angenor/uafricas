@@ -14,7 +14,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Section rétractable — repliée par défaut
+// Section rétractable : repliée par défaut
 const replie = ref(true)
 
 type OpenContributionPayload = {
@@ -213,7 +213,7 @@ const proposerPersonnalite = () => {
               v-if="p.annee_naissance || p.annee_deces"
               class="text-xs text-gray-500 mb-2"
             >
-              {{ p.annee_naissance ?? '?' }} — {{ p.annee_deces ?? '' }}
+              {{ p.annee_naissance ?? '?' }} - {{ p.annee_deces ?? '' }}
             </p>
             <p class="text-sm text-gray-600 line-clamp-3 flex-1">
               {{ p.biographie_courte }}
@@ -233,7 +233,7 @@ const proposerPersonnalite = () => {
               class="mt-3 flex items-start gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-800"
             >
               <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span>Contribution suspendue — en cours de vérification.</span>
+              <span>Contribution suspendue : en cours de vérification.</span>
             </div>
 
             <div class="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-gray-100">

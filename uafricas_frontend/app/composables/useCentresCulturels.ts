@@ -164,8 +164,8 @@ export function formatHeureFrancais(dateStr: string): string {
 
 /**
  * Trier les programmations selon la règle FR-017a :
- *   1. Programmations à venir (date_heure_debut >= maintenant) — ordre croissant.
- *   2. Programmations passées — ordre décroissant.
+ *   1. Programmations à venir (date_heure_debut >= maintenant), ordre croissant.
+ *   2. Programmations passées : ordre décroissant.
  * Retourne un nouveau tableau (immutabilité).
  */
 export function trierProgrammations(

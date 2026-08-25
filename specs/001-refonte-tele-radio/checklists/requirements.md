@@ -33,7 +33,7 @@
 
 - Items marked incomplete require spec updates before `/speckit.clarify` or `/speckit.plan`
 
-### Itération 1 — 2026-07-19
+### Itération 1 - 2026-07-19
 
 Un seul critère en échec : **3 marqueurs `[NEEDS CLARIFICATION]` subsistent**, tous portant sur des décisions
 qui relèvent du commanditaire et pour lesquelles aucun défaut raisonnable ne s'impose :
@@ -53,7 +53,7 @@ consignés en **Hypothèses** (H-001 à H-010) plutôt qu'en marqueurs :
 - seuil de signalement → aligné sur les contributions comparables de la plateforme (H-007) ;
 - vedette codée en dur de la page Télé → provisoire assumé, remplacé par la mise en avant pilotable (H-006, FR-010).
 
-### Itération 2 — 2026-07-19 — ✅ tous critères satisfaits
+### Itération 2 - 2026-07-19 : ✅ tous critères satisfaits
 
 Les 3 arbitrages ont été rendus par le commanditaire et intégrés à la spécification ; aucun marqueur ne subsiste.
 
@@ -65,7 +65,7 @@ Les 3 arbitrages ont été rendus par le commanditaire et intégrés à la spéc
 
 **Verdict** : spécification prête pour `/speckit.clarify` (facultatif) ou `/speckit.plan`.
 
-### Itération 3 — 2026-07-19 — session `/speckit.clarify`
+### Itération 3 - 2026-07-19 : session `/speckit.clarify`
 
 5 questions posées et intégrées (voir `## Clarifications` dans la spec). Aucune n'a invalidé un critère du
 checklist ; toutes ont converti des zones **Partielles** de la taxonomie en exigences testables.
@@ -80,5 +80,5 @@ checklist ; toutes ont converti des zones **Partielles** de la taxonomie en exig
 
 **Restent Outstanding, faible impact** : fiabilité/disponibilité (non critique pour des pages de contenu) ;
 terminologie « programme / émission / contenu », que le back-office emploie différemment côté radio et côté
-télé — à unifier lors du plan. **Deferred au plan** : limitation de débit, formats d'import/export, versionnement
+télé : à unifier lors du plan. **Deferred au plan** : limitation de débit, formats d'import/export, versionnement
 de protocole.

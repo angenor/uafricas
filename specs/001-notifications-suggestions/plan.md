@@ -10,7 +10,7 @@ Système de notifications in-app (table + polling au chargement de page, pas de 
 
 **Language/Version**: Rust Edition 2024 (backend) + TypeScript / Nuxt 4 / Vue 3 (frontend)
 **Primary Dependencies**: pg_trgm existant, audit existant
-**Storage**: PostgreSQL 16 — 2 nouvelles tables (notifications, doublons_ignores)
+**Storage**: PostgreSQL 16 - 2 nouvelles tables (notifications, doublons_ignores)
 **Testing**: Vérification manuelle
 **Target Platform**: Web (SSR Nuxt 4)
 **Project Type**: Web application (monorepo)

@@ -1,4 +1,4 @@
-# Phase 1 — Quickstart: Validation manuelle
+# Phase 1 : Quickstart: Validation manuelle
 
 **Feature**: `001-centres-reorganisation` | **Date**: 2026-04-19
 
@@ -30,7 +30,7 @@ Avant de dérouler les scénarios :
 
 ---
 
-## Scénario 1 — Création d'un centre par l'admin et visibilité publique (US1)
+## Scénario 1 : Création d'un centre par l'admin et visibilité publique (US1)
 
 1. Se connecter en admin (`admin@test.com`).
 2. Naviguer vers `/admin/centres-culturels`.
@@ -45,7 +45,7 @@ Avant de dérouler les scénarios :
 
 ---
 
-## Scénario 2 — Redirections permanentes (US2)
+## Scénario 2 : Redirections permanentes (US2)
 
 Chaque étape doit afficher la nouvelle URL canonique dans la barre d'adresse (après 301) :
 
@@ -71,7 +71,7 @@ curl -I http://localhost:3000/site/<uuid-centre>
 
 ---
 
-## Scénario 3 — Audit des liens internes (US2)
+## Scénario 3 : Audit des liens internes (US2)
 
 À la racine du repo :
 
@@ -87,7 +87,7 @@ grep -rn "africain-afro-americain\|'/site/\|\"/site/" uafricas_frontend/app/ \
 
 ---
 
-## Scénario 4 — Tri des programmations à venir / passées (US1 + US2)
+## Scénario 4 : Tri des programmations à venir / passées (US1 + US2)
 
 1. Depuis l'admin, créer pour un centre :
    - une programmation passée (ex. `date_heure_debut = 2026-01-01T10:00:00Z`),
@@ -100,7 +100,7 @@ grep -rn "africain-afro-americain\|'/site/\|\"/site/" uafricas_frontend/app/ \
 
 ---
 
-## Scénario 5 — Carrousel alimenté par les images de couverture (US1)
+## Scénario 5 : Carrousel alimenté par les images de couverture (US1)
 
 1. En tant qu'admin, vérifier qu'au moins 3 centres publiés ont une `image_couverture_url` non nulle.
 2. Ouvrir `/centres` en public.
@@ -114,7 +114,7 @@ grep -rn "africain-afro-americain\|'/site/\|\"/site/" uafricas_frontend/app/ \
 
 ---
 
-## Scénario 6 — Administration exclusive des programmations (US3)
+## Scénario 6 : Administration exclusive des programmations (US3)
 
 1. En anonyme, ouvrir `/centres/<uuid-centre>`.
 2. **Attendu** : aucun bouton « Ajouter une programmation », aucun formulaire, aucun lien de création visible.
@@ -130,7 +130,7 @@ grep -rn "africain-afro-americain\|'/site/\|\"/site/" uafricas_frontend/app/ \
 
 ---
 
-## Scénario 7 — Performance de la liste `/centres` (SC-005)
+## Scénario 7 : Performance de la liste `/centres` (SC-005)
 
 1. Dans Chrome DevTools → onglet Network, cocher « Disable cache », profil « Fast 3G » désactivé (connexion standard).
 2. Hard reload `/centres`.
@@ -138,7 +138,7 @@ grep -rn "africain-afro-americain\|'/site/\|\"/site/" uafricas_frontend/app/ \
 
 ---
 
-## Scénario 8 — Conformité Tailwind v4 pur (Principe VI)
+## Scénario 8 : Conformité Tailwind v4 pur (Principe VI)
 
 À la racine du repo :
 
@@ -148,11 +148,11 @@ grep -rn "\"btn\|\"card\|\"modal\|\"alert\|\"badge\|\"drawer\"" \
   uafricas_frontend/app/components/centres-culturels/
 ```
 
-**Attendu** : aucun résultat (classes daisyUI interdites sur le site public — les trois pages publiques et leurs composants doivent rester en Tailwind CSS v4 pur).
+**Attendu** : aucun résultat (classes daisyUI interdites sur le site public, les trois pages publiques et leurs composants doivent rester en Tailwind CSS v4 pur).
 
 ---
 
-## Synthèse — Matrice succès critères
+## Synthèse : Matrice succès critères
 
 | SC | Scénario couvrant | Statut attendu |
 |---|---|---|

@@ -31,7 +31,7 @@ fn extraire_utilisateur_id(req: &HttpRequest) -> Option<Uuid> {
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/africantives — Lister les africantives avec filtres
+// GET /api/africantives : Lister les africantives avec filtres
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_africantives(
     pool: web::Data<PgPool>,
@@ -142,7 +142,7 @@ pub async fn lister_africantives(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/africantives/{id} — Obtenir le detail d'une africantive
+// GET /api/africantives/{id} : Obtenir le detail d'une africantive
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_africantive(
     pool: web::Data<PgPool>,
@@ -176,7 +176,7 @@ pub async fn obtenir_africantive(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/africantives — Creer une africantive (multipart)
+// POST /api/africantives : Creer une africantive (multipart)
 // ──────────────────────────────────────────────────────────────
 pub async fn creer_africantive(
     req: HttpRequest,
@@ -342,7 +342,7 @@ pub async fn creer_africantive(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/africantives/domaines — Lister les domaines disponibles
+// GET /api/africantives/domaines : Lister les domaines disponibles
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_domaines(
     pool: web::Data<PgPool>,
@@ -367,7 +367,7 @@ pub async fn lister_domaines(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/africantives/pays — Lister les pays avec des africantives
+// GET /api/africantives/pays : Lister les pays avec des africantives
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_pays(
     pool: web::Data<PgPool>,

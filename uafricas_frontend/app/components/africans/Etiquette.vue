@@ -16,7 +16,7 @@
  *
  * Le vert n'est PAS interchangeable avec le chocolat : dans l'application il
  * marque, il n'agit pas. Un badge vert cliquable serait une faute de grammaire
- * visuelle — c'est l'ambiguïté relevée sur la page publique, à ne pas propager.
+ * visuelle : c'est l'ambiguïté relevée sur la page publique, à ne pas propager.
  */
 withDefaults(defineProps<{ ton?: 'gris' | 'vert' }>(), { ton: 'gris' })
 </script>

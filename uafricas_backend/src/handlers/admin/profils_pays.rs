@@ -406,7 +406,7 @@ pub async fn supprimer_fiche_pays(
 /// PATCH /api/admin/profils-pays/{id}/debloquer
 /// Débloque une fiche bloquée par signalements communautaires (seuil atteint) :
 /// remet `bloquee=false`, purge les signalements et remet le compteur à zéro
-/// (ardoise vierge — sinon un seul nouveau signalement la re-bloquerait aussitôt).
+/// (ardoise vierge : sinon un seul nouveau signalement la re-bloquerait aussitôt).
 pub async fn debloquer_fiche_pays(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
@@ -1481,7 +1481,7 @@ pub async fn supprimer_site_touristique(
 
 /// PATCH /api/admin/profils-pays/{id}/sites-touristiques/{site_id}/verification
 ///
-/// Active ou retire le badge « Vérifié » d'un site (US3 — réservé admin, FR-012).
+/// Active ou retire le badge « Vérifié » d'un site (US3, réservé admin, FR-012).
 /// Journalise l'avant/après via `audit::log_action` (Principe VII).
 pub async fn definir_verification_site(
     admin: AdminUtilisateur,
@@ -1544,7 +1544,7 @@ pub async fn definir_verification_site(
 
 /// PATCH /api/admin/sites-touristiques/avis/{avis_id}/masquer
 ///
-/// Masque ou réaffiche un avis inapproprié (US5 — FR-015d). Audité.
+/// Masque ou réaffiche un avis inapproprié (US5, FR-015d). Audité.
 pub async fn masquer_avis_site(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
@@ -2378,7 +2378,7 @@ fn parse_pieces_jointes(json: &Value) -> Vec<AdminContributionPieceJointe> {
         .collect()
 }
 
-/// PATCH /api/admin/profils-pays/contributions/{id}/etat — T036/T037/T045
+/// PATCH /api/admin/profils-pays/contributions/{id}/etat, T036/T037/T045
 ///
 /// Transaction SQL UNIQUE :
 ///   1. UPDATE contribution_fiche SET etat, traite_par, traite_at, note_moderation
@@ -2387,7 +2387,7 @@ fn parse_pieces_jointes(json: &Value) -> Vec<AdminContributionPieceJointe> {
 ///   3. Si approuvee : marquer obsoletes les contributions concurrentes
 ///      (meme fiche_pays, meme type_objet, meme target_id, etat=en_attente)
 ///   4. Notifier l'auteur via arbre_genealogique.notifications
-///   5. audit::log_action (hors transaction — non-bloquant)
+///   5. audit::log_action (hors transaction, non-bloquant)
 pub async fn moderer_contribution(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -2543,7 +2543,7 @@ pub async fn moderer_contribution(
         .await?;
     }
 
-    // 4. Notification a l'auteur (dans la meme transaction — FR-019)
+    // 4. Notification a l'auteur (dans la meme transaction, FR-019)
     let (titre_notif, message_notif) =
         construire_message_notification(&etat, &type_objet, note.as_deref());
     let lien_action = format!("/mon-compte/contributions?id={}", id);
@@ -2600,7 +2600,7 @@ pub async fn moderer_contribution(
     }))
 }
 
-/// POST /api/admin/profils-pays/contributions/{id}/retirer — T038/T045
+/// POST /api/admin/profils-pays/contributions/{id}/retirer, T038/T045
 ///
 /// Retire une contribution deja approuvee :
 ///   - soft-DELETE la ligne cible (table determinee par type_objet_contribution)
@@ -2762,7 +2762,7 @@ async fn appliquer_fiche_scalaire(
     section: &str,
     nouvelle_valeur: &str,
 ) -> Result<(), ApiErreur> {
-    // Colonne SQL (avec cast éventuel) autorisée par section — liste fermée.
+    // Colonne SQL (avec cast éventuel) autorisée par section, liste fermée.
     let set_clause = match section {
         "population" => "population = $1::bigint",
         "superficie_km2" => "superficie_km2 = $1::decimal",
@@ -2810,7 +2810,7 @@ async fn appliquer_contribution_afripulse(
     pieces_json: &Value,
 ) -> Result<Option<Uuid>, ApiErreur> {
     // Le type d'action provient directement de la colonne `type_contribution`
-    // (fiable) — l'enum SQL utilise « modification », les branches internes « edition ».
+    // (fiable) : l'enum SQL utilise « modification », les branches internes « edition ».
     let type_contrib = if type_contribution == "modification" {
         "edition"
     } else {
@@ -2994,7 +2994,7 @@ async fn appliquer_contribution_afripulse(
         }
         ("secteur_developpement", "suppression") => {
             let tid = target_id.unwrap();
-            // Pas de soft delete sur secteur_developpement (table historique) — DELETE simple
+            // Pas de soft delete sur secteur_developpement (table historique), DELETE simple
             sqlx::query("DELETE FROM country_profile.secteur_developpement WHERE id = $1")
                 .bind(tid)
                 .execute(&mut **tx)
@@ -3256,7 +3256,7 @@ async fn appliquer_contribution_afripulse(
             Ok(dernier_id)
         }
 
-        // ── Fiche pays (creation) — US3 ─────────────────────────
+        // ── Fiche pays (creation) : US3 ─────────────────────────
         ("fiche_pays", "ajout") => {
             let payload = nouvelle_jsonb.ok_or_else(|| {
                 ApiErreur::Validation("nouvelle_valeur_jsonb requise pour fiche_pays".into())
@@ -3307,7 +3307,7 @@ async fn appliquer_contribution_afripulse(
             Ok(Some(nouvel_id))
         }
 
-        // Autres combos : pas d'effet (ex. fiche_pays + edition — hors scope US3)
+        // Autres combos : pas d'effet (ex. fiche_pays + edition : hors scope US3)
         _ => Ok(target_id),
     }
 }

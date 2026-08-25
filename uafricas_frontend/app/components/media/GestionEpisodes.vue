@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
- * Gestion des **épisodes** d'un programme (feature 009, US1 — FR-014 à FR-020,
+ * Gestion des **épisodes** d'un programme (feature 009, US1, FR-014 à FR-020,
  * FR-042).
  *
  * Un seul composant pour le co-détenteur et pour l'administration : les deux
  * font exactement la même chose sur les mêmes objets, et seule l'autorité
  * diffère. Ce qui change est encapsulé ici :
- *   — membre : l'épisode naît `en_attente`, le serveur en décide seul ;
- *   — admin  : il naît `publie`, l'administration étant l'autorité de validation.
+ *   membre : l'épisode naît `en_attente`, le serveur en décide seul ;
+ *   admin  : il naît `publie`, l'administration étant l'autorité de validation.
  * Deux composants jumeaux auraient dupliqué le réordonnancement, la mise à la
  * une et le formulaire pour n'en changer que la route.
  *
@@ -19,7 +19,7 @@ import { LIBELLES_ETAT_EPISODE } from '~/composables/useMediaEmissions'
 
 const props = withDefaults(defineProps<{
   emissionId: string
-  /** Titre affiché en tête — évite un aller-retour pour le relire. */
+  /** Titre affiché en tête : évite un aller-retour pour le relire. */
   emissionTitre?: string
   /** `chaine_tv` → vidéo, `station_radio` → audio : décide du libellé du média. */
   typeSupport?: 'chaine_tv' | 'station_radio'
@@ -176,7 +176,7 @@ const executerSuppression = async () => {
 /**
  * L'ordre décide de la **rotation** en grille : deux épisodes au même rang la
  * rendraient non déterministe. Le serveur exige donc une liste couvrant
- * exactement les épisodes du programme — on la renvoie toujours entière, jamais
+ * exactement les épisodes du programme : on la renvoie toujours entière, jamais
  * la seule paire déplacée.
  */
 const deplacer = async (index: number, delta: number) => {
@@ -231,7 +231,7 @@ const champClasses = computed(() => props.sombre
       <h3 class="font-oswald text-lg font-bold" :class="sombre ? 'text-white' : 'text-gray-900'">
         Épisodes
         <span v-if="emissionTitre" :class="sombre ? 'text-gray-500 font-normal' : 'text-gray-400 font-normal'">
-          — {{ emissionTitre }}
+          {{ emissionTitre }}
         </span>
       </h3>
       <button

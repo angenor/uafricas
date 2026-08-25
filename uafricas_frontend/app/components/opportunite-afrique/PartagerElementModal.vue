@@ -84,7 +84,7 @@ const partageNatif = async () => {
     try {
       await navigator.share({ title: props.titre, text: textePartage.value, url: urlPage.value })
     } catch {
-      // Partage annulé — sans effet
+      // Partage annulé : sans effet
     }
   }
 }
@@ -95,7 +95,7 @@ const copierLien = async () => {
     copieLienOk.value = true
     setTimeout(() => { copieLienOk.value = false }, 2000)
   } catch {
-    // Presse-papiers indisponible — sans effet
+    // Presse-papiers indisponible : sans effet
   }
 }
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Les invitations à co-détenir un support média — US5.
+ * Les invitations à co-détenir un support média, US5.
  *
  * Un propriétaire de chaîne ou de station invite par courriel ; l'invité
  * accepte ou refuse ici. Une acceptation le fait entrer dans l'équipe du
@@ -16,13 +16,13 @@ import {
 
 definePageMeta({ middleware: 'auth' })
 
-useHead({ title: 'Mes invitations médias — UAfricas' })
+useHead({ title: 'Mes invitations médias | UAfricas' })
 
 const { mesInvitations, repondreInvitation, chargement, erreur } = useMediaDetention()
 
 const invitations = ref<InvitationDetenteurAPI[]>([])
 
-/** Invitation en cours de traitement — évite le double clic sur Accepter/Refuser. */
+/** Invitation en cours de traitement : évite le double clic sur Accepter/Refuser. */
 const enCours = ref<string | null>(null)
 
 /** Affiché après une acceptation, pour orienter vers le support fraîchement rejoint. */
@@ -38,7 +38,7 @@ onMounted(charger)
  * Une invitation expirée n'est jamais basculée en base : aucune tâche de fond
  * ne périme les invitations, c'est la lecture qui tranche via le champ
  * `expiree` calculé par le serveur. Le statut peut donc valoir encore
- * `en_attente` alors que l'invitation n'est plus actionnable — `expiree` prime.
+ * `en_attente` alors que l'invitation n'est plus actionnable, `expiree` prime.
  */
 const estActionnable = (invitation: InvitationDetenteurAPI): boolean =>
   invitation.statut === 'en_attente' && !invitation.expiree

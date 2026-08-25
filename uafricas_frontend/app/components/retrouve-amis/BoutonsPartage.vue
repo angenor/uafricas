@@ -8,7 +8,7 @@ const props = defineProps<{
   prenomRecherche?: string
   /**
    * Identifiant de l'avis, nécessaire au traçage des partages externes. Le `slug`
-   * ne peut pas en tenir lieu : le log attend un UUID. Optionnel — sans lui le
+   * ne peut pas en tenir lieu : le log attend un UUID. Optionnel : sans lui le
    * partage fonctionne, il n'est simplement pas compté.
    */
   avisId?: string

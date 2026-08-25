@@ -60,7 +60,7 @@ const lieuxRencontre = computed(() => {
       </div>
 
       <!-- ═══════════════════════════════════════════════════════
-           QUI RECHERCHE QUI — la zone principale
+           QUI RECHERCHE QUI : la zone principale
            ═══════════════════════════════════════════════════════ -->
       <div class="bg-linear-to-b from-amber-50/80 to-white px-6 py-8 md:px-10 md:py-10">
         <!-- Phrase narrative -->
@@ -142,7 +142,7 @@ const lieuxRencontre = computed(() => {
       </div>
 
       <!-- ═══════════════════════════════════════════════════════
-           DETAILS — ou et quand
+           DETAILS : ou et quand
            ═══════════════════════════════════════════════════════ -->
       <div class="px-6 md:px-10 pb-8 space-y-8">
 
@@ -253,7 +253,7 @@ const lieuxRencontre = computed(() => {
           <div class="rounded-xl border-l-4 border-custom-chocolat bg-amber-50/30 p-5">
             <p class="text-sm leading-relaxed text-gray-700 whitespace-pre-line italic">{{ props.avis.description }}</p>
             <p class="mt-3 text-xs text-gray-400">
-              — {{ auteurDisplay }}
+              {{ auteurDisplay }}
             </p>
           </div>
         </div>

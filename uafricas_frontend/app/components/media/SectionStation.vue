@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Section d'une station sur les pages Radio — refondue par la feature 010
+ * Section d'une station sur les pages Radio, refondue par la feature 010
  * (FR-060 : parité stricte avec la section télé, « station » et « audio »
  * substitués).
  *
@@ -27,7 +27,7 @@ const lienStation = computed(() =>
 )
 
 /**
- * **Tous** les programmes servis sont affichés — y compris ceux sans épisode
+ * **Tous** les programmes servis sont affichés, y compris ceux sans épisode
  * publié (FR-005). Le filtre `episodes.length > 0` qui régnait ici n'avait de
  * sens que tant que la section montrait des enregistrements.
  */
@@ -43,7 +43,7 @@ const lireDirect = () => {
   lire({
     id: `direct-${props.section.station.id}`,
     type: 'station_radio',
-    titre: `${props.section.station.name} — en direct`,
+    titre: `${props.section.station.name}, en direct`,
     support: props.section.station.name,
     supportSlug: props.section.station.slug,
     url: props.section.station.streamUrl,
@@ -63,7 +63,7 @@ const showPartage = ref(false)
 const showIdee = ref(false)
 const showAnimation = ref(false)
 
-// Voir `SectionChaine.vue` : une fonction d'ouverture, et non le ref lui-même —
+// Voir `SectionChaine.vue` : une fonction d'ouverture, et non le ref lui-même, 
 // Vue déballe les refs dans un template.
 const ouvrirSiConnecte = (ouvrir: () => void) => {
   if (!userStore.accessToken) {
@@ -148,7 +148,7 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
       class="mb-6 px-1"
     />
 
-    <!-- Ce que la grille programme à cet instant (US5, FR-039) — texte seul. -->
+    <!-- Ce que la grille programme à cet instant (US5, FR-039), texte seul. -->
     <MediaBandeauDiffusion
       :en-cours="section.diffusionEnCours"
       :suivant="section.creneauSuivant"

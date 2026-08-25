@@ -177,7 +177,7 @@
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Territoire</label>
                   <select v-model="formEdit.pays" class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden">
-                    <option value="">—</option>
+                    <option value="">-</option>
                     <option v-for="p in PAYS_AFRICAINS" :key="p" :value="p">{{ p }}</option>
                   </select>
                 </div>

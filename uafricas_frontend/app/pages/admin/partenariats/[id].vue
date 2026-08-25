@@ -49,7 +49,7 @@ onMounted(() => charger())
 
 <template>
   <div>
-    <AdminPageHeader :titre="partenariatDetail ? `Partenariat — ${partenariatDetail.organisation_denomination}` : 'Chargement...'" sous-titre="Modifier le partenariat">
+    <AdminPageHeader :titre="partenariatDetail ? `Partenariat, ${partenariatDetail.organisation_denomination}` : 'Chargement...'" sous-titre="Modifier le partenariat">
       <template #actions>
         <NuxtLink to="/admin/partenariats" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour

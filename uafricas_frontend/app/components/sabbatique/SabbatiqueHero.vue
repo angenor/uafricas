@@ -1,5 +1,5 @@
 <template>
-  <!-- Hero compact — le contenu s'adapte au type de programme -->
+  <!-- Hero compact : le contenu s'adapte au type de programme -->
   <div class="relative w-full bg-font-baniere-ethnie bg-cover bg-center">
     <div class="absolute inset-0 bg-custom-chocolat/50"></div>
 

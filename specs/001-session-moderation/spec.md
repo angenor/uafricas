@@ -1,4 +1,4 @@
-# Feature Specification: Modération de session Afrolang — mise en évidence et permissions tableau blanc
+# Feature Specification: Modération de session Afrolang, mise en évidence et permissions tableau blanc
 
 **Feature Branch**: `001-session-moderation`
 **Created**: 2026-05-10
@@ -86,7 +86,7 @@ Pendant une session publique diffusée en livestream, l'administrateur de la sal
 **Définition des rôles**
 
 - **FR-001**: Le système DOIT reconnaître comme « modérateur de session » disposant de pouvoirs de modération en session Afrolang : (a) tout administrateur de la plateforme (rôle global), (b) tout utilisateur nommé administrateur d'une salle publique pour cette salle, (c) tout utilisateur nommé modérateur attitré d'une salle publique pour cette salle, (d) pour les salles privées, l'utilisateur qui a créé la salle privée. Les quatre catégories écrivent d'office sur le tableau blanc et peuvent gérer les permissions tableau blanc des autres participants.
-- **FR-001b**: Le système DOIT restreindre le pouvoir de **mise en évidence** (spotlight) aux seuls administrateurs de la plateforme et administrateurs de la salle (et, pour les salles privées, au créateur de la salle — bien que le spotlight ne soit pas proposé en privé). Les modérateurs attitrés n'ont pas accès au spotlight.
+- **FR-001b**: Le système DOIT restreindre le pouvoir de **mise en évidence** (spotlight) aux seuls administrateurs de la plateforme et administrateurs de la salle (et, pour les salles privées, au créateur de la salle, bien que le spotlight ne soit pas proposé en privé). Les modérateurs attitrés n'ont pas accès au spotlight.
 - **FR-002**: Le système DOIT considérer le rôle d'administrateur de la plateforme comme supérieur en privilège ; seul l'administrateur plateforme peut révoquer/nommer les administrateurs de salle hors session ; seuls l'administrateur plateforme et l'administrateur de salle peuvent nommer/révoquer les modérateurs attitrés.
 - **FR-003**: Le système DOIT recalculer dynamiquement le statut d'administrateur d'un utilisateur en session si sa nomination change (révocation, suspension, nomination), sans nécessiter une déconnexion/reconnexion.
 
@@ -104,7 +104,7 @@ Pendant une session publique diffusée en livestream, l'administrateur de la sal
 
 **Mise en évidence d'un participant (sessions publiques livestreamées)**
 
-- **FR-020**: Le système DOIT permettre, uniquement dans les sessions publiques livestreamées, à un administrateur (plateforme ou salle uniquement — pas aux modérateurs attitrés) de désigner n'importe quel participant présent comme « mis en évidence », quel que soit l'état de sa caméra ou de son micro.
+- **FR-020**: Le système DOIT permettre, uniquement dans les sessions publiques livestreamées, à un administrateur (plateforme ou salle uniquement, pas aux modérateurs attitrés) de désigner n'importe quel participant présent comme « mis en évidence », quel que soit l'état de sa caméra ou de son micro.
 - **FR-021**: Le système DOIT n'autoriser qu'une seule personne mise en évidence à la fois ; mettre en évidence un nouveau participant retire automatiquement la mise en évidence en cours.
 - **FR-022**: Le système DOIT permettre à un administrateur de désactiver complètement la mise en évidence active (retour à la disposition par défaut sans personne en vedette).
 - **FR-023**: Le système DOIT diffuser le changement de mise en évidence à tous les participants et spectateurs connectés en moins de 2 secondes.
@@ -140,7 +140,7 @@ Pendant une session publique diffusée en livestream, l'administrateur de la sal
 - La fonctionnalité « mise en évidence » s'applique exclusivement aux sessions publiques livestreamées ; les sessions privées en sont exemptées (cas d'usage : sessions privées sont par nature en petit comité, la mosaïque par défaut suffit).
 - Une seule personne peut être mise en évidence à la fois (modèle classique de spotlight). Le multi-spotlight est explicitement hors périmètre.
 - L'état par défaut au démarrage d'une session est : « personne hors administrateurs n'écrit sur le tableau blanc » et « aucune mise en évidence active ». Les permissions ne sont pas mémorisées d'une session à l'autre.
-- Les administrateurs (plateforme + salle) ont par construction le droit d'écrire sur le tableau blanc et ne peuvent en être privés — cette règle prime sur toute autre permission individuelle.
+- Les administrateurs (plateforme + salle) ont par construction le droit d'écrire sur le tableau blanc et ne peuvent en être privés, cette règle prime sur toute autre permission individuelle.
 - La révocation d'une nomination d'administrateur de salle prend effet immédiatement, y compris si l'administrateur concerné est en session.
 - L'interface de modération (panneau permissions, bouton mise en évidence) est rendue uniquement aux utilisateurs reconnus comme administrateurs de la salle ; un participant standard ne la voit pas et le serveur rejette toute tentative d'action de modération de sa part.
 - Les permissions accordées avant déconnexion sont conservées le temps de la session ; un participant qui se reconnecte retrouve son état.

@@ -163,7 +163,7 @@ const soumettreCreationSallePrivee = async (payload: { titre: string; descriptio
   })
 
   if (!resultat) {
-    createModalRef.value?.setError('Échec de la création — veuillez réessayer.')
+    createModalRef.value?.setError('Échec de la création, veuillez réessayer.')
     return
   }
   if ('erreur' in resultat && resultat.erreur === 'salle_privee_unicite') {

@@ -1,6 +1,6 @@
 <template>
   <!-- Colonne de navigation : 312 px, 11 entrées fixes, pas vertical de 44 px.
-       En dessous de lg, elle devient une bande horizontale défilante — la
+       En dessous de lg, elle devient une bande horizontale défilante, la
        maquette ne prévoit rien pour le mobile, c'est une décision d'intégration. -->
   <nav
     class="af-nav flex gap-1 overflow-x-auto scrollbar-none py-2 lg:flex-col lg:overflow-visible lg:py-0"

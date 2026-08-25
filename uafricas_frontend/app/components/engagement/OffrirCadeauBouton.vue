@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
- * Point d'entrée réutilisable vers l'offre de cadeau — Tailwind v4 pur.
+ * Point d'entrée réutilisable vers l'offre de cadeau, Tailwind v4 pur.
  *
  * Monté sur les sept familles de contenus et sur les profils. Il se masque
  * lui-même dans les trois cas où offrir n'aurait pas de sens :
- * — visiteur non connecté (le serveur refuserait, autant ne rien promettre) ;
- * — le membre est l'auteur du contenu (l'auto-cadeau est refusé, et une
+ * visiteur non connecté (le serveur refuserait, autant ne rien promettre) ;
+ * le membre est l'auteur du contenu (l'auto-cadeau est refusé, et une
  *   contrainte `CHECK` le rend impossible en base) ;
- * — la famille n'a pas d'auteur enregistré (`site_touristique`,
+ * la famille n'a pas d'auteur enregistré (`site_touristique`,
  *   `secteur_developpement`) : proposer le bouton ne mènerait qu'à un 409.
  */
 import { computed, ref } from 'vue'

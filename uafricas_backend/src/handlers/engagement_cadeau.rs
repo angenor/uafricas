@@ -1,9 +1,9 @@
-//! Cadeaux virtuels — endpoints membre et publics (feature 008).
+//! Cadeaux virtuels : endpoints membre et publics (feature 008).
 //!
-//! - `GET  /api/engagement/cadeaux` (public) — catalogue
-//! - `POST /api/engagement/cadeaux/envoyer` (JWT) — intention de paiement
-//! - `POST /api/engagement/paiements/{reference}/confirmer` (JWT) — issue
-//! - `GET  /api/engagement/cadeaux/{type_objet}/{objet_id}` (public) — cadeaux d'un contenu
+//! - `GET  /api/engagement/cadeaux` (public), catalogue
+//! - `POST /api/engagement/cadeaux/envoyer` (JWT), intention de paiement
+//! - `POST /api/engagement/paiements/{reference}/confirmer` (JWT), issue
+//! - `GET  /api/engagement/cadeaux/{type_objet}/{objet_id}` (public), cadeaux d'un contenu
 //! - `GET  /api/engagement/mes-cadeaux` (JWT, paginé)
 //! - `GET  /api/engagement/ma-cagnotte` (JWT)
 //!
@@ -39,13 +39,13 @@ fn exiger_utilisateur_id(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
         .ok_or_else(|| ApiErreur::NonAutorise("Authentification requise".to_string()))
 }
 
-/// Nom affichable d'un membre — même expression partout, pour qu'un offreur
+/// Nom affichable d'un membre : même expression partout, pour qu'un offreur
 /// s'affiche identiquement dans une modale, un journal et une notification.
 const NOM_AFFICHE: &str = "TRIM(COALESCE(u.prenom, '') || ' ' || COALESCE(u.nom, ''))";
 
 /// Lit les paramètres de monétisation. La ligne est garantie unique par le
 /// schéma (`id BOOLEAN PRIMARY KEY CHECK (id)`), donc jamais absente après la
-/// migration — le repli n'existe que pour ne pas planter une base à moitié
+/// migration : le repli n'existe que pour ne pas planter une base à moitié
 /// migrée.
 async fn charger_parametres(pool: &PgPool) -> Result<ParametreMonetisation, ApiErreur> {
     let params = sqlx::query_as::<_, ParametreMonetisation>(
@@ -78,7 +78,7 @@ async fn charger_membre_bref(pool: &PgPool, id: Uuid) -> Result<MembreBref, ApiE
 /// Les noms de colonne diffèrent d'une famille à l'autre et ne sont pas
 /// devinables : `nom_emission` pour les programmes, `nom_complet` pour une
 /// personnalité, et rien du tout pour `codimoi` et `factcheck`, dont le contenu
-/// EST le texte — on le tronque plutôt que de renvoyer un pavé dans une cellule
+/// EST le texte : on le tronque plutôt que de renvoyer un pavé dans une cellule
 /// de tableau. `fiche_pays` n'a pas de nom propre : le nom vient du territoire
 /// référencé, d'où la sous-requête.
 ///
@@ -109,7 +109,7 @@ pub(crate) fn source_titre(type_objet: &str) -> Option<(&'static str, &'static s
 ///
 /// Une requête par ligne affichée : la page en compte 25 au plus, et le journal
 /// comptable est consulté ponctuellement. Une jointure par famille imposerait
-/// dix `LEFT JOIN` inter-schémas pour la même information — c'est le compromis
+/// dix `LEFT JOIN` inter-schémas pour la même information : c'est le compromis
 /// déjà retenu par la file de modération média.
 ///
 /// Un échec renvoie `None` plutôt qu'une erreur : un titre manquant ne doit pas
@@ -128,7 +128,7 @@ pub(crate) async fn resoudre_titre(pool: &PgPool, type_objet: &str, objet_id: Uu
 // 1. CATALOGUE
 // ════════════════════════════════════════════════════════════════════════════
 
-/// GET /api/engagement/cadeaux — catalogue actif + contexte de monétisation.
+/// GET /api/engagement/cadeaux : catalogue actif + contexte de monétisation.
 pub async fn catalogue(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
     let params = charger_parametres(pool.get_ref()).await?;
 
@@ -155,7 +155,7 @@ pub async fn catalogue(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreu
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 2. ENVOI — création de l'intention
+// 2. ENVOI : création de l'intention
 // ════════════════════════════════════════════════════════════════════════════
 
 /// POST /api/engagement/cadeaux/envoyer
@@ -210,7 +210,7 @@ pub async fn envoyer_cadeau(
                 )
             })?;
 
-    // Refus explicite avant l'écriture — la contrainte `ck_transaction_pas_auto_cadeau`
+    // Refus explicite avant l'écriture : la contrainte `ck_transaction_pas_auto_cadeau`
     // l'interdirait de toute façon, mais un 500 de contrainte ne dit rien au membre.
     if beneficiaire_id == offreur_id {
         return Err(ApiErreur::AccesInterdit(
@@ -288,16 +288,16 @@ pub async fn envoyer_cadeau(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 3. CONFIRMATION — l'issue du paiement
+// 3. CONFIRMATION : l'issue du paiement
 // ════════════════════════════════════════════════════════════════════════════
 
 /// POST /api/engagement/paiements/{reference}/confirmer
 ///
 /// Séquence impérative (research R10) :
-/// 1. `UPDATE … WHERE etat = 'en_attente'` — c'est le **verrou d'idempotence**
+/// 1. `UPDATE … WHERE etat = 'en_attente'` : c'est le **verrou d'idempotence**
 ///    de la confirmation : deux requêtes concurrentes ne peuvent pas toutes deux
 ///    passer cette étape.
-/// 2. Cagnotte créditée **dans la même transaction SQL** — une cagnotte créditée
+/// 2. Cagnotte créditée **dans la même transaction SQL**, une cagnotte créditée
 ///    sans transaction aboutie serait de l'argent inventé.
 /// 3. `COMMIT`.
 /// 4. **Après le commit seulement** : les points et la notification. Ils sont
@@ -353,7 +353,7 @@ pub async fn confirmer_paiement(
     }
 
     // ── Expiration paresseuse ────────────────────────────────────────────────
-    // Résolue à la lecture, jamais par une tâche de fond — même motif que les
+    // Résolue à la lecture, jamais par une tâche de fond, même motif que les
     // créneaux de programmation média.
     if Utc::now() - transaction.created_at > Duration::minutes(paiement::EXPIRATION_MINUTES) {
         sqlx::query(

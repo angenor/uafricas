@@ -8,7 +8,7 @@ const etape = ref(1)
 const erreurLocale = ref<string | null>(null)
 
 const form = reactive({
-  // Etape 1 — Infos de base
+  // Etape 1 : Infos de base
   titre: '',
   description: '',
   type_operation: 'vente',
@@ -17,10 +17,10 @@ const form = reactive({
   devise: 'XOF',
   prix_negociable: false,
   quantite: 1,
-  // Etape 2 — Categorie
+  // Etape 2 : Categorie
   categorie_id: '',
   etat: 'brouillon',
-  // Etape 3 — Contact
+  // Etape 3 : Contact
   ville: '',
   adresse: '',
   type_contact: 'messagerie_plateforme',

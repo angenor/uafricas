@@ -1,4 +1,4 @@
-# Contrat — API publique (sans authentification)
+# Contrat : API publique (sans authentification)
 
 **Feature** : `001-refonte-tele-radio` | Enveloppe standard du projet : `ApiResponse<T>`
 (`{ success, data, error }`). Filtre implicite de toute lecture publique :
@@ -19,14 +19,14 @@ Programme mis en avant pour toute la page, avec repli déterministe (FR-001, FR-
   "id": "uuid", "slug": "journal-afrique-12-07",
   "nom_emission": "…", "description": "…",
   "image_couverture_url": "/uploads/…", "video_url": "https://youtu.be/… | /uploads/…",
-  "source_media": "externe",            // "hebergee" | "externe" — pilote le choix du lecteur (FR-056)
+  "source_media": "externe",            // "hebergee" | "externe", pilote le choix du lecteur (FR-056)
   "chaine_id": "uuid", "chaine_nom": "Africa24",
   "est_repli": false,                    // true si servi par défaut faute de vedette désignée
   "nombre_likes": 12, "nombre_dislikes": 1, "nombre_commentaires": 4
 }
 ```
 
-`data: null` si aucun programme publié n'existe — la page affiche alors son message d'état vide, jamais un
+`data: null` si aucun programme publié n'existe, la page affiche alors son message d'état vide, jamais un
 lecteur en erreur.
 
 ### `GET /api/television/sections`
@@ -38,13 +38,13 @@ FR-054 / SC-011.
 |---|---|---|
 | `page`, `par_page` | 1, 6 | pagination des **sections**, chargées au défilement |
 | `contenus_par_section` | 12 | taille de la rangée horizontale |
-| `recherche`, `pays`, `categorie` | — | filtres conservés |
+| `recherche`, `pays`, `categorie` |, | filtres conservés |
 
 ```jsonc
 {
   "sections": [{
     "chaine": { "id", "nom", "slug", "description", "cover", "pays", "categorie", "est_en_direct" },
-    "mis_en_evidence": { /* ProgrammeTele — a_la_une de la chaîne, sinon le plus récent */ },
+    "mis_en_evidence": { /* ProgrammeTele, a_la_une de la chaîne, sinon le plus récent */ },
     "contenus": [ /* … contenus_par_section éléments, hors mis_en_evidence */ ],
     "total_contenus": 37,
     "diffusion_en_cours": { "contenu_id": "uuid", "fin_prevue": "…" } | null,   // US5
@@ -55,7 +55,7 @@ FR-054 / SC-011.
 ```
 
 **Invariant (FR-008)** : aucune section n'est retournée pour une chaîne sans contenu publié.
-**Ordre stable (FR-004)** : `ORDER BY chaine.nom ASC, chaine.id ASC` — déterministe entre deux visites.
+**Ordre stable (FR-004)** : `ORDER BY chaine.nom ASC, chaine.id ASC`, déterministe entre deux visites.
 
 ### `GET /api/television/chaines/{slug}` · `GET /api/television/programmes/{slug}`
 
@@ -68,7 +68,7 @@ Détail par slug, pour les pages SSR et les aperçus sociaux (R12). Renvoie l'ob
 
 ### `GET /api/stations-radio/sections`
 
-**Paramètre déterminant** : `origine` ∈ `africans` | `territoire` — porté par la page, **jamais** par un
+**Paramètre déterminant** : `origine` ∈ `africans` | `territoire`, porté par la page, **jamais** par un
 filtre utilisateur (FR-014). `/medias/radio/africans` envoie `africans`, `/medias/radio/nationales` envoie
 `territoire`.
 
@@ -80,7 +80,7 @@ s'appliquent **en plus** de l'origine.
   "sections": [{
     "station": { "id", "nom", "slug", "description", "cover", "pays", "ville",
                  "type_station", "genres_liste", "stream_url" },
-    "direct_disponible": true,                 // stream_url non nul — FR-016
+    "direct_disponible": true,                 // stream_url non nul, FR-016
     "mis_en_evidence": { /* ProgrammeRadio */ },
     "contenus": [ … ],
     "total_contenus": 8,
@@ -102,7 +102,7 @@ télévision en a trois. Mêmes filtres et même forme que `programmes-vedettes`
 | Endpoint | Réponse |
 |---|---|
 | `GET /api/medias/{type_media}/{media_id}/commentaires?page=&par_page=` | liste paginée `{ id, auteur: {id, nom, prenom, photo}, contenu, created_at }`, `deleted_at IS NULL`, `ORDER BY created_at DESC` |
-| `GET /api/medias/partages?page=&par_page=` | 8ᵉ source du mur `/publications` — `{ id, legende, created_at, utilisateur, media: {type_media, id, slug, titre, image, support_nom} }` |
+| `GET /api/medias/partages?page=&par_page=` | 8ᵉ source du mur `/publications`, `{ id, legende, created_at, utilisateur, media: {type_media, id, slug, titre, image, support_nom} }` |
 
 `type_media` ∈ `chaine_tv` | `station_radio` | `programme_tele` | `programme_radio`. Valeur hors liste →
 **400** ; le handler ne compose jamais de SQL à partir de l'entrée brute (whitelist de littéraux, R3).
@@ -128,9 +128,9 @@ Les compteurs et `ma_reaction` sont **portés par les DTO de détail**, pas par 
 | Code | Cas |
 |---|---|
 | 400 | `type_media` / `type_support` / `origine` hors whitelist ; pagination invalide |
-| 404 | slug inconnu, ou objet dont `etat <> 'publie'` — un contenu retiré est indiscernable d'un contenu inexistant (FR-028) |
+| 404 | slug inconnu, ou objet dont `etat <> 'publie'`, un contenu retiré est indiscernable d'un contenu inexistant (FR-028) |
 | 429 | quota de lecture dépassé (rate limit nginx existant, 30 r/s) |
 
 **Contrat de suspension** : un contenu passé en `etat = 'suspendu'` par franchissement du seuil de
-signalements (FR-050) disparaît de tous les endpoints publics à la requête suivante — y compris des
+signalements (FR-050) disparaît de tous les endpoints publics à la requête suivante, y compris des
 sections et de la vedette, qui basculent sur leur repli.

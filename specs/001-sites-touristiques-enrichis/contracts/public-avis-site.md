@@ -1,4 +1,4 @@
-# Contrat — Avis de visiteur sur un site (note 1–5)
+# Contrat : Avis de visiteur sur un site (note 1–5)
 
 Écriture directe (publication immédiate, D2). Enveloppe `{ success, data, error }`.
 
@@ -39,7 +39,7 @@ Dépose ou met à jour l'avis de l'utilisateur connecté (upsert sur l'avis acti
 ```
 
 **Règles** :
-- `note` ∈ [1,5], `commentaire` non vide (1..2000) — sinon **422**.
+- `note` ∈ [1,5], `commentaire` non vide (1..2000), sinon **422**.
 - Un avis actif au plus par (utilisateur, site) : si déjà présent → mise à jour (pas de doublon,
   FR-015a). Réponse **201** (création) ou **200** (mise à jour) avec l'avis.
 - Site inexistant/supprimé → **404**.

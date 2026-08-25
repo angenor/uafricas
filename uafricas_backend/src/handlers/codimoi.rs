@@ -120,7 +120,7 @@ async fn construire_response(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/codimoi — Lister les posts avec filtres et pagination
+// GET /api/codimoi : Lister les posts avec filtres et pagination
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_posts(
     pool: web::Data<PgPool>,
@@ -208,7 +208,7 @@ pub async fn lister_posts(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/codimoi/{id} — Obtenir le detail d'un post
+// GET /api/codimoi/{id} : Obtenir le detail d'un post
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_post(
     pool: web::Data<PgPool>,
@@ -239,7 +239,7 @@ pub async fn obtenir_post(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/codimoi — Creer un nouveau post
+// POST /api/codimoi : Creer un nouveau post
 // ──────────────────────────────────────────────────────────────
 pub async fn creer_post(
     pool: web::Data<PgPool>,
@@ -354,7 +354,7 @@ pub async fn creer_post(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/codimoi/{id}/reaction — Ajouter/toggler une reaction
+// POST /api/codimoi/{id}/reaction : Ajouter/toggler une reaction
 // ──────────────────────────────────────────────────────────────
 pub async fn reagir(
     pool: web::Data<PgPool>,
@@ -488,7 +488,7 @@ pub async fn reagir(
     //
     // Plus aucun décompte de likes : la clé `jaime:codimoi:{id}:{membre}` porte
     // le membre qui aime, donc l'unicité est structurelle. Créditer aussi sur un
-    // RETRAIT est sans effet — le retrait suit toujours une pose qui a déjà
+    // RETRAIT est sans effet : le retrait suit toujours une pose qui a déjà
     // écrit la clé, et le second INSERT retombe sur le `ON CONFLICT DO NOTHING`.
     if body.type_reaction == "like" {
         if let Ok(Some(cree_par)) = sqlx::query_scalar::<_, Uuid>(
@@ -529,7 +529,7 @@ pub async fn reagir(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/codimoi/{id}/commentaires — Lister les commentaires
+// GET /api/codimoi/{id}/commentaires : Lister les commentaires
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_commentaires(
     pool: web::Data<PgPool>,
@@ -582,7 +582,7 @@ pub async fn lister_commentaires(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/codimoi/{id}/commentaires — Creer un commentaire
+// POST /api/codimoi/{id}/commentaires, Creer un commentaire
 // ──────────────────────────────────────────────────────────────
 pub async fn creer_commentaire(
     pool: web::Data<PgPool>,

@@ -75,8 +75,8 @@ const googleMapsUrl = computed(() =>
 
 useHead(() => ({
   title: centre.value
-    ? `${centre.value.nom} — Afroculture · AfricanS`
-    : 'Centre culturel — Afroculture · AfricanS',
+    ? `${centre.value.nom} : Afroculture · AfricanS`
+    : 'Centre culturel : Afroculture · AfricanS',
   meta: [
     {
       name: 'description',
@@ -91,7 +91,7 @@ useHead(() => ({
  * L'inscription au centre n'a PAS d'endpoint côté serveur : le composable
  * n'expose que `inscrireProgrammation`, qui porte sur une programmation
  * précise. La version précédente de cette page affichait malgré tout
- * « Inscription enregistrée avec succès ! » sans rien appeler — un utilisateur
+ * « Inscription enregistrée avec succès ! » sans rien appeler : un utilisateur
  * se croyait inscrit alors que rien n'était enregistré. On ne reconduit pas ce
  * message ; le formulaire annonce son état réel tant que la route n'existe pas.
  */

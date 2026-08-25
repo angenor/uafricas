@@ -1,10 +1,10 @@
-//! Page Radio — sections d'une station et référentiels de filtre.
+//! Page Radio : sections d'une station et référentiels de filtre.
 //!
 //! La table `media_content.programme_radio` a disparu avec la migration 09q :
 //! le conteneur est désormais l'**émission** (`models::media_emission`,
 //! `media_content.emission_radio`), l'unité diffusable l'**épisode**
 //! (`models::media_episode`, `media_content.episode_radio`). Ce module ne garde
-//! que ce qui relève de la page — la structure des sections, strictement
+//! que ce qui relève de la page : la structure des sections, strictement
 //! symétrique de celle de la télé.
 
 use serde::{Deserialize, Serialize};
@@ -21,7 +21,7 @@ use crate::models::station_radio::StationRadioResponse;
 #[derive(Debug, Serialize)]
 pub struct StationSectionResponse {
     pub station: StationRadioResponse,
-    /// `stream_url` renseigné — le direct est alors offert comme un contenu.
+    /// `stream_url` renseigné : le direct est alors offert comme un contenu.
     pub direct_disponible: bool,
     /// Programmes publiés comptant au moins un épisode publié (FR-011).
     pub emissions: Vec<EmissionResponse>,

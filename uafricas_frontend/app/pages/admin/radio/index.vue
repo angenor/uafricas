@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Stations de radio — back-office.
+ * Stations de radio : back-office.
  *
  * L'onglet « Émissions » a disparu d'ici : depuis 09q une émission est une
  * `emission_*` commune aux deux familles, gérée sur `/admin/medias/emissions`.

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Panneau « Mes points » de l'onglet du profil — Tailwind pur.
+ * Panneau « Mes points » de l'onglet du profil, Tailwind pur.
  *
  * Ce panneau n'est plus l'écran complet : il tient le rôle de **résumé et de
  * porte d'entrée** vers `/mon-compte/engagement`, qui porte la ventilation, les

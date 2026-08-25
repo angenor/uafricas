@@ -1,10 +1,10 @@
-# Retrouve Amis — Plan d'implémentation
+# Retrouve Amis : Plan d'implémentation
 
 ## Vue d'ensemble
 
 **Retrouve Amis** est une fonctionnalité de la plateforme UAfricas permettant de retrouver des amis perdus de vue grâce au recoupement d'informations. Un utilisateur dépose une "avis de recherche" décrivant la personne qu'il cherche (nom, école, ville, période, etc.), et le système croise ces informations avec :
 
-1. **Les autres avis de recherche** — quelqu'un cherche peut-être aussi cette personne, ou la personne perdue cherche aussi l'utilisateur.
+1. **Les autres avis de recherche** : quelqu'un cherche peut-être aussi cette personne, ou la personne perdue cherche aussi l'utilisateur.
 2. **Les profils des utilisateurs inscrits** (uniquement ceux ayant consenti à être trouvables).
 
 3. etc...
@@ -58,14 +58,14 @@ Un nouveau schema `retrouve_amis` sera ajouté aux 10 schemas existants, dans la
 #### Backend (Rust)
 | Fichier | Action |
 |---------|--------|
-| `doc/bd/schemas/16_retrouve_amis.sql` | Nouveau — schema SQL |
-| `src/models/retrouve_amis.rs` | Nouveau — modèles Rust |
-| `src/models/admin/retrouve_amis.rs` | Nouveau — modèles admin |
-| `src/handlers/retrouve_amis.rs` | Nouveau — handlers publics |
-| `src/handlers/admin/retrouve_amis.rs` | Nouveau — handlers admin |
-| `src/routes.rs` | Modifier — ajouter routes |
-| `src/models/mod.rs` | Modifier — déclarer module |
-| `src/handlers/mod.rs` | Modifier — déclarer module |
+| `doc/bd/schemas/16_retrouve_amis.sql` | Nouveau, schema SQL |
+| `src/models/retrouve_amis.rs` | Nouveau, modèles Rust |
+| `src/models/admin/retrouve_amis.rs` | Nouveau, modèles admin |
+| `src/handlers/retrouve_amis.rs` | Nouveau, handlers publics |
+| `src/handlers/admin/retrouve_amis.rs` | Nouveau, handlers admin |
+| `src/routes.rs` | Modifier : ajouter routes |
+| `src/models/mod.rs` | Modifier : déclarer module |
+| `src/handlers/mod.rs` | Modifier : déclarer module |
 
 #### Frontend (Nuxt 4)
 | Fichier | Action |
@@ -92,7 +92,7 @@ Un nouveau schema `retrouve_amis` sera ajouté aux 10 schemas existants, dans la
 [Utilisateur connecté]
     │
     ▼
-[Page "Retrouve Amis" — description + CTA]
+[Page "Retrouve Amis" : description + CTA]
     │
     ▼
 [Formulaire multi-étapes]
@@ -103,7 +103,7 @@ Un nouveau schema `retrouve_amis` sera ajouté aux 10 schemas existants, dans la
     └── Étape 5 : Vos préférences (anonymat, mode de contact)
     │
     ▼
-[Avis créé — état "actif"]
+[Avis créé : état "actif"]
     │
     ▼
 [Algorithme de matching lancé en arrière-plan]
@@ -118,7 +118,7 @@ Un nouveau schema `retrouve_amis` sera ajouté aux 10 schemas existants, dans la
 [Notification : "Correspondance potentielle trouvée"]
     │
     ▼
-[Page correspondance — affiche le score + critères communs]
+[Page correspondance : affiche le score + critères communs]
     │
     ├── [Utilisateur A confirme : "Oui, c'est bien moi / la personne"]
     │       │
@@ -144,7 +144,7 @@ Un nouveau schema `retrouve_amis` sera ajouté aux 10 schemas existants, dans la
 [Visiteur non connecté]
     │
     ▼
-[Page "Retrouve Amis" — formulaire de recherche rapide]
+[Page "Retrouve Amis" : formulaire de recherche rapide]
     │
     ▼
 [Résultats : "X avis correspondent à vos critères"]
@@ -163,7 +163,7 @@ Un nouveau schema `retrouve_amis` sera ajouté aux 10 schemas existants, dans la
 
 ## Découpage en phases
 
-### Phase 1 — MVP (prioritaire)
+### Phase 1 : MVP (prioritaire)
 - Schema BD + migrations
 - CRUD avis de recherche (backend + frontend)
 - Algorithme de matching basique (correspondance exacte + fuzzy sur noms)
@@ -171,14 +171,14 @@ Un nouveau schema `retrouve_amis` sera ajouté aux 10 schemas existants, dans la
 - Système de double opt-in
 - Messagerie simple entre correspondants
 
-### Phase 2 — Enrichissement
+### Phase 2 : Enrichissement
 - Recherche anonyme (visiteurs non connectés)
 - Préférences de trouvabilité (profil utilisateur)
 - Notifications en temps réel (intégration existante ou polling)
 - Administration et modération
 - Système de signalement
 
-### Phase 3 — Intelligence
+### Phase 3 : Intelligence
 - Algorithme de matching avancé (phonétique, translittération)
 - Suggestions proactives basées sur les profils
 - Matching croisé multi-avis (A cherche B, B cherche C, C connaît A)

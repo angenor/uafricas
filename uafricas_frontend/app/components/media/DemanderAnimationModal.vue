@@ -17,7 +17,7 @@ import {
 
 const props = defineProps<{
   isOpen: boolean
-  /** Nature du support visé — sert uniquement à formuler les libellés. */
+  /** Nature du support visé : sert uniquement à formuler les libellés. */
   typeSupport: 'chaine_tv' | 'station_radio'
   /** Identifiant du support destinataire (obligatoire côté serveur). */
   supportId: string

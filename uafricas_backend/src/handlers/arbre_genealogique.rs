@@ -1,16 +1,16 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Handlers — Arbre généalogique
+// Handlers : Arbre généalogique
 // ════════════════════════════════════════════════════════════════════════════
 //
 // Endpoints :
-//   GET    /api/arbre/personnes          — lister_personnes  (US3)
-//   POST   /api/arbre/personnes          — creer_personne    (US1)
-//   GET    /api/arbre/personnes/{id}     — obtenir_personne  (US1)
-//   PUT    /api/arbre/personnes/{id}     — modifier_personne (US1)
-//   DELETE /api/arbre/personnes/{id}     — supprimer_personne(US1)
-//   POST   /api/arbre/personnes/{id}/photo — uploader_photo  (US1)
-//   POST   /api/arbre/liens              — creer_lien        (US2)
-//   DELETE /api/arbre/liens/{id}         — supprimer_lien    (US2)
+//   GET    /api/arbre/personnes : lister_personnes  (US3)
+//   POST   /api/arbre/personnes : creer_personne    (US1)
+//   GET    /api/arbre/personnes/{id} : obtenir_personne  (US1)
+//   PUT    /api/arbre/personnes/{id} : modifier_personne (US1)
+//   DELETE /api/arbre/personnes/{id} : supprimer_personne(US1)
+//   POST   /api/arbre/personnes/{id}/photo, uploader_photo  (US1)
+//   POST   /api/arbre/liens : creer_lien        (US2)
+//   DELETE /api/arbre/liens/{id} : supprimer_lien    (US2)
 // ════════════════════════════════════════════════════════════════════════════
 
 use actix_multipart::Multipart;
@@ -253,7 +253,7 @@ fn valider_coherence_dates(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// GET /api/arbre/arbre-complet — Arbre complet pour visualisation
+// GET /api/arbre/arbre-complet : Arbre complet pour visualisation
 // ════════════════════════════════════════════════════════════════════════════
 
 pub async fn obtenir_arbre_complet(
@@ -324,7 +324,7 @@ pub async fn obtenir_arbre_complet(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// US3 — GET /api/arbre/personnes
+// US3 : GET /api/arbre/personnes
 // ════════════════════════════════════════════════════════════════════════════
 
 pub async fn lister_personnes(
@@ -420,7 +420,7 @@ pub async fn lister_personnes(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// US1 — POST /api/arbre/personnes
+// US1 : POST /api/arbre/personnes
 // ════════════════════════════════════════════════════════════════════════════
 
 pub async fn creer_personne(
@@ -534,7 +534,7 @@ pub async fn creer_personne(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// US1 — GET /api/arbre/personnes/{id}
+// US1 : GET /api/arbre/personnes/{id}
 // ════════════════════════════════════════════════════════════════════════════
 
 pub async fn obtenir_personne(
@@ -557,7 +557,7 @@ pub async fn obtenir_personne(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// US1 — PUT /api/arbre/personnes/{id}
+// US1 : PUT /api/arbre/personnes/{id}
 // ════════════════════════════════════════════════════════════════════════════
 
 pub async fn modifier_personne(
@@ -668,7 +668,7 @@ pub async fn modifier_personne(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// US1 — DELETE /api/arbre/personnes/{id}
+// US1 : DELETE /api/arbre/personnes/{id}
 // ════════════════════════════════════════════════════════════════════════════
 
 pub async fn supprimer_personne(
@@ -751,7 +751,7 @@ pub async fn supprimer_personne(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// US1 — POST /api/arbre/personnes/{id}/photo
+// US1 : POST /api/arbre/personnes/{id}/photo
 // ════════════════════════════════════════════════════════════════════════════
 
 pub async fn uploader_photo(
@@ -856,7 +856,7 @@ pub async fn uploader_photo(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// US2 — POST /api/arbre/liens  (stub — implémenté en Phase 4 / T018)
+// US2 : POST /api/arbre/liens  (stub : implémenté en Phase 4 / T018)
 // ════════════════════════════════════════════════════════════════════════════
 
 pub async fn creer_lien(
@@ -998,7 +998,7 @@ pub async fn creer_lien(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// US2 — DELETE /api/arbre/liens/{id}  (stub — implémenté en Phase 4 / T019)
+// US2 : DELETE /api/arbre/liens/{id}  (stub, implémenté en Phase 4 / T019)
 // ════════════════════════════════════════════════════════════════════════════
 
 pub async fn supprimer_lien(

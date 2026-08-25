@@ -1,4 +1,4 @@
-# Feature Specification: Afrolang — Ajustements salles publiques et privées
+# Feature Specification: Afrolang : Ajustements salles publiques et privées
 
 **Feature Branch**: `005-afrolang-salles`
 **Created**: 2026-04-14
@@ -11,19 +11,19 @@
 
 - Q: Quelle source référentielle pour la liste des groupes ethniques africains utilisée par les salles publiques Afrolang ? → A: Réutiliser le référentiel existant `country_profile.groupe_ethnique` comme source unique ; chaque salle publique Afrolang est rattachée à une entrée existante, évitant toute duplication.
 - Q: Que devient une salle privée si son créateur quitte définitivement la plateforme ou supprime son compte ? → A: Archivage automatique de la salle (lecture seule, plus de nouvelle session possible) dès le départ définitif du créateur ; les participants sont notifiés.
-- Q: Comment est proposée la création d'une salle privée depuis une salle publique ? → A: Pas de modal intrusif — un bouton permanent « Créer une salle privée » reste visible dans l'interface de la salle publique, accompagné d'une info-bulle de découverte uniquement à la toute première visite de l'utilisateur dans cette salle.
+- Q: Comment est proposée la création d'une salle privée depuis une salle publique ? → A: Pas de modal intrusif : un bouton permanent « Créer une salle privée » reste visible dans l'interface de la salle publique, accompagné d'une info-bulle de découverte uniquement à la toute première visite de l'utilisateur dans cette salle.
 - Q: Quels types de ressources peuvent figurer dans la rubrique « Ressources » d'une salle ? → A: Ressources internes uploadées (fichiers : PDF, images, audios, vidéos) ET liens externes autorisés, mais tout lien externe doit être validé par un modérateur Afrolang attitré ou un administrateur avant publication.
 - Q: Combien de salles privées un même membre peut-il avoir actives en même temps ? → A: Maximum 1 salle privée active par membre et par salle publique de rattachement. Un même membre peut donc posséder plusieurs salles privées actives s'il les rattache à des salles publiques différentes, mais ne peut jamais en avoir deux simultanément rattachées à la même salle publique.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 — Accéder à la salle publique de son groupe ethnique (Priority: P1)
+### User Story 1 : Accéder à la salle publique de son groupe ethnique (Priority: P1)
 
 Un membre ouvre Afrolang, parcourt l'annuaire des groupes ethniques africains et rejoint la salle publique correspondant à son groupe (ex. « Gurunsi »). Il y retrouve les ressources d'apprentissage (dictionnaire, alphabet, médias), participe à la visioconférence, échange par messagerie écrite et utilise le tableau blanc collaboratif. La salle est ouverte à tout membre authentifié, sans restriction supplémentaire.
 
 **Why this priority**: C'est le cœur de l'expérience Afrolang. Sans cet accès fluide aux salles publiques ethniques, aucune autre fonctionnalité n'a de valeur.
 
-**Independent Test**: Un testeur se connecte, ouvre l'annuaire des groupes ethniques, rejoint la salle « Gurunsi », consulte au moins une ressource, envoie un message écrit et trace sur le tableau blanc — tout cela dans une seule session.
+**Independent Test**: Un testeur se connecte, ouvre l'annuaire des groupes ethniques, rejoint la salle « Gurunsi », consulte au moins une ressource, envoie un message écrit et trace sur le tableau blanc, tout cela dans une seule session.
 
 **Acceptance Scenarios**:
 
@@ -33,7 +33,7 @@ Un membre ouvre Afrolang, parcourt l'annuaire des groupes ethniques africains et
 
 ---
 
-### User Story 2 — Proposer la création d'une salle pour un groupe ethnique absent (Priority: P1)
+### User Story 2 : Proposer la création d'une salle pour un groupe ethnique absent (Priority: P1)
 
 Un membre cherche sa salle ethnique mais ne la trouve pas dans la liste. La plateforme l'informe qu'il peut proposer la création d'une salle publique et la soumettre pour validation par les administrateurs. Il renseigne le nom du groupe ethnique, la langue cible et une description, puis soumet la demande. Il est informé qu'un délai de validation s'applique et reçoit une notification dès que la salle est approuvée (ou refusée avec motif).
 
@@ -50,7 +50,7 @@ Un membre cherche sa salle ethnique mais ne la trouve pas dans la liste. La plat
 
 ---
 
-### User Story 3 — Modérer une salle publique (modérateur Afrolang ou modérateur de session) (Priority: P1)
+### User Story 3 : Modérer une salle publique (modérateur Afrolang ou modérateur de session) (Priority: P1)
 
 Chaque salle publique dispose d'un ou plusieurs modérateurs Afrolang désignés par l'administration pour leur connaissance de la langue. Quand aucun modérateur Afrolang n'est présent à l'ouverture d'une session, la première personne connectée devient automatiquement modérateur de session. Elle peut, si d'autres arrivent, transférer la modération à un autre participant. Dès qu'un modérateur Afrolang attitré rejoint la salle, il récupère automatiquement le rôle de modération.
 
@@ -68,7 +68,7 @@ Chaque salle publique dispose d'un ou plusieurs modérateurs Afrolang désignés
 
 ---
 
-### User Story 4 — Créer une salle privée depuis une salle publique (Priority: P2)
+### User Story 4 : Créer une salle privée depuis une salle publique (Priority: P2)
 
 Un membre entrant dans une salle publique (ex. « Gurunsi ») voit un bouton permanent « Créer une salle privée » dans l'interface. À sa première visite, une info-bulle de découverte lui signale cette possibilité ; aux visites suivantes, seul le bouton reste visible (pas de modal intrusif). En cliquant, il choisit un motif (1. Apprentissage de la langue par mes enfants, 2. Réseautage avec un adulte pour apprentissage, 3. Échanges de groupe) et peut personnaliser la description. Il déclare être adulte (18 ans ou plus). Si le motif concerne l'apprentissage d'enfants, une notice d'alerte lui rappelle la nécessité qu'un adulte soit présent auprès des enfants. La salle privée créée est rattachée à la salle publique d'origine.
 
@@ -85,13 +85,13 @@ Un membre entrant dans une salle publique (ex. « Gurunsi ») voit un bouton per
 
 ---
 
-### User Story 5 — Gérer la visibilité et les adhésions à une salle privée (Priority: P2)
+### User Story 5 : Gérer la visibilité et les adhésions à une salle privée (Priority: P2)
 
-Le créateur d'une salle privée choisit entre deux modes : (A) **Privée fermée** — la salle n'est pas visible depuis la salle publique ; seules les personnes que le créateur ajoute comme abonnés peuvent y accéder ; (B) **Privée visible** — la salle apparaît aux membres de la salle publique de rattachement, qui peuvent demander à y adhérer. Le créateur fixe une limite de participants et peut refuser une demande (avec motif facultatif « groupe complet » lorsque la limite est atteinte). Les personnes invitées à rejoindre une salle privée peuvent accepter ou refuser l'invitation.
+Le créateur d'une salle privée choisit entre deux modes : (A) **Privée fermée**, la salle n'est pas visible depuis la salle publique ; seules les personnes que le créateur ajoute comme abonnés peuvent y accéder ; (B) **Privée visible**, la salle apparaît aux membres de la salle publique de rattachement, qui peuvent demander à y adhérer. Le créateur fixe une limite de participants et peut refuser une demande (avec motif facultatif « groupe complet » lorsque la limite est atteinte). Les personnes invitées à rejoindre une salle privée peuvent accepter ou refuser l'invitation.
 
 **Why this priority**: La flexibilité visibilité/adhésion est indispensable pour couvrir les usages (famille fermée vs cercle d'apprentissage ouvert).
 
-**Independent Test**: Un testeur crée deux salles privées — une fermée, une visible — puis vérifie qu'un autre membre ne voit que la visible, peut envoyer une demande d'adhésion, et que le créateur peut accepter, refuser ou recevoir automatiquement un refus « groupe complet » quand la limite est atteinte.
+**Independent Test**: Un testeur crée deux salles privées, une fermée, une visible, puis vérifie qu'un autre membre ne voit que la visible, peut envoyer une demande d'adhésion, et que le créateur peut accepter, refuser ou recevoir automatiquement un refus « groupe complet » quand la limite est atteinte.
 
 **Acceptance Scenarios**:
 
@@ -104,7 +104,7 @@ Le créateur d'une salle privée choisit entre deux modes : (A) **Privée fermé
 
 ---
 
-### User Story 6 — Utiliser le tableau blanc collaboratif, les ressources et la messagerie écrite (Priority: P2)
+### User Story 6 : Utiliser le tableau blanc collaboratif, les ressources et la messagerie écrite (Priority: P2)
 
 Dans toute salle (publique ou privée), les participants peuvent : (a) utiliser un tableau blanc collaboratif fonctionnel (tracés, formes, texte, effacement) synchronisé en temps réel ; (b) consulter la rubrique « Ressources » de la salle (dictionnaire de la langue s'il existe, alphabet, médias, liens pédagogiques) ; (c) échanger par une messagerie instantanée écrite pendant la session.
 
@@ -139,7 +139,7 @@ Dans toute salle (publique ou privée), les participants peuvent : (a) utiliser 
 
 #### Salles publiques et annuaire ethnique
 
-- **FR-001**: Le système DOIT afficher les salles publiques organisées selon la liste des groupes ethniques africains référencés dans l'entité partagée de la plateforme (réutilisation du référentiel `country_profile.groupe_ethnique` comme source unique de vérité — aucune duplication).
+- **FR-001**: Le système DOIT afficher les salles publiques organisées selon la liste des groupes ethniques africains référencés dans l'entité partagée de la plateforme (réutilisation du référentiel `country_profile.groupe_ethnique` comme source unique de vérité, aucune duplication).
 - **FR-002**: Le système DOIT permettre à tout membre authentifié de rejoindre une salle publique sans restriction supplémentaire.
 - **FR-003**: Le système DOIT permettre à un membre qui ne trouve pas sa salle ethnique de soumettre une proposition de création de salle publique (groupe ethnique, langue cible, description).
 - **FR-004**: Le système DOIT informer le proposant qu'un délai de validation par les administrateurs s'applique avant que la salle devienne accessible.

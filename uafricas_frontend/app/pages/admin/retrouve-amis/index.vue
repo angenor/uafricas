@@ -95,7 +95,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
 <template>
   <div>
-    <AdminPageHeader titre="Avis de recherche — Retrouve Amis" sous-titre="Gestion et moderation des avis de recherche">
+    <AdminPageHeader titre="Avis de recherche, Retrouve Amis" sous-titre="Gestion et moderation des avis de recherche">
       <template #actions>
         <div v-if="stats" class="flex items-center gap-3 text-sm">
           <span class="badge badge-success badge-sm">{{ stats.avis_actifs }} actifs</span>

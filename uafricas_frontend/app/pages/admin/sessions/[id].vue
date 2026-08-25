@@ -9,7 +9,7 @@ const { sessionDetail, tableauBlanc, loading, error, chargerDetail, chargerTable
 const ongletActif = ref('infos')
 
 const formatDuree = (secondes: number | null) => {
-  if (!secondes) return '—'
+  if (!secondes) return '-'
   const h = Math.floor(secondes / 3600)
   const m = Math.floor((secondes % 3600) / 60)
   const s = secondes % 60
@@ -18,7 +18,7 @@ const formatDuree = (secondes: number | null) => {
 }
 
 const formatDate = (date: string | null) => {
-  if (!date) return '—'
+  if (!date) return '-'
   return new Date(date).toLocaleDateString('fr-FR', {
     day: '2-digit', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
@@ -40,7 +40,7 @@ const roleLabel = (role: string | null) => {
     case 'moderateur': return 'Moderateur'
     case 'participant': return 'Participant'
     case 'observateur': return 'Observateur'
-    default: return role || '—'
+    default: return role || '-'
   }
 }
 
@@ -90,13 +90,13 @@ onMounted(() => chargerDetail(id))
         <div>
           <h2 class="text-lg font-bold">{{ sessionDetail.titre || 'Session sans titre' }}</h2>
           <p class="text-sm text-base-content/60">
-            {{ sessionDetail.salle_titre || '—' }}
+            {{ sessionDetail.salle_titre || '-' }}
             {{ sessionDetail.salle_langue ? ` (${sessionDetail.salle_langue})` : '' }}
-            — {{ sessionDetail.salle_privee_titre || 'Salle privee' }}
+            {{ sessionDetail.salle_privee_titre || 'Salle privee' }}
           </p>
           <div class="flex gap-2 mt-1">
             <span class="badge badge-sm" :class="etatClass(sessionDetail.etat)">
-              {{ sessionDetail.etat || '—' }}
+              {{ sessionDetail.etat || '-' }}
             </span>
             <span class="badge badge-outline badge-sm">
               {{ sessionDetail.participants.length }} participant(s)
@@ -128,12 +128,12 @@ onMounted(() => chargerDetail(id))
             <div>
               <h4 class="font-semibold text-sm text-base-content/60 mb-1">Etat</h4>
               <span class="badge" :class="etatClass(sessionDetail.etat)">
-                {{ sessionDetail.etat || '—' }}
+                {{ sessionDetail.etat || '-' }}
               </span>
             </div>
             <div>
               <h4 class="font-semibold text-sm text-base-content/60 mb-1">Moderateur</h4>
-              <p>{{ sessionDetail.moderateur_nom || '—' }}</p>
+              <p>{{ sessionDetail.moderateur_nom || '-' }}</p>
             </div>
             <div>
               <h4 class="font-semibold text-sm text-base-content/60 mb-1">Date debut prevue</h4>
@@ -157,7 +157,7 @@ onMounted(() => chargerDetail(id))
             </div>
             <div>
               <h4 class="font-semibold text-sm text-base-content/60 mb-1">Pic de participants</h4>
-              <p>{{ sessionDetail.nombre_participants_pic ?? '—' }}</p>
+              <p>{{ sessionDetail.nombre_participants_pic ?? '-' }}</p>
             </div>
             <div>
               <h4 class="font-semibold text-sm text-base-content/60 mb-1">Tableau blanc actif</h4>
@@ -165,7 +165,7 @@ onMounted(() => chargerDetail(id))
             </div>
             <div>
               <h4 class="font-semibold text-sm text-base-content/60 mb-1">Createur</h4>
-              <p>{{ sessionDetail.cree_par_nom || '—' }}</p>
+              <p>{{ sessionDetail.cree_par_nom || '-' }}</p>
             </div>
           </div>
           <div class="mt-4 text-sm text-base-content/50">
@@ -214,7 +214,7 @@ onMounted(() => chargerDetail(id))
           <h3 class="font-semibold mb-4">Snapshot du tableau blanc</h3>
           <template v-if="tableauBlanc">
             <div class="flex gap-4 mb-4 text-sm text-base-content/60">
-              <span>Version: {{ tableauBlanc.version ?? '—' }}</span>
+              <span>Version: {{ tableauBlanc.version ?? '-' }}</span>
               <span>Derniere maj: {{ formatDate(tableauBlanc.updated_at) }}</span>
             </div>
             <div class="bg-base-200 rounded-lg p-4 overflow-auto max-h-[500px]">

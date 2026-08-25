@@ -32,5 +32,5 @@
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit.clarify` or `/speckit.plan`
-- Validation exécutée au premier passage — tous les critères passent sans itération supplémentaire.
+- Validation exécutée au premier passage, tous les critères passent sans itération supplémentaire.
 - Le motif exact d'URL hiérarchique de la fiche programmation (`/centres/{centreId}/programmations/{programmationId}` ou variante) est intentionnellement laissé au plan d'implémentation ; la spec fixe la contrainte (« hiérarchie cohérente sous `/centres/{centreId}/...` ») sans imposer la forme technique.

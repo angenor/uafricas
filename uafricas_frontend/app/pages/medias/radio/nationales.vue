@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Radios Nationales — stations rattachées à un territoire africain (US2).
+ * Radios Nationales : stations rattachées à un territoire africain (US2).
  *
  * Page DISTINCTE de `/medias/radio/africans` : l'adresse est inchangée (FR-012),
  * aucune redirection, aucune fusion. L'origine `territoire` est fixée ici.

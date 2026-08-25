@@ -4,7 +4,7 @@
  *
  * Elle existe d'abord pour le partage : un aperçu social (FR-026) exige une URL
  * propre au contenu, et les pages de liste en donneraient un identique pour
- * tous. `useAsyncData` est appelé au niveau racine — c'est ce qui rend la page
+ * tous. `useAsyncData` est appelé au niveau racine : c'est ce qui rend la page
  * rendue côté serveur, donc lisible par les robots des réseaux sociaux.
  */
 import { useTelevision } from '~/composables/useTelevision'
@@ -21,7 +21,7 @@ const { data: detail, pending: chargement } = await useAsyncData(
 )
 
 /**
- * Cette page est désormais la page d'un **ÉPISODE** — son emplacement et son
+ * Cette page est désormais la page d'un **ÉPISODE**, son emplacement et son
  * slug sont conservés, ce qui préserve les adresses publiques déjà indexées
  * (FR-056). Ce qui change, c'est qu'elle nomme la série à laquelle il
  * appartient et propose les autres épisodes (US1 §4).
@@ -61,7 +61,7 @@ const descriptionOg = computed(() =>
 
 useHead(() => {
   if (!programme.value) return {}
-  const titre = `${programme.value.title} — Télévision — UAfricas`
+  const titre = `${programme.value.title}, Télévision | UAfricas`
   return {
     title: titre,
     meta: [
@@ -136,7 +136,7 @@ useHead(() => {
           </NuxtLink>
           <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-white mb-2">
             <span v-if="programme.numeroEpisode" class="text-gray-400 font-normal">
-              Épisode {{ programme.numeroEpisode }} —
+              Épisode {{ programme.numeroEpisode }} 
             </span>
             {{ programme.title }}
           </h1>

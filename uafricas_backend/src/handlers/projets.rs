@@ -31,7 +31,7 @@ fn extraire_utilisateur_id(req: &HttpRequest) -> Option<Uuid> {
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/projets — Lister les projets avec filtres et pagination
+// GET /api/projets : Lister les projets avec filtres et pagination
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_projets(
     pool: web::Data<PgPool>,
@@ -167,7 +167,7 @@ pub async fn lister_projets(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/projets/{id} — Obtenir le detail d'un projet
+// GET /api/projets/{id} : Obtenir le detail d'un projet
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_projet(
     pool: web::Data<PgPool>,
@@ -211,7 +211,7 @@ pub async fn obtenir_projet(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/projets — Creer un projet (multipart)
+// POST /api/projets : Creer un projet (multipart)
 // ──────────────────────────────────────────────────────────────
 pub async fn creer_projet(
     req: HttpRequest,
@@ -549,7 +549,7 @@ pub async fn creer_projet(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/projets/statistiques — Statistiques des projets
+// GET /api/projets/statistiques : Statistiques des projets
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_statistiques(
     pool: web::Data<PgPool>,

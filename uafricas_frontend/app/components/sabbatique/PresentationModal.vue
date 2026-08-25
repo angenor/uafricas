@@ -35,7 +35,7 @@
         <div class="overflow-y-auto px-6 py-6 space-y-8">
           <!-- L'accroche -->
           <p class="text-gray-700 leading-relaxed">
-            Vous avez des compétences et un peu de temps — un congé, une pause sabbatique, quelques
+            Vous avez des compétences et un peu de temps, un congé, une pause sabbatique, quelques
             heures ? <strong class="text-gray-900">Sabbafrica</strong> vous permet de les mettre
             <strong class="text-gray-900">au service d'organisations africaines</strong>, que vous
             soyez sur le continent ou dans la diaspora. Un échange concret, utile et humain.
@@ -87,7 +87,7 @@
               Notre objectif
             </h3>
             <p class="text-gray-700 text-sm leading-relaxed">
-              Renforcer les organisations locales — ONG, institutions, entreprises, collectivités —
+              Renforcer les organisations locales : ONG, institutions, entreprises, collectivités 
               partager les compétences et les bonnes pratiques, et tisser des réseaux de coopération
               durables.
             </p>

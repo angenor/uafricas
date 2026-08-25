@@ -62,7 +62,7 @@
 /**
  * Carte de publication : l'anatomie relevée à l'identique sur quatre modules
  * (fil d'actualité, Codimoi, Africonnect, Vidafrica). Les variantes ne portent
- * que sur le média — image, mosaïque, vidéo, direct, fiche pays — d'où le slot
+ * que sur le média : image, mosaïque, vidéo, direct, fiche pays : d'où le slot
  * `media` qui prend le pas sur le rendu par défaut.
  */
 export interface AuteurPublication {

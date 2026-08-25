@@ -10,7 +10,7 @@ import type {
 
 definePageMeta({ middleware: 'auth' })
 
-useHead({ title: 'Mes amis — AfricanS' })
+useHead({ title: 'Mes amis | AfricanS' })
 
 const {
   listerDemandesRecues,

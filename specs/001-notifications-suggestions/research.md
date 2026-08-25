@@ -19,7 +19,7 @@
 
 **Raisonnement** :
 - Pattern simple : après chaque action génératrice de notification, un INSERT non-bloquant (comme l'audit existant).
-- Pas besoin d'un système d'événements/bus — les points de création sont identifiables (5-6 endroits).
+- Pas besoin d'un système d'événements/bus, les points de création sont identifiables (5-6 endroits).
 - Exemples : dans `matching_profond` → INSERT notif "Nouveau match", dans `accepter_invitation` → INSERT notif "Invitation acceptée".
 
 ## Décision 3 : Suggestions proactives côté client
@@ -29,7 +29,7 @@
 **Raisonnement** :
 - Les données sont déjà en mémoire (endpoint `arbre-complet`). Analyser le graphe = parcourir les nœuds côté JS.
 - Suggestions : `noeud.parents.length < 2` → "Parents manquants", `!noeud.naissance` → "Date manquante".
-- Pas de nouvel endpoint — c'est une extension du composable `useLayoutArbre` déjà existant.
+- Pas de nouvel endpoint : c'est une extension du composable `useLayoutArbre` déjà existant.
 - Recalculé à chaque modification de l'arbre.
 
 ## Décision 4 : Détection de doublons intra-arbre
@@ -57,4 +57,4 @@
 **Raisonnement** :
 - Un seul appel léger (retourne juste un nombre) à chaque navigation de page.
 - Le composable expose un `ref<number>` réactif consommé par le composant cloche dans la navbar.
-- Pas de polling périodique — juste au changement de page (Nuxt navigation guards).
+- Pas de polling périodique : juste au changement de page (Nuxt navigation guards).

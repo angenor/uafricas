@@ -50,6 +50,6 @@ withDefaults(defineProps<{
 defineEmits<{ 'update:modelValue': [string] }>()
 
 // useId() garantit l'appariement label/champ même si le composant est monté
-// plusieurs fois sur une page — le cas du panneau Filtres, répété par module.
+// plusieurs fois sur une page : le cas du panneau Filtres, répété par module.
 const id = useId()
 </script>

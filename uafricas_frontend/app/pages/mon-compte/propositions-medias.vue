@@ -16,7 +16,7 @@ import {
 
 definePageMeta({ middleware: 'auth' })
 
-useHead({ title: 'Mes propositions de médias — UAfricas' })
+useHead({ title: 'Mes propositions de médias | UAfricas' })
 
 const { mesPropositions, retirer, chargement } = useMediaProposition()
 

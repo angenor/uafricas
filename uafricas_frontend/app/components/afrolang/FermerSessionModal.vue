@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Modale de fermeture pour abus depuis la salle live (FR-019).
 // Accessible aux admins de session (admin plateforme ou admin de salle).
-// Tailwind v4 pur (composant public — Principe VI).
+// Tailwind v4 pur (composant public : Principe VI).
 
 const props = defineProps<{
   ouvert: boolean

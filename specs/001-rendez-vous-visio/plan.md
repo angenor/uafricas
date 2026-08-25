@@ -11,8 +11,8 @@ Permettre à deux membres **amis** d'organiser et de tenir un entretien vidéo 1
 
 **Language/Version**: Rust Edition 2024 (backend), TypeScript / Nuxt 4 (Vue 3 SSR) (frontend)  
 **Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL), uuid, chrono, serde, `audit::log_action`, `RegistreSse` (SSE) (backend) ; Pinia, Tailwind CSS v4 (pur), FontAwesome, **peerjs (à ajouter via pnpm)** (frontend)  
-**Storage**: PostgreSQL 16, schéma `social` (source de vérité — Principe III). Cloche persistante via `arbre_genealogique.notifications` (système cloche unifié existant). Aucun stockage de média (P2P).  
-**Testing**: Aucun framework configuré (Principe — pas de CI/CD encore). Tests manuels via quickstart + scénarios d'acceptation.  
+**Storage**: PostgreSQL 16, schéma `social` (source de vérité, Principe III). Cloche persistante via `arbre_genealogique.notifications` (système cloche unifié existant). Aucun stockage de média (P2P).  
+**Testing**: Aucun framework configuré (Principe, pas de CI/CD encore). Tests manuels via quickstart + scénarios d'acceptation.  
 **Target Platform**: Navigateurs modernes (WebRTC : `getUserMedia`, RTCPeerConnection) ; backend Linux (port 8082 en dev).  
 **Project Type**: Application web (monorepo frontend Nuxt + backend Actix).  
 **Performance Goals**: Notification temps réel < 5 s (SC-002) ; établissement connexion vidéo < 10 s sur réseaux compatibles (SC-004) ; média 0 bande passante serveur (SC-005).  
@@ -29,7 +29,7 @@ Permettre à deux membres **amis** d'organiser et de tenir un entretien vidéo 1
 | II. Monorepo cohérent | ✅ | Types cohérents SQL ↔ struct Rust `FromRow` ↔ interface TS ; livrés ensemble. |
 | III. SQL source de vérité | ✅ | Migration `schemas/31_social_rendez_vous.sql` d'abord, intégrée à l'orchestrateur, puis backend, puis frontend. |
 | IV. Sécurité par défaut | ✅ (avec note) | JWT Bearer, sqlx paramétré, revérif amitié/blocage à chaque action, audit sans contenu sensible. **Note signalisation** : peer-id = hachage déterministe `(rendez_vous_id, participant_id)` ; le secret d'accès est l'UUID du rendez-vous, connu des seuls participants via l'API. STUN public, pas de TURN (documenté). Voir research.md §Sécurité. |
-| V. Simplicité (YAGNI) | ✅ | 1 handler + 1 model par domaine, 1 composable, pas de Repository, pas de FK conversation (lien messagerie côté frontend via `demanderOuverture`). « expiré »/« terminé » dérivés par calcul (pas de statut ni tâche planifiée — clarifications). |
+| V. Simplicité (YAGNI) | ✅ | 1 handler + 1 model par domaine, 1 composable, pas de Repository, pas de FK conversation (lien messagerie côté frontend via `demanderOuverture`). « expiré »/« terminé » dérivés par calcul (pas de statut ni tâche planifiée, clarifications). |
 | VI. Tailwind v4 (daisyUI back-office only) | ✅ | UI membre (modal proposition, section panneau, salle visio, bouton profil) en Tailwind v4 pur. |
 | VII. Audit & traçabilité | ✅ | `audit::log_action` sur chaque mutation (proposer/accepter/refuser/contre-proposer/annuler), sans sujet/description. |
 
@@ -42,14 +42,14 @@ Permettre à deux membres **amis** d'organiser et de tenir un entretien vidéo 1
 ```text
 specs/001-rendez-vous-visio/
 ├── plan.md              # Ce fichier (/speckit.plan)
-├── research.md          # Phase 0 — décisions techniques
-├── data-model.md        # Phase 1 — entités & schéma
-├── quickstart.md        # Phase 1 — mise en route & tests manuels
+├── research.md          # Phase 0 : décisions techniques
+├── data-model.md        # Phase 1 : entités & schéma
+├── quickstart.md        # Phase 1 : mise en route & tests manuels
 ├── contracts/
-│   └── rendez-vous.md   # Phase 1 — contrats d'API
+│   └── rendez-vous.md   # Phase 1 : contrats d'API
 ├── checklists/
 │   └── requirements.md  # /speckit.specify
-└── tasks.md             # Phase 2 (/speckit.tasks — non créé ici)
+└── tasks.md             # Phase 2 (/speckit.tasks, non créé ici)
 ```
 
 ### Source Code (repository root)
@@ -59,12 +59,12 @@ uafricas_backend/
 ├── doc/bd/
 │   ├── schema.sql                              # + ligne \ir schemas/31_social_rendez_vous.sql
 │   └── schemas/
-│       └── 31_social_rendez_vous.sql           # NOUVEAU — enum + table + index (idempotent)
+│       └── 31_social_rendez_vous.sql           # NOUVEAU, enum + table + index (idempotent)
 └── src/
     ├── models/
-    │   └── rendez_vous.rs                       # NOUVEAU — structs FromRow, DTO, COLONNES, evt_* SSE, peer-id
+    │   └── rendez_vous.rs                       # NOUVEAU, structs FromRow, DTO, COLONNES, evt_* SSE, peer-id
     ├── handlers/
-    │   └── rendez_vous.rs                       # NOUVEAU — proposer/lister/detail/salle/accepter/refuser/contre/annuler
+    │   └── rendez_vous.rs                       # NOUVEAU, proposer/lister/detail/salle/accepter/refuser/contre/annuler
     ├── models/mod.rs                            # + pub mod rendez_vous;
     ├── handlers/mod.rs                          # + pub mod rendez_vous;
     └── routes.rs                                # + scope /rendez-vous
@@ -74,16 +74,16 @@ uafricas_frontend/
 ├── nuxt.config.ts                              # + runtimeConfig.public.peerjs* / iceServers
 ├── app/
 │   ├── composables/
-│   │   └── useRendezVous.ts                     # NOUVEAU — $fetch + useState + gererEvenement
+│   │   └── useRendezVous.ts                     # NOUVEAU, $fetch + useState + gererEvenement
 │   ├── components/
 │   │   └── social/
-│   │       ├── RendezVousProposerModal.vue      # NOUVEAU — formulaire (sujet/desc/date/heure/durée)
-│   │       ├── RendezVousListe.vue              # NOUVEAU — vue gestion (4 filtres) + carte
-│   │       ├── RendezVousCarte.vue              # NOUVEAU — carte RDV (MembreLight + actions)
-│   │       └── RendezVousSalle.vue              # NOUVEAU — salle visio P2P (PeerJS)
-│   ├── components/social/MessagerieFlottante.vue # MODIF — 3e onglet « Rendez-vous »
-│   ├── plugins/messagerie.client.ts             # MODIF — dispatch evt rdv_* → useRendezVous + refresh cloche
-│   └── pages/profil/[id].vue                    # MODIF — bouton « Proposer un rendez-vous » (si etat==='amis')
+│   │       ├── RendezVousProposerModal.vue      # NOUVEAU, formulaire (sujet/desc/date/heure/durée)
+│   │       ├── RendezVousListe.vue              # NOUVEAU, vue gestion (4 filtres) + carte
+│   │       ├── RendezVousCarte.vue              # NOUVEAU, carte RDV (MembreLight + actions)
+│   │       └── RendezVousSalle.vue              # NOUVEAU, salle visio P2P (PeerJS)
+│   ├── components/social/MessagerieFlottante.vue # MODIF, 3e onglet « Rendez-vous »
+│   ├── plugins/messagerie.client.ts             # MODIF, dispatch evt rdv_* → useRendezVous + refresh cloche
+│   └── pages/profil/[id].vue                    # MODIF, bouton « Proposer un rendez-vous » (si etat==='amis')
 ```
 
 **Structure Decision**: Application web monorepo (Option 2). Le backend suit le pattern « 1 handler + 1 model par domaine » (calqué sur `amitie.rs` / `messagerie.rs`). Le frontend suit « 1 composable par domaine » + composants `social/` (PascalCase, préfixe auto `Social…`). La vue de gestion est hébergée dans le panneau de messagerie flottant existant (clarification Q3), pas une page dédiée.

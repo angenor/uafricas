@@ -5,7 +5,7 @@
 
 ## Modifications du schema existant
 
-### Table `arbre_genealogique.personnes` — colonnes ajoutées
+### Table `arbre_genealogique.personnes`, colonnes ajoutées
 
 | Colonne | Type | Description |
 |---------|------|-------------|
@@ -41,18 +41,18 @@ Stocke les correspondances potentielles détectées par l'algorithme de matching
 | `deleted_at` | TIMESTAMPTZ | | Soft delete |
 
 **Contraintes** :
-- UNIQUE sur `(LEAST(rattachement_a_id, rattachement_b_id), GREATEST(rattachement_a_id, rattachement_b_id))` — une seule suggestion par paire, quel que soit l'ordre
-- CHECK `rattachement_a_id != rattachement_b_id` — non-réflexif
+- UNIQUE sur `(LEAST(rattachement_a_id, rattachement_b_id), GREATEST(rattachement_a_id, rattachement_b_id))`, une seule suggestion par paire, quel que soit l'ordre
+- CHECK `rattachement_a_id != rattachement_b_id`, non-réflexif
 - Les rattachements doivent appartenir à des arbres différents (vérifié côté applicatif)
 
 **Cycle de vie** :
 ```
 en_attente → confirmee_a (A confirme) → confirmee (B confirme aussi)
 en_attente → confirmee_b (B confirme) → confirmee (A confirme aussi)
-en_attente → rejetee_a (A rejette) — définitif
-en_attente → rejetee_b (B rejette) — définitif
-confirmee_a → rejetee_b (B rejette après que A a confirmé) — annulée
-confirmee_b → rejetee_a (A rejette après que B a confirmé) — annulée
+en_attente → rejetee_a (A rejette) : définitif
+en_attente → rejetee_b (B rejette) : définitif
+confirmee_a → rejetee_b (B rejette après que A a confirmé), annulée
+confirmee_b → rejetee_a (A rejette après que B a confirmé), annulée
 ```
 
 ### `arbre_genealogique.demandes_contact`
@@ -77,7 +77,7 @@ Stocke les demandes de contact entre utilisateurs après confirmation mutuelle.
 SuggestionCorrespondanceResponse
 ├── id: UUID
 ├── ma_personne: PersonneResumeResponse (nom, prenoms, naissance, lieu)
-├── personne_matchee: PersonneResumeResponse (nom, prenoms, naissance, lieu — de l'autre arbre)
+├── personne_matchee: PersonneResumeResponse (nom, prenoms, naissance, lieu, de l'autre arbre)
 ├── score: f32 (0-100%)
 ├── details_score: DetailsScoreResponse
 │   ├── nom: f32

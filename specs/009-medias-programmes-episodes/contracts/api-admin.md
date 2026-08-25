@@ -1,7 +1,7 @@
-# Contrat — API back-office (administrateurs)
+# Contrat : API back-office (administrateurs)
 
 **Authentification** : JWT admin (`AdminUtilisateur`). **Autorisation** :
-`verifier_permission!(admin, "media", "voir" | "modifier" | "supprimer")` — permissions seedées par
+`verifier_permission!(admin, "media", "voir" | "modifier" | "supprimer")`, permissions seedées par
 09j §8. **Audit** : `audit::log_action` sur chaque mutation, avec état avant/après (FR-045, principe
 VII).
 
@@ -9,7 +9,7 @@ Préfixe : `/api/admin/medias`.
 
 ---
 
-## 1. File de modération des épisodes — le cœur de FR-040 à FR-043
+## 1. File de modération des épisodes : le cœur de FR-040 à FR-043
 
 ### `GET /api/admin/medias/episodes`
 
@@ -43,7 +43,7 @@ Le tri `echeance` remonte d'abord les épisodes attendus à l'antenne (`prochain
 proche), puis les épisodes sans échéance par ancienneté. C'est ce qui empêche qu'un épisode dû samedi
 soit traité au même rang qu'un contenu sans date (FR-043) et ce qui rend SC-007 atteignable.
 
-`prochaine_echeance` se calcule à la lecture depuis les créneaux de l'émission — aucune tâche de fond.
+`prochaine_echeance` se calcule à la lecture depuis les créneaux de l'émission, aucune tâche de fond.
 
 ### `PATCH /api/admin/medias/episodes/{id}/valider`
 
@@ -59,7 +59,7 @@ rotation à l'occurrence suivante. Notification à l'auteur (FR-041).
 { "motif": "Qualité audio insuffisante sur les 4 premières minutes." }
 ```
 
-`400` si le motif fait moins de 10 caractères — même garde applicative que le rejet d'une proposition
+`400` si le motif fait moins de 10 caractères, même garde applicative que le rejet d'une proposition
 (09l). Le CHECK `ck_episode_*_rejet_motive` interdit un rejet vide en base. Notification à l'auteur
 avec le motif (FR-041, SC-008).
 
@@ -84,15 +84,15 @@ Remplacent `/api/admin/programmes-tele` et `/api/admin/programmes-radio`, suppri
 | `PATCH  /api/admin/medias/emissions/{id}/etat` | Changement d'état |
 | `DELETE /api/admin/medias/emissions/{id}` | `409` si épisodes publiés (FR-010) |
 | `GET    /api/admin/medias/emissions/{id}/episodes` | Épisodes, filtrables par état et date de soumission |
-| `POST   /api/admin/medias/emissions/{id}/episodes` | Création administrative — naît `publie` (l'admin est l'autorité de validation) |
+| `POST   /api/admin/medias/emissions/{id}/episodes` | Création administrative, naît `publie` (l'admin est l'autorité de validation) |
 | `PUT    /api/admin/medias/episodes/{id}` | Modification |
 | `DELETE /api/admin/medias/episodes/{id}` | Suppression douce |
 | `PUT    /api/admin/medias/emissions/{id}/episodes/reordonner` | Réordonnancement atomique |
-| `PATCH  /api/admin/medias/episodes/{id}/vedette-globale` | Remplace `/programmes-tele/{id}/vedette-globale` — bascule et désignation dans **une seule transaction** (R9) |
+| `PATCH  /api/admin/medias/episodes/{id}/vedette-globale` | Remplace `/programmes-tele/{id}/vedette-globale`, bascule et désignation dans **une seule transaction** (R9) |
 | `POST   /api/admin/medias/upload` | Inchangée |
 
 **Asymétrie assumée** : un épisode créé par un administrateur naît `publie`, un épisode créé par un
-co-détenteur naît `en_attente`. C'est la conséquence directe de FR-040 — l'administrateur *est* le
+co-détenteur naît `en_attente`. C'est la conséquence directe de FR-040, l'administrateur *est* le
 validateur, le faire passer par sa propre file n'aurait pas de sens.
 
 ---
@@ -119,7 +119,7 @@ l'enregistrement d'un support publié sans thématique ni couverture**.
 - `type_objet` accepte `emission_tele`, `emission_radio`, `episode_tele`, `episode_radio` ; les
   anciennes valeurs `programme_tele` / `programme_radio` subsistent dans l'enum pour l'historique mais
   ne sont plus produites (data-model.md §3.4).
-- La validation d'une proposition d'**épisode** crée l'épisode directement en `publie` — la décision
+- La validation d'une proposition d'**épisode** crée l'épisode directement en `publie`, la décision
   administrative *est* la validation, l'épisode ne repasse pas par la file de modération. La validation
   d'une proposition d'**émission** crée l'émission puis, comme aujourd'hui, la ligne de propriété de son
   auteur dans la **même transaction**.

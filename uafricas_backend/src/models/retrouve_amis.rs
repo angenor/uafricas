@@ -581,7 +581,7 @@ pub struct AvisPublicListeRow {
     pub pays_nom: Option<String>,
 }
 
-// ── DTOs de reponse — Publics ────────────────────────────────
+// ── DTOs de reponse : Publics ────────────────────────────────
 
 /// Detail complet d'un avis public actif
 #[derive(Debug, Serialize)]
@@ -696,7 +696,7 @@ pub struct PartageResponse {
     pub compteur_partages: i32,
 }
 
-// ── DTOs de requete — Publics ────────────────────────────────
+// ── DTOs de requete : Publics ────────────────────────────────
 
 /// Corps de la requete pour publier/depublier un avis
 #[derive(Debug, Deserialize)]

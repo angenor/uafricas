@@ -200,7 +200,7 @@
                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"
                 alt="Google"
               />
-              <span>Google — Bientot disponible</span>
+              <span>Google : Bientot disponible</span>
             </div>
           </button>
 

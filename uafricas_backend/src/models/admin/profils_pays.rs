@@ -443,7 +443,7 @@ pub struct VerificationSiteBody {
     pub verifie: bool,
 }
 
-/// Body de modération d'un avis de site (US5 — masquage admin).
+/// Body de modération d'un avis de site (US5, masquage admin).
 #[derive(Debug, Deserialize)]
 pub struct MasquerAvisBody {
     pub masque: bool,
@@ -602,7 +602,7 @@ pub struct RetirerContributionRequest {
 }
 
 /// Contribution concurrente (meme fiche_pays, meme type_objet, meme target_id,
-/// etat=en_attente) — avertit l'admin qu'elles seront marquees 'obsolete' a
+/// etat=en_attente) : avertit l'admin qu'elles seront marquees 'obsolete' a
 /// l'approbation.
 #[derive(Debug, Serialize, FromRow)]
 pub struct AdminContributionConcurrente {
@@ -624,7 +624,7 @@ pub struct AdminContributionPieceJointe {
     pub url_signee: String,
 }
 
-/// Reponse enrichie GET /api/admin/profils-pays/contributions/{id} — inclut
+/// Reponse enrichie GET /api/admin/profils-pays/contributions/{id}, inclut
 /// diff structure JSONB + pieces jointes + contributions concurrentes (T040).
 #[derive(Debug, Serialize)]
 pub struct AdminContributionDetailResponse {

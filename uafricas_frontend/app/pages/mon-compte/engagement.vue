@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
- * Espace « Mon engagement » — page dédiée (US1).
+ * Espace « Mon engagement » : page dédiée (US1).
  *
  * L'onglet « Mes points » de `/mon-compte/profil` reste la porte d'entrée et
  * pointe ici : profil → onglet → page, soit 2 clics (SC-003). Une page dédiée
  * est partageable, retrouvable dans l'historique du navigateur et peut porter
  * ses filtres, ce qu'un onglet piloté par un `ref` ne permet pas.
  *
- * Tailwind v4 pur — aucune classe daisyUI (Principe VI).
+ * Tailwind v4 pur : aucune classe daisyUI (Principe VI).
  */
 import { computed, ref, onMounted } from 'vue'
 import {
@@ -19,7 +19,7 @@ import {
 
 definePageMeta({ middleware: 'auth' })
 
-useHead({ title: 'Mon engagement — UAfricas' })
+useHead({ title: 'Mon engagement | UAfricas' })
 
 const { obtenirMonCompte, obtenirMesCategories, obtenirActionsRecompensees } = useEngagement()
 
@@ -156,7 +156,7 @@ const baremeParCategorie = computed(() => {
         <!--
           Cagnotte et cadeaux reçus (feature 008). Placés ici plutôt que sur une
           page dédiée : depuis le profil, « Mon engagement » puis le défilement
-          suffisent — soit deux clics, ce qu'exige SC-010.
+          suffisent : soit deux clics, ce qu'exige SC-010.
           Les deux blocs s'affichent aussi quand le membre n'a aucun point : on
           peut recevoir un cadeau en soutien financier alors que la règle
           `cadeau_recu` est désactivée, donc avoir une cagnotte sans un point.

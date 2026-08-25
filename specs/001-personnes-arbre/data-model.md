@@ -21,7 +21,7 @@ arbre_genealogique.personnes   arbre_genealogique.liens_familiaux
   (entité partageable)           (entre 2 rattachements du même arbre)
 ```
 
-## Schema SQL — `23_arbre_genealogique.sql`
+## Schema SQL : `23_arbre_genealogique.sql`
 
 ```sql
 -- =============================================================
@@ -142,7 +142,7 @@ CREATE INDEX idx_liens_source ON arbre_genealogique.liens_familiaux(rattachement
 CREATE INDEX idx_liens_cible ON arbre_genealogique.liens_familiaux(rattachement_cible_id) WHERE deleted_at IS NULL;
 ```
 
-## Structs Rust — `src/models/arbre_genealogique.rs`
+## Structs Rust : `src/models/arbre_genealogique.rs`
 
 ```rust
 use chrono::{DateTime, Utc};
@@ -338,7 +338,7 @@ pub struct PersonneQueryParams {
 }
 ```
 
-## Interfaces TypeScript — `app/mocks/arbre-genealogique.ts`
+## Interfaces TypeScript : `app/mocks/arbre-genealogique.ts`
 
 ```typescript
 // ─── Types ──────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Handlers — Notifications et doublons
+// Handlers : Notifications et doublons
 // ════════════════════════════════════════════════════════════════════════════
 
 use actix_web::{web, HttpRequest, HttpResponse};

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Back-office — catalogue des cadeaux virtuels et paramètres de monétisation.
+ * Back-office : catalogue des cadeaux virtuels et paramètres de monétisation.
  *
  * daisyUI est **autorisé ici** : le Principe VI le réserve à l'administration,
  * les écrans membres restant en Tailwind v4 pur.
@@ -14,7 +14,7 @@ import {
 import { formaterMontant } from '~/composables/useCadeaux'
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
-useHead({ title: 'Cadeaux virtuels — Administration' })
+useHead({ title: 'Cadeaux virtuels : Administration' })
 
 const {
   listerCadeaux, creerCadeau, modifierCadeau, supprimerCadeau,
@@ -83,7 +83,7 @@ const ajouter = async () => {
     }
     formulaire.value = false
     await rafraichir()
-    notifier('Cadeau créé — il est immédiatement visible côté membre.')
+    notifier('Cadeau créé : il est immédiatement visible côté membre.')
   } catch (e) { signaler(e) }
 }
 
@@ -99,7 +99,7 @@ const enregistrer = async (c: AdminCadeau) => {
       ordre: c.ordre,
       actif: c.actif,
     })
-    notifier('Cadeau enregistré — les envois passés conservent leurs valeurs figées.')
+    notifier('Cadeau enregistré : les envois passés conservent leurs valeurs figées.')
   } catch (e) { signaler(e) }
 }
 
@@ -120,7 +120,7 @@ const enregistrerParametres = async () => {
       devise: parametres.value.devise,
       paiement_reel_actif: parametres.value.paiement_reel_actif,
     })
-    notifier('Paramètres enregistrés — la modification ne vaut que pour les envois à venir.')
+    notifier('Paramètres enregistrés : la modification ne vaut que pour les envois à venir.')
   } catch (e) { signaler(e) }
 }
 </script>
@@ -165,7 +165,7 @@ const enregistrerParametres = async () => {
             Modifier le <strong>prix</strong> ou les <strong>points</strong> d'un cadeau
             n'affecte <strong>aucun envoi passé</strong> : chaque transaction porte ses propres
             valeurs, figées au moment de l'envoi. Un cadeau déjà offert ne peut plus être
-            supprimé — seulement désactivé.
+            supprimé : seulement désactivé.
           </span>
         </div>
 
@@ -267,7 +267,7 @@ const enregistrerParametres = async () => {
             <strong>simulé</strong> : les membres obtiennent gratuitement points et cagnottes.
             C'est un risque accepté le temps de la phase de test, et la
             <NuxtLink to="/admin/engagement/transactions" class="link">purge de fin de phase</NuxtLink>
-            en est la contrepartie — elle n'est d'ailleurs accessible qu'une fois ce drapeau activé.
+            en est la contrepartie : elle n'est d'ailleurs accessible qu'une fois ce drapeau activé.
           </span>
         </div>
 

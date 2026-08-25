@@ -1,4 +1,4 @@
-# Implementation Plan: Système d'engagement / gamification AFRICANS — Phase 1
+# Implementation Plan: Système d'engagement / gamification AFRICANS, Phase 1
 
 **Branch**: `001-engagement-gamification` | **Date**: 2026-07-06 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/001-engagement-gamification/spec.md`
@@ -13,7 +13,7 @@ Nouveau schéma bounded-context **`engagement`** (justifié : domaine transversa
 
 **Language/Version**: Rust Edition 2024 (backend), TypeScript / Nuxt 4 (Vue 3 SSR) (frontend)
 **Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL), uuid, chrono, serde (backend) ; Pinia, Tailwind CSS v4 (pur, public) + daisyUI v5 (admin), FontAwesome (frontend). **Aucune dépendance nouvelle.**
-**Storage**: PostgreSQL 16 — nouveau schéma `engagement` ; migration idempotente numérotée sous `uafricas_backend/doc/bd/schemas/`
+**Storage**: PostgreSQL 16 : nouveau schéma `engagement` ; migration idempotente numérotée sous `uafricas_backend/doc/bd/schemas/`
 **Testing**: Aucun harnais configuré (constitution : pas de testing/CI). Vérification par `cargo check` + diagnostics LSP + quickstart manuel.
 **Target Platform**: Serveur Linux (backend Actix sur :8080/8082), navigateur (frontend Nuxt SSR :3000)
 **Project Type**: Web application (monorepo frontend + backend)
@@ -44,11 +44,11 @@ Nouveau schéma bounded-context **`engagement`** (justifié : domaine transversa
 ```text
 specs/001-engagement-gamification/
 ├── plan.md              # Ce fichier
-├── research.md          # Phase 0 — décisions techniques
-├── data-model.md        # Phase 1 — schéma engagement + entités
-├── quickstart.md        # Phase 1 — scénario de vérification manuel
+├── research.md          # Phase 0 : décisions techniques
+├── data-model.md        # Phase 1 : schéma engagement + entités
+├── quickstart.md        # Phase 1 : scénario de vérification manuel
 ├── contracts/
-│   └── engagement-api.md # Phase 1 — contrats REST (public + admin)
+│   └── engagement-api.md # Phase 1, contrats REST (public + admin)
 └── checklists/
     └── requirements.md   # Checklist qualité de la spec (déjà créée)
 ```
@@ -58,42 +58,42 @@ specs/001-engagement-gamification/
 ```text
 uafricas_backend/
 ├── doc/bd/schemas/
-│   └── NN_engagement.sql              # NOUVEAU — schéma + tables + seed barème (prochain n° libre, ≈33)
+│   └── NN_engagement.sql              # NOUVEAU, schéma + tables + seed barème (prochain n° libre, ≈33)
 ├── src/
 │   ├── services/
 │   │   ├── mod.rs                     # + pub mod engagement;
-│   │   └── engagement.rs             # NOUVEAU — moteur non-bloquant (attribuer / retirer / evaluer_popularite / recalculer_niveau)
+│   │   └── engagement.rs             # NOUVEAU, moteur non-bloquant (attribuer / retirer / evaluer_popularite / recalculer_niveau)
 │   ├── models/
-│   │   ├── engagement.rs             # NOUVEAU — Compte, Mouvement, Regle, Palier, Niveau (public DTO)
+│   │   ├── engagement.rs             # NOUVEAU, Compte, Mouvement, Regle, Palier, Niveau (public DTO)
 │   │   └── admin/
-│   │       └── engagement.rs         # NOUVEAU — DTO admin (règles/paliers/niveaux/journal, Create/Modifier)
+│   │       └── engagement.rs         # NOUVEAU, DTO admin (règles/paliers/niveaux/journal, Create/Modifier)
 │   ├── handlers/
-│   │   ├── engagement.rs             # NOUVEAU — endpoints publics (mon-compte, mon-journal, niveau/{id})
+│   │   ├── engagement.rs             # NOUVEAU, endpoints publics (mon-compte, mon-journal, niveau/{id})
 │   │   └── admin/
-│   │       └── engagement.rs         # NOUVEAU — endpoints admin (règles, paliers, niveaux, journal, ajustement)
+│   │       └── engagement.rs         # NOUVEAU, endpoints admin (règles, paliers, niveaux, journal, ajustement)
 │   └── routes.rs                     # + routes /api/engagement et /api/admin/engagement
 │                                     # + points d'appel du service dans les handlers de modération/réaction existants (voir data-model.md §Intégration)
 
 uafricas_frontend/
 ├── app/
 │   ├── composables/
-│   │   ├── useEngagement.ts          # NOUVEAU — public (mon compte, mon journal, badge d'un membre)
-│   │   └── useAdminEngagement.ts     # NOUVEAU — admin (CRUD barème + journal global)
+│   │   ├── useEngagement.ts          # NOUVEAU, public (mon compte, mon journal, badge d'un membre)
+│   │   └── useAdminEngagement.ts     # NOUVEAU, admin (CRUD barème + journal global)
 │   ├── components/
 │   │   ├── engagement/
-│   │   │   ├── MesPointsPanel.vue     # NOUVEAU — Tailwind pur (solde/statut/réputation/historique)
-│   │   │   └── BadgeStatut.vue        # NOUVEAU — Tailwind pur (badge réutilisable profil + sous contenus)
+│   │   │   ├── MesPointsPanel.vue     # NOUVEAU, Tailwind pur (solde/statut/réputation/historique)
+│   │   │   └── BadgeStatut.vue        # NOUVEAU, Tailwind pur (badge réutilisable profil + sous contenus)
 │   │   └── admin/engagement/
-│   │       ├── ReglesBaremeTable.vue  # NOUVEAU — daisyUI
-│   │       └── JournalPointsTable.vue # NOUVEAU — daisyUI
+│   │       ├── ReglesBaremeTable.vue  # NOUVEAU, daisyUI
+│   │       └── JournalPointsTable.vue # NOUVEAU, daisyUI
 │   └── pages/
 │       ├── mon-compte/profil.vue      # + onglet « Mes points » (dropdown d'onglets existant)
 │       └── admin/engagement/
-│           ├── regles.vue             # NOUVEAU — daisyUI
-│           └── journal.vue            # NOUVEAU — daisyUI
+│           ├── regles.vue             # NOUVEAU, daisyUI
+│           └── journal.vue            # NOUVEAU, daisyUI
 ```
 
-**Structure Decision**: Application web monorepo (Option 2). On suit strictement les conventions existantes : un fichier handler/model par domaine, séparation public / `admin/`, service transverse dans `src/services/` calqué sur `audit.rs`, composables `useEngagement` (public) / `useAdminEngagement` (admin), badge et panneau publics en Tailwind pur, écrans admin en daisyUI. Le point d'intégration le plus étendu (appels du service depuis les handlers de modération et de réaction existants) est catalogué dans `data-model.md §Intégration` — il ne crée pas de nouvelle abstraction, seulement des appels non-bloquants ajoutés aux mutations déjà en place.
+**Structure Decision**: Application web monorepo (Option 2). On suit strictement les conventions existantes : un fichier handler/model par domaine, séparation public / `admin/`, service transverse dans `src/services/` calqué sur `audit.rs`, composables `useEngagement` (public) / `useAdminEngagement` (admin), badge et panneau publics en Tailwind pur, écrans admin en daisyUI. Le point d'intégration le plus étendu (appels du service depuis les handlers de modération et de réaction existants) est catalogué dans `data-model.md §Intégration` : il ne crée pas de nouvelle abstraction, seulement des appels non-bloquants ajoutés aux mutations déjà en place.
 
 ## Complexity Tracking
 

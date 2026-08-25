@@ -2,7 +2,7 @@
 import type { CentreCulturelAPI } from '~/composables/useCentresCulturels'
 
 /**
- * Afroculture — premier écran porté sur le gabarit de la refonte.
+ * Afroculture : premier écran porté sur le gabarit de la refonte.
  *
  * La logique de données est celle d'avant, inchangée : même endpoint, même
  * mapping d'URL d'image, même répartition international / local. Seule la
@@ -23,7 +23,7 @@ interface ApiResponse<T> {
 }
 
 useHead({
-  title: 'Afroculture — centres culturels africains et afro-descendants · AfricanS',
+  title: 'Afroculture : centres culturels africains et afro-descendants · AfricanS',
   meta: [
     {
       name: 'description',

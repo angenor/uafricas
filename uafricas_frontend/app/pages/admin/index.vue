@@ -205,7 +205,7 @@ const modulesOverview = computed(() => {
                     :style="{ height: `${Math.max((point.total / maxInscription) * 100, point.total > 0 ? 5 : 2)}%` }"
                   />
                   <div class="absolute -top-6 bg-base-300 text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                    {{ point.total }} — {{ formatJour(point.jour) }}
+                    {{ point.total }} - {{ formatJour(point.jour) }}
                   </div>
                 </div>
               </div>

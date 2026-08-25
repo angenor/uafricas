@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * Saisie de l'équipe éditoriale d'un support ou d'un programme — feature 010.
+ * Saisie de l'équipe éditoriale d'un support ou d'un programme, feature 010.
  *
- * **Un seul composant, monté côté membre ET côté back-office** — précédent
+ * **Un seul composant, monté côté membre ET côté back-office**, précédent
  * assumé de `GestionEpisodes.vue` : les règles sont les mêmes des deux côtés,
  * seule l'autorité diffère, et la prop `base` choisit le préfixe d'URL. Écrit
  * en **Tailwind v4 pur** (Principe VI) puisqu'il est monté sur des pages
@@ -13,7 +13,7 @@
  * donc ni identifiant de ligne à suivre, ni verbe de suppression à appeler.
  *
  * Deux règles qui ne se voient pas mais se paient cher si on les oublie :
- *  • la fonction est un **texte libre** — les suggestions proposent, la saisie
+ *  • la fonction est un **texte libre**, les suggestions proposent, la saisie
  *    décide (FR-015) ;
  *  • le contact **n'est jamais pré-rempli depuis le compte rattaché** : un
  *    rattachement ne doit pas transformer l'adresse d'un compte en donnée
@@ -31,7 +31,7 @@ const props = withDefaults(defineProps<{
   typePorteur: TypePorteurEquipe
   porteurId: string
   base?: BaseEquipe
-  /** Titre du bloc — le back-office l'intègre parfois à sa propre section. */
+  /** Titre du bloc : le back-office l'intègre parfois à sa propre section. */
   titre?: string
   /** Le rendu s'adapte au fond de la page qui l'accueille. */
   sombre?: boolean
@@ -73,7 +73,7 @@ onMounted(async () => {
 // La source surveillée est une **chaîne**, pas un tableau littéral : un getter
 // qui construit un nouveau tableau à chaque évaluation n'est jamais égal au
 // précédent, si bien que le watcher se déclenchait à chaque invalidation
-// réactive — donc à chaque frappe — et rechargeait par-dessus la saisie en
+// réactive : donc à chaque frappe : et rechargeait par-dessus la saisie en
 // cours. Le formulaire se vidait sous les doigts.
 watch(() => `${props.typePorteur}:${props.porteurId}`, charger)
 
@@ -95,7 +95,7 @@ const deplacer = (index: number, sens: -1 | 1) => {
   confirmation.value = null
 }
 
-/** Les deux champs obligatoires (FR-012) — le serveur les revalide. */
+/** Les deux champs obligatoires (FR-012), le serveur les revalide. */
 const lignesIncompletes = computed(() =>
   membres.value.some(m => !m.nom.trim() || !m.fonction.trim()),
 )
@@ -118,7 +118,7 @@ const enregistrer = async () => {
   // nouveauté disponible dès la saisie suivante, sans rechargement de page.
   fonctions.value = await listerFonctions()
   confirmation.value = resultat.length
-    ? `Équipe enregistrée — ${resultat.length} personne${resultat.length > 1 ? 's' : ''}.`
+    ? `Équipe enregistrée, ${resultat.length} personne${resultat.length > 1 ? 's' : ''}.`
     : 'Équipe vidée.'
   emit('maj', resultat.length)
 }
@@ -153,7 +153,7 @@ const rattacher = (index: number, compte: MembreAPI) => {
   if (!ligne) return
   ligne.utilisateur_id = compte.id
   ligne.compte_libelle = [compte.prenom, compte.nom].filter(Boolean).join(' ')
-  // Le nom et le prénom sont PRÉ-REMPLIS s'ils sont vides — c'est du confort.
+  // Le nom et le prénom sont PRÉ-REMPLIS s'ils sont vides : c'est du confort.
   // Le CONTACT, jamais : l'adresse du compte n'est pas une donnée publique (D2).
   if (!ligne.nom.trim()) ligne.nom = compte.nom
   if (!ligne.prenom.trim()) ligne.prenom = compte.prenom
@@ -299,7 +299,7 @@ const classeChamp = computed(() =>
         </div>
 
         <!-- Rattachement facultatif à un compte : il rend le nom cliquable vers
-             le profil public, et RIEN d'autre — aucun droit n'en découle. -->
+             le profil public, et RIEN d'autre, aucun droit n'en découle. -->
         <div class="mt-2 border-t pt-2" :class="sombre ? 'border-white/10' : 'border-gray-200'">
           <div class="flex flex-wrap items-center gap-2 text-xs">
             <span :class="sombre ? 'text-gray-400' : 'text-gray-500'">Compte UAfricas :</span>

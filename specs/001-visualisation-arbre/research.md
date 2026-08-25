@@ -23,14 +23,14 @@
 **Décision** : Créer un nouvel endpoint `GET /api/arbre/arbre-complet` retournant toutes les personnes et tous les liens de l'arbre de l'utilisateur en un seul appel.
 
 **Raisonnement** :
-- L'endpoint `lister_personnes` existant est paginé et ne retourne pas les liens familiaux — inutilisable pour construire un graphe.
-- L'endpoint `obtenir_personne/{id}` retourne les liens d'une seule personne (un niveau) — nécessiterait N appels pour N personnes (problème N+1).
+- L'endpoint `lister_personnes` existant est paginé et ne retourne pas les liens familiaux, inutilisable pour construire un graphe.
+- L'endpoint `obtenir_personne/{id}` retourne les liens d'une seule personne (un niveau), nécessiterait N appels pour N personnes (problème N+1).
 - Un endpoint dédié fait un seul aller-retour réseau, simplifie le frontend et permet une construction de graphe directe côté client.
 - La volumétrie typique (5-200 personnes) ne justifie pas de pagination pour cet endpoint.
 
 **Alternatives évaluées** :
 - **Utiliser les endpoints existants** : Multiples appels API, complexité client, latence cumulée. Rejeté.
-- **Endpoint avec récursivité SQL** : Plus complexe côté backend pour un gain minimal — le chargement complet est suffisant pour la taille attendue des arbres.
+- **Endpoint avec récursivité SQL** : Plus complexe côté backend pour un gain minimal, le chargement complet est suffisant pour la taille attendue des arbres.
 
 ## Décision 3 : Stratégie SSR
 
@@ -58,7 +58,7 @@
 
 **Alternatives évaluées** :
 - **Tout afficher** : Problèmes de performance et lisibilité au-delà de 50 nœuds, surtout sur mobile.
-- **Chargement serveur progressif** : Complexité backend (endpoint par profondeur) pour un gain minimal — les données complètes font < 50 kB pour 200 personnes.
+- **Chargement serveur progressif** : Complexité backend (endpoint par profondeur) pour un gain minimal, les données complètes font < 50 kB pour 200 personnes.
 
 ## Décision 5 : Panneau contextuel (mini-fiche)
 
@@ -79,4 +79,4 @@
 | `@vue-flow/minimap` | ^1.5 | ~3 kB | Mini-carte de navigation (optionnel) |
 | `relatives-tree` | ^1.1 | ~3 kB | Calcul layout arbre généalogique |
 
-**Total** : ~55 kB gzip — acceptable pour une page feature.
+**Total** : ~55 kB gzip : acceptable pour une page feature.
