@@ -55,7 +55,7 @@
 withDefaults(defineProps<{
   libelle: string
   modelValue?: string
-  type?: 'text' | 'email' | 'password' | 'select' | 'textarea'
+  type?: 'text' | 'email' | 'password' | 'tel' | 'url' | 'select' | 'textarea'
   placeholder?: string
   aide?: string
   /** Icône posée en tête du champ (types simples uniquement). */
