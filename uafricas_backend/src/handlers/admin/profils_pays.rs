@@ -68,9 +68,8 @@ async fn verifier_fiche_existe(pool: &PgPool, fiche_id: Uuid) -> Result<(), ApiE
 pub async fn lister_fiches_pays(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    params: web::Query<AdminFichePayQueryParams>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    params: web::Query<AdminFichePayQueryParams>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
 
     let pagination = PaginationParams {
         page: params.page,
@@ -151,9 +150,8 @@ pub async fn lister_fiches_pays(
 pub async fn obtenir_fiche_pays(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    path: web::Path<Uuid>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let id = path.into_inner();
 
     let joins = "JOIN shared.pays p ON fp.pays_id = p.id
@@ -231,9 +229,8 @@ pub async fn obtenir_fiche_pays(
 pub async fn creer_fiche_pays(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    body: web::Json<CreerFichePayRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<CreerFichePayRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
 
     // Verifier que le pays existe
     let pays_existe: bool =
@@ -264,9 +261,13 @@ pub async fn creer_fiche_pays(
          (id, pays_id, slogan, superficie_km2, population, biographie, contexte,
           contexte_historique, image_couverture_url, image_drapeau_url, image_embleme_url,
           image_devise_url, hymne_national, langue_officielle, langues_populaires,
-          monnaie, fuseau_horaire, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)",
-    )
+          monnaie, fuseau_horaire,
+          drapeau_description, embleme_description, hymne_description,
+          fleur_nationale, fleur_description, animal_national, animal_description,
+          oiseau_national, oiseau_description,
+          cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+                 $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)")
     .bind(id)
     .bind(body.pays_id)
     .bind(body.slogan.as_deref().map(|s| s.trim()))
@@ -284,6 +285,15 @@ pub async fn creer_fiche_pays(
     .bind(body.langues_populaires.as_deref().map(|s| s.trim()))
     .bind(body.monnaie.as_deref().map(|s| s.trim()))
     .bind(body.fuseau_horaire.as_deref().map(|s| s.trim()))
+    .bind(body.drapeau_description.as_deref().map(|s| s.trim()))
+    .bind(body.embleme_description.as_deref().map(|s| s.trim()))
+    .bind(body.hymne_description.as_deref().map(|s| s.trim()))
+    .bind(body.fleur_nationale.as_deref().map(|s| s.trim()))
+    .bind(body.fleur_description.as_deref().map(|s| s.trim()))
+    .bind(body.animal_national.as_deref().map(|s| s.trim()))
+    .bind(body.animal_description.as_deref().map(|s| s.trim()))
+    .bind(body.oiseau_national.as_deref().map(|s| s.trim()))
+    .bind(body.oiseau_description.as_deref().map(|s| s.trim()))
     .bind(admin.id)
     .execute(pool.get_ref())
     .await?;
@@ -307,9 +317,8 @@ pub async fn modifier_fiche_pays(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<ModifierFichePayRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<ModifierFichePayRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let id = path.into_inner();
 
     verifier_fiche_existe(pool.get_ref(), id).await?;
@@ -341,6 +350,15 @@ pub async fn modifier_fiche_pays(
     champ_str!(body.langues_populaires, "langues_populaires");
     champ_str!(body.monnaie, "monnaie");
     champ_str!(body.fuseau_horaire, "fuseau_horaire");
+    champ_str!(body.drapeau_description, "drapeau_description");
+    champ_str!(body.embleme_description, "embleme_description");
+    champ_str!(body.hymne_description, "hymne_description");
+    champ_str!(body.fleur_nationale, "fleur_nationale");
+    champ_str!(body.fleur_description, "fleur_description");
+    champ_str!(body.animal_national, "animal_national");
+    champ_str!(body.animal_description, "animal_description");
+    champ_str!(body.oiseau_national, "oiseau_national");
+    champ_str!(body.oiseau_description, "oiseau_description");
 
     if let Some(v) = body.superficie_km2 {
         sets.push(format!("superficie_km2 = {}", v));
@@ -380,9 +398,8 @@ pub async fn modifier_fiche_pays(
 pub async fn supprimer_fiche_pays(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "supprimer");
+    path: web::Path<Uuid>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let id = path.into_inner();
 
     let result = sqlx::query("DELETE FROM country_profile.fiche_pays WHERE id = $1")
@@ -411,9 +428,8 @@ pub async fn debloquer_fiche_pays(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    req: HttpRequest,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    req: HttpRequest) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let id = path.into_inner();
 
     // État courant (pour l'audit + 404 si inexistante).
@@ -472,9 +488,8 @@ pub async fn debloquer_fiche_pays(
 pub async fn lister_regions(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    path: web::Path<Uuid>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
 
     let items = sqlx::query_as::<_, AdminRegionResponse>(
@@ -497,9 +512,8 @@ pub async fn creer_region(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<CreerRegionRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<CreerRegionRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
     verifier_fiche_existe(pool.get_ref(), fiche_id).await?;
 
@@ -538,9 +552,8 @@ pub async fn modifier_region(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
-    body: web::Json<ModifierRegionRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<ModifierRegionRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, region_id) = path.into_inner();
 
     let mut sets = Vec::new();
@@ -599,9 +612,8 @@ pub async fn modifier_region(
 pub async fn supprimer_region(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "supprimer");
+    path: web::Path<(Uuid, Uuid)>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, region_id) = path.into_inner();
 
     let result =
@@ -632,9 +644,8 @@ pub async fn supprimer_region(
 pub async fn lister_groupes_ethniques(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    path: web::Path<Uuid>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
 
     let items = sqlx::query_as::<_, AdminGroupeEthniqueResponse>(
@@ -662,9 +673,8 @@ pub async fn creer_groupe_ethnique(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<CreerGroupeEthniqueRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<CreerGroupeEthniqueRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
     verifier_fiche_existe(pool.get_ref(), fiche_id).await?;
 
@@ -714,9 +724,8 @@ pub async fn modifier_groupe_ethnique(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
-    body: web::Json<ModifierGroupeEthniqueRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<ModifierGroupeEthniqueRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, ge_id) = path.into_inner();
 
     let mut sets = Vec::new();
@@ -781,9 +790,8 @@ pub async fn modifier_groupe_ethnique(
 pub async fn supprimer_groupe_ethnique(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "supprimer");
+    path: web::Path<(Uuid, Uuid)>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, ge_id) = path.into_inner();
 
     let result = sqlx::query(
@@ -815,9 +823,8 @@ pub async fn supprimer_groupe_ethnique(
 pub async fn lister_alliances(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    path: web::Path<Uuid>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
 
     let items = sqlx::query_as::<_, AdminAllianceResponse>(
@@ -841,9 +848,8 @@ pub async fn creer_alliance(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<CreerAllianceRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<CreerAllianceRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
     verifier_fiche_existe(pool.get_ref(), fiche_id).await?;
 
@@ -886,9 +892,8 @@ pub async fn modifier_alliance(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
-    body: web::Json<ModifierAllianceRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<ModifierAllianceRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, alliance_id) = path.into_inner();
 
     let mut sets = Vec::new();
@@ -945,9 +950,8 @@ pub async fn modifier_alliance(
 pub async fn supprimer_alliance(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "supprimer");
+    path: web::Path<(Uuid, Uuid)>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, alliance_id) = path.into_inner();
 
     let result = sqlx::query(
@@ -980,9 +984,8 @@ pub async fn lister_contes(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    params: web::Query<AdminConteQueryParams>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    params: web::Query<AdminConteQueryParams>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
 
     let mut conditions = vec!["c.fiche_pays_id = $1".to_string()];
@@ -1028,9 +1031,8 @@ pub async fn creer_conte(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<CreerConteRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<CreerConteRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
     verifier_fiche_existe(pool.get_ref(), fiche_id).await?;
 
@@ -1083,9 +1085,8 @@ pub async fn modifier_conte(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
-    body: web::Json<ModifierConteRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<ModifierConteRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, conte_id) = path.into_inner();
 
     if let Some(ref t) = body.type_conte {
@@ -1155,9 +1156,8 @@ pub async fn modifier_conte(
 pub async fn supprimer_conte(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "supprimer");
+    path: web::Path<(Uuid, Uuid)>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, conte_id) = path.into_inner();
 
     let result = sqlx::query(
@@ -1189,9 +1189,8 @@ pub async fn supprimer_conte(
 pub async fn lister_sites_touristiques(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    path: web::Path<Uuid>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
 
     let items = sqlx::query_as::<_, AdminSiteTouristiqueResponse>(
@@ -1222,9 +1221,8 @@ pub async fn creer_site_touristique(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<CreerSiteTouristiqueRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<CreerSiteTouristiqueRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
     verifier_fiche_existe(pool.get_ref(), fiche_id).await?;
 
@@ -1318,9 +1316,8 @@ pub async fn modifier_site_touristique(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
-    body: web::Json<ModifierSiteTouristiqueRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<ModifierSiteTouristiqueRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, site_id) = path.into_inner();
 
     let mut sets = Vec::new();
@@ -1449,9 +1446,8 @@ pub async fn modifier_site_touristique(
 pub async fn supprimer_site_touristique(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "supprimer");
+    path: web::Path<(Uuid, Uuid)>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, site_id) = path.into_inner();
 
     let result = sqlx::query(
@@ -1488,9 +1484,8 @@ pub async fn definir_verification_site(
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
     body: web::Json<VerificationSiteBody>,
-    req: HttpRequest,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    req: HttpRequest) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, site_id) = path.into_inner();
 
     // État courant (pour l'audit + 404 si inexistant/supprimé).
@@ -1550,9 +1545,8 @@ pub async fn masquer_avis_site(
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
     body: web::Json<MasquerAvisBody>,
-    req: HttpRequest,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    req: HttpRequest) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let avis_id = path.into_inner();
 
     let avant: Option<bool> = sqlx::query_scalar(
@@ -1604,9 +1598,8 @@ pub async fn masquer_avis_site(
 pub async fn lister_secteurs(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    path: web::Path<Uuid>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
 
     let items = sqlx::query_as::<_, AdminSecteurResponse>(
@@ -1629,9 +1622,8 @@ pub async fn creer_secteur(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<CreerSecteurRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<CreerSecteurRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
     verifier_fiche_existe(pool.get_ref(), fiche_id).await?;
 
@@ -1671,9 +1663,8 @@ pub async fn modifier_secteur(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
-    body: web::Json<ModifierSecteurRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<ModifierSecteurRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, secteur_id) = path.into_inner();
 
     let mut sets = Vec::new();
@@ -1725,9 +1716,8 @@ pub async fn modifier_secteur(
 pub async fn supprimer_secteur(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "supprimer");
+    path: web::Path<(Uuid, Uuid)>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, secteur_id) = path.into_inner();
 
     let result = sqlx::query(
@@ -1759,9 +1749,8 @@ pub async fn supprimer_secteur(
 pub async fn lister_saisons(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    path: web::Path<Uuid>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
 
     let items = sqlx::query_as::<_, AdminSaisonResponse>(
@@ -1784,9 +1773,8 @@ pub async fn creer_saison(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<CreerSaisonRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<CreerSaisonRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
     verifier_fiche_existe(pool.get_ref(), fiche_id).await?;
 
@@ -1840,9 +1828,8 @@ pub async fn modifier_saison(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
-    body: web::Json<ModifierSaisonRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<ModifierSaisonRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, saison_id) = path.into_inner();
 
     if let Some(m) = body.mois_debut {
@@ -1915,9 +1902,8 @@ pub async fn modifier_saison(
 pub async fn supprimer_saison(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "supprimer");
+    path: web::Path<(Uuid, Uuid)>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, saison_id) = path.into_inner();
 
     let result =
@@ -1948,9 +1934,8 @@ pub async fn supprimer_saison(
 pub async fn lister_liens_interethniques(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    path: web::Path<Uuid>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
 
     let items = sqlx::query_as::<_, AdminLienInterethniqueResponse>(
@@ -1976,9 +1961,8 @@ pub async fn creer_lien_interethnique(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<CreerLienInterethniqueRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<CreerLienInterethniqueRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let fiche_id = path.into_inner();
     verifier_fiche_existe(pool.get_ref(), fiche_id).await?;
 
@@ -2015,9 +1999,8 @@ pub async fn modifier_lien_interethnique(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
-    body: web::Json<ModifierLienInterethniqueRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<ModifierLienInterethniqueRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, lien_id) = path.into_inner();
 
     let mut sets = Vec::new();
@@ -2077,9 +2060,8 @@ pub async fn modifier_lien_interethnique(
 pub async fn supprimer_lien_interethnique(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "supprimer");
+    path: web::Path<(Uuid, Uuid)>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (fiche_id, lien_id) = path.into_inner();
 
     let result = sqlx::query(
@@ -2115,9 +2097,8 @@ pub async fn supprimer_lien_interethnique(
 pub async fn lister_contributions(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    params: web::Query<AdminContributionQueryParams>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    params: web::Query<AdminContributionQueryParams>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
 
     let page = params.page.unwrap_or(1).max(1);
     let par_page = params.par_page.unwrap_or(20).min(100);
@@ -2203,7 +2184,9 @@ pub async fn lister_contributions(
 
     let select_sql = format!(
         "SELECT cf.id, cf.fiche_pays_id, p.nom AS pays_nom,
-                cf.section, cf.type_contribution::TEXT AS type_contribution,
+                cf.section,
+                cf.type_objet_contribution::TEXT AS type_objet_contribution,
+                cf.type_contribution::TEXT AS type_contribution,
                 cf.etat::TEXT AS etat,
                 uc.nom || ' ' || uc.prenom AS contributeur_nom,
                 ut.nom || ' ' || ut.prenom AS traite_par_nom,
@@ -2241,9 +2224,8 @@ pub async fn lister_contributions(
 pub async fn obtenir_contribution(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    path: web::Path<Uuid>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let id = path.into_inner();
 
     // Ligne principale (colonnes legacy + base)
@@ -2393,9 +2375,8 @@ pub async fn moderer_contribution(
     req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<ModererContributionRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<ModererContributionRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let id = path.into_inner();
 
     let etat = body.etat.trim().to_lowercase();
@@ -2613,9 +2594,8 @@ pub async fn retirer_contribution_approuvee(
     req: HttpRequest,
     pool: web::Data<PgPool>,
     path: web::Path<Uuid>,
-    body: web::Json<RetirerContributionRequest>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    body: web::Json<RetirerContributionRequest>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let id = path.into_inner();
 
     let motif = body.motif.trim().to_string();
@@ -2784,6 +2764,16 @@ async fn appliquer_fiche_scalaire(
         "voyage_prises_electriques" => "voyage_prises_electriques = $1",
         "voyage_contacts_tourisme" => "voyage_contacts_tourisme = $1",
         "voyage_recommandations_securite" => "voyage_recommandations_securite = $1",
+        // Symboles nationaux (schéma 11l)
+        "drapeau_description" => "drapeau_description = $1",
+        "embleme_description" => "embleme_description = $1",
+        "hymne_description" => "hymne_description = $1",
+        "fleur_nationale" => "fleur_nationale = $1",
+        "fleur_description" => "fleur_description = $1",
+        "animal_national" => "animal_national = $1",
+        "animal_description" => "animal_description = $1",
+        "oiseau_national" => "oiseau_national = $1",
+        "oiseau_description" => "oiseau_description = $1",
         _ => return Ok(()),
     };
 
@@ -2799,7 +2789,7 @@ async fn appliquer_fiche_scalaire(
     Ok(())
 }
 
-async fn appliquer_contribution_afripulse(
+pub async fn appliquer_contribution_afripulse(
     tx: &mut Transaction<'_, Postgres>,
     fiche_pays_id: Uuid,
     auteur_id: Uuid,
@@ -3419,9 +3409,8 @@ pub struct ContributionSuspendueRow {
 /// Liste toutes les contributions suspendues (>10 signalements), tous types confondus.
 pub async fn lister_contributions_suspendues(
     admin: AdminUtilisateur,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "voir");
+    pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
 
     // UNION ALL des 5 objets signalables ; libellé = colonne nom/titre propre à chaque table.
     let rows: Vec<ContributionSuspendueRow> = sqlx::query_as(
@@ -3477,9 +3466,8 @@ pub async fn reactiver_contribution(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
     path: web::Path<(String, Uuid)>,
-    req: HttpRequest,
-) -> Result<HttpResponse, ApiErreur> {
-    verifier_permission!(admin, "profil_pays", "modifier");
+    req: HttpRequest) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "fiche_pays", "gerer");
     let (type_objet, objet_id) = path.into_inner();
 
     let (table, _) = crate::handlers::contribution_signalement::table_et_softdelete(&type_objet)

@@ -125,7 +125,7 @@ BEGIN
     SELECT
         p.id,
         'https://flagcdn.com/w640/' || LOWER(p.code_iso2) || '.png',
-        'https://flagcdn.com/w320/' || LOWER(p.code_iso2) || '.png',
+        'https://flagcdn.com/' || LOWER(p.code_iso2) || '.svg',
         t.langue,
         t.monnaie,
         u_createur_id

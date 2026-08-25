@@ -1251,6 +1251,8 @@ pub struct MaContributionRow {
     pub type_contribution: String,
     pub etat: String,
     pub note_moderation: Option<String>,
+    /// Titre de l'objet visé, extrait du payload de la contribution.
+    pub libelle_objet: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub traite_at: Option<chrono::DateTime<chrono::Utc>>,
 }
@@ -1331,6 +1333,18 @@ pub async fn lister_mes_contributions(
                 cf.type_contribution::text AS type_contribution,
                 cf.etat::text AS etat,
                 cf.note_moderation,
+                -- Libellé de l'objet proposé, tiré du payload lui-même. Sans lui
+                -- toutes les lignes d'un même territoire se ressemblent : « Côte
+                -- d'Ivoire · Personnalité connue · Modification », cinq fois, sans
+                -- moyen de savoir laquelle est laquelle.
+                COALESCE(
+                    cf.nouvelle_valeur_jsonb->>'titre',
+                    cf.nouvelle_valeur_jsonb->>'nom',
+                    cf.nouvelle_valeur_jsonb->>'nom_complet',
+                    cf.ancienne_valeur_jsonb->>'titre',
+                    cf.ancienne_valeur_jsonb->>'nom',
+                    cf.ancienne_valeur_jsonb->>'nom_complet'
+                ) AS libelle_objet,
                 cf.created_at, cf.traite_at
          FROM country_profile.contribution_fiche cf
          LEFT JOIN country_profile.fiche_pays fp ON cf.fiche_pays_id = fp.id

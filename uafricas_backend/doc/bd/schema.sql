@@ -137,6 +137,9 @@
 \ir schemas/11i_country_profile_recettes_culinaires.sql
 \ir schemas/11j_country_profile_signalement_contributions.sql
 \ir schemas/11k_country_profile_reactions_partages_elements.sql
+\ir schemas/11l_country_profile_symboles_nationaux.sql
+\ir schemas/11m_country_profile_drapeaux_svg.sql
+\ir schemas/11n_country_profile_permission_admin.sql
 \ir schemas/16_retrouve_amis.sql
 \ir schemas/23_arbre_genealogique.sql
 \ir schemas/24_matching.sql

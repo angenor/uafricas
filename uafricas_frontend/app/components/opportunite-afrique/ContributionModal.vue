@@ -500,7 +500,7 @@ watch(() => props.legacyContext, (ctx) => {
       >
         <div class="flex items-start justify-between px-6 py-4 border-b border-gray-200">
           <div>
-            <h2 class="font-oswald text-xl font-bold text-gray-900">{{ titreModal }}</h2>
+            <h2 class="text-[20px]/[1.4] font-bold text-af-encre">{{ titreModal }}</h2>
             <p class="text-sm text-gray-500 mt-1">{{ paysNom }}</p>
           </div>
           <button
@@ -518,14 +518,14 @@ watch(() => props.legacyContext, (ctx) => {
         <form class="px-6 py-5 space-y-5 overflow-y-auto flex-1" @submit.prevent="handleSubmit">
           <div
             v-if="form.submitted"
-            class="bg-green-50 border border-green-200 text-green-800 rounded-md p-4 text-sm"
+            class="rounded-[10px] border border-af-vert/30 bg-af-vert/5 p-4 text-[14px]/[1.4] text-af-vert"
           >
             Contribution soumise avec succès ! Elle sera examinée par un administrateur.
           </div>
 
           <div
             v-if="form.error"
-            class="bg-red-50 border border-red-200 text-red-800 rounded-md p-4 text-sm"
+            class="rounded-[10px] border border-af-live/30 bg-af-live/5 p-4 text-[14px]/[1.4] text-af-live"
           >
             {{ form.errorMessage }}
           </div>
@@ -533,7 +533,7 @@ watch(() => props.legacyContext, (ctx) => {
           <template v-if="estModeAfripulse && contexteAfripulse">
             <div
               v-if="estSuppression"
-              class="bg-amber-50 border border-amber-200 text-amber-800 rounded-md p-4 text-sm"
+              class="rounded-[10px] border border-af-chocolat/30 bg-af-chocolat/5 p-4 text-[14px]/[1.4] text-af-chocolat"
             >
               <p class="font-medium mb-1">Proposer la suppression de cet élément</p>
               <p v-if="contexteAfripulse.libelle">
@@ -547,20 +547,20 @@ watch(() => props.legacyContext, (ctx) => {
 
             <template v-else-if="contexteAfripulse.type_objet_contribution === 'site_touristique'">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nom du site *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Nom du site *</label>
                 <input
                   v-model="formAfripulse.nom"
                   type="text"
                   required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Type de site *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Type de site *</label>
                 <select
                   v-model="formAfripulse.sous_type"
                   required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 >
                   <option value="">Sélectionnez un type</option>
                   <option v-for="st in sousTypesDisponibles" :key="st.value" :value="st.value">
@@ -569,80 +569,80 @@ watch(() => props.legacyContext, (ctx) => {
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Gestionnaire *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Gestionnaire *</label>
                 <input
                   v-model="formAfripulse.gestionnaire"
                   type="text"
                   required
                   placeholder="Nom du gestionnaire / propriétaire"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Ville *</label>
+                  <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Ville *</label>
                   <input
                     v-model="formAfripulse.ville"
                     type="text"
                     required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Village (optionnel)</label>
+                  <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Village (optionnel)</label>
                   <input
                     v-model="formAfripulse.village"
                     type="text"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                 </div>
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Latitude (GPS) *</label>
+                  <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Latitude (GPS) *</label>
                   <input
                     v-model="formAfripulse.latitude"
                     type="number"
                     step="any"
                     required
                     placeholder="5.1962"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Longitude (GPS) *</label>
+                  <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Longitude (GPS) *</label>
                   <input
                     v-model="formAfripulse.longitude"
                     type="number"
                     step="any"
                     required
                     placeholder="-3.7388"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                 </div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Information pertinente *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Information pertinente *</label>
                 <textarea
                   v-model="formAfripulse.info_pertinente"
                   rows="3"
                   required
                   placeholder="Accès, horaires, particularités utiles au visiteur…"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                  class="w-full resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Description (optionnel)</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Description (optionnel)</label>
                 <textarea
                   v-model="formAfripulse.description"
                   rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                  class="w-full resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
 
               <!-- Contacts : requis (au moins un) pour un site privé (FR-006) -->
-              <fieldset class="border border-gray-200 rounded-md p-4">
-                <legend class="text-sm font-medium text-gray-700 px-2">
+              <fieldset class="rounded-[10px] border border-af-bordure p-4">
+                <legend class="px-2 text-[14px]/[1.4] font-bold text-af-encre">
                   Contacts {{ estSitePrive ? '(au moins un requis)' : '(optionnel)' }}
                 </legend>
                 <div class="space-y-3">
@@ -650,34 +650,34 @@ watch(() => props.legacyContext, (ctx) => {
                     v-model="formAfripulse.contact_telephone"
                     type="tel"
                     placeholder="Téléphone"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                   <input
                     v-model="formAfripulse.contact_courriel"
                     type="email"
                     placeholder="Courriel"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                   <input
                     v-model="formAfripulse.contact_adresse"
                     type="text"
                     placeholder="Adresse"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                 </div>
               </fieldset>
 
               <!-- Lien officiel du site web (facultatif) -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Site web (optionnel)</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Site web (optionnel)</label>
                 <input
                   v-model="formAfripulse.site_web_url"
                   type="url"
                   inputmode="url"
                   placeholder="https://exemple.com"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
-                <p class="text-xs text-gray-400 mt-1">Doit commencer par http:// ou https://</p>
+                <p class="mt-1 text-[12px]/[1.4] text-af-atone">Doit commencer par http:// ou https://</p>
               </div>
 
               <OpportuniteAfriqueMultiImageUploadField
@@ -687,20 +687,20 @@ watch(() => props.legacyContext, (ctx) => {
               />
 
               <!-- Constitution légale (facultatif : US4) -->
-              <fieldset class="border border-gray-200 rounded-md p-4">
-                <legend class="text-sm font-medium text-gray-700 px-2">Constitution légale (optionnel)</legend>
+              <fieldset class="rounded-[10px] border border-af-bordure p-4">
+                <legend class="px-2 text-[14px]/[1.4] font-bold text-af-encre">Constitution légale (optionnel)</legend>
                 <div class="space-y-3">
                   <input
                     v-model="formAfripulse.constitution_statut_juridique"
                     type="text"
                     placeholder="Statut juridique (ex. SARL)"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                   <input
                     v-model="formAfripulse.constitution_numero"
                     type="text"
                     placeholder="Numéro d'enregistrement"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                   <OpportuniteAfriqueImageUploadField
                     v-model="formAfripulse.constitution_document_url"
@@ -712,78 +712,78 @@ watch(() => props.legacyContext, (ctx) => {
 
             <template v-else-if="contexteAfripulse.type_objet_contribution === 'secteur_developpement'">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nom du secteur *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Nom du secteur *</label>
                 <input
                   v-model="formAfripulse.nom"
                   type="text"
                   required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Description *</label>
                 <textarea
                   v-model="formAfripulse.description"
                   rows="4"
                   required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                  class="w-full resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Localité (optionnel)</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Localité (optionnel)</label>
                 <input
                   v-model="formAfripulse.localite"
                   type="text"
                   placeholder="Ville, région ou zone concernée"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
 
               <!-- Contacts (optionnels) -->
-              <fieldset class="border border-gray-200 rounded-md p-4">
-                <legend class="text-sm font-medium text-gray-700 px-2">Contacts (optionnel)</legend>
+              <fieldset class="rounded-[10px] border border-af-bordure p-4">
+                <legend class="px-2 text-[14px]/[1.4] font-bold text-af-encre">Contacts (optionnel)</legend>
                 <div class="space-y-3">
                   <input
                     v-model="formAfripulse.contact_telephone"
                     type="tel"
                     placeholder="Téléphone"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                   <input
                     v-model="formAfripulse.contact_courriel"
                     type="email"
                     placeholder="Courriel"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                   <input
                     v-model="formAfripulse.contact_adresse"
                     type="text"
                     placeholder="Adresse"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                 </div>
               </fieldset>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Références (optionnel)</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Références (optionnel)</label>
                 <textarea
                   v-model="formAfripulse.references_utiles"
                   rows="2"
                   placeholder="Sources, rapports, organismes de référence…"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                  class="w-full resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Site web (optionnel)</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Site web (optionnel)</label>
                 <input
                   v-model="formAfripulse.site_web_url"
                   type="url"
                   inputmode="url"
                   placeholder="https://exemple.com"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
-                <p class="text-xs text-gray-400 mt-1">Doit commencer par http:// ou https://</p>
+                <p class="mt-1 text-[12px]/[1.4] text-af-atone">Doit commencer par http:// ou https://</p>
               </div>
 
               <OpportuniteAfriqueImageUploadField
@@ -794,47 +794,47 @@ watch(() => props.legacyContext, (ctx) => {
 
             <template v-else-if="contexteAfripulse.type_objet_contribution === 'personnalite_connue'">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nom complet *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Nom complet *</label>
                 <input
                   v-model="formAfripulse.nom_complet"
                   type="text"
                   required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Domaine *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Domaine *</label>
                 <select
                   v-model="formAfripulse.domaine"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 >
                   <option v-for="d in domaines" :key="d.value" :value="d.value">{{ d.label }}</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Biographie courte *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Biographie courte *</label>
                 <textarea
                   v-model="formAfripulse.biographie_courte"
                   rows="3"
                   required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                  class="w-full resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Année de naissance</label>
+                  <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Année de naissance</label>
                   <input
                     v-model="formAfripulse.annee_naissance"
                     type="number"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Année de décès</label>
+                  <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Année de décès</label>
                   <input
                     v-model="formAfripulse.annee_deces"
                     type="number"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                    class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                   />
                 </div>
               </div>
@@ -843,88 +843,88 @@ watch(() => props.legacyContext, (ctx) => {
                 label="Portrait (optionnel)"
               />
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Lien de référence (optionnel)</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Lien de référence (optionnel)</label>
                 <input
                   v-model="formAfripulse.lien_reference"
                   type="url"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
             </template>
 
             <template v-else-if="contexteAfripulse.type_objet_contribution === 'savoir_pratique'">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Titre *</label>
                 <input
                   v-model="formAfripulse.titre"
                   type="text"
                   required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Catégorie *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Catégorie *</label>
                 <select
                   v-model="formAfripulse.categorie"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 >
                   <option v-for="c in categoriesSavoir" :key="c.value" :value="c.value">{{ c.label }}</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Explication *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Explication *</label>
                 <textarea
                   v-model="formAfripulse.explication"
                   rows="4"
                   required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                  class="w-full resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Exemple (optionnel)</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Exemple (optionnel)</label>
                 <textarea
                   v-model="formAfripulse.exemple"
                   rows="2"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                  class="w-full resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
             </template>
 
             <template v-else-if="contexteAfripulse.type_objet_contribution === 'recette_culinaire'">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Titre de la recette *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Titre de la recette *</label>
                 <input
                   v-model="formAfripulse.titre"
                   type="text"
                   required
                   placeholder="Ex. : Thiéboudienne, Mafé, Ndolé…"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Zone (ville) de consommation</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Zone (ville) de consommation</label>
                 <input
                   v-model="formAfripulse.territoires_consommation"
                   type="text"
                   placeholder="Ex. : Dakar, Bamako, Abidjan…"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Petite histoire ou présentation</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Petite histoire ou présentation</label>
                 <textarea
                   v-model="formAfripulse.histoire"
                   rows="3"
                   placeholder="Origine, occasion, anecdotes…"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                  class="w-full resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
 
               <!-- Ingrédients nécessaires -->
-              <fieldset class="border border-gray-200 rounded-md p-4">
-                <legend class="text-sm font-medium text-gray-700 px-2">Ingrédients nécessaires</legend>
+              <fieldset class="rounded-[10px] border border-af-bordure p-4">
+                <legend class="px-2 text-[14px]/[1.4] font-bold text-af-encre">Ingrédients nécessaires</legend>
                 <div class="space-y-2">
                   <div v-for="(ing, i) in formAfripulse.ingredients" :key="i" class="flex gap-2 items-center">
                     <span class="text-xs text-gray-400 w-5 shrink-0">{{ i + 1 }}.</span>
@@ -932,11 +932,11 @@ watch(() => props.legacyContext, (ctx) => {
                       v-model="formAfripulse.ingredients[i]"
                       type="text"
                       placeholder="Ex. : 500 g de riz brisé"
-                      class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                      class="flex-1 rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                     />
                     <button
                       type="button"
-                      class="px-2 py-1 text-red-600 hover:text-red-700 text-sm cursor-pointer"
+                      class="cursor-pointer px-2 py-1 text-[14px]/[1.4] text-af-corps transition hover:text-af-live"
                       @click="formAfripulse.ingredients.splice(i, 1)"
                     >
                       <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
@@ -953,8 +953,8 @@ watch(() => props.legacyContext, (ctx) => {
               </fieldset>
 
               <!-- Mode de préparation (étapes 1 à 10) -->
-              <fieldset class="border border-gray-200 rounded-md p-4">
-                <legend class="text-sm font-medium text-gray-700 px-2">Mode de préparation (étapes 1 à 10)</legend>
+              <fieldset class="rounded-[10px] border border-af-bordure p-4">
+                <legend class="px-2 text-[14px]/[1.4] font-bold text-af-encre">Mode de préparation (étapes 1 à 10)</legend>
                 <div class="space-y-2">
                   <div v-for="(etape, i) in formAfripulse.etapes_preparation" :key="i" class="flex gap-2 items-start">
                     <span class="text-xs font-semibold text-custom-chocolat w-6 shrink-0 mt-2.5">{{ i + 1 }}</span>
@@ -962,11 +962,11 @@ watch(() => props.legacyContext, (ctx) => {
                       v-model="formAfripulse.etapes_preparation[i]"
                       rows="2"
                       placeholder="Décrivez cette étape…"
-                      class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                      class="flex-1 resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                     />
                     <button
                       type="button"
-                      class="px-2 py-1 text-red-600 hover:text-red-700 text-sm cursor-pointer mt-1.5"
+                      class="mt-1.5 cursor-pointer px-2 py-1 text-[14px]/[1.4] text-af-corps transition hover:text-af-live"
                       @click="formAfripulse.etapes_preparation.splice(i, 1)"
                     >
                       <font-awesome-icon :icon="['fas', 'xmark']" class="w-4 h-4" />
@@ -980,7 +980,7 @@ watch(() => props.legacyContext, (ctx) => {
                   >
                     + Ajouter une étape
                   </button>
-                  <p v-else class="text-xs text-gray-400">Maximum 10 étapes atteint.</p>
+                  <p v-else class="text-[12px]/[1.4] text-af-atone">Maximum 10 étapes atteint.</p>
                 </div>
               </fieldset>
 
@@ -1000,13 +1000,13 @@ watch(() => props.legacyContext, (ctx) => {
                 Votre contribution sera examinée par un administrateur avant publication.
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ contexteLegacy.label }} *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">{{ contexteLegacy.label }} *</label>
                 <textarea
                   v-model="form.nouvelle_valeur"
                   rows="5"
                   required
                   placeholder="Saisissez l'information…"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                  class="w-full resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
             </template>
@@ -1014,18 +1014,18 @@ watch(() => props.legacyContext, (ctx) => {
             <!-- Mode générique : sélection libre de la section -->
             <template v-else>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Section concernée *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Section concernée *</label>
                 <select
                   v-model="form.section"
                   required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                  class="w-full rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 >
                   <option value="">Sélectionnez une section</option>
                   <option v-for="s in sections" :key="s.value" :value="s.value">{{ s.label }}</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Type *</label>
                 <div class="flex flex-wrap gap-4">
                   <label class="flex items-center gap-2">
                     <input v-model="form.type_contribution" type="radio" value="modification" />
@@ -1042,34 +1042,36 @@ watch(() => props.legacyContext, (ctx) => {
                 </div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nouvelle valeur *</label>
+                <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">Nouvelle valeur *</label>
                 <textarea
                   v-model="form.nouvelle_valeur"
                   rows="4"
                   required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+                  class="w-full resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
                 />
               </div>
             </template>
           </template>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+            <label class="mb-1.5 block text-[14px]/[1.4] font-bold text-af-encre">
               {{ contexteAfripulse?.type_objet_contribution === 'recette_culinaire' ? 'Lien (optionnel)' : 'Justification (optionnel)' }}
             </label>
             <textarea
               v-model="form.justification"
               rows="2"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent resize-y"
+              class="w-full resize-y rounded-[10px] border border-af-bordure bg-white px-3 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
               :placeholder="contexteAfripulse?.type_objet_contribution === 'recette_culinaire' ? 'Lien vers la recette complète, une vidéo, la source…' : 'Source, contexte, raison...'"
             />
           </div>
         </form>
 
-        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <!-- Pied collant : sur un formulaire de dix champs, les actions
+             quittaient l'écran et il fallait redéfiler pour valider. -->
+        <div class="sticky bottom-0 flex justify-end gap-3 border-t border-af-bordure bg-white px-6 py-4">
           <button
             type="button"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            class="text-base font-bold text-af-corps transition hover:opacity-70"
             @click="emit('close')"
           >
             Annuler
@@ -1077,10 +1079,8 @@ watch(() => props.legacyContext, (ctx) => {
           <button
             type="button"
             :disabled="form.loading"
-            class="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            :class="estSuppression
-              ? 'bg-red-600 hover:bg-red-700'
-              : 'bg-custom-chocolat hover:bg-custom-chocolat/90'"
+            class="rounded-lg px-6 py-2.5 text-base font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+            :class="estSuppression ? 'bg-af-live hover:opacity-90' : 'bg-af-chocolat hover:opacity-90'"
             @click="handleSubmit"
           >
             {{ labelBouton }}

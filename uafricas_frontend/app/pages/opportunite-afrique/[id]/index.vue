@@ -1,377 +1,3 @@
-<template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Loading -->
-    <div v-if="chargement" class="flex items-center justify-center h-screen">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-custom-green"></div>
-    </div>
-
-    <!-- Pays non trouvé -->
-    <div v-else-if="!pays" class="flex flex-col items-center justify-center h-screen">
-      <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-      </svg>
-      <h1 class="text-2xl font-bold text-gray-700 mb-2">Territoire non trouvé</h1>
-      <p class="text-gray-500 mb-4">Le territoire que vous recherchez n'existe pas dans notre base.</p>
-      <NuxtLink to="/opportunite-afrique" class="text-custom-green hover:underline">
-        &#8592; Retour à la liste des territoires
-      </NuxtLink>
-    </div>
-
-    <!-- Contenu -->
-    <template v-else>
-      <!-- Hero section avec image de couverture -->
-      <div class="relative h-56 md:h-72 bg-cover bg-center"
-           :style="{ backgroundImage: `url(${pays.image_couverture})` }">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-
-        <!-- Contenu du hero -->
-        <div class="absolute inset-0 flex flex-col justify-end px-4 md:px-8 pb-6 pt-16">
-          <div class="max-w-6xl mx-auto w-full">
-            <CommonBreadcrumbNav class="mb-4" :custom-breadcrumbs="breadcrumbs" />
-
-            <div class="flex items-center gap-4">
-              <!-- Drapeau -->
-              <img :src="pays.drapeau_url || ''"
-                   :alt="'Drapeau ' + pays.nom"
-                   class="h-16 md:h-20 w-auto rounded shadow-lg">
-
-              <div>
-                <h1 class="text-3xl md:text-5xl font-bold text-white mb-2">{{ pays.nom }}</h1>
-                <p v-if="pays.slogan" class="text-xl text-white/80 italic">{{ pays.slogan }}</p>
-              </div>
-            </div>
-
-            <!-- Badge région -->
-            <div class="mt-4">
-              <span class="px-4 py-2 bg-custom-green text-white rounded-full text-sm font-medium">
-                {{ pays.region }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Contenu principal -->
-      <div class="max-w-6xl mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <!-- Colonne principale -->
-          <div class="lg:col-span-2 space-y-6">
-            <!-- Image de couverture -->
-            <div class="rounded-lg overflow-hidden shadow-md">
-              <img :src="pays.image_couverture"
-                   :alt="pays.nom"
-                   class="w-full h-64 md:h-80 object-cover" />
-            </div>
-
-            <!-- Informations générales -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <button
-                type="button"
-                class="w-full flex items-center text-left text-2xl font-bold cursor-pointer hover:opacity-80 transition-opacity"
-                :class="infosReplie ? '' : 'mb-6'"
-                :aria-expanded="!infosReplie"
-                @click="infosReplie = !infosReplie"
-              >
-                <svg class="w-6 h-6 mr-2 text-custom-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                Informations générales
-                <svg class="w-5 h-5 ml-auto text-gray-400 transition-transform duration-200" :class="infosReplie ? '-rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </button>
-
-              <div v-show="!infosReplie" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="flex items-start space-x-3">
-                  <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-sm text-gray-500">Capitale</p>
-                    <p class="font-semibold text-gray-900">{{ pays.capitale }}</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start space-x-3">
-                  <div class="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-sm text-gray-500">Population</p>
-                    <p class="font-semibold text-gray-900">{{ pays.population }}</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start space-x-3">
-                  <div class="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-sm text-gray-500">Superficie</p>
-                    <p class="font-semibold text-gray-900">{{ pays.superficie }}</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start space-x-3">
-                  <div class="flex-shrink-0 w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-sm text-gray-500">Monnaie</p>
-                    <p class="font-semibold text-gray-900">{{ pays.monnaie }}</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start space-x-3">
-                  <div class="flex-shrink-0 w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-sm text-gray-500">Région</p>
-                    <p class="font-semibold text-gray-900">{{ pays.region }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Culture et Langues -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <button
-                type="button"
-                class="w-full flex items-center text-left text-2xl font-bold cursor-pointer hover:opacity-80 transition-opacity"
-                :class="cultureReplie ? '' : 'mb-6'"
-                :aria-expanded="!cultureReplie"
-                @click="cultureReplie = !cultureReplie"
-              >
-                <svg class="w-6 h-6 mr-2 text-custom-chocolat" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
-                </svg>
-                Culture et Langues
-                <svg class="w-5 h-5 ml-auto text-gray-400 transition-transform duration-200" :class="cultureReplie ? '-rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </button>
-
-              <div v-show="!cultureReplie" class="space-y-6">
-                <!-- Langues -->
-                <div>
-                  <h3 class="text-sm font-medium text-gray-500 mb-3">Langues parlées</h3>
-                  <div class="flex flex-wrap gap-2">
-                    <span v-for="langue in pays.langues" :key="langue"
-                          class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                      {{ langue }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Ethnies / groupes ethniques -->
-                <div>
-                  <h3 class="text-sm font-medium text-gray-500 mb-3">Principaux groupes ethniques</h3>
-                  <div class="flex flex-wrap gap-2">
-                    <span v-for="ethnie in pays.ethnies" :key="ethnie"
-                          class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                      {{ ethnie }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Afripulse : sections enrichies (US1) -->
-            <OpportuniteAfriqueSecteursOpportunitesSection
-              :fiche-id="pays.id"
-              :est-authentifie="userStore.isAuthenticated"
-              @open-contribution="onOpenContribution"
-              @require-login="onRequireLogin"
-            />
-            <OpportuniteAfriqueRecettesCulinairesSection
-              :fiche-id="pays.id"
-              :est-authentifie="userStore.isAuthenticated"
-              @open-contribution="onOpenContribution"
-              @require-login="onRequireLogin"
-            />
-            <OpportuniteAfriqueSitesTouristiquesSection
-              :fiche-id="pays.id"
-              :est-authentifie="userStore.isAuthenticated"
-              @open-contribution="onOpenContribution"
-              @require-login="onRequireLogin"
-            />
-            <OpportuniteAfriquePersonnalitesSection
-              :fiche-id="pays.id"
-              :est-authentifie="userStore.isAuthenticated"
-              @open-contribution="onOpenContribution"
-              @require-login="onRequireLogin"
-            />
-            <OpportuniteAfriqueSavoirAvantVoyagerSection
-              :fiche-id="pays.id"
-              :fiche="pays"
-              :est-authentifie="userStore.isAuthenticated"
-              @open-contribution="onOpenContribution"
-              @open-champ-voyage="onOpenChampVoyage"
-              @require-login="onRequireLogin"
-            />
-          </div>
-
-          <!-- Sidebar -->
-          <div class="space-y-6">
-            <!-- Statistiques -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h3 class="text-lg font-bold mb-4">Statistiques</h3>
-              <div class="space-y-4">
-                <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                  <span class="text-gray-600">Contributions</span>
-                  <span class="font-medium">{{ pays.nombre_contributions }}</span>
-                </div>
-                <div class="flex items-center justify-between py-2">
-                  <span class="text-gray-600">Dernière mise à jour</span>
-                  <span class="font-medium text-sm">{{ formatDate(pays.updated_at) }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Symboles nationaux -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h3 class="text-lg font-bold mb-4 flex items-center">
-                <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-                </svg>
-                Symboles nationaux
-              </h3>
-
-              <div class="space-y-4">
-                <!-- Devise -->
-                <div v-if="pays.devise" class="bg-gray-50 rounded-lg p-4">
-                  <p class="text-sm text-gray-500 mb-1">Devise nationale</p>
-                  <p class="text-lg font-semibold text-gray-900 italic">"{{ pays.devise }}"</p>
-                </div>
-
-                <!-- Drapeau -->
-                <div class="bg-gray-50 rounded-lg p-4 flex items-center space-x-4">
-                  <img :src="pays.drapeau_url || ''"
-                       :alt="'Drapeau ' + pays.nom"
-                       class="h-12 w-auto rounded shadow">
-                  <div>
-                    <p class="text-sm text-gray-500">Drapeau</p>
-                    <p class="font-medium text-gray-900">{{ pays.nom }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Réactions (like / dislike) -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h3 class="text-lg font-bold mb-4">Cette fiche vous plaît ?</h3>
-              <div class="flex items-center gap-3">
-                <button
-                  type="button"
-                  :disabled="reactionEnCours"
-                  class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-60 border"
-                  :class="pays.ma_reaction === 'like'
-                    ? 'bg-custom-green text-white border-custom-green'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                  @click="basculerReaction('like')"
-                >
-                  <font-awesome-icon :icon="['fas', 'thumbs-up']" class="w-4 h-4" />
-                  <span>{{ pays.nombre_likes }}</span>
-                </button>
-                <button
-                  type="button"
-                  :disabled="reactionEnCours"
-                  class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-60 border"
-                  :class="pays.ma_reaction === 'dislike'
-                    ? 'bg-red-500 text-white border-red-500'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                  @click="basculerReaction('dislike')"
-                >
-                  <font-awesome-icon :icon="['fas', 'thumbs-down']" class="w-4 h-4" />
-                  <span>{{ pays.nombre_dislikes }}</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Cadeaux reçus par la fiche -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <EngagementOffrirCadeauBouton
-                type-objet="fiche_pays"
-                :objet-id="pays.id"
-                :destinataire="pays.nom"
-                class="mb-4"
-                @offert="cadeauxRef?.rafraichir()"
-              />
-              <EngagementCadeauxRecus ref="cadeauxRef" type-objet="fiche_pays" :objet-id="pays.id" />
-            </div>
-
-            <!-- Contributeurs -->
-            <OpportuniteAfriqueContributeursSection :contributeurs="contributeurs" />
-
-            <!-- Actions -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h3 class="text-lg font-bold mb-4">Actions</h3>
-              <div class="space-y-3">
-                <button @click="proposerModification"
-                        class="w-full py-2 px-4 bg-custom-chocolat text-white rounded-lg font-medium hover:bg-custom-chocolat/90 transition flex items-center justify-center">
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                  </svg>
-                  Proposer une modification
-                </button>
-
-                <button @click="ouvrirPartage"
-                        class="w-full py-2 px-4 bg-custom-green text-white rounded-lg font-medium hover:bg-custom-green/90 transition flex items-center justify-center cursor-pointer">
-                  <font-awesome-icon :icon="['fas', 'share-nodes']" class="w-5 h-5 mr-2" />
-                  Partager
-                </button>
-
-                <NuxtLink to="/opportunite-afrique"
-                          class="w-full py-2 px-4 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition flex items-center justify-center">
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                  </svg>
-                  Retour à la liste
-                </NuxtLink>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </template>
-
-    <!-- Modal contribution -->
-    <OpportuniteAfriqueContributionModal
-      ref="contributionModalRef"
-      :is-open="showContributionModal"
-      :fiche-id="pays?.id || ''"
-      :pays-nom="pays?.nom || ''"
-      :afripulse-context="afripulseContext"
-      :legacy-context="legacyFieldContext"
-      @close="fermerContributionModal"
-      @submit="handleContributionSubmit"
-    />
-
-    <!-- Modal partage communautaire -->
-    <OpportuniteAfriquePartagerFicheModal
-      ref="partageModalRef"
-      :is-open="showPartageModal"
-      :pays-nom="pays?.nom || ''"
-      :fiche-id="pays?.id"
-      :est-connecte="userStore.isAuthenticated"
-      @close="showPartageModal = false"
-      @submit="handlePartageSubmit"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import {
   useOpportuniteAfrique,
@@ -383,11 +9,42 @@ import {
 } from '~/composables/useOpportuniteAfrique'
 import { useUserStore } from '~/stores/user'
 
+/**
+ * Fiche territoire Afripulse : portée sur le gabarit de la refonte.
+ *
+ * La page était restée sur l'ancienne enveloppe (barre supérieure à
+ * méga-menus, pas de navigation latérale) alors que `/opportunite-afrique`
+ * était portée : cliquer une carte ou un drapeau faisait changer de squelette.
+ *
+ * Réagencée d'après le cadre Figma « afripulse-2 » :
+ *   - le hero devient le bandeau de module, titre centré et badge de région en
+ *     bas à droite. Le drapeau en quitte l'en-tête : il figure déjà dans les
+ *     symboles nationaux, à droite ;
+ *   - « Informations générales » passe en deux colonnes : les six champs à
+ *     gauche, un visuel à droite ;
+ *   - « Cultures et langues » liste les langues et les groupes ethniques
+ *     NUMÉROTÉS sur deux colonnes, comme la maquette, au lieu de pastilles ;
+ *   - les cinq sections enrichies deviennent des accordéons `AfricansAccordeon`
+ *     (repliés), au lieu de bandes pleine largeur à fond gris ;
+ *   - statistiques, symboles, réactions et actions passent dans le rail.
+ *
+ * UN ÉCART assumé à la maquette : elle dessine le DÉCOUPAGE PROVINCIAL du
+ * pays, avec le nom et la superficie de chaque province. Aucune donnée
+ * infranationale n'existe en base : la carte affiche donc le contour du
+ * territoire, tracé à l'ouverture, et rien de plus. Inventer neuf provinces
+ * ferait une jolie image et une fiche fausse.
+ *
+ * Les sept symboles nationaux de la maquette (devise, drapeau, armoiries,
+ * hymne, fleur, animal, oiseau) sont désormais tous portés par la base, la
+ * migration `11l` a ajouté les notices et les trois symboles qui manquaient.
+ * Chacun n'apparaît que s'il est réellement renseigné.
+ */
+definePageMeta({ layout: false })
+
 const route = useRoute()
 const userStore = useUserStore()
 const { redirigerVersConnexion } = useAuth()
 const {
-  chargement,
   obtenirFiche,
   soumettreContribution,
   soumettreContributionEnrichie,
@@ -415,14 +72,15 @@ interface LegacyFieldContext {
 const idFiche = route.params.id as string
 
 // Chargement côté serveur (SSR) : indispensable pour que les balises Open Graph
-// soient présentes dans le HTML lu par les robots des réseaux sociaux (aperçu de partage).
+// soient présentes dans le HTML lu par les robots des réseaux sociaux.
 const { data: ficheChargee } = await useAsyncData(
   `fiche-pays-${idFiche}`,
   () => obtenirFiche(idFiche),
 )
 const pays = ref<FichePaysDetailAPI | null>(ficheChargee.value)
 
-// ── SEO / Open Graph (aperçu lors du partage sur les réseaux sociaux) ──
+// ── SEO / Open Graph ───────────────────────────────────────────────────────
+
 const requete = useRequestURL()
 const origineSite = `${requete.protocol}//${requete.host}`
 const urlCanonique = `${origineSite}/opportunite-afrique/${idFiche}`
@@ -438,47 +96,93 @@ const descriptionOg = computed(() =>
 
 useHead(() => {
   if (!pays.value) return {}
-  const titre = `${pays.value.nom} - Opportunités en Afrique - AfricanS`
+  const titre = `${pays.value.nom} : Afripulse | AfricanS`
   return {
     title: titre,
     meta: [
       { name: 'description', content: descriptionOg.value },
-      // Open Graph
       { property: 'og:type', content: 'article' },
       { property: 'og:title', content: titre },
       { property: 'og:description', content: descriptionOg.value },
       { property: 'og:url', content: urlCanonique },
-      { property: 'og:site_name', content: 'AfricanS' },
-      ...(imageOg.value ? [{ property: 'og:image', content: imageOg.value }] : []),
-      // Twitter Card
+      { property: 'og:site_name', content: 'AfricanS' }, ...(imageOg.value ? [{ property: 'og:image', content: imageOg.value }] : []),
       { name: 'twitter:card', content: imageOg.value ? 'summary_large_image' : 'summary' },
       { name: 'twitter:title', content: titre },
-      { name: 'twitter:description', content: descriptionOg.value },
-      ...(imageOg.value ? [{ name: 'twitter:image', content: imageOg.value }] : []),
-    ],
+      { name: 'twitter:description', content: descriptionOg.value }, ...(imageOg.value ? [{ name: 'twitter:image', content: imageOg.value }] : [])],
     link: [{ rel: 'canonical', href: urlCanonique }],
   }
 })
 
-// État rétractable des sections (repliées par défaut pour faciliter la lecture)
-const infosReplie = ref(false)
-const cultureReplie = ref(true)
+// ── Informations générales ─────────────────────────────────────────────────
 
-const breadcrumbs = computed(() => [
-  { label: 'Opportunités en Afrique', to: '/opportunite-afrique' },
-  { label: pays.value?.nom || 'Détail', to: undefined },
-])
+/** Les six champs de la maquette, dans son ordre. Un champ vide est omis. */
+const CHAMPS = computed(() => {
+  const p = pays.value
+  if (!p) return []
+  return [
+    { icone: 'fa-solid fa-building', libelle: 'Capitale', valeur: p.capitale },
+    { icone: 'fa-solid fa-boxes-stacked', libelle: 'Superficie', valeur: p.superficie },
+    { icone: 'fa-solid fa-location-dot', libelle: 'Région', valeur: p.region },
+    { icone: 'fa-solid fa-users', libelle: 'Population', valeur: p.population },
+    { icone: 'fa-solid fa-coins', libelle: 'Monnaie', valeur: p.monnaie },
+    { icone: 'fa-solid fa-flag', libelle: 'Devise', valeur: p.devise }].filter(c => Boolean(c.valeur))
+})
+
+/**
+ * Symboles nationaux, dans l'ordre de la maquette. Un symbole n'apparaît que
+ * s'il porte une image OU un texte : une fiche mal renseignée montre moins de
+ * lignes, jamais une ligne vide, et jamais une valeur inventée.
+ */
+const SYMBOLES = computed(() => {
+  const p = pays.value
+  if (!p) return []
+  return [
+    { cle: 'devise', libelle: 'Devise nationale', texte: p.devise, image: null, italique: true },
+    {
+      cle: 'drapeau',
+      libelle: 'Drapeau',
+      texte: p.drapeau_description,
+      image: p.drapeau_url ? resoudreUrlImage(p.drapeau_url) : null,
+      hauteur: 'h-12',
+    },
+    {
+      cle: 'armoiries',
+      libelle: 'Armoiries',
+      texte: p.embleme_description,
+      image: p.embleme_url ? resoudreUrlImage(p.embleme_url) : null,
+      hauteur: 'h-20',
+    },
+    // Le titre de l'hymne et sa notice sont deux colonnes : on les joint sur
+    // une ligne pour ne pas faire deux entrées d'un seul symbole.
+    {
+      cle: 'hymne',
+      libelle: 'Hymne national',
+      texte: [p.hymne_national, p.hymne_description].filter(Boolean).join(' - ') || null,
+      image: null,
+    },
+    { cle: 'fleur', libelle: 'Fleur nationale', texte: [p.fleur_nationale, p.fleur_description].filter(Boolean).join(' - ') || null, image: null },
+    { cle: 'animal', libelle: 'Animal national', texte: [p.animal_national, p.animal_description].filter(Boolean).join(' - ') || null, image: null },
+    { cle: 'oiseau', libelle: 'Oiseau national', texte: [p.oiseau_national, p.oiseau_description].filter(Boolean).join(' - ') || null, image: null }].filter(sym => sym.texte || sym.image)
+})
+
+// ── Recherche du rail : elle renvoie à la liste des territoires ────────────
+
+const rechercheTerritoire = ref('')
+const lancerRecherche = () => {
+  const q = rechercheTerritoire.value.trim()
+  navigateTo(q ? `/opportunite-afrique?recherche=${encodeURIComponent(q)}` : '/opportunite-afrique')
+}
+
+// ── Contribution ───────────────────────────────────────────────────────────
+
 const contributeurs = ref<ContributeurAPI[]>([])
 const showContributionModal = ref(false)
 const afripulseContext = ref<AfripulseContext | null>(null)
 const legacyFieldContext = ref<LegacyFieldContext | null>(null)
-const contributionModalRef = ref<{ setLoading: (val: boolean) => void; setError: (msg: string) => void; setSuccess: () => void } | null>(null)
+const contributionModalRef = ref<{ setLoading: (v: boolean) => void, setError: (m: string) => void, setSuccess: () => void } | null>(null)
 
 const proposerModification = () => {
-  if (!userStore.isAuthenticated) {
-    redirigerVersConnexion()
-    return
-  }
+  if (!userStore.isAuthenticated) return redirigerVersConnexion()
   afripulseContext.value = null
   legacyFieldContext.value = null
   showContributionModal.value = true
@@ -496,9 +200,7 @@ const onOpenChampVoyage = (ctx: LegacyFieldContext) => {
   showContributionModal.value = true
 }
 
-const onRequireLogin = () => {
-  redirigerVersConnexion()
-}
+const onRequireLogin = () => redirigerVersConnexion()
 
 const fermerContributionModal = () => {
   showContributionModal.value = false
@@ -506,15 +208,13 @@ const fermerContributionModal = () => {
   legacyFieldContext.value = null
 }
 
-// ── Réactions like / dislike ────────────────────────────────────
+// ── Réactions ──────────────────────────────────────────────────────────────
+
 const reactionEnCours = ref(false)
 
 const basculerReaction = async (type: 'like' | 'dislike') => {
   if (!pays.value) return
-  if (!userStore.isAuthenticated) {
-    redirigerVersConnexion()
-    return
-  }
+  if (!userStore.isAuthenticated) return redirigerVersConnexion()
   if (reactionEnCours.value) return
   reactionEnCours.value = true
   const etat = await reagirFiche(pays.value.id, type)
@@ -526,28 +226,22 @@ const basculerReaction = async (type: 'like' | 'dislike') => {
   reactionEnCours.value = false
 }
 
-// ── Partage vers le mur communautaire /publications ─────────────
-const showPartageModal = ref(false)
-const partageModalRef = ref<{ setLoading: (v: boolean) => void; setError: (m: string) => void; setSuccess: () => void } | null>(null)
+// ── Partage ────────────────────────────────────────────────────────────────
 
-// Rechargé après qu'un cadeau vient d'être offert.
+const showPartageModal = ref(false)
+const partageModalRef = ref<{ setLoading: (v: boolean) => void, setError: (m: string) => void, setSuccess: () => void } | null>(null)
 const cadeauxRef = ref<{ rafraichir: () => void } | null>(null)
 
-const ouvrirPartage = () => {
-  // Le partage réseaux sociaux est ouvert à tous ; seule la publication
-  // sur le mur communautaire requiert une connexion (gérée dans la modale).
-  showPartageModal.value = true
-}
+// Le partage réseaux sociaux est ouvert à tous ; seule la publication sur le
+// mur communautaire requiert une connexion (gérée dans la modale).
+const ouvrirPartage = () => { showPartageModal.value = true }
 
 const handlePartageSubmit = async (legende: string) => {
   if (!pays.value) return
   partageModalRef.value?.setLoading(true)
   const res = await partagerFiche(pays.value.id, legende || undefined)
-  if (res) {
-    partageModalRef.value?.setSuccess()
-  } else {
-    partageModalRef.value?.setError('Erreur lors du partage. Veuillez réessayer.')
-  }
+  if (res) partageModalRef.value?.setSuccess()
+  else partageModalRef.value?.setError('Erreur lors du partage. Veuillez réessayer.')
 }
 
 type SubmitLegacy = {
@@ -582,29 +276,314 @@ const handleContributionSubmit = async (data: SubmitLegacy | SubmitAfripulse) =>
       nouvelle_valeur_jsonb: data.nouvelle_valeur_jsonb,
       justification: data.justification || undefined,
     })
-    ok = !!res
-  } else {
+    ok = Boolean(res)
+  }
+  else {
     const res = await soumettreContribution(pays.value.id, {
       section: data.section,
       type_contribution: data.type_contribution,
       nouvelle_valeur: data.nouvelle_valeur,
       justification: data.justification || undefined,
     })
-    ok = !!res
+    ok = Boolean(res)
   }
 
   if (ok) {
     contributionModalRef.value?.setSuccess()
     contributeurs.value = await listerContributeurs(pays.value.id)
-  } else {
+  }
+  else {
     contributionModalRef.value?.setError('Erreur lors de la soumission de votre contribution. Veuillez réessayer.')
   }
 }
 
 onMounted(async () => {
   // La fiche est déjà chargée côté serveur ; on complète avec les contributeurs.
-  if (pays.value) {
-    contributeurs.value = await listerContributeurs(pays.value.id)
-  }
+  if (pays.value) contributeurs.value = await listerContributeurs(pays.value.id)
 })
 </script>
+
+<template>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        :titre="pays?.nom ?? 'Territoire'"
+        :sous-titre="pays?.slogan ?? undefined"
+        :image="pays?.image_couverture ? resoudreUrlImage(pays.image_couverture) : null"
+      >
+        <template v-if="pays?.region" #action>
+          <span class="rounded-lg bg-af-vert px-4 py-2 text-[14px]/[1.4] font-bold text-white">
+            {{ pays.region }}
+          </span>
+        </template>
+      </AfricansBandeauModule>
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Africarise', vers: '/africa-culture' },
+          { libelle: 'Afripulse', vers: '/opportunite-afrique' },
+          { libelle: pays?.nom ?? 'Territoire' }]"
+      />
+    </template>
+
+    <div v-if="!pays" class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+      <font-awesome-icon icon="fa-solid fa-earth-africa" class="text-4xl text-af-atone-2" />
+      <p class="mt-4 text-[16px]/[1.4] font-bold">Territoire introuvable</p>
+      <p class="mt-2 text-[14px]/[1.4] text-af-corps">
+        Cette fiche n'existe pas ou n'est plus publiée.
+      </p>
+      <AfricansBouton class="mt-6" variante="secondaire" icone="fa-solid fa-arrow-left" vers="/opportunite-afrique">
+        Retour aux territoires
+      </AfricansBouton>
+    </div>
+
+    <div v-else class="flex flex-col gap-5">
+      <!-- Informations générales : champs à gauche, visuel à droite. -->
+      <AfricansAccordeon titre="Informations générales" icone="fa-solid fa-circle-info" fond="blanc" par-defaut-ouvert>
+        <div class="grid gap-6 md:grid-cols-2 md:items-center">
+          <dl class="flex flex-col gap-5">
+            <div v-for="champ in CHAMPS" :key="champ.libelle" class="flex items-start gap-3">
+              <font-awesome-icon :icon="champ.icone" class="mt-0.5 size-5 shrink-0 text-af-chocolat" />
+              <div class="min-w-0">
+                <dt class="text-[14px]/[1.4] text-af-corps">{{ champ.libelle }}</dt>
+                <dd class="text-[14px]/[1.4] font-bold text-af-encre">{{ champ.valeur }}</dd>
+              </div>
+            </div>
+          </dl>
+
+          <!-- La maquette pose une carte à cette place. Le contour du pays
+               vient de `@svg-maps/world`, déjà utilisé par la carte d'Afrique
+               de la liste : les 55 territoires sont couverts, sans asset ni
+               requête. Repli sur la photo pour une fiche sans code ISO2. -->
+          <OpportuniteAfriqueCarteTerritoire
+            v-if="pays.code"
+            :code="pays.code"
+            :nom="pays.nom"
+          />
+          <img
+            v-else-if="pays.image_couverture"
+            :src="resoudreUrlImage(pays.image_couverture)"
+            :alt="pays.nom"
+            class="w-full rounded-[10px] object-cover"
+          />
+        </div>
+      </AfricansAccordeon>
+
+      <!-- Cultures et langues -->
+      <AfricansAccordeon
+        v-if="pays.langues?.length || pays.ethnies?.length"
+        titre="Cultures et langues"
+        icone="fa-solid fa-earth-africa"
+      >
+        <div class="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
+          <div class="flex flex-col gap-8">
+          <div v-if="pays.langues?.length" class="flex flex-col gap-3">
+            <h4 class="text-[17px]/[1.4] font-bold text-af-encre">Langues parlées</h4>
+            <ol class="grid gap-x-8 gap-y-1 sm:grid-cols-2">
+              <li
+                v-for="(langue, i) in pays.langues"
+                :key="langue"
+                class="text-[14px]/[1.4] text-af-encre"
+              >
+                {{ i + 1 }}-{{ langue }}
+              </li>
+            </ol>
+          </div>
+
+          <div v-if="pays.ethnies?.length" class="flex flex-col gap-3">
+            <h4 class="text-[17px]/[1.4] font-bold text-af-encre">Principaux groupes ethniques</h4>
+            <ol class="grid gap-x-8 gap-y-1 sm:grid-cols-2">
+              <li
+                v-for="(ethnie, i) in pays.ethnies"
+                :key="ethnie"
+                class="text-[14px]/[1.4] text-af-encre"
+              >
+                {{ i + 1 }}-{{ ethnie }}
+              </li>
+            </ol>
+          </div>
+          </div>
+
+          <!-- L'illustration du Figma, exportée depuis la maquette. Son
+               `width`/`height` en dur a été retiré à l'enregistrement : le
+               `viewBox` suffit à donner le rapport d'aspect, et c'est la mise
+               en page qui décide de la taille.
+               `alt` vide : elle est décorative, la relire à voix haute
+               n'apprendrait rien de plus que les listes qu'elle accompagne. -->
+          <img
+            src="/images/africans/illustrations/cultures-langues.svg"
+            alt=""
+            class="mx-auto w-full max-w-[260px] md:mx-0"
+          />
+        </div>
+      </AfricansAccordeon>
+
+      <!-- Sections enrichies (US1), toutes repliées. -->
+      <OpportuniteAfriqueSecteursOpportunitesSection
+        :fiche-id="pays.id"
+        :est-authentifie="userStore.isAuthenticated"
+        @open-contribution="onOpenContribution"
+        @require-login="onRequireLogin"
+      />
+      <OpportuniteAfriqueRecettesCulinairesSection
+        :fiche-id="pays.id"
+        :est-authentifie="userStore.isAuthenticated"
+        @open-contribution="onOpenContribution"
+        @require-login="onRequireLogin"
+      />
+      <OpportuniteAfriqueSitesTouristiquesSection
+        :fiche-id="pays.id"
+        :est-authentifie="userStore.isAuthenticated"
+        @open-contribution="onOpenContribution"
+        @require-login="onRequireLogin"
+      />
+      <OpportuniteAfriquePersonnalitesSection
+        :fiche-id="pays.id"
+        :est-authentifie="userStore.isAuthenticated"
+        @open-contribution="onOpenContribution"
+        @require-login="onRequireLogin"
+      />
+      <OpportuniteAfriqueSavoirAvantVoyagerSection
+        :fiche-id="pays.id"
+        :fiche="pays"
+        :est-authentifie="userStore.isAuthenticated"
+        @open-contribution="onOpenContribution"
+        @open-champ-voyage="onOpenChampVoyage"
+        @require-login="onRequireLogin"
+      />
+    </div>
+
+    <template #rail>
+      <form @submit.prevent="lancerRecherche">
+        <AfricansRecherche v-model="rechercheTerritoire" placeholder="Territoire, région, pays…" />
+      </form>
+
+      <template v-if="pays">
+        <AfricansPanneau titre="Statistiques" icone="fa-solid fa-sliders">
+          <dl class="flex flex-col">
+            <div class="flex items-baseline justify-between gap-4 pb-3">
+              <dt class="text-[14px]/[1.4] font-bold">Contributions</dt>
+              <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ pays.nombre_contributions }}</dd>
+            </div>
+            <div class="flex items-baseline justify-between gap-4 border-t border-af-bordure py-3">
+              <dt class="text-[14px]/[1.4] font-bold">J'aime</dt>
+              <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ pays.nombre_likes }}</dd>
+            </div>
+            <div class="flex items-baseline justify-between gap-4 border-t border-af-bordure pt-3">
+              <dt class="text-[14px]/[1.4] font-bold">Dernière mise à jour</dt>
+              <dd class="text-[14px]/[1.4] text-af-corps">{{ formatDate(pays.updated_at) }}</dd>
+            </div>
+          </dl>
+        </AfricansPanneau>
+
+        <AfricansPanneau v-if="SYMBOLES.length" titre="Symboles nationaux" icone="fa-solid fa-star">
+          <ul class="flex flex-col gap-5">
+            <li v-for="sym in SYMBOLES" :key="sym.cle" class="flex flex-col gap-2">
+              <p class="text-[12px]/[1.4] font-bold text-af-atone uppercase">{{ sym.libelle }}</p>
+              <!-- `self-start` n'est PAS cosmétique : le <li> est un conteneur
+                   flex en colonne, dont l'`align-items` vaut `stretch`. Une
+                   image en `w-auto` s'y étirait donc sur toute la largeur du
+                   rail tout en gardant la hauteur imposée, le drapeau
+                   paraissait écrasé, six fois trop large. -->
+              <img
+                v-if="sym.image"
+                :src="sym.image"
+                :alt="`${sym.libelle} - ${pays.nom}`"
+                class="w-auto self-start"
+                :class="sym.hauteur"
+              />
+              <p
+                v-if="sym.texte"
+                class="text-[14px]/[1.4]"
+                :class="sym.italique ? 'text-af-encre italic' : 'text-af-corps'"
+              >
+                <template v-if="sym.italique">« {{ sym.texte }} »</template>
+                <template v-else>{{ sym.texte }}</template>
+              </p>
+            </li>
+          </ul>
+        </AfricansPanneau>
+
+        <AfricansPanneau titre="Cette fiche vous plaît ?" icone="fa-solid fa-thumbs-up">
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              :disabled="reactionEnCours"
+              class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-[14px]/[1.4] font-bold transition disabled:opacity-60"
+              :class="pays.ma_reaction === 'like'
+                ? 'border-af-vert bg-af-vert text-white'
+                : 'border-af-bordure bg-white text-af-corps hover:border-af-vert'"
+              @click="basculerReaction('like')"
+            >
+              <font-awesome-icon icon="fa-solid fa-thumbs-up" />
+              {{ pays.nombre_likes }}
+            </button>
+            <button
+              type="button"
+              :disabled="reactionEnCours"
+              class="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-[14px]/[1.4] font-bold transition disabled:opacity-60"
+              :class="pays.ma_reaction === 'dislike'
+                ? 'border-af-live bg-af-live text-white'
+                : 'border-af-bordure bg-white text-af-corps hover:border-af-live'"
+              @click="basculerReaction('dislike')"
+            >
+              <font-awesome-icon icon="fa-solid fa-thumbs-down" />
+              {{ pays.nombre_dislikes }}
+            </button>
+          </div>
+        </AfricansPanneau>
+
+        <AfricansPanneau titre="Cadeaux" icone="fa-solid fa-gift">
+          <div class="flex flex-col gap-4">
+            <EngagementOffrirCadeauBouton
+              type-objet="fiche_pays"
+              :objet-id="pays.id"
+              :destinataire="pays.nom"
+              @offert="cadeauxRef?.rafraichir()"
+            />
+            <EngagementCadeauxRecus ref="cadeauxRef" type-objet="fiche_pays" :objet-id="pays.id" />
+          </div>
+        </AfricansPanneau>
+
+        <OpportuniteAfriqueContributeursSection :contributeurs="contributeurs" />
+
+        <AfricansPanneau titre="Actions" icone="fa-solid fa-pen-to-square">
+          <div class="flex flex-col gap-3">
+            <AfricansBouton icone="fa-solid fa-pen-to-square" @click="proposerModification">
+              Proposer une modification
+            </AfricansBouton>
+            <AfricansBouton variante="secondaire" icone="fa-solid fa-share-nodes" @click="ouvrirPartage">
+              Partager
+            </AfricansBouton>
+            <AfricansBouton variante="secondaire" icone="fa-solid fa-arrow-left" vers="/opportunite-afrique">
+              Retour aux territoires
+            </AfricansBouton>
+          </div>
+        </AfricansPanneau>
+      </template>
+    </template>
+
+    <OpportuniteAfriqueContributionModal
+      ref="contributionModalRef"
+      :is-open="showContributionModal"
+      :fiche-id="pays?.id || ''"
+      :pays-nom="pays?.nom || ''"
+      :afripulse-context="afripulseContext"
+      :legacy-context="legacyFieldContext"
+      @close="fermerContributionModal"
+      @submit="handleContributionSubmit"
+    />
+
+    <OpportuniteAfriquePartagerFicheModal
+      ref="partageModalRef"
+      :is-open="showPartageModal"
+      :pays-nom="pays?.nom || ''"
+      :fiche-id="pays?.id"
+      :est-connecte="userStore.isAuthenticated"
+      @close="showPartageModal = false"
+      @submit="handlePartageSubmit"
+    />
+  </NuxtLayout>
+</template>

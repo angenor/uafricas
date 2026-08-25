@@ -36,6 +36,16 @@ export interface FichePaysDetailAPI extends FichePaysAPI {
   embleme_url: string | null
   devise: string | null
   hymne_national: string | null
+  // Symboles nationaux enrichis (migration 11l). Tous facultatifs.
+  drapeau_description: string | null
+  embleme_description: string | null
+  hymne_description: string | null
+  fleur_nationale: string | null
+  fleur_description: string | null
+  animal_national: string | null
+  animal_description: string | null
+  oiseau_national: string | null
+  oiseau_description: string | null
   langue_officielle: string | null
   langues: string[]
   ethnies: string[]

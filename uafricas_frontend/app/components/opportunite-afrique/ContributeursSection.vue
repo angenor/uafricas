@@ -55,7 +55,7 @@ const formatDateRelative = (iso: string | null): string => {
         <div class="flex-shrink-0">
           <img
             v-if="c.utilisateur_id !== null && c.photo_url"
-            :src="c.photo_url"
+            :src="urlMedia(c.photo_url)!"
             :alt="c.prenom + ' ' + c.nom"
             class="w-10 h-10 rounded-full object-cover border-2 border-custom-green/20"
           />

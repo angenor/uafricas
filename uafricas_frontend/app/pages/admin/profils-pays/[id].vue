@@ -17,6 +17,7 @@ const {
   chargerContes, creerConte, modifierConte, supprimerConte,
   chargerSitesTouristiques, creerSiteTouristique, modifierSiteTouristique, supprimerSiteTouristique, definirVerificationSite,
   chargerSecteurs, creerSecteur, modifierSecteur, supprimerSecteur,
+  recettesCulinaires, personnalites, savoirsPratiques, chargerContenusCommunautaires,
   chargerSaisons, creerSaison, modifierSaison, supprimerSaison,
   chargerLiensInterethniques, creerLienInterethnique, modifierLienInterethnique, supprimerLienInterethnique,
   loading, error,
@@ -25,6 +26,7 @@ const {
 // ── Onglets ─────────────────────────────────────────────────
 
 type TabType = 'general' | 'regions' | 'groupes' | 'alliances' | 'contes' | 'sites' | 'secteurs' | 'saisons' | 'liens'
+  | 'recettes' | 'personnalites' | 'savoirs'
 
 const ongletActif = ref<TabType>('general')
 
@@ -38,7 +40,10 @@ const tabs: Array<{ id: TabType; label: string; icon: string; countKey?: string 
   { id: 'secteurs', label: 'Secteurs', icon: 'building', countKey: 'nb_secteurs' },
   { id: 'saisons', label: 'Saisons', icon: 'calendar-days', countKey: 'nb_saisons' },
   { id: 'liens', label: 'Liens', icon: 'link', countKey: 'nb_liens_interethniques' },
-]
+  // Contenus communautaires : en lecture seule ici (voir le bandeau des onglets).
+  { id: 'recettes', label: 'Recettes', icon: 'utensils' },
+  { id: 'personnalites', label: 'Personnalites', icon: 'user-tie' },
+  { id: 'savoirs', label: 'Savoirs', icon: 'plane' }]
 
 const getCount = (key: string) => {
   if (!ficheDetail.value) return 0
@@ -63,6 +68,15 @@ const form = reactive({
   image_embleme_url: '',
   image_devise_url: '',
   hymne_national: '',
+  drapeau_description: '',
+  embleme_description: '',
+  hymne_description: '',
+  fleur_nationale: '',
+  fleur_description: '',
+  animal_national: '',
+  animal_description: '',
+  oiseau_national: '',
+  oiseau_description: '',
   langue_officielle: '',
   langues_populaires: '',
   monnaie: '',
@@ -83,6 +97,15 @@ const remplirForm = () => {
   form.image_embleme_url = f.image_embleme_url || ''
   form.image_devise_url = f.image_devise_url || ''
   form.hymne_national = f.hymne_national || ''
+  form.drapeau_description = f.drapeau_description || ''
+  form.embleme_description = f.embleme_description || ''
+  form.hymne_description = f.hymne_description || ''
+  form.fleur_nationale = f.fleur_nationale || ''
+  form.fleur_description = f.fleur_description || ''
+  form.animal_national = f.animal_national || ''
+  form.animal_description = f.animal_description || ''
+  form.oiseau_national = f.oiseau_national || ''
+  form.oiseau_description = f.oiseau_description || ''
   form.langue_officielle = f.langue_officielle || ''
   form.langues_populaires = f.langues_populaires || ''
   form.monnaie = f.monnaie || ''
@@ -106,6 +129,15 @@ const sauvegarderGeneral = async () => {
     if (form.image_embleme_url.trim()) body.image_embleme_url = form.image_embleme_url.trim()
     if (form.image_devise_url.trim()) body.image_devise_url = form.image_devise_url.trim()
     if (form.hymne_national.trim()) body.hymne_national = form.hymne_national.trim()
+    if (form.drapeau_description.trim()) body.drapeau_description = form.drapeau_description.trim()
+    if (form.embleme_description.trim()) body.embleme_description = form.embleme_description.trim()
+    if (form.hymne_description.trim()) body.hymne_description = form.hymne_description.trim()
+    if (form.fleur_nationale.trim()) body.fleur_nationale = form.fleur_nationale.trim()
+    if (form.fleur_description.trim()) body.fleur_description = form.fleur_description.trim()
+    if (form.animal_national.trim()) body.animal_national = form.animal_national.trim()
+    if (form.animal_description.trim()) body.animal_description = form.animal_description.trim()
+    if (form.oiseau_national.trim()) body.oiseau_national = form.oiseau_national.trim()
+    if (form.oiseau_description.trim()) body.oiseau_description = form.oiseau_description.trim()
     if (form.langue_officielle.trim()) body.langue_officielle = form.langue_officielle.trim()
     if (form.langues_populaires.trim()) body.langues_populaires = form.langues_populaires.trim()
     if (form.monnaie.trim()) body.monnaie = form.monnaie.trim()
@@ -378,6 +410,16 @@ const chargerDonneesOnglet = async (tab: TabType) => {
     case 'secteurs': await chargerSecteurs(id); break
     case 'saisons': await chargerSaisons(id); break
     case 'liens': await chargerLiensInterethniques(id); break
+    // Un seul appel sert les trois onglets communautaires : ils viennent des
+    // mêmes endpoints publics, autant les charger d'un bloc.
+    case 'recettes':
+    case 'personnalites':
+    case 'savoirs':
+      await chargerContenusCommunautaires(id)
+      tabDataLoaded.recettes = true
+      tabDataLoaded.personnalites = true
+      tabDataLoaded.savoirs = true
+      break
   }
   tabDataLoaded[tab] = true
 }
@@ -550,6 +592,50 @@ onMounted(async () => {
                 <div class="form-control">
                   <label class="label"><span class="label-text">Fuseau horaire</span></label>
                   <input v-model="form.fuseau_horaire" type="text" class="input input-bordered">
+                </div>
+              </div>
+            </div>
+
+            <!-- Symboles nationaux (migration 11l) : notices et symboles
+                 vivants attendus par la fiche publique. -->
+            <div class="space-y-4">
+              <h3 class="text-lg font-semibold border-b pb-2">Symboles nationaux</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Notice du drapeau</span></label>
+                  <textarea v-model="form.drapeau_description" rows="2" class="textarea textarea-bordered" />
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Notice des armoiries</span></label>
+                  <textarea v-model="form.embleme_description" rows="2" class="textarea textarea-bordered" />
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Notice de l'hymne</span></label>
+                  <textarea v-model="form.hymne_description" rows="2" class="textarea textarea-bordered" />
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Fleur nationale</span></label>
+                  <input v-model="form.fleur_nationale" type="text" class="input input-bordered">
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Notice de la fleur</span></label>
+                  <textarea v-model="form.fleur_description" rows="2" class="textarea textarea-bordered" />
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Animal national</span></label>
+                  <input v-model="form.animal_national" type="text" class="input input-bordered">
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Notice de l'animal</span></label>
+                  <textarea v-model="form.animal_description" rows="2" class="textarea textarea-bordered" />
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Oiseau national</span></label>
+                  <input v-model="form.oiseau_national" type="text" class="input input-bordered">
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text">Notice de l'oiseau</span></label>
+                  <textarea v-model="form.oiseau_description" rows="2" class="textarea textarea-bordered" />
                 </div>
               </div>
             </div>
@@ -769,6 +855,103 @@ onMounted(async () => {
       </div>
 
       <!-- ══════ Onglet Secteurs ══════ -->
+      <!-- Contenus communautaires : recettes, personnalités, savoirs.
+           Ils n'ont pas de CRUD d'administration : ils naissent d'une
+           contribution et se corrigent par le même canal, qui s'applique
+           immédiatement pour un détenteur de `fiche_pays.gerer`. Les lister
+           ici répond au seul manque réel : les RETROUVER. -->
+      <div v-else-if="ongletActif === 'recettes'" class="space-y-4">
+        <div class="alert alert-info">
+          <font-awesome-icon icon="circle-info" />
+          <span>
+            Contenus proposés par la communauté. Pour en corriger un, ouvrez la fiche publique et
+            utilisez « Modifier » : la correction s'applique aussitôt avec vos droits.
+          </span>
+        </div>
+        <h3 class="text-lg font-semibold">Recettes culinaires ({{ recettesCulinaires.length }})</h3>
+        <div class="card bg-base-100 shadow-sm">
+          <div class="card-body">
+            <div v-if="!recettesCulinaires.length" class="text-center py-8 text-base-content/50">
+              <font-awesome-icon icon="inbox" class="text-4xl mb-2" /><p>Aucune recette</p>
+            </div>
+            <div v-else class="overflow-x-auto">
+              <table class="table table-zebra">
+                <thead><tr><th>Titre</th><th>Zones</th><th>Ingredients</th><th>Images</th></tr></thead>
+                <tbody>
+                  <tr v-for="r in recettesCulinaires" :key="r.id">
+                    <td>{{ r.titre }}</td>
+                    <td class="max-w-xs truncate">{{ r.territoires_consommation || '-' }}</td>
+                    <td>{{ (r.ingredients || []).length }}</td>
+                    <td>{{ (r.images || []).length }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="ongletActif === 'personnalites'" class="space-y-4">
+        <div class="alert alert-info">
+          <font-awesome-icon icon="circle-info" />
+          <span>
+            Contenus proposés par la communauté. Pour en corriger un, ouvrez la fiche publique et
+            utilisez « Modifier » : la correction s'applique aussitôt avec vos droits.
+          </span>
+        </div>
+        <h3 class="text-lg font-semibold">Personnalites connues ({{ personnalites.length }})</h3>
+        <div class="card bg-base-100 shadow-sm">
+          <div class="card-body">
+            <div v-if="!personnalites.length" class="text-center py-8 text-base-content/50">
+              <font-awesome-icon icon="inbox" class="text-4xl mb-2" /><p>Aucune personnalite</p>
+            </div>
+            <div v-else class="overflow-x-auto">
+              <table class="table table-zebra">
+                <thead><tr><th>Nom</th><th>Domaine</th><th>Annees</th><th>Portrait</th></tr></thead>
+                <tbody>
+                  <tr v-for="pc in personnalites" :key="pc.id">
+                    <td>{{ pc.nom_complet }}</td>
+                    <td>{{ pc.domaine }}</td>
+                    <td>{{ pc.annee_naissance || '?' }} - {{ pc.annee_deces || '' }}</td>
+                    <td>{{ pc.portrait_url ? 'oui' : '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="ongletActif === 'savoirs'" class="space-y-4">
+        <div class="alert alert-info">
+          <font-awesome-icon icon="circle-info" />
+          <span>
+            Contenus proposés par la communauté. Pour en corriger un, ouvrez la fiche publique et
+            utilisez « Modifier » : la correction s'applique aussitôt avec vos droits.
+          </span>
+        </div>
+        <h3 class="text-lg font-semibold">Savoirs pratiques ({{ savoirsPratiques.length }})</h3>
+        <div class="card bg-base-100 shadow-sm">
+          <div class="card-body">
+            <div v-if="!savoirsPratiques.length" class="text-center py-8 text-base-content/50">
+              <font-awesome-icon icon="inbox" class="text-4xl mb-2" /><p>Aucun savoir</p>
+            </div>
+            <div v-else class="overflow-x-auto">
+              <table class="table table-zebra">
+                <thead><tr><th>Titre</th><th>Categorie</th><th>Explication</th></tr></thead>
+                <tbody>
+                  <tr v-for="sp in savoirsPratiques" :key="sp.id">
+                    <td>{{ sp.titre }}</td>
+                    <td>{{ sp.categorie }}</td>
+                    <td class="max-w-md truncate">{{ sp.explication }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div v-else-if="ongletActif === 'secteurs'" class="space-y-4">
         <div class="flex justify-between items-center">
           <h3 class="text-lg font-semibold">Secteurs de developpement ({{ secteurs.length }})</h3>

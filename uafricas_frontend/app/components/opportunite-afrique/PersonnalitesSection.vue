@@ -114,64 +114,52 @@ const proposerPersonnalite = () => {
 </script>
 
 <template>
-  <section class="transition-all" :class="replie ? 'py-5' : 'py-12'">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between gap-4" :class="replie ? '' : 'mb-8'">
-        <button
-          type="button"
-          class="flex items-center gap-3 text-left min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-          :aria-expanded="!replie"
-          @click="replie = !replie"
-        >
-          <font-awesome-icon
-            :icon="['fas', 'chevron-down']"
-            class="w-5 h-5 shrink-0 text-custom-chocolat transition-transform duration-200"
-            :class="replie ? '-rotate-90' : ''"
-          />
-          <h2 class="font-oswald text-3xl md:text-4xl font-bold text-gray-900">
-            Personnalités connues
-          </h2>
-        </button>
-        <button
-          v-show="!replie"
-          type="button"
-          class="px-4 py-2 bg-custom-chocolat text-white rounded-md hover:bg-custom-chocolat/90 transition-colors text-sm font-medium"
-          @click="proposerPersonnalite"
-        >
-          Proposer une personnalité
-        </button>
-      </div>
-
+  <AfricansAccordeon
+    titre="Personnalités connues"
+    icone="fa-solid fa-user-tie"
+    :model-value="!replie"
+    @update:model-value="replie = !$event"
+  >
       <div v-show="!replie">
-      <div class="flex flex-wrap gap-2 mb-8">
+      <!-- Les pastilles de domaine ET l'action tiennent sur la même ligne :
+           `items-center` les aligne sur la même base, `ml-auto` pousse le
+           bouton à droite. -->
+      <div class="mb-8 flex flex-wrap items-center gap-2">
         <button
           v-for="d in domaines"
           :key="d.value"
           type="button"
           class="px-3 py-1.5 rounded-full text-sm font-medium transition-colors border"
           :class="domaineFiltre === d.value
-            ? 'bg-custom-chocolat text-white border-custom-chocolat'
-            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+            ? 'bg-af-chocolat text-white border-af-chocolat'
+            : 'bg-white text-af-corps border-af-bordure hover:bg-af-fond'"
           @click="domaineFiltre = d.value"
         >
           {{ d.label }}
         </button>
+
+        <AfricansBoutonIcone
+          class="ml-auto"
+          libelle="Proposer une personnalité"
+          icone="fa-solid fa-plus"
+          @click="proposerPersonnalite"
+        />
       </div>
 
-      <div v-if="chargement" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div v-if="chargement" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         <div v-for="n in 4" :key="n" class="bg-gray-100 rounded-lg h-80 animate-pulse" />
       </div>
 
       <div
         v-else-if="personnalites.length === 0"
-        class="text-center py-12 bg-gray-50 rounded-lg"
+        class="rounded-[10px] border border-af-bordure bg-white py-12 text-center"
       >
-        <p class="text-gray-600">Aucune personnalité pour l'instant.</p>
+        <p class="text-[14px]/[1.4] text-af-corps">Aucune personnalité pour l'instant.</p>
       </div>
 
       <div
         v-else
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
       >
         <article
           v-for="p in personnalitesPage"
@@ -192,20 +180,20 @@ const proposerPersonnalite = () => {
             />
             <div
               v-else
-              class="w-full h-full flex items-center justify-center bg-gradient-to-br from-custom-chocolat/20 to-custom-green/20 font-oswald text-4xl font-bold text-custom-chocolat"
+              class="w-full h-full flex items-center justify-center bg-af-chocolat/10 text-4xl font-bold text-af-chocolat"
             >
               {{ getInitiales(p.nom_complet) }}
             </div>
           </button>
           <div class="p-4 flex-1 flex flex-col">
             <h3
-              class="font-oswald text-lg font-semibold text-gray-900 mb-1 cursor-pointer hover:text-custom-chocolat transition-colors"
+              class="text-[17px]/[1.4] font-bold text-af-encre cursor-pointer transition hover:text-af-chocolat"
               @click="ouvrirDetail(p)"
             >
               {{ p.nom_complet }}
             </h3>
             <span
-              class="inline-block self-start px-2 py-0.5 text-xs font-medium bg-custom-green/10 text-custom-green rounded-full mb-2"
+              class="inline-block self-start rounded-full bg-af-fond px-2 py-0.5 text-[12px]/[1.4] font-bold text-af-corps mb-2"
             >
               {{ labelDomaine(p.domaine) }}
             </span>
@@ -223,23 +211,23 @@ const proposerPersonnalite = () => {
               :href="p.lien_reference"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-xs text-custom-chocolat hover:underline mt-3 inline-block"
+              class="mt-3 inline-block text-[12px]/[1.4] font-bold text-af-chocolat transition hover:opacity-70"
             >
               En savoir plus
             </a>
             <!-- Bandeau de suspension (>10 signalements) -->
             <div
               v-if="p.suspendu"
-              class="mt-3 flex items-start gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-800"
+              class="mt-3 flex items-start gap-2 rounded-[10px] border border-af-live/30 bg-af-live/5 px-3 py-2 text-[12px]/[1.4] text-af-live"
             >
               <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="w-3.5 h-3.5 mt-0.5 shrink-0" />
               <span>Contribution suspendue : en cours de vérification.</span>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+            <div class="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-af-bordure">
               <button
                 type="button"
-                class="inline-flex items-center gap-1 text-xs font-medium text-custom-green hover:underline"
+                class="inline-flex items-center gap-1 text-[12px]/[1.4] font-bold text-af-corps transition hover:text-af-chocolat"
                 @click="ouvrirDetail(p)"
               >
                 <font-awesome-icon :icon="['fas', 'circle-info']" class="w-3.5 h-3.5" />
@@ -248,7 +236,7 @@ const proposerPersonnalite = () => {
               <template v-if="!p.suspendu">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
+                  class="inline-flex items-center gap-1 text-[12px]/[1.4] font-bold text-af-corps transition hover:text-af-chocolat"
                   @click="ouvrirContribution('edition', p)"
                 >
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,7 +246,7 @@ const proposerPersonnalite = () => {
                 </button>
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
+                  class="inline-flex items-center gap-1 text-[12px]/[1.4] font-bold text-af-corps transition hover:text-af-live"
                   @click="ouvrirContribution('suppression', p)"
                 >
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,9 +273,8 @@ const proposerPersonnalite = () => {
         v-if="!chargement && personnalites.length"
         v-model:page="page"
         :total-pages="totalPages"
-        accent-class="bg-custom-chocolat border-custom-chocolat text-white"
+        accent-class="bg-af-chocolat border-af-chocolat text-white"
       />
       </div>
-    </div>
-  </section>
+  </AfricansAccordeon>
 </template>
