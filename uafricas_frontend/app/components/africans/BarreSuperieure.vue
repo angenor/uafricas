@@ -9,9 +9,16 @@
        continuer de la recouvrir. -->
   <header class="sticky top-0 z-50 h-af-barre border-b border-af-bordure bg-white">
     <div class="mx-auto flex h-full max-w-af-conteneur items-center gap-6 px-6">
-      <NuxtLink to="/" class="shrink-0">
-        <img src="/logos/logo_uafracas.png" alt="AfricanS" class="h-[59px] w-auto" />
-      </NuxtLink>
+      <!-- Trois zones, dont DEUX ÉLASTIQUES de part et d'autre. C'est ce qui
+           centre réellement la recherche : un simple `mx-auto` la centrerait
+           dans l'espace RESTANT, et se décalerait donc dès que le logo et les
+           contrôles de droite n'ont pas la même largeur, ce qui est le cas ici.
+           `min-w-0` les autorise à se comprimer plutôt qu'à déborder. -->
+      <div class="flex min-w-0 flex-1 items-center">
+        <NuxtLink to="/" class="shrink-0">
+          <img src="/logos/logo_uafracas.png" alt="AfricanS" class="h-[59px] w-auto" />
+        </NuxtLink>
+      </div>
 
       <!-- Recherche globale. C'est un BOUTON déguisé en champ, pas un champ :
            la saisie et les résultats vivent dans la fenêtre de recherche, qui
@@ -19,19 +26,20 @@
            la barre et l'autre dans la fenêtre qu'il ouvre, obligeraient à
            retaper ce qu'on vient d'écrire.
 
-           Largeur fixe : `flex-1` fonctionnerait maintenant que plus aucune
-           marge automatique ne s'interpose, mais un champ qui s'étire sur la
-           moitié de la barre déséquilibre le reste. 320 px suffisent à sa
-           phrase.
+           Largeur FIXE, et `shrink-0` : c'est l'élément du milieu, et un
+           élément central qui se comprime n'est plus centré sur la même chose
+           d'un écran à l'autre. 320 px suffisent à sa phrase.
 
            Seuil à 48rem : à 640 px, logo + 320 px de champ + les deux
            contrôles de droite débordent. En dessous, la loupe remplace le
            champ.
 
-           Le `ml-auto` est ce qui pousse la recherche et le compte à droite. -->
+           Elle est posée entre les deux zones élastiques, pas poussée par
+           une marge : c'est la seule façon qu'elle reste au milieu quand le
+           nom affiché à droite s'allonge. -->
       <button
         type="button"
-        class="ml-auto hidden h-11 w-80 shrink items-center gap-3 rounded-lg border border-af-bordure bg-af-fond px-4 text-left transition hover:border-af-chocolat focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat md:flex"
+        class="hidden h-11 w-80 shrink-0 items-center gap-3 rounded-lg border border-af-bordure bg-af-fond px-4 text-left transition hover:border-af-chocolat focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat md:flex"
         aria-label="Rechercher sur AfricanS"
         @click="rechercheOuverte = true"
       >
@@ -42,19 +50,19 @@
         </kbd>
       </button>
 
-      <!-- Repli sous 48rem, où le champ disparaît. Hors de la branche
-           « connecté » comme le champ lui-même : la racine sert le fil à tout
-           le monde, un visiteur doit pouvoir chercher aussi. -->
-      <button
-        type="button"
-        class="ml-auto grid size-6 shrink-0 place-items-center text-af-chocolat transition hover:opacity-70 md:hidden"
-        aria-label="Rechercher sur AfricanS"
-        @click="rechercheOuverte = true"
-      >
-        <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="text-xl" />
-      </button>
+      <div class="flex min-w-0 flex-1 items-center justify-end gap-4">
+        <!-- Repli sous 48rem, où le champ disparaît. Hors de la branche
+             « connecté » comme le champ lui-même : la racine sert le fil à
+             tout le monde, un visiteur doit pouvoir chercher aussi. -->
+        <button
+          type="button"
+          class="grid size-6 shrink-0 place-items-center text-af-chocolat transition hover:opacity-70 md:hidden"
+          aria-label="Rechercher sur AfricanS"
+          @click="rechercheOuverte = true"
+        >
+          <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="text-xl" />
+        </button>
 
-      <div class="flex items-center gap-4">
         <template v-if="estConnecte">
           <!-- Cloche : le composant existait déjà, complet (compteur de non-lus,
                liste, marquage lu, navigation vers l'objet) : il n'était monté
