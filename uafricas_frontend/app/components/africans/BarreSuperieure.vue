@@ -13,46 +13,25 @@
         <img src="/logos/logo_uafracas.png" alt="AfricanS" class="h-[59px] w-auto" />
       </NuxtLink>
 
-      <!-- Profil. Dans la maquette il n'est pas collé au logo : il commence au
-           tiers de la barre, au droit de la colonne principale. -->
-      <NuxtLink
-        v-if="estConnecte"
-        to="/mon-compte/profil"
-        class="flex items-center gap-3 lg:ml-[calc(var(--spacing-af-colonne)+2.5rem)]"
-      >
-        <img
-          v-if="photo"
-          :src="photo"
-          :alt="nomAffiche"
-          class="size-11 rounded-full object-cover"
-        />
-        <span v-else class="grid size-11 place-items-center rounded-full bg-af-chocolat/15 text-af-chocolat">
-          <font-awesome-icon icon="fa-solid fa-user" />
-        </span>
-        <span class="hidden text-base font-bold sm:inline">{{ nomAffiche }}</span>
-      </NuxtLink>
-
       <!-- Recherche globale. C'est un BOUTON déguisé en champ, pas un champ :
            la saisie et les résultats vivent dans la fenêtre de recherche, qui
            les groupe par nature et se pilote au clavier. Deux champs, l'un dans
            la barre et l'autre dans la fenêtre qu'il ouvre, obligeraient à
            retaper ce qu'on vient d'écrire.
 
-           Largeur FIXE et non `flex-1` : le profil porte `mr-auto`, et une
-           marge automatique absorbe tout l'espace libre AVANT que `flex-grow`
-           n'entre en jeu. Le champ resterait donc à la largeur de son texte,
-           quelle que soit la valeur donnée à `flex-1`.
+           Largeur fixe : `flex-1` fonctionnerait maintenant que plus aucune
+           marge automatique ne s'interpose, mais un champ qui s'étire sur la
+           moitié de la barre déséquilibre le reste. 320 px suffisent à sa
+           phrase.
 
-           Seuil à 48rem et non 40rem : à 640 px, logo + profil + 288 px de
-           champ + trois icônes débordent. En dessous, la loupe le remplace.
+           Seuil à 48rem : à 640 px, logo + 320 px de champ + les deux
+           contrôles de droite débordent. En dessous, la loupe remplace le
+           champ.
 
-           C'est ce `ml-auto` qui pousse la recherche et les icônes à droite,
-           et lui SEUL : le profil portait un `mr-auto` qui faisait le même
-           travail, mais il disparaît avec lui pour un visiteur déconnecté, et
-           la barre se repliait alors à gauche. -->
+           Le `ml-auto` est ce qui pousse la recherche et le compte à droite. -->
       <button
         type="button"
-        class="ml-auto hidden h-11 w-72 shrink items-center gap-3 rounded-lg border border-af-bordure bg-af-fond px-4 text-left transition hover:border-af-chocolat focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat md:flex"
+        class="ml-auto hidden h-11 w-80 shrink items-center gap-3 rounded-lg border border-af-bordure bg-af-fond px-4 text-left transition hover:border-af-chocolat focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat md:flex"
         aria-label="Rechercher sur AfricanS"
         @click="rechercheOuverte = true"
       >
@@ -83,21 +62,41 @@
                étaient des `<button>` sans gestionnaire : décoratives. -->
           <LayoutClocheNotifications />
 
-          <!-- Menu du compte. La barre affiche le nom et la photo, mais le reste
-               du menu que portait l'ancienne navigation, engagement, ami(e)s,
-               contributions, administration, déconnexion, n'avait plus de
-               porte d'entrée. -->
+          <!-- Menu du compte : profil, engagement, ami(e)s, contributions,
+               administration, déconnexion. Ces entrées que portait l'ancienne
+               navigation n'avaient plus de porte d'entrée depuis la refonte. -->
           <div ref="menuRef" class="relative">
+            <!-- Avatar ET menu en un seul contrôle. Ils faisaient double
+                 emploi : l'avatar menait au profil, l'engrenage ouvrait un
+                 menu dont la PREMIÈRE entrée est « Mon profil ». Deux points
+                 d'entrée pour la même destination, à deux endroits différents
+                 de la barre.
+
+                 Le profil reste donc atteignable, en une entrée nommée plutôt
+                 qu'en devinant qu'une photo est cliquable. -->
             <button
               type="button"
-              class="grid size-6 place-items-center text-af-chocolat transition hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-af-chocolat"
+              class="flex items-center gap-2 rounded-full pr-2 transition hover:bg-af-fond focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat"
               :aria-expanded="menuOuvert"
               aria-haspopup="true"
               aria-label="Mon compte"
-              title="Mon compte"
               @click="menuOuvert = !menuOuvert"
             >
-              <font-awesome-icon icon="fa-solid fa-gear" class="text-xl" />
+              <img
+                v-if="photo"
+                :src="photo"
+                :alt="''"
+                class="size-11 shrink-0 rounded-full object-cover"
+              />
+              <span v-else class="grid size-11 shrink-0 place-items-center rounded-full bg-af-chocolat/15 text-af-chocolat">
+                <font-awesome-icon icon="fa-solid fa-user" />
+              </span>
+              <span class="hidden max-w-40 truncate text-base font-bold lg:inline">{{ nomAffiche }}</span>
+              <font-awesome-icon
+                icon="fa-solid fa-chevron-down"
+                class="shrink-0 text-sm text-af-corps transition-transform"
+                :class="menuOuvert && 'rotate-180'"
+              />
             </button>
 
             <div
