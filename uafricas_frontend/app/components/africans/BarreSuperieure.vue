@@ -18,7 +18,7 @@
       <NuxtLink
         v-if="estConnecte"
         to="/mon-compte/profil"
-        class="ml-auto flex items-center gap-3 lg:mr-auto lg:ml-[calc(var(--spacing-af-colonne)+2.5rem)]"
+        class="flex items-center gap-3 lg:ml-[calc(var(--spacing-af-colonne)+2.5rem)]"
       >
         <img
           v-if="photo"
@@ -32,7 +32,50 @@
         <span class="hidden text-base font-bold sm:inline">{{ nomAffiche }}</span>
       </NuxtLink>
 
-      <div class="ml-auto flex items-center gap-4">
+      <!-- Recherche globale. C'est un BOUTON déguisé en champ, pas un champ :
+           la saisie et les résultats vivent dans la fenêtre de recherche, qui
+           les groupe par nature et se pilote au clavier. Deux champs, l'un dans
+           la barre et l'autre dans la fenêtre qu'il ouvre, obligeraient à
+           retaper ce qu'on vient d'écrire.
+
+           Largeur FIXE et non `flex-1` : le profil porte `mr-auto`, et une
+           marge automatique absorbe tout l'espace libre AVANT que `flex-grow`
+           n'entre en jeu. Le champ resterait donc à la largeur de son texte,
+           quelle que soit la valeur donnée à `flex-1`.
+
+           Seuil à 48rem et non 40rem : à 640 px, logo + profil + 288 px de
+           champ + trois icônes débordent. En dessous, la loupe le remplace.
+
+           C'est ce `ml-auto` qui pousse la recherche et les icônes à droite,
+           et lui SEUL : le profil portait un `mr-auto` qui faisait le même
+           travail, mais il disparaît avec lui pour un visiteur déconnecté, et
+           la barre se repliait alors à gauche. -->
+      <button
+        type="button"
+        class="ml-auto hidden h-11 w-72 shrink items-center gap-3 rounded-lg border border-af-bordure bg-af-fond px-4 text-left transition hover:border-af-chocolat focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat md:flex"
+        aria-label="Rechercher sur AfricanS"
+        @click="rechercheOuverte = true"
+      >
+        <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="shrink-0 text-af-atone-2" />
+        <span class="min-w-0 flex-1 truncate text-[14px]/[1.4] text-af-atone-2">Rechercher sur AfricanS…</span>
+        <kbd class="hidden shrink-0 rounded border border-af-bordure bg-white px-1.5 py-0.5 text-[11px] text-af-atone lg:inline">
+          {{ raccourci }}
+        </kbd>
+      </button>
+
+      <!-- Repli sous 48rem, où le champ disparaît. Hors de la branche
+           « connecté » comme le champ lui-même : la racine sert le fil à tout
+           le monde, un visiteur doit pouvoir chercher aussi. -->
+      <button
+        type="button"
+        class="ml-auto grid size-6 shrink-0 place-items-center text-af-chocolat transition hover:opacity-70 md:hidden"
+        aria-label="Rechercher sur AfricanS"
+        @click="rechercheOuverte = true"
+      >
+        <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="text-xl" />
+      </button>
+
+      <div class="flex items-center gap-4">
         <template v-if="estConnecte">
           <!-- Cloche : le composant existait déjà, complet (compteur de non-lus,
                liste, marquage lu, navigation vers l'objet) : il n'était monté
@@ -117,6 +160,8 @@
         </template>
       </div>
     </div>
+
+    <LayoutRecherchePopup :ouvert="rechercheOuverte" @fermer="rechercheOuverte = false" />
   </header>
 </template>
 
@@ -135,6 +180,23 @@ const photo = computed(() => urlMedia(userStore.user?.photo_url))
 
 const menuOuvert = ref(false)
 const menuRef = ref<HTMLElement | null>(null)
+
+// ── Recherche globale ─────────────────────────────────────────────────────
+// Le composant `LayoutRecherchePopup` était complet (résultats groupés,
+// navigation au clavier, recherches récentes) mais n'était monté que par
+// l'ancienne barre : les pages du gabarit n'avaient aucune recherche.
+const rechercheOuverte = ref(false)
+
+// Affiché tel quel dans la pastille : `⌘K` sur macOS, `Ctrl K` ailleurs.
+// Le calcul est CLIENT uniquement — `navigator` n'existe pas au rendu serveur.
+const raccourci = ref('Ctrl K')
+
+const surRaccourciRecherche = (e: KeyboardEvent) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault()
+    rechercheOuverte.value = true
+  }
+}
 
 const liensCompte = computed(() => [
   { libelle: 'Mon profil', vers: '/mon-compte/profil', icone: 'fa-solid fa-user' },
@@ -163,9 +225,14 @@ const surEchap = (e: KeyboardEvent) => {
 onMounted(() => {
   document.addEventListener('click', surClicExterieur)
   document.addEventListener('keydown', surEchap)
+  document.addEventListener('keydown', surRaccourciRecherche)
+  if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+    raccourci.value = '⌘K'
+  }
 })
 onBeforeUnmount(() => {
   document.removeEventListener('click', surClicExterieur)
   document.removeEventListener('keydown', surEchap)
+  document.removeEventListener('keydown', surRaccourciRecherche)
 })
 </script>
