@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_emission, media_episode, media_equipe, media_programmation, media_proposition, media_social, media_support, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{africanite, admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_emission, media_episode, media_equipe, media_programmation, media_proposition, media_social, media_support, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -696,6 +696,19 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/specialites", web::get().to(experts::lister_specialites_experts))
                     .route("/{id}", web::get().to(experts::obtenir_expert))
                     .route("/{id}/note", web::post().to(experts::noter_expert)),
+            )
+            // Africanité : publications éphémères du fil (spec 012, P1)
+            .service(
+                web::scope("/africanites")
+                    .route("", web::get().to(africanite::lister_africanites))
+                    // Deux routes de création et non une : le texte voyage en
+                    // JSON, l'image et la vidéo en multipart. Les mêler dans un
+                    // seul handler obligerait à deviner le type de corps.
+                    .route("/texte", web::post().to(africanite::creer_africanite_texte))
+                    .route("/media", web::post().to(africanite::creer_africanite_media))
+                    // Après les chemins littéraux : « /texte » serait sinon
+                    // capté par « /{id}/vue » et parserait « texte » en UUID.
+                    .route("/{id}/vue", web::post().to(africanite::marquer_vue)),
             )
             // Routes annuaire des membres (profils publics)
             .service(

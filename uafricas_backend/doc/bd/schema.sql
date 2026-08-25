@@ -152,6 +152,7 @@
 \ir schemas/30_social_conversation_annonce.sql
 \ir schemas/31_social_rendez_vous.sql
 \ir schemas/32_social_partage_profil.sql
+\ir schemas/36_social_africanite.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════
