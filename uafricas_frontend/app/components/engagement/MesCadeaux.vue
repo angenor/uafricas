@@ -5,7 +5,7 @@
  * Le **montant n'est affiché que sur le sens « offerts »** : l'offreur a le
  * droit de savoir ce qu'il a dépensé, le bénéficiaire ne voit jamais le prix
  * ligne à ligne. L'API applique déjà cette règle : le champ arrive à `null` sur
- * les cadeaux reçus , ce composant ne fait que ne pas la contredire.
+ * les cadeaux reçus, ce composant ne fait que ne pas la contredire.
  */
 import { onMounted, ref } from 'vue'
 import { useCadeaux, formaterMontant, type MonCadeau } from '~/composables/useCadeaux'

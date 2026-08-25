@@ -1189,7 +1189,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{type_support}/{support_id}/couverture", web::put().to(media_support::definir_couverture))
                     // Équipe éditoriale (010). {type_porteur} accepte QUATRE
                     // valeurs : les deux supports et les deux familles de
-                    // programme , là où les motifs voisins n'en acceptent que
+                    // programme, là où les motifs voisins n'en acceptent que
                     // deux. Le segment final « equipe » les distingue.
                     .route("/{type_porteur}/{porteur_id}/equipe", web::get().to(media_equipe::obtenir_equipe))
                     .route("/{type_porteur}/{porteur_id}/equipe", web::put().to(media_equipe::definir_equipe))

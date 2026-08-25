@@ -807,7 +807,7 @@ pub async fn lister_detenteurs_admin(
 ///
 /// Désignation directe, sans invitation : c'est le recours quand plus personne
 /// ne détient le support. Le rôle `proprietaire` est admis ici, contrairement
-/// à l'invitation entre membres , mais l'index unique
+/// à l'invitation entre membres, mais l'index unique
 /// `uq_support_un_proprietaire` en refusera un second.
 pub async fn ajouter_detenteur_admin(
     admin: AdminUtilisateur,

@@ -124,7 +124,7 @@ pub async fn partager_profil(
 
     // Engagement : 1 point au membre dont le profil est partagé (non-bloquant).
     // Le profil se désigne lui-même : `type_objet = 'profil'`, `objet_id` =
-    // identifiant du membre , exactement comme la table de partage ci-dessus.
+    // identifiant du membre, exactement comme la table de partage ci-dessus.
     crate::services::engagement::crediter_partage(
         pool.get_ref(),
         "profil",

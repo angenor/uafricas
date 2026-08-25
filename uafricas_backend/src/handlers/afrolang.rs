@@ -218,7 +218,7 @@ pub async fn est_moderateur_actif(
         }
         // Ni office ni attitré : soit le placeholder qui a ouvert la session,
         // soit un co-modérateur promu en séance. Distinction dérivée de
-        // `session.moderateur_id` : aucune colonne supplémentaire , elle
+        // `session.moderateur_id` : aucune colonne supplémentaire, elle
         // délimite ce qu'un modérateur peut révoquer (cf. `retirer_moderateur_session`).
         return Ok(Some(if placeholder_id == Some(utilisateur_id) {
             NiveauModerateur::Demarreur
@@ -5373,7 +5373,7 @@ async fn lister_moderateurs_office(
     session_id: Uuid,
 ) -> Result<Vec<ModerateurOfficeResponse>, ApiErreur> {
     // Refonte multi-modérateurs : on liste les modérateurs RÉELLEMENT actifs et
-    // présents (role_session='moderateur'), pas tous les attitrés de la salle 
+    // présents (role_session='moderateur'), pas tous les attitrés de la salle, 
     // un attitré entré mais en attente de passation (role 'participant') ne doit
     // PAS apparaître ici (cohérence avec le gating de est_moderateur_actif).
     let rows = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>)>(

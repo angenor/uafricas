@@ -51,7 +51,7 @@ pub fn exiger_utilisateur_id(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
 /// que lui.
 ///
 /// Renvoie 404 si le support n'existe pas, un membre qui n'y a pas accès n'a
-/// pas à distinguer « inexistant » de « interdit » , 403 s'il n'est pas
+/// pas à distinguer « inexistant » de « interdit », 403 s'il n'est pas
 /// détenteur actif ou si son rôle est insuffisant.
 pub async fn garde_detenteur(
     pool: &PgPool,
