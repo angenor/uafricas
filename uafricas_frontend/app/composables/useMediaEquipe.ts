@@ -132,7 +132,7 @@ export const useMediaEquipe = () => {
 
   /**
    * Remplacement intégral et ordonné : l'ordre du tableau fait foi, une liste
-   * vide supprime toute l'équipe. Les champs laissés blancs partent en `null` 
+   * vide supprime toute l'équipe. Les champs laissés blancs partent en `null`, 
    * une chaîne vide produirait un libellé creux à l'affichage.
    */
   const definirEquipe = async (

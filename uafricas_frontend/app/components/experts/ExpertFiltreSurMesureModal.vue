@@ -52,9 +52,7 @@ const etapes: Etape[] = [
     sousTitre: 'Dans quel domaine cherchez-vous un(e) expert(e) ?',
     type: 'options',
     options: [
-      { value: '', label: 'Peu importe' },
-      ...CATEGORIES_EXPERTISE.filter((c) => c !== 'Tout').map((c) => ({ value: c, label: c })),
-    ],
+      { value: '', label: 'Peu importe' }, ...CATEGORIES_EXPERTISE.filter((c) => c !== 'Tout').map((c) => ({ value: c, label: c }))],
   },
   {
     cle: 'pays',
@@ -63,9 +61,7 @@ const etapes: Etape[] = [
     type: 'options',
     recherchable: true,
     options: [
-      { value: '', label: 'Peu importe' },
-      ...TERRITOIRES_EXPERTS.map((p) => ({ value: p, label: p })),
-    ],
+      { value: '', label: 'Peu importe' }, ...TERRITOIRES_EXPERTS.map((p) => ({ value: p, label: p }))],
   },
   {
     cle: 'situation',

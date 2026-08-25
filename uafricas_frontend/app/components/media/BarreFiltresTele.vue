@@ -299,7 +299,7 @@ const classeSelect = [
           <div class="flex flex-wrap gap-2 overflow-y-auto px-4 py-4">
             <!-- Les thèmes sans chaîne restent proposés et cliquables : leur
                  `(0)` est une information : il dit que le thème existe et
-                 n'attend qu'un contenu , là où les masquer laisserait croire
+                 n'attend qu'un contenu, là où les masquer laisserait croire
                  à un catalogue plus étroit qu'il n'est. Ils sont simplement
                  estompés pour ne pas concurrencer les thèmes servis. -->
             <button

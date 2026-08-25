@@ -88,3 +88,22 @@ export const estMediaJouable = (
   if (sourceMedia(url, sourceMediaDeclaree) === 'hebergee') return true
   return youtubeEmbedUrl(url) !== null
 }
+
+/**
+ * Résout un chemin d'upload en URL absolue.
+ *
+ * Le serveur renvoie des chemins RELATIFS (`/uploads/photos-profil/…`), servis
+ * par actix-files sur le port du backend. En production, nginx place les deux
+ * derrière la même origine et le chemin relatif suffit : c'est pourquoi
+ * l'oubli du préfixe ne s'y voit pas. En développement, le front est sur 3000
+ * et le backend sur 8080 : le navigateur demande alors une image qui n'existe
+ * pas de son côté, et l'affiche cassée.
+ *
+ * Renvoie `null` pour une entrée vide, et laisse passer les URL déjà absolues.
+ */
+export const urlMedia = (chemin: string | null | undefined): string | null => {
+  if (!chemin) return null
+  if (chemin.startsWith('http://') || chemin.startsWith('https://')) return chemin
+  const base = useRuntimeConfig().public.apiBaseUrl as string
+  return `${base}${chemin}`
+}

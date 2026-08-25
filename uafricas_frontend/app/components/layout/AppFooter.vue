@@ -72,6 +72,9 @@
 const anneeCourante = new Date().getFullYear()
 
 const liensRapides = [
+  // La page de présentation n'est plus la racine : sans ce lien, elle ne serait
+  // atteignable qu'en tapant son adresse.
+  { label: 'Découvrir AfricanS', to: '/decouvrir', icone: 'fa-solid fa-earth-africa' },
   { label: 'Notre Mission', to: '/a-propos/mission', icone: 'fa-solid fa-rocket' },
   { label: 'Gouvernance', to: '/universite/gouvernance', icone: 'fa-solid fa-landmark' },
   { label: 'Nos Partenaires', to: '/a-propos/partenaires', icone: 'fa-solid fa-handshake' },

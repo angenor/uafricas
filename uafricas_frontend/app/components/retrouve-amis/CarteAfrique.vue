@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import World from '@svg-maps/world'
 import { PAYS_AFRICAINS_ISO2 } from '~/constants/afripulsePaysAutorises'
-import { NOMS_PAYS_FR, AFRICA_VIEWBOX, PETITES_ILES } from '~/utils/carteAfrique'
+import { NOMS_PAYS_FR, AFRICA_VIEWBOX, PETITES_ILES, couleurChaleurAvis } from '~/utils/carteAfrique'
 
 interface MapLocation {
   id: string
@@ -76,13 +76,9 @@ const adjustBrightness = (hex: string, percent: number): string => {
 }
 
 /** Échelle de chaleur ambre selon le nombre d'avis. */
-const couleurChaleur = (compte: number): string => {
-  if (compte >= 10) return '#b45309' // amber-700
-  if (compte >= 6) return '#d97706' // amber-600
-  if (compte >= 3) return '#f59e0b' // amber-500
-  if (compte >= 1) return '#fbbf24' // amber-400
-  return '#e5e7eb' // gray-200 (aucun avis)
-}
+// L'échelle vit dans `utils/carteAfrique.ts` : la légende du rail la lit aussi,
+// et deux tables séparées finiraient par diverger.
+const couleurChaleur = couleurChaleurAvis
 
 const getMapColor = (id: string): string => {
   const iso = id.toLowerCase()

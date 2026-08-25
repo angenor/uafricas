@@ -416,7 +416,7 @@ let detacherListenerModeration: (() => void) | null = null
  *  une fois. Avant cela, on retombe sur la prop optimiste fournie à la jointure. */
 const niveauCharge = ref(false)
 
-/** Statut modérateur EFFECTIF (set multi-modérateurs), dérivé du niveau serveur 
+/** Statut modérateur EFFECTIF (set multi-modérateurs), dérivé du niveau serveur, 
  *  remplace la prop figée `estModerateur`. Tant que le 1ᵉʳ fetch n'a pas eu lieu,
  *  on utilise la valeur optimiste de la prop (évite un flash non-modérateur). */
 const estModerateurEffectif = computed(() =>

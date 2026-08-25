@@ -8,7 +8,7 @@
     leave-to-class="opacity-0 translate-y-1"
   >
     <div v-if="open" class="absolute top-full left-1/2 -translate-x-1/2 z-50 pt-2">
-      <div class="w-96 flex bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+      <div class="flex w-96 overflow-hidden rounded-[10px] border border-af-bordure bg-white font-af shadow-xl">
         <!-- Zone image à gauche -->
         <div class="relative w-28 shrink-0 overflow-hidden" :class="gradient">
           <img
@@ -42,11 +42,11 @@
               :to="item.to"
               class="group flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-all duration-150"
             >
-              <div class="shrink-0 w-8 h-8 rounded-lg bg-orange-50 text-custom-chocolat flex items-center justify-center mt-0.5 group-hover:bg-green-50 group-hover:text-custom-green transition-colors duration-150">
+              <div class="shrink-0 w-8 h-8 rounded-lg bg-af-chocolat/15 text-af-chocolat flex items-center justify-center mt-0.5 group-hover:bg-af-vert/10 group-hover:text-af-vert transition-colors duration-150">
                 <font-awesome-icon :icon="item.icon" class="text-sm" />
               </div>
               <div class="min-w-0">
-                <p class="text-sm font-medium text-gray-800 group-hover:text-custom-green transition-colors duration-150">
+                <p class="text-sm font-medium text-gray-800 group-hover:text-af-vert transition-colors duration-150">
                   {{ item.label }}
                 </p>
                 <p class="text-[11px] text-gray-400 mt-0.5 leading-snug">

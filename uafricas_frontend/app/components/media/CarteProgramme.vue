@@ -1,5 +1,12 @@
 <script setup lang="ts">
 /**
+ * `<component :is="'NuxtLink'">` ne résout PAS le composant : la chaîne est
+ * rendue telle quelle, et le navigateur reçoit une balise `<NuxtLink>` inerte
+ * un lien qui n'en est pas un. `resolveComponent` le résout pour de bon.
+ */
+const LienNuxt = resolveComponent('NuxtLink')
+
+/**
  * Carte d'un **programme** dans une section de vitrine, feature 010.
  *
  * Trois informations, pas une de plus : couverture, nom, description tronquée
@@ -52,7 +59,7 @@ const iconeRepli = computed<[string, string]>(() =>
   <!-- `NuxtLink` est enregistré globalement : la bascule vers `div` évite de
        dupliquer tout le balisage pour le seul cas sans slug. -->
   <component
-    :is="lien ? 'NuxtLink' : 'div'"
+    :is="lien ? LienNuxt : 'div'"
     :to="lien || undefined"
     class="group block w-full text-left"
   >

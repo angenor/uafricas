@@ -8,7 +8,7 @@
  * entièrement et la section retombe sur son contenu mis en évidence (FR-041).
  *
  * Depuis 09q le créneau désigne un **programme** et l'épisode se déduit de la
- * rotation : le bandeau nomme donc les deux. Le lien pointe vers l'épisode 
+ * rotation : le bandeau nomme donc les deux. Le lien pointe vers l'épisode : 
  * c'est lui qu'on regarde ; le nom du programme le surmonte pour situer la série.
  */
 import type { CreneauAPI } from '~/composables/useMediaProgrammation'

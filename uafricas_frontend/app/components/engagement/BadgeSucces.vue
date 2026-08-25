@@ -4,7 +4,7 @@
  * sur le profil public.
  *
  * Deux états : obtenu (couleur pleine, date) et verrouillé (grisé, cadenas).
- * Le libellé, la description, la couleur et l'icône viennent tous de la base 
+ * Le libellé, la description, la couleur et l'icône viennent tous de la base, 
  * aucun texte de badge n'est écrit dans ce composant.
  */
 import { computed } from 'vue'

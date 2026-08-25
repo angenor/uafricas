@@ -289,7 +289,7 @@ onMounted(() => {
     props.room.on('dataReceived', handleDataReceived)
   }
 
-  // Recadrer le contenu quand le panneau (donc l'iframe) change de largeur 
+  // Recadrer le contenu quand le panneau (donc l'iframe) change de largeur, 
   // garantit que chacun voit tout le contenu quelle que soit sa largeur.
   if (whiteboardContainer.value && typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => recadrerDebounce())

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Liste des supports (chaînes et stations) que je détiens, et leur gestion 
+ * Liste des supports (chaînes et stations) que je détiens, et leur gestion, 
  * grille de programmation, demandes reçues, équipe (US5, US6).
  *
  * Extrait de la page `/mon-compte/mes-supports` pour être également monté en
@@ -102,7 +102,7 @@ const charger = async () => {
  * C'est ce que visent les passerelles venues des vitrines publiques (« Gérer ma
  * chaîne » dans une section de `/medias/tele`) : sans cela le détenteur
  * atterrit sur une liste refermée et doit y retrouver le support qu'il vient de
- * quitter. Un identifiant inconnu : support retiré entre-temps, lien recopié 
+ * quitter. Un identifiant inconnu : support retiré entre-temps, lien recopié, 
  * est simplement ignoré.
  */
 const route = useRoute()

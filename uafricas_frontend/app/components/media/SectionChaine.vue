@@ -140,7 +140,7 @@ const programmesMasques = computed(() =>
       </div>
     </header>
 
-    <!-- Extrait de description : ellipse figée, sans commande de dépliage 
+    <!-- Extrait de description : ellipse figée, sans commande de dépliage : 
          c'est la page de la chaîne qui déplie (FR-003). -->
     <CommonTexteRepliable
       v-if="section.chaine.description"

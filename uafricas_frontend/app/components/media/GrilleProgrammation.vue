@@ -495,7 +495,7 @@ const dateLisible = (iso: string) => {
             </p>
             <p class="text-sm text-white">
               <span v-if="apercuEpisode.numero_episode" class="text-gray-400">
-                Épisode {{ apercuEpisode.numero_episode }} 
+                Épisode {{ apercuEpisode.numero_episode }}, 
               </span>
               {{ apercuEpisode.titre }}
             </p>

@@ -162,7 +162,7 @@
               </div>
               <div class="text-sm text-gray-500">
                 <font-awesome-icon icon="fa-solid fa-eye" class="mr-1" />
-                {{ post.nombre_vues }} vues
+                (vues non comptées)
               </div>
             </div>
           </div>

@@ -87,7 +87,7 @@
               Notre objectif
             </h3>
             <p class="text-gray-700 text-sm leading-relaxed">
-              Renforcer les organisations locales : ONG, institutions, entreprises, collectivités 
+              Renforcer les organisations locales : ONG, institutions, entreprises, collectivités, 
               partager les compétences et les bonnes pratiques, et tisser des réseaux de coopération
               durables.
             </p>

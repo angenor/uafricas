@@ -1,5 +1,12 @@
 <script setup lang="ts">
 /**
+ * `<component :is="'NuxtLink'">` ne résout PAS le composant : la chaîne est
+ * rendue telle quelle, et le navigateur reçoit une balise `<NuxtLink>` inerte
+ * un lien qui n'en est pas un. `resolveComponent` le résout pour de bon.
+ */
+const LienNuxt = resolveComponent('NuxtLink')
+
+/**
  * Historique des points : liste paginée, filtres catégorie + période.
  * Tailwind v4 pur (Principe VI).
  *
@@ -232,7 +239,7 @@ const mentionPlafond = (m: MouvementPoints): string | null => {
                 lisible, avec un lien quand la page de détail existe.
               -->
               <component
-                :is="lienContenu(m) ? 'NuxtLink' : 'span'"
+                :is="lienContenu(m) ? LienNuxt : 'span'"
                 v-if="m.type_objet"
                 :to="lienContenu(m)"
                 class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-gray-600"

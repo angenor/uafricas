@@ -1,51 +1,30 @@
 <template>
-  <section id="decouvrir" class="py-16 md:py-24 w-full bg-gray-50">
-    <div class="container mx-auto px-6 md:px-12 lg:px-20">
-      <!-- Titre -->
-      <div class="text-center mb-12">
-        <h2 class="text-custom-chocolat text-3xl sm:text-4xl lg:text-5xl font-display">
-          <span class="font-bold">D</span>écouvrir AfricanS
+  <section id="decouvrir" class="w-full bg-af-fond py-16 font-af md:py-24">
+    <div class="mx-auto max-w-af-conteneur px-6">
+      <header class="flex flex-col items-center gap-3 text-center">
+        <h2 class="text-[28px]/[1.4] font-bold text-af-chocolat sm:text-[36px]/[1.4] lg:text-[40px]/[1.4]">
+          Découvrir AfricanS
         </h2>
-        <p class="text-gray-500 mt-3 text-lg max-w-2xl mx-auto">
+        <p class="max-w-3xl text-[16px]/[1.4] text-af-corps sm:text-[20px]/[1.4]">
           Apprenez-en plus sur notre organisation, notre mission et comment nous rejoindre.
         </p>
-      </div>
+      </header>
 
-      <!-- Grille de cartes -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      <div class="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <NuxtLink
-          v-for="(item, index) in items"
+          v-for="item in ITEMS"
           :key="item.titre"
-          :to="item.lien"
-          data-aos="fade-up"
-          :data-aos-delay="index * 100"
-          class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 text-center group border border-gray-100 hover:border-custom-green/30 block"
+          :to="item.vers"
+          class="group flex flex-col items-center gap-2 rounded-[10px] border border-af-bordure bg-white p-6 text-center transition hover:border-af-chocolat"
         >
-          <!-- Icône -->
-          <div
-            class="w-14 h-14 mx-auto rounded-full flex items-center justify-center mb-4"
-            :class="item.couleur === 'green'
-              ? 'bg-custom-green/10 text-custom-green'
-              : 'bg-custom-chocolat/10 text-custom-chocolat'"
-          >
-            <font-awesome-icon :icon="item.icone" class="w-6 h-6" />
-          </div>
-
-          <!-- Titre -->
-          <h3 class="font-display text-lg font-bold text-gray-800 mb-2">
+          <font-awesome-icon
+            :icon="item.icone"
+            class="mb-2 size-8 text-af-chocolat transition group-hover:scale-110"
+          />
+          <h3 class="text-[16px]/[1.4] font-bold text-af-encre transition group-hover:text-af-chocolat">
             {{ item.titre }}
           </h3>
-
-          <!-- Description -->
-          <p class="text-sm text-gray-600 leading-relaxed mb-4">
-            {{ item.description }}
-          </p>
-
-          <!-- Lien -->
-          <span class="inline-flex items-center gap-1 text-custom-green text-sm font-semibold group-hover:underline transition-colors">
-            En savoir plus
-            <font-awesome-icon icon="fa-solid fa-arrow-right" class="w-3 h-3" />
-          </span>
+          <p class="text-[12px]/[1.4] text-af-corps">{{ item.description }}</p>
         </NuxtLink>
       </div>
     </div>
@@ -53,51 +32,36 @@
 </template>
 
 <script setup lang="ts">
-interface DecouvrirItem {
-  icone: string
-  titre: string
-  description: string
-  lien: string
-  couleur: 'green' | 'chocolat'
-}
-
-const items: DecouvrirItem[] = [
+const ITEMS = [
   {
     icone: 'fa-solid fa-rocket',
-    titre: 'Notre Mission',
+    titre: 'Notre mission',
     description: 'Promouvoir les valeurs africaines et afro-descendantes pour un développement durable.',
-    lien: '/a-propos/mission',
-    couleur: 'green'
+    vers: '/a-propos/mission',
   },
   {
     icone: 'fa-solid fa-landmark',
     titre: 'Gouvernance',
-    description: 'Engager les citoyens africains dans l\'amélioration de la gouvernance politique et sociale.',
-    lien: '/universite/gouvernance',
-    couleur: 'chocolat'
+    description: "Engager les citoyens africains dans l'amélioration de la gouvernance politique et sociale.",
+    vers: '/universite/gouvernance',
   },
   {
     icone: 'fa-solid fa-handshake',
-    titre: 'Nos Partenaires',
+    titre: 'Nos partenaires',
     description: 'Découvrez les organisations qui soutiennent notre mission panafricaine.',
-    lien: '/a-propos/partenaires',
-    couleur: 'green'
+    vers: '/a-propos/partenaires',
   },
   {
     icone: 'fa-solid fa-circle-info',
     titre: 'FAQ',
     description: 'Retrouvez les réponses aux questions les plus fréquemment posées.',
-    lien: '/a-propos/faq',
-    couleur: 'chocolat'
+    vers: '/a-propos/faq',
   },
   {
     icone: 'fa-solid fa-envelope',
-    titre: 'Contactez-nous',
+    titre: 'Nous contacter',
     description: 'Pour toute question, suggestion ou proposition de collaboration.',
-    lien: '/a-propos/contact',
-    couleur: 'green'
-  }
+    vers: '/a-propos/contact',
+  },
 ]
-
-useAOS()
 </script>
