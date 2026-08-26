@@ -23,35 +23,73 @@
           </div>
         </div>
 
-        <!-- Actions header -->
+        <!-- Actions header. Alignées sur celles du site : mêmes composants,
+             pas une seconde implémentation. La barre du back-office portait
+             une cloche DÉCORATIVE — un `<button>` sans gestionnaire, avec une
+             pastille toujours allumée quel qu'en soit le nombre — et un menu
+             dont l'entrée « Paramètres » menait à `/admin`, la page où l'on
+             se trouvait déjà. -->
         <div class="flex-none flex items-center gap-2">
-          <!-- Notifications -->
-          <button class="btn btn-ghost btn-circle btn-sm">
-            <div class="indicator">
-              <font-awesome-icon :icon="['fas', 'bell']" class="w-4 h-4" />
-              <span class="badge badge-xs badge-primary indicator-item"></span>
-            </div>
+          <!-- Recherche globale, la même fenêtre que sur le site : un
+               administrateur cherche les mêmes contenus que les autres, il n'a
+               pas à repasser côté public pour cela. -->
+          <button
+            type="button"
+            class="hidden md:flex h-9 w-64 items-center gap-2 rounded-lg border border-base-300 bg-base-200/60 px-3 text-left transition hover:border-custom-chocolat"
+            aria-label="Rechercher sur AfricanS"
+            @click="rechercheOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="w-3.5 h-3.5 shrink-0 text-base-content/40" />
+            <span class="min-w-0 flex-1 truncate text-sm text-base-content/40">Rechercher…</span>
+            <kbd class="kbd kbd-xs">{{ raccourci }}</kbd>
           </button>
 
-          <!-- Avatar admin -->
+          <button
+            type="button"
+            class="btn btn-ghost btn-circle btn-sm md:hidden"
+            aria-label="Rechercher"
+            @click="rechercheOuverte = true"
+          >
+            <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="w-4 h-4" />
+          </button>
+
+          <!-- Cloche RÉELLE : compteur de non-lus, liste, marquage lu. -->
+          <LayoutClocheNotifications />
+
+          <!-- Menu du compte : la photo et le nom du membre connecté, et les
+               mêmes entrées que la barre du site, plus le retour au site. -->
           <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
-              <div class="w-8 rounded-full bg-custom-chocolat/10 flex items-center justify-center">
-                <font-awesome-icon :icon="['fas', 'user']" class="w-3.5 h-3.5 text-custom-chocolat" />
-              </div>
+            <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-2 px-2">
+              <img
+                v-if="photo"
+                :src="photo"
+                :alt="''"
+                class="size-7 shrink-0 rounded-full object-cover"
+              />
+              <span v-else class="grid size-7 shrink-0 place-items-center rounded-full bg-custom-chocolat/10 text-custom-chocolat">
+                <font-awesome-icon :icon="['fas', 'user']" class="w-3 h-3" />
+              </span>
+              <span class="hidden max-w-32 truncate text-sm font-medium lg:inline">{{ nomAffiche }}</span>
+              <font-awesome-icon :icon="['fas', 'chevron-down']" class="w-3 h-3 opacity-60" />
             </div>
-            <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-200 mt-2">
-              <li>
-                <NuxtLink to="/admin" class="flex items-center gap-2">
-                  <font-awesome-icon :icon="['fas', 'gear']" class="w-3.5 h-3.5" />
-                  Paramètres
+            <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-56 p-2 shadow-lg border border-base-200 mt-2">
+              <li v-for="lien in liensCompte" :key="lien.vers">
+                <NuxtLink :to="lien.vers" class="flex items-center gap-2">
+                  <font-awesome-icon :icon="lien.icone" class="w-3.5 h-3.5 opacity-60" />
+                  {{ lien.libelle }}
+                </NuxtLink>
+              </li>
+              <li class="border-t border-base-200 mt-1 pt-1">
+                <NuxtLink to="/" class="flex items-center gap-2">
+                  <font-awesome-icon :icon="['fas', 'earth-africa']" class="w-3.5 h-3.5 opacity-60" />
+                  Retour au site
                 </NuxtLink>
               </li>
               <li>
-                <NuxtLink to="/" class="flex items-center gap-2">
-                  <font-awesome-icon :icon="['fas', 'right-from-bracket']" class="w-3.5 h-3.5" />
-                  Retour au site
-                </NuxtLink>
+                <button type="button" class="flex items-center gap-2 text-error" @click="seDeconnecter">
+                  <font-awesome-icon :icon="['fas', 'right-from-bracket']" class="w-3.5 h-3.5 opacity-60" />
+                  Se déconnecter
+                </button>
               </li>
             </ul>
           </div>
@@ -64,6 +102,8 @@
       </main>
     </div>
 
+    <LayoutRecherchePopup :ouvert="rechercheOuverte" @fermer="rechercheOuverte = false" />
+
     <!-- Sidebar (drawer) -->
     <div class="drawer-side z-40">
       <label for="admin-drawer" aria-label="Fermer le menu" class="drawer-overlay"></label>
@@ -75,7 +115,43 @@
 </template>
 
 <script setup lang="ts">
+import { useUserStore } from '~/stores/user'
+import { NAV_COMPTE } from '~/utils/navigation-compte'
+
 const route = useRoute()
+const userStore = useUserStore()
+const { logout } = useAuth()
+
+const nomAffiche = computed(() => userStore.fullName || userStore.displayName || 'Mon compte')
+// `urlMedia` et non le chemin brut : le backend renvoie du relatif, servi sur
+// SON port.
+const photo = computed(() => urlMedia(userStore.user?.photo_url))
+
+// La même source que la barre du site : deux listes auraient divergé.
+const liensCompte = computed(() => NAV_COMPTE.filter(e => e.dansLeMenu))
+
+const seDeconnecter = async () => {
+  await logout()
+}
+
+// ── Recherche globale ─────────────────────────────────────────────────────
+const rechercheOuverte = ref(false)
+const raccourci = ref('Ctrl K')
+
+const surRaccourciRecherche = (e: KeyboardEvent) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault()
+    rechercheOuverte.value = true
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', surRaccourciRecherche)
+  if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+    raccourci.value = '⌘K'
+  }
+})
+onBeforeUnmount(() => document.removeEventListener('keydown', surRaccourciRecherche))
 
 const pageTitle = computed(() => {
   const path = route.path.replace('/admin', '').replace(/^\//, '')
