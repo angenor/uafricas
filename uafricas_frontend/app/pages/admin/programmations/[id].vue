@@ -219,7 +219,7 @@ onMounted(async () => {
             <table class="table table-sm">
               <thead>
                 <tr>
-                  <th>Nom / Prenom</th>
+                  <th>Nom / Prénom</th>
                   <th>Titre</th>
                   <th>Pays</th>
                   <th>Lieu de residence</th>

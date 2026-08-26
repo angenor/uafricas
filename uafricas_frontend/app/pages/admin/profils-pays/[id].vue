@@ -818,7 +818,7 @@ onMounted(async () => {
             </div>
             <div v-else class="overflow-x-auto">
               <table class="table table-zebra">
-                <thead><tr><th>Nom</th><th>Region</th><th>Coordonnees</th><th>Verifie</th><th class="w-24">Actions</th></tr></thead>
+                <thead><tr><th>Nom</th><th>Region</th><th>Coordonnees</th><th>Vérifié</th><th class="w-24">Actions</th></tr></thead>
                 <tbody>
                   <tr v-for="s in sitesTouristiques" :key="s.id">
                     <td>{{ s.nom }}</td>
@@ -836,7 +836,7 @@ onMounted(async () => {
                           @change="basculerVerification(s)"
                         />
                         <span v-if="s.verifie" class="badge badge-success badge-sm gap-1">
-                          <font-awesome-icon icon="circle-check" /> Verifie
+                          <font-awesome-icon icon="circle-check" /> Vérifié
                         </span>
                       </label>
                     </td>
@@ -938,7 +938,7 @@ onMounted(async () => {
             </div>
             <div v-else class="overflow-x-auto">
               <table class="table table-zebra">
-                <thead><tr><th>Titre</th><th>Categorie</th><th>Explication</th></tr></thead>
+                <thead><tr><th>Titre</th><th>Catégorie</th><th>Explication</th></tr></thead>
                 <tbody>
                   <tr v-for="sp in savoirsPratiques" :key="sp.id">
                     <td>{{ sp.titre }}</td>

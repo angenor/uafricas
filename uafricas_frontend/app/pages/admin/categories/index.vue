@@ -17,7 +17,7 @@ const filterDefs: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom...' },
   { key: 'contexte', label: 'Contexte', type: 'select', placeholder: 'Tous', options: [
     { label: 'Annonce', value: 'annonce' }, { label: 'Livre', value: 'livre' }, { label: 'Radio', value: 'radio' },
-    { label: 'Television', value: 'television' }, { label: 'Evenement', value: 'evenement' }, { label: 'Formation', value: 'formation' }, { label: 'Projet', value: 'projet' },
+    { label: 'Television', value: 'television' }, { label: 'Événement', value: 'evenement' }, { label: 'Formation', value: 'formation' }, { label: 'Projet', value: 'projet' },
   ]},
 ]
 const confirmerSuppression = (item: any) => { deleteTarget.value = { id: item.id, nom: item.nom }; showDelete.value = true }
@@ -32,8 +32,8 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 </script>
 <template>
   <div>
-    <AdminPageHeader titre="Categories" sous-titre="Gerer les categories hierarchiques">
-      <template #actions><NuxtLink to="/admin/categories/create" class="btn btn-primary btn-sm"><font-awesome-icon icon="plus" class="mr-1" /> Nouvelle categorie</NuxtLink></template>
+    <AdminPageHeader titre="Catégories" sous-titre="Gerer les catégories hierarchiques">
+      <template #actions><NuxtLink to="/admin/categories/create" class="btn btn-primary btn-sm"><font-awesome-icon icon="plus" class="mr-1" /> Nouvelle catégorie</NuxtLink></template>
     </AdminPageHeader>
     <AdminFilters :filtres="filterDefs" v-model="filtres" @rechercher="() => { reinitialiserPagination(); chargerListe() }" @reinitialiser="reinitialiser" />
     <AdminDataTable :colonnes="colonnes" :donnees="categories" :pagination="pagination" :tri-colonne="sort.column" :tri-direction="sort.direction" :loading="loading" @trier="changerTri" @aller-page="allerPage">

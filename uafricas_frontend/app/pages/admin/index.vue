@@ -35,13 +35,13 @@ const kpis = computed<StatsCardData[]>(() => {
       color: 'bg-primary/10 text-primary',
     },
     {
-      label: 'Annonces publiees',
+      label: 'Annonces publiées',
       value: s.annonces.publiees,
       icon: 'bullhorn',
       color: 'bg-success/10 text-success',
     },
     {
-      label: 'Evenements a venir',
+      label: 'Événements a venir',
       value: s.evenements.a_venir,
       icon: 'calendar',
       color: 'bg-info/10 text-info',
@@ -84,9 +84,9 @@ const segmentsAnnonces = computed<ChartSegment[]>(() => {
   if (!stats.value) return []
   const a = stats.value.annonces
   return [
-    { label: 'Publiees', valeur: a.publiees, couleur: 'bg-success' },
+    { label: 'Publiées', valeur: a.publiees, couleur: 'bg-success' },
     { label: 'En attente', valeur: a.en_attente, couleur: 'bg-warning' },
-    { label: 'Expirees', valeur: a.expirees, couleur: 'bg-error' },
+    { label: 'Expirées', valeur: a.expirees, couleur: 'bg-error' },
   ]
 })
 
@@ -98,7 +98,7 @@ const segmentsFactchecks = computed<ChartSegment[]>(() => {
     { label: 'Faux', valeur: v.faux, couleur: 'text-error' },
     { label: 'Partiellement vrai', valeur: v.partiellement_vrai, couleur: 'text-warning' },
     { label: 'Trompeur', valeur: v.trompeur, couleur: 'text-info' },
-    { label: 'Non verifie', valeur: v.non_verifie, couleur: 'text-neutral' },
+    { label: 'Non vérifié', valeur: v.non_verifie, couleur: 'text-neutral' },
   ]
 })
 
@@ -137,7 +137,7 @@ const modulesOverview = computed(() => {
     { label: 'Africantives', total: s.africantives.total, icon: 'rocket', lien: '/admin/africantives' },
     { label: 'Centres culturels', total: s.centres_culturels.total, icon: 'landmark', lien: '/admin/centres-culturels' },
     { label: 'Codi-Moi', total: s.codimoi.total, icon: 'quote-left', lien: '/admin/codimoi' },
-    { label: 'Evenements', total: s.evenements.total, icon: 'calendar', lien: '/admin/evenements' },
+    { label: 'Événements', total: s.evenements.total, icon: 'calendar', lien: '/admin/evenements' },
     { label: 'MOOC', total: s.moocs.total, icon: 'graduation-cap', lien: '/admin/mooc' },
     { label: 'Livres', total: s.livres.total, icon: 'book', lien: '/admin/livres' },
     { label: 'Radio', total: s.radio_tv.stations_radio, icon: 'radio', lien: '/admin/radio' },
@@ -177,7 +177,7 @@ const modulesOverview = computed(() => {
 
       <!-- Section 2 : Graphiques -->
       <div class="mb-8">
-        <h2 class="text-lg font-display font-semibold text-base-content mb-4">Tendances & Repartition</h2>
+        <h2 class="text-lg font-display font-semibold text-base-content mb-4">Tendances & Répartition</h2>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           <!-- Courbe inscriptions utilisateurs -->
@@ -219,7 +219,7 @@ const modulesOverview = computed(() => {
 
           <!-- Barres annonces par etat -->
           <AdminChart
-            titre="Annonces par etat"
+            titre="Annonces par état"
             type="barres"
             :segments="segmentsAnnonces"
           />
@@ -234,7 +234,7 @@ const modulesOverview = computed(() => {
           />
           <!-- Barres mauvaises pratiques -->
           <AdminChart
-            titre="Mauvaises pratiques par gravite"
+            titre="Mauvaises pratiques par gravité"
             type="barres"
             :segments="segmentsBadHabits"
           />

@@ -18,7 +18,7 @@ const colonnes: TableColumn[] = [
   { key: 'titre', label: 'Titre', sortable: true },
   { key: 'format', label: 'Format', width: 'w-28', align: 'center' },
   { key: 'type_formation', label: 'Type', width: 'w-28' },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-28', align: 'center' },
+  { key: 'etat', label: 'État', sortable: true, width: 'w-28', align: 'center' },
   { key: 'date_heure_debut', label: 'Debut', sortable: true, width: 'w-28',
     format: (v: string) => v ? new Date(v).toLocaleDateString('fr-FR') : '-' },
   { key: 'nombre_places', label: 'Places', width: 'w-20', align: 'center' },
@@ -40,7 +40,7 @@ const filterDefs: FilterDefinition[] = [
     { label: 'Conference', value: 'conference' },
     { label: 'Certification', value: 'certification' },
   ]},
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'Brouillon', value: 'brouillon' },
     { label: 'Publie', value: 'publie' },
     { label: 'Suspendu', value: 'suspendu' },
@@ -187,7 +187,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
       </template>
       <template #actions="{ item }">
         <div class="flex gap-1">
-          <button class="btn btn-ghost btn-xs" title="Changer etat" @click="ouvrirChangerEtat(item)">
+          <button class="btn btn-ghost btn-xs" title="Changer état" @click="ouvrirChangerEtat(item)">
             <font-awesome-icon icon="arrows-rotate" />
           </button>
           <NuxtLink :to="`/admin/mooc/${item.id}`" class="btn btn-ghost btn-xs">
@@ -210,10 +210,10 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
     <!-- Modal changement etat -->
     <div v-if="showEtat" class="modal modal-open">
       <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Changer l'etat</h3>
+        <h3 class="font-bold text-lg mb-4">Changer l'état</h3>
         <p class="mb-2 text-sm text-base-content/70">MOOC : {{ etatTarget?.titre }}</p>
         <div class="form-control">
-          <label class="label"><span class="label-text">Nouvel etat</span></label>
+          <label class="label"><span class="label-text">Nouvel état</span></label>
           <select v-model="nouvelEtat" class="select select-bordered">
             <option value="brouillon">Brouillon</option>
             <option value="publie">Publie</option>

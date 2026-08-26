@@ -208,7 +208,7 @@ onMounted(() => charger())
       <div class="card bg-base-100 shadow-sm">
         <div class="card-body flex-row items-center justify-between py-3">
           <div class="flex items-center gap-3">
-            <span class="text-sm font-medium">Etat :</span>
+            <span class="text-sm font-medium">État :</span>
             <span class="badge" :class="etatBadge(etatAnnonce)">{{ etatAnnonce }}</span>
           </div>
           <div class="flex gap-2">
@@ -339,7 +339,7 @@ onMounted(() => charger())
                 <select v-model="form.type_contact" class="select select-bordered">
                   <option value="messagerie_plateforme">Messagerie plateforme</option>
                   <option value="email">Email</option>
-                  <option value="telephone">Telephone</option>
+                  <option value="telephone">Téléphone</option>
                 </select>
               </div>
               <div class="form-control">
@@ -349,8 +349,8 @@ onMounted(() => charger())
             </div>
 
             <div class="form-control">
-              <label class="label"><span class="label-text">ID Categorie (UUID)</span></label>
-              <input v-model="form.categorie_id" type="text" class="input input-bordered" placeholder="UUID de la categorie" />
+              <label class="label"><span class="label-text">ID Catégorie (UUID)</span></label>
+              <input v-model="form.categorie_id" type="text" class="input input-bordered" placeholder="UUID de la catégorie" />
               <label v-if="annonceDetail.categorie_nom" class="label">
                 <span class="label-text-alt">Actuelle : {{ annonceDetail.categorie_nom }}</span>
               </label>

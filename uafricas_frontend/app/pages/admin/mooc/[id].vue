@@ -195,7 +195,7 @@ onMounted(async () => {
           {{ etatLabel(moocDetail.etat) }}
         </span>
         <button class="btn btn-outline btn-xs" @click="ouvrirEtatModal">
-          <font-awesome-icon icon="arrows-rotate" class="mr-1" /> Changer etat
+          <font-awesome-icon icon="arrows-rotate" class="mr-1" /> Changer état
         </button>
         <span v-if="moocDetail.nombre_inscriptions > 0" class="text-sm text-base-content/70">
           {{ moocDetail.nombre_inscriptions }} inscription(s)
@@ -444,7 +444,7 @@ onMounted(async () => {
       <!-- Modal changement etat -->
       <div v-if="showEtatModal" class="modal modal-open">
         <div class="modal-box">
-          <h3 class="font-bold text-lg mb-4">Changer l'etat du MOOC</h3>
+          <h3 class="font-bold text-lg mb-4">Changer l'état du MOOC</h3>
           <div class="form-control">
             <select v-model="nouvelEtat" class="select select-bordered">
               <option value="brouillon">Brouillon</option>

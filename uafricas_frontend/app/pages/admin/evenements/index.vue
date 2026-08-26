@@ -17,7 +17,7 @@ const etatLoading = ref(false)
 const colonnes: TableColumn[] = [
   { key: 'titre', label: 'Titre', sortable: true },
   { key: 'format', label: 'Format', width: 'w-28', align: 'center' },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-28', align: 'center' },
+  { key: 'etat', label: 'État', sortable: true, width: 'w-28', align: 'center' },
   { key: 'date_heure_debut', label: 'Debut', sortable: true, width: 'w-32',
     format: (v: string) => v ? new Date(v).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-' },
   { key: 'nombre_places', label: 'Places', width: 'w-20', align: 'center' },
@@ -33,7 +33,7 @@ const filterDefs: FilterDefinition[] = [
     { label: 'En ligne', value: 'en_ligne' },
     { label: 'Hybride', value: 'hybride' },
   ]},
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'Brouillon', value: 'brouillon' },
     { label: 'Publie', value: 'publie' },
     { label: 'Suspendu', value: 'suspendu' },
@@ -127,10 +127,10 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
 <template>
   <div>
-    <AdminPageHeader titre="Evenements" sous-titre="Gerer les evenements de la plateforme">
+    <AdminPageHeader titre="Événements" sous-titre="Gerer les événements de la plateforme">
       <template #actions>
         <NuxtLink to="/admin/evenements/create" class="btn btn-primary btn-sm">
-          <font-awesome-icon icon="plus" class="mr-1" /> Nouvel evenement
+          <font-awesome-icon icon="plus" class="mr-1" /> Nouvel événement
         </NuxtLink>
       </template>
     </AdminPageHeader>
@@ -175,7 +175,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
       <template #actions="{ item }">
         <div class="flex gap-1">
-          <button class="btn btn-ghost btn-xs" title="Changer etat" @click="ouvrirChangerEtat(item)">
+          <button class="btn btn-ghost btn-xs" title="Changer état" @click="ouvrirChangerEtat(item)">
             <font-awesome-icon icon="arrows-rotate" />
           </button>
           <NuxtLink :to="`/admin/evenements/${item.id}`" class="btn btn-ghost btn-xs">
@@ -199,10 +199,10 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
     <!-- Modal changement etat -->
     <div v-if="showEtat" class="modal modal-open">
       <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Changer l'etat de l'evenement</h3>
+        <h3 class="font-bold text-lg mb-4">Changer l'état de l'événement</h3>
         <p class="mb-2 text-sm text-base-content/70">Evenement : {{ etatTarget?.titre }}</p>
         <div class="form-control">
-          <label class="label"><span class="label-text">Nouvel etat</span></label>
+          <label class="label"><span class="label-text">Nouvel état</span></label>
           <select v-model="nouvelEtat" class="select select-bordered">
             <option value="brouillon">Brouillon</option>
             <option value="publie">Publie</option>

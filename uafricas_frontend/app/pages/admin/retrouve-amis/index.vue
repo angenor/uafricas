@@ -40,7 +40,7 @@ const colonnes: TableColumn[] = [
   },
   { key: 'nom_recherche', label: 'Personne recherchee', sortable: true },
   { key: 'ville', label: 'Ville', width: 'w-28' },
-  { key: 'etat', label: 'Etat', width: 'w-24' },
+  { key: 'etat', label: 'État', width: 'w-24' },
   { key: 'nb_correspondances', label: 'Corresp.', width: 'w-20', align: 'center' },
   { key: 'nb_signalements', label: 'Signal.', width: 'w-20', align: 'center' },
   {
@@ -54,7 +54,7 @@ const colonnes: TableColumn[] = [
 
 const filterDefs: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom, prenom, ville...' },
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'Actif', value: 'actif' },
     { label: 'Suspendu', value: 'suspendu' },
     { label: 'Cloture', value: 'cloture' },
@@ -156,7 +156,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
       <template #actions="{ item }">
         <div class="flex gap-1">
-          <NuxtLink :to="`/admin/retrouve-amis/${item.id}`" class="btn btn-ghost btn-xs" title="Voir le detail">
+          <NuxtLink :to="`/admin/retrouve-amis/${item.id}`" class="btn btn-ghost btn-xs" title="Voir le détail">
             <font-awesome-icon icon="eye" />
           </NuxtLink>
           <button

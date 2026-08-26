@@ -8,10 +8,10 @@ const { sessions, filtres, pagination, sort, loading, chargerListe, allerPage, c
 const colonnes: TableColumn[] = [
   { key: 'titre_display', label: 'Titre' },
   { key: 'salle_titre', label: 'Salle', width: 'w-32' },
-  { key: 'etat', label: 'Etat', width: 'w-24' },
+  { key: 'etat', label: 'État', width: 'w-24' },
   { key: 'moderateur_display', label: 'Moderateur', width: 'w-32' },
   { key: 'nombre_participants_pic', label: 'Pic participants', width: 'w-28', align: 'center' },
-  { key: 'duree_display', label: 'Duree', width: 'w-24' },
+  { key: 'duree_display', label: 'Durée', width: 'w-24' },
   { key: 'created_at', label: 'Date', sortable: true, width: 'w-28',
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]
@@ -19,7 +19,7 @@ const colonnes: TableColumn[] = [
 const filterDefs: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Titre...' },
   {
-    key: 'etat', label: 'Etat', type: 'select',
+    key: 'etat', label: 'État', type: 'select',
     options: [
       { value: '', label: 'Tous' },
       { value: 'planifiee', label: 'Planifiee' },

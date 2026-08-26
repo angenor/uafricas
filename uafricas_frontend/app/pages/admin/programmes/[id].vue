@@ -208,7 +208,7 @@ onMounted(async () => {
           {{ etatLabel(programmeDetail.etat) }}
         </span>
         <button class="btn btn-outline btn-xs" @click="ouvrirEtatModal">
-          <font-awesome-icon icon="arrows-rotate" class="mr-1" /> Changer etat
+          <font-awesome-icon icon="arrows-rotate" class="mr-1" /> Changer état
         </button>
         <span v-if="programmeDetail.nombre_candidatures > 0" class="text-sm text-base-content/70">
           {{ programmeDetail.nombre_candidatures }} candidature(s)
@@ -288,7 +288,7 @@ onMounted(async () => {
               <h3 class="text-lg font-semibold border-b pb-2">Dates & capacite</h3>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="form-control">
-                  <label class="label"><span class="label-text">Duree</span></label>
+                  <label class="label"><span class="label-text">Durée</span></label>
                   <select v-model="form.duree" class="select select-bordered">
                     <option value="">Non specifie</option>
                     <option v-for="d in durees" :key="d.value" :value="d.value">{{ d.label }}</option>
@@ -327,7 +327,7 @@ onMounted(async () => {
                 </label>
               </div>
               <div class="form-control">
-                <label class="label"><span class="label-text">Details</span></label>
+                <label class="label"><span class="label-text">Détails</span></label>
                 <textarea v-model="form.prise_en_charge_details" class="textarea textarea-bordered" />
               </div>
             </div>
@@ -408,7 +408,7 @@ onMounted(async () => {
       <!-- Modal etat -->
       <div v-if="showEtatModal" class="modal modal-open">
         <div class="modal-box">
-          <h3 class="font-bold text-lg mb-4">Changer l'etat du programme</h3>
+          <h3 class="font-bold text-lg mb-4">Changer l'état du programme</h3>
           <div class="form-control">
             <select v-model="nouvelEtat" class="select select-bordered">
               <option value="brouillon">Brouillon</option>

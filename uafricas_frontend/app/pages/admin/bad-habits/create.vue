@@ -95,14 +95,14 @@ const soumettre = async () => {
               <input v-model="form.titre" type="text" class="input input-bordered" required placeholder="Titre du signalement">
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Categorie du probleme *</span></label>
+              <label class="label"><span class="label-text">Catégorie du probleme *</span></label>
               <select v-model="form.categorie_probleme" class="select select-bordered" required>
                 <option value="corruption">Corruption</option>
                 <option value="service_public_defaillant">Service public defaillant</option>
                 <option value="infrastructure_degradee">Infrastructure degradee</option>
                 <option value="acces_services_limite">Acces services limite</option>
                 <option value="insalubrite">Insalubrite</option>
-                <option value="probleme_securite">Probleme securite</option>
+                <option value="probleme_securite">Probleme sécurité</option>
                 <option value="autre">Autre</option>
               </select>
             </div>
@@ -110,14 +110,14 @@ const soumettre = async () => {
 
           <!-- Detail categorie (si autre) -->
           <div v-if="form.categorie_probleme === 'autre'" class="form-control">
-            <label class="label"><span class="label-text">Preciser la categorie</span></label>
+            <label class="label"><span class="label-text">Preciser la catégorie</span></label>
             <input v-model="form.categorie_probleme_detail" type="text" class="input input-bordered" placeholder="Preciser le type de probleme...">
           </div>
 
           <!-- Gravite + Etat -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="form-control">
-              <label class="label"><span class="label-text">Gravite</span></label>
+              <label class="label"><span class="label-text">Gravité</span></label>
               <select v-model="form.gravite" class="select select-bordered">
                 <option value="faible">Faible</option>
                 <option value="elevee">Elevee</option>
@@ -125,7 +125,7 @@ const soumettre = async () => {
               </select>
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Etat</span></label>
+              <label class="label"><span class="label-text">État</span></label>
               <select v-model="form.etat" class="select select-bordered">
                 <option value="en_attente">En attente</option>
                 <option value="publie">Publie</option>
@@ -157,7 +157,7 @@ const soumettre = async () => {
 
           <!-- Details problematique -->
           <div class="form-control">
-            <label class="label"><span class="label-text">Details de la problematique *</span></label>
+            <label class="label"><span class="label-text">Détails de la problematique *</span></label>
             <textarea v-model="form.details_problematique" class="textarea textarea-bordered" rows="4" required placeholder="Detaillez la problematique specifique..." />
           </div>
 

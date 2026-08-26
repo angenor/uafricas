@@ -7,7 +7,7 @@ const { favoris, stats, filtres, pagination, sort, loading, chargerListe, charge
 
 const colonnes: TableColumn[] = [
   { key: 'annonce_titre', label: 'Annonce' },
-  { key: 'annonce_etat', label: 'Etat', width: 'w-24' },
+  { key: 'annonce_etat', label: 'État', width: 'w-24' },
   { key: 'utilisateur_nom', label: 'Utilisateur', format: (_v: string, row: any) => `${row.utilisateur_prenom} ${row.utilisateur_nom}` },
   { key: 'utilisateur_email', label: 'Email', width: 'w-40' },
   { key: 'created_at', label: 'Date favori', sortable: true, width: 'w-28', format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },

@@ -66,7 +66,7 @@ onMounted(() => chargerDetail(id))
   <div>
     <AdminPageHeader
       :titre="sessionDetail?.titre || 'Session sans titre'"
-      sous-titre="Detail de la session AfroLang"
+      sous-titre="Détail de la session AfroLang"
     >
       <template #actions>
         <NuxtLink to="/admin/sessions" class="btn btn-ghost btn-sm">
@@ -126,7 +126,7 @@ onMounted(() => chargerDetail(id))
         <div class="card-body">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 class="font-semibold text-sm text-base-content/60 mb-1">Etat</h4>
+              <h4 class="font-semibold text-sm text-base-content/60 mb-1">État</h4>
               <span class="badge" :class="etatClass(sessionDetail.etat)">
                 {{ sessionDetail.etat || '-' }}
               </span>
@@ -148,7 +148,7 @@ onMounted(() => chargerDetail(id))
               <p>{{ formatDate(sessionDetail.termine_at) }}</p>
             </div>
             <div>
-              <h4 class="font-semibold text-sm text-base-content/60 mb-1">Duree</h4>
+              <h4 class="font-semibold text-sm text-base-content/60 mb-1">Durée</h4>
               <p>{{ formatDuree(sessionDetail.duree_secondes) }}</p>
             </div>
             <div>
@@ -185,7 +185,7 @@ onMounted(() => chargerDetail(id))
                 <th class="w-28">Role</th>
                 <th class="w-36">Rejoint le</th>
                 <th class="w-36">Quitte le</th>
-                <th class="w-24">Duree</th>
+                <th class="w-24">Durée</th>
               </tr>
             </thead>
             <tbody>

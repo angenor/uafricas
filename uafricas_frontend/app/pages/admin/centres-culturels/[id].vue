@@ -302,7 +302,7 @@ onMounted(() => charger())
           <table class="table table-sm">
             <thead>
               <tr>
-                <th>Nom / Prenom</th>
+                <th>Nom / Prénom</th>
                 <th>Role</th>
                 <th>Date</th>
                 <th class="w-28">Actions</th>

@@ -28,7 +28,7 @@ onMounted(() => chargerDetail(id))
   <div>
     <AdminPageHeader
       :titre="sallePriveeDetail?.titre || 'Chargement...'"
-      sous-titre="Detail de la salle privee (lecture seule)"
+      sous-titre="Détail de la salle privee (lecture seule)"
     >
       <template #actions>
         <NuxtLink to="/admin/salles-privees" class="btn btn-ghost btn-sm">
@@ -117,7 +117,7 @@ onMounted(() => chargerDetail(id))
             <thead>
               <tr>
                 <th>Titre</th>
-                <th class="w-24">Etat</th>
+                <th class="w-24">État</th>
                 <th class="w-36">Date</th>
                 <th class="w-24 text-center">Pic participants</th>
                 <th class="w-16">Actions</th>

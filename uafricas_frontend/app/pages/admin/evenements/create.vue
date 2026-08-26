@@ -77,7 +77,7 @@ const soumettre = async () => {
 
 <template>
   <div>
-    <AdminPageHeader titre="Nouvel evenement" sous-titre="Creer un evenement">
+    <AdminPageHeader titre="Nouvel événement" sous-titre="Creer un événement">
       <template #actions>
         <NuxtLink to="/admin/evenements" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour
@@ -97,12 +97,12 @@ const soumettre = async () => {
           <div class="space-y-4">
             <h3 class="text-lg font-semibold border-b pb-2">Informations de base</h3>
             <div class="form-control">
-              <label class="label"><span class="label-text">Titre de l'evenement *</span></label>
+              <label class="label"><span class="label-text">Titre de l'événement *</span></label>
               <input v-model="form.titre" type="text" class="input input-bordered" required placeholder="Ex: Conference sur le developpement durable">
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Description</span></label>
-              <textarea v-model="form.description" class="textarea textarea-bordered h-32" placeholder="Description detaillee de l'evenement, objectifs, programme..." />
+              <textarea v-model="form.description" class="textarea textarea-bordered h-32" placeholder="Description detaillee de l'événement, objectifs, programme..." />
             </div>
           </div>
 
@@ -111,7 +111,7 @@ const soumettre = async () => {
             <h3 class="text-lg font-semibold border-b pb-2">Type & format</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="form-control">
-                <label class="label"><span class="label-text">Type d'evenement</span></label>
+                <label class="label"><span class="label-text">Type d'événement</span></label>
                 <input v-model="form.type_evenement" type="text" class="input input-bordered" placeholder="Ex: Conference, Atelier, Seminaire">
               </div>
               <div class="form-control">

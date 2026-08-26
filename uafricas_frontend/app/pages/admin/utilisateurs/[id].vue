@@ -260,7 +260,7 @@ onMounted(() => charger())
           <form @submit.prevent="sauvegarderProfil" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="form-control">
-                <label class="label"><span class="label-text">Prenom</span></label>
+                <label class="label"><span class="label-text">Prénom</span></label>
                 <input v-model="form.prenom" type="text" class="input input-bordered">
               </div>
               <div class="form-control">
@@ -274,7 +274,7 @@ onMounted(() => charger())
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="form-control">
-                <label class="label"><span class="label-text">Telephone</span></label>
+                <label class="label"><span class="label-text">Téléphone</span></label>
                 <input v-model="form.telephone" type="tel" class="input input-bordered">
               </div>
               <div class="form-control">
@@ -437,9 +437,9 @@ onMounted(() => charger())
     <!-- Modal changement etat -->
     <dialog class="modal" :class="{ 'modal-open': showEtatModal }">
       <div class="modal-box max-w-md">
-        <h3 class="font-bold text-lg">Confirmer le changement d'etat</h3>
+        <h3 class="font-bold text-lg">Confirmer le changement d'état</h3>
         <p class="py-4">
-          Voulez-vous vraiment changer l'etat de cet utilisateur en
+          Voulez-vous vraiment changer l'état de cet utilisateur en
           <strong>{{ nouvelEtat }}</strong> ?
         </p>
         <div class="modal-action">

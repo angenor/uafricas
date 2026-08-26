@@ -136,8 +136,8 @@ const soumettre = async () => {
               </select>
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Categorie (UUID)</span></label>
-              <input v-model="form.categorie_id" type="text" class="input input-bordered" placeholder="UUID de la categorie" />
+              <label class="label"><span class="label-text">Catégorie (UUID)</span></label>
+              <input v-model="form.categorie_id" type="text" class="input input-bordered" placeholder="UUID de la catégorie" />
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Langue</span></label>
