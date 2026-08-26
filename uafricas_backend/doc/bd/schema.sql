@@ -181,6 +181,11 @@
 
 \ir schemas/14_triggers.sql
 \ir schemas/15_seed.sql
+
+-- Catalogue de permissions du back-office et attribution aux rôles.
+-- APRÈS 15_seed : il complète le catalogue que celui-ci amorce, et rattache
+-- au rôle Administrateur, que 15_seed crée sans lui donner aucun droit.
+\ir schemas/04h_iam_permissions_backoffice.sql
 \ir schemas/16_seed_centres_culturels.sql
 \ir schemas/17_seed_evenements.sql
 \ir schemas/18_seed_sabbatiques.sql
