@@ -1,234 +1,157 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')">
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Formations disponibles"
+        sous-titre="MOOC, CLOM, ateliers et concertations pour développer vos compétences"
+        image="/images/education.png"
+      />
+    </template>
 
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Formations Disponibles
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            MOOC, CLOM, ateliers et concertations pour développer vos compétences
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Mindshiftlab', vers: '/mindshiftlab' },
+          { libelle: 'Muniversa', vers: '/universite' },
+          { libelle: 'Formations' },
+        ]"
+      >
+        <template #centre>
+          <p class="text-base font-bold text-af-encre">
+            {{ formationsTriees.length }} formation{{ formationsTriees.length > 1 ? 's' : '' }}
           </p>
+        </template>
+      </AfricansFilAriane>
+    </template>
+
+    <div class="flex flex-col gap-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <label class="relative min-w-0 flex-1">
+          <span class="sr-only">Rechercher une formation</span>
+          <font-awesome-icon
+            icon="fa-solid fa-magnifying-glass"
+            class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-af-atone-2"
+          />
+          <input
+            v-model="recherche"
+            type="search"
+            placeholder="Titre, intervenant, mot-clé…"
+            class="h-11 w-full rounded-[10px] border border-af-bordure bg-white pr-4 pl-11 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
+          />
+        </label>
+        <label class="flex items-center gap-2">
+          <span class="text-[14px]/[1.4] text-af-corps">Trier par</span>
+          <select
+            v-model="triSelectionne"
+            class="h-11 rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
+          >
+            <option value="date">Date</option>
+            <option value="titre">Titre</option>
+          </select>
+        </label>
+      </div>
+
+      <div
+        v-if="erreur"
+        class="flex items-center gap-2 rounded-[10px] border border-af-live/30 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
+      >
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="shrink-0" />
+        <span class="min-w-0 flex-1">{{ erreur }}</span>
+        <button type="button" class="shrink-0 font-bold underline" @click="chargerFormations">Réessayer</button>
+      </div>
+
+      <div v-if="chargement" class="grid gap-5 sm:grid-cols-2">
+        <div v-for="n in 4" :key="n" class="h-72 animate-pulse rounded-[10px] bg-af-bordure" />
+      </div>
+
+      <template v-else-if="formationsTriees.length > 0">
+        <div class="grid gap-5 sm:grid-cols-2">
+          <UniversiteInudaFormationCard
+            v-for="formation in formationsTriees"
+            :key="formation.id"
+            :formation="formation"
+            @click="voirDetail"
+            @inscrire="ouvrirInscription"
+          />
         </div>
+
+        <nav v-if="totalPages > 1" class="flex items-center justify-center gap-2">
+          <button
+            v-for="p in totalPages"
+            :key="p"
+            type="button"
+            class="size-10 rounded-[10px] text-[14px]/[1.4] font-bold transition"
+            :class="p === pageActuelle ? 'bg-af-chocolat text-white' : 'border border-af-bordure bg-white hover:border-af-chocolat'"
+            :aria-current="p === pageActuelle ? 'page' : undefined"
+            @click="allerPage(p)"
+          >
+            {{ p }}
+          </button>
+        </nav>
+      </template>
+
+      <!-- Deux vides distincts : « rien ne correspond » n'est pas « rien n'est
+           programmé », et la sortie proposée n'est pas la même. -->
+      <div v-else class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+        <font-awesome-icon icon="fa-solid fa-graduation-cap" class="text-4xl text-af-atone-2" />
+        <p class="mt-4 text-[16px]/[1.4] font-bold">
+          {{ formations.length > 0 ? 'Aucune formation ne correspond à vos critères' : 'Aucune formation programmée pour le moment' }}
+        </p>
+        <AfricansBouton
+          v-if="formations.length > 0"
+          class="mt-6"
+          variante="secondaire"
+          icone="fa-solid fa-rotate-left"
+          @click="reinitialiserFiltres"
+        >
+          Réinitialiser les filtres
+        </AfricansBouton>
       </div>
     </div>
 
-    <!-- Contenu principal -->
-    <div class="max-w-6xl mx-auto px-4 mt-6">
-      <!-- Header avec breadcrumb -->
-      <div class="bg-white shadow-xs rounded-t-lg">
-        <div class="px-4 py-6">
-          <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" class="mb-4" />
+    <template #rail>
+      <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="reinitialiserFiltres">
+        <UniversiteInudaFiltresFormations @filtres-changes="appliquerFiltres" />
+      </AfricansPanneau>
 
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-gray-600">
-                Découvrez nos formations pour développer vos compétences
-              </p>
-            </div>
-            <NuxtLink to="/universite"
-                      class="text-custom-chocolat hover:text-custom-green font-medium">
-              ← Retour
+      <AfricansPanneau titre="Aussi dans Muniversa" icone="fa-solid fa-graduation-cap">
+        <ul class="flex flex-col gap-1">
+          <li v-for="lien in AUTRES_INUDA" :key="lien.to">
+            <NuxtLink
+              :to="lien.to"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px]/[1.4] font-bold text-af-corps transition hover:bg-af-chocolat/[0.07] hover:text-af-chocolat"
+            >
+              <font-awesome-icon :icon="lien.icone" class="size-5 shrink-0" />
+              {{ lien.libelle }}
             </NuxtLink>
-          </div>
-        </div>
-      </div>
+          </li>
+        </ul>
+      </AfricansPanneau>
+    </template>
 
-      <div class="max-w-7xl mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <!-- Filtres -->
-          <div class="lg:col-span-1">
-            <div class="sticky top-4">
-              <!-- Barre de recherche -->
-              <div class="bg-white rounded-lg shadow-md p-3 mb-6">
-                <div class="relative">
-                  <font-awesome-icon icon="fa-solid fa-magnifying-glass"
-                                     class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-                  <input v-model="recherche"
-                         type="text"
-                         placeholder="Rechercher une formation..."
-                         class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-              </div>
+    <!-- Confirmation d'inscription -->
+    <AfricansModale
+      :model-value="formationSelectionnee !== null"
+      titre="S'inscrire à la formation"
+      icone="fa-solid fa-graduation-cap"
+      @update:model-value="formationSelectionnee = null"
+    >
+      <p v-if="formationSelectionnee" class="text-[14px]/[1.5] text-af-corps">
+        Vous souhaitez vous inscrire à
+        <strong class="font-bold text-af-encre">{{ formationSelectionnee.titre }}</strong>.
+      </p>
+      <p v-if="messageInscription" class="mt-3 text-[14px]/[1.4]" :class="inscriptionReussie ? 'text-af-vert' : 'text-af-live'">
+        {{ messageInscription }}
+      </p>
 
-              <!-- Composant de filtres -->
-              <UniversiteInudaFiltresFormations @filtres-changes="appliquerFiltres" />
-            </div>
-          </div>
-
-          <!-- Liste des formations -->
-          <div class="lg:col-span-3">
-            <!-- Résumé des résultats -->
-            <div class="flex items-center justify-between mb-6">
-              <p class="text-gray-600">
-                {{ formations.length }} formation{{ formations.length > 1 ? 's' : '' }} trouvée{{ formations.length > 1 ? 's' : '' }}
-              </p>
-              <div class="flex items-center gap-4">
-                <!-- Tri -->
-                <select v-model="triSelectionne"
-                        class="px-3 py-2 border border-gray-300 rounded-md text-sm">
-                  <option value="date">Trier par date</option>
-                  <option value="titre">Trier par titre</option>
-                </select>
-
-                <!-- Vue -->
-                <div class="flex border border-gray-300 rounded-md">
-                  <button @click="vueMode = 'grid'"
-                          :class="vueMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600'"
-                          class="px-3 py-2 text-sm rounded-l-md border-r border-gray-300">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
-                    </svg>
-                  </button>
-                  <button @click="vueMode = 'list'"
-                          :class="vueMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600'"
-                          class="px-3 py-2 text-sm rounded-r-md">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Erreur -->
-            <div v-if="erreur" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p class="text-red-700">{{ erreur }}</p>
-              <button @click="chargerFormations" class="mt-2 text-red-600 underline text-sm">Réessayer</button>
-            </div>
-
-            <div v-if="chargement" class="text-center py-12">
-              <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <p class="mt-4 text-gray-600">Chargement des formations...</p>
-            </div>
-
-            <div v-else-if="formationsTriees.length === 0" class="text-center py-12">
-              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              <p class="mt-4 text-gray-600">Aucune formation ne correspond à vos critères</p>
-              <button @click="reinitialiserFiltres"
-                      class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                Réinitialiser les filtres
-              </button>
-            </div>
-
-            <!-- Vue grille -->
-            <div v-else-if="vueMode === 'grid'"
-                 class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              <UniversiteInudaFormationCard
-                v-for="formation in formationsTriees"
-                :key="formation.id"
-                :formation="formation"
-                @click="voirDetail"
-                @inscrire="ouvrirInscription" />
-            </div>
-
-            <!-- Vue liste -->
-            <div v-else class="space-y-4">
-              <div v-for="formation in formationsTriees"
-                   :key="formation.id"
-                   class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                   @click="voirDetail(formation)">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-2">
-                      <span class="px-3 py-1 rounded-full text-sm font-medium"
-                            :class="getTypeClasses(formation.type)">
-                        {{ getTypeLabel(formation.type) }}
-                      </span>
-                      <span :class="getStatutColor(formation.statut)"
-                            class="w-2 h-2 rounded-full inline-block"></span>
-                      <span class="text-gray-500 text-sm">{{ getStatutLabel(formation.statut) }}</span>
-                    </div>
-
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">{{ formation.titre }}</h3>
-                    <p class="text-gray-600 mb-3 line-clamp-2">{{ formation.description }}</p>
-
-                    <div class="flex items-center text-sm text-gray-500 gap-4 mb-4">
-                      <span>{{ formation.formateur.prenom }} {{ formation.formateur.nom }}</span>
-                      <span>{{ formatDateCourt(formation.date_heure_debut) }}</span>
-                      <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded">
-                        {{ formation.langue }}
-                      </span>
-                    </div>
-
-                    <!-- Boutons d'action -->
-                    <div class="flex items-center gap-3">
-                      <button @click.stop="voirDetail(formation)"
-                              class="inline-flex items-center px-4 py-2 text-sm font-medium text-custom-chocolat bg-white border border-custom-chocolat rounded-md hover:bg-custom-chocolat hover:text-white transition-colors">
-                        En savoir plus
-                      </button>
-                      <button @click.stop="ouvrirInscription(formation)"
-                              :disabled="!peutSInscrire(formation)"
-                              class="px-4 py-2 rounded-md font-medium transition"
-                              :class="peutSInscrire(formation)
-                                ? 'bg-custom-green text-white hover:bg-green-700'
-                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
-                        {{ getActionLabel(formation) }}
-                      </button>
-                    </div>
-                  </div>
-                  <img v-if="formation.couverture_url"
-                       :src="formation.couverture_url"
-                       :alt="formation.titre"
-                       class="hidden sm:block ml-4 w-32 h-24 rounded-lg object-cover shrink-0">
-                </div>
-              </div>
-            </div>
-
-            <!-- Pagination -->
-            <div v-if="totalPages > 1" class="flex justify-center mt-8 gap-2">
-              <button v-for="p in totalPages" :key="p"
-                      @click="allerPage(p)"
-                      :class="p === pageActuelle ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'"
-                      class="px-4 py-2 border border-gray-300 rounded-md text-sm">
-                {{ p }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal d'inscription -->
-    <div v-if="formationSelectionnee" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div class="p-6">
-          <div class="flex justify-between items-start mb-4">
-            <h2 class="text-xl font-bold">S'inscrire à la formation</h2>
-            <button @click="formationSelectionnee = null" class="text-gray-500 hover:text-gray-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-          <p class="text-gray-600 mb-4">
-            Vous souhaitez vous inscrire à : <strong>{{ formationSelectionnee.titre }}</strong>
-          </p>
-          <div class="flex gap-3">
-            <button @click="confirmerInscription"
-                    :disabled="inscriptionEnCours"
-                    class="flex-1 py-2 bg-custom-green text-white rounded-md hover:bg-green-700 transition disabled:opacity-50">
-              {{ inscriptionEnCours ? 'Inscription...' : 'Confirmer' }}
-            </button>
-            <button @click="formationSelectionnee = null"
-                    class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">
-              Annuler
-            </button>
-          </div>
-          <p v-if="messageInscription" class="mt-3 text-sm" :class="inscriptionReussie ? 'text-green-600' : 'text-red-600'">
-            {{ messageInscription }}
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
+      <template #actions>
+        <AfricansBouton variante="secondaire" @click="formationSelectionnee = null">Annuler</AfricansBouton>
+        <AfricansBouton :desactive="inscriptionEnCours" :tourne="inscriptionEnCours" @click="confirmerInscription">
+          {{ inscriptionEnCours ? 'Inscription…' : 'Confirmer' }}
+        </AfricansBouton>
+      </template>
+    </AfricansModale>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
@@ -245,15 +168,27 @@ import {
   formatDateCourt,
 } from '~/composables/useFormations'
 
-useHead({
-  title: 'Formations - INUDA'
-})
+/**
+ * Formations de Muniversa, portées sur le gabarit de la refonte.
+ *
+ * La bascule grille / liste disparaît : les deux vues montraient exactement
+ * les mêmes informations, et la seconde réimplémentait à la main, en cinquante
+ * lignes, ce que `FormationCard` fait déjà. Deux rendus d'une même carte
+ * finissent par diverger.
+ *
+ * Le tri et les filtres sont inchangés, et restent appliqués côté client comme
+ * avant : l'endpoint ne les porte pas.
+ */
+definePageMeta({ layout: false })
 
-const breadcrumbs = [
-  { label: 'Université', to: '/universite' },
-  { label: 'INUDA', to: '/universite' },
-  { label: 'Formations', to: undefined }
+/** Les autres portes de l'univers, reprises de `MODULES_AFRICANS`. */
+const AUTRES_INUDA = [
+  { libelle: 'Facultés partenaires', to: '/universite/facultes', icone: 'fa-solid fa-building-columns' },
+  { libelle: 'Mon espace', to: '/universite/mon-espace', icone: 'fa-solid fa-user-graduate' },
+  { libelle: 'Africalive', to: '/evenements/liste', icone: 'fa-solid fa-calendar-days' },
 ]
+
+useHead({ title: 'Formations | Muniversa' })
 
 const { chargement, erreur, listerFormations, inscrireFormation } = useFormations()
 
@@ -261,7 +196,6 @@ const formations = ref<FormationAPI[]>([])
 const recherche = ref('')
 const filtresActifs = ref<{ types?: string[]; statuts?: string[] }>({})
 const triSelectionne = ref('date')
-const vueMode = ref('grid')
 const formationSelectionnee = ref<FormationAPI | null>(null)
 const pageActuelle = ref(1)
 const totalPages = ref(1)
@@ -371,12 +305,3 @@ onMounted(() => {
   chargerFormations()
 })
 </script>
-
-<style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>

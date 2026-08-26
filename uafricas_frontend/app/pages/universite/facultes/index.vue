@@ -1,305 +1,267 @@
-<template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')">
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70"></div>
-
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Nos Facultés Partenaires
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Découvrez les facultés qui collaborent avec l'INUDA pour votre réussite académique
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Contenu principal -->
-    <div class="max-w-6xl mx-auto px-4 mt-6">
-      <!-- Header avec breadcrumb -->
-      <div class="bg-white shadow-xs rounded-t-lg">
-        <div class="px-4 py-6">
-          <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" class="mb-4" />
-
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-gray-600">
-                Explorez nos partenariats académiques d'excellence
-              </p>
-            </div>
-            <NuxtLink to="/universite"
-                      class="text-custom-chocolat hover:text-custom-green font-medium">
-              ← Retour
-            </NuxtLink>
-          </div>
-        </div>
-      </div>
-
-      <div class="max-w-7xl mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <!-- Filtres -->
-          <div class="lg:col-span-1">
-            <div class="bg-white rounded-lg shadow-md p-6 sticky top-4">
-              <h3 class="text-lg font-bold mb-4">Filtrer par domaine</h3>
-
-              <!-- Recherche -->
-              <div class="mb-4 relative">
-                <font-awesome-icon icon="fa-solid fa-magnifying-glass"
-                                   class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-                <input v-model="recherche"
-                       type="text"
-                       placeholder="Rechercher une faculté..."
-                       class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              </div>
-
-              <!-- Domaines -->
-              <div class="space-y-2">
-                <label class="flex items-center">
-                  <input type="radio" v-model="domaineSelectionne" value="" class="mr-2">
-                  <span>Tous les domaines</span>
-                </label>
-                <label v-for="domaine in domaines" :key="domaine" class="flex items-center">
-                  <input type="radio" v-model="domaineSelectionne" :value="domaine" class="mr-2">
-                  <span>{{ domaine }}</span>
-                </label>
-              </div>
-
-              <!-- Type d'école -->
-              <h4 class="text-sm font-medium text-gray-700 mt-6 mb-2">Type d'établissement</h4>
-              <div class="space-y-2">
-                <label class="flex items-center">
-                  <input type="checkbox" v-model="typesEcole" value="publique" class="mr-2">
-                  <span>Public</span>
-                </label>
-                <label class="flex items-center">
-                  <input type="checkbox" v-model="typesEcole" value="privee" class="mr-2">
-                  <span>Privé</span>
-                </label>
-              </div>
-
-              <!-- Accepte nouveaux inscrits -->
-              <div class="mt-6">
-                <label class="flex items-center">
-                  <input type="checkbox" v-model="seulementOuvertes" class="mr-2">
-                  <span class="text-sm">Inscriptions ouvertes uniquement</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Liste des facultés -->
-          <div class="lg:col-span-3">
-            <div v-if="loading" class="text-center py-12">
-              <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <p class="mt-4 text-gray-600">Chargement des facultés...</p>
-            </div>
-
-            <div v-else-if="facultesFiltrees.length === 0" class="text-center py-12">
-              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              <p class="mt-4 text-gray-600">Aucune faculté ne correspond à vos critères</p>
-            </div>
-
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div v-for="faculte in facultesFiltrees" :key="faculte.id"
-                   class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-                <!-- Image de couverture -->
-                <div class="h-48 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                  <img v-if="faculte.imageCouverture"
-                       :src="faculte.imageCouverture"
-                       :alt="faculte.titre"
-                       class="w-full h-full object-cover">
-                  <svg v-else class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v7"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9v7m18-7v7"></path>
-                  </svg>
-                </div>
-
-                <!-- Contenu -->
-                <div class="p-6">
-                  <div class="flex items-start justify-between mb-3">
-                    <div class="flex-1">
-                      <h3 class="text-xl font-bold text-gray-900 mb-1">{{ faculte.titre }}</h3>
-                      <p class="text-sm text-gray-600">{{ faculte.acronyme }}</p>
-                    </div>
-                    <span v-if="faculte.accepteNouveauxInscrits"
-                          class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                      Inscriptions ouvertes
-                    </span>
-                  </div>
-
-                  <p class="text-gray-600 mb-4 line-clamp-2">{{ faculte.description }}</p>
-
-                  <!-- École partenaire -->
-                  <div class="mb-4 text-sm text-gray-500">
-                    <div class="flex items-center">
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                      </svg>
-                      {{ faculte.ecolePartenaire?.nom }} - {{ faculte.ecolePartenaire?.ville }}, {{ faculte.ecolePartenaire?.pays }}
-                    </div>
-                  </div>
-
-                  <!-- Domaines d'études -->
-                  <div class="mb-4">
-                    <div class="flex flex-wrap gap-1">
-                      <span v-for="domaine in faculte.domainesEtudes?.slice(0, 3)" :key="domaine"
-                            class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                        {{ domaine }}
-                      </span>
-                      <span v-if="faculte.domainesEtudes?.length > 3"
-                            class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                        +{{ faculte.domainesEtudes.length - 3 }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- Boutons d'action -->
-                  <div class="flex items-center gap-3">
-                    <button @click="voirDetail(faculte)"
-                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-custom-chocolat bg-white border border-custom-chocolat rounded-md hover:bg-custom-chocolat hover:text-white transition-colors">
-                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                      </svg>
-                      En savoir plus
-                    </button>
-                    <button @click="ouvrirFormulaireInteret(faculte)"
-                            :disabled="!faculte.accepteNouveauxInscrits"
-                            class="px-4 py-2 rounded-md font-medium transition"
-                            :class="faculte.accepteNouveauxInscrits
-                              ? 'bg-custom-green text-white hover:bg-green-700'
-                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
-                      {{ faculte.accepteNouveauxInscrits ? 'Manifester intérêt' : 'Fermé' }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Manifestation d'intérêt -->
-    <div v-if="faculteSelectionnee" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div class="p-6">
-          <div class="flex justify-between items-start mb-4">
-            <h2 class="text-xl font-bold">Manifester mon intérêt</h2>
-            <button @click="faculteSelectionnee = null" class="text-gray-500 hover:text-gray-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-          <p class="text-gray-600 mb-4">
-            Vous manifestez votre intérêt pour : <strong>{{ faculteSelectionnee.titre }}</strong>
-          </p>
-          <p class="text-sm text-gray-500 mb-4">
-            Cette fonctionnalité sera disponible prochainement. Vous pourrez soumettre votre candidature directement depuis la plateforme.
-          </p>
-          <button @click="faculteSelectionnee = null"
-                  class="w-full py-2 bg-custom-chocolat text-white rounded-md hover:bg-custom-chocolat/90 transition">
-            Fermer
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { getFacultesActives, getDomainesUniques, type Faculte } from '~/mocks/inuda/facultes'
+import { useFacultes, type Faculte } from '~/composables/useFacultes'
 
-useHead({
-  title: 'Facultés partenaires - INUDA'
-})
+/**
+ * Facultés partenaires de Muniversa, portées sur le gabarit de la refonte.
+ *
+ * La page lisait `~/mocks/inuda/facultes` : des facultés INVENTÉES, avec leurs
+ * photos hébergées chez unsplash, pendant que le back-office en gérait de
+ * vraies et que `useFacultes` savait déjà les servir. Les deux ne se sont
+ * jamais rencontrés — ajouter une faculté en administration ne changeait rien
+ * ici, et les visiteurs voyaient un catalogue qui n'existait pas.
+ *
+ * Le filtrage passe côté SERVEUR : l'endpoint porte `recherche`, `domaine`,
+ * `type_ecole` et `ouvertes`, et renvoie au passage la liste des domaines
+ * réellement déclarés — plus besoin de la déduire du jeu de données affiché,
+ * ce qui masquait tout domaine absent de la première page.
+ */
+definePageMeta({ layout: false })
 
-const breadcrumbs = [
-  { label: 'Université', to: '/universite' },
-  { label: 'INUDA', to: '/universite' },
-  { label: 'Facultés', to: undefined }
-]
+useHead({ title: 'Facultés partenaires | Muniversa' })
 
-const { loading, erreur, listerFacultes } = useFacultes()
+const { listerFacultes, loading, erreur } = useFacultes()
 
 const facultes = ref<Faculte[]>([])
 const domaines = ref<string[]>([])
+const total = ref(0)
+
 const recherche = ref('')
 const domaineSelectionne = ref('')
-const typesEcole = ref(['publique', 'privee'])
+const typeEcole = ref('')
 const seulementOuvertes = ref(false)
+
+const AUTRES_INUDA = [
+  { libelle: 'Formations', to: '/universite/formations', icone: 'fa-solid fa-graduation-cap' },
+  { libelle: 'Mon espace', to: '/universite/mon-espace', icone: 'fa-solid fa-user-graduate' },
+  { libelle: 'Africalive', to: '/evenements/liste', icone: 'fa-solid fa-calendar-days' },
+]
+
 const faculteSelectionnee = ref<Faculte | null>(null)
 
-// Filtrer les facultes (le filtrage type_ecole se fait cote client
-// car le backend filtre deja par domaine/recherche/ouvertes)
-const facultesFiltrees = computed(() => {
-  return facultes.value.filter(faculte => {
-    if (faculte.ecolePartenaire?.type && !typesEcole.value.includes(faculte.ecolePartenaire.type)) {
-      return false
-    }
-    return true
-  })
-})
+const aucunFiltreActif = computed(
+  () => !recherche.value && !domaineSelectionne.value && !typeEcole.value && !seulementOuvertes.value,
+)
 
-const voirDetail = (faculte: Faculte) => {
-  navigateTo(`/universite/facultes/${faculte.id}`)
-}
-
-const ouvrirFormulaireInteret = (faculte: Faculte) => {
-  faculteSelectionnee.value = faculte
-}
-
-// Debounce pour la recherche
-let rechercheTimer: ReturnType<typeof setTimeout> | null = null
-
-const chargerFacultes = async () => {
+const charger = async () => {
   try {
-    const result = await listerFacultes({
+    const data = await listerFacultes({
       recherche: recherche.value || undefined,
       domaine: domaineSelectionne.value || undefined,
+      typeEcole: typeEcole.value || undefined,
       ouvertes: seulementOuvertes.value || undefined,
+      parPage: 24,
     })
-    facultes.value = result.facultes
-    domaines.value = result.domaines
-  } catch (e) {
-    // Fallback sur les mocks si le backend n'est pas disponible
-    console.warn('Fallback sur les données mock:', e)
-    facultes.value = getFacultesActives()
-    domaines.value = getDomainesUniques()
+    facultes.value = data.facultes
+    total.value = data.total
+    // Les domaines viennent du SERVEUR, sur l'ensemble du catalogue : les
+    // déduire des seules facultés affichées ferait disparaître un domaine
+    // dès qu'un filtre l'écarte, et le rendrait impossible à resélectionner.
+    if (data.domaines?.length) domaines.value = data.domaines
+  }
+  catch {
+    // `erreur` est déjà posée par le composable.
   }
 }
 
-// Recharger quand les filtres changent
-watch([domaineSelectionne, seulementOuvertes], () => {
-  chargerFacultes()
-})
+const reinitialiser = () => {
+  recherche.value = ''
+  domaineSelectionne.value = ''
+  typeEcole.value = ''
+  seulementOuvertes.value = false
+}
 
+let minuterie: ReturnType<typeof setTimeout> | null = null
 watch(recherche, () => {
-  if (rechercheTimer) clearTimeout(rechercheTimer)
-  rechercheTimer = setTimeout(() => {
-    chargerFacultes()
-  }, 400)
+  if (minuterie) clearTimeout(minuterie)
+  minuterie = setTimeout(charger, 400)
 })
+watch([domaineSelectionne, typeEcole, seulementOuvertes], charger)
 
-onMounted(() => {
-  chargerFacultes()
-})
+onMounted(charger)
+
+const voirDetail = (faculte: Faculte) => navigateTo(`/universite/facultes/${faculte.id}`)
 </script>
 
-<style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>
+<template>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Nos facultés partenaires"
+        sous-titre="Les facultés qui collaborent avec Muniversa pour votre réussite académique"
+        image="/images/education.png"
+      />
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Mindshiftlab', vers: '/mindshiftlab' },
+          { libelle: 'Muniversa', vers: '/universite' },
+          { libelle: 'Facultés' },
+        ]"
+      >
+        <template #centre>
+          <p class="text-base font-bold text-af-encre">
+            {{ total }} faculté{{ total > 1 ? 's' : '' }}
+          </p>
+        </template>
+      </AfricansFilAriane>
+    </template>
+
+    <div class="flex flex-col gap-6">
+      <div
+        v-if="erreur"
+        class="flex items-center gap-2 rounded-[10px] border border-af-live/30 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
+      >
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="shrink-0" />
+        <span class="min-w-0 flex-1">{{ erreur }}</span>
+        <button type="button" class="shrink-0 font-bold underline" @click="charger">Réessayer</button>
+      </div>
+
+      <div v-if="loading" class="grid gap-5 sm:grid-cols-2">
+        <div v-for="n in 4" :key="n" class="h-80 animate-pulse rounded-[10px] bg-af-bordure" />
+      </div>
+
+      <div v-else-if="facultes.length > 0" class="grid gap-5 sm:grid-cols-2">
+        <article
+          v-for="faculte in facultes"
+          :key="faculte.id"
+          class="group flex flex-col overflow-hidden rounded-[10px] border border-af-bordure bg-white transition hover:border-af-chocolat"
+        >
+          <div class="relative aspect-[16/9] overflow-hidden bg-af-fond">
+            <img
+              v-if="faculte.imageCouverture"
+              :src="faculte.imageCouverture"
+              :alt="faculte.titre"
+              class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+            <!-- Pas de repli sur un fichier : une faculté sans couverture
+                 affiche un pictogramme, qui ne peut pas manquer. -->
+            <div v-else class="grid size-full place-items-center">
+              <font-awesome-icon icon="fa-solid fa-building-columns" class="text-4xl text-af-atone-2" />
+            </div>
+            <span
+              v-if="faculte.accepteNouveauxInscrits"
+              class="absolute top-3 right-3 rounded bg-af-vert px-3 py-1 text-[12px]/[1.4] font-bold text-white"
+            >
+              Inscriptions ouvertes
+            </span>
+          </div>
+
+          <div class="flex flex-1 flex-col gap-3 p-5">
+            <div>
+              <h2 class="text-[17px]/[1.4] font-bold text-af-encre">{{ faculte.titre }}</h2>
+              <p class="text-[12px]/[1.4] text-af-atone">{{ faculte.acronyme }}</p>
+            </div>
+
+            <p class="line-clamp-2 text-[14px]/[1.5] text-af-corps">{{ faculte.description }}</p>
+
+            <p v-if="faculte.ecolePartenaire" class="flex items-center gap-1.5 text-[12px]/[1.4] text-af-atone">
+              <font-awesome-icon icon="fa-solid fa-location-dot" />
+              {{ faculte.ecolePartenaire.nom }}, {{ faculte.ecolePartenaire.ville }}
+            </p>
+
+            <div v-if="faculte.domainesEtudes?.length" class="flex flex-wrap gap-2">
+              <AfricansEtiquette v-for="d in faculte.domainesEtudes.slice(0, 3)" :key="d">{{ d }}</AfricansEtiquette>
+              <AfricansEtiquette v-if="faculte.domainesEtudes.length > 3">
+                +{{ faculte.domainesEtudes.length - 3 }}
+              </AfricansEtiquette>
+            </div>
+
+            <div class="mt-auto flex flex-wrap items-center gap-3 pt-2">
+              <AfricansBouton variante="secondaire" icone="fa-solid fa-circle-info" @click="voirDetail(faculte)">
+                En savoir plus
+              </AfricansBouton>
+              <AfricansBouton
+                :desactive="!faculte.accepteNouveauxInscrits"
+                icone="fa-solid fa-paper-plane"
+                @click="faculteSelectionnee = faculte"
+              >
+                {{ faculte.accepteNouveauxInscrits ? 'Manifester mon intérêt' : 'Inscriptions fermées' }}
+              </AfricansBouton>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- Deux vides distincts : « rien ne correspond » n'est pas « aucun
+           partenariat », et la sortie proposée n'est pas la même. -->
+      <div v-else class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+        <font-awesome-icon icon="fa-solid fa-building-columns" class="text-4xl text-af-atone-2" />
+        <p class="mt-4 text-[16px]/[1.4] font-bold">
+          {{ aucunFiltreActif ? 'Aucune faculté partenaire pour le moment' : 'Aucune faculté ne correspond à vos critères' }}
+        </p>
+        <AfricansBouton
+          v-if="!aucunFiltreActif"
+          class="mt-6"
+          variante="secondaire"
+          icone="fa-solid fa-rotate-left"
+          @click="reinitialiser"
+        >
+          Réinitialiser les filtres
+        </AfricansBouton>
+      </div>
+    </div>
+
+    <template #rail>
+      <AfricansRecherche v-model="recherche" placeholder="Nom, acronyme, domaine…" />
+
+      <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="reinitialiser">
+        <div class="flex flex-col gap-4">
+          <AfricansChamp v-model="domaineSelectionne" libelle="Domaine d'études" type="select">
+            <option value="">Tous les domaines</option>
+            <option v-for="d in domaines" :key="d" :value="d">{{ d }}</option>
+          </AfricansChamp>
+
+          <AfricansChamp v-model="typeEcole" libelle="Type d'établissement" type="select">
+            <option value="">Tous les types</option>
+            <option value="publique">Public</option>
+            <option value="privee">Privé</option>
+          </AfricansChamp>
+
+          <label class="flex items-center gap-3 text-[14px]/[1.4] text-af-corps">
+            <input v-model="seulementOuvertes" type="checkbox" class="size-4 accent-af-chocolat" />
+            Inscriptions ouvertes uniquement
+          </label>
+        </div>
+      </AfricansPanneau>
+
+      <AfricansPanneau titre="Aussi dans Muniversa" icone="fa-solid fa-graduation-cap">
+        <ul class="flex flex-col gap-1">
+          <li v-for="lien in AUTRES_INUDA" :key="lien.to">
+            <NuxtLink
+              :to="lien.to"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px]/[1.4] font-bold text-af-corps transition hover:bg-af-chocolat/[0.07] hover:text-af-chocolat"
+            >
+              <font-awesome-icon :icon="lien.icone" class="size-5 shrink-0" />
+              {{ lien.libelle }}
+            </NuxtLink>
+          </li>
+        </ul>
+      </AfricansPanneau>
+    </template>
+
+    <AfricansModale
+      :model-value="faculteSelectionnee !== null"
+      titre="Manifester mon intérêt"
+      icone="fa-solid fa-paper-plane"
+      @update:model-value="faculteSelectionnee = null"
+    >
+      <p v-if="faculteSelectionnee" class="text-[14px]/[1.5] text-af-corps">
+        Vous manifestez votre intérêt pour
+        <strong class="font-bold text-af-encre">{{ faculteSelectionnee.titre }}</strong>.
+      </p>
+      <!-- Dit ce qui est : aucun endpoint ne reçoit encore cette manifestation.
+           Un formulaire qui n'envoie rien serait pire qu'une annonce franche. -->
+      <p class="mt-3 text-[14px]/[1.4] text-af-atone">
+        La candidature en ligne n'est pas encore ouverte. En attendant, contactez directement
+        l'établissement partenaire.
+      </p>
+
+      <template #actions>
+        <AfricansBouton @click="faculteSelectionnee = null">J'ai compris</AfricansBouton>
+      </template>
+    </AfricansModale>
+  </NuxtLayout>
+</template>
