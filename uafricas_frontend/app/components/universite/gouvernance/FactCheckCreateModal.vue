@@ -1,271 +1,245 @@
 <template>
-  <Transition name="modal-fade">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
-      @click.self="fermer"
-    >
-      <div
-        class="relative w-full max-w-2xl bg-white shadow-2xl rounded-2xl max-h-[90vh] overflow-hidden flex flex-col"
-        @click.stop
+  <AfricansModale
+    :model-value="open"
+    titre="Publier un FactCheck"
+    sous-titre="Vérifier une idée reçue sur l'Afrique"
+    icone="fa-solid fa-magnifying-glass-chart"
+    taille="large"
+    @update:model-value="fermer()"
+  >
+    <AfricansEtapes :etapes="ETAPES" :courante="etapeCourante" class="mb-6" @aller="etapeCourante = $event" />
+
+    <form id="form-factcheck" class="flex flex-col gap-5" @submit.prevent="soumettre">
+      <p
+        v-if="erreurMessage"
+        class="flex items-center gap-2 rounded-lg border border-af-live/20 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
       >
-        <!-- Header -->
-        <div class="bg-linear-to-r from-blue-700 to-indigo-600 text-white p-6 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <font-awesome-icon :icon="['fas', 'magnifying-glass-chart']" class="text-lg" />
-            </div>
-            <div>
-              <h2 class="text-xl font-bold">Publier un FactCheck</h2>
-              <p class="text-xs text-white/80">Vérifier une idée reçue sur l'Afrique</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            class="w-9 h-9 rounded-full hover:bg-white/20 flex items-center justify-center transition"
-            @click="fermer"
-          >
-            <font-awesome-icon :icon="['fas', 'xmark']" />
-          </button>
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" />
+        {{ erreurMessage }}
+      </p>
+
+      <!-- ─── Étape 1 : l'affirmation ─── -->
+      <template v-if="etapeCourante === 0">
+        <div>
+          <AfricansChamp
+            v-model="form.contenu"
+            libelle="Contenu du factcheck"
+            type="textarea"
+            :lignes="5"
+            placeholder="Décrivez l'idée reçue à vérifier et apportez votre analyse factuelle…"
+            obligatoire
+          />
+          <p class="mt-1 text-[12px] text-af-atone">{{ form.contenu.length }} caractères (minimum 10)</p>
         </div>
 
-        <!-- Body -->
-        <form class="p-6 space-y-5 overflow-y-auto" @submit.prevent="soumettre">
-          <div
-            v-if="erreurMessage"
-            class="bg-red-50 border-l-4 border-red-500 p-3 rounded-lg text-sm text-red-700 flex items-center gap-2"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-exclamation']" />
-            <span>{{ erreurMessage }}</span>
+        <fieldset>
+          <legend class="mb-2 text-[14px]/[1.4] text-af-atone italic">
+            Type <span class="not-italic text-af-live">*</span>
+          </legend>
+          <div class="grid gap-2 sm:grid-cols-3">
+            <button
+              v-for="t in typesPublication"
+              :key="t.value"
+              type="button"
+              class="flex items-start gap-2 rounded-lg border-2 px-3 py-2.5 text-left text-[12px] font-bold transition"
+              :class="form.type_publication === t.value
+                ? 'border-af-chocolat bg-af-chocolat/10 text-af-chocolat'
+                : 'border-af-bordure bg-white text-af-corps hover:border-af-chocolat'"
+              @click="form.type_publication = t.value"
+            >
+              <font-awesome-icon :icon="t.icon" class="mt-0.5" />
+              <span>{{ t.label }}</span>
+            </button>
           </div>
+        </fieldset>
+
+        <!-- Un fait vécu se situe : sans territoire ni preuve, il n'est
+             qu'une affirmation de plus. Le bloc n'apparaît que pour lui. -->
+        <div
+          v-if="form.type_publication === 'fait_vecu'"
+          class="flex flex-col gap-4 rounded-lg border border-af-chocolat/20 bg-af-chocolat/5 p-4"
+        >
+          <p class="flex items-center gap-2 text-[14px]/[1.4] font-bold text-af-chocolat">
+            <font-awesome-icon icon="fa-solid fa-location-dot" />
+            Fait vécu ou observé
+          </p>
+
+          <AfricansChamp v-model="form.pays_id" libelle="Territoire" type="select">
+            <option :value="undefined">Sélectionner un territoire</option>
+            <option v-for="p in pays" :key="p.id" :value="p.id">{{ p.nom }}</option>
+          </AfricansChamp>
+
+          <p class="flex items-center gap-2 text-[12px] text-af-corps">
+            <font-awesome-icon icon="fa-solid fa-calendar-day" />
+            La date enregistrée est celle de la publication.
+          </p>
 
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Contenu du factcheck <span class="text-red-500">*</span>
-            </label>
-            <textarea
-              v-model="form.contenu"
-              rows="5"
-              required
-              placeholder="Décrivez l'idée reçue à vérifier et apportez votre analyse factuelle..."
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition text-sm"
+            <p class="mb-2 text-[14px]/[1.4] text-af-atone italic">Preuve (photo ou PDF)</p>
+            <div v-if="!preuveUrl" class="flex flex-wrap items-center gap-3">
+              <label
+                class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-af-bordure bg-white px-4 py-2 text-[14px]/[1.4] font-bold text-af-corps transition hover:border-af-chocolat"
+                :class="televersementEnCours && 'cursor-not-allowed opacity-50'"
+              >
+                <font-awesome-icon
+                  :icon="televersementEnCours ? 'fa-solid fa-spinner' : 'fa-solid fa-paperclip'"
+                  :class="televersementEnCours && 'animate-spin'"
+                />
+                {{ televersementEnCours ? 'Téléversement…' : 'Joindre un fichier' }}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  class="sr-only"
+                  :disabled="televersementEnCours"
+                  @change="onPreuveSelectionnee"
+                >
+              </label>
+              <span class="text-[12px] text-af-atone-2">Sinon, « Pas de preuve » sera affiché.</span>
+            </div>
+            <div
+              v-else
+              class="flex items-center justify-between gap-3 rounded-lg border border-af-vert/40 bg-af-vert/5 px-4 py-2.5"
+            >
+              <span class="flex min-w-0 items-center gap-2 text-[14px]/[1.4] text-af-vert">
+                <font-awesome-icon :icon="preuveType === 'pdf' ? 'fa-solid fa-file-pdf' : 'fa-solid fa-image'" />
+                <span class="truncate">{{ preuveType === 'pdf' ? 'Document PDF joint' : 'Photo jointe' }}</span>
+              </span>
+              <button type="button" class="shrink-0 text-af-live transition hover:opacity-70" aria-label="Retirer la preuve" @click="retirerPreuve">
+                <font-awesome-icon icon="fa-solid fa-xmark" />
+              </button>
+            </div>
+            <p v-if="erreurPreuve" class="mt-1 text-[12px] text-af-live">{{ erreurPreuve }}</p>
+          </div>
+        </div>
+      </template>
+
+      <!-- ─── Étape 2 : l'analyse ─── -->
+      <template v-else>
+        <fieldset>
+          <legend class="mb-2 text-[14px]/[1.4] text-af-atone italic">Verdict</legend>
+          <div class="grid grid-cols-2 gap-2 md:grid-cols-3">
+            <button
+              v-for="v in verdicts"
+              :key="v.value"
+              type="button"
+              class="rounded-lg border-2 px-3 py-2 text-[12px] font-bold transition"
+              :class="form.verdict === v.value ? v.activeClass : 'border-af-bordure bg-white text-af-corps hover:border-af-chocolat'"
+              @click="form.verdict = form.verdict === v.value ? undefined : v.value"
+            >
+              <font-awesome-icon :icon="v.icon" class="mr-1" />
+              {{ v.label }}
+            </button>
+          </div>
+        </fieldset>
+
+        <!-- Les deux volets s'opposent : le rouge et le vert sont ici
+             porteurs de sens, pas décoratifs. -->
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="flex flex-col gap-3 rounded-lg border-l-4 border-af-live bg-af-live/5 p-3">
+            <p class="text-[12px] font-bold text-af-live uppercase">
+              <font-awesome-icon icon="fa-solid fa-xmark" class="mr-1" />Préjugé
+            </p>
+            <AfricansChamp v-model="form.prejuge_titre" libelle="Titre du préjugé" />
+            <AfricansChamp
+              v-model="form.prejuge_description"
+              libelle="Description"
+              type="textarea"
+              :lignes="2"
+              aide="Facultatif"
             />
-            <p class="text-xs text-gray-500 mt-1">{{ form.contenu.length }} caractères (minimum 10)</p>
           </div>
-
-          <!-- Type de publication -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Type <span class="text-red-500">*</span>
-            </label>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <button
-                v-for="t in typesPublication"
-                :key="t.value"
-                type="button"
-                class="px-3 py-2.5 rounded-lg border-2 text-xs font-medium transition-all text-left flex items-start gap-2"
-                :class="form.type_publication === t.value
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'"
-                @click="form.type_publication = t.value"
-              >
-                <font-awesome-icon :icon="t.icon" class="mt-0.5" />
-                <span>{{ t.label }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Bloc « Fait vécu ou observé » : territoire + preuve -->
-          <div v-if="form.type_publication === 'fait_vecu'" class="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p class="text-xs font-bold text-amber-700 uppercase tracking-wide flex items-center gap-1.5">
-              <font-awesome-icon :icon="['fas', 'location-dot']" />
-              Fait vécu ou observé
+          <div class="flex flex-col gap-3 rounded-lg border-l-4 border-af-vert bg-af-vert/5 p-3">
+            <p class="text-[12px] font-bold text-af-vert uppercase">
+              <font-awesome-icon icon="fa-solid fa-check" class="mr-1" />Réalité
             </p>
-
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Territoire</label>
-              <select
-                v-model="form.pays_id"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition text-sm bg-white"
-              >
-                <option :value="undefined">Sélectionner un territoire</option>
-                <option v-for="p in pays" :key="p.id" :value="p.id">{{ p.nom }}</option>
-              </select>
-            </div>
-
-            <p class="text-xs text-amber-700 flex items-center gap-1.5">
-              <font-awesome-icon :icon="['fas', 'calendar-day']" />
-              La date enregistrée est celle de la publication.
-            </p>
-
-            <!-- Preuve : photo ou PDF (facultative) -->
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Preuve (photo ou PDF)</label>
-              <div v-if="!preuveUrl" class="flex items-center gap-3">
-                <label
-                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition"
-                  :class="{ 'opacity-50 cursor-not-allowed': televersementEnCours }"
-                >
-                  <font-awesome-icon
-                    :icon="televersementEnCours ? ['fas', 'spinner'] : ['fas', 'paperclip']"
-                    :class="{ 'animate-spin': televersementEnCours }"
-                  />
-                  {{ televersementEnCours ? 'Téléversement...' : 'Joindre un fichier' }}
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    class="sr-only"
-                    :disabled="televersementEnCours"
-                    @change="onPreuveSelectionnee"
-                  >
-                </label>
-                <span class="text-xs text-gray-400">Sinon, « Pas de preuve » sera affiché.</span>
-              </div>
-              <div v-else class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-green-300 bg-green-50">
-                <span class="flex items-center gap-2 text-sm text-green-700 min-w-0">
-                  <font-awesome-icon :icon="preuveType === 'pdf' ? ['fas', 'file-pdf'] : ['fas', 'image']" />
-                  <span class="truncate">{{ preuveType === 'pdf' ? 'Document PDF joint' : 'Photo jointe' }}</span>
-                </span>
-                <button type="button" class="text-red-500 hover:text-red-700 shrink-0" @click="retirerPreuve">
-                  <font-awesome-icon :icon="['fas', 'xmark']" />
-                </button>
-              </div>
-              <p v-if="erreurPreuve" class="text-xs text-red-600 mt-1">{{ erreurPreuve }}</p>
-            </div>
+            <AfricansChamp v-model="form.realite_titre" libelle="Titre de la réalité" />
+            <AfricansChamp
+              v-model="form.realite_description"
+              libelle="Description"
+              type="textarea"
+              :lignes="2"
+              aide="Facultatif"
+            />
           </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Verdict</label>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-              <button
-                v-for="v in verdicts"
-                :key="v.value"
-                type="button"
-                class="px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all"
-                :class="form.verdict === v.value
-                  ? `${v.activeClass} border-current`
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'"
-                @click="form.verdict = form.verdict === v.value ? undefined : v.value"
-              >
-                <font-awesome-icon :icon="v.icon" class="mr-1" />
-                {{ v.label }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Volets préjugé / réalité -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="p-3 bg-red-50 rounded-lg border-l-4 border-red-400 space-y-2">
-              <p class="text-xs font-bold text-red-600 uppercase tracking-wide">
-                <font-awesome-icon :icon="['fas', 'xmark']" class="mr-1" />Préjugé
-              </p>
-              <input
-                v-model="form.prejuge_titre"
-                type="text"
-                placeholder="Titre du préjugé"
-                class="w-full px-3 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
-              />
-              <textarea
-                v-model="form.prejuge_description"
-                rows="2"
-                placeholder="Description du préjugé (optionnel)"
-                class="w-full px-3 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
-              />
-            </div>
-            <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-400 space-y-2">
-              <p class="text-xs font-bold text-green-600 uppercase tracking-wide">
-                <font-awesome-icon :icon="['fas', 'check']" class="mr-1" />Réalité
-              </p>
-              <input
-                v-model="form.realite_titre"
-                type="text"
-                placeholder="Titre de la réalité"
-                class="w-full px-3 py-2 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition text-sm bg-white"
-              />
-              <textarea
-                v-model="form.realite_description"
-                rows="2"
-                placeholder="Description de la réalité (optionnel)"
-                class="w-full px-3 py-2 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition text-sm bg-white"
-              />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Source</label>
-              <input
-                v-model="form.source_originale"
-                type="url"
-                placeholder="https://..."
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition text-sm"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Image illustrative</label>
-              <div v-if="!imageApercu" class="flex items-center gap-3">
-                <label
-                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition"
-                  :class="{ 'opacity-50 cursor-not-allowed': imageEnCours }"
-                >
-                  <font-awesome-icon
-                    :icon="imageEnCours ? ['fas', 'spinner'] : ['fas', 'image']"
-                    :class="{ 'animate-spin': imageEnCours }"
-                  />
-                  {{ imageEnCours ? 'Téléversement...' : 'Choisir une image' }}
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    class="sr-only"
-                    :disabled="imageEnCours"
-                    @change="onImageSelectionnee"
-                  >
-                </label>
-                <span class="text-xs text-gray-400">Facultatif</span>
-              </div>
-              <div v-else class="relative">
-                <img :src="imageApercu" alt="Aperçu" class="w-full h-32 object-cover rounded-lg border border-gray-200">
-                <button
-                  type="button"
-                  class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition"
-                  @click="retirerImage"
-                >
-                  <font-awesome-icon :icon="['fas', 'xmark']" class="text-xs" />
-                </button>
-              </div>
-              <p v-if="erreurImage" class="text-xs text-red-600 mt-1">{{ erreurImage }}</p>
-            </div>
-          </div>
-
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2 text-xs text-blue-800">
-            <font-awesome-icon :icon="['fas', 'circle-info']" class="mt-0.5" />
-            <p>Votre contribution sera publiée immédiatement et visible par tous les utilisateurs.</p>
-          </div>
-        </form>
-
-        <!-- Footer -->
-        <div class="border-t border-gray-100 p-4 flex items-center justify-end gap-3 bg-gray-50">
-          <button
-            type="button"
-            class="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium hover:bg-white transition"
-            @click="fermer"
-          >
-            Annuler
-          </button>
-          <button
-            type="button"
-            :disabled="!estValide || enCours"
-            class="px-5 py-2.5 rounded-lg bg-linear-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2 shadow-md"
-            @click="soumettre"
-          >
-            <font-awesome-icon v-if="enCours" :icon="['fas', 'spinner']" class="animate-spin" />
-            <font-awesome-icon v-else :icon="['fas', 'paper-plane']" />
-            {{ enCours ? 'Publication...' : 'Publier' }}
-          </button>
         </div>
-      </div>
-    </div>
-  </Transition>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <AfricansChamp v-model="form.source_originale" libelle="Source" type="url" placeholder="https://…" />
+
+          <div>
+            <p class="mb-2 text-[14px]/[1.4] text-af-atone italic">Image illustrative</p>
+            <div v-if="!imageApercu" class="flex flex-wrap items-center gap-3">
+              <label
+                class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-af-bordure bg-white px-4 py-2 text-[14px]/[1.4] font-bold text-af-corps transition hover:border-af-chocolat"
+                :class="imageEnCours && 'cursor-not-allowed opacity-50'"
+              >
+                <font-awesome-icon
+                  :icon="imageEnCours ? 'fa-solid fa-spinner' : 'fa-solid fa-image'"
+                  :class="imageEnCours && 'animate-spin'"
+                />
+                {{ imageEnCours ? 'Téléversement…' : 'Choisir une image' }}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  class="sr-only"
+                  :disabled="imageEnCours"
+                  @change="onImageSelectionnee"
+                >
+              </label>
+              <span class="text-[12px] text-af-atone-2">Facultatif</span>
+            </div>
+            <div v-else class="relative">
+              <img :src="imageApercu" alt="" class="h-32 w-full rounded-lg border border-af-bordure object-cover">
+              <button
+                type="button"
+                class="absolute top-2 right-2 grid size-7 place-items-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+                aria-label="Retirer l'image"
+                @click="retirerImage"
+              >
+                <font-awesome-icon icon="fa-solid fa-xmark" class="text-[12px]" />
+              </button>
+            </div>
+            <p v-if="erreurImage" class="mt-1 text-[12px] text-af-live">{{ erreurImage }}</p>
+          </div>
+        </div>
+
+        <p class="flex items-start gap-2 rounded-lg border border-af-chocolat/20 bg-af-chocolat/5 px-4 py-3 text-[12px]/[1.6] text-af-corps">
+          <font-awesome-icon icon="fa-solid fa-circle-info" class="mt-0.5 shrink-0 text-af-chocolat" />
+          Votre contribution sera publiée immédiatement et visible par tous les utilisateurs.
+        </p>
+      </template>
+    </form>
+
+    <template #actions>
+      <button
+        type="button"
+        class="mr-auto text-base font-bold text-af-corps transition hover:opacity-70"
+        @click="fermer"
+      >
+        Annuler
+      </button>
+      <AfricansBouton
+        v-if="etapeCourante === 1"
+        variante="secondaire"
+        icone="fa-solid fa-arrow-left"
+        @click="etapeCourante = 0"
+      >
+        Précédent
+      </AfricansBouton>
+      <AfricansBouton v-if="etapeCourante === 0" icone="fa-solid fa-arrow-right" @click="suivant">
+        Suivant
+      </AfricansBouton>
+      <AfricansBouton
+        v-else
+        :desactive="!estValide || enCours"
+        :tourne="enCours"
+        :icone="enCours ? 'fa-solid fa-spinner' : 'fa-solid fa-paper-plane'"
+        @click="soumettre"
+      >
+        {{ enCours ? 'Publication…' : 'Publier' }}
+      </AfricansBouton>
+    </template>
+  </AfricansModale>
 </template>
 
 <script setup lang="ts">
@@ -301,10 +275,10 @@ const enCours = ref(false)
 const erreurMessage = ref<string | null>(null)
 
 // Types de publication
-const typesPublication: { value: TypePublicationFactcheck; label: string; icon: [string, string] }[] = [
-  { value: 'on_dit', label: 'On dit / entendu quelque part', icon: ['fas', 'comments'] },
-  { value: 'adage_legende', label: 'Adage / Légende', icon: ['fas', 'book-open'] },
-  { value: 'fait_vecu', label: 'Fait vécu ou observé', icon: ['fas', 'location-dot'] },
+const typesPublication: { value: TypePublicationFactcheck; label: string; icon: string }[] = [
+  { value: 'on_dit', label: 'On dit / entendu quelque part', icon: 'fa-solid fa-comments' },
+  { value: 'adage_legende', label: 'Adage / Légende', icon: 'fa-solid fa-book-open' },
+  { value: 'fait_vecu', label: 'Fait vécu ou observé', icon: 'fa-solid fa-location-dot' },
 ]
 
 // Territoires (chargés à l'ouverture)
@@ -378,16 +352,34 @@ function retirerImage() {
 }
 
 const verdicts = [
-  { value: 'vrai' as const, label: 'Vrai', icon: ['fas', 'check'], activeClass: 'bg-green-50 text-green-700' },
-  { value: 'faux' as const, label: 'Faux', icon: ['fas', 'xmark'], activeClass: 'bg-red-50 text-red-700' },
-  { value: 'partiellement_vrai' as const, label: 'Partiellement vrai', icon: ['fas', 'circle-half-stroke'], activeClass: 'bg-yellow-50 text-yellow-700' },
-  { value: 'trompeur' as const, label: 'Trompeur', icon: ['fas', 'triangle-exclamation'], activeClass: 'bg-orange-50 text-orange-700' },
-  { value: 'non_verifie' as const, label: 'Non vérifié', icon: ['fas', 'question'], activeClass: 'bg-gray-100 text-gray-700' },
+  { value: 'vrai' as const, label: 'Vrai', icon: 'fa-solid fa-check', activeClass: 'border-af-vert bg-af-vert/10 text-af-vert' },
+  { value: 'faux' as const, label: 'Faux', icon: 'fa-solid fa-xmark', activeClass: 'border-af-live bg-af-live/10 text-af-live' },
+  { value: 'partiellement_vrai' as const, label: 'Partiellement vrai', icon: 'fa-solid fa-circle-half-stroke', activeClass: 'border-af-chocolat bg-af-chocolat/10 text-af-chocolat' },
+  { value: 'trompeur' as const, label: 'Trompeur', icon: 'fa-solid fa-triangle-exclamation', activeClass: 'border-af-chocolat bg-af-chocolat/10 text-af-chocolat' },
+  { value: 'non_verifie' as const, label: 'Non vérifié', icon: 'fa-solid fa-question', activeClass: 'border-af-atone bg-af-fond text-af-corps' },
 ]
 
 const estValide = computed(() => form.contenu.trim().length >= 10)
 
+const ETAPES = [
+  { titre: "L'affirmation" },
+  { titre: "L'analyse" },
+] as const
+const etapeCourante = ref(0)
+
+function suivant() {
+  // Le seul champ obligatoire vit à l'étape 1 : passer à la suite sans lui
+  // n'aurait aucun sens, l'analyse porterait sur rien.
+  if (!estValide.value) {
+    erreurMessage.value = 'Le contenu du factcheck doit contenir au moins 10 caractères.'
+    return
+  }
+  erreurMessage.value = null
+  etapeCourante.value = 1
+}
+
 function reinitialiser() {
+  etapeCourante.value = 0
   form.contenu = ''
   form.source_originale = undefined
   form.verdict = undefined
@@ -457,14 +449,3 @@ watch(() => props.open, async (v) => {
   }
 })
 </script>
-
-<style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-</style>
