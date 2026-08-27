@@ -39,6 +39,36 @@ export interface ResultatPartageExterne {
   auteur_credite: boolean
 }
 
+/**
+ * Construit les six liens de partage à partir d'un texte et d'une URL.
+ *
+ * Ces six URL étaient reconstruites À LA MAIN dans six composants : les deux
+ * modales d'Afripulse, celle des médias, celle des événements, celle de la
+ * gouvernance et les boutons d'Africonnect. Six copies du même encodage, dont
+ * une seule aurait été corrigée le jour d'un défaut.
+ *
+ * `mailto:` est traité à part par l'appelant : `window.open` sur un `mailto:`
+ * laisse un onglet vide derrière lui.
+ */
+export const construireReseaux = (texte: string, url: string): OptionReseau[] => {
+  const t = encodeURIComponent(texte)
+  const u = encodeURIComponent(url)
+  return [
+    { nom: 'WhatsApp', url: `https://wa.me/?text=${encodeURIComponent(`${texte} ${url}`)}`, icon: ['fab', 'whatsapp'], couleur: 'bg-[#25D366] hover:bg-[#1da851]', reseau: 'whatsapp' },
+    { nom: 'Facebook', url: `https://www.facebook.com/sharer/sharer.php?u=${u}`, icon: ['fab', 'facebook'], couleur: 'bg-[#1877F2] hover:bg-[#0d65d9]', reseau: 'facebook' },
+    { nom: 'X / Twitter', url: `https://twitter.com/intent/tweet?url=${u}&text=${t}`, icon: ['fab', 'twitter'], couleur: 'bg-black hover:bg-gray-800', reseau: 'x' },
+    { nom: 'LinkedIn', url: `https://www.linkedin.com/sharing/share-offsite/?url=${u}`, icon: ['fab', 'linkedin'], couleur: 'bg-[#0A66C2] hover:bg-[#084e96]', reseau: 'linkedin' },
+    { nom: 'Telegram', url: `https://t.me/share/url?url=${u}&text=${t}`, icon: ['fab', 'telegram'], couleur: 'bg-[#229ED9] hover:bg-[#1b7fae]', reseau: 'telegram' },
+    { nom: 'E-mail', url: `mailto:?subject=${t}&body=${encodeURIComponent(`${texte} ${url}`)}`, icon: ['fas', 'envelope'], couleur: 'bg-af-corps hover:opacity-90', reseau: 'email' },
+  ]
+}
+
+/** Ouvre un lien de partage. `mailto:` ne passe PAS par `window.open`. */
+export const ouvrirPartage = (r: OptionReseau) => {
+  if (r.url.startsWith('mailto:')) window.location.href = r.url
+  else window.open(r.url, '_blank', 'noopener,noreferrer,width=600,height=500')
+}
+
 export const usePartageExterne = () => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBaseUrl as string
