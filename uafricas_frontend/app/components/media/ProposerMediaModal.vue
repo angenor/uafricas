@@ -118,6 +118,7 @@ watch(themeSelection, (valeur) => {
 })
 
 const reinitialiser = () => {
+  etapeCourante.value = 0
   typeObjet.value = props.typesOfferts[0] ?? 'chaine_tv'
   justification.value = ''
   donnees.value = {}
@@ -198,10 +199,37 @@ const valider = (): string | null => {
   return null
 }
 
+const ETAPES = [
+  { titre: 'Le contenu' },
+  { titre: 'Fichiers & source' },
+  { titre: 'Contacts & envoi' },
+] as const
+const etapeCourante = ref(0)
+
+/**
+ * À quelle étape se corrige un message donné. `valider()` reste l'autorité
+ * unique : ceci ne fait que router son message vers l'étape qui l'affiche —
+ * un message rendu sur une étape invisible est un message perdu.
+ */
+const etapeDeLErreur = (message: string): number =>
+  message.startsWith('Expliquez') ? 2 : 0
+
+const suivant = () => {
+  const probleme = valider()
+  // Seule l'étape 1 bloque : c'est elle qui porte l'identité du contenu.
+  if (etapeCourante.value === 0 && probleme && etapeDeLErreur(probleme) === 0) {
+    erreur.value = probleme
+    return
+  }
+  erreur.value = ''
+  etapeCourante.value = Math.min(etapeCourante.value + 1, ETAPES.length - 1)
+}
+
 const soumettreFormulaire = async () => {
   const probleme = valider()
   if (probleme) {
     erreur.value = probleme
+    etapeCourante.value = etapeDeLErreur(probleme)
     return
   }
   erreur.value = ''
@@ -233,384 +261,269 @@ const soumettreFormulaire = async () => {
   }
 }
 
-const onKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && props.isOpen) fermer()
-}
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="modal-fade">
-      <div
-        v-if="isOpen"
-        class="fixed inset-0 z-[90] flex items-center justify-center p-4"
-        @click.self="fermer"
+  <AfricansModale
+    :model-value="isOpen"
+    titre="Proposer un contenu"
+    sous-titre="Examiné par un administrateur avant publication"
+    icone="fa-solid fa-paper-plane"
+    taille="large"
+    @update:model-value="fermer()"
+  >
+    <!-- Confirmation -->
+    <div v-if="succes" class="flex flex-col items-center gap-3 py-6 text-center">
+      <span class="grid size-14 place-items-center rounded-full bg-af-vert/10">
+        <font-awesome-icon icon="fa-solid fa-check" class="text-2xl text-af-vert" />
+      </span>
+      <p class="text-base font-bold text-af-encre">Proposition envoyée !</p>
+      <p class="max-w-sm text-[14px]/[1.6] text-af-corps">
+        Elle sera examinée par un administrateur avant publication. Vous pouvez en
+        suivre l'avancement depuis
+        <NuxtLink to="/mon-compte/propositions-medias" class="font-bold text-af-chocolat underline">
+          vos propositions
+        </NuxtLink>.
+      </p>
+    </div>
+
+    <!-- Invitation à se connecter -->
+    <div v-else-if="!userStore.accessToken" class="flex flex-col items-center gap-3 py-8 text-center">
+      <font-awesome-icon icon="fa-solid fa-lock" class="text-3xl text-af-atone-2" />
+      <p class="text-[14px]/[1.4] text-af-corps">Proposer un contenu demande un compte.</p>
+      <AfricansBouton vers="/login" variante="secondaire">Se connecter</AfricansBouton>
+    </div>
+
+    <template v-else>
+      <AfricansEtapes :etapes="ETAPES" :courante="etapeCourante" class="mb-6" @aller="etapeCourante = $event" />
+
+      <form id="form-proposition-media" class="flex flex-col gap-5" @submit.prevent="soumettreFormulaire">
+        <!-- Rien de non validé n'est public : le dire d'emblée. -->
+        <p class="flex gap-3 rounded-lg border border-af-chocolat/20 bg-af-chocolat/5 px-4 py-3 text-[14px]/[1.6] text-af-corps">
+          <font-awesome-icon icon="fa-solid fa-circle-info" class="mt-1 shrink-0 text-af-chocolat" />
+          <span>
+            Votre proposition est examinée par un administrateur avant toute publication.
+            Elle n'apparaîtra sur le site qu'une fois validée.
+          </span>
+        </p>
+
+        <!-- ─── Étape 1 : identité du contenu ─── -->
+        <template v-if="etapeCourante === 0">
+          <AfricansChamp v-model="typeObjet" libelle="Que proposez-vous ?" type="select" obligatoire>
+            <option v-for="t in typesOfferts" :key="t" :value="t">{{ LIBELLES_TYPE_OBJET[t] }}</option>
+          </AfricansChamp>
+
+          <AfricansChamp
+            v-model="donnees.nom"
+            libelle="Nom"
+            :maxlength="350"
+            placeholder="Nom de la chaîne, de la station ou de l'émission"
+            obligatoire
+          />
+
+          <AfricansChamp
+            v-model="donnees.description"
+            libelle="Description"
+            type="textarea"
+            :lignes="3"
+            placeholder="Présentez le contenu en quelques phrases…"
+          />
+
+          <!-- Résolu en `pays_id` par nom côté serveur. -->
+          <AfricansChamp v-model="donnees.pays" libelle="Territoire" type="select" obligatoire>
+            <option value="">Choisir un territoire…</option>
+            <option v-for="t in territoires" :key="t.id" :value="t.nom">{{ t.nom }}</option>
+          </AfricansChamp>
+
+          <!-- Rôle de partie prenante (supports) : FR-029 -->
+          <div v-if="estSupport" class="flex flex-col gap-2">
+            <AfricansChamp
+              v-model="donnees.role_partie_prenante"
+              libelle="À quel titre proposez-vous ce média ?"
+              type="select"
+              obligatoire
+            >
+              <option value="">Choisir…</option>
+              <option v-for="r in ROLES_PARTIE_PRENANTE" :key="r.valeur" :value="r.valeur">
+                {{ r.libelle }}
+              </option>
+            </AfricansChamp>
+            <AfricansChamp
+              v-if="donnees.role_partie_prenante === 'autre'"
+              v-model="donnees.role_partie_prenante_autre"
+              libelle="Précisez votre rôle"
+              :maxlength="200"
+              obligatoire
+            />
+          </div>
+
+          <!-- Support de rattachement (émission proposée hors page de détail).
+               Sans lui, l'émission serait orpheline et n'apparaîtrait sur
+               aucune page, toutes structurées par support. -->
+          <div v-if="rattachementRequis">
+            <AfricansChamp
+              v-model="parentSelection"
+              :libelle="estVideo ? 'Chaîne de rattachement' : 'Station de rattachement'"
+              type="select"
+              obligatoire
+            >
+              <option value="">{{ estVideo ? 'Choisir une chaîne…' : 'Choisir une station…' }}</option>
+              <option v-for="parent in supportsParents" :key="parent.id" :value="parent.id">
+                {{ parent.nom }}
+              </option>
+            </AfricansChamp>
+            <p v-if="supportsParents.length === 0" class="mt-1.5 text-[12px] text-af-atone">
+              Aucune {{ estVideo ? 'chaîne' : 'station' }} publiée pour l'instant.
+              Proposez-en une d'abord, ou attendez sa validation.
+            </p>
+          </div>
+
+          <!-- Thème phare (contenus) : FR-030 -->
+          <div v-if="estContenu" class="flex flex-col gap-2">
+            <AfricansChamp v-model="themeSelection" libelle="Thème phare" type="select" obligatoire>
+              <option value="">Choisir un thème…</option>
+              <option v-for="theme in themes" :key="theme.id" :value="theme.id">{{ theme.nom }}</option>
+              <option :value="AUTRE">Autre (à préciser)</option>
+            </AfricansChamp>
+            <AfricansChamp
+              v-if="themeSelection === AUTRE"
+              v-model="donnees.theme_phare_autre"
+              libelle="Précisez le thème phare"
+              :maxlength="200"
+              obligatoire
+            />
+          </div>
+        </template>
+
+        <!-- ─── Étape 2 : fichiers et provenance ─── -->
+        <template v-else-if="etapeCourante === 1">
+          <!-- Média : fichier OU lien, jamais les deux (FR-056) -->
+          <div class="flex flex-col gap-2">
+            <p class="text-[14px]/[1.4] text-af-atone italic">
+              {{ estVideo ? 'Vidéo' : estContenu ? 'Audio' : 'Flux de diffusion' }}
+            </p>
+            <input
+              v-if="estContenu"
+              type="file"
+              :accept="estVideo ? 'video/*' : 'audio/*'"
+              class="w-full text-[14px]/[1.4] text-af-corps file:mr-3 file:rounded-md file:border-0 file:bg-af-fond file:px-4 file:py-2 file:text-[14px] file:font-bold file:text-af-corps hover:file:bg-af-bordure"
+              @change="surFichierMedia"
+            >
+            <input
+              v-model="lienExterne"
+              type="url"
+              :disabled="!!fichierMedia"
+              class="h-11 w-full rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none disabled:opacity-50"
+              placeholder="…ou collez un lien (YouTube, flux en ligne…)"
+            >
+            <p v-if="fichierMedia" class="text-[12px] text-af-atone">
+              Fichier choisi : {{ fichierMedia.name }}, le champ de lien est désactivé.
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <p class="text-[14px]/[1.4] text-af-atone italic">Image de couverture</p>
+            <input
+              type="file"
+              accept="image/*"
+              class="w-full text-[14px]/[1.4] text-af-corps file:mr-3 file:rounded-md file:border-0 file:bg-af-fond file:px-4 file:py-2 file:text-[14px] file:font-bold file:text-af-corps hover:file:bg-af-bordure"
+              @change="surFichierImage"
+            >
+          </div>
+
+          <!-- Source et auteur : aucune décharge de droits n'est recueillie
+               (H-012), l'administrateur se prononce seul sur la licéité. -->
+          <div class="grid gap-5 sm:grid-cols-2">
+            <AfricansChamp
+              v-model="donnees.source_declaree"
+              libelle="Source du média"
+              :maxlength="300"
+              placeholder="D'où provient ce contenu ?"
+            />
+            <AfricansChamp
+              v-model="donnees.auteur_declare"
+              libelle="Auteur du contenu"
+              :maxlength="300"
+              placeholder="Qui l'a réalisé ?"
+            />
+          </div>
+        </template>
+
+        <!-- ─── Étape 3 : contacts publics et justification ─── -->
+        <template v-else>
+          <!-- Coordonnées publiques du support (09p). Réservées aux chaînes et
+               stations : une émission n'a pas d'équipe propre à joindre, c'est
+               son support qui la porte. -->
+          <div v-if="estSupport" class="flex flex-col gap-4 rounded-lg border border-af-bordure p-4">
+            <div>
+              <p class="text-[14px]/[1.4] font-bold text-af-encre">Contacts de votre média</p>
+              <p class="mt-0.5 text-[12px]/[1.6] text-af-atone">
+                Facultatif. Ces coordonnées seront affichées sur la page publique de votre
+                {{ typeObjet === 'chaine_tv' ? 'chaîne' : 'station' }} une fois la proposition
+                validée : n'y mettez que ce que vous acceptez de rendre public.
+              </p>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <AfricansChamp v-model="donnees.contact_email" libelle="E-mail" type="email" :maxlength="320" placeholder="contact@votremedia.tv" />
+              <AfricansChamp v-model="donnees.contact_telephone" libelle="Téléphone" type="tel" :maxlength="50" placeholder="+225 01 02 03 04 05" />
+              <AfricansChamp v-model="donnees.contact_whatsapp" libelle="WhatsApp" type="tel" :maxlength="50" placeholder="+225 01 02 03 04 05" />
+              <AfricansChamp v-model="donnees.contact_site_web" libelle="Site web" :maxlength="500" placeholder="www.votremedia.tv" />
+            </div>
+
+            <AfricansChamp v-model="donnees.contact_adresse" libelle="Adresse" :maxlength="300" placeholder="Siège, quartier, ville" />
+          </div>
+
+          <AfricansChamp
+            v-model="justification"
+            libelle="Pourquoi proposez-vous ce contenu ?"
+            type="textarea"
+            :lignes="3"
+            placeholder="Ce mot accompagne votre proposition auprès de l'administrateur."
+            obligatoire
+          />
+        </template>
+
+        <p v-if="erreur" class="rounded-lg border border-af-live/20 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live">
+          {{ erreur }}
+        </p>
+      </form>
+    </template>
+
+    <template v-if="!succes && userStore.accessToken" #actions>
+      <button
+        type="button"
+        class="mr-auto text-base font-bold text-af-corps transition hover:opacity-70 disabled:opacity-50"
+        :disabled="chargement"
+        @click="fermer"
       >
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-          <!-- En-tête -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-            <h3 class="font-oswald text-xl font-bold text-gray-900">Proposer un contenu</h3>
-            <button
-              type="button"
-              class="w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors cursor-pointer"
-              :disabled="chargement"
-              @click="fermer"
-            >
-              <font-awesome-icon :icon="['fas', 'xmark']" class="w-5 h-5" />
-            </button>
-          </div>
-
-          <div class="px-6 py-5 overflow-y-auto">
-            <!-- Confirmation -->
-            <div v-if="succes" class="flex flex-col items-center justify-center py-10 text-center">
-              <div class="w-14 h-14 rounded-full bg-custom-green/10 flex items-center justify-center mb-4">
-                <font-awesome-icon :icon="['fas', 'check']" class="w-7 h-7 text-custom-green" />
-              </div>
-              <p class="font-medium text-gray-900">Proposition envoyée !</p>
-              <p class="text-sm text-gray-500 mt-2 max-w-sm">
-                Elle sera examinée par un administrateur avant publication. Vous pouvez
-                en suivre l’avancement depuis
-                <NuxtLink to="/mon-compte/propositions-medias" class="text-custom-green hover:underline">
-                  vos propositions
-                </NuxtLink>.
-              </p>
-            </div>
-
-            <!-- Invitation à se connecter -->
-            <div v-else-if="!userStore.accessToken" class="py-10 text-center">
-              <font-awesome-icon :icon="['fas', 'lock']" class="w-10 h-10 text-gray-300 mb-4" />
-              <p class="text-gray-600 mb-2">Proposer un contenu demande un compte.</p>
-              <NuxtLink to="/login" class="text-custom-green font-medium hover:underline">
-                Se connecter
-              </NuxtLink>
-            </div>
-
-            <form v-else class="space-y-5" @submit.prevent="soumettreFormulaire">
-              <!-- Rien de non validé n'est public : le dire d'emblée. -->
-              <p class="flex gap-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
-                <font-awesome-icon :icon="['fas', 'circle-info']" class="w-4 h-4 mt-0.5 shrink-0" />
-                <span>
-                  Votre proposition est examinée par un administrateur avant toute
-                  publication. Elle n’apparaîtra sur le site qu’une fois validée.
-                </span>
-              </p>
-
-              <!-- Type -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                  Que proposez-vous ? <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="typeObjet"
-                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                >
-                  <option v-for="t in typesOfferts" :key="t" :value="t">
-                    {{ LIBELLES_TYPE_OBJET[t] }}
-                  </option>
-                </select>
-              </div>
-
-              <!-- Nom -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                  Nom <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="donnees.nom"
-                  type="text"
-                  maxlength="350"
-                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                  placeholder="Nom de la chaîne, de la station ou de l’émission"
-                >
-              </div>
-
-              <!-- Description -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
-                <textarea
-                  v-model="donnees.description"
-                  rows="3"
-                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                  placeholder="Présentez le contenu en quelques phrases…"
-                ></textarea>
-              </div>
-
-              <!-- Territoire concerné : résolu en pays_id par nom côté serveur. -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                  Territoire <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="donnees.pays"
-                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                >
-                  <option value="">Choisir un territoire…</option>
-                  <option v-for="t in territoires" :key="t.id" :value="t.nom">
-                    {{ t.nom }}
-                  </option>
-                </select>
-              </div>
-
-              <!-- Rôle de partie prenante (supports) : FR-029 -->
-              <div v-if="estSupport">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                  À quel titre proposez-vous ce média ? <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="donnees.role_partie_prenante"
-                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                >
-                  <option value="">Choisir…</option>
-                  <option v-for="r in ROLES_PARTIE_PRENANTE" :key="r.valeur" :value="r.valeur">
-                    {{ r.libelle }}
-                  </option>
-                </select>
-                <input
-                  v-if="donnees.role_partie_prenante === 'autre'"
-                  v-model="donnees.role_partie_prenante_autre"
-                  type="text"
-                  maxlength="200"
-                  class="mt-2 w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                  placeholder="Précisez votre rôle"
-                >
-              </div>
-
-              <!-- Support de rattachement (émission proposée hors page de détail).
-                   Sans lui, l'émission serait orpheline et n'apparaîtrait sur
-                   aucune page, toutes structurées par support. -->
-              <div v-if="rattachementRequis">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                  {{ estVideo ? 'Chaîne de rattachement' : 'Station de rattachement' }}
-                  <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="parentSelection"
-                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                >
-                  <option value="">
-                    {{ estVideo ? 'Choisir une chaîne…' : 'Choisir une station…' }}
-                  </option>
-                  <option v-for="parent in supportsParents" :key="parent.id" :value="parent.id">
-                    {{ parent.nom }}
-                  </option>
-                </select>
-                <p v-if="supportsParents.length === 0" class="mt-1.5 text-xs text-gray-500">
-                  Aucune {{ estVideo ? 'chaîne' : 'station' }} publiée pour l'instant.
-                  Proposez-en une d'abord, ou attendez sa validation.
-                </p>
-              </div>
-
-              <!-- Thème phare (contenus) : FR-030 -->
-              <div v-if="estContenu">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                  Thème phare <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="themeSelection"
-                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                >
-                  <option value="">Choisir un thème…</option>
-                  <option v-for="theme in themes" :key="theme.id" :value="theme.id">
-                    {{ theme.nom }}
-                  </option>
-                  <option :value="AUTRE">Autre (à préciser)</option>
-                </select>
-                <input
-                  v-if="themeSelection === AUTRE"
-                  v-model="donnees.theme_phare_autre"
-                  type="text"
-                  maxlength="200"
-                  class="mt-2 w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                  placeholder="Précisez le thème phare"
-                >
-              </div>
-
-              <!-- Média : fichier OU lien, jamais les deux (FR-056) -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                  {{ estVideo ? 'Vidéo' : estContenu ? 'Audio' : 'Flux de diffusion' }}
-                </label>
-                <input
-                  v-if="estContenu"
-                  type="file"
-                  :accept="estVideo ? 'video/*' : 'audio/*'"
-                  class="w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200"
-                  @change="surFichierMedia"
-                >
-                <input
-                  v-model="lienExterne"
-                  type="url"
-                  :disabled="!!fichierMedia"
-                  class="mt-2 w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent disabled:bg-gray-100"
-                  placeholder="…ou collez un lien (YouTube, flux en ligne…)"
-                >
-                <p v-if="fichierMedia" class="mt-1 text-xs text-gray-500">
-                  Fichier choisi : {{ fichierMedia.name }}, le champ de lien est désactivé.
-                </p>
-              </div>
-
-              <!-- Image de couverture -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Image de couverture</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  class="w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200"
-                  @change="surFichierImage"
-                >
-              </div>
-
-              <!-- Source et auteur : aucune décharge de droits n'est recueillie
-                   (H-012), l'administrateur se prononce seul sur la licéité. -->
-              <div class="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Source du média</label>
-                  <input
-                    v-model="donnees.source_declaree"
-                    type="text"
-                    maxlength="300"
-                    class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                    placeholder="D’où provient ce contenu ?"
-                  >
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Auteur du contenu</label>
-                  <input
-                    v-model="donnees.auteur_declare"
-                    type="text"
-                    maxlength="300"
-                    class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                    placeholder="Qui l’a réalisé ?"
-                  >
-                </div>
-              </div>
-
-              <!-- Coordonnées publiques du support (09p).
-                   Réservées aux chaînes et stations : une émission n'a pas
-                   d'équipe propre à joindre, c'est son support qui la porte. -->
-              <div v-if="estSupport" class="rounded-lg border border-gray-200 p-4 space-y-4">
-                <div>
-                  <p class="text-sm font-semibold text-gray-900">Contacts de votre média</p>
-                  <p class="text-xs text-gray-500 mt-0.5">
-                    Facultatif. Ces coordonnées seront affichées sur la page publique de
-                    votre {{ typeObjet === 'chaine_tv' ? 'chaîne' : 'station' }} une fois
-                    la proposition validée : n’y mettez que ce que vous acceptez de rendre public.
-                  </p>
-                </div>
-
-                <div class="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">E-mail</label>
-                    <input
-                      v-model="donnees.contact_email"
-                      type="email"
-                      maxlength="320"
-                      class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                      placeholder="contact@votremedia.tv"
-                    >
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Téléphone</label>
-                    <input
-                      v-model="donnees.contact_telephone"
-                      type="tel"
-                      maxlength="50"
-                      class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                      placeholder="+225 01 02 03 04 05"
-                    >
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">WhatsApp</label>
-                    <input
-                      v-model="donnees.contact_whatsapp"
-                      type="tel"
-                      maxlength="50"
-                      class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                      placeholder="+225 01 02 03 04 05"
-                    >
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Site web</label>
-                    <input
-                      v-model="donnees.contact_site_web"
-                      type="text"
-                      maxlength="500"
-                      class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                      placeholder="www.votremedia.tv"
-                    >
-                  </div>
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Adresse</label>
-                  <input
-                    v-model="donnees.contact_adresse"
-                    type="text"
-                    maxlength="300"
-                    class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                    placeholder="Siège, quartier, ville"
-                  >
-                </div>
-              </div>
-
-              <!-- Justification -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                  Pourquoi proposez-vous ce contenu ? <span class="text-red-500">*</span>
-                </label>
-                <textarea
-                  v-model="justification"
-                  rows="3"
-                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
-                  placeholder="Ce mot accompagne votre proposition auprès de l’administrateur."
-                ></textarea>
-              </div>
-
-              <p v-if="erreur" class="text-sm text-red-600">{{ erreur }}</p>
-            </form>
-          </div>
-
-          <!-- Pied -->
-          <div
-            v-if="!succes && userStore.accessToken"
-            class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0"
-          >
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer disabled:opacity-50"
-              :disabled="chargement"
-              @click="fermer"
-            >
-              Annuler
-            </button>
-            <button
-              type="button"
-              class="px-5 py-2 text-sm font-medium text-white bg-custom-green rounded-lg hover:bg-custom-green/90 transition-colors cursor-pointer disabled:opacity-60 inline-flex items-center gap-2"
-              :disabled="chargement"
-              @click="soumettreFormulaire"
-            >
-              <font-awesome-icon v-if="chargement" :icon="['fas', 'spinner']" class="w-4 h-4 animate-spin" />
-              <font-awesome-icon v-else :icon="['fas', 'paper-plane']" class="w-4 h-4" />
-              Soumettre
-            </button>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+        Annuler
+      </button>
+      <AfricansBouton
+        v-if="etapeCourante > 0"
+        variante="secondaire"
+        icone="fa-solid fa-arrow-left"
+        @click="etapeCourante -= 1"
+      >
+        Précédent
+      </AfricansBouton>
+      <AfricansBouton
+        v-if="etapeCourante < ETAPES.length - 1"
+        icone="fa-solid fa-arrow-right"
+        @click="suivant"
+      >
+        Suivant
+      </AfricansBouton>
+      <AfricansBouton
+        v-else
+        type="submit"
+        form="form-proposition-media"
+        :desactive="chargement"
+        :tourne="chargement"
+        :icone="chargement ? 'fa-solid fa-spinner' : 'fa-solid fa-paper-plane'"
+      >
+        Soumettre
+      </AfricansBouton>
+    </template>
+  </AfricansModale>
 </template>
-
-<style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-</style>
