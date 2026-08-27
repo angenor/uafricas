@@ -184,13 +184,13 @@ chargerAvis()
             <!-- Ecole -->
             <div>
               <label for="filtre-ecole" class="block text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">
-                Ecole
+                École
               </label>
               <input
                 id="filtre-ecole"
                 v-model="ecole"
                 type="text"
-                placeholder="Ecole..."
+                placeholder="École..."
                 class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
               />
             </div>
@@ -232,7 +232,7 @@ chargerAvis()
               class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
               @click="reinitialiser"
             >
-              Reinitialiser
+              Réinitialiser
             </button>
           </div>
         </form>

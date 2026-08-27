@@ -22,12 +22,12 @@ const emit = defineEmits<{
 
 // ── Etapes du formulaire ───────────────────────────────────────
 const etapes = [
-  { numero: 1, titre: 'Preferences' },
-  { numero: 2, titre: 'Identite' },
+  { numero: 1, titre: 'Préférences' },
+  { numero: 2, titre: 'Identité' },
   { numero: 3, titre: 'Relation' },
   { numero: 4, titre: 'Lieu de rencontre' },
   { numero: 5, titre: 'Photo & apparence' },
-  { numero: 6, titre: 'Recapitulatif' },
+  { numero: 6, titre: 'Récapitulatif' },
 ]
 const etapeCourante = ref(1)
 
@@ -142,13 +142,13 @@ const validerEtape = (etape: number): boolean => {
 
   if (etape === 1) {
     if (!formulaire.partage_coordonnees) {
-      erreurs.partage_coordonnees = 'Vous devez accepter le partage de coordonnees pour pouvoir continuer.'
+      erreurs.partage_coordonnees = 'Vous devez accepter le partage de coordonnées pour pouvoir continuer.'
     } else {
       const aCoordonnee = formulaire.coordonnees_email.trim()
         || formulaire.coordonnees_telephone.trim()
         || formulaire.coordonnees_whatsapp.trim()
       if (!aCoordonnee) {
-        erreurs.coordonnees = 'Au moins une coordonnee est requise.'
+        erreurs.coordonnees = 'Au moins une coordonnée est requise.'
       }
     }
   }
@@ -184,7 +184,7 @@ const validerGlobal = (): boolean => {
   }
 
   if (!formulaire.partage_coordonnees) {
-    erreurs.partage_coordonnees = 'Vous devez accepter le partage de coordonnees pour pouvoir continuer.'
+    erreurs.partage_coordonnees = 'Vous devez accepter le partage de coordonnées pour pouvoir continuer.'
     etapeCourante.value = 1
     return false
   }
@@ -193,7 +193,7 @@ const validerGlobal = (): boolean => {
     || formulaire.coordonnees_telephone.trim()
     || formulaire.coordonnees_whatsapp.trim()
   if (!aCoordonnee) {
-    erreurs.coordonnees = 'Au moins une coordonnee est requise.'
+    erreurs.coordonnees = 'Au moins une coordonnée est requise.'
     etapeCourante.value = 1
     return false
   }
@@ -321,7 +321,7 @@ const labelRelation = computed(() => {
 const lignesRecap = computed(() => {
   const lignes: { label: string; valeur: string }[] = []
   lignes.push({ label: 'Nom recherche', valeur: formulaire.nom_recherche })
-  if (formulaire.prenom_recherche.trim()) lignes.push({ label: 'Prenom', valeur: formulaire.prenom_recherche })
+  if (formulaire.prenom_recherche.trim()) lignes.push({ label: 'Prénom', valeur: formulaire.prenom_recherche })
   if (formulaire.surnom.trim()) lignes.push({ label: 'Surnom', valeur: formulaire.surnom })
   if (formulaire.genre_recherche) {
     const label = GENRES_PERSONNE.find(g => g.value === formulaire.genre_recherche)?.label ?? formulaire.genre_recherche
@@ -330,7 +330,7 @@ const lignesRecap = computed(() => {
   if (formulaire.comment_connu.trim()) lignes.push({ label: 'Comment connu', valeur: formulaire.comment_connu })
   if (labelRelation.value) lignes.push({ label: 'Type de relation', valeur: labelRelation.value })
   if (formulaire.localite_rencontre.trim()) lignes.push({ label: 'Localite de rencontre', valeur: formulaire.localite_rencontre })
-  if (formulaire.ecole_rencontre.trim()) lignes.push({ label: 'Ecole de rencontre', valeur: formulaire.ecole_rencontre })
+  if (formulaire.ecole_rencontre.trim()) lignes.push({ label: 'École de rencontre', valeur: formulaire.ecole_rencontre })
   if (formulaire.ville_rencontre.trim()) lignes.push({ label: 'Ville de rencontre', valeur: formulaire.ville_rencontre })
   if (formulaire.pays_id) {
     const nomPays = listePays.value.find(p => p.id === formulaire.pays_id)?.nom
@@ -349,7 +349,7 @@ const lignesRecap = computed(() => {
   if (formulaire.description.trim()) lignes.push({ label: 'Description', valeur: formulaire.description })
   // Anonymat masqué pour le moment
   // lignes.push({ label: 'Anonymat', valeur: formulaire.est_anonyme ? 'Oui' : 'Non' })
-  if (formulaire.partage_coordonnees) lignes.push({ label: 'Partage coordonnees', valeur: 'Oui' })
+  if (formulaire.partage_coordonnees) lignes.push({ label: 'Partage coordonnées', valeur: 'Oui' })
   return lignes
 })
 
@@ -391,7 +391,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       {{ etapes[etapeCourante - 1]?.titre }}
     </h2>
     <p class="mb-6 text-center text-sm text-gray-500">
-      Etape {{ etapeCourante }} sur {{ etapes.length }}
+      Étape {{ etapeCourante }} sur {{ etapes.length }}
     </p>
 
     <!-- Erreur globale -->
@@ -403,7 +403,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
     <div ref="etapeRef">
     <!-- ── Etape 1 : Preferences ──────────────────────── -->
     <div v-if="etapeCourante === 1" class="space-y-5">
-      <p class="text-sm text-gray-500">Definissez vos preferences de confidentialite avant de commencer.</p>
+      <p class="text-sm text-gray-500">Définissez vos préférences de confidentialité avant de commencer.</p>
 
       <!-- Anonymat : masqué pour le moment, seuls les avis publics sont permis -->
       <!-- <div class="rounded-lg border border-gray-200 p-4">
@@ -431,9 +431,9 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
             class="mt-0.5 h-5 w-5 rounded border-gray-300 text-custom-chocolat accent-custom-chocolat"
           >
           <div>
-            <span class="text-sm font-medium text-gray-700">Partager mes coordonnees</span>
+            <span class="text-sm font-medium text-gray-700">Partager mes coordonnées</span>
             <p class="text-xs text-gray-500 mt-0.5">
-              Vos coordonnees seront partagees uniquement avec les correspondances mutuelles (jamais affichees publiquement).
+              Vos coordonnées seront partagées uniquement avec les correspondances mutuelles (jamais affichées publiquement).
             </p>
           </div>
         </label>
@@ -451,7 +451,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
             >
           </div>
           <div>
-            <label :class="labelClass">Telephone</label>
+            <label :class="labelClass">Téléphone</label>
             <input
               v-model="formulaire.coordonnees_telephone"
               type="tel"
@@ -490,7 +490,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       </div>
 
       <div>
-        <label :class="labelClass">Prenom</label>
+        <label :class="labelClass">Prénom</label>
         <input
           v-model="formulaire.prenom_recherche"
           type="text"
@@ -573,7 +573,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
 
       <!-- Precision pour "Autre" -->
       <div v-if="formulaire.type_relation === 'autre'" class="mt-3">
-        <label :class="labelClass">Precisez le type de relation</label>
+        <label :class="labelClass">Précisez le type de relation</label>
         <input
           v-model="formulaire.type_relation_autre"
           type="text"
@@ -630,7 +630,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
         </div>
 
         <div>
-          <label :class="labelClass">Ecole / Lieu de travail</label>
+          <label :class="labelClass">École / Lieu de travail</label>
           <input
             v-model="formulaire.ecole_rencontre"
             type="text"
@@ -657,7 +657,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
             v-model="formulaire.pays_id"
             :class="inputClass"
           >
-            <option value="">Selectionnez un territoire</option>
+            <option value="">Sélectionnez un territoire</option>
             <option v-for="pays in listePays" :key="pays.id" :value="pays.id">
               {{ pays.nom }}
             </option>
@@ -682,7 +682,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
           </label>
         </div>
         <div v-else class="relative inline-block">
-          <img ref="photoPreviewImgRef" :src="photoPreview" alt="Apercu" class="h-48 w-auto rounded-lg object-cover border border-gray-200">
+          <img ref="photoPreviewImgRef" :src="photoPreview" alt="Aperçu" class="h-48 w-auto rounded-lg object-cover border border-gray-200">
           <button
             type="button"
             class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center hover:bg-red-600 cursor-pointer"
@@ -739,7 +739,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
         <font-awesome-icon :icon="['fas', 'info-circle']" class="mr-2" />
         Votre avis sera publie immediatement et visible par tous les visiteurs.
         <span v-if="formulaire.partage_coordonnees">
-          Vos coordonnees ne seront partagees qu'avec les correspondances mutuelles.
+          Vos coordonnées ne seront partagées qu'avec les correspondances mutuelles.
         </span>
       </div>
     </div>
@@ -755,7 +755,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
         :disabled="enTransition"
         @click="precedent"
       >
-        Precedent
+        Précédent
       </button>
       <button
         v-else

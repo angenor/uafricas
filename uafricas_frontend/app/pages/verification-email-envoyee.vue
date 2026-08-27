@@ -46,7 +46,7 @@
           </div>
 
           <p class="text-gray-700 text-base mb-2">
-            Un email de verification a ete envoye a :
+            Un email de vérification a été envoye a :
           </p>
           <p class="text-custom-green font-semibold text-lg mb-6">
             {{ email || 'votre adresse email' }}
@@ -67,7 +67,7 @@
               <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
-              Nouvel email de verification envoye !
+              Nouvel email de vérification envoye !
             </div>
           </div>
 
@@ -103,7 +103,7 @@
               </svg>
               <span v-if="loading">Envoi en cours...</span>
               <span v-else-if="compteur > 0">Renvoyer dans {{ compteur }}s</span>
-              <span v-else>Renvoyer l'email de verification</span>
+              <span v-else>Renvoyer l'email de vérification</span>
             </div>
           </button>
 

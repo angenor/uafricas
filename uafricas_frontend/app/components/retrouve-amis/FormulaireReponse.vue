@@ -81,7 +81,7 @@ const fermer = () => {
       <div>
         <p class="text-green-800 text-sm font-medium">{{ messageSucces }}</p>
         <p class="text-green-700 text-xs mt-1">
-          Une correspondance a ete creee. L'auteur de l'avis pourra vous contacter.
+          Une correspondance a été créée. L'auteur de l'avis pourra vous contacter.
         </p>
       </div>
     </div>

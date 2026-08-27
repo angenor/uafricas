@@ -403,7 +403,7 @@
                       <font-awesome-icon icon="fa-solid fa-envelope" class="text-sm" />
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500">Email verifie</p>
+                      <p class="text-xs text-gray-500">Email vérifié</p>
                       <p class="text-sm font-medium" :class="profil.email_verifie ? 'text-emerald-600' : 'text-red-500'">
                         {{ profil.email_verifie ? 'Oui' : 'Non' }}
                       </p>

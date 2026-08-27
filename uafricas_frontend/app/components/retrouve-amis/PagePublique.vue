@@ -33,7 +33,7 @@ const labelGenre = computed(() => {
 const lieuxRencontre = computed(() => {
   const lieux: { label: string; valeur: string; icone: string }[] = []
   if (props.avis.localite_rencontre) lieux.push({ label: 'Localite', valeur: props.avis.localite_rencontre, icone: 'map-pin' })
-  if (props.avis.ecole_rencontre) lieux.push({ label: 'Ecole / Lieu', valeur: props.avis.ecole_rencontre, icone: 'school' })
+  if (props.avis.ecole_rencontre) lieux.push({ label: 'École / Lieu', valeur: props.avis.ecole_rencontre, icone: 'school' })
   if (props.avis.ville_rencontre) lieux.push({ label: 'Ville', valeur: props.avis.ville_rencontre, icone: 'city' })
   return lieux
 })
@@ -182,7 +182,7 @@ const lieuxRencontre = computed(() => {
                 <font-awesome-icon :icon="['fas', 'graduation-cap']" />
               </div>
               <div>
-                <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Ecole</p>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">École</p>
                 <p class="text-sm font-medium text-gray-800">{{ props.avis.ecole }}</p>
               </div>
             </div>
@@ -212,7 +212,7 @@ const lieuxRencontre = computed(() => {
                 <font-awesome-icon :icon="['fas', 'calendar']" />
               </div>
               <div>
-                <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Periode</p>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Période</p>
                 <p class="text-sm font-medium text-gray-800">{{ formatPeriode(props.avis.periode_debut, props.avis.periode_fin) }}</p>
               </div>
             </div>
