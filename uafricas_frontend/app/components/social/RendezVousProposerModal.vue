@@ -70,106 +70,91 @@ const soumettre = async () => {
 </script>
 
 <template>
-  <div
-    class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
-    @click.self="emit('fermer')"
+  <!-- Montée par `v-if` chez l'appelant : le `model-value` est donc toujours
+       vrai, et c'est la fermeture de la coque qui remonte `fermer`. -->
+  <AfricansModale
+    :model-value="true"
+    titre="Proposer un rendez-vous"
+    :sous-titre="`Avec ${nomComplet}`"
+    icone="fa-solid fa-video"
+    @update:model-value="emit('fermer')"
   >
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-      <!-- En-tête -->
-      <header class="flex items-center justify-between px-5 py-4 bg-linear-to-r from-custom-chocolat to-custom-green text-white">
-        <h2 class="font-semibold flex items-center gap-2">
-          <font-awesome-icon icon="fa-solid fa-video" />
-          Proposer un rendez-vous
-        </h2>
-        <button type="button" class="p-1 hover:bg-white/20 rounded-lg transition" aria-label="Fermer" @click="emit('fermer')">
-          <font-awesome-icon icon="fa-solid fa-xmark" />
-        </button>
-      </header>
+    <form id="form-rdv" class="flex flex-col gap-5" @submit.prevent="soumettre">
+      <div>
+        <AfricansChamp
+          v-model="sujet"
+          libelle="Sujet"
+          placeholder="Ex. : Mentorat carrière"
+          :maxlength="150"
+          obligatoire
+        />
+        <p class="mt-1 text-right text-[12px] text-af-atone-2">{{ sujet.length }}/150</p>
+      </div>
 
-      <form class="p-5 space-y-4" @submit.prevent="soumettre">
-        <p class="text-sm text-gray-500">
-          Avec <span class="font-semibold text-gray-700">{{ nomComplet }}</span>
-        </p>
+      <AfricansChamp
+        v-model="description"
+        libelle="Description"
+        type="textarea"
+        placeholder="Détails, objectifs, contexte…"
+        aide="Facultatif"
+      />
 
-        <!-- Sujet -->
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1" for="rdv-sujet">Sujet <span class="text-red-500">*</span></label>
-          <input
-            id="rdv-sujet"
-            v-model="sujet"
-            type="text"
-            maxlength="150"
-            placeholder="Ex. : Mentorat carrière"
-            class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40"
-          >
-          <p class="text-xs text-gray-400 mt-1 text-right">{{ sujet.length }}/150</p>
-        </div>
+      <!-- `datetime-local` n'est pas un type d'AfricansChamp, qui n'émet que
+           des chaînes de saisie libre : le champ natif est conservé, habillé
+           aux mêmes jetons. -->
+      <div>
+        <label class="mb-2 block text-base font-bold text-af-encre" for="rdv-date">
+          Date et heure <span class="text-af-live">*</span>
+        </label>
+        <input
+          id="rdv-date"
+          v-model="dateHeure"
+          type="datetime-local"
+          :min="minDateHeure"
+          class="w-full rounded-lg border border-af-bordure bg-white px-4 py-3 text-base text-af-encre transition focus:border-af-chocolat focus:outline-none"
+        >
+      </div>
 
-        <!-- Description -->
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1" for="rdv-desc">Description <span class="text-gray-400 font-normal">(facultatif)</span></label>
-          <textarea
-            id="rdv-desc"
-            v-model="description"
-            rows="3"
-            placeholder="Détails, objectifs, contexte…"
-            class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40 resize-none"
-          />
-        </div>
-
-        <!-- Date & heure -->
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1" for="rdv-date">Date et heure <span class="text-red-500">*</span></label>
-          <input
-            id="rdv-date"
-            v-model="dateHeure"
-            type="datetime-local"
-            :min="minDateHeure"
-            class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-custom-chocolat/40"
-          >
-        </div>
-
-        <!-- Durée -->
-        <div>
-          <span class="block text-sm font-semibold text-gray-700 mb-2">Durée</span>
-          <div class="grid grid-cols-4 gap-2">
-            <button
-              v-for="d in DUREES"
-              :key="d"
-              type="button"
-              class="py-2 rounded-xl text-sm font-semibold border transition"
-              :class="dureeMinutes === d
-                ? 'bg-custom-chocolat text-white border-custom-chocolat'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-custom-chocolat/50'"
-              @click="dureeMinutes = d"
-            >
-              {{ d }} min
-            </button>
-          </div>
-        </div>
-
-        <!-- Erreur -->
-        <p v-if="erreur" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{{ erreur }}</p>
-
-        <!-- Actions -->
-        <div class="flex justify-end gap-2 pt-1">
+      <div>
+        <span class="mb-2 block text-base font-bold text-af-encre">Durée</span>
+        <div class="grid grid-cols-4 gap-2">
           <button
+            v-for="d in DUREES"
+            :key="d"
             type="button"
-            class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-100 transition"
-            @click="emit('fermer')"
+            class="rounded-lg border py-2.5 text-[14px]/[1.4] font-bold transition"
+            :class="dureeMinutes === d
+              ? 'border-af-chocolat bg-af-chocolat text-white'
+              : 'border-af-bordure bg-white text-af-corps hover:border-af-chocolat'"
+            @click="dureeMinutes = d"
           >
-            Annuler
-          </button>
-          <button
-            type="submit"
-            :disabled="envoiEnCours"
-            class="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-custom-chocolat to-custom-green hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <font-awesome-icon v-if="envoiEnCours" icon="fa-solid fa-spinner" spin class="mr-1" />
-            Proposer
+            {{ d }} min
           </button>
         </div>
-      </form>
-    </div>
-  </div>
+      </div>
+
+      <p v-if="erreur" class="rounded-lg border border-af-live/20 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live">
+        {{ erreur }}
+      </p>
+    </form>
+
+    <template #actions>
+      <button
+        type="button"
+        class="text-base font-bold text-af-corps transition hover:opacity-70"
+        @click="emit('fermer')"
+      >
+        Annuler
+      </button>
+      <AfricansBouton
+        type="submit"
+        form="form-rdv"
+        :desactive="envoiEnCours"
+        :tourne="envoiEnCours"
+        icone="fa-solid fa-video"
+      >
+        Proposer
+      </AfricansBouton>
+    </template>
+  </AfricansModale>
 </template>

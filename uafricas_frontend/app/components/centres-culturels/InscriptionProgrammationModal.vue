@@ -58,123 +58,60 @@ const soumettre = () => {
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="fade">
-      <div
-        v-if="isOpen"
-        class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/50"
-        @click.self="emit('close')"
-      >
-        <div class="w-full max-w-lg bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
-          <!-- En-tête -->
-          <div class="flex items-start justify-between p-5 border-b border-gray-100">
-            <div>
-              <h3 class="text-xl font-bold text-gray-800">S'inscrire à la programmation</h3>
-              <p v-if="titreProgrammation" class="text-sm text-gray-500 mt-0.5">{{ titreProgrammation }}</p>
-            </div>
-            <button
-              class="text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Fermer"
-              @click="emit('close')"
-            >
-              <font-awesome-icon :icon="['fas', 'xmark']" class="text-xl" />
-            </button>
-          </div>
-
-          <!-- Formulaire -->
-          <form class="p-5 space-y-4" @submit.prevent="soumettre">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
-                <input
-                  v-model="form.nom"
-                  type="text"
-                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-custom-green focus:ring-1 focus:ring-custom-green outline-none"
-                  required
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Prénom *</label>
-                <input
-                  v-model="form.prenom"
-                  type="text"
-                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-custom-green focus:ring-1 focus:ring-custom-green outline-none"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Pays *</label>
-              <select
-                v-model="form.pays"
-                class="w-full rounded-md border border-gray-300 px-3 py-2 bg-white focus:border-custom-green focus:ring-1 focus:ring-custom-green outline-none"
-                required
-              >
-                <option value="" disabled>Sélectionnez un pays</option>
-                <option v-for="p in pays" :key="p.id" :value="p.nom">{{ p.nom }}</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Lieu de résidence *</label>
-              <input
-                v-model="form.lieu_residence"
-                type="text"
-                placeholder="Ville, quartier…"
-                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-custom-green focus:ring-1 focus:ring-custom-green outline-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
-              <input
-                v-model="form.titre"
-                type="text"
-                placeholder="Fonction, profession, titre…"
-                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-custom-green focus:ring-1 focus:ring-custom-green outline-none"
-                required
-              />
-            </div>
-
-            <p v-if="erreurLocale" class="text-sm text-red-600">{{ erreurLocale }}</p>
-
-            <div class="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                class="px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
-                @click="emit('close')"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                class="px-4 py-2 rounded-md bg-custom-green text-white hover:bg-custom-green/90 transition-colors disabled:opacity-50"
-                :disabled="loading"
-              >
-                <font-awesome-icon
-                  :icon="['fas', loading ? 'spinner' : 'user-plus']"
-                  :class="{ 'animate-spin': loading }"
-                  class="mr-2"
-                />
-                Confirmer l'inscription
-              </button>
-            </div>
-          </form>
-        </div>
+  <AfricansModale
+    :model-value="isOpen"
+    titre="S'inscrire à la programmation"
+    :sous-titre="titreProgrammation"
+    icone="fa-solid fa-user-plus"
+    @update:model-value="emit('close')"
+  >
+    <form id="form-inscription-prog" class="flex flex-col gap-5" @submit.prevent="soumettre">
+      <div class="grid gap-5 sm:grid-cols-2">
+        <AfricansChamp v-model="form.nom" libelle="Nom" obligatoire />
+        <AfricansChamp v-model="form.prenom" libelle="Prénom" obligatoire />
       </div>
-    </Transition>
-  </Teleport>
-</template>
 
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>
+      <AfricansChamp v-model="form.pays" libelle="Pays" type="select" obligatoire>
+        <option value="" disabled>Sélectionnez un pays</option>
+        <option v-for="p in pays" :key="p.id" :value="p.nom">{{ p.nom }}</option>
+      </AfricansChamp>
+
+      <AfricansChamp
+        v-model="form.lieu_residence"
+        libelle="Lieu de résidence"
+        placeholder="Ville, quartier…"
+        obligatoire
+      />
+
+      <AfricansChamp
+        v-model="form.titre"
+        libelle="Titre"
+        placeholder="Fonction, profession, titre…"
+        obligatoire
+      />
+
+      <p v-if="erreurLocale" class="rounded-lg border border-af-live/20 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live">
+        {{ erreurLocale }}
+      </p>
+    </form>
+
+    <template #actions>
+      <button
+        type="button"
+        class="text-base font-bold text-af-corps transition hover:opacity-70"
+        @click="emit('close')"
+      >
+        Annuler
+      </button>
+      <AfricansBouton
+        type="submit"
+        form="form-inscription-prog"
+        :desactive="loading"
+        :tourne="loading"
+        :icone="loading ? 'fa-solid fa-spinner' : 'fa-solid fa-user-plus'"
+      >
+        Confirmer l'inscription
+      </AfricansBouton>
+    </template>
+  </AfricansModale>
+</template>
