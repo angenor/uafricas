@@ -488,34 +488,15 @@ watch(() => props.legacyContext, (ctx) => {
 </script>
 
 <template>
-  <Transition name="modal-fade">
-    <div
-      v-if="isOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-      @click.self="emit('close')"
-    >
-      <div
-        class="relative w-full max-w-2xl bg-white shadow-xl rounded-lg max-h-[90vh] overflow-hidden flex flex-col"
-        @click.stop
-      >
-        <div class="flex items-start justify-between px-6 py-4 border-b border-gray-200">
-          <div>
-            <h2 class="text-[20px]/[1.4] font-bold text-af-encre">{{ titreModal }}</h2>
-            <p class="text-sm text-gray-500 mt-1">{{ paysNom }}</p>
-          </div>
-          <button
-            type="button"
-            class="text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Fermer"
-            @click="emit('close')"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form class="px-6 py-5 space-y-5 overflow-y-auto flex-1" @submit.prevent="handleSubmit">
+  <AfricansModale
+    :model-value="isOpen"
+    :titre="titreModal"
+    :sous-titre="paysNom"
+    icone="fa-solid fa-hand-holding-heart"
+    :ton="estSuppression ? 'chocolat' : 'vert'"
+    @update:model-value="emit('close')"
+  >
+    <form id="form-contribution-afripulse" class="flex flex-col gap-5" @submit.prevent="handleSubmit">
           <div
             v-if="form.submitted"
             class="rounded-[10px] border border-af-vert/30 bg-af-vert/5 p-4 text-[14px]/[1.4] text-af-vert"
@@ -927,7 +908,7 @@ watch(() => props.legacyContext, (ctx) => {
                 <legend class="px-2 text-[14px]/[1.4] font-bold text-af-encre">Ingrédients nécessaires</legend>
                 <div class="space-y-2">
                   <div v-for="(ing, i) in formAfripulse.ingredients" :key="i" class="flex gap-2 items-center">
-                    <span class="text-xs text-gray-400 w-5 shrink-0">{{ i + 1 }}.</span>
+                    <span class="text-xs text-af-atone-2 w-5 shrink-0">{{ i + 1 }}.</span>
                     <input
                       v-model="formAfripulse.ingredients[i]"
                       type="text"
@@ -995,7 +976,7 @@ watch(() => props.legacyContext, (ctx) => {
           <template v-else>
             <!-- Champ ciblé : section pré-déterminée, on ne montre que la valeur à proposer -->
             <template v-if="estChampCible && contexteLegacy">
-              <div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-md p-3 text-sm">
+              <div class="bg-af-chocolat/5 border border-af-chocolat/20 text-af-corps rounded-md p-3 text-sm">
                 Vous proposez une mise à jour de <strong>« {{ contexteLegacy.label }} »</strong>.
                 Votre contribution sera examinée par un administrateur avant publication.
               </div>
@@ -1064,40 +1045,28 @@ watch(() => props.legacyContext, (ctx) => {
               :placeholder="contexteAfripulse?.type_objet_contribution === 'recette_culinaire' ? 'Lien vers la recette complète, une vidéo, la source…' : 'Source, contexte, raison...'"
             />
           </div>
-        </form>
+    </form>
 
-        <!-- Pied collant : sur un formulaire de dix champs, les actions
-             quittaient l'écran et il fallait redéfiler pour valider. -->
-        <div class="sticky bottom-0 flex justify-end gap-3 border-t border-af-bordure bg-white px-6 py-4">
-          <button
-            type="button"
-            class="text-base font-bold text-af-corps transition hover:opacity-70"
-            @click="emit('close')"
-          >
-            Annuler
-          </button>
-          <button
-            type="button"
-            :disabled="form.loading"
-            class="rounded-lg px-6 py-2.5 text-base font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
-            :class="estSuppression ? 'bg-af-live hover:opacity-90' : 'bg-af-chocolat hover:opacity-90'"
-            @click="handleSubmit"
-          >
-            {{ labelBouton }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </Transition>
+    <template #actions>
+      <button
+        type="button"
+        class="text-base font-bold text-af-corps transition hover:opacity-70"
+        @click="emit('close')"
+      >
+        Annuler
+      </button>
+      <!-- Bouton brut et non AfricansBouton : la variante destructrice
+           (proposition de SUPPRESSION) n'existe pas dans les trois variantes
+           de la maquette, et la couleur est ici porteuse de sens. -->
+      <button
+        type="submit"
+        form="form-contribution-afripulse"
+        :disabled="form.loading"
+        class="inline-flex h-10 items-center justify-center rounded-lg px-6 text-base font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        :class="estSuppression ? 'bg-af-live' : 'bg-af-degrade'"
+      >
+        {{ labelBouton }}
+      </button>
+    </template>
+  </AfricansModale>
 </template>
-
-<style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-</style>
