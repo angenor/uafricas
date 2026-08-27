@@ -1,0 +1,22 @@
+{
+    "folders": [
+        {
+            "path": "uafricas_frontend"
+        },
+        {
+            "path": "whiteboard"
+        },
+        {
+            "path": "uafricas_backend"
+        },
+        {
+            "path": "specs"
+        },
+        {
+            "path": "nginx"
+        },
+        {
+            "path": "documentations"
+        }
+    ]
+}

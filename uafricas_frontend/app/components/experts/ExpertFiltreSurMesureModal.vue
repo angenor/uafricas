@@ -215,45 +215,28 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="modal-fade">
-      <div
-        v-if="isOpen"
-        class="fixed inset-0 z-[90] flex items-center justify-center p-4"
-        @click.self="fermer"
-      >
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+  <AfricansModale
+    :model-value="isOpen"
+    titre="Trouver un(e) expert(e) sur mesure"
+    sous-titre="Affinez vos critères étape par étape pour identifier le profil idéal"
+    icone="fa-solid fa-wand-magic-sparkles"
+    @update:model-value="!$event && fermer()"
+  >
+    <div class="flex flex-col gap-5">
+      <!-- Compteur vivant. C'est la seule raison de remplir ce formulaire
+           plutôt que la barre de filtres de la page : il dit, à chaque critère
+           ajouté, ce qu'il reste. Il tient donc la tête, pas le pied. -->
+      <p class="inline-flex w-fit items-center gap-2 rounded-full bg-af-chocolat/10 px-4 py-1.5 text-[14px]/[1.4] text-af-corps">
+        <font-awesome-icon v-if="chargementCompte" icon="fa-solid fa-spinner" class="animate-spin text-af-chocolat" />
+        <template v-else>
+          <strong class="font-bold text-af-chocolat">{{ nombreCorrespondances ?? '-' }}</strong>
+          expert{{ (nombreCorrespondances ?? 0) > 1 ? 's' : '' }}
+          correspond{{ (nombreCorrespondances ?? 0) > 1 ? 'ent' : '' }} à vos critères
+        </template>
+      </p>
 
-        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-          <!-- En-tête -->
-          <div class="relative px-6 py-5 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white shrink-0">
-            <button
-              type="button"
-              class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/30 transition cursor-pointer"
-              @click="fermer"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <h3 class="text-xl font-extrabold tracking-tight">Trouver un(e) expert(e) sur mesure</h3>
-            <p class="text-white/85 text-sm mt-1">
-              Affinez vos critères étape par étape pour identifier le profil idéal.
-            </p>
-            <!-- Compteur live -->
-            <div class="mt-3 inline-flex items-center gap-2 bg-white/15 rounded-full px-4 py-1.5 text-sm font-semibold">
-              <span v-if="chargementCompte" class="inline-block w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
-              <template v-else>
-                <span class="text-base">{{ nombreCorrespondances ?? '-' }}</span>
-                <span class="text-white/85 font-normal">
-                  expert{{ (nombreCorrespondances ?? 0) > 1 ? 's' : '' }} correspond{{ (nombreCorrespondances ?? 0) > 1 ? 'ent' : '' }}
-                </span>
-              </template>
-            </div>
-          </div>
-
-          <!-- Timeline -->
-          <div class="px-6 py-6 overflow-y-auto grow">
+      <!-- Étapes -->
+          <div>
             <ol class="relative">
               <li
                 v-for="(etape, index) in etapes"
@@ -265,7 +248,7 @@ onBeforeUnmount(() => {
                 <span
                   v-if="index < etapes.length - 1 && index < etapeMax"
                   class="absolute left-[15px] top-9 bottom-0 w-0.5"
-                  :class="index < etapeCourante || termine ? 'bg-emerald-400' : 'bg-gray-200'"
+                  :class="index < etapeCourante || termine ? 'bg-af-vert' : 'bg-af-bordure'"
                 ></span>
 
                 <!-- Pastille -->
@@ -273,10 +256,10 @@ onBeforeUnmount(() => {
                   class="absolute left-0 top-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all"
                   :class="[
                     index === etapeCourante && !termine
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-4 ring-emerald-100'
+                      ? 'bg-af-chocolat text-white ring-4 ring-af-chocolat/20'
                       : index < etapeCourante || termine
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-gray-100 text-gray-400',
+                        ? 'bg-af-vert text-white'
+                        : 'bg-af-fond text-af-atone-2',
                   ]"
                 >
                   <svg
@@ -295,14 +278,14 @@ onBeforeUnmount(() => {
                 <div v-if="index !== etapeCourante || termine">
                   <button
                     type="button"
-                    class="group/edit w-full text-left flex items-center justify-between gap-3 rounded-xl px-3 py-2 -ml-3 hover:bg-gray-50 transition cursor-pointer"
+                    class="group/edit w-full text-left flex items-center justify-between gap-3 rounded-lg px-3 py-2 -ml-3 hover:bg-af-fond transition cursor-pointer"
                     @click="editerEtape(index)"
                   >
                     <div>
-                      <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">{{ etape.titre }}</p>
-                      <p class="text-sm font-semibold text-gray-900">{{ libelleChoix(etape) }}</p>
+                      <p class="text-xs font-medium text-af-atone-2 uppercase tracking-wider">{{ etape.titre }}</p>
+                      <p class="text-sm font-semibold text-af-encre">{{ libelleChoix(etape) }}</p>
                     </div>
-                    <span class="text-xs text-emerald-600 font-medium opacity-0 group-hover/edit:opacity-100 transition">
+                    <span class="text-xs text-af-chocolat font-medium opacity-0 group-hover/edit:opacity-100 transition">
                       Modifier
                     </span>
                   </button>
@@ -310,8 +293,8 @@ onBeforeUnmount(() => {
 
                 <!-- Étape active -->
                 <div v-else class="pt-0.5">
-                  <h4 class="text-base font-bold text-gray-900">{{ etape.titre }}</h4>
-                  <p class="text-sm text-gray-500 mb-3">{{ etape.sousTitre }}</p>
+                  <h4 class="text-base font-bold text-af-encre">{{ etape.titre }}</h4>
+                  <p class="text-sm text-af-atone mb-3">{{ etape.sousTitre }}</p>
 
                   <!-- Choix par options -->
                   <div v-if="etape.type === 'options'">
@@ -321,9 +304,9 @@ onBeforeUnmount(() => {
                         v-model="rechercheOption"
                         type="search"
                         placeholder="Rechercher un territoire…"
-                        class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                        class="w-full pl-10 pr-4 py-2.5 bg-af-fond border border-af-bordure rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-af-chocolat focus:border-transparent transition"
                       />
-                      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-af-atone-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 110-14 7 7 0 010 14z" />
                       </svg>
                     </div>
@@ -338,13 +321,13 @@ onBeforeUnmount(() => {
                         type="button"
                         class="px-4 py-2 rounded-full text-sm font-medium transition-all border cursor-pointer"
                         :class="selections[etape.cle] === opt.value
-                          ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-transparent shadow-md'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-emerald-300 hover:bg-emerald-50'"
+                          ? 'bg-af-chocolat text-white border-af-chocolat'
+                          : 'bg-white text-af-corps border-af-bordure hover:border-af-chocolat hover:bg-af-fond'"
                         @click="choisirOption(etape, opt.value)"
                       >
                         {{ opt.label }}
                       </button>
-                      <p v-if="optionsVisibles(etape).length === 0" class="text-sm text-gray-400 py-2">
+                      <p v-if="optionsVisibles(etape).length === 0" class="text-sm text-af-atone-2 py-2">
                         Aucun territoire ne correspond à « {{ rechercheOption }} ».
                       </p>
                     </div>
@@ -356,13 +339,13 @@ onBeforeUnmount(() => {
                       v-model="selections[etape.cle]"
                       type="text"
                       :placeholder="etape.placeholder"
-                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                      class="w-full px-4 py-3 bg-af-fond border border-af-bordure rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-af-chocolat focus:border-transparent transition"
                       @keyup.enter="avancer"
                     />
                     <div class="flex gap-2">
                       <button
                         type="button"
-                        class="px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg transition cursor-pointer"
+                        class="px-5 py-2 rounded-lg text-sm font-semibold bg-af-degrade text-white hover:shadow-lg transition cursor-pointer"
                         @click="avancer"
                       >
                         {{ selections[etape.cle] ? 'Valider' : 'Passer' }}
@@ -374,45 +357,23 @@ onBeforeUnmount(() => {
             </ol>
           </div>
 
-          <!-- Pied : récapitulatif + action -->
-          <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/60 shrink-0">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <button
-                type="button"
-                class="text-sm text-gray-500 hover:text-gray-700 transition cursor-pointer"
-                @click="reinitialiser"
-              >
-                Réinitialiser les critères
-              </button>
+    </div>
 
-              <button
-                type="button"
-                :disabled="chargementCompte"
-                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-500 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-                @click="appliquer"
-              >
-                <span>
-                  {{ aDesCriteres ? `Voir ${nombreCorrespondances ?? ''} résultat${(nombreCorrespondances ?? 0) > 1 ? 's' : ''}` : 'Voir tous les experts' }}
-                </span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+    <template #actions>
+      <button
+        type="button"
+        class="mr-auto text-base font-bold text-af-corps transition hover:opacity-70"
+        @click="reinitialiser"
+      >
+        Réinitialiser les critères
+      </button>
+      <AfricansBouton
+        :desactive="chargementCompte"
+        icone="fa-solid fa-arrow-right"
+        @click="appliquer"
+      >
+        {{ aDesCriteres ? `Voir ${nombreCorrespondances ?? ''} résultat${(nombreCorrespondances ?? 0) > 1 ? 's' : ''}` : 'Voir tous les experts' }}
+      </AfricansBouton>
+    </template>
+  </AfricansModale>
 </template>
-
-<style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-</style>
