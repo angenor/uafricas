@@ -1,546 +1,435 @@
 <template>
-  <Transition name="modal-fade">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
-      @click.self="fermer"
-    >
-      <div
-        class="relative w-full max-w-3xl bg-white shadow-2xl rounded-2xl max-h-[92vh] overflow-hidden flex flex-col"
-        @click.stop
+  <AfricansModale
+    :model-value="open"
+    :titre="estBonne ? 'Goodhabits' : 'Badhabits'"
+    :sous-titre="estBonne
+      ? 'Valoriser une action exemplaire de gouvernance'
+      : 'Dénoncer un problème de gouvernance'"
+    :icone="estBonne ? 'fa-solid fa-thumbs-up' : 'fa-solid fa-triangle-exclamation'"
+    :ton="estBonne ? 'vert' : 'chocolat'"
+    taille="large"
+    @update:model-value="fermer()"
+  >
+    <AfricansEtapes :etapes="ETAPES" :courante="etapeCourante" class="mb-6" @aller="etapeCourante = $event" />
+
+    <form id="form-habits" class="flex flex-col gap-5" @submit.prevent="soumettre">
+      <p
+        v-if="erreurMessage"
+        class="flex items-center gap-2 rounded-lg border border-af-live/20 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
       >
-        <div
-          class="text-white p-6 flex items-center justify-between transition-colors duration-300"
-          :class="estBonne
-            ? 'bg-linear-to-r from-emerald-600 to-green-600'
-            : 'bg-linear-to-r from-red-700 to-orange-600'"
-        >
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <font-awesome-icon
-                :icon="['fas', estBonne ? 'thumbs-up' : 'triangle-exclamation']"
-                class="text-lg"
-              />
-            </div>
-            <div>
-              <h2 class="text-xl font-bold">
-                {{ estBonne ? 'Goodhabits' : 'Badhabits' }}
-              </h2>
-              <p class="text-xs text-white/80">
-                {{ estBonne
-                  ? 'Valoriser une action exemplaire de gouvernance'
-                  : 'Dénoncer un problème de gouvernance' }}
-              </p>
-            </div>
-          </div>
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" />
+        {{ erreurMessage }}
+      </p>
+
+      <!-- ─── Étape 1 : la pratique ─── -->
+      <template v-if="etapeCourante === 0">
+        <!-- La bascule reste à l'étape 1 : changer de nature en cours de
+             route redéfinirait les champs obligatoires des étapes suivantes. -->
+        <div class="grid grid-cols-2 gap-2 rounded-lg bg-af-fond p-1">
           <button
             type="button"
-            class="w-9 h-9 rounded-full hover:bg-white/20 flex items-center justify-center transition"
-            @click="fermer"
+            class="flex items-center justify-center gap-2 rounded-lg py-2.5 text-[14px]/[1.4] font-bold transition"
+            :class="!estBonne ? 'bg-white text-af-chocolat shadow-sm' : 'text-af-atone hover:text-af-corps'"
+            @click="changerMode('mauvaise')"
           >
-            <font-awesome-icon :icon="['fas', 'xmark']" />
+            <font-awesome-icon icon="fa-solid fa-triangle-exclamation" class="text-[12px]" />
+            Badhabits
+          </button>
+          <button
+            type="button"
+            class="flex items-center justify-center gap-2 rounded-lg py-2.5 text-[14px]/[1.4] font-bold transition"
+            :class="estBonne ? 'bg-white text-af-vert shadow-sm' : 'text-af-atone hover:text-af-corps'"
+            @click="changerMode('bonne')"
+          >
+            <font-awesome-icon icon="fa-solid fa-thumbs-up" class="text-[12px]" />
+            Goodhabits
           </button>
         </div>
 
-        <form class="p-6 space-y-5 overflow-y-auto" @submit.prevent="soumettre">
-          <div
-            v-if="erreurMessage"
-            class="bg-red-50 border-l-4 border-red-500 p-3 rounded-lg text-sm text-red-700 flex items-center gap-2"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-exclamation']" />
-            <span>{{ erreurMessage }}</span>
-          </div>
+        <AfricansChamp
+          v-model="form.titre"
+          libelle="Titre"
+          :maxlength="350"
+          :placeholder="estBonne
+            ? 'Résumez la bonne pratique en une phrase…'
+            : 'Résumez la mauvaise pratique en une phrase…'"
+          obligatoire
+        />
 
-          <!-- Toggle type de pratique -->
-          <div class="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-xl">
-            <button
-              type="button"
-              class="flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all"
-              :class="!estBonne
-                ? 'bg-white text-red-700 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'"
-              @click="changerMode('mauvaise')"
-            >
-              <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="text-xs" />
-              Badhabits
-            </button>
-            <button
-              type="button"
-              class="flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all"
-              :class="estBonne
-                ? 'bg-white text-emerald-700 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'"
-              @click="changerMode('bonne')"
-            >
-              <font-awesome-icon :icon="['fas', 'thumbs-up']" class="text-xs" />
-              Goodhabits
-            </button>
-          </div>
+        <div class="grid gap-5 md:grid-cols-2">
+          <AfricansChamp v-model="form.categorie_probleme" libelle="Catégorie" type="select" obligatoire>
+            <option v-for="c in categoriesActives" :key="c.value" :value="c.value">{{ c.label }}</option>
+          </AfricansChamp>
 
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Titre <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="form.titre"
-              type="text"
-              required
-              maxlength="350"
-              :placeholder="estBonne
-                ? 'Résumez la bonne pratique en une phrase...'
-                : 'Résumez la mauvaise pratique en une phrase...'"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg transition text-sm"
-              :class="estBonne
-                ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
-            />
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
-                Catégorie <span class="text-red-500">*</span>
-              </label>
-              <select
-                v-model="form.categorie_probleme"
-                required
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg transition text-sm bg-white"
-                :class="estBonne
-                  ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                  : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
-              >
-                <option
-                  v-for="c in categoriesActives"
-                  :key="c.value"
-                  :value="c.value"
-                >{{ c.label }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
-                {{ estBonne ? 'Impact' : 'Gravité' }}
-              </label>
-              <div class="flex gap-2">
-                <button
-                  v-for="n in niveauxActifs"
-                  :key="n.value"
-                  type="button"
-                  class="flex-1 px-3 py-2.5 rounded-lg border-2 text-xs font-medium transition"
-                  :class="niveauCourant === n.value
-                    ? `${n.activeClass} border-current`
-                    : 'bg-white border-gray-200 text-gray-600'"
-                  @click="changerNiveau(n.value)"
-                >
-                  <font-awesome-icon :icon="n.icon" class="mr-1" />
-                  {{ n.label }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="form.categorie_probleme === 'autre'">
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Précisez la catégorie</label>
-            <input
-              v-model="form.categorie_probleme_detail"
-              type="text"
-              maxlength="200"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg transition text-sm"
-              :class="estBonne
-                ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Description générale <span class="text-red-500">*</span>
-            </label>
-            <textarea
-              v-model="form.description_generale"
-              rows="3"
-              required
-              :placeholder="estBonne
-                ? 'Décrivez brièvement cette bonne pratique...'
-                : 'Décrivez brièvement la problématique...'"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg transition text-sm"
-              :class="estBonne
-                ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
-            />
-          </div>
-
-          <!-- Mauvaise pratique : détails (texte libre) -->
-          <div v-if="!estBonne">
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Détails de la problématique
-              <span class="text-red-500">*</span>
-            </label>
-            <textarea
-              v-model="form.details_problematique"
-              rows="5"
-              required
-              placeholder="Expliquez en détail le problème, son contexte, ses conséquences..."
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg transition text-sm focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
-            />
-          </div>
-
-          <!-- Bonne pratique : modalités pratiques de reproductibilité (liste, 10 max) -->
-          <div v-else>
-            <div class="flex items-center justify-between mb-2">
-              <label class="block text-sm font-semibold text-gray-700">
-                Modalités pratiques de reproductibilité <span class="text-red-500">*</span>
-                <span class="text-gray-400 font-normal">(10 modalités maximum)</span>
-              </label>
+          <fieldset>
+            <legend class="mb-2 text-[14px]/[1.4] text-af-atone italic">
+              {{ estBonne ? 'Impact' : 'Gravité' }}
+            </legend>
+            <div class="flex gap-2">
               <button
-                v-if="modalitesReproductibilite.length < 10"
+                v-for="n in niveauxActifs"
+                :key="n.value"
                 type="button"
-                class="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-                @click="ajouterModalite"
+                class="flex-1 rounded-lg border-2 px-3 py-2.5 text-[12px] font-bold transition"
+                :class="niveauCourant === n.value ? n.activeClass : 'border-af-bordure bg-white text-af-corps hover:border-af-chocolat'"
+                @click="changerNiveau(n.value)"
               >
-                <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
-                Ajouter une modalité
+                <font-awesome-icon :icon="n.icon" class="mr-1" />
+                {{ n.label }}
               </button>
             </div>
-            <p class="text-xs text-gray-400 mb-2">
-              Décrivez les modalités pratiques pour reproduire cette bonne pratique : étapes, conditions, moyens...
-            </p>
-            <div v-if="modalitesReproductibilite.length === 0" class="text-xs text-gray-400 italic">
-              Aucune modalité. Ajoutez au moins une modalité concrète.
-            </div>
-            <div v-for="(_, idx) in modalitesReproductibilite" :key="idx" class="flex items-center gap-2 mb-2">
-              <span class="shrink-0 w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center">
-                {{ idx + 1 }}
-              </span>
-              <input
-                v-model="modalitesReproductibilite[idx]"
-                type="text"
-                maxlength="500"
-                :placeholder="`Modalité ${idx + 1}...`"
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition text-sm"
-              >
-              <button
-                type="button"
-                class="w-10 h-10 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition"
-                @click="retirerModalite(idx)"
-              >
-                <font-awesome-icon :icon="['fas', 'trash']" class="text-xs" />
-              </button>
-            </div>
-          </div>
+          </fieldset>
+        </div>
 
-          <!-- Témoignages (texte) : distinct des preuves -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              {{ estBonne ? 'Témoignages / Preuves' : 'Témoignages' }}
-            </label>
-            <textarea
-              v-model="form.preuves_temoignages"
-              rows="3"
-              :placeholder="estBonne
-                ? 'Témoignages, chiffres, médias...'
-                : 'Témoignages de personnes affectées ou ayant constaté les faits...'"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg transition text-sm"
-              :class="estBonne
-                ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
-            />
-          </div>
+        <AfricansChamp
+          v-if="form.categorie_probleme === 'autre'"
+          v-model="form.categorie_probleme_detail"
+          libelle="Précisez la catégorie"
+          :maxlength="200"
+        />
 
-          <!-- Bonne pratique : reproductibilité (texte) -->
-          <div v-if="estBonne">
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Reproductibilité / Transposition</label>
-            <textarea
-              v-model="form.solutions_proposees"
-              rows="3"
-              placeholder="Comment d'autres communautés peuvent reproduire cette action ?"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg transition text-sm focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-            />
-          </div>
+        <AfricansChamp
+          v-model="form.description_generale"
+          libelle="Description générale"
+          type="textarea"
+          :lignes="3"
+          :placeholder="estBonne
+            ? 'Décrivez brièvement cette bonne pratique…'
+            : 'Décrivez brièvement la problématique…'"
+          obligatoire
+        />
+      </template>
 
-          <!-- Preuves (images ou PDF) : partagé Goodhabits / Badhabits -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Preuves (images ou PDF)</label>
-            <div class="flex flex-wrap items-center gap-3">
-              <div
-                v-for="(preuve, idx) in preuvesFichiers"
-                :key="preuve.url"
-                class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-50"
-              >
-                <img
-                  v-if="preuve.type === 'image'"
-                  :src="urlAbsolue(preuve.url)"
-                  alt=""
-                  class="w-full h-full object-cover"
-                >
-                <a
-                  v-else
-                  :href="urlAbsolue(preuve.url)"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="w-full h-full flex flex-col items-center justify-center gap-1 text-red-500 hover:text-red-600 transition"
-                >
-                  <font-awesome-icon :icon="['fas', 'file-pdf']" class="text-2xl" />
-                  <span class="text-[10px] font-semibold">PDF</span>
-                </a>
-                <button
-                  type="button"
-                  class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition"
-                  @click="retirerPhoto(idx)"
-                >
-                  <font-awesome-icon :icon="['fas', 'xmark']" class="text-[10px]" />
-                </button>
-              </div>
-              <label
-                v-if="preuvesFichiers.length < 5"
-                class="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 cursor-pointer transition text-xs gap-1"
-                :class="[
-                  estBonne ? 'hover:border-emerald-400 hover:text-emerald-500' : 'hover:border-red-400 hover:text-red-500',
-                  { 'opacity-50 cursor-not-allowed': photoEnCours },
-                ]"
-              >
-                <font-awesome-icon
-                  :icon="photoEnCours ? ['fas', 'spinner'] : ['fas', 'paperclip']"
-                  :class="{ 'animate-spin': photoEnCours }"
-                />
-                <span>Ajouter</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,application/pdf"
-                  multiple
-                  class="sr-only"
-                  :disabled="photoEnCours"
-                  @change="onPhotosSelectionnees"
-                >
-              </label>
-            </div>
-            <p class="text-xs text-gray-400 mt-1">Jusqu'à 5 fichiers (images JPEG, PNG, WebP ou PDF).</p>
-            <p v-if="erreurPhoto" class="text-xs text-red-600 mt-1">{{ erreurPhoto }}</p>
-          </div>
+      <!-- ─── Étape 2 : le détail ─── -->
+      <template v-else-if="etapeCourante === 1">
+        <!-- Mauvaise pratique : détails en texte libre -->
+        <AfricansChamp
+          v-if="!estBonne"
+          v-model="form.details_problematique"
+          libelle="Détails de la problématique"
+          type="textarea"
+          :lignes="5"
+          placeholder="Expliquez en détail le problème, son contexte, ses conséquences…"
+          obligatoire
+        />
 
-          <!-- Mauvaise pratique : solutions proposées (liste, 10 max) -->
-          <div v-if="!estBonne">
-            <div class="flex items-center justify-between mb-2">
-              <label class="block text-sm font-semibold text-gray-700">
-                Solutions proposées <span class="text-gray-400 font-normal">(10 propositions maximum)</span>
-              </label>
-              <button
-                v-if="solutions.length < 10"
-                type="button"
-                class="text-xs text-red-600 hover:text-red-700 font-medium"
-                @click="ajouterSolution"
-              >
-                <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
-                Ajouter une proposition
-              </button>
-            </div>
-            <div v-if="solutions.length === 0" class="text-xs text-gray-400 italic">
-              Aucune proposition. Suggérez des solutions concrètes (facultatif).
-            </div>
-            <div v-for="(_, idx) in solutions" :key="idx" class="flex items-center gap-2 mb-2">
-              <span class="shrink-0 w-7 h-7 rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center justify-center">
-                {{ idx + 1 }}
-              </span>
-              <input
-                v-model="solutions[idx]"
-                type="text"
-                maxlength="500"
-                :placeholder="`Proposition ${idx + 1}...`"
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm"
-              >
-              <button
-                type="button"
-                class="w-10 h-10 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition"
-                @click="retirerSolution(idx)"
-              >
-                <font-awesome-icon :icon="['fas', 'trash']" class="text-xs" />
-              </button>
-            </div>
-          </div>
-
-          <!-- Mauvaise pratique : identité réelle obligatoire (jamais anonyme) -->
-          <div v-if="!estBonne" class="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-            <p class="text-xs font-semibold text-red-700 uppercase tracking-wide flex items-center gap-1.5">
-              <font-awesome-icon :icon="['fas', 'id-card']" />
-              Vos informations d'identité <span class="text-red-500">*</span>
-            </p>
-            <p class="text-xs text-red-700/80">
-              Un signalement ne peut pas être anonyme : vous devez partager votre identité réelle et vos coordonnées.
-            </p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input
-                v-model="form.identite_nom"
-                type="text"
-                maxlength="150"
-                placeholder="Nom (état civil) *"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
-              >
-              <input
-                v-model="form.identite_prenom"
-                type="text"
-                maxlength="150"
-                placeholder="Prénom (état civil) *"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
-              >
-              <input
-                v-model="form.identite_courriel"
-                type="email"
-                maxlength="255"
-                placeholder="Courriel *"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
-              >
-              <input
-                v-model="form.identite_contact"
-                type="text"
-                maxlength="50"
-                placeholder="Contact (téléphone) *"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/30 focus:border-red-500 transition text-sm bg-white"
-              >
-            </div>
-          </div>
-
-          <div class="bg-gray-50 rounded-lg p-4 space-y-3">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Localisation</p>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
-                Territoire <span class="text-red-500">*</span>
-              </label>
-              <select
-                v-model="form.pays_id"
-                required
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg transition text-sm bg-white"
-                :class="estBonne
-                  ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                  : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
-              >
-                <option value="" disabled>Sélectionnez un territoire</option>
-                <option v-for="p in paysListe" :key="p.id" :value="p.id">{{ p.nom }}</option>
-              </select>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input
-                v-model="form.region"
-                type="text"
-                maxlength="250"
-                placeholder="Région (facultatif)"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg transition text-sm"
-                :class="estBonne
-                  ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                  : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
-              />
-              <input
-                v-model="form.ville_quartier_zone"
-                type="text"
-                maxlength="350"
-                placeholder="Ville / Quartier / Zone (facultatif)"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg transition text-sm"
-                :class="estBonne
-                  ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                  : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <label class="block text-sm font-semibold text-gray-700">Médias (URLs facultatives)</label>
-              <button
-                v-if="mediasUrls.length < 5"
-                type="button"
-                class="text-xs font-medium transition"
-                :class="estBonne
-                  ? 'text-emerald-600 hover:text-emerald-700'
-                  : 'text-red-600 hover:text-red-700'"
-                @click="ajouterMedia"
-              >
-                <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
-                Ajouter une URL
-              </button>
-            </div>
-            <div v-if="mediasUrls.length === 0" class="text-xs text-gray-400 italic">
-              Aucun média. Ajoutez des URLs d'images ou vidéos si nécessaire.
-            </div>
-            <div v-for="(_, idx) in mediasUrls" :key="idx" class="flex gap-2 mb-2">
-              <input
-                v-model="mediasUrls[idx]"
-                type="url"
-                placeholder="https://..."
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg transition text-sm"
-                :class="estBonne
-                  ? 'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500'
-                  : 'focus:ring-2 focus:ring-red-500/30 focus:border-red-500'"
-              />
-              <button
-                type="button"
-                class="w-10 h-10 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition"
-                @click="retirerMedia(idx)"
-              >
-                <font-awesome-icon :icon="['fas', 'trash']" class="text-xs" />
-              </button>
-            </div>
-          </div>
-
-          <label
-            v-if="estBonne"
-            class="flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all"
-            :class="form.publication_anonyme
-              ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-              : 'border-gray-200 hover:border-gray-300 text-gray-600'"
-          >
-            <input v-model="form.publication_anonyme" type="checkbox" class="sr-only" />
-            <span
-              class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0"
-              :class="form.publication_anonyme
-                ? (estBonne ? 'border-emerald-500 bg-emerald-500' : 'border-red-500 bg-red-500')
-                : 'border-gray-300'"
-            >
-              <font-awesome-icon v-if="form.publication_anonyme" :icon="['fas', 'check']" class="text-white text-xs" />
+        <!-- Bonne pratique : modalités de reproductibilité (10 maximum) -->
+        <div v-else>
+          <div class="mb-2 flex items-center justify-between gap-4">
+            <span class="text-[14px]/[1.4] text-af-atone italic">
+              Modalités pratiques de reproductibilité <span class="not-italic text-af-live">*</span>
+              <span class="text-af-atone-2">(10 modalités maximum)</span>
             </span>
-            <div>
-              <p class="text-sm font-medium">Publier de manière anonyme</p>
-              <p class="text-xs opacity-75">Votre nom ne sera pas affiché publiquement</p>
-            </div>
-          </label>
-
-          <div
-            class="border rounded-lg p-3 flex items-start gap-2 text-xs"
-            :class="estBonne
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-              : 'bg-red-50 border-red-200 text-red-800'"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-info']" class="mt-0.5" />
-            <p>
-              {{ estBonne
-                ? 'Votre félicitation sera publiée immédiatement. Restez factuel et inspirant.'
-                : 'Votre signalement sera publié immédiatement. Restez factuel et respectueux.' }}
-            </p>
+            <button
+              v-if="modalitesReproductibilite.length < 10"
+              type="button"
+              class="shrink-0 text-[12px] font-bold text-af-vert transition hover:opacity-70"
+              @click="ajouterModalite"
+            >
+              <font-awesome-icon icon="fa-solid fa-plus" class="mr-1" />
+              Ajouter une modalité
+            </button>
           </div>
-        </form>
-
-        <div class="border-t border-gray-100 p-4 flex items-center justify-end gap-3 bg-gray-50">
-          <button
-            type="button"
-            class="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium hover:bg-white transition"
-            @click="fermer"
-          >
-            Annuler
-          </button>
-          <button
-            type="button"
-            :disabled="!estValide || enCours"
-            class="px-5 py-2.5 rounded-lg text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2 shadow-md"
-            :class="estBonne
-              ? 'bg-linear-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700'
-              : 'bg-linear-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700'"
-            @click="soumettre"
-          >
-            <font-awesome-icon v-if="enCours" :icon="['fas', 'spinner']" class="animate-spin" />
-            <font-awesome-icon v-else :icon="['fas', 'paper-plane']" />
-            {{ enCours ? 'Publication...' : 'Publier' }}
-          </button>
+          <p class="mb-2 text-[12px] text-af-atone">
+            Décrivez les modalités pratiques pour reproduire cette bonne pratique : étapes,
+            conditions, moyens…
+          </p>
+          <p v-if="modalitesReproductibilite.length === 0" class="text-[12px] text-af-atone-2 italic">
+            Aucune modalité. Ajoutez au moins une modalité concrète.
+          </p>
+          <div v-for="(_, idx) in modalitesReproductibilite" :key="idx" class="mb-2 flex items-center gap-2">
+            <span class="grid size-7 shrink-0 place-items-center rounded-full bg-af-vert/10 text-[12px] font-bold text-af-vert">
+              {{ idx + 1 }}
+            </span>
+            <input
+              v-model="modalitesReproductibilite[idx]"
+              type="text"
+              maxlength="500"
+              :placeholder="`Modalité ${idx + 1}…`"
+              class="h-11 min-w-0 flex-1 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
+            >
+            <button
+              type="button"
+              class="grid size-10 shrink-0 place-items-center rounded-md border border-af-bordure text-af-atone transition hover:border-af-live hover:text-af-live"
+              :aria-label="`Retirer la modalité ${idx + 1}`"
+              @click="retirerModalite(idx)"
+            >
+              <font-awesome-icon icon="fa-solid fa-trash" class="text-[12px]" />
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
-  </Transition>
+
+        <AfricansChamp
+          v-model="form.preuves_temoignages"
+          :libelle="estBonne ? 'Témoignages / Preuves' : 'Témoignages'"
+          type="textarea"
+          :lignes="3"
+          :placeholder="estBonne
+            ? 'Témoignages, chiffres, médias…'
+            : 'Témoignages de personnes affectées ou ayant constaté les faits…'"
+        />
+
+        <AfricansChamp
+          v-if="estBonne"
+          v-model="form.solutions_proposees"
+          libelle="Reproductibilité / Transposition"
+          type="textarea"
+          :lignes="3"
+          placeholder="Comment d'autres communautés peuvent reproduire cette action ?"
+        />
+
+        <!-- Mauvaise pratique : solutions proposées (10 maximum) -->
+        <div v-if="!estBonne">
+          <div class="mb-2 flex items-center justify-between gap-4">
+            <span class="text-[14px]/[1.4] text-af-atone italic">
+              Solutions proposées <span class="text-af-atone-2">(10 propositions maximum)</span>
+            </span>
+            <button
+              v-if="solutions.length < 10"
+              type="button"
+              class="shrink-0 text-[12px] font-bold text-af-chocolat transition hover:opacity-70"
+              @click="ajouterSolution"
+            >
+              <font-awesome-icon icon="fa-solid fa-plus" class="mr-1" />
+              Ajouter une proposition
+            </button>
+          </div>
+          <p v-if="solutions.length === 0" class="text-[12px] text-af-atone-2 italic">
+            Aucune proposition. Suggérez des solutions concrètes (facultatif).
+          </p>
+          <div v-for="(_, idx) in solutions" :key="idx" class="mb-2 flex items-center gap-2">
+            <span class="grid size-7 shrink-0 place-items-center rounded-full bg-af-chocolat/10 text-[12px] font-bold text-af-chocolat">
+              {{ idx + 1 }}
+            </span>
+            <input
+              v-model="solutions[idx]"
+              type="text"
+              maxlength="500"
+              :placeholder="`Proposition ${idx + 1}…`"
+              class="h-11 min-w-0 flex-1 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
+            >
+            <button
+              type="button"
+              class="grid size-10 shrink-0 place-items-center rounded-md border border-af-bordure text-af-atone transition hover:border-af-live hover:text-af-live"
+              :aria-label="`Retirer la proposition ${idx + 1}`"
+              @click="retirerSolution(idx)"
+            >
+              <font-awesome-icon icon="fa-solid fa-trash" class="text-[12px]" />
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- ─── Étape 3 : preuves et localisation ─── -->
+      <template v-else-if="etapeCourante === 2">
+        <div>
+          <p class="mb-2 text-[14px]/[1.4] text-af-atone italic">Preuves (images ou PDF)</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <div
+              v-for="(preuve, idx) in preuvesFichiers"
+              :key="preuve.url"
+              class="relative size-20 overflow-hidden rounded-lg border border-af-bordure bg-af-fond"
+            >
+              <img
+                v-if="preuve.type === 'image'"
+                :src="urlAbsolue(preuve.url)"
+                alt=""
+                class="size-full object-cover"
+              >
+              <a
+                v-else
+                :href="urlAbsolue(preuve.url)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex size-full flex-col items-center justify-center gap-1 text-af-live transition hover:opacity-70"
+              >
+                <font-awesome-icon icon="fa-solid fa-file-pdf" class="text-2xl" />
+                <span class="text-[10px] font-bold">PDF</span>
+              </a>
+              <button
+                type="button"
+                class="absolute top-0.5 right-0.5 grid size-5 place-items-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+                :aria-label="`Retirer la preuve ${idx + 1}`"
+                @click="retirerPhoto(idx)"
+              >
+                <font-awesome-icon icon="fa-solid fa-xmark" class="text-[10px]" />
+              </button>
+            </div>
+            <label
+              v-if="preuvesFichiers.length < 5"
+              class="flex size-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-af-bordure text-[12px] text-af-atone-2 transition hover:border-af-chocolat hover:text-af-chocolat"
+              :class="photoEnCours && 'cursor-not-allowed opacity-50'"
+            >
+              <font-awesome-icon
+                :icon="photoEnCours ? 'fa-solid fa-spinner' : 'fa-solid fa-paperclip'"
+                :class="photoEnCours && 'animate-spin'"
+              />
+              <span>Ajouter</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                multiple
+                class="sr-only"
+                :disabled="photoEnCours"
+                @change="onPhotosSelectionnees"
+              >
+            </label>
+          </div>
+          <p class="mt-1 text-[12px] text-af-atone-2">Jusqu'à 5 fichiers (images JPEG, PNG, WebP ou PDF).</p>
+          <p v-if="erreurPhoto" class="mt-1 text-[12px] text-af-live">{{ erreurPhoto }}</p>
+        </div>
+
+        <div class="flex flex-col gap-4 rounded-lg bg-af-fond p-4">
+          <p class="text-[14px]/[1.4] font-bold text-af-encre">Localisation</p>
+
+          <AfricansChamp v-model="form.pays_id" libelle="Territoire" type="select" obligatoire>
+            <option value="" disabled>Sélectionnez un territoire</option>
+            <option v-for="p in paysListe" :key="p.id" :value="p.id">{{ p.nom }}</option>
+          </AfricansChamp>
+
+          <div class="grid gap-4 md:grid-cols-2">
+            <AfricansChamp v-model="form.region" libelle="Région" :maxlength="250" aide="Facultatif" />
+            <AfricansChamp
+              v-model="form.ville_quartier_zone"
+              libelle="Ville / Quartier / Zone"
+              :maxlength="350"
+              aide="Facultatif"
+            />
+          </div>
+        </div>
+
+        <div>
+          <div class="mb-2 flex items-center justify-between gap-4">
+            <span class="text-[14px]/[1.4] text-af-atone italic">Médias (URLs facultatives)</span>
+            <button
+              v-if="mediasUrls.length < 5"
+              type="button"
+              class="shrink-0 text-[12px] font-bold transition hover:opacity-70"
+              :class="estBonne ? 'text-af-vert' : 'text-af-chocolat'"
+              @click="ajouterMedia"
+            >
+              <font-awesome-icon icon="fa-solid fa-plus" class="mr-1" />
+              Ajouter une URL
+            </button>
+          </div>
+          <p v-if="mediasUrls.length === 0" class="text-[12px] text-af-atone-2 italic">
+            Aucun média. Ajoutez des URLs d'images ou vidéos si nécessaire.
+          </p>
+          <div v-for="(_, idx) in mediasUrls" :key="idx" class="mb-2 flex gap-2">
+            <input
+              v-model="mediasUrls[idx]"
+              type="url"
+              placeholder="https://…"
+              class="h-11 min-w-0 flex-1 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
+            />
+            <button
+              type="button"
+              class="grid size-10 shrink-0 place-items-center rounded-md border border-af-bordure text-af-atone transition hover:border-af-live hover:text-af-live"
+              :aria-label="`Retirer l'URL ${idx + 1}`"
+              @click="retirerMedia(idx)"
+            >
+              <font-awesome-icon icon="fa-solid fa-trash" class="text-[12px]" />
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- ─── Étape 4 : vous et la publication ─── -->
+      <template v-else>
+        <!-- Mauvaise pratique : identité réelle, jamais anonyme -->
+        <div
+          v-if="!estBonne"
+          class="flex flex-col gap-3 rounded-lg border border-af-live/30 bg-af-live/5 p-4"
+        >
+          <p class="flex items-center gap-2 text-[14px]/[1.4] font-bold text-af-live">
+            <font-awesome-icon icon="fa-solid fa-id-card" />
+            Vos informations d'identité <span>*</span>
+          </p>
+          <p class="text-[12px]/[1.6] text-af-corps">
+            Un signalement ne peut pas être anonyme : vous devez partager votre identité
+            réelle et vos coordonnées.
+          </p>
+          <div class="grid gap-3 md:grid-cols-2">
+            <AfricansChamp v-model="form.identite_nom" libelle="Nom (état civil)" :maxlength="150" obligatoire />
+            <AfricansChamp v-model="form.identite_prenom" libelle="Prénom (état civil)" :maxlength="150" obligatoire />
+            <AfricansChamp v-model="form.identite_courriel" libelle="Courriel" type="email" :maxlength="255" obligatoire />
+            <AfricansChamp v-model="form.identite_contact" libelle="Contact (téléphone)" :maxlength="50" obligatoire />
+          </div>
+        </div>
+
+        <label
+          v-if="estBonne"
+          class="flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 transition"
+          :class="form.publication_anonyme
+            ? 'border-af-vert bg-af-vert/5 text-af-vert'
+            : 'border-af-bordure text-af-corps hover:border-af-chocolat'"
+        >
+          <input v-model="form.publication_anonyme" type="checkbox" class="sr-only peer" />
+          <span
+            class="grid size-5 shrink-0 place-items-center rounded-md border-2 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-af-chocolat"
+            :class="form.publication_anonyme ? 'border-af-vert bg-af-vert' : 'border-af-bordure'"
+          >
+            <font-awesome-icon v-if="form.publication_anonyme" icon="fa-solid fa-check" class="text-[12px] text-white" />
+          </span>
+          <span>
+            <span class="block text-[14px]/[1.4] font-bold">Publier de manière anonyme</span>
+            <span class="block text-[12px] opacity-75">Votre nom ne sera pas affiché publiquement</span>
+          </span>
+        </label>
+
+        <p
+          class="flex items-start gap-2 rounded-lg border px-4 py-3 text-[12px]/[1.6]"
+          :class="estBonne
+            ? 'border-af-vert/20 bg-af-vert/5 text-af-corps'
+            : 'border-af-chocolat/20 bg-af-chocolat/5 text-af-corps'"
+        >
+          <font-awesome-icon
+            icon="fa-solid fa-circle-info"
+            class="mt-0.5 shrink-0"
+            :class="estBonne ? 'text-af-vert' : 'text-af-chocolat'"
+          />
+          {{ estBonne
+            ? 'Votre félicitation sera publiée immédiatement. Restez factuel et inspirant.'
+            : 'Votre signalement sera publié immédiatement. Restez factuel et respectueux.' }}
+        </p>
+      </template>
+    </form>
+
+    <template #actions>
+      <button
+        type="button"
+        class="mr-auto text-base font-bold text-af-corps transition hover:opacity-70"
+        @click="fermer"
+      >
+        Annuler
+      </button>
+      <AfricansBouton
+        v-if="etapeCourante > 0"
+        variante="secondaire"
+        icone="fa-solid fa-arrow-left"
+        @click="etapeCourante -= 1"
+      >
+        Précédent
+      </AfricansBouton>
+      <AfricansBouton
+        v-if="etapeCourante < ETAPES.length - 1"
+        icone="fa-solid fa-arrow-right"
+        @click="suivant"
+      >
+        Suivant
+      </AfricansBouton>
+      <AfricansBouton
+        v-else
+        type="submit"
+        form="form-habits"
+        :desactive="enCours"
+        :tourne="enCours"
+        :icone="enCours ? 'fa-solid fa-spinner' : 'fa-solid fa-paper-plane'"
+      >
+        {{ enCours ? 'Publication…' : 'Publier' }}
+      </AfricansBouton>
+    </template>
+  </AfricansModale>
 </template>
 
 <script setup lang="ts">
@@ -684,15 +573,15 @@ const categoriesBonne = [
 ]
 
 const gravites = [
-  { value: 'faible' as const, label: 'Faible', icon: ['fas', 'circle-info'], activeClass: 'bg-yellow-50 text-yellow-700' },
-  { value: 'elevee' as const, label: 'Élevée', icon: ['fas', 'triangle-exclamation'], activeClass: 'bg-orange-50 text-orange-700' },
-  { value: 'critique' as const, label: 'Critique', icon: ['fas', 'skull'], activeClass: 'bg-red-50 text-red-700' },
+  { value: 'faible' as const, label: 'Faible', icon: 'fa-solid fa-circle-info', activeClass: 'border-af-atone bg-af-fond text-af-corps' },
+  { value: 'elevee' as const, label: 'Élevée', icon: 'fa-solid fa-triangle-exclamation', activeClass: 'border-af-chocolat bg-af-chocolat/10 text-af-chocolat' },
+  { value: 'critique' as const, label: 'Critique', icon: 'fa-solid fa-skull', activeClass: 'border-af-live bg-af-live/10 text-af-live' },
 ]
 
 const impacts = [
-  { value: 'faible' as const, label: 'Modeste', icon: ['fas', 'seedling'], activeClass: 'bg-lime-50 text-lime-700' },
-  { value: 'fort' as const, label: 'Fort', icon: ['fas', 'leaf'], activeClass: 'bg-emerald-50 text-emerald-700' },
-  { value: 'exemplaire' as const, label: 'Exemplaire', icon: ['fas', 'star'], activeClass: 'bg-green-50 text-green-700' },
+  { value: 'faible' as const, label: 'Modeste', icon: 'fa-solid fa-seedling', activeClass: 'border-af-vert/50 bg-af-vert/5 text-af-vert' },
+  { value: 'fort' as const, label: 'Fort', icon: 'fa-solid fa-leaf', activeClass: 'border-af-vert bg-af-vert/10 text-af-vert' },
+  { value: 'exemplaire' as const, label: 'Exemplaire', icon: 'fa-solid fa-star', activeClass: 'border-af-vert bg-af-vert text-white' },
 ]
 
 const categoriesActives = computed(() => estBonne.value ? categoriesBonne : categoriesMauvaise)
@@ -727,23 +616,68 @@ function changerMode(mode: TypePratique) {
 
 const courrielValide = (c?: string) => !!c && c.includes('@') && c.includes('.')
 
-const estValide = computed(() => {
-  const base = form.titre.trim().length >= 5
-    && form.description_generale.trim().length >= 10
-    && !!form.categorie_probleme
-    && !!form.pays_id
-  if (estBonne.value) {
-    // Bonne pratique : au moins une modalité de reproductibilité
-    return base && modalitesValides.value.length > 0
+const ETAPES = [
+  { titre: 'La pratique' },
+  { titre: 'Le détail' },
+  { titre: 'Preuves & lieu' },
+  { titre: 'Vous & publication' },
+] as const
+const etapeCourante = ref(0)
+
+/**
+ * Ce qui manque à une étape, ou null. C'est la SOURCE UNIQUE de validation,
+ * partagée par le passage à l'étape suivante et par l'envoi : un second jeu
+ * de règles pour le bouton divergerait au premier champ obligatoire ajouté.
+ */
+function manqueEtape(i: number): string | null {
+  switch (i) {
+    case 0:
+      if (form.titre.trim().length < 5) return 'Le titre doit contenir au moins 5 caractères.'
+      if (!form.categorie_probleme) return 'Choisissez une catégorie.'
+      if (form.description_generale.trim().length < 10) {
+        return 'La description générale doit contenir au moins 10 caractères.'
+      }
+      return null
+    case 1:
+      if (estBonne.value) {
+        return modalitesValides.value.length > 0
+          ? null
+          : 'Ajoutez au moins une modalité de reproductibilité.'
+      }
+      return form.details_problematique.trim().length >= 10
+        ? null
+        : 'Les détails de la problématique doivent contenir au moins 10 caractères.'
+    case 2:
+      return form.pays_id ? null : 'Sélectionnez un territoire.'
+    case 3:
+      // Une bonne pratique peut être anonyme ; un signalement, jamais.
+      if (estBonne.value) return null
+      if (!form.identite_nom?.trim() || !form.identite_prenom?.trim()) {
+        return 'Vos nom et prénom à l\'état civil sont requis pour un signalement.'
+      }
+      if (!courrielValide(form.identite_courriel?.trim())) return 'Indiquez un courriel valide.'
+      if (!form.identite_contact?.trim()) return 'Indiquez un contact téléphonique.'
+      return null
+    default:
+      return null
   }
-  // Mauvaise pratique : détails requis + identité réelle obligatoire
-  return base
-    && form.details_problematique.trim().length >= 10
-    && !!form.identite_nom?.trim()
-    && !!form.identite_prenom?.trim()
-    && courrielValide(form.identite_courriel?.trim())
-    && !!form.identite_contact?.trim()
-})
+}
+
+function suivant() {
+  const manque = manqueEtape(etapeCourante.value)
+  if (manque) {
+    erreurMessage.value = manque
+    return
+  }
+  erreurMessage.value = null
+  etapeCourante.value = Math.min(etapeCourante.value + 1, ETAPES.length - 1)
+}
+
+/** L'envoi ramène à l'étape fautive : un message invisible est un message perdu. */
+function premiereEtapeIncomplete(): number | null {
+  for (let i = 0; i < ETAPES.length; i++) if (manqueEtape(i)) return i
+  return null
+}
 
 function ajouterMedia() {
   if (mediasUrls.value.length < 5) mediasUrls.value.push('')
@@ -754,6 +688,7 @@ function retirerMedia(idx: number) {
 }
 
 function reinitialiser() {
+  etapeCourante.value = 0
   form.type_pratique = props.typePratiqueInitial
   form.titre = ''
   form.description_generale = ''
@@ -787,7 +722,13 @@ function fermer() {
 }
 
 async function soumettre() {
-  if (!estValide.value || enCours.value) return
+  if (enCours.value) return
+  const fautive = premiereEtapeIncomplete()
+  if (fautive !== null) {
+    erreurMessage.value = manqueEtape(fautive)
+    etapeCourante.value = fautive
+    return
+  }
   enCours.value = true
   erreurMessage.value = null
   try {
@@ -864,13 +805,3 @@ watch(() => props.typePratiqueInitial, (v) => {
 })
 </script>
 
-<style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-</style>
