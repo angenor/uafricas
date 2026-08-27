@@ -8,7 +8,8 @@
     >
       <div
         v-if="modelValue"
-        class="fixed inset-0 z-100 grid place-items-center overflow-y-auto bg-black/30 p-4 font-af"
+        class="fixed inset-0 grid place-items-center overflow-y-auto bg-black/30 p-4 font-af"
+        :class="couche === 'session' ? 'z-[10002]' : 'z-100'"
         @click.self="fermer"
       >
         <div
@@ -16,7 +17,8 @@
           role="dialog"
           aria-modal="true"
           :aria-labelledby="idTitre"
-          class="relative w-full max-w-[615px] overflow-hidden rounded-[10px] bg-white shadow-xl"
+          class="relative w-full overflow-hidden rounded-[10px] bg-white shadow-xl"
+          :class="taille === 'large' ? 'max-w-4xl' : 'max-w-[615px]'"
           tabindex="-1"
         >
           <!-- Bandeau de tête de 17 px. Vert à la création, chocolat pour
@@ -64,7 +66,19 @@ const props = withDefaults(defineProps<{
   icone?: string
   /** `vert` = création de contenu, `chocolat` = explication / onboarding. */
   ton?: 'vert' | 'chocolat'
-}>(), { ton: 'vert' })
+  /**
+   * 615 px est la largeur de la maquette et le défaut. `large` est réservé
+   * aux contenus qui ne s'y replient pas sans dommage : coques à onglets,
+   * listes de fiches, formulaires à plusieurs dizaines de champs.
+   */
+  taille?: 'normale' | 'large'
+  /**
+   * `session` place la modale au-dessus de la salle Afrolang en plein écran,
+   * qui occupe déjà z-10000. Le défaut, z-100, passe au-dessus de la barre
+   * supérieure (z-50) et suffit partout ailleurs.
+   */
+  couche?: 'normale' | 'session'
+}>(), { ton: 'vert', taille: 'normale', couche: 'normale' })
 
 const emit = defineEmits<{ 'update:modelValue': [boolean] }>()
 

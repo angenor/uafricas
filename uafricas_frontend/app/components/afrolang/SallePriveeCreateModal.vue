@@ -105,153 +105,90 @@ watch(
 </script>
 
 <template>
-  <Transition name="modal-fade">
-    <div
-      v-if="isOpen"
-      class="fixed inset-0 z-10002 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
-      @click.self="emit('close')"
-    >
-      <div
-        class="relative w-full max-w-lg bg-white shadow-2xl rounded-2xl border-t-4 border-custom-chocolat transition-all duration-300 max-h-[92vh] overflow-hidden"
-        @click.stop
+  <!-- `couche="session"` : cette modale s'ouvre aussi depuis la salle en plein
+       écran (`AfrolangRoom`, z-10000), qu'elle doit recouvrir. -->
+  <AfricansModale
+    :model-value="isOpen"
+    titre="Créer ma salle privée"
+    sous-titre="Un espace à votre initiative, accessible par un code secret."
+    icone="fa-solid fa-lock"
+    ton="chocolat"
+    couche="session"
+    @update:model-value="emit('close')"
+  >
+    <form id="form-salle-privee" class="flex flex-col gap-5" @submit.prevent="handleSubmit">
+      <p
+        v-if="form.submitted"
+        class="flex items-center gap-3 rounded-lg border border-af-vert/20 bg-af-vert/5 px-4 py-3 text-[14px]/[1.4] font-bold text-af-vert"
       >
-        <!-- En-tête -->
-        <div class="bg-gradient-to-r from-custom-chocolat to-custom-chocolat/80 text-white p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h2 class="text-2xl font-bold">Créer ma salle privée</h2>
-              <p class="text-white/80 text-sm mt-1">
-                Un espace à votre initiative, accessible par un code secret.
-              </p>
-            </div>
-            <button
-              type="button"
-              class="text-white/80 hover:text-white transition-colors"
-              @click="emit('close')"
-            >
-              <font-awesome-icon :icon="['fas', 'xmark']" class="w-6 h-6" />
-            </button>
-          </div>
-        </div>
+        <font-awesome-icon icon="fa-solid fa-circle-check" />
+        Salle privée créée avec succès !
+      </p>
 
-        <!-- Formulaire -->
-        <form
-          class="p-6 space-y-5 bg-white max-h-[72vh] overflow-y-auto"
-          @submit.prevent="handleSubmit"
-        >
-          <!-- Message de succès -->
-          <Transition name="fade-slide">
-            <div
-              v-if="form.submitted"
-              class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg"
-            >
-              <div class="flex items-center">
-                <font-awesome-icon
-                  :icon="['fas', 'circle-check']"
-                  class="w-6 h-6 text-green-500 mr-3"
-                />
-                <p class="text-green-700 font-medium">Salle privée créée avec succès !</p>
-              </div>
-            </div>
-          </Transition>
+      <p
+        v-if="form.error"
+        class="flex items-start gap-3 rounded-lg border border-af-live/20 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
+      >
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="mt-0.5 shrink-0" />
+        {{ form.errorMessage }}
+      </p>
 
-          <!-- Message d'erreur -->
-          <Transition name="fade-slide">
-            <div
-              v-if="form.error"
-              class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg"
-            >
-              <div class="flex items-start gap-3">
-                <font-awesome-icon
-                  :icon="['fas', 'circle-exclamation']"
-                  class="w-6 h-6 text-red-500 mt-0.5 shrink-0"
-                />
-                <p class="text-red-700 text-sm">{{ form.errorMessage }}</p>
-              </div>
-            </div>
-          </Transition>
+      <AfricansChamp
+        v-model="form.titre"
+        libelle="Titre de la salle"
+        :maxlength="350"
+        placeholder="Ex : Mon cercle Wolof du soir"
+        aide="Entre 5 et 350 caractères."
+        obligatoire
+      />
 
-          <!-- Titre -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Titre de la salle <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="form.titre"
-              type="text"
-              minlength="5"
-              maxlength="350"
-              class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-custom-chocolat transition-colors"
-              placeholder="Ex : Mon cercle Wolof du soir"
-              required
-            >
-            <p class="text-xs text-gray-400 mt-1">
-              Entre 5 et 350 caractères.
-            </p>
-          </div>
-
-          <!-- Code secret -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              <font-awesome-icon :icon="['fas', 'lock']" class="w-4 h-4 mr-1 text-gray-400" />
-              Code secret <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="form.code_acces"
-              type="text"
-              pattern="^[A-Za-z0-9!@#$%&*?-]{4,16}$"
-              autocomplete="off"
-              class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-custom-chocolat transition-colors font-mono tracking-wider"
-              placeholder="wolof2026"
-              required
-            >
-            <p class="text-xs text-gray-400 mt-1">
-              4 à 16 caractères (lettres, chiffres ou <code>!@#$%&amp;*?-</code>).
-              Notez-le soigneusement : il n'est plus jamais affiché.
-            </p>
-          </div>
-
-          <!-- Description -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Description (facultative)
-            </label>
-            <textarea
-              v-model="form.description"
-              rows="3"
-              maxlength="1000"
-              class="w-full border-2 rounded-lg p-3 border-gray-200 focus:outline-hidden focus:border-custom-chocolat transition-colors resize-none"
-              placeholder="À qui s'adresse cette salle, quand se retrouve-t-on…"
-            />
-            <p class="text-xs text-gray-400 mt-1">
-              {{ form.description.length }} / 1000
-            </p>
-          </div>
-
-          <!-- Boutons -->
-          <div class="flex gap-3 pt-2">
-            <button
-              type="button"
-              class="flex-1 p-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all"
-              @click="emit('close')"
-            >
-              Annuler
-            </button>
-            <button
-              type="submit"
-              :disabled="!isFormValid || form.loading"
-              class="flex-1 p-3 bg-custom-chocolat text-white rounded-xl font-medium hover:bg-custom-chocolat/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <font-awesome-icon
-                v-if="form.loading"
-                :icon="['fas', 'spinner']"
-                class="w-4 h-4 animate-spin"
-              />
-              {{ form.loading ? 'Création...' : 'Créer la salle privée' }}
-            </button>
-          </div>
-        </form>
+      <div>
+        <AfricansChamp
+          v-model="form.code_acces"
+          libelle="Code secret"
+          icone="fa-solid fa-lock"
+          :maxlength="16"
+          placeholder="wolof2026"
+          autocomplete="off"
+          obligatoire
+        />
+        <p class="mt-2 text-[12px]/[1.4] text-af-atone">
+          4 à 16 caractères (lettres, chiffres ou <code>!@#$%&amp;*?-</code>).
+          Notez-le soigneusement : il n'est plus jamais affiché.
+        </p>
       </div>
-    </div>
-  </Transition>
+
+      <div>
+        <AfricansChamp
+          v-model="form.description"
+          libelle="Description"
+          type="textarea"
+          :lignes="3"
+          :maxlength="1000"
+          placeholder="À qui s'adresse cette salle, quand se retrouve-t-on…"
+          aide="Facultative"
+        />
+        <p class="mt-1 text-right text-[12px] text-af-atone-2">{{ form.description.length }} / 1000</p>
+      </div>
+    </form>
+
+    <template #actions>
+      <button
+        type="button"
+        class="text-base font-bold text-af-corps transition hover:opacity-70"
+        @click="emit('close')"
+      >
+        Annuler
+      </button>
+      <AfricansBouton
+        type="submit"
+        form="form-salle-privee"
+        :desactive="!isFormValid || form.loading"
+        :tourne="form.loading"
+        :icone="form.loading ? 'fa-solid fa-spinner' : 'fa-solid fa-lock'"
+      >
+        {{ form.loading ? 'Création…' : 'Créer la salle privée' }}
+      </AfricansBouton>
+    </template>
+  </AfricansModale>
 </template>

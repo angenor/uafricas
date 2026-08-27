@@ -105,125 +105,111 @@ onMounted(() => {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-[100] flex items-start justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8 px-4"
-      @click.self="fermer"
-    >
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-auto">
-        <!-- En-tête -->
-        <header class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <div>
-            <h2 class="text-lg font-bold text-gray-900">Proposer une salle Afrolang</h2>
-            <p class="text-xs text-gray-500 mt-0.5">
-              Pour une langue africaine et son groupe ethnique
-            </p>
-          </div>
-          <button
-            type="button"
-            class="text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Fermer"
-            @click="fermer"
+  <AfricansModale
+    :model-value="open"
+    titre="Proposer une salle Afrolang"
+    sous-titre="Pour une langue africaine et son groupe ethnique"
+    icone="fa-solid fa-lightbulb"
+    taille="large"
+    @update:model-value="fermer()"
+  >
+    <!-- Onglets -->
+    <div class="-mt-2 mb-6 flex border-b border-af-bordure">
+      <button
+        type="button"
+        class="flex items-center gap-2 border-b-2 px-4 py-3 text-base font-bold transition"
+        :class="onglet === 'proposer'
+          ? 'border-af-chocolat text-af-chocolat'
+          : 'border-transparent text-af-atone hover:text-af-corps'"
+        @click="onglet = 'proposer'"
+      >
+        <font-awesome-icon icon="fa-solid fa-lightbulb" />
+        Soumettre
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-2 border-b-2 px-4 py-3 text-base font-bold transition"
+        :class="onglet === 'mes-propositions'
+          ? 'border-af-chocolat text-af-chocolat'
+          : 'border-transparent text-af-atone hover:text-af-corps'"
+        @click="onglet = 'mes-propositions'; rechargerListe()"
+      >
+        <font-awesome-icon icon="fa-solid fa-list" />
+        Mes propositions
+        <span
+          v-if="total > 0"
+          class="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-af-fond px-1 text-[10px] text-af-corps"
+        >
+          {{ total }}
+        </span>
+      </button>
+    </div>
+
+    <div class="max-h-[60vh] overflow-y-auto">
+      <section v-if="onglet === 'proposer'">
+        <AfrolangPropositionSalleForm
+          :groupes-disponibles="groupesDisponibles"
+          :territoires="territoiresDisponibles"
+          @soumis="ajouterProposition"
+        />
+      </section>
+
+      <section v-else>
+        <header class="mb-4 flex items-center justify-between gap-4">
+          <h3 class="text-base font-bold text-af-encre">Suivi de mes soumissions</h3>
+          <select
+            v-model="filtreStatut"
+            class="h-10 rounded-md border border-af-bordure bg-white px-3 text-[14px]/[1.4] text-af-corps focus:border-af-chocolat focus:outline-none"
+            @change="aller(1)"
           >
-            <font-awesome-icon :icon="['fas', 'xmark']" class="w-5 h-5" />
-          </button>
+            <option value="">Tous les statuts</option>
+            <option value="en_attente">En attente</option>
+            <option value="validee">Validées</option>
+            <option value="rejetee">Rejetées</option>
+            <option value="retiree">Retirées</option>
+          </select>
         </header>
 
-        <!-- Onglets -->
-        <div class="flex border-b border-gray-200 px-6">
-          <button
-            type="button"
-            class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
-            :class="onglet === 'proposer'
-              ? 'border-custom-chocolat text-custom-chocolat'
-              : 'border-transparent text-gray-500 hover:text-gray-700'"
-            @click="onglet = 'proposer'"
-          >
-            <font-awesome-icon :icon="['fas', 'lightbulb']" class="w-3.5 h-3.5 mr-1.5" />
-            Soumettre
-          </button>
-          <button
-            type="button"
-            class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
-            :class="onglet === 'mes-propositions'
-              ? 'border-custom-chocolat text-custom-chocolat'
-              : 'border-transparent text-gray-500 hover:text-gray-700'"
-            @click="onglet = 'mes-propositions'; rechargerListe()"
-          >
-            <font-awesome-icon :icon="['fas', 'list']" class="w-3.5 h-3.5 mr-1.5" />
-            Mes propositions
-            <span v-if="total > 0" class="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] bg-gray-100 text-gray-700">
-              {{ total }}
-            </span>
-          </button>
+        <div v-if="chargementListe" class="flex items-center gap-2 text-[14px]/[1.4] text-af-atone">
+          <font-awesome-icon icon="fa-solid fa-spinner" class="animate-spin" />
+          Chargement…
+        </div>
+        <div
+          v-else-if="!propositions.length"
+          class="rounded-lg border border-dashed border-af-bordure bg-af-fond px-6 py-10 text-center"
+        >
+          <font-awesome-icon icon="fa-solid fa-inbox" class="mb-3 text-3xl text-af-atone-2" />
+          <p class="text-[14px]/[1.4] text-af-corps">Aucune proposition pour le moment.</p>
+        </div>
+        <div v-else class="grid gap-3">
+          <AfrolangPropositionSalleCard
+            v-for="p in propositions"
+            :key="p.id"
+            :proposition="p"
+            @retiree="mettreAJourProposition"
+          />
         </div>
 
-        <!-- Contenu -->
-        <div class="p-6 max-h-[70vh] overflow-y-auto">
-          <section v-if="onglet === 'proposer'">
-            <AfrolangPropositionSalleForm
-              :groupes-disponibles="groupesDisponibles"
-              :territoires="territoiresDisponibles"
-              @soumis="ajouterProposition"
-            />
-          </section>
-
-          <section v-else>
-            <header class="flex items-center justify-between mb-4">
-              <h3 class="text-sm font-semibold text-gray-900">Suivi de mes soumissions</h3>
-              <select
-                v-model="filtreStatut"
-                class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-                @change="aller(1)"
-              >
-                <option value="">Tous les statuts</option>
-                <option value="en_attente">En attente</option>
-                <option value="validee">Validées</option>
-                <option value="rejetee">Rejetées</option>
-                <option value="retiree">Retirées</option>
-              </select>
-            </header>
-
-            <div v-if="chargementListe" class="text-sm text-gray-500 flex items-center gap-2">
-              <font-awesome-icon :icon="['fas', 'spinner']" class="w-4 h-4 animate-spin" />
-              Chargement…
-            </div>
-            <div v-else-if="!propositions.length" class="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center">
-              <font-awesome-icon :icon="['fas', 'inbox']" class="w-8 h-8 text-gray-400 mb-3" />
-              <p class="text-sm text-gray-600">Aucune proposition pour le moment.</p>
-            </div>
-            <div v-else class="grid grid-cols-1 gap-3">
-              <AfrolangPropositionSalleCard
-                v-for="p in propositions"
-                :key="p.id"
-                :proposition="p"
-                @retiree="mettreAJourProposition"
-              />
-            </div>
-
-            <div v-if="totalPages > 1" class="mt-6 flex items-center justify-center gap-2 text-sm">
-              <button
-                type="button"
-                :disabled="page <= 1"
-                class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                @click="aller(page - 1)"
-              >
-                <font-awesome-icon :icon="['fas', 'chevron-left']" class="w-3 h-3" />
-              </button>
-              <span class="text-gray-600">Page {{ page }} / {{ totalPages }}</span>
-              <button
-                type="button"
-                :disabled="page >= totalPages"
-                class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                @click="aller(page + 1)"
-              >
-                <font-awesome-icon :icon="['fas', 'chevron-right']" class="w-3 h-3" />
-              </button>
-            </div>
-          </section>
+        <div v-if="totalPages > 1" class="mt-6 flex items-center justify-center gap-3 text-[14px]/[1.4]">
+          <button
+            type="button"
+            :disabled="page <= 1"
+            class="grid size-9 place-items-center rounded-md border border-af-bordure bg-white text-af-corps transition hover:border-af-chocolat disabled:opacity-40"
+            @click="aller(page - 1)"
+          >
+            <font-awesome-icon icon="fa-solid fa-chevron-left" />
+          </button>
+          <span class="text-af-corps">Page {{ page }} / {{ totalPages }}</span>
+          <button
+            type="button"
+            :disabled="page >= totalPages"
+            class="grid size-9 place-items-center rounded-md border border-af-bordure bg-white text-af-corps transition hover:border-af-chocolat disabled:opacity-40"
+            @click="aller(page + 1)"
+          >
+            <font-awesome-icon icon="fa-solid fa-chevron-right" />
+          </button>
         </div>
-      </div>
+      </section>
     </div>
-  </Teleport>
+  </AfricansModale>
 </template>
