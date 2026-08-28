@@ -275,7 +275,6 @@ const handleMapClick = (location: { id: string }) => {
             v-for="programme in programmes"
             :key="programme.id"
             :programme="programme"
-            @click="navigateTo(`/echanges-sabbatiques/${programme.id}`)"
           />
         </div>
 
@@ -376,7 +375,6 @@ const handleMapClick = (location: { id: string }) => {
               v-for="programme in programmesPaysSelectionne"
               :key="programme.id"
               :programme="programme"
-              @click="navigateTo(`/echanges-sabbatiques/${programme.id}`)"
             />
           </div>
         </div>
