@@ -99,6 +99,16 @@ watch(() => props.open, (val) => {
 
 const fermer = () => emit('close')
 
+/**
+ * L'état d'envoi appartient au formulaire, le bouton à la coque : le premier
+ * l'expose, la seconde le lit. Le lien passe par l'attribut `form` du bouton,
+ * pas par un émetteur — c'est la soumission NATIVE qui déclenche la validation
+ * du navigateur sur les champs `required`.
+ */
+const formulaireRef = ref<{ enCours: boolean, formulaireValide: boolean } | null>(null)
+const envoiEnCours = computed(() => formulaireRef.value?.enCours ?? false)
+const formulaireValide = computed(() => formulaireRef.value?.formulaireValide ?? false)
+
 onMounted(() => {
   if (props.open) chargerSiBesoin()
 })
@@ -148,6 +158,7 @@ onMounted(() => {
     <div class="max-h-[60vh] overflow-y-auto">
       <section v-if="onglet === 'proposer'">
         <AfrolangPropositionSalleForm
+          ref="formulaireRef"
           :groupes-disponibles="groupesDisponibles"
           :territoires="territoiresDisponibles"
           @soumis="ajouterProposition"
@@ -211,5 +222,26 @@ onMounted(() => {
         </div>
       </section>
     </div>
+
+    <!-- Actions du seul onglet « Soumettre » : « Mes propositions » est une
+         liste, elle n'a rien à valider. -->
+    <template v-if="onglet === 'proposer'" #actions>
+      <button
+        type="button"
+        class="text-base font-bold text-af-corps transition hover:opacity-70"
+        @click="fermer"
+      >
+        Annuler
+      </button>
+      <AfricansBouton
+        type="submit"
+        form="form-proposition-salle"
+        :desactive="envoiEnCours || !formulaireValide"
+        :tourne="envoiEnCours"
+        :icone="envoiEnCours ? 'fa-solid fa-spinner' : 'fa-solid fa-paper-plane'"
+      >
+        {{ envoiEnCours ? 'Envoi…' : 'Soumettre la proposition' }}
+      </AfricansBouton>
+    </template>
   </AfricansModale>
 </template>
