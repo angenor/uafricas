@@ -1,63 +1,54 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1555217851-6141535bd771?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
-    >
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Mes favoris
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Les annonces du Marché Africain que vous avez sauvegardées.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <CommonBreadcrumbNav
-        class="mb-6"
-        :custom-breadcrumbs="[
-          { label: 'Marché Africain', to: '/marche-africain' },
-          { label: 'Mes favoris', to: undefined },
-        ]"
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <!-- L'image était hotlinkée sur Unsplash ; celle du module existait
+           déjà dans le dépôt. -->
+      <AfricansBandeauModule
+        titre="Mes favoris"
+        sous-titre="Les annonces d'Afromarket que vous avez sauvegardées."
+        image="/images/marche-afrique.png"
       />
+    </template>
 
-      <div class="flex flex-wrap items-center justify-end gap-4 mb-8">
-        <NuxtLink
-          to="/marche-africain/mes-annonces"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-white transition-all"
-        >
-          <font-awesome-icon :icon="['fas', 'sliders']" class="w-4 h-4" />
-          Mes annonces
-        </NuxtLink>
-      </div>
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Opafrica', vers: '/marche-africain' },
+          { libelle: 'Afromarket', vers: '/marche-africain' },
+          { libelle: 'Mes favoris' },
+        ]"
+      >
+        <template #action>
+          <AfricansBouton vers="/marche-africain/mes-annonces" variante="secondaire" icone="fa-solid fa-sliders">
+            Mes annonces
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
+
+    <div class="flex flex-col gap-6">
 
       <!-- Chargement -->
       <div v-if="chargement" class="text-center py-16">
-        <div class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mx-auto mb-4"></div>
-        <p class="text-gray-500">Chargement…</p>
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-af-vert border-t-transparent mx-auto mb-4"></div>
+        <p class="text-af-atone">Chargement…</p>
       </div>
 
       <!-- Vide -->
       <div v-else-if="annonces.length === 0" class="text-center py-16 bg-white rounded-2xl shadow-xs">
-        <font-awesome-icon :icon="['far', 'heart']" class="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">Aucun favori</h3>
-        <p class="text-gray-500 mb-4">Parcourez le marché et ajoutez des annonces à vos favoris.</p>
+        <font-awesome-icon :icon="['far', 'heart']" class="w-16 h-16 text-af-atone-2 mx-auto mb-4" />
+        <h3 class="text-lg font-semibold text-af-corps mb-2">Aucun favori</h3>
+        <p class="text-af-atone mb-4">Parcourez le marché et ajoutez des annonces à vos favoris.</p>
         <NuxtLink
           to="/marche-africain"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 text-white font-medium hover:bg-emerald-600 transition-colors"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-af-vert text-white font-medium hover:bg-af-vert transition-colors"
         >
           Explorer le marché
         </NuxtLink>
       </div>
 
       <!-- Grille -->
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div v-else class="grid gap-5 sm:grid-cols-2">
         <MarcheAnnonceCard
           v-for="annonce in annonces"
           :key="annonce.id"
@@ -70,29 +61,29 @@
       <div v-if="totalPages > 1" class="mt-10 flex items-center justify-center gap-2">
         <button
           :disabled="page === 1"
-          class="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          class="p-2 rounded-lg border border-af-bordure text-af-corps hover:bg-af-fond disabled:opacity-50"
           @click="changerPage(page - 1)"
         >
           <font-awesome-icon :icon="['fas', 'chevron-left']" class="w-4 h-4" />
         </button>
-        <span class="px-4 py-2 text-sm text-gray-600">Page {{ page }} / {{ totalPages }}</span>
+        <span class="px-4 py-2 text-sm text-af-corps">Page {{ page }} / {{ totalPages }}</span>
         <button
           :disabled="page === totalPages"
-          class="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          class="p-2 rounded-lg border border-af-bordure text-af-corps hover:bg-af-fond disabled:opacity-50"
           @click="changerPage(page + 1)"
         >
           <font-awesome-icon :icon="['fas', 'chevron-right']" class="w-4 h-4" />
         </button>
       </div>
     </div>
-  </div>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useMarcheAfricain, type AnnonceAPI } from '~/composables/useMarcheAfricain'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth', layout: false })
 
 useHead({ title: 'Mes favoris - Marché Africain - AfricanS' })
 

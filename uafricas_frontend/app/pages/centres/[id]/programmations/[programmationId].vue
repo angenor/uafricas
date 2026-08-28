@@ -172,6 +172,8 @@
 </template>
 
 <script setup lang="ts">
+
+definePageMeta({ layout: false })
 import type { ProgrammationDetailAPI } from '~/composables/useCentresCulturels'
 import { formatDateCourteFrancais, formatHeureFrancais, getModeLabel } from '~/composables/useCentresCulturels'
 import { useUserStore } from '~/stores/user'

@@ -223,6 +223,35 @@ export interface AnnonceFiltres {
 // ── Types frontend ────────────────────────────────────────────
 
 export type TypeEchange = 'Vente' | 'Troc' | 'Don' | "Opportunité d'investissement"
+
+/**
+ * Habillage de la pastille de type d'échange. UNE SEULE définition : la carte
+ * de la liste et la page de détail l'affichaient chacune avec ses propres
+ * couleurs, et rien ne les tenait accordées.
+ *
+ * Les quatre types restent visuellement distincts sur la seule palette de la
+ * refonte. Deux teintes seulement y sont disponibles pour un badge — `af-live`
+ * est réservé à la pastille de direct —, la quatrième lecture vient donc du
+ * remplissage : plein pour ce qui engage de l'argent, contour pour le reste.
+ *
+ * Aucun n'est blanc sans contour : posée sur le repli d'image, lui-même
+ * `af-fond` (#F5F5F5), l'ancienne pastille « Vente » en blanc sur gris très
+ * clair était illisible.
+ */
+export function classeTypeEchange(type: string): string {
+  switch (type as TypeEchange) {
+    case 'Vente':
+      return 'bg-af-chocolat text-white'
+    case "Opportunité d'investissement":
+      return 'border border-af-chocolat bg-white text-af-chocolat'
+    case 'Troc':
+      return 'bg-af-vert text-white'
+    case 'Don':
+      return 'border border-af-vert bg-white text-af-vert'
+    default:
+      return 'border border-af-bordure bg-white text-af-corps'
+  }
+}
 export type Categorie = 'Agriculture' | 'Informatique' | 'Immobilier' | 'Voitures' | 'Electronique' | 'Formation'
 export type Devise = 'XOF' | 'EUR' | 'NGN' | 'USD'
 

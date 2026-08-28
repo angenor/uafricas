@@ -2,16 +2,16 @@
   <form class="space-y-6" @submit.prevent="soumettre">
     <!-- Type d'opération -->
     <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">Type d'annonce *</label>
+      <label class="block text-sm font-semibold text-af-corps mb-2">Type d'annonce *</label>
       <div class="grid grid-cols-3 gap-3">
         <button
           v-for="t in typesEchange"
           :key="t.value"
           type="button"
-          class="py-2.5 px-3 rounded-xl border text-sm font-medium transition-all"
+          class="py-2.5 px-3 rounded-lg border text-sm font-medium transition-all"
           :class="form.typeEchange === t.value
-            ? 'border-custom-chocolat bg-custom-chocolat/10 text-custom-chocolat'
-            : 'border-gray-200 text-gray-600 hover:border-gray-300'"
+            ? 'border-af-chocolat bg-af-chocolat/10 text-af-chocolat'
+            : 'border-af-bordure text-af-corps hover:border-af-bordure'"
           @click="form.typeEchange = t.value"
         >
           {{ t.label }}
@@ -21,25 +21,25 @@
 
     <!-- Titre -->
     <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2" for="titre">Titre *</label>
+      <label class="block text-sm font-semibold text-af-corps mb-2" for="titre">Titre *</label>
       <input
         id="titre"
         v-model="form.titre"
         type="text"
         maxlength="350"
-        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+        class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
         placeholder="Ex. : Vélo tout-terrain en bon état"
       />
     </div>
 
     <!-- Description -->
     <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2" for="description">Description *</label>
+      <label class="block text-sm font-semibold text-af-corps mb-2" for="description">Description *</label>
       <textarea
         id="description"
         v-model="form.description"
         rows="4"
-        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+        class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
         placeholder="Décrivez l'article, son état, les détails utiles…"
       ></textarea>
     </div>
@@ -47,22 +47,22 @@
     <!-- Catégorie + Condition -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="categorie">Catégorie *</label>
+        <label class="block text-sm font-semibold text-af-corps mb-2" for="categorie">Catégorie *</label>
         <select
           id="categorie"
           v-model="form.categorieId"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green bg-white"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert bg-white"
         >
           <option value="" disabled>Choisir une catégorie</option>
           <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.nom }}</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="condition">État de l'article</label>
+        <label class="block text-sm font-semibold text-af-corps mb-2" for="condition">État de l'article</label>
         <select
           id="condition"
           v-model="form.conditionArticle"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green bg-white"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert bg-white"
         >
           <option value="non_applicable">Non applicable</option>
           <option value="neuf">Neuf</option>
@@ -75,13 +75,13 @@
     <!-- Secteur d'activité (facultatif) -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="secteur">
-          Secteur d'activité <span class="text-gray-400 font-normal">(facultatif)</span>
+        <label class="block text-sm font-semibold text-af-corps mb-2" for="secteur">
+          Secteur d'activité <span class="text-af-atone-2 font-normal">(facultatif)</span>
         </label>
         <select
           id="secteur"
           v-model="form.secteurId"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green bg-white"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert bg-white"
         >
           <option value="">Aucun secteur</option>
           <option v-for="s in secteurs" :key="s.id" :value="s.id">{{ s.nom }}</option>
@@ -89,13 +89,13 @@
         </select>
       </div>
       <div v-if="form.secteurId === 'autre'">
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="secteur-autre">Préciser le secteur</label>
+        <label class="block text-sm font-semibold text-af-corps mb-2" for="secteur-autre">Préciser le secteur</label>
         <input
           id="secteur-autre"
           v-model="form.secteurAutre"
           type="text"
           maxlength="200"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
           placeholder="Ex. : Mines, Tourisme…"
         />
       </div>
@@ -104,30 +104,30 @@
     <!-- Prix (vente uniquement) -->
     <div v-if="form.typeEchange === 'Vente'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="md:col-span-1">
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="prix">Prix *</label>
+        <label class="block text-sm font-semibold text-af-corps mb-2" for="prix">Prix *</label>
         <input
           id="prix"
           v-model.number="form.prix"
           type="number"
           min="0"
           step="any"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
           placeholder="0"
         />
       </div>
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="devise">Devise</label>
+        <label class="block text-sm font-semibold text-af-corps mb-2" for="devise">Devise</label>
         <select
           id="devise"
           v-model="form.devise"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green bg-white"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert bg-white"
         >
           <option v-for="d in devises" :key="d.value" :value="d.value">{{ d.label }} ({{ d.symbol }})</option>
         </select>
       </div>
       <div class="flex items-end">
-        <label class="inline-flex items-center gap-2 text-sm text-gray-700 pb-2.5 cursor-pointer">
-          <input v-model="form.prixNegociable" type="checkbox" class="rounded border-gray-300 text-custom-green focus:ring-custom-green" />
+        <label class="inline-flex items-center gap-2 text-sm text-af-corps pb-2.5 cursor-pointer">
+          <input v-model="form.prixNegociable" type="checkbox" class="rounded border-af-bordure text-af-vert focus:ring-af-vert" />
           Prix négociable
         </label>
       </div>
@@ -136,138 +136,138 @@
     <!-- Localisation + quantité -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="ville">Ville</label>
+        <label class="block text-sm font-semibold text-af-corps mb-2" for="ville">Ville</label>
         <input
           id="ville"
           v-model="form.ville"
           type="text"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
           placeholder="Ex. : Dakar"
         />
       </div>
       <div class="md:col-span-2">
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="adresse">Adresse (facultative)</label>
+        <label class="block text-sm font-semibold text-af-corps mb-2" for="adresse">Adresse (facultative)</label>
         <input
           id="adresse"
           v-model="form.adresse"
           type="text"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
           placeholder="Quartier, point de repère…"
         />
       </div>
     </div>
 
     <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2" for="quantite">Quantité disponible</label>
+      <label class="block text-sm font-semibold text-af-corps mb-2" for="quantite">Quantité disponible</label>
       <input
         id="quantite"
         v-model.number="form.quantite"
         type="number"
         min="1"
-        class="w-full md:w-40 px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+        class="w-full md:w-40 px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
       />
     </div>
 
     <!-- Type d'annonceur -->
     <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">Vous publiez en tant que</label>
+      <label class="block text-sm font-semibold text-af-corps mb-2">Vous publiez en tant que</label>
       <div class="grid grid-cols-2 gap-3">
         <label
-          class="flex items-start gap-2 p-3 rounded-xl border cursor-pointer transition-all"
+          class="flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition-all"
           :class="form.typeAnnonceur === 'particulier'
-            ? 'border-custom-green bg-custom-green/5'
-            : 'border-gray-200 hover:bg-gray-50'"
+            ? 'border-af-vert bg-af-vert/5'
+            : 'border-af-bordure hover:bg-af-fond'"
         >
-          <input type="radio" value="particulier" v-model="form.typeAnnonceur" class="mt-0.5 accent-custom-green" />
+          <input type="radio" value="particulier" v-model="form.typeAnnonceur" class="mt-0.5 accent-af-vert" />
           <span>
-            <span class="block text-sm font-medium text-gray-800">En mon nom propre</span>
-            <span class="block text-xs text-gray-500">Contact révélé sur demande</span>
+            <span class="block text-sm font-medium text-af-encre">En mon nom propre</span>
+            <span class="block text-xs text-af-atone">Contact révélé sur demande</span>
           </span>
         </label>
         <label
-          class="flex items-start gap-2 p-3 rounded-xl border cursor-pointer transition-all"
+          class="flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition-all"
           :class="form.typeAnnonceur === 'entreprise'
-            ? 'border-custom-green bg-custom-green/5'
-            : 'border-gray-200 hover:bg-gray-50'"
+            ? 'border-af-vert bg-af-vert/5'
+            : 'border-af-bordure hover:bg-af-fond'"
         >
-          <input type="radio" value="entreprise" v-model="form.typeAnnonceur" class="mt-0.5 accent-custom-green" />
+          <input type="radio" value="entreprise" v-model="form.typeAnnonceur" class="mt-0.5 accent-af-vert" />
           <span>
-            <span class="block text-sm font-medium text-gray-800">Au nom d'une entreprise</span>
-            <span class="block text-xs text-gray-500">Coordonnées affichées publiquement</span>
+            <span class="block text-sm font-medium text-af-encre">Au nom d'une entreprise</span>
+            <span class="block text-xs text-af-atone">Coordonnées affichées publiquement</span>
           </span>
         </label>
       </div>
     </div>
 
     <!-- Coordonnées de l'entreprise (affichées publiquement) -->
-    <div v-if="form.typeAnnonceur === 'entreprise'" class="space-y-3 p-4 rounded-xl border border-gray-200 bg-gray-50">
+    <div v-if="form.typeAnnonceur === 'entreprise'" class="space-y-3 p-4 rounded-lg border border-af-bordure bg-af-fond">
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">Nom de l'entreprise <span class="text-red-500">*</span></label>
+        <label class="block text-sm font-semibold text-af-corps mb-1">Nom de l'entreprise <span class="text-af-live">*</span></label>
         <input
           v-model="form.nomEntreprise"
           type="text"
           maxlength="200"
           placeholder="Ex : Sahel Distribution SARL"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
         />
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Téléphone</label>
+          <label class="block text-sm font-semibold text-af-corps mb-1">Téléphone</label>
           <input
             v-model="form.contactTelephone"
             type="tel"
             maxlength="30"
             placeholder="+221 ..."
-            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
           />
         </div>
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">E-mail</label>
+          <label class="block text-sm font-semibold text-af-corps mb-1">E-mail</label>
           <input
             v-model="form.contactEmail"
             type="email"
             maxlength="255"
             placeholder="contact@entreprise.com"
-            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
           />
         </div>
       </div>
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">Adresse</label>
+        <label class="block text-sm font-semibold text-af-corps mb-1">Adresse</label>
         <input
           v-model="form.contactAdresse"
           type="text"
           maxlength="300"
           placeholder="Adresse de l'entreprise"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
         />
       </div>
     </div>
 
     <!-- Site web ou page réseau social (facultatif) -->
     <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">Site web ou page réseau social <span class="text-gray-400 font-normal">(facultatif)</span></label>
+      <label class="block text-sm font-semibold text-af-corps mb-2">Site web ou page réseau social <span class="text-af-atone-2 font-normal">(facultatif)</span></label>
       <input
         v-model="form.siteWebUrl"
         type="url"
         maxlength="500"
         placeholder="https://..."
-        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
+        class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
       />
     </div>
 
     <!-- Territoires ciblés -->
     <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">Territoires ciblés</label>
-      <div class="space-y-3 max-h-72 overflow-y-auto p-3 border border-gray-200 rounded-xl">
+      <label class="block text-sm font-semibold text-af-corps mb-2">Territoires ciblés</label>
+      <div class="space-y-3 max-h-72 overflow-y-auto p-3 border border-af-bordure rounded-lg">
         <!-- Bloc Afrique -->
         <div>
           <div class="flex items-center justify-between mb-2">
-            <p class="text-xs font-semibold uppercase tracking-wide text-custom-green">Afrique</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-af-vert">Afrique</p>
             <button
               type="button"
-              class="text-xs font-medium text-custom-green hover:underline"
+              class="text-xs font-medium text-af-vert hover:underline"
               @click="basculerTousAfrique"
             >
               {{ toutAfriqueSelectionne ? 'Tout désélectionner' : "Toute l'Afrique" }}
@@ -279,8 +279,8 @@
               :key="terr.id"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
               :class="form.paysIds.includes(terr.id)
-                ? 'bg-custom-green text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                ? 'bg-af-vert text-white'
+                : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
             >
               <input type="checkbox" class="hidden" :value="terr.id" v-model="form.paysIds" />
               {{ terr.nom }}
@@ -288,12 +288,12 @@
           </div>
         </div>
         <!-- Bloc hors Afrique -->
-        <div class="pt-2 border-t border-gray-100">
+        <div class="pt-2 border-t border-af-bordure">
           <div class="flex items-center justify-between mb-2">
-            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Hors Afrique</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-af-atone">Hors Afrique</p>
             <button
               type="button"
-              class="text-xs font-medium text-custom-green hover:underline"
+              class="text-xs font-medium text-af-vert hover:underline"
               @click="basculerTousHorsAfrique"
             >
               {{ toutHorsAfriqueSelectionne ? 'Tout désélectionner' : 'Tout Hors Afrique' }}
@@ -305,8 +305,8 @@
               :key="terr.id"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
               :class="form.paysIds.includes(terr.id)
-                ? 'bg-custom-green text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                ? 'bg-af-vert text-white'
+                : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
             >
               <input type="checkbox" class="hidden" :value="terr.id" v-model="form.paysIds" />
               {{ terr.nom }}
@@ -318,14 +318,14 @@
 
     <!-- Photos existantes (mode édition) -->
     <div v-if="mode === 'edition' && photosExistantes.length > 0">
-      <label class="block text-sm font-semibold text-gray-700 mb-2">Photos actuelles</label>
+      <label class="block text-sm font-semibold text-af-corps mb-2">Photos actuelles</label>
       <div class="flex flex-wrap gap-3">
-        <div v-for="media in photosExistantes" :key="media.id" class="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200">
+        <div v-for="media in photosExistantes" :key="media.id" class="relative w-24 h-24 rounded-lg overflow-hidden border border-af-bordure">
           <img :src="media.media_url" :alt="form.titre" class="w-full h-full object-cover" />
-          <span v-if="media.est_principale" class="absolute bottom-0 inset-x-0 bg-custom-green/90 text-white text-[10px] text-center py-0.5">Principale</span>
+          <span v-if="media.est_principale" class="absolute bottom-0 inset-x-0 bg-af-vert/90 text-white text-[10px] text-center py-0.5">Principale</span>
           <button
             type="button"
-            class="absolute top-1 right-1 w-6 h-6 bg-red-500/90 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+            class="absolute top-1 right-1 w-6 h-6 bg-af-live/50/90 text-white rounded-full flex items-center justify-center text-xs hover:bg-af-live"
             @click="retirerPhotoExistante(media.id)"
           >
             <font-awesome-icon :icon="['fas', 'xmark']" />
@@ -336,24 +336,24 @@
 
     <!-- Ajout de photos -->
     <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">
+      <label class="block text-sm font-semibold text-af-corps mb-2">
         {{ mode === 'edition' ? 'Ajouter des photos' : 'Photos *' }}
-        <span class="font-normal text-gray-400">(JPEG/PNG/WebP, max 3 Mo, {{ MAX_PHOTOS }} au total)</span>
+        <span class="font-normal text-af-atone-2">(JPEG/PNG/WebP, max 3 Mo, {{ MAX_PHOTOS }} au total)</span>
       </label>
       <input
         ref="inputFichier"
         type="file"
         accept="image/jpeg,image/png,image/webp"
         multiple
-        class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-custom-chocolat/10 file:text-custom-chocolat hover:file:bg-custom-chocolat/20"
+        class="block w-full text-sm text-af-corps file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-af-chocolat/10 file:text-af-chocolat hover:file:bg-af-chocolat/20"
         @change="onFichiersSelectionnes"
       />
       <div v-if="apercus.length > 0" class="flex flex-wrap gap-3 mt-3">
-        <div v-for="(ap, i) in apercus" :key="i" class="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200">
+        <div v-for="(ap, i) in apercus" :key="i" class="relative w-24 h-24 rounded-lg overflow-hidden border border-af-bordure">
           <img :src="ap" alt="aperçu" class="w-full h-full object-cover" />
           <button
             type="button"
-            class="absolute top-1 right-1 w-6 h-6 bg-red-500/90 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+            class="absolute top-1 right-1 w-6 h-6 bg-af-live/50/90 text-white rounded-full flex items-center justify-center text-xs hover:bg-af-live"
             @click="retirerNouvellePhoto(i)"
           >
             <font-awesome-icon :icon="['fas', 'xmark']" />
@@ -363,7 +363,7 @@
     </div>
 
     <!-- Erreur -->
-    <p v-if="erreurForm" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+    <p v-if="erreurForm" class="text-sm text-af-live bg-af-live/5 border border-af-live/30 rounded-lg px-4 py-2">
       {{ erreurForm }}
     </p>
 
@@ -371,7 +371,7 @@
     <div class="flex items-center justify-end gap-3 pt-2">
       <button
         type="button"
-        class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+        class="px-5 py-2.5 rounded-lg border border-af-bordure text-af-corps hover:bg-af-fond transition-colors"
         @click="$emit('cancel')"
       >
         Annuler
@@ -379,7 +379,7 @@
       <button
         type="submit"
         :disabled="enCours"
-        class="px-6 py-2.5 rounded-xl bg-linear-to-r from-custom-chocolat to-amber-700 text-white font-semibold hover:from-amber-700 hover:to-custom-chocolat transition-all disabled:opacity-60 flex items-center gap-2"
+        class="px-6 py-2.5 rounded-lg bg-linear-to-r from-af-chocolat to-af-chocolat text-white font-semibold hover:from-af-chocolat hover:to-af-chocolat transition-all disabled:opacity-60 flex items-center gap-2"
       >
         <span v-if="enCours" class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
         {{ mode === 'edition' ? 'Enregistrer' : 'Publier' }}

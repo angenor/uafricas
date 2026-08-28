@@ -207,7 +207,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth', layout: false })
 
 import type { PersonneDetail, LienResume, TypeLien } from '~/mocks/arbre-genealogique'
 import { formaterDate } from '~/mocks/arbre-genealogique'

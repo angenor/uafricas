@@ -7,7 +7,10 @@
         :image="annonce?.photo_url ?? null"
       >
         <template v-if="annonce" #action>
-          <span class="rounded-lg bg-af-vert px-4 py-2 text-[14px]/[1.4] font-bold text-white">
+          <span
+            class="rounded-lg px-4 py-2 text-[14px]/[1.4] font-bold"
+            :class="classeTypeEchange(annonce.type_echange)"
+          >
             {{ annonce.type_echange }}
           </span>
         </template>
@@ -216,12 +219,14 @@ import {
   useMarcheAfricain,
   formatPrix,
   formatDate,
+  classeTypeEchange,
   type AnnonceDetailAPI,
-  type TypeEchange,
 } from '~/composables/useMarcheAfricain'
 import { useMessagerie } from '~/composables/useMessagerie'
 import { useUserStore } from '~/stores/user'
 import { navigateTo } from '#app'
+
+definePageMeta({ layout: false })
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -296,22 +301,6 @@ const paysAffiche = computed(() => {
   }
   return 'Non spécifié'
 })
-
-// Methods
-const getTypeColor = (type: string): string => {
-  switch (type as TypeEchange) {
-    case 'Vente':
-      return 'bg-white text-gray-700'
-    case 'Troc':
-      return 'bg-purple-100 text-purple-700'
-    case 'Don':
-      return 'bg-blue-100 text-blue-700'
-    case "Opportunité d'investissement":
-      return 'bg-amber-100 text-amber-700'
-    default:
-      return 'bg-gray-100 text-gray-700'
-  }
-}
 
 const ouvrirContact = () => {
   if (!isAuthenticated.value) {
