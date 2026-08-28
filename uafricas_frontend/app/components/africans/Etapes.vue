@@ -12,17 +12,21 @@
            de se réduire sous la largeur de son contenu. Sans lui, le `truncate`
            du libellé ne s'appliquait jamais et la dernière étape débordait du
            cadre — « L'organisation » sortait de la carte. -->
+      <!-- C'est le <li> PORTEUR D'UN CONNECTEUR qui s'étire, jamais la
+           pastille : le connecteur absorbe l'espace libre et la rangée reste
+           tendue d'un bord à l'autre, sans qu'une étape prenne dix fois la
+           place de ses voisines. -->
       <li
         v-for="(etape, i) in etapes"
         :key="etape.titre"
         class="flex min-w-0 items-center gap-2"
-        :class="i === courante ? 'flex-1' : ''"
+        :class="i < etapes.length - 1 ? 'flex-1' : ''"
       >
         <button
           type="button"
           class="flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left transition"
           :class="[
-            i === courante ? 'flex-1 bg-af-chocolat/10' : '',
+            i === courante ? 'bg-af-chocolat/10' : '',
             i < courante ? 'hover:bg-af-fond' : '',
             i > courante ? 'cursor-default' : '',
           ]"
@@ -62,7 +66,7 @@
 
         <span
           v-if="i < etapes.length - 1"
-          class="h-0.5 w-4 shrink-0 rounded-full"
+          class="h-0.5 min-w-4 flex-1 rounded-full"
           :class="i < courante ? 'bg-af-vert' : 'bg-af-bordure'"
         />
       </li>

@@ -391,6 +391,8 @@ const onPublicationReussie = async (detail: AnnonceDetailAPI) => {
       v-model="showPublishModal"
       titre="Publier une annonce"
       sous-titre="Vente, troc, don ou opportunité d'investissement"
+      icone="fa-solid fa-plus"
+      taille="large"
     >
       <MarcheAnnonceForm @success="onPublicationReussie" @cancel="showPublishModal = false" />
     </AfricansModale>

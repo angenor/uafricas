@@ -125,6 +125,7 @@
     <AfricansModale
       :model-value="showEdition"
       titre="Modifier l'annonce"
+      sous-titre="Vente, troc, don ou opportunité d'investissement"
       icone="fa-solid fa-pen"
       taille="large"
       @update:model-value="showEdition = false"

@@ -8,7 +8,7 @@
       <!-- Type d'opération -->
       <div>
         <label class="block text-sm font-semibold text-af-corps mb-2">Type d'annonce *</label>
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-2 gap-3">
           <button
             v-for="t in typesEchange"
             :key="t.value"
@@ -16,7 +16,7 @@
             class="py-2.5 px-3 rounded-lg border text-sm font-medium transition-all"
             :class="form.typeEchange === t.value
               ? 'border-af-chocolat bg-af-chocolat/10 text-af-chocolat'
-              : 'border-af-bordure text-af-corps hover:border-af-bordure'"
+              : 'border-af-bordure text-af-corps hover:border-af-chocolat'"
             @click="form.typeEchange = t.value"
           >
             {{ t.label }}
