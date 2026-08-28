@@ -252,7 +252,20 @@ export function classeTypeEchange(type: string): string {
       return 'border border-af-bordure bg-white text-af-corps'
   }
 }
-export type Categorie = 'Agriculture' | 'Informatique' | 'Immobilier' | 'Voitures' | 'Electronique' | 'Formation'
+/**
+ * SLUGS du référentiel `shared.categorie`, contexte 'annonce' (03b), et non
+ * les noms affichés. Le backend accepte `c.nom = $2 OR c.slug = $2` : passer
+ * par le slug rend le filtre insensible aux accents et à la casse — la clé
+ * « Electronique » ne pouvait matcher ni « Électronique » ni « electronique »,
+ * et ce filtre-là ne renvoyait jamais rien.
+ */
+export type Categorie =
+  | 'annonce-agriculture'
+  | 'annonce-informatique'
+  | 'annonce-immobilier'
+  | 'annonce-voitures'
+  | 'annonce-electronique'
+  | 'annonce-formation'
 export type Devise = 'XOF' | 'EUR' | 'NGN' | 'USD'
 
 /** Interface des filtres cote UI (reprend le format du mock) */
@@ -269,12 +282,12 @@ export interface FiltresAnnonce {
 
 export const CATEGORIES: { key: Categorie | 'Tout'; label: string }[] = [
   { key: 'Tout', label: 'Toutes les catégories' },
-  { key: 'Agriculture', label: 'Agriculture' },
-  { key: 'Informatique', label: 'Informatique' },
-  { key: 'Immobilier', label: 'Immobilier' },
-  { key: 'Voitures', label: 'Voitures' },
-  { key: 'Electronique', label: 'Électronique' },
-  { key: 'Formation', label: 'Formation' },
+  { key: 'annonce-agriculture', label: 'Agriculture' },
+  { key: 'annonce-informatique', label: 'Informatique' },
+  { key: 'annonce-immobilier', label: 'Immobilier' },
+  { key: 'annonce-voitures', label: 'Voitures' },
+  { key: 'annonce-electronique', label: 'Électronique' },
+  { key: 'annonce-formation', label: 'Formation' },
 ]
 
 export const TYPES_ECHANGE: { value: TypeEchange; label: string; color: string }[] = [

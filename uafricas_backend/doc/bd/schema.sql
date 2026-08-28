@@ -73,6 +73,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 
 \ir schemas/03_shared.sql
+-- Catégories du marché : shared.categorie n'en portait aucune de contexte
+-- 'annonce', ce qui rendait la publication impossible (catégorie obligatoire,
+-- sélecteur vide).
+\ir schemas/03b_shared_categories_annonce.sql
 \ir schemas/04_iam.sql
 \ir schemas/04b_iam_expertise.sql
 \ir schemas/04b_iam_biblio_demande.sql
