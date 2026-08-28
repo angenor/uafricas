@@ -184,11 +184,18 @@ useHead({
 
       <!-- Avis actif : contenu complet -->
       <template v-else-if="estActif">
-        <!-- Repondre a cet avis (place en haut) -->
+        <!-- L'avis d'abord, la réponse ensuite : on ne répond pas à ce qu'on
+             n'a pas encore lu, et l'avis lui-même annonce « Répondez à cet
+             avis CI-DESSOUS » — promesse que l'ordre inverse démentait. -->
+        <RetrouveAmisPagePublique
+          :avis="(avis as AvisPublicDetail)"
+          :peut-repondre="userStore.user?.id !== (avis as AvisPublicDetail).auteur_id"
+        />
+
         <!-- CTA connexion pour visiteurs non connectes -->
         <div
           v-if="!userStore.isAuthenticated"
-          class="mb-6 rounded-[10px] border border-af-chocolat/20 bg-af-chocolat/5 p-8 text-center"
+          class="mt-6 rounded-[10px] border border-af-chocolat/20 bg-af-chocolat/5 p-8 text-center"
         >
           <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-af-chocolat/10">
             <font-awesome-icon :icon="['fas', 'user-lock']" class="text-xl text-af-chocolat" />
@@ -197,25 +204,37 @@ useHead({
             Vous connaissez cette personne ?
           </p>
           <p class="text-af-atone text-sm mb-6 max-w-md mx-auto">
-            Connectez-vous pour contacter l'auteur de cet avis et l'aider a retrouver la personne recherchee.
+            Connectez-vous pour contacter l'auteur de cet avis et l'aider à retrouver la personne recherchée.
           </p>
           <NuxtLink
             :to="`/login?redirect=${encodeURIComponent(`/retrouve-amis/public/${slug}`)}`"
             class="inline-flex items-center gap-2 rounded-lg bg-af-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
           >
             <font-awesome-icon :icon="['fas', 'right-to-bracket']" />
-            Se connecter pour repondre
+            Se connecter pour répondre
           </NuxtLink>
         </div>
 
         <RetrouveAmisFormulaireReponse
           v-else-if="userStore.user?.id !== (avis as AvisPublicDetail).auteur_id"
-          class="mt-0! mb-6"
+          class="mt-6"
           :slug="slug"
           :auteur-id="(avis as AvisPublicDetail).auteur_id"
         />
 
-        <RetrouveAmisPagePublique :avis="(avis as AvisPublicDetail)" />
+        <!-- L'auteur ne voit ni invitation ni formulaire, à juste titre. Sans
+             ce repère il ne saurait pas OÙ les réponses lui parviennent : la
+             page publique est souvent le seul écran du module qu'il rouvre. -->
+        <p
+          v-if="userStore.isAuthenticated && userStore.user?.id === (avis as AvisPublicDetail).auteur_id"
+          class="mt-6 flex flex-wrap items-center justify-center gap-2 rounded-[10px] border border-af-bordure bg-af-fond px-5 py-4 text-[14px]/[1.4] text-af-corps"
+        >
+          <font-awesome-icon icon="fa-solid fa-handshake" class="text-af-chocolat" />
+          Vous êtes l'auteur de cet avis. Les réponses vous parviennent dans
+          <NuxtLink to="/retrouve-amis/correspondances" class="font-bold text-af-chocolat underline">
+            vos correspondances
+          </NuxtLink>.
+        </p>
 
         <RetrouveAmisBoutonsPartage
           :slug="slug"

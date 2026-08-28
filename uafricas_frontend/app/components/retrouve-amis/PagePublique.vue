@@ -2,9 +2,16 @@
 import type { AvisPublicDetail } from '~/composables/useRetrouvAmis'
 import { TYPES_RELATION, GENRES_PERSONNE, formatDate, formatPeriode } from '~/composables/useRetrouvAmis'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   avis: AvisPublicDetail
-}>()
+  /**
+   * Faux pour l'AUTEUR de l'avis : l'appel à l'action ne s'adresse pas à
+   * celui qui cherche, et la page ne lui sert aucun formulaire de réponse.
+   * Le défaut est `true` : hors de la page publique, un consommateur qui ne
+   * connaît pas l'identité du lecteur ne doit pas masquer l'invitation.
+   */
+  peutRepondre?: boolean
+}>(), { peutRepondre: true })
 
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBaseUrl as string
@@ -258,8 +265,10 @@ const lieuxRencontre = computed(() => {
           </div>
         </div>
 
-        <!-- Appel a l'action -->
-        <div class="rounded-lg bg-linear-to-r from-af-vert/10 to-af-vert/5 p-5 ring-1 ring-af-vert/30 text-center">
+        <!-- Appel à l'action. Masqué pour l'AUTEUR de l'avis : « Vous
+             reconnaissez cette personne ? » ne s'adresse pas à celui qui la
+             cherche, et aucun formulaire de réponse ne lui est servi. -->
+        <div v-if="peutRepondre" class="rounded-lg bg-linear-to-r from-af-vert/10 to-af-vert/5 p-5 ring-1 ring-af-vert/30 text-center">
           <p class="text-sm font-medium text-af-corps mb-1">
             <font-awesome-icon :icon="['fas', 'heart']" class="text-af-vert mr-1" />
             Vous reconnaissez cette personne ?
