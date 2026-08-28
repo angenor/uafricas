@@ -101,7 +101,7 @@ const reseaux = computed<OptionReseau[]>(() => [
     nom: 'X / Twitter',
     url: urlTwitter.value,
     icon: ['fab', 'twitter'],
-    couleur: 'bg-black hover:bg-gray-800',
+    couleur: 'bg-black hover:bg-af-encre',
     reseau: 'x',
   },
   {
@@ -122,7 +122,7 @@ const reseaux = computed<OptionReseau[]>(() => [
     nom: 'E-mail',
     url: urlEmail.value,
     icon: ['fas', 'envelope'],
-    couleur: 'bg-gray-600 hover:bg-gray-700',
+    couleur: 'bg-af-corps hover:bg-af-encre',
     reseau: 'email',
   },
 ])
@@ -130,13 +130,13 @@ const reseaux = computed<OptionReseau[]>(() => [
 
 <template>
   <div class="mt-6">
-    <div class="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-200/60">
+    <div class="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-af-bordure/60">
       <div class="flex items-center justify-between mb-5">
-        <h2 class="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-400">
-          <font-awesome-icon :icon="['fas', 'share-nodes']" class="text-amber-600" />
+        <h2 class="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-af-atone-2">
+          <font-awesome-icon :icon="['fas', 'share-nodes']" class="text-af-chocolat" />
           Partager cet avis
         </h2>
-        <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200/60">
+        <span class="rounded-full bg-af-chocolat/5 px-3 py-1 text-xs font-semibold text-af-chocolat ring-1 ring-af-chocolat/20/60">
           {{ compteur }} partage{{ compteur !== 1 ? 's' : '' }}
         </span>
       </div>
@@ -147,7 +147,7 @@ const reseaux = computed<OptionReseau[]>(() => [
           v-for="reseau in reseaux"
           :key="reseau.nom"
           type="button"
-          class="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md active:scale-95 cursor-pointer"
+          class="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md active:scale-95 cursor-pointer"
           :class="reseau.couleur"
           :title="`Partager sur ${reseau.nom}`"
           @click="partager(reseau)"
@@ -159,10 +159,10 @@ const reseaux = computed<OptionReseau[]>(() => [
         <!-- Bouton copier le lien -->
         <button
           type="button"
-          class="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-sm transition-all active:scale-95 cursor-pointer"
+          class="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-sm transition-all active:scale-95 cursor-pointer"
           :class="copieLienOk
-            ? 'bg-green-50 text-green-700 ring-1 ring-green-300'
-            : 'bg-gray-50 text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100'"
+            ? 'bg-af-vert/5 text-af-vert ring-1 ring-af-vert/30'
+            : 'bg-af-fond text-af-corps ring-1 ring-af-bordure hover:bg-af-fond'"
           @click="copierLien"
         >
           <font-awesome-icon :icon="copieLienOk ? ['fas', 'check'] : ['fas', 'link']" />

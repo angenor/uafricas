@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AvisPublicResume, PaysInfo, RecherchePubliqueParams, PaginationInfo } from '~/composables/useRetrouvAmis'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: false })
 
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBaseUrl as string
@@ -109,40 +109,42 @@ chargerAvis()
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
-    >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Rechercher un avis de recherche
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Parcourez les avis publics et aidez des personnes a retrouver leurs amis perdus de vue.
-          </p>
-        </div>
-      </div>
-    </div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <!-- L'image était hotlinkée sur Unsplash ; le hero local du module
+           existait déjà. -->
+      <AfricansBandeauModule
+        titre="Rechercher un avis"
+        sous-titre="Parcourez les avis publics et aidez des personnes à retrouver leurs amis perdus de vue."
+        image="/images/africans/heros/hero-africonnect.jpg"
+      />
+    </template>
 
-    <div class="max-w-6xl mx-auto px-4 py-8">
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Opafrica', vers: '/retrouve-amis' },
+          { libelle: 'Africonnect', vers: '/retrouve-amis' },
+          { libelle: 'Rechercher' },
+        ]"
+      />
+    </template>
+
+    <div class="min-w-0">
       <!-- Filtres -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 mb-8">
+      <div class="bg-white rounded-lg shadow-sm border border-af-bordure p-3 mb-8">
         <form @submit.prevent="soumettreRecherche" class="space-y-3">
           <!-- Barre de recherche -->
           <div class="relative">
             <font-awesome-icon
               :icon="['fas', 'magnifying-glass']"
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-af-atone-2 text-sm"
             />
             <input
               v-model="recherche"
               type="text"
               placeholder="Rechercher par nom, prenom, ecole, ville..."
-              class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
+              class="w-full pl-9 pr-3 py-2 rounded-lg border border-af-bordure text-sm text-af-encre placeholder:text-af-atone-2 focus:border-af-chocolat focus:ring-2 focus:border-af-chocolat/20 focus:outline-none transition-colors"
             />
           </div>
 
@@ -150,13 +152,13 @@ chargerAvis()
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <!-- Pays -->
             <div>
-              <label for="filtre-pays" class="block text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">
+              <label for="filtre-pays" class="block text-xs text-af-atone uppercase tracking-wide font-medium mb-1">
                 Territoire
               </label>
               <select
                 id="filtre-pays"
                 v-model="paysId"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors bg-white"
+                class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm text-af-encre focus:border-af-chocolat focus:ring-2 focus:border-af-chocolat/20 focus:outline-none transition-colors bg-white"
               >
                 <option value="">
                   Tous les territoires
@@ -169,7 +171,7 @@ chargerAvis()
 
             <!-- Ville -->
             <div>
-              <label for="filtre-ville" class="block text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">
+              <label for="filtre-ville" class="block text-xs text-af-atone uppercase tracking-wide font-medium mb-1">
                 Ville
               </label>
               <input
@@ -177,13 +179,13 @@ chargerAvis()
                 v-model="ville"
                 type="text"
                 placeholder="Ville..."
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
+                class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm text-af-encre placeholder:text-af-atone-2 focus:border-af-chocolat focus:ring-2 focus:border-af-chocolat/20 focus:outline-none transition-colors"
               />
             </div>
 
             <!-- Ecole -->
             <div>
-              <label for="filtre-ecole" class="block text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">
+              <label for="filtre-ecole" class="block text-xs text-af-atone uppercase tracking-wide font-medium mb-1">
                 École
               </label>
               <input
@@ -191,19 +193,19 @@ chargerAvis()
                 v-model="ecole"
                 type="text"
                 placeholder="École..."
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
+                class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm text-af-encre placeholder:text-af-atone-2 focus:border-af-chocolat focus:ring-2 focus:border-af-chocolat/20 focus:outline-none transition-colors"
               />
             </div>
 
             <!-- Tri -->
             <div>
-              <label for="filtre-tri" class="block text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">
+              <label for="filtre-tri" class="block text-xs text-af-atone uppercase tracking-wide font-medium mb-1">
                 Trier par
               </label>
               <select
                 id="filtre-tri"
                 v-model="tri"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors bg-white"
+                class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm text-af-encre focus:border-af-chocolat focus:ring-2 focus:border-af-chocolat/20 focus:outline-none transition-colors bg-white"
               >
                 <option value="created_at">
                   Plus recents
@@ -219,7 +221,7 @@ chargerAvis()
           <div class="flex items-center gap-3">
             <button
               type="submit"
-              class="px-5 py-2 bg-amber-700 text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors flex items-center gap-2"
+              class="px-5 py-2 bg-af-chocolat text-white text-sm font-medium rounded-lg hover:opacity-90 transition-colors flex items-center gap-2"
               :disabled="chargement"
             >
               <font-awesome-icon v-if="chargement" :icon="['fas', 'spinner']" class="animate-spin" />
@@ -229,7 +231,7 @@ chargerAvis()
             <button
               v-if="aFiltresActifs"
               type="button"
-              class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+              class="px-4 py-2 text-sm text-af-corps hover:text-af-encre transition-colors"
               @click="reinitialiser"
             >
               Réinitialiser
@@ -240,23 +242,23 @@ chargerAvis()
 
       <!-- Resultats -->
       <div v-if="chargement" class="text-center py-12">
-        <font-awesome-icon :icon="['fas', 'spinner']" class="animate-spin text-2xl text-amber-700" />
-        <p class="text-gray-500 mt-3 text-sm">Chargement des avis...</p>
+        <font-awesome-icon :icon="['fas', 'spinner']" class="animate-spin text-2xl text-af-chocolat" />
+        <p class="text-af-atone mt-3 text-sm">Chargement des avis...</p>
       </div>
 
-      <div v-else-if="erreur" class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="text-red-500 text-xl mb-2" />
-        <p class="text-red-700 text-sm">{{ erreur }}</p>
+      <div v-else-if="erreur" class="bg-af-live/5 border border-af-live/30 rounded-lg p-6 text-center">
+        <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="text-af-live text-xl mb-2" />
+        <p class="text-af-live text-sm">{{ erreur }}</p>
       </div>
 
-      <div v-else-if="avis.length === 0" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center">
+      <div v-else-if="avis.length === 0" class="bg-white rounded-lg shadow-sm border border-af-bordure p-12 text-center">
+        <div class="w-16 h-16 mx-auto mb-4 bg-af-fond text-af-atone-2 rounded-full flex items-center justify-center">
           <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="text-xl" />
         </div>
-        <h2 class="text-lg font-semibold text-gray-700 mb-2">
+        <h2 class="text-lg font-semibold text-af-corps mb-2">
           Aucun avis ne correspond
         </h2>
-        <p class="text-gray-500 text-sm">
+        <p class="text-af-atone text-sm">
           Essayez de modifier vos criteres de recherche ou de reinitialiser les filtres.
         </p>
       </div>
@@ -264,7 +266,7 @@ chargerAvis()
       <template v-else>
         <!-- Compteur resultats -->
         <div class="flex items-center justify-between mb-4">
-          <p class="text-sm text-gray-500">
+          <p class="text-sm text-af-atone">
             {{ pagination.total }} avis{{ pagination.total !== 1 ? '' : '' }} trouve{{ pagination.total !== 1 ? 's' : '' }}
           </p>
         </div>
@@ -284,8 +286,8 @@ chargerAvis()
             type="button"
             class="px-3 py-2 text-sm rounded-lg border transition-colors"
             :class="pagination.page === 1
-              ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-              : 'border-gray-300 text-gray-700 hover:bg-gray-50'"
+              ? 'border-af-bordure text-af-atone-2 cursor-not-allowed'
+              : 'border-af-bordure text-af-corps hover:bg-af-fond'"
             :disabled="pagination.page === 1"
             @click="allerPage(pagination.page - 1)"
           >
@@ -298,8 +300,8 @@ chargerAvis()
             type="button"
             class="px-3.5 py-2 text-sm rounded-lg border transition-colors"
             :class="p === pagination.page
-              ? 'bg-amber-700 text-white border-amber-700'
-              : 'border-gray-300 text-gray-700 hover:bg-gray-50'"
+              ? 'bg-af-chocolat text-white border-af-chocolat'
+              : 'border-af-bordure text-af-corps hover:bg-af-fond'"
             @click="allerPage(p)"
           >
             {{ p }}
@@ -309,8 +311,8 @@ chargerAvis()
             type="button"
             class="px-3 py-2 text-sm rounded-lg border transition-colors"
             :class="pagination.page === pagination.pages
-              ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-              : 'border-gray-300 text-gray-700 hover:bg-gray-50'"
+              ? 'border-af-bordure text-af-atone-2 cursor-not-allowed'
+              : 'border-af-bordure text-af-corps hover:bg-af-fond'"
             :disabled="pagination.page === pagination.pages"
             @click="allerPage(pagination.page + 1)"
           >
@@ -319,5 +321,5 @@ chargerAvis()
         </div>
       </template>
     </div>
-  </div>
+  </NuxtLayout>
 </template>

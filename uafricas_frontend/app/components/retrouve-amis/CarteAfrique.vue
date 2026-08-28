@@ -86,7 +86,7 @@ const getMapColor = (id: string): string => {
   const isHovered = hoveredCountry.value?.id.toLowerCase() === iso
   const isSelected = props.selectedIso === iso
 
-  if (isSelected) return '#A54A1C' // custom-chocolat
+  if (isSelected) return '#A54A1C' // af-chocolat
   if (compte > 0) {
     const base = couleurChaleur(compte)
     return isHovered ? adjustBrightness(base, -12) : base

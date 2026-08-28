@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Correspondance, CorrespondanceFiltres, EtatCorrespondance } from '~/composables/useRetrouvAmis'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: false })
 
 const userStore = useUserStore()
 const { redirigerVersConnexion } = useAuth()
@@ -114,41 +114,41 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
-    >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Correspondances
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Consultez et gerez les profils qui correspondent a vos avis de recherche.
-          </p>
-        </div>
-      </div>
-    </div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <!-- L'image était hotlinkée sur Unsplash ; le hero local du module
+           existait déjà. -->
+      <AfricansBandeauModule
+        titre="Correspondances"
+        sous-titre="Consultez et gérez les profils qui correspondent à vos avis de recherche."
+        image="/images/africans/heros/hero-africonnect.jpg"
+      />
+    </template>
 
-    <div class="max-w-6xl mx-auto lg:flex lg:gap-8 px-4 py-8">
-      <RetrouveAmisSideBar />
-      <div class="flex-1 min-w-0">
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Opafrica', vers: '/retrouve-amis' },
+          { libelle: 'Africonnect', vers: '/retrouve-amis' },
+          { libelle: 'Correspondances' },
+        ]"
+      />
+    </template>
+
+    <div class="min-w-0">
       <!-- En-tete -->
       <div class="flex items-center justify-between mb-8 gap-4">
         <div class="flex items-center gap-3">
           <span
             v-if="nonLues > 0"
-            class="inline-flex items-center justify-center min-w-6 h-6 px-2 bg-red-500 text-white text-xs font-bold rounded-full"
+            class="inline-flex items-center justify-center min-w-6 h-6 px-2 bg-af-live/50 text-white text-xs font-bold rounded-full"
           >
             {{ nonLues }} non lue(s)
           </span>
         </div>
         <button
           v-if="nonLues > 0"
-          class="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
+          class="px-4 py-2 text-sm font-medium text-af-chocolat bg-af-chocolat/5 border border-af-chocolat/20 rounded-lg hover:bg-af-chocolat/10 transition-colors cursor-pointer"
           :disabled="chargement"
           @click="onToutMarquerLu"
         >
@@ -160,7 +160,7 @@ onUnmounted(() => {
       <!-- Message succes -->
       <div
         v-if="messageSucces"
-        class="mb-6 p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg"
+        class="mb-6 p-3 bg-af-vert/5 border border-af-vert/30 text-af-vert text-sm rounded-lg"
       >
         {{ messageSucces }}
       </div>
@@ -169,7 +169,7 @@ onUnmounted(() => {
       <div class="flex flex-col sm:flex-row gap-4 mb-8">
         <select
           v-model="filtreEtat"
-          class="px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+          class="px-4 py-2.5 bg-white border border-af-bordure rounded-lg text-sm text-af-corps focus:outline-none focus:ring-2 focus:border-af-chocolat focus:border-af-chocolat"
         >
           <option v-for="opt in optionsEtat" :key="opt.value" :value="opt.value">
             {{ opt.label }}
@@ -180,16 +180,16 @@ onUnmounted(() => {
           v-model="filtreAvisId"
           type="text"
           placeholder="Filtrer par ID d'avis..."
-          class="px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+          class="px-4 py-2.5 bg-white border border-af-bordure rounded-lg text-sm text-af-corps focus:outline-none focus:ring-2 focus:border-af-chocolat focus:border-af-chocolat"
         />
 
         <div class="flex items-center gap-2 ml-auto">
-          <span class="text-sm text-gray-500">Trier par :</span>
+          <span class="text-sm text-af-atone">Trier par :</span>
           <button
             class="px-3 py-2 text-sm rounded-lg border transition-colors cursor-pointer"
             :class="tri === 'score'
-              ? 'bg-amber-700 text-white border-amber-700'
-              : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'"
+              ? 'bg-af-chocolat text-white border-af-chocolat'
+              : 'bg-white text-af-corps border-af-bordure hover:border-af-chocolat'"
             @click="tri = 'score'"
           >
             Score
@@ -197,8 +197,8 @@ onUnmounted(() => {
           <button
             class="px-3 py-2 text-sm rounded-lg border transition-colors cursor-pointer"
             :class="tri === 'date'
-              ? 'bg-amber-700 text-white border-amber-700'
-              : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'"
+              ? 'bg-af-chocolat text-white border-af-chocolat'
+              : 'bg-white text-af-corps border-af-bordure hover:border-af-chocolat'"
             @click="tri = 'date'"
           >
             Date
@@ -208,7 +208,7 @@ onUnmounted(() => {
 
       <!-- Chargement -->
       <div v-if="chargement" class="flex justify-center py-20">
-        <div class="w-10 h-10 border-4 border-amber-200 border-t-amber-700 rounded-full animate-spin" />
+        <div class="w-10 h-10 border-4 border-af-chocolat/20 border-t-amber-700 rounded-full animate-spin" />
       </div>
 
       <!-- Grille des correspondances -->
@@ -227,11 +227,11 @@ onUnmounted(() => {
       <!-- Etat vide -->
       <div
         v-else
-        class="text-center py-20 bg-white rounded-2xl border border-gray-200"
+        class="text-center py-20 bg-white rounded-2xl border border-af-bordure"
       >
-        <font-awesome-icon :icon="['fas', 'users-slash']" class="text-4xl text-gray-300 mb-4" />
-        <p class="text-gray-500 text-lg mb-2">Aucune correspondance trouvee</p>
-        <p class="text-gray-400 text-sm">
+        <font-awesome-icon :icon="['fas', 'users-slash']" class="text-4xl text-af-atone-2 mb-4" />
+        <p class="text-af-atone text-lg mb-2">Aucune correspondance trouvee</p>
+        <p class="text-af-atone-2 text-sm">
           Les correspondances apparaitront ici lorsque le systeme identifiera des profils compatibles avec vos avis de recherche.
         </p>
       </div>
@@ -242,7 +242,7 @@ onUnmounted(() => {
         class="flex items-center justify-center gap-2 mt-10"
       >
         <button
-          class="px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          class="px-3 py-2 text-sm rounded-lg border border-af-bordure bg-white text-af-corps hover:bg-af-fond transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           :disabled="page <= 1"
           @click="allerPage(page - 1)"
         >
@@ -254,27 +254,30 @@ onUnmounted(() => {
             v-if="p === 1 || p === totalPages || (p >= page - 1 && p <= page + 1)"
             class="px-3.5 py-2 text-sm rounded-lg border transition-colors cursor-pointer"
             :class="p === page
-              ? 'bg-amber-700 text-white border-amber-700'
-              : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'"
+              ? 'bg-af-chocolat text-white border-af-chocolat'
+              : 'bg-white text-af-corps border-af-bordure hover:bg-af-fond'"
             @click="allerPage(p)"
           >
             {{ p }}
           </button>
           <span
             v-else-if="p === page - 2 || p === page + 2"
-            class="px-1 text-gray-400"
+            class="px-1 text-af-atone-2"
           >...</span>
         </template>
 
         <button
-          class="px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          class="px-3 py-2 text-sm rounded-lg border border-af-bordure bg-white text-af-corps hover:bg-af-fond transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           :disabled="page >= totalPages"
           @click="allerPage(page + 1)"
         >
           <font-awesome-icon :icon="['fas', 'chevron-right']" />
         </button>
       </div>
-      </div>
     </div>
-  </div>
+
+    <template #rail>
+      <RetrouveAmisSideBar />
+    </template>
+  </NuxtLayout>
 </template>

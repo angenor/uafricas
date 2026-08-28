@@ -1,11 +1,11 @@
 <template>
   <div
-    class="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all p-5 cursor-pointer border border-gray-100"
+    class="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all p-5 cursor-pointer border border-af-bordure"
     @click="$emit('voir', correspondance.id)"
   >
     <!-- En-tete : initiales + score + etat -->
     <div class="flex items-start justify-between mb-4">
-      <div class="w-12 h-12 rounded-full bg-custom-chocolat/10 text-custom-chocolat font-bold flex items-center justify-center text-lg">
+      <div class="w-12 h-12 rounded-full bg-af-chocolat/10 text-af-chocolat font-bold flex items-center justify-center text-lg">
         {{ correspondance.resume_anonymise.initiales }}
       </div>
       <div class="flex items-center gap-2">
@@ -22,14 +22,14 @@
     <!-- Informations -->
     <div class="space-y-2 mb-4">
       <!-- Ville -->
-      <div v-if="correspondance.resume_anonymise.ville" class="flex items-center text-sm text-gray-600">
-        <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3.5 h-3.5 mr-2 text-custom-green" />
+      <div v-if="correspondance.resume_anonymise.ville" class="flex items-center text-sm text-af-corps">
+        <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3.5 h-3.5 mr-2 text-af-vert" />
         <span>{{ correspondance.resume_anonymise.ville }}</span>
       </div>
 
       <!-- Periode -->
-      <div v-if="correspondance.resume_anonymise.periode" class="flex items-center text-sm text-gray-600">
-        <font-awesome-icon :icon="['fas', 'calendar']" class="w-3.5 h-3.5 mr-2 text-custom-chocolat" />
+      <div v-if="correspondance.resume_anonymise.periode" class="flex items-center text-sm text-af-corps">
+        <font-awesome-icon :icon="['fas', 'calendar']" class="w-3.5 h-3.5 mr-2 text-af-chocolat" />
         <span>{{ correspondance.resume_anonymise.periode }}</span>
       </div>
 
@@ -38,7 +38,7 @@
         <span
           class="text-xs px-2 py-0.5 rounded-full font-medium"
           :class="correspondance.type_cible === 'avis'
-            ? 'bg-indigo-50 text-indigo-700'
+            ? 'bg-af-chocolat/5 text-af-chocolat'
             : 'bg-violet-50 text-violet-700'"
         >
           {{ correspondance.type_cible === 'avis' ? 'Avis' : 'Profil' }}
@@ -46,7 +46,7 @@
         <span
           class="text-xs px-2 py-0.5 rounded-full font-medium"
           :class="correspondance.mon_role === 'auteur'
-            ? 'bg-custom-chocolat/10 text-custom-chocolat'
+            ? 'bg-af-chocolat/10 text-af-chocolat'
             : 'bg-sky-50 text-sky-700'"
         >
           {{ correspondance.mon_role === 'auteur' ? 'Auteur' : 'Cible' }}
@@ -62,7 +62,7 @@
       <span
         v-for="critere in correspondance.resume_anonymise.criteres_communs"
         :key="critere"
-        class="bg-custom-green/10 text-custom-green text-xs px-2 py-0.5 rounded-full"
+        class="bg-af-vert/10 text-af-vert text-xs px-2 py-0.5 rounded-full"
       >
         {{ critere }}
       </span>
@@ -71,7 +71,7 @@
     <!-- Pied : expiration -->
     <div
       v-if="correspondance.expire_at"
-      class="pt-3 border-t border-gray-100 flex items-center text-xs text-gray-400"
+      class="pt-3 border-t border-af-bordure flex items-center text-xs text-af-atone-2"
     >
       <font-awesome-icon :icon="['fas', 'clock']" class="w-3 h-3 mr-1.5" />
       Expire le {{ formaterDate(correspondance.expire_at) }}
@@ -111,14 +111,14 @@ defineEmits<{
 
 const etatClasses = computed(() => {
   const classes: Record<string, string> = {
-    en_attente: 'bg-amber-100 text-amber-700',
-    acceptee_a: 'bg-blue-100 text-blue-700',
-    acceptee_b: 'bg-blue-100 text-blue-700',
-    mutuelle: 'bg-custom-green/10 text-custom-green',
-    declinee: 'bg-red-100 text-red-700',
-    archivee: 'bg-gray-100 text-gray-500',
+    en_attente: 'bg-af-chocolat/10 text-af-chocolat',
+    acceptee_a: 'bg-af-chocolat/10 text-af-chocolat',
+    acceptee_b: 'bg-af-chocolat/10 text-af-chocolat',
+    mutuelle: 'bg-af-vert/10 text-af-vert',
+    declinee: 'bg-af-live/10 text-af-live',
+    archivee: 'bg-af-fond text-af-atone',
   }
-  return classes[props.correspondance.etat] || 'bg-gray-100 text-gray-500'
+  return classes[props.correspondance.etat] || 'bg-af-fond text-af-atone'
 })
 
 const etatLabel = computed(() => {

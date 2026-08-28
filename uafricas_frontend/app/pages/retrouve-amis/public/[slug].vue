@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AvisPublicDetail, AvisPublicEtat } from '~/composables/useRetrouvAmis'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: false })
 
 const route = useRoute()
 const config = useRuntimeConfig()
@@ -104,40 +104,44 @@ useHead({
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero compact (titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center pb-10"
-      style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
-    >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Avis de recherche
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Aidez a retrouver une personne perdue de vue.
-          </p>
-        </div>
-      </div>
-    </div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <!-- L'image était hotlinkée sur Unsplash ; le hero local du module
+           existait déjà. -->
+      <AfricansBandeauModule
+        titre="Avis de recherche"
+        sous-titre="Aidez à retrouver une personne perdue de vue."
+        image="/images/africans/heros/hero-africonnect.jpg"
+      />
+    </template>
 
-    <div class="max-w-4xl mx-auto px-4 -mt-6 relative z-10 pb-12">
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Opafrica', vers: '/retrouve-amis' },
+          { libelle: 'Africonnect', vers: '/retrouve-amis' },
+          { libelle: 'Avis de recherche' },
+        ]"
+      />
+    </template>
+
+    <!-- Page PUBLIQUE : pas de rail de section. Un visiteur non connecté n'a
+         ni avis, ni correspondances, ni statistiques à y voir. -->
+    <div class="min-w-0">
       <!-- Erreur / non disponible -->
-      <div v-if="nonDisponible" class="rounded-2xl bg-white p-14 text-center shadow-lg ring-1 ring-gray-200/60">
-        <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-50">
-          <font-awesome-icon :icon="['fas', 'circle-xmark']" class="text-4xl text-gray-300" />
+      <div v-if="nonDisponible" class="rounded-[10px] bg-white p-14 text-center border border-af-bordure">
+        <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-af-fond">
+          <font-awesome-icon :icon="['fas', 'circle-xmark']" class="text-4xl text-af-atone-2" />
         </div>
-        <h2 class="text-xl font-semibold text-gray-700 mb-2">
+        <h2 class="text-xl font-semibold text-af-corps mb-2">
           Avis non disponible
         </h2>
-        <p class="text-gray-400 text-sm mb-8">
+        <p class="text-af-atone-2 text-sm mb-8">
           Cet avis de recherche n'existe pas ou n'est plus disponible.
         </p>
         <NuxtLink
           to="/retrouve-amis"
-          class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md"
+          class="inline-flex items-center gap-2 rounded-lg bg-af-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
         >
           <font-awesome-icon :icon="['fas', 'arrow-left']" />
           Retour a Retrouv'Amis
@@ -145,33 +149,33 @@ useHead({
       </div>
 
       <!-- Avis non actif (cloture / suspendu) -->
-      <div v-else-if="estNonActif" class="rounded-2xl bg-white p-14 text-center shadow-lg ring-1 ring-gray-200/60">
+      <div v-else-if="estNonActif" class="rounded-[10px] bg-white p-14 text-center border border-af-bordure">
         <div
           class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full"
           :class="(avis as AvisPublicEtat).etat === 'cloture'
-            ? 'bg-green-50'
-            : 'bg-orange-50'"
+            ? 'bg-af-vert/5'
+            : 'bg-af-chocolat/5'"
         >
           <font-awesome-icon
             :icon="(avis as AvisPublicEtat).etat === 'cloture'
               ? ['fas', 'heart']
               : ['fas', 'shield-halved']"
             class="text-4xl"
-            :class="(avis as AvisPublicEtat).etat === 'cloture' ? 'text-custom-green' : 'text-orange-400'"
+            :class="(avis as AvisPublicEtat).etat === 'cloture' ? 'text-af-vert' : 'text-af-chocolat'"
           />
         </div>
-        <h2 class="text-xl font-semibold text-gray-700 mb-2">
+        <h2 class="text-xl font-semibold text-af-corps mb-2">
           {{ (avis as AvisPublicEtat).message }}
         </h2>
-        <p v-if="(avis as AvisPublicEtat).etat === 'cloture'" class="text-gray-400 text-sm mb-8">
+        <p v-if="(avis as AvisPublicEtat).etat === 'cloture'" class="text-af-atone-2 text-sm mb-8">
           L'auteur de cet avis a retrouve la personne qu'il recherchait.
         </p>
-        <p v-else class="text-gray-400 text-sm mb-8">
+        <p v-else class="text-af-atone-2 text-sm mb-8">
           Un examen de cet avis est en cours. Veuillez reessayer plus tard.
         </p>
         <NuxtLink
           to="/retrouve-amis"
-          class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md"
+          class="inline-flex items-center gap-2 rounded-lg bg-af-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
         >
           <font-awesome-icon :icon="['fas', 'arrow-left']" />
           Retour a Retrouv'Amis
@@ -184,20 +188,20 @@ useHead({
         <!-- CTA connexion pour visiteurs non connectes -->
         <div
           v-if="!userStore.isAuthenticated"
-          class="mb-6 rounded-2xl bg-linear-to-br from-amber-50 to-orange-50 p-8 text-center ring-1 ring-amber-200/60"
+          class="mb-6 rounded-[10px] border border-af-chocolat/20 bg-af-chocolat/5 p-8 text-center"
         >
-          <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
-            <font-awesome-icon :icon="['fas', 'user-lock']" class="text-xl text-amber-600" />
+          <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-af-chocolat/10">
+            <font-awesome-icon :icon="['fas', 'user-lock']" class="text-xl text-af-chocolat" />
           </div>
-          <p class="text-lg font-semibold text-gray-800 mb-1">
+          <p class="text-lg font-semibold text-af-encre mb-1">
             Vous connaissez cette personne ?
           </p>
-          <p class="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+          <p class="text-af-atone text-sm mb-6 max-w-md mx-auto">
             Connectez-vous pour contacter l'auteur de cet avis et l'aider a retrouver la personne recherchee.
           </p>
           <NuxtLink
             :to="`/login?redirect=${encodeURIComponent(`/retrouve-amis/public/${slug}`)}`"
-            class="inline-flex items-center gap-2 rounded-xl bg-custom-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md"
+            class="inline-flex items-center gap-2 rounded-lg bg-af-chocolat px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
           >
             <font-awesome-icon :icon="['fas', 'right-to-bracket']" />
             Se connecter pour repondre
@@ -228,5 +232,5 @@ useHead({
         />
       </template>
     </div>
-  </div>
+  </NuxtLayout>
 </template>
