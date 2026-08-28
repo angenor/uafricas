@@ -73,7 +73,7 @@ const chargerPlus = () => {
 
 const ouvrir = async (n: Notification) => {
   if (!n.lu) {
-    await marquerLue(n.id)
+    await marquerLue(n.id, (n as { source?: 'arbre' | 'africonnect' }).source)
     n.lu = true
   }
   if (n.lien_action) navigateTo(n.lien_action)

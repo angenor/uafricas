@@ -121,7 +121,11 @@ pub struct Correspondance {
 pub struct NotificationRetrouve {
     pub id: Uuid,
     pub utilisateur_id: Uuid,
-    pub correspondance_id: Uuid,
+    /// Nullable : `avis_suspendu` et `demande_retrait` ne se rattachent a
+    /// aucune correspondance. Un `Uuid` non optionnel faisait echouer sqlx a
+    /// la deserialisation, et c'est TOUTE la liste qui tombait des la premiere
+    /// notification de ce genre.
+    pub correspondance_id: Option<Uuid>,
     #[sqlx(rename = "type_notif")]
     pub type_notif: String,
     pub lu: bool,
@@ -303,7 +307,9 @@ pub struct NotificationResponse {
     pub id: Uuid,
     #[serde(rename = "type")]
     pub type_notif: String,
-    pub correspondance_id: Uuid,
+    /// Nullable comme en base : `avis_suspendu` et `demande_retrait` ne se
+    /// rattachent a aucune correspondance.
+    pub correspondance_id: Option<Uuid>,
     pub lu: bool,
     pub created_at: DateTime<Utc>,
 }

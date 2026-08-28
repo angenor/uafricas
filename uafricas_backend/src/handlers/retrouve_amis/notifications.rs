@@ -38,12 +38,15 @@ pub async fn lister_notifications(
     let non_lues_sql = "SELECT COUNT(*) FROM retrouve_amis.notification_retrouve WHERE utilisateur_id = $1 AND lu = FALSE";
 
     let list_sql = format!(
-        "SELECT id, type::text AS type_notif, correspondance_id, lu, created_at
+        "SELECT {colonnes}
          FROM retrouve_amis.notification_retrouve
-         WHERE {}
+         WHERE {ou}
          ORDER BY created_at DESC
-         LIMIT {} OFFSET {}",
-        where_clause, par_page, offset
+         LIMIT {limite} OFFSET {decalage}",
+        ou = where_clause,
+        colonnes = NOTIFICATION_COLONNES,
+        limite = par_page,
+        decalage = offset,
     );
 
     let total: (i64,) = sqlx::query_as(&count_sql)
