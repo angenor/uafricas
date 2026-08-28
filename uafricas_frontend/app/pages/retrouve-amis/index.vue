@@ -242,8 +242,25 @@ const nomPaysSelectionne = computed(() =>
   paysSelectionneIso.value ? (NOMS_PAYS_FR[paysSelectionneIso.value] ?? paysSelectionneIso.value) : '',
 )
 
+const panneauPaysRef = ref<HTMLElement | null>(null)
+
 const onSelectPays = async (iso: string) => {
+  // Re-cliquer le territoire déjà retenu le désélectionne : sans cela, la
+  // croix du panneau était le seul retour à la carte nue.
+  if (paysSelectionneIso.value === iso) {
+    paysSelectionneIso.value = null
+    return
+  }
   paysSelectionneIso.value = iso
+  // Vidée AVANT le chargement : le titre change immédiatement, la liste non.
+  // Sans cela, le panneau affiche un instant les avis du territoire précédent
+  // sous le nom du nouveau.
+  avisPaysSelectionne.value = []
+  // Le panneau naît SOUS la carte : sans ce défilement, le clic n'a d'effet
+  // visible que dans la couleur du territoire. Avant le chargement, pour que
+  // le déplacement ne dépende pas de la latence du réseau.
+  await nextTick()
+  amenerSousLaBarre(panneauPaysRef.value)
   const paysId = paysIdParIso.value[iso]
   if (!paysId) {
     avisPaysSelectionne.value = []
@@ -358,7 +375,7 @@ onMounted(() => {
             />
           </div>
 
-          <section v-if="paysSelectionneIso" class="flex flex-col gap-5">
+          <section v-if="paysSelectionneIso" ref="panneauPaysRef" class="flex flex-col gap-5">
             <h2 class="flex items-center gap-3 text-[20px]/[1.4] font-bold text-af-chocolat">
               <font-awesome-icon icon="fa-solid fa-location-dot" class="size-6" />
               {{ nomPaysSelectionne }}

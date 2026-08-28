@@ -101,6 +101,7 @@ const onSearchInput = () => {
 }
 
 const reinitialiserFiltres = () => {
+  selectedPays.value = null
   zoneTerritoire.value = 'tout'
   filtres.value = { type: 'tous', pays: '', domaine: '', recherche: '' }
   chargerProgrammes()
@@ -173,6 +174,15 @@ const selectedPays = ref<string | null>(null)
 const programmesPaysSelectionne = computed(() =>
   selectedPays.value ? (programmesParPays.value[selectedPays.value] || []) : [])
 
+/**
+ * Un filtre peut vider le territoire retenu de tous ses programmes. Le
+ * panneau restait alors ouvert sur « 0 programme » et une grille vide, alors
+ * que la carte, elle, avait déjà repeint le pays en gris.
+ */
+watch(programmesParPays, (groupes) => {
+  if (selectedPays.value && !groupes[selectedPays.value]?.length) selectedPays.value = null
+})
+
 const getMapColor = (id: string): string => {
   const survole = hoveredCountry.value?.id === id
   const aProgrammes = Boolean(programmesParPays.value[id]?.length)
@@ -189,8 +199,28 @@ const handleMapMouseMove = (event: MouseEvent) => {
   mousePos.value = { x: event.clientX - rect.left, y: event.clientY - rect.top }
 }
 
+const panneauPaysRef = ref<HTMLElement | null>(null)
+
+/**
+ * Le panneau du territoire naît SOUS la carte, qui occupe jusqu'à 70svh : il
+ * apparaissait donc hors de l'écran, et le clic restait sans effet visible
+ * ailleurs que dans la couleur du pays.
+ */
+const amenerPanneauALEcran = async () => {
+  await nextTick()
+  amenerSousLaBarre(panneauPaysRef.value)
+}
+
 const handleMapClick = (location: { id: string }) => {
-  if (programmesParPays.value[location.id]?.length) selectedPays.value = location.id
+  if (!programmesParPays.value[location.id]?.length) return
+  // Re-cliquer le territoire déjà retenu le désélectionne : sans cela, le
+  // seul moyen de revenir à la carte nue était la croix du panneau.
+  if (selectedPays.value === location.id) {
+    selectedPays.value = null
+    return
+  }
+  selectedPays.value = location.id
+  amenerPanneauALEcran()
 }
 </script>
 
@@ -322,7 +352,7 @@ const handleMapClick = (location: { id: string }) => {
           </ul>
         </div>
 
-        <div v-if="selectedPays" class="flex flex-col gap-4">
+        <div v-if="selectedPays" ref="panneauPaysRef" class="flex flex-col gap-4 scroll-mt-af-barre">
           <div class="flex items-center justify-between gap-4">
             <h2 class="text-[20px]/[1.4] font-bold text-af-chocolat">
               {{ NOMS_PAYS_FR[selectedPays] || selectedPays }}
