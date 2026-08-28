@@ -109,7 +109,7 @@ const auteurDisplay = computed(() => {
           <span class="truncate">{{ props.avis.ecole_rencontre }}</span>
         </div>
         <div v-if="props.avis.description_physique" class="flex items-start gap-2">
-          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-50 text-purple-400 mt-0.5">
+          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-af-fond text-af-atone-2 mt-0.5">
             <font-awesome-icon :icon="['fas', 'id-card']" class="text-xs" />
           </span>
           <span class="line-clamp-2 text-af-atone">{{ props.avis.description_physique }}</span>

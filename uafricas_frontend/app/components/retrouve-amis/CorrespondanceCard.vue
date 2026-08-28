@@ -1,7 +1,10 @@
 <template>
-  <div
-    class="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all p-5 cursor-pointer border border-af-bordure"
-    @click="$emit('voir', correspondance.id)"
+  <!-- Un LIEN, et non un `<div @click>` : la carte mène à la page où la
+       correspondance s'accepte ou se refuse. En div, elle ne s'ouvrait pas
+       dans un nouvel onglet et n'était pas atteignable au clavier. -->
+  <NuxtLink
+    :to="`/retrouve-amis/correspondances/${correspondance.id}`"
+    class="flex flex-col rounded-[10px] border border-af-bordure bg-white p-5 transition hover:-translate-y-1 hover:border-af-chocolat"
   >
     <!-- En-tete : initiales + score + etat -->
     <div class="flex items-start justify-between mb-4">
@@ -39,7 +42,7 @@
           class="text-xs px-2 py-0.5 rounded-full font-medium"
           :class="correspondance.type_cible === 'avis'
             ? 'bg-af-chocolat/5 text-af-chocolat'
-            : 'bg-violet-50 text-violet-700'"
+            : 'bg-af-vert/10 text-af-vert'"
         >
           {{ correspondance.type_cible === 'avis' ? 'Avis' : 'Profil' }}
         </span>
@@ -47,7 +50,7 @@
           class="text-xs px-2 py-0.5 rounded-full font-medium"
           :class="correspondance.mon_role === 'auteur'
             ? 'bg-af-chocolat/10 text-af-chocolat'
-            : 'bg-sky-50 text-sky-700'"
+            : 'bg-af-fond text-af-corps'"
         >
           {{ correspondance.mon_role === 'auteur' ? 'Auteur' : 'Cible' }}
         </span>
@@ -76,7 +79,21 @@
       <font-awesome-icon :icon="['fas', 'clock']" class="w-3 h-3 mr-1.5" />
       Expire le {{ formaterDate(correspondance.expire_at) }}
     </div>
-  </div>
+
+    <!-- Ce que la carte attend de l'utilisateur. « En attente » et un score
+         ne le disaient pas : rien n'indiquait qu'une décision est due, ni où
+         la prendre. Le compte à rebours de l'expiration la rend urgente. -->
+    <p
+      class="mt-4 flex items-center gap-2 text-[14px]/[1.4] font-bold"
+      :class="correspondance.etat === 'en_attente' ? 'text-af-chocolat' : 'text-af-corps'"
+    >
+      <font-awesome-icon
+        :icon="correspondance.etat === 'en_attente' ? 'fa-solid fa-handshake' : 'fa-solid fa-circle-info'"
+      />
+      {{ correspondance.etat === 'en_attente' ? 'Accepter ou refuser' : 'Voir le détail' }}
+      <font-awesome-icon icon="fa-solid fa-arrow-right" class="ml-auto" />
+    </p>
+  </NuxtLink>
 </template>
 
 <script setup lang="ts">
@@ -103,10 +120,6 @@ interface Correspondance {
 
 const props = defineProps<{
   correspondance: Correspondance
-}>()
-
-defineEmits<{
-  voir: [id: string]
 }>()
 
 const etatClasses = computed(() => {

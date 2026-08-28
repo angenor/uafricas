@@ -211,7 +211,7 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
               class="text-xs px-2 py-0.5 rounded-full font-medium"
               :class="correspondance.type_cible === 'avis'
                 ? 'bg-af-chocolat/5 text-af-chocolat'
-                : 'bg-violet-50 text-violet-700'"
+                : 'bg-af-vert/10 text-af-vert'"
             >
               {{ correspondance.type_cible === 'avis' ? 'Via avis' : 'Via profil' }}
             </span>
@@ -219,7 +219,7 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
               class="text-xs px-2 py-0.5 rounded-full font-medium"
               :class="correspondance.mon_role === 'auteur'
                 ? 'bg-af-chocolat/10 text-af-chocolat'
-                : 'bg-sky-50 text-sky-700'"
+                : 'bg-af-fond text-af-corps'"
             >
               {{ correspondance.mon_role === 'auteur' ? 'Vous êtes l\'auteur' : 'Vous êtes la cible' }}
             </span>

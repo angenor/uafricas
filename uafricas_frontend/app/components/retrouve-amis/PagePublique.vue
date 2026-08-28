@@ -215,7 +215,7 @@ const lieuxRencontre = computed(() => {
               v-if="props.avis.periode_debut || props.avis.periode_fin"
               class="flex items-center gap-3 rounded-lg bg-af-fond p-4 ring-1 ring-af-bordure"
             >
-              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-600">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-af-chocolat/10 text-af-chocolat">
                 <font-awesome-icon :icon="['fas', 'calendar']" />
               </div>
               <div>

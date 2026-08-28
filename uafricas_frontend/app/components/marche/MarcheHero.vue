@@ -1,5 +1,5 @@
 <template>
-  <div class="group relative bg-gradient-to-r from-af-vert via-green-600 to-af-vert pt-16 pb-6">
+  <div class="group relative bg-gradient-to-r from-af-vert via-af-vert to-af-vert pt-16 pb-6">
     <!-- Pattern overlay -->
     <div class="absolute inset-0 opacity-10">
       <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%222%22 fill=%22white%22/></svg>'); background-size: 40px 40px;"></div>
@@ -76,7 +76,7 @@
               @input="$emit('update:modelRecherche', ($event.target as HTMLInputElement).value)"
               @keyup.enter="$emit('search')"
               placeholder="Rechercher une annonce..."
-              class="w-full pl-11 pr-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-af-vert bg-af-fond placeholder-gray-400"
+              class="w-full pl-11 pr-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-af-vert bg-af-fond placeholder-af-atone-2"
             />
           </div>
 

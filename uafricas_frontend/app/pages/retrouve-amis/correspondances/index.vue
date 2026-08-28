@@ -20,7 +20,7 @@ const messageSucces = ref('')
 
 // Options de filtre etat
 const optionsEtat: { value: string; label: string }[] = [
-  { value: '', label: 'Tous les etats' },
+  { value: '', label: 'Tous les états' },
   { value: 'en_attente', label: 'En attente' },
   { value: 'acceptee_a', label: 'Acceptee (vous)' },
   { value: 'acceptee_b', label: 'Acceptee (autre)' },
@@ -82,10 +82,6 @@ watch([filtreEtat, filtreAvisId, tri], () => {
 watch(page, () => charger())
 
 // Navigation vers detail
-const voirDetail = (id: string) => {
-  navigateTo(`/retrouve-amis/correspondances/${id}`)
-}
-
 // Changement de page
 const allerPage = (p: number) => {
   if (p >= 1 && p <= totalPages.value) {
@@ -220,7 +216,6 @@ onUnmounted(() => {
           v-for="corr in correspondances"
           :key="corr.id"
           :correspondance="corr"
-          @voir="voirDetail"
         />
       </div>
 
