@@ -86,17 +86,17 @@ const dateCourte = (valeur: string | null) => {
 </script>
 
 <template>
-  <section class="text-white">
+  <section class="text-af-encre">
     <header class="mb-5">
       <h2 class="text-xl sm:text-2xl font-bold">Détenteurs du support</h2>
-      <p class="text-sm text-gray-400">
+      <p class="text-sm text-af-corps">
         Les personnes autorisées à administrer cette chaîne ou cette station.
       </p>
     </header>
 
     <p
       v-if="erreur"
-      class="mb-5 rounded-lg border border-red-500 bg-red-500/10 text-red-300 px-4 py-3 text-sm"
+      class="mb-5 rounded-lg border border-red-500 bg-af-live/10 text-red-300 px-4 py-3 text-sm"
     >
       <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="mr-2" />
       {{ erreur }}
@@ -104,14 +104,14 @@ const dateCourte = (valeur: string | null) => {
 
     <p
       v-if="confirmation"
-      class="mb-5 rounded-lg border border-yellow-400/50 bg-yellow-400/10 text-yellow-200 px-4 py-3 text-sm"
+      class="mb-5 rounded-lg border border-af-chocolat/50 bg-af-chocolat/10 text-yellow-200 px-4 py-3 text-sm"
     >
       <font-awesome-icon :icon="['fas', 'circle-info']" class="mr-2" />
       {{ confirmation }}
     </p>
 
     <div v-if="chargement && !detenteurs.length" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-af-chocolat" />
     </div>
 
     <template v-else>
@@ -120,7 +120,7 @@ const dateCourte = (valeur: string | null) => {
         <li
           v-for="d in actifs"
           :key="d.id"
-          class="flex items-center gap-4 rounded-xl border border-white/10 bg-neutral-900 px-4 py-3"
+          class="flex items-center gap-4 rounded-xl border border-af-bordure bg-af-fond px-4 py-3"
         >
           <img
             v-if="d.utilisateur_photo"
@@ -131,23 +131,23 @@ const dateCourte = (valeur: string | null) => {
           >
           <span
             v-else
-            class="h-11 w-11 rounded-full shrink-0 bg-neutral-800 flex items-center justify-center"
+            class="h-11 w-11 rounded-full shrink-0 bg-af-fond flex items-center justify-center"
           >
-            <font-awesome-icon :icon="['fas', 'user']" class="text-neutral-600" />
+            <font-awesome-icon :icon="['fas', 'user']" class="text-af-atone-2" />
           </span>
 
           <div class="min-w-0 flex-1">
-            <p class="text-white font-semibold truncate">
+            <p class="text-af-encre font-semibold truncate">
               {{ nomComplet(d) }}
-              <span v-if="estMoi(d)" class="text-xs font-normal text-gray-500">(vous)</span>
+              <span v-if="estMoi(d)" class="text-xs font-normal text-af-atone">(vous)</span>
             </p>
-            <p v-if="d.utilisateur_email" class="text-sm text-gray-400 truncate">
+            <p v-if="d.utilisateur_email" class="text-sm text-af-corps truncate">
               {{ d.utilisateur_email }}
             </p>
           </div>
 
           <span
-            class="shrink-0 rounded-full border border-yellow-400/50 bg-yellow-400/10 text-yellow-400 text-xs px-3 py-1 cursor-help"
+            class="shrink-0 rounded-full border border-af-chocolat/50 bg-af-chocolat/10 text-af-chocolat text-xs px-3 py-1 cursor-help"
             :title="DESCRIPTIONS_ROLE_DETENTEUR[d.role]"
           >
             {{ LIBELLES_ROLE_DETENTEUR[d.role] }}
@@ -156,7 +156,7 @@ const dateCourte = (valeur: string | null) => {
           <button
             v-if="peutGerer && !estMoi(d)"
             type="button"
-            class="shrink-0 text-gray-500 hover:text-red-400 transition-colors"
+            class="shrink-0 text-af-atone hover:text-af-live transition-colors"
             :title="`Retirer ${nomComplet(d)}`"
             @click="retirerDetenteur(d)"
           >
@@ -167,7 +167,7 @@ const dateCourte = (valeur: string | null) => {
 
       <p
         v-else
-        class="rounded-xl border border-white/10 bg-neutral-900 px-6 py-10 text-center text-gray-400"
+        class="rounded-xl border border-af-bordure bg-af-fond px-6 py-10 text-center text-af-corps"
       >
         Aucun détenteur actif pour ce support.
       </p>
@@ -175,10 +175,10 @@ const dateCourte = (valeur: string | null) => {
       <!-- Invitation d'un co-détenteur ou d'un programmateur -->
       <form
         v-if="peutGerer"
-        class="mt-6 rounded-xl border border-white/10 bg-neutral-900 p-5"
+        class="mt-6 rounded-xl border border-af-bordure bg-af-fond p-5"
         @submit.prevent="envoyerInvitation"
       >
-        <h3 class="text-sm font-bold uppercase tracking-wide text-gray-300 mb-4">
+        <h3 class="text-sm font-bold uppercase tracking-wide text-af-corps mb-4">
           Inviter une personne
         </h3>
 
@@ -188,13 +188,13 @@ const dateCourte = (valeur: string | null) => {
             type="email"
             required
             placeholder="adresse@exemple.org"
-            class="flex-1 rounded-lg bg-neutral-800 border border-white/10 text-white px-3 py-2 text-sm placeholder:text-gray-600 focus:border-yellow-400 focus:outline-none"
+            class="flex-1 rounded-lg bg-af-fond border border-af-bordure text-af-encre px-3 py-2 text-sm placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
           >
           <!-- Le rôle `proprietaire` est absent : un support n'en a qu'un, et
                c'est l'auteur validé de la proposition (US4). -->
           <select
             v-model="roleInvite"
-            class="rounded-lg bg-neutral-800 border border-white/10 text-white px-3 py-2 text-sm focus:border-yellow-400 focus:outline-none"
+            class="rounded-lg bg-af-fond border border-af-bordure text-af-encre px-3 py-2 text-sm focus:border-af-chocolat focus:outline-none"
           >
             <option value="co_detenteur">{{ LIBELLES_ROLE_DETENTEUR.co_detenteur }}</option>
             <option value="programmateur">{{ LIBELLES_ROLE_DETENTEUR.programmateur }}</option>
@@ -202,7 +202,7 @@ const dateCourte = (valeur: string | null) => {
           <button
             type="submit"
             :disabled="envoiEnCours || !email.trim()"
-            class="inline-flex items-center justify-center gap-2 rounded-full bg-yellow-400 text-neutral-900 font-semibold px-5 py-2 text-sm hover:bg-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center justify-center gap-2 rounded-full bg-af-chocolat text-neutral-900 font-semibold px-5 py-2 text-sm hover:bg-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span
               v-if="envoiEnCours"
@@ -213,21 +213,21 @@ const dateCourte = (valeur: string | null) => {
           </button>
         </div>
 
-        <p class="mt-3 text-xs text-gray-500">
+        <p class="mt-3 text-xs text-af-atone">
           {{ DESCRIPTIONS_ROLE_DETENTEUR[roleInvite] }}
         </p>
       </form>
 
       <!-- Historique : jamais effacé, seulement mis en retrait -->
       <div v-if="anciens.length" class="mt-8">
-        <h3 class="text-sm font-bold uppercase tracking-wide text-gray-500 mb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wide text-af-atone mb-3">
           Anciens détenteurs
         </h3>
         <ul class="space-y-2">
           <li
             v-for="d in anciens"
             :key="d.id"
-            class="flex items-center gap-4 rounded-lg border border-white/5 bg-neutral-900/50 px-4 py-2.5 opacity-60"
+            class="flex items-center gap-4 rounded-lg border border-white/5 bg-af-fond/50 px-4 py-2.5 opacity-60"
           >
             <img
               v-if="d.utilisateur_photo"
@@ -238,20 +238,20 @@ const dateCourte = (valeur: string | null) => {
             >
             <span
               v-else
-              class="h-9 w-9 rounded-full shrink-0 bg-neutral-800 flex items-center justify-center"
+              class="h-9 w-9 rounded-full shrink-0 bg-af-fond flex items-center justify-center"
             >
-              <font-awesome-icon :icon="['fas', 'user']" class="text-neutral-700 text-sm" />
+              <font-awesome-icon :icon="['fas', 'user']" class="text-af-atone-2 text-sm" />
             </span>
 
             <div class="min-w-0 flex-1">
-              <p class="text-gray-300 text-sm truncate">{{ nomComplet(d) }}</p>
-              <p v-if="d.retire_at" class="text-xs text-gray-500">
+              <p class="text-af-corps text-sm truncate">{{ nomComplet(d) }}</p>
+              <p v-if="d.retire_at" class="text-xs text-af-atone">
                 Retiré le {{ dateCourte(d.retire_at) }}
               </p>
             </div>
 
             <span
-              class="shrink-0 rounded-full border border-white/10 text-gray-400 text-xs px-3 py-1 cursor-help"
+              class="shrink-0 rounded-full border border-af-bordure text-af-corps text-xs px-3 py-1 cursor-help"
               :title="DESCRIPTIONS_ROLE_DETENTEUR[d.role]"
             >
               {{ LIBELLES_ROLE_DETENTEUR[d.role] }}

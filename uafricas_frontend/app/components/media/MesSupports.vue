@@ -229,13 +229,13 @@ const dateFormatee = (iso: string) =>
     </div>
 
     <div v-if="chargement" class="flex justify-center py-16">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-af-chocolat"></div>
     </div>
 
     <div v-else-if="supports.length === 0" class="text-center py-16">
-      <font-awesome-icon :icon="['fas', 'tv']" class="w-12 h-12 text-gray-300 mb-4" />
-      <p class="text-gray-600 mb-1">Vous ne détenez aucun support pour l’instant.</p>
-      <p class="text-sm text-gray-400 max-w-md mx-auto">
+      <font-awesome-icon :icon="['fas', 'tv']" class="w-12 h-12 text-af-corps mb-4" />
+      <p class="text-af-atone-2 mb-1">Vous ne détenez aucun support pour l’instant.</p>
+      <p class="text-sm text-af-corps max-w-md mx-auto">
         On devient détenteur en faisant valider une proposition de chaîne ou de
         station : vous en êtes alors le propriétaire, ou en acceptant
         l’invitation d’un propriétaire.
@@ -243,7 +243,7 @@ const dateFormatee = (iso: string) =>
       <div class="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm">
         <NuxtLink
           to="/mon-compte/propositions-medias"
-          class="rounded-full bg-custom-chocolat px-5 py-2 font-medium text-white transition-colors hover:bg-custom-chocolat/90"
+          class="rounded-full bg-af-chocolat px-5 py-2 font-medium text-af-encre transition-colors hover:bg-af-chocolat/90"
         >
           Mes propositions de médias
         </NuxtLink>
@@ -313,7 +313,7 @@ const dateFormatee = (iso: string) =>
                 :alt="detenteur.support_nom || 'Support'"
                 class="h-full w-full object-cover"
               >
-              <font-awesome-icon v-else :icon="iconeType(detenteur.type_support)" class="w-6 h-6 text-gray-400" />
+              <font-awesome-icon v-else :icon="iconeType(detenteur.type_support)" class="w-6 h-6 text-af-corps" />
             </div>
 
             <div class="min-w-0 flex-1">
@@ -331,7 +331,7 @@ const dateFormatee = (iso: string) =>
                   {{ LIBELLES_ROLE_DETENTEUR[detenteur.role] }}
                 </span>
               </div>
-              <p class="mt-2 text-xs text-gray-400">
+              <p class="mt-2 text-xs text-af-corps">
                 Détenteur depuis le {{ dateFormatee(detenteur.designe_at) }}
               </p>
             </div>
@@ -351,8 +351,8 @@ const dateFormatee = (iso: string) =>
               type="button"
               class="inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
               :class="gestionOuverte === detenteur.id
-                ? 'bg-gray-800 text-white'
-                : 'bg-custom-chocolat text-white hover:bg-custom-chocolat/90'"
+                ? 'bg-gray-800 text-af-encre'
+                : 'bg-af-chocolat text-white hover:bg-af-chocolat/90'"
               :aria-expanded="gestionOuverte === detenteur.id"
               @click="basculerGestion(detenteur)"
             >
@@ -371,7 +371,7 @@ const dateFormatee = (iso: string) =>
               <h3 class="font-oswald text-lg font-bold text-gray-900">Programmes</h3>
               <button
                 type="button"
-                class="rounded-full bg-custom-chocolat px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-custom-chocolat/90"
+                class="rounded-full bg-af-chocolat px-4 py-1.5 text-sm font-medium text-af-encre transition-colors hover:bg-af-chocolat/90"
                 @click="ouvrirCreationProgramme(detenteur)"
               >
                 + Nouveau programme
@@ -380,7 +380,7 @@ const dateFormatee = (iso: string) =>
 
             <p
               v-if="(emissionsParSupport[detenteur.support_id] ?? []).length === 0"
-              class="text-sm text-gray-500"
+              class="text-sm text-af-atone"
             >
               Aucun programme pour l'instant. Un programme se déclare sans fichier :
               ses épisodes viendront ensuite.
@@ -395,7 +395,7 @@ const dateFormatee = (iso: string) =>
                 <div class="flex flex-wrap items-center justify-between gap-3 p-4">
                   <div class="min-w-0">
                     <p class="font-semibold text-gray-900 truncate">{{ emission.titre }}</p>
-                    <p class="text-xs text-gray-500 mt-0.5">
+                    <p class="text-xs text-af-atone mt-0.5">
                       {{ emission.nombre_episodes }} épisode(s) publié(s)
                       · {{ LIBELLES_CADENCE[emission.cadence] || emission.cadence }}
                       <span v-if="emission.episodes_en_attente" class="text-amber-700">
@@ -454,7 +454,7 @@ const dateFormatee = (iso: string) =>
             />
             <p
               v-if="emissionsProgrammables(detenteur.support_id).length === 0"
-              class="mt-2 text-sm text-gray-500"
+              class="mt-2 text-sm text-af-atone"
             >
               Ce support n'a encore aucun programme : créez-en un avant de bâtir sa grille.
             </p>
@@ -490,7 +490,7 @@ const dateFormatee = (iso: string) =>
                 <button
                   type="button"
                   :disabled="enregistrementFiche === detenteur.support_id"
-                  class="rounded-full bg-custom-chocolat px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-custom-chocolat/90 disabled:opacity-50"
+                  class="rounded-full bg-af-chocolat px-5 py-2 text-sm font-medium text-af-encre transition-colors hover:bg-af-chocolat/90 disabled:opacity-50"
                   @click="enregistrerFiche(detenteur)"
                 >
                   Enregistrer la fiche
@@ -503,7 +503,7 @@ const dateFormatee = (iso: string) =>
             <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">
               Demandes reçues
             </h3>
-            <p class="mb-3 text-sm text-gray-600">
+            <p class="mb-3 text-sm text-af-atone-2">
               Les idées de contenu déposées par les visiteurs et les demandes
               d'animation adressées à ce support.
             </p>
@@ -532,7 +532,7 @@ const dateFormatee = (iso: string) =>
                à se tromper de formulaire. -->
           <section>
             <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">Gestion des accès</h3>
-            <p class="mb-3 text-sm text-gray-600">
+            <p class="mb-3 text-sm text-af-atone-2">
               Qui peut administrer ce support : co-détenteurs et programmateurs.
               Sans effet sur l'équipe éditoriale publiée ci-dessus.
             </p>
@@ -554,7 +554,7 @@ const dateFormatee = (iso: string) =>
     >
       <div class="w-full max-w-md rounded-xl bg-white p-6">
         <h3 class="font-oswald text-xl font-bold text-gray-900 mb-1">Nouveau programme</h3>
-        <p class="text-sm text-gray-500 mb-4">
+        <p class="text-sm text-af-atone mb-4">
           Sur {{ creationPour.support_nom }}. Le programme est créé en brouillon ;
           il devient public dès qu'un de ses épisodes est validé.
         </p>
@@ -586,7 +586,7 @@ const dateFormatee = (iso: string) =>
                 {{ LIBELLES_CADENCE[c] }}
               </option>
             </select>
-            <p class="text-xs text-gray-500 mt-1">
+            <p class="text-xs text-af-atone mt-1">
               Elle sert à vous alerter d'une échéance sans épisode, pas à décider de la diffusion.
             </p>
           </div>
@@ -601,12 +601,12 @@ const dateFormatee = (iso: string) =>
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
-          <button type="button" class="text-sm text-gray-500 hover:text-gray-900" @click="creationPour = null">
+          <button type="button" class="text-sm text-af-atone hover:text-gray-900" @click="creationPour = null">
             Annuler
           </button>
           <button
             type="button"
-            class="rounded-full bg-custom-chocolat px-5 py-2 text-sm font-medium text-white hover:bg-custom-chocolat/90"
+            class="rounded-full bg-af-chocolat px-5 py-2 text-sm font-medium text-af-encre hover:bg-af-chocolat/90"
             @click="creerProgramme"
           >
             Créer le programme

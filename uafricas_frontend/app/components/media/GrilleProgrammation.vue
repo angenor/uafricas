@@ -191,20 +191,20 @@ const dateLisible = (iso: string) => {
 </script>
 
 <template>
-  <section class="text-white">
+  <section class="text-af-encre">
     <header class="flex flex-wrap items-center justify-between gap-4 mb-5">
       <div>
         <h2 class="text-xl sm:text-2xl font-bold">Grille de programmation</h2>
-        <p class="text-sm text-gray-400">
+        <p class="text-sm text-af-corps">
           Horaires indiqués en
-          <span class="text-yellow-400">{{ fuseauMajoritaire }}</span>
+          <span class="text-af-chocolat">{{ fuseauMajoritaire }}</span>
           sauf mention contraire.
         </p>
       </div>
       <button
         v-if="modifiable"
         type="button"
-        class="inline-flex items-center gap-2 rounded-full border border-yellow-400 bg-yellow-400/10 text-yellow-400 px-5 py-2 text-sm hover:bg-yellow-400/20 transition-colors"
+        class="inline-flex items-center gap-2 rounded-full border border-af-chocolat bg-af-chocolat/10 text-af-chocolat px-5 py-2 text-sm hover:bg-af-chocolat/20 transition-colors"
         @click="ouvrirCreation()"
       >
         <font-awesome-icon :icon="['fas', 'plus']" />
@@ -216,26 +216,26 @@ const dateLisible = (iso: string) => {
          lui qui nomme le créneau en conflit. Le reformuler perdrait l'info. -->
     <p
       v-if="erreur"
-      class="mb-5 rounded-lg border border-red-500 bg-red-500/10 text-red-300 px-4 py-3 text-sm"
+      class="mb-5 rounded-lg border border-af-live bg-af-live/10 text-af-live px-4 py-3 text-sm"
     >
       <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="mr-2" />
       {{ erreur }}
     </p>
 
     <div v-if="chargement && !creneaux.length" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-af-chocolat" />
     </div>
 
     <div
       v-else-if="grilleVide"
-      class="rounded-xl border border-white/10 bg-neutral-900 px-6 py-12 text-center"
+      class="rounded-xl border border-af-bordure bg-af-fond px-6 py-12 text-center"
     >
-      <font-awesome-icon :icon="['fas', 'calendar']" class="text-3xl text-neutral-600 mb-3" />
-      <p class="text-gray-400">Aucun créneau programmé.</p>
+      <font-awesome-icon :icon="['fas', 'calendar']" class="text-3xl text-af-atone-2 mb-3" />
+      <p class="text-af-corps">Aucun créneau programmé.</p>
       <button
         v-if="modifiable"
         type="button"
-        class="mt-4 text-sm text-yellow-400 hover:underline"
+        class="mt-4 text-sm text-af-chocolat hover:underline"
         @click="ouvrirCreation()"
       >
         Créer le premier créneau
@@ -248,16 +248,16 @@ const dateLisible = (iso: string) => {
       <div
         v-for="colonne in colonnes"
         :key="colonne.jour"
-        class="rounded-xl border border-white/10 bg-neutral-900 p-3 min-w-0"
+        class="rounded-xl border border-af-bordure bg-af-fond p-3 min-w-0"
       >
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-bold uppercase tracking-wide text-gray-300">
+          <h3 class="text-sm font-bold uppercase tracking-wide text-af-corps">
             {{ colonne.libelle }}
           </h3>
           <button
             v-if="modifiable"
             type="button"
-            class="text-gray-500 hover:text-yellow-400 transition-colors"
+            class="text-af-atone hover:text-af-chocolat transition-colors"
             :title="`Ajouter un créneau le ${colonne.libelle.toLowerCase()}`"
             @click="ouvrirCreation(colonne.jour)"
           >
@@ -265,7 +265,7 @@ const dateLisible = (iso: string) => {
           </button>
         </div>
 
-        <p v-if="!colonne.creneaux.length" class="text-xs text-gray-600 py-2">
+        <p v-if="!colonne.creneaux.length" class="text-xs text-af-atone-2 py-2">
           Aucun créneau.
         </p>
 
@@ -276,61 +276,61 @@ const dateLisible = (iso: string) => {
             class="rounded-lg border px-3 py-2 transition-colors"
             :class="[
               creneau.emission_indisponible
-                ? 'border-red-500 bg-red-500/5'
-                : 'border-white/10 bg-neutral-800 hover:border-yellow-400/60',
+                ? 'border-af-live bg-af-live/5'
+                : 'border-af-bordure bg-af-fond hover:border-af-chocolat/60',
               modifiable ? 'cursor-pointer' : '',
             ]"
             @click="ouvrirEdition(creneau)"
           >
             <p
               class="text-sm font-semibold"
-              :class="creneau.emission_indisponible ? 'text-red-300' : 'text-yellow-400'"
+              :class="creneau.emission_indisponible ? 'text-af-live' : 'text-af-chocolat'"
             >
               {{ creneau.heure_debut.slice(0, 5) }} →
               {{ heureFin(creneau.heure_debut.slice(0, 5), creneau.duree_minutes) }}
             </p>
             <p
               class="text-sm truncate"
-              :class="creneau.emission_indisponible ? 'text-red-200' : 'text-white'"
+              :class="creneau.emission_indisponible ? 'text-af-live' : 'text-af-encre'"
               :title="nomEmission(creneau)"
             >
               {{ nomEmission(creneau) }}
             </p>
             <!-- L'épisode n'est résolu que sur les endpoints de diffusion : la
                  grille annonce la série, pas le numéro du jour. -->
-            <p v-if="creneau.episode" class="text-xs text-gray-400 truncate">
+            <p v-if="creneau.episode" class="text-xs text-af-corps truncate">
               {{ creneau.episode.titre }}
             </p>
 
             <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
               <span
                 v-if="creneau.recurrence === 'quotidien'"
-                class="rounded-full bg-white/10 text-gray-300 text-[10px] px-2 py-0.5 uppercase tracking-wide"
+                class="rounded-full bg-af-fond text-af-corps text-[10px] px-2 py-0.5 uppercase tracking-wide"
               >
                 Quotidien
               </span>
               <span
                 v-if="emissionDe(creneau)?.nombre_episodes !== undefined"
-                class="rounded-full bg-white/10 text-gray-300 text-[10px] px-2 py-0.5"
+                class="rounded-full bg-af-fond text-af-corps text-[10px] px-2 py-0.5"
               >
                 {{ emissionDe(creneau)!.nombre_episodes }} ép.
               </span>
               <span
                 v-if="emissionDe(creneau)?.cadence"
-                class="rounded-full bg-white/10 text-gray-400 text-[10px] px-2 py-0.5"
+                class="rounded-full bg-af-fond text-af-corps text-[10px] px-2 py-0.5"
               >
                 {{ LIBELLES_CADENCE_COURTE[emissionDe(creneau)!.cadence!] || emissionDe(creneau)!.cadence }}
               </span>
               <!-- Le fuseau n'apparaît que s'il s'écarte de celui de l'en-tête. -->
               <span
                 v-if="creneau.fuseau !== fuseauMajoritaire"
-                class="rounded-full border border-yellow-400/40 text-yellow-400 text-[10px] px-2 py-0.5"
+                class="rounded-full border border-af-chocolat/40 text-af-chocolat text-[10px] px-2 py-0.5"
               >
                 {{ creneau.fuseau }}
               </span>
             </div>
 
-            <p v-if="creneau.emission_indisponible" class="mt-1.5 text-[11px] text-red-400 leading-snug">
+            <p v-if="creneau.emission_indisponible" class="mt-1.5 text-[11px] text-af-live leading-snug">
               <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="mr-1" />
               {{ creneau.alerte || 'Programme indisponible : ce créneau n’annonce rien.' }}
             </p>
@@ -345,14 +345,14 @@ const dateLisible = (iso: string) => {
       class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 p-0 sm:p-4"
       @click.self="fermerPanneau"
     >
-      <div class="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-white/10 bg-neutral-900 p-6">
+      <div class="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-af-bordure bg-af-fond p-6">
         <div class="flex items-start justify-between gap-4 mb-5">
-          <h3 class="text-lg font-bold text-white">
+          <h3 class="text-lg font-bold text-af-encre">
             {{ creneauEdite ? 'Modifier le créneau' : 'Nouveau créneau' }}
           </h3>
           <button
             type="button"
-            class="text-gray-500 hover:text-white transition-colors"
+            class="text-af-atone hover:opacity-70 transition-colors"
             aria-label="Fermer"
             @click="fermerPanneau"
           >
@@ -362,43 +362,43 @@ const dateLisible = (iso: string) => {
 
         <p
           v-if="erreur"
-          class="mb-4 rounded-lg border border-red-500 bg-red-500/10 text-red-300 px-4 py-3 text-sm"
+          class="mb-4 rounded-lg border border-af-live bg-af-live/10 text-af-live px-4 py-3 text-sm"
         >
           {{ erreur }}
         </p>
 
         <form class="space-y-4" @submit.prevent="soumettre">
           <div>
-            <label class="block text-sm text-gray-400 mb-1.5" for="creneau-emission">Programme</label>
+            <label class="block text-sm text-af-corps mb-1.5" for="creneau-emission">Programme</label>
             <select
               id="creneau-emission"
               v-model="formulaire.emission_id"
               required
-              class="w-full rounded-lg bg-neutral-800 border border-white/10 text-white px-3 py-2 text-sm focus:border-yellow-400 focus:outline-none"
+              class="w-full rounded-lg bg-af-fond border border-af-bordure text-af-encre px-3 py-2 text-sm focus:border-af-chocolat focus:outline-none"
             >
               <option value="" disabled>Choisir un programme…</option>
               <option v-for="emission in emissions" :key="emission.id" :value="emission.id">
                 {{ emission.titre }}
               </option>
             </select>
-            <p v-if="emissionChoisie" class="text-xs text-gray-500 mt-1.5">
+            <p v-if="emissionChoisie" class="text-xs text-af-atone mt-1.5">
               {{ emissionChoisie.nombre_episodes ?? 0 }} épisode(s) publié(s)
               <template v-if="emissionChoisie.cadence">
                 · cadence {{ LIBELLES_CADENCE_COURTE[emissionChoisie.cadence] || emissionChoisie.cadence }}
               </template>
             </p>
-            <p v-if="emissionChoisie && !emissionChoisie.nombre_episodes" class="text-xs text-amber-400 mt-1">
+            <p v-if="emissionChoisie && !emissionChoisie.nombre_episodes" class="text-xs text-af-chocolat mt-1">
               Sans épisode publié, ce créneau n’annoncera rien au public.
             </p>
           </div>
 
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm text-gray-400 mb-1.5" for="creneau-recurrence">Récurrence</label>
+              <label class="block text-sm text-af-corps mb-1.5" for="creneau-recurrence">Récurrence</label>
               <select
                 id="creneau-recurrence"
                 v-model="formulaire.recurrence"
-                class="w-full rounded-lg bg-neutral-800 border border-white/10 text-white px-3 py-2 text-sm focus:border-yellow-400 focus:outline-none"
+                class="w-full rounded-lg bg-af-fond border border-af-bordure text-af-encre px-3 py-2 text-sm focus:border-af-chocolat focus:outline-none"
               >
                 <option value="hebdomadaire">Chaque semaine</option>
                 <option value="quotidien">Tous les jours</option>
@@ -408,11 +408,11 @@ const dateLisible = (iso: string) => {
             <!-- Un créneau quotidien ne porte pas de jour : le champ disparaît
                  et la valeur part à `null` (CHECK ck_creneau_jour_coherent). -->
             <div v-if="formulaire.recurrence === 'hebdomadaire'">
-              <label class="block text-sm text-gray-400 mb-1.5" for="creneau-jour">Jour</label>
+              <label class="block text-sm text-af-corps mb-1.5" for="creneau-jour">Jour</label>
               <select
                 id="creneau-jour"
                 v-model.number="formulaire.jour_semaine"
-                class="w-full rounded-lg bg-neutral-800 border border-white/10 text-white px-3 py-2 text-sm focus:border-yellow-400 focus:outline-none"
+                class="w-full rounded-lg bg-af-fond border border-af-bordure text-af-encre px-3 py-2 text-sm focus:border-af-chocolat focus:outline-none"
               >
                 <option v-for="(libelle, index) in JOURS_SEMAINE" :key="libelle" :value="index">
                   {{ libelle }}
@@ -423,17 +423,17 @@ const dateLisible = (iso: string) => {
 
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm text-gray-400 mb-1.5" for="creneau-heure">Heure de début</label>
+              <label class="block text-sm text-af-corps mb-1.5" for="creneau-heure">Heure de début</label>
               <input
                 id="creneau-heure"
                 v-model="formulaire.heure_debut"
                 type="time"
                 required
-                class="w-full rounded-lg bg-neutral-800 border border-white/10 text-white px-3 py-2 text-sm focus:border-yellow-400 focus:outline-none"
+                class="w-full rounded-lg bg-af-fond border border-af-bordure text-af-encre px-3 py-2 text-sm focus:border-af-chocolat focus:outline-none"
               >
             </div>
             <div>
-              <label class="block text-sm text-gray-400 mb-1.5" for="creneau-duree">Durée (minutes)</label>
+              <label class="block text-sm text-af-corps mb-1.5" for="creneau-duree">Durée (minutes)</label>
               <input
                 id="creneau-duree"
                 v-model.number="formulaire.duree_minutes"
@@ -441,17 +441,17 @@ const dateLisible = (iso: string) => {
                 min="1"
                 max="1440"
                 required
-                class="w-full rounded-lg bg-neutral-800 border border-white/10 text-white px-3 py-2 text-sm focus:border-yellow-400 focus:outline-none"
+                class="w-full rounded-lg bg-af-fond border border-af-bordure text-af-encre px-3 py-2 text-sm focus:border-af-chocolat focus:outline-none"
               >
             </div>
           </div>
 
           <div>
-            <label class="block text-sm text-gray-400 mb-1.5" for="creneau-fuseau">Fuseau horaire</label>
+            <label class="block text-sm text-af-corps mb-1.5" for="creneau-fuseau">Fuseau horaire</label>
             <select
               id="creneau-fuseau"
               v-model="formulaire.fuseau"
-              class="w-full rounded-lg bg-neutral-800 border border-white/10 text-white px-3 py-2 text-sm focus:border-yellow-400 focus:outline-none"
+              class="w-full rounded-lg bg-af-fond border border-af-bordure text-af-encre px-3 py-2 text-sm focus:border-af-chocolat focus:outline-none"
             >
               <option v-for="fuseau in FUSEAUX_PROPOSES" :key="fuseau" :value="fuseau">
                 {{ fuseau }}
@@ -462,24 +462,24 @@ const dateLisible = (iso: string) => {
           <!-- Date d'effet : l'origine du comptage des occurrences. C'est elle
                qui décide quel épisode passe quand. -->
           <div>
-            <label class="block text-sm text-gray-400 mb-1.5" for="creneau-date-effet">
+            <label class="block text-sm text-af-corps mb-1.5" for="creneau-date-effet">
               Date d’effet de la rotation
             </label>
             <input
               id="creneau-date-effet"
               v-model="formulaire.date_effet"
               type="date"
-              class="w-full rounded-lg bg-neutral-800 border border-white/10 text-white px-3 py-2 text-sm focus:border-yellow-400 focus:outline-none"
+              class="w-full rounded-lg bg-af-fond border border-af-bordure text-af-encre px-3 py-2 text-sm focus:border-af-chocolat focus:outline-none"
             >
-            <p class="text-xs text-gray-500 mt-1.5">
+            <p class="text-xs text-af-atone mt-1.5">
               Le premier épisode du programme passe à cette date ; les suivants suivent
               l’ordre des épisodes, puis la série recommence.
             </p>
           </div>
 
-          <p class="text-xs text-gray-500">
+          <p class="text-xs text-af-atone">
             Fin prévue à
-            <span class="text-gray-300">
+            <span class="text-af-corps">
               {{ heureFin(formulaire.heure_debut, formulaire.duree_minutes) }}
             </span>.
           </p>
@@ -488,18 +488,18 @@ const dateLisible = (iso: string) => {
                cesse d'être une abstraction. -->
           <div
             v-if="apercuEpisode"
-            class="rounded-lg border border-yellow-400/40 bg-yellow-400/5 px-4 py-3"
+            class="rounded-lg border border-af-chocolat/40 bg-af-chocolat/5 px-4 py-3"
           >
-            <p class="text-xs uppercase tracking-wide text-yellow-400 mb-1">
+            <p class="text-xs uppercase tracking-wide text-af-chocolat mb-1">
               Prochaine occurrence
             </p>
-            <p class="text-sm text-white">
-              <span v-if="apercuEpisode.numero_episode" class="text-gray-400">
+            <p class="text-sm text-af-encre">
+              <span v-if="apercuEpisode.numero_episode" class="text-af-corps">
                 Épisode {{ apercuEpisode.numero_episode }}, 
               </span>
               {{ apercuEpisode.titre }}
             </p>
-            <p v-if="creneauEdite" class="text-xs text-gray-400 mt-1">
+            <p v-if="creneauEdite" class="text-xs text-af-corps mt-1">
               Rotation calée sur le {{ dateLisible(creneauEdite.date_effet) }}
               <template v-if="creneauEdite.est_rediffusion"> · rediffusion</template>
             </p>
@@ -509,7 +509,7 @@ const dateLisible = (iso: string) => {
             <button
               v-if="creneauEdite"
               type="button"
-              class="inline-flex items-center gap-2 rounded-full border border-red-500 text-red-400 px-4 py-2 text-sm hover:bg-red-500/10 transition-colors"
+              class="inline-flex items-center gap-2 rounded-full border border-af-live text-af-live px-4 py-2 text-sm hover:bg-af-live/10 transition-colors"
               @click="supprimer(creneauEdite)"
             >
               <font-awesome-icon :icon="['fas', 'trash']" />
@@ -520,7 +520,7 @@ const dateLisible = (iso: string) => {
             <div class="flex items-center gap-3">
               <button
                 type="button"
-                class="rounded-full border border-white/20 text-gray-300 px-4 py-2 text-sm hover:bg-white/5 transition-colors"
+                class="rounded-full border border-af-bordure text-af-corps px-4 py-2 text-sm hover:bg-af-fond transition-colors"
                 @click="fermerPanneau"
               >
                 {{ apercuEpisode ? 'Fermer' : 'Annuler' }}
@@ -528,11 +528,11 @@ const dateLisible = (iso: string) => {
               <button
                 type="submit"
                 :disabled="enregistrement || !formulaire.emission_id"
-                class="inline-flex items-center gap-2 rounded-full bg-yellow-400 text-neutral-900 font-semibold px-5 py-2 text-sm hover:bg-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="inline-flex items-center gap-2 rounded-full bg-af-chocolat text-white font-semibold px-5 py-2 text-sm hover:bg-af-chocolat transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span
                   v-if="enregistrement"
-                  class="animate-spin rounded-full h-4 w-4 border-b-2 border-neutral-900"
+                  class="animate-spin rounded-full h-4 w-4 border-b-2 border-af-encre"
                 />
                 {{ creneauEdite ? 'Enregistrer' : 'Ajouter' }}
               </button>

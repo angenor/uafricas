@@ -78,7 +78,7 @@ const lienContact = (contact: string): string | null => {
       class="mb-3 font-oswald uppercase tracking-wide"
       :class="[
         compact ? 'text-xs' : 'text-sm',
-        sombre ? 'text-gray-400' : 'text-gray-500',
+        sombre ? 'text-af-corps' : 'text-af-atone',
       ]"
     >
       {{ titre }}
@@ -93,31 +93,31 @@ const lienContact = (contact: string): string | null => {
         :key="membre.id"
         class="rounded-lg border px-3 py-2.5 transition-colors"
         :class="sombre
-          ? 'border-white/10 bg-white/5 hover:border-custom-chocolat/50'
-          : 'border-gray-200 bg-white hover:border-custom-chocolat/50'"
+          ? 'border-af-bordure bg-af-fond hover:border-af-chocolat/50'
+          : 'border-af-bordure bg-white hover:border-af-chocolat/50'"
       >
         <NuxtLink
           v-if="membre.utilisateur_id"
           :to="`/profil/${membre.utilisateur_id}`"
           class="block font-semibold underline-offset-2 transition-colors hover:underline"
-          :class="sombre ? 'text-white hover:text-custom-chocolat' : 'text-gray-900 hover:text-custom-chocolat'"
+          :class="sombre ? 'text-af-encre hover:text-af-chocolat' : 'text-af-encre hover:text-af-chocolat'"
         >
           {{ nomComplet(membre) }}
         </NuxtLink>
         <span
           v-else
           class="block font-semibold"
-          :class="sombre ? 'text-white' : 'text-gray-900'"
+          :class="sombre ? 'text-af-encre' : 'text-af-encre'"
         >{{ nomComplet(membre) }}</span>
 
-        <p class="mt-0.5 text-sm" :class="sombre ? 'text-custom-chocolat' : 'text-custom-chocolat'">
+        <p class="mt-0.5 text-sm" :class="sombre ? 'text-af-chocolat' : 'text-af-chocolat'">
           {{ membre.fonction }}
         </p>
 
         <p
           v-if="membre.territoire"
           class="mt-0.5 text-xs"
-          :class="sombre ? 'text-gray-400' : 'text-gray-500'"
+          :class="sombre ? 'text-af-corps' : 'text-af-atone'"
         >
           {{ membre.territoire }}
         </p>
@@ -127,12 +127,12 @@ const lienContact = (contact: string): string | null => {
             v-if="lienContact(membre.contact)"
             :href="lienContact(membre.contact) as string"
             class="mt-1 block break-words text-xs underline underline-offset-2 transition-colors"
-            :class="sombre ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-custom-green'"
+            :class="sombre ? 'text-af-corps hover:opacity-70' : 'text-af-atone hover:text-af-vert'"
           >{{ membre.contact }}</a>
           <p
             v-else
             class="mt-1 block break-words text-xs"
-            :class="sombre ? 'text-gray-400' : 'text-gray-500'"
+            :class="sombre ? 'text-af-corps' : 'text-af-atone'"
           >{{ membre.contact }}</p>
         </template>
       </li>
@@ -142,7 +142,7 @@ const lienContact = (contact: string): string | null => {
       v-if="doitReplier"
       type="button"
       class="mt-3 text-sm font-medium underline underline-offset-2 transition-colors cursor-pointer"
-      :class="sombre ? 'text-custom-chocolat hover:text-white' : 'text-custom-chocolat hover:text-custom-green'"
+      :class="sombre ? 'text-af-chocolat hover:opacity-70' : 'text-af-chocolat hover:text-af-vert'"
       @click="deplie = !deplie"
     >
       {{ deplie ? 'voir moins' : `voir plus (${restants})` }}

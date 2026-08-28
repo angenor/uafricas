@@ -125,10 +125,10 @@ onMounted(() => charger(1))
 </script>
 
 <template>
-  <section :class="sombre ? 'text-white' : 'text-gray-900'">
+  <section :class="sombre ? 'text-af-encre' : 'text-af-encre'">
     <h3 class="font-oswald text-lg font-bold mb-4">
       Commentaires
-      <span :class="sombre ? 'text-white/60' : 'text-gray-400'" class="font-normal">({{ total }})</span>
+      <span :class="sombre ? 'text-af-encre/60' : 'text-af-corps'" class="font-normal">({{ total }})</span>
     </h3>
 
     <!-- Saisie -->
@@ -138,22 +138,22 @@ onMounted(() => charger(1))
         rows="3"
         :maxlength="MAX"
         placeholder="Partagez votre avis sur ce contenu…"
-        class="w-full px-3.5 py-2.5 rounded-lg text-sm resize-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
+        class="w-full px-3.5 py-2.5 rounded-lg text-sm resize-none focus:ring-2 focus:ring-af-vert focus:border-transparent"
         :class="sombre
-          ? 'bg-white/10 border border-white/20 text-white placeholder-white/40'
-          : 'bg-white border border-gray-300 text-gray-900'"
+          ? 'bg-af-fond border border-af-bordure text-af-encre placeholder-white/40'
+          : 'bg-white border border-af-bordure text-af-encre'"
         :disabled="envoiEnCours"
       ></textarea>
       <div class="flex items-center justify-between mt-2">
-        <p v-if="erreur" class="text-sm text-red-500">{{ erreur }}</p>
+        <p v-if="erreur" class="text-sm text-af-live">{{ erreur }}</p>
         <span v-else></span>
         <div class="flex items-center gap-3">
-          <span class="text-xs" :class="restant < 0 ? 'text-red-500' : (sombre ? 'text-white/50' : 'text-gray-400')">
+          <span class="text-xs" :class="restant < 0 ? 'text-af-live' : (sombre ? 'text-af-encre/50' : 'text-af-corps')">
             {{ restant }}
           </span>
           <button
             type="button"
-            class="px-4 py-2 text-sm font-medium text-white bg-custom-green rounded-lg hover:bg-custom-green/90 transition-colors cursor-pointer disabled:opacity-60 inline-flex items-center gap-2"
+            class="px-4 py-2 text-sm font-medium text-af-encre bg-af-vert rounded-lg hover:bg-af-vert/90 transition-colors cursor-pointer disabled:opacity-60 inline-flex items-center gap-2"
             :disabled="envoiEnCours"
             @click="envoyer"
           >
@@ -165,8 +165,8 @@ onMounted(() => charger(1))
       </div>
     </div>
 
-    <p v-else class="mb-6 text-sm" :class="sombre ? 'text-white/70' : 'text-gray-500'">
-      <NuxtLink to="/login" class="text-custom-green font-medium hover:underline">Connectez-vous</NuxtLink>
+    <p v-else class="mb-6 text-sm" :class="sombre ? 'text-af-encre/70' : 'text-af-atone'">
+      <NuxtLink to="/login" class="text-af-vert font-medium hover:underline">Connectez-vous</NuxtLink>
       pour laisser un commentaire.
     </p>
 
@@ -174,7 +174,7 @@ onMounted(() => charger(1))
     <p
       v-if="!chargement && commentaires.length === 0"
       class="text-sm py-6 text-center"
-      :class="sombre ? 'text-white/60' : 'text-gray-500'"
+      :class="sombre ? 'text-af-encre/60' : 'text-af-atone'"
     >
       Aucun commentaire pour l’instant : soyez le premier à réagir.
     </p>
@@ -184,7 +184,7 @@ onMounted(() => charger(1))
         v-for="commentaire in commentaires"
         :key="commentaire.id"
         class="flex gap-3 rounded-xl p-4"
-        :class="sombre ? 'bg-white/5' : 'bg-gray-50'"
+        :class="sombre ? 'bg-af-fond' : 'bg-af-fond'"
       >
         <div class="shrink-0">
           <img
@@ -195,7 +195,7 @@ onMounted(() => charger(1))
           >
           <div
             v-else
-            class="w-10 h-10 rounded-full bg-linear-to-br from-custom-chocolat to-amber-600 flex items-center justify-center text-white font-bold text-xs"
+            class="w-10 h-10 rounded-full bg-linear-to-br from-af-chocolat to-af-chocolat flex items-center justify-center text-af-encre font-bold text-xs"
           >
             {{ initiales(commentaire) }}
           </div>
@@ -204,19 +204,19 @@ onMounted(() => charger(1))
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="font-semibold text-sm">{{ nomAuteur(commentaire) }}</span>
-            <span class="text-xs" :class="sombre ? 'text-white/50' : 'text-gray-400'">
+            <span class="text-xs" :class="sombre ? 'text-af-encre/50' : 'text-af-corps'">
               {{ dateFormatee(commentaire.created_at) }}
             </span>
             <button
               v-if="commentaire.est_mien"
               type="button"
-              class="ml-auto text-xs text-red-500 hover:underline cursor-pointer"
+              class="ml-auto text-xs text-af-live hover:underline cursor-pointer"
               @click="supprimer(commentaire)"
             >
               Supprimer
             </button>
           </div>
-          <p class="text-sm mt-1 whitespace-pre-line" :class="sombre ? 'text-white/85' : 'text-gray-700'">
+          <p class="text-sm mt-1 whitespace-pre-line" :class="sombre ? 'text-af-encre/85' : 'text-af-corps'">
             {{ commentaire.contenu }}
           </p>
         </div>
@@ -228,8 +228,8 @@ onMounted(() => charger(1))
       type="button"
       class="mt-4 w-full py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-60"
       :class="sombre
-        ? 'bg-white/10 text-white hover:bg-white/20'
-        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+        ? 'bg-af-fond text-af-encre hover:bg-af-bordure'
+        : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
       :disabled="chargement"
       @click="chargerSuite"
     >

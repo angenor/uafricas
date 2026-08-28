@@ -88,11 +88,11 @@ const refuser = async (d: PropositionMediaAPI) => {
       {{ erreur }}
     </p>
 
-    <p v-if="chargement" class="py-6 text-center text-sm text-gray-500">
+    <p v-if="chargement" class="py-6 text-center text-sm text-af-atone">
       Chargement des demandes…
     </p>
 
-    <p v-else-if="demandes.length === 0" class="py-6 text-center text-sm text-gray-500">
+    <p v-else-if="demandes.length === 0" class="py-6 text-center text-sm text-af-atone">
       Aucune demande en attente. Les idées de contenu et les demandes d'animation
       déposées par les visiteurs apparaîtront ici.
     </p>
@@ -107,8 +107,8 @@ const refuser = async (d: PropositionMediaAPI) => {
           <span
             class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
             :class="demande.type_objet === 'animation_programme'
-              ? 'bg-custom-chocolat/10 text-custom-chocolat'
-              : 'bg-custom-green/10 text-custom-green'"
+              ? 'bg-af-chocolat/10 text-af-chocolat'
+              : 'bg-af-vert/10 text-af-vert'"
           >
             <font-awesome-icon
               :icon="['fas', demande.type_objet === 'animation_programme' ? 'microphone' : 'lightbulb']"
@@ -116,12 +116,12 @@ const refuser = async (d: PropositionMediaAPI) => {
             />
             {{ demande.type_objet === 'animation_programme' ? 'Demande d\'animation' : 'Idée de contenu' }}
           </span>
-          <span class="text-xs text-gray-500">{{ dateFormatee(demande.created_at) }}</span>
+          <span class="text-xs text-af-atone">{{ dateFormatee(demande.created_at) }}</span>
         </div>
 
         <h4 class="mt-3 font-semibold text-gray-900">{{ titre(demande) }}</h4>
         <p class="mt-1 text-sm text-gray-700">{{ demande.justification }}</p>
-        <p class="mt-2 text-xs text-gray-500">Proposée par {{ auteur(demande) }}</p>
+        <p class="mt-2 text-xs text-af-atone">Proposée par {{ auteur(demande) }}</p>
 
         <!-- Dire ce que l'acceptation engage : ajouter un co-détenteur n'est pas
              un simple accusé de réception, il ouvre la grille à un tiers. -->
@@ -137,7 +137,7 @@ const refuser = async (d: PropositionMediaAPI) => {
           <button
             type="button"
             :disabled="traitement === demande.id"
-            class="inline-flex cursor-pointer items-center gap-2 rounded-full bg-custom-green px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-custom-green/90 disabled:opacity-60"
+            class="inline-flex cursor-pointer items-center gap-2 rounded-full bg-af-vert px-4 py-1.5 text-sm font-semibold text-af-encre transition-colors hover:bg-af-vert/90 disabled:opacity-60"
             @click="accepter(demande)"
           >
             <font-awesome-icon :icon="['fas', 'check']" class="w-3.5 h-3.5" />
@@ -154,25 +154,25 @@ const refuser = async (d: PropositionMediaAPI) => {
           </button>
         </div>
 
-        <p v-else class="mt-4 text-xs text-gray-500">
+        <p v-else class="mt-4 text-xs text-af-atone">
           Seul le propriétaire du support décide de ces demandes.
         </p>
 
         <div v-if="refusOuvert === demande.id" class="mt-3">
           <label class="mb-1 block text-sm font-medium text-gray-700">
             Motif du refus
-            <span class="font-normal text-gray-400">(10 caractères minimum)</span>
+            <span class="font-normal text-af-corps">(10 caractères minimum)</span>
           </label>
           <textarea
             v-model="motifs[demande.id]"
             rows="2"
             placeholder="Expliquez votre décision à l'auteur…"
-            class="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-custom-chocolat"
+            class="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-af-chocolat"
           ></textarea>
           <button
             type="button"
             :disabled="(motifs[demande.id] ?? '').trim().length < 10 || traitement === demande.id"
-            class="mt-2 cursor-pointer rounded-full bg-gray-800 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-gray-900 disabled:cursor-default disabled:opacity-50"
+            class="mt-2 cursor-pointer rounded-full bg-gray-800 px-4 py-1.5 text-sm font-semibold text-af-encre transition-colors hover:bg-gray-900 disabled:cursor-default disabled:opacity-50"
             @click="refuser(demande)"
           >
             Confirmer le refus

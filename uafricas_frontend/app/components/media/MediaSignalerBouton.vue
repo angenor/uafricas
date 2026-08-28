@@ -79,8 +79,8 @@ const soumettre = async (payload: { motif: string, description: string }) => {
     :disabled="aSignale"
     class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors"
     :class="aSignale
-      ? 'border-white/10 text-gray-500 cursor-default'
-      : 'border-white/20 text-gray-300 hover:border-orange-400 hover:text-orange-400 cursor-pointer'"
+      ? 'border-af-bordure text-af-atone cursor-default'
+      : 'border-af-bordure text-af-corps hover:border-af-chocolat hover:text-af-chocolat cursor-pointer'"
     @click="ouvrir"
   >
     <font-awesome-icon :icon="['fas', 'flag']" />
@@ -93,8 +93,8 @@ const soumettre = async (payload: { motif: string, description: string }) => {
     :disabled="aSignale"
     class="inline-flex items-center gap-1.5 text-sm transition-colors"
     :class="aSignale
-      ? 'text-gray-400 cursor-default'
-      : 'text-orange-500 hover:text-orange-400 hover:underline cursor-pointer'"
+      ? 'text-af-corps cursor-default'
+      : 'text-af-chocolat hover:text-af-chocolat hover:underline cursor-pointer'"
     @click="ouvrir"
   >
     <font-awesome-icon :icon="['fas', 'flag']" class="w-3.5 h-3.5" />

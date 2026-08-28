@@ -53,10 +53,10 @@ const dureeLisible = (minutes: number | null) =>
 <template>
   <section>
     <div class="flex items-baseline justify-between gap-4 mb-4">
-      <h2 class="font-oswald text-xl font-bold text-white">
+      <h2 class="font-oswald text-xl font-bold text-af-encre">
         Épisodes
       </h2>
-      <span v-if="total" class="text-sm text-gray-400">
+      <span v-if="total" class="text-sm text-af-corps">
         {{ total }} au total
       </span>
     </div>
@@ -65,9 +65,9 @@ const dureeLisible = (minutes: number | null) =>
       <li v-for="episode in episodes" :key="episode.id">
         <NuxtLink
           :to="lienEpisode(episode)"
-          class="group flex gap-4 py-4 hover:bg-white/5 transition-colors rounded-lg px-2 -mx-2"
+          class="group flex gap-4 py-4 hover:bg-af-fond transition-colors rounded-lg px-2 -mx-2"
         >
-          <div class="w-32 sm:w-44 shrink-0 aspect-video rounded-lg overflow-hidden bg-neutral-800">
+          <div class="w-32 sm:w-44 shrink-0 aspect-video rounded-lg overflow-hidden bg-af-fond">
             <img
               v-if="episode.image_couverture_url"
               :src="episode.image_couverture_url"
@@ -76,21 +76,21 @@ const dureeLisible = (minutes: number | null) =>
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             >
             <span v-else class="w-full h-full flex items-center justify-center">
-              <font-awesome-icon :icon="['fas', 'play']" class="text-neutral-600" />
+              <font-awesome-icon :icon="['fas', 'play']" class="text-af-atone-2" />
             </span>
           </div>
 
           <div class="min-w-0 flex-1">
-            <p class="text-white font-semibold group-hover:text-yellow-400 transition-colors">
-              <span v-if="episode.numero_episode" class="text-gray-500 font-normal">
+            <p class="text-af-encre font-semibold group-hover:text-af-chocolat transition-colors">
+              <span v-if="episode.numero_episode" class="text-af-atone font-normal">
                 {{ episode.numero_episode }}.
               </span>
               {{ episode.titre }}
             </p>
-            <p v-if="episode.description" class="text-gray-400 text-sm mt-1 line-clamp-2">
+            <p v-if="episode.description" class="text-af-corps text-sm mt-1 line-clamp-2">
               {{ episode.description }}
             </p>
-            <p class="text-xs text-gray-500 mt-1 flex flex-wrap gap-x-3">
+            <p class="text-xs text-af-atone mt-1 flex flex-wrap gap-x-3">
               <span v-if="dureeLisible(episode.duree_minutes)">
                 {{ dureeLisible(episode.duree_minutes) }}
               </span>
@@ -103,7 +103,7 @@ const dureeLisible = (minutes: number | null) =>
       </li>
     </ul>
 
-    <p v-else-if="!chargement" class="text-gray-500 text-sm">
+    <p v-else-if="!chargement" class="text-af-atone text-sm">
       Ce programme n'a pas encore d'épisode publié.
     </p>
 
@@ -111,7 +111,7 @@ const dureeLisible = (minutes: number | null) =>
       <button
         type="button"
         :disabled="chargement"
-        class="inline-flex items-center gap-2 rounded-full border border-white/20 text-gray-300 px-6 py-2 text-sm hover:border-yellow-400 hover:text-yellow-400 transition-colors disabled:opacity-50"
+        class="inline-flex items-center gap-2 rounded-full border border-af-bordure text-af-corps px-6 py-2 text-sm hover:border-af-chocolat hover:text-af-chocolat transition-colors disabled:opacity-50"
         @click="chargerPage(page + 1)"
       >
         <font-awesome-icon v-if="chargement" :icon="['fas', 'spinner']" spin />
