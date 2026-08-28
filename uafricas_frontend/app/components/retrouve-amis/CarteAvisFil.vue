@@ -102,13 +102,5 @@ const etiquettes = computed(() => {
     lieu || null].filter(Boolean) as string[]
 })
 
-const dateRelative = computed(() => {
-  const ms = Date.now() - new Date(props.avis.created_at).getTime()
-  const heures = Math.floor(ms / 3_600_000)
-  if (heures < 1) return "à l'instant"
-  if (heures < 24) return `il y a ${heures} h`
-  const jours = Math.floor(heures / 24)
-  if (jours < 31) return `il y a ${jours} j`
-  return new Date(props.avis.created_at).toLocaleDateString('fr-FR')
-})
+const dateRelative = computed(() => dateRelativeDepuis(props.avis.created_at))
 </script>

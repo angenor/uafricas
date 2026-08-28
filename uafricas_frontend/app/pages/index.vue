@@ -10,6 +10,9 @@ import type { SalleAPI } from '~/composables/useAfrolang'
 import type { ContributionCitoyenne } from '~/types/gouvernance'
 import type { MembreLightAPI } from '~/composables/useAmis'
 import type { AvisPublicResume } from '~/composables/useRetrouvAmis'
+import type { AnnonceAPI } from '~/composables/useMarcheAfricain'
+import type { SabbatiqueAPI } from '~/composables/useSabbatiques'
+import type { ExpertAPI } from '~/composables/useExperts'
 import type { AuteurAfricanitesAPI } from '~/composables/useAfricanite'
 import type { MembreAPI } from '~/composables/useMembres'
 import type { BrouillonCodimoi } from '~/components/codi-moi/PublierModale.vue'
@@ -40,7 +43,7 @@ useHead({
   title: 'Publications de la Communauté | AfricanS',
 })
 
-type FiltreValue = 'tous' | 'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits' | 'territoire_partage' | 'element_partage' | 'profil_partage' | 'video_partage' | 'media_partage' | 'afrolang_direct' | 'avis_recherche'
+type FiltreValue = 'tous' | 'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits' | 'territoire_partage' | 'element_partage' | 'profil_partage' | 'video_partage' | 'media_partage' | 'afrolang_direct' | 'avis_recherche' | 'annonce' | 'sabbatique' | 'expert'
 
 interface BasePublication {
   key: string
@@ -111,6 +114,29 @@ interface PublicationAvisRecherche extends BasePublication {
   typeFiltre: 'avis_recherche'
 }
 
+/**
+ * Trois sources de plus qui entrent DIRECTEMENT, sans passer par un partage :
+ * une annonce, un programme d'échange et une expertise sont publiés pour être
+ * vus, exactement comme un post Codimoi. Aucune n'a de table de partage.
+ */
+interface PublicationAnnonce extends BasePublication {
+  source: 'annonce'
+  data: AnnonceAPI
+  typeFiltre: 'annonce'
+}
+
+interface PublicationSabbatique extends BasePublication {
+  source: 'sabbatique'
+  data: SabbatiqueAPI
+  typeFiltre: 'sabbatique'
+}
+
+interface PublicationExpert extends BasePublication {
+  source: 'expert'
+  data: ExpertAPI
+  typeFiltre: 'expert'
+}
+
 interface PublicationAfrolangDirect extends BasePublication {
   source: 'afrolang_direct'
   data: SalleAPI
@@ -120,9 +146,10 @@ interface PublicationAfrolangDirect extends BasePublication {
 type Publication = PublicationAfrolangDirect | PublicationCodimoi | PublicationGouvernance | PublicationTerritoirePartage
   | PublicationElementPartage | PublicationProfilPartage | PublicationContributionPartage
   | PublicationVideoPartage | PublicationMediaPartage | PublicationAvisRecherche
+  | PublicationAnnonce | PublicationSabbatique | PublicationExpert
 
 /**
- * Les onze filtres du rail. La couleur d'habillage propre à chaque source a
+ * Les quatorze filtres du rail. La couleur d'habillage propre à chaque source a
  * disparu : dans la refonte le type est dit par le badge de la carte, et dix
  * jeux de dégradés ne disaient rien de plus que dix libellés.
  */
@@ -138,6 +165,9 @@ const FILTRES: { value: FiltreValue, label: string, icone: string }[] = [
   { value: 'video_partage', label: 'Vidéos partagées', icone: 'fa-solid fa-video' },
   { value: 'media_partage', label: 'Radio & télé', icone: 'fa-solid fa-tv' },
   { value: 'avis_recherche', label: 'Avis de recherche', icone: 'fa-solid fa-users' },
+  { value: 'annonce', label: 'Afromarket', icone: 'fa-solid fa-store' },
+  { value: 'sabbatique', label: 'Sabbafrica', icone: 'fa-solid fa-plane' },
+  { value: 'expert', label: 'Diapertise', icone: 'fa-solid fa-user-tie' },
   { value: 'afrolang_direct', label: 'En direct', icone: 'fa-solid fa-video' }]
 
 /**
@@ -165,6 +195,9 @@ const { listerPartagesVideos } = useVidafrica()
 const { listerPartages: listerPartagesMedias } = useMediaSocial()
 const { listerSalles } = useAfrolang()
 const { rechercherAvisPublics, incrementerPartage } = useRetrouvAmis()
+const { listerAnnonces } = useMarcheAfricain()
+const { listerProgrammes } = useSabbatiques()
+const { listerExperts } = useExperts()
 
 // Africanités en tête de fil (spec 012)
 const { listerAfricanites, marquerVue } = useAfricanite()
@@ -247,7 +280,14 @@ const compteurs = computed<Record<FiltreValue, number>>(() => {
     video_partage: 0,
     media_partage: 0,
     afrolang_direct: 0,
+    avis_recherche: 0,
+    annonce: 0,
+    sabbatique: 0,
+    expert: 0,
   }
+  // `Record<FiltreValue, number>` DEVRAIT interdire d'oublier une clé, mais le
+  // build Nuxt ne typecheck pas : une clé manquante passait, et `c[…]++` sur
+  // `undefined` affichait « NaN » à côté du filtre.
   for (const p of publications.value) {
     c[p.typeFiltre]++
   }
@@ -305,6 +345,18 @@ const publicationsFiltrees = computed<Publication[]>(() => {
         titre = p.data.titre.toLowerCase()
         desc = `${p.data.description ?? ''} ${p.data.langue_cible ?? ''}`.toLowerCase()
       }
+      else if (p.source === 'annonce') {
+        titre = p.data.titre.toLowerCase()
+        desc = `${p.data.description} ${p.data.categorie} ${p.data.ville ?? ''} ${p.data.pays}`.toLowerCase()
+      }
+      else if (p.source === 'sabbatique') {
+        titre = p.data.titre.toLowerCase()
+        desc = `${p.data.description} ${p.data.domaine ?? ''} ${p.data.ville ?? ''} ${p.data.pays ?? ''}`.toLowerCase()
+      }
+      else if (p.source === 'expert') {
+        titre = `${p.data.prenom} ${p.data.nom}`.toLowerCase()
+        desc = `${p.data.expertiseInfo.domaine} ${p.data.expertiseInfo.biographie} ${p.data.expertiseInfo.specialites.join(' ')} ${p.data.pays}`.toLowerCase()
+      }
       else if (p.source === 'avis_recherche') {
         titre = `${p.data.prenom_recherche ?? ''} ${p.data.nom_recherche}`.toLowerCase()
         desc = `${p.data.ecole_rencontre ?? ''} ${p.data.ville_rencontre ?? ''} ${p.data.localite_rencontre ?? ''} ${p.data.description_physique ?? ''}`.toLowerCase()
@@ -328,6 +380,9 @@ function engagementDe(pub: Publication): number {
   // Un avis ne porte NI like NI commentaire : son seul compteur tenu par le
   // serveur est le partage. Il descend donc en bas de « Tendances », ce qui
   // est exact et non un defaut de tri.
+  // Aucune des trois ne tient de compteur d'engagement. Elles descendent donc
+  // en bas de « Tendances » : c'est exact, pas un defaut de tri.
+  if (pub.source === 'annonce' || pub.source === 'sabbatique' || pub.source === 'expert') return 0
   if (pub.source === 'avis_recherche') return pub.data.compteur_partages
   if (pub.source === 'afrolang_direct') return pub.data.sessions_en_cours
   if (pub.source === 'codimoi') return pub.data.nombre_likes + pub.data.nombre_commentaires
@@ -389,6 +444,11 @@ function nomAuteur(pub: Publication): string {
   if (pub.source === 'avis_recherche') {
     return pub.data.auteur_anonyme ? 'Anonyme' : (pub.data.auteur_pseudonyme || 'Un membre')
   }
+  if (pub.source === 'annonce' || pub.source === 'sabbatique') {
+    const u = pub.data.user
+    return `${u.prenom ?? ''} ${u.nom ?? ''}`.trim() || 'Un membre'
+  }
+  if (pub.source === 'expert') return `${pub.data.prenom} ${pub.data.nom}`.trim()
   if (pub.source === 'afrolang_direct') {
     const admin = pub.data.administrateurs?.[0]
     return admin ? `${admin.prenom} ${admin.nom}`.trim() : 'AfricanS'
@@ -412,6 +472,8 @@ function paysPub(pub: Publication): string | null {
   if (pub.source === 'profil_partage') return pub.data.profil.pays || null
   if (pub.source === 'contribution_partage' || pub.source === 'video_partage' || pub.source === 'media_partage') return null
   if (pub.source === 'avis_recherche') return pub.data.pays?.nom || null
+  if (pub.source === 'annonce') return pub.data.pays || null
+  if (pub.source === 'sabbatique' || pub.source === 'expert') return pub.data.pays || null
   return pub.data.localisation.pays || null
 }
 
@@ -442,11 +504,24 @@ const partagerAvisFil = async (avis: AvisPublicResume) => {
   }
 }
 
+/**
+ * Partage des trois nouvelles sources : copie du lien, sans plus.
+ * Contrairement aux avis de recherche, ni annonce, ni programme, ni expertise
+ * ne portent de compteur de partages côté serveur — annoncer un chiffre qui
+ * n'existe pas serait une invention.
+ */
+const copierLien = (chemin: string) => {
+  if (import.meta.client && navigator.clipboard) {
+    navigator.clipboard.writeText(`${window.location.origin}${chemin}`)
+  }
+  notifier('Lien copié dans le presse-papiers.')
+}
+
 const chargerTout = async () => {
   loading.value = true
   erreurChargement.value = null
 
-  const [resCodimoi, resGouv, resPartages, resPartagesElements, resPartagesProfils, resPartagesContrib, resPartagesVideos, resPartagesMedias, resSalles, resAvis] = await Promise.allSettled([
+  const [resCodimoi, resGouv, resPartages, resPartagesElements, resPartagesProfils, resPartagesContrib, resPartagesVideos, resPartagesMedias, resSalles, resAvis, resAnnonces, resSabbatiques, resExperts] = await Promise.allSettled([
     listerPosts({ page: 1, par_page: 30 }),
     getContributions({ page: 1, parPage: 30 }),
     listerPartagesFiches(1, 30),
@@ -460,7 +535,10 @@ const chargerTout = async () => {
     // porte `sessions_en_cours`, un seul appel suffit donc à les trouver.
     listerSalles({ page: 1, par_page: 30 }),
     // Dixième source : les avis de recherche publics, servis tels quels.
-    rechercherAvisPublics({ page: 1, par_page: 30 })])
+    rechercherAvisPublics({ page: 1, par_page: 30 }),
+    listerAnnonces({ page: 1, par_page: 30 }),
+    listerProgrammes({ page: 1, par_page: 30 }),
+    listerExperts({ page: 1, par_page: 30 })])
 
   const items: Publication[] = []
 
@@ -612,6 +690,33 @@ const chargerTout = async () => {
   }
   else if (resAvis.status === 'rejected') {
     console.error('Erreur chargement Avis de recherche:', resAvis.reason)
+  }
+
+  if (resAnnonces.status === 'fulfilled' && resAnnonces.value?.annonces) {
+    for (const a of resAnnonces.value.annonces) {
+      items.push({ key: `annonce-${a.id}`, source: 'annonce', data: a, date: new Date(a.created_at), typeFiltre: 'annonce' })
+    }
+  }
+  else if (resAnnonces.status === 'rejected') {
+    console.error('Erreur chargement Afromarket:', resAnnonces.reason)
+  }
+
+  if (resSabbatiques.status === 'fulfilled' && resSabbatiques.value?.programmes) {
+    for (const pr of resSabbatiques.value.programmes) {
+      items.push({ key: `sabbatique-${pr.id}`, source: 'sabbatique', data: pr, date: new Date(pr.created_at), typeFiltre: 'sabbatique' })
+    }
+  }
+  else if (resSabbatiques.status === 'rejected') {
+    console.error('Erreur chargement Sabbafrica:', resSabbatiques.reason)
+  }
+
+  if (resExperts.status === 'fulfilled' && resExperts.value?.experts) {
+    for (const e of resExperts.value.experts) {
+      items.push({ key: `expert-${e.id}`, source: 'expert', data: e, date: new Date(e.dateInscription), typeFiltre: 'expert' })
+    }
+  }
+  else if (resExperts.status === 'rejected') {
+    console.error('Erreur chargement Diapertise:', resExperts.reason)
   }
 
   if (resSalles.status === 'rejected') {
@@ -1027,6 +1132,27 @@ onMounted(async () => {
             :avis="pub.data"
             dans-le-fil
             @partager="partagerAvisFil(pub.data)"
+          />
+
+          <!-- Annonce Afromarket. -->
+          <MarcheCarteAnnonceFil
+            v-else-if="pub.source === 'annonce'"
+            :annonce="pub.data"
+            @partager="copierLien(`/marche-africain/${pub.data.id}`)"
+          />
+
+          <!-- Programme Sabbafrica. -->
+          <SabbatiqueCarteProgrammeFil
+            v-else-if="pub.source === 'sabbatique'"
+            :programme="pub.data"
+            @partager="copierLien(`/echanges-sabbatiques/${pub.data.id}`)"
+          />
+
+          <!-- Expertise Diapertise. -->
+          <ExpertsCarteExpertFil
+            v-else-if="pub.source === 'expert'"
+            :expert="pub.data"
+            @partager="copierLien(`/profil/${pub.data.id}`)"
           />
 
           <!-- Les six sources de partage : une seule et même carte. -->
