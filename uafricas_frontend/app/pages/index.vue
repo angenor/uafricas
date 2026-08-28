@@ -1025,6 +1025,7 @@ onMounted(async () => {
           <RetrouveAmisCarteAvisFil
             v-else-if="pub.source === 'avis_recherche'"
             :avis="pub.data"
+            dans-le-fil
             @partager="partagerAvisFil(pub.data)"
           />
 

@@ -1,7 +1,8 @@
 <template>
   <AfricansCartePublication
     :auteur="auteur"
-    :titre="nomRecherche"
+    :categorie="dansLeFil ? 'Avis de recherche' : undefined"
+    :titre="dansLeFil ? `Recherche : ${nomRecherche}` : nomRecherche"
     :texte="avis.description_physique || undefined"
     :etiquettes="etiquettes"
     :images="photoComplete ? [photoComplete] : undefined"
@@ -45,7 +46,15 @@ import { TYPES_RELATION } from '~/composables/useRetrouvAmis'
  * donc que le partage, seul compteur réellement tenu par le serveur
  * (`compteur_partages`).
  */
-const props = defineProps<{ avis: AvisPublicResume }>()
+const props = withDefaults(defineProps<{
+  avis: AvisPublicResume
+  /**
+   * Dans le fil d'actualité, la carte côtoie neuf autres sources : elle doit
+   * DIRE ce qu'elle est. Sur /retrouve-amis, où chaque carte est un avis, le
+   * badge et le préfixe « Recherche : » ne seraient que du bruit répété.
+   */
+  dansLeFil?: boolean
+}>(), { dansLeFil: false })
 
 defineEmits<{ partager: [] }>()
 
@@ -65,6 +74,7 @@ const nomRecherche = computed(() =>
  *  pas une donnée manquante : le pseudonyme n'est alors même pas transmis. */
 const auteur = computed(() => ({
   nom: props.avis.auteur_anonyme ? 'Anonyme' : (props.avis.auteur_pseudonyme ?? 'Anonyme'),
+  action: props.dansLeFil ? 'recherche une personne perdue de vue' : undefined,
 }))
 
 const GENRES: Record<string, string> = { homme: 'Homme', femme: 'Femme' }
