@@ -6,50 +6,60 @@
       leave-active-class="transition duration-100 ease-in"
       leave-to-class="opacity-0"
     >
+      <!-- Centrage par un conteneur INTERMÉDIAIRE en `min-h-full`, et non par
+           `place-items-center` sur la boîte défilante. Avec le centrage direct,
+           une modale plus HAUTE que la fenêtre voit son sommet rogné, et rien
+           ne permet d'y remonter : le débordement d'un élément centré part des
+           deux côtés, mais seul le bas est atteignable au défilement. Le titre
+           et le bouton de fermeture de « Publier une annonce » étaient ainsi
+           hors d'atteinte.
+           Le remplissage vit sur le conteneur intermédiaire : c'est lui qui
+           reçoit alors les clics hors de la boîte, y compris dans la marge. -->
       <div
         v-if="modelValue"
-        class="fixed inset-0 grid place-items-center overflow-y-auto bg-black/30 p-4 font-af"
+        class="fixed inset-0 overflow-y-auto bg-black/30 font-af"
         :class="couche === 'session' ? 'z-[10002]' : 'z-100'"
-        @click.self="fermer"
       >
-        <div
-          ref="boite"
-          role="dialog"
-          aria-modal="true"
-          :aria-labelledby="idTitre"
-          class="relative w-full overflow-hidden rounded-[10px] bg-white shadow-xl"
-          :class="taille === 'large' ? 'max-w-4xl' : 'max-w-[615px]'"
-          tabindex="-1"
-        >
-          <!-- Bandeau de tête de 17 px. Vert à la création, chocolat pour
-               l'explication : la couleur DIT quelque chose, elle n'est pas
-               décorative. Un bandeau vert sur une modale d'onboarding
-               brouillerait le signal. -->
-          <div class="h-[17px]" :class="ton === 'vert' ? 'bg-af-vert' : 'bg-af-chocolat'" />
-
-          <button
-            ref="boutonFermer"
-            type="button"
-            class="absolute top-8 right-6 grid size-6 place-items-center text-af-encre transition hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-af-chocolat"
-            aria-label="Fermer"
-            @click="fermer"
+        <div class="flex min-h-full items-center justify-center p-4" @click.self="fermer">
+          <div
+            ref="boite"
+            role="dialog"
+            aria-modal="true"
+            :aria-labelledby="idTitre"
+            class="relative w-full overflow-hidden rounded-[10px] bg-white shadow-xl"
+            :class="taille === 'large' ? 'max-w-4xl' : 'max-w-[615px]'"
+            tabindex="-1"
           >
-            <font-awesome-icon icon="fa-solid fa-xmark" class="text-xl" />
-          </button>
+            <!-- Bandeau de tête de 17 px. Vert à la création, chocolat pour
+                 l'explication : la couleur DIT quelque chose, elle n'est pas
+                 décorative. Un bandeau vert sur une modale d'onboarding
+                 brouillerait le signal. -->
+            <div class="h-[17px]" :class="ton === 'vert' ? 'bg-af-vert' : 'bg-af-chocolat'" />
 
-          <div class="p-8">
-            <div class="flex items-center gap-3 pr-10">
-              <font-awesome-icon v-if="icone" :icon="icone" class="size-6 text-af-chocolat" />
-              <h2 :id="idTitre" class="text-[20px]/[1.4] font-bold">{{ titre }}</h2>
-            </div>
-            <p v-if="sousTitre" class="mt-1 text-[14px]/[1.4] text-af-atone italic">
-              {{ sousTitre }}
-            </p>
+            <button
+              ref="boutonFermer"
+              type="button"
+              class="absolute top-8 right-6 grid size-6 place-items-center text-af-encre transition hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-af-chocolat"
+              aria-label="Fermer"
+              @click="fermer"
+            >
+              <font-awesome-icon icon="fa-solid fa-xmark" class="text-xl" />
+            </button>
 
-            <div class="mt-6"><slot /></div>
+            <div class="p-8">
+              <div class="flex items-center gap-3 pr-10">
+                <font-awesome-icon v-if="icone" :icon="icone" class="size-6 text-af-chocolat" />
+                <h2 :id="idTitre" class="text-[20px]/[1.4] font-bold">{{ titre }}</h2>
+              </div>
+              <p v-if="sousTitre" class="mt-1 text-[14px]/[1.4] text-af-atone italic">
+                {{ sousTitre }}
+              </p>
 
-            <div v-if="$slots.actions" class="mt-8 flex items-center justify-end gap-6">
-              <slot name="actions" />
+              <div class="mt-6"><slot /></div>
+
+              <div v-if="$slots.actions" class="mt-8 flex items-center justify-end gap-6">
+                <slot name="actions" />
+              </div>
             </div>
           </div>
         </div>

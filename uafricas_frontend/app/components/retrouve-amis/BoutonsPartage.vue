@@ -136,7 +136,7 @@ const reseaux = computed<OptionReseau[]>(() => [
           <font-awesome-icon :icon="['fas', 'share-nodes']" class="text-af-chocolat" />
           Partager cet avis
         </h2>
-        <span class="rounded-full bg-af-chocolat/5 px-3 py-1 text-xs font-semibold text-af-chocolat ring-1 ring-af-chocolat/20/60">
+        <span class="rounded-full bg-af-chocolat/5 px-3 py-1 text-xs font-semibold text-af-chocolat ring-1 ring-af-chocolat/60">
           {{ compteur }} partage{{ compteur !== 1 ? 's' : '' }}
         </span>
       </div>

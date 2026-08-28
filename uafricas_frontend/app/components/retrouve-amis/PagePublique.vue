@@ -62,7 +62,7 @@ const lieuxRencontre = computed(() => {
       <!-- ═══════════════════════════════════════════════════════
            QUI RECHERCHE QUI : la zone principale
            ═══════════════════════════════════════════════════════ -->
-      <div class="bg-linear-to-b from-af-chocolat/5/80 to-white px-6 py-8 md:px-10 md:py-10">
+      <div class="bg-linear-to-b from-af-chocolat/80 to-white px-6 py-8 md:px-10 md:py-10">
         <!-- Phrase narrative -->
         <p class="mb-6 text-center text-sm text-af-atone">
           <span class="font-semibold text-af-chocolat">{{ auteurDisplay }}</span>
@@ -226,7 +226,7 @@ const lieuxRencontre = computed(() => {
             Comment la personne me connait
             <span class="h-px flex-1 bg-af-bordure" />
           </h2>
-          <div class="rounded-lg bg-af-chocolat/5/50 p-5 ring-1 ring-af-chocolat/10">
+          <div class="rounded-lg bg-af-chocolat/50 p-5 ring-1 ring-af-chocolat/10">
             <p class="text-sm leading-relaxed text-af-corps whitespace-pre-line">{{ props.avis.comment_connu }}</p>
           </div>
         </div>
@@ -250,7 +250,7 @@ const lieuxRencontre = computed(() => {
             Message de l'auteur
             <span class="h-px flex-1 bg-af-bordure" />
           </h2>
-          <div class="rounded-lg border-l-4 border-af-chocolat bg-af-chocolat/5/30 p-5">
+          <div class="rounded-lg border-l-4 border-af-chocolat bg-af-chocolat/30 p-5">
             <p class="text-sm leading-relaxed text-af-corps whitespace-pre-line italic">{{ props.avis.description }}</p>
             <p class="mt-3 text-xs text-af-atone-2">
               {{ auteurDisplay }}
@@ -259,7 +259,7 @@ const lieuxRencontre = computed(() => {
         </div>
 
         <!-- Appel a l'action -->
-        <div class="rounded-lg bg-linear-to-r from-af-vert/10 to-af-vert/5 p-5 ring-1 ring-af-vert/20/60 text-center">
+        <div class="rounded-lg bg-linear-to-r from-af-vert/10 to-af-vert/5 p-5 ring-1 ring-af-vert/60 text-center">
           <p class="text-sm font-medium text-af-corps mb-1">
             <font-awesome-icon :icon="['fas', 'heart']" class="text-af-vert mr-1" />
             Vous reconnaissez cette personne ?

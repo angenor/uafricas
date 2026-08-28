@@ -974,7 +974,7 @@ const pointEtatClasses = computed(() => {
     case 'actif': return 'bg-af-vert'
     case 'en_attente': return 'bg-af-chocolat/50 animate-pulse'
     case 'bloque': return 'bg-af-live/50'
-    default: return 'bg-af-fond0'
+    default: return 'bg-af-atone'
   }
 })
 
