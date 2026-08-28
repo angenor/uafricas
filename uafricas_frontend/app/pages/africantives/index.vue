@@ -44,22 +44,6 @@
         <AfricansBouton type="submit" icone="fa-solid fa-magnifying-glass">Rechercher</AfricansBouton>
       </form>
 
-      <!-- Domaines : le filtre le plus utilisé reste au-dessus de la grille,
-           où on le voit sans quitter les résultats des yeux. -->
-      <div class="flex flex-wrap items-center gap-2">
-        <button
-          v-for="dom in domainesFiltre"
-          :key="dom.value"
-          type="button"
-          class="rounded-full px-3 py-1.5 text-[12px]/[1.4] font-bold transition"
-          :class="filtres.domaine === dom.value ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
-          :aria-pressed="filtres.domaine === dom.value"
-          @click="filtres.domaine = dom.value"
-        >
-          {{ dom.label }}
-        </button>
-      </div>
-
       <div ref="zoneListe" class="scroll-mt-24">
         <div v-if="chargement" class="grid gap-5 sm:grid-cols-2">
           <div v-for="n in 4" :key="n" class="h-72 animate-pulse rounded-[10px] bg-af-bordure" />
@@ -134,6 +118,17 @@
     <template #rail>
       <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="resetFilters">
         <div class="flex flex-col gap-4">
+          <!-- Le domaine tenait vingt PASTILLES au-dessus de la grille, soit
+               cinq lignes qui écrasaient les résultats. Un référentiel de
+               cette taille se choisit dans une liste, pas en balayant une
+               barre : il rejoint les deux autres filtres, dans le seul endroit
+               de la page qui en porte. -->
+          <AfricansChamp v-model="filtres.domaine" libelle="Domaine" type="select">
+            <option v-for="dom in domainesFiltre" :key="dom.value" :value="dom.value">
+              {{ dom.label }}
+            </option>
+          </AfricansChamp>
+
           <AfricansChamp v-model="filtres.pays" libelle="Territoire" type="select">
             <option value="">Tous les territoires</option>
             <option v-for="p in paysAfricains" :key="p" :value="p">{{ p }}</option>
