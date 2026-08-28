@@ -1,4 +1,6 @@
 <script setup lang="ts">
+
+definePageMeta({ layout: false })
 /**
  * Page de détail d'une station de radio (US3) : son identité, son direct, ses
  * émissions et ses interactions. Pendant exact de la page des chaînes.
@@ -36,10 +38,10 @@ const nombreCommentaires = ref(0)
 // Rechargé après qu'un cadeau vient d'être offert.
 const cadeauxRef = ref<{ rafraichir: () => void } | null>(null)
 
-const breadcrumbs = computed(() => [
-  { label: 'Médias', to: '/medias' },
-  { label: 'Radio', to: '/medias/radios' },
-  { label: station.value?.name || 'Station', to: undefined },
+const filAriane = computed(() => [
+  { libelle: 'Médias', vers: '/medias' },
+  { libelle: 'Radio', vers: '/medias/radios' },
+  { libelle: station.value?.name || 'Station' },
 ])
 
 // ── SEO / Open Graph ──
@@ -109,44 +111,41 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-neutral-950">
-    <div v-if="chargement" class="flex items-center justify-center h-screen">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400"></div>
+  <NuxtLayout name="africans">
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="filAriane" />
+    </template>
+
+    <div v-if="chargement" class="flex items-center justify-center py-24">
+      <div class="animate-spin rounded-full h-12 w-12 text-3xl text-af-chocolat"></div>
     </div>
 
     <!-- Un contenu retiré est indiscernable d'un contenu inexistant (FR-028). -->
-    <div v-else-if="!station" class="flex flex-col items-center justify-center h-screen px-4 text-center">
-      <font-awesome-icon :icon="['fas', 'radio']" class="w-14 h-14 text-neutral-700 mb-4" />
-      <h1 class="text-2xl font-bold text-white mb-2">Station introuvable</h1>
-      <p class="text-gray-400 mb-4">
+    <div v-else-if="!station" class="flex flex-col items-center justify-center py-24 px-4 text-center">
+      <font-awesome-icon :icon="['fas', 'radio']" class="w-14 h-14 text-af-atone-2 mb-4" />
+      <h1 class="text-2xl font-bold text-af-encre mb-2">Station introuvable</h1>
+      <p class="text-af-corps mb-4">
         Cette station n’existe pas, ou elle a été retirée de l’antenne.
       </p>
-      <NuxtLink to="/medias/radios" class="text-yellow-400 hover:underline">
+      <NuxtLink to="/medias/radios" class="font-bold text-af-chocolat hover:underline">
         &#8592; Retour à la radio
       </NuxtLink>
     </div>
 
     <template v-else>
-      <div class="max-w-5xl mx-auto px-4 pt-24 pb-16">
-        <nav aria-label="Fil d'Ariane" class="mb-6 text-sm text-gray-400">
-          <template v-for="(fil, i) in breadcrumbs" :key="i">
-            <NuxtLink v-if="fil.to" :to="fil.to" class="hover:text-yellow-400">{{ fil.label }}</NuxtLink>
-            <span v-else class="text-white">{{ fil.label }}</span>
-            <span v-if="i < breadcrumbs.length - 1" class="mx-2">/</span>
-          </template>
-        </nav>
+      <div class="flex flex-col gap-6">
 
         <header class="flex flex-col sm:flex-row gap-6 items-start mb-8">
-          <div class="w-24 h-24 rounded-2xl overflow-hidden bg-neutral-900 shrink-0">
+          <div class="w-24 h-24 rounded-2xl overflow-hidden bg-af-fond shrink-0">
             <img v-if="station.cover" :src="station.cover" :alt="station.name" class="w-full h-full object-cover">
             <span v-else class="w-full h-full flex items-center justify-center">
-              <font-awesome-icon :icon="['fas', 'radio']" class="text-2xl text-neutral-700" />
+              <font-awesome-icon :icon="['fas', 'radio']" class="text-2xl text-af-atone-2" />
             </span>
           </div>
 
           <div class="min-w-0">
-            <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-white mb-2">{{ station.name }}</h1>
-            <p class="text-gray-400 text-sm flex flex-wrap items-center gap-x-3 gap-y-1 mb-4">
+            <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-af-encre mb-2">{{ station.name }}</h1>
+            <p class="text-af-corps text-sm flex flex-wrap items-center gap-x-3 gap-y-1 mb-4">
               <span v-if="station.location">{{ station.location }}</span>
               <span v-if="station.location && station.genre">· </span>
               <span v-if="station.genre">{{ station.genre }}</span>
@@ -156,8 +155,8 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
             <button
               v-if="station.streamUrl"
               type="button"
-              class="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400"
-              :class="directEnCours ? 'bg-red-600 text-white' : 'border border-red-500 text-red-400 hover:bg-red-500/15'"
+              class="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat"
+              :class="directEnCours ? 'bg-af-live text-white' : 'border border-af-live text-af-live hover:bg-af-live/15'"
               @click="ecouterDirect"
             >
               <font-awesome-icon :icon="['fas', directEnCours ? 'volume-high' : 'play']" />
@@ -182,7 +181,7 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
           <!-- Proposer un contenu rattaché à ce support (US4) -->
           <button
             type="button"
-            class="mt-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 text-white px-5 py-2 text-sm font-semibold hover:bg-white/20 transition-colors cursor-pointer"
+            class="mt-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-af-fond text-af-encre px-5 py-2 text-sm font-semibold hover:bg-white/20 transition-colors cursor-pointer"
             @click="propositionOuverte = true"
           >
             <font-awesome-icon :icon="['fas', 'plus']" class="w-4 h-4" />
@@ -192,7 +191,7 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
           <!-- Contacter l'équipe du support (US6, FR-046) -->
           <button
             type="button"
-            class="mt-4 sm:ml-3 inline-flex items-center gap-2 rounded-full border border-white/25 text-white px-5 py-2 text-sm font-semibold hover:bg-white/10 transition-colors cursor-pointer"
+            class="mt-4 sm:ml-3 inline-flex items-center gap-2 rounded-full border border-white/25 text-af-encre px-5 py-2 text-sm font-semibold hover:bg-af-fond transition-colors cursor-pointer"
             @click="contactOuvert = true"
           >
             <font-awesome-icon :icon="['fas', 'envelope']" class="w-4 h-4" />
@@ -225,7 +224,7 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
           :texte="station.description"
           :lignes="5"
           sombre
-          class="mb-8 text-gray-300 leading-relaxed"
+          class="mb-8 text-af-corps leading-relaxed"
         />
 
         <!-- Équipe éditoriale de la station (FR-023), repliée au-delà de six
@@ -251,11 +250,11 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
              qui ne se lisent pas de la même façon sont deux pages à maintenir
              deux fois. -->
         <section v-if="programmes.length" class="mb-12">
-          <h2 class="font-oswald text-xl font-bold text-white mb-4">Ses programmes</h2>
+          <h2 class="font-oswald text-xl font-bold text-af-encre mb-4">Ses programmes</h2>
 
           <article v-for="emission in programmes" :key="emission.id" class="mb-8 last:mb-0">
             <!-- Périodicité D'ABORD, et jamais masquée (FR-044, US5-3). -->
-            <p class="mb-1 text-xs uppercase tracking-wide text-custom-chocolat">
+            <p class="mb-1 text-xs uppercase tracking-wide text-af-chocolat">
               {{ LIBELLES_CADENCE[emission.cadence] || emission.cadence }}
             </p>
 
@@ -263,12 +262,12 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
               <NuxtLink
                 v-if="lienEmission(emission)"
                 :to="lienEmission(emission)!"
-                class="font-semibold text-white hover:text-custom-chocolat transition-colors truncate"
+                class="font-semibold text-af-encre hover:text-af-chocolat transition-colors truncate"
               >
                 {{ emission.titre }}
               </NuxtLink>
-              <h3 v-else class="font-semibold text-white truncate">{{ emission.titre }}</h3>
-              <span class="text-xs text-gray-400 shrink-0">
+              <h3 v-else class="font-semibold text-af-encre truncate">{{ emission.titre }}</h3>
+              <span class="text-xs text-af-corps shrink-0">
                 {{ emission.nombreEpisodes }} enregistrement{{ emission.nombreEpisodes > 1 ? 's' : '' }}
               </span>
             </div>
@@ -279,7 +278,7 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
               :texte="emission.description"
               :lignes="3"
               sombre
-              class="mb-3 text-sm text-gray-400"
+              class="mb-3 text-sm text-af-corps"
             />
 
             <!-- Équipe PROPRE au programme (FR-025). -->
@@ -309,14 +308,14 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
                 @lire="ecouterEmission(contenu)"
               />
             </div>
-            <p v-else class="text-sm text-gray-500">
+            <p v-else class="text-sm text-af-atone">
               Aucun enregistrement publié pour l'instant.
             </p>
 
             <NuxtLink
               v-if="lienEmission(emission) && emission.nombreEpisodes > emission.episodes.length"
               :to="lienEmission(emission)!"
-              class="inline-block mt-3 text-sm text-custom-chocolat hover:underline"
+              class="inline-block mt-3 text-sm text-af-chocolat hover:underline"
             >
               Voir les {{ emission.nombreEpisodes }} enregistrements
             </NuxtLink>
@@ -366,5 +365,5 @@ const ecouterEmission = (emission: ProgrammeRadio) => {
         @close="showPartage = false"
       />
     </template>
-  </div>
+  </NuxtLayout>
 </template>

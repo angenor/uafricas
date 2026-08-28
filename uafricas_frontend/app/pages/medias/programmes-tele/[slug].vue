@@ -1,4 +1,6 @@
 <script setup lang="ts">
+
+definePageMeta({ layout: false })
 /**
  * Page de détail d'une émission de télévision (US3).
  *
@@ -45,10 +47,10 @@ const lienChaine = computed(() =>
   programme.value?.chaineSlug ? `/medias/chaines/${programme.value.chaineSlug}` : null,
 )
 
-const breadcrumbs = computed(() => [
-  { label: 'Médias', to: '/medias' },
-  { label: 'Télévision', to: '/medias/tele' },
-  { label: programme.value?.title || 'Émission', to: undefined },
+const filAriane = computed(() => [
+  { libelle: 'Médias', vers: '/medias' },
+  { libelle: 'Télévision', vers: '/medias/tele' },
+  { libelle: programme.value?.title || 'Émission' },
 ])
 
 // ── SEO / Open Graph (aperçu lors du partage sur les réseaux sociaux) ──
@@ -83,34 +85,31 @@ useHead(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-neutral-950">
-    <div v-if="chargement" class="flex items-center justify-center h-screen">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400"></div>
+  <NuxtLayout name="africans">
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="filAriane" />
+    </template>
+
+    <div v-if="chargement" class="flex items-center justify-center py-24">
+      <div class="animate-spin rounded-full h-12 w-12 text-3xl text-af-chocolat"></div>
     </div>
 
     <!-- Un contenu retiré est indiscernable d'un contenu inexistant (FR-028) :
          le serveur renvoie 404 dans les deux cas, la page dit la même chose. -->
-    <div v-else-if="!programme" class="flex flex-col items-center justify-center h-screen px-4 text-center">
-      <font-awesome-icon :icon="['fas', 'tv']" class="w-14 h-14 text-neutral-700 mb-4" />
-      <h1 class="text-2xl font-bold text-white mb-2">Émission introuvable</h1>
-      <p class="text-gray-400 mb-4">
+    <div v-else-if="!programme" class="flex flex-col items-center justify-center py-24 px-4 text-center">
+      <font-awesome-icon :icon="['fas', 'tv']" class="w-14 h-14 text-af-atone-2 mb-4" />
+      <h1 class="text-2xl font-bold text-af-encre mb-2">Émission introuvable</h1>
+      <p class="text-af-corps mb-4">
         Cette émission n’existe pas, ou elle a été retirée de l’antenne.
       </p>
-      <NuxtLink to="/medias/tele" class="text-yellow-400 hover:underline">
+      <NuxtLink to="/medias/tele" class="font-bold text-af-chocolat hover:underline">
         &#8592; Retour à la télévision
       </NuxtLink>
     </div>
 
     <template v-else>
-      <div class="max-w-5xl mx-auto px-4 pt-24 pb-16">
+      <div class="flex flex-col gap-6">
         <!-- Fil d'Ariane -->
-        <nav aria-label="Fil d'Ariane" class="mb-6 text-sm text-gray-400">
-          <template v-for="(fil, i) in breadcrumbs" :key="i">
-            <NuxtLink v-if="fil.to" :to="fil.to" class="hover:text-yellow-400">{{ fil.label }}</NuxtLink>
-            <span v-else class="text-white">{{ fil.label }}</span>
-            <span v-if="i < breadcrumbs.length - 1" class="mx-2">/</span>
-          </template>
-        </nav>
 
         <!-- Lecteur -->
         <div class="rounded-2xl overflow-hidden bg-black mb-8">
@@ -129,19 +128,19 @@ useHead(() => {
           <NuxtLink
             v-if="lienProgramme"
             :to="lienProgramme"
-            class="inline-flex items-center gap-2 text-yellow-400 text-sm font-semibold hover:underline mb-2"
+            class="inline-flex items-center gap-2 text-af-chocolat text-sm font-semibold hover:underline mb-2"
           >
             <font-awesome-icon :icon="['fas', 'layer-group']" class="w-3.5 h-3.5" />
             {{ programme.emissionTitre }}
           </NuxtLink>
-          <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-white mb-2">
-            <span v-if="programme.numeroEpisode" class="text-gray-400 font-normal">
+          <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-af-encre mb-2">
+            <span v-if="programme.numeroEpisode" class="text-af-corps font-normal">
               Épisode {{ programme.numeroEpisode }}, 
             </span>
             {{ programme.title }}
           </h1>
-          <p class="text-gray-400 text-sm flex flex-wrap items-center gap-x-3 gap-y-1">
-            <NuxtLink v-if="lienChaine" :to="lienChaine" class="hover:text-yellow-400">
+          <p class="text-af-corps text-sm flex flex-wrap items-center gap-x-3 gap-y-1">
+            <NuxtLink v-if="lienChaine" :to="lienChaine" class="hover:text-af-chocolat">
               {{ programme.chaineNom }}
             </NuxtLink>
             <span v-else-if="programme.chaineNom">{{ programme.chaineNom }}</span>
@@ -168,7 +167,7 @@ useHead(() => {
           <!-- Proposer un contenu rattaché à ce support (US4) -->
           <button
             type="button"
-            class="mt-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 text-white px-5 py-2 text-sm font-semibold hover:bg-white/20 transition-colors cursor-pointer"
+            class="mt-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-af-fond text-af-encre px-5 py-2 text-sm font-semibold hover:bg-white/20 transition-colors cursor-pointer"
             @click="propositionOuverte = true"
           >
             <font-awesome-icon :icon="['fas', 'plus']" class="w-4 h-4" />
@@ -194,17 +193,17 @@ useHead(() => {
           </span>
         </div>
 
-        <p v-if="programme.description" class="text-gray-300 leading-relaxed whitespace-pre-line mb-4">
+        <p v-if="programme.description" class="text-af-corps leading-relaxed whitespace-pre-line mb-4">
           {{ programme.description }}
         </p>
 
-        <dl v-if="programme.animator || programme.producer" class="text-sm text-gray-400 space-y-1 mb-10">
+        <dl v-if="programme.animator || programme.producer" class="text-sm text-af-corps space-y-1 mb-10">
           <div v-if="programme.animator" class="flex gap-2">
-            <dt class="font-semibold text-gray-300">Animation :</dt>
+            <dt class="font-semibold text-af-corps">Animation :</dt>
             <dd>{{ programme.animator }}</dd>
           </div>
           <div v-if="programme.producer" class="flex gap-2">
-            <dt class="font-semibold text-gray-300">Production :</dt>
+            <dt class="font-semibold text-af-corps">Production :</dt>
             <dd>{{ programme.producer }}</dd>
           </div>
         </dl>
@@ -231,13 +230,13 @@ useHead(() => {
              la série navigable depuis n'importe lequel de ses épisodes. -->
         <section v-if="voisins.length" class="mt-10">
           <div class="flex items-baseline justify-between gap-4 mb-4">
-            <h2 class="font-oswald text-xl font-bold text-white">
+            <h2 class="font-oswald text-xl font-bold text-af-encre">
               Autres épisodes
             </h2>
             <NuxtLink
               v-if="lienProgramme"
               :to="lienProgramme"
-              class="text-yellow-400 text-sm hover:underline"
+              class="text-af-chocolat text-sm hover:underline"
             >
               Voir le programme
             </NuxtLink>
@@ -247,9 +246,9 @@ useHead(() => {
               v-for="voisin in voisins"
               :key="voisin.id"
               :to="`/medias/programmes-tele/${voisin.slug}`"
-              class="group block rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-yellow-400/60 transition-colors"
+              class="group block rounded-xl overflow-hidden bg-af-fond border border-af-bordure hover:border-af-chocolat/60 transition-colors"
             >
-              <div class="aspect-video bg-neutral-800 overflow-hidden">
+              <div class="aspect-video bg-af-fond overflow-hidden">
                 <img
                   v-if="voisin.banner"
                   :src="voisin.banner"
@@ -258,7 +257,7 @@ useHead(() => {
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 >
               </div>
-              <p class="p-3 text-sm text-white line-clamp-2">{{ voisin.title }}</p>
+              <p class="p-3 text-sm text-af-encre line-clamp-2">{{ voisin.title }}</p>
             </NuxtLink>
           </div>
         </section>
@@ -280,5 +279,5 @@ useHead(() => {
         @close="showPartage = false"
       />
     </template>
-  </div>
+  </NuxtLayout>
 </template>
