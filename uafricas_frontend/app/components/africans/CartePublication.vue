@@ -1,5 +1,6 @@
 <template>
   <article class="overflow-hidden rounded-[10px] border border-af-bordure bg-white">
+    <slot name="bandeau" />
     <!-- L'en-tête tombe quand il n'y a ni auteur ni catégorie : Vidafrica
          référence des vidéos dont l'auteur réel n'est pas toujours connu, et
          un avatar « anonyme » inventerait une personne. -->

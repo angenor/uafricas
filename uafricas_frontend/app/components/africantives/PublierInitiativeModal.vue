@@ -353,7 +353,7 @@ watch(() => props.isOpen, (isOpen) => {
           <div v-else class="rounded-lg border-2 border-dashed border-af-bordure p-6 text-center transition hover:border-af-chocolat">
             <font-awesome-icon icon="fa-solid fa-cloud-arrow-up" class="mb-3 text-3xl text-af-atone-2" />
             <p class="text-[14px]/[1.4] text-af-corps">Cliquez pour ajouter une image</p>
-            <p class="mb-3 text-[12px] text-af-atone-2">JPG, PNG, WebP — 5 Mo maximum</p>
+            <p class="mb-3 text-[12px] text-af-atone-2">JPG, PNG, WebP · 5 Mo maximum</p>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"

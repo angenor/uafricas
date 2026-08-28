@@ -1,7 +1,6 @@
 <template>
   <AfricansCartePublication
     :auteur="auteur"
-    :categorie="dansLeFil ? 'Avis de recherche' : undefined"
     :titre="dansLeFil ? `Recherche : ${nomRecherche}` : nomRecherche"
     :texte="avis.description_physique || undefined"
     :etiquettes="etiquettes"
@@ -11,6 +10,16 @@
     :quand="`Publié ${dateRelative}`"
     @partager="$emit('partager')"
   >
+    <!-- Un avis de recherche n'est pas un contenu de plus : c'est un APPEL.
+         Le badge en haut à droite ne se lit qu'une fois la carte regardée ;
+         ce bandeau la signale pendant le défilement. -->
+    <template v-if="dansLeFil" #bandeau>
+      <p class="flex items-center gap-2 bg-af-degrade px-4 py-2 text-[13px]/[1.4] font-bold text-white">
+        <font-awesome-icon icon="fa-solid fa-magnifying-glass" />
+        Avis de recherche : aidez à retrouver cette personne
+      </p>
+    </template>
+
     <template #sous-media>
       <!-- Un avis clôturé reste en ligne : c'est l'issue heureuse du module, et
            la masquer priverait la communauté de la seule preuve que ça marche. -->

@@ -28,7 +28,7 @@
         <!-- Le seuil de dix signes est celui du serveur : l'annoncer ici évite
              un aller-retour pour un motif d'un mot. -->
         <p class="text-[12px]/[1.4]" :class="valide || longueur === 0 ? 'text-af-atone' : 'text-af-live'">
-          {{ longueur }} / 1000 — dix signes au minimum
+          {{ longueur }} / 1000 · dix signes au minimum
         </p>
       </div>
 
