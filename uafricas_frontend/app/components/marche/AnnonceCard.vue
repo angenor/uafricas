@@ -38,9 +38,12 @@
         class="absolute top-3 right-3 z-10"
       />
 
+      <!-- Contour indispensable : cette pastille se pose aussi bien sur une
+           photo que sur le repli d'image, lui-même `af-fond` (#F5F5F5), où un
+           fond blanc seul serait invisible. -->
       <span
         v-if="annonce.quantite && annonce.quantite > 1"
-        class="absolute bottom-3 left-3 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-af-corps"
+        class="absolute bottom-3 left-3 rounded-full border border-af-bordure bg-white px-2 py-1 text-xs font-bold text-af-corps"
       >
         Min. {{ annonce.quantite }} unités
       </span>

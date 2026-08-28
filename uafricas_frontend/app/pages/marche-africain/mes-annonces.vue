@@ -46,7 +46,7 @@
         <div
           v-for="a in annonces"
           :key="a.id"
-          class="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col"
+          class="flex flex-col overflow-hidden rounded-[10px] border border-af-bordure bg-white"
         >
           <div class="relative aspect-[16/10] bg-af-fond">
             <img v-if="a.photo_url" :src="a.photo_url" :alt="a.titre" class="w-full h-full object-cover" />
@@ -67,28 +67,28 @@
             <h3 class="font-semibold text-af-encre line-clamp-2 mb-2">{{ a.titre }}</h3>
             <p class="text-af-chocolat font-bold mb-4">{{ formatPrix(a.prix, a.devise) }}</p>
 
-            <div class="mt-auto flex flex-wrap gap-2">
+            <div class="mt-auto grid grid-cols-2 gap-2">
               <NuxtLink
                 :to="`/marche-africain/${a.id}`"
-                class="px-3 py-1.5 rounded-lg text-sm border border-af-bordure text-af-corps hover:bg-af-fond"
+                class="rounded-lg border border-af-bordure px-3 py-1.5 text-center text-sm text-af-corps transition hover:border-af-chocolat hover:text-af-chocolat"
               >
                 Voir
               </NuxtLink>
               <button
-                class="px-3 py-1.5 rounded-lg text-sm border border-af-bordure text-af-corps hover:bg-af-fond"
+                class="rounded-lg border border-af-bordure px-3 py-1.5 text-sm text-af-corps transition hover:border-af-chocolat hover:text-af-chocolat"
                 @click="ouvrirEdition(a.id)"
               >
                 Modifier
               </button>
               <button
                 v-if="a.etat === 'publiee'"
-                class="px-3 py-1.5 rounded-lg text-sm border border-af-vert/30 text-af-vert hover:bg-af-vert/5"
+                class="rounded-lg border border-af-vert/40 px-3 py-1.5 text-sm text-af-vert transition hover:bg-af-vert/5"
                 @click="marquerConclue(a.id)"
               >
                 Marquer conclue
               </button>
               <button
-                class="px-3 py-1.5 rounded-lg text-sm border border-af-live/30 text-af-live hover:bg-af-live/5"
+                class="rounded-lg border border-af-live/40 px-3 py-1.5 text-sm text-af-live transition hover:bg-af-live/5"
                 @click="confirmerSuppression(a.id)"
               >
                 Supprimer
@@ -201,10 +201,10 @@ const libelleEtat = (etat: string): string => {
 
 const badgeEtat = (etat: string): string => {
   switch (etat) {
-    case 'publiee': return 'bg-af-vert/10 text-af-vert'
-    case 'conclue': return 'bg-af-bordure text-af-corps'
-    case 'suspendue': return 'bg-af-live/10 text-af-live'
-    default: return 'bg-af-chocolat/10 text-af-chocolat'
+    case 'publiee': return 'bg-af-vert text-white'
+    case 'conclue': return 'border border-af-bordure bg-white text-af-corps'
+    case 'suspendue': return 'bg-af-live text-white'
+    default: return 'bg-af-chocolat text-white'
   }
 }
 
