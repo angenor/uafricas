@@ -9,6 +9,7 @@ import type { PartageMediaAPI } from '~/composables/useMediaSocial'
 import type { SalleAPI } from '~/composables/useAfrolang'
 import type { ContributionCitoyenne } from '~/types/gouvernance'
 import type { MembreLightAPI } from '~/composables/useAmis'
+import type { AvisPublicResume } from '~/composables/useRetrouvAmis'
 import type { AuteurAfricanitesAPI } from '~/composables/useAfricanite'
 import type { MembreAPI } from '~/composables/useMembres'
 import type { BrouillonCodimoi } from '~/components/codi-moi/PublierModale.vue'
@@ -39,7 +40,7 @@ useHead({
   title: 'Publications de la Communauté | AfricanS',
 })
 
-type FiltreValue = 'tous' | 'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits' | 'territoire_partage' | 'element_partage' | 'profil_partage' | 'video_partage' | 'media_partage' | 'afrolang_direct'
+type FiltreValue = 'tous' | 'codimoi' | 'factcheck' | 'ideaforces' | 'badhabits' | 'territoire_partage' | 'element_partage' | 'profil_partage' | 'video_partage' | 'media_partage' | 'afrolang_direct' | 'avis_recherche'
 
 interface BasePublication {
   key: string
@@ -94,6 +95,22 @@ interface PublicationMediaPartage extends BasePublication {
   typeFiltre: 'media_partage'
 }
 
+/**
+ * Les avis de recherche Africonnect entrent au fil DIRECTEMENT, comme les
+ * posts Codimoi et les contributions citoyennes — pas par un partage.
+ *
+ * Les huit autres sources de partage s'appuient chacune sur une table qui
+ * garde une ligne par partage, avec son auteur et sa date. `avis_recherche`
+ * n'a qu'un `compteur_partages` INTEGER : il n'existe ni ligne de partage,
+ * ni endpoint pour les lister. Attendre un partage aurait donc voulu dire
+ * n'afficher jamais aucun avis.
+ */
+interface PublicationAvisRecherche extends BasePublication {
+  source: 'avis_recherche'
+  data: AvisPublicResume
+  typeFiltre: 'avis_recherche'
+}
+
 interface PublicationAfrolangDirect extends BasePublication {
   source: 'afrolang_direct'
   data: SalleAPI
@@ -102,10 +119,10 @@ interface PublicationAfrolangDirect extends BasePublication {
 
 type Publication = PublicationAfrolangDirect | PublicationCodimoi | PublicationGouvernance | PublicationTerritoirePartage
   | PublicationElementPartage | PublicationProfilPartage | PublicationContributionPartage
-  | PublicationVideoPartage | PublicationMediaPartage
+  | PublicationVideoPartage | PublicationMediaPartage | PublicationAvisRecherche
 
 /**
- * Les dix filtres du rail. La couleur d'habillage propre à chaque source a
+ * Les onze filtres du rail. La couleur d'habillage propre à chaque source a
  * disparu : dans la refonte le type est dit par le badge de la carte, et dix
  * jeux de dégradés ne disaient rien de plus que dix libellés.
  */
@@ -120,6 +137,7 @@ const FILTRES: { value: FiltreValue, label: string, icone: string }[] = [
   { value: 'profil_partage', label: 'Profils partagés', icone: 'fa-solid fa-user' },
   { value: 'video_partage', label: 'Vidéos partagées', icone: 'fa-solid fa-video' },
   { value: 'media_partage', label: 'Radio & télé', icone: 'fa-solid fa-tv' },
+  { value: 'avis_recherche', label: 'Avis de recherche', icone: 'fa-solid fa-users' },
   { value: 'afrolang_direct', label: 'En direct', icone: 'fa-solid fa-video' }]
 
 /**
@@ -146,6 +164,7 @@ const { listerPartagesProfils } = useMembres()
 const { listerPartagesVideos } = useVidafrica()
 const { listerPartages: listerPartagesMedias } = useMediaSocial()
 const { listerSalles } = useAfrolang()
+const { rechercherAvisPublics, incrementerPartage } = useRetrouvAmis()
 
 // Africanités en tête de fil (spec 012)
 const { listerAfricanites, marquerVue } = useAfricanite()
@@ -286,6 +305,10 @@ const publicationsFiltrees = computed<Publication[]>(() => {
         titre = p.data.titre.toLowerCase()
         desc = `${p.data.description ?? ''} ${p.data.langue_cible ?? ''}`.toLowerCase()
       }
+      else if (p.source === 'avis_recherche') {
+        titre = `${p.data.prenom_recherche ?? ''} ${p.data.nom_recherche}`.toLowerCase()
+        desc = `${p.data.ecole_rencontre ?? ''} ${p.data.ville_rencontre ?? ''} ${p.data.localite_rencontre ?? ''} ${p.data.description_physique ?? ''}`.toLowerCase()
+      }
       else {
         titre = p.data.titre.toLowerCase()
         desc = p.data.description.toLowerCase()
@@ -302,6 +325,10 @@ const publicationsFiltrees = computed<Publication[]>(() => {
 
 /** Engagement d'une publication : seuls Codimoi et la gouvernance en portent. */
 function engagementDe(pub: Publication): number {
+  // Un avis ne porte NI like NI commentaire : son seul compteur tenu par le
+  // serveur est le partage. Il descend donc en bas de « Tendances », ce qui
+  // est exact et non un defaut de tri.
+  if (pub.source === 'avis_recherche') return pub.data.compteur_partages
   if (pub.source === 'afrolang_direct') return pub.data.sessions_en_cours
   if (pub.source === 'codimoi') return pub.data.nombre_likes + pub.data.nombre_commentaires
   if (pub.source === 'gouvernance') return pub.data.stats.likes + pub.data.stats.commentaires
@@ -357,6 +384,11 @@ function isQuoteType(type: string): boolean {
 }
 
 function nomAuteur(pub: Publication): string {
+  // L'anonymat est une GARANTIE du module, pas une donnée manquante : quand
+  // l'auteur l'a choisi, le serveur ne transmet même pas de pseudonyme.
+  if (pub.source === 'avis_recherche') {
+    return pub.data.auteur_anonyme ? 'Anonyme' : (pub.data.auteur_pseudonyme || 'Un membre')
+  }
   if (pub.source === 'afrolang_direct') {
     const admin = pub.data.administrateurs?.[0]
     return admin ? `${admin.prenom} ${admin.nom}`.trim() : 'AfricanS'
@@ -379,6 +411,7 @@ function paysPub(pub: Publication): string | null {
   if (pub.source === 'element_partage') return pub.data.element.territoire_nom || null
   if (pub.source === 'profil_partage') return pub.data.profil.pays || null
   if (pub.source === 'contribution_partage' || pub.source === 'video_partage' || pub.source === 'media_partage') return null
+  if (pub.source === 'avis_recherche') return pub.data.pays?.nom || null
   return pub.data.localisation.pays || null
 }
 
@@ -390,11 +423,30 @@ function formatDate(date: Date): string {
   }).format(date)
 }
 
+/**
+ * Partage d'un avis depuis le fil : copie du lien public, puis incrément du
+ * compteur serveur reporté LOCALEMENT. Recharger le fil entier pour un seul
+ * chiffre ferait sauter la position de lecture.
+ */
+const partagerAvisFil = async (avis: AvisPublicResume) => {
+  if (import.meta.client && navigator.clipboard) {
+    navigator.clipboard.writeText(`${window.location.origin}/retrouve-amis/public/${avis.slug}`)
+  }
+  notifier("Lien de l'avis copié.")
+
+  const res = await incrementerPartage(avis.slug)
+  if (!res) return
+  const pub = publications.value.find(p => p.source === 'avis_recherche' && p.data.id === avis.id)
+  if (pub && pub.source === 'avis_recherche') {
+    pub.data = { ...pub.data, compteur_partages: res.compteur_partages }
+  }
+}
+
 const chargerTout = async () => {
   loading.value = true
   erreurChargement.value = null
 
-  const [resCodimoi, resGouv, resPartages, resPartagesElements, resPartagesProfils, resPartagesContrib, resPartagesVideos, resPartagesMedias, resSalles] = await Promise.allSettled([
+  const [resCodimoi, resGouv, resPartages, resPartagesElements, resPartagesProfils, resPartagesContrib, resPartagesVideos, resPartagesMedias, resSalles, resAvis] = await Promise.allSettled([
     listerPosts({ page: 1, par_page: 30 }),
     getContributions({ page: 1, parPage: 30 }),
     listerPartagesFiches(1, 30),
@@ -403,10 +455,12 @@ const chargerTout = async () => {
     listerPartagesContributions(1, 30),
     listerPartagesVideos(1, 30),
     listerPartagesMedias(1, 30),
-    // Neuvième source : les salles Afrolang EN COURS. Aucun endpoint public ne
+    // Salles Afrolang EN COURS. Aucun endpoint public ne
     // liste les sessions actives toutes salles confondues ; la liste des salles
     // porte `sessions_en_cours`, un seul appel suffit donc à les trouver.
-    listerSalles({ page: 1, par_page: 30 })])
+    listerSalles({ page: 1, par_page: 30 }),
+    // Dixième source : les avis de recherche publics, servis tels quels.
+    rechercherAvisPublics({ page: 1, par_page: 30 })])
 
   const items: Publication[] = []
 
@@ -545,7 +599,22 @@ const chargerTout = async () => {
       })
     }
   }
-  else if (resSalles.status === 'rejected') {
+  if (resAvis.status === 'fulfilled' && resAvis.value?.avis) {
+    for (const avis of resAvis.value.avis) {
+      items.push({
+        key: `avis-${avis.id}`,
+        source: 'avis_recherche',
+        data: avis,
+        date: new Date(avis.created_at),
+        typeFiltre: 'avis_recherche',
+      })
+    }
+  }
+  else if (resAvis.status === 'rejected') {
+    console.error('Erreur chargement Avis de recherche:', resAvis.reason)
+  }
+
+  if (resSalles.status === 'rejected') {
     console.error('Erreur chargement salles Afrolang:', resSalles.reason)
   }
 
@@ -951,6 +1020,14 @@ onMounted(async () => {
             :contribution="pub.data"
           />
 
+          <!-- Avis de recherche Africonnect. `CarteAvisFil` existait déjà,
+               écrite pour le fil, mais n'était montée que sur /retrouve-amis. -->
+          <RetrouveAmisCarteAvisFil
+            v-else-if="pub.source === 'avis_recherche'"
+            :avis="pub.data"
+            @partager="partagerAvisFil(pub.data)"
+          />
+
           <!-- Les six sources de partage : une seule et même carte. -->
           <PublicationsCartePartage v-else v-bind="partageEn(pub)!" />
         </template>
@@ -964,7 +1041,7 @@ onMounted(async () => {
         <p class="mt-2 text-[14px]/[1.4] text-af-corps">
           {{ hasFiltresActifs
             ? 'Essayez une autre catégorie, un autre territoire, ou repartez de zéro.'
-            : 'Les publications des huit modules de la plateforme apparaîtront ici.' }}
+            : 'Les publications des modules de la plateforme apparaîtront ici.' }}
         </p>
         <AfricansBouton
           v-if="hasFiltresActifs"
