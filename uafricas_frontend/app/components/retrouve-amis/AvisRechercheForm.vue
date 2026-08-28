@@ -416,7 +416,7 @@ const labelClass = 'mb-2 block text-[14px]/[1.4] text-af-atone italic'
           <div>
             <span class="text-sm font-medium text-af-corps">Publier en anonyme</span>
             <p class="text-xs text-af-atone mt-0.5">
-              Votre nom et prenom ne seront pas affiches sur l'avis public. Seul « Anonyme » apparaitra.
+              Votre nom et prénom ne seront pas affichés sur l'avis public. Seul « Anonyme » apparaîtra.
             </p>
           </div>
         </label>
@@ -477,7 +477,7 @@ const labelClass = 'mb-2 block text-[14px]/[1.4] text-af-atone italic'
     <div v-if="etapeCourante === 2" class="space-y-4">
       <div>
         <label :class="labelClass">
-          Nom de la personne recherchee <span class="text-af-live">*</span>
+          Nom de la personne recherchée <span class="text-af-live">*</span>
         </label>
         <input
           v-model="formulaire.nom_recherche"
@@ -512,7 +512,7 @@ const labelClass = 'mb-2 block text-[14px]/[1.4] text-af-atone italic'
       </div>
 
       <div>
-        <label :class="labelClass">Genre de la personne recherchee</label>
+        <label :class="labelClass">Genre de la personne recherchée</label>
         <div class="flex gap-4">
           <label v-for="genre in GENRES_PERSONNE" :key="genre.value" class="flex items-center gap-2 cursor-pointer" @click="animerSelection">
             <input
@@ -586,7 +586,7 @@ const labelClass = 'mb-2 block text-[14px]/[1.4] text-af-atone italic'
 
     <!-- ── Etape 4 : Lieu de rencontre ────────────────── -->
     <div v-if="etapeCourante === 4" class="space-y-4">
-      <p class="text-sm text-af-atone">Ou avez-vous rencontre cette personne pour la derniere fois ?</p>
+      <p class="text-sm text-af-atone">Où avez-vous rencontré cette personne pour la dernière fois ?</p>
 
       <!-- Rencontre sur les reseaux sociaux -->
       <div class="rounded-lg border border-af-bordure p-4 space-y-3">

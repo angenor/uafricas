@@ -62,12 +62,12 @@ const lieuxRencontre = computed(() => {
       <!-- ═══════════════════════════════════════════════════════
            QUI RECHERCHE QUI : la zone principale
            ═══════════════════════════════════════════════════════ -->
-      <div class="bg-linear-to-b from-af-chocolat/80 to-white px-6 py-8 md:px-10 md:py-10">
+      <div class="bg-linear-to-b from-af-chocolat/5 to-white px-6 py-8 md:px-10 md:py-10">
         <!-- Phrase narrative -->
         <p class="mb-6 text-center text-sm text-af-atone">
           <span class="font-semibold text-af-chocolat">{{ auteurDisplay }}</span>
           recherche
-          <span v-if="labelRelation" class="text-af-corps">{{ labelRelation === 'Autre' ? 'une connaissance' : (['Ami(e)', 'Collegue', 'Voisin(e)'].includes(labelRelation!) ? `un(e) ${labelRelation!.toLowerCase()}` : `un(e) ancien(ne) ${labelRelation!.toLowerCase()}`) }}</span>
+          <span v-if="labelRelation" class="text-af-corps">{{ labelRelation === 'Autre' ? 'une connaissance' : (['Ami(e)', 'Collègue', 'Voisin(e)'].includes(labelRelation!) ? `un(e) ${labelRelation!.toLowerCase()}` : `un(e) ancien(ne) ${labelRelation!.toLowerCase()}`) }}</span>
           <span v-else>une personne</span>
           perdue de vue
           <span class="text-af-atone-2 mx-1">·</span>
@@ -76,11 +76,11 @@ const lieuxRencontre = computed(() => {
 
         <!-- Carte personne recherchee -->
         <div class="relative rounded-2xl bg-white p-6 md:p-8 shadow-md ring-1 ring-af-bordure/60">
-          <!-- Badge "Personne recherchee" -->
+          <!-- Badge "Personne recherchée" -->
           <div class="absolute -top-3 left-6 md:left-8">
             <span class="inline-flex items-center gap-1.5 rounded-full bg-af-chocolat px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm">
               <font-awesome-icon :icon="['fas', 'magnifying-glass']" class="text-[10px]" />
-              Personne recherchee
+              Personne recherchée
             </span>
           </div>
 
@@ -150,7 +150,7 @@ const lieuxRencontre = computed(() => {
         <div v-if="lieuxRencontre.length > 0 || props.avis.jamais_rencontre || props.avis.ecole || props.avis.ville || props.avis.pays || props.avis.periode_debut || props.avis.periode_fin">
           <h2 class="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-af-atone-2">
             <font-awesome-icon :icon="['fas', 'map-location-dot']" class="text-af-chocolat" />
-            Ou et quand se sont-ils connus ?
+            Où et quand se sont-ils connus ?
             <span class="h-px flex-1 bg-af-bordure" />
           </h2>
 
@@ -223,10 +223,10 @@ const lieuxRencontre = computed(() => {
         <div v-if="props.avis.comment_connu">
           <h2 class="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-af-atone-2">
             <font-awesome-icon :icon="['fas', 'comments']" class="text-af-chocolat" />
-            Comment la personne me connait
+            Comment la personne me connaît
             <span class="h-px flex-1 bg-af-bordure" />
           </h2>
-          <div class="rounded-lg bg-af-chocolat/50 p-5 ring-1 ring-af-chocolat/10">
+          <div class="rounded-lg bg-af-chocolat/5 p-5 ring-1 ring-af-chocolat/10">
             <p class="text-sm leading-relaxed text-af-corps whitespace-pre-line">{{ props.avis.comment_connu }}</p>
           </div>
         </div>
@@ -250,7 +250,7 @@ const lieuxRencontre = computed(() => {
             Message de l'auteur
             <span class="h-px flex-1 bg-af-bordure" />
           </h2>
-          <div class="rounded-lg border-l-4 border-af-chocolat bg-af-chocolat/30 p-5">
+          <div class="rounded-lg border-l-4 border-af-chocolat bg-af-chocolat/5 p-5">
             <p class="text-sm leading-relaxed text-af-corps whitespace-pre-line italic">{{ props.avis.description }}</p>
             <p class="mt-3 text-xs text-af-atone-2">
               {{ auteurDisplay }}
@@ -259,13 +259,13 @@ const lieuxRencontre = computed(() => {
         </div>
 
         <!-- Appel a l'action -->
-        <div class="rounded-lg bg-linear-to-r from-af-vert/10 to-af-vert/5 p-5 ring-1 ring-af-vert/60 text-center">
+        <div class="rounded-lg bg-linear-to-r from-af-vert/10 to-af-vert/5 p-5 ring-1 ring-af-vert/30 text-center">
           <p class="text-sm font-medium text-af-corps mb-1">
             <font-awesome-icon :icon="['fas', 'heart']" class="text-af-vert mr-1" />
             Vous reconnaissez cette personne ?
           </p>
           <p class="text-xs text-af-atone">
-            Repondez a cet avis ci-dessous ou partagez-le pour augmenter les chances de retrouvailles.
+            Répondez à cet avis ci-dessous ou partagez-le pour augmenter les chances de retrouvailles.
           </p>
         </div>
 
@@ -277,7 +277,7 @@ const lieuxRencontre = computed(() => {
           </span>
           <span class="flex items-center gap-2">
             <font-awesome-icon :icon="['fas', 'clock']" class="text-af-atone-2" />
-            Publie le {{ formatDate(props.avis.created_at) }}
+            Publié le {{ formatDate(props.avis.created_at) }}
           </span>
         </div>
       </div>

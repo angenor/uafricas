@@ -375,10 +375,10 @@ export const TYPES_PARCOURS: { value: TypeParcours; label: string; icon: string 
 
 export const TYPES_RELATION: { value: TypeRelationRecherche; label: string }[] = [
   { value: 'amis_enfance', label: 'Amis d\'enfance' },
-  { value: 'amis_ecole', label: 'Amis d\'ecole / universite' },
-  { value: 'collegue', label: 'Collegue' },
+  { value: 'amis_ecole', label: 'Amis d\'école / université' },
+  { value: 'collegue', label: 'Collègue' },
   { value: 'connaissance', label: 'Connaissance' },
-  { value: 'frere_soeur', label: 'Frere / Soeur' },
+  { value: 'frere_soeur', label: 'Frère / Sœur' },
   { value: 'parent', label: 'Parent' },
   { value: 'autre', label: 'Autre' },
 ]

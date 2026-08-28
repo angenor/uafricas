@@ -206,7 +206,7 @@ const soumettre = () => {
         <font-awesome-icon icon="route" class="mx-auto mb-3 h-8 w-8 text-af-atone-2" />
         <p class="text-sm text-af-atone">Aucun parcours renseigne.</p>
         <p class="mt-1 text-xs text-af-atone-2">
-          Ajoutez vos ecoles et villes de residence pour etre retrouve plus facilement.
+          Ajoutez vos écoles et villes de résidence pour être retrouvé plus facilement.
         </p>
       </div>
 
@@ -296,7 +296,7 @@ const soumettre = () => {
               v-model="formulaire.nom"
               type="text"
               maxlength="150"
-              :placeholder="formulaire.type_entree === 'ecole' ? 'Ex : Universite Cheikh Anta Diop' : 'Ex : Dakar'"
+              :placeholder="formulaire.type_entree === 'ecole' ? 'Ex : Université Cheikh Anta Diop' : 'Ex : Dakar'"
               class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-af-chocolat"
             >
           </div>

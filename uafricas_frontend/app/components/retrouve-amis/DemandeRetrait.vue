@@ -145,7 +145,7 @@ const fermerTout = () => {
       <div class="bg-af-chocolat/5 border border-af-chocolat/20 rounded-lg p-3">
         <p class="text-af-chocolat text-sm">
           <font-awesome-icon :icon="['fas', 'circle-info']" class="mr-1" />
-          Si vous etes la personne recherchee dans cet avis et ne souhaitez pas etre retrouvee, vous pouvez demander son retrait. L'avis sera immediatement suspendu le temps qu'un administrateur examine votre demande.
+          Si vous êtes la personne recherchée dans cet avis et ne souhaitez pas être retrouvée, vous pouvez demander son retrait. L'avis sera immediatement suspendu le temps qu'un administrateur examine votre demande.
         </p>
       </div>
 
@@ -158,7 +158,7 @@ const fermerTout = () => {
           v-model="motifRetrait"
           rows="4"
           class="w-full rounded-lg border border-af-bordure px-4 py-3 text-sm text-af-encre placeholder:text-af-atone-2 focus:border-af-chocolat focus:ring-2 focus:border-af-chocolat/20 focus:outline-none transition-colors resize-none"
-          placeholder="Je suis la personne recherchee dans cet avis et je ne souhaite pas etre retrouvee..."
+          placeholder="Je suis la personne recherchée dans cet avis et je ne souhaite pas être retrouvée..."
         />
       </div>
 

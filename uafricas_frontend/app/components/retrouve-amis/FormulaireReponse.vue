@@ -124,14 +124,14 @@ const fermer = () => {
       <div class="bg-af-chocolat/5 border border-af-chocolat/20 rounded-lg p-3">
         <p class="text-af-chocolat text-sm">
           <font-awesome-icon :icon="['fas', 'circle-info']" class="mr-1" />
-          Votre reponse creera une correspondance avec l'auteur de l'avis. Il sera notifie et pourra entrer en contact avec vous.
+          Votre réponse créera une correspondance avec l'auteur de l'avis. Il sera notifié et pourra entrer en contact avec vous.
         </p>
       </div>
 
       <!-- Type de reponse -->
       <div>
         <label class="block text-sm font-medium text-af-corps mb-2">
-          Votre relation avec la personne recherchee <span class="text-af-live">*</span>
+          Votre relation avec la personne recherchée <span class="text-af-live">*</span>
         </label>
         <div class="space-y-2">
           <label
@@ -187,7 +187,7 @@ const fermer = () => {
         >
           <font-awesome-icon v-if="chargement" :icon="['fas', 'spinner']" class="animate-spin" />
           <font-awesome-icon v-else :icon="['fas', 'paper-plane']" />
-          Envoyer ma reponse
+          Envoyer ma réponse
         </button>
       </div>
     </div>
