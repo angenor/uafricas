@@ -47,35 +47,35 @@ const fuseauxDistincts = computed(() =>
 <template>
   <div
     v-if="enCours || suivant"
-    class="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl bg-neutral-900/70 border border-white/10 px-4 py-3 mb-6"
+    class="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl bg-af-fond border border-af-bordure px-4 py-3 mb-6"
   >
     <div v-if="enCours" class="flex items-center gap-3 min-w-0">
       <span
-        class="shrink-0 rounded-full bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wide"
+        class="shrink-0 rounded-full bg-af-live text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wide"
       >
         En ce moment
       </span>
       <div class="min-w-0">
-        <span v-if="serie(enCours)" class="block truncate text-gray-400 text-[11px] uppercase tracking-wide">
+        <span v-if="serie(enCours)" class="block truncate text-af-corps text-[11px] uppercase tracking-wide">
           {{ serie(enCours) }}
         </span>
         <NuxtLink
           v-if="lien(enCours)"
           :to="lien(enCours)!"
-          class="block truncate text-white text-sm font-semibold hover:text-yellow-400 transition-colors"
+          class="block truncate text-af-encre text-sm font-semibold hover:text-af-chocolat transition-colors"
         >
           {{ titre(enCours) }}
         </NuxtLink>
-        <span v-else class="block truncate text-white text-sm font-semibold">
+        <span v-else class="block truncate text-af-encre text-sm font-semibold">
           {{ titre(enCours) }}
         </span>
-        <span class="text-gray-400 text-xs">
+        <span class="text-af-corps text-xs">
           {{ enCours.heure_debut }} – {{ heureFin(enCours.heure_debut, enCours.duree_minutes) }}
           <span v-if="fuseauxDistincts"> ({{ enCours.fuseau }})</span>
           <!-- La rotation a bouclé : le public a droit à l'information. -->
           <span
             v-if="enCours.est_rediffusion"
-            class="ml-1.5 rounded-full border border-white/20 text-gray-300 text-[10px] px-1.5 py-0.5 uppercase tracking-wide"
+            class="ml-1.5 rounded-full border border-af-bordure text-af-corps text-[10px] px-1.5 py-0.5 uppercase tracking-wide"
           >
             Rediffusion
           </span>
@@ -85,28 +85,28 @@ const fuseauxDistincts = computed(() =>
 
     <div v-if="suivant" class="flex items-center gap-3 min-w-0">
       <span
-        class="shrink-0 rounded-full border border-yellow-400 text-yellow-400 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wide"
+        class="shrink-0 rounded-full border border-af-chocolat text-af-chocolat text-[10px] font-bold px-2 py-0.5 uppercase tracking-wide"
       >
         À suivre
       </span>
       <div class="min-w-0">
-        <span v-if="serie(suivant)" class="block truncate text-gray-400 text-[11px] uppercase tracking-wide">
+        <span v-if="serie(suivant)" class="block truncate text-af-corps text-[11px] uppercase tracking-wide">
           {{ serie(suivant) }}
         </span>
         <NuxtLink
           v-if="lien(suivant)"
           :to="lien(suivant)!"
-          class="block truncate text-white text-sm hover:text-yellow-400 transition-colors"
+          class="block truncate text-af-encre text-sm hover:text-af-chocolat transition-colors"
         >
           {{ titre(suivant) }}
         </NuxtLink>
-        <span v-else class="block truncate text-white text-sm">{{ titre(suivant) }}</span>
-        <span class="text-gray-400 text-xs">
+        <span v-else class="block truncate text-af-encre text-sm">{{ titre(suivant) }}</span>
+        <span class="text-af-corps text-xs">
           à {{ suivant.heure_debut }}
           <span v-if="fuseauxDistincts"> ({{ suivant.fuseau }})</span>
           <span
             v-if="suivant.est_rediffusion"
-            class="ml-1.5 rounded-full border border-white/20 text-gray-300 text-[10px] px-1.5 py-0.5 uppercase tracking-wide"
+            class="ml-1.5 rounded-full border border-af-bordure text-af-corps text-[10px] px-1.5 py-0.5 uppercase tracking-wide"
           >
             Rediffusion
           </span>

@@ -90,8 +90,8 @@ const basculer = async (type: TypeReaction) => {
       :class="[
         compact ? 'py-1.5 text-sm' : 'py-2.5',
         maReaction === 'like'
-          ? 'bg-custom-green text-white border-custom-green'
-          : 'bg-white/10 text-white border-white/25 hover:bg-white/20',
+          ? 'bg-af-vert text-white border-af-vert'
+          : 'bg-af-fond text-af-encre border-af-bordure hover:bg-af-bordure',
       ]"
       @click="basculer('like')"
     >
@@ -108,8 +108,8 @@ const basculer = async (type: TypeReaction) => {
       :class="[
         compact ? 'py-1.5 text-sm' : 'py-2.5',
         maReaction === 'dislike'
-          ? 'bg-red-500 text-white border-red-500'
-          : 'bg-white/10 text-white border-white/25 hover:bg-white/20',
+          ? 'bg-af-live text-white border-af-live'
+          : 'bg-af-fond text-af-encre border-af-bordure hover:bg-af-bordure',
       ]"
       @click="basculer('dislike')"
     >
@@ -120,7 +120,7 @@ const basculer = async (type: TypeReaction) => {
     <button
       type="button"
       aria-label="Commenter"
-      class="flex items-center justify-center gap-2 rounded-lg border border-white/25 bg-white/10 px-4 font-medium text-white transition-colors cursor-pointer hover:bg-white/20"
+      class="flex items-center justify-center gap-2 rounded-lg border border-af-bordure bg-af-fond px-4 font-medium text-af-encre transition-colors cursor-pointer hover:bg-af-bordure"
       :class="compact ? 'py-1.5 text-sm' : 'py-2.5'"
       @click="emit('commenter')"
     >
@@ -131,7 +131,7 @@ const basculer = async (type: TypeReaction) => {
     <button
       type="button"
       aria-label="Partager"
-      class="flex items-center justify-center gap-2 rounded-lg border border-white/25 bg-white/10 px-4 font-medium text-white transition-colors cursor-pointer hover:bg-white/20"
+      class="flex items-center justify-center gap-2 rounded-lg border border-af-bordure bg-af-fond px-4 font-medium text-af-encre transition-colors cursor-pointer hover:bg-af-bordure"
       :class="compact ? 'py-1.5 text-sm' : 'py-2.5'"
       @click="emit('partager')"
     >

@@ -32,7 +32,7 @@ const defiler = (sens: -1 | 1) => {
     <!-- Titre et méta sur la même ligne : depuis 009, une rangée est un
          PROGRAMME, et son en-tête porte son décompte d'épisodes et sa cadence. -->
     <div v-if="titre || $slots.entete" class="flex items-baseline justify-between gap-4 mb-3 px-1">
-      <h4 v-if="titre" class="text-white font-semibold truncate">{{ titre }}</h4>
+      <h4 v-if="titre" class="text-af-encre font-semibold truncate">{{ titre }}</h4>
       <slot name="entete" />
     </div>
 
@@ -40,7 +40,7 @@ const defiler = (sens: -1 | 1) => {
          naviguent à la souris ou au clavier (FR-053). -->
     <button
       type="button"
-      class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 h-11 w-11 items-center justify-center rounded-full bg-black/70 text-white opacity-0 group-hover/rangee:opacity-100 focus-visible:opacity-100 hover:bg-black/90 transition-opacity"
+      class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 h-11 w-11 items-center justify-center rounded-full bg-black/70 text-af-encre opacity-0 group-hover/rangee:opacity-100 focus-visible:opacity-100 hover:bg-black/90 transition-opacity"
       aria-label="Contenus précédents"
       @click="defiler(-1)"
     >
@@ -60,14 +60,14 @@ const defiler = (sens: -1 | 1) => {
 
     <button
       type="button"
-      class="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 h-11 w-11 items-center justify-center rounded-full bg-black/70 text-white opacity-0 group-hover/rangee:opacity-100 focus-visible:opacity-100 hover:bg-black/90 transition-opacity"
+      class="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 h-11 w-11 items-center justify-center rounded-full bg-black/70 text-af-encre opacity-0 group-hover/rangee:opacity-100 focus-visible:opacity-100 hover:bg-black/90 transition-opacity"
       aria-label="Contenus suivants"
       @click="defiler(1)"
     >
       <font-awesome-icon :icon="['fas', 'chevron-right']" />
     </button>
 
-    <p v-if="messageVide" class="text-gray-500 text-sm px-1">{{ messageVide }}</p>
+    <p v-if="messageVide" class="text-af-atone text-sm px-1">{{ messageVide }}</p>
   </section>
 </template>
 

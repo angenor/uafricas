@@ -131,9 +131,9 @@ const basculerDirect = () => emit('update:enDirect', !props.enDirect)
 
 const classePastille = (actif: boolean) => [
   'inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors cursor-pointer',
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-orange',
   actif
-    ? 'bg-yellow-400 text-black hover:bg-yellow-300'
+    ? 'bg-af-orange text-black hover:bg-af-orange'
     : 'bg-white/10 text-white ring-1 ring-white/25 backdrop-blur-xs hover:bg-white/20',
 ]
 
@@ -146,7 +146,7 @@ const classePastille = (actif: boolean) => [
 const classeSelect = [
   'appearance-none truncate rounded-full bg-white/10 text-white text-sm font-medium ring-1 ring-white/25 backdrop-blur-xs',
   'pl-9 pr-9 py-2 cursor-pointer hover:bg-white/20 transition-colors',
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-orange',
 ]
 </script>
 
@@ -164,7 +164,7 @@ const classeSelect = [
            conteneur défilant lui-même, il reste donc fixe sous les pastilles
            qui glissent. -->
       <div
-        class="flex flex-nowrap sm:flex-wrap items-center justify-start sm:justify-center gap-2 sm:gap-3 overflow-x-auto sm:overflow-visible rounded-2xl bg-linear-to-r from-black/85 via-custom-chocolat/45 to-black/85 ring-1 ring-yellow-400/35 backdrop-blur-md shadow-lg shadow-black/50 px-3 py-2.5"
+        class="flex flex-nowrap sm:flex-wrap items-center justify-start sm:justify-center gap-2 sm:gap-3 overflow-x-auto sm:overflow-visible rounded-2xl bg-linear-to-r from-black/85 via-af-chocolat/45 to-black/85 ring-1 ring-af-orange/35 backdrop-blur-md shadow-lg shadow-black/50 px-3 py-2.5"
       >
         <!-- Africans Télé International (chaînes de la plateforme) : porte aussi
              le panneau des thématiques déclarées. Le panneau lui-même est
@@ -194,20 +194,20 @@ const classeSelect = [
           <font-awesome-icon
             :icon="['fas', 'earth-africa']"
             class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-            :class="pays !== TOUS_TERRITOIRES ? 'text-yellow-400' : 'text-gray-300'"
+            :class="pays !== TOUS_TERRITOIRES ? 'text-af-orange' : 'text-white/80'"
           />
           <select
             :value="pays"
-            :class="[...classeSelect, 'w-52', pays !== TOUS_TERRITOIRES ? 'ring-yellow-400 text-yellow-400' : '']"
+            :class="[...classeSelect, 'w-52', pays !== TOUS_TERRITOIRES ? 'ring-af-orange text-af-orange' : '']"
             aria-label="Filtrer par territoire"
             @change="emit('update:pays', ($event.target as HTMLSelectElement).value)"
           >
-            <option class="bg-gray-900 text-white" :value="TOUS_TERRITOIRES">Tous les territoires</option>
-            <option v-for="t in territoires" :key="t" class="bg-gray-900 text-white" :value="t">{{ t }}</option>
+            <option class="bg-black/80 text-white" :value="TOUS_TERRITOIRES">Tous les territoires</option>
+            <option v-for="t in territoires" :key="t" class="bg-black/80 text-white" :value="t">{{ t }}</option>
           </select>
           <font-awesome-icon
             :icon="['fas', 'chevron-down']"
-            class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
+            class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-white/70"
           />
         </div>
 
@@ -220,7 +220,7 @@ const classeSelect = [
         >
           <span
             class="w-2 h-2 rounded-full"
-            :class="enDirect ? 'bg-red-600' : 'bg-red-500 animate-pulse'"
+            :class="enDirect ? 'bg-af-live' : 'bg-af-live animate-pulse'"
           />
           En direct
         </button>
@@ -228,12 +228,12 @@ const classeSelect = [
         <!-- Compte-rendu du filtrage : sans lui, un résultat vide ressemble à une
              page cassée plutôt qu'à un filtre trop étroit. -->
         <div v-if="filtresActifs" class="flex shrink-0 items-center gap-2">
-          <span v-if="nombreChaines !== undefined" class="text-xs text-gray-300 whitespace-nowrap">
+          <span v-if="nombreChaines !== undefined" class="text-xs text-white/80 whitespace-nowrap">
             {{ nombreChaines }} chaîne{{ nombreChaines > 1 ? 's' : '' }}
           </span>
           <button
             type="button"
-            class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/25 text-gray-300 px-3 py-2 text-xs font-medium whitespace-nowrap hover:border-yellow-400 hover:text-yellow-400 transition-colors cursor-pointer"
+            class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/25 text-white/80 px-3 py-2 text-xs font-medium whitespace-nowrap hover:border-af-orange hover:text-af-orange transition-colors cursor-pointer"
             @click="emit('reinitialiser')"
           >
             <font-awesome-icon :icon="['fas', 'xmark']" class="w-3 h-3" />
@@ -264,28 +264,28 @@ const classeSelect = [
         <div
           role="dialog"
           aria-label="Africans Télé International, filtrer par thématique"
-          class="absolute inset-x-3 bottom-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[36rem] max-h-[65vh] flex flex-col rounded-2xl bg-neutral-900 ring-1 ring-white/15 shadow-2xl"
+          class="absolute inset-x-3 bottom-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[36rem] max-h-[65vh] flex flex-col rounded-2xl bg-black/80 ring-1 ring-white/15 shadow-2xl"
         >
           <div class="flex items-center justify-between gap-3 px-4 pt-4 pb-3 border-b border-white/10">
             <div class="min-w-0">
               <p class="text-white font-semibold truncate">
                 Africans Télé International
-                <span v-if="thematiques.length" class="text-yellow-400">({{ thematiques.length }})</span>
+                <span v-if="thematiques.length" class="text-af-orange">({{ thematiques.length }})</span>
               </p>
-              <p class="text-xs text-gray-400">Affiner par thématique</p>
+              <p class="text-xs text-white/70">Affiner par thématique</p>
             </div>
             <div class="flex items-center gap-3">
               <button
                 v-if="thematiques.length"
                 type="button"
-                class="text-xs text-gray-400 underline hover:text-white"
+                class="text-xs text-white/70 underline hover:text-white"
                 @click="emit('update:thematiques', [])"
               >
                 Tout décocher
               </button>
               <button
                 type="button"
-                class="text-gray-400 hover:text-white"
+                class="text-white/70 hover:text-white"
                 aria-label="Fermer"
                 @click="panneauThematiques = false"
               >
@@ -308,10 +308,10 @@ const classeSelect = [
               type="button"
               class="rounded-full border px-3 py-1.5 text-xs transition-colors"
               :class="thematiques.includes(t.id)
-                ? 'bg-yellow-400 border-yellow-400 text-neutral-900 font-semibold'
+                ? 'bg-af-orange border-af-orange text-black font-semibold'
                 : t.nombre_supports > 0
-                  ? 'bg-white/5 border-white/15 text-gray-300 hover:border-yellow-400'
-                  : 'bg-transparent border-white/10 text-gray-500 hover:border-yellow-400/60 hover:text-gray-300'"
+                  ? 'bg-white/5 border-white/15 text-white/80 hover:border-af-orange'
+                  : 'bg-transparent border-white/10 text-white/60 hover:border-af-orange/60 hover:text-white/80'"
               @click="basculerThematique(t.id)"
             >
               {{ t.nom }} ({{ t.nombre_supports }})
@@ -321,7 +321,7 @@ const classeSelect = [
           <div class="px-4 pb-4 pt-1 border-t border-white/10">
             <button
               type="button"
-              class="w-full rounded-full bg-yellow-400 text-neutral-900 font-semibold py-2.5 text-sm hover:bg-yellow-300 transition-colors"
+              class="w-full rounded-full bg-af-orange text-black font-semibold py-2.5 text-sm hover:bg-af-orange transition-colors"
               @click="panneauThematiques = false"
             >
               Voir les résultats

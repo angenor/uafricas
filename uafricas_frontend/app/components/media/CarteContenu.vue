@@ -34,8 +34,8 @@ const emit = defineEmits<{ lire: [] }>()
   >
     <button
       type="button"
-      class="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400"
-      :class="enLecture ? 'ring-2 ring-yellow-400' : ''"
+      class="relative w-full aspect-video rounded-lg overflow-hidden bg-af-fond focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat"
+      :class="enLecture ? 'ring-2 ring-af-chocolat' : ''"
       :aria-label="`Lire ${titre}`"
       @click="emit('lire')"
     >
@@ -47,8 +47,8 @@ const emit = defineEmits<{ lire: [] }>()
         class="w-full h-full object-cover transition-transform duration-300 group-hover/carte:scale-105"
       >
       <!-- Faute de couverture, un aplat sobre plutôt qu'une image cassée. -->
-      <span v-else class="w-full h-full flex items-center justify-center bg-neutral-800">
-        <font-awesome-icon :icon="['fas', 'image']" class="text-2xl text-neutral-600" />
+      <span v-else class="w-full h-full flex items-center justify-center bg-af-fond">
+        <font-awesome-icon :icon="['fas', 'image']" class="text-2xl text-af-atone-2" />
       </span>
 
       <span
@@ -62,7 +62,7 @@ const emit = defineEmits<{ lire: [] }>()
 
       <span
         v-if="aLaUne"
-        class="absolute top-2 left-2 rounded bg-yellow-400 text-black text-[10px] font-bold px-1.5 py-0.5 uppercase"
+        class="absolute top-2 left-2 rounded bg-af-chocolat text-white text-[10px] font-bold px-1.5 py-0.5 uppercase"
       >
         À la une
       </span>
@@ -75,15 +75,15 @@ const emit = defineEmits<{ lire: [] }>()
       <NuxtLink
         v-if="lien"
         :to="lien"
-        class="block text-white text-sm font-semibold truncate hover:text-yellow-400 transition-colors"
+        class="block text-af-encre text-sm font-semibold truncate hover:text-af-chocolat transition-colors"
         :title="titre"
       >
         {{ titre }}
       </NuxtLink>
-      <p v-else class="block text-white text-sm font-semibold truncate" :title="titre">
+      <p v-else class="block text-af-encre text-sm font-semibold truncate" :title="titre">
         {{ titre }}
       </p>
-      <p v-if="description" class="text-gray-400 text-xs line-clamp-2 mt-0.5">{{ description }}</p>
+      <p v-if="description" class="text-af-corps text-xs line-clamp-2 mt-0.5">{{ description }}</p>
     </div>
   </article>
 </template>

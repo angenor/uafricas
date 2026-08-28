@@ -63,7 +63,7 @@ const iconeRepli = computed<[string, string]>(() =>
     :to="lien || undefined"
     class="group block w-full text-left"
   >
-    <div class="relative aspect-video overflow-hidden rounded-lg bg-neutral-800">
+    <div class="relative aspect-video overflow-hidden rounded-lg bg-af-fond">
       <img
         v-if="couverture"
         :src="couverture"
@@ -72,18 +72,18 @@ const iconeRepli = computed<[string, string]>(() =>
         class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
       >
       <span v-else class="flex h-full w-full items-center justify-center">
-        <font-awesome-icon :icon="iconeRepli" class="text-3xl text-neutral-600" />
+        <font-awesome-icon :icon="iconeRepli" class="text-3xl text-af-atone-2" />
       </span>
     </div>
 
-    <h4 class="mt-2 font-semibold text-white transition-colors group-hover:text-custom-chocolat">
+    <h4 class="mt-2 font-semibold text-af-encre transition-colors group-hover:text-af-chocolat">
       {{ programme.titre }}
     </h4>
 
     <!-- Ellipse figée, sans commande de dépliage : en vitrine, FR-003 demande
          des points de suspension et non un « voir plus », celui-là est réservé
          aux pages de détail. -->
-    <p v-if="programme.description" class="mt-1 text-sm leading-snug text-gray-400 line-clamp-3">
+    <p v-if="programme.description" class="mt-1 text-sm leading-snug text-af-corps line-clamp-3">
       {{ programme.description }}
     </p>
   </component>

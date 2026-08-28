@@ -68,13 +68,13 @@ const lienDetail = computed(() =>
         :controles="!commandesDisponibles"
       />
       <div v-else-if="chargement" class="w-full h-full flex items-center justify-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400" />
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-af-orange" />
       </div>
       <!-- État vide explicite : aucun programme publié à mettre en avant. -->
       <div v-else class="w-full h-full flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <font-awesome-icon :icon="['fas', 'tv']" class="text-4xl text-gray-600" />
-        <p class="text-gray-300 text-lg font-semibold">Aucun programme n'est encore diffusé</p>
-        <p class="text-gray-500 text-sm">Les contenus apparaîtront ici dès leur publication.</p>
+        <font-awesome-icon :icon="['fas', 'tv']" class="text-4xl text-white/50" />
+        <p class="text-white/80 text-lg font-semibold">Aucun programme n'est encore diffusé</p>
+        <p class="text-white/60 text-sm">Les contenus apparaîtront ici dès leur publication.</p>
       </div>
     </div>
 
@@ -87,22 +87,22 @@ const lienDetail = computed(() =>
     <!-- Identité du contenu -->
     <div v-if="programme" class="absolute bottom-24 left-6 sm:left-10 right-6 max-w-2xl text-white">
       <div class="flex flex-wrap items-center gap-3 mb-3">
-        <span v-if="programme.chaineNom" class="text-sm uppercase tracking-wide text-yellow-400 font-semibold">
+        <span v-if="programme.chaineNom" class="text-sm uppercase tracking-wide text-af-orange font-semibold">
           {{ programme.chaineNom }}
         </span>
         <span
           v-if="!programme.estRepli"
-          class="rounded-full px-3 py-0.5 text-xs bg-yellow-400/20 border border-yellow-400 text-yellow-400 uppercase"
+          class="rounded-full px-3 py-0.5 text-xs bg-af-orange/20 border border-af-orange text-af-orange uppercase"
         >
           À la une
         </span>
-        <span v-if="programme.themePhare" class="text-xs text-gray-300">{{ programme.themePhare }}</span>
+        <span v-if="programme.themePhare" class="text-xs text-white/80">{{ programme.themePhare }}</span>
       </div>
 
       <h1 class="text-3xl sm:text-5xl font-bold uppercase leading-tight mb-3">
         {{ programme.title }}
       </h1>
-      <p v-if="programme.description" class="text-gray-200 text-sm sm:text-base line-clamp-3 mb-5">
+      <p v-if="programme.description" class="text-white/90 text-sm sm:text-base line-clamp-3 mb-5">
         {{ programme.description }}
       </p>
 
@@ -110,7 +110,7 @@ const lienDetail = computed(() =>
         <button
           v-if="commandesDisponibles"
           type="button"
-          class="inline-flex items-center gap-2 rounded-full bg-white text-black font-semibold px-6 py-2.5 hover:bg-gray-200 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400"
+          class="inline-flex items-center gap-2 rounded-full bg-white text-black font-semibold px-6 py-2.5 hover:bg-white/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-orange"
           :aria-label="enPause ? 'Reprendre la lecture' : 'Mettre en pause'"
           @click="basculerLecture"
         >
@@ -121,7 +121,7 @@ const lienDetail = computed(() =>
         <button
           v-if="commandesDisponibles"
           type="button"
-          class="inline-flex items-center justify-center h-11 w-11 rounded-full bg-white/15 hover:bg-white/25 text-white ring-1 ring-white/25 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400"
+          class="inline-flex items-center justify-center h-11 w-11 rounded-full bg-white/15 hover:bg-white/25 text-white ring-1 ring-white/25 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-orange"
           :aria-label="sonCoupe ? 'Rétablir le son' : 'Couper le son'"
           :aria-pressed="sonCoupe"
           @click="basculerSon"
@@ -132,7 +132,7 @@ const lienDetail = computed(() =>
         <NuxtLink
           v-if="lienDetail"
           :to="lienDetail"
-          class="inline-flex items-center gap-2 rounded-full border border-yellow-400 bg-yellow-400/10 text-yellow-400 px-5 py-2.5 hover:bg-yellow-400/20 transition-colors"
+          class="inline-flex items-center gap-2 rounded-full border border-af-orange bg-af-orange/10 text-af-orange px-5 py-2.5 hover:bg-af-orange/20 transition-colors"
         >
           <font-awesome-icon :icon="['fas', 'circle-info']" />
           En savoir plus

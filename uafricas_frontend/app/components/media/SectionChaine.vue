@@ -90,37 +90,37 @@ const programmesMasques = computed(() =>
       >
       <span
         v-else
-        class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-neutral-800"
+        class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-af-fond"
       >
-        <font-awesome-icon :icon="['fas', 'tv']" class="text-neutral-600" />
+        <font-awesome-icon :icon="['fas', 'tv']" class="text-af-atone-2" />
       </span>
       <div class="min-w-0 flex-1">
         <div class="flex flex-wrap items-center gap-3">
           <NuxtLink
             v-if="lienChaine"
             :to="lienChaine"
-            class="truncate text-xl font-bold text-white transition-colors hover:text-custom-chocolat sm:text-2xl"
+            class="truncate text-xl font-bold text-af-encre transition-colors hover:text-af-chocolat sm:text-2xl"
           >
             {{ section.chaine.name }}
           </NuxtLink>
-          <h2 v-else class="truncate text-xl font-bold text-white sm:text-2xl">
+          <h2 v-else class="truncate text-xl font-bold text-af-encre sm:text-2xl">
             {{ section.chaine.name }}
           </h2>
           <span
             v-if="section.chaine.isLive"
-            class="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white"
+            class="rounded-full bg-af-live px-2 py-0.5 text-[10px] font-bold uppercase text-white"
           >
             En direct
           </span>
         </div>
-        <p class="truncate text-sm text-gray-400">
+        <p class="truncate text-sm text-af-corps">
           <span v-if="section.chaine.country">{{ section.chaine.country }}</span>
           <span v-if="section.chaine.country && section.chaine.category"> · </span>
           <span v-if="section.chaine.category">{{ section.chaine.category }}</span>
         </p>
       </div>
       <div class="flex shrink-0 items-center gap-3">
-        <span class="hidden text-xs text-gray-500 sm:block">
+        <span class="hidden text-xs text-af-atone sm:block">
           {{ section.totalEmissions }} programme{{ section.totalEmissions > 1 ? 's' : '' }}
         </span>
 
@@ -130,7 +130,7 @@ const programmesMasques = computed(() =>
         <NuxtLink
           v-if="lienGestion"
           :to="lienGestion"
-          class="inline-flex items-center gap-2 rounded-full border border-custom-chocolat bg-custom-chocolat/10 px-4 py-1.5 text-xs font-semibold text-custom-chocolat transition-colors hover:bg-custom-chocolat/20 sm:text-sm"
+          class="inline-flex items-center gap-2 rounded-full border border-af-chocolat bg-af-chocolat/10 px-4 py-1.5 text-xs font-semibold text-af-chocolat transition-colors hover:bg-af-chocolat/20 sm:text-sm"
           :title="`Vous êtes ${LIBELLES_ROLE_DETENTEUR[monRole!].toLowerCase()} de cette chaîne`"
         >
           <font-awesome-icon :icon="['fas', 'sliders']" class="h-3.5 w-3.5" />
@@ -148,7 +148,7 @@ const programmesMasques = computed(() =>
       :lignes="3"
       :repliable="false"
       sombre
-      class="mb-4 max-w-4xl px-1 text-sm text-gray-300"
+      class="mb-4 max-w-4xl px-1 text-sm text-af-corps"
     />
 
     <!-- Équipe éditoriale : aucun seuil de repli en vitrine, et aucun cadre
@@ -181,7 +181,7 @@ const programmesMasques = computed(() =>
         type-support="chaine_tv"
       />
     </div>
-    <p v-else class="mt-6 px-1 text-sm text-gray-500">
+    <p v-else class="mt-6 px-1 text-sm text-af-atone">
       Cette chaîne n'a pas encore annoncé de programme.
     </p>
 
@@ -190,7 +190,7 @@ const programmesMasques = computed(() =>
     <NuxtLink
       v-if="programmesMasques > 0 && lienChaine"
       :to="lienChaine"
-      class="mt-4 inline-flex items-center gap-2 px-1 text-sm font-medium text-custom-chocolat underline underline-offset-2 transition-colors hover:text-white"
+      class="mt-4 inline-flex items-center gap-2 px-1 text-sm font-medium text-af-chocolat underline underline-offset-2 transition-colors hover:opacity-70"
     >
       Voir les {{ section.totalEmissions }} programmes
       <font-awesome-icon :icon="['fas', 'arrow-right']" class="h-3 w-3" />
@@ -218,7 +218,7 @@ const programmesMasques = computed(() =>
     <div class="mt-4 flex flex-wrap gap-3 px-1">
       <button
         type="button"
-        class="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-custom-chocolat hover:text-custom-chocolat"
+        class="inline-flex items-center gap-2 rounded-full border border-af-bordure px-4 py-2 text-sm text-af-corps transition-colors hover:border-af-chocolat hover:text-af-chocolat"
         @click="ouvrirSiConnecte(() => showIdee = true)"
       >
         <font-awesome-icon :icon="['fas', 'lightbulb']" />
@@ -226,7 +226,7 @@ const programmesMasques = computed(() =>
       </button>
       <button
         type="button"
-        class="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-custom-chocolat hover:text-custom-chocolat"
+        class="inline-flex items-center gap-2 rounded-full border border-af-bordure px-4 py-2 text-sm text-af-corps transition-colors hover:border-af-chocolat hover:text-af-chocolat"
         @click="ouvrirSiConnecte(() => showAnimation = true)"
       >
         <font-awesome-icon :icon="['fas', 'microphone']" />
