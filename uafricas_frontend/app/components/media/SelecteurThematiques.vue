@@ -77,10 +77,10 @@ const enDefaut = computed(() => props.requis && props.modelValue.length === 0)
 <template>
   <div>
     <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-      <p :class="sombre ? 'text-sm text-gray-300' : 'text-sm text-gray-700'">
+      <p :class="sombre ? 'text-sm text-gray-300' : 'text-sm text-af-corps'">
         Thématiques
-        <span v-if="requis" class="text-red-500">*</span>
-        <span :class="sombre ? 'text-gray-500' : 'text-gray-400'">
+        <span v-if="requis" class="text-af-live">*</span>
+        <span :class="sombre ? 'text-af-atone' : 'text-gray-400'">
           {{ modelValue.length }} sélectionnée{{ modelValue.length > 1 ? 's' : '' }}
         </span>
       </p>
@@ -88,7 +88,7 @@ const enDefaut = computed(() => props.requis && props.modelValue.length === 0)
         v-if="modelValue.length && !disabled"
         type="button"
         class="text-xs underline"
-        :class="sombre ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'"
+        :class="sombre ? 'text-gray-400 hover:text-white' : 'text-af-atone hover:text-af-encre'"
         @click="viderSelection"
       >
         Tout décocher
@@ -102,13 +102,13 @@ const enDefaut = computed(() => props.requis && props.modelValue.length === 0)
       :disabled="disabled"
       class="w-full rounded-lg px-3 py-2 text-sm mb-3 border outline-none transition-colors disabled:opacity-50"
       :class="sombre
-        ? 'bg-white/5 border-white/15 text-white placeholder-gray-500 focus:border-yellow-400'
-        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gray-900'"
+        ? 'bg-white/5 border-white/15 text-white placeholder-af-atone-2 focus:border-af-chocolat'
+        : 'bg-white border-af-bordure text-af-encre placeholder-af-atone-2 focus:border-af-encre'"
     >
 
     <div
       class="flex flex-wrap gap-2 max-h-64 overflow-y-auto p-1 rounded-lg"
-      :class="enDefaut ? 'ring-1 ring-red-500/60' : ''"
+      :class="enDefaut ? 'ring-1 ring-af-live/60' : ''"
     >
       <button
         v-for="theme in filtrees"
@@ -118,11 +118,11 @@ const enDefaut = computed(() => props.requis && props.modelValue.length === 0)
         class="rounded-full px-3 py-1.5 text-sm border transition-colors disabled:opacity-50"
         :class="estSelectionne(theme.id)
           ? (sombre
-            ? 'bg-yellow-400 border-yellow-400 text-neutral-900 font-semibold'
-            : 'bg-gray-900 border-gray-900 text-white font-semibold')
+            ? 'bg-af-chocolat border-af-chocolat text-af-encre font-semibold'
+            : 'bg-gray-900 border-af-encre text-white font-semibold')
           : (sombre
-            ? 'bg-white/5 border-white/15 text-gray-300 hover:border-yellow-400'
-            : 'bg-white border-gray-300 text-gray-700 hover:border-gray-900')"
+            ? 'bg-white/5 border-white/15 text-gray-300 hover:border-af-chocolat'
+            : 'bg-white border-af-bordure text-af-corps hover:border-af-encre')"
         @click="basculer(theme.id)"
       >
         {{ theme.nom }}
@@ -130,13 +130,13 @@ const enDefaut = computed(() => props.requis && props.modelValue.length === 0)
 
       <p
         v-if="!filtrees.length"
-        :class="sombre ? 'text-sm text-gray-500' : 'text-sm text-gray-400'"
+        :class="sombre ? 'text-sm text-af-atone' : 'text-sm text-gray-400'"
       >
         Aucune thématique ne correspond à cette recherche.
       </p>
     </div>
 
-    <p v-if="enDefaut" class="text-xs text-red-500 mt-2">
+    <p v-if="enDefaut" class="text-xs text-af-live mt-2">
       Un support publié doit porter au moins une thématique.
     </p>
   </div>

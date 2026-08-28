@@ -96,7 +96,7 @@ const dateCourte = (valeur: string | null) => {
 
     <p
       v-if="erreur"
-      class="mb-5 rounded-lg border border-red-500 bg-af-live/10 text-red-300 px-4 py-3 text-sm"
+      class="mb-5 rounded-lg border border-af-live bg-af-live/10 text-af-live px-4 py-3 text-sm"
     >
       <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="mr-2" />
       {{ erreur }}
@@ -104,7 +104,7 @@ const dateCourte = (valeur: string | null) => {
 
     <p
       v-if="confirmation"
-      class="mb-5 rounded-lg border border-af-chocolat/50 bg-af-chocolat/10 text-yellow-200 px-4 py-3 text-sm"
+      class="mb-5 rounded-lg border border-af-chocolat/50 bg-af-chocolat/10 text-af-chocolat px-4 py-3 text-sm"
     >
       <font-awesome-icon :icon="['fas', 'circle-info']" class="mr-2" />
       {{ confirmation }}
@@ -202,11 +202,11 @@ const dateCourte = (valeur: string | null) => {
           <button
             type="submit"
             :disabled="envoiEnCours || !email.trim()"
-            class="inline-flex items-center justify-center gap-2 rounded-full bg-af-chocolat text-neutral-900 font-semibold px-5 py-2 text-sm hover:bg-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center justify-center gap-2 rounded-full bg-af-chocolat text-white font-semibold px-5 py-2 text-sm hover:bg-af-chocolat transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span
               v-if="envoiEnCours"
-              class="animate-spin rounded-full h-4 w-4 border-b-2 border-neutral-900"
+              class="animate-spin rounded-full h-4 w-4 border-b-2 border-af-encre"
             />
             <font-awesome-icon v-else :icon="['fas', 'paper-plane']" />
             Inviter

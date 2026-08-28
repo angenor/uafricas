@@ -84,7 +84,7 @@ const refuser = async (d: PropositionMediaAPI) => {
 
 <template>
   <div>
-    <p v-if="erreur" class="mb-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
+    <p v-if="erreur" class="mb-3 rounded-lg bg-af-live/5 px-4 py-2 text-sm text-af-live">
       {{ erreur }}
     </p>
 
@@ -101,7 +101,7 @@ const refuser = async (d: PropositionMediaAPI) => {
       <li
         v-for="demande in demandes"
         :key="demande.id"
-        class="rounded-2xl border border-gray-200 bg-white p-4"
+        class="rounded-2xl border border-af-bordure bg-white p-4"
       >
         <div class="flex flex-wrap items-start justify-between gap-2">
           <span
@@ -119,15 +119,15 @@ const refuser = async (d: PropositionMediaAPI) => {
           <span class="text-xs text-af-atone">{{ dateFormatee(demande.created_at) }}</span>
         </div>
 
-        <h4 class="mt-3 font-semibold text-gray-900">{{ titre(demande) }}</h4>
-        <p class="mt-1 text-sm text-gray-700">{{ demande.justification }}</p>
+        <h4 class="mt-3 font-semibold text-af-encre">{{ titre(demande) }}</h4>
+        <p class="mt-1 text-sm text-af-corps">{{ demande.justification }}</p>
         <p class="mt-2 text-xs text-af-atone">Proposée par {{ auteur(demande) }}</p>
 
         <!-- Dire ce que l'acceptation engage : ajouter un co-détenteur n'est pas
              un simple accusé de réception, il ouvre la grille à un tiers. -->
         <p
           v-if="demande.type_objet === 'animation_programme' && peutDecider"
-          class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800"
+          class="mt-3 rounded-lg bg-af-chocolat/5 px-3 py-2 text-xs text-af-chocolat"
         >
           Accepter cette demande ajoutera {{ auteur(demande) }} à l'équipe du
           support : elle ou il pourra alors programmer des créneaux.
@@ -146,7 +146,7 @@ const refuser = async (d: PropositionMediaAPI) => {
           <button
             type="button"
             :disabled="traitement === demande.id"
-            class="inline-flex cursor-pointer items-center gap-2 rounded-full border border-gray-300 px-4 py-1.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+            class="inline-flex cursor-pointer items-center gap-2 rounded-full border border-af-bordure px-4 py-1.5 text-sm font-semibold text-af-corps transition-colors hover:bg-af-fond disabled:opacity-60"
             @click="refusOuvert = refusOuvert === demande.id ? null : demande.id"
           >
             <font-awesome-icon :icon="['fas', 'xmark']" class="w-3.5 h-3.5" />
@@ -159,7 +159,7 @@ const refuser = async (d: PropositionMediaAPI) => {
         </p>
 
         <div v-if="refusOuvert === demande.id" class="mt-3">
-          <label class="mb-1 block text-sm font-medium text-gray-700">
+          <label class="mb-1 block text-sm font-medium text-af-corps">
             Motif du refus
             <span class="font-normal text-af-corps">(10 caractères minimum)</span>
           </label>
@@ -167,7 +167,7 @@ const refuser = async (d: PropositionMediaAPI) => {
             v-model="motifs[demande.id]"
             rows="2"
             placeholder="Expliquez votre décision à l'auteur…"
-            class="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-af-chocolat"
+            class="w-full resize-none rounded-lg border border-af-bordure px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-af-chocolat"
           ></textarea>
           <button
             type="button"

@@ -171,16 +171,16 @@ const detacher = (index: number) => {
 
 const classeChamp = computed(() =>
   props.sombre
-    ? 'w-full rounded-lg border border-white/15 bg-af-fond px-3 py-2 text-sm text-af-encre placeholder-gray-500 focus:border-af-chocolat focus:outline-none'
-    : 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-af-chocolat focus:outline-none focus:ring-1 focus:ring-af-chocolat',
+    ? 'w-full rounded-lg border border-white/15 bg-af-fond px-3 py-2 text-sm text-af-encre placeholder-af-atone-2 focus:border-af-chocolat focus:outline-none'
+    : 'w-full rounded-lg border border-af-bordure bg-white px-3 py-2 text-sm text-af-encre placeholder-af-atone-2 focus:border-af-chocolat focus:outline-none focus:ring-1 focus:ring-af-chocolat',
 )
 </script>
 
 <template>
-  <section :class="sombre ? 'text-gray-200' : 'text-gray-800'">
+  <section :class="sombre ? 'text-white/80' : 'text-af-encre'">
     <header class="mb-3 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h3 class="font-oswald text-base uppercase tracking-wide" :class="sombre ? 'text-af-encre' : 'text-gray-900'">
+        <h3 class="font-oswald text-base uppercase tracking-wide" :class="sombre ? 'text-af-encre' : 'text-af-encre'">
           {{ titre }}
         </h3>
         <p class="mt-0.5 text-xs" :class="sombre ? 'text-af-corps' : 'text-af-atone'">
@@ -205,7 +205,7 @@ const classeChamp = computed(() =>
     <p
       v-if="!chargement && !membres.length"
       class="rounded-lg border border-dashed px-4 py-6 text-center text-sm"
-      :class="sombre ? 'border-white/15 text-af-corps' : 'border-gray-300 text-af-atone'"
+      :class="sombre ? 'border-white/15 text-af-corps' : 'border-af-bordure text-af-atone'"
     >
       Aucune personne déclarée. Le bloc « équipe » n'apparaîtra pas sur les pages publiques.
     </p>
@@ -215,7 +215,7 @@ const classeChamp = computed(() =>
         v-for="(membre, index) in membres"
         :key="index"
         class="rounded-lg border p-3"
-        :class="sombre ? 'border-af-bordure bg-af-fond' : 'border-gray-200 bg-gray-50'"
+        :class="sombre ? 'border-af-bordure bg-af-fond' : 'border-af-bordure bg-af-fond'"
       >
         <div class="mb-2 flex items-center justify-between gap-2">
           <span class="text-xs font-semibold" :class="sombre ? 'text-af-corps' : 'text-af-atone'">
@@ -244,7 +244,7 @@ const classeChamp = computed(() =>
             </button>
             <button
               type="button"
-              class="rounded p-1.5 text-red-500 transition-colors hover:text-af-live"
+              class="rounded p-1.5 text-af-live transition-colors hover:text-af-live"
               title="Retirer cette personne"
               @click="retirer(index)"
             >
@@ -256,7 +256,7 @@ const classeChamp = computed(() =>
         <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           <label class="block">
             <span class="mb-1 block text-xs" :class="sombre ? 'text-af-corps' : 'text-af-atone-2'">
-              Nom <span class="text-red-500">*</span>
+              Nom <span class="text-af-live">*</span>
             </span>
             <input v-model="membre.nom" type="text" placeholder="Diallo" :class="classeChamp">
           </label>
@@ -268,7 +268,7 @@ const classeChamp = computed(() =>
 
           <div class="block">
             <span class="mb-1 block text-xs" :class="sombre ? 'text-af-corps' : 'text-af-atone-2'">
-              Fonction <span class="text-red-500">*</span>
+              Fonction <span class="text-af-live">*</span>
             </span>
             <!-- Texte libre assisté : toute fonction nouvelle est acceptée et
                  rejoint le référentiel dès l'enregistrement (FR-015). -->
@@ -300,7 +300,7 @@ const classeChamp = computed(() =>
 
         <!-- Rattachement facultatif à un compte : il rend le nom cliquable vers
              le profil public, et RIEN d'autre, aucun droit n'en découle. -->
-        <div class="mt-2 border-t pt-2" :class="sombre ? 'border-af-bordure' : 'border-gray-200'">
+        <div class="mt-2 border-t pt-2" :class="sombre ? 'border-af-bordure' : 'border-af-bordure'">
           <div class="flex flex-wrap items-center gap-2 text-xs">
             <span :class="sombre ? 'text-af-corps' : 'text-af-atone'">Compte UAfricas :</span>
             <span v-if="membre.utilisateur_id" class="font-medium text-af-vert">
@@ -318,7 +318,7 @@ const classeChamp = computed(() =>
             <button
               v-if="membre.utilisateur_id"
               type="button"
-              class="text-red-500 underline underline-offset-2 hover:opacity-80"
+              class="text-af-live underline underline-offset-2 hover:opacity-80"
               @click="detacher(index)"
             >
               détacher
@@ -350,7 +350,7 @@ const classeChamp = computed(() =>
                 <button
                   type="button"
                   class="w-full rounded px-2 py-1.5 text-left text-sm transition-colors"
-                  :class="sombre ? 'text-gray-200 hover:bg-af-fond' : 'text-gray-700 hover:bg-white'"
+                  :class="sombre ? 'text-white/80 hover:bg-af-fond' : 'text-af-corps hover:bg-af-fond'"
                   @click="rattacher(index, compte)"
                 >
                   {{ compte.prenom }} {{ compte.nom }}
@@ -372,9 +372,9 @@ const classeChamp = computed(() =>
       </li>
     </ul>
 
-    <p v-if="erreur" class="mt-3 text-sm text-red-500">{{ erreur }}</p>
+    <p v-if="erreur" class="mt-3 text-sm text-af-live">{{ erreur }}</p>
     <p v-if="confirmation" class="mt-3 text-sm text-af-vert">{{ confirmation }}</p>
-    <p v-if="lignesIncompletes" class="mt-3 text-sm text-amber-500">
+    <p v-if="lignesIncompletes" class="mt-3 text-sm text-af-chocolat">
       Chaque personne doit au moins porter un nom et une fonction.
     </p>
 
