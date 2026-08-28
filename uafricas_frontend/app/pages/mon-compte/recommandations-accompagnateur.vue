@@ -12,26 +12,26 @@
         <p class="mt-1 text-[14px]/[1.5] text-af-corps">Vous avez été recommandé(e) pour accompagner certaines salles Afrolang. Acceptez ou refusez chaque proposition.</p>
       </header>
       <!-- Filtres -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-wrap gap-2">
+      <div class="bg-white rounded-2xl shadow-sm border border-af-bordure p-4 mb-6 flex flex-wrap gap-2">
         <button v-for="f in filtres"
                 :key="f.code ?? 'tous'"
                 type="button"
                 class="px-3 py-1.5 text-sm rounded-full border transition-colors"
                 :class="statutFiltre === f.code
-                  ? 'bg-custom-chocolat text-white border-custom-chocolat'
-                  : 'bg-white text-gray-700 border-gray-200 hover:border-custom-chocolat hover:text-custom-chocolat'"
+                  ? 'bg-af-chocolat text-white border-af-chocolat'
+                  : 'bg-white text-af-corps border-af-bordure hover:border-af-chocolat hover:text-af-chocolat'"
                 @click="statutFiltre = f.code; page = 1; recharger()">
           {{ f.libelle }}
         </button>
       </div>
 
       <!-- Liste -->
-      <div v-if="chargement" class="text-center py-12 text-sm text-gray-500">
-        <font-awesome-icon icon="fa-solid fa-spinner" class="animate-spin text-2xl text-custom-chocolat mb-3" />
+      <div v-if="chargement" class="text-center py-12 text-sm text-af-atone">
+        <font-awesome-icon icon="fa-solid fa-spinner" class="animate-spin text-2xl text-af-chocolat mb-3" />
         <p>Chargement…</p>
       </div>
-      <div v-else-if="recommandations.length === 0" class="text-center py-12 text-sm text-gray-500 bg-white rounded-2xl border border-gray-100">
-        <font-awesome-icon icon="fa-regular fa-envelope-open" class="text-4xl text-gray-300 mb-3" />
+      <div v-else-if="recommandations.length === 0" class="text-center py-12 text-sm text-af-atone bg-white rounded-2xl border border-af-bordure">
+        <font-awesome-icon icon="fa-regular fa-envelope-open" class="text-4xl text-af-atone-2 mb-3" />
         <p>Aucune recommandation à afficher.</p>
       </div>
       <div v-else>
@@ -46,20 +46,20 @@
       <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 mt-6">
         <button type="button"
                 :disabled="page <= 1"
-                class="px-3 py-1.5 text-xs rounded-md border border-gray-200 disabled:opacity-40 hover:bg-gray-50"
+                class="px-3 py-1.5 text-xs rounded-md border border-af-bordure disabled:opacity-40 hover:bg-af-fond"
                 @click="page = Math.max(1, page - 1); recharger()">
           Précédent
         </button>
-        <span class="text-xs text-gray-600">Page {{ page }} / {{ totalPages }}</span>
+        <span class="text-xs text-af-corps">Page {{ page }} / {{ totalPages }}</span>
         <button type="button"
                 :disabled="page >= totalPages"
-                class="px-3 py-1.5 text-xs rounded-md border border-gray-200 disabled:opacity-40 hover:bg-gray-50"
+                class="px-3 py-1.5 text-xs rounded-md border border-af-bordure disabled:opacity-40 hover:bg-af-fond"
                 @click="page = Math.min(totalPages, page + 1); recharger()">
           Suivant
         </button>
       </div>
 
-      <div v-if="erreur" class="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+      <div v-if="erreur" class="mt-4 text-sm text-af-live bg-af-live/5 border border-af-live/30 rounded-md px-3 py-2">
         {{ erreur }}
       </div>
     </div>

@@ -19,3 +19,17 @@
     </template>
   </NuxtLayout>
 </template>
+
+<script setup lang="ts">
+/**
+ * Page dédiée aux supports que je détiens, US5, US6.
+ *
+ * Le contenu vit dans `MediaMesSupports`, également monté en onglet de
+ * `/mon-compte/profil` : cette URL reste le point d'arrivée des liens envoyés
+ * par courriel et des invitations, sans dupliquer l'écran.
+ */
+definePageMeta({ middleware: 'auth', layout: false })
+
+useHead({ title: 'Mes supports médias | UAfricas' })
+
+</script>

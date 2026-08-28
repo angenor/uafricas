@@ -123,10 +123,10 @@
             <!-- ─── Onglet Informations ─── -->
             <div v-if="ongletActif === 'informations'" class="space-y-6">
               <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-gray-800">Informations personnelles</h2>
+                <h2 class="text-lg font-semibold text-af-encre">Informations personnelles</h2>
                 <button
                   v-if="!modeEdition"
-                  class="flex items-center gap-2 px-4 py-2 text-sm text-af-chocolat hover:bg-orange-50 rounded-lg transition-colors"
+                  class="flex items-center gap-2 px-4 py-2 text-sm text-af-chocolat hover:bg-af-chocolat/5 rounded-lg transition-colors"
                   @click="activerEdition"
                 >
                   <font-awesome-icon icon="fa-solid fa-pen-to-square" />
@@ -152,35 +152,35 @@
               <form v-else @submit.prevent="sauvegarderProfil" class="space-y-5">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Prénom</label>
+                    <label class="text-sm font-medium text-af-corps block">Prénom</label>
                     <input
                       v-model="formulaire.prenom"
                       type="text"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                     />
                   </div>
                   <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Nom</label>
+                    <label class="text-sm font-medium text-af-corps block">Nom</label>
                     <input
                       v-model="formulaire.nom"
                       type="text"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                     />
                   </div>
                   <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Téléphone</label>
+                    <label class="text-sm font-medium text-af-corps block">Téléphone</label>
                     <input
                       v-model="formulaire.telephone"
                       type="tel"
                       placeholder="+225 00 00 00 00"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                     />
                   </div>
                   <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Genre</label>
+                    <label class="text-sm font-medium text-af-corps block">Genre</label>
                     <select
                       v-model="formulaire.genre"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                     >
                       <option value="non_precise">Non précisé</option>
                       <option value="homme">Homme</option>
@@ -188,30 +188,30 @@
                     </select>
                   </div>
                   <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Date de naissance</label>
+                    <label class="text-sm font-medium text-af-corps block">Date de naissance</label>
                     <input
                       v-model="formulaire.date_naissance"
                       type="date"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                     />
                   </div>
                   <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Fonction</label>
+                    <label class="text-sm font-medium text-af-corps block">Fonction</label>
                     <input
                       v-model="formulaire.fonction"
                       type="text"
                       placeholder="Ex: Developpeur, Enseignant..."
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                     />
                   </div>
                 </div>
                 <div class="space-y-2">
-                  <label class="text-sm font-medium text-gray-700 block">Biographie</label>
+                  <label class="text-sm font-medium text-af-corps block">Biographie</label>
                   <textarea
                     v-model="formulaire.biographie"
                     rows="4"
                     placeholder="Parlez de vous..."
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white resize-none"
+                    class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white resize-none"
                   ></textarea>
                 </div>
 
@@ -219,14 +219,14 @@
                 <div class="flex items-center justify-end gap-3 pt-2">
                   <button
                     type="button"
-                    class="px-5 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                    class="px-5 py-2.5 text-sm text-af-corps hover:bg-af-fond rounded-lg transition-colors"
                     @click="annulerEdition"
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
-                    class="flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                    class="flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50"
                     :disabled="profilComposable.loading.value"
                   >
                     <font-awesome-icon
@@ -242,10 +242,10 @@
             <!-- ─── Onglet Localisation ─── -->
             <div v-if="ongletActif === 'localisation'" class="space-y-6">
               <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-gray-800">Localisation et préférences</h2>
+                <h2 class="text-lg font-semibold text-af-encre">Localisation et préférences</h2>
                 <button
                   v-if="!modeEditionLocalisation"
-                  class="flex items-center gap-2 px-4 py-2 text-sm text-af-chocolat hover:bg-orange-50 rounded-lg transition-colors"
+                  class="flex items-center gap-2 px-4 py-2 text-sm text-af-chocolat hover:bg-af-chocolat/5 rounded-lg transition-colors"
                   @click="activerEditionLocalisation"
                 >
                   <font-awesome-icon icon="fa-solid fa-pen-to-square" />
@@ -264,28 +264,28 @@
               <form v-else @submit.prevent="sauvegarderLocalisation" class="space-y-5">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Ville</label>
+                    <label class="text-sm font-medium text-af-corps block">Ville</label>
                     <input
                       v-model="formulaireLocalisation.ville"
                       type="text"
                       placeholder="Ex: Abidjan, Dakar..."
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                     />
                   </div>
                   <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Localite / Quartier</label>
+                    <label class="text-sm font-medium text-af-corps block">Localite / Quartier</label>
                     <input
                       v-model="formulaireLocalisation.localite"
                       type="text"
                       placeholder="Ex: Cocody, Plateau..."
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                     />
                   </div>
                   <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Langue preferee</label>
+                    <label class="text-sm font-medium text-af-corps block">Langue preferee</label>
                     <select
                       v-model="formulaireLocalisation.langue_preferee"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                     >
                       <option value="fr">Francais</option>
                       <option value="en">Anglais</option>
@@ -299,14 +299,14 @@
                 <div class="flex items-center justify-end gap-3 pt-2">
                   <button
                     type="button"
-                    class="px-5 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                    class="px-5 py-2.5 text-sm text-af-corps hover:bg-af-fond rounded-lg transition-colors"
                     @click="modeEditionLocalisation = false"
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
-                    class="flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                    class="flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50"
                     :disabled="profilComposable.loading.value"
                   >
                     <font-awesome-icon
@@ -321,28 +321,28 @@
 
             <!-- ─── Onglet Africonnect ─── -->
             <div v-if="ongletActif === 'retrouve-amis'" class="space-y-6">
-              <h2 class="text-lg font-semibold text-gray-800 mb-2">Africonnect</h2>
+              <h2 class="text-lg font-semibold text-af-encre mb-2">Africonnect</h2>
 
               <!-- Statut trouvable -->
-              <div class="bg-gray-50 rounded-xl p-5">
+              <div class="bg-af-fond rounded-lg p-5">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
                     <div
                       class="w-9 h-9 rounded-lg flex items-center justify-center"
-                      :class="profil.est_trouvable ? 'bg-af-vert/10 text-af-vert' : 'bg-gray-200 text-gray-400'"
+                      :class="profil.est_trouvable ? 'bg-af-vert/10 text-af-vert' : 'bg-af-bordure text-af-atone-2'"
                     >
                       <font-awesome-icon icon="fa-solid fa-eye" class="text-sm" />
                     </div>
                     <div>
-                      <p class="text-sm font-medium text-gray-800">Profil trouvable</p>
-                      <p class="text-xs text-gray-500">
+                      <p class="text-sm font-medium text-af-encre">Profil trouvable</p>
+                      <p class="text-xs text-af-atone">
                         {{ profil.est_trouvable ? 'Votre profil est visible pour le matching' : 'Votre profil est masque' }}
                       </p>
                     </div>
                   </div>
                   <span
                     class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium"
-                    :class="profil.est_trouvable ? 'bg-af-vert/10 text-af-vert' : 'bg-gray-100 text-gray-500'"
+                    :class="profil.est_trouvable ? 'bg-af-vert/10 text-af-vert' : 'bg-af-fond text-af-atone'"
                   >
                     {{ profil.est_trouvable ? 'Actif' : 'Inactif' }}
                   </span>
@@ -350,14 +350,14 @@
               </div>
 
               <!-- Parcours -->
-              <div class="border border-gray-200 rounded-xl p-5">
+              <div class="border border-af-bordure rounded-lg p-5">
                 <div class="flex items-center gap-3 mb-4">
                   <div class="w-9 h-9 rounded-lg bg-af-chocolat/10 text-af-chocolat flex items-center justify-center">
                     <font-awesome-icon icon="fa-solid fa-route" class="text-sm" />
                   </div>
                   <div>
-                    <h3 class="text-sm font-semibold text-gray-800">Mon parcours</h3>
-                    <p class="text-xs text-gray-500">{{ parcoursRetrouvAmis.length }} entree(s) de parcours</p>
+                    <h3 class="text-sm font-semibold text-af-encre">Mon parcours</h3>
+                    <p class="text-xs text-af-atone">{{ parcoursRetrouvAmis.length }} entree(s) de parcours</p>
                   </div>
                 </div>
 
@@ -366,15 +366,15 @@
                   <div
                     v-for="p in parcoursRetrouvAmis"
                     :key="p.id"
-                    class="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg text-sm"
+                    class="flex items-center gap-3 px-3 py-2 bg-af-fond rounded-lg text-sm"
                   >
                     <font-awesome-icon
                       :icon="p.type_entree === 'ecole' ? 'fa-solid fa-graduation-cap' : p.type_entree === 'ville_residence' ? 'fa-solid fa-building' : 'fa-solid fa-briefcase'"
-                      class="text-gray-400 w-4"
+                      class="text-af-atone-2 w-4"
                     />
-                    <span class="font-medium text-gray-700">{{ p.nom }}</span>
-                    <span v-if="p.ville" class="text-gray-400">- {{ p.ville }}</span>
-                    <span v-if="p.periode_debut" class="text-gray-400 ml-auto text-xs">
+                    <span class="font-medium text-af-corps">{{ p.nom }}</span>
+                    <span v-if="p.ville" class="text-af-atone-2">- {{ p.ville }}</span>
+                    <span v-if="p.periode_debut" class="text-af-atone-2 ml-auto text-xs">
                       {{ p.periode_debut }}{{ p.periode_fin ? ` - ${p.periode_fin}` : '' }}
                     </span>
                   </div>
@@ -382,7 +382,7 @@
 
                 <NuxtLink
                   to="/retrouve-amis"
-                  class="inline-flex items-center gap-2 px-4 py-2 text-sm text-af-chocolat hover:bg-orange-50 rounded-lg transition-colors"
+                  class="inline-flex items-center gap-2 px-4 py-2 text-sm text-af-chocolat hover:bg-af-chocolat/5 rounded-lg transition-colors"
                 >
                   <font-awesome-icon icon="fa-solid fa-arrow-right" class="text-xs" />
                   Gérer dans Africonnect
@@ -392,50 +392,50 @@
 
             <!-- ─── Onglet Sécurité ─── -->
             <div v-if="ongletActif === 'securite'" class="space-y-6">
-              <h2 class="text-lg font-semibold text-gray-800 mb-2">Sécurité du compte</h2>
+              <h2 class="text-lg font-semibold text-af-encre mb-2">Sécurité du compte</h2>
 
               <!-- Infos compte -->
-              <div class="bg-gray-50 rounded-xl p-5 space-y-4">
-                <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Informations du compte</h3>
+              <div class="bg-af-fond rounded-lg p-5 space-y-4">
+                <h3 class="text-sm font-semibold text-af-corps uppercase tracking-wide">Informations du compte</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                    <div class="w-9 h-9 rounded-lg bg-af-vert/10 text-af-vert flex items-center justify-center">
                       <font-awesome-icon icon="fa-solid fa-envelope" class="text-sm" />
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500">Email vérifié</p>
-                      <p class="text-sm font-medium" :class="profil.email_verifie ? 'text-emerald-600' : 'text-red-500'">
+                      <p class="text-xs text-af-atone">Email vérifié</p>
+                      <p class="text-sm font-medium" :class="profil.email_verifie ? 'text-af-vert' : 'text-af-live'">
                         {{ profil.email_verifie ? 'Oui' : 'Non' }}
                       </p>
                     </div>
                   </div>
                   <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                    <div class="w-9 h-9 rounded-lg bg-af-chocolat/10 text-af-chocolat flex items-center justify-center">
                       <font-awesome-icon icon="fa-solid fa-calendar" class="text-sm" />
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500">Date d'inscription</p>
-                      <p class="text-sm font-medium text-gray-700">{{ dateInscriptionComplete }}</p>
+                      <p class="text-xs text-af-atone">Date d'inscription</p>
+                      <p class="text-sm font-medium text-af-corps">{{ dateInscriptionComplete }}</p>
                     </div>
                   </div>
                   <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                    <div class="w-9 h-9 rounded-lg bg-af-chocolat/10 text-af-chocolat flex items-center justify-center">
                       <font-awesome-icon icon="fa-solid fa-clock-rotate-left" class="text-sm" />
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500">Derniere connexion</p>
-                      <p class="text-sm font-medium text-gray-700">{{ derniereConnexionFormatee }}</p>
+                      <p class="text-xs text-af-atone">Derniere connexion</p>
+                      <p class="text-sm font-medium text-af-corps">{{ derniereConnexionFormatee }}</p>
                     </div>
                   </div>
                   <div class="flex items-center gap-3">
                     <div class="w-9 h-9 rounded-lg flex items-center justify-center"
-                      :class="profil.etat === 'actif' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'"
+                      :class="profil.etat === 'actif' ? 'bg-af-vert/10 text-af-vert' : 'bg-af-chocolat/10 text-af-chocolat'"
                     >
                       <font-awesome-icon icon="fa-solid fa-circle-check" class="text-sm" />
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500">Etat du compte</p>
-                      <p class="text-sm font-medium" :class="profil.etat === 'actif' ? 'text-emerald-600' : 'text-orange-600'">
+                      <p class="text-xs text-af-atone">Etat du compte</p>
+                      <p class="text-sm font-medium" :class="profil.etat === 'actif' ? 'text-af-vert' : 'text-af-chocolat'">
                         {{ etatLabel }}
                       </p>
                     </div>
@@ -444,50 +444,50 @@
               </div>
 
               <!-- Changer mot de passe -->
-              <div class="border border-gray-200 rounded-xl p-5">
+              <div class="border border-af-bordure rounded-lg p-5">
                 <div class="flex items-center gap-3 mb-4">
-                  <div class="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
+                  <div class="w-9 h-9 rounded-lg bg-af-live/10 text-af-live flex items-center justify-center">
                     <font-awesome-icon icon="fa-solid fa-lock" class="text-sm" />
                   </div>
-                  <h3 class="text-sm font-semibold text-gray-800">Changer le mot de passe</h3>
+                  <h3 class="text-sm font-semibold text-af-encre">Changer le mot de passe</h3>
                 </div>
 
                 <form @submit.prevent="handleChangerMotDePasse" class="space-y-4">
                   <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-700 block">Mot de passe actuel</label>
+                    <label class="text-sm font-medium text-af-corps block">Mot de passe actuel</label>
                     <input
                       v-model="formulaireMdp.ancien_mot_de_passe"
                       type="password"
                       required
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                      class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                     />
                   </div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-2">
-                      <label class="text-sm font-medium text-gray-700 block">Nouveau mot de passe</label>
+                      <label class="text-sm font-medium text-af-corps block">Nouveau mot de passe</label>
                       <input
                         v-model="formulaireMdp.nouveau_mot_de_passe"
                         type="password"
                         required
                         minlength="6"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                        class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                       />
                     </div>
                     <div class="space-y-2">
-                      <label class="text-sm font-medium text-gray-700 block">Confirmer le mot de passe</label>
+                      <label class="text-sm font-medium text-af-corps block">Confirmer le mot de passe</label>
                       <input
                         v-model="formulaireMdp.confirmation_mot_de_passe"
                         type="password"
                         required
                         minlength="6"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
+                        class="w-full px-4 py-3 border border-af-bordure rounded-lg focus:ring-2 focus:ring-af-vert focus:border-transparent transition-all duration-300 bg-af-fond hover:bg-white"
                       />
                     </div>
                   </div>
                   <div class="flex justify-end">
                     <button
                       type="submit"
-                      class="flex items-center gap-2 px-5 py-2.5 text-sm bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
+                      class="flex items-center gap-2 px-5 py-2.5 text-sm bg-af-live text-white font-medium rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
                       :disabled="profilComposable.loading.value"
                     >
                       <font-awesome-icon
@@ -503,18 +503,18 @@
 
             <!-- ─── Onglet Bibliothèque Humaine ─── -->
             <div v-if="ongletActif === 'bibliotheque-humaine'" class="space-y-6">
-              <h2 class="text-lg font-semibold text-gray-800">Bibliothèque Humaine</h2>
+              <h2 class="text-lg font-semibold text-af-encre">Bibliothèque Humaine</h2>
 
               <div v-if="chargementDemande" class="flex justify-center py-8">
                 <font-awesome-icon icon="fa-solid fa-spinner" class="text-2xl text-af-chocolat animate-spin" />
               </div>
 
               <div v-else-if="!maDemande" class="text-center py-10">
-                <font-awesome-icon icon="fa-solid fa-book-open" class="text-4xl text-gray-300 mb-3" />
-                <p class="text-gray-500 text-sm mb-4">Vous n'avez pas encore soumis de demande pour rejoindre la Bibliothèque Humaine.</p>
+                <font-awesome-icon icon="fa-solid fa-book-open" class="text-4xl text-af-atone-2 mb-3" />
+                <p class="text-af-atone text-sm mb-4">Vous n'avez pas encore soumis de demande pour rejoindre la Bibliothèque Humaine.</p>
                 <NuxtLink
                   to="/bibliotheque/humaine"
-                  class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300"
+                  class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-lg hover:shadow-lg transition-all duration-300"
                 >
                   <font-awesome-icon icon="fa-solid fa-plus" />
                   Soumettre une demande
@@ -524,29 +524,29 @@
               <div v-else class="space-y-4">
                 <!-- Badge statut -->
                 <div
-                  class="flex items-center gap-3 p-4 rounded-xl border"
+                  class="flex items-center gap-3 p-4 rounded-lg border"
                   :class="{
-                    'bg-amber-50 border-amber-200': maDemande.statut === 'en_attente',
-                    'bg-green-50 border-green-200': maDemande.statut === 'valide',
-                    'bg-red-50 border-red-200': maDemande.statut === 'rejete',
+                    'bg-af-chocolat/5 border-af-chocolat/20': maDemande.statut === 'en_attente',
+                    'bg-af-vert/5 border-af-vert/30': maDemande.statut === 'valide',
+                    'bg-af-live/5 border-af-live/30': maDemande.statut === 'rejete',
                   }"
                 >
                   <font-awesome-icon
                     :icon="maDemande.statut === 'valide' ? 'fa-solid fa-circle-check' : maDemande.statut === 'rejete' ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-clock'"
                     class="text-xl"
                     :class="{
-                      'text-amber-500': maDemande.statut === 'en_attente',
-                      'text-green-600': maDemande.statut === 'valide',
-                      'text-red-600': maDemande.statut === 'rejete',
+                      'text-af-chocolat': maDemande.statut === 'en_attente',
+                      'text-af-vert': maDemande.statut === 'valide',
+                      'text-af-live': maDemande.statut === 'rejete',
                     }"
                   />
                   <div class="flex-1">
                     <p
                       class="font-semibold text-sm"
                       :class="{
-                        'text-amber-700': maDemande.statut === 'en_attente',
-                        'text-green-700': maDemande.statut === 'valide',
-                        'text-red-700': maDemande.statut === 'rejete',
+                        'text-af-chocolat': maDemande.statut === 'en_attente',
+                        'text-af-vert': maDemande.statut === 'valide',
+                        'text-af-live': maDemande.statut === 'rejete',
                       }"
                     >
                       {{
@@ -555,23 +555,23 @@
                         : 'Demande rejetée'
                       }}
                     </p>
-                    <p class="text-xs text-gray-500 mt-0.5">
+                    <p class="text-xs text-af-atone mt-0.5">
                       Soumis le {{ new Date(maDemande.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) }}
                     </p>
                   </div>
                 </div>
 
                 <!-- Commentaire admin si rejeté -->
-                <div v-if="maDemande.statut === 'rejete' && maDemande.commentaireAdmin" class="p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <p class="text-xs font-semibold text-red-600 uppercase tracking-wide mb-1">Motif du rejet</p>
-                  <p class="text-sm text-red-700">{{ maDemande.commentaireAdmin }}</p>
+                <div v-if="maDemande.statut === 'rejete' && maDemande.commentaireAdmin" class="p-4 bg-af-live/5 border border-af-live/30 rounded-lg">
+                  <p class="text-xs font-semibold text-af-live uppercase tracking-wide mb-1">Motif du rejet</p>
+                  <p class="text-sm text-af-live">{{ maDemande.commentaireAdmin }}</p>
                 </div>
 
                 <!-- Re-soumettre si rejeté -->
                 <div v-if="maDemande.statut === 'rejete'" class="text-center pt-2">
                   <NuxtLink
                     to="/bibliotheque/humaine"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-lg hover:shadow-lg transition-all duration-300"
                   >
                     <font-awesome-icon icon="fa-solid fa-rotate-right" />
                     Soumettre une nouvelle demande
@@ -581,20 +581,20 @@
                 <!-- Résumé -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                   <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Fonction déclarée</p>
-                    <p class="text-sm text-gray-700">{{ maDemande.fonction }}</p>
+                    <p class="text-xs font-semibold text-af-atone uppercase tracking-wide mb-1">Fonction déclarée</p>
+                    <p class="text-sm text-af-corps">{{ maDemande.fonction }}</p>
                   </div>
                   <div v-if="maDemande.pays">
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Territoire</p>
-                    <p class="text-sm text-gray-700">{{ maDemande.pays }}</p>
+                    <p class="text-xs font-semibold text-af-atone uppercase tracking-wide mb-1">Territoire</p>
+                    <p class="text-sm text-af-corps">{{ maDemande.pays }}</p>
                   </div>
                   <div v-if="maDemande.specialites.length > 0" class="md:col-span-2">
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Spécialités</p>
+                    <p class="text-xs font-semibold text-af-atone uppercase tracking-wide mb-1">Spécialités</p>
                     <div class="flex flex-wrap gap-1">
                       <span
                         v-for="s in maDemande.specialites"
                         :key="s"
-                        class="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full"
+                        class="inline-block px-2 py-0.5 bg-af-fond text-af-corps text-xs rounded-full"
                       >{{ s }}</span>
                     </div>
                   </div>
@@ -604,18 +604,18 @@
 
             <!-- ─── Onglet Expertise ─── -->
             <div v-if="ongletActif === 'expertise'" class="space-y-6">
-              <h2 class="text-lg font-semibold text-gray-800">Mon expertise</h2>
+              <h2 class="text-lg font-semibold text-af-encre">Mon expertise</h2>
 
               <div v-if="chargementExpertise" class="flex justify-center py-8">
                 <font-awesome-icon icon="fa-solid fa-spinner" class="text-2xl text-af-chocolat animate-spin" />
               </div>
 
               <div v-else-if="!maCandidatureExpert" class="text-center py-10">
-                <font-awesome-icon icon="fa-solid fa-user-tie" class="text-4xl text-gray-300 mb-3" />
-                <p class="text-gray-500 text-sm mb-4">Vous n'avez pas encore soumis de demande pour devenir expert.</p>
+                <font-awesome-icon icon="fa-solid fa-user-tie" class="text-4xl text-af-atone-2 mb-3" />
+                <p class="text-af-atone text-sm mb-4">Vous n'avez pas encore soumis de demande pour devenir expert.</p>
                 <NuxtLink
                   to="/devenir-expert"
-                  class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300"
+                  class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-lg hover:shadow-lg transition-all duration-300"
                 >
                   <font-awesome-icon icon="fa-solid fa-plus" />
                   Apporter mon expertise
@@ -625,29 +625,29 @@
               <div v-else class="space-y-4">
                 <!-- Badge statut -->
                 <div
-                  class="flex items-center gap-3 p-4 rounded-xl border"
+                  class="flex items-center gap-3 p-4 rounded-lg border"
                   :class="{
-                    'bg-amber-50 border-amber-200': maCandidatureExpert.statut === 'en_attente',
-                    'bg-green-50 border-green-200': maCandidatureExpert.statut === 'valide',
-                    'bg-red-50 border-red-200': maCandidatureExpert.statut === 'refuse',
+                    'bg-af-chocolat/5 border-af-chocolat/20': maCandidatureExpert.statut === 'en_attente',
+                    'bg-af-vert/5 border-af-vert/30': maCandidatureExpert.statut === 'valide',
+                    'bg-af-live/5 border-af-live/30': maCandidatureExpert.statut === 'refuse',
                   }"
                 >
                   <font-awesome-icon
                     :icon="maCandidatureExpert.statut === 'valide' ? 'fa-solid fa-circle-check' : maCandidatureExpert.statut === 'refuse' ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-clock'"
                     class="text-xl"
                     :class="{
-                      'text-amber-500': maCandidatureExpert.statut === 'en_attente',
-                      'text-green-600': maCandidatureExpert.statut === 'valide',
-                      'text-red-600': maCandidatureExpert.statut === 'refuse',
+                      'text-af-chocolat': maCandidatureExpert.statut === 'en_attente',
+                      'text-af-vert': maCandidatureExpert.statut === 'valide',
+                      'text-af-live': maCandidatureExpert.statut === 'refuse',
                     }"
                   />
                   <div class="flex-1">
                     <p
                       class="font-semibold text-sm"
                       :class="{
-                        'text-amber-700': maCandidatureExpert.statut === 'en_attente',
-                        'text-green-700': maCandidatureExpert.statut === 'valide',
-                        'text-red-700': maCandidatureExpert.statut === 'refuse',
+                        'text-af-chocolat': maCandidatureExpert.statut === 'en_attente',
+                        'text-af-vert': maCandidatureExpert.statut === 'valide',
+                        'text-af-live': maCandidatureExpert.statut === 'refuse',
                       }"
                     >
                       {{
@@ -656,23 +656,23 @@
                         : 'Demande refusée'
                       }}
                     </p>
-                    <p class="text-xs text-gray-500 mt-0.5">
+                    <p class="text-xs text-af-atone mt-0.5">
                       Soumis le {{ new Date(maCandidatureExpert.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) }}
                     </p>
                   </div>
                 </div>
 
                 <!-- Commentaire admin si refusé -->
-                <div v-if="maCandidatureExpert.statut === 'refuse' && maCandidatureExpert.commentaireAdmin" class="p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <p class="text-xs font-semibold text-red-600 uppercase tracking-wide mb-1">Motif du refus</p>
-                  <p class="text-sm text-red-700">{{ maCandidatureExpert.commentaireAdmin }}</p>
+                <div v-if="maCandidatureExpert.statut === 'refuse' && maCandidatureExpert.commentaireAdmin" class="p-4 bg-af-live/5 border border-af-live/30 rounded-lg">
+                  <p class="text-xs font-semibold text-af-live uppercase tracking-wide mb-1">Motif du refus</p>
+                  <p class="text-sm text-af-live">{{ maCandidatureExpert.commentaireAdmin }}</p>
                 </div>
 
                 <!-- Re-soumettre si refusé -->
                 <div v-if="maCandidatureExpert.statut === 'refuse'" class="text-center pt-2">
                   <NuxtLink
                     to="/devenir-expert"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-af-degrade text-white font-medium rounded-lg hover:shadow-lg transition-all duration-300"
                   >
                     <font-awesome-icon icon="fa-solid fa-rotate-left" />
                     Soumettre une nouvelle demande
@@ -683,7 +683,7 @@
                 <div v-if="maCandidatureExpert.statut === 'valide' && profil" class="text-center pt-2">
                   <NuxtLink
                     :to="`/experts/${profil.id}`"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 text-sm border border-af-vert text-af-vert font-medium rounded-xl hover:bg-green-50 transition-all duration-300"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 text-sm border border-af-vert text-af-vert font-medium rounded-lg hover:bg-af-vert/5 transition-all duration-300"
                   >
                     <font-awesome-icon icon="fa-solid fa-arrow-up-right-from-square" />
                     Voir ma fiche d'expert
@@ -693,12 +693,12 @@
                 <!-- Résumé -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                   <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Domaine</p>
-                    <p class="text-sm text-gray-700">{{ maCandidatureExpert.domaine }}</p>
+                    <p class="text-xs font-semibold text-af-atone uppercase tracking-wide mb-1">Domaine</p>
+                    <p class="text-sm text-af-corps">{{ maCandidatureExpert.domaine }}</p>
                   </div>
                   <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Années d'expérience</p>
-                    <p class="text-sm text-gray-700">{{ maCandidatureExpert.nbAnneesExperience }}</p>
+                    <p class="text-xs font-semibold text-af-atone uppercase tracking-wide mb-1">Années d'expérience</p>
+                    <p class="text-sm text-af-corps">{{ maCandidatureExpert.nbAnneesExperience }}</p>
                   </div>
                 </div>
               </div>
@@ -707,16 +707,16 @@
             <!-- ─── Onglet Mes échanges sabbatiques ─── -->
             <div v-if="ongletActif === 'mes-echanges'" class="space-y-6">
               <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-gray-800">Mes projets d'échange</h2>
+                <h2 class="text-lg font-semibold text-af-encre">Mes projets d'échange</h2>
                 <NuxtLink
                   to="/echanges-sabbatiques/proposer"
-                  class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-af-vert text-white font-medium rounded-xl hover:bg-af-vert/90 transition-all"
+                  class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-af-vert text-white font-medium rounded-lg hover:bg-af-vert/90 transition-all"
                 >
                   <font-awesome-icon icon="fa-solid fa-plus" />
                   <span class="hidden sm:inline">Proposer</span>
                 </NuxtLink>
               </div>
-              <p class="text-sm text-gray-500 -mt-3">
+              <p class="text-sm text-af-atone -mt-3">
                 Gérez les candidatures reçues et sélectionnez le candidat final pour chaque projet.
               </p>
               <SabbatiqueMesEchanges />
@@ -725,16 +725,16 @@
             <!-- ─── Onglet Mes événements ─── -->
             <div v-if="ongletActif === 'mes-evenements'" class="space-y-6">
               <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-gray-800">Mes événements</h2>
+                <h2 class="text-lg font-semibold text-af-encre">Mes événements</h2>
                 <NuxtLink
                   to="/evenements/liste"
-                  class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-af-vert text-white font-medium rounded-xl hover:bg-af-vert/90 transition-all"
+                  class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-af-vert text-white font-medium rounded-lg hover:bg-af-vert/90 transition-all"
                 >
                   <font-awesome-icon icon="fa-solid fa-plus" />
                   <span class="hidden sm:inline">Proposer</span>
                 </NuxtLink>
               </div>
-              <p class="text-sm text-gray-500 -mt-3">
+              <p class="text-sm text-af-atone -mt-3">
                 Gérez vos événements : modifiez, supprimez, consultez les inscrits et démarrez vos diffusions en direct.
               </p>
               <EvenementsMesEvenements />
@@ -748,16 +748,16 @@
             <!-- ─── Onglet Mes supports médias ─── -->
             <div v-if="ongletActif === 'mes-supports'" class="space-y-6">
               <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-gray-800">Mes supports médias</h2>
+                <h2 class="text-lg font-semibold text-af-encre">Mes supports médias</h2>
                 <NuxtLink
                   to="/mon-compte/invitations-medias"
-                  class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-af-vert text-white font-medium rounded-xl hover:bg-af-vert/90 transition-all"
+                  class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-af-vert text-white font-medium rounded-lg hover:bg-af-vert/90 transition-all"
                 >
                   <font-awesome-icon icon="fa-solid fa-envelope" />
                   <span class="hidden sm:inline">Invitations</span>
                 </NuxtLink>
               </div>
-              <p class="text-sm text-gray-500 -mt-3">
+              <p class="text-sm text-af-atone -mt-3">
                 Les chaînes et stations que vous détenez : bâtissez leur grille de
                 programmation, arbitrez les idées et demandes d'animation reçues,
                 et gérez votre équipe.
@@ -962,19 +962,19 @@ const etatLabel = computed(() => {
 
 const badgeEtatClasses = computed(() => {
   switch (profil.value?.etat) {
-    case 'actif': return 'bg-emerald-50 text-emerald-700'
-    case 'en_attente': return 'bg-orange-50 text-orange-700'
-    case 'bloque': return 'bg-red-50 text-red-700'
-    default: return 'bg-gray-50 text-gray-700'
+    case 'actif': return 'bg-af-vert/5 text-af-vert'
+    case 'en_attente': return 'bg-af-chocolat/5 text-af-chocolat'
+    case 'bloque': return 'bg-af-live/5 text-af-live'
+    default: return 'bg-af-fond text-af-corps'
   }
 })
 
 const pointEtatClasses = computed(() => {
   switch (profil.value?.etat) {
-    case 'actif': return 'bg-emerald-500'
-    case 'en_attente': return 'bg-orange-500 animate-pulse'
-    case 'bloque': return 'bg-red-500'
-    default: return 'bg-gray-500'
+    case 'actif': return 'bg-af-vert'
+    case 'en_attente': return 'bg-af-chocolat/50 animate-pulse'
+    case 'bloque': return 'bg-af-live/50'
+    default: return 'bg-af-fond0'
   }
 })
 
