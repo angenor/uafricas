@@ -210,7 +210,7 @@ onUnmounted(() => {
       <!-- Grille des correspondances -->
       <div
         v-else-if="correspondances.length > 0"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        class="flex flex-col gap-4"
       >
         <RetrouveAmisCorrespondanceCard
           v-for="corr in correspondances"
