@@ -1,9 +1,9 @@
 <template>
-  <div class="flex flex-wrap gap-2 items-center mb-6 bg-white rounded-xl shadow-sm p-3">
+  <div class="flex flex-wrap gap-2 items-center mb-6 bg-white rounded-lg shadow-sm p-3">
     <!-- Filtre par type -->
     <select
       v-model="localFiltres.type"
-      class="font-medium px-3 py-2 text-sm rounded-lg cursor-pointer bg-white border border-custom-chocolat text-custom-chocolat focus:outline-hidden"
+      class="font-medium px-3 py-2 text-sm rounded-lg cursor-pointer bg-white border border-af-chocolat text-af-chocolat focus:outline-hidden"
       @change="emitUpdate"
     >
       <option
@@ -18,7 +18,7 @@
     <!-- Filtre par pays -->
     <select
       v-model="localFiltres.pays"
-      class="font-medium px-3 py-2 text-sm rounded-lg cursor-pointer bg-white border border-custom-chocolat text-custom-chocolat focus:outline-hidden"
+      class="font-medium px-3 py-2 text-sm rounded-lg cursor-pointer bg-white border border-af-chocolat text-af-chocolat focus:outline-hidden"
       @change="emitUpdate"
     >
       <option
@@ -33,7 +33,7 @@
     <!-- Filtre par domaine -->
     <select
       v-model="localFiltres.domaine"
-      class="font-medium px-3 py-2 text-sm rounded-lg cursor-pointer bg-white border border-custom-chocolat text-custom-chocolat focus:outline-hidden"
+      class="font-medium px-3 py-2 text-sm rounded-lg cursor-pointer bg-white border border-af-chocolat text-af-chocolat focus:outline-hidden"
       @change="emitUpdate"
     >
       <option
@@ -51,11 +51,11 @@
         v-model="localFiltres.recherche"
         type="text"
         placeholder="Rechercher..."
-        class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 focus:border-custom-green focus:outline-hidden"
+        class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-af-bordure focus:border-af-vert focus:outline-hidden"
         @input="emitUpdate"
       />
       <font-awesome-icon
-        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4"
+        class="absolute left-3 top-1/2 -translate-y-1/2 text-af-atone-2 h-4"
         :icon="['fas', 'search']"
       />
     </div>

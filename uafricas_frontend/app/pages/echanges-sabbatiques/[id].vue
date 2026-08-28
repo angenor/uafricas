@@ -213,16 +213,16 @@
         >
           <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full my-auto">
             <div class="flex items-center justify-between px-6 py-4 border-b">
-              <h2 class="text-lg font-bold text-custom-chocolat">
+              <h2 class="text-lg font-bold text-af-chocolat">
                 Candidatures reçues
               </h2>
-              <button type="button" class="text-gray-400 hover:text-gray-600" @click="modaleGestion = false">
+              <button type="button" class="text-af-atone-2 hover:text-af-corps" @click="modaleGestion = false">
                 <font-awesome-icon :icon="['fas', 'xmark']" class="text-xl" />
               </button>
             </div>
 
             <div class="px-6 py-5 max-h-[70vh] overflow-y-auto">
-              <p v-if="!candidatures.length" class="text-gray-500 text-sm text-center py-8">
+              <p v-if="!candidatures.length" class="text-af-atone text-sm text-center py-8">
                 Aucune candidature pour le moment.
               </p>
 
@@ -230,45 +230,45 @@
                 v-for="c in candidatures"
                 :key="c.id"
                 class="border rounded-lg p-4 mb-3"
-                :class="c.est_retenu ? 'border-custom-green bg-custom-green/5' : 'border-gray-200'"
+                :class="c.est_retenu ? 'border-af-vert bg-af-vert/5' : 'border-af-bordure'"
               >
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
-                    <p class="font-semibold text-gray-900">
+                    <p class="font-semibold text-af-encre">
                       {{ c.nom_etat_civil || `${c.candidat.prenom || ''} ${c.candidat.nom}`.trim() }}
                     </p>
-                    <p class="text-sm text-gray-600">{{ c.fonction_actuelle }}</p>
-                    <p class="text-xs text-gray-400">{{ c.lieu_residence }}</p>
+                    <p class="text-sm text-af-corps">{{ c.fonction_actuelle }}</p>
+                    <p class="text-xs text-af-atone-2">{{ c.lieu_residence }}</p>
                     <div class="flex flex-wrap gap-2 mt-2 text-xs">
-                      <span v-if="c.statut_emploi_label" class="px-2 py-0.5 bg-gray-100 rounded-full text-gray-600">
+                      <span v-if="c.statut_emploi_label" class="px-2 py-0.5 bg-af-fond rounded-full text-af-corps">
                         {{ c.statut_emploi_label }}
                       </span>
                       <span
                         class="px-2 py-0.5 rounded-full"
-                        :class="c.repond_profil ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'"
+                        :class="c.repond_profil ? 'bg-af-vert/10 text-af-vert' : 'bg-af-chocolat/10 text-af-chocolat'"
                       >
                         {{ c.repond_profil ? 'Répond au profil' : 'Profil partiel' }}
                       </span>
                     </div>
                     <div class="flex flex-wrap gap-3 mt-2 text-sm">
-                      <a v-if="c.cv_url" :href="c.cv_url" target="_blank" class="text-custom-green hover:underline">
+                      <a v-if="c.cv_url" :href="c.cv_url" target="_blank" class="text-af-vert hover:underline">
                         <font-awesome-icon :icon="['fas', 'file-pdf']" class="mr-1" />CV
                       </a>
-                      <a v-if="c.lien_expertise" :href="c.lien_expertise" target="_blank" class="text-custom-green hover:underline">
+                      <a v-if="c.lien_expertise" :href="c.lien_expertise" target="_blank" class="text-af-vert hover:underline">
                         <font-awesome-icon :icon="['fas', 'link']" class="mr-1" />Compte expertise
                       </a>
                     </div>
-                    <p v-if="c.lettre_motivation" class="text-sm text-gray-600 mt-2 italic">
+                    <p v-if="c.lettre_motivation" class="text-sm text-af-corps mt-2 italic">
                       « {{ c.lettre_motivation }} »
                     </p>
                   </div>
                   <div class="shrink-0">
-                    <span v-if="c.est_retenu" class="inline-flex items-center gap-1 text-custom-green font-medium text-sm">
+                    <span v-if="c.est_retenu" class="inline-flex items-center gap-1 text-af-vert font-medium text-sm">
                       <font-awesome-icon :icon="['fas', 'award']" /> Retenu
                     </span>
                     <button
                       v-else
-                      class="bg-custom-green text-white px-3 py-1.5 rounded-md text-sm hover:bg-custom-green/90 transition-colors disabled:opacity-50"
+                      class="bg-af-vert text-white px-3 py-1.5 rounded-md text-sm hover:bg-af-vert/90 transition-colors disabled:opacity-50"
                       :disabled="selectionEnCours"
                       @click="retenir(c.id)"
                     >
@@ -286,7 +286,7 @@
       <Teleport to="body">
         <div
           v-if="toastSucces"
-          class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-custom-green text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2"
+          class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-af-vert text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2"
         >
           <font-awesome-icon :icon="['fas', 'circle-check']" />
           Votre candidature a bien été envoyée !
@@ -306,6 +306,8 @@ import {
   type CandidatureAPI,
 } from '~/composables/useSabbatiques'
 import { useUserStore } from '~/stores/user'
+
+definePageMeta({ layout: false })
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -346,12 +348,12 @@ const getStatutLabel = (statut: string) => {
 
 const getStatutClasses = (statut: string) => {
   const classes: Record<string, string> = {
-    ouvert: 'bg-green-100 text-green-800',
-    en_cours: 'bg-blue-100 text-blue-800',
-    termine: 'bg-gray-100 text-gray-800',
-    complet: 'bg-red-100 text-red-800'
+    ouvert: 'bg-af-vert/10 text-af-vert',
+    en_cours: 'bg-af-chocolat/10 text-af-chocolat',
+    termine: 'bg-af-fond text-af-encre',
+    complet: 'bg-af-live/10 text-af-live'
   }
-  return classes[statut] || 'bg-gray-100 text-gray-800'
+  return classes[statut] || 'bg-af-fond text-af-encre'
 }
 
 const getPriseLabel = (value: string) => {

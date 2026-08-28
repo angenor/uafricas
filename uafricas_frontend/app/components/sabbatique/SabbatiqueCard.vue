@@ -13,7 +13,7 @@
       <!-- Badge type -->
       <span
         class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium"
-        :class="programme.interafricain ? 'bg-custom-green text-white' : 'bg-custom-chocolat text-white'"
+        :class="programme.interafricain ? 'bg-af-vert text-white' : 'bg-af-chocolat text-white'"
       >
         {{ programme.interafricain ? 'Interafricain' : 'Hors Afrique' }}
       </span>
@@ -22,28 +22,28 @@
     <!-- Contenu -->
     <div class="w-full py-2">
       <!-- Pays -->
-      <div class="px-2 text-sm capitalize font-normal text-gray-500 flex items-center">
+      <div class="px-2 text-sm capitalize font-normal text-af-atone flex items-center">
         <font-awesome-icon class="h-4 mr-1" :icon="['fas', 'location-dot']" />
         <span>{{ programme.pays }}</span>
-        <span v-if="programme.ville" class="border-l-2 pl-1 ml-1 border-gray-400">
+        <span v-if="programme.ville" class="border-l-2 pl-1 ml-1 border-af-bordure">
           {{ programme.ville }}
         </span>
       </div>
 
       <!-- Titre -->
-      <div class="px-2 line-clamp-2 text-gray-800 text-lg mt-1">
+      <div class="px-2 line-clamp-2 text-af-encre text-lg mt-1">
         {{ programme.titre }}
       </div>
 
       <!-- Date -->
       <div class="absolute bottom-2 left-0">
-        <div class="inline-flex px-2 font-bold text-sm text-custom-chocolat bg-gray-100/14 rounded-r-full items-center">
+        <div class="inline-flex px-2 font-bold text-sm text-af-chocolat bg-af-fond/14 rounded-r-full items-center">
           <font-awesome-icon
-            class="h-4 w-4 mr-2 text-gray-400"
+            class="h-4 w-4 mr-2 text-af-atone-2"
             :icon="['fas', 'calendar-days']"
           />
           <span>{{ formatDate(programme.date_debut) }}</span>
-          <span class="ml-2 text-xs font-normal text-gray-400">
+          <span class="ml-2 text-xs font-normal text-af-atone-2">
             {{ programme.duree_label }}
           </span>
         </div>
