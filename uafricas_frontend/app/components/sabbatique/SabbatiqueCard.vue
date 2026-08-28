@@ -1,6 +1,12 @@
 <template>
+  <!-- `w-full` et non `w-72` : la carte n'est montée que dans des grilles à
+       deux colonnes. En largeur FIXE, elle laissait dans sa cellule le vide
+       qui restait, lequel s'ajoutait au `gap-5` de la grille — l'écart entre
+       deux cartes paraissait le double du réel.
+       `mt-2` retiré pour la même raison : l'espacement appartient à la
+       grille, une marge posée sur l'enfant le rendait asymétrique. -->
   <div
-    class="h-80 relative w-72 hover:scale-95 transition-transform font-bold hover:shadow-none bg-white rounded-md mt-2 overflow-hidden shadow-md cursor-pointer"
+    class="relative h-80 w-full cursor-pointer overflow-hidden rounded-md bg-white font-bold shadow-md transition-transform hover:scale-95 hover:shadow-none"
     @click="$emit('click', programme)"
   >
     <!-- Image de couverture -->
