@@ -5,7 +5,7 @@
   <AfricansCartePublication
     :auteur="auteur"
     :titre="programme.titre"
-    :texte="programme.description"
+    :texte="resume"
     :etiquettes="etiquettes"
     :images="couverture ? [couverture] : undefined"
     :actions="['partager']"
@@ -38,6 +38,10 @@ const props = defineProps<{ programme: SabbatiqueAPI }>()
 defineEmits<{ partager: [] }>()
 
 const couverture = computed(() => urlMedia(props.programme.couverture_url))
+
+// La description vient de l'éditeur riche : c'est du HTML, que la carte du
+// fil rend échappé. Seul le texte est retenu, et borné à un aperçu.
+const resume = computed(() => texteBrut(props.programme.description))
 
 const auteur = computed(() => ({
   nom: `${props.programme.user.prenom ?? ''} ${props.programme.user.nom ?? ''}`.trim() || 'Un organisateur',
