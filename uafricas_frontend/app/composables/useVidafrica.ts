@@ -11,13 +11,16 @@ interface VideoAfricaAPI {
   vignette_url: string | null
   duree_secondes: number | null
   territoires?: string[]
-  auteur_reel?: string | null
+  // Servis par les DEUX routes (liste ET détail) : la carte du fil
+  // `vidafrica/CarteVideoFil.vue` est interactive, elle a besoin de l'auteur,
+  // des compteurs et surtout de `ma_reaction` (cf. `mapperVideo`).
+  auteur_reel: string | null
   langue_originale?: string | null
   langues_disponibles: string[]
-  nombre_likes?: number
-  nombre_dislikes?: number
-  nombre_partages?: number
-  ma_reaction?: 'like' | 'dislike' | null
+  nombre_likes: number
+  nombre_dislikes: number
+  nombre_partages: number
+  ma_reaction: 'like' | 'dislike' | null
   created_at: string
 }
 
@@ -170,6 +173,10 @@ const mapperVideo = (api: VideoAfricaAPI, apiBase: string): VideoAfrica => ({
   auteurReel: api.auteur_reel ?? null,
   langueOriginale: api.langue_originale ?? null,
   languesDisponibles: api.langues_disponibles,
+  // ⚠️ Les replis `?? 0` / `?? null` ne sont qu'un filet contre un backend
+  // plus ancien : ils ne DOIVENT pas masquer une route qui oublierait ces
+  // champs. Une liste servie sans `ma_reaction` rend le pouce éteint pour un
+  // membre qui a déjà aimé, et son clic bascule vers la SUPPRESSION du like.
   nombreLikes: api.nombre_likes ?? 0,
   nombreDislikes: api.nombre_dislikes ?? 0,
   nombrePartages: api.nombre_partages ?? 0,
@@ -209,7 +216,7 @@ export const useVidafrica = () => {
     }
   }
 
-  // Aimer / ne pas aimer une vidéo (toggle) — JWT requis.
+  // Aimer / ne pas aimer une vidéo (toggle), JWT requis.
   const reagirVideo = async (
     videoId: string,
     typeReaction: 'like' | 'dislike',
@@ -234,7 +241,7 @@ export const useVidafrica = () => {
     }
   }
 
-  // Partager une vidéo sur le mur communautaire — JWT requis.
+  // Partager une vidéo sur le mur communautaire, JWT requis.
   const partagerVideo = async (
     videoId: string,
     legende?: string,
@@ -250,7 +257,7 @@ export const useVidafrica = () => {
     return reponse.success ? reponse.data : null
   }
 
-  // Lister les partages de vidéos (public, paginé) — pour le mur /publications.
+  // Lister les partages de vidéos (public, paginé), pour le mur /publications.
   const listerPartagesVideos = async (
     page = 1,
     parPage = 20,
@@ -320,7 +327,12 @@ export const useVidafrica = () => {
       const qs = searchParams.toString()
       const url = `${apiBase}/api/vidafrica/videos${qs ? `?${qs}` : ''}`
 
-      const reponse = await $fetch<ApiResponse<PaginatedVideoResponse>>(url)
+      // JWT facultatif mais INDISPENSABLE quand le membre est connecté : sans
+      // lui le serveur ne peut pas renseigner `ma_reaction`, les pouces du fil
+      // s'affichent éteints et le prochain clic retire la réaction existante.
+      const reponse = await $fetch<ApiResponse<PaginatedVideoResponse>>(url, {
+        headers: authHeaders(),
+      })
       if (!reponse.success || !reponse.data) {
         return { videos: [], pagination: { page: 1, parPage: 20, total: 0, totalPages: 0 } }
       }

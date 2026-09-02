@@ -1,4 +1,4 @@
-# Feature Specification: Marché Africain — acheter, vendre, troquer, donner
+# Feature Specification: Marché Africain, acheter, vendre, troquer, donner
 
 **Feature Branch**: `001-marche-achat-vente-troc-don`  
 **Created**: 2026-05-26  

@@ -76,7 +76,7 @@ fn texte_optionnel(valeur: Option<&str>) -> Option<String> {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// ÉCOLES PARTENAIRES — CRUD
+// ÉCOLES PARTENAIRES : CRUD
 // ════════════════════════════════════════════════════════════════════
 
 /// GET /api/admin/ecoles-partenaires
@@ -357,7 +357,7 @@ pub async fn supprimer_ecole(
 }
 
 // ════════════════════════════════════════════════════════════════════
-// FACULTÉS — CRUD
+// FACULTÉS : CRUD
 // ════════════════════════════════════════════════════════════════════
 
 /// GET /api/admin/facultes

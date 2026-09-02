@@ -1,4 +1,4 @@
-# Quickstart — Rendez-vous en visioconférence entre amis
+# Quickstart : Rendez-vous en visioconférence entre amis
 
 ## Pré-requis
 
@@ -8,14 +8,14 @@
 
 ## Mise en place (ordre Principe III : SQL → backend → frontend)
 
-1. **Schéma SQL** — créer `uafricas_backend/doc/bd/schemas/31_social_rendez_vous.sql` (enum + table + index, idempotent) puis ajouter `\ir schemas/31_social_rendez_vous.sql` dans `doc/bd/schema.sql` après la ligne `30_social_conversation_annonce.sql`.
+1. **Schéma SQL** : créer `uafricas_backend/doc/bd/schemas/31_social_rendez_vous.sql` (enum + table + index, idempotent) puis ajouter `\ir schemas/31_social_rendez_vous.sql` dans `doc/bd/schema.sql` après la ligne `30_social_conversation_annonce.sql`.
    - Réinitialiser la BDD dev : `docker compose down -v && docker compose up -d` (le `docker-init.sh` rejoue le schéma), **ou** appliquer la migration à chaud :
      `docker compose exec -T postgres psql -U uafricas -d africans_db < uafricas_backend/doc/bd/schemas/31_social_rendez_vous.sql`
 
-2. **Backend** — créer `src/models/rendez_vous.rs` + `src/handlers/rendez_vous.rs`, déclarer les modules (`models/mod.rs`, `handlers/mod.rs`), ajouter le scope `/rendez-vous` dans `src/routes.rs`. Relancer proprement :
+2. **Backend** : créer `src/models/rendez_vous.rs` + `src/handlers/rendez_vous.rs`, déclarer les modules (`models/mod.rs`, `handlers/mod.rs`), ajouter le scope `/rendez-vous` dans `src/routes.rs`. Relancer proprement :
    `kill $(lsof -i :8082 -t) 2>/dev/null; RUST_LOG=info cargo run`
 
-3. **Frontend** — `cd uafricas_frontend && pnpm add peerjs`. Ajouter dans `nuxt.config.ts` :
+3. **Frontend** : `cd uafricas_frontend && pnpm add peerjs`. Ajouter dans `nuxt.config.ts` :
    ```ts
    runtimeConfig: {
      public: {
@@ -31,23 +31,23 @@
 
 ## Parcours de validation manuelle (scénarios d'acceptation)
 
-### US1 — Proposer (P1)
+### US1 : Proposer (P1)
 1. Se connecter (A), ouvrir `/profil/<id de B>` (amis). Vérifier le bouton **« Proposer un rendez-vous »** (absent si non-amis).
 2. Remplir sujet + date future + durée 30, envoyer → toast succès. B reçoit la cloche (+1) et un événement temps réel < 5 s.
 3. Cas d'échec : date passée / sujet vide / durée absente / soi-même → message d'erreur, aucun RDV créé.
 
-### US2 — Répondre (P2)
+### US2 : Répondre (P2)
 4. Côté B : panneau messagerie → onglet **Rendez-vous** → filtre « en attente de ma réponse ». Accepter → statut `accepté`, A notifié.
 5. Refuser un autre RDV → `refusé`, A notifié.
 6. Contre-proposer → reste `proposé`, l'initiative bascule vers A (chez A : « en attente de ma réponse »), A notifié.
 7. Tenter une action quand ce n'est pas son tour, ou contre-proposer un `accepté` → rejet `409`.
 
-### US3 — Gérer (P3)
+### US3 : Gérer (P3)
 8. Vérifier les 4 filtres (attente moi / attente autre / à venir / passés) et l'affichage MembreLight (photo, nom, fonction, pays) + sujet/date/durée/statut.
 9. Annuler un RDV accepté (depuis l'un OU l'autre) → `annulé`, l'autre notifié.
 10. Cliquer le lien **messagerie** d'un RDV → la conversation privée avec ce membre s'ouvre.
 
-### US4 — Visio (P4)
+### US4 : Visio (P4)
 11. Sur un RDV `accepté`, vérifier que **« Rejoindre »** est inactif hors fenêtre, actif dès `−5 min`.
 12. Les deux membres rejoignent (deux navigateurs/onglets) → flux local + distant visibles ; tester micro/caméra/quitter.
 13. L'un quitte → l'autre voit « l'autre a quitté ».

@@ -108,7 +108,7 @@ export interface ContributionCitoyenne {
   stats: ContributionStats
   tags?: string[]
   verified?: boolean
-  /** Réactions globales (emojis) — factcheck connecté à l'API */
+  /** Réactions globales (emojis) : factcheck connecté à l'API */
   reactions?: ReactionsGlobales
   /** L'utilisateur courant a liké le volet préjugé */
   aLikePrejuge?: boolean

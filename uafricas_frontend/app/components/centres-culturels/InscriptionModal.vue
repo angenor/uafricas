@@ -1,11 +1,10 @@
 <script setup lang="ts">
-defineProps<{
-  isOpen: boolean
-}>()
+/** Choix des notifications d'un centre culturel. */
+defineProps<{ isOpen: boolean }>()
 
 const emit = defineEmits<{
   close: []
-  submit: [options: { prioritaires: boolean; toutes: boolean }]
+  submit: [options: { prioritaires: boolean, toutes: boolean }]
 }>()
 
 const prioritaires = ref(true)
@@ -17,56 +16,34 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="isOpen"
-      class="z-50 min-h-screen backdrop-blur-xs w-screen bg-black/40 fixed inset-0 flex items-start justify-center pt-14"
-      @click.self="emit('close')"
-    >
-      <div
-        class="bg-white px-6 py-5 w-full max-w-md overflow-hidden rounded-md border-t-8 border-green-700"
-        data-aos="zoom-in"
-        data-aos-duration="300"
-      >
-        <h3 class="text-xl font-bold text-gray-800 mb-4">
-          S'inscrire aux notifications
-        </h3>
-
-        <div class="space-y-3">
-          <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-            <input
-              v-model="prioritaires"
-              class="accent-green-600 w-5 h-5"
-              type="checkbox"
-            />
-            <span class="ml-3 text-gray-700">Recevoir les notifications prioritaires</span>
-          </label>
-
-          <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-            <input
-              v-model="toutes"
-              class="accent-green-600 w-5 h-5"
-              type="checkbox"
-            />
-            <span class="ml-3 text-gray-700">Recevoir toutes les notifications</span>
-          </label>
-        </div>
-
-        <div class="flex space-x-4 justify-center mt-8">
-          <button
-            @click="emit('close')"
-            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-          >
-            Annuler
-          </button>
-          <button
-            @click="handleSubmit"
-            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-          >
-            Soumettre
-          </button>
-        </div>
-      </div>
+  <AfricansModale
+    :model-value="isOpen"
+    titre="S'inscrire aux notifications"
+    icone="fa-solid fa-bell"
+    @update:model-value="!$event && emit('close')"
+  >
+    <div class="flex flex-col gap-2">
+      <label class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-[14px]/[1.4] text-af-corps transition hover:bg-af-fond">
+        <input v-model="prioritaires" type="checkbox" class="size-4 accent-af-chocolat" />
+        Recevoir les notifications prioritaires
+      </label>
+      <label class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-[14px]/[1.4] text-af-corps transition hover:bg-af-fond">
+        <input v-model="toutes" type="checkbox" class="size-4 accent-af-chocolat" />
+        Recevoir toutes les notifications
+      </label>
     </div>
-  </Teleport>
+
+    <template #actions>
+      <!-- « Annuler » était un bouton ROUGE, à côté d'un bouton vert : deux
+           actions de même poids visuel, dont l'une n'engage rien. -->
+      <button
+        type="button"
+        class="text-base font-bold text-af-corps transition hover:opacity-70"
+        @click="emit('close')"
+      >
+        Annuler
+      </button>
+      <AfricansBouton icone="fa-solid fa-bell" @click="handleSubmit">S'inscrire</AfricansBouton>
+    </template>
+  </AfricansModale>
 </template>

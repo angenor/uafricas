@@ -32,5 +32,5 @@
 ## Notes
 
 - All items passed validation on first iteration.
-- The spec references Feature 1's existing page (`/arbre-genealogique/[id]`) as a navigation target (FR-015) — this is a dependency, not an implementation detail.
-- The Assumptions section documents that API optimization (new endpoint vs existing) will be determined during planning — this is appropriately deferred.
+- The spec references Feature 1's existing page (`/arbre-genealogique/[id]`) as a navigation target (FR-015), this is a dependency, not an implementation detail.
+- The Assumptions section documents that API optimization (new endpoint vs existing) will be determined during planning, this is appropriately deferred.

@@ -4,7 +4,7 @@
  *
  * Deux modes **exclusifs** (FR-034) : « toute l'Afrique » ou une liste de
  * territoires. La bascule continentale neutralise la liste à l'écran, comme la
- * transaction serveur la vide en base — laisser les deux cochables aurait
+ * transaction serveur la vide en base, laisser les deux cochables aurait
  * produit une fiche affichant deux couvertures contradictoires jusqu'à la
  * prochaine écriture, que le trigger rejetterait.
  *
@@ -16,7 +16,7 @@
 import type { TerritoirePublic } from '~/composables/useMediaSupport'
 
 const props = withDefaults(defineProps<{
-  /** `true` : couverture continentale — la liste est alors ignorée. */
+  /** `true` : couverture continentale : la liste est alors ignorée. */
   continentale: boolean
   /** Identifiants des territoires couverts. */
   territoires: string[]
@@ -89,9 +89,9 @@ const enDefaut = computed(
 
 <template>
   <div>
-    <p :class="sombre ? 'text-sm text-gray-300 mb-2' : 'text-sm text-gray-700 mb-2'">
+    <p :class="sombre ? 'text-sm text-gray-300 mb-2' : 'text-sm text-af-corps mb-2'">
       Couverture territoriale
-      <span v-if="requis" class="text-red-500">*</span>
+      <span v-if="requis" class="text-af-live">*</span>
     </p>
 
     <!-- Les deux modes sont présentés comme un choix, pas comme deux cases -->
@@ -101,14 +101,14 @@ const enDefaut = computed(
         :disabled="disabled"
         class="text-left rounded-lg border px-4 py-3 transition-colors disabled:opacity-50"
         :class="continentale
-          ? (sombre ? 'bg-yellow-400/10 border-yellow-400' : 'bg-gray-900/5 border-gray-900')
-          : (sombre ? 'bg-white/5 border-white/15 hover:border-white/40' : 'bg-white border-gray-300 hover:border-gray-500')"
+          ? (sombre ? 'bg-af-chocolat/10 border-af-chocolat' : 'bg-gray-900/5 border-af-encre')
+          : (sombre ? 'bg-white/5 border-white/15 hover:border-white/40' : 'bg-white border-af-bordure hover:border-af-bordure')"
         @click="basculerContinentale(true)"
       >
-        <span class="block font-semibold" :class="sombre ? 'text-white' : 'text-gray-900'">
+        <span class="block font-semibold" :class="sombre ? 'text-white' : 'text-af-encre'">
           Toute l'Afrique
         </span>
-        <span class="block text-xs mt-0.5" :class="sombre ? 'text-gray-400' : 'text-gray-500'">
+        <span class="block text-xs mt-0.5" :class="sombre ? 'text-gray-400' : 'text-af-atone'">
           Le support remonte sur chaque territoire, quel que soit le filtre.
         </span>
       </button>
@@ -118,14 +118,14 @@ const enDefaut = computed(
         :disabled="disabled"
         class="text-left rounded-lg border px-4 py-3 transition-colors disabled:opacity-50"
         :class="!continentale
-          ? (sombre ? 'bg-yellow-400/10 border-yellow-400' : 'bg-gray-900/5 border-gray-900')
-          : (sombre ? 'bg-white/5 border-white/15 hover:border-white/40' : 'bg-white border-gray-300 hover:border-gray-500')"
+          ? (sombre ? 'bg-af-chocolat/10 border-af-chocolat' : 'bg-gray-900/5 border-af-encre')
+          : (sombre ? 'bg-white/5 border-white/15 hover:border-white/40' : 'bg-white border-af-bordure hover:border-af-bordure')"
         @click="basculerContinentale(false)"
       >
-        <span class="block font-semibold" :class="sombre ? 'text-white' : 'text-gray-900'">
+        <span class="block font-semibold" :class="sombre ? 'text-white' : 'text-af-encre'">
           Territoires choisis
         </span>
-        <span class="block text-xs mt-0.5" :class="sombre ? 'text-gray-400' : 'text-gray-500'">
+        <span class="block text-xs mt-0.5" :class="sombre ? 'text-gray-400' : 'text-af-atone'">
           {{ territoires.length }} territoire{{ territoires.length > 1 ? 's' : '' }} sélectionné{{ territoires.length > 1 ? 's' : '' }}.
         </span>
       </button>
@@ -139,13 +139,13 @@ const enDefaut = computed(
         :disabled="disabled"
         class="w-full rounded-lg px-3 py-2 text-sm mb-3 border outline-none transition-colors disabled:opacity-50"
         :class="sombre
-          ? 'bg-white/5 border-white/15 text-white placeholder-gray-500 focus:border-yellow-400'
-          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gray-900'"
+          ? 'bg-white/5 border-white/15 text-white placeholder-af-atone-2 focus:border-af-chocolat'
+          : 'bg-white border-af-bordure text-af-encre placeholder-af-atone-2 focus:border-af-encre'"
       >
 
       <div
         class="flex flex-wrap gap-2 max-h-64 overflow-y-auto p-1 rounded-lg"
-        :class="enDefaut ? 'ring-1 ring-red-500/60' : ''"
+        :class="enDefaut ? 'ring-1 ring-af-live/60' : ''"
       >
         <button
           v-for="territoire in filtres"
@@ -155,11 +155,11 @@ const enDefaut = computed(
           class="rounded-full px-3 py-1.5 text-sm border transition-colors disabled:opacity-50"
           :class="estSelectionne(territoire.id)
             ? (sombre
-              ? 'bg-yellow-400 border-yellow-400 text-neutral-900 font-semibold'
-              : 'bg-gray-900 border-gray-900 text-white font-semibold')
+              ? 'bg-af-chocolat border-af-chocolat text-af-encre font-semibold'
+              : 'bg-gray-900 border-af-encre text-white font-semibold')
             : (sombre
-              ? 'bg-white/5 border-white/15 text-gray-300 hover:border-yellow-400'
-              : 'bg-white border-gray-300 text-gray-700 hover:border-gray-900')"
+              ? 'bg-white/5 border-white/15 text-gray-300 hover:border-af-chocolat'
+              : 'bg-white border-af-bordure text-af-corps hover:border-af-encre')"
           @click="basculerTerritoire(territoire.id)"
         >
           {{ territoire.nom }}
@@ -167,13 +167,13 @@ const enDefaut = computed(
 
         <p
           v-if="!filtres.length"
-          :class="sombre ? 'text-sm text-gray-500' : 'text-sm text-gray-400'"
+          :class="sombre ? 'text-sm text-af-atone' : 'text-sm text-gray-400'"
         >
           Aucun territoire ne correspond à cette recherche.
         </p>
       </div>
 
-      <p v-if="enDefaut" class="text-xs text-red-500 mt-2">
+      <p v-if="enDefaut" class="text-xs text-af-live mt-2">
         Un support publié doit déclarer au moins un territoire, ou couvrir toute l'Afrique.
       </p>
     </div>

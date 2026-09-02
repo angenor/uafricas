@@ -117,7 +117,7 @@ export interface SabbatiqueFiltres {
   pays?: string
   /**
    * Zone géographique du territoire d'accueil : `afrique`, `hors_afrique` ou
-   * `tout` (aucun filtre — cette valeur n'est PAS transmise à l'API).
+   * `tout` (aucun filtre : cette valeur n'est PAS transmise à l'API).
    */
   zone?: 'afrique' | 'hors_afrique' | 'tout'
   domaine?: string

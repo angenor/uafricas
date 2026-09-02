@@ -25,7 +25,7 @@ uafricas_frontend/app/pages/arbre-genealogique/
 
 ## Vérification rapide
 
-1. `pnpm dev` — le serveur démarre sans erreur
+1. `pnpm dev` : le serveur démarre sans erreur
 2. Naviguer vers `/arbre-genealogique/`
 3. Cliquer "Ajouter une personne" → l'overlay plein écran wizard s'ouvre
 4. Parcourir les 6 étapes + récapitulatif
@@ -38,5 +38,5 @@ uafricas_frontend/app/pages/arbre-genealogique/
 
 - Aucune modification backend nécessaire
 - Le DTO en sortie du wizard est identique à `CreerPersonneForm` existant
-- Tailwind CSS v4 pur — pas de classes daisyUI
+- Tailwind CSS v4 pur : pas de classes daisyUI
 - Tester sur mobile (320px min) et vérifier `prefers-reduced-motion`

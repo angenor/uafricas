@@ -1,4 +1,4 @@
-# Quickstart — Vidafrica
+# Quickstart : Vidafrica
 
 **Branch**: `004-vidafrica-sous-titres`
 
@@ -16,39 +16,39 @@
 3. Ajouter `\ir schemas/27_vidafrica.sql` dans `schema.sql`
 4. Recréer la base : `docker compose down -v && docker compose up -d`
 
-### Étape 2 : Backend — Models
-1. Créer `src/models/admin/vidafrica.rs` — structs FromRow, DTOs, COLONNES
-2. Créer `src/models/vidafrica.rs` — structs publiques
+### Étape 2 : Backend : Models
+1. Créer `src/models/admin/vidafrica.rs`, structs FromRow, DTOs, COLONNES
+2. Créer `src/models/vidafrica.rs` : structs publiques
 3. Déclarer les modules dans `src/models/admin/mod.rs` et `src/models/mod.rs`
 
-### Étape 3 : Backend — Handlers Admin
-1. Créer `src/handlers/admin/vidafrica.rs` — CRUD vidéos + pistes + segments + timings mot
+### Étape 3 : Backend : Handlers Admin
+1. Créer `src/handlers/admin/vidafrica.rs`, CRUD vidéos + pistes + segments + timings mot
 2. Déclarer dans `src/handlers/admin/mod.rs`
 3. Enregistrer les routes dans `src/routes.rs`
 
-### Étape 4 : Backend — Handlers Public
-1. Créer `src/handlers/vidafrica.rs` — lister vidéos, détail, sous-titres par langue
+### Étape 4 : Backend : Handlers Public
+1. Créer `src/handlers/vidafrica.rs` : lister vidéos, détail, sous-titres par langue
 2. Déclarer dans `src/handlers/mod.rs`
 3. Enregistrer les routes publiques dans `src/routes.rs`
 
-### Étape 5 : Frontend — Composables + Mock
-1. Créer `app/mocks/vidafrica.ts` — interfaces + données mock
-2. Créer `app/composables/useAdminVidafrica.ts` — CRUD admin
-3. Créer `app/composables/useVidafrica.ts` — lecture publique
+### Étape 5 : Frontend : Composables + Mock
+1. Créer `app/mocks/vidafrica.ts` : interfaces + données mock
+2. Créer `app/composables/useAdminVidafrica.ts`, CRUD admin
+3. Créer `app/composables/useVidafrica.ts`, lecture publique
 
-### Étape 6 : Frontend — Admin Pages
-1. Créer `app/pages/admin/vidafrica/index.vue` — liste des vidéos
-2. Créer `app/pages/admin/vidafrica/create.vue` — formulaire création
-3. Créer `app/pages/admin/vidafrica/[id].vue` — édition + gestion sous-titres + tap-to-mark
+### Étape 6 : Frontend : Admin Pages
+1. Créer `app/pages/admin/vidafrica/index.vue`, liste des vidéos
+2. Créer `app/pages/admin/vidafrica/create.vue`, formulaire création
+3. Créer `app/pages/admin/vidafrica/[id].vue`, édition + gestion sous-titres + tap-to-mark
 
-### Étape 7 : Frontend — Composant Lecteur Karaoké
-1. Créer `app/components/vidafrica/VidafricaLecteur.vue` — lecteur vidéo + overlay karaoké
+### Étape 7 : Frontend : Composant Lecteur Karaoké
+1. Créer `app/components/vidafrica/VidafricaLecteur.vue`, lecteur vidéo + overlay karaoké
 2. Implémenter la synchronisation `requestAnimationFrame` + `currentTime`
 3. Implémenter le sélecteur de langue
 
-### Étape 8 : Frontend — Page Publique
-1. Créer `app/pages/vidafrica/index.vue` — catalogue avec filtres + recherche
-2. Créer `app/pages/vidafrica/[slug].vue` — page de lecture vidéo
+### Étape 8 : Frontend : Page Publique
+1. Créer `app/pages/vidafrica/index.vue`, catalogue avec filtres + recherche
+2. Créer `app/pages/vidafrica/[slug].vue`, page de lecture vidéo
 
 ## Vérification rapide
 

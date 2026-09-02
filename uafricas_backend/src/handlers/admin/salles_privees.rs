@@ -12,7 +12,7 @@ use crate::models::pagination::{PaginatedResponse, PaginationParams};
 use crate::verifier_permission;
 use crate::ApiResponse;
 
-/// GET /api/admin/salles-privees — supervision lecture seule
+/// GET /api/admin/salles-privees : supervision lecture seule
 pub async fn lister_salles_privees(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
@@ -103,7 +103,7 @@ pub async fn lister_salles_privees(
     }))
 }
 
-/// GET /api/admin/salles-privees/{id} — détail lecture seule
+/// GET /api/admin/salles-privees/{id} : détail lecture seule
 pub async fn obtenir_salle_privee(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,

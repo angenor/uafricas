@@ -3,7 +3,7 @@
  * Décor animé des pages Radio : ciel étoilé et ondes sonores.
  *
  * Extrait des deux pages, qui en portaient chacune une copie intégrale.
- * Ce n'est PAS une fusion des pages — elles restent deux fichiers distincts,
+ * Ce n'est PAS une fusion des pages : elles restent deux fichiers distincts,
  * chacune avec sa propre origine de publication (FR-012) : seul le décor,
  * strictement identique et sans logique, est mis en commun.
  */

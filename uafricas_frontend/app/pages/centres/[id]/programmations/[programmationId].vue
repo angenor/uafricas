@@ -1,4 +1,179 @@
+<template>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        :titre="programmation?.titre ?? 'Programmation'"
+        :sous-titre="centreNom || undefined"
+        :image="programmation?.image_couverture_url ?? null"
+      >
+        <template v-if="programmation" #action>
+          <span class="rounded-lg bg-af-vert px-4 py-2 text-[14px]/[1.4] font-bold text-white">
+            {{ getModeLabel(programmation.mode) }}
+          </span>
+        </template>
+      </AfricansBandeauModule>
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Afroculture', vers: '/centres' },
+          { libelle: centreNom || 'Centre', vers: `/centres/${centreId}` },
+          { libelle: programmation?.titre ?? 'Programmation' }]"
+      />
+    </template>
+
+    <div v-if="chargement" class="flex flex-col gap-5">
+      <div v-for="n in 3" :key="n" class="h-32 animate-pulse rounded-[10px] bg-af-bordure" />
+    </div>
+
+    <div v-else-if="erreur || !programmation" class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+      <font-awesome-icon icon="fa-solid fa-calendar-xmark" class="text-4xl text-af-atone-2" />
+      <p class="mt-4 text-[16px]/[1.4] font-bold">Programmation introuvable</p>
+      <p class="mt-2 text-[14px]/[1.4] text-af-corps">{{ erreur || "Cette programmation n'existe pas ou a été retirée." }}</p>
+      <AfricansBouton class="mt-6" variante="secondaire" icone="fa-solid fa-arrow-left" :vers="`/centres/${centreId}`">
+        Retour au centre
+      </AfricansBouton>
+    </div>
+
+    <div v-else class="flex flex-col gap-5">
+      <AfricansAccordeon titre="Informations pratiques" icone="fa-solid fa-circle-info" fond="blanc" par-defaut-ouvert>
+        <dl class="grid gap-5 sm:grid-cols-2">
+          <div class="flex items-start gap-3">
+            <font-awesome-icon icon="fa-solid fa-calendar-days" class="mt-0.5 size-5 shrink-0 text-af-chocolat" />
+            <div class="min-w-0">
+              <dt class="text-[14px]/[1.4] text-af-corps">Dates</dt>
+              <dd class="text-[14px]/[1.4] font-bold text-af-encre">{{ periode }}</dd>
+            </div>
+          </div>
+
+          <!-- L'horaire n'est affiché QUE pour un événement d'une seule journée.
+               Sur plusieurs jours, « 22:48 - 22:48 » ne dit rien : ce sont deux
+               instants distants de trois jours, pas un créneau. -->
+          <div v-if="horaire" class="flex items-start gap-3">
+            <font-awesome-icon icon="fa-solid fa-clock" class="mt-0.5 size-5 shrink-0 text-af-chocolat" />
+            <div class="min-w-0">
+              <dt class="text-[14px]/[1.4] text-af-corps">Horaire</dt>
+              <dd class="text-[14px]/[1.4] font-bold text-af-encre">{{ horaire }}</dd>
+            </div>
+          </div>
+
+          <div v-if="programmation.lieu" class="flex items-start gap-3">
+            <font-awesome-icon icon="fa-solid fa-location-dot" class="mt-0.5 size-5 shrink-0 text-af-chocolat" />
+            <div class="min-w-0">
+              <dt class="text-[14px]/[1.4] text-af-corps">Lieu</dt>
+              <dd class="text-[14px]/[1.4] font-bold text-af-encre">{{ programmation.lieu }}</dd>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <font-awesome-icon icon="fa-solid fa-tag" class="mt-0.5 size-5 shrink-0 text-af-chocolat" />
+            <div class="min-w-0">
+              <dt class="text-[14px]/[1.4] text-af-corps">Type</dt>
+              <dd class="text-[14px]/[1.4] font-bold text-af-encre">{{ getModeLabel(programmation.mode) }}</dd>
+            </div>
+          </div>
+
+          <div
+            v-if="programmation.lien_en_ligne && (programmation.mode === 'en-ligne' || programmation.mode === 'hybride')"
+            class="flex items-start gap-3 sm:col-span-2"
+          >
+            <font-awesome-icon icon="fa-solid fa-link" class="mt-0.5 size-5 shrink-0 text-af-chocolat" />
+            <div class="min-w-0">
+              <dt class="text-[14px]/[1.4] text-af-corps">Lien de participation</dt>
+              <dd>
+                <a
+                  :href="programmation.lien_en_ligne"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-[14px]/[1.4] font-bold text-af-chocolat transition hover:opacity-70"
+                >
+                  {{ programmation.lien_en_ligne }}
+                </a>
+              </dd>
+            </div>
+          </div>
+        </dl>
+      </AfricansAccordeon>
+
+      <AfricansAccordeon v-if="programmation.description" titre="Description" icone="fa-solid fa-align-left" par-defaut-ouvert>
+        <p class="text-[14px]/[1.4] whitespace-pre-line text-af-corps">{{ programmation.description }}</p>
+      </AfricansAccordeon>
+
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <AfricansBouton variante="secondaire" icone="fa-solid fa-arrow-left" :vers="`/centres/${centreId}`">
+          Retour au centre
+        </AfricansBouton>
+        <AfricansBouton variante="secondaire" icone="fa-solid fa-masks-theater" vers="/centres">
+          Tous les centres
+        </AfricansBouton>
+      </div>
+    </div>
+
+    <template #rail>
+      <AfricansPanneau v-if="programmation" titre="Inscription" icone="fa-solid fa-user-plus">
+        <div class="flex flex-col gap-4">
+          <p v-if="programmation.nombre_places" class="text-[14px]/[1.4] text-af-corps">
+            <span class="text-[20px]/[1.4] font-bold text-af-chocolat">{{ placesRestantes }}</span>
+            place{{ (placesRestantes ?? 0) > 1 ? 's' : '' }} restante{{ (placesRestantes ?? 0) > 1 ? 's' : '' }}
+            sur {{ programmation.nombre_places }}
+          </p>
+
+          <AfricansBouton
+            v-if="isAuthenticated"
+            :variante="estInscrit ? 'secondaire' : 'primaire'"
+            :desactive="inscriptionEnCours || (complet && !estInscrit)"
+            :tourne="inscriptionEnCours"
+            :icone="estInscrit ? 'fa-solid fa-user-minus' : 'fa-solid fa-user-plus'"
+            pleine-largeur
+            @click="basculerInscription"
+          >
+            {{ estInscrit ? 'Annuler mon inscription' : complet ? 'Complet' : "S'inscrire" }}
+          </AfricansBouton>
+
+          <template v-else>
+            <p class="text-[14px]/[1.4] text-af-corps">
+              Connectez-vous pour vous inscrire à cette programmation.
+            </p>
+            <AfricansBouton pleine-largeur icone="fa-solid fa-right-to-bracket" :vers="`/login?redirect=/centres/${centreId}/programmations/${programmationId}`">
+              Se connecter
+            </AfricansBouton>
+          </template>
+
+          <p
+            v-if="messageInscription"
+            class="rounded-[10px] border border-af-vert/30 bg-af-vert/5 p-3 text-[12px]/[1.4] text-af-vert"
+          >
+            {{ messageInscription }}
+          </p>
+        </div>
+      </AfricansPanneau>
+
+      <AfricansPanneau v-if="centreNom" titre="Le centre" icone="fa-solid fa-masks-theater">
+        <div class="flex flex-col gap-3">
+          <p class="text-[14px]/[1.4] font-bold text-af-encre">{{ centreNom }}</p>
+          <AfricansBouton variante="secondaire" icone="fa-solid fa-arrow-right" :vers="`/centres/${centreId}`">
+            Voir sa programmation
+          </AfricansBouton>
+        </div>
+      </AfricansPanneau>
+    </template>
+
+    <CentresCulturelsInscriptionProgrammationModal
+      :is-open="showInscriptionModal"
+      :loading="inscriptionEnCours"
+      :titre-programmation="programmation?.titre"
+      :defaut-nom="userStore.user?.nom"
+      :defaut-prenom="userStore.user?.prenom"
+      @close="showInscriptionModal = false"
+      @submit="confirmerInscription"
+    />
+  </NuxtLayout>
+</template>
+
 <script setup lang="ts">
+
+definePageMeta({ layout: false })
 import type { ProgrammationDetailAPI } from '~/composables/useCentresCulturels'
 import { formatDateCourteFrancais, formatHeureFrancais, getModeLabel } from '~/composables/useCentresCulturels'
 import { useUserStore } from '~/stores/user'
@@ -68,6 +243,40 @@ const placesRestantes = computed(() => {
   return Math.max(0, places - nombreInscrits.value)
 })
 const complet = computed(() => placesRestantes.value !== null && placesRestantes.value <= 0 && !estInscrit.value)
+
+/** Vrai si début et fin tombent le même jour civil. */
+const memeJournee = computed(() => {
+  const p = programmation.value
+  if (!p?.date_heure_fin) return true
+  const d = new Date(p.date_heure_debut)
+  const f = new Date(p.date_heure_fin)
+  return d.toDateString() === f.toDateString()
+})
+
+const periode = computed(() => {
+  const p = programmation.value
+  if (!p) return ''
+  const debut = formatDateCourteFrancais(p.date_heure_debut)
+  if (!p.date_heure_fin || memeJournee.value) return debut
+  return `${debut} - ${formatDateCourteFrancais(p.date_heure_fin)}`
+})
+
+/**
+ * Horaire affiché UNIQUEMENT pour un événement d'une seule journée.
+ *
+ * Sur plusieurs jours, la page annonçait « 22:48 - 22:48 » : deux instants
+ * distants de trois jours, pas un créneau. Ce n'était pas un bug d'affichage : 
+ * les deux bornes portent bien la même heure, héritée du `NOW()` du seed, mais
+ * un horaire de festival de quatre jours n'a de toute façon aucun sens.
+ */
+const horaire = computed(() => {
+  const p = programmation.value
+  if (!p || !memeJournee.value) return null
+  const debut = formatHeureFrancais(p.date_heure_debut)
+  if (!p.date_heure_fin) return debut
+  const fin = formatHeureFrancais(p.date_heure_fin)
+  return debut === fin ? debut : `${debut} - ${fin}`
+})
 
 // Rafraîchir le statut d'inscription côté client (le token n'existe pas au rendu SSR)
 const rafraichirStatut = async () => {
@@ -139,225 +348,3 @@ useHead(() => ({
 
 </script>
 
-<template>
-  <div class="min-h-screen bg-gray-100">
-    <!-- Modal d'inscription -->
-    <CentresCulturelsInscriptionProgrammationModal
-      :is-open="showInscriptionModal"
-      :loading="inscriptionEnCours"
-      :titre-programmation="programmation?.titre"
-      :defaut-nom="userStore.user?.nom"
-      :defaut-prenom="userStore.user?.prenom"
-      @close="showInscriptionModal = false"
-      @submit="confirmerInscription"
-    />
-
-    <!-- Loading state -->
-    <div v-if="chargement" class="flex justify-center items-center min-h-screen">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-green"></div>
-    </div>
-
-    <!-- Not found state -->
-    <div
-      v-else-if="erreur && !programmation"
-      class="flex flex-col justify-center items-center min-h-screen"
-    >
-      <font-awesome-icon :icon="['fas', 'exclamation-triangle']" class="text-6xl text-yellow-500 mb-4" />
-      <h1 class="text-2xl font-bold text-gray-700">Programmation non trouvée</h1>
-      <p class="text-gray-500 mt-2">{{ erreur }}</p>
-      <NuxtLink
-        :to="`/centres/${centreId}`"
-        class="mt-4 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
-      >
-        Retour au centre
-      </NuxtLink>
-    </div>
-
-    <!-- Content -->
-    <div v-else-if="programmation" class="w-full h-full">
-      <div
-        class="bg-white mx-4 md:mx-16 lg:mx-72 pt-32 px-4 md:px-7 pb-20 rounded-b-md shadow-md"
-      >
-        <CommonBreadcrumbNav
-          :custom-breadcrumbs="[
-            { label: 'Centres culturels', to: '/centres' },
-            { label: centreNom, to: `/centres/${centreId}` },
-            { label: programmation.titre },
-          ]"
-        />
-
-        <!-- Image de couverture -->
-        <img
-          v-if="programmation.image_couverture_url"
-          class="w-full rounded-xl h-48 md:h-80 object-cover mt-3"
-          :src="programmation.image_couverture_url"
-          :alt="programmation.titre"
-          data-aos="fade-up"
-          data-aos-duration="600"
-        />
-
-        <!-- Info bar -->
-        <div
-          class="p-3 mt-3 bg-slate-100 rounded-r-md shadow-md border border-l-4 border-l-custom-green"
-          data-aos="fade-right"
-          data-aos-duration="600"
-        >
-          <div class="flex flex-wrap items-center text-custom-chocolat gap-2">
-            <NuxtLink
-              :to="`/centres/${centreId}`"
-              class="font-bold underline hover:text-custom-green transition-colors"
-            >
-              {{ centreNom }}
-            </NuxtLink>
-            <span class="hidden md:inline">|</span>
-            <div class="text-custom-green">
-              {{ formatDateCourteFrancais(programmation.date_heure_debut) }}
-              <template v-if="programmation.date_heure_fin">
-                <span class="underline">au</span>
-                {{ formatDateCourteFrancais(programmation.date_heure_fin) }}
-              </template>
-            </div>
-          </div>
-          <div class="mt-2 flex items-center text-gray-700">
-            <font-awesome-icon :icon="['fas', 'location-dot']" />
-            <span class="ml-2">{{ programmation.lieu || 'Lieu non précisé' }}</span>
-          </div>
-          <div class="mt-2 flex items-center">
-            <font-awesome-icon class="text-gray-700" :icon="['far', 'clock']" />
-            <span class="ml-2 font-bold text-xl md:text-2xl text-custom-chocolat">
-              {{ formatHeureFrancais(programmation.date_heure_debut) }}
-              <template v-if="programmation.date_heure_fin">
-                - {{ formatHeureFrancais(programmation.date_heure_fin) }}
-              </template>
-            </span>
-          </div>
-          <div class="mt-2 text-sm">
-            <span class="text-gray-500">Type:</span>
-            <span class="ml-1 font-medium">{{ getModeLabel(programmation.mode) }}</span>
-          </div>
-          <div v-if="programmation.lien_en_ligne && (programmation.mode === 'en-ligne' || programmation.mode === 'hybride')" class="mt-2">
-            <a
-              :href="programmation.lien_en_ligne"
-              target="_blank"
-              class="text-custom-green hover:underline text-sm"
-            >
-              <font-awesome-icon :icon="['fas', 'video']" class="mr-1" />
-              Rejoindre en ligne
-            </a>
-          </div>
-          <div v-if="programmation.nombre_places" class="mt-2 text-sm text-gray-600">
-            <font-awesome-icon :icon="['fas', 'users']" class="mr-1" />
-            {{ programmation.nombre_places }} places disponibles
-          </div>
-        </div>
-
-        <!-- Titre -->
-        <h1
-          class="font-bold text-2xl md:text-4xl mb-4 mt-4 text-gray-900"
-          data-aos="fade-up"
-          data-aos-duration="600"
-        >
-          {{ programmation.titre }}
-        </h1>
-
-        <!-- Inscription -->
-        <div
-          v-if="isAuthenticated"
-          class="mb-4"
-          data-aos="fade-up"
-          data-aos-duration="600"
-        >
-          <div class="flex flex-wrap items-center gap-3">
-            <button
-              v-if="!estInscrit"
-              class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
-              :disabled="inscriptionEnCours || complet"
-              @click="basculerInscription"
-            >
-              <font-awesome-icon
-                :icon="['fas', inscriptionEnCours ? 'spinner' : 'user-plus']"
-                :class="{ 'animate-spin': inscriptionEnCours }"
-                class="mr-2"
-              />
-              {{ complet ? 'Complet' : "S'inscrire à cette programmation" }}
-            </button>
-
-            <template v-else>
-              <span class="inline-flex items-center px-3 py-2 bg-custom-green/10 text-custom-green rounded-md font-medium">
-                <font-awesome-icon :icon="['fas', 'circle-check']" class="mr-2" />
-                Vous êtes inscrit(e)
-              </span>
-              <button
-                class="px-3 py-2 text-red-600 border border-red-600 rounded-md hover:bg-red-600/10 transition-colors disabled:opacity-50"
-                :disabled="inscriptionEnCours"
-                @click="basculerInscription"
-              >
-                <font-awesome-icon
-                  :icon="['fas', inscriptionEnCours ? 'spinner' : 'user-minus']"
-                  :class="{ 'animate-spin': inscriptionEnCours }"
-                  class="mr-2"
-                />
-                Se désinscrire
-              </button>
-            </template>
-          </div>
-
-          <p v-if="placesRestantes !== null" class="mt-2 text-sm text-gray-600">
-            <font-awesome-icon :icon="['fas', 'users']" class="mr-1" />
-            {{ placesRestantes }} place(s) restante(s) sur {{ programmation.nombre_places }}
-          </p>
-          <p v-else class="mt-2 text-sm text-gray-600">
-            <font-awesome-icon :icon="['fas', 'users']" class="mr-1" />
-            {{ nombreInscrits }} inscrit(s)
-          </p>
-          <p v-if="messageInscription" class="mt-1 text-sm text-custom-chocolat">{{ messageInscription }}</p>
-        </div>
-        <div
-          v-else
-          class="mb-4 border p-3 text-red-600 bg-red-600/10 border-red-600 rounded-md"
-          data-aos="fade-up"
-          data-aos-duration="600"
-        >
-          <p class="mb-2">Connectez-vous pour pouvoir vous inscrire à cette session</p>
-          <NuxtLink
-            to="/login"
-            class="inline-block px-4 py-1 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
-          >
-            Connexion
-          </NuxtLink>
-        </div>
-
-        <!-- Description -->
-        <div
-          v-if="programmation.description"
-          class="mt-4 bg-slate-100 rounded-r-md shadow-md border border-l-4 border-l-custom-green p-4"
-          data-aos="fade-up"
-          data-aos-duration="800"
-        >
-          <h2 class="text-xl font-bold mb-2 text-gray-800">Description</h2>
-          <p class="text-gray-700 leading-relaxed">
-            {{ programmation.description }}
-          </p>
-        </div>
-
-        <!-- Navigation -->
-        <div class="mt-6 flex justify-between">
-          <NuxtLink
-            :to="`/centres/${centreId}`"
-            class="text-custom-chocolat hover:text-custom-green transition-colors"
-          >
-            <font-awesome-icon :icon="['fas', 'arrow-left']" class="mr-2" />
-            Retour au centre
-          </NuxtLink>
-          <NuxtLink
-            to="/centres"
-            class="text-custom-chocolat hover:text-custom-green transition-colors"
-          >
-            Tous les centres
-            <font-awesome-icon :icon="['fas', 'arrow-right']" class="ml-2" />
-          </NuxtLink>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>

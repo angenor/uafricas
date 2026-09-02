@@ -56,7 +56,7 @@ pub fn table_porteur(type_porteur: &str) -> Result<&'static str, ApiErreur> {
     }
 }
 
-/// Support auquel se rattache le porteur — c'est lui qui porte la détention, et
+/// Support auquel se rattache le porteur : c'est lui qui porte la détention, et
 /// donc la garde d'écriture. Un programme n'a pas de détenteur propre.
 pub fn type_support_du_porteur(type_porteur: &str) -> Result<&'static str, ApiErreur> {
     match type_porteur {
@@ -110,7 +110,7 @@ pub struct MembreEquipeRow {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     /// Issu d'un `LEFT JOIN iam.utilisateur u ON u.id = m.utilisateur_id AND
-    /// u.deleted_at IS NULL` — et **non** de la colonne `m.utilisateur_id`.
+    /// u.deleted_at IS NULL` : et **non** de la colonne `m.utilisateur_id`.
     /// `None` quand le compte n'existe plus : le nom s'affiche alors en texte
     /// simple, sans lien mort (FR-014).
     pub compte_id: Option<Uuid>,
@@ -151,7 +151,7 @@ pub struct MembreEquipeResponse {
 }
 
 // ────────────────────────────────────────────────────────────────
-// Écriture — remplacement intégral (D6)
+// Écriture : remplacement intégral (D6)
 // ────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
@@ -178,7 +178,7 @@ pub struct EquipeRequest {
 
 /// Vide une chaîne optionnelle réduite à des espaces : sans cela, un champ
 /// laissé blanc par le formulaire produirait un libellé vide à l'écran, que
-/// `skip_serializing_if` ne filtrerait pas — `Some("")` n'est pas `None`.
+/// `skip_serializing_if` ne filtrerait pas, `Some("")` n'est pas `None`.
 pub fn normaliser_optionnel(valeur: &Option<String>) -> Option<String> {
     valeur
         .as_deref()

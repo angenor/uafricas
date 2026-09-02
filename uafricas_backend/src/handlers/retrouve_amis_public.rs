@@ -7,7 +7,7 @@ use crate::services::audit;
 use crate::ApiResponse;
 
 // ══════════════════════════════════════════════════════════════
-// Handlers publics — Avis de recherche (sans authentification)
+// Handlers publics : Avis de recherche (sans authentification)
 // ══════════════════════════════════════════════════════════════
 //
 // Ces handlers sont enregistres HORS du scope JWT dans routes.rs.

@@ -1,4 +1,4 @@
-# Implementation Plan: Vidafrica — Sous-titrage vidéo multilingue karaoke
+# Implementation Plan: Vidafrica : Sous-titrage vidéo multilingue karaoke
 
 **Branch**: `004-vidafrica-sous-titres` | **Date**: 2026-04-13 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification from `/specs/004-vidafrica-sous-titres/spec.md`
@@ -33,7 +33,7 @@ Vidafrica est une fonctionnalité de sous-titrage vidéo multilingue avec surlig
 | VI. Tailwind CSS v4 | PASS | Site public = Tailwind v4 pur, back-office = daisyUI v5 autorisé |
 | VII. Audit & Traçabilité | PASS | `audit::log_action` sur toutes les mutations admin (CRUD vidéos, pistes, segments) |
 
-**Constitution Check post-design** : PASS — aucune violation. Le design utilise exclusivement les patterns existants du projet.
+**Constitution Check post-design** : PASS, aucune violation. Le design utilise exclusivement les patterns existants du projet.
 
 ## Project Structure
 
@@ -51,7 +51,7 @@ specs/004-vidafrica-sous-titres/
 │   └── api-public-vidafrica.md  # Contrats API public (4 endpoints)
 ├── checklists/
 │   └── requirements.md  # Checklist qualité spec
-└── tasks.md             # (Phase 2 — /speckit.tasks)
+└── tasks.md             # (Phase 2, /speckit.tasks)
 ```
 
 ### Source Code (repository root)
@@ -94,4 +94,4 @@ uafricas_frontend/
 │               └── [id].vue                # Édition + sous-titres + tap-to-mark
 ```
 
-**Structure Decision**: Suit la structure existante du monorepo — un fichier handler/model par domaine côté backend, un composable par domaine côté frontend, composants organisés par feature dans `app/components/vidafrica/`.
+**Structure Decision**: Suit la structure existante du monorepo, un fichier handler/model par domaine côté backend, un composable par domaine côté frontend, composants organisés par feature dans `app/components/vidafrica/`.

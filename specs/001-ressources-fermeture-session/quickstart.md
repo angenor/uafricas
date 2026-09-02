@@ -1,4 +1,4 @@
-# Quickstart — Validation manuelle
+# Quickstart : Validation manuelle
 
 **Feature**: 001-ressources-fermeture-session
 **Pré-requis**: Docker compose lancé (`docker compose up -d`), backend (`RUST_LOG=info cargo run`), frontend (`pnpm dev`), schéma SQL ré-appliqué après édition de `08b_afrolang.sql` (drop volume `docker compose down -v` + remontée si dev local).
@@ -9,7 +9,7 @@ Comptes test :
 
 ---
 
-## Scénario A — Ajout de ressources contribuées (US1)
+## Scénario A : Ajout de ressources contribuées (US1)
 
 1. **Préparation** : avec `test-admin`, créer (ou réutiliser) une salle publique Afrolang (ex : groupe ethnique « Bambara »). Démarrer une session via la page `/afrolang/salle/<id>`.
 2. Se déconnecter, se connecter avec `test-user`. Rejoindre la même session.
@@ -20,17 +20,17 @@ Comptes test :
 7. **Onglet Vidéo erreur** : coller `https://vimeo.com/1234`. Soumettre. ❌ Erreur attendue : « Seules les URLs YouTube sont acceptées ».
 8. **Onglet Accompagnateur** : sélectionner test-admin. Motif « Locuteur natif, formateur depuis 8 ans ». Soumettre. ✅ Toast « Recommandation envoyée, en attente d'acceptation ». La carte n'est **pas** visible publiquement (vérifier avec un troisième compte si dispo).
 9. Se reconnecter avec **test-admin**. Aller dans `/mon-compte/recommandations-accompagnateur`. Vérifier la présence de la recommandation en état `en_attente`.
-10. Cliquer **Accepter**. ✅ Statut passe à `acceptee` ; retourner sur la session de la salle (test-user ou anonyme) — la carte d'accompagnateur est désormais visible publiquement avec lien vers le profil.
+10. Cliquer **Accepter**. ✅ Statut passe à `acceptee` ; retourner sur la session de la salle (test-user ou anonyme), la carte d'accompagnateur est désormais visible publiquement avec lien vers le profil.
 11. Toujours en test-admin : retirer le consentement. ✅ La carte disparaît instantanément.
 
-## Scénario B — Persistance au niveau salle (US1 acceptance #6)
+## Scénario B : Persistance au niveau salle (US1 acceptance #6)
 
 1. Avec test-user, ajouter 2 ressources (1 document, 1 lien web) dans la session A.
 2. Mettre fin à la session A (test-admin termine la session).
 3. Avec test-admin, démarrer une **nouvelle session** dans la même salle.
 4. Rejoindre avec test-user. Vérifier que les 2 ressources de la session A apparaissent toujours dans l'onglet « Ressources contribuées ». ✅
 
-## Scénario C — Salle privée, visibilité restreinte (FR-001 option C)
+## Scénario C : Salle privée, visibilité restreinte (FR-001 option C)
 
 1. Avec test-admin, créer une salle privée (code d'accès `BAMBARA2026`) sous la salle publique « Bambara ».
 2. Avec test-user, accéder à la fiche de la salle privée et saisir le code. ✅ Accès accordé. Une ligne `acces_salle_privee` doit exister (vérifier via Adminer).
@@ -40,7 +40,7 @@ Comptes test :
 6. Avec un **troisième utilisateur** (ou en navigation privée) n'ayant jamais validé le code, tenter d'accéder à la liste des ressources via l'API directe. ✅ Doit renvoyer **403 `salle_privee_acces_requis`**.
 7. Avec test-admin (créateur de la salle privée), changer le code via `PATCH /salles-privees/{id}/code-acces`. ✅ La ligne `acces_salle_privee` de test-user passe à `revoque_at IS NOT NULL`. Test-user retentant l'accès → 403.
 
-## Scénario D — Fermeture admin et désactivation salle (US2)
+## Scénario D : Fermeture admin et désactivation salle (US2)
 
 1. Avec test-user, démarrer une session dans une salle publique. Rejoindre avec un second compte (créer test-user2 si nécessaire).
 2. Avec test-admin, aller dans `/admin/afrolang/sessions`. Repérer la session en cours.
@@ -53,12 +53,12 @@ Comptes test :
 9. Avec test-admin, ouvrir l'onglet **Historique de modération** de la salle. ✅ La fermeture apparaît avec auteur, motif, horodatage.
 10. Cliquer **Réactiver la salle**. Saisir un commentaire facultatif. ✅ La salle redevient utilisable ; un évènement `reactivation_admin` apparaît dans l'historique.
 
-## Scénario E — Rate-limit ressources (FR-011)
+## Scénario E : Rate-limit ressources (FR-011)
 
 1. Avec test-user, ajouter 10 ressources dans la même salle en < 24 h (peu importe le type).
 2. À la 11ᵉ tentative, l'API doit renvoyer **429 `rate_limit_ressources`**. ✅
 
-## Scénario F — Audit (Principe VII)
+## Scénario F : Audit (Principe VII)
 
 1. Via Adminer, ouvrir la table `audit.log_action` (ou nom équivalent).
 2. Vérifier qu'à chaque action ci-dessus correspond une ligne :

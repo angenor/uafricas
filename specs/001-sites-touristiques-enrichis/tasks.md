@@ -1,5 +1,5 @@
 ---
-description: "Task list — Enrichissement des sites touristiques"
+description: "Task list : Enrichissement des sites touristiques"
 ---
 
 # Tasks: Enrichissement des sites touristiques
@@ -7,7 +7,7 @@ description: "Task list — Enrichissement des sites touristiques"
 **Input**: Design documents from `/specs/001-sites-touristiques-enrichis/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/, quickstart.md
 
-**Tests**: Aucun test automatisé demandé (pas de harnais testing/CI configuré — Constitution). Vérification manuelle via `cargo check`/`clippy`, `getDiagnostics` (rust-analyzer/Volar) et scénarios `quickstart.md`.
+**Tests**: Aucun test automatisé demandé (pas de harnais testing/CI configuré, Constitution). Vérification manuelle via `cargo check`/`clippy`, `getDiagnostics` (rust-analyzer/Volar) et scénarios `quickstart.md`.
 
 **Organization**: Tâches groupées par user story (P1 → P3) pour livraison incrémentale.
 
@@ -22,18 +22,18 @@ Monorepo : backend `uafricas_backend/src/…` + `uafricas_backend/doc/bd/…` ; 
 
 ---
 
-## Phase 1: Setup (Schéma partagé — SQL Source de Vérité)
+## Phase 1: Setup (Schéma partagé : SQL Source de Vérité)
 
 **Purpose**: Poser le socle de données (Principe III) dont dépendent toutes les stories.
 
-- [x] T001 Créer la migration `uafricas_backend/doc/bd/schemas/11d_country_profile_sites_enrichis.sql` : enum `country_profile.sous_type_site` (20 valeurs), `ALTER TABLE country_profile.site_touristique` (sous_type, gestionnaire, ville, village, info_pertinente, contact_telephone, contact_courriel, contact_adresse, constitution_statut_juridique, constitution_numero, constitution_document_url, verifie, verifie_par, verifie_at), table `country_profile.avis_site`, index (`idx_site_touristique_sous_type`, `idx_site_touristique_verifie`, `uniq_avis_site_actif`, `idx_avis_site_visible`) et trigger `trg_avis_site_updated` — conforme à `data-model.md`
+- [x] T001 Créer la migration `uafricas_backend/doc/bd/schemas/11d_country_profile_sites_enrichis.sql` : enum `country_profile.sous_type_site` (20 valeurs), `ALTER TABLE country_profile.site_touristique` (sous_type, gestionnaire, ville, village, info_pertinente, contact_telephone, contact_courriel, contact_adresse, constitution_statut_juridique, constitution_numero, constitution_document_url, verifie, verifie_par, verifie_at), table `country_profile.avis_site`, index (`idx_site_touristique_sous_type`, `idx_site_touristique_verifie`, `uniq_avis_site_actif`, `idx_avis_site_visible`) et trigger `trg_avis_site_updated`, conforme à `data-model.md`
 - [x] T002 Orchestrer `\ir schemas/11d_country_profile_sites_enrichis.sql` dans `uafricas_backend/doc/bd/schema.sql` (après `11c_…`) puis recréer la base de dev : `docker compose down -v && docker compose up -d`
 
 **Checkpoint**: Schéma en base ; colonnes/table disponibles pour le mapping cross-stack.
 
 ---
 
-## Phase 2: Foundational (Types partagés — bloque toutes les stories)
+## Phase 2: Foundational (Types partagés, bloque toutes les stories)
 
 **Purpose**: Aligner les types Rust ↔ TS sur le schéma (Principe II/III). Aucune story ne peut démarrer avant.
 
@@ -59,7 +59,7 @@ Monorepo : backend `uafricas_backend/src/…` + `uafricas_backend/doc/bd/…` ; 
 - [x] T009 [US1] Ajouter le sélecteur de sous-type (options filtrées selon la famille via `SOUS_TYPES_PAR_CATEGORIE`) au formulaire « site touristique » de `uafricas_frontend/app/components/opportunite-afrique/ContributionModal.vue`
 - [x] T010 [US1] Afficher le sous-type (libellé FR) sur chaque carte et ajouter un filtre par sous-type (par famille) dans `uafricas_frontend/app/components/opportunite-afrique/SitesTouristiquesSection.vue`
 
-**Checkpoint**: US1 fonctionnelle — sous-types proposés, enregistrés, affichés et filtrables.
+**Checkpoint**: US1 fonctionnelle : sous-types proposés, enregistrés, affichés et filtrables.
 
 ---
 
@@ -69,14 +69,14 @@ Monorepo : backend `uafricas_backend/src/…` + `uafricas_backend/doc/bd/…` ; 
 
 **Independent Test**: Soumettre un site privé sans contact → refus ; avec tous les champs → 202 ; après validation, fiche publique complète.
 
-- [x] T011 [US2] Dans `soumettre_contribution_afripulse` (`uafricas_backend/src/handlers/contributions_fiche.rs`) : valider les champs requis (`nom`, `gestionnaire`, `ville`, `info_pertinente`, `latitude`, `longitude`) et, si `categorie=prive`, exiger au moins un contact (téléphone/courriel/adresse) — messages 422 listant les manques (FR-006/FR-008)
+- [x] T011 [US2] Dans `soumettre_contribution_afripulse` (`uafricas_backend/src/handlers/contributions_fiche.rs`) : valider les champs requis (`nom`, `gestionnaire`, `ville`, `info_pertinente`, `latitude`, `longitude`) et, si `categorie=prive`, exiger au moins un contact (téléphone/courriel/adresse), messages 422 listant les manques (FR-006/FR-008)
 - [x] T012 [US2] Étendre les branches site de `appliquer_contribution_afripulse` (`uafricas_backend/src/handlers/admin/profils_pays.rs`) pour mapper gestionnaire, ville, village, info_pertinente, latitude, longitude, contact_telephone, contact_courriel, contact_adresse
-- [x] T013 [US2] Étendre `SiteTouristiqueResponse` + SELECT de `lister_sites_touristiques` (`uafricas_backend/src/handlers/afripulse_public.rs`) pour renvoyer gestionnaire, ville, village, info_pertinente, latitude, longitude et les contacts (publics — CL résolue)
+- [x] T013 [US2] Étendre `SiteTouristiqueResponse` + SELECT de `lister_sites_touristiques` (`uafricas_backend/src/handlers/afripulse_public.rs`) pour renvoyer gestionnaire, ville, village, info_pertinente, latitude, longitude et les contacts (publics, CL résolue)
 - [x] T014 [US2] Étendre `AdminSiteTouristiqueResponse`, `CreerSiteTouristiqueRequest`, `ModifierSiteTouristiqueRequest` (`uafricas_backend/src/models/admin/profils_pays.rs`) avec les nouveaux champs (sous_type, gestionnaire, ville, village, info_pertinente, contacts) et adapter le CRUD admin `creer/modifier_site_touristique` (`uafricas_backend/src/handlers/admin/profils_pays.rs`)
 - [x] T015 [US2] Ajouter les champs au formulaire site de `uafricas_frontend/app/components/opportunite-afrique/ContributionModal.vue` (gestionnaire, ville, village, GPS lat/long, info pertinente, contacts conditionnels si privé) + validation côté client
 - [x] T016 [US2] Afficher gestionnaire, localisation (ville/village/territoire), GPS et info pertinente sur la fiche ; afficher les contacts pour les sites privés dans `uafricas_frontend/app/components/opportunite-afrique/SitesTouristiquesSection.vue`
 
-**Checkpoint**: US1 + US2 fonctionnelles — fiche site complète et validée.
+**Checkpoint**: US1 + US2 fonctionnelles, fiche site complète et validée.
 
 ---
 
@@ -95,7 +95,7 @@ Monorepo : backend `uafricas_backend/src/…` + `uafricas_backend/doc/bd/…` ; 
 - [x] T023 [P] [US5] Créer le composant `uafricas_frontend/app/components/opportunite-afrique/SiteAvisListe.vue` (Tailwind v4 pur : note moyenne, nombre, liste paginée, formulaire de dépôt avec étoiles 1–5 ; invite connexion si non authentifié)
 - [x] T024 [US5] Intégrer `SiteAvisListe` dans la carte/fiche site de `uafricas_frontend/app/components/opportunite-afrique/SitesTouristiquesSection.vue` (affiche « aucun avis » si vide)
 
-**Checkpoint**: US5 fonctionnelle — avis notés, moyenne, upsert, modération.
+**Checkpoint**: US5 fonctionnelle : avis notés, moyenne, upsert, modération.
 
 ---
 
@@ -113,7 +113,7 @@ Monorepo : backend `uafricas_backend/src/…` + `uafricas_backend/doc/bd/…` ; 
 - [x] T030 [US3] Afficher le badge « Vérifié » (FontAwesome) sur les cartes/fiches dans `uafricas_frontend/app/components/opportunite-afrique/SitesTouristiquesSection.vue`
 - [x] T031 [US3] Ajouter le contrôle d'activation/retrait du badge (daisyUI) sur la liste des sites dans `uafricas_frontend/app/pages/admin/profils-pays/[id].vue`
 
-**Checkpoint**: US3 fonctionnelle — badge piloté par l'admin, visible publiquement.
+**Checkpoint**: US3 fonctionnelle : badge piloté par l'admin, visible publiquement.
 
 ---
 
@@ -128,7 +128,7 @@ Monorepo : backend `uafricas_backend/src/…` + `uafricas_backend/doc/bd/…` ; 
 - [x] T034 [US4] Ajouter les champs constitution légale (statut, numéro, upload document via `ImageUploadField`/`uploaderImageContribution`) au formulaire site de `uafricas_frontend/app/components/opportunite-afrique/ContributionModal.vue`
 - [x] T035 [US4] Afficher une section « Constitution légale » conditionnelle (masquée si vide) sur la fiche dans `uafricas_frontend/app/components/opportunite-afrique/SitesTouristiquesSection.vue`
 
-**Checkpoint**: US4 fonctionnelle — informations légales saisies et affichées.
+**Checkpoint**: US4 fonctionnelle : informations légales saisies et affichées.
 
 ---
 
@@ -146,8 +146,8 @@ Monorepo : backend `uafricas_backend/src/…` + `uafricas_backend/doc/bd/…` ; 
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)** : aucune dépendance — démarre immédiatement (T001 → T002).
-- **Foundational (Phase 2)** : dépend de Setup — BLOQUE toutes les stories.
+- **Setup (Phase 1)** : aucune dépendance, démarre immédiatement (T001 → T002).
+- **Foundational (Phase 2)** : dépend de Setup, BLOQUE toutes les stories.
 - **User Stories (Phases 3–7)** : dépendent de Foundational. Ordre de priorité conseillé P1 (US1, US2) → P2 (US5, US3) → P3 (US4).
 - **Polish (Phase 8)** : après les stories visées.
 
@@ -155,7 +155,7 @@ Monorepo : backend `uafricas_backend/src/…` + `uafricas_backend/doc/bd/…` ; 
 
 - **US1 (P1)** : après Foundational. Indépendante.
 - **US2 (P1)** : après Foundational. Partage des fichiers avec US1 (contributions_fiche.rs, appliquer_contribution, ContributionModal.vue, SitesTouristiquesSection.vue) → exécuter après US1 pour limiter les conflits.
-- **US5 (P2)** : après Foundational. Quasi indépendante (table `avis_site`, nouveaux endpoints, nouveau composant) — peut se faire en parallèle d'US1/US2 par un autre développeur.
+- **US5 (P2)** : après Foundational. Quasi indépendante (table `avis_site`, nouveaux endpoints, nouveau composant), peut se faire en parallèle d'US1/US2 par un autre développeur.
 - **US3 (P2)** : après Foundational. Touche admin + affichage badge ; indépendante d'US5.
 - **US4 (P3)** : après Foundational. Partage appliquer_contribution + ContributionModal + section → après US2 de préférence.
 

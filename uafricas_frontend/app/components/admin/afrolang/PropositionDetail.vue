@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Panneau détail + actions (Valider/Rejeter) — feature 001-admin-salles-publiques, US2
+// Panneau détail + actions (Valider/Rejeter), feature 001-admin-salles-publiques, US2
 import type { PropositionSalle } from '~/composables/useAfrolang'
 
 const props = defineProps<{
@@ -24,7 +24,7 @@ const formatDateTime = (iso: string | null) =>
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit',
       })
-    : '—'
+    : '-'
 
 const statutLibelle = computed(() => {
   const libelles: Record<string, string> = {
@@ -108,7 +108,7 @@ const confirmerRejet = () => {
               :key="p.id"
               class="badge badge-outline"
             >
-              {{ p.code_iso2 ? `${p.code_iso2} — ` : '' }}{{ p.nom }}
+              {{ p.code_iso2 ? `${p.code_iso2} : ` : '' }}{{ p.nom }}
             </span>
           </div>
         </div>

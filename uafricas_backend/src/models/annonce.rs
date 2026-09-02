@@ -234,7 +234,7 @@ pub struct AnnonceDetailResponse {
     pub type_annonceur: String,
     /// Nom de l'entreprise (si type_annonceur = entreprise)
     pub nom_entreprise: Option<String>,
-    /// Coordonnées publiques — renseignées uniquement pour une entreprise
+    /// Coordonnées publiques : renseignées uniquement pour une entreprise
     pub contact_telephone: Option<String>,
     pub contact_email: Option<String>,
     pub contact_adresse: Option<String>,

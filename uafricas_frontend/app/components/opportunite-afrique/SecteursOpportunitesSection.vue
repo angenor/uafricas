@@ -13,7 +13,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Section rétractable — repliée par défaut
+// Section rétractable : repliée par défaut
 const replie = ref(true)
 
 type OpenContributionPayload = {
@@ -104,93 +104,76 @@ const proposerSecteur = () => {
 </script>
 
 <template>
-  <section class="bg-gray-50 transition-all" :class="replie ? 'py-5' : 'py-12'">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between gap-4" :class="replie ? '' : 'mb-8'">
-        <button
-          type="button"
-          class="flex items-center gap-3 text-left min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-          :aria-expanded="!replie"
-          @click="replie = !replie"
-        >
-          <font-awesome-icon
-            :icon="['fas', 'chevron-down']"
-            class="w-5 h-5 shrink-0 text-custom-green transition-transform duration-200"
-            :class="replie ? '-rotate-90' : ''"
-          />
-          <h2 class="font-oswald text-3xl md:text-4xl font-bold text-gray-900">
-            Secteurs d'opportunités
-          </h2>
-        </button>
-        <button
-          v-show="!replie"
-          type="button"
-          class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors text-sm font-medium"
-          @click="proposerSecteur"
-        >
-          Proposer un secteur
-        </button>
-      </div>
+  <AfricansAccordeon
+    titre="Secteurs d'opportunités"
+    icone="fa-solid fa-briefcase"
+    :model-value="!replie"
+    @update:model-value="replie = !$event"
+  >
 
       <div v-show="!replie">
+        <div class="mb-6 flex flex-wrap items-center gap-3">
+          <template v-if="localitesDisponibles.length">
+            <label for="filtre-localite-secteur" class="sr-only">Filtrer par localité</label>
+            <font-awesome-icon icon="fa-solid fa-location-dot" class="text-af-atone" />
+            <select
+              id="filtre-localite-secteur"
+              v-model="localiteSelectionnee"
+              class="h-10 rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
+            >
+              <option value="">Toutes les localités</option>
+              <option v-for="localite in localitesDisponibles" :key="localite" :value="localite">{{ localite }}</option>
+            </select>
+            <button
+              v-if="localiteSelectionnee"
+              type="button"
+              class="text-[14px]/[1.4] font-bold text-af-chocolat transition hover:opacity-70 cursor-pointer"
+              @click="localiteSelectionnee = ''"
+            >
+              Réinitialiser
+            </button>
+          </template>
+
+          <AfricansBoutonIcone
+            class="ml-auto"
+            libelle="Proposer un secteur"
+            icone="fa-solid fa-plus"
+            @click="proposerSecteur"
+          />
+        </div>
+
 
       <div v-if="chargement" class="space-y-4">
-        <div v-for="n in 3" :key="n" class="bg-gray-200 rounded-lg h-24 animate-pulse" />
+        <div v-for="n in 3" :key="n" class="h-24 animate-pulse rounded-[10px] bg-af-bordure" />
       </div>
 
       <div
         v-else-if="secteurs.length === 0"
-        class="text-center py-12 bg-white rounded-lg"
+        class="rounded-[10px] border border-af-bordure bg-white py-12 text-center"
       >
-        <p class="text-gray-600 mb-4">Aucun secteur pour l'instant.</p>
-        <button
-          type="button"
-          class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors text-sm font-medium"
-          @click="proposerSecteur"
-        >
-          Proposer un secteur
-        </button>
+        <p class="text-[14px]/[1.4] text-af-corps">Aucun secteur pour l'instant.</p>
       </div>
 
       <template v-else>
-        <!-- Filtre : localité (ville, région, zone concernée) -->
-        <div v-if="localitesDisponibles.length" class="mb-6 flex flex-wrap items-center gap-3">
-          <label for="filtre-localite-secteur" class="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
-            <font-awesome-icon :icon="['fas', 'location-dot']" class="w-4 h-4 text-custom-green" />
-            Localité (ville, région, zone concernée)
-          </label>
-          <select
-            id="filtre-localite-secteur"
-            v-model="localiteSelectionnee"
-            class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-custom-green focus:outline-none focus:ring-1 focus:ring-custom-green"
-          >
-            <option value="">Toutes les localités</option>
-            <option v-for="localite in localitesDisponibles" :key="localite" :value="localite">{{ localite }}</option>
-          </select>
-          <button
-            v-if="localiteSelectionnee"
-            type="button"
-            class="text-sm font-medium text-custom-green hover:underline cursor-pointer"
-            @click="localiteSelectionnee = ''"
-          >
-            Réinitialiser
-          </button>
-        </div>
+        <!-- Barre d'outils : filtre à gauche, action à droite, une seule
+             ligne de base. Le libellé du menu reste `sr-only` : il disait en
+             toutes lettres ce que le menu montre déjà. -->
+        
 
         <div
           v-if="secteursFiltres.length === 0"
-          class="text-center py-12 bg-white rounded-lg"
+          class="rounded-[10px] border border-af-bordure bg-white py-12 text-center"
         >
-          <p class="text-gray-600">Aucun secteur pour cette localité.</p>
+          <p class="text-[14px]/[1.4] text-af-corps">Aucun secteur pour cette localité.</p>
         </div>
 
         <ul v-else class="space-y-4">
         <li
           v-for="secteur in secteursPage"
           :key="secteur.id"
-          class="flex flex-col sm:flex-row gap-5 bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow border-l-4 border-custom-green"
+          class="flex flex-col sm:flex-row gap-5 rounded-[10px] border border-af-bordure bg-white p-6 transition hover:border-af-chocolat"
         >
-          <!-- Image illustrative (optionnelle) — cliquable -->
+          <!-- Image illustrative (optionnelle) : cliquable -->
           <button
             v-if="secteur.image_url"
             type="button"
@@ -206,13 +189,13 @@ const proposerSecteur = () => {
 
           <div class="min-w-0 flex-1">
             <h3
-              class="font-oswald text-xl font-semibold text-gray-900 mb-1 cursor-pointer hover:text-custom-green transition-colors"
+              class="text-[17px]/[1.4] font-bold text-af-encre cursor-pointer transition hover:text-af-chocolat"
               @click="ouvrirDetail(secteur)"
             >
               {{ secteur.nom }}
             </h3>
             <p v-if="secteur.localite" class="inline-flex items-center gap-1.5 text-sm text-gray-500 mb-2">
-              <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3.5 h-3.5 text-custom-chocolat" />
+              <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3.5 h-3.5 text-af-atone" />
               {{ secteur.localite }}
             </p>
             <p v-if="secteur.description" class="text-gray-600 leading-relaxed line-clamp-3">
@@ -222,16 +205,16 @@ const proposerSecteur = () => {
           <!-- Bandeau de suspension (>10 signalements) -->
           <div
             v-if="secteur.suspendu"
-            class="mt-3 flex items-start gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-800"
+            class="mt-3 flex items-start gap-2 rounded-[10px] border border-af-live/30 bg-af-live/5 px-3 py-2 text-[12px]/[1.4] text-af-live"
           >
             <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="w-3.5 h-3.5 mt-0.5 shrink-0" />
-            <span>Contribution suspendue — en cours de vérification par la modération.</span>
+            <span>Contribution suspendue : en cours de vérification par la modération.</span>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+          <div class="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-af-bordure">
             <button
               type="button"
-              class="inline-flex items-center gap-1 text-xs font-medium text-custom-green hover:underline"
+              class="inline-flex items-center gap-1 text-[12px]/[1.4] font-bold text-af-corps transition hover:text-af-chocolat"
               @click="ouvrirDetail(secteur)"
             >
               <font-awesome-icon :icon="['fas', 'circle-info']" class="w-3.5 h-3.5" />
@@ -240,7 +223,7 @@ const proposerSecteur = () => {
             <template v-if="!secteur.suspendu">
               <button
                 type="button"
-                class="inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
+                class="inline-flex items-center gap-1 text-[12px]/[1.4] font-bold text-af-corps transition hover:text-af-chocolat"
                 @click="ouvrirContribution('edition', secteur)"
               >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -250,7 +233,7 @@ const proposerSecteur = () => {
               </button>
               <button
                 type="button"
-                class="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
+                class="inline-flex items-center gap-1 text-[12px]/[1.4] font-bold text-af-corps transition hover:text-af-live"
                 @click="ouvrirContribution('suppression', secteur)"
               >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -277,6 +260,5 @@ const proposerSecteur = () => {
         <OpportuniteAfriquePaginationLocale v-model:page="page" :total-pages="totalPages" />
       </template>
       </div>
-    </div>
-  </section>
+  </AfricansAccordeon>
 </template>

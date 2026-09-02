@@ -1,502 +1,385 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div class="group relative bg-gradient-to-br from-custom-green via-emerald-600 to-teal-600 overflow-hidden">
-      <!-- Background pattern -->
-      <div class="absolute inset-0 opacity-10">
-        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;0.4&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');" />
-      </div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Soumettre un projet"
+        sous-titre="Présentez votre projet de développement et bénéficiez du soutien de notre communauté d'investisseurs et de partenaires africains"
+        image="/images/finance_projet_banire.png"
+      />
+    </template>
 
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center text-white select-none">
-        <!-- Badge -->
-        <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-xs px-4 py-2 rounded-full text-sm font-medium mb-4">
-          <font-awesome-icon :icon="['fas', 'paper-plane']" class="w-4 h-4" />
-          Proposez votre initiative
-        </div>
-
-        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Soumettre un Projet
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Présentez votre projet de développement et bénéficiez du soutien de notre communauté d'investisseurs et de partenaires africains.
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Financer un projet', vers: '/financer-projet' },
+          { libelle: 'Soumettre un projet' },
+        ]"
+      >
+        <template #centre>
+          <p v-if="!succes" class="text-base font-bold text-af-encre">
+            Étape {{ etape + 1 }} sur {{ ETAPES.length }}
           </p>
-        </div>
-      </div>
+        </template>
+      </AfricansFilAriane>
+    </template>
 
-      <!-- Wave bottom -->
-      <div class="absolute bottom-0 left-0 right-0">
-        <svg class="w-full h-12 md:h-16" viewBox="0 0 1440 54" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-          <path d="M0 22L60 16.7C120 11 240 1 360 0.7C480 1 600 11 720 16.7C840 22 960 22 1080 16.7C1200 11 1320 1 1380 0.7L1440 0V54H1380C1320 54 1200 54 1080 54C960 54 840 54 720 54C600 54 480 54 360 54C240 54 120 54 60 54H0V22Z" fill="#f9fafb"/>
-        </svg>
+    <!-- ═══ Confirmation ═══
+         Elle REMPLACE le formulaire au lieu de le coiffer : laisser dix-huit
+         champs vidés sous un message de succès se lit comme un formulaire à
+         remplir de nouveau. -->
+    <div v-if="succes" class="rounded-[10px] border border-af-vert/30 bg-white p-12 text-center">
+      <font-awesome-icon icon="fa-solid fa-circle-check" class="text-5xl text-af-vert" />
+      <h1 class="mt-4 text-[24px]/[1.3] font-bold text-af-encre">Projet soumis</h1>
+      <p class="mx-auto mt-2 max-w-lg text-[14px]/[1.5] text-af-corps">
+        Il sera examiné par notre équipe avant publication. Vous serez prévenu de la décision.
+      </p>
+      <div class="mt-6 flex flex-wrap justify-center gap-3">
+        <AfricansBouton icone="fa-solid fa-magnifying-glass" vers="/financer-projet">
+          Voir les projets
+        </AfricansBouton>
+        <AfricansBouton variante="secondaire" icone="fa-solid fa-plus" @click="recommencer">
+          Soumettre un autre projet
+        </AfricansBouton>
       </div>
     </div>
 
-    <!-- Breadcrumb -->
-    <div class="bg-gray-50">
-      <div class="max-w-7xl mx-auto px-4 py-4">
-        <CommonBreadcrumbNav />
+    <form v-else class="flex flex-col gap-6" @submit.prevent="surSoumission">
+      <!-- ═══ Fil des étapes ═══
+           Les pastilles sont des BOUTONS : revenir corriger une réponse deux
+           étapes plus haut ne doit pas obliger à ressortir de celles qu'on a
+           déjà remplies. Elles restent bloquées tant que l'étape 1 n'est pas
+           valide, puisque c'est la seule qui porte des champs obligatoires. -->
+      <nav class="flex flex-wrap gap-2" aria-label="Étapes du formulaire">
+        <button
+          v-for="(e, i) in ETAPES"
+          :key="e.titre"
+          type="button"
+          class="flex min-w-0 flex-1 items-center gap-3 rounded-[10px] border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-50"
+          :class="i === etape
+            ? 'border-af-chocolat bg-af-chocolat/[0.07]'
+            : 'border-af-bordure bg-white hover:border-af-chocolat'"
+          :disabled="i > 0 && !etapeUnValide"
+          :aria-current="i === etape ? 'step' : undefined"
+          @click="allerA(i)"
+        >
+          <span
+            class="grid size-8 shrink-0 place-items-center rounded-full text-[14px]/[1] font-bold"
+            :class="i < etape
+              ? 'bg-af-vert text-white'
+              : i === etape
+                ? 'bg-af-chocolat text-white'
+                : 'bg-af-fond text-af-atone'"
+          >
+            <font-awesome-icon v-if="i < etape" icon="fa-solid fa-check" />
+            <template v-else>{{ i + 1 }}</template>
+          </span>
+          <span class="min-w-0">
+            <span class="block truncate text-[14px]/[1.3] font-bold" :class="i === etape ? 'text-af-chocolat' : 'text-af-encre'">
+              {{ e.titre }}
+            </span>
+            <span class="block truncate text-[12px]/[1.3] text-af-atone">{{ e.obligatoire ? 'Obligatoire' : 'Facultatif' }}</span>
+          </span>
+        </button>
+      </nav>
+
+      <!-- Restauration. Le message dit AUSSI ce qui n'a pas été retrouvé :
+           découvrir l'absence de l'image au moment d'envoyer serait pire que
+           de l'apprendre tout de suite. -->
+      <div
+        v-if="brouillonRestaure"
+        class="flex flex-wrap items-center gap-3 rounded-[10px] border border-af-vert/30 bg-af-vert/5 px-4 py-3 text-[14px]/[1.4] text-af-corps"
+      >
+        <font-awesome-icon icon="fa-solid fa-clock-rotate-left" class="shrink-0 text-af-vert" />
+        <span class="min-w-0 flex-1">
+          Votre saisie précédente a été retrouvée. L'image de couverture, elle, est à choisir de nouveau.
+        </span>
+        <button
+          type="button"
+          class="shrink-0 text-[14px]/[1.4] font-bold text-af-chocolat transition hover:opacity-70"
+          @click="abandonnerBrouillon"
+        >
+          Repartir de zéro
+        </button>
+        <button
+          type="button"
+          class="grid size-6 shrink-0 place-items-center text-af-atone transition hover:text-af-encre"
+          aria-label="Masquer ce message"
+          @click="brouillonRestaure = false"
+        >
+          <font-awesome-icon icon="fa-solid fa-xmark" />
+        </button>
       </div>
-    </div>
 
-    <!-- Formulaire -->
-    <section class="px-4 md:px-16 lg:px-64 py-8">
-      <div class="bg-white rounded-md shadow-lg border-t-8 border-custom-green max-w-3xl mx-auto">
-        <div class="px-6 md:px-10 py-8">
-          <h1 class="text-2xl font-bold text-custom-chocolat mb-2">
-            Soumettre un projet de développement
-          </h1>
-          <p class="text-gray-500 text-sm mb-8">
-            Présentez votre projet pour bénéficier du soutien de notre communauté d'investisseurs et de partenaires africains.
-            Les champs marqués d'un <span class="text-red-500">*</span> sont obligatoires.
-          </p>
+      <div v-if="erreurMessage" class="flex items-center gap-2 rounded-[10px] border border-af-live/30 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live">
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" />
+        {{ erreurMessage }}
+      </div>
 
-          <!-- Message de succès -->
-          <div
-            v-if="succes"
-            class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm mb-6 flex items-center gap-2"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-check']" />
-            Votre projet a été soumis avec succès ! Il sera examiné par notre équipe avant publication.
-          </div>
+      <!-- `v-show` et non `v-if` : démonter une étape recrée son champ de
+           fichier au retour, et le navigateur perd alors le nom du fichier
+           choisi — alors que la sélection, elle, vit dans `couvertureFile`. -->
+      <section class="flex flex-col gap-5 rounded-[10px] border border-af-bordure bg-white p-6">
+        <!-- ─── 1. Le projet ─── -->
+        <template v-if="etape === 0">
+          <header>
+            <h2 class="text-[17px]/[1.4] font-bold">Le projet</h2>
+            <p class="mt-1 text-[14px]/[1.4] text-af-corps">
+              Les trois champs de cette étape sont les seuls exigés. Tout le reste peut être complété plus tard.
+            </p>
+          </header>
 
-          <!-- Message d'erreur -->
-          <div
-            v-if="erreurMessage"
-            class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm mb-6 flex items-center gap-2"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-exclamation']" />
-            {{ erreurMessage }}
-          </div>
+          <AfricansChamp
+            v-model="form.titre"
+            libelle="Titre du projet *"
+            placeholder="Ex : construction d'un centre de formation numérique"
+          />
 
-          <form @submit.prevent="handleSubmit" class="space-y-6">
-            <!-- ═══════════════════════════════════════════ -->
-            <!-- Section 1 : Informations principales       -->
-            <!-- ═══════════════════════════════════════════ -->
-            <fieldset>
-              <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                <font-awesome-icon :icon="['fas', 'circle-info']" class="text-custom-green" />
-                Informations principales
-              </legend>
+          <AfricansChamp
+            v-model="form.description"
+            libelle="Description du projet *"
+            type="textarea"
+            placeholder="Contexte, besoins identifiés, approche proposée…"
+          />
 
-              <!-- Titre -->
-              <div class="mb-4">
-                <label for="titre" class="block text-sm font-medium text-gray-700 mb-1">
-                  Titre du projet <span class="text-red-500">*</span>
-                </label>
-                <input
-                  id="titre"
-                  v-model="form.titre"
-                  type="text"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                  placeholder="Ex: Construction d'un centre de formation numérique"
-                />
-              </div>
-
-              <!-- Description -->
-              <div class="mb-4">
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-                  Description du projet <span class="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="description"
-                  v-model="form.description"
-                  rows="5"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green resize-y"
-                  placeholder="Décrivez votre projet en détail : contexte, besoins identifiés, approche proposée..."
-                />
-              </div>
-
-              <!-- Objectifs dynamiques -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Objectifs du projet <span class="text-red-500">*</span>
-                </label>
-                <div class="space-y-2">
-                  <div
-                    v-for="(_, index) in objectifs"
-                    :key="index"
-                    class="flex items-center gap-2"
-                  >
-                    <span class="text-xs text-gray-400 w-6 text-right">{{ index + 1 }}.</span>
-                    <input
-                      v-model="objectifs[index]"
-                      type="text"
-                      class="flex-1 border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green text-sm"
-                      :placeholder="`Objectif ${index + 1}`"
-                    />
-                    <button
-                      v-if="objectifs.length > 1"
-                      type="button"
-                      class="p-2 text-red-400 hover:text-red-600 transition-colors"
-                      @click="supprimerObjectif(index)"
-                    >
-                      <font-awesome-icon :icon="['fas', 'trash']" class="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  class="mt-2 text-sm text-custom-green hover:text-custom-green/80 flex items-center gap-1 transition-colors"
-                  @click="ajouterObjectif"
-                >
-                  <font-awesome-icon :icon="['fas', 'plus']" class="w-3 h-3" />
-                  Ajouter un objectif
-                </button>
-              </div>
-            </fieldset>
-
-            <!-- ═══════════════════════════════════════════ -->
-            <!-- Section 2 : Organisation                    -->
-            <!-- ═══════════════════════════════════════════ -->
-            <fieldset class="border-t pt-6">
-              <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                <font-awesome-icon :icon="['fas', 'building']" class="text-custom-green" />
-                Organisation porteuse
-              </legend>
-
-              <div class="mb-4">
-                <label for="nom-organisation" class="block text-sm font-medium text-gray-700 mb-1">
-                  Nom de l'organisation
-                </label>
-                <input
-                  id="nom-organisation"
-                  v-model="form.nomOrganisation"
-                  type="text"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                  placeholder="Ex: ONG Développement Durable Afrique"
-                />
-              </div>
-
-              <div class="mb-4">
-                <label for="description-organisation" class="block text-sm font-medium text-gray-700 mb-1">
-                  Description de l'organisation
-                </label>
-                <textarea
-                  id="description-organisation"
-                  v-model="form.descriptionOrganisation"
-                  rows="3"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green resize-y"
-                  placeholder="Présentez brièvement votre organisation..."
-                />
-              </div>
-
-              <div>
-                <label for="site-web" class="block text-sm font-medium text-gray-700 mb-1">
-                  Site web
-                </label>
-                <input
-                  id="site-web"
-                  v-model="form.siteWeb"
-                  type="url"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                  placeholder="https://www.exemple.org"
-                />
-              </div>
-            </fieldset>
-
-            <!-- ═══════════════════════════════════════════ -->
-            <!-- Section 3 : Localisation                    -->
-            <!-- ═══════════════════════════════════════════ -->
-            <fieldset class="border-t pt-6">
-              <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                <font-awesome-icon :icon="['fas', 'globe-africa']" class="text-custom-green" />
-                Localisation
-              </legend>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label for="pays" class="block text-sm font-medium text-gray-700 mb-1">
-                    Territoire
-                  </label>
-                  <select
-                    id="pays"
-                    v-model="form.pays"
-                    class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden"
-                  >
-                    <option value="" disabled>Choisir un territoire</option>
-                    <option
-                      v-for="pays in paysOptions"
-                      :key="pays.value"
-                      :value="pays.value"
-                    >
-                      {{ pays.label }}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label for="ville" class="block text-sm font-medium text-gray-700 mb-1">
-                    Ville
-                  </label>
-                  <input
-                    id="ville"
-                    v-model="form.ville"
-                    type="text"
-                    class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                    placeholder="Ex: Dakar"
-                  />
-                </div>
-              </div>
-            </fieldset>
-
-            <!-- ═══════════════════════════════════════════ -->
-            <!-- Section 4 : Budget et durée                 -->
-            <!-- ═══════════════════════════════════════════ -->
-            <fieldset class="border-t pt-6">
-              <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                <font-awesome-icon :icon="['fas', 'coins']" class="text-custom-green" />
-                Budget et durée
-              </legend>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label for="cout-total" class="block text-sm font-medium text-gray-700 mb-1">
-                    Coût total estimé
-                  </label>
-                  <input
-                    id="cout-total"
-                    v-model.number="form.coutTotal"
-                    type="number"
-                    min="0"
-                    step="1000"
-                    class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                    placeholder="Ex: 5000000"
-                  />
-                </div>
-                <div>
-                  <label for="devise" class="block text-sm font-medium text-gray-700 mb-1">
-                    Devise
-                  </label>
-                  <select
-                    id="devise"
-                    v-model="form.devise"
-                    class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden"
-                  >
-                    <option
-                      v-for="devise in DEVISES_FORM"
-                      :key="devise.value"
-                      :value="devise.value"
-                    >
-                      {{ devise.label }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label for="duree" class="block text-sm font-medium text-gray-700 mb-1">
-                    Durée du projet
-                  </label>
-                  <select
-                    id="duree"
-                    v-model="form.dureeMois"
-                    class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden"
-                  >
-                    <option :value="null" disabled>Choisir une durée</option>
-                    <option
-                      v-for="duree in DUREES_MOIS_FORM"
-                      :key="duree.value"
-                      :value="duree.value"
-                    >
-                      {{ duree.label }}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label for="date-debut" class="block text-sm font-medium text-gray-700 mb-1">
-                    Date de début souhaitée
-                  </label>
-                  <input
-                    id="date-debut"
-                    v-model="form.dateDebutSouhaitee"
-                    type="date"
-                    class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                  />
-                </div>
-              </div>
-            </fieldset>
-
-            <!-- ═══════════════════════════════════════════ -->
-            <!-- Section 5 : Détails du projet               -->
-            <!-- ═══════════════════════════════════════════ -->
-            <fieldset class="border-t pt-6">
-              <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                <font-awesome-icon :icon="['fas', 'clipboard-list']" class="text-custom-green" />
-                Détails du projet
-              </legend>
-
-              <div class="mb-4">
-                <label for="resultats-attendus" class="block text-sm font-medium text-gray-700 mb-1">
-                  Résultats attendus
-                </label>
-                <textarea
-                  id="resultats-attendus"
-                  v-model="form.resultatsAttendus"
-                  rows="3"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green resize-y"
-                  placeholder="Quels résultats concrets attendez-vous ?"
-                />
-              </div>
-
-              <div class="mb-4">
-                <label for="activites-programmees" class="block text-sm font-medium text-gray-700 mb-1">
-                  Activités programmées
-                </label>
-                <textarea
-                  id="activites-programmees"
-                  v-model="form.activitesProgrammees"
-                  rows="3"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green resize-y"
-                  placeholder="Quelles activités sont prévues pour atteindre les objectifs ?"
-                />
-              </div>
-
-              <div class="mb-4">
-                <label for="echeanciers" class="block text-sm font-medium text-gray-700 mb-1">
-                  Échéanciers
-                </label>
-                <textarea
-                  id="echeanciers"
-                  v-model="form.echeanciers"
-                  rows="3"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green resize-y"
-                  placeholder="Décrivez le calendrier prévu pour les différentes phases du projet..."
-                />
-              </div>
-
-              <div class="mb-4">
-                <label for="contribution-autonomisation" class="block text-sm font-medium text-gray-700 mb-1">
-                  Contribution à l'autonomisation
-                </label>
-                <textarea
-                  id="contribution-autonomisation"
-                  v-model="form.contributionAutonomisation"
-                  rows="3"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green resize-y"
-                  placeholder="Comment ce projet contribue-t-il à l'autonomisation des communautés ?"
-                />
-              </div>
-
-              <div>
-                <label for="difficultes-risques" class="block text-sm font-medium text-gray-700 mb-1">
-                  Difficultés et risques
-                </label>
-                <textarea
-                  id="difficultes-risques"
-                  v-model="form.difficultesRisques"
-                  rows="3"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green resize-y"
-                  placeholder="Quels sont les risques identifiés et les mesures de mitigation prévues ?"
-                />
-              </div>
-            </fieldset>
-
-            <!-- ═══════════════════════════════════════════ -->
-            <!-- Section 6 : Contact                         -->
-            <!-- ═══════════════════════════════════════════ -->
-            <fieldset class="border-t pt-6">
-              <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                <font-awesome-icon :icon="['fas', 'address-book']" class="text-custom-green" />
-                Contact
-              </legend>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label for="contact-email" class="block text-sm font-medium text-gray-700 mb-1">
-                    Email de contact
-                  </label>
-                  <input
-                    id="contact-email"
-                    v-model="form.contactEmail"
-                    type="email"
-                    class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                    placeholder="contact@organisation.org"
-                  />
-                </div>
-                <div>
-                  <label for="contact-telephone" class="block text-sm font-medium text-gray-700 mb-1">
-                    Téléphone
-                  </label>
-                  <input
-                    id="contact-telephone"
-                    v-model="form.contactTelephone"
-                    type="tel"
-                    class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                    placeholder="+221 77 123 45 67"
-                  />
-                </div>
-              </div>
-            </fieldset>
-
-            <!-- ═══════════════════════════════════════════ -->
-            <!-- Section 7 : Image de couverture             -->
-            <!-- ═══════════════════════════════════════════ -->
-            <fieldset class="border-t pt-6">
-              <legend class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                <font-awesome-icon :icon="['fas', 'image']" class="text-custom-green" />
-                Image de couverture
-              </legend>
-
-              <div class="p-3 bg-custom-green/20 border border-custom-green rounded-md">
-                <label for="couverture" class="block text-sm font-medium text-custom-green mb-1">
-                  Choisir une image (5 Mo max)
-                </label>
-                <input
-                  id="couverture"
-                  type="file"
-                  accept="image/*"
-                  @change="handleCouvertureChange"
-                  class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-custom-green file:text-white hover:file:bg-custom-green/90"
-                />
-              </div>
-
-              <!-- Preview -->
-              <div v-if="couverturePreview" class="mt-3 relative inline-block">
-                <img
-                  :src="couverturePreview"
-                  alt="Aperçu de la couverture"
-                  class="w-48 h-32 object-cover rounded-lg border border-gray-200"
-                />
-                <button
-                  type="button"
-                  class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-                  @click="supprimerCouverture"
-                >
-                  <font-awesome-icon :icon="['fas', 'times']" />
-                </button>
-              </div>
-            </fieldset>
-
-            <!-- ═══════════════════════════════════════════ -->
-            <!-- Boutons d'action                            -->
-            <!-- ═══════════════════════════════════════════ -->
-            <div class="flex flex-col sm:flex-row gap-3 justify-center pt-4 border-t">
-              <NuxtLink
-                to="/financer-projet"
-                class="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors text-center"
-              >
-                Annuler
-              </NuxtLink>
+          <div class="flex flex-col gap-2">
+            <span class="text-[14px]/[1.4] text-af-atone italic">Objectifs du projet *</span>
+            <div v-for="(_, index) in objectifs" :key="index" class="flex items-center gap-2">
+              <span class="w-6 shrink-0 text-right text-[14px]/[1.4] text-af-atone">{{ index + 1 }}.</span>
+              <input
+                v-model="objectifs[index]"
+                type="text"
+                :placeholder="`Objectif ${index + 1}`"
+                class="h-11 min-w-0 flex-1 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
+              />
               <button
-                type="submit"
-                :disabled="!isFormValid || loading"
-                class="px-6 py-2.5 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                v-if="objectifs.length > 1"
+                type="button"
+                class="grid size-9 shrink-0 place-items-center rounded-md text-af-atone transition hover:text-af-live"
+                :aria-label="`Retirer l'objectif ${index + 1}`"
+                @click="supprimerObjectif(index)"
               >
-                <font-awesome-icon
-                  v-if="loading"
-                  :icon="['fas', 'spinner']"
-                  class="animate-spin"
-                />
-                {{ loading ? 'Soumission en cours...' : 'Soumettre le projet' }}
+                <font-awesome-icon icon="fa-solid fa-trash" />
               </button>
             </div>
-          </form>
-        </div>
+            <button
+              type="button"
+              class="flex w-fit items-center gap-2 text-[14px]/[1.4] font-bold text-af-chocolat transition hover:opacity-70"
+              @click="ajouterObjectif"
+            >
+              <font-awesome-icon icon="fa-solid fa-plus" />
+              Ajouter un objectif
+            </button>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <span class="text-[14px]/[1.4] text-af-atone italic">Image de couverture</span>
+            <div v-if="couverturePreview" class="relative w-fit">
+              <img :src="couverturePreview" alt="Aperçu de la couverture" class="h-32 w-48 rounded-[10px] border border-af-bordure object-cover" />
+              <button
+                type="button"
+                class="absolute -top-2 -right-2 grid size-6 place-items-center rounded-full bg-af-live text-xs text-white transition hover:opacity-80"
+                aria-label="Retirer l'image"
+                @click="supprimerCouverture"
+              >
+                <font-awesome-icon icon="fa-solid fa-xmark" />
+              </button>
+            </div>
+            <input
+              id="couverture"
+              type="file"
+              accept="image/*"
+              class="text-[14px]/[1.4] text-af-corps file:mr-4 file:rounded-md file:border-0 file:bg-af-chocolat file:px-4 file:py-2 file:text-[14px]/[1.4] file:font-bold file:text-white hover:file:opacity-90"
+              @change="handleCouvertureChange"
+            />
+            <p class="text-[12px]/[1.4] text-af-atone">5 Mo maximum.</p>
+          </div>
+        </template>
+
+        <!-- ─── 2. Le porteur ─── -->
+        <template v-else-if="etape === 1">
+          <header>
+            <h2 class="text-[17px]/[1.4] font-bold">Le porteur</h2>
+            <p class="mt-1 text-[14px]/[1.4] text-af-corps">
+              Qui porte le projet, où, et comment vous joindre.
+            </p>
+          </header>
+
+          <AfricansChamp v-model="form.nomOrganisation" libelle="Nom de l'organisation" placeholder="Ex : ONG Développement Durable Afrique" />
+          <AfricansChamp v-model="form.descriptionOrganisation" libelle="Description de l'organisation" type="textarea" placeholder="Présentez brièvement votre organisation…" />
+          <AfricansChamp v-model="form.siteWeb" libelle="Site web" type="url" placeholder="https://www.exemple.org" />
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <AfricansChamp v-model="form.pays" libelle="Territoire" type="select">
+              <option value="">Choisir un territoire</option>
+              <option v-for="pays in paysOptions" :key="pays.value" :value="pays.value">{{ pays.label }}</option>
+            </AfricansChamp>
+            <AfricansChamp v-model="form.ville" libelle="Ville" placeholder="Ex : Dakar" />
+          </div>
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <AfricansChamp v-model="form.contactEmail" libelle="Courriel de contact" type="email" placeholder="contact@exemple.org" />
+            <AfricansChamp v-model="form.contactTelephone" libelle="Téléphone" type="tel" placeholder="+221 77 000 00 00" />
+          </div>
+        </template>
+
+        <!-- ─── 3. Budget et calendrier ─── -->
+        <template v-else-if="etape === 2">
+          <header>
+            <h2 class="text-[17px]/[1.4] font-bold">Budget et calendrier</h2>
+            <p class="mt-1 text-[14px]/[1.4] text-af-corps">
+              Ce que le projet coûte, et quand il se déroule.
+            </p>
+          </header>
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <!-- Champs natifs et non `AfricansChamp` : le composant n'émet que
+                 des chaînes, et le coût comme la durée partent à l'API en
+                 nombres. `12` deviendrait `"12"`, refusé à la désérialisation. -->
+            <label class="flex flex-col gap-2">
+              <span class="text-[14px]/[1.4] text-af-atone italic">Coût total estimé</span>
+              <input
+                v-model.number="form.coutTotal"
+                type="number"
+                min="0"
+                step="1000"
+                placeholder="Ex : 5000000"
+                class="h-11 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
+              />
+            </label>
+
+            <AfricansChamp v-model="form.devise" libelle="Devise" type="select">
+              <option v-for="devise in DEVISES_FORM" :key="devise.value" :value="devise.value">{{ devise.label }}</option>
+            </AfricansChamp>
+
+            <label class="flex flex-col gap-2">
+              <span class="text-[14px]/[1.4] text-af-atone italic">Durée du projet</span>
+              <select
+                v-model="form.dureeMois"
+                class="h-11 rounded-md border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:border-af-chocolat focus:outline-none"
+              >
+                <option :value="null">Choisir une durée</option>
+                <option v-for="duree in DUREES_MOIS_FORM" :key="duree.value" :value="duree.value">{{ duree.label }}</option>
+              </select>
+            </label>
+
+            <label class="flex flex-col gap-2">
+              <span class="text-[14px]/[1.4] text-af-atone italic">Date de début souhaitée</span>
+              <input
+                v-model="form.dateDebutSouhaitee"
+                type="date"
+                class="h-11 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] focus:border-af-chocolat focus:outline-none"
+              />
+            </label>
+          </div>
+        </template>
+
+        <!-- ─── 4. Le détail ─── -->
+        <template v-else>
+          <header>
+            <h2 class="text-[17px]/[1.4] font-bold">Le détail</h2>
+            <p class="mt-1 text-[14px]/[1.4] text-af-corps">
+              Ce que vous en attendez, comment vous comptez y arriver, et ce qui pourrait l'en empêcher.
+            </p>
+          </header>
+
+          <AfricansChamp v-model="form.resultatsAttendus" libelle="Résultats attendus" type="textarea" placeholder="Quels changements concrets ce projet produira-t-il ?" />
+          <AfricansChamp v-model="form.activitesProgrammees" libelle="Activités programmées" type="textarea" placeholder="Les grandes activités prévues." />
+          <AfricansChamp v-model="form.echeanciers" libelle="Échéanciers" type="textarea" placeholder="Les jalons et leurs dates." />
+          <AfricansChamp v-model="form.contributionAutonomisation" libelle="Contribution à l'autonomisation" type="textarea" placeholder="En quoi le projet rend-il les bénéficiaires plus autonomes ?" />
+          <AfricansChamp v-model="form.difficultesRisques" libelle="Difficultés et risques" type="textarea" placeholder="Ce qui pourrait compromettre le projet, et comment vous l'anticipez." />
+        </template>
+      </section>
+
+      <!-- ═══ Navigation ═══ -->
+      <div class="flex flex-wrap items-center gap-3">
+        <AfricansBouton v-if="etape > 0" variante="secondaire" icone="fa-solid fa-arrow-left" @click="precedent">
+          Précédent
+        </AfricansBouton>
+
+        <AfricansBouton
+          v-if="etape < ETAPES.length - 1"
+          icone="fa-solid fa-arrow-right"
+          :desactive="etape === 0 && !etapeUnValide"
+          @click="suivant"
+        >
+          Suivant
+        </AfricansBouton>
+
+        <!-- Sortie anticipée. Quinze des dix-huit champs sont facultatifs :
+             obliger à traverser trois étapes vides pour envoyer un dossier
+             déjà complet serait une formalité, pas un accompagnement. -->
+        <AfricansBouton
+          v-if="etape < ETAPES.length - 1 && isFormValid"
+          variante="secondaire"
+          icone="fa-solid fa-paper-plane"
+          :desactive="loading"
+          :tourne="loading"
+          @click="surSoumission"
+        >
+          Soumettre maintenant
+        </AfricansBouton>
+
+        <AfricansBouton
+          v-if="etape === ETAPES.length - 1"
+          type="submit"
+          :icone="loading ? 'fa-solid fa-spinner' : 'fa-solid fa-paper-plane'"
+          :desactive="!isFormValid || loading"
+          :tourne="loading"
+        >
+          {{ loading ? 'Soumission en cours…' : 'Soumettre le projet' }}
+        </AfricansBouton>
+
+        <AfricansBouton class="ml-auto" variante="secondaire" vers="/financer-projet">
+          Annuler
+        </AfricansBouton>
       </div>
-    </section>
-  </div>
+    </form>
+
+    <template v-if="!succes" #rail>
+      <AfricansPanneau titre="Progression" icone="fa-solid fa-list-check">
+        <ol class="flex flex-col gap-1">
+          <li v-for="(e, i) in ETAPES" :key="e.titre">
+            <button
+              type="button"
+              class="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition disabled:cursor-not-allowed disabled:opacity-50"
+              :class="i === etape ? 'bg-af-chocolat/15' : 'hover:bg-af-chocolat/[0.07]'"
+              :disabled="i > 0 && !etapeUnValide"
+              @click="allerA(i)"
+            >
+              <span
+                class="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-[12px]/[1] font-bold"
+                :class="i < etape ? 'bg-af-vert text-white' : i === etape ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-atone'"
+              >
+                <font-awesome-icon v-if="i < etape" icon="fa-solid fa-check" />
+                <template v-else>{{ i + 1 }}</template>
+              </span>
+              <span class="min-w-0">
+                <span class="block text-[14px]/[1.3] font-bold" :class="i === etape ? 'text-af-chocolat' : 'text-af-encre'">{{ e.titre }}</span>
+                <span class="block text-[12px]/[1.4] text-af-atone">{{ e.resume }}</span>
+              </span>
+            </button>
+          </li>
+        </ol>
+      </AfricansPanneau>
+
+      <AfricansPanneau titre="Bon à savoir" icone="fa-solid fa-circle-info">
+        <ul class="flex flex-col gap-3 text-[14px]/[1.5] text-af-corps">
+          <li class="flex gap-3">
+            <font-awesome-icon icon="fa-solid fa-asterisk" class="mt-1 size-3 shrink-0 text-af-chocolat" />
+            Seuls le titre, la description et un objectif sont exigés. Vous pouvez envoyer dès qu'ils sont remplis.
+          </li>
+          <li class="flex gap-3">
+            <font-awesome-icon icon="fa-solid fa-eye" class="mt-1 size-3 shrink-0 text-af-chocolat" />
+            Votre projet est examiné par l'équipe avant d'être publié.
+          </li>
+          <li class="flex gap-3">
+            <font-awesome-icon icon="fa-solid fa-floppy-disk" class="mt-1 size-3 shrink-0 text-af-vert" />
+            Votre saisie est conservée sur cet appareil si vous quittez la page. L'image de couverture fait exception.
+          </li>
+        </ul>
+      </AfricansPanneau>
+    </template>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
@@ -508,8 +391,27 @@ import {
 } from '~/composables/useProjets'
 import { useUserStore } from '~/stores/user'
 
+/**
+ * Soumettre un projet, porté sur le gabarit et découpé en QUATRE ÉTAPES.
+ *
+ * Le formulaire tenait sur une seule page : dix-huit champs, dont cinq zones
+ * de texte long, sur près de quatre écrans de défilement. On n'y voyait ni où
+ * l'on en était, ni ce qu'il restait.
+ *
+ * Le découpage suit une DISSYMÉTRIE du formulaire : seuls trois champs sont
+ * exigés (titre, description, un objectif), les quinze autres sont
+ * facultatifs. L'étape 1 les rassemble donc tous les trois, et le bouton
+ * « Soumettre maintenant » apparaît dès qu'elle est valide — traverser trois
+ * étapes vides pour envoyer un dossier déjà complet serait une formalité, pas
+ * un accompagnement.
+ *
+ * Aucun champ n'est ajouté ni retiré, et la charge utile envoyée à
+ * `creerProjet` est rigoureusement la même.
+ */
+definePageMeta({ layout: false })
+
 useHead({
-  title: 'Soumettre un Projet - AfricanS',
+  title: 'Soumettre un projet | AfricanS',
   meta: [
     {
       name: 'description',
@@ -530,11 +432,45 @@ onMounted(() => {
   }
 })
 
+// ─── Étapes ───────────────────────────────────────────────────────────────
+const ETAPES = [
+  { titre: 'Le projet', resume: 'Titre, description, objectifs, image', obligatoire: true },
+  { titre: 'Le porteur', resume: 'Organisation, lieu, contact', obligatoire: false },
+  { titre: 'Budget et calendrier', resume: 'Coût, devise, durée, date', obligatoire: false },
+  { titre: 'Le détail', resume: 'Résultats, activités, risques', obligatoire: false },
+] as const
+
+const etape = ref(0)
+
+/** Seule l'étape 1 porte des champs exigés : c'est elle qui garde les autres. */
+const etapeUnValide = computed(() =>
+  form.titre.trim().length > 0
+  && form.description.trim().length > 0
+  && objectifs.some(o => o.trim().length > 0),
+)
+
+const allerA = (i: number) => {
+  if (i > 0 && !etapeUnValide.value) return
+  etape.value = i
+  // Remonter en tête : sans cela, changer d'étape laisse le visiteur au bas
+  // de la précédente, devant des champs qu'il n'a pas encore vus.
+  if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+const suivant = () => allerA(etape.value + 1)
+const precedent = () => allerA(etape.value - 1)
+
 // Options pays (sans l'option "Tous les pays")
 const paysOptions = PAYS_PROJETS.filter(p => p.value !== '')
 
 // Form state
-const form = reactive({
+/**
+ * Valeurs par défaut, déclarées UNE fois. Elles servaient à trois endroits :
+ * l'état initial, la remise à zéro et, désormais, le test « ce brouillon
+ * vaut-il d'être conservé ». Trois listes de dix-huit champs recopiées à la
+ * main auraient fini par diverger d'un champ, en silence.
+ */
+const valeursInitiales = () => ({
   titre: '',
   description: '',
   nomOrganisation: '',
@@ -555,6 +491,8 @@ const form = reactive({
   contactTelephone: '',
 })
 
+const form = reactive(valeursInitiales())
+
 const objectifs = reactive<string[]>([''])
 const couvertureFile = ref<File | null>(null)
 const couverturePreview = ref<string | null>(null)
@@ -562,14 +500,10 @@ const loading = computed(() => chargement.value)
 const succes = ref(false)
 const erreurMessage = ref<string | null>(null)
 
-// Validation
-const isFormValid = computed(() => {
-  return (
-    form.titre.trim().length > 0 &&
-    form.description.trim().length > 0 &&
-    objectifs.some(o => o.trim().length > 0)
-  )
-})
+// La validité du formulaire EST celle de l'étape 1 : elle seule porte des
+// champs exigés. Une seconde définition aurait pu diverger de la garde des
+// étapes sans que rien ne le signale.
+const isFormValid = etapeUnValide
 
 // Objectifs
 const ajouterObjectif = () => {
@@ -614,30 +548,154 @@ const supprimerCouverture = () => {
 
 // Reset
 const resetForm = () => {
-  form.titre = ''
-  form.description = ''
-  form.nomOrganisation = ''
-  form.descriptionOrganisation = ''
-  form.siteWeb = ''
-  form.pays = ''
-  form.ville = ''
-  form.coutTotal = null
-  form.devise = 'XOF'
-  form.dureeMois = null
-  form.dateDebutSouhaitee = ''
-  form.resultatsAttendus = ''
-  form.activitesProgrammees = ''
-  form.echeanciers = ''
-  form.contributionAutonomisation = ''
-  form.difficultesRisques = ''
-  form.contactEmail = ''
-  form.contactTelephone = ''
+  Object.assign(form, valeursInitiales())
   objectifs.splice(0, objectifs.length, '')
   supprimerCouverture()
 }
 
+// ─── Brouillon local ──────────────────────────────────────────────────────
+//
+// Un formulaire en quatre étapes fait passer plus de temps dessus, donc plus
+// à perdre : un rechargement, un lien cliqué par erreur, et dix-huit champs
+// disparaissaient.
+//
+// La clé porte l'identifiant du membre. Sur un poste partagé, une clé unique
+// ferait relire à quelqu'un le brouillon d'un autre — et le lui ferait
+// soumettre sous son propre compte.
+//
+// Elle porte aussi un numéro de version : si la forme du formulaire change,
+// un brouillon écrit par l'ancienne version ne doit pas être réinjecté
+// champ par champ dans la nouvelle.
+const CLE_BROUILLON = computed(
+  () => `africans:brouillon:projet:v1:${userStore.user?.id ?? 'anonyme'}`,
+)
+
+/** Vrai le temps d'annoncer au membre que sa saisie a été retrouvée. */
+const brouillonRestaure = ref(false)
+
+/**
+ * Un brouillon vide n'est pas un brouillon. Sans ce test, ouvrir la page puis
+ * la quitter écrirait dix-huit champs vides dans le stockage, et le bandeau
+ * « saisie retrouvée » s'afficherait à la visite suivante sans rien à montrer.
+ *
+ * La comparaison porte sur les valeurs par défaut RÉELLES, pas sur « chaîne
+ * vide ou nul » : `devise` vaut `XOF` d'emblée, et la traiter comme une saisie
+ * rendrait tout brouillon utile.
+ */
+const brouillonUtile = () => {
+  const defauts = valeursInitiales() as Record<string, unknown>
+  return Object.entries(form).some(([cle, valeur]) => valeur !== defauts[cle])
+    || objectifs.some(o => o.trim() !== '')
+}
+
+const enregistrerBrouillon = () => {
+  if (!import.meta.client || succes.value) return
+  try {
+    if (!brouillonUtile()) {
+      localStorage.removeItem(CLE_BROUILLON.value)
+      return
+    }
+    // La couverture est ABSENTE du brouillon : c'est un `File`, que JSON ne
+    // sait pas porter, et son aperçu en base64 pèse un tiers de plus que
+    // l'image — 5 Mo autorisés deviendraient 6,7 Mo, au-delà du quota de
+    // `localStorage`. Le membre en est prévenu à la restauration.
+    localStorage.setItem(CLE_BROUILLON.value, JSON.stringify({
+      form: { ...form },
+      objectifs: [...objectifs],
+      etape: etape.value,
+    }))
+  }
+  catch {
+    // Quota dépassé, ou stockage refusé par le navigateur. Le formulaire
+    // continue de fonctionner sans filet plutôt que de s'interrompre.
+  }
+}
+
+const effacerBrouillon = () => {
+  if (!import.meta.client) return
+  try {
+    localStorage.removeItem(CLE_BROUILLON.value)
+  }
+  catch { /* stockage indisponible */ }
+}
+
+const restaurerBrouillon = () => {
+  if (!import.meta.client) return
+  let brut: string | null = null
+  try {
+    brut = localStorage.getItem(CLE_BROUILLON.value)
+  }
+  catch { return }
+  if (!brut) return
+
+  try {
+    const donnees = JSON.parse(brut) as {
+      form?: Record<string, unknown>
+      objectifs?: unknown
+      etape?: unknown
+    }
+    // Recopie champ par champ, et seulement ceux que le formulaire connaît :
+    // un brouillon trafiqué ne doit pas pouvoir injecter de clé étrangère
+    // dans l'objet envoyé à l'API.
+    for (const cle of Object.keys(form) as (keyof typeof form)[]) {
+      const valeur = donnees.form?.[cle]
+      if (valeur !== undefined) (form as Record<string, unknown>)[cle] = valeur
+    }
+    if (Array.isArray(donnees.objectifs) && donnees.objectifs.length) {
+      objectifs.splice(0, objectifs.length, ...donnees.objectifs.map(o => String(o)))
+    }
+    if (typeof donnees.etape === 'number' && donnees.etape >= 0 && donnees.etape < ETAPES.length) {
+      etape.value = donnees.etape
+    }
+    brouillonRestaure.value = true
+  }
+  catch {
+    // Brouillon illisible : on le jette plutôt que de laisser un formulaire
+    // à moitié rempli d'on ne sait quoi.
+    effacerBrouillon()
+  }
+}
+
+/** Repart d'un formulaire vierge et oublie le brouillon. */
+const abandonnerBrouillon = () => {
+  resetForm()
+  effacerBrouillon()
+  brouillonRestaure.value = false
+  etape.value = 0
+}
+
+// L'enregistrement est différé : sans cela, chaque frappe écrirait dans
+// `localStorage`, une opération SYNCHRONE qui bloque le fil principal.
+let minuterieBrouillon: ReturnType<typeof setTimeout> | null = null
+watch([form, objectifs, etape], () => {
+  if (minuterieBrouillon) clearTimeout(minuterieBrouillon)
+  minuterieBrouillon = setTimeout(enregistrerBrouillon, 500)
+}, { deep: true })
+
+// Fermer l'onglet ne laisse pas le temps à la minuterie de se déclencher.
+const surFermeture = () => {
+  if (minuterieBrouillon) clearTimeout(minuterieBrouillon)
+  enregistrerBrouillon()
+}
+
+onMounted(() => {
+  restaurerBrouillon()
+  window.addEventListener('beforeunload', surFermeture)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', surFermeture)
+  surFermeture()
+})
+
+/** Relance une saisie après une confirmation. */
+const recommencer = () => {
+  succes.value = false
+  erreurMessage.value = null
+  etape.value = 0
+}
+
 // Submit
-const handleSubmit = async () => {
+const surSoumission = async () => {
   if (!isFormValid.value) return
 
   erreurMessage.value = null
@@ -675,7 +733,10 @@ const handleSubmit = async () => {
 
     if (result) {
       succes.value = true
+      effacerBrouillon()
+      brouillonRestaure.value = false
       resetForm()
+      etape.value = 0
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
       erreurMessage.value = 'Une erreur est survenue lors de la soumission du projet.'

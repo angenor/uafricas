@@ -1,4 +1,4 @@
-# Phase 1 — Modèle de données
+# Phase 1 : Modèle de données
 
 **Feature**: `008-recadrage-engagement-cadeaux` | **Schéma**: `engagement` | **Migrations**: `35f_engagement_recadrage.sql`, `35g_engagement_cadeaux.sql`
 
@@ -6,9 +6,9 @@ Conventions du projet respectées : UUID v4 en clé primaire, `TIMESTAMPTZ`, `sn
 
 ---
 
-## Partie A — Entités modifiées (migration `35f`)
+## Partie A : Entités modifiées (migration `35f`)
 
-### A1. `engagement.regle_points` — recadrage du barème
+### A1. `engagement.regle_points` : recadrage du barème
 
 Aucun changement de structure. Trois opérations de données :
 
@@ -35,7 +35,7 @@ UPDATE engagement.regle_points SET actif = FALSE, updated_at = NOW()
 
 > Les plafonds sont livrés à `NULL` (illimité) et restent réglables en back-office. Rappel de la spécification 007 : **les plafonds s'expriment en points, pas en occurrences**.
 
-### A2. `engagement.categorie_points` — catégorie « Cadeaux »
+### A2. `engagement.categorie_points` : catégorie « Cadeaux »
 
 ```
 INSERT INTO engagement.categorie_points (code, libelle, description, ordre, couleur, icone)
@@ -45,7 +45,7 @@ ON CONFLICT (code) DO NOTHING;
 
 Les catégories `popularite`, `partages` et `ajustements` existent déjà (migration `35c`). Les catégories devenues sans règle active (`contributions`, `medias`, `verification`) sont **conservées** : leur suppression est interdite tant qu'une règle y est rattachée (FR-004 de la spécification 007), et elles redeviendront utiles si une règle écartée est réactivée.
 
-### A3. `engagement.niveau` — quatre statuts (FR-004, R6)
+### A3. `engagement.niveau` : quatre statuts (FR-004, R6)
 
 Ordre d'exécution **impératif** (l'ordre 3 doit se libérer avant l'insertion de `gold`) :
 
@@ -77,17 +77,17 @@ UPDATE engagement.compte c
        updated_at = NOW();
 ```
 
-### A4. `engagement.palier_popularite` — neutralisé (FR-003, R3)
+### A4. `engagement.palier_popularite` : neutralisé (FR-003, R3)
 
 ```
 UPDATE engagement.palier_popularite SET actif = FALSE;
 ```
 
-La table et les écrans d'administration sont conservés : le mécanisme n'est plus alimenté mais reste réactivable, comme les règles écartées. `services::engagement::evaluer_popularite` est en revanche **supprimée du code** — sa sémantique (crédit par palier de contenu) est incompatible avec le crédit unitaire par membre.
+La table et les écrans d'administration sont conservés : le mécanisme n'est plus alimenté mais reste réactivable, comme les règles écartées. `services::engagement::evaluer_popularite` est en revanche **supprimée du code**, sa sémantique (crédit par palier de contenu) est incompatible avec le crédit unitaire par membre.
 
 ---
 
-## Partie B — Entités nouvelles (migration `35g`)
+## Partie B : Entités nouvelles (migration `35g`)
 
 ### B1. Types énumérés
 
@@ -98,7 +98,7 @@ CREATE TYPE engagement.etat_paiement AS ENUM ('en_attente', 'abouti', 'echoue', 
 
 `purge` n'est pas un état de paiement à proprement parler : c'est la marque laissée par la purge de fin de phase de test (R11), qui conserve la ligne pour l'historique tout en signalant que ses effets ont été annulés.
 
-### B2. `engagement.cadeau` — catalogue
+### B2. `engagement.cadeau` : catalogue
 
 | Colonne | Type | Contraintes | Rôle |
 |---------|------|-------------|------|
@@ -126,19 +126,19 @@ CREATE TYPE engagement.etat_paiement AS ENUM ('en_attente', 'abouti', 'echoue', 
 
 > Le rapport prix/points est constant (100 FCFA le point) à la mise en service. Rien ne l'impose : l'administration peut le rompre pour valoriser un cadeau symbolique.
 
-### B3. `engagement.parametre_monetisation` — singleton
+### B3. `engagement.parametre_monetisation`, singleton
 
 | Colonne | Type | Contraintes |
 |---------|------|-------------|
-| `id` | BOOLEAN | `PRIMARY KEY DEFAULT TRUE CHECK (id)` — ligne unique par construction |
+| `id` | BOOLEAN | `PRIMARY KEY DEFAULT TRUE CHECK (id)`, ligne unique par construction |
 | `taux_commission` | SMALLINT | `NOT NULL DEFAULT 10 CHECK (taux_commission BETWEEN 0 AND 100)` |
 | `devise` | VARCHAR(3) | `NOT NULL DEFAULT 'XOF'` |
-| `paiement_reel_actif` | BOOLEAN | `NOT NULL DEFAULT FALSE` — bascule CinetPay ; informe le bandeau et la purge |
+| `paiement_reel_actif` | BOOLEAN | `NOT NULL DEFAULT FALSE`, bascule CinetPay ; informe le bandeau et la purge |
 | `updated_at` | TIMESTAMPTZ | `NOT NULL DEFAULT NOW()` |
 
 L'astuce `id BOOLEAN PRIMARY KEY CHECK (id)` rend la **seconde ligne impossible en SQL** : il ne peut exister qu'un seul paramétrage, sans code de garde applicatif.
 
-### B4. `engagement.transaction_cadeau` — journal comptable
+### B4. `engagement.transaction_cadeau` : journal comptable
 
 | Colonne | Type | Contraintes | Rôle |
 |---------|------|-------------|------|
@@ -161,7 +161,7 @@ L'astuce `id BOOLEAN PRIMARY KEY CHECK (id)` rend la **seconde ligne impossible 
 | `created_at` | TIMESTAMPTZ | `NOT NULL DEFAULT NOW()` | |
 | `finalise_at` | TIMESTAMPTZ | | Renseigné à l'aboutissement, l'échec ou l'expiration |
 
-**Contraintes structurelles — les invariants métier deviennent impossibles à violer en SQL :**
+**Contraintes structurelles : les invariants métier deviennent impossibles à violer en SQL :**
 
 ```
 CHECK (part_beneficiaire + part_plateforme = montant)             -- SC-009, exact par construction
@@ -175,9 +175,9 @@ CHECK (etat <> 'en_attente' OR finalise_at IS NULL)                -- pas de fin
 
 **Index** : `(beneficiaire_id, etat)`, `(offreur_id)`, `(type_objet, objet_id) WHERE etat = 'abouti'` (affichage des cadeaux d'un contenu), `(created_at DESC)` (journal admin), `(simule) WHERE etat = 'abouti'` (purge).
 
-**Note sur `offreur_id`** : `ON DELETE SET NULL` exigerait une colonne nullable, ce qui contredirait `NOT NULL`. La colonne est donc `NOT NULL REFERENCES … ON DELETE CASCADE` comme le reste du schéma `engagement`. Une transaction dont l'offreur disparaît disparaît avec lui — aucune archive comptable n'est bâtie, la recette restant connue par les états agrégés exportés avant la suppression. Le cas limite correspondant de `spec.md` a été aligné sur cette décision ; construire une table d'archive avant que l'encaissement ne soit réel serait prématuré (Principe V).
+**Note sur `offreur_id`** : `ON DELETE SET NULL` exigerait une colonne nullable, ce qui contredirait `NOT NULL`. La colonne est donc `NOT NULL REFERENCES … ON DELETE CASCADE` comme le reste du schéma `engagement`. Une transaction dont l'offreur disparaît disparaît avec lui, aucune archive comptable n'est bâtie, la recette restant connue par les états agrégés exportés avant la suppression. Le cas limite correspondant de `spec.md` a été aligné sur cette décision ; construire une table d'archive avant que l'encaissement ne soit réel serait prématuré (Principe V).
 
-### B5. `engagement.cagnotte` — solde de soutien du bénéficiaire
+### B5. `engagement.cagnotte` : solde de soutien du bénéficiaire
 
 | Colonne | Type | Contraintes |
 |---------|------|-------------|
@@ -192,7 +192,7 @@ CHECK (montant_verse <= montant_cumule)
 
 `montant_verse` reste à 0 pendant toute cette itération (FR-026, aucun payout). La colonne existe dès maintenant pour que l'arrivée du versement n'exige pas de migration de la table la plus sensible.
 
-**Cohérence vérifiable** (SC-009) — invariant que la recette doit pouvoir contrôler :
+**Cohérence vérifiable** (SC-009) : invariant que la recette doit pouvoir contrôler :
 
 ```
 montant_cumule = COALESCE((SELECT SUM(part_beneficiaire) FROM engagement.transaction_cadeau
@@ -201,7 +201,7 @@ montant_cumule = COALESCE((SELECT SUM(part_beneficiaire) FROM engagement.transac
 
 ---
 
-## Partie C — Transitions d'état d'une transaction
+## Partie C : Transitions d'état d'une transaction
 
 ```
                  initier()                confirmer(aboutir = true)
@@ -219,14 +219,14 @@ montant_cumule = COALESCE((SELECT SUM(part_beneficiaire) FROM engagement.transac
 | → `en_attente` | `POST /cadeaux/envoyer` | Création de la ligne, prix/points/taux figés, référence obtenue du simulateur. **Aucun point, aucune cagnotte.** |
 | `en_attente` → `abouti` | `POST /paiements/{reference}/confirmer` avec succès | Cagnotte créditée (mode `soutien_financier` uniquement) **dans la transaction SQL** ; points crédités et notification émise **après le COMMIT** (R10). |
 | `en_attente` → `echoue` | Confirmation en échec | Aucun effet, la ligne reste pour l'analyse. Le membre peut réémettre un envoi. |
-| `en_attente` → `expire` | Lecture d'une intention dont `created_at` dépasse 30 minutes | Résolution **paresseuse**, aucune tâche de fond — même motif que les créneaux de programmation média. |
+| `en_attente` → `expire` | Lecture d'une intention dont `created_at` dépasse 30 minutes | Résolution **paresseuse**, aucune tâche de fond, même motif que les créneaux de programmation média. |
 | `abouti` → `purge` | `POST /admin/engagement/purger-phase-test` | Mouvements de points supprimés, soldes et niveaux recalculés depuis le journal, cagnottes réduites d'autant. |
 
 **États terminaux** : `abouti` (hors purge), `echoue`, `expire`, `purge`. Aucun retour en arrière n'est prévu ; un litige se règle par l'ajustement manuel motivé déjà livré.
 
 ---
 
-## Partie D — Récapitulatif des clés d'idempotence
+## Partie D : Récapitulatif des clés d'idempotence
 
 L'ensemble du recadrage repose sur trois clés, et sur elles seules. Aucune vérification en lecture-puis-écriture n'est nécessaire.
 
@@ -240,12 +240,12 @@ Clés **héritées** encore présentes dans le journal (règles désactivées) :
 
 ---
 
-## Partie E — Impact sur les entités existantes non modifiées structurellement
+## Partie E : Impact sur les entités existantes non modifiées structurellement
 
 | Entité | Impact |
 |--------|--------|
 | `engagement.compte` | Aucun changement de colonne. `niveau_code` rebasculé par `35f`, puis maintenu par le moteur. |
 | `engagement.mouvement_points` | Aucun changement de colonne. Trois nouveaux `type_action`, trois nouveaux motifs de clé. |
-| `engagement.badge` | Aucun changement. Les badges paramétrés sur `actions_comptees` d'une action désactivée cessent de progresser — l'administration peut les repointer sur `jaime_recu`, `partage_recu` ou `cadeau_recu` sans migration. |
+| `engagement.badge` | Aucun changement. Les badges paramétrés sur `actions_comptees` d'une action désactivée cessent de progresser, l'administration peut les repointer sur `jaime_recu`, `partage_recu` ou `cadeau_recu` sans migration. |
 | `engagement.partage_externe` | Aucun changement de structure. La table cesse d'alimenter un seuil et devient une **trace statistique** par canal (FR-015). |
 | `media_content.support_detenteur` | Aucun changement. Lu en lecture seule par `resoudre_beneficiaire` (R4). |

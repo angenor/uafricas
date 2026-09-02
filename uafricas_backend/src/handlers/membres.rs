@@ -18,7 +18,7 @@ struct ApiResponse<T: serde::Serialize> {
 // Endpoints
 // ────────────────────────────────────────────────────────────────
 
-/// GET /api/utilisateurs — Annuaire public paginee de tous les membres actifs
+/// GET /api/utilisateurs : Annuaire public paginee de tous les membres actifs
 pub async fn lister_membres(
     pool: web::Data<PgPool>,
     params: web::Query<MembreQueryParams>,
@@ -130,7 +130,7 @@ pub async fn lister_membres(
     }))
 }
 
-/// GET /api/utilisateurs/{id} — Detail public d'un membre par son id
+/// GET /api/utilisateurs/{id} : Detail public d'un membre par son id
 pub async fn obtenir_membre(
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,

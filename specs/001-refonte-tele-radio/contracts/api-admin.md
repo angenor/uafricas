@@ -1,4 +1,4 @@
-# Contrat — API back-office
+# Contrat : API back-office
 
 **Feature** : `001-refonte-tele-radio`
 Extracteur : `AdminUtilisateur` (exige le rôle `admin` ou `super_admin`).
@@ -6,7 +6,7 @@ Garde de permission : **`verifier_permission!(admin, "media", <action>)`**.
 
 > **Piège à ne pas reproduire** : `"media"` couvre radio et télé (`admin/radio_tele.rs`, 21 occurrences) ;
 > `"media_content"` couvre vidafrica. `"programme"` désigne les programmes d'échange, pas les programmes
-> radio/TV. Utiliser `"media"` — voir R15.
+> radio/TV. Utiliser `"media"` : voir R15.
 
 > **Prérequis de migration** : `15_seed.sql` ne déclare **aucune** permission `media`. Sans le seed ajouté
 > par `09j`, seul `super_admin` (wildcard `all.all`) franchira ces gardes et la file de modération sera
@@ -23,7 +23,7 @@ Garde de permission : **`verifier_permission!(admin, "media", <action>)`**.
 | PATCH | `/api/admin/medias/propositions/{id}/valider` | `media.modifier` |
 | PATCH | `/api/admin/medias/propositions/{id}/rejeter` | `media.modifier` |
 
-**Valider** — corps `{ "commentaire": "…" }` (facultatif). Séquence atomique, calquée sur
+**Valider** : corps `{ "commentaire": "…" }` (facultatif). Séquence atomique, calquée sur
 `admin/propositions_salle.rs:204-390` :
 
 ```
@@ -41,7 +41,7 @@ La notification est émise **dans la transaction** (style `admin/profils_pays.rs
 fire-and-forget : une décision de publication ne doit pas pouvoir être commitée sans que l'auteur en soit
 averti (FR-034).
 
-**Rejeter** — corps `{ "commentaire": "…" }` **obligatoire, ≥ 10 caractères** (FR-033). Garde applicative
+**Rejeter** : corps `{ "commentaire": "…" }` **obligatoire, ≥ 10 caractères** (FR-033). Garde applicative
 doublée du `CHECK ck_prop_media_rejet_commente`. Aucun objet n'est créé ; l'auteur voit le motif dans
 `/api/medias/propositions/moi`.
 
@@ -55,8 +55,8 @@ les droits d'auteur et l'autorisation de rediffusion.
 
 | Méthode | Chemin | Effet |
 |---|---|---|
-| PATCH | `/api/admin/television/programmes-tele/{id}/vedette-globale` | `{ "a_la_une_globale": true }` — bascule l'ancienne vedette à `false` **dans la même transaction** (FR-001) |
-| PATCH | `/api/admin/stations-radio/{id}/origine` | `{ "origine_publication": "africans" \| "territoire" }` — détermine la page d'affichage (FR-014) |
+| PATCH | `/api/admin/television/programmes-tele/{id}/vedette-globale` | `{ "a_la_une_globale": true }`, bascule l'ancienne vedette à `false` **dans la même transaction** (FR-001) |
+| PATCH | `/api/admin/stations-radio/{id}/origine` | `{ "origine_publication": "africans" \| "territoire" }`, détermine la page d'affichage (FR-014) |
 
 **Concurrence** : l'exclusivité de `a_la_une` est aujourd'hui gérée par deux requêtes séparées sur le pool
 (`admin/radio_tele.rs:1256-1265`, `:1392-1407`). Avec l'index unique global de `09j`, la seconde échouerait
@@ -81,7 +81,7 @@ Sans cette remise à zéro, le contenu serait resuspendu au premier signalement 
 franchi. Les signalements individuels sont conservés pour l'historique.
 
 **Retrait de l'antenne** (FR-033) : `'suspendu'` retire le contenu de toutes les pages publiques sans le
-supprimer — il reste consultable et réactivable en back-office. Un contenu retiré alors qu'il est vedette
+supprimer : il reste consultable et réactivable en back-office. Un contenu retiré alors qu'il est vedette
 ou programmé fait basculer la page sur son repli à la requête suivante.
 
 ---
@@ -98,14 +98,14 @@ Logique d'ajout à trois branches, reprise telle quelle de `admin/moderateurs_af
 
 | Situation | Résultat |
 |---|---|
-| ligne existante, `actif = TRUE` | **400** — « Ce membre est déjà co-détenteur de ce support » |
+| ligne existante, `actif = TRUE` | **400**, « Ce membre est déjà co-détenteur de ce support » |
 | ligne existante, `actif = FALSE` | `UPDATE … SET actif = TRUE, retire_at = NULL, role, designe_par, designe_at = NOW()` |
 | aucune ligne | `INSERT` |
 
 Retrait : `UPDATE … SET actif = FALSE, retire_at = NOW() WHERE … AND actif = TRUE`, puis contrôle de
 `rows_affected() == 0` → **404**. L'historique n'est jamais effacé.
 
-Un support sans co-détenteur actif reste diffusé et administrable — sa grille demeure modifiable par un
+Un support sans co-détenteur actif reste diffusé et administrable, sa grille demeure modifiable par un
 administrateur (edge case « dernier co-détenteur retiré »).
 
 ---

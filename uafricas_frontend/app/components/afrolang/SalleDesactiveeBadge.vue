@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// Badge "Désactivée par administration" — Tailwind v4 pur (principe VI).
-// Feature 001-ressources-fermeture-session, US2 — T054.
+// Badge "Désactivée par administration", Tailwind v4 pur (principe VI).
+// Feature 001-ressources-fermeture-session, US2, T054.
 
 interface Props {
   /** Information de désactivation. Si null/undefined, le composant ne s'affiche pas. */

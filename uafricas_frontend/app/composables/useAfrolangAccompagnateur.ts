@@ -1,4 +1,4 @@
-// Composable Afrolang : workflow accompagnateur — consentement explicite
+// Composable Afrolang : workflow accompagnateur, consentement explicite
 // (feature 001-ressources-fermeture-session, US1)
 import { useUserStore } from '~/stores/user'
 import type {
@@ -60,7 +60,7 @@ export const useAfrolangAccompagnateur = () => {
   const chargement = ref(false)
   const erreur = ref<string | null>(null)
 
-  // État partagé via useState — badge NavBar
+  // État partagé via useState : badge NavBar
   const mesRecommandationsEnAttente = useState<number>(
     'afrolang.mesRecommandationsEnAttente',
     () => 0,

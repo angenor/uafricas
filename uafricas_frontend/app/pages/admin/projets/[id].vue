@@ -189,7 +189,7 @@ onMounted(() => charger())
         <div class="card-body">
           <!-- Workflow approbation -->
           <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-base-200 rounded-lg">
-            <span class="font-semibold text-sm">Etat actuel :</span>
+            <span class="font-semibold text-sm">État actuel :</span>
             <span class="badge" :class="etatProjetConfig[projetDetail.etat]?.class || 'badge-neutral'">
               {{ etatProjetConfig[projetDetail.etat]?.label || projetDetail.etat }}
             </span>
@@ -289,7 +289,7 @@ onMounted(() => charger())
                 </select>
               </div>
               <div class="form-control">
-                <label class="label"><span class="label-text">Duree (mois)</span></label>
+                <label class="label"><span class="label-text">Durée (mois)</span></label>
                 <input v-model.number="form.duree_mois" type="number" min="1" class="input input-bordered">
               </div>
             </div>
@@ -311,13 +311,13 @@ onMounted(() => charger())
                 <input v-model="form.contact_email" type="email" class="input input-bordered">
               </div>
               <div class="form-control">
-                <label class="label"><span class="label-text">Telephone contact</span></label>
+                <label class="label"><span class="label-text">Téléphone contact</span></label>
                 <input v-model="form.contact_telephone" type="tel" class="input input-bordered">
               </div>
             </div>
 
             <div class="form-control">
-              <label class="label"><span class="label-text">Resultats attendus</span></label>
+              <label class="label"><span class="label-text">Résultats attendus</span></label>
               <textarea v-model="form.resultats_attendus" class="textarea textarea-bordered" rows="2" />
             </div>
 

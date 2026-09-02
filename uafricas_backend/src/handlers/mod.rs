@@ -1,4 +1,5 @@
 pub mod admin;
+pub mod africanite;
 pub mod afripulse_public;
 pub mod arbre_genealogique;
 pub mod africantives;

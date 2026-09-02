@@ -18,7 +18,7 @@ struct ApiResponse<T: serde::Serialize> {
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/livres — Lister les livres avec recherche, filtre et pagination
+// GET /api/livres : Lister les livres avec recherche, filtre et pagination
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_livres(
     pool: web::Data<PgPool>,
@@ -116,7 +116,7 @@ pub async fn lister_livres(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/livres/{id} — Obtenir un livre par son ID
+// GET /api/livres/{id} : Obtenir un livre par son ID
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_livre(
     pool: web::Data<PgPool>,
@@ -149,7 +149,7 @@ pub async fn obtenir_livre(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/livres — Creer un nouveau livre (multipart/form-data)
+// POST /api/livres : Creer un nouveau livre (multipart/form-data)
 // ──────────────────────────────────────────────────────────────
 pub async fn creer_livre(
     pool: web::Data<PgPool>,
@@ -288,7 +288,7 @@ pub async fn creer_livre(
 }
 
 // ──────────────────────────────────────────────────────────────
-// DELETE /api/livres/{id} — Suppression douce d'un livre
+// DELETE /api/livres/{id} : Suppression douce d'un livre
 // ──────────────────────────────────────────────────────────────
 pub async fn supprimer_livre(
     pool: web::Data<PgPool>,

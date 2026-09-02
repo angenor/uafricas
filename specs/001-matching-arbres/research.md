@@ -22,7 +22,7 @@
 **Décision** : Vérification synchrone rapide (nom exact) dans le handler `creer_personne`, puis `tokio::spawn` pour le matching profond en tâche de fond.
 
 **Raisonnement** :
-- À l'échelle cible (10 000 personnes), le matching profond via GIN trigram prend < 100ms en SQL. `tokio::spawn` est suffisant — pas besoin de job queue externe.
+- À l'échelle cible (10 000 personnes), le matching profond via GIN trigram prend < 100ms en SQL. `tokio::spawn` est suffisant : pas besoin de job queue externe.
 - Le matching synchrone rapide (nom exact) donne un feedback immédiat à l'utilisateur.
 - Le matching profond (fuzzy) s'exécute en background, stocke les résultats en base, l'utilisateur les voit à sa prochaine visite sur la page Découvertes.
 - En cas d'erreur du matching, la création de personne n'est pas affectée (fire-and-forget avec log d'erreur).
@@ -53,13 +53,13 @@
 - Le lieu est un bon discriminant en contexte africain (village/ville d'origine fort marqueur identitaire) → 20%.
 - Le genre permet d'éliminer les faux positifs évidents → 10%.
 
-## Décision 4 : Structure de données — nouveau schema vs extension
+## Décision 4 : Structure de données : nouveau schema vs extension
 
 **Décision** : Étendre le schema `arbre_genealogique` existant avec de nouvelles tables plutôt que créer un nouveau schema.
 
 **Raisonnement** :
 - Les correspondances lient des personnes du même schema `arbre_genealogique`. Un schema séparé ajouterait des foreign keys cross-schema inutilement complexes.
-- La Décision 8 du research.md de Feature 1 (architecture Personne/Rattachement) a été conçue exactement pour ce cas — le matching compare des rattachements de différents arbres.
+- La Décision 8 du research.md de Feature 1 (architecture Personne/Rattachement) a été conçue exactement pour ce cas, le matching compare des rattachements de différents arbres.
 - Principe V (YAGNI) de la constitution.
 
 ## Décision 5 : Confidentialité et identité anonymisée
@@ -78,5 +78,5 @@
 **Raisonnement** :
 - pg_trgm et les GIN indexes font le gros du travail côté PostgreSQL.
 - La normalisation en Rust est simple (lowercase, remplacement de patterns, suppression de diacritiques).
-- Pas besoin de crate externe (`strsim` etc.) — les fonctions SQL sont suffisantes.
+- Pas besoin de crate externe (`strsim` etc.), les fonctions SQL sont suffisantes.
 - Si besoin futur de matching côté Rust : `strsim` (Jaro-Winkler) est une option légère.

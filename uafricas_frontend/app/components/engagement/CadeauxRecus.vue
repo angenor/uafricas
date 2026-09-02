@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Cadeaux reçus par un contenu ou un profil — Tailwind v4 pur.
+ * Cadeaux reçus par un contenu ou un profil, Tailwind v4 pur.
  *
  * **Aucun montant en argent n'est affiché**, et l'API n'en renvoie aucun : ce
  * que le public voit, c'est la reconnaissance reçue, pas ce qu'elle a coûté.
@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<{
   objetId: string
   /** Version réduite : uniquement les pastilles et le total. */
   compact?: boolean
-  /** Palette claire sur fond sombre — les 4 pages médias sont en `neutral-950`. */
+  /** Palette claire sur fond sombre : les 4 pages médias sont en `neutral-950`. */
   sombre?: boolean
 }>(), { compact: false, sombre: false })
 

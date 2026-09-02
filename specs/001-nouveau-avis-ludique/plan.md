@@ -53,13 +53,13 @@ specs/001-nouveau-avis-ludique/
 uafricas_frontend/
 ├── app/
 │   ├── composables/
-│   │   └── useAnimationsFormulaire.ts    # NOUVEAU — composable GSAP reutilisable
+│   │   └── useAnimationsFormulaire.ts    # NOUVEAU, composable GSAP reutilisable
 │   ├── components/
 │   │   └── retrouve-amis/
-│   │       └── AvisRechercheForm.vue     # MODIFIE — ajout animations GSAP
+│   │       └── AvisRechercheForm.vue     # MODIFIE, ajout animations GSAP
 │   └── pages/
 │       └── retrouve-amis/
-│           └── nouveau.vue               # MODIFIE — animations ecran de succes
+│           └── nouveau.vue               # MODIFIE, animations ecran de succes
 ```
 
 **Structure Decision**: Pas de nouveau dossier. Un composable centralise la logique d'animation GSAP reutilisable (transitions d'etapes, stagger de champs, confettis). Les deux fichiers Vue existants sont enrichis sans changement de structure fonctionnelle.
@@ -71,12 +71,12 @@ uafricas_frontend/
 Responsabilites :
 - **Gestion du contexte GSAP** : creation (`gsap.context()`), cleanup (`revert()`) dans le cycle de vie Vue
 - **Detection reduced-motion** : `window.matchMedia('(prefers-reduced-motion: reduce)')` avec garde sur toutes les fonctions
-- **Transitions d'etapes** : `animerTransitionEtape(direction: 'avant' | 'arriere', cibleRef)` — slide directionnel + fade
-- **Stagger de champs** : `animerChampsEtape(conteneurRef)` — fade-in + translateY echelonne sur les enfants directs
-- **Animation progression** : `animerProgression(nouvelleEtape, ancienneEtape, dotsRef)` — scale pulse sur dot actif + scaleX segments
-- **Confettis** : `lancerConfettis(conteneurRef, couleurs)` — particules DOM avec gravite GSAP, duree 3-4s, fade-out
-- **Compteur anime** : `animerCompteur(cibleRef, valeurFinale)` — incrementation progressive de 0 a N
-- **Shake erreur** : `animerErreur(cibleRef)` — translateX oscillant rapide
+- **Transitions d'etapes** : `animerTransitionEtape(direction: 'avant' | 'arriere', cibleRef)`, slide directionnel + fade
+- **Stagger de champs** : `animerChampsEtape(conteneurRef)`, fade-in + translateY echelonne sur les enfants directs
+- **Animation progression** : `animerProgression(nouvelleEtape, ancienneEtape, dotsRef)`, scale pulse sur dot actif + scaleX segments
+- **Confettis** : `lancerConfettis(conteneurRef, couleurs)`, particules DOM avec gravite GSAP, duree 3-4s, fade-out
+- **Compteur anime** : `animerCompteur(cibleRef, valeurFinale)`, incrementation progressive de 0 a N
+- **Shake erreur** : `animerErreur(cibleRef)`, translateX oscillant rapide
 - **Interruptibilite** : `timelineCourante` tuee avant chaque nouvelle animation
 
 Pattern de reference : `AssistantAjoutPersonne.vue` lignes utilisant `gsap.context()`, `timeline.kill()`, `shallowRef<gsap.core.Timeline>`.
@@ -92,7 +92,7 @@ Pattern de reference : `AssistantAjoutPersonne.vue` lignes utilisant `gsap.conte
 ### Modifications `nouveau.vue`
 
 1. **Ecran de succes** : ajouter refs sur les elements (icone, titre, message correspondances, boutons)
-2. **Animation d'entree** : `onMounted` conditionnel quand `succes === true` — timeline sequentielle : bounce-in icone → fade-in titre → confettis → stagger boutons
+2. **Animation d'entree** : `onMounted` conditionnel quand `succes === true`, timeline sequentielle : bounce-in icone → fade-in titre → confettis → stagger boutons
 3. **Compteur correspondances** : `animerCompteur` sur le nombre
 4. **Shake erreur** : `animerErreur` sur le div d'erreur quand `erreur` change
 
@@ -112,7 +112,7 @@ Pattern de reference : `AssistantAjoutPersonne.vue` lignes utilisant `gsap.conte
 | Stagger boutons succes | 150ms/bouton | back.out(1.2) | Apres confettis |
 | Shake erreur | 400ms | power2.out | Erreur soumission |
 
-### Confettis — Implementation
+### Confettis : Implementation
 
 - 30-40 elements `<div>` crees dynamiquement dans un conteneur overlay (`position: absolute`, `overflow: hidden`, `pointer-events: none`)
 - Couleurs alternees : `#A54A1C` (chocolat) et `#228B22` (vert)

@@ -1,6 +1,6 @@
 //! Réactions (like/dislike) et partages communautaires des SOUS-OBJETS afripulse
 //! (secteur, recette, site touristique, personnalité). Design générique par
-//! (type_objet, objet_id) — cf. migration 11k. Calqué sur `fiche_pays_social`.
+//! (type_objet, objet_id), cf. migration 11k. Calqué sur `fiche_pays_social`.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

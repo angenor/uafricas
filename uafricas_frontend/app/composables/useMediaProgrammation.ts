@@ -1,5 +1,5 @@
 // Grille de programmation récurrente d'un support média
-// (US5 puis US2 de la feature 009 — migrations 09n et 09q).
+// (US5 puis US2 de la feature 009 : migrations 09n et 09q).
 //
 // Un créneau n'est pas un instant mais une règle : « tous les jours à 20h30 »
 // ou « chaque mercredi à 18h ». Depuis 09q il désigne un **programme**, plus un
@@ -34,7 +34,7 @@ export interface CreneauAPI {
   duree_minutes: number
   fuseau: string
   /**
-   * « AAAA-MM-JJ » — origine du comptage des occurrences.
+   * « AAAA-MM-JJ » : origine du comptage des occurrences.
    *
    * La déplacer **redéfinit la rotation** : c'est le seul levier dont dispose
    * un détenteur pour choisir quel épisode passe quand.
@@ -44,7 +44,7 @@ export interface CreneauAPI {
   actif: boolean
   emission?: RefContenu | null
   /** L'épisode retenu par la rotation. Absent des lectures de grille, qui ne
-   * la résolvent pas — la grille dit ce qui est programmé, pas ce qui passe. */
+   * la résolvent pas : la grille dit ce qui est programmé, pas ce qui passe. */
   episode?: RefContenu | null
   /** Occurrences écoulées depuis `date_effet` (FR-016). */
   rang_occurrence?: number | null
@@ -53,7 +53,7 @@ export interface CreneauAPI {
   /** Programme retiré, suspendu, ou sans épisode publié : le créneau reste
    * dans la grille mais n'annonce rien au public (FR-021, FR-024). */
   emission_indisponible: boolean
-  /** Motif de l'indisponibilité — servi à la seule vue détenteur. */
+  /** Motif de l'indisponibilité : servi à la seule vue détenteur. */
   alerte?: string | null
   created_at: string
   updated_at: string
@@ -103,7 +103,7 @@ export const JOURS_SEMAINE = [
 /** Fuseau par défaut, aligné sur celui de la migration 09n. */
 export const FUSEAU_DEFAUT = 'Africa/Abidjan'
 
-/** Fuseaux proposés — couvre l'amplitude horaire du continent. */
+/** Fuseaux proposés : couvre l'amplitude horaire du continent. */
 export const FUSEAUX_PROPOSES = [
   'Africa/Abidjan',
   'Africa/Dakar',
@@ -156,7 +156,7 @@ export const useMediaProgrammation = () => {
     e?.data?.error || e?.message || defaut
 
   /**
-   * La grille complète — lecture publique, c'est un programme de diffusion.
+   * La grille complète : lecture publique, c'est un programme de diffusion.
    *
    * `vueDetenteur` conserve les créneaux dont le programme n'annonce rien : le
    * public ne doit pas les voir (FR-021), mais les masquer au détenteur lui
@@ -213,7 +213,7 @@ export const useMediaProgrammation = () => {
    *
    * Un chevauchement est refusé par le serveur (409) **sans rien écrire** : le
    * message renvoyé décrit le créneau en cause et doit être affiché tel quel.
-   * L'épisode retenu par la rotation revient dans la réponse — c'est ce qui
+   * L'épisode retenu par la rotation revient dans la réponse : c'est ce qui
    * rend la date d'effet compréhensible au lieu de rester une abstraction.
    */
   const creerCreneau = async (
@@ -278,7 +278,7 @@ export const useMediaProgrammation = () => {
 
   /**
    * Programmes dont l'échéance de cadence approche ou est dépassée, tous
-   * supports détenus confondus. Calculées à la lecture — aucune tâche de fond.
+   * supports détenus confondus. Calculées à la lecture : aucune tâche de fond.
    */
   const mesAlertesCadence = async (): Promise<AlerteCadence[]> => {
     erreur.value = null

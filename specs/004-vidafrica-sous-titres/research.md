@@ -1,4 +1,4 @@
-# Research — Vidafrica (sous-titrage vidéo multilingue karaoke)
+# Research : Vidafrica (sous-titrage vidéo multilingue karaoke)
 
 **Branch**: `004-vidafrica-sous-titres` | **Date**: 2026-04-13
 

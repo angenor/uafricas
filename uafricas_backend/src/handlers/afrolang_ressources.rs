@@ -130,7 +130,7 @@ async fn resoudre_session_origine(
     if session_salle_id == Some(salle_id) {
         return Ok(None);
     }
-    // Cas 2 : session de salle privée — la salle privée doit pointer vers `salle_id`.
+    // Cas 2 : session de salle privée : la salle privée doit pointer vers `salle_id`.
     if let Some(spi) = session_salle_privee_id {
         let parent_id: Option<Uuid> = sqlx::query_scalar(
             "SELECT salle_id FROM afrolang.salle_privee WHERE id = $1",
@@ -502,7 +502,7 @@ async fn finaliser_lecture_unique(
     Ok(row.vers_response())
 }
 
-/// Route handler — branche entre multipart (document) et JSON (autres variants).
+/// Route handler : branche entre multipart (document) et JSON (autres variants).
 pub async fn ajouter_ressource_contribuee(
     pool: web::Data<PgPool>,
     req: HttpRequest,

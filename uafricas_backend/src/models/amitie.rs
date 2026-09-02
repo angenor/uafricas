@@ -7,7 +7,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 // ────────────────────────────────────────────────────────────────
-// DTO partagé MembreLight (champs publics uniquement — jamais d'email/téléphone)
+// DTO partagé MembreLight (champs publics uniquement, jamais d'email/téléphone)
 // ────────────────────────────────────────────────────────────────
 
 /// Colonnes pour construire un MembreLight depuis iam.utilisateur u

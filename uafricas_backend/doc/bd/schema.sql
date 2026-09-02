@@ -73,6 +73,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 
 \ir schemas/03_shared.sql
+-- Catégories du marché : shared.categorie n'en portait aucune de contexte
+-- 'annonce', ce qui rendait la publication impossible (catégorie obligatoire,
+-- sélecteur vide).
+\ir schemas/03b_shared_categories_annonce.sql
 \ir schemas/04_iam.sql
 \ir schemas/04b_iam_expertise.sql
 \ir schemas/04b_iam_biblio_demande.sql
@@ -137,6 +141,12 @@
 \ir schemas/11i_country_profile_recettes_culinaires.sql
 \ir schemas/11j_country_profile_signalement_contributions.sql
 \ir schemas/11k_country_profile_reactions_partages_elements.sql
+\ir schemas/11l_country_profile_symboles_nationaux.sql
+\ir schemas/11m_country_profile_drapeaux_svg.sql
+-- 11n n'est PAS ici : ce n'est pas une migration de structure mais un INSERT
+-- qui lit `iam.role` et `iam.permission`. En phase 2, les deux tables sont
+-- encore vides — son SELECT ne ramenait aucune ligne et le `ON CONFLICT DO
+-- NOTHING` rendait ce silence indétectable. Déplacée en phase 5, après 04h.
 \ir schemas/16_retrouve_amis.sql
 \ir schemas/23_arbre_genealogique.sql
 \ir schemas/24_matching.sql
@@ -152,6 +162,7 @@
 \ir schemas/30_social_conversation_annonce.sql
 \ir schemas/31_social_rendez_vous.sql
 \ir schemas/32_social_partage_profil.sql
+\ir schemas/36_social_africanite.sql
 
 
 -- ════════════════════════════════════════════════════════════════════════════
@@ -177,6 +188,16 @@
 
 \ir schemas/14_triggers.sql
 \ir schemas/15_seed.sql
+
+-- Catalogue de permissions du back-office et attribution aux rôles.
+-- APRÈS 15_seed : il complète le catalogue que celui-ci amorce, et rattache
+-- au rôle Administrateur, que 15_seed crée sans lui donner aucun droit.
+\ir schemas/04h_iam_permissions_backoffice.sql
+
+-- Rattache `fiche_pays.gerer` au rôle Administrateur. APRÈS 15_seed (qui crée
+-- le rôle) et APRÈS 04h (qui crée la permission) : c'est un INSERT … SELECT,
+-- il lui faut les deux lignes en base pour produire le moindre effet.
+\ir schemas/11n_country_profile_permission_admin.sql
 \ir schemas/16_seed_centres_culturels.sql
 \ir schemas/17_seed_evenements.sql
 \ir schemas/18_seed_sabbatiques.sql

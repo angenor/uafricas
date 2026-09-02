@@ -5,16 +5,16 @@
 
 ## Summary
 
-Permettre à tout membre connecté et actif d'envoyer une demande d'amitié à un autre membre depuis l'annuaire `/profil` et la fiche `/profil/{id}`, de l'accepter/refuser, de gérer ses relations (annuler, retirer, bloquer), et — une fois amis — de **discuter en temps réel** via un **bouton flottant de messagerie** présent sur toutes les pages.
+Permettre à tout membre connecté et actif d'envoyer une demande d'amitié à un autre membre depuis l'annuaire `/profil` et la fiche `/profil/{id}`, de l'accepter/refuser, de gérer ses relations (annuler, retirer, bloquer), et, une fois amis, de **discuter en temps réel** via un **bouton flottant de messagerie** présent sur toutes les pages.
 
 Approche technique : nouveau **schéma PostgreSQL `social`** (demandes, amitiés, blocages, conversations, messages, notifications) ; backend Rust/Actix-Web exposant des endpoints REST + un **flux SSE** pour le temps réel (registre de connexions en mémoire, mono-instance, sans nouvelle dépendance) ; frontend Nuxt 4 en **Tailwind v4 pur** (composables `useAmis`/`useMessagerie`, plugin client SSE, composant flottant global, page `/mon-compte/amis`, boutons sur `/profil`). Voir [research.md](./research.md) pour les décisions.
 
 ## Technical Context
 
 **Language/Version**: Rust Edition 2024 (backend) ; TypeScript / Nuxt 4 / Vue 3 SSR (frontend)
-**Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL), uuid, chrono, serde, `futures-util` (SSE), `tokio` (déjà présents) — **aucune nouvelle dépendance** ; Pinia/useState, $fetch, `EventSource` (navigateur), FontAwesome (frontend)
-**Storage**: PostgreSQL 16 — nouveau schéma `social` (`schemas/29_social.sql`), aucune modification de `iam.utilisateur`
-**Testing**: aucun framework configuré (cf. constitution) — validation manuelle via [quickstart.md](./quickstart.md)
+**Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL), uuid, chrono, serde, `futures-util` (SSE), `tokio` (déjà présents), **aucune nouvelle dépendance** ; Pinia/useState, $fetch, `EventSource` (navigateur), FontAwesome (frontend)
+**Storage**: PostgreSQL 16 : nouveau schéma `social` (`schemas/29_social.sql`), aucune modification de `iam.utilisateur`
+**Testing**: aucun framework configuré (cf. constitution) : validation manuelle via [quickstart.md](./quickstart.md)
 **Target Platform**: serveur Linux (Docker), navigateurs modernes (SSE/EventSource)
 **Project Type**: web (monorepo frontend Nuxt + backend Rust)
 **Performance Goals**: remise d'un message < 2 s (SC-008) ; bouton flottant accessible en 1 clic sur 100 % des pages (SC-007)
@@ -33,7 +33,7 @@ Approche technique : nouveau **schéma PostgreSQL `social`** (demandes, amitiés
 | IV. Sécurité par défaut | ✅ PASS | JWT sur tous les endpoints ; requêtes paramétrées sqlx ; validation (≤2000, non vide, états actifs) ; blocage ; rate-limit (FR-014) ; liste d'amis privée (FR-026) ; pas de secret en dur. SSE auth par token (Décision 3, exposition limitée documentée). |
 | V. Simplicité (YAGNI) | ✅ PASS | SSE plutôt que WebSocket ; pas de table rate-limit dédiée ; composables (pas de store ad hoc) ; ordre canonique des paires. Nouveau schéma justifié (bounded-context). |
 | VI. Tailwind v4 (daisyUI back-office only) | ✅ PASS | Aucune surface admin ; toute l'UI (public + espace membre) en Tailwind v4 pur, **sans daisyUI** (Décision 8). |
-| VII. Audit & traçabilité | ✅ PASS | **Toutes** les mutations auditées via `log_action`. Pour les messages, l'audit ne capture que des **métadonnées** (id message/conversation/expéditeur, longueur) — jamais le contenu, pour préserver la confidentialité. |
+| VII. Audit & traçabilité | ✅ PASS | **Toutes** les mutations auditées via `log_action`. Pour les messages, l'audit ne capture que des **métadonnées** (id message/conversation/expéditeur, longueur), jamais le contenu, pour préserver la confidentialité. |
 
 **Verdict** : PASS. Aucune violation ; aucune déviation.
 
@@ -44,14 +44,14 @@ Approche technique : nouveau **schéma PostgreSQL `social`** (demandes, amitiés
 ```text
 specs/001-demande-amitie/
 ├── plan.md              # Ce fichier
-├── research.md          # Phase 0 — décisions techniques
-├── data-model.md        # Phase 1 — schéma social
-├── quickstart.md        # Phase 1 — mise en route & validation
+├── research.md          # Phase 0 : décisions techniques
+├── data-model.md        # Phase 1 : schéma social
+├── quickstart.md        # Phase 1 : mise en route & validation
 ├── contracts/
-│   └── api.md           # Phase 1 — contrats REST + SSE
+│   └── api.md           # Phase 1 : contrats REST + SSE
 ├── checklists/
 │   └── requirements.md  # Qualité de la spec
-└── tasks.md             # Phase 2 (/speckit.tasks — non créé ici)
+└── tasks.md             # Phase 2 (/speckit.tasks, non créé ici)
 ```
 
 ### Source Code (repository root)
@@ -106,4 +106,4 @@ uafricas_frontend/
 |-----------|------------|-------------------------------------|
 | Nouveau schéma `social` (vs rattachement à `iam`) | Bounded-context dédié (amitié + messagerie) au cycle de vie propre ; cohérent avec `retrouve_amis`, `arbre_genealogique` | Mettre dans `iam` mélangerait identité/accès et relations sociales ; `retrouve_amis` est du matching, sémantiquement distinct |
 
-> Aucune déviation au Principe VII : les messages **sont** audités (métadonnées seules, sans contenu — Décision 9 de research.md).
+> Aucune déviation au Principe VII : les messages **sont** audités (métadonnées seules, sans contenu, Décision 9 de research.md).

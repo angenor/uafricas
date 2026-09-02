@@ -12,15 +12,15 @@ const deleteLoading = ref(false)
 const colonnes: TableColumn[] = [
   { key: 'nom_complet', label: 'Utilisateur', sortable: true, width: 'w-60' },
   { key: 'email', label: 'Email', sortable: true },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-28' },
+  { key: 'etat', label: 'État', sortable: true, width: 'w-28' },
   { key: 'roles', label: 'Roles', width: 'w-40' },
-  { key: 'email_verifie', label: 'Verifie', width: 'w-20', align: 'center' },
+  { key: 'email_verifie', label: 'Vérifié', width: 'w-20', align: 'center' },
   { key: 'created_at', label: 'Inscription', sortable: true, width: 'w-32', format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]
 
 const filterDefs: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom, prenom, email...' },
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous les etats', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous les états', options: [
     { label: 'Actif', value: 'actif' },
     { label: 'En attente', value: 'en_attente' },
     { label: 'Suspendu', value: 'suspendu' },

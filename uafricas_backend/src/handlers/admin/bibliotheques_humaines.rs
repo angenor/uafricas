@@ -38,7 +38,7 @@ const ADMIN_BIBLIO_COLONNES: &str = "
 ";
 
 // ────────────────────────────────────────────────────────────────
-// US1 — Liste des demandes
+// US1 : Liste des demandes
 // ────────────────────────────────────────────────────────────────
 
 /// GET /api/admin/bibliotheques-humaines
@@ -132,7 +132,7 @@ pub async fn lister_demandes(
 }
 
 // ────────────────────────────────────────────────────────────────
-// US2 — Détail, validation, rejet
+// US2 : Détail, validation, rejet
 // ────────────────────────────────────────────────────────────────
 
 /// GET /api/admin/bibliotheques-humaines/{id}

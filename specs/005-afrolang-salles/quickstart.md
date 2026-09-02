@@ -1,4 +1,4 @@
-# Quickstart — Validation manuelle de la feature 005-afrolang-salles
+# Quickstart : Validation manuelle de la feature 005-afrolang-salles
 
 Pas de framework de tests automatisés (constitution UAfricas). Ce document sert de **check-list de validation manuelle** alignée sur les User Stories et critères de succès du spec.
 
@@ -30,7 +30,7 @@ Comptes de test (cf. `CLAUDE.md`) :
 
 ---
 
-## Scénario 1 — User Story 1 (P1) : accéder à la salle publique de son groupe
+## Scénario 1 : User Story 1 (P1) : accéder à la salle publique de son groupe
 
 **Prérequis** : au moins une salle publique rattachée à un groupe ethnique existe (par exemple « Gurunsi »).
 
@@ -45,7 +45,7 @@ Comptes de test (cf. `CLAUDE.md`) :
 
 ---
 
-## Scénario 2 — User Story 2 (P1) : proposer une salle absente
+## Scénario 2 : User Story 2 (P1) : proposer une salle absente
 
 1. Connecté en `user2@test.com`, `/afrolang` → barre de recherche « Zulu » (absent).
 2. Cliquer sur « Proposer cette salle » → modal `ProposerSalleModal.vue`.
@@ -61,7 +61,7 @@ Comptes de test (cf. `CLAUDE.md`) :
 
 ---
 
-## Scénario 3 — User Story 3 (P1) : modération de session
+## Scénario 3 : User Story 3 (P1) : modération de session
 
 ### 3.1 Premier arrivé = modérateur de session
 
@@ -87,7 +87,7 @@ Comptes de test (cf. `CLAUDE.md`) :
 
 ---
 
-## Scénario 4 — User Story 4 (P2) : création d'une salle privée
+## Scénario 4 : User Story 4 (P2) : création d'une salle privée
 
 1. `user2` entre dans la salle publique « Gurunsi ».
 2. ✅ Bouton permanent « Créer une salle privée » visible ; info-bulle de découverte à la 1ère visite uniquement (FR-013, confirmation Q3).
@@ -103,7 +103,7 @@ Comptes de test (cf. `CLAUDE.md`) :
 
 ---
 
-## Scénario 5 — User Story 5 (P2) : visibilité et adhésions
+## Scénario 5 : User Story 5 (P2) : visibilité et adhésions
 
 ### 5.1 Salle privée fermée + invitation directe
 
@@ -128,7 +128,7 @@ Comptes de test (cf. `CLAUDE.md`) :
 
 ---
 
-## Scénario 6 — User Story 6 (P2) : tableau blanc, ressources, chat
+## Scénario 6 : User Story 6 (P2) : tableau blanc, ressources, chat
 
 ### 6.1 Tableau blanc temps réel
 
@@ -137,12 +137,12 @@ Comptes de test (cf. `CLAUDE.md`) :
 3. Utilisateur A (modérateur) clique « Effacer » → ✅ le canevas est remis à zéro chez tous (FR-027).
 4. Fermer la session → ✅ le dernier snapshot persiste dans `afrolang.tableau_blanc`.
 
-### 6.2 Ressources — fichier interne
+### 6.2 Ressources : fichier interne
 
 1. `user2` (modérateur Afrolang attitré sur « Gurunsi ») ajoute une ressource fichier (upload PDF).
 2. ✅ `etat='publiee'` immédiatement, visible par tous (FR-028).
 
-### 6.3 Ressources — lien externe modéré
+### 6.3 Ressources : lien externe modéré
 
 1. `user3` (simple membre) soumet un lien externe `https://dictionnaire.example/gurunsi` via `POST /ressources/lien`.
 2. ✅ `etat='en_attente_validation'`, invisible aux autres membres mais visible pour `user3` dans son suivi.
@@ -155,7 +155,7 @@ Comptes de test (cf. `CLAUDE.md`) :
 
 ---
 
-## Scénario 7 — Edge Case : archivage automatique du créateur supprimé
+## Scénario 7 : Edge Case : archivage automatique du créateur supprimé
 
 1. Admin désactive `user2` (via `/admin/utilisateurs/{id}/etat` → `desactive`).
 2. Hook / appel explicite `POST /admin/afrolang/salles-privees/archiver-batch-utilisateur { utilisateur_id=user2 }`.
@@ -175,7 +175,7 @@ Avant toute PR :
 - [ ] Les pages admin `/admin/afrolang/**` peuvent utiliser daisyUI v5 (Principe VI).
 - [ ] JWT requis sur tous les endpoints mutants (Principe IV).
 - [ ] Uploads de fichiers passent par `sanitize-filename` + whitelist d'extensions (Principe IV).
-- [ ] Pas d'abstraction prématurée (Principe V) — réutilisation des patterns existants (`ApiResponse<T>`, `COLONNES`, `FromRow`).
+- [ ] Pas d'abstraction prématurée (Principe V), réutilisation des patterns existants (`ApiResponse<T>`, `COLONNES`, `FromRow`).
 
 ---
 

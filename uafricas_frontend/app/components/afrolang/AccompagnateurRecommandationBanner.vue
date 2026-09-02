@@ -50,7 +50,7 @@ const couleursStatut: Record<string, string> = {
 
 const libelleStatut: Record<string, string> = {
   en_attente: 'En attente de votre réponse',
-  acceptee: 'Accepté — visible publiquement',
+  acceptee: 'Accepté : visible publiquement',
   refusee: 'Refusé',
   retiree: 'Consentement retiré',
 }

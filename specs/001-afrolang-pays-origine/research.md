@@ -1,8 +1,8 @@
-# Research — Pays d'origine des salles publiques Afrolang
+# Research : Pays d'origine des salles publiques Afrolang
 
-**Phase 0** — Résolution des inconnues techniques avant design.
+**Phase 0** : Résolution des inconnues techniques avant design.
 
-## R1 — Modèle de relation N-N : table de jointure ou tableau natif ?
+## R1 : Modèle de relation N-N : table de jointure ou tableau natif ?
 
 **Decision** : Table de jointure dédiée `afrolang.salle_pays_origine(salle_id, pays_id, created_at)` avec PK composite `(salle_id, pays_id)` + FK ON DELETE CASCADE des deux côtés.
 
@@ -15,9 +15,9 @@
 
 **Alternatives considered** :
 - Colonne `pays_origine_ids UUID[]` directement sur `afrolang.salle` : plus compact mais (a) pas d'intégrité référentielle vers `shared.pays`, (b) impossible d'utiliser les FK CASCADE pour FR-010, (c) requêtes de filtre nécessitent `pays_origine_ids @> ARRAY[$X]` moins lisible et moins indexable, (d) rompt l'homogénéité avec `annonce_pays`. **Rejeté**.
-- Table avec colonne `ordre` explicite : pas d'intérêt — l'ordre d'affichage est dérivé du nom (`ORDER BY p.nom`). YAGNI. **Rejeté**.
+- Table avec colonne `ordre` explicite : pas d'intérêt, l'ordre d'affichage est dérivé du nom (`ORDER BY p.nom`). YAGNI. **Rejeté**.
 
-## R2 — Comment renvoyer la liste de pays dans le payload public sans N+1 ?
+## R2 : Comment renvoyer la liste de pays dans le payload public sans N+1 ?
 
 **Decision** : `array_agg` corrélé dans le SELECT principal de `lister_salles`, désérialisé en `Vec<PaysOrigineLight>` via `sqlx::types::Json` ou directement `serde_json::Value` puis cast.
 
@@ -46,9 +46,9 @@ WHERE ...
 - `COALESCE … '[]'::json` ⇒ jamais `NULL`, toujours un tableau vide ⇒ FR-009 satisfait sans condition spéciale côté Rust.
 
 **Alternatives considered** :
-- 2ᵉ requête après `lister_salles` pour récupérer les pays par `WHERE salle_id = ANY($1)` puis grouper côté Rust : plus de code Rust, deux allers-retours réseau. **Rejeté** — la version `json_agg` est l'approche la plus propre pour PostgreSQL.
+- 2ᵉ requête après `lister_salles` pour récupérer les pays par `WHERE salle_id = ANY($1)` puis grouper côté Rust : plus de code Rust, deux allers-retours réseau. **Rejeté** : la version `json_agg` est l'approche la plus propre pour PostgreSQL.
 
-## R3 — Filtre public `?pays_id=` (mono-valué)
+## R3 : Filtre public `?pays_id=` (mono-valué)
 
 **Decision** : Ajouter dans `SalleFiltres` (Rust) un `Option<Uuid> pays_id`. Quand renseigné, ajouter à `conditions` :
 
@@ -68,7 +68,7 @@ EXISTS (
 **Alternatives considered** :
 - `JOIN` direct au lieu de `EXISTS` : risque de doublons si plusieurs pays matchent (impossible ici en mono mais fragile). **Rejeté**.
 
-## R4 — Endpoints admin : où placer les routes ?
+## R4 : Endpoints admin : où placer les routes ?
 
 **Decision** : Sous `/api/admin/afrolang/salles/{id}/pays` (POST) et `/api/admin/afrolang/salles/{id}/pays/{pays_id}` (DELETE). Handlers dans `src/handlers/admin/salles.rs` (fichier existant pour les salles publiques admin).
 
@@ -80,7 +80,7 @@ EXISTS (
 **Alternatives considered** :
 - Endpoint PUT « bulk » (`PUT /pays` avec un tableau d'UUID qui remplace) : plus simple côté UI mais moins clair côté audit (granularité « N ajouts + M retraits » plutôt qu'un diff). **Rejeté** par alignement strict avec `annonce_pays` (Principe V).
 
-## R5 — UI carte : règle d'affichage 1-3 vs 4+
+## R5 : UI carte : règle d'affichage 1-3 vs 4+
 
 **Decision** : Composable de calcul dans `SalleCard.vue` :
 
@@ -103,7 +103,7 @@ Rendu :
 - Bibliothèque `country-flag-icons` ou `flag-icon-css` : ajoute 100+ Ko de SVG/CSS pour un usage marginal. **Rejeté** (Principe V, pas de nouvelle dépendance).
 - Tooltip via daisyUI `tooltip` class : interdit côté public (Principe VI). Utilisation de l'attribut HTML natif `title=` + classe Tailwind si besoin d'un style custom plus tard.
 
-## R6 — Migration des salles existantes (Q1 : aucune)
+## R6 : Migration des salles existantes (Q1 : aucune)
 
 **Decision** : Aucun script de seed, aucun `INSERT` dans la migration. La table `afrolang.salle_pays_origine` est créée vide. Documentation en tête du DDL : « Enrichissement éditorial 100 % manuel (cf. spec.md Q1). »
 
@@ -111,9 +111,9 @@ Rendu :
 - Q1 explicite. Pré-remplir depuis `groupe_ethnique → fiche_pays → pays` ferait une supposition que l'utilisateur a explicitement rejetée.
 - Réduit le risque de migration : pas de transaction longue, pas d'effet de bord sur un schéma `country_profile` étranger.
 
-**Alternatives considered** : Aucune — décision prise au moment du `/speckit.clarify`.
+**Alternatives considered** : Aucune : décision prise au moment du `/speckit.clarify`.
 
-## R7 — Audit : granularité
+## R7 : Audit : granularité
 
 **Decision** : 1 entrée d'audit par appel API (1 ajout = 1 ligne, 1 retrait = 1 ligne). Action = `CREATE` ou `DELETE`, table = `salle_pays_origine`, entity_id = `salle_id`. Pas de payload before/after (le couple `(salle_id, pays_id)` est dans l'URL et trivialement reconstructible depuis l'audit log via les autres champs).
 

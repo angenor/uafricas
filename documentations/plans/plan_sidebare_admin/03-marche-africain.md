@@ -1,6 +1,6 @@
-# 03 — Marché Africain (Marketplace)
+# 03 : Marché Africain (Marketplace)
 
-> **Phase** : 2 — Modules métier
+> **Phase** : 2 : Modules métier
 > **Section sidebar** : Marché Africain
 > **Icône** : faStore
 > **Statut global** : [x] Terminé
@@ -17,16 +17,16 @@
 - **Enums** : `type_operation`, `etat_annonce`, `type_contact`, `condition_article`
 
 ### Plans précédents (prérequis)
-- **`00-fondation-admin.md`** — Composants CRUD, middleware, useAdmin
-- **`01-utilisateurs-acces.md`** — Utilisateurs (created_by, modération)
-- **`02-referentiels.md`** — Pays (annonce_pays), Catégories (annonce.categorie_id), Médiathèque (upload médias)
+- **`00-fondation-admin.md`** : Composants CRUD, middleware, useAdmin
+- **`01-utilisateurs-acces.md`** : Utilisateurs (created_by, modération)
+- **`02-referentiels.md`** : Pays (annonce_pays), Catégories (annonce.categorie_id), Médiathèque (upload médias)
 
 ### Plans qui dépendent de celui-ci
-- **`12-dashboard.md`** — Stats annonces (publiées, en attente, favoris)
+- **`12-dashboard.md`** : Stats annonces (publiées, en attente, favoris)
 
 ### Backend existant
-- [x] `src/handlers/annonces.rs` — listing public (GET liste + détail) — **À étendre pour admin**
-- [x] Endpoints admin CRUD + modération — **CRÉÉ**
+- [x] `src/handlers/annonces.rs` : listing public (GET liste + détail), **À étendre pour admin**
+- [x] Endpoints admin CRUD + modération, **CRÉÉ**
 
 ---
 
@@ -35,29 +35,29 @@
 ### 1. Annonces (`/admin/annonces`)
 
 #### Backend
-- [x] `GET /api/admin/annonces` — liste paginée + filtres (état, type_operation, catégorie, pays, créateur, recherche full-text)
-- [x] `GET /api/admin/annonces/:id` — détail complet (avec pays ciblés + médias)
-- [x] `POST /api/admin/annonces` — création
-- [x] `PUT /api/admin/annonces/:id` — modification
-- [x] `PATCH /api/admin/annonces/:id/etat` — modération : changer état (publiée/suspendue/supprimée)
-- [x] `DELETE /api/admin/annonces/:id` — soft delete
-- [x] `POST /api/admin/annonces/:id/pays` — ajouter pays ciblé
-- [x] `DELETE /api/admin/annonces/:id/pays/:pays_id` — retirer pays ciblé
-- [x] `POST /api/admin/annonces/:id/medias` — upload média (image/vidéo)
-- [x] `DELETE /api/admin/annonces/:id/medias/:media_id` — retirer média
-- [x] `PUT /api/admin/annonces/:id/medias/ordre` — réordonner médias
+- [x] `GET /api/admin/annonces` : liste paginée + filtres (état, type_operation, catégorie, pays, créateur, recherche full-text)
+- [x] `GET /api/admin/annonces/:id` : détail complet (avec pays ciblés + médias)
+- [x] `POST /api/admin/annonces` : création
+- [x] `PUT /api/admin/annonces/:id` : modification
+- [x] `PATCH /api/admin/annonces/:id/etat`, modération : changer état (publiée/suspendue/supprimée)
+- [x] `DELETE /api/admin/annonces/:id`, soft delete
+- [x] `POST /api/admin/annonces/:id/pays`, ajouter pays ciblé
+- [x] `DELETE /api/admin/annonces/:id/pays/:pays_id`, retirer pays ciblé
+- [x] `POST /api/admin/annonces/:id/medias`, upload média (image/vidéo)
+- [x] `DELETE /api/admin/annonces/:id/medias/:media_id`, retirer média
+- [x] `PUT /api/admin/annonces/:id/medias/ordre`, réordonner médias
 - **Fichiers** : `src/handlers/admin/annonces.rs`, `src/models/admin/annonce.rs`
 
 #### Frontend
-- [x] `app/pages/admin/annonces/index.vue` — liste avec DataTable + filtres (état, type, catégorie, pays)
-- [x] `app/pages/admin/annonces/create.vue` — formulaire multi-étapes :
+- [x] `app/pages/admin/annonces/index.vue`, liste avec DataTable + filtres (état, type, catégorie, pays)
+- [x] `app/pages/admin/annonces/create.vue`, formulaire multi-étapes :
   - Étape 1 : Infos de base (titre, description, type, condition, prix)
   - Étape 2 : Catégorie + état
   - Étape 3 : Contact + localisation
-- [x] `app/pages/admin/annonces/[id].vue` — édition avec onglets :
-  - [x] Onglet Infos — données principales + modération état
-  - [x] Onglet Pays ciblés — ajout/retrait de pays
-  - [x] Onglet Médias — galerie avec réordonnement (up/down)
+- [x] `app/pages/admin/annonces/[id].vue`, édition avec onglets :
+  - [x] Onglet Infos : données principales + modération état
+  - [x] Onglet Pays ciblés : ajout/retrait de pays
+  - [x] Onglet Médias : galerie avec réordonnement (up/down)
 - [x] `app/composables/useAdminAnnonces.ts`
 
 ---
@@ -65,12 +65,12 @@
 ### 2. Favoris (`/admin/annonces-favoris`)
 
 #### Backend
-- [x] `GET /api/admin/annonces-favoris` — liste paginée (annonce + utilisateur + date)
-- [x] `GET /api/admin/annonces-favoris/stats` — top annonces les plus mises en favoris
+- [x] `GET /api/admin/annonces-favoris`, liste paginée (annonce + utilisateur + date)
+- [x] `GET /api/admin/annonces-favoris/stats`, top annonces les plus mises en favoris
 - **Fichiers** : `src/handlers/admin/annonces_favoris.rs`, `src/models/admin/annonce_favori.rs`
 
 #### Frontend
-- [x] `app/pages/admin/annonces-favoris/index.vue` — vue lecture seule, stats de popularité, top annonces
+- [x] `app/pages/admin/annonces-favoris/index.vue`, vue lecture seule, stats de popularité, top annonces
 - [x] `app/composables/useAdminAnnoncesFavoris.ts`
 
 ---
@@ -91,16 +91,16 @@
 > Commande : `agent-browser --headed`
 
 ### Annonces
-- [ ] **T3.1** — Liste annonces : vérifier DataTable + badges d'état colorés (publiée=vert, en_attente=orange, suspendue=rouge)
-- [ ] **T3.2** — Filtres combinés : tester filtre état + type_operation + catégorie + pays simultanément, puis reset
-- [ ] **T3.3** — Formulaire multi-étapes : naviguer étape 1 → 2 → 3, vérifier la persistance des données entre étapes
-- [ ] **T3.4** — Modération état : sur la page d'édition, changer l'état d'une annonce (publier/suspendre) → vérifier modal de confirmation + mise à jour du badge
-- [ ] **T3.5** — Onglet Pays ciblés : ajouter/retirer des pays via multi-sélection, vérifier la liste
-- [ ] **T3.6** — Onglet Médias : upload image + vidéo, vérifier preview, tester le drag & drop pour réordonnement
-- [ ] **T3.7** — Suppression annonce : vérifier modal de confirmation + disparition de la liste
+- [ ] **T3.1** : Liste annonces : vérifier DataTable + badges d'état colorés (publiée=vert, en_attente=orange, suspendue=rouge)
+- [ ] **T3.2** : Filtres combinés : tester filtre état + type_operation + catégorie + pays simultanément, puis reset
+- [ ] **T3.3** : Formulaire multi-étapes : naviguer étape 1 → 2 → 3, vérifier la persistance des données entre étapes
+- [ ] **T3.4** : Modération état : sur la page d'édition, changer l'état d'une annonce (publier/suspendre) → vérifier modal de confirmation + mise à jour du badge
+- [ ] **T3.5** : Onglet Pays ciblés : ajouter/retirer des pays via multi-sélection, vérifier la liste
+- [ ] **T3.6** : Onglet Médias : upload image + vidéo, vérifier preview, tester le drag & drop pour réordonnement
+- [ ] **T3.7** : Suppression annonce : vérifier modal de confirmation + disparition de la liste
 
 ### Favoris
-- [ ] **T3.8** — Vue favoris : vérifier l'affichage lecture seule, stats de popularité (top annonces)
+- [ ] **T3.8** : Vue favoris : vérifier l'affichage lecture seule, stats de popularité (top annonces)
 
 ---
 

@@ -16,8 +16,8 @@ const etatLoading = ref(false)
 
 const colonnes: TableColumn[] = [
   { key: 'titre', label: 'Titre', sortable: true },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-28', align: 'center' },
-  { key: 'duree', label: 'Duree', width: 'w-28' },
+  { key: 'etat', label: 'État', sortable: true, width: 'w-28', align: 'center' },
+  { key: 'duree', label: 'Durée', width: 'w-28' },
   { key: 'pays_nom', label: 'Territoire', width: 'w-32' },
   { key: 'domaine_nom', label: 'Domaine', width: 'w-32' },
   { key: 'nombre_places', label: 'Places', width: 'w-20', align: 'center' },
@@ -29,7 +29,7 @@ const colonnes: TableColumn[] = [
 
 const filterDefs: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Titre, description...' },
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'Brouillon', value: 'brouillon' },
     { label: 'En attente', value: 'en_attente_validation' },
     { label: 'Publie', value: 'publie' },
@@ -38,7 +38,7 @@ const filterDefs: FilterDefinition[] = [
     { label: 'Suspendu', value: 'suspendu' },
     { label: 'Annule', value: 'annule' },
   ]},
-  { key: 'duree', label: 'Duree', type: 'select', placeholder: 'Toutes', options: [
+  { key: 'duree', label: 'Durée', type: 'select', placeholder: 'Toutes', options: [
     { label: '1 semaine', value: '1_semaine' },
     { label: '2 semaines', value: '2_semaines' },
     { label: '1 mois', value: '1_mois' },
@@ -175,7 +175,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
       </template>
       <template #actions="{ item }">
         <div class="flex gap-1">
-          <button class="btn btn-ghost btn-xs" title="Changer etat" @click="ouvrirChangerEtat(item)">
+          <button class="btn btn-ghost btn-xs" title="Changer état" @click="ouvrirChangerEtat(item)">
             <font-awesome-icon icon="arrows-rotate" />
           </button>
           <NuxtLink :to="`/admin/programmes/${item.id}`" class="btn btn-ghost btn-xs">
@@ -198,10 +198,10 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
     <!-- Modal changement etat -->
     <div v-if="showEtat" class="modal modal-open">
       <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Changer l'etat</h3>
+        <h3 class="font-bold text-lg mb-4">Changer l'état</h3>
         <p class="mb-2 text-sm text-base-content/70">Programme : {{ etatTarget?.titre }}</p>
         <div class="form-control">
-          <label class="label"><span class="label-text">Nouvel etat</span></label>
+          <label class="label"><span class="label-text">Nouvel état</span></label>
           <select v-model="nouvelEtat" class="select select-bordered">
             <option value="brouillon">Brouillon</option>
             <option value="en_attente_validation">En attente de validation</option>

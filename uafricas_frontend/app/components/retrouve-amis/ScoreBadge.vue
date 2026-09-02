@@ -18,9 +18,9 @@ const props = withDefaults(defineProps<{
 })
 
 const couleurClasses = computed(() => {
-  if (props.score >= 80) return 'bg-custom-green/10 text-custom-green'
-  if (props.score >= 60) return 'bg-amber-100 text-amber-700'
-  return 'bg-gray-100 text-gray-500'
+  if (props.score >= 80) return 'bg-af-vert/10 text-af-vert'
+  if (props.score >= 60) return 'bg-af-chocolat/10 text-af-chocolat'
+  return 'bg-af-fond text-af-atone'
 })
 
 const tailleClasses = computed(() => {

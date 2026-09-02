@@ -45,7 +45,7 @@
             <font-awesome-icon :icon="['fas', 'shield-halved']" class="w-4 h-4" />
             <span class="hidden sm:inline">Modération</span>
           </button>
-          <!-- Fermeture pour abus (admin plateforme OU admin de salle) — FR-019 -->
+          <!-- Fermeture pour abus (admin plateforme OU admin de salle), FR-019 -->
           <button
             v-if="peutFermerPourAbus"
             class="px-3 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2 text-sm font-medium bg-red-700/70 text-red-50"
@@ -56,7 +56,7 @@
             <font-awesome-icon :icon="['fas', 'ban']" class="w-4 h-4" />
             <span class="hidden sm:inline">Fermer la salle</span>
           </button>
-          <!-- Signalement communautaire de la salle — visible aux membres ordinaires
+          <!-- Signalement communautaire de la salle, visible aux membres ordinaires
                (ceux qui n'ont pas le pouvoir admin de « Fermer la salle »). -->
           <button
             v-if="!peutFermerPourAbus"
@@ -166,7 +166,7 @@
           @fermer="moderationPanelOuvert = false"
         />
 
-        <!-- Espace commentaires temps réel — monté EN PERMANENCE (`v-show`) : replié,
+        <!-- Espace commentaires temps réel : monté EN PERMANENCE (`v-show`) : replié,
              il continue d'écouter les DataPackets pour tenir le compteur de non-lus. -->
         <aside
           v-show="chatOuvert"
@@ -295,7 +295,7 @@
          « placeholder » + bannière de promotion au modérateur désigné entrant. -->
     <AfrolangPassationModerationPrompt :session-id="session.id" />
 
-    <!-- Audio des participants distants — conteneur STABLE (toujours monté) :
+    <!-- Audio des participants distants : conteneur STABLE (toujours monté) :
          découplé de la grille vidéo pour que le son ne se coupe pas lors des
          changements de layout (partage d'écran, spotlight…). -->
     <div class="hidden" aria-hidden="true">
@@ -340,7 +340,7 @@ const props = defineProps<{
   livekitUrl: string
   session: SessionDetailAPI
   estModerateur: boolean
-  /** ID de la salle publique parente — requis pour le panneau « Ressources contribuées »
+  /** ID de la salle publique parente : requis pour le panneau « Ressources contribuées »
    *  (feature 001-ressources-fermeture-session, US1). Pour une session privée, le
    *  parent doit résoudre `salle_privee.salle_id` et le passer ici. */
   salleId?: string | null
@@ -363,11 +363,11 @@ const peutFermerPourAbus = computed(() => {
 
 const onSessionFermee = () => {
   fermetureModaleOuverte.value = false
-  // Sortie propre — la salle est désactivée, on quitte la session.
+  // Sortie propre : la salle est désactivée, on quitte la session.
   emit('quitter')
 }
 
-/** Signalement communautaire de la salle — accessible aux membres ordinaires. */
+/** Signalement communautaire de la salle, accessible aux membres ordinaires. */
 const signalementModaleOuverte = ref(false)
 const aSignaleSession = ref(false)
 const signalementModalRef = ref<{
@@ -416,7 +416,7 @@ let detacherListenerModeration: (() => void) | null = null
  *  une fois. Avant cela, on retombe sur la prop optimiste fournie à la jointure. */
 const niveauCharge = ref(false)
 
-/** Statut modérateur EFFECTIF (set multi-modérateurs), dérivé du niveau serveur —
+/** Statut modérateur EFFECTIF (set multi-modérateurs), dérivé du niveau serveur, 
  *  remplace la prop figée `estModerateur`. Tant que le 1ᵉʳ fetch n'a pas eu lieu,
  *  on utilise la valeur optimiste de la prop (évite un flash non-modérateur). */
 const estModerateurEffectif = computed(() =>
@@ -612,7 +612,7 @@ const extractParticipantInfo = (participant: Participant, isLocal: boolean): Roo
 }
 
 /** Un participant est modérateur s'il figure dans le set de modérateurs actifs
- *  (multi-modérateurs) renvoyé par le serveur — plus de mono `session.moderateur`. */
+ *  (multi-modérateurs) renvoyé par le serveur, plus de mono `session.moderateur`. */
 const estModerateurParId = (identity: string): boolean =>
   moderateursOffice.value.some(m => m.utilisateur_id === identity)
 

@@ -1,15 +1,40 @@
 <script setup lang="ts">
 import type { VideoAfrica } from '~/composables/useVidafrica'
+import { useUserStore } from '~/stores/user'
 
-const { listerVideos, chargerLanguesDisponibles } = useVidafrica()
+/**
+ * Vidafrica : fil des vidéos sous-titrées, porté sur le gabarit de la refonte.
+ *
+ * Les données ne changent pas : même endpoint, mêmes filtres, même pagination.
+ * La présentation, si : la grille de trois vignettes devient le FIL de cartes
+ * pleine largeur de la maquette, et le filtre par langue quitte la bande de
+ * pastilles pour le rail.
+ */
+definePageMeta({ layout: false })
+
+useHead({
+  title: 'Vidafrica : vidéos sous-titrées en langues africaines | AfricanS',
+  meta: [
+    {
+      name: 'description',
+      content: "Vidafrica met à l'honneur la musique, les clips et les films africains, et surtout les langues dans lesquelles ils sont créés.",
+    }],
+})
+
+const { listerVideos, chargerLanguesDisponibles, reagirVideo } = useVidafrica()
+const { redirigerVersConnexion } = useAuth()
 const userStore = useUserStore()
 const estConnecte = computed(() => userStore.isAuthenticated)
 
 const showProposer = ref(false)
-// Modale de présentation « C'est quoi Vidafrica ? »
-const presentationOuverte = ref(false)
+const decouverteOuverte = ref(false)
+
+// Partage : la modale porte la légende et publie sur le mur.
+const videoAPartager = ref<VideoAfrica | null>(null)
+const partageOuvert = ref(false)
+
 const videos = ref<VideoAfrica[]>([])
-const languesFiltre = ref<{ code: string; label: string; nombreVideos: number }[]>([])
+const languesFiltre = ref<{ code: string, label: string, nombreVideos: number }[]>([])
 const chargement = ref(true)
 
 const recherche = ref('')
@@ -34,23 +59,81 @@ const charger = async () => {
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
-const rechercher = () => {
+
+watch(recherche, () => {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
     page.value = 1
     charger()
   }, 300)
-}
+})
 
-const changerLangue = (code: string) => {
-  langueSelectionnee.value = langueSelectionnee.value === code ? '' : code
+watch(langueSelectionnee, () => {
   page.value = 1
   charger()
-}
+})
 
 const allerPage = (p: number) => {
+  if (p < 1 || p > totalPages.value) return
   page.value = p
   charger()
+  window.scrollTo({ top: 300, behavior: 'smooth' })
+}
+
+const reinitialiser = () => {
+  recherche.value = ''
+  langueSelectionnee.value = ''
+}
+
+const aucunFiltreActif = computed(() => !recherche.value && !langueSelectionnee.value)
+
+/**
+ * La réaction est appliquée sur la vidéo DU FIL, pas rechargée depuis le
+ * serveur : `reagirVideo` renvoie déjà les compteurs à jour, et recharger la
+ * page entière ferait sauter la position de lecture de l'utilisateur.
+ */
+const reagir = async (video: VideoAfrica, type: 'like' | 'dislike') => {
+  if (!estConnecte.value) {
+    redirigerVersConnexion()
+    return
+  }
+  const res = await reagirVideo(video.id, type)
+  if (!res) return
+  const i = videos.value.findIndex(v => v.id === video.id)
+  if (i !== -1) {
+    videos.value[i] = {
+      ...videos.value[i]!,
+      nombreLikes: res.nombreLikes,
+      nombreDislikes: res.nombreDislikes,
+      maReaction: res.maReaction,
+    }
+  }
+}
+
+const ouvrirPartage = (video: VideoAfrica) => {
+  if (!estConnecte.value) {
+    redirigerVersConnexion()
+    return
+  }
+  videoAPartager.value = video
+  partageOuvert.value = true
+}
+
+const surPartage = () => {
+  const cible = videoAPartager.value
+  if (!cible) return
+  const i = videos.value.findIndex(v => v.id === cible.id)
+  if (i !== -1) {
+    videos.value[i] = { ...videos.value[i]!, nombrePartages: videos.value[i]!.nombrePartages + 1 }
+  }
+}
+
+const proposer = () => {
+  if (!estConnecte.value) {
+    redirigerVersConnexion()
+    return
+  }
+  showProposer.value = true
 }
 
 onMounted(async () => {
@@ -60,117 +143,139 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero (compact, titre ↔ description au survol) -->
-    <section class="group relative bg-gradient-to-r from-custom-chocolat to-custom-chocolat/80 text-white">
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12 select-none">
-          <h1 class="absolute inset-0 flex items-center justify-center text-2xl md:text-4xl font-bold font-['Oswald'] transition-opacity duration-300 group-hover:opacity-0">
-            Vidafrica
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Vidéos sous-titrées en langues africaines et internationales, surlignage karaoké mot par mot.
-          </p>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Vidafrica"
+        sous-titre="Vidafrica met à l'honneur la musique, les clips et les films africains, et surtout les langues dans lesquelles ils sont créés."
+        image="/images/africans/heros/hero-vidafrica.jpg"
+        aide="C'est quoi Vidafrica ?"
+        @aide="decouverteOuverte = true"
+      />
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="[{ libelle: 'Africamood', vers: '/vidafrica' }, { libelle: 'Vidafrica' }]">
+        <template #action>
+          <!-- La maquette dit « Partager du contenu ». Ce que le bouton ouvre
+               est une PROPOSITION, soumise à modération avant publication. -->
+          <AfricansBouton icone="fa-solid fa-plus" @click="proposer">
+            Proposer une vidéo
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
+
+    <div class="flex flex-col gap-6">
+      <h2 v-if="!chargement" class="text-[20px]/[1.4] font-bold text-af-chocolat">
+        {{ total }} vidéo{{ total > 1 ? 's' : '' }}
+      </h2>
+
+      <!-- Chargement : squelettes à l'anatomie d'une carte du fil. -->
+      <div v-if="chargement" class="flex flex-col gap-6">
+        <div v-for="n in 2" :key="n" class="overflow-hidden rounded-[10px] border border-af-bordure bg-white">
+          <div class="flex items-center gap-3 p-4">
+            <div class="size-11 animate-pulse rounded-full bg-af-bordure" />
+            <div class="h-3 w-1/3 animate-pulse rounded bg-af-bordure" />
+          </div>
+          <div class="aspect-video w-full animate-pulse bg-af-bordure" />
+          <div class="h-10" />
+        </div>
+      </div>
+
+      <template v-else-if="videos.length">
+        <div class="flex flex-col gap-6">
+          <VidafricaCarteVideoFil
+            v-for="v in videos"
+            :key="v.id"
+            :video="v"
+            @jaime="reagir(v, 'like')"
+            @jaime-pas="reagir(v, 'dislike')"
+            @partager="ouvrirPartage(v)"
+          />
         </div>
 
-        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <!-- Bouton d'aide : ouvre la présentation de Vidafrica -->
+        <nav v-if="totalPages > 1" class="flex items-center justify-center gap-2" aria-label="Pagination des vidéos">
           <button
             type="button"
-            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
-            aria-label="En savoir plus sur Vidafrica"
-            @click="presentationOuverte = true"
+            class="grid size-10 place-items-center rounded-lg border border-af-bordure bg-white text-af-corps transition hover:bg-af-chocolat/[0.07] disabled:opacity-40"
+            :disabled="page === 1"
+            aria-label="Page précédente"
+            @click="allerPage(page - 1)"
           >
-            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
-            C'est quoi Vidafrica&nbsp;?
+            <font-awesome-icon icon="fa-solid fa-chevron-left" />
           </button>
-        </div>
 
-        <!-- Barre de recherche -->
-        <div class="mt-5 max-w-xl mx-auto">
-          <div class="relative">
-            <font-awesome-icon icon="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-            <input
-              v-model="recherche"
-              type="text"
-              class="w-full pl-10 pr-4 py-2 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50"
-              placeholder="Rechercher une vidéo..."
-              @keydown.enter="rechercher"
-              @input="rechercher"
-            />
-          </div>
-
-          <!-- Proposer une vidéo (utilisateur connecté) -->
           <button
-            v-if="estConnecte"
-            class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-custom-chocolat text-sm font-medium hover:bg-white/90 transition-colors"
-            @click="showProposer = true"
-          >
-            <font-awesome-icon icon="plus" /> Proposer une vidéo
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Modale : proposer une vidéo -->
-    <VidafricaProposerVideoModal v-model="showProposer" />
-
-    <!-- Modale de présentation « C'est quoi Vidafrica ? » -->
-    <VidafricaPresentationModal
-      :open="presentationOuverte"
-      @close="presentationOuverte = false"
-    />
-
-    <!-- Filtres langues -->
-    <section v-if="languesFiltre.length > 0" class="max-w-5xl mx-auto px-4 py-6">
-      <div class="flex flex-wrap gap-2 items-center">
-        <span class="text-sm text-gray-500 mr-2">Filtrer par langue :</span>
-        <button
-          v-for="l in languesFiltre" :key="l.code"
-          class="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
-          :class="l.code === langueSelectionnee
-            ? 'bg-custom-chocolat text-white'
-            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
-          @click="changerLangue(l.code)"
-        >
-          {{ l.label }}
-          <span class="ml-1 text-xs opacity-60">({{ l.nombreVideos }})</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- Grille de vidéos -->
-    <section class="max-w-5xl mx-auto px-4 pb-12">
-      <div v-if="chargement" class="flex justify-center py-16">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-custom-chocolat" />
-      </div>
-
-      <div v-else-if="videos.length === 0" class="text-center py-16">
-        <font-awesome-icon icon="video-slash" class="text-5xl text-gray-300 mb-4" />
-        <p class="text-xl text-gray-500">Aucune vidéo trouvée</p>
-        <p class="text-sm text-gray-400 mt-1">Essayez de modifier vos critères de recherche</p>
-      </div>
-
-      <div v-else>
-        <p class="text-sm text-gray-500 mb-4">{{ total }} vidéo{{ total > 1 ? 's' : '' }}</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <VidafricaCarteVideo v-for="v in videos" :key="v.id" :video="v" />
-        </div>
-
-        <!-- Pagination -->
-        <div v-if="totalPages > 1" class="flex justify-center gap-2 mt-8">
-          <button
-            v-for="p in totalPages" :key="p"
-            class="w-10 h-10 rounded-lg text-sm font-medium transition-all"
+            v-for="p in totalPages"
+            :key="p"
+            type="button"
+            class="h-10 min-w-10 rounded-lg px-3 text-[14px]/[1.4] font-bold transition"
             :class="p === page
-              ? 'bg-custom-chocolat text-white'
-              : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
+              ? 'bg-af-degrade text-white'
+              : 'border border-af-bordure bg-white text-af-corps hover:bg-af-chocolat/[0.07]'"
+            :aria-current="p === page ? 'page' : undefined"
             @click="allerPage(p)"
           >
             {{ p }}
           </button>
-        </div>
+
+          <button
+            type="button"
+            class="grid size-10 place-items-center rounded-lg border border-af-bordure bg-white text-af-corps transition hover:bg-af-chocolat/[0.07] disabled:opacity-40"
+            :disabled="page === totalPages"
+            aria-label="Page suivante"
+            @click="allerPage(page + 1)"
+          >
+            <font-awesome-icon icon="fa-solid fa-chevron-right" />
+          </button>
+        </nav>
+      </template>
+
+      <!-- Deux vides distincts : « rien ne correspond » n'est pas « rien
+           n'existe », et la sortie proposée n'est pas la même. -->
+      <div v-else class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+        <font-awesome-icon icon="fa-solid fa-video-slash" class="text-4xl text-af-atone-2" />
+        <p class="mt-4 text-[16px]/[1.4] font-bold">
+          {{ aucunFiltreActif ? 'Aucune vidéo pour le moment' : 'Aucune vidéo ne correspond à votre recherche' }}
+        </p>
+        <AfricansBouton
+          class="mt-5"
+          :variante="aucunFiltreActif ? 'primaire' : 'secondaire'"
+          :icone="aucunFiltreActif ? 'fa-solid fa-plus' : 'fa-solid fa-rotate-right'"
+          @click="aucunFiltreActif ? proposer() : reinitialiser()"
+        >
+          {{ aucunFiltreActif ? 'Proposer une vidéo' : 'Réinitialiser' }}
+        </AfricansBouton>
       </div>
-    </section>
-  </div>
+    </div>
+
+    <template #rail>
+      <AfricansRecherche v-model="recherche" placeholder="Titre, artiste, film…" />
+
+      <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="reinitialiser">
+        <AfricansChamp v-model="langueSelectionnee" libelle="Langues" type="select">
+          <option value="">Toutes les langues</option>
+          <!-- Le décompte vient du serveur et porte sur tout le fonds, pas sur
+               la page courante : il reste juste quand on tourne les pages. -->
+          <option v-for="l in languesFiltre" :key="l.code" :value="l.code">
+            {{ l.label }} ({{ l.nombreVideos }})
+          </option>
+        </AfricansChamp>
+      </AfricansPanneau>
+    </template>
+
+    <!-- ══════════════ Surcouches ══════════════ -->
+
+    <VidafricaProposerVideoModal v-model="showProposer" />
+
+    <VidafricaPartagerModal
+      v-if="videoAPartager"
+      v-model="partageOuvert"
+      :video="videoAPartager"
+      @partage="surPartage"
+    />
+
+    <VidafricaDecouverteModale v-model="decouverteOuverte" />
+  </NuxtLayout>
 </template>

@@ -71,7 +71,7 @@ fn generer_slug(titre: &str) -> String {
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/gouvernance/stats — Statistiques de gouvernance
+// GET /api/gouvernance/stats : Statistiques de gouvernance
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_stats(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
     let (factcheck,): (i64,) = sqlx::query_as(
@@ -119,7 +119,7 @@ pub async fn obtenir_stats(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiE
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/gouvernance/contributions — Liste paginee des contributions
+// GET /api/gouvernance/contributions : Liste paginee des contributions
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_contributions(
     req: HttpRequest,
@@ -356,7 +356,7 @@ async fn contribution_publiee_existe(
     Ok(existe)
 }
 
-// POST /api/gouvernance/partages — Partager une contribution
+// POST /api/gouvernance/partages : Partager une contribution
 pub async fn partager_contribution(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -406,7 +406,7 @@ pub async fn partager_contribution(
     // Engagement : 1 point à l'auteur de la contribution par partage reçu.
     // `type_contribution` est transmis tel quel : seul `factcheck` a aujourd'hui
     // une résolution d'auteur ; `badhabits` et `ideaforces` ne créditent personne
-    // et n'échouent pas — brancher leur famille plus tard ne demandera rien ici.
+    // et n'échouent pas : brancher leur famille plus tard ne demandera rien ici.
     if let Some(auteur_id) = crate::services::engagement::resoudre_beneficiaire(
         pool.get_ref(),
         type_contribution,
@@ -456,7 +456,7 @@ pub async fn partager_contribution(
     }))
 }
 
-// GET /api/gouvernance/partages — Lister les partages (mur public, paginé)
+// GET /api/gouvernance/partages : Lister les partages (mur public, paginé)
 pub async fn lister_partages_contributions(
     pool: web::Data<PgPool>,
     params: web::Query<PartageQueryParams>,
@@ -516,7 +516,7 @@ pub async fn lister_partages_contributions(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/gouvernance/factcheck/{id}/reaction — Toggle d'une reaction
+// POST /api/gouvernance/factcheck/{id}/reaction, Toggle d'une reaction
 // ──────────────────────────────────────────────────────────────
 
 /// Colonne compteur de la table factcheck pour un type de reaction globale
@@ -737,7 +737,7 @@ pub async fn reagir_factcheck(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/pays — Liste publique des pays (pour selecteurs)
+// GET /api/pays : Liste publique des pays (pour selecteurs)
 // ──────────────────────────────────────────────────────────────
 
 #[derive(Debug, serde::Serialize, sqlx::FromRow)]
@@ -767,7 +767,7 @@ pub async fn lister_pays_public(pool: web::Data<PgPool>) -> Result<HttpResponse,
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/gouvernance/factcheck/{id}/signalement — Signaler un factcheck
+// POST /api/gouvernance/factcheck/{id}/signalement, Signaler un factcheck
 // ──────────────────────────────────────────────────────────────
 pub async fn signaler_factcheck(
     req: HttpRequest,
@@ -866,7 +866,7 @@ pub async fn signaler_factcheck(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/gouvernance/factcheck — Publier un factcheck (authentifie)
+// POST /api/gouvernance/factcheck : Publier un factcheck (authentifie)
 // ──────────────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
@@ -883,7 +883,7 @@ pub struct CreerFactcheckPublicRequest {
     pub realite_description: Option<String>,
     /// Type de publication : 'on_dit' | 'adage_legende' | 'fait_vecu'
     pub type_publication: Option<String>,
-    /// URL relative de la preuve (photo/PDF) — fait vécu uniquement
+    /// URL relative de la preuve (photo/PDF), fait vécu uniquement
     pub preuve_url: Option<String>,
     /// Type de preuve : 'image' | 'pdf'
     pub preuve_type: Option<String>,
@@ -1019,7 +1019,7 @@ pub async fn creer_factcheck_public(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/gouvernance/factcheck/upload-preuve — Upload d'une preuve
+// POST /api/gouvernance/factcheck/upload-preuve, Upload d'une preuve
 // (photo ou PDF) pour un factcheck de type « fait vécu ». Retourne
 // l'URL relative et le type ('image'|'pdf') à placer dans la requête
 // de création du factcheck.
@@ -1114,7 +1114,7 @@ pub async fn uploader_preuve_factcheck(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/gouvernance/bad-habits — Publier une mauvaise pratique
+// POST /api/gouvernance/bad-habits : Publier une mauvaise pratique
 // ──────────────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
@@ -1135,9 +1135,9 @@ pub struct CreerBadHabitPublicRequest {
     pub region: Option<String>,
     pub ville_quartier_zone: Option<String>,
     pub medias_urls: Option<Vec<String>>,
-    /// 'mauvaise' | 'bonne' — pour une mauvaise pratique, l'identité est obligatoire
+    /// 'mauvaise' | 'bonne' : pour une mauvaise pratique, l'identité est obligatoire
     pub type_pratique: Option<String>,
-    /// Preuves (photos) — URLs relatives uploadées
+    /// Preuves (photos) : URLs relatives uploadées
     pub preuves_photos: Option<Vec<String>>,
     /// Solutions proposées (10 propositions maximum)
     pub solutions_propositions: Option<Vec<String>>,
@@ -1340,7 +1340,7 @@ pub async fn creer_bad_habit_public(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/gouvernance/idea-forces — Publier une idee force
+// POST /api/gouvernance/idea-forces : Publier une idee force
 // ──────────────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]

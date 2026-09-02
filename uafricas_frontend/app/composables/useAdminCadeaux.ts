@@ -1,9 +1,9 @@
-// Administration des cadeaux virtuels (feature 008) — catalogue, journal
+// Administration des cadeaux virtuels (feature 008), catalogue, journal
 // comptable, paramètres de monétisation, purge de fin de phase de test.
 //
 // Bâti sur `useAdmin` : `adminFetch` porte déjà le jeton, la redirection 401 et
 // le message d'accès interdit. Les montants circulent en entier et ne sont
-// jamais formatés ici — `formaterMontant` de `useCadeaux` est l'unique point de
+// jamais formatés ici : `formaterMontant` de `useCadeaux` est l'unique point de
 // formatage monétaire de l'application.
 import type { ApiResponse } from '~/types/admin'
 import type { EtatPaiement, ModeCadeau } from '~/composables/useCadeaux'
@@ -145,7 +145,7 @@ export const useAdminCadeaux = () => {
     return res.data
   }
 
-  /** Échoue en 409 si le cadeau a déjà été offert — la contrainte SQL le garantit. */
+  /** Échoue en 409 si le cadeau a déjà été offert, la contrainte SQL le garantit. */
   const supprimerCadeau = async (id: string): Promise<void> => {
     await adminFetch(`/api/admin/engagement/cadeaux/${id}`, { method: 'DELETE' })
   }

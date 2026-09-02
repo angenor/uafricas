@@ -34,19 +34,19 @@ const auteurDisplay = computed(() => {
 <template>
   <NuxtLink
     :to="`/retrouve-amis/public/${props.avis.slug}`"
-    class="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-gray-200/60 transition-all duration-300 hover:shadow-xl hover:ring-amber-300 hover:-translate-y-1"
+    class="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-af-bordure/60 transition-all duration-300 hover:shadow-xl hover:ring-af-chocolat/30 hover:-translate-y-1"
   >
     <!-- Badge etat en haut a gauche -->
     <div
       v-if="props.avis.etat === 'cloture'"
-      class="absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded-full bg-green-600 px-3 py-1 text-xs font-bold text-white shadow-lg"
+      class="absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded-full bg-af-vert px-3 py-1 text-xs font-bold text-white shadow-lg"
     >
       <font-awesome-icon :icon="['fas', 'heart']" />
       Retrouve(e) !
     </div>
 
     <!-- Zone visuelle : photo ou avatar stylise -->
-    <div class="relative h-56 overflow-hidden bg-linear-to-br from-amber-100 to-amber-50">
+    <div class="relative h-56 overflow-hidden bg-linear-to-br from-af-chocolat/10 to-af-chocolat/5">
       <img
         v-if="photoComplete"
         :src="photoComplete"
@@ -55,13 +55,13 @@ const auteurDisplay = computed(() => {
         :class="{ 'grayscale opacity-60': props.avis.etat === 'cloture' }"
       >
       <!-- Placeholder silhouette inconnu -->
-      <div v-else class="flex h-full w-full flex-col items-center justify-center bg-linear-to-br from-gray-200 to-gray-300">
+      <div v-else class="flex h-full w-full flex-col items-center justify-center bg-linear-to-br from-af-bordure to-af-bordure">
         <!-- Silhouette tete + epaules -->
         <div class="relative mb-1">
-          <div class="h-16 w-16 rounded-full bg-gray-400/50" />
-          <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 h-10 w-24 rounded-t-full bg-gray-400/50" />
+          <div class="h-16 w-16 rounded-full bg-af-atone-2/50" />
+          <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 h-10 w-24 rounded-t-full bg-af-atone-2/50" />
         </div>
-        <span class="mt-6 text-xs font-semibold uppercase tracking-wider text-gray-500/80">Photo non disponible</span>
+        <span class="mt-6 text-xs font-semibold uppercase tracking-wider text-af-atone/80">Photo non disponible</span>
       </div>
       <!-- Degrade bas pour lisibilite -->
       <div class="absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-black/50 to-transparent" />
@@ -80,14 +80,14 @@ const auteurDisplay = computed(() => {
       <div class="mb-3 flex flex-wrap items-center gap-2">
         <span
           v-if="labelRelation"
-          class="inline-flex items-center gap-1 rounded-full bg-amber-600/10 px-2.5 py-1 text-xs font-semibold text-amber-700"
+          class="inline-flex items-center gap-1 rounded-full bg-af-chocolat/10 px-2.5 py-1 text-xs font-semibold text-af-chocolat"
         >
           <font-awesome-icon :icon="['fas', 'link']" class="text-[10px]" />
           {{ labelRelation }}
         </span>
         <span
           v-if="props.avis.genre_recherche"
-          class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600"
+          class="inline-flex items-center gap-1 rounded-full bg-af-fond px-2.5 py-1 text-xs font-medium text-af-corps"
         >
           <font-awesome-icon :icon="['fas', props.avis.genre_recherche === 'homme' ? 'mars' : 'venus']" class="text-[10px]" />
           {{ props.avis.genre_recherche === 'homme' ? 'Homme' : 'Femme' }}
@@ -95,24 +95,24 @@ const auteurDisplay = computed(() => {
       </div>
 
       <!-- Infos cles compactes -->
-      <div class="space-y-2 text-sm text-gray-600">
+      <div class="space-y-2 text-sm text-af-corps">
         <div v-if="lieuRencontre" class="flex items-center gap-2">
-          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-400">
+          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-af-live/5 text-af-live">
             <font-awesome-icon :icon="['fas', 'location-dot']" class="text-xs" />
           </span>
           <span class="truncate">{{ lieuRencontre }}</span>
         </div>
         <div v-if="props.avis.ecole_rencontre" class="flex items-center gap-2">
-          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-400">
+          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-af-chocolat/5 text-af-atone-2">
             <font-awesome-icon :icon="['fas', 'graduation-cap']" class="text-xs" />
           </span>
           <span class="truncate">{{ props.avis.ecole_rencontre }}</span>
         </div>
         <div v-if="props.avis.description_physique" class="flex items-start gap-2">
-          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-50 text-purple-400 mt-0.5">
+          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-af-fond text-af-atone-2 mt-0.5">
             <font-awesome-icon :icon="['fas', 'id-card']" class="text-xs" />
           </span>
-          <span class="line-clamp-2 text-gray-500">{{ props.avis.description_physique }}</span>
+          <span class="line-clamp-2 text-af-atone">{{ props.avis.description_physique }}</span>
         </div>
       </div>
 
@@ -120,14 +120,14 @@ const auteurDisplay = computed(() => {
       <div class="flex-1" />
 
       <!-- Footer -->
-      <div class="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
-        <div class="flex items-center gap-2 text-xs text-gray-500">
-          <div class="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100">
-            <font-awesome-icon :icon="['fas', 'user']" class="text-[10px] text-gray-400" />
+      <div class="mt-4 flex items-center justify-between border-t border-af-bordure pt-3">
+        <div class="flex items-center gap-2 text-xs text-af-atone">
+          <div class="flex h-6 w-6 items-center justify-center rounded-full bg-af-fond">
+            <font-awesome-icon :icon="['fas', 'user']" class="text-[10px] text-af-atone-2" />
           </div>
           <span>{{ auteurDisplay }}</span>
         </div>
-        <div class="flex items-center gap-3 text-xs text-gray-400">
+        <div class="flex items-center gap-3 text-xs text-af-atone-2">
           <span v-if="props.avis.compteur_partages > 0" class="flex items-center gap-1">
             <font-awesome-icon :icon="['fas', 'share-nodes']" />
             {{ props.avis.compteur_partages }}

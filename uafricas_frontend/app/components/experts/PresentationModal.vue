@@ -35,8 +35,8 @@
         <div class="overflow-y-auto px-6 py-6 space-y-8">
           <!-- L'accroche -->
           <p class="text-gray-700 leading-relaxed">
-            Partout dans le monde, des Africaines et des Africains — sur le continent comme dans
-            les diasporas — portent des savoir-faire précieux. <strong class="text-gray-900">Diapertise</strong>
+            Partout dans le monde, des Africaines et des Africains, sur le continent comme dans
+            les diasporas : portent des savoir-faire précieux. <strong class="text-gray-900">Diapertise</strong>
             les rassemble en un seul endroit pour les rendre <strong class="text-gray-900">visibles
             et faciles à solliciter</strong>, au service du développement du continent.
           </p>

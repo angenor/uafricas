@@ -96,7 +96,7 @@ onMounted(() => charger())
               </select>
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Etat</span></label>
+              <label class="label"><span class="label-text">État</span></label>
               <select v-model="form.etat" class="select select-bordered">
                 <option value="actif">Actif</option>
                 <option value="en_attente">En attente</option>
@@ -110,7 +110,7 @@ onMounted(() => charger())
               <input v-model="form.email" type="email" class="input input-bordered">
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Telephone</span></label>
+              <label class="label"><span class="label-text">Téléphone</span></label>
               <input v-model="form.telephone" type="tel" class="input input-bordered">
             </div>
           </div>

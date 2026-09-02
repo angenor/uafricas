@@ -32,7 +32,7 @@
 ## Notes
 
 - All items passed validation on first iteration.
-- US1 (recherche locale) est principalement côté client — réutilise les données déjà chargées.
+- US1 (recherche locale) est principalement côté client, réutilise les données déjà chargées.
 - US2 (recherche publique) nécessite un nouvel endpoint serveur utilisant pg_trgm de Feature 4.
-- US3 (chemin de parenté) est le composant le plus complexe — algorithme LCA + terminologie française.
+- US3 (chemin de parenté) est le composant le plus complexe, algorithme LCA + terminologie française.
 - Les filtres (US4) complètent les modes ascendant/descendant de Feature 2.

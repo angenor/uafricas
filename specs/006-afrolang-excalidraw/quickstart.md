@@ -1,4 +1,4 @@
-# Phase 1 — Quickstart: Migration tldraw → Excalidraw
+# Phase 1 : Quickstart: Migration tldraw → Excalidraw
 
 **Feature** : `006-afrolang-excalidraw`
 **Date** : 2026-04-24
@@ -17,7 +17,7 @@ Procédure opérationnelle pour implémenter, builder et valider la migration. D
 - Deux navigateurs (ou profils distincts) pour tester la collaboration.
 - Comptes de test documentés dans `CLAUDE.md` (section « Test Users »).
 
-## Étape 1 — Mise à jour des dépendances du projet iframe
+## Étape 1 : Mise à jour des dépendances du projet iframe
 
 ```bash
 cd whiteboard
@@ -28,7 +28,7 @@ pnpm add @excalidraw/excalidraw
 grep -c tldraw pnpm-lock.yaml   # doit retourner 0
 ```
 
-## Étape 2 — Refonte de `whiteboard/src/App.tsx`
+## Étape 2 : Refonte de `whiteboard/src/App.tsx`
 
 Appliquer le pattern décrit dans `contracts/postmessage.md` :
 
@@ -39,7 +39,7 @@ Appliquer le pattern décrit dans `contracts/postmessage.md` :
 - Implémenter `estSnapshotExcalidrawValide` (cf. data-model.md).
 - Conserver `main.tsx` et `index.html` tels quels.
 
-## Étape 3 — Adaptation de `AfrolangWhiteboard.vue`
+## Étape 3 : Adaptation de `AfrolangWhiteboard.vue`
 
 Sans toucher à la signature des props (`sessionId`, `estModerateur`, `room`) :
 
@@ -47,10 +47,10 @@ Sans toucher à la signature des props (`sessionId`, `estModerateur`, `room`) :
 - Brancher le `setInterval` 30 s de `get-snapshot` conditionné à `props.estModerateur`.
 - Ajouter un `watch(() => props.room?.state, ...)` pour détecter Connected ↔ Disconnected et déclencher la resync (appel `obtenirTableauBlanc` + `load-snapshot`).
 - Ajouter la garde de broadcast : n'envoyer sur LiveKit que si `room?.state === 'connected'`.
-- Ajouter un toast (Tailwind v4 pur, sans daisyUI — principe VI de la constitution) pour `excalidraw-image-rejected`.
+- Ajouter un toast (Tailwind v4 pur, sans daisyUI, principe VI de la constitution) pour `excalidraw-image-rejected`.
 - Ajouter le bouton « Effacer tout » avec `v-if="estModerateur"` déclenchant le pattern `clear`.
 
-## Étape 4 — Build et copie de l'actif statique
+## Étape 4 : Build et copie de l'actif statique
 
 ```bash
 cd whiteboard
@@ -66,7 +66,7 @@ grep -lr "tldraw" public/whiteboard || echo "AC-5 OK: aucun résidu tldraw"
 grep -l "tl-watermark\|No tldraw license key provided" public/whiteboard/assets/*.js || echo "AC-6 OK: aucun marqueur anti-tamper"
 ```
 
-## Étape 5 — Validation locale (dev)
+## Étape 5 : Validation locale (dev)
 
 1. Ouvrir deux profils navigateur distincts sur `http://localhost:3000`.
 2. Connecter le compte modérateur dans l'un, un compte participant dans l'autre (cf. `CLAUDE.md § Test Users`).
@@ -80,7 +80,7 @@ grep -l "tl-watermark\|No tldraw license key provided" public/whiteboard/assets/
 10. Tester image invalide (PDF ou JPEG > 2 Mo) : refus local + toast, rien de diffusé.
 11. Tester reconnexion : couper le wifi 10 s, le rétablir → le tableau se resynchronise automatiquement sur le dernier snapshot serveur (FR-016).
 
-## Étape 6 — Validation production
+## Étape 6 : Validation production
 
 Après merge et déploiement via `./deploy.sh update` :
 
@@ -90,7 +90,7 @@ Après merge et déploiement via `./deploy.sh update` :
 4. Inspecter la console navigateur → absence totale d'erreurs (SC-004).
 5. Exécuter côté VPS : `grep -c "tl-watermark\|No tldraw license" /opt/uafricas/frontend_static/whiteboard/assets/*.js` → doit retourner 0 (AC-6).
 
-## Étape 7 — Nettoyage final
+## Étape 7 : Nettoyage final
 
 ```bash
 # Depuis la racine du monorepo
@@ -110,5 +110,5 @@ git commit -m "feat(afrolang-whiteboard): migration tldraw → Excalidraw pour r
 ## Points de vigilance
 
 - **Ne pas toucher** : `AfrolangRoom.vue`, `pages/afrolang/session/[id].vue`, `pages/afrolang/session/privee/[id].vue`, `useAfrolang.ts`, tout le `uafricas_backend/`, le schéma SQL. Tout changement dans ces fichiers viole la spec (FR-012, FR-013).
-- **Bundle size** : si Vite affiche un warning sur la taille du chunk, laisser tel quel — l'iframe est chargée à la demande, l'impact sur l'ouverture de la page Afrolang est nul (NFR-7).
+- **Bundle size** : si Vite affiche un warning sur la taille du chunk, laisser tel quel, l'iframe est chargée à la demande, l'impact sur l'ouverture de la page Afrolang est nul (NFR-7).
 - **CSP / iframe** : vérifier qu'en prod `nginx/nginx.conf` autorise bien le chargement de `/whiteboard/` ; pas de modification prévue, mais à surveiller si la page refuse d'embarquer l'iframe.

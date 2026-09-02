@@ -1,4 +1,4 @@
-# Contrat — API membre (JWT requis)
+# Contrat : API membre (JWT requis)
 
 **Feature** : `007-engagement-points-badges`
 Authentification : `Authorization: Bearer <access_token>` → `extraire_utilisateur_id(&req)` (`handlers/engagement.rs`).
@@ -11,7 +11,7 @@ Scope Actix : `web::scope("/engagement")`, monté dans `routes.rs` à côté des
 | Méthode | Chemin | État | Objet |
 |---|---|---|---|
 | GET | `/api/engagement/mon-compte` | existante, inchangée | Soldes, réputation, niveau, prochain niveau |
-| GET | `/api/engagement/mon-journal` | **modifiée** | Historique paginé — nouveaux filtres |
+| GET | `/api/engagement/mon-journal` | **modifiée** | Historique paginé, nouveaux filtres |
 | GET | `/api/engagement/niveau/{utilisateur_id}` | existante, inchangée | Badge de niveau public |
 | GET | `/api/engagement/mes-categories` | **NEW** | Ventilation des points par catégorie |
 | GET | `/api/engagement/mes-badges` | **NEW** | Badges obtenus + catalogue à débloquer |
@@ -21,11 +21,11 @@ Scope Actix : `web::scope("/engagement")`, monté dans `routes.rs` à côté des
 
 ---
 
-## 1. `GET /mon-journal` — filtres ajoutés (FR-012)
+## 1. `GET /mon-journal` : filtres ajoutés (FR-012)
 
 Paramètres : `page` (défaut 1), `taille` (défaut 20, max 100), `type_action` *(existant)*, **`categorie`** *(code de catégorie)*, **`depuis`** / **`jusqu_a`** *(dates ISO `YYYY-MM-DD`)*.
 
-Les filtres nuls sont neutralisés par cast paramétré (`$n::text IS NULL OR …`), comme `admin/engagement::lister_journal` — jamais de concaténation de fragments SQL.
+Les filtres nuls sont neutralisés par cast paramétré (`$n::text IS NULL OR …`), comme `admin/engagement::lister_journal`, jamais de concaténation de fragments SQL.
 
 `MouvementResponse` gagne deux champs :
 
@@ -33,7 +33,7 @@ Les filtres nuls sont neutralisés par cast paramétré (`$n::text IS NULL OR �
 {
   "id": "…", "type_action": "media_a_la_une",
   "libelle": "Contenu média mis à la une",      // libellé de la règle (jamais de texte figé côté front)
-  "categorie_code": "medias",                    // NEW — null si mouvement antérieur au rattrapage
+  "categorie_code": "medias",                    // NEW, null si mouvement antérieur au rattrapage
   "categorie_libelle": "Médias (télé & radio)",  // NEW
   "type_objet": "programme_tele", "objet_id": "…",
   "points": 8, "reputation_delta": 1, "solde_apres": 258,
@@ -44,13 +44,13 @@ Les filtres nuls sont neutralisés par cast paramétré (`$n::text IS NULL OR �
 
 `plafond_atteint = true` avec `points = 0` signifie « plafond atteint, aucun point crédité » ; avec `points > 0`, « écrêté à N points » (R14).
 
-> **Asymétrie assumée** : `libelle` est lu dans la **règle courante** (renommer une règle renomme donc l'action dans tout l'historique affiché), tandis que `categorie_code` / `categorie_libelle` viennent de la **catégorie figée à l'écriture** (une re-catégorisation ne réécrit pas le passé — R1). C'est délibéré : un libellé est un texte d'affichage qu'on veut pouvoir corriger partout, une catégorie est une donnée d'agrégation dont la stabilité conditionne la ventilation.
+> **Asymétrie assumée** : `libelle` est lu dans la **règle courante** (renommer une règle renomme donc l'action dans tout l'historique affiché), tandis que `categorie_code` / `categorie_libelle` viennent de la **catégorie figée à l'écriture** (une re-catégorisation ne réécrit pas le passé, R1). C'est délibéré : un libellé est un texte d'affichage qu'on veut pouvoir corriger partout, une catégorie est une donnée d'agrégation dont la stabilité conditionne la ventilation.
 
 ## 2. `GET /mes-categories` (FR-011)
 
 ```jsonc
 { "success": true, "data": {
-  "solde_points": 258,             // compte.solde_points — le solde COURANT
+  "solde_points": 258,             // compte.solde_points, le solde COURANT
   "total_gagne": 271,              // SUM(points) du journal, toutes catégories
   "categories": [
     { "code": "medias", "libelle": "Médias (télé & radio)", "couleur": "amber",
@@ -88,7 +88,7 @@ Effet de bord assumé : appelle `evaluer_badges` **avant** de répondre (R7), ce
 
 ## 4. `GET /badges/{utilisateur_id}` (FR-014)
 
-Public (aucun JWT requis), comme `GET /niveau/{utilisateur_id}` : renvoie **uniquement** les badges obtenus (code, libellé, description, couleur, icône, date). **Jamais** de solde, de réputation ni de mouvement — le détail chiffré reste privé.
+Public (aucun JWT requis), comme `GET /niveau/{utilisateur_id}` : renvoie **uniquement** les badges obtenus (code, libellé, description, couleur, icône, date). **Jamais** de solde, de réputation ni de mouvement, le détail chiffré reste privé.
 
 Consommé par `pages/profil/[id].vue` à côté de `EngagementBadgeStatut`.
 
@@ -106,7 +106,7 @@ Public : le barème n'est pas une donnée sensible, et l'afficher aux visiteurs 
 ```
 
 - `utilisateur_id` **toujours** pris du JWT (jamais du corps).
-- `reseau` ∈ `whatsapp | facebook | x | linkedin | telegram | email` — toute autre valeur → 400.
+- `reseau` ∈ `whatsapp | facebook | x | linkedin | telegram | email`, toute autre valeur → 400.
 - `type_objet` validé contre la liste des familles partageables (littéraux fixes).
 - Séquence : `INSERT … ON CONFLICT DO NOTHING` → `COUNT(DISTINCT reseau)` → si `>= regle.seuil_declencheur`, `attribuer(...)` **après** la réponse préparée, en non-bloquant.
 
@@ -115,7 +115,7 @@ Public : le barème n'est pas une donnée sensible, et l'afficher aux visiteurs 
 { "success": true, "data": { "reseaux_distincts": 5, "seuil": 5, "bonus_attribue": true } }
 ```
 
-`bonus_attribue` reflète le franchissement du seuil, **pas** le crédit effectif : le plafond journalier peut écrêter à 0 point (l'écrêtage est alors visible dans le journal). Le front ne doit rien promettre à l'utilisateur sur la base de ce champ — il sert au libellé « partagé sur 5 réseaux ✓ ».
+`bonus_attribue` reflète le franchissement du seuil, **pas** le crédit effectif : le plafond journalier peut écrêter à 0 point (l'écrêtage est alors visible dans le journal). Le front ne doit rien promettre à l'utilisateur sur la base de ce champ : il sert au libellé « partagé sur 5 réseaux ✓ ».
 
 **Best-effort côté front** (`usePartageExterne`) : l'appel part **après** l'ouverture de la fenêtre de partage et son échec est silencieux (`.catch(() => {})`). Un traçage raté ne doit jamais empêcher un partage (scénario 5 de l'US5).
 
@@ -123,6 +123,6 @@ Public : le barème n'est pas une donnée sensible, et l'afficher aux visiteurs 
 
 ## Notes d'implémentation
 
-- Les 5 routes nouvelles vont dans `handlers/engagement.rs`, leurs DTO dans `models/engagement.rs` — aucun fichier supplémentaire (Principe V).
+- Les 5 routes nouvelles vont dans `handlers/engagement.rs`, leurs DTO dans `models/engagement.rs`, aucun fichier supplémentaire (Principe V).
 - Le composable `useEngagement.ts` est étendu, pas dupliqué ; `usePartageExterne.ts` est créé à part parce qu'il est consommé par 6 modales qui n'ont rien à voir avec l'espace membre.
 - Aucun de ces endpoints ne mute le barème : ils sont exempts d'audit administratif (le journal `mouvement_points` suffit à la traçabilité métier).

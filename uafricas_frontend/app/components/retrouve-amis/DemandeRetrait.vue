@@ -90,19 +90,19 @@ const fermerTout = () => {
     <!-- Message de succes -->
     <div
       v-if="messageSucces"
-      class="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3"
+      class="bg-af-vert/5 border border-af-vert/30 rounded-lg p-4 flex items-start gap-3"
     >
-      <font-awesome-icon :icon="['fas', 'circle-check']" class="text-custom-green text-lg mt-0.5 shrink-0" />
-      <p class="text-green-800 text-sm">{{ messageSucces }}</p>
+      <font-awesome-icon :icon="['fas', 'circle-check']" class="text-af-vert text-lg mt-0.5 shrink-0" />
+      <p class="text-af-vert text-sm">{{ messageSucces }}</p>
     </div>
 
     <!-- Erreur -->
     <div
       v-if="erreur"
-      class="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3"
+      class="bg-af-live/5 border border-af-live/30 rounded-lg p-4 flex items-start gap-3"
     >
-      <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="text-red-500 text-lg mt-0.5 shrink-0" />
-      <p class="text-red-700 text-sm">{{ erreur }}</p>
+      <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="text-af-live text-lg mt-0.5 shrink-0" />
+      <p class="text-af-live text-sm">{{ erreur }}</p>
     </div>
 
     <!-- Boutons d'action (masques apres envoi) -->
@@ -110,17 +110,17 @@ const fermerTout = () => {
       <!-- Bouton demande de retrait -->
       <button
         type="button"
-        class="flex items-center justify-center gap-2 px-5 py-3 bg-amber-700 text-white font-medium rounded-lg hover:bg-amber-800 transition-colors text-sm"
+        class="flex items-center justify-center gap-2 px-5 py-3 bg-af-chocolat text-white font-medium rounded-lg hover:opacity-90 transition-colors text-sm"
         @click="ouvrirRetrait"
       >
         <font-awesome-icon :icon="['fas', 'user-shield']" />
-        Cet avis me concerne — demander le retrait
+        Cet avis me concerne : demander le retrait
       </button>
 
       <!-- Bouton signalement -->
       <button
         type="button"
-        class="flex items-center justify-center gap-2 px-5 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm"
+        class="flex items-center justify-center gap-2 px-5 py-3 border border-af-bordure text-af-corps font-medium rounded-lg hover:bg-af-fond transition-colors text-sm"
         @click="ouvrirSignalement"
       >
         <font-awesome-icon :icon="['fas', 'flag']" />
@@ -131,48 +131,48 @@ const fermerTout = () => {
     <!-- Formulaire demande de retrait -->
     <div
       v-if="formulaireRetraitOuvert"
-      class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4"
+      class="bg-white border border-af-bordure rounded-lg shadow-sm p-6 space-y-4"
     >
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-800">
+        <h3 class="text-lg font-semibold text-af-encre">
           Demander le retrait de cet avis
         </h3>
-        <button type="button" class="text-gray-400 hover:text-gray-600" @click="fermerTout">
+        <button type="button" class="text-af-atone-2 hover:text-af-corps" @click="fermerTout">
           <font-awesome-icon :icon="['fas', 'xmark']" class="text-xl" />
         </button>
       </div>
 
-      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
-        <p class="text-amber-800 text-sm">
+      <div class="bg-af-chocolat/5 border border-af-chocolat/20 rounded-lg p-3">
+        <p class="text-af-chocolat text-sm">
           <font-awesome-icon :icon="['fas', 'circle-info']" class="mr-1" />
-          Si vous etes la personne recherchee dans cet avis et ne souhaitez pas etre retrouvee, vous pouvez demander son retrait. L'avis sera immediatement suspendu le temps qu'un administrateur examine votre demande.
+          Si vous êtes la personne recherchée dans cet avis et ne souhaitez pas être retrouvée, vous pouvez demander son retrait. L'avis sera immediatement suspendu le temps qu'un administrateur examine votre demande.
         </p>
       </div>
 
       <div>
-        <label for="motif-retrait" class="block text-sm font-medium text-gray-700 mb-1">
-          Expliquez votre demande <span class="text-red-500">*</span>
+        <label for="motif-retrait" class="block text-sm font-medium text-af-corps mb-1">
+          Expliquez votre demande <span class="text-af-live">*</span>
         </label>
         <textarea
           id="motif-retrait"
           v-model="motifRetrait"
           rows="4"
-          class="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors resize-none"
-          placeholder="Je suis la personne recherchee dans cet avis et je ne souhaite pas etre retrouvee..."
+          class="w-full rounded-lg border border-af-bordure px-4 py-3 text-sm text-af-encre placeholder:text-af-atone-2 focus:border-af-chocolat focus:ring-2 focus:border-af-chocolat/20 focus:outline-none transition-colors resize-none"
+          placeholder="Je suis la personne recherchée dans cet avis et je ne souhaite pas être retrouvée..."
         />
       </div>
 
       <div class="flex justify-end gap-3">
         <button
           type="button"
-          class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+          class="px-4 py-2 text-sm text-af-corps hover:text-af-encre transition-colors"
           @click="fermerTout"
         >
           Annuler
         </button>
         <button
           type="button"
-          class="px-5 py-2 bg-amber-700 text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          class="px-5 py-2 bg-af-chocolat text-white text-sm font-medium rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           :disabled="!motifRetrait.trim() || chargement"
           @click="soumettreRetrait"
         >
@@ -185,25 +185,25 @@ const fermerTout = () => {
     <!-- Formulaire signalement -->
     <div
       v-if="formulaireSignalementOuvert"
-      class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4"
+      class="bg-white border border-af-bordure rounded-lg shadow-sm p-6 space-y-4"
     >
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-800">
+        <h3 class="text-lg font-semibold text-af-encre">
           Signaler cet avis
         </h3>
-        <button type="button" class="text-gray-400 hover:text-gray-600" @click="fermerTout">
+        <button type="button" class="text-af-atone-2 hover:text-af-corps" @click="fermerTout">
           <font-awesome-icon :icon="['fas', 'xmark']" class="text-xl" />
         </button>
       </div>
 
       <div>
-        <label for="motif-signalement" class="block text-sm font-medium text-gray-700 mb-1">
-          Motif du signalement <span class="text-red-500">*</span>
+        <label for="motif-signalement" class="block text-sm font-medium text-af-corps mb-1">
+          Motif du signalement <span class="text-af-live">*</span>
         </label>
         <select
           id="motif-signalement"
           v-model="motifSignalement"
-          class="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors bg-white"
+          class="w-full rounded-lg border border-af-bordure px-4 py-3 text-sm text-af-encre focus:border-af-chocolat focus:ring-2 focus:border-af-chocolat/20 focus:outline-none transition-colors bg-white"
         >
           <option
             v-for="m in motifsSignalement"
@@ -216,14 +216,14 @@ const fermerTout = () => {
       </div>
 
       <div>
-        <label for="description-signalement" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="description-signalement" class="block text-sm font-medium text-af-corps mb-1">
           Description (facultatif)
         </label>
         <textarea
           id="description-signalement"
           v-model="descriptionSignalement"
           rows="3"
-          class="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors resize-none"
+          class="w-full rounded-lg border border-af-bordure px-4 py-3 text-sm text-af-encre placeholder:text-af-atone-2 focus:border-af-chocolat focus:ring-2 focus:border-af-chocolat/20 focus:outline-none transition-colors resize-none"
           placeholder="Decrivez plus en detail le probleme..."
         />
       </div>
@@ -231,14 +231,14 @@ const fermerTout = () => {
       <div class="flex justify-end gap-3">
         <button
           type="button"
-          class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+          class="px-4 py-2 text-sm text-af-corps hover:text-af-encre transition-colors"
           @click="fermerTout"
         >
           Annuler
         </button>
         <button
           type="button"
-          class="px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          class="px-5 py-2 bg-af-live text-white text-sm font-medium rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           :disabled="chargement"
           @click="soumettreSignalement"
         >

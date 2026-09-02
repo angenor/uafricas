@@ -20,7 +20,7 @@ export const useAdminDomaines = () => {
     if (result) domaines.value = result.data
   }
 
-  // Liste complète non paginée — pour alimenter un sélecteur (audit #20)
+  // Liste complète non paginée : pour alimenter un sélecteur (audit #20)
   const listerTousDomaines = async (): Promise<AdminDomaine[]> => {
     const result = await listerPagine<AdminDomaine>('/api/admin/domaines', { par_page: 500 })
     return result?.data ?? []

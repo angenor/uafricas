@@ -1,4 +1,4 @@
-# Phase 4 — Tableau blanc interactif
+# Phase 4 : Tableau blanc interactif
 
 > **Statut** : `TERMINE`
 > **Progression** : 9/9 taches
@@ -12,10 +12,10 @@
 ```
 ✅ = termine    🔄 = en cours    ⬜ = a faire    🔒 = bloque
 
-[✅] Phase 1 — Backend REST         (terminee)
-[✅] Phase 2 — Frontend UI          (terminee)
-[✅] Phase 3 — WebRTC Signaling     (terminee)
-[✅] Phase 4 — Tableau blanc        ◄── TERMINE
+[✅] Phase 1 : Backend REST         (terminee)
+[✅] Phase 2 : Frontend UI          (terminee)
+[✅] Phase 3 : WebRTC Signaling     (terminee)
+[✅] Phase 4 : Tableau blanc        ◄── TERMINE
 ```
 
 **Ce que les Phases precedentes fournissent :**
@@ -51,7 +51,7 @@
 
 ---
 
-## 4.1 — Choix technologique : tldraw
+## 4.1 : Choix technologique : tldraw
 
 | Critere | tldraw | Excalidraw | Fabric.js (custom) |
 |---------|--------|------------|-------------------|
@@ -86,9 +86,9 @@ Participant A                    LiveKit SFU                   Participant B
 
 ---
 
-## 4.1–4.2 — Mini-app tldraw (package separe)
+## 4.1–4.2 : Mini-app tldraw (package separe)
 
-### 4.1 — Structure du package
+### 4.1 : Structure du package
 
 > tldraw est React. Pour l'integrer dans Vue 3/Nuxt, on cree une mini-app React servie en iframe.
 
@@ -155,7 +155,7 @@ export default function WhiteboardApp() {
 }
 ```
 
-### 4.2 — Build et servir
+### 4.2 : Build et servir
 
 ```bash
 cd whiteboard && pnpm build
@@ -167,11 +167,11 @@ L'iframe pointera vers `/whiteboard/index.html` (servi en static par Nuxt).
 
 ---
 
-## 4.3–4.6 — Backend : endpoints tableau blanc
+## 4.3–4.6 : Backend : endpoints tableau blanc
 
 > **Enrichissent** `src/handlers/afrolang.rs` cree en Phase 1
 
-### 4.3 — `obtenir_tableau_blanc`
+### 4.3 : `obtenir_tableau_blanc`
 
 ```rust
 // GET /api/afrolang/sessions/{id}/tableau-blanc
@@ -206,7 +206,7 @@ pub async fn obtenir_tableau_blanc(
 }
 ```
 
-### 4.4 — `sauvegarder_tableau_blanc`
+### 4.4 : `sauvegarder_tableau_blanc`
 
 ```rust
 // PUT /api/afrolang/sessions/{id}/tableau-blanc
@@ -241,7 +241,7 @@ pub async fn sauvegarder_tableau_blanc(
 }
 ```
 
-### 4.5 — `effacer_tableau_blanc`
+### 4.5 : `effacer_tableau_blanc`
 
 ```rust
 // DELETE /api/afrolang/sessions/{id}/tableau-blanc
@@ -269,7 +269,7 @@ pub async fn effacer_tableau_blanc(
 }
 ```
 
-### 4.6 — Routes
+### 4.6 : Routes
 
 Ajouter dans le scope `/afrolang` de `routes.rs` (sous la route token Phase 3) :
 
@@ -282,7 +282,7 @@ Ajouter dans le scope `/afrolang` de `routes.rs` (sous la route token Phase 3) :
 
 ---
 
-## 4.7 — `AfrolangWhiteboard.vue`
+## 4.7 : `AfrolangWhiteboard.vue`
 
 ```vue
 <template>
@@ -399,9 +399,9 @@ async function effacerTout() {
 
 ---
 
-## 4.8 — Modifications composants Phase 3
+## 4.8 : Modifications composants Phase 3
 
-### `AfrolangRoom.vue` — Ajouter mode split-screen
+### `AfrolangRoom.vue` : Ajouter mode split-screen
 
 ```
 Mode normal (Phase 3):              Mode tableau blanc (Phase 4):
@@ -417,17 +417,17 @@ Mode normal (Phase 3):              Mode tableau blanc (Phase 4):
 
 Ajout : `v-if="tableauBlancOuvert"` pour afficher `AfrolangWhiteboard` en cote-a-cote.
 
-### `AfrolangControls.vue` — Activer le bouton WB
+### `AfrolangControls.vue` : Activer le bouton WB
 
 Le bouton "Tableau blanc" etait present mais desactive en Phase 3 → l'activer maintenant.
 
-### `AfrolangSidebar.vue` — Ajouter onglet optionnel
+### `AfrolangSidebar.vue` : Ajouter onglet optionnel
 
 Ajouter un onglet "Tableau blanc" dans le panneau lateral (alternative au split-screen).
 
 ---
 
-## 4.9 — Enrichir `useAfrolang.ts`
+## 4.9 : Enrichir `useAfrolang.ts`
 
 > **Modifie** le composable cree en Phase 2 (tache 2.1–2.2), deja enrichi en Phase 3 (tache 3.11)
 
@@ -484,7 +484,7 @@ export async function effacerTableauBlanc(sessionId: string): Promise<void> {
 ## Considerations de performance
 
 1. **Taille JSONB** : Limiter a 5MB par snapshot. Les snapshots tldraw sont generalement < 1MB.
-2. **Frequence de sauvegarde** : 30 secondes — bon compromis securite/charge DB.
+2. **Frequence de sauvegarde** : 30 secondes, bon compromis securite/charge DB.
 3. **DataChannel vs WebSocket** : On reutilise les DataChannels LiveKit (Phase 3) → pas de serveur WebSocket supplementaire.
 4. **Compression** : Compresser les operations via DataChannel si necessaire (pako/gzip).
 

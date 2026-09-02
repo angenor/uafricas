@@ -1,4 +1,4 @@
-// Cadeaux virtuels — catalogue, envoi, confirmation, cagnotte (feature 008).
+// Cadeaux virtuels : catalogue, envoi, confirmation, cagnotte (feature 008).
 //
 // **Le formatage monétaire est exclusivement frontal.** Aucune API ne renvoie de
 // montant formaté : les montants circulent en unité entière de la devise
@@ -118,7 +118,7 @@ export interface Cagnotte {
   devise: string
   /** Toujours `false` dans cette itération : aucun versement n'est disponible. */
   versement_disponible: boolean
-  /** Fraction issue de transactions simulées — ce que la purge retirera. */
+  /** Fraction issue de transactions simulées : ce que la purge retirera. */
   part_simulee: number
 }
 
@@ -146,7 +146,7 @@ export type FamilleCadeau = typeof FAMILLES_CADEAU[number]
 
 /**
  * Formate un montant entier dans sa devise. **Unique point de formatage
- * monétaire de l'application** — c'est volontaire.
+ * monétaire de l'application** : c'est volontaire.
  */
 export const formaterMontant = (montant: number, devise = 'XOF'): string => {
   const nombre = new Intl.NumberFormat('fr-FR').format(montant)

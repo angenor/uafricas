@@ -11,7 +11,7 @@ use crate::verifier_permission;
 use crate::ApiResponse;
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/admin/utilisateurs — Liste paginee avec filtres
+// GET /api/admin/utilisateurs : Liste paginee avec filtres
 // ────────────────────────────────────────────────────────────────
 
 pub async fn lister_utilisateurs(
@@ -132,7 +132,7 @@ pub async fn lister_utilisateurs(
 }
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/admin/utilisateurs/{id} — Detail complet
+// GET /api/admin/utilisateurs/{id} : Detail complet
 // ────────────────────────────────────────────────────────────────
 
 pub async fn obtenir_utilisateur(
@@ -271,7 +271,7 @@ pub async fn obtenir_utilisateur(
 }
 
 // ────────────────────────────────────────────────────────────────
-// POST /api/admin/utilisateurs — Creation
+// POST /api/admin/utilisateurs : Creation
 // ────────────────────────────────────────────────────────────────
 
 pub async fn creer_utilisateur(
@@ -374,7 +374,7 @@ pub async fn creer_utilisateur(
 }
 
 // ────────────────────────────────────────────────────────────────
-// PUT /api/admin/utilisateurs/{id} — Modification profil
+// PUT /api/admin/utilisateurs/{id} : Modification profil
 // ────────────────────────────────────────────────────────────────
 
 pub async fn modifier_utilisateur(
@@ -514,7 +514,7 @@ pub async fn modifier_utilisateur(
 }
 
 // ────────────────────────────────────────────────────────────────
-// PATCH /api/admin/utilisateurs/{id}/etat — Changement d'etat
+// PATCH /api/admin/utilisateurs/{id}/etat, Changement d'etat
 // ────────────────────────────────────────────────────────────────
 
 pub async fn changer_etat_utilisateur(
@@ -654,7 +654,7 @@ pub async fn valider_compte_admin(
 }
 
 // ────────────────────────────────────────────────────────────────
-// DELETE /api/admin/utilisateurs/{id} — Soft delete
+// DELETE /api/admin/utilisateurs/{id}, Soft delete
 // ────────────────────────────────────────────────────────────────
 
 pub async fn supprimer_utilisateur(
@@ -714,7 +714,7 @@ pub async fn supprimer_utilisateur(
 }
 
 // ────────────────────────────────────────────────────────────────
-// POST /api/admin/utilisateurs/{id}/roles — Assigner un role
+// POST /api/admin/utilisateurs/{id}/roles, Assigner un role
 // ────────────────────────────────────────────────────────────────
 
 pub async fn assigner_role(
@@ -791,7 +791,7 @@ pub async fn assigner_role(
 }
 
 // ────────────────────────────────────────────────────────────────
-// DELETE /api/admin/utilisateurs/{id}/roles/{role_id} — Retirer un role
+// DELETE /api/admin/utilisateurs/{id}/roles/{role_id}, Retirer un role
 // ────────────────────────────────────────────────────────────────
 
 pub async fn retirer_role(
@@ -841,7 +841,7 @@ pub async fn retirer_role(
 }
 
 // ────────────────────────────────────────────────────────────────
-// POST /api/admin/utilisateurs/{id}/specialites — Assigner specialite
+// POST /api/admin/utilisateurs/{id}/specialites, Assigner specialite
 // ────────────────────────────────────────────────────────────────
 
 pub async fn assigner_specialite(
@@ -941,7 +941,7 @@ pub async fn retirer_specialite(
 }
 
 // ────────────────────────────────────────────────────────────────
-// POST /api/admin/utilisateurs/{id}/permissions — Ajouter permission specifique
+// POST /api/admin/utilisateurs/{id}/permissions, Ajouter permission specifique
 // ────────────────────────────────────────────────────────────────
 
 pub async fn ajouter_permission_specifique(

@@ -156,7 +156,7 @@ pub struct AdminPaysInfo {
     pub nom: String,
 }
 
-// ── Avis de recherche — Liste ───────────────────────────────
+// ── Avis de recherche : Liste ───────────────────────────────
 
 #[derive(Debug, Serialize)]
 pub struct AdminAvisRechercheResponse {
@@ -181,7 +181,7 @@ pub struct AdminAvisRechercheListeResponse {
     pub par_page: i64,
 }
 
-// ── Avis de recherche — Détail ──────────────────────────────
+// ── Avis de recherche : Détail ──────────────────────────────
 
 #[derive(Debug, Serialize)]
 pub struct AdminCorrespondanceInfo {
@@ -223,7 +223,7 @@ pub struct AdminAvisRechercheDetailResponse {
     pub updated_at: DateTime<Utc>,
 }
 
-// ── Signalements — Liste ────────────────────────────────────
+// ── Signalements : Liste ────────────────────────────────────
 
 #[derive(Debug, Serialize)]
 pub struct AdminAvisResume {
@@ -418,7 +418,7 @@ impl AdminSignalementRow {
 }
 
 // ════════════════════════════════════════════════════════════════
-// Demandes de Retrait (Admin) — 002-partage-avis-recherche
+// Demandes de Retrait (Admin) : 002-partage-avis-recherche
 // ════════════════════════════════════════════════════════════════
 
 // ── Colonnes SQL Demandes de Retrait ─────────────────────────

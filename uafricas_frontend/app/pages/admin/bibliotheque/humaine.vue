@@ -3,7 +3,7 @@ import type { DemandeBiblioHumaine, StatutDemande } from '~/mocks/bibliotheques-
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
-useHead({ title: 'Bibliothèques Humaines — Admin' })
+useHead({ title: 'Bibliothèques Humaines, Admin' })
 
 const {
   demandes,
@@ -68,7 +68,7 @@ async function confirmerApprobation(id: string) {
   actionLoading.value = true
   try {
     await approuverDemande(id)
-    afficherSucces('Demande approuvée — la Bibliothèque Humaine est maintenant visible publiquement.')
+    afficherSucces('Demande approuvée : la Bibliothèque Humaine est maintenant visible publiquement.')
     showDetailModal.value = false
     await charger()
   }
@@ -283,7 +283,7 @@ onMounted(charger)
             </div>
             <div>
               <h3 class="text-xl font-bold">{{ demandeDetail.prenom }} {{ demandeDetail.nom }}</h3>
-              <p class="text-base-content/70 text-sm">{{ demandeDetail.fonction }} — {{ demandeDetail.pays }}</p>
+              <p class="text-base-content/70 text-sm">{{ demandeDetail.fonction }} - {{ demandeDetail.pays }}</p>
               <span :class="['badge mt-1', statutBadge(demandeDetail.statut)]">
                 {{ statutLabel(demandeDetail.statut) }}
               </span>
@@ -363,7 +363,7 @@ onMounted(charger)
             v-model="commentaireRejet"
             rows="4"
             class="textarea textarea-bordered w-full text-sm"
-            placeholder="Motif du rejet (facultatif — ex : biographie trop courte…)"
+            placeholder="Motif du rejet (facultatif, ex : biographie trop courte…)"
           />
           <div class="modal-action">
             <button class="btn btn-ghost" @click="showRejetModal = false">Annuler</button>

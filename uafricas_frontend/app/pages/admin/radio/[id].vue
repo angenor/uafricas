@@ -6,7 +6,7 @@
  * gérées sur `/admin/medias/emissions`. Le tableau du bas les liste seulement.
  *
  * Thématiques et couverture : exigées à l'état `publie` (FR-029, FR-035), pas
- * sur un brouillon — sinon une fiche en cours de saisie ne s'enregistrerait plus.
+ * sur un brouillon : sinon une fiche en cours de saisie ne s'enregistrerait plus.
  */
 import type { AdminEmission } from '~/types/admin'
 
@@ -271,7 +271,7 @@ onMounted(async () => {
                 <label class="label"><span class="label-text">Origine de publication *</span></label>
                 <select v-model="stationForm.origine_publication" class="select select-bordered">
                   <option v-for="o in ORIGINES_PUBLICATION_RADIO" :key="o.valeur" :value="o.valeur">
-                    {{ o.libelle }} — page {{ o.page }}
+                    {{ o.libelle }} : page {{ o.page }}
                   </option>
                 </select>
                 <label class="label"><span class="label-text-alt">{{ aideOrigine }}</span></label>
@@ -280,7 +280,7 @@ onMounted(async () => {
                 <div class="form-control">
                   <label class="label"><span class="label-text">Rôle de la partie prenante</span></label>
                   <select v-model="stationForm.role_partie_prenante" class="select select-bordered">
-                    <option value="">— Non spécifié —</option>
+                    <option value="">Non spécifié</option>
                     <option v-for="r in ROLES_PARTIE_PRENANTE_RADIO" :key="r.valeur" :value="r.valeur">{{ r.libelle }}</option>
                   </select>
                 </div>
@@ -337,7 +337,7 @@ onMounted(async () => {
                 <div class="form-control">
                   <label class="label"><span class="label-text">Territoire</span></label>
                   <select v-model="stationForm.pays_id" class="select select-bordered">
-                    <option value="">— Aucun —</option>
+                    <option value="">Aucun</option>
                     <option v-for="p in paysDisponibles" :key="p.id" :value="p.id">{{ p.nom }}</option>
                   </select>
                 </div>
@@ -381,7 +381,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Équipe éditoriale (010) — voir la note de `/admin/television/[id]` :
+      <!-- Équipe éditoriale (010) : voir la note de `/admin/television/[id]` :
            un seul composant, monté membre et admin, l'autorité seule diffère. -->
       <div class="card bg-base-100 shadow-sm mt-6">
         <div class="card-body">

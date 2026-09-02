@@ -17,12 +17,12 @@ admin de vérification) et frontend (composable, section Vue, modal de contribut
 
 **Language/Version**: Rust Edition 2024 (backend), TypeScript / Nuxt 4 (Vue 3 SSR) (frontend)  
 **Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL), uuid, chrono, serde, sanitize-filename, image, lettre (backend) ; Pinia, Tailwind CSS v4, FontAwesome (frontend)  
-**Storage**: PostgreSQL 16, schéma `country_profile` (source de vérité — Principe III)  
-**Testing**: aucun harnais configuré (Principe — pas de testing/CI/CD imposé) ; vérification manuelle via test users + `cargo check` / Volar diagnostics  
+**Storage**: PostgreSQL 16, schéma `country_profile` (source de vérité, Principe III)  
+**Testing**: aucun harnais configuré (Principe, pas de testing/CI/CD imposé) ; vérification manuelle via test users + `cargo check` / Volar diagnostics  
 **Target Platform**: Serveur Linux (backend port 8082), web SSR (frontend port 3000)  
 **Project Type**: Web application (monorepo `uafricas_backend/` + `uafricas_frontend/`)  
 **Performance Goals**: lecture page détail fluide ; agrégat note moyenne/site sans N+1 ; pas d'objectif de débit spécifique  
-**Constraints**: site public = Tailwind v4 pur (pas de daisyUI — Principe VI) ; UI/code/SQL en français (Principe I) ; mutations auditées (Principe VII) ; pas de secrets en dur (Principe IV)  
+**Constraints**: site public = Tailwind v4 pur (pas de daisyUI, Principe VI) ; UI/code/SQL en français (Principe I) ; mutations auditées (Principe VII) ; pas de secrets en dur (Principe IV)  
 **Scale/Scope**: 54 fiches pays max ; quelques dizaines de sites par fiche ; charge faible à modérée
 
 ## Constitution Check
@@ -39,7 +39,7 @@ admin de vérification) et frontend (composable, section Vue, modal de contribut
 | VI. Tailwind v4 (public) | Section publique et modal en Tailwind v4 pur ; daisyUI uniquement côté back-office admin. ✅ |
 | VII. Audit & Traçabilité | `audit::log_action` sur le toggle `verifie`, la modération d'avis, et (déjà) l'application de contribution. ✅ |
 
-**Résultat** : PASS — aucune violation. Section Complexity Tracking non requise.
+**Résultat** : PASS : aucune violation. Section Complexity Tracking non requise.
 
 ## Project Structure
 
@@ -48,16 +48,16 @@ admin de vérification) et frontend (composable, section Vue, modal de contribut
 ```text
 specs/001-sites-touristiques-enrichis/
 ├── plan.md              # Ce fichier (/speckit.plan)
-├── research.md          # Phase 0 — décisions techniques
-├── data-model.md        # Phase 1 — entités + DDL
-├── quickstart.md        # Phase 1 — mise en route & vérification
-├── contracts/           # Phase 1 — contrats d'API
+├── research.md          # Phase 0 : décisions techniques
+├── data-model.md        # Phase 1 : entités + DDL
+├── quickstart.md        # Phase 1 : mise en route & vérification
+├── contracts/           # Phase 1 : contrats d'API
 │   ├── public-sites-touristiques.md
 │   ├── public-avis-site.md
 │   └── admin-sites-verification.md
 ├── checklists/
 │   └── requirements.md  # Checklist qualité spec (déjà créé)
-└── tasks.md             # Phase 2 (/speckit.tasks — NON créé ici)
+└── tasks.md             # Phase 2 (/speckit.tasks, NON créé ici)
 ```
 
 ### Source Code (repository root)
@@ -65,11 +65,11 @@ specs/001-sites-touristiques-enrichis/
 ```text
 uafricas_backend/
 ├── doc/bd/schemas/
-│   └── 11d_country_profile_sites_enrichis.sql   # NOUVEAU — ALTER site_touristique + enum + table avis_site
+│   └── 11d_country_profile_sites_enrichis.sql   # NOUVEAU, ALTER site_touristique + enum + table avis_site
 ├── src/
 │   ├── models/
 │   │   ├── afripulse.rs                          # + enum SousTypeSite, + AvisSiteRow
-│   │   ├── contribution_fiche.rs                 # (inchangé — réutilisé)
+│   │   ├── contribution_fiche.rs                 # (inchangé, réutilisé)
 │   │   └── admin/profils_pays.rs                 # + champs sur Admin/Creer/Modifier SiteTouristique, DTO vérification
 │   ├── handlers/
 │   │   ├── afripulse_public.rs                   # SiteTouristiqueResponse étendu + agrégat avis ; + handlers avis_site
@@ -85,7 +85,7 @@ uafricas_frontend/
     ├── components/opportunite-afrique/
     │   ├── SitesTouristiquesSection.vue          # affichage enrichi (sous-type, gestionnaire, localisation, contacts, badge, légal, avis) + filtre sous-type
     │   ├── ContributionModal.vue                 # formulaire site enrichi (champs requis + contacts + légal)
-    │   ├── SiteAvisListe.vue                     # NOUVEAU — liste + moyenne + dépôt d'avis (Tailwind v4)
+    │   ├── SiteAvisListe.vue                     # NOUVEAU, liste + moyenne + dépôt d'avis (Tailwind v4)
     │   └── ImageUploadField.vue                  # (réutilisé)
     └── pages/
         ├── opportunite-afrique/[id].vue          # (inchangé ou ajustements mineurs de câblage)
@@ -98,4 +98,4 @@ Principe V.
 
 ## Complexity Tracking
 
-> Aucune violation de la Constitution — section non requise.
+> Aucune violation de la Constitution, section non requise.

@@ -7,6 +7,7 @@ import type {
 } from '~/types/admin'
 
 export const useAdminProfilsPays = () => {
+  const config = useRuntimeConfig()
   const { adminFetch, listerPagine, pagination, sort, loading, error, allerPage, changerTri, reinitialiserPagination } = useAdmin()
 
   const fichesPays = ref<AdminFichePay[]>([])
@@ -174,13 +175,58 @@ export const useAdminProfilsPays = () => {
     await adminFetch<ApiResponse<null>>(`/api/admin/profils-pays/${ficheId}/sites-touristiques/${siteId}`, { method: 'DELETE' })
   }
 
-  /** Active ou retire le badge « Vérifié » d'un site (US3 — réservé admin). */
+  /** Active ou retire le badge « Vérifié » d'un site (US3, réservé admin). */
   const definirVerificationSite = async (ficheId: string, siteId: string, verifie: boolean) => {
     const response = await adminFetch<ApiResponse<{ id: string, verifie: boolean, verifie_at: string | null }>>(
       `/api/admin/profils-pays/${ficheId}/sites-touristiques/${siteId}/verification`,
       { method: 'PATCH', body: { verifie } },
     )
     return response.data
+  }
+
+  // ── Contenus nés de la contribution communautaire ─────────
+  //
+  // Recettes, personnalités et savoirs pratiques n'ont PAS de CRUD
+  // d'administration : ils naissent d'une contribution, et se corrigent par
+  // le même canal : qui, depuis le rattachement de `fiche_pays.gerer`,
+  // s'applique immédiatement pour qui détient le droit.
+  //
+  // Le back-office les listait donc nulle part : un administrateur ne
+  // retrouvait pas ce qui était déjà en ligne. Ces trois lectures comblent
+  // le trou en consommant les endpoints PUBLICS, même donnée, même source,
+  // aucune route neuve à maintenir.
+
+  const recettesCulinaires = ref<any[]>([])
+  const personnalites = ref<any[]>([])
+  const savoirsPratiques = ref<any[]>([])
+
+  const chargerContenusCommunautaires = async (ficheId: string) => {
+    const base = `${config.public.apiBaseUrl}/api/fiches-pays/${ficheId}`
+    const extraire = (donnees: any): any[] => {
+      if (Array.isArray(donnees)) return donnees
+      if (donnees && typeof donnees === 'object') {
+        const liste = Object.values(donnees).find(v => Array.isArray(v))
+        return (liste as any[]) ?? []
+      }
+      return []
+    }
+    const lire = async (chemin: string) => {
+      try {
+        const r = await $fetch<ApiResponse<any>>(`${base}/${chemin}`)
+        return r.success ? extraire(r.data) : []
+      }
+      catch {
+        // Une section indisponible ne doit pas vider les deux autres.
+        return []
+      }
+    }
+    const [r, pers, sav] = await Promise.all([
+      lire('recettes-culinaires'),
+      lire('personnalites'),
+      lire('savoirs-pratiques')])
+    recettesCulinaires.value = r
+    personnalites.value = pers
+    savoirsPratiques.value = sav
   }
 
   // ── Secteurs de developpement ─────────────────────────────
@@ -283,6 +329,7 @@ export const useAdminProfilsPays = () => {
     chargerContes, creerConte, modifierConte, supprimerConte,
     chargerSitesTouristiques, creerSiteTouristique, modifierSiteTouristique, supprimerSiteTouristique, definirVerificationSite,
     chargerSecteurs, creerSecteur, modifierSecteur, supprimerSecteur,
+    recettesCulinaires, personnalites, savoirsPratiques, chargerContenusCommunautaires,
     chargerSaisons, creerSaison, modifierSaison, supprimerSaison,
     chargerLiensInterethniques, creerLienInterethnique, modifierLienInterethnique, supprimerLienInterethnique,
     contributionsSuspendues, chargerContributionsSuspendues, reactiverContribution,

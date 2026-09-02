@@ -1,4 +1,4 @@
-# Phase 0 — Research : Administrateurs de salle publique & propositions
+# Phase 0 : Research : Administrateurs de salle publique & propositions
 
 **Feature** : 001-admin-salles-publiques
 **Date** : 2026-05-10
@@ -7,7 +7,7 @@ Aucun marqueur `[NEEDS CLARIFICATION]` n'est resté dans la spec ; cette phase d
 
 ---
 
-## Décision 1 — Faut-il rouvrir l'historique de la feature 005 (`proposition_salle` supprimée) ?
+## Décision 1 : Faut-il rouvrir l'historique de la feature 005 (`proposition_salle` supprimée) ?
 
 **Décision** : NON. Reconcevoir `afrolang.proposition_salle` *from scratch*, table simple et autonome, indépendante de l'ancienne implémentation supprimée par la refonte.
 
@@ -17,12 +17,12 @@ Aucun marqueur `[NEEDS CLARIFICATION]` n'est resté dans la spec ; cette phase d
 - Aucune donnée historique à migrer (la table avait été supprimée).
 
 **Alternatives rejetées** :
-- *Restaurer l'ancien schéma* : vivement déconseillé — contenait des colonnes `parrain_*`, `votes`, `etat_communautaire` qui dépassent largement la spec actuelle.
+- *Restaurer l'ancien schéma* : vivement déconseillé, contenait des colonnes `parrain_*`, `votes`, `etat_communautaire` qui dépassent largement la spec actuelle.
 - *Réutiliser une table générique de demandes* : aucune table générique n'existe ; en créer une serait de la sur-ingénierie.
 
 ---
 
-## Décision 2 — `salle_moderateur` vs nouvelle table `salle_administrateur`
+## Décision 2 : `salle_moderateur` vs nouvelle table `salle_administrateur`
 
 **Décision** : Créer **une table distincte** `afrolang.salle_administrateur` ; ne **pas** réutiliser `afrolang.salle_moderateur`.
 
@@ -40,7 +40,7 @@ Aucun marqueur `[NEEDS CLARIFICATION]` n'est resté dans la spec ; cette phase d
 
 ---
 
-## Décision 3 — Atomicité validation proposition → création de salle
+## Décision 3 : Atomicité validation proposition → création de salle
 
 **Décision** : Validation effectuée dans une **transaction sqlx unique** :
 1. `SELECT ... FOR UPDATE` sur la proposition (verrou ligne).
@@ -61,7 +61,7 @@ Aucun marqueur `[NEEDS CLARIFICATION]` n'est resté dans la spec ; cette phase d
 
 ---
 
-## Décision 4 — Suspension automatique en cascade (FR-021, FR-022, SC-008)
+## Décision 4 : Suspension automatique en cascade (FR-021, FR-022, SC-008)
 
 **Décision** : Implémenter via **handlers existants étendus**, pas via trigger SQL.
 
@@ -79,13 +79,13 @@ Aucun marqueur `[NEEDS CLARIFICATION]` n'est resté dans la spec ; cette phase d
 
 ---
 
-## Décision 5 — Notification : canal et délai
+## Décision 5 : Notification : canal et délai
 
-**Décision** : Réutiliser le mécanisme de notification existant — pour cette feature, **in-app uniquement** au minimum (insertion dans la table de notifications existante), e-mail SMTP best-effort si déjà branché pour les décisions de modération similaires (Bibliothèque Humaine notamment, cf. mémoire `001-admin-biblio-humaine`).
+**Décision** : Réutiliser le mécanisme de notification existant, pour cette feature, **in-app uniquement** au minimum (insertion dans la table de notifications existante), e-mail SMTP best-effort si déjà branché pour les décisions de modération similaires (Bibliothèque Humaine notamment, cf. mémoire `001-admin-biblio-humaine`).
 
 **Rationale** :
 - SC-004 exige une notification < 60 s après la décision : un INSERT in-app + envoi SMTP non bloquant satisfait ce SLA.
-- Pas de nouveau canal, pas de WebSocket dédié — Principe V (YAGNI).
+- Pas de nouveau canal, pas de WebSocket dédié, Principe V (YAGNI).
 
 **Alternatives rejetées** :
 - *Notification temps réel via LiveKit data channel* : hors périmètre, salle pas forcément ouverte au moment de la décision.
@@ -93,7 +93,7 @@ Aucun marqueur `[NEEDS CLARIFICATION]` n'est resté dans la spec ; cette phase d
 
 ---
 
-## Décision 6 — Anti-spam (edge case « tentatives répétées »)
+## Décision 6 : Anti-spam (edge case « tentatives répétées »)
 
 **Décision** : Compteur léger côté backend lors de `POST /api/afrolang/propositions` :
 - `SELECT COUNT(*) FROM afrolang.proposition_salle WHERE auteur_id=$1 AND statut='rejetee' AND decide_at > NOW() - INTERVAL '7 days'`
@@ -106,13 +106,13 @@ Aucun marqueur `[NEEDS CLARIFICATION]` n'est resté dans la spec ; cette phase d
 
 ---
 
-## Décision 7 — Visibilité publique des administrateurs de salle
+## Décision 7 : Visibilité publique des administrateurs de salle
 
 **Décision** : `GET /api/afrolang/salles/{id}` (endpoint public existant) est étendu d'un champ `administrateurs: Array<{ utilisateur_id, nom, prenom, photo_url, nomme_at }>` peuplé par `json_agg` filtré sur `actif=TRUE`.
 
 **Rationale** :
 - Conforme FR-017 (visibilité publique).
-- Pas de nouvel endpoint — Principe V.
+- Pas de nouvel endpoint : Principe V.
 - `json_agg` est déjà utilisé dans `lister_salles` pour `pays_origine` (feature 001-afrolang-pays-origine), même pattern.
 
 **Alternatives rejetées** :
@@ -120,7 +120,7 @@ Aucun marqueur `[NEEDS CLARIFICATION]` n'est resté dans la spec ; cette phase d
 
 ---
 
-## Décision 8 — Modèle d'autorisation pour pouvoirs futurs (FR-019)
+## Décision 8 : Modèle d'autorisation pour pouvoirs futurs (FR-019)
 
 **Décision** : Exposer un helper Rust **`est_administrateur_salle(pool, salle_id, user_id) -> Result<bool>`** dans `src/handlers/afrolang.rs`. Aucune capacité branchée à ce stade : le helper renvoie un booléen, prêt à être appelé par les futurs handlers qui implémenteront les pouvoirs.
 

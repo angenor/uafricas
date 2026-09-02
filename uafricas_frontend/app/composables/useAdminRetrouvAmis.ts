@@ -1,4 +1,4 @@
-// Composable pour l'administration — Retrouve Amis (avis, signalements, stats)
+// Composable pour l'administration : Retrouve Amis (avis, signalements, stats)
 import type { ApiResponse } from '~/types/admin'
 
 // ── Interfaces ─────────────────────────────────────────────
@@ -393,16 +393,16 @@ export const useAdminRetrouvAmis = () => {
     filtresAvis, filtresSignalements, filtresDemandesRetrait,
     pagination, sort, loading, error,
 
-    // Actions — Avis
+    // Actions : Avis
     chargerAvis, chargerDetailAvis, changerEtatAvis,
 
-    // Actions — Signalements
+    // Actions : Signalements
     chargerSignalements, chargerDetailSignalement, modererSignalement,
 
-    // Actions — Demandes de retrait
+    // Actions : Demandes de retrait
     chargerDemandesRetrait, statuerDemandeRetrait,
 
-    // Actions — Statistiques
+    // Actions : Statistiques
     chargerStatistiques,
 
     // Navigation pagination

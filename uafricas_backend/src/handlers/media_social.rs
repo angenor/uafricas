@@ -4,7 +4,7 @@
 //! Les six types de média (`chaine_tv`, `station_radio`, `emission_tele`,
 //! `emission_radio`, `episode_tele`, `episode_radio`) sont servis par les mêmes
 //! endpoints, discriminés par
-//! `(type_media, media_id)` — cf. migration 09k. Calqué sur `element_social`,
+//! `(type_media, media_id)`, cf. migration 09k. Calqué sur `element_social`,
 //! qui rend le même service aux sous-objets afripulse.
 //!
 //! La LECTURE reste publique ; seule la participation exige un compte
@@ -89,7 +89,7 @@ async fn verifier_media_publie(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// RÉACTIONS — POST /api/medias/{type_media}/{media_id}/reaction
+// RÉACTIONS : POST /api/medias/{type_media}/{media_id}/reaction
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Une seule réaction retenue par membre et par contenu (FR-023).
@@ -236,7 +236,7 @@ const COMMENTAIRE_SELECT: &str = "SELECT mc.id, mc.contenu, mc.created_at, mc.up
        FROM media_content.media_commentaire mc
        JOIN iam.utilisateur u ON u.id = mc.auteur_id";
 
-/// GET /api/medias/{type_media}/{media_id}/commentaires — lecture publique.
+/// GET /api/medias/{type_media}/{media_id}/commentaires, lecture publique.
 pub async fn lister_commentaires(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -346,7 +346,7 @@ pub async fn commenter_media(
     }))
 }
 
-/// DELETE /api/medias/commentaires/{id} — soft delete, auteur uniquement.
+/// DELETE /api/medias/commentaires/{id}, soft delete, auteur uniquement.
 pub async fn supprimer_commentaire(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -478,7 +478,7 @@ pub async fn partager_media(
     }))
 }
 
-/// GET /api/medias/partages — 8ᵉ source du mur communautaire, lecture publique.
+/// GET /api/medias/partages : 8ᵉ source du mur communautaire, lecture publique.
 pub async fn lister_partages_medias(
     pool: web::Data<PgPool>,
     params: web::Query<PartageMediaQueryParams>,
@@ -525,7 +525,7 @@ pub async fn lister_partages_medias(
 // ── Construction de l'UNION des six types ─────────────────────────────
 // Le titre ne porte pas le même nom de colonne selon la table (`nom` pour les
 // supports, `titre` pour les programmes et les épisodes) : une seule requête ne
-// peut pas les couvrir, d'où un fragment par type réuni par UNION ALL — patron
+// peut pas les couvrir, d'où un fragment par type réuni par UNION ALL, patron
 // `element_social::union_select`.
 
 fn fragment_partages(type_media: &str) -> String {
@@ -655,14 +655,14 @@ pub async fn compteurs_pour(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SIGNALEMENT — POST /api/medias/{type_media}/{media_id}/signalement (US7)
+// SIGNALEMENT : POST /api/medias/{type_media}/{media_id}/signalement (US7)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Signale un contenu contraire aux règles (FR-049, FR-050).
 ///
 /// Idempotent par `uq_signalement_media_membre` : un même membre ne peut pas
 /// faire croître le compteur en signalant plusieurs fois. Au-delà du seuil, le
-/// contenu bascule en `etat = 'suspendu'` — il disparaît alors de toutes les
+/// contenu bascule en `etat = 'suspendu'` : il disparaît alors de toutes les
 /// pages publiques à la requête suivante, sans intervention humaine (SC-009).
 ///
 /// La bascule ne va jamais dans l'autre sens : la désuspension est
@@ -730,7 +730,7 @@ pub async fn signaler_media(
     let doit_suspendre = nombre > SEUIL_SIGNALEMENTS_SUSPENSION_MEDIA;
 
     // 3. Compteur dénormalisé + bascule d'état. `etat` est une colonne texte sur
-    //    ces six tables — il n'y existe pas de colonne booléenne `suspendu`.
+    //    ces six tables : il n'y existe pas de colonne booléenne `suspendu`.
     let suspendu: bool = sqlx::query_scalar(&format!(
         "UPDATE {table}
             SET etat = CASE WHEN $3 AND etat = 'publie' THEN 'suspendu' ELSE etat END,
@@ -745,7 +745,7 @@ pub async fn signaler_media(
     .fetch_one(pool.get_ref())
     .await?;
 
-    // 4. Audit — uniquement sur un signalement réellement nouveau, un doublon
+    // 4. Audit : uniquement sur un signalement réellement nouveau, un doublon
     //    n'étant pas une mutation (FR-055).
     if nouveau_signalement {
         let ip = audit::extraire_ip(&req);

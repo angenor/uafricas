@@ -65,7 +65,7 @@ export interface PaysOrigineLight {
 
 /** Territoire sélectionnable dans le formulaire de proposition de salle.
  *  Contrairement à `PaysOrigineLight` (pays déjà utilisés par une salle), couvre
- *  TOUS les territoires actifs — Afrique d'abord, puis les autres continents
+ *  TOUS les territoires actifs : Afrique d'abord, puis les autres continents
  *  (diaspora où des langues africaines ont essaimé : Amériques, Europe…). */
 export interface TerritoireAPI {
   id: string
@@ -87,7 +87,7 @@ export interface AdministrateurLight {
 /** Statut d'une proposition communautaire de salle publique. */
 export type StatutProposition = 'en_attente' | 'validee' | 'rejetee' | 'retiree'
 
-/** DTO d'une proposition de salle (public et admin) — feature 001-admin-salles-publiques. */
+/** DTO d'une proposition de salle (public et admin), feature 001-admin-salles-publiques. */
 export interface PropositionSalle {
   id: string
   auteur: { id: string; nom: string; prenom: string }
@@ -145,7 +145,7 @@ export interface DesactivationAdminInfoAPI {
   motif: string | null
 }
 
-/** DTO salle publique (liste) — feature 005 */
+/** DTO salle publique (liste) : feature 005 */
 export interface SalleAPI {
   id: string
   titre: string
@@ -218,11 +218,11 @@ export interface SessionAPI {
 export interface SessionDetailAPI extends SessionAPI {
   moderateur: AfrolangUser | null
   participants: ParticipantAPI[]
-  /** Feature 001-session-moderation (FR-024) — état spotlight initial à la connexion. */
+  /** Feature 001-session-moderation (FR-024), état spotlight initial à la connexion. */
   spotlight?: SpotlightInfoAPI | null
-  /** Feature 001-session-moderation — nombre de permissions tableau blanc actives. */
+  /** Feature 001-session-moderation : nombre de permissions tableau blanc actives. */
   permissions_tableau_blanc_count?: number
-  /** Refonte multi-modérateurs — demande de passation en attente (filet si DataPacket perdu). */
+  /** Refonte multi-modérateurs : demande de passation en attente (filet si DataPacket perdu). */
   passation_en_attente?: PassationEnAttenteAPI | null
 }
 
@@ -322,12 +322,12 @@ export interface GroupeEthniqueListeAPI extends PageMeta {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Feature 001-session-moderation — permissions tableau blanc + spotlight
+// Feature 001-session-moderation : permissions tableau blanc + spotlight
 // ──────────────────────────────────────────────────────────────
 
 /** Niveau de modérateur de session calculé côté serveur (FR-001/FR-001b).
  *  `demarreur` = placeholder (utilisateur lambda ayant démarré la session).
- *  `promu_session` = co-modérateur nommé en séance — le SEUL révocable depuis
+ *  `promu_session` = co-modérateur nommé en séance, le SEUL révocable depuis
  *  la salle, les autres découlant d'un rôle porté par la salle elle-même. */
 export type NiveauModerateur =
   | 'admin_plateforme'
@@ -463,7 +463,7 @@ export interface SalleFiltres {
   /**
    * Zone géographique du territoire d'origine : `afrique` (salles
    * exclusivement africaines), `hors_afrique` (au moins un territoire hors
-   * d'Afrique) ou `tout` (aucun filtre — non transmis à l'API).
+   * d'Afrique) ou `tout` (aucun filtre : non transmis à l'API).
    */
   zone?: 'afrique' | 'hors_afrique' | 'tout'
   page?: number
@@ -638,7 +638,7 @@ export const useAfrolang = () => {
 
   // ── Feature 001-session-moderation : état partagé (singleton via useState) ──
   // Nécessaire pour que AfrolangRoom et SalleModerationPanel partagent la même
-  // instance — sinon chaque appel à useAfrolang() crée des refs locales isolées.
+  // instance : sinon chaque appel à useAfrolang() crée des refs locales isolées.
   const monNiveauModerateurSession = useState<NiveauModerateur | null>('afrolang.monNiveauModerateurSession', () => null)
   const permissionsTableauBlanc = useState<PermissionTableauBlancAPI[]>('afrolang.permissionsTableauBlanc', () => [])
   const moderateursOffice = useState<ModerateurOfficeAPI[]>('afrolang.moderateursOffice', () => [])
@@ -657,7 +657,7 @@ export const useAfrolang = () => {
   const suisJeModerateur = computed<boolean>(() => monNiveauModerateurSession.value !== null)
 
   /** Réinitialise tout l'état de modération partagé (à appeler à l'entrée ET la
-   *  sortie d'une session pour éviter toute fuite entre salles — useState global). */
+   *  sortie d'une session pour éviter toute fuite entre salles, useState global). */
   const reinitialiserEtatModeration = () => {
     monNiveauModerateurSession.value = null
     permissionsTableauBlanc.value = []
@@ -829,7 +829,7 @@ export const useAfrolang = () => {
     }
   }
 
-  /** Obtenir le detail d'une salle privee (endpoint legacy — sera supprimé par la refonte). */
+  /** Obtenir le detail d'une salle privee (endpoint legacy, sera supprimé par la refonte). */
   const obtenirSallePrivee = async (id: string): Promise<SallePriveeDetailAPI | null> => {
     chargement.value = true
     erreur.value = null
@@ -1003,7 +1003,7 @@ export const useAfrolang = () => {
     }
   }
 
-  /** US1 — Démarrer ou rejoindre le livestream public d'une salle en 1 appel. */
+  /** US1 : Démarrer ou rejoindre le livestream public d'une salle en 1 appel. */
   const demarrerOuRejoindreSallePublique = async (
     salleId: string,
   ): Promise<DemarrerRejoindrePriveeResponse | null> => {
@@ -1169,7 +1169,7 @@ export const useAfrolang = () => {
     }
   }
 
-  // ── Feature 005 — Option A : sessions de salle publique ──────────────────
+  // ── Feature 005 : Option A : sessions de salle publique ──────────────────
 
   const creerSessionSallePublique = async (
     salleId: string,
@@ -1484,7 +1484,7 @@ export const useAfrolang = () => {
     }
   }
 
-  // ── Feature 005 — US3 : Modération de session ──
+  // ── Feature 005 : US3 : Modération de session ──
 
   /** Transférer manuellement la modération de session à un autre participant. */
   const transfererModerationSession = async (
@@ -1537,7 +1537,7 @@ export const useAfrolang = () => {
 
   /** Coupe le micro d'un participant (mute appliqué par le serveur LiveKit).
    *  `coupe` vaut faux quand il n'y avait rien à couper (micro déjà fermé,
-   *  participant déconnecté) — ce n'est pas une erreur. */
+   *  participant déconnecté) : ce n'est pas une erreur. */
   const couperMicroParticipant = async (
     sessionId: string,
     utilisateurId: string,
@@ -1564,7 +1564,7 @@ export const useAfrolang = () => {
     }
   }
 
-  /** Coupe le micro de tous les participants — modérateurs présents exceptés. */
+  /** Coupe le micro de tous les participants, modérateurs présents exceptés. */
   const couperTousLesMicros = async (
     sessionId: string,
   ): Promise<{ coupes: number } | { erreur: 'interdit' | 'autre' }> => {
@@ -1586,7 +1586,7 @@ export const useAfrolang = () => {
     }
   }
 
-  // ── Feature 005 — US6 : Ressources et messagerie ──────────────────────
+  // ── Feature 005 : US6 : Ressources et messagerie ──────────────────────
 
   const listerRessources = async (salleId: string): Promise<RessourceSalleAPI[]> => {
     erreur.value = null
@@ -1829,7 +1829,7 @@ export const useAfrolang = () => {
   }
 
   // ──────────────────────────────────────────────────────────
-  // Feature 001-session-moderation — méthodes
+  // Feature 001-session-moderation : méthodes
   // ──────────────────────────────────────────────────────────
 
   /** Récupère l'état complet (modérateurs d'office + permissions individuelles + mon niveau). */
@@ -2031,7 +2031,7 @@ export const useAfrolang = () => {
 
   /** Attache un listener `dataReceived` sur la `Room` LiveKit pour les évènements
    *  `moderation.*`. `sessionId` sert à re-synchroniser l'état modérateur de façon
-   *  AUTORITAIRE (re-fetch serveur) sur les évènements de passation — on ne fait
+   *  AUTORITAIRE (re-fetch serveur) sur les évènements de passation : on ne fait
    *  jamais confiance au seul contenu du DataPacket pour une décision d'autorisation.
    *  Retourne une fonction de détachement à appeler au démontage. */
   const attacherListenerModeration = (room: Room, sessionId: string): (() => void) => {
@@ -2091,7 +2091,7 @@ export const useAfrolang = () => {
     }
   }
 
-  /** POST passation/accepter — le placeholder cède la modération (consentement). */
+  /** POST passation/accepter : le placeholder cède la modération (consentement). */
   const accepterPassation = async (sessionId: string): Promise<boolean> => {
     try {
       const r = await $fetch<ApiResponse<unknown>>(
@@ -2107,7 +2107,7 @@ export const useAfrolang = () => {
     }
   }
 
-  /** POST passation/finaliser — promotion auto après délai (appelé par le timer
+  /** POST passation/finaliser : promotion auto après délai (appelé par le timer
    *  client du modérateur désigné entrant). `resolu` indique si le délai serveur
    *  était bien échu. */
   const finaliserPassation = async (sessionId: string): Promise<boolean> => {
@@ -2135,7 +2135,7 @@ export const useAfrolang = () => {
 
   /** Combine : compte connecté actif + salle vivante + accès salle privée si applicable.
    *  Si `salle` n'est pas chargée (ex. depuis l'intérieur d'une session live),
-   *  on autorise — le backend re-valide tous les invariants. */
+   *  on autorise : le backend re-valide tous les invariants. */
   const peutContribuerRessource = (
     salle: SalleAPI | null,
     aAccesSallePriveeSiNecessaire: boolean = true,

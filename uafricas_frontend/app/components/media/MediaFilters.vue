@@ -29,8 +29,8 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
         :class="[
           'px-6 py-3 text-sm font-medium rounded-t-xl transition-all duration-200 focus:outline-hidden',
           activeFilter === 'type'
-            ? 'bg-black/60 text-yellow-400 border-t-2 border-yellow-400'
-            : 'bg-gray-900/60 text-gray-400 hover:text-white'
+            ? 'bg-black/60 text-af-chocolat border-t-2 border-af-chocolat'
+            : 'bg-gray-900/60 text-af-corps hover:opacity-70'
         ]"
       >
         <div class="flex items-center">
@@ -45,8 +45,8 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
         :class="[
           'px-6 py-3 text-sm font-medium rounded-t-xl transition-all duration-200 focus:outline-hidden',
           activeFilter === 'country'
-            ? 'bg-black/60 text-yellow-400 border-t-2 border-yellow-400'
-            : 'bg-gray-900/60 text-gray-400 hover:text-white'
+            ? 'bg-black/60 text-af-chocolat border-t-2 border-af-chocolat'
+            : 'bg-gray-900/60 text-af-corps hover:opacity-70'
         ]"
       >
         <div class="flex items-center">
@@ -61,8 +61,8 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
         :class="[
           'px-6 py-3 text-sm font-medium rounded-t-xl transition-all duration-200 focus:outline-hidden',
           activeFilter === 'genre'
-            ? 'bg-black/60 text-yellow-400 border-t-2 border-yellow-400'
-            : 'bg-gray-900/60 text-gray-400 hover:text-white'
+            ? 'bg-black/60 text-af-chocolat border-t-2 border-af-chocolat'
+            : 'bg-gray-900/60 text-af-corps hover:opacity-70'
         ]"
       >
         <div class="flex items-center">
@@ -78,7 +78,7 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
     <div class="bg-black/60 backdrop-blur-md rounded-b-xl rounded-tr-xl p-4 shadow-lg border border-gray-800">
       <!-- Filtre par type de programme -->
       <div v-if="activeFilter === 'type'">
-        <h2 class="text-xl font-bold text-yellow-400 mb-4 flex items-center">
+        <h2 class="text-xl font-bold text-af-chocolat mb-4 flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
           </svg>
@@ -94,7 +94,7 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
               'px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
               selectedType === type
                 ? 'bg-yellow-500 text-black shadow-lg'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                : 'bg-gray-800 text-af-corps hover:bg-gray-700'
             ]"
           >
             {{ type }}
@@ -104,7 +104,7 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
 
       <!-- Filtre par pays -->
       <div v-if="activeFilter === 'country'">
-        <h2 class="text-xl font-bold text-yellow-400 mb-4 flex items-center">
+        <h2 class="text-xl font-bold text-af-chocolat mb-4 flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
           </svg>
@@ -118,7 +118,7 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
               'px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
               selectedCountry === 'Tous les territoires'
                 ? 'bg-yellow-500 text-black shadow-lg'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                : 'bg-gray-800 text-af-corps hover:bg-gray-700'
             ]"
           >
             Tous les territoires
@@ -131,7 +131,7 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
               'px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
               selectedCountry === country
                 ? 'bg-yellow-500 text-black shadow-lg'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                : 'bg-gray-800 text-af-corps hover:bg-gray-700'
             ]"
           >
             {{ country }}
@@ -141,7 +141,7 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
 
       <!-- Filtre par genre -->
       <div v-if="activeFilter === 'genre'">
-        <h2 class="text-xl font-bold text-yellow-400 mb-4 flex items-center">
+        <h2 class="text-xl font-bold text-af-chocolat mb-4 flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
             <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
           </svg>
@@ -155,7 +155,7 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
               'px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
               selectedGenre === 'Tous les genres'
                 ? 'bg-yellow-500 text-black shadow-lg'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                : 'bg-gray-800 text-af-corps hover:bg-gray-700'
             ]"
           >
             Tous les genres
@@ -168,7 +168,7 @@ const activeFilter = ref<'type' | 'country' | 'genre'>('type')
               'px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
               selectedGenre === genre
                 ? 'bg-yellow-500 text-black shadow-lg'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                : 'bg-gray-800 text-af-corps hover:bg-gray-700'
             ]"
           >
             {{ genre }}

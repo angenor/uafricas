@@ -1,4 +1,4 @@
-//! Équipes éditoriales — lecture groupée, écriture par remplacement, suggestions
+//! Équipes éditoriales : lecture groupée, écriture par remplacement, suggestions
 //! (feature 010-medias-equipes-vitrine, migration 09t).
 //!
 //!   GET       /api/medias/equipe/fonctions
@@ -6,7 +6,7 @@
 //!   GET | PUT /api/admin/medias/{type_porteur}/{porteur_id}/equipe
 //!
 //! Les routes `/api/medias/**` s'adressent à des **MEMBRES** : la garde est
-//! `garde_detenteur`, jamais `AdminUtilisateur` — cet extracteur rejetterait
+//! `garde_detenteur`, jamais `AdminUtilisateur`, cet extracteur rejetterait
 //! tout non-admin. L'erreur inverse a été commise et corrigée en 009.
 //!
 //! Le public ne passe pas par ces routes : il lit l'équipe dans les payloads de
@@ -33,7 +33,7 @@ use crate::verifier_permission;
 use crate::ApiResponse;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Lecture groupée — sans requête N+1
+// Lecture groupée : sans requête N+1
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Équipes de plusieurs porteurs du **même** discriminant, en une seule requête.
@@ -76,7 +76,7 @@ pub async fn equipes_par_porteurs(
     Ok(resultat)
 }
 
-/// Équipe d'un porteur unique — commodité au-dessus de la lecture groupée.
+/// Équipe d'un porteur unique : commodité au-dessus de la lecture groupée.
 pub async fn equipe_du_porteur(
     pool: &PgPool,
     type_porteur: &str,
@@ -87,7 +87,7 @@ pub async fn equipe_du_porteur(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Cycle de vie — nettoyage à la suppression du porteur (FR-019)
+// Cycle de vie : nettoyage à la suppression du porteur (FR-019)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Suppression douce de l'équipe d'un porteur, **dans la transaction** de la
@@ -95,7 +95,7 @@ pub async fn equipe_du_porteur(
 ///
 /// `porteur_id` n'a pas de clé étrangère (prix du polymorphisme) : aucune
 /// cascade n'est possible, le nettoyage est explicite. L'oublier ne casse rien
-/// de visible — les équipes orphelines restent simplement dans le référentiel de
+/// de visible : les équipes orphelines restent simplement dans le référentiel de
 /// suggestions de fonctions.
 pub async fn supprimer_equipe_du_porteur(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
@@ -114,7 +114,7 @@ pub async fn supprimer_equipe_du_porteur(
     Ok(())
 }
 
-/// Même nettoyage, hors transaction — pour les chemins de suppression qui n'en
+/// Même nettoyage, hors transaction, pour les chemins de suppression qui n'en
 /// ouvrent pas.
 pub async fn supprimer_equipe_du_porteur_pool(
     pool: &PgPool,
@@ -134,7 +134,7 @@ pub async fn supprimer_equipe_du_porteur_pool(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Écriture — règles communes membre et back-office
+// Écriture : règles communes membre et back-office
 // ═══════════════════════════════════════════════════════════════════════════
 
 async fn exiger_porteur_existant(
@@ -168,7 +168,7 @@ async fn exiger_porteur_existant(
 /// internes réduits) sans quoi « Directeur » et « Directeur  » constitueraient
 /// deux entrées du référentiel de suggestions (FR-015).
 ///
-/// Chaque `PUT` réattribue les identifiants — aucune table ne référence un
+/// Chaque `PUT` réattribue les identifiants, aucune table ne référence un
 /// membre d'équipe, c'est ce qui autorise le remplacement intégral.
 async fn appliquer_equipe(
     pool: &PgPool,
@@ -334,7 +334,7 @@ pub async fn definir_equipe(
     }))
 }
 
-/// GET /api/medias/equipe/fonctions — suggestions du champ « fonction ».
+/// GET /api/medias/equipe/fonctions : suggestions du champ « fonction ».
 ///
 /// Portée volontairement **globale** (toutes chaînes, stations et programmes
 /// confondus) : une fonction déclarée sur une chaîne doit être proposée sur un
@@ -388,7 +388,7 @@ pub async fn admin_obtenir_equipe(
 
 /// PUT /api/admin/medias/{type_porteur}/{porteur_id}/equipe
 ///
-/// Mêmes règles que le chemin membre — `appliquer_equipe` est partagée, aucune
+/// Mêmes règles que le chemin membre : `appliquer_equipe` est partagée, aucune
 /// règle n'est réécrite. Seule l'autorité diffère : l'administration n'a pas à
 /// détenir le support. **La journalisation, elle, ne diffère pas** : le Principe
 /// VII est un MUST et ce `PUT` est une mutation au même titre que l'autre.

@@ -67,7 +67,7 @@ const colonnes: TableColumn[] = [
     format: (_v: any, row: any) => `${row.signale_par?.prenom || ''} ${row.signale_par?.nom || ''}`.trim(),
   },
   { key: 'motif', label: 'Motif', width: 'w-36' },
-  { key: 'etat', label: 'Etat', width: 'w-28' },
+  { key: 'etat', label: 'État', width: 'w-28' },
   {
     key: 'created_at',
     label: 'Date',
@@ -78,7 +78,7 @@ const colonnes: TableColumn[] = [
 ]
 
 const filterDefs: FilterDefinition[] = [
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'En attente', value: 'en_attente' },
     { label: 'Approuve', value: 'approuve' },
     { label: 'Rejete', value: 'rejete' },
@@ -126,7 +126,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
 <template>
   <div>
-    <AdminPageHeader titre="Signalements — Retrouve Amis" sous-titre="Moderation des signalements d'avis de recherche">
+    <AdminPageHeader titre="Signalements, Retrouve Amis" sous-titre="Moderation des signalements d'avis de recherche">
       <template #actions>
         <NuxtLink to="/admin/retrouve-amis" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour aux avis

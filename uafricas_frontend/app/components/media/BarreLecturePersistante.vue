@@ -2,7 +2,7 @@
 /**
  * Barre de lecture ancrée en bas de l'écran (FR-017).
  *
- * Montée dans le LAYOUT, hors du `<slot/>` : c'est ce placement — et lui seul —
+ * Montée dans le LAYOUT, hors du `<slot/>` : c'est ce placement, et lui seul 
  * qui fait survivre l'écoute au changement de page. Un lecteur monté dans une
  * page est démonté à la navigation, et le son se coupe.
  *
@@ -115,7 +115,7 @@ onMounted(() => {
 
       <div class="min-w-0 flex-1">
         <p class="text-sm font-semibold truncate">{{ contenu.titre }}</p>
-        <p class="text-xs text-gray-400 truncate">
+        <p class="text-xs text-white/70 truncate">
           <span v-if="contenu.estDirect" class="text-red-400 font-semibold">● En direct</span>
           <span v-if="contenu.estDirect && contenu.support"> · </span>
           <span v-if="contenu.support">{{ contenu.support }}</span>
@@ -125,7 +125,7 @@ onMounted(() => {
 
       <button
         type="button"
-        class="h-11 w-11 shrink-0 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-200 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400"
+        class="h-11 w-11 shrink-0 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-200 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-orange"
         :aria-label="enLecture ? 'Mettre en pause' : 'Reprendre la lecture'"
         @click="basculerLecture()"
       >
@@ -133,7 +133,7 @@ onMounted(() => {
       </button>
 
       <div v-if="afficheTimeline" class="hidden md:flex items-center gap-2 w-64">
-        <span class="text-[11px] text-gray-400 tabular-nums w-9 text-right">{{ formaterDuree(position) }}</span>
+        <span class="text-[11px] text-white/70 tabular-nums w-9 text-right">{{ formaterDuree(position) }}</span>
         <input
           type="range"
           min="0"
@@ -143,13 +143,13 @@ onMounted(() => {
           aria-label="Position de lecture"
           @input="deplacer"
         >
-        <span class="text-[11px] text-gray-400 tabular-nums w-9">{{ formaterDuree(duree) }}</span>
+        <span class="text-[11px] text-white/70 tabular-nums w-9">{{ formaterDuree(duree) }}</span>
       </div>
 
       <div class="hidden sm:flex items-center gap-2 shrink-0">
         <button
           type="button"
-          class="h-9 w-9 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400"
+          class="h-9 w-9 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-orange"
           :aria-label="coupe ? 'Rétablir le son' : 'Couper le son'"
           :aria-pressed="coupe"
           @click="basculerSon"
@@ -170,7 +170,7 @@ onMounted(() => {
 
       <button
         type="button"
-        class="h-9 w-9 shrink-0 rounded-full hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400"
+        class="h-9 w-9 shrink-0 rounded-full hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-orange"
         aria-label="Fermer le lecteur"
         @click="arreter"
       >

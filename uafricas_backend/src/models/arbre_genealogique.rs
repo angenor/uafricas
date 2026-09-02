@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Modèles — Arbre généalogique
+// Modèles : Arbre généalogique
 // ════════════════════════════════════════════════════════════════════════════
 
 use chrono::{DateTime, Utc};
@@ -16,7 +16,7 @@ pub const PERSONNE_COLONNES: &str =
 
 // ─── Structs BDD (FromRow) ────────────────────────────────────────────────
 
-/// Personne réelle — entité partageable entre arbres
+/// Personne réelle : entité partageable entre arbres
 #[derive(Debug, sqlx::FromRow)]
 pub struct Personne {
     pub id: Uuid,
@@ -37,7 +37,7 @@ pub struct Personne {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Arbre généalogique — un par utilisateur
+/// Arbre généalogique : un par utilisateur
 #[derive(Debug, sqlx::FromRow)]
 pub struct Arbre {
     pub id: Uuid,
@@ -45,7 +45,7 @@ pub struct Arbre {
     pub created_at: DateTime<Utc>,
 }
 
-/// Rattachement — lie une Personne réelle à un Arbre
+/// Rattachement : lie une Personne réelle à un Arbre
 #[derive(Debug, sqlx::FromRow)]
 pub struct Rattachement {
     pub id: Uuid,
@@ -54,7 +54,7 @@ pub struct Rattachement {
     pub ajoute_le: DateTime<Utc>,
 }
 
-/// Lien familial — relation typée entre deux Rattachements du même Arbre
+/// Lien familial : relation typée entre deux Rattachements du même Arbre
 #[derive(Debug, sqlx::FromRow)]
 pub struct LienFamilial {
     pub id: Uuid,
@@ -183,7 +183,7 @@ impl From<LienFamilial> for LienFamilialResponse {
     }
 }
 
-// ─── DTOs — Arbre complet (visualisation) ─────────────────────────────────
+// ─── DTOs : Arbre complet (visualisation) ─────────────────────────────────
 
 /// Nœud personne pour la visualisation d'arbre (inclut rattachement_id)
 #[derive(Debug, Serialize, sqlx::FromRow)]

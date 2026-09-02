@@ -51,7 +51,7 @@ const onRejeter = async (commentaire: string) => {
     const res = await rejeterProposition(id, commentaire)
     if (!res) throw new Error('Rejet échoué')
     proposition.value = res
-    successMsg.value = 'Proposition rejetée — l\'auteur a été notifié.'
+    successMsg.value = 'Proposition rejetée, l\'auteur a été notifié.'
   }
   catch (e: any) {
     erreurAction.value = e?.data?.error || e?.message || 'Erreur de rejet'

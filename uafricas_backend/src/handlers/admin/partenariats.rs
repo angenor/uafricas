@@ -11,7 +11,7 @@ use crate::verifier_permission;
 use crate::ApiResponse;
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/admin/partenariats — Liste paginee
+// GET /api/admin/partenariats : Liste paginee
 // ────────────────────────────────────────────────────────────────
 
 pub async fn lister_partenariats(
@@ -104,7 +104,7 @@ pub async fn lister_partenariats(
 }
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/admin/partenariats/{id} — Detail
+// GET /api/admin/partenariats/{id} : Detail
 // ────────────────────────────────────────────────────────────────
 
 pub async fn obtenir_partenariat(
@@ -168,7 +168,7 @@ pub async fn obtenir_partenariat(
 }
 
 // ────────────────────────────────────────────────────────────────
-// POST /api/admin/partenariats — Creation
+// POST /api/admin/partenariats : Creation
 // ────────────────────────────────────────────────────────────────
 
 pub async fn creer_partenariat(
@@ -230,7 +230,7 @@ pub async fn creer_partenariat(
 }
 
 // ────────────────────────────────────────────────────────────────
-// PUT /api/admin/partenariats/{id} — Modification
+// PUT /api/admin/partenariats/{id} : Modification
 // ────────────────────────────────────────────────────────────────
 
 pub async fn modifier_partenariat(
@@ -323,7 +323,7 @@ pub async fn modifier_partenariat(
 }
 
 // ────────────────────────────────────────────────────────────────
-// DELETE /api/admin/partenariats/{id} — Suppression reelle
+// DELETE /api/admin/partenariats/{id}, Suppression reelle
 // ────────────────────────────────────────────────────────────────
 
 pub async fn supprimer_partenariat(

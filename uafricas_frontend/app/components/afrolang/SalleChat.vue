@@ -1,12 +1,12 @@
 <script setup lang="ts">
-// Espace commentaires temps réel de session (US6) — persistance REST +
+// Espace commentaires temps réel de session (US6), persistance REST +
 // diffusion instantanée par DataPacket LiveKit (`type: 'chat'`).
 //
 // La diffusion est faite PAR LE SERVEUR après l'INSERT, pas par le client
 // émetteur : le token de session refuse `can_publish_data` à tout participant
 // ordinaire (canal data réservé au tableau blanc), si bien qu'une diffusion
 // côté client ne servirait le direct qu'aux modérateurs. Le client se contente
-// donc d'écouter — et d'afficher son propre message, qu'il connaît déjà.
+// donc d'écouter : et d'afficher son propre message, qu'il connaît déjà.
 //
 // Le composant reste MONTÉ même quand le panneau est replié (`v-show` côté
 // parent) : sans cela il manquerait les paquets reçus pendant la fermeture, et
@@ -18,7 +18,7 @@ import type { MessageSessionAPI } from '~/composables/useAfrolang'
 
 interface Props {
   sessionId: string
-  /** Room LiveKit connectée — support de la diffusion temps réel. */
+  /** Room LiveKit connectée : support de la diffusion temps réel. */
   room?: Room | null
   /** Le panneau est-il visible ? Sert à remettre le compteur de non-lus à zéro. */
   visible?: boolean
@@ -50,7 +50,7 @@ const colleEnBas = ref(true)
 const nouveauxEnBas = ref(0)
 const nonLus = ref(0)
 
-/** Ids déjà affichés — le même message peut arriver par POST, par DataPacket
+/** Ids déjà affichés : le même message peut arriver par POST, par DataPacket
  *  et par la reprise d'historique `since`. */
 const idsConnus = new Set<string>()
 
@@ -74,7 +74,7 @@ const heure = (iso: string): string => {
     : d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
-/** Vrai quand le flux est (quasi) en bas — tolérance de 60 px. */
+/** Vrai quand le flux est (quasi) en bas, tolérance de 60 px. */
 const estEnBas = (): boolean => {
   const el = zoneFlux.value
   if (!el) return true
@@ -157,7 +157,7 @@ const envoyer = async () => {
   envoyerEnCours.value = false
 
   if (!message) {
-    erreurEnvoi.value = 'Envoi impossible — vérifiez votre connexion et réessayez.'
+    erreurEnvoi.value = 'Envoi impossible, vérifiez votre connexion et réessayez.'
     return
   }
 
@@ -183,8 +183,8 @@ const surDataPacket = (payload: Uint8Array) => {
 
 /** Filet de rattrapage périodique. Le `send_data` serveur est best-effort (son
  *  échec est journalisé, jamais propagé, pour ne pas faire échouer un message
- *  pourtant persisté) : ce sondage léger — une requête `since`, le plus souvent
- *  vide — garantit la convergence, LiveKit restant le chemin instantané. */
+ *  pourtant persisté) : ce sondage léger, une requête `since`, le plus souvent
+ *  vide : garantit la convergence, LiveKit restant le chemin instantané. */
 const INTERVALLE_RATTRAPAGE_MS = 30_000
 let minuteurRattrapage: ReturnType<typeof setInterval> | null = null
 
@@ -261,7 +261,7 @@ onBeforeUnmount(() => {
           Chargement des commentaires...
         </p>
         <p v-else-if="messages.length === 0" class="text-center text-sm text-gray-400">
-          Aucun commentaire — lancez la discussion.
+          Aucun commentaire : lancez la discussion.
         </p>
 
         <div
@@ -332,7 +332,7 @@ onBeforeUnmount(() => {
           :disabled="envoyerEnCours || !nouveauMessage.trim()"
           class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-600 text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-40"
           aria-label="Envoyer le commentaire"
-          title="Envoyer (Entrée) — Maj+Entrée pour aller à la ligne"
+          title="Envoyer (Entrée) : Maj+Entrée pour aller à la ligne"
         >
           <font-awesome-icon
             :icon="['fas', envoyerEnCours ? 'spinner' : 'paper-plane']"

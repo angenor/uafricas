@@ -1,4 +1,4 @@
-# Phase 1 — Modèle de données
+# Phase 1 : Modèle de données
 
 **Feature**: 010-medias-equipes-vitrine · **Date**: 2026-08-10
 **Migration**: `uafricas_backend/doc/bd/schemas/09t_media_content_equipes_periodicite.sql`
@@ -7,7 +7,7 @@ Le schéma SQL est la source de vérité (Principe III) : la migration précède
 
 ---
 
-## 1. Table neuve — `media_content.membre_equipe`
+## 1. Table neuve : `media_content.membre_equipe`
 
 ```sql
 CREATE TABLE IF NOT EXISTS media_content.membre_equipe (
@@ -36,7 +36,7 @@ ALTER TABLE media_content.membre_equipe
         CHECK (type_porteur IN ('chaine_tv', 'station_radio', 'emission_tele', 'emission_radio'));
 
 -- FR-012 : nom et fonction obligatoires, et « obligatoire » veut dire non vide,
--- pas « non NULL » — une chaîne d'espaces passerait le NOT NULL.
+-- pas « non NULL » : une chaîne d'espaces passerait le NOT NULL.
 ALTER TABLE media_content.membre_equipe
     ADD CONSTRAINT ck_membre_equipe_nom_non_vide      CHECK (btrim(nom) <> '');
 ALTER TABLE media_content.membre_equipe
@@ -61,17 +61,17 @@ CREATE INDEX IF NOT EXISTS idx_membre_equipe_fonction
 
 ### Commentaires de colonne (obligatoires, cf. 09q/09r)
 
-- `type_porteur` — « Support (chaine_tv, station_radio) ou programme (emission_tele, emission_radio). Volontairement PAS l'enum type_support_media (09m), qui ne couvre que les supports, ni le CHECK des interactions (09k), qui inclut les épisodes. »
-- `utilisateur_id` — « Rattachement FACULTATIF à un compte (FR-013). ON DELETE SET NULL : la fiche survit à la fermeture du compte, sans lien mort. Ne confère AUCUN droit — les droits vivent dans support_detenteur (09m). »
-- `contact` — « Coordonnée professionnelle SAISIE par le gestionnaire. N'est JAMAIS dérivée de iam.utilisateur.email, même quand utilisateur_id est renseigné. »
-- `ordre` — « Rang d'affichage public (FR-016), réécrit à chaque PUT depuis l'index reçu. »
+- `type_porteur` : « Support (chaine_tv, station_radio) ou programme (emission_tele, emission_radio). Volontairement PAS l'enum type_support_media (09m), qui ne couvre que les supports, ni le CHECK des interactions (09k), qui inclut les épisodes. »
+- `utilisateur_id` : « Rattachement FACULTATIF à un compte (FR-013). ON DELETE SET NULL : la fiche survit à la fermeture du compte, sans lien mort. Ne confère AUCUN droit : les droits vivent dans support_detenteur (09m). »
+- `contact` : « Coordonnée professionnelle SAISIE par le gestionnaire. N'est JAMAIS dérivée de iam.utilisateur.email, même quand utilisateur_id est renseigné. »
+- `ordre` : « Rang d'affichage public (FR-016), réécrit à chaque PUT depuis l'index reçu. »
 
 ### Cycle de vie
 
 | Événement | Effet |
 |---|---|
 | `PUT …/equipe` | `DELETE` des lignes du porteur puis `INSERT` de la liste reçue, dans une transaction. `ordre` = index. |
-| Suppression douce d'un programme (`emission_*.deleted_at`) | Suppression douce de son équipe : `UPDATE membre_equipe SET deleted_at = NOW() WHERE type_porteur = … AND porteur_id = …` — FR-019. À poser dans `media_emission::supprimer_emission` **et** `admin::radio_tele::supprimer_emission_admin`. |
+| Suppression douce d'un programme (`emission_*.deleted_at`) | Suppression douce de son équipe : `UPDATE membre_equipe SET deleted_at = NOW() WHERE type_porteur = … AND porteur_id = …`, FR-019. À poser dans `media_emission::supprimer_emission` **et** `admin::radio_tele::supprimer_emission_admin`. |
 | Suppression douce d'un support | Même traitement, dans `admin::radio_tele::supprimer_{chaine_tv,station_radio}`. |
 | Fermeture d'un compte rattaché | `ON DELETE SET NULL` (suppression dure) ; la suppression douce est absorbée à la lecture par `AND u.deleted_at IS NULL` dans la jointure. |
 
@@ -79,7 +79,7 @@ CREATE INDEX IF NOT EXISTS idx_membre_equipe_fonction
 
 ---
 
-## 2. Modification — périodicité des programmes
+## 2. Modification : périodicité des programmes
 
 ```sql
 ALTER TABLE media_content.emission_tele  DROP CONSTRAINT IF EXISTS ck_emission_tele_cadence;
@@ -97,7 +97,7 @@ ALTER TABLE media_content.emission_radio
 
 ---
 
-## 3. Types Rust — `src/models/media_equipe.rs`
+## 3. Types Rust : `src/models/media_equipe.rs`
 
 ```rust
 pub const TYPES_PORTEUR: [&str; 4] =
@@ -161,7 +161,7 @@ pub struct EquipeRequest { pub membres: Vec<MembreEquipeRequest> }
 | `nom` non vide après `btrim` | « Le nom d'un membre de l'équipe est obligatoire » |
 | `fonction` non vide après `btrim` | « La fonction d'un membre de l'équipe est obligatoire » |
 | `membres.len() <= 60` | « Une équipe ne peut compter plus de 60 personnes » |
-| Normalisation appliquée à `fonction` avant insertion | `btrim` + `regexp_replace('\s+', ' ')` — voir D3 |
+| Normalisation appliquée à `fonction` avant insertion | `btrim` + `regexp_replace('\s+', ' ')` : voir D3 |
 
 Une liste **vide est valide** : c'est ainsi qu'on supprime toute l'équipe.
 
@@ -191,7 +191,7 @@ Ces trois champs suivent la convention de `thematiques` (09r) : omis du JSON qua
 
 ---
 
-## 5. Types TypeScript — `app/composables/useMediaEquipe.ts`
+## 5. Types TypeScript : `app/composables/useMediaEquipe.ts`
 
 ```ts
 export type TypePorteurEquipe =
@@ -220,13 +220,13 @@ export interface MembreEquipeForm {
 }
 ```
 
-Ajouts aux types existants : `TvChannel.equipe: MembreEquipeAPI[]`, `TvEmission.equipe: MembreEquipeAPI[]`, et leurs pendants radio — repli `[]` dans les mappeurs, jamais `undefined`, pour que les gabarits n'aient pas à tester deux formes.
+Ajouts aux types existants : `TvChannel.equipe: MembreEquipeAPI[]`, `TvEmission.equipe: MembreEquipeAPI[]`, et leurs pendants radio, repli `[]` dans les mappeurs, jamais `undefined`, pour que les gabarits n'aient pas à tester deux formes.
 
 ---
 
 ## 6. Périodicité côté code
 
-### Rust — `models/media_emission.rs`
+### Rust : `models/media_emission.rs`
 
 ```rust
 pub const CADENCES_AUTORISEES: [&str; 4] =
@@ -257,7 +257,7 @@ pub fn heures_anticipation_alerte(cadence: &str) -> Option<i64> {
 
 Le message d'erreur de `valider_cadence` mentionne les quatre valeurs.
 
-### TypeScript — `app/composables/useMediaEmissions.ts`
+### TypeScript : `app/composables/useMediaEmissions.ts`
 
 ```ts
 export const LIBELLES_CADENCE: Record<string, string> = {
@@ -266,7 +266,7 @@ export const LIBELLES_CADENCE: Record<string, string> = {
   hebdomadaire: 'Hebdomadaire',
   mensuelle:    'Mensuel',
 }
-/** Ordre d'affichage dans les sélecteurs — « non périodique » en tête (défaut, FR-042). */
+/** Ordre d'affichage dans les sélecteurs, « non périodique » en tête (défaut, FR-042). */
 export const CADENCES_ORDONNEES = ['ponctuelle', 'quotidienne', 'hebdomadaire', 'mensuelle'] as const
 ```
 
@@ -278,7 +278,7 @@ export const CADENCES_ORDONNEES = ['ponctuelle', 'quotidienne', 'hebdomadaire', 
 
 | Convention | Respect |
 |---|---|
-| UUID v4 en PK | `gen_random_uuid()` — comme 09m/09q/09r |
+| UUID v4 en PK | `gen_random_uuid()`, comme 09m/09q/09r |
 | Suppression douce | `deleted_at TIMESTAMPTZ`, filtré dans tous les index partiels et toutes les lectures |
 | TIMESTAMPTZ | `created_at`, `updated_at`, `deleted_at` |
 | snake_case français | `type_porteur`, `porteur_id`, `territoire`, `cree_par` |

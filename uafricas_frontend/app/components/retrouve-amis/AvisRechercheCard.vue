@@ -45,9 +45,9 @@ const periodeLabel = computed(() => {
 
 const etatConfig = computed(() => {
   const configs: Record<string, { label: string; classes: string }> = {
-    actif: { label: 'Actif', classes: 'bg-custom-green/10 text-custom-green' },
-    cloture: { label: 'Cloture', classes: 'bg-gray-100 text-gray-500' },
-    suspendu: { label: 'Suspendu', classes: 'bg-red-100 text-red-600' },
+    actif: { label: 'Actif', classes: 'bg-af-vert/10 text-af-vert' },
+    cloture: { label: 'Cloture', classes: 'bg-af-fond text-af-atone' },
+    suspendu: { label: 'Suspendu', classes: 'bg-af-live/10 text-af-live' },
   }
   return configs[props.avis.etat] ?? configs.actif
 })
@@ -75,14 +75,14 @@ function onCloturer(event: Event) {
 
 <template>
   <article
-    class="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-5 cursor-pointer border border-gray-100"
+    class="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-5 cursor-pointer border border-af-bordure"
     @click="emit('voir', avis.id)"
   >
     <!-- En-tete : nom + badge etat -->
     <div class="flex items-start justify-between gap-3 mb-3">
-      <h3 class="text-lg font-bold text-gray-900 leading-tight">
+      <h3 class="text-lg font-bold text-af-encre leading-tight">
         {{ nomComplet }}
-        <span v-if="avis.surnom" class="text-sm font-normal text-gray-400 ml-1">
+        <span v-if="avis.surnom" class="text-sm font-normal text-af-atone-2 ml-1">
           ({{ avis.surnom }})
         </span>
       </h3>
@@ -96,20 +96,20 @@ function onCloturer(event: Event) {
 
     <!-- Criteres (chips) -->
     <div class="flex flex-wrap gap-2 mb-4">
-      <span v-if="avis.ville" class="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 rounded-full px-3 py-1">
-        <font-awesome-icon icon="location-dot" class="text-custom-chocolat/70" />
+      <span v-if="avis.ville" class="inline-flex items-center gap-1.5 text-xs text-af-corps bg-af-fond rounded-full px-3 py-1">
+        <font-awesome-icon icon="location-dot" class="text-af-chocolat/70" />
         {{ avis.ville }}
       </span>
-      <span v-if="avis.ecole" class="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 rounded-full px-3 py-1">
-        <font-awesome-icon icon="graduation-cap" class="text-custom-chocolat/70" />
+      <span v-if="avis.ecole" class="inline-flex items-center gap-1.5 text-xs text-af-corps bg-af-fond rounded-full px-3 py-1">
+        <font-awesome-icon icon="graduation-cap" class="text-af-chocolat/70" />
         {{ avis.ecole }}
       </span>
-      <span v-if="avis.pays" class="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 rounded-full px-3 py-1">
-        <font-awesome-icon icon="earth-africa" class="text-custom-chocolat/70" />
+      <span v-if="avis.pays" class="inline-flex items-center gap-1.5 text-xs text-af-corps bg-af-fond rounded-full px-3 py-1">
+        <font-awesome-icon icon="earth-africa" class="text-af-chocolat/70" />
         {{ avis.pays.nom }}
       </span>
-      <span v-if="periodeLabel" class="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 rounded-full px-3 py-1">
-        <font-awesome-icon icon="calendar" class="text-custom-chocolat/70" />
+      <span v-if="periodeLabel" class="inline-flex items-center gap-1.5 text-xs text-af-corps bg-af-fond rounded-full px-3 py-1">
+        <font-awesome-icon icon="calendar" class="text-af-chocolat/70" />
         {{ periodeLabel }}
       </span>
     </div>
@@ -117,21 +117,21 @@ function onCloturer(event: Event) {
     <!-- Pied : correspondances + date + actions -->
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
-        <span class="text-xs font-semibold text-custom-chocolat bg-custom-chocolat/10 rounded-full px-2.5 py-1">
+        <span class="text-xs font-semibold text-af-chocolat bg-af-chocolat/10 rounded-full px-2.5 py-1">
           {{ avis.nb_correspondances }} correspondance{{ avis.nb_correspondances > 1 ? 's' : '' }}
         </span>
-        <span class="text-xs text-gray-400">{{ dateCreation }}</span>
+        <span class="text-xs text-af-atone-2">{{ dateCreation }}</span>
       </div>
 
       <div v-if="estActif" class="flex items-center gap-1">
         <button
-          class="text-custom-chocolat hover:bg-custom-chocolat/10 rounded-lg px-3 py-1 text-sm transition-colors"
+          class="text-af-chocolat hover:bg-af-chocolat/10 rounded-lg px-3 py-1 text-sm transition-colors"
           @click="onModifier"
         >
           Modifier
         </button>
         <button
-          class="text-red-500 hover:bg-red-50 rounded-lg px-3 py-1 text-sm transition-colors"
+          class="text-af-live hover:bg-af-live/5 rounded-lg px-3 py-1 text-sm transition-colors"
           @click="onCloturer"
         >
           Cloturer

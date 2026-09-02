@@ -24,15 +24,15 @@ export interface ChaineTvAPI {
   pays: string | null
   langue: string
   est_en_direct: boolean
-  /** « africans » (Africans Télé International) ou « territoire » — cf. 09o. */
+  /** « africans » (Africans Télé International) ou « territoire », cf. 09o. */
   origine_publication: string
-  /** Coordonnées publiques de l'équipe (09p) — absent quand aucune. */
+  /** Coordonnées publiques de l'équipe (09p), absent quand aucune. */
   contacts?: ContactsSupport | null
-  /** Thématiques déclarées (US3) — absent quand la chaîne n'en déclare aucune. */
+  /** Thématiques déclarées (US3) : absent quand la chaîne n'en déclare aucune. */
   thematiques?: ThematiquePublique[]
   /** Couverture territoriale déclarée (US4). */
   couverture?: CouverturePublique | null
-  /** Équipe éditoriale déclarée (010) — absent quand la chaîne n'en a aucune. */
+  /** Équipe éditoriale déclarée (010) : absent quand la chaîne n'en a aucune. */
   equipe?: MembreEquipeAPI[]
   created_at: string
   /** Réactions, commentaires et partages agrégés (FR-027). */
@@ -60,7 +60,7 @@ export interface VedetteTeleAPI {
 }
 
 /**
- * Une section = une chaîne et ses **programmes** publiés — et non plus une
+ * Une section = une chaîne et ses **programmes** publiés, et non plus une
  * vignette par vidéo. Chaque programme annonce son nombre d'épisodes et un
  * aperçu borné à 12.
  */
@@ -68,7 +68,7 @@ export interface TeleSectionAPI {
   chaine: ChaineTvAPI
   emissions: EmissionAPI[]
   total_emissions: number
-  /** Grille du moment (US2) — absents quand la chaîne n'en a aucune. */
+  /** Grille du moment (US2) : absents quand la chaîne n'en a aucune. */
   diffusion_en_cours?: CreneauAPI | null
   creneau_suivant?: CreneauAPI | null
 }
@@ -97,7 +97,7 @@ export interface TvChannel {
   origine: string
   /** Coordonnées publiques de l'équipe, `null` quand elle n'en publie aucune. */
   contacts: ContactsSupport | null
-  /** Thématiques déclarées (US3) — vide tant que l'API ne les greffe pas. */
+  /** Thématiques déclarées (US3) : vide tant que l'API ne les greffe pas. */
   thematiques: ThematiquePublique[]
   /** Couverture territoriale déclarée (US4). */
   couverture: CouverturePublique | null
@@ -113,7 +113,7 @@ export interface TvChannel {
  *
  * Le nom `TvProgram` est conservé : à l'écran, l'unité que le visiteur lit et
  * partage reste « le programme qu'il regarde ». Ce qui a changé, c'est qu'il
- * appartient désormais à une série — d'où `emissionId` et `emissionTitre`.
+ * appartient désormais à une série : d'où `emissionId` et `emissionTitre`.
  */
 export interface TvProgram {
   id: string
@@ -159,7 +159,7 @@ export interface TvEmission {
   /** Aperçu borné à 12 ; au-delà, la page du programme. Vide sur les
    *  sections de vitrine, qui ne rendent plus d'épisode (010, FR-002). */
   episodes: TvProgram[]
-  /** Équipe éditoriale DU PROGRAMME (010) — jamais celle de sa chaîne. */
+  /** Équipe éditoriale DU PROGRAMME (010), jamais celle de sa chaîne. */
   equipe: MembreEquipeAPI[]
   interactions: CompteursInteraction | null
 }
@@ -209,9 +209,9 @@ export interface TeleSectionsFiltres {
   /** Identifiant d'un thème phare (`shared.categorie`, contexte « media »).
    * Porte sur les PROGRAMMES diffusés, à ne pas confondre avec `thematiques`. */
   theme?: string
-  /** Thématiques DÉCLARÉES par la chaîne (US3) — répétable, entendu comme un OU. */
+  /** Thématiques DÉCLARÉES par la chaîne (US3), répétable, entendu comme un OU. */
   thematiques?: string[]
-  /** Territoire couvert (US4) — remonte aussi les chaînes continentales. */
+  /** Territoire couvert (US4) : remonte aussi les chaînes continentales. */
   territoire?: string
   /** `true` restreint aux chaînes en direct ; `false`/absent ne filtre pas. */
   en_direct?: boolean
@@ -268,7 +268,7 @@ function mapperChaineApiVersTv(chaine: ChaineTvAPI, apiBase: string): TvChannel 
 /**
  * Un ÉPISODE vers la forme consommée par les composants.
  *
- * Exporté : `useStationsRadio` s'en sert à l'identique — la seule différence
+ * Exporté : `useStationsRadio` s'en sert à l'identique, la seule différence
  * entre les deux familles est le nom de la colonne de média, et l'API l'a déjà
  * aplanie sous `media_url`.
  */
@@ -408,7 +408,7 @@ export const useTelevision = () => {
   }
 
   /**
-   * **Programmes** d'une chaîne détenue — alimente le sélecteur de la grille de
+   * **Programmes** d'une chaîne détenue : alimente le sélecteur de la grille de
    * programmation, qui désigne désormais une série et non un fichier (FR-014).
    *
    * Route MEMBRE : la grille se construit depuis l'espace du détenteur, et la
@@ -483,7 +483,7 @@ export const useTelevision = () => {
 
   /**
    * Épisode mis en avant sur toute la page (FR-052).
-   * `null` quand aucun épisode n'est publié — la page affiche alors son message
+   * `null` quand aucun épisode n'est publié, la page affiche alors son message
    * d'état vide, jamais un lecteur en erreur.
    */
   const obtenirVedette = async (): Promise<ProgrammeVedette | null> => {
@@ -569,7 +569,7 @@ export const useTelevision = () => {
   }
 
   /**
-   * Détail d'une chaîne par son slug, **avec ses programmes** — requis par les
+   * Détail d'une chaîne par son slug, **avec ses programmes**, requis par les
    * pages SSR. La page déplie ainsi le catalogue à deux niveaux sans second
    * appel.
    */

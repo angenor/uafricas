@@ -1,4 +1,4 @@
-// Composable admin — barème d'engagement (règles, paliers, niveaux) + journal
+// Composable admin : barème d'engagement (règles, paliers, niveaux) + journal
 import { useAdmin } from '~/composables/useAdmin'
 
 export interface AdminRegle {

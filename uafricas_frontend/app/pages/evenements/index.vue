@@ -1,144 +1,96 @@
-<template>
-  <div class="min-h-screen flex flex-col">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div class="group relative">
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat to-black/90"></div>
-
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Forum
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Événements & Rencontres
-          </p>
-        </div>
-
-        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <!-- Bouton d'aide : ouvre la présentation d'Africalive -->
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
-            aria-label="En savoir plus sur Africalive"
-            @click="presentationOuverte = true"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
-            C'est quoi Africalive&nbsp;?
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modale de présentation « C'est quoi Africalive ? » -->
-    <EvenementsPresentationModal
-      :open="presentationOuverte"
-      @close="presentationOuverte = false"
-    />
-
-    <!-- Breadcrumb -->
-    <div class="backdrop-blur-xs">
-      <div class="mx-auto px-4 py-3">
-        <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
-      </div>
-    </div>
-
-    <!-- Contenu principal - 3 sections -->
-    <div class="flex-1 flex flex-col lg:flex-row">
-      <!-- Section 1: Codi-Moi -->
-      <div class="flex-1 p-4 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-hidden flex flex-col">
-        <div class="text-2xl font-bold uppercase text-custom-chocolat mb-2">
-          Codi-Moi
-        </div>
-        <div class="flex flex-wrap gap-1 mb-2">
-          <span class="inline-flex items-center text-xs text-black font-bold">
-            <span class="w-2 h-2 bg-black rounded-full mr-1"></span>Education
-          </span>
-          <span class="inline-flex items-center text-xs text-black font-bold">
-            <span class="w-2 h-2 bg-black rounded-full mr-1"></span>Santé
-          </span>
-          <span class="inline-flex items-center text-xs text-black font-bold">
-            <span class="w-2 h-2 bg-black rounded-full mr-1"></span>Agriculture
-          </span>
-        </div>
-        <div class="flex-1 relative overflow-hidden rounded-md min-h-64">
-          <img
-            class="absolute inset-0 w-full h-full object-cover"
-            src="https://www.agoraafricaine.info/wp-content/uploads/2022/05/valeurs-africaines.jpg"
-            alt="Codification"
-          />
-          <div class="absolute inset-0 bg-black/30 flex items-end p-3">
-            <NuxtLink to="/codi-moi">
-              <button class="text-white text-sm whitespace-nowrap rounded-full bg-custom-green px-3 py-1 hover:scale-105 transition-all">
-                Découvrir
-                <font-awesome-icon icon="fa-solid fa-arrow-right" class="ml-1" />
-              </button>
-            </NuxtLink>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section 2: Afrolang -->
-      <div class="flex-1 p-4 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-hidden flex flex-col">
-        <div class="text-2xl font-bold uppercase text-custom-chocolat mb-2">
-          Afrolang
-        </div>
-        <div class="text-sm mb-2">
-          Découvrez les langues et cultures africaines à travers notre programme linguistique innovant.
-        </div>
-        <div class="flex-1 relative overflow-hidden rounded-md min-h-64">
-          <img
-            class="absolute inset-0 w-full h-full object-cover"
-            src="https://www.fratmat.info/media/k2/items/cache/c9e4f768b9037f2637ff258302bd739d_XL.jpg"
-            alt="Afrolang"
-          />
-          <div class="absolute inset-0 bg-black/30 flex items-end p-3">
-            <NuxtLink to="/afrolang">
-              <button class="text-white text-sm whitespace-nowrap rounded-full bg-custom-green px-3 py-1 hover:scale-105 transition-all">
-                Découvrir
-                <font-awesome-icon icon="fa-solid fa-arrow-right" class="ml-1" />
-              </button>
-            </NuxtLink>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section 3: Événements & Ateliers -->
-      <div class="flex-1 p-4 overflow-hidden flex flex-col">
-        <div class="text-2xl font-bold uppercase text-custom-chocolat mb-2">
-          Événements & Ateliers
-        </div>
-        <div class="text-sm mb-2">
-          Participez à nos événements culturels, ateliers et rencontres pour célébrer la richesse africaine.
-        </div>
-        <div class="flex-1 relative overflow-hidden rounded-md min-h-64">
-          <img
-            class="absolute inset-0 w-full h-full object-cover"
-            src="https://www.learnthings.fr/wp-content/uploads/2024/06/atelier-en-formation-768x578.jpg.webp"
-            alt="Événements"
-          />
-          <div class="absolute inset-0 bg-black/30 flex items-end p-3">
-            <NuxtLink to="/evenements/liste">
-              <button class="text-white text-sm whitespace-nowrap rounded-full bg-custom-green px-3 py-1 hover:scale-105 transition-all">
-                Découvrir
-                <font-awesome-icon icon="fa-solid fa-arrow-right" class="ml-1" />
-              </button>
-            </NuxtLink>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
+/**
+ * Forum : porté sur le gabarit de la refonte.
+ *
+ * La page est un simple carrefour vers trois modules. Elle chargeait ses trois
+ * illustrations depuis **trois sites tiers** (agoraafricaine.info, fratmat.info
+ * et learnthings.fr) : images hotlinkées, qui cassent le jour où ces sites les
+ * déplacent, et qui envoient l'adresse IP de chaque visiteur à trois hôtes
+ * étrangers au projet. La troisième, en prime, était une photo de banque
+ * d'images sans rapport avec l'Afrique. Les trois visuels du dépôt les
+ * remplacent.
+ */
+definePageMeta({ layout: false })
+
 useHead({
-  title: 'Forum - Événements | AfricanS'
+  title: 'Forum : Événements & rencontres | AfricanS',
+  meta: [
+    {
+      name: 'description',
+      content: 'Codi-Moi, Afrolang et Africalive : les trois espaces de rencontre de la plateforme.',
+    }],
 })
 
-const breadcrumbs = [
-  { label: 'Événements', to: undefined }
-]
+const decouverteOuverte = ref(false)
 
-// Modale de présentation « C'est quoi Africalive ? »
-const presentationOuverte = ref(false)
+const ESPACES = [
+  {
+    titre: 'Codi-Moi',
+    description: 'Codifier et transmettre les savoirs africains, éducation, santé, agriculture.',
+    image: '/images/africans/heros/hero-codimoi.jpg',
+    vers: '/codi-moi',
+  },
+  {
+    titre: 'Afrolang',
+    description: 'Découvrez les langues et cultures africaines à travers notre programme linguistique.',
+    image: '/images/africans/heros/hero-afrolang.jpg',
+    vers: '/afrolang',
+  },
+  {
+    titre: 'Événements & ateliers',
+    description: 'Participez aux événements culturels, ateliers et rencontres de la communauté.',
+    image: '/images/even1.png',
+    vers: '/evenements/liste',
+  }]
 </script>
+
+<template>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Forum"
+        sous-titre="Événements & rencontres"
+        image="/images/even1.png"
+        aide="C'est quoi Africalive ?"
+        @aide="decouverteOuverte = true"
+      />
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="[{ libelle: 'Forum' }]">
+        <template #action>
+          <AfricansBouton icone="fa-solid fa-calendar-days" vers="/evenements/liste">
+            Voir les événements
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
+
+    <div class="grid gap-5 sm:grid-cols-2">
+      <NuxtLink
+        v-for="espace in ESPACES"
+        :key="espace.titre"
+        :to="espace.vers"
+        class="group flex flex-col overflow-hidden rounded-[10px] border border-af-bordure bg-white transition hover:border-af-chocolat"
+      >
+        <div class="aspect-[16/10] w-full overflow-hidden bg-af-fond">
+          <img
+            :src="espace.image"
+            alt=""
+            class="size-full object-cover transition duration-300 group-hover:scale-105"
+          />
+        </div>
+        <div class="flex flex-1 flex-col gap-2 p-4">
+          <h2 class="text-[17px]/[1.4] font-bold text-af-encre">{{ espace.titre }}</h2>
+          <p class="text-[14px]/[1.4] text-af-corps">{{ espace.description }}</p>
+          <span class="mt-auto flex items-center gap-2 pt-2 text-[14px]/[1.4] font-bold text-af-chocolat">
+            Découvrir
+            <font-awesome-icon icon="fa-solid fa-arrow-right" class="transition group-hover:translate-x-1" />
+          </span>
+        </div>
+      </NuxtLink>
+    </div>
+
+    <EvenementsDecouverteModale v-model="decouverteOuverte" />
+  </NuxtLayout>
+</template>

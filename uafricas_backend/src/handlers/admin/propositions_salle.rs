@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Feature 001-admin-salles-publiques — US2
+// Feature 001-admin-salles-publiques : US2
 // Handlers admin pour la modération des propositions communautaires de salles.
 //
 // Endpoints :
@@ -367,7 +367,7 @@ pub async fn valider_proposition(
     let message = if let Some(ref c) = commentaire {
         format!("Votre proposition a été validée. Commentaire admin : {}", c)
     } else {
-        "Votre proposition de salle a été validée — la salle est créée.".to_string()
+        "Votre proposition de salle a été validée, la salle est créée.".to_string()
     };
     notification::creer_notification(
         pool.get_ref(),

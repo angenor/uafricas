@@ -38,7 +38,7 @@ const tronquer = (texte: string, max: number = 80): string => {
 const colonnes: TableColumn[] = [
   { key: 'contenu', label: 'Contenu' },
   { key: 'verdict', label: 'Verdict', width: 'w-40' },
-  { key: 'etat', label: 'Etat', width: 'w-24' },
+  { key: 'etat', label: 'État', width: 'w-24' },
   { key: 'nombre_likes', label: 'Likes', width: 'w-20', align: 'center' },
   { key: 'nombre_dislikes', label: 'Dislikes', width: 'w-20', align: 'center' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
@@ -52,9 +52,9 @@ const filterDefs: FilterDefinition[] = [
     { label: 'Faux', value: 'faux' },
     { label: 'Partiellement vrai', value: 'partiellement_vrai' },
     { label: 'Trompeur', value: 'trompeur' },
-    { label: 'Non verifie', value: 'non_verifie' },
+    { label: 'Non vérifié', value: 'non_verifie' },
   ]},
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'Publie', value: 'publie' },
     { label: 'Brouillon', value: 'brouillon' },
     { label: 'Suspendu', value: 'suspendu' },

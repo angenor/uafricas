@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Handlers — Notifications et doublons
+// Handlers : Notifications et doublons
 // ════════════════════════════════════════════════════════════════════════════
 
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -30,13 +30,53 @@ pub async fn compteur_notifications(req: HttpRequest, pool: web::Data<PgPool>) -
     Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(json!({"non_lues": nb})), error: None }))
 }
 
+/// Filtres de `GET /api/notifications`.
+///
+/// `type` et `page` étaient déjà ENVOYÉS par le client (`useNotifications`)
+/// mais le handler les ignorait : la liste renvoyait toujours les 50 dernières.
+/// Un filtre qui ne filtre pas et une pagination qui repagine la même page sont
+/// pires qu'absents : l'interface promet ce que le serveur ne fait pas.
+#[derive(Debug, serde::Deserialize)]
+pub struct NotificationsQuery {
+    pub page: Option<i64>,
+    #[serde(rename = "type")]
+    pub type_: Option<String>,
+}
+
 // GET /api/notifications
-pub async fn lister_notifications(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
+pub async fn lister_notifications(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    params: web::Query<NotificationsQuery>) -> Result<HttpResponse, ApiErreur> {
     let uid = extraire_utilisateur_id(&req)?;
+
+    const PAR_PAGE: i64 = 50;
+    let page = params.page.unwrap_or(1).max(1);
+    let offset = (page - 1) * PAR_PAGE;
+
+    // Le type est comparé tel quel : la colonne est un VARCHAR libre (cette
+    // table est la table générique de fait de la plateforme), un type inconnu
+    // renvoie donc une liste vide plutôt qu'une erreur.
+    let type_filtre = params
+        .type_
+        .as_deref()
+        .map(str::trim)
+        .filter(|t| !t.is_empty());
+
     let notifs = sqlx::query_as::<_, NotificationRow>(
         "SELECT id, destinataire_id, type AS type_, message, lien_action, lu, created_at
-         FROM arbre_genealogique.notifications WHERE destinataire_id = $1 ORDER BY created_at DESC LIMIT 50",
-    ).bind(uid).fetch_all(pool.get_ref()).await?;
+         FROM arbre_genealogique.notifications
+         WHERE destinataire_id = $1
+           AND ($2::text IS NULL OR type = $2)
+         ORDER BY created_at DESC
+         LIMIT $3 OFFSET $4")
+    .bind(uid)
+    .bind(type_filtre)
+    .bind(PAR_PAGE)
+    .bind(offset)
+    .fetch_all(pool.get_ref())
+    .await?;
+
     Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(notifs), error: None }))
 }
 

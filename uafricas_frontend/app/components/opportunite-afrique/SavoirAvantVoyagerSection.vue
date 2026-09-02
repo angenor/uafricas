@@ -11,13 +11,13 @@ import type {
 interface Props {
   ficheId: string
   estAuthentifie: boolean
-  /** Fiche territoire — fournit les valeurs du bloc « infos pratiques » */
+  /** Fiche territoire : fournit les valeurs du bloc « infos pratiques » */
   fiche?: FichePaysDetailAPI | null
 }
 
 const props = defineProps<Props>()
 
-// Section rétractable — repliée par défaut
+// Section rétractable : repliée par défaut
 const replie = ref(true)
 
 type OpenContributionPayload = {
@@ -42,7 +42,7 @@ const emit = defineEmits<{
   (e: 'require-login'): void
 }>()
 
-/** Champs « infos pratiques » du bloc — chaque clé est une colonne fiche_pays */
+/** Champs « infos pratiques » du bloc : chaque clé est une colonne fiche_pays */
 const champsVoyage = [
   { section: 'voyage_langue_internationale', label: 'Langue internationale' },
   { section: 'voyage_langue_locale', label: 'Langue locale la plus utilisée' },
@@ -138,39 +138,20 @@ const proposerSavoir = () => {
 </script>
 
 <template>
-  <section class="bg-gray-50 transition-all" :class="replie ? 'py-5' : 'py-12'">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between gap-4" :class="replie ? '' : 'mb-8'">
-        <button
-          type="button"
-          class="flex items-center gap-3 text-left min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-          :aria-expanded="!replie"
-          @click="replie = !replie"
-        >
-          <font-awesome-icon
-            :icon="['fas', 'chevron-down']"
-            class="w-5 h-5 shrink-0 text-custom-chocolat transition-transform duration-200"
-            :class="replie ? '-rotate-90' : ''"
-          />
-          <h2 class="font-oswald text-3xl md:text-4xl font-bold text-gray-900">
-            À savoir avant de voyager
-          </h2>
-        </button>
-        <button
-          v-show="!replie"
-          type="button"
-          class="px-4 py-2 bg-custom-chocolat text-white rounded-md hover:bg-custom-chocolat/90 transition-colors text-sm font-medium"
-          @click="proposerSavoir"
-        >
-          Proposer un savoir
-        </button>
+  <AfricansAccordeon
+    titre="À savoir avant de voyager"
+    icone="fa-solid fa-plane"
+    :model-value="!replie"
+    @update:model-value="replie = !$event"
+  >
+      <div v-show="!replie">
+      <div class="mb-4 flex justify-end">
+        <AfricansBoutonIcone libelle="Proposer un savoir" icone="fa-solid fa-plus" @click="proposerSavoir" />
       </div>
 
-      <div v-show="!replie">
-
-      <!-- Bloc « Infos pratiques » — champs structurés contribuables par tous -->
+      <!-- Bloc « Infos pratiques » : champs structurés contribuables par tous -->
       <div class="bg-white rounded-lg shadow-sm p-5 mb-6">
-        <h3 class="font-oswald text-xl font-semibold text-gray-900 mb-1">Infos pratiques</h3>
+        <h3 class="text-[17px]/[1.4] font-bold text-af-encre mb-1">Infos pratiques</h3>
         <p class="text-sm text-gray-500 mb-5">
           L'essentiel à connaître avant de partir. Chaque information peut être proposée ou corrigée par la communauté (validation par un administrateur).
         </p>
@@ -184,7 +165,7 @@ const proposerSavoir = () => {
               <h4 class="text-sm font-medium text-gray-500">{{ info.label }}</h4>
               <button
                 type="button"
-                class="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
+                class="shrink-0 inline-flex items-center gap-1 text-[12px]/[1.4] font-bold text-af-corps transition hover:text-af-chocolat"
                 @click="ouvrirChampVoyage(info.section, info.label, info.valeur)"
               >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,7 +178,7 @@ const proposerSavoir = () => {
               {{ info.valeur }}
             </p>
             <p v-else class="mt-1 text-sm italic text-gray-400">
-              Non renseigné — proposez cette information.
+              Non renseigné : proposez cette information.
             </p>
           </div>
         </div>
@@ -209,9 +190,9 @@ const proposerSavoir = () => {
 
       <div
         v-else-if="savoirs.length === 0"
-        class="text-center py-12 bg-white rounded-lg"
+        class="rounded-[10px] border border-af-bordure bg-white py-12 text-center"
       >
-        <p class="text-gray-600">Aucun savoir pratique pour l'instant.</p>
+        <p class="text-[14px]/[1.4] text-af-corps">Aucun savoir pratique pour l'instant.</p>
       </div>
 
       <div v-else class="space-y-3">
@@ -226,7 +207,7 @@ const proposerSavoir = () => {
             class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
             @click="basculerCategorie(cat.value)"
           >
-            <span class="font-oswald text-lg font-semibold text-gray-900">
+            <span class="text-[17px]/[1.4] font-bold text-af-encre">
               {{ cat.label }}
               <span class="ml-2 text-sm font-normal text-gray-500">
                 ({{ savoirsParCategorie[cat.value]!.length }})
@@ -252,15 +233,15 @@ const proposerSavoir = () => {
               :key="s.id"
               class="px-5 py-4"
             >
-              <h3 class="font-semibold text-gray-900 mb-2">{{ s.titre }}</h3>
-              <p class="text-sm text-gray-700 leading-relaxed mb-2">{{ s.explication }}</p>
-              <p v-if="s.exemple" class="text-sm italic text-gray-500 border-l-2 border-custom-green pl-3">
+              <h3 class="mb-2 text-[14px]/[1.4] font-bold text-af-encre">{{ s.titre }}</h3>
+              <p class="mb-2 text-[14px]/[1.4] text-af-corps">{{ s.explication }}</p>
+              <p v-if="s.exemple" class="border-l-2 border-af-bordure pl-3 text-[14px]/[1.4] text-af-corps italic">
                 {{ s.exemple }}
               </p>
               <div class="flex items-center gap-3 mt-3">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-custom-chocolat hover:underline"
+                  class="inline-flex items-center gap-1 text-[12px]/[1.4] font-bold text-af-corps transition hover:text-af-chocolat"
                   @click="ouvrirContribution('edition', s)"
                 >
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -270,7 +251,7 @@ const proposerSavoir = () => {
                 </button>
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
+                  class="inline-flex items-center gap-1 text-[12px]/[1.4] font-bold text-af-corps transition hover:text-af-live"
                   @click="ouvrirContribution('suppression', s)"
                 >
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -284,6 +265,5 @@ const proposerSavoir = () => {
         </div>
       </div>
       </div>
-    </div>
-  </section>
+  </AfricansAccordeon>
 </template>

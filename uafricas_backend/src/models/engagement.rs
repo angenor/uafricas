@@ -36,7 +36,7 @@ pub struct CompteRow {
 }
 
 /// Résumé de cagnotte porté par « Mon compte » (feature 008).
-/// Le détail — dont la part simulée — vit sur `GET /ma-cagnotte`.
+/// Le détail : dont la part simulée : vit sur `GET /ma-cagnotte`.
 #[derive(Serialize)]
 pub struct CagnotteResume {
     pub montant_cumule: i32,
@@ -63,7 +63,7 @@ pub struct CompteResponse {
 /// **règle courante** (renommer une règle renomme l'action dans tout l'historique
 /// affiché), tandis que `categorie_code` / `categorie_libelle` viennent de la
 /// catégorie **figée à l'écriture** (une re-catégorisation ne réécrit pas le
-/// passé — R1).
+/// passé : R1).
 #[derive(Serialize, FromRow)]
 pub struct MouvementResponse {
     pub id: Uuid,
@@ -102,7 +102,7 @@ pub struct CategorieVentilation {
     pub nombre_mouvements: i64,
 }
 
-/// Réponse « Mes catégories » — ventilation des points gagnés.
+/// Réponse « Mes catégories » : ventilation des points gagnés.
 ///
 /// `total_gagne` (cumul du journal) peut **dépasser** `solde_points` (solde
 /// courant) à cause du plancher 0 appliqué par `appliquer` : les deux notions
@@ -126,7 +126,7 @@ pub struct BadgeObtenuResponse {
     pub obtenu_at: DateTime<Utc>,
 }
 
-/// Un badge **à débloquer** — jamais renvoyé sur le profil public.
+/// Un badge **à débloquer** : jamais renvoyé sur le profil public.
 ///
 /// `progression_actuelle` / `progression_cible` sont nuls quand la condition ne
 /// s'exprime pas comme « N sur M » (le niveau se compare sur un ordre) : l'UI

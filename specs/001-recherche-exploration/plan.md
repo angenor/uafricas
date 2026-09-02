@@ -4,13 +4,13 @@
 
 ## Summary
 
-Recherche multi-critères dans son arbre (côté client, instantanée) et dans la base publique (endpoint pg_trgm). Chemin de parenté entre deux personnes avec terminologie française (BFS + LCA côté client). Filtres combinables (géographique, générationnel, branche). Interface unifiée avec toggle "Mon arbre / Tous les arbres". Majoritairement frontend — 1 seul nouvel endpoint backend.
+Recherche multi-critères dans son arbre (côté client, instantanée) et dans la base publique (endpoint pg_trgm). Chemin de parenté entre deux personnes avec terminologie française (BFS + LCA côté client). Filtres combinables (géographique, générationnel, branche). Interface unifiée avec toggle "Mon arbre / Tous les arbres". Majoritairement frontend : 1 seul nouvel endpoint backend.
 
 ## Technical Context
 
 **Language/Version**: Rust Edition 2024 (backend, 1 endpoint) + TypeScript / Nuxt 4 / Vue 3 (frontend, principal)
 **Primary Dependencies**: pg_trgm existant (Feature 4), @vue-flow/core existant
-**Storage**: Aucune modification SQL — réutilise colonnes normalisées et indexes de Feature 4
+**Storage**: Aucune modification SQL : réutilise colonnes normalisées et indexes de Feature 4
 **Testing**: Vérification manuelle
 **Target Platform**: Web (SSR Nuxt 4)
 **Project Type**: Web application (monorepo)

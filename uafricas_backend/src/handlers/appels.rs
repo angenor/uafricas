@@ -100,7 +100,7 @@ fn ok_vide() -> HttpResponse {
 // Démarrer un appel
 // ════════════════════════════════════════════════════════════════
 
-/// POST /api/appels — Démarrer un appel direct vers un ami.
+/// POST /api/appels : Démarrer un appel direct vers un ami.
 /// Crée un appel éphémère, fait sonner le destinataire (SSE) et renvoie la
 /// config P2P à l'appelant pour ouvrir la salle immédiatement.
 pub async fn appeler(
@@ -148,7 +148,7 @@ pub async fn appeler(
 // Rejoindre (accepter) / refuser / annuler
 // ════════════════════════════════════════════════════════════════
 
-/// GET /api/appels/{id}/salle — Config P2P pour rejoindre l'appel (= accepter).
+/// GET /api/appels/{id}/salle : Config P2P pour rejoindre l'appel (= accepter).
 /// Le destinataire qui rejoint déclenche `appel_accepte` vers l'appelant.
 pub async fn salle(
     pool: web::Data<PgPool>,
@@ -188,7 +188,7 @@ pub async fn salle(
     }))
 }
 
-/// POST /api/appels/{id}/refuser — Le destinataire décline l'appel.
+/// POST /api/appels/{id}/refuser : Le destinataire décline l'appel.
 pub async fn refuser(
     sse: web::Data<RegistreSse>,
     registre: web::Data<RegistreAppels>,
@@ -207,7 +207,7 @@ pub async fn refuser(
     Ok(ok_vide())
 }
 
-/// POST /api/appels/{id}/annuler — Un participant abandonne avant connexion
+/// POST /api/appels/{id}/annuler : Un participant abandonne avant connexion
 /// (l'appelant raccroche pendant la sonnerie). L'autre est prévenu.
 pub async fn annuler(
     sse: web::Data<RegistreSse>,

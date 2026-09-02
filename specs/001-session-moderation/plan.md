@@ -1,4 +1,4 @@
-# Implementation Plan: Modération de session Afrolang — mise en évidence et permissions tableau blanc
+# Implementation Plan: Modération de session Afrolang, mise en évidence et permissions tableau blanc
 
 **Branch**: `001-session-moderation` | **Date**: 2026-05-10 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/001-session-moderation/spec.md`
@@ -6,8 +6,8 @@
 ## Summary
 
 Ajouter à toute session Afrolang (publique ou privée) deux leviers de modération en temps réel :
-1. **Permissions tableau blanc** — par défaut seuls les modérateurs de session écrivent ; un admin peut accorder/retirer individuellement le droit d'écriture aux participants.
-2. **Mise en évidence (spotlight)** — uniquement dans les sessions publiques livestreamées, un admin plateforme ou admin de salle peut désigner un participant comme « en vedette ».
+1. **Permissions tableau blanc** : par défaut seuls les modérateurs de session écrivent ; un admin peut accorder/retirer individuellement le droit d'écriture aux participants.
+2. **Mise en évidence (spotlight)** : uniquement dans les sessions publiques livestreamées, un admin plateforme ou admin de salle peut désigner un participant comme « en vedette ».
 
 L'approche technique repose sur :
 - **Persistance** : 1 nouvelle table `afrolang.session_permission_tableau_blanc` (état session-scoped) + 3 colonnes sur `afrolang.session` (`participant_mis_en_evidence_id`, `mis_en_evidence_par`, `mis_en_evidence_at`). L'`ON DELETE CASCADE` existant nettoie automatiquement à la clôture.
@@ -18,9 +18,9 @@ L'approche technique repose sur :
 ## Technical Context
 
 **Language/Version**: Rust Edition 2024 (backend) + TypeScript / Nuxt 4 / Vue 3 SSR (frontend)
-**Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL), uuid, chrono, serde, **livekit-api** (déjà présent — utilisé pour token signing aujourd'hui, étendu pour `RoomServiceClient::update_participant`) ; Pinia, $fetch, FontAwesome, **livekit-client** (déjà présent côté Vue pour `DataPacket_Kind.RELIABLE`)
-**Storage**: PostgreSQL 16 — schema `afrolang` existant (1 nouvelle table + 3 colonnes sur `session`)
-**Testing**: aucun (pas de CI/CD configuré — section « Pas de linting, testing ni CI/CD » de la constitution) ; validation manuelle via quickstart
+**Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL), uuid, chrono, serde, **livekit-api** (déjà présent, utilisé pour token signing aujourd'hui, étendu pour `RoomServiceClient::update_participant`) ; Pinia, $fetch, FontAwesome, **livekit-client** (déjà présent côté Vue pour `DataPacket_Kind.RELIABLE`)
+**Storage**: PostgreSQL 16 : schema `afrolang` existant (1 nouvelle table + 3 colonnes sur `session`)
+**Testing**: aucun (pas de CI/CD configuré, section « Pas de linting, testing ni CI/CD » de la constitution) ; validation manuelle via quickstart
 **Target Platform**: backend Linux server (Actix-Web port 8080) + frontend SSR Nuxt 4 (port 3000) ; livestream via LiveKit (serveur Docker local en dev, Cloud LiveKit en prod)
 **Project Type**: monorepo web (frontend + backend, principe II)
 **Performance Goals**: propagation modération ≤ 2 s p95 (SC-002) ; aucun impact mesurable sur le débit vidéo LiveKit existant
@@ -50,12 +50,12 @@ L'approche technique repose sur :
 ```text
 specs/001-session-moderation/
 ├── plan.md              # Ce fichier
-├── research.md          # Phase 0 — choix d'architecture (LiveKit enforcement, état session)
+├── research.md          # Phase 0 : choix d'architecture (LiveKit enforcement, état session)
 ├── spec.md              # Feature specification
-├── data-model.md        # Phase 1 — DDL nouvelle table + colonnes session
-├── quickstart.md        # Phase 1 — scénarios de validation manuelle
+├── data-model.md        # Phase 1 : DDL nouvelle table + colonnes session
+├── quickstart.md        # Phase 1 : scénarios de validation manuelle
 ├── contracts/
-│   └── api-rest.md      # Phase 1 — 5 endpoints REST + format data packets LiveKit
+│   └── api-rest.md      # Phase 1 - 5 endpoints REST + format data packets LiveKit
 └── checklists/
     └── requirements.md  # Spec quality checklist
 ```
@@ -72,7 +72,7 @@ uafricas_backend/
 │   ├── handlers/
 │   │   └── afrolang.rs               # +5 handlers : lister/accorder/retirer permissions, spotlight on/off
 │   ├── services/
-│   │   └── livekit_moderation.rs     # NEW — wrapper livekit-api : update_participant(can_publish_data), publish_data(moderation message)
+│   │   └── livekit_moderation.rs     # NEW, wrapper livekit-api : update_participant(can_publish_data), publish_data(moderation message)
 │   └── routes.rs                     # +5 routes scoped sous /api/afrolang/sessions/{id}/...
 
 uafricas_frontend/
@@ -81,15 +81,15 @@ uafricas_frontend/
 │   │   └── useAfrolang.ts            # +interfaces + 5 méthodes : listerPermissionsTableauBlanc, accorderPermissionTableauBlanc, retirerPermissionTableauBlanc, mettreEnEvidence, retirerMiseEnEvidence + listener data packet 'moderation'
 │   └── components/
 │       └── afrolang/
-│           ├── SalleModerationPanel.vue     # NEW — panneau permissions + spotlight (Tailwind v4 pur)
+│           ├── SalleModerationPanel.vue     # NEW, panneau permissions + spotlight (Tailwind v4 pur)
 │           ├── AfrolangRoom.vue             # +intégration panneau (visible pour modérateurs uniquement)
 │           ├── AfrolangWhiteboard.vue       # +état visuel lecture-seule + désactivation barre d'outils
 │           └── AfrolangVideoGrid.vue        # +affichage spotlight (mise en avant centrale + bordure + libellé)
 ```
 
-**Structure Decision** : extension chirurgicale du domaine `afrolang` existant — aucun nouveau dossier, réutilisation maximale des chemins établis par les features 005 et 006. Le nouveau module `services/livekit_moderation.rs` côté backend est isolé pour confiner l'usage de `livekit-api::RoomServiceClient` (déjà utilisé pour la génération de token).
+**Structure Decision** : extension chirurgicale du domaine `afrolang` existant, aucun nouveau dossier, réutilisation maximale des chemins établis par les features 005 et 006. Le nouveau module `services/livekit_moderation.rs` côté backend est isolé pour confiner l'usage de `livekit-api::RoomServiceClient` (déjà utilisé pour la génération de token).
 
-## Phase 0 — Research
+## Phase 0 : Research
 
 Voir [research.md](./research.md). Sujets traités :
 - Enforcement serveur des permissions data (LiveKit `RoomService::update_participant` vs canal applicatif custom)
@@ -97,11 +97,11 @@ Voir [research.md](./research.md). Sujets traités :
 - Propagation temps réel des mutations (DataPacket vs WebSocket applicatif vs polling)
 - Cible « tous les participants connectés » du spotlight (jointure session_participant vs liste LiveKit live)
 
-## Phase 1 — Design & Contracts
+## Phase 1 : Design & Contracts
 
-- **Data model** : [data-model.md](./data-model.md) — DDL complet de `session_permission_tableau_blanc`, ALTER sur `session`, contraintes et indexes.
-- **Contracts** : [contracts/api-rest.md](./contracts/api-rest.md) — 5 endpoints REST (request/response JSON) + 2 formats de DataPacket LiveKit (`moderation.permission_update`, `moderation.spotlight`).
-- **Quickstart** : [quickstart.md](./quickstart.md) — 7 scénarios manuels alignés sur les Acceptance Scenarios de la spec.
+- **Data model** : [data-model.md](./data-model.md), DDL complet de `session_permission_tableau_blanc`, ALTER sur `session`, contraintes et indexes.
+- **Contracts** : [contracts/api-rest.md](./contracts/api-rest.md), 5 endpoints REST (request/response JSON) + 2 formats de DataPacket LiveKit (`moderation.permission_update`, `moderation.spotlight`).
+- **Quickstart** : [quickstart.md](./quickstart.md), 7 scénarios manuels alignés sur les Acceptance Scenarios de la spec.
 - **Agent context** : `CLAUDE.md` mis à jour via `.specify/scripts/bash/update-agent-context.sh claude`.
 
 ## Complexity Tracking

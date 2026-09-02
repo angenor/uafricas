@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * Mes cadeaux reçus et offerts — Tailwind v4 pur.
+ * Mes cadeaux reçus et offerts : Tailwind v4 pur.
  *
  * Le **montant n'est affiché que sur le sens « offerts »** : l'offreur a le
  * droit de savoir ce qu'il a dépensé, le bénéficiaire ne voit jamais le prix
- * ligne à ligne. L'API applique déjà cette règle — le champ arrive à `null` sur
- * les cadeaux reçus —, ce composant ne fait que ne pas la contredire.
+ * ligne à ligne. L'API applique déjà cette règle : le champ arrive à `null` sur
+ * les cadeaux reçus, ce composant ne fait que ne pas la contredire.
  */
 import { onMounted, ref } from 'vue'
 import { useCadeaux, formaterMontant, type MonCadeau } from '~/composables/useCadeaux'
@@ -137,7 +137,7 @@ const formaterDate = (iso: string) =>
                 <span
                   v-if="c.simule"
                   class="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700"
-                  title="Paiement simulé — sera retiré à la mise en service du paiement réel"
+                  title="Paiement simulé : sera retiré à la mise en service du paiement réel"
                 >simulé</span>
               </div>
               <em v-if="c.message" class="mt-1 block truncate text-xs text-gray-500">

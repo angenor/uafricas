@@ -344,7 +344,7 @@
               <div>
                 <div class="p-3 bg-custom-chocolat/10 border border-custom-chocolat/30 rounded-md">
                   <label for="document-legal" class="block text-sm font-medium text-custom-chocolat mb-1">
-                    Document légal — PDF (10 Mo max)
+                    Document légal : PDF (10 Mo max)
                   </label>
                   <input
                     id="document-legal"

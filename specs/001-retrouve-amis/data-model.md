@@ -16,9 +16,9 @@ Nouveau bounded context (11ème schema). Dépendances cross-schema : `iam.utilis
 ```sql
 CREATE TYPE retrouve_amis.etat_avis AS ENUM ('actif', 'cloture', 'suspendu');
 ```
-- `actif` — Avis visible pour le moteur de recoupement
-- `cloture` — Avis fermé par l'auteur (ami retrouvé ou abandon)
-- `suspendu` — Avis suspendu par un admin suite à signalement
+- `actif` : Avis visible pour le moteur de recoupement
+- `cloture` : Avis fermé par l'auteur (ami retrouvé ou abandon)
+- `suspendu` : Avis suspendu par un admin suite à signalement
 
 ### `retrouve_amis.etat_correspondance`
 ```sql
@@ -26,19 +26,19 @@ CREATE TYPE retrouve_amis.etat_correspondance AS ENUM (
     'en_attente', 'acceptee_a', 'acceptee_b', 'mutuelle', 'declinee', 'archivee'
 );
 ```
-- `en_attente` — Correspondance détectée, aucune action des parties
-- `acceptee_a` — L'auteur de l'avis source a accepté le contact
-- `acceptee_b` — La cible a accepté le contact (l'auteur de l'avis n'a pas encore répondu)
-- `mutuelle` — Les deux parties ont accepté → coordonnées partagées
-- `declinee` — Une des parties a refusé → blacklist créée
-- `archivee` — Aucune réponse après 30 jours → auto-archivage
+- `en_attente` : Correspondance détectée, aucune action des parties
+- `acceptee_a` : L'auteur de l'avis source a accepté le contact
+- `acceptee_b` : La cible a accepté le contact (l'auteur de l'avis n'a pas encore répondu)
+- `mutuelle` : Les deux parties ont accepté → coordonnées partagées
+- `declinee` : Une des parties a refusé → blacklist créée
+- `archivee` : Aucune réponse après 30 jours → auto-archivage
 
 ### `retrouve_amis.type_cible`
 ```sql
 CREATE TYPE retrouve_amis.type_cible AS ENUM ('avis', 'profil');
 ```
-- `avis` — La correspondance a été trouvée entre deux avis de recherche
-- `profil` — La correspondance a été trouvée entre un avis et un profil utilisateur "trouvable"
+- `avis` : La correspondance a été trouvée entre deux avis de recherche
+- `profil` : La correspondance a été trouvée entre un avis et un profil utilisateur "trouvable"
 
 ### `retrouve_amis.motif_signalement`
 ```sql
@@ -56,8 +56,8 @@ CREATE TYPE retrouve_amis.etat_signalement AS ENUM ('en_attente', 'approuve', 'r
 ```sql
 CREATE TYPE retrouve_amis.type_parcours AS ENUM ('ecole', 'ville_residence');
 ```
-- `ecole` — École ou université fréquentée
-- `ville_residence` — Ville de résidence passée
+- `ecole` : École ou université fréquentée
+- `ville_residence` : Ville de résidence passée
 
 ### `retrouve_amis.type_notification`
 ```sql
@@ -295,7 +295,7 @@ CREATE INDEX idx_notification_created ON retrouve_amis.notification_retrouve(cre
 
 ## Modification cross-schema
 
-### `iam.utilisateur` — Ajout de colonne
+### `iam.utilisateur` : Ajout de colonne
 
 ```sql
 ALTER TABLE iam.utilisateur ADD COLUMN est_trouvable BOOLEAN NOT NULL DEFAULT FALSE;

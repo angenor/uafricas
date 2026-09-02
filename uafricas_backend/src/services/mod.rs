@@ -7,7 +7,7 @@ pub mod livekit_moderation;
 pub mod image_validation;
 pub mod matching;
 pub mod messagerie_sse;
-/// Prestataire de paiement — **unique point de bascule vers CinetPay** (SC-012).
+/// Prestataire de paiement : **unique point de bascule vers CinetPay** (SC-012).
 /// Le basculement vers l'encaissement réel ne doit toucher que ce fichier.
 pub mod paiement;
 pub mod rate_limit_afripulse;

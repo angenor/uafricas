@@ -6,7 +6,7 @@
 //!   • 5 contributions `en_attente` simultanées sur un même pays
 //!
 //! Calcul en temps réel via 3 requêtes COUNT paramétrées (indexées par
-//! idx_contribution_rate_limit et idx_contribution_attente_pays — cf. 11c).
+//! idx_contribution_rate_limit et idx_contribution_attente_pays, cf. 11c).
 
 use chrono::{DateTime, Duration, Utc};
 use sqlx::PgPool;

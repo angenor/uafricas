@@ -1,4 +1,4 @@
-# Retrouve Amis — Algorithme de matching
+# Retrouve Amis : Algorithme de matching
 
 ## Vue d'ensemble
 
@@ -17,7 +17,7 @@ Le matching produit un **score de 0 à 100** avec un détail des critères qui o
 Chaque avis contient N critères typés avec un poids :
 
 ```
-Exemple — Avis de Jean qui cherche Paul :
+Exemple : Avis de Jean qui cherche Paul :
   - nom: "Kamga" (poids: 5)
   - prenom: "Paul" (poids: 5)
   - ville: "Douala" (poids: 4)
@@ -49,7 +49,7 @@ Préférences de Paul (utilisateur inscrit) :
   - anciens_noms: ["Kamga"]
   - anciennes_villes: ["Douala", "Yaoundé"]
   - anciennes_ecoles: ["Lycée Joss", "Université de Douala"]
-  - periode: 1995 — 2010
+  - periode: 1995 - 2010
 ```
 
 ---
@@ -249,7 +249,7 @@ fn score_nom(a: &str, b: &str) -> i32 {
     if sim > 0.7  { return 80; }
     if sim > 0.5  { return 60; }
 
-    // 3. Soundex (phonétique) — utile pour les noms africains
+    // 3. Soundex (phonétique) : utile pour les noms africains
     //    avec des orthographes variées
     if soundex_fr(a) == soundex_fr(b) { return 70; }
 

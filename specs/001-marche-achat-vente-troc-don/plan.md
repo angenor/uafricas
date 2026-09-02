@@ -1,4 +1,4 @@
-# Implementation Plan: Marché Africain — acheter, vendre, troquer, donner
+# Implementation Plan: Marché Africain, acheter, vendre, troquer, donner
 
 **Branch**: `001-marche-achat-vente-troc-don` | **Date**: 2026-05-26 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/001-marche-achat-vente-troc-don/spec.md`
@@ -13,8 +13,8 @@ L'infrastructure est largement en place : schéma `marketplace` complet (`annonc
 
 **Language/Version**: Rust Edition 2024 (backend) ; TypeScript / Nuxt 4 (Vue 3 SSR) (frontend)  
 **Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL), actix-multipart, `image` crate, service interne `image_validation`, JWT (`jwt.rs`), `audit::log_action`, SSE (`messagerie_sse::RegistreSse`) ; Pinia, Tailwind CSS v4 (pur), FontAwesome (frontend)  
-**Storage**: PostgreSQL 16, schémas `marketplace` (source de vérité — Principe III) et `social` (messagerie). Upload photos en local sous `./uploads/marketplace/annonces/` servi par actix-files  
-**Testing**: Aucun framework configuré (Contrainte constitution) — validation manuelle via quickstart + scénarios d'acceptation  
+**Storage**: PostgreSQL 16, schémas `marketplace` (source de vérité, Principe III) et `social` (messagerie). Upload photos en local sous `./uploads/marketplace/annonces/` servi par actix-files  
+**Testing**: Aucun framework configuré (Contrainte constitution), validation manuelle via quickstart + scénarios d'acceptation  
 **Target Platform**: Serveur Linux (backend port 8082 en dev) + SSR Nuxt (port 3000)  
 **Project Type**: web (monorepo frontend + backend)  
 **Performance Goals**: Annonce visible < 5 s après validation (SC-001) ; listing paginé (≤ 50/page, déjà en place)  
@@ -56,7 +56,7 @@ specs/001-marche-achat-vente-troc-don/
 │   └── contact-messagerie.md
 ├── checklists/
 │   └── requirements.md  # déjà créé (/speckit.specify)
-└── tasks.md             # Phase 2 (/speckit.tasks — non créé ici)
+└── tasks.md             # Phase 2 (/speckit.tasks, non créé ici)
 ```
 
 ### Source Code (repository root)
@@ -93,4 +93,4 @@ uafricas_frontend/
 
 ## Complexity Tracking
 
-> Aucune violation de la Constitution — section vide.
+> Aucune violation de la Constitution, section vide.

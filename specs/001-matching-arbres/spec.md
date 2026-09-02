@@ -3,7 +3,7 @@
 **Feature Branch**: `001-matching-arbres`
 **Created**: 2026-03-16
 **Status**: Draft
-**Input**: User description: "Feature 4 — Matching et découverte de parents. L'algorithme compare les arbres de tous les utilisateurs pour détecter des ancêtres ou des personnes en commun, en se basant sur le rapprochement des noms, lieux et dates. Quand un match potentiel est trouvé, les deux utilisateurs reçoivent une suggestion. L'utilisateur peut confirmer ou rejeter le match. Si les deux confirment, leurs arbres se connectent et chacun découvre une nouvelle branche familiale. Page Découvertes listant les matchs en attente et confirmés."
+**Input**: User description: "Feature 4, Matching et découverte de parents. L'algorithme compare les arbres de tous les utilisateurs pour détecter des ancêtres ou des personnes en commun, en se basant sur le rapprochement des noms, lieux et dates. Quand un match potentiel est trouvé, les deux utilisateurs reçoivent une suggestion. L'utilisateur peut confirmer ou rejeter le match. Si les deux confirment, leurs arbres se connectent et chacun découvre une nouvelle branche familiale. Page Découvertes listant les matchs en attente et confirmés."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -11,7 +11,7 @@
 
 L'utilisateur connecté accède à la page « Découvertes » et voit une liste de correspondances potentielles trouvées par le système. Chaque suggestion indique la personne de son arbre qui pourrait correspondre à une personne d'un autre arbre, avec un score de confiance et les critères de rapprochement (nom similaire, lieu proche, dates compatibles). L'utilisateur peut consulter les détails de chaque suggestion pour évaluer sa pertinence.
 
-**Why this priority**: Sans suggestions, la feature n'existe pas. C'est le cœur du produit — la raison pour laquelle les utilisateurs enrichissent leur arbre.
+**Why this priority**: Sans suggestions, la feature n'existe pas. C'est le cœur du produit : la raison pour laquelle les utilisateurs enrichissent leur arbre.
 
 **Independent Test**: Créer deux comptes utilisateurs avec des personnes aux noms/lieux/dates similaires → vérifier qu'une suggestion apparaît dans la page Découvertes de chaque utilisateur.
 
@@ -26,9 +26,9 @@ L'utilisateur connecté accède à la page « Découvertes » et voit une liste 
 
 ### User Story 2 - Confirmer ou rejeter une correspondance (Priority: P1)
 
-L'utilisateur peut examiner chaque suggestion et décider de la confirmer (« Oui, c'est bien la même personne ») ou de la rejeter (« Non, ce n'est pas la bonne personne »). La confirmation est unilatérale — elle ne prend effet que lorsque les deux utilisateurs concernés confirment la même correspondance. Un rejet supprime définitivement la suggestion pour cet utilisateur.
+L'utilisateur peut examiner chaque suggestion et décider de la confirmer (« Oui, c'est bien la même personne ») ou de la rejeter (« Non, ce n'est pas la bonne personne »). La confirmation est unilatérale : elle ne prend effet que lorsque les deux utilisateurs concernés confirment la même correspondance. Un rejet supprime définitivement la suggestion pour cet utilisateur.
 
-**Why this priority**: Indissociable de US1 — les suggestions n'ont de valeur que si l'utilisateur peut agir dessus.
+**Why this priority**: Indissociable de US1, les suggestions n'ont de valeur que si l'utilisateur peut agir dessus.
 
 **Independent Test**: Confirmer une suggestion côté utilisateur A → vérifier que le statut passe à « en attente de l'autre utilisateur ». Puis confirmer côté utilisateur B → vérifier que le statut passe à « confirmé ».
 
@@ -43,9 +43,9 @@ L'utilisateur peut examiner chaque suggestion et décider de la confirmer (« Ou
 
 ### User Story 3 - Découvrir de nouvelles branches après confirmation mutuelle (Priority: P1)
 
-Quand les deux utilisateurs confirment une correspondance, les deux personnes matchées sont « fusionnées » logiquement : la personne devient un nœud partagé entre les deux arbres. Chaque utilisateur peut alors voir les branches de l'autre arbre rattachées à cette personne commune. Les informations personnelles de l'autre utilisateur (identité, email) restent masquées — seules les données de l'arbre (personnes, liens) sont partagées.
+Quand les deux utilisateurs confirment une correspondance, les deux personnes matchées sont « fusionnées » logiquement : la personne devient un nœud partagé entre les deux arbres. Chaque utilisateur peut alors voir les branches de l'autre arbre rattachées à cette personne commune. Les informations personnelles de l'autre utilisateur (identité, email) restent masquées, seules les données de l'arbre (personnes, liens) sont partagées.
 
-**Why this priority**: C'est la promesse de valeur de la plateforme — la découverte de branches familiales inconnues. Sans cette US, les confirmations n'aboutissent à rien.
+**Why this priority**: C'est la promesse de valeur de la plateforme, la découverte de branches familiales inconnues. Sans cette US, les confirmations n'aboutissent à rien.
 
 **Independent Test**: Après confirmation mutuelle d'un match entre les arbres de A et B, vérifier que A voit les ancêtres/descendants de B rattachés à la personne commune dans sa propre vue arbre.
 
@@ -109,16 +109,16 @@ Le système exécute automatiquement l'algorithme de matching à intervalles ré
 - **FR-004**: Les informations personnelles de l'autre utilisateur (nom, email, identité) DOIVENT rester masquées tant que la correspondance n'est pas mutuellement confirmée. Seules les données de la personne dans l'arbre (nom, dates, lieu) sont visibles dans la suggestion.
 - **FR-005**: L'utilisateur DOIT pouvoir confirmer ou rejeter chaque suggestion individuellement.
 - **FR-006**: Une correspondance ne DOIT être considérée comme validée que lorsque les DEUX utilisateurs ont confirmé la même suggestion.
-- **FR-007**: Un rejet DOIT être définitif — la même paire de personnes ne DOIT pas générer de nouvelle suggestion.
+- **FR-007**: Un rejet DOIT être définitif, la même paire de personnes ne DOIT pas générer de nouvelle suggestion.
 - **FR-008**: Après confirmation mutuelle, chaque utilisateur DOIT pouvoir voir l'intégralité de l'arbre de l'autre utilisateur (toutes les personnes et liens), marquées visuellement comme « branches découvertes ». L'arbre complet de l'autre est exposé, pas seulement les branches proches de la personne commune.
 - **FR-009**: La page « Découvertes » DOIT afficher trois sections : suggestions en attente, confirmations en cours (un seul côté confirmé), correspondances confirmées.
 - **FR-010**: Le matching DOIT s'exécuter en deux temps : une vérification rapide synchrone (correspondances par nom exact) à chaque ajout de personne, puis une tâche de fond pour le matching profond (variantes phonétiques, dates approximatives, lieux). Les résultats du matching profond sont disponibles ultérieurement.
 - **FR-011**: Le système DOIT empêcher les suggestions en doublon (même paire de personnes déjà matchée, confirmée ou rejetée).
 - **FR-012**: Si une personne impliquée dans une correspondance est supprimée, le système DOIT annuler automatiquement la suggestion/correspondance et notifier l'autre utilisateur si nécessaire.
-- **FR-013**: Les branches découvertes DOIVENT être en lecture seule — l'utilisateur ne peut pas modifier les personnes provenant de l'arbre d'un autre utilisateur.
+- **FR-013**: Les branches découvertes DOIVENT être en lecture seule, l'utilisateur ne peut pas modifier les personnes provenant de l'arbre d'un autre utilisateur.
 - **FR-014**: Le système DOIT notifier l'utilisateur quand de nouvelles suggestions sont disponibles (indicateur sur la page Découvertes, et/ou notification dans l'interface).
 - **FR-015**: Après confirmation mutuelle, chaque utilisateur DOIT pouvoir envoyer une demande de contact à l'autre. L'autre utilisateur peut accepter (ses coordonnées deviennent visibles) ou refuser (la relation reste limitée à la visualisation des branches).
-- **FR-016**: Tant que la demande de contact n'est pas acceptée, aucune information personnelle (nom, email, photo de profil) du propriétaire de l'arbre ne DOIT être exposée — seul un identifiant anonyme (ex : « Membre #1234 ») est affiché.
+- **FR-016**: Tant que la demande de contact n'est pas acceptée, aucune information personnelle (nom, email, photo de profil) du propriétaire de l'arbre ne DOIT être exposée, seul un identifiant anonyme (ex : « Membre #1234 ») est affiché.
 
 ### Key Entities
 
@@ -130,9 +130,9 @@ Le système exécute automatiquement l'algorithme de matching à intervalles ré
 
 ## Assumptions
 
-- Le matching ne s'exécute qu'entre arbres d'utilisateurs différents — jamais au sein du même arbre.
+- Le matching ne s'exécute qu'entre arbres d'utilisateurs différents, jamais au sein du même arbre.
 - Le score de confiance est calculé côté serveur. L'algorithme exact (pondération, seuils, phonétique) sera déterminé lors de la phase de planification, mais un seuil minimum (ex : 60%) est appliqué pour éviter les suggestions non pertinentes.
-- La « fusion logique » des personnes matchées ne modifie pas les données de l'un ou l'autre arbre. C'est une relation de type « pont » entre deux rattachements de deux arbres distincts — chaque arbre conserve ses propres données.
+- La « fusion logique » des personnes matchées ne modifie pas les données de l'un ou l'autre arbre. C'est une relation de type « pont » entre deux rattachements de deux arbres distincts, chaque arbre conserve ses propres données.
 - Les branches découvertes sont mises à jour en temps réel si l'autre utilisateur modifie son arbre (ajout/modification de personnes rattachées à la personne commune).
 - La notification de nouvelles suggestions se fait via un indicateur visuel dans l'interface (badge/compteur sur le menu), pas par email dans un premier temps.
 - Le matching considère toutes les personnes de l'arbre, pas uniquement celles sans parents. Plus un arbre est riche, plus les correspondances sont fiables.
@@ -143,9 +143,9 @@ Le système exécute automatiquement l'algorithme de matching à intervalles ré
 
 ### Session 2026-03-16
 
-- Q: Combien de générations de l'arbre de l'autre utilisateur sont visibles après confirmation mutuelle ? → A: Arbre complet — toutes les personnes et liens de l'autre utilisateur sont visibles.
-- Q: Le matching s'exécute-t-il de façon synchrone, asynchrone ou hybride ? → A: Hybride — vérification rapide synchrone (nom exact) à chaque ajout, puis tâche de fond pour le matching profond (phonétique, dates, lieux).
-- Q: Les utilisateurs peuvent-ils communiquer après confirmation mutuelle ? → A: Demande de contact optionnelle — l'utilisateur peut envoyer une demande, l'autre accepte ou refuse. Identité masquée tant que le contact n'est pas accepté.
+- Q: Combien de générations de l'arbre de l'autre utilisateur sont visibles après confirmation mutuelle ? → A: Arbre complet : toutes les personnes et liens de l'autre utilisateur sont visibles.
+- Q: Le matching s'exécute-t-il de façon synchrone, asynchrone ou hybride ? → A: Hybride : vérification rapide synchrone (nom exact) à chaque ajout, puis tâche de fond pour le matching profond (phonétique, dates, lieux).
+- Q: Les utilisateurs peuvent-ils communiquer après confirmation mutuelle ? → A: Demande de contact optionnelle, l'utilisateur peut envoyer une demande, l'autre accepte ou refuse. Identité masquée tant que le contact n'est pas accepté.
 
 ## Success Criteria *(mandatory)*
 

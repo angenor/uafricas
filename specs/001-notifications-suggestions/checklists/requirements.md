@@ -32,7 +32,7 @@
 ## Notes
 
 - All items passed on first iteration.
-- La fusion de doublons (US3) est la composante la plus complexe — nécessite un endpoint transactionnel.
-- Les suggestions proactives sont calculées côté client — pas de nouvel endpoint.
+- La fusion de doublons (US3) est la composante la plus complexe, nécessite un endpoint transactionnel.
+- Les suggestions proactives sont calculées côté client, pas de nouvel endpoint.
 - Les notifications sont créées dans les handlers existants des Features 4 et 6.
-- Pas de notification email dans cette version — uniquement in-app.
+- Pas de notification email dans cette version, uniquement in-app.

@@ -223,11 +223,11 @@ onMounted(() => charger())
                   <option value="faux">Faux</option>
                   <option value="partiellement_vrai">Partiellement vrai</option>
                   <option value="trompeur">Trompeur</option>
-                  <option value="non_verifie">Non verifie</option>
+                  <option value="non_verifie">Non vérifié</option>
                 </select>
               </div>
               <div class="form-control">
-                <label class="label"><span class="label-text">Etat</span></label>
+                <label class="label"><span class="label-text">État</span></label>
                 <select v-model="form.etat" class="select select-bordered">
                   <option value="publie">Publie</option>
                   <option value="brouillon">Brouillon</option>

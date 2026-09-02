@@ -33,4 +33,4 @@
 
 - Tous les points de divergence remontés par l'utilisateur (annuaire, bouton Démarrer, page `/afrolang/salle-privee/[id].vue`, création par modale, 1 salle privée par user par salle publique, accès par code secret) sont couverts par des FR explicites.
 - Session `/speckit.clarify` du 2026-04-15 : 5 ambiguïtés structurantes levées (cycle de vie salle privée, reprise des données legacy, création & démarrage des salles publiques, emplacement du widget « Canal privé », indépendance salle privée ↔ salle publique).
-- A3 (valeur rate limit) et A5 (longueur / format code secret) restent en Assumptions — décisions de design à valider en `/speckit.plan` ; A4 a été remplacée par une décision ferme de table rase (produit pas encore en prod).
+- A3 (valeur rate limit) et A5 (longueur / format code secret) restent en Assumptions, décisions de design à valider en `/speckit.plan` ; A4 a été remplacée par une décision ferme de table rase (produit pas encore en prod).

@@ -182,7 +182,7 @@ onMounted(() => charger())
         <div>
           <h2 class="text-lg font-bold">{{ centreDetail.nom }}</h2>
           <p class="text-sm text-base-content/60">
-            {{ centreDetail.ville || '—' }}{{ centreDetail.pays_nom ? `, ${centreDetail.pays_nom}` : '' }}
+            {{ centreDetail.ville || '-' }}{{ centreDetail.pays_nom ? `, ${centreDetail.pays_nom}` : '' }}
           </p>
           <div class="flex gap-2 mt-1">
             <span :class="centreDetail.actif ? 'badge badge-success badge-sm' : 'badge badge-neutral badge-sm'">
@@ -302,7 +302,7 @@ onMounted(() => charger())
           <table class="table table-sm">
             <thead>
               <tr>
-                <th>Nom / Prenom</th>
+                <th>Nom / Prénom</th>
                 <th>Role</th>
                 <th>Date</th>
                 <th class="w-28">Actions</th>
@@ -395,10 +395,10 @@ onMounted(() => charger())
                 <td>{{ prog.titre }}</td>
                 <td>
                   <span v-if="prog.mode" class="badge badge-sm badge-outline">{{ prog.mode }}</span>
-                  <span v-else class="text-base-content/40">—</span>
+                  <span v-else class="text-base-content/40">-</span>
                 </td>
                 <td>{{ new Date(prog.date_heure_debut).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }}</td>
-                <td class="text-center">{{ prog.nombre_places ?? '—' }}</td>
+                <td class="text-center">{{ prog.nombre_places ?? '-' }}</td>
                 <td>
                   <NuxtLink :to="`/admin/programmations/${prog.id}`" class="btn btn-ghost btn-xs">
                     <font-awesome-icon icon="pen-to-square" />

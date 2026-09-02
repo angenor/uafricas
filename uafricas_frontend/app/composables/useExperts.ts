@@ -65,7 +65,7 @@ export interface ExpertFiltres {
   specialite?: string
   /**
    * Zone géographique du territoire d'origine : filtre aussi la liste des experts.
-   * `tout` n'est PAS transmis à l'API — c'est l'absence de filtre côté serveur.
+   * `tout` n'est PAS transmis à l'API : c'est l'absence de filtre côté serveur.
    */
   zone?: 'afrique' | 'hors_afrique' | 'tout'
   tri?: 'recent' | 'experience' | 'rating'

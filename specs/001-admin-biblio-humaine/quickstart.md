@@ -19,7 +19,7 @@ pnpm dev
 
 ## Ordre d'implémentation
 
-### Étape 1 — Migration SQL
+### Étape 1 : Migration SQL
 
 ```bash
 # Via psql ou Adminer (http://localhost:8088)
@@ -27,32 +27,32 @@ psql -h localhost -U uafricas -d africans_db \
   -f uafricas_backend/doc/bd/schemas/04b_iam_biblio_demande.sql
 ```
 
-### Étape 2 — Backend : modèles
+### Étape 2 : Backend : modèles
 
 1. Créer `src/models/admin/biblio_humaine.rs`
 2. Déclarer dans `src/models/admin/mod.rs`
 3. Ajouter `DemandeCreeeResponse` et `MaDemandeResponse` dans `src/models/bibliotheque_humaine.rs`
 
-### Étape 3 — Backend : handlers + routes
+### Étape 3 : Backend : handlers + routes
 
-1. Modifier `src/handlers/bibliotheques_humaines.rs` — `inscrire_biblio` crée une demande
+1. Modifier `src/handlers/bibliotheques_humaines.rs`, `inscrire_biblio` crée une demande
 2. Créer `src/handlers/admin/bibliotheques_humaines.rs`
 3. Déclarer dans `src/handlers/admin/mod.rs`
 4. Ajouter les routes dans `src/routes.rs`
 
-### Étape 4 — Frontend : composables
+### Étape 4 : Frontend : composables
 
 1. Ajouter `obtenirMaDemande()` dans `app/composables/useBibliothequeHumaine.ts`
 2. Créer `app/composables/useAdminBibliosHumaines.ts`
 
-### Étape 5 — Frontend : pages admin
+### Étape 5 : Frontend : pages admin
 
 1. Créer `app/pages/admin/bibliotheques-humaines/index.vue`
 2. Créer `app/pages/admin/bibliotheques-humaines/[id].vue`
 
-### Étape 6 — Frontend : statut candidat
+### Étape 6 : Frontend : statut candidat
 
-Modifier `app/pages/profil.vue` — afficher le statut de la demande pour l'utilisateur connecté.
+Modifier `app/pages/profil.vue` : afficher le statut de la demande pour l'utilisateur connecté.
 
 ## Comptes de test
 

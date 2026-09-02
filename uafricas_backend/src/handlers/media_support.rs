@@ -1,5 +1,5 @@
-//! Fiche d'un support média — thématiques multiples et couverture territoriale
-//! (feature 009-medias-programmes-episodes, US3 et US4 — migration 09r).
+//! Fiche d'un support média : thématiques multiples et couverture territoriale
+//! (feature 009-medias-programmes-episodes, US3 et US4, migration 09r).
 //!
 //! Routes membres (gardées par `garde_detenteur`) **et** back-office (gardées
 //! par `verifier_permission!`) : les règles de validation sont strictement les
@@ -30,7 +30,7 @@ use crate::verifier_permission;
 use crate::ApiResponse;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Lectures groupées — sans requête N+1
+// Lectures groupées : sans requête N+1
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Thématiques de plusieurs supports, en **une seule requête**.
@@ -66,7 +66,7 @@ pub async fn thematiques_par_supports(
     Ok(resultat)
 }
 
-/// Couverture de plusieurs supports, en **deux requêtes** — le drapeau
+/// Couverture de plusieurs supports, en **deux requêtes**, le drapeau
 /// continental vit sur la table du support, les territoires sur la liaison.
 pub async fn couverture_par_supports(
     pool: &PgPool,
@@ -124,7 +124,7 @@ pub async fn couverture_par_supports(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Thèmes **actifs du référentiel `media`**, chacun avec le nombre de supports
-/// publiés qui le déclarent — zéro compris.
+/// publiés qui le déclarent : zéro compris.
 ///
 /// La liste partait auparavant des déclarations, et ne montrait donc que les
 /// thèmes déjà servis. C'est ce qui cachait l'étendue du catalogue : le
@@ -206,7 +206,7 @@ pub async fn territoires_disponibles(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Écritures — règles communes membre et back-office
+// Écritures : règles communes membre et back-office
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Remplacement intégral des thématiques d'un support.
@@ -550,14 +550,14 @@ pub async fn admin_definir_couverture(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Référentiels d'ÉDITION — GET /api/medias/referentiels
+// Référentiels d'ÉDITION : GET /api/medias/referentiels
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Catalogue complet des thèmes et des territoires, pour les **sélecteurs**.
 ///
 /// Distinct des référentiels de filtre ci-dessus, qui portent un décompte par
 /// support et, pour les territoires, ne listent que ce qui est **déjà
-/// couvert** : les réutiliser ici rendrait un territoire inédit inatteignable —
+/// couvert** : les réutiliser ici rendrait un territoire inédit inatteignable, 
 /// le premier support à vouloir le choisir ne le verrait pas dans la liste.
 pub async fn referentiels_edition(
     pool: web::Data<PgPool>,

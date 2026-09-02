@@ -3,7 +3,7 @@
 **Feature Branch**: `001-recherche-exploration`
 **Created**: 2026-03-16
 **Status**: Draft
-**Input**: User description: "Feature 5 — Recherche et exploration. Rechercher une personne par nom/lieu/date dans son propre arbre. Rechercher dans la base publique pour voir si quelqu'un a déjà référencé un de ses ancêtres. Visualiser le chemin de parenté entre deux personnes. Filtrer par branche familiale, par zone géographique, par génération."
+**Input**: User description: "Feature 5, Recherche et exploration. Rechercher une personne par nom/lieu/date dans son propre arbre. Rechercher dans la base publique pour voir si quelqu'un a déjà référencé un de ses ancêtres. Visualiser le chemin de parenté entre deux personnes. Filtrer par branche familiale, par zone géographique, par génération."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -11,7 +11,7 @@
 
 L'utilisateur connecté peut rechercher une personne dans son arbre par nom, prénom, lieu de naissance ou date de naissance. Les résultats s'affichent en temps réel à mesure que l'utilisateur tape. En cliquant sur un résultat, la vue arbre se centre sur la personne trouvée. La recherche fonctionne aussi bien depuis la page de visualisation que depuis une page de recherche dédiée.
 
-**Why this priority**: La recherche dans son propre arbre est le besoin le plus immédiat — dès que l'arbre dépasse 20 personnes, le parcours visuel ne suffit plus.
+**Why this priority**: La recherche dans son propre arbre est le besoin le plus immédiat, dès que l'arbre dépasse 20 personnes, le parcours visuel ne suffit plus.
 
 **Independent Test**: Avec un arbre de 30+ personnes, saisir un nom partiel dans le champ de recherche → vérifier que les résultats pertinents apparaissent en moins de 1 seconde.
 
@@ -105,7 +105,7 @@ L'utilisateur peut filtrer les personnes visibles dans la vue arbre selon plusie
 
 ### Session 2026-03-16
 
-- Q: Comment l'utilisateur bascule-t-il entre recherche locale et publique ? → A: Un seul champ avec toggle "Mon arbre / Tous les arbres" — résultats locaux par défaut, bascule vers public.
+- Q: Comment l'utilisateur bascule-t-il entre recherche locale et publique ? → A: Un seul champ avec toggle "Mon arbre / Tous les arbres", résultats locaux par défaut, bascule vers public.
 
 ### Key Entities
 
@@ -118,7 +118,7 @@ L'utilisateur peut filtrer les personnes visibles dans la vue arbre selon plusie
 - La recherche dans son propre arbre est côté client (les données sont déjà chargées via `arbre-complet`). Pas de nouvel endpoint pour la recherche locale.
 - La recherche publique nécessite un nouvel endpoint côté serveur qui utilise les colonnes normalisées et pg_trgm existants (Feature 4).
 - Le calcul du chemin de parenté se fait côté client par un algorithme BFS/DFS sur le graphe en mémoire. Pour les chemins longs (>10 nœuds), un résumé est affiché.
-- La terminologie familiale est déterminée par un algorithme qui compte les générations ascendantes et descendantes entre les deux personnes (méthode de Knuth : LCA — Lowest Common Ancestor).
+- La terminologie familiale est déterminée par un algorithme qui compte les générations ascendantes et descendantes entre les deux personnes (méthode de Knuth : LCA, Lowest Common Ancestor).
 - Les filtres sont des transformations côté client du graphe existant, pas de nouveaux endpoints.
 - La « branche paternelle » est définie comme : tous les ancêtres et descendants accessibles en passant uniquement par le père (ou le premier parent masculin) de la personne centrée.
 

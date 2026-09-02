@@ -1,3 +1,349 @@
+<template>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Apporter mon expertise"
+        sous-titre="Complétez votre profil et présentez votre expertise. Votre demande sera examinée par un administrateur avant publication."
+        image="/images/apporter-expertise.png"
+      />
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Opafrica', vers: '/actions' },
+          { libelle: 'Diapertise', vers: '/experts' },
+          { libelle: 'Ma candidature' },
+        ]"
+      >
+        <template v-if="!chargementInit && !succes && !candidatureActive" #centre>
+          <p class="text-base font-bold text-af-encre">
+            Étape {{ etape + 1 }} sur {{ ETAPES.length }}
+          </p>
+        </template>
+      </AfricansFilAriane>
+    </template>
+
+    <div v-if="chargementInit" class="flex flex-col gap-6">
+      <div v-for="n in 2" :key="n" class="h-48 animate-pulse rounded-[10px] bg-af-bordure" />
+    </div>
+
+    <!-- ═══ Confirmation ═══ -->
+    <div v-else-if="succes" class="rounded-[10px] border border-af-vert/30 bg-white p-12 text-center">
+      <font-awesome-icon icon="fa-solid fa-circle-check" class="text-5xl text-af-vert" />
+      <h1 class="mt-4 text-[24px]/[1.3] font-bold text-af-encre">Demande envoyée</h1>
+      <p class="mx-auto mt-2 max-w-lg text-[14px]/[1.5] text-af-corps">
+        Elle sera examinée par un administrateur. Vous serez prévenu de la décision.
+      </p>
+      <div class="mt-6 flex flex-wrap justify-center gap-3">
+        <AfricansBouton icone="fa-solid fa-user-tie" vers="/experts">Voir les expertises</AfricansBouton>
+        <AfricansBouton variante="secondaire" icone="fa-solid fa-user" vers="/mon-compte/profil">
+          Mon profil
+        </AfricansBouton>
+      </div>
+    </div>
+
+    <!-- ═══ Demande déjà déposée ═══ -->
+    <div v-else-if="candidatureActive" class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+      <font-awesome-icon
+        :icon="candidatureActive.statut === 'valide' ? 'fa-solid fa-circle-check' : 'fa-solid fa-clock'"
+        class="text-5xl"
+        :class="candidatureActive.statut === 'valide' ? 'text-af-vert' : 'text-af-chocolat'"
+      />
+      <h1 class="mt-4 text-[24px]/[1.3] font-bold text-af-encre">
+        {{ candidatureActive.statut === 'valide' ? 'Vous êtes déjà expert' : "Demande en cours d'examen" }}
+      </h1>
+      <p class="mx-auto mt-2 max-w-lg text-[14px]/[1.5] text-af-corps">
+        {{ candidatureActive.statut === 'valide'
+          ? 'Votre expertise est publiée dans le répertoire.'
+          : 'Un administrateur doit encore l’examiner. Vous serez prévenu de la décision.' }}
+      </p>
+      <AfricansBouton class="mt-6" icone="fa-solid fa-user-tie" vers="/experts">
+        Voir les expertises
+      </AfricansBouton>
+    </div>
+
+    <!-- ═══ Formulaire ═══ -->
+    <form v-else class="flex flex-col gap-6" @submit.prevent="soumettre">
+      <div
+        v-if="candidatureRefusee"
+        class="rounded-[10px] border border-af-live/30 bg-af-live/5 px-4 py-3 text-[14px]/[1.4]"
+      >
+        <p class="font-bold text-af-live">Votre demande précédente a été refusée.</p>
+        <p v-if="candidatureRefusee.commentaireAdmin" class="mt-1 text-af-corps">
+          {{ candidatureRefusee.commentaireAdmin }}
+        </p>
+        <p class="mt-1 text-af-corps">Vous pouvez la corriger et la soumettre à nouveau.</p>
+      </div>
+
+      <!-- Fil des étapes -->
+      <nav class="flex flex-wrap gap-2" aria-label="Étapes de la candidature">
+        <button
+          v-for="(e, i) in ETAPES"
+          :key="e.titre"
+          type="button"
+          class="flex min-w-0 flex-1 items-center gap-3 rounded-[10px] border p-3 text-left transition"
+          :class="i === etape ? 'border-af-chocolat bg-af-chocolat/[0.07]' : 'border-af-bordure bg-white hover:border-af-chocolat'"
+          :aria-current="i === etape ? 'step' : undefined"
+          @click="allerA(i)"
+        >
+          <span
+            class="grid size-8 shrink-0 place-items-center rounded-full text-[14px]/[1] font-bold"
+            :class="i < etape ? 'bg-af-vert text-white' : i === etape ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-atone'"
+          >
+            <font-awesome-icon v-if="i < etape" icon="fa-solid fa-check" />
+            <template v-else>{{ i + 1 }}</template>
+          </span>
+          <span class="min-w-0 truncate text-[14px]/[1.3] font-bold" :class="i === etape ? 'text-af-chocolat' : 'text-af-encre'">
+            {{ e.titre }}
+          </span>
+        </button>
+      </nav>
+
+      <p
+        v-if="messageEtape || erreurForm"
+        role="alert"
+        class="flex items-start gap-2 rounded-[10px] border border-af-live/30 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
+      >
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="mt-0.5 shrink-0" />
+        {{ messageEtape || erreurForm }}
+      </p>
+
+      <section class="flex flex-col gap-5 rounded-[10px] border border-af-bordure bg-white p-6">
+        <!-- ─── 1. Mon profil ─── -->
+        <template v-if="etape === 0">
+          <div class="flex items-center gap-5">
+            <AfricansAvatar :nom="form.fonction || 'Photo'" :src="photoPreview || urlMedia(photoUrlActuelle)" :taille="80" />
+            <div class="flex flex-col items-start gap-1">
+              <AfricansBouton variante="secondaire" icone="fa-solid fa-image" @click="declencherSelectionPhoto">
+                Changer la photo
+              </AfricansBouton>
+              <p class="text-[12px]/[1.4] text-af-atone">JPEG ou PNG, format carré recommandé.</p>
+              <input ref="inputPhoto" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="onPhotoChange" />
+            </div>
+          </div>
+
+          <AfricansChamp v-model="form.fonction" libelle="Fonction *" placeholder="Ex : ingénieure logiciel, médecin, agronome…" />
+
+          <AfricansChamp v-model="form.paysId" libelle="Territoire de résidence *" type="select">
+            <option value="">Sélectionner</option>
+            <option v-for="p in listePays" :key="p.id" :value="p.id">{{ p.nom }}</option>
+          </AfricansChamp>
+        </template>
+
+        <!-- ─── 2. Mon expertise ─── -->
+        <template v-else-if="etape === 1">
+          <AfricansChamp v-model="form.domaine" libelle="Domaine d'expertise *" type="select">
+            <option value="">Sélectionner</option>
+            <option v-for="d in domainesDisponibles" :key="d" :value="d">{{ d }}</option>
+          </AfricansChamp>
+
+          <AfricansChamp
+            v-if="form.domaine === DOMAINE_AUTRE"
+            v-model="form.domaineAutre"
+            libelle="Précisez votre domaine *"
+            placeholder="Votre domaine d'expertise"
+          />
+
+          <div class="flex flex-col gap-2">
+            <span class="text-[14px]/[1.4] text-af-atone italic">Spécialités (facultatives)</span>
+            <p class="text-[12px]/[1.4] text-af-atone">
+              Sous-domaines ou compétences précises. Quinze au maximum.
+            </p>
+            <div class="flex gap-2">
+              <input
+                v-model="specialiteInput"
+                type="text"
+                placeholder="Ex : développement web, cardiologie…"
+                class="h-11 min-w-0 flex-1 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
+                @keydown.enter.prevent="ajouterSpecialite"
+              />
+              <AfricansBouton variante="secondaire" icone="fa-solid fa-plus" @click="ajouterSpecialite">Ajouter</AfricansBouton>
+            </div>
+            <div v-if="form.specialites.length" class="flex flex-wrap gap-2">
+              <span
+                v-for="(sp, i) in form.specialites"
+                :key="sp"
+                class="inline-flex items-center gap-2 rounded bg-af-fond px-3 py-1 text-[12px]/[1.4] text-af-encre"
+              >
+                {{ sp }}
+                <button type="button" :aria-label="`Retirer ${sp}`" class="text-af-atone transition hover:text-af-live" @click="retirerSpecialite(i)">
+                  <font-awesome-icon icon="fa-solid fa-xmark" />
+                </button>
+              </span>
+            </div>
+          </div>
+
+          <AfricansChamp
+            v-model="form.biographie"
+            libelle="Biographie *"
+            type="textarea"
+            placeholder="Votre parcours, ce que vous savez faire, ce que vous cherchez à transmettre."
+            aide="Entre 10 et 5 000 caractères."
+          />
+        </template>
+
+        <!-- ─── 3. Mon parcours ─── -->
+        <template v-else-if="etape === 2">
+          <label class="flex flex-col gap-2">
+            <span class="text-[14px]/[1.4] text-af-atone italic">Années d'expérience *</span>
+            <!-- Champ natif : `AfricansChamp` n'émet que des chaînes, et l'API
+                 attend un entier. `5` partirait en `"5"`. -->
+            <input
+              v-model.number="form.nbAnnees"
+              type="number"
+              min="0"
+              class="h-11 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] focus:border-af-chocolat focus:outline-none"
+            />
+          </label>
+
+          <fieldset class="flex flex-col gap-2">
+            <legend class="mb-2 text-[14px]/[1.4] text-af-atone italic">Situation(s) professionnelle(s) *</legend>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <label
+                v-for="s in situationsDisponibles"
+                :key="s.id"
+                class="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-2.5 text-[14px]/[1.4] transition"
+                :class="form.situations.includes(s.id) ? 'border-af-chocolat bg-af-chocolat/[0.07] font-bold text-af-chocolat' : 'border-af-bordure text-af-corps hover:border-af-chocolat'"
+              >
+                <input
+                  type="checkbox"
+                  class="size-4 accent-af-chocolat"
+                  :checked="form.situations.includes(s.id)"
+                  @change="toggleSituation(s.id)"
+                />
+                {{ s.label }}
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="flex flex-col gap-2">
+            <legend class="mb-2 text-[14px]/[1.4] text-af-atone italic">Objectifs actuels (facultatifs)</legend>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="o in OBJECTIFS_EXPERTISE"
+                :key="o.value"
+                type="button"
+                class="rounded-full px-3 py-1.5 text-[12px]/[1.4] font-bold transition"
+                :class="form.objectifs.includes(o.value) ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
+                :aria-pressed="form.objectifs.includes(o.value)"
+                @click="toggleObjectif(o.value)"
+              >
+                {{ o.label }}
+              </button>
+            </div>
+          </fieldset>
+
+          <div class="flex flex-col gap-2">
+            <span class="text-[14px]/[1.4] text-af-atone italic">Réalisations (facultatives)</span>
+            <div class="flex gap-2">
+              <input
+                v-model="realisationInput"
+                type="text"
+                placeholder="Une réalisation marquante"
+                class="h-11 min-w-0 flex-1 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
+                @keydown.enter.prevent="ajouterRealisation"
+              />
+              <AfricansBouton variante="secondaire" icone="fa-solid fa-plus" @click="ajouterRealisation">Ajouter</AfricansBouton>
+            </div>
+            <ul v-if="form.realisations.length" class="flex flex-col gap-1">
+              <li
+                v-for="(r, i) in form.realisations"
+                :key="`${r}-${i}`"
+                class="flex items-start gap-2 rounded-lg bg-af-fond px-3 py-2 text-[14px]/[1.4] text-af-corps"
+              >
+                <span class="min-w-0 flex-1">{{ r }}</span>
+                <button type="button" :aria-label="`Retirer la réalisation ${i + 1}`" class="shrink-0 text-af-atone transition hover:text-af-live" @click="retirerRealisation(i)">
+                  <font-awesome-icon icon="fa-solid fa-xmark" />
+                </button>
+              </li>
+            </ul>
+          </div>
+        </template>
+
+        <!-- ─── 4. Mes références ─── -->
+        <template v-else>
+          <AfricansChamp v-model="form.portfolio" libelle="Portfolio / site web (facultatif)" type="url" placeholder="https://…" />
+          <AfricansChamp v-model="form.linkedin" libelle="Profil LinkedIn (facultatif)" type="url" placeholder="https://www.linkedin.com/in/votre-profil" />
+
+          <div class="flex flex-col gap-2">
+            <span class="text-[14px]/[1.4] text-af-atone italic">CV (facultatif, PDF)</span>
+            <div class="flex flex-wrap items-center gap-3">
+              <AfricansBouton variante="secondaire" icone="fa-solid fa-file-pdf" @click="declencherSelectionCV">
+                Choisir un fichier
+              </AfricansBouton>
+              <span class="min-w-0 truncate text-[14px]/[1.4] text-af-atone">
+                {{ cvNom || 'Aucun fichier sélectionné' }}
+              </span>
+              <button v-if="cvNom" type="button" class="text-[14px]/[1.4] font-bold text-af-live transition hover:opacity-70" @click="retirerCV">
+                Retirer
+              </button>
+            </div>
+            <input ref="inputCV" type="file" accept="application/pdf" class="hidden" @change="onCVChange" />
+            <p class="text-[12px]/[1.4] text-af-atone">PDF uniquement, 10 Mo maximum.</p>
+            <p v-if="erreurs.cv" role="alert" class="text-[12px]/[1.4] text-af-live">{{ erreurs.cv }}</p>
+          </div>
+        </template>
+      </section>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <AfricansBouton v-if="etape > 0" variante="secondaire" icone="fa-solid fa-arrow-left" @click="precedent">
+          Précédent
+        </AfricansBouton>
+        <AfricansBouton v-if="etape < ETAPES.length - 1" icone="fa-solid fa-arrow-right" @click="suivant">
+          Suivant
+        </AfricansBouton>
+        <AfricansBouton
+          v-else
+          type="submit"
+          :icone="soumission ? 'fa-solid fa-spinner' : 'fa-solid fa-paper-plane'"
+          :desactive="soumission"
+          :tourne="soumission"
+        >
+          {{ soumission ? 'Envoi en cours…' : 'Soumettre ma demande' }}
+        </AfricansBouton>
+        <AfricansBouton class="ml-auto" variante="secondaire" vers="/experts">Annuler</AfricansBouton>
+      </div>
+    </form>
+
+    <template v-if="!chargementInit && !succes && !candidatureActive" #rail>
+      <AfricansPanneau titre="Progression" icone="fa-solid fa-list-check">
+        <ol class="flex flex-col gap-1">
+          <li v-for="(e, i) in ETAPES" :key="e.titre">
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[14px]/[1.4] transition"
+              :class="i === etape ? 'bg-af-chocolat/15 font-bold text-af-chocolat' : 'text-af-corps hover:bg-af-chocolat/[0.07]'"
+              @click="allerA(i)"
+            >
+              <font-awesome-icon :icon="e.icone" class="w-4 shrink-0 text-center" />
+              <span class="min-w-0 flex-1 truncate">{{ e.titre }}</span>
+              <font-awesome-icon v-if="i < etape" icon="fa-solid fa-check" class="shrink-0 text-af-vert" />
+            </button>
+          </li>
+        </ol>
+      </AfricansPanneau>
+
+      <AfricansPanneau titre="Bon à savoir" icone="fa-solid fa-circle-info">
+        <ul class="flex flex-col gap-3 text-[14px]/[1.5] text-af-corps">
+          <li class="flex gap-3">
+            <font-awesome-icon icon="fa-solid fa-eye" class="mt-1 size-3 shrink-0 text-af-chocolat" />
+            Votre demande est examinée par un administrateur avant publication.
+          </li>
+          <li class="flex gap-3">
+            <font-awesome-icon icon="fa-solid fa-user" class="mt-1 size-3 shrink-0 text-af-chocolat" />
+            La fonction, le territoire et la photo mettent aussi à jour votre profil.
+          </li>
+          <li class="flex gap-3">
+            <font-awesome-icon icon="fa-solid fa-triangle-exclamation" class="mt-1 size-3 shrink-0 text-af-live" />
+            La saisie n'est pas conservée si vous quittez la page.
+          </li>
+        </ul>
+      </AfricansPanneau>
+    </template>
+  </NuxtLayout>
+</template>
+
 <script setup lang="ts">
 import {
   CATEGORIES_EXPERTISE,
@@ -7,8 +353,20 @@ import {
   type MaCandidatureAPI,
 } from '~/composables/useExperts'
 
-useHead({ title: 'Devenir expert - AfricanS' })
-useAOS()
+/**
+ * Apporter mon expertise, porté sur le gabarit et découpé en QUATRE ÉTAPES.
+ *
+ * La page présentait quatorze champs d'un seul tenant, dont deux listes à
+ * étiquettes, deux groupes de cases à cocher et deux téléversements, sur une
+ * carte centrée hors du gabarit de la refonte.
+ *
+ * `valider()` n'est pas dupliqué : il reste l'autorité de la soumission, et
+ * chaque étape n'en interroge que SA part. Deux jeux de règles auraient fini
+ * par diverger, et l'écart n'aurait été visible qu'au refus du serveur.
+ */
+definePageMeta({ layout: false })
+
+useHead({ title: 'Apporter mon expertise | AfricanS' })
 
 const router = useRouter()
 const { isAuthenticated } = useAuth()
@@ -168,14 +526,72 @@ function valider(): boolean {
   return Object.keys(erreurs).length === 0
 }
 
+// ── Étapes ────────────────────────────────────────────────────────────────
+const ETAPES = [
+  { titre: 'Mon profil', icone: 'fa-solid fa-user', champs: ['fonction', 'paysId'] },
+  { titre: 'Mon expertise', icone: 'fa-solid fa-lightbulb', champs: ['domaine', 'domaineAutre', 'biographie'] },
+  { titre: 'Mon parcours', icone: 'fa-solid fa-briefcase', champs: ['nbAnnees', 'situations'] },
+  { titre: 'Mes références', icone: 'fa-solid fa-link', champs: ['portfolio', 'linkedin', 'cv'] },
+] as const
+
+const etape = ref(0)
+
+/**
+ * Les erreurs d'une étape, tirées de la validation d'ENSEMBLE. `valider()`
+ * remplit `erreurs` pour tout le formulaire ; on ne lit ici que les clés qui
+ * appartiennent à l'étape, sans réécrire une seule règle.
+ */
+function erreursEtape(i: number): string[] {
+  valider()
+  const champs = ETAPES[i]!.champs as readonly string[]
+  return champs.map(c => erreurs[c]).filter(Boolean) as string[]
+}
+
+const messageEtape = ref<string | null>(null)
+
+function suivant() {
+  const manque = erreursEtape(etape.value)
+  if (manque.length) { messageEtape.value = manque[0]!; return }
+  messageEtape.value = null
+  etape.value += 1
+  if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function precedent() {
+  messageEtape.value = null
+  etape.value -= 1
+  if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function allerA(i: number) {
+  // On ne saute en avant que par des étapes déjà complètes.
+  if (i > etape.value) {
+    for (let k = etape.value; k < i; k++) {
+      const manque = erreursEtape(k)
+      if (manque.length) { etape.value = k; messageEtape.value = manque[0]!; return }
+    }
+  }
+  messageEtape.value = null
+  etape.value = i
+}
+
 // ── Soumission ──
 async function soumettre() {
   erreurForm.value = null
   if (!valider()) {
+    // Ramener sur l'étape en défaut : un message générique en pied de page
+    // n'aide pas quand le champ fautif est trois écrans plus haut.
+    const premiere = ETAPES.findIndex((_, i) => erreursEtape(i).length > 0)
+    if (premiere >= 0) {
+      etape.value = premiere
+      messageEtape.value = erreursEtape(premiere)[0] ?? null
+      if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
     erreurForm.value = 'Veuillez corriger les champs indiqués.'
     return
   }
 
+  messageEtape.value = null
   soumission.value = true
   try {
     // 1. Photo (optionnelle)
@@ -189,7 +605,7 @@ async function soumettre() {
       pays_residence_id: form.paysId,
     })
 
-    // 3. CV (optionnel, PDF) — uploadé avant la création de la candidature
+    // 3. CV (optionnel, PDF), uploadé avant la création de la candidature
     let cvUrl: string | undefined
     if (cvFile.value) {
       cvUrl = (await uploaderCV(cvFile.value)) ?? undefined
@@ -283,442 +699,3 @@ onMounted(async () => {
   chargementInit.value = false
 })
 </script>
-
-<template>
-  <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-3xl mx-auto">
-      <!-- En-tête -->
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-custom-chocolat to-custom-green mb-4">
-          <font-awesome-icon icon="fa-solid fa-hand-holding-heart" class="text-white text-2xl" />
-        </div>
-        <h1 class="text-3xl font-bold text-gray-800 font-oswald">Apporter mon expertise</h1>
-        <p class="text-gray-500 mt-2 max-w-xl mx-auto">
-          Complétez votre profil et présentez votre expertise. Votre demande sera examinée par un administrateur avant publication.
-        </p>
-      </div>
-
-      <!-- Chargement initial -->
-      <div v-if="chargementInit" class="flex justify-center py-20">
-        <font-awesome-icon icon="fa-solid fa-spinner" class="text-3xl text-custom-chocolat animate-spin" />
-      </div>
-
-      <!-- Confirmation de soumission -->
-      <div
-        v-else-if="succes"
-        class="bg-white rounded-2xl shadow-sm border border-green-100 p-8 text-center"
-        data-aos="fade-up"
-      >
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-          <font-awesome-icon icon="fa-solid fa-circle-check" class="text-green-600 text-3xl" />
-        </div>
-        <h2 class="text-xl font-bold text-gray-800">Demande envoyée !</h2>
-        <p class="text-gray-500 mt-2">
-          Votre demande sera examinée par un administrateur. Vous serez notifié(e) par email de la décision.
-        </p>
-        <div class="flex flex-wrap justify-center gap-3 mt-6">
-          <NuxtLink
-            to="/mon-compte/profil"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-gradient-to-r from-custom-chocolat to-custom-green text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300"
-          >
-            <font-awesome-icon icon="fa-solid fa-user" />
-            Suivre ma demande
-          </NuxtLink>
-          <NuxtLink
-            to="/experts"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm border border-gray-300 text-gray-600 font-medium rounded-xl hover:bg-gray-50 transition-all duration-300"
-          >
-            Voir les experts
-          </NuxtLink>
-        </div>
-      </div>
-
-      <!-- Demande déjà active (en attente ou validée) -->
-      <div
-        v-else-if="candidatureActive"
-        class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center"
-        data-aos="fade-up"
-      >
-        <div
-          class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
-          :class="candidatureActive.statut === 'valide' ? 'bg-green-100' : 'bg-amber-100'"
-        >
-          <font-awesome-icon
-            :icon="candidatureActive.statut === 'valide' ? 'fa-solid fa-circle-check' : 'fa-solid fa-clock'"
-            class="text-3xl"
-            :class="candidatureActive.statut === 'valide' ? 'text-green-600' : 'text-amber-500'"
-          />
-        </div>
-        <h2 class="text-xl font-bold text-gray-800">
-          {{ candidatureActive.statut === 'valide' ? 'Vous êtes déjà expert' : 'Demande en cours d\'examen' }}
-        </h2>
-        <p class="text-gray-500 mt-2">
-          {{
-            candidatureActive.statut === 'valide'
-              ? 'Votre profil d\'expert est validé et visible publiquement.'
-              : 'Vous avez déjà une demande en attente de validation. Vous ne pouvez pas en soumettre une nouvelle pour le moment.'
-          }}
-        </p>
-        <div class="flex flex-wrap justify-center gap-3 mt-6">
-          <NuxtLink
-            to="/mon-compte/profil"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-gradient-to-r from-custom-chocolat to-custom-green text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300"
-          >
-            <font-awesome-icon icon="fa-solid fa-user" />
-            Voir le statut
-          </NuxtLink>
-        </div>
-      </div>
-
-      <!-- Formulaire -->
-      <form
-        v-else
-        class="space-y-6"
-        data-aos="fade-up"
-        @submit.prevent="soumettre"
-      >
-        <!-- Bandeau re-soumission après refus -->
-        <div v-if="candidatureRefusee" class="bg-red-50 border border-red-200 rounded-xl p-4">
-          <p class="text-sm font-semibold text-red-700">Votre précédente demande a été refusée</p>
-          <p v-if="candidatureRefusee.commentaireAdmin" class="text-sm text-red-600 mt-1">
-            Motif : {{ candidatureRefusee.commentaireAdmin }}
-          </p>
-          <p class="text-xs text-red-500 mt-1">Corrigez votre dossier ci-dessous pour soumettre une nouvelle demande.</p>
-        </div>
-
-        <!-- Erreur globale -->
-        <div v-if="erreurForm" class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-2">
-          <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="text-red-500 mt-0.5" />
-          <span class="text-sm text-red-600">{{ erreurForm }}</span>
-        </div>
-
-        <!-- Section profil de base -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <font-awesome-icon icon="fa-solid fa-user" class="text-custom-chocolat" />
-            Mon profil
-          </h2>
-
-          <!-- Photo -->
-          <div class="flex items-center gap-4 mb-5">
-            <div class="w-20 h-20 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
-              <img
-                v-if="photoPreview || photoUrlActuelle"
-                :src="photoPreview || photoUrlActuelle || ''"
-                alt="Photo de profil"
-                class="w-full h-full object-cover"
-              />
-              <font-awesome-icon v-else icon="fa-solid fa-user" class="text-gray-300 text-2xl" />
-            </div>
-            <div>
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                @click="declencherSelectionPhoto"
-              >
-                <font-awesome-icon icon="fa-solid fa-image" />
-                Changer la photo
-              </button>
-              <p class="text-xs text-gray-400 mt-1">JPEG ou PNG, format carré recommandé.</p>
-              <input
-                ref="inputPhoto"
-                type="file"
-                accept="image/jpeg,image/png"
-                class="hidden"
-                @change="onPhotoChange"
-              />
-            </div>
-          </div>
-
-          <!-- Fonction -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Fonction <span class="text-red-500">*</span></label>
-            <input
-              v-model="form.fonction"
-              type="text"
-              placeholder="Ex : Ingénieure logiciel, Médecin, Agronome…"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
-            />
-            <p v-if="erreurs.fonction" class="text-xs text-red-500 mt-1">{{ erreurs.fonction }}</p>
-          </div>
-
-          <!-- Pays de résidence -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Territoire de résidence <span class="text-red-500">*</span></label>
-            <select
-              v-model="form.paysId"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
-            >
-              <option value="">— Sélectionner —</option>
-              <option v-for="p in listePays" :key="p.id" :value="p.id">{{ p.nom }}</option>
-            </select>
-            <p v-if="erreurs.paysId" class="text-xs text-red-500 mt-1">{{ erreurs.paysId }}</p>
-          </div>
-        </div>
-
-        <!-- Section expertise -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <font-awesome-icon icon="fa-solid fa-user-tie" class="text-custom-chocolat" />
-            Mon expertise
-          </h2>
-
-          <!-- Domaine -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Domaine d'expertise <span class="text-red-500">*</span></label>
-            <select
-              v-model="form.domaine"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
-            >
-              <option value="">— Sélectionner —</option>
-              <option v-for="d in domainesDisponibles" :key="d" :value="d">{{ d }}</option>
-              <option :value="DOMAINE_AUTRE">Autre…</option>
-            </select>
-            <p v-if="erreurs.domaine" class="text-xs text-red-500 mt-1">{{ erreurs.domaine }}</p>
-
-            <!-- Précision libre si « Autre » -->
-            <div v-if="form.domaine === DOMAINE_AUTRE" class="mt-3">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Précisez votre domaine <span class="text-red-500">*</span>
-              </label>
-              <input
-                v-model="form.domaineAutre"
-                type="text"
-                maxlength="120"
-                placeholder="Ex : Cybersécurité, Droit international, Énergies renouvelables…"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
-              />
-              <div class="flex justify-between mt-1">
-                <p v-if="erreurs.domaineAutre" class="text-xs text-red-500">{{ erreurs.domaineAutre }}</p>
-                <p class="text-xs text-gray-400 ml-auto">{{ form.domaineAutre.length }} / 120</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Spécialités (tags libres) -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Spécialités <span class="text-gray-400">(optionnel)</span>
-            </label>
-            <p class="text-xs text-gray-400 mb-2">Sous-domaines ou compétences précises. Appuyez sur Entrée pour ajouter.</p>
-            <div v-if="form.specialites.length" class="flex flex-wrap gap-2 mb-2">
-              <span
-                v-for="(s, i) in form.specialites"
-                :key="i"
-                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-custom-green text-sm border border-green-200"
-              >
-                {{ s }}
-                <button type="button" class="hover:text-red-500" @click="retirerSpecialite(i)">
-                  <font-awesome-icon icon="fa-solid fa-xmark" />
-                </button>
-              </span>
-            </div>
-            <div class="flex gap-2">
-              <input
-                v-model="specialiteInput"
-                type="text"
-                placeholder="Ex : Développement web, Cardiologie…"
-                class="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
-                @keydown.enter.prevent="ajouterSpecialite"
-              />
-              <button
-                type="button"
-                class="px-4 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
-                @click="ajouterSpecialite"
-              >
-                Ajouter
-              </button>
-            </div>
-          </div>
-
-          <!-- Biographie -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Biographie <span class="text-red-500">*</span></label>
-            <textarea
-              v-model="form.biographie"
-              rows="5"
-              placeholder="Présentez votre parcours, vos réalisations et ce que vous pouvez apporter…"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white resize-y"
-            />
-            <div class="flex justify-between mt-1">
-              <p v-if="erreurs.biographie" class="text-xs text-red-500">{{ erreurs.biographie }}</p>
-              <p class="text-xs text-gray-400 ml-auto">{{ form.biographie.length }} / 5000</p>
-            </div>
-          </div>
-
-          <!-- Réalisations majeures (liste d'items) -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Réalisations majeures <span class="text-gray-400">(optionnel)</span>
-            </label>
-            <p class="text-xs text-gray-400 mb-2">Ajoutez vos réalisations marquantes, une par une.</p>
-            <ul v-if="form.realisations.length" class="space-y-2 mb-2">
-              <li
-                v-for="(r, i) in form.realisations"
-                :key="i"
-                class="flex items-start gap-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-200"
-              >
-                <font-awesome-icon icon="fa-solid fa-award" class="text-custom-chocolat mt-0.5" />
-                <span class="flex-1 text-sm text-gray-700">{{ r }}</span>
-                <button type="button" class="text-gray-400 hover:text-red-500" @click="retirerRealisation(i)">
-                  <font-awesome-icon icon="fa-solid fa-xmark" />
-                </button>
-              </li>
-            </ul>
-            <div class="flex gap-2">
-              <input
-                v-model="realisationInput"
-                type="text"
-                placeholder="Ex : Prix d'innovation 2023, publication scientifique…"
-                class="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
-                @keydown.enter.prevent="ajouterRealisation"
-              />
-              <button
-                type="button"
-                class="px-4 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
-                @click="ajouterRealisation"
-              >
-                Ajouter
-              </button>
-            </div>
-          </div>
-
-          <!-- Années d'expérience -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Années d'expérience <span class="text-red-500">*</span></label>
-            <input
-              v-model.number="form.nbAnnees"
-              type="number"
-              min="0"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
-            />
-            <p v-if="erreurs.nbAnnees" class="text-xs text-red-500 mt-1">{{ erreurs.nbAnnees }}</p>
-          </div>
-
-          <!-- Situations professionnelles -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Situation(s) professionnelle(s) <span class="text-red-500">*</span></label>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <label
-                v-for="s in situationsDisponibles"
-                :key="s.id"
-                class="flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors"
-                :class="form.situations.includes(s.id)
-                  ? 'border-custom-green bg-green-50 text-custom-green'
-                  : 'border-gray-200 hover:bg-gray-50 text-gray-600'"
-              >
-                <input
-                  type="checkbox"
-                  :checked="form.situations.includes(s.id)"
-                  class="accent-custom-green"
-                  @change="toggleSituation(s.id)"
-                />
-                <span class="text-sm">{{ s.label }}</span>
-              </label>
-            </div>
-            <p v-if="erreurs.situations" class="text-xs text-red-500 mt-1">{{ erreurs.situations }}</p>
-          </div>
-
-          <!-- Objectifs actuels -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Objectifs actuels <span class="text-gray-400">(optionnel)</span></label>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <label
-                v-for="o in OBJECTIFS_EXPERTISE"
-                :key="o.value"
-                class="flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors"
-                :class="form.objectifs.includes(o.value)
-                  ? 'border-custom-green bg-green-50 text-custom-green'
-                  : 'border-gray-200 hover:bg-gray-50 text-gray-600'"
-              >
-                <input
-                  type="checkbox"
-                  :checked="form.objectifs.includes(o.value)"
-                  class="accent-custom-green"
-                  @change="toggleObjectif(o.value)"
-                />
-                <span class="text-sm">{{ o.label }}</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Portfolio -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Portfolio / site web <span class="text-gray-400">(optionnel)</span></label>
-            <input
-              v-model="form.portfolio"
-              type="url"
-              placeholder="https://…"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
-            />
-            <p v-if="erreurs.portfolio" class="text-xs text-red-500 mt-1">{{ erreurs.portfolio }}</p>
-          </div>
-
-          <!-- LinkedIn -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Profil LinkedIn <span class="text-gray-400">(optionnel)</span></label>
-            <input
-              v-model="form.linkedin"
-              type="url"
-              placeholder="https://www.linkedin.com/in/votre-profil"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-custom-green focus:border-transparent transition-all bg-gray-50 focus:bg-white"
-            />
-            <p v-if="erreurs.linkedin" class="text-xs text-red-500 mt-1">{{ erreurs.linkedin }}</p>
-          </div>
-
-          <!-- CV (PDF) -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">CV <span class="text-gray-400">(optionnel, PDF)</span></label>
-            <div class="flex items-center gap-3 flex-wrap">
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                @click="declencherSelectionCV"
-              >
-                <font-awesome-icon icon="fa-solid fa-file" />
-                Choisir un fichier
-              </button>
-              <span v-if="cvNom" class="inline-flex items-center gap-2 text-sm text-gray-600">
-                {{ cvNom }}
-                <button type="button" class="text-gray-400 hover:text-red-500" @click="retirerCV">
-                  <font-awesome-icon icon="fa-solid fa-xmark" />
-                </button>
-              </span>
-              <span v-else class="text-xs text-gray-400">Aucun fichier sélectionné</span>
-            </div>
-            <input
-              ref="inputCV"
-              type="file"
-              accept="application/pdf"
-              class="hidden"
-              @change="onCVChange"
-            />
-            <p v-if="erreurs.cv" class="text-xs text-red-500 mt-1">{{ erreurs.cv }}</p>
-            <p class="text-xs text-gray-400 mt-1">PDF uniquement, 10 Mo maximum.</p>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="flex justify-end gap-3">
-          <NuxtLink
-            to="/experts"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm border border-gray-300 text-gray-600 font-medium rounded-xl hover:bg-gray-50 transition-all"
-          >
-            Annuler
-          </NuxtLink>
-          <button
-            type="submit"
-            :disabled="soumission"
-            class="inline-flex items-center gap-2 px-6 py-2.5 text-sm bg-gradient-to-r from-custom-chocolat to-custom-green text-white font-medium rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <font-awesome-icon
-              :icon="soumission ? 'fa-solid fa-spinner' : 'fa-solid fa-paper-plane'"
-              :class="soumission ? 'animate-spin' : ''"
-            />
-            {{ soumission ? 'Envoi en cours…' : 'Soumettre ma demande' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</template>

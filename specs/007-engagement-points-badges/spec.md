@@ -1,4 +1,4 @@
-# Feature Specification: Récompenses par points — barème 100 % paramétrable & espace « Mon engagement »
+# Feature Specification: Récompenses par points, barème 100 % paramétrable & espace « Mon engagement »
 
 **Feature Branch**: `007-engagement-points-badges` (répertoire de spec ; aucune branche créée automatiquement)
 
@@ -10,18 +10,18 @@
 
 ## Contexte et cadrage
 
-Le **socle d'engagement existe déjà** (phase 1 livrée — voir `specs/001-engagement-gamification/` et `documentations/Systeme_gamification_engagement.md`) : chaque membre possède un compte d'engagement (solde global, solde mensuel, réputation, niveau dérivé), chaque gain/perte est journalisé de façon immuable et idempotente, le barème est stocké en base plutôt qu'en dur, et un premier écran de back-office permet d'ajuster les montants existants. Un encart « Mes points » figure déjà dans la page de profil du membre.
+Le **socle d'engagement existe déjà** (phase 1 livrée : voir `specs/001-engagement-gamification/` et `documentations/Systeme_gamification_engagement.md`) : chaque membre possède un compte d'engagement (solde global, solde mensuel, réputation, niveau dérivé), chaque gain/perte est journalisé de façon immuable et idempotente, le barème est stocké en base plutôt qu'en dur, et un premier écran de back-office permet d'ajuster les montants existants. Un encart « Mes points » figure déjà dans la page de profil du membre.
 
 **Cette spécification ne recrée rien de tout cela : elle complète le socle sur les trois axes demandés.**
 
-1. **Paramétrage réellement complet en back-office** — aujourd'hui l'administrateur peut modifier les montants et plafonds des règles *déjà existantes*, mais il ne peut ni **créer** une nouvelle action récompensée, ni la **classer dans une catégorie**, ni définir des **paliers de popularité propres à une famille de contenus**, ni **créer ou retirer un niveau**, ni **définir un badge**. Le barème n'est donc paramétrable qu'à moitié.
-2. **Espace membre digne du nom** — aujourd'hui un simple encart (solde, réputation, niveau, derniers mouvements) noyé dans la page profil. Le membre ne voit ni la **ventilation de ses points par catégorie**, ni sa **progression vers le niveau suivant**, ni ses **badges**, ni un **historique filtrable**.
-3. **Couverture des actions** — plusieurs actions déjà mesurables sur la plateforme ne rapportent rien (proposition de contenu télé/radio validée, mise à la une d'un média, animation de support acceptée, popularité des contenus télé/radio), et les **partages vers des réseaux sociaux externes** ne sont pas tracés du tout.
+1. **Paramétrage réellement complet en back-office**, aujourd'hui l'administrateur peut modifier les montants et plafonds des règles *déjà existantes*, mais il ne peut ni **créer** une nouvelle action récompensée, ni la **classer dans une catégorie**, ni définir des **paliers de popularité propres à une famille de contenus**, ni **créer ou retirer un niveau**, ni **définir un badge**. Le barème n'est donc paramétrable qu'à moitié.
+2. **Espace membre digne du nom** : aujourd'hui un simple encart (solde, réputation, niveau, derniers mouvements) noyé dans la page profil. Le membre ne voit ni la **ventilation de ses points par catégorie**, ni sa **progression vers le niveau suivant**, ni ses **badges**, ni un **historique filtrable**.
+3. **Couverture des actions** : plusieurs actions déjà mesurables sur la plateforme ne rapportent rien (proposition de contenu télé/radio validée, mise à la une d'un média, animation de support acceptée, popularité des contenus télé/radio), et les **partages vers des réseaux sociaux externes** ne sont pas tracés du tout.
 
 **Explicitement hors périmètre de cette itération** (chantiers distincts) :
 
 - **Publicité, monétisation, dons** : périmètre commercial séparé. Aucune conversion argent → points, en aucun cas.
-- **Impact algorithmique des statuts** sur le classement des fils et les slots « à la une » : reporté (décision de la phase 1 maintenue) — les niveaux restent des distinctions visuelles et symboliques.
+- **Impact algorithmique des statuts** sur le classement des fils et les slots « à la une » : reporté (décision de la phase 1 maintenue), les niveaux restent des distinctions visuelles et symboliques.
 - **Cadeaux entre utilisateurs** (Gô, Boro, Digbate, Lass, Viemogo) et **cadeaux partenaires** : **exclus** (décision produit du 2026-07-29). Mécanisme de *dépense* de points dont le modèle de coût (transfert intégral vs coût réduit) reste à trancher ; il fera l'objet d'une spécification dédiée avec son propre anti-abus (quota journalier, interdiction de l'auto-cadeau).
 - **Classements publics** (global / par application / par territoire) : **exclus** (décision produit du 2026-07-29). Un classement établi sur un barème encore en calibration serait trompeur ; il sera spécifié une fois le barème stabilisé, avec la question du consentement à y figurer.
 
@@ -50,7 +50,7 @@ Un membre connecté ouvre un espace dédié « Mon engagement » depuis son prof
 
 Un administrateur habilité ouvre le module d'engagement du back-office et administre **la totalité** du barème sans aucune intervention technique ni redéploiement : il **crée, modifie, active ou désactive** une règle de points (action récompensée, libellé affiché au membre, montant de points, impact réputation, plafond journalier, plafond mensuel, catégorie de rattachement), gère les **catégories de points** utilisées pour la ventilation côté membre, définit les **paliers de popularité** (seuil de « j'aime » → points) globalement ou pour une **famille de contenus** donnée, **crée, réordonne, modifie ou retire un niveau** (libellé, seuil d'entrée, apparence du badge), et consulte le **journal global** filtrable pour investiguer un litige, avec possibilité de **crédit/débit manuel motivé**.
 
-**Why this priority**: L'exigence « entièrement paramétrable » est explicite. Sans création de règles, chaque nouvelle action récompensée exigerait une livraison technique — ce que le produit refuse. C'est aussi le préalable aux stories 3 à 5, qui se contentent alors de brancher des actions sur des règles créées par l'administration.
+**Why this priority**: L'exigence « entièrement paramétrable » est explicite. Sans création de règles, chaque nouvelle action récompensée exigerait une livraison technique : ce que le produit refuse. C'est aussi le préalable aux stories 3 à 5, qui se contentent alors de brancher des actions sur des règles créées par l'administration.
 
 **Independent Test**: Créer une nouvelle règle avec un montant et un plafond, déclencher l'action correspondante et constater le crédit au bon montant ; désactiver la règle et constater qu'aucun point n'est plus attribué ; créer un niveau intermédiaire et constater que les membres concernés changent de niveau ; vérifier que chaque modification apparaît dans la piste d'audit.
 
@@ -61,7 +61,7 @@ Un administrateur habilité ouvre le module d'engagement du back-office et admin
 3. **Given** un administrateur, **When** il modifie le montant d'une règle, **Then** les attributions suivantes utilisent le nouveau montant, les mouvements déjà journalisés ne sont pas recalculés, et la modification est tracée dans l'audit avec son auteur.
 4. **Given** un administrateur, **When** il crée un palier de popularité à 2 000 « j'aime » réservé à la famille « contenus télé/radio », **Then** ce palier ne s'applique qu'à cette famille et les autres familles conservent les paliers globaux.
 5. **Given** un administrateur, **When** il insère un niveau intermédiaire à 500 points, **Then** les membres situés entre 500 et le seuil suivant basculent sur ce nouveau niveau et son badge dès leur prochaine consultation, sans opération manuelle membre par membre.
-6. **Given** un utilisateur **sans** la permission de gestion de l'engagement, **When** il tente d'accéder au module ou d'exécuter une opération de paramétrage, **Then** l'accès est refusé avec un message explicite nommant la permission requise, et le refus est observable dans les **journaux techniques du serveur**. *(La piste d'audit fonctionnelle, elle, ne consigne que les modifications effectivement appliquées : instrumenter les refus supposerait de modifier le contrôle de permission commun à toutes les routes d'administration de la plateforme — hors périmètre.)*
+6. **Given** un utilisateur **sans** la permission de gestion de l'engagement, **When** il tente d'accéder au module ou d'exécuter une opération de paramétrage, **Then** l'accès est refusé avec un message explicite nommant la permission requise, et le refus est observable dans les **journaux techniques du serveur**. *(La piste d'audit fonctionnelle, elle, ne consigne que les modifications effectivement appliquées : instrumenter les refus supposerait de modifier le contrôle de permission commun à toutes les routes d'administration de la plateforme, hors périmètre.)*
 7. **Given** un administrateur, **When** il tente de créer deux règles pour la même action, ou deux niveaux au même seuil, **Then** le système refuse avec un message explicite plutôt que de créer un barème ambigu.
 8. **Given** un administrateur, **When** il applique un ajustement manuel motivé à un membre, **Then** le mouvement apparaît dans le journal du membre avec le motif et l'identité de l'administrateur.
 
@@ -69,9 +69,9 @@ Un administrateur habilité ouvre le module d'engagement du back-office et admin
 
 ### User Story 3 - Débloquer des badges et succès (Priority: P2)
 
-Au-delà des badges de niveau, la plateforme distingue les membres par des **badges/succès paramétrables** : l'administration définit chaque badge (nom, description, apparence, condition d'obtention exprimée à partir des données d'engagement — nombre d'occurrences d'une action donnée, total de points dans une catégorie, solde total atteint, niveau atteint, palier de popularité atteint) et le système les attribue **automatiquement** dès que la condition est remplie. Un badge peut aussi être attribué ou retiré **manuellement** par l'administration pour les distinctions éditoriales. Le membre est **notifié** lorsqu'il débloque un badge ou change de niveau, et ses badges sont visibles sur son profil public.
+Au-delà des badges de niveau, la plateforme distingue les membres par des **badges/succès paramétrables** : l'administration définit chaque badge (nom, description, apparence, condition d'obtention exprimée à partir des données d'engagement, nombre d'occurrences d'une action donnée, total de points dans une catégorie, solde total atteint, niveau atteint, palier de popularité atteint) et le système les attribue **automatiquement** dès que la condition est remplie. Un badge peut aussi être attribué ou retiré **manuellement** par l'administration pour les distinctions éditoriales. Le membre est **notifié** lorsqu'il débloque un badge ou change de niveau, et ses badges sont visibles sur son profil public.
 
-**Why this priority**: La demande cite explicitement les badges parmi ce que le membre doit pouvoir consulter, et les badges nominatifs **n'existent pas** aujourd'hui (seuls les badges de niveau existent). C'est la principale nouveauté fonctionnelle côté membre, mais elle s'appuie sur l'espace membre (US1) et sur le paramétrage (US2) — d'où P2.
+**Why this priority**: La demande cite explicitement les badges parmi ce que le membre doit pouvoir consulter, et les badges nominatifs **n'existent pas** aujourd'hui (seuls les badges de niveau existent). C'est la principale nouveauté fonctionnelle côté membre, mais elle s'appuie sur l'espace membre (US1) et sur le paramétrage (US2) : d'où P2.
 
 **Independent Test**: Définir un badge conditionné à 10 contributions validées, faire atteindre ce seuil à un membre de test, vérifier que le badge apparaît une seule fois dans son espace et sur son profil public, qu'il reçoit une notification, et que la condition réévaluée ne crée pas de doublon.
 
@@ -163,7 +163,7 @@ Un membre partage un contenu de la plateforme vers des réseaux sociaux externes
 - **FR-011**: Le système DOIT présenter la **ventilation des points gagnés par catégorie**, chaque catégorie affichant son libellé et son total, en distinguant clairement ce cumul du **solde courant**.
 - **FR-012**: Le système DOIT présenter l'**historique paginé** des mouvements du membre, filtrable par catégorie et par période, chaque ligne indiquant l'action en langage clair, la date, les points signés, l'impact réputation éventuel et la mention d'un éventuel **écrêtage par plafond**.
 - **FR-013**: Le système DOIT présenter au membre ses **badges obtenus** (avec date d'obtention) et le **catalogue des badges à débloquer**, avec leur condition en langage clair et, lorsque la condition est chiffrable, sa progression. *(Livré avec l'US3 : sans badges définis, la section reste un emplacement vide.)*
-- **FR-014**: Le système DOIT afficher sur le **profil public** d'un membre son **badge de niveau** — dès l'US1 — et ses **badges de succès obtenus** — avec l'US3 —, sans exposer ses soldes ni son historique, réservés au titulaire et aux administrateurs.
+- **FR-014**: Le système DOIT afficher sur le **profil public** d'un membre son **badge de niveau**, dès l'US1, et ses **badges de succès obtenus**, avec l'US3 , sans exposer ses soldes ni son historique, réservés au titulaire et aux administrateurs.
 - **FR-015**: Le système DOIT afficher un **état vide pédagogique** listant les actions récompensées lorsqu'un membre n'a encore aucun point.
 - **FR-016**: Le système DOIT n'afficher au membre que des libellés **paramétrés en back-office** (actions, catégories, niveaux, badges), sans texte de barème figé dans l'interface.
 
@@ -196,15 +196,15 @@ Un membre partage un contenu de la plateforme vers des réseaux sociaux externes
 
 ### Key Entities *(include if feature involves data)*
 
-- **Compte d'engagement** *(existant)* : capital d'engagement d'un membre — solde total, solde mensuel, réputation, niveau courant dérivé, date du dernier mouvement. Relation 1–1 avec un membre.
-- **Mouvement de points** *(existant, à enrichir)* : trace immuable d'un gain/perte — membre, action, objet concerné, points signés, impact réputation, solde résultant, indicateur d'écrêtage, **catégorie au moment du mouvement**, date.
-- **Règle de points** *(existante, à rendre créable)* : paramètre d'une action récompensée — identifiant d'action, libellé public, points, impact réputation, plafond journalier, plafond mensuel, **catégorie**, état actif.
-- **Catégorie de points** *(nouvelle)* : regroupement d'actions servant à la ventilation côté membre — libellé, ordre d'affichage, apparence. Relation 1–N avec les règles.
-- **Palier de popularité** *(existant, à enrichir)* : seuil de « j'aime » déclenchant une récompense unique par contenu — seuil, points, **famille de contenus facultative**, état actif.
-- **Niveau** *(existant, à rendre créable/supprimable)* : borne de solde définissant un statut — libellé, seuil d'entrée, ordre, apparence du badge.
-- **Badge** *(nouveau)* : distinction nominative — nom, description, apparence, type et paramètres de la condition d'obtention, état actif.
-- **Badge obtenu** *(nouveau)* : lien membre ↔ badge — date d'obtention, origine (automatique ou attribution éditoriale), administrateur à l'origine le cas échéant. Unique par (membre, badge).
-- **Partage externe** *(nouveau)* : trace d'un partage vers un réseau social externe — membre, contenu partagé (famille + identifiant), réseau, date. Unique par (membre, contenu, réseau) pour le comptage des réseaux distincts.
+- **Compte d'engagement** *(existant)* : capital d'engagement d'un membre, solde total, solde mensuel, réputation, niveau courant dérivé, date du dernier mouvement. Relation 1–1 avec un membre.
+- **Mouvement de points** *(existant, à enrichir)* : trace immuable d'un gain/perte, membre, action, objet concerné, points signés, impact réputation, solde résultant, indicateur d'écrêtage, **catégorie au moment du mouvement**, date.
+- **Règle de points** *(existante, à rendre créable)* : paramètre d'une action récompensée, identifiant d'action, libellé public, points, impact réputation, plafond journalier, plafond mensuel, **catégorie**, état actif.
+- **Catégorie de points** *(nouvelle)* : regroupement d'actions servant à la ventilation côté membre, libellé, ordre d'affichage, apparence. Relation 1–N avec les règles.
+- **Palier de popularité** *(existant, à enrichir)* : seuil de « j'aime » déclenchant une récompense unique par contenu, seuil, points, **famille de contenus facultative**, état actif.
+- **Niveau** *(existant, à rendre créable/supprimable)* : borne de solde définissant un statut, libellé, seuil d'entrée, ordre, apparence du badge.
+- **Badge** *(nouveau)* : distinction nominative, nom, description, apparence, type et paramètres de la condition d'obtention, état actif.
+- **Badge obtenu** *(nouveau)* : lien membre ↔ badge, date d'obtention, origine (automatique ou attribution éditoriale), administrateur à l'origine le cas échéant. Unique par (membre, badge).
+- **Partage externe** *(nouveau)* : trace d'un partage vers un réseau social externe, membre, contenu partagé (famille + identifiant), réseau, date. Unique par (membre, contenu, réseau) pour le comptage des réseaux distincts.
 
 ## Success Criteria *(mandatory)*
 
@@ -226,7 +226,7 @@ Un membre partage un contenu de la plateforme vers des réseaux sociaux externes
 
 - **La phase 1 du système d'engagement est en service** : compte d'engagement, journal immuable et idempotent, barème stocké en base, niveaux, encart « Mes points », journal d'administration et ajustement manuel existent déjà. Cette itération les **étend** sans les réécrire.
 - Les **montants** cités par le document source (proposition média +5, mise à la une +8, animation acceptée +15, partage vers 5 réseaux +10 plafonné à 3 fois par jour) sont des **valeurs de départ paramétrables**, initialisées puis ajustables par le produit sans livraison technique.
-- Les **catégories de points** proposées par défaut sont : Contributions, Popularité, Médias, Vérification de faits, Partages, Ajustements — libellés et périmètre restant paramétrables.
+- Les **catégories de points** proposées par défaut sont : Contributions, Popularité, Médias, Vérification de faits, Partages, Ajustements, libellés et périmètre restant paramétrables.
 - La **ventilation par catégorie** est un cumul des points **gagnés** par catégorie, dérivé du journal ; les points ne sont pas cloisonnés en soldes séparés dépensables par catégorie, et le niveau continue de dépendre du seul solde global.
 - La **réputation** reste un score distinct, non dépensable, n'entrant pas dans le calcul du niveau.
 - Le **solde de points ne descend pas sous zéro** (plancher à 0) ; la réputation peut être négative.
@@ -234,14 +234,14 @@ Un membre partage un contenu de la plateforme vers des réseaux sociaux externes
 - Les **conditions de badge** sont choisies parmi un ensemble fermé de types de conditions mesurables : l'administration paramètre les valeurs, pas des expressions libres.
 - Les **badges** sont **rétro-évalués une fois à la mise en service** sur l'état courant des comptes (un membre ayant déjà 10 contributions validées obtient le badge correspondant), afin que le catalogue ne paraisse pas vide au lancement ; les **points**, eux, ne sont jamais attribués rétroactivement.
 - Les **notifications** d'engagement (niveau atteint, badge débloqué) réutilisent le mécanisme de notification existant de la plateforme ; aucun service de notification dédié n'est créé.
-- Le **partage externe** est constaté au moment où le membre déclenche l'action de partage depuis la plateforme ; le système ne vérifie pas la publication effective sur le réseau — d'où le plafond journalier et l'exigence de 5 réseaux **distincts** comme garde-fous. Le **bénéficiaire est le partageur**, y compris lorsqu'il partage son propre contenu (FR-030).
+- Le **partage externe** est constaté au moment où le membre déclenche l'action de partage depuis la plateforme ; le système ne vérifie pas la publication effective sur le réseau : d'où le plafond journalier et l'exigence de 5 réseaux **distincts** comme garde-fous. Le **bénéficiaire est le partageur**, y compris lorsqu'il partage son propre contenu (FR-030).
 - Le **barème n'est pas une donnée sensible** : la liste des actions récompensées et de leurs montants est consultable publiquement (elle sert l'engagement en montrant ce qui rapporte des points). Seuls les soldes, la réputation et l'historique d'un membre sont privés.
 - Le back-office d'engagement reste réservé aux détenteurs de la permission de gestion de l'engagement (aujourd'hui les super-administrateurs).
 - Les écrans membre suivent les conventions des pages publiques de la plateforme ; les écrans d'administration celles du back-office.
 
 ## Décisions produit (tranchées)
 
-1. **Impact algorithmique des statuts** sur la visibilité des fils : **reporté** — les niveaux restent des distinctions visuelles et symboliques.
+1. **Impact algorithmique des statuts** sur la visibilité des fils : **reporté**, les niveaux restent des distinctions visuelles et symboliques.
 2. **Publicité, monétisation, dons** : **hors périmètre**, chantier autonome ; aucune conversion argent → points.
 3. **Pas de reprise automatique** des points acquis ; seuls un malus explicite du barème ou un ajustement administratif motivé retirent des points.
 4. **Pas de rétroactivité des points** à l'activation d'une nouvelle règle ; rétro-évaluation unique des **badges** au lancement.

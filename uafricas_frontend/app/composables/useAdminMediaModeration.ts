@@ -1,6 +1,6 @@
 /**
  * File de modération des **épisodes** versés par les co-détenteurs
- * (feature 009, US1 — FR-040 à FR-043).
+ * (feature 009, US1, FR-040 à FR-043).
  *
  * Elle est distincte de `useAdminMediaPropositions` : une proposition est un
  * brouillon JSONB soumis par un contributeur extérieur, un épisode en attente
@@ -11,7 +11,7 @@
  *
  * Le tri par défaut est l'**échéance** : un épisode attendu à l'antenne samedi
  * ne doit pas être traité au même rang qu'un contenu sans date. Elle est
- * calculée à la lecture depuis les créneaux du programme — aucune colonne à
+ * calculée à la lecture depuis les créneaux du programme, aucune colonne à
  * maintenir, aucune tâche de fond.
  */
 import type { ApiResponse, AdminEpisode } from '~/types/admin'
@@ -52,7 +52,7 @@ export const useAdminMediaModeration = () => {
   /**
    * Publie l'épisode et, s'il était encore brouillon, son programme dans la
    * même transaction : sans cela l'épisode validé resterait invisible du public.
-   * `409` si l'épisode n'est pas « en attente » — revalider un épisode publié
+   * `409` si l'épisode n'est pas « en attente », revalider un épisode publié
    * le rendrait indistinguable d'une resoumission.
    */
   const valider = async (episodeId: string) => {

@@ -131,14 +131,14 @@ const soumettre = async () => {
               <div class="form-control">
                 <label class="label"><span class="label-text">Territoire de destination</span></label>
                 <select v-model="form.pays_id" class="select select-bordered">
-                  <option value="">— Sélectionner un territoire —</option>
+                  <option value="">Sélectionner un territoire</option>
                   <option v-for="p in paysListe" :key="p.id" :value="p.id">{{ p.nom }}</option>
                 </select>
               </div>
               <div class="form-control">
                 <label class="label"><span class="label-text">Domaine</span></label>
                 <select v-model="form.domaine_id" class="select select-bordered">
-                  <option value="">— Sélectionner un domaine —</option>
+                  <option value="">Sélectionner un domaine</option>
                   <option v-for="d in domainesListe" :key="d.id" :value="d.id">{{ d.nom }}</option>
                 </select>
               </div>
@@ -160,7 +160,7 @@ const soumettre = async () => {
             <h3 class="text-lg font-semibold border-b pb-2">Dates & capacite</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="form-control">
-                <label class="label"><span class="label-text">Duree</span></label>
+                <label class="label"><span class="label-text">Durée</span></label>
                 <select v-model="form.duree" class="select select-bordered">
                   <option value="">Non specifie</option>
                   <option v-for="d in durees" :key="d.value" :value="d.value">{{ d.label }}</option>
@@ -199,7 +199,7 @@ const soumettre = async () => {
               </label>
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Details de la prise en charge</span></label>
+              <label class="label"><span class="label-text">Détails de la prise en charge</span></label>
               <textarea v-model="form.prise_en_charge_details" class="textarea textarea-bordered" placeholder="Precisions sur la couverture financiere..." />
             </div>
           </div>

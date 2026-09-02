@@ -96,7 +96,7 @@ async fn charger_domaines_uniques(pool: &PgPool) -> Result<Vec<String>, ApiErreu
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/facultes — Lister les facultes avec filtres et pagination
+// GET /api/facultes : Lister les facultes avec filtres et pagination
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_facultes(
     pool: web::Data<PgPool>,
@@ -222,7 +222,7 @@ pub async fn lister_facultes(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/universite/stats — Statistiques agregees (bande d'accueil)
+// GET /api/universite/stats : Statistiques agregees (bande d'accueil)
 // ──────────────────────────────────────────────────────────────
 #[derive(serde::Serialize)]
 pub struct UniversiteStatsResponse {
@@ -298,7 +298,7 @@ pub async fn stats_universite(pool: web::Data<PgPool>) -> Result<HttpResponse, A
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/facultes/{id} — Obtenir le detail d'une faculte
+// GET /api/facultes/{id} : Obtenir le detail d'une faculte
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_faculte(
     pool: web::Data<PgPool>,

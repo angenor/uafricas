@@ -1,6 +1,6 @@
 //! Réactions (like/dislike) et partages communautaires des SOUS-OBJETS afripulse
 //! (secteur, recette, site touristique, personnalité). Membres authentifiés
-//! pour les mutations. Design générique par (type_objet, objet_id) — cf. 11k.
+//! pour les mutations. Design générique par (type_objet, objet_id), cf. 11k.
 //! Calqué sur `fiche_pays_social`.
 
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -168,7 +168,7 @@ pub async fn reagir_element(
     // Seuls `personnalite_connue` et `recette_culinaire` ont un `cree_par` :
     // `site_touristique` et `secteur_developpement` sont des contenus éditoriaux
     // rattachés à une fiche pays, sans aucune colonne d'auteur. Ils ne créditent
-    // donc personne — et ce n'est PAS une erreur (FR-008c) : la réaction est
+    // donc personne : et ce n'est PAS une erreur (FR-008c) : la réaction est
     // enregistrée, le compteur s'incrémente, rien n'échoue.
     if ma_reaction.as_deref() == Some("like") {
         if let Some(auteur_id) =
@@ -268,7 +268,7 @@ pub async fn partager_element(
 }
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/fiches-pays/elements/partages — mur communautaire (public)
+// GET /api/fiches-pays/elements/partages, mur communautaire (public)
 // ────────────────────────────────────────────────────────────────
 
 pub async fn lister_partages_elements(

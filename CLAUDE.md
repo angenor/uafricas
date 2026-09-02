@@ -85,9 +85,25 @@ Recherche frontend + backend simultanée, exploration multi-fichiers en parallè
 Mettre à jour ce fichier lors de : ajout/suppression service Docker ou dépendance majeure, nouveau composable/store/module, nouvel endpoint API ou schema BDD, changement commandes dev, conventions, CI/CD.
 **Recent Changes = index court (1 ligne/feature).** Ne pas y remettre de longs paragraphes : le détail est dans `git log`, `specs/` et le code. Une ligne cite au plus la migration SQL et les modules/composants clés.
 
+## Seeds locaux
+`uafricas_backend/doc/bd/seeds-locaux/` — **hors de `schemas/`**, jamais inclus par `schema.sql`, donc jamais déployé. Tous idempotents (rejouables sans doublon), aucun UUID en dur : utilisateurs, pays, domaines et spécialités sont résolus par leur clé naturelle.
+
+| Fichier | Contenu |
+|---|---|
+| `96_seed_local_modules.sql` | Diapertise (4 expertises validées), Humantech (3 bibliothèques humaines), Librafrica (4 publications), Africantives (4 initiatives), Africamood radio (3 stations, 4 émissions, 5 épisodes) et Vidafrica (3 vidéos) |
+| `97_seed_local_universite.sql` | 4 écoles partenaires + 4 facultés |
+| `98_seed_local_afripulse.sql` | Contenu Afripulse |
+| `99_seed_local_tests.sql` | Comptes de test |
+
+La **télé** d'Africamood vient de `seeds/009_demo_medias.sql` (3 chaînes, 4 émissions, 13 épisodes, vraies URL YouTube) — seed manuel lui aussi, à appliquer explicitement.
+
+Application : `docker exec -i uafricas_postgres psql -U uafricas -d africans_db < <fichier>`
+
 ## Test Users
-- `test-admin@test.com` / `Test1234`
-- `test-user@test.com` / `Test1234`
+Comptes **locaux uniquement**, semés par `uafricas_backend/doc/bd/seeds-locaux/99_seed_local_tests.sql`.
+Ce fichier est hors de `schemas/` : il n'est PAS inclus par `schema.sql`, donc jamais déployé.
+- `test-admin@test.com` / `Test1234` — rôles Administrateur + Utilisateur
+- `martialdjezou@gmail.com` / `Test1234` — Eric Martial Djezou, rôle Utilisateur. **Adresse réelle sur un mot de passe publié ici** : à ne jamais recréer ailleurs qu'en local.
 
 ## Tech Stack par feature
 Backend Rust Edition 2024 + Actix-Web 4 + sqlx (PostgreSQL) ; frontend Nuxt 4 / Vue 3 SSR + Pinia + Tailwind v4. Extensions notables : `pg_trgm` (matching arbres), LiveKit (afrolang temps réel + modération + événements streaming), SSE via `futures-util`/`tokio` (messagerie social), `image` crate (validation photos), `lettre` (SMTP), `peerjs` (visio P2P rendez-vous/appels), `@vue-flow/core` (arbre généalogique), `@excalidraw/excalidraw` (tableau blanc afrolang, MIT).

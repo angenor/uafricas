@@ -140,7 +140,7 @@ pub async fn a_acces_salle_privee_actif(
 ///
 /// Retourne `true` si l'utilisateur a une nomination active comme administrateur
 /// de la salle publique passée en argument. Aucune capacité concrète n'est encore
-/// branchée à cette table — ce helper sert de point d'autorisation unique pour
+/// branchée à cette table : ce helper sert de point d'autorisation unique pour
 /// toutes les futures capacités du rôle (modération étendue, gestion des
 /// ressources, etc.) sans rupture de compatibilité.
 pub async fn est_administrateur_salle(
@@ -194,12 +194,12 @@ pub async fn est_moderateur_actif(
         return Ok(None);
     };
 
-    // 1/2/3 — rôles « office » (indépendants de la présence / role_session)
+    // 1/2/3 : rôles « office » (indépendants de la présence / role_session)
     if let Some(n) = niveau_office_ctx(pool, salle_id, salle_privee_id, utilisateur_id).await? {
         return Ok(Some(n));
     }
 
-    // 4 — gating par role_session effectif
+    // 4 : gating par role_session effectif
     let est_mod_role: bool = sqlx::query_scalar(
         "SELECT EXISTS(
             SELECT 1 FROM afrolang.session_participant
@@ -218,7 +218,7 @@ pub async fn est_moderateur_actif(
         }
         // Ni office ni attitré : soit le placeholder qui a ouvert la session,
         // soit un co-modérateur promu en séance. Distinction dérivée de
-        // `session.moderateur_id` — aucune colonne supplémentaire —, elle
+        // `session.moderateur_id` : aucune colonne supplémentaire, elle
         // délimite ce qu'un modérateur peut révoquer (cf. `retirer_moderateur_session`).
         return Ok(Some(if placeholder_id == Some(utilisateur_id) {
             NiveauModerateur::Demarreur
@@ -231,7 +231,7 @@ pub async fn est_moderateur_actif(
 }
 
 /// Niveaux « office » (admin plateforme / admin de salle / créateur de salle
-/// privée) — modérateurs « quoi qu'il arrive », jamais soumis à la passation.
+/// privée) : modérateurs « quoi qu'il arrive », jamais soumis à la passation.
 async fn niveau_office_ctx(
     pool: &PgPool,
     salle_id: Option<Uuid>,
@@ -302,7 +302,7 @@ enum EffetArrivee {
     Aucun,
     /// Un modérateur (office ou attitré) vient d'être activé immédiatement.
     ModerateurAjoute(Uuid),
-    /// Une demande de passation est ouverte (ou déjà ouverte) — prévenir le placeholder.
+    /// Une demande de passation est ouverte (ou déjà ouverte), prévenir le placeholder.
     DemandeOuverte,
 }
 
@@ -327,7 +327,7 @@ async fn appliquer_arrivee_moderation_publique_tx(
     demande_at_courant: Option<chrono::DateTime<chrono::Utc>>,
     utilisateur_id: Uuid,
 ) -> Result<EffetArrivee, ApiErreur> {
-    // Office ? (admin plateforme OU admin de salle) — modérateur immédiat.
+    // Office ? (admin plateforme OU admin de salle), modérateur immédiat.
     let est_admin: bool = sqlx::query_scalar(
         "SELECT EXISTS(SELECT 1 FROM iam.utilisateur_role ur JOIN iam.role r ON ur.role_id=r.id
                        WHERE ur.utilisateur_id=$1 AND r.slug='admin')",
@@ -684,7 +684,7 @@ async fn executer_effet_resolution(
 }
 
 /// Résolution paresseuse : promeut automatiquement si la demande est échue (≥ 60 s)
-/// — modèle « cloturer_si_necessaire », sans cron. Best-effort, appelée en tête
+/// modèle « cloturer_si_necessaire », sans cron. Best-effort, appelée en tête
 /// des lectures/arrivées/départs pour ne pas dépendre du seul timer client.
 async fn resoudre_passation_si_due(
     pool: &PgPool,
@@ -712,10 +712,10 @@ async fn resoudre_passation_si_due(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// 1.4 — Handlers annuaire groupes ethniques (feature 005, US1)
+// 1.4 : Handlers annuaire groupes ethniques (feature 005, US1)
 // ══════════════════════════════════════════════════════════════════════════
 
-/// GET /api/afrolang/groupes-ethniques — Annuaire ethnique avec état de salle
+/// GET /api/afrolang/groupes-ethniques, Annuaire ethnique avec état de salle
 pub async fn lister_groupes_ethniques(
     pool: web::Data<PgPool>,
     params: web::Query<GroupeEthniqueFiltres>,
@@ -831,10 +831,10 @@ pub async fn lister_groupes_ethniques(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// 1.5 — Handlers salles publiques
+// 1.5 : Handlers salles publiques
 // ══════════════════════════════════════════════════════════════════════════
 
-/// GET /api/afrolang/salles — Liste paginee des salles publiques actives
+/// GET /api/afrolang/salles : Liste paginee des salles publiques actives
 pub async fn lister_salles(
     pool: web::Data<PgPool>,
     params: web::Query<SalleFiltres>,
@@ -879,7 +879,7 @@ pub async fn lister_salles(
         bind_index += 1;
     }
 
-    // Filtre pays d'origine (feature 001-afrolang-pays-origine, US2 — Q3 archivés masqués)
+    // Filtre pays d'origine (feature 001-afrolang-pays-origine, US2, Q3 archivés masqués)
     if let Some(pays_id) = params.pays_id {
         conditions.push(format!(
             "EXISTS (SELECT 1 FROM afrolang.salle_pays_origine spo \
@@ -893,7 +893,7 @@ pub async fn lister_salles(
     }
 
     // Filtre zone géographique (Afrique / Hors Afrique) : les deux zones sont
-    // DISJOINTES. Un simple `EXISTS` par zone ne suffisait pas — les salles de
+    // DISJOINTES. Un simple `EXISTS` par zone ne suffisait pas, les salles de
     // diaspora (créoles) citent presque toutes un territoire africain parmi
     // leurs origines et remontaient donc aussi dans « Afrique », qui affichait
     // alors la quasi-totalité du catalogue. Règle retenue : dès qu'une salle a
@@ -1051,7 +1051,7 @@ pub async fn lister_salles(
     }))
 }
 
-/// GET /api/afrolang/salles/{id} — Detail d'une salle publique (feature 005)
+/// GET /api/afrolang/salles/{id} : Detail d'une salle publique (feature 005)
 pub async fn obtenir_salle(
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
@@ -1189,7 +1189,7 @@ pub async fn obtenir_salle(
     }))
 }
 
-/// POST /api/afrolang/salles — Creation multipart (image + metadonnees) [Admin]
+/// POST /api/afrolang/salles : Creation multipart (image + metadonnees) [Admin]
 pub async fn creer_salle(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -1290,7 +1290,7 @@ pub async fn creer_salle(
     }))
 }
 
-/// PUT /api/afrolang/salles/{id} — Modifier une salle [Admin]
+/// PUT /api/afrolang/salles/{id} : Modifier une salle [Admin]
 pub async fn modifier_salle(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -1378,7 +1378,7 @@ pub async fn modifier_salle(
     }))
 }
 
-/// DELETE /api/afrolang/salles/{id} — Soft delete [Admin]
+/// DELETE /api/afrolang/salles/{id} : Soft delete [Admin]
 pub async fn supprimer_salle(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -1414,10 +1414,10 @@ pub async fn supprimer_salle(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// 1.6 — Handlers salles privees
+// 1.6 : Handlers salles privees
 // ══════════════════════════════════════════════════════════════════════════
 
-/// GET /api/afrolang/salles/{salle_id}/salles-privees — Salles privées listées
+/// GET /api/afrolang/salles/{salle_id}/salles-privees, Salles privées listées
 /// dans le widget d'une salle publique (contrat endpoint 2, refonte 2026-04).
 ///
 /// Toute salle privée non archivée et non supprimée est retournée : la
@@ -1470,7 +1470,7 @@ pub async fn lister_salles_privees_par_salle_publique(
     }))
 }
 
-/// GET /api/afrolang/salles-privees/{id} — Detail d'une salle privee avec sessions
+/// GET /api/afrolang/salles-privees/{id}, Detail d'une salle privee avec sessions
 pub async fn obtenir_salle_privee(
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
@@ -1536,7 +1536,7 @@ pub async fn obtenir_salle_privee(
     }))
 }
 
-/// POST /api/afrolang/salles-privees — Création d'une salle privée par
+/// POST /api/afrolang/salles-privees : Création d'une salle privée par
 /// l'utilisateur courant (refonte 2026-04, endpoint 1 du contrat).
 ///
 /// Valide titre, description, code d'accès, vérifie que la salle publique
@@ -1588,11 +1588,11 @@ pub async fn creer_salle_privee_publique(
         return Err(ApiErreur::Validation("Salle publique supprimée".into()));
     }
     if !salle_active {
-        // 422 selon le contrat — nous utilisons Validation (400) par défaut,
+        // 422 selon le contrat : nous utilisons Validation (400) par défaut,
         // le contrat distingue « inactive » (422) de « inexistante » (400) :
         // on exprime cela via le message sans créer de variant supplémentaire.
         return Err(ApiErreur::Validation(
-            "Salle publique inactive — création impossible".into(),
+            "Salle publique inactive : création impossible".into(),
         ));
     }
 
@@ -1711,7 +1711,7 @@ pub async fn creer_salle_privee_publique(
     }))
 }
 
-/// PUT /api/afrolang/salles-privees/{id} — Modifier sa salle privee [JWT createur]
+/// PUT /api/afrolang/salles-privees/{id}, Modifier sa salle privee [JWT createur]
 pub async fn modifier_salle_privee(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -1786,7 +1786,7 @@ pub async fn modifier_salle_privee(
     }))
 }
 
-/// DELETE /api/afrolang/salles-privees/{id} — Soft delete [JWT createur]
+/// DELETE /api/afrolang/salles-privees/{id}, Soft delete [JWT createur]
 pub async fn supprimer_salle_privee(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -1827,7 +1827,7 @@ pub async fn supprimer_salle_privee(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// 1.7 — Handlers sessions
+// 1.7 : Handlers sessions
 // ══════════════════════════════════════════════════════════════════════════
 
 /// Vérifie que l'utilisateur peut démarrer/terminer une session.
@@ -1875,7 +1875,7 @@ async fn peut_gerer_cycle_session(
     Ok(false)
 }
 
-/// POST /api/afrolang/salles/{salle_id}/sessions — Créer une session dans une salle publique [JWT]
+/// POST /api/afrolang/salles/{salle_id}/sessions, Créer une session dans une salle publique [JWT]
 ///
 /// Règle d'autorisation : tout utilisateur authentifié peut créer une session
 /// (la salle publique n'appartient à personne). Le créateur devient modérateur
@@ -1948,7 +1948,7 @@ pub async fn creer_session_salle_publique(
     }))
 }
 
-/// GET /api/afrolang/salles/{salle_id}/sessions — Sessions d'une salle publique
+/// GET /api/afrolang/salles/{salle_id}/sessions, Sessions d'une salle publique
 pub async fn lister_sessions_salle_publique(
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
@@ -2013,7 +2013,7 @@ pub async fn lister_sessions_salle_publique(
     }))
 }
 
-/// GET /api/afrolang/salles-privees/{sp_id}/sessions — Sessions d'une salle privee
+/// GET /api/afrolang/salles-privees/{sp_id}/sessions, Sessions d'une salle privee
 pub async fn lister_sessions(
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
@@ -2078,7 +2078,7 @@ pub async fn lister_sessions(
     }))
 }
 
-/// GET /api/afrolang/sessions/{id} — Detail d'une session avec participants
+/// GET /api/afrolang/sessions/{id} : Detail d'une session avec participants
 pub async fn obtenir_session(
     pool: web::Data<PgPool>,
     livekit_config: web::Data<LivekitConfig>,
@@ -2173,7 +2173,7 @@ pub async fn obtenir_session(
     }))
 }
 
-/// POST /api/afrolang/salles-privees/{sp_id}/sessions — Planifier une session [JWT moderateur]
+/// POST /api/afrolang/salles-privees/{sp_id}/sessions, Planifier une session [JWT moderateur]
 pub async fn creer_session(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -2246,7 +2246,7 @@ pub async fn creer_session(
     }))
 }
 
-/// PUT /api/afrolang/sessions/{id}/demarrer — Demarrer une session [JWT moderateur]
+/// PUT /api/afrolang/sessions/{id}/demarrer, Demarrer une session [JWT moderateur]
 pub async fn demarrer_session(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -2327,7 +2327,7 @@ pub async fn demarrer_session(
     }))
 }
 
-/// PUT /api/afrolang/sessions/{id}/terminer — Terminer une session [JWT moderateur]
+/// PUT /api/afrolang/sessions/{id}/terminer, Terminer une session [JWT moderateur]
 pub async fn terminer_session(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -2415,7 +2415,7 @@ pub async fn terminer_session(
     }))
 }
 
-/// POST /api/afrolang/sessions/{id}/rejoindre — Rejoindre une session [JWT]
+/// POST /api/afrolang/sessions/{id}/rejoindre, Rejoindre une session [JWT]
 pub async fn rejoindre_session(
     pool: web::Data<PgPool>,
     livekit_config: web::Data<LivekitConfig>,
@@ -2559,7 +2559,7 @@ pub async fn rejoindre_session(
     }))
 }
 
-/// POST /api/afrolang/sessions/{id}/quitter — Quitter une session [JWT]
+/// POST /api/afrolang/sessions/{id}/quitter, Quitter une session [JWT]
 pub async fn quitter_session(
     pool: web::Data<PgPool>,
     livekit_config: web::Data<LivekitConfig>,
@@ -2838,10 +2838,10 @@ pub async fn quitter_session(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Phase 3 — Token LiveKit pour visioconference
+// Phase 3 : Token LiveKit pour visioconference
 // ══════════════════════════════════════════════════════════════════════════
 
-/// POST /api/afrolang/sessions/{id}/token — Generer un token LiveKit pour rejoindre la visio
+/// POST /api/afrolang/sessions/{id}/token, Generer un token LiveKit pour rejoindre la visio
 pub async fn generer_token_session(
     pool: web::Data<PgPool>,
     livekit_config: web::Data<LivekitConfig>,
@@ -2908,7 +2908,7 @@ pub async fn generer_token_session(
         user_nom
     ).trim().to_string();
 
-    // 5b. Refonte multi-modérateurs — droit d'écriture tableau blanc + statut modérateur :
+    // 5b. Refonte multi-modérateurs : droit d'écriture tableau blanc + statut modérateur :
     //     is_moderator dérive du SET de modérateurs (est_moderateur_actif), PAS de
     //     session.moderateur_id (qui ne désigne que le placeholder, NULL en multi-mod).
     //     (1) modérateur de session → autorisé ;
@@ -2990,10 +2990,10 @@ pub async fn generer_token_session(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Phase 4 — Tableau blanc collaboratif
+// Phase 4 : Tableau blanc collaboratif
 // ══════════════════════════════════════════════════════════════════════════
 
-/// GET /api/afrolang/sessions/{id}/tableau-blanc — Obtenir le snapshot du tableau blanc
+/// GET /api/afrolang/sessions/{id}/tableau-blanc, Obtenir le snapshot du tableau blanc
 pub async fn obtenir_tableau_blanc(
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
@@ -3033,7 +3033,7 @@ pub async fn obtenir_tableau_blanc(
     }
 }
 
-/// PUT /api/afrolang/sessions/{id}/tableau-blanc — Sauvegarder le snapshot
+/// PUT /api/afrolang/sessions/{id}/tableau-blanc, Sauvegarder le snapshot
 pub async fn sauvegarder_tableau_blanc(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -3082,7 +3082,7 @@ pub async fn sauvegarder_tableau_blanc(
     }))
 }
 
-/// DELETE /api/afrolang/sessions/{id}/tableau-blanc — Effacer le tableau blanc
+/// DELETE /api/afrolang/sessions/{id}/tableau-blanc, Effacer le tableau blanc
 pub async fn effacer_tableau_blanc(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -3126,10 +3126,10 @@ pub async fn effacer_tableau_blanc(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// 1.8 — Handlers utilitaires
+// 1.8 : Handlers utilitaires
 // ══════════════════════════════════════════════════════════════════════════
 
-/// GET /api/afrolang/stats — Statistiques globales Afrolang
+/// GET /api/afrolang/stats : Statistiques globales Afrolang
 pub async fn obtenir_stats(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -3176,7 +3176,7 @@ pub async fn obtenir_stats(
     }))
 }
 
-/// GET /api/afrolang/langues — Liste des langues disponibles
+/// GET /api/afrolang/langues : Liste des langues disponibles
 pub async fn lister_langues(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -3208,10 +3208,10 @@ pub async fn lister_langues(
 //  `code-acces`, `archiver` ajoutés en fin de fichier).
 
 // ══════════════════════════════════════════════════════════════════════════
-// Feature 005 — Transfert de modération de session (US3)
+// Feature 005 : Transfert de modération de session (US3)
 // ══════════════════════════════════════════════════════════════════════════
 
-/// PUT /api/afrolang/sessions/{id}/moderation/transferer — Promotion d'un
+/// PUT /api/afrolang/sessions/{id}/moderation/transferer, Promotion d'un
 /// participant en CO-modérateur [JWT modérateur].
 ///
 /// Refonte multi-modérateurs : un transfert n'évince plus l'appelant. N'importe
@@ -3330,10 +3330,10 @@ pub async fn transferer_moderation_session(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Passation de modération — endpoints (refonte multi-modérateurs, 2026-06)
+// Passation de modération : endpoints (refonte multi-modérateurs, 2026-06)
 // ══════════════════════════════════════════════════════════════════════════
 
-/// POST /api/afrolang/sessions/{id}/passation/accepter — Le placeholder accepte
+/// POST /api/afrolang/sessions/{id}/passation/accepter, Le placeholder accepte
 /// de céder la modération au(x) modérateur(s) attitré(s) présent(s) [JWT placeholder].
 pub async fn accepter_passation(
     pool: web::Data<PgPool>,
@@ -3386,7 +3386,7 @@ pub async fn accepter_passation(
     }
 }
 
-/// POST /api/afrolang/sessions/{id}/passation/finaliser — Promotion automatique
+/// POST /api/afrolang/sessions/{id}/passation/finaliser, Promotion automatique
 /// après le délai (≥ 60 s) : un modérateur attitré présent réclame la modération
 /// si le placeholder n'a pas répondu [JWT attitré présent]. Idempotent.
 pub async fn finaliser_passation(
@@ -3455,7 +3455,7 @@ pub async fn finaliser_passation(
     }))
 }
 
-/// PATCH /api/afrolang/salles-privees/{id}/max-participants — Modifier la
+/// PATCH /api/afrolang/salles-privees/{id}/max-participants, Modifier la
 /// limite de participants d'une salle privée (auteur uniquement).
 pub async fn modifier_max_participants_salle_privee(
     pool: web::Data<PgPool>,
@@ -3526,7 +3526,7 @@ pub async fn modifier_max_participants_salle_privee(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Feature 005 — US6 : Messagerie de session
+// Feature 005 : US6 : Messagerie de session
 // ══════════════════════════════════════════════════════════════════════════
 
 /// Vérifie que l'utilisateur est participant actif d'une session
@@ -3553,7 +3553,7 @@ async fn verifier_participant_actif(
     Ok(())
 }
 
-/// GET /api/afrolang/sessions/{id}/messages — Historique [JWT participant]
+/// GET /api/afrolang/sessions/{id}/messages, Historique [JWT participant]
 pub async fn lister_messages_session(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -3597,7 +3597,7 @@ pub async fn lister_messages_session(
     }))
 }
 
-/// POST /api/afrolang/sessions/{id}/messages — Envoyer un message [JWT participant]
+/// POST /api/afrolang/sessions/{id}/messages, Envoyer un message [JWT participant]
 pub async fn envoyer_message_session(
     pool: web::Data<PgPool>,
     livekit_config: web::Data<LivekitConfig>,
@@ -3668,7 +3668,7 @@ pub async fn envoyer_message_session(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Feature 005 — US6 : Ressources de salle publique
+// Feature 005 : US6 : Ressources de salle publique
 // ══════════════════════════════════════════════════════════════════════════
 
 const RESSOURCES_EXTENSIONS_AUTORISEES: &[&str] = &[
@@ -3695,7 +3695,7 @@ async fn est_moderateur_attitre(
     Ok(v)
 }
 
-/// GET /api/afrolang/salles/{salle_id}/ressources — Liste publique
+/// GET /api/afrolang/salles/{salle_id}/ressources, Liste publique
 pub async fn lister_ressources(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -3733,7 +3733,7 @@ pub async fn lister_ressources(
     }))
 }
 
-/// POST /api/afrolang/salles/{salle_id}/ressources/fichier — Upload fichier
+/// POST /api/afrolang/salles/{salle_id}/ressources/fichier, Upload fichier
 /// [JWT modérateur attitré ou admin]
 pub async fn uploader_ressource_fichier(
     pool: web::Data<PgPool>,
@@ -3882,7 +3882,7 @@ pub async fn uploader_ressource_fichier(
     }))
 }
 
-/// POST /api/afrolang/salles/{salle_id}/ressources/lien — Soumettre un lien [JWT]
+/// POST /api/afrolang/salles/{salle_id}/ressources/lien, Soumettre un lien [JWT]
 pub async fn soumettre_lien_externe(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -3946,7 +3946,7 @@ pub async fn soumettre_lien_externe(
     }))
 }
 
-/// DELETE /api/afrolang/ressources/{id} — Suppression (auteur, modérateur, admin) [JWT]
+/// DELETE /api/afrolang/ressources/{id}, Suppression (auteur, modérateur, admin) [JWT]
 pub async fn supprimer_ressource(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -4001,7 +4001,7 @@ pub async fn supprimer_ressource(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Refonte 2026-04 — Salles privées : code secret, rate limit, jeton d'accès
+// Refonte 2026-04 : Salles privées : code secret, rate limit, jeton d'accès
 // ══════════════════════════════════════════════════════════════════════════
 
 /// Durée de vie d'un jeton d'accès salle privée (4 heures).
@@ -4122,7 +4122,7 @@ pub async fn verifier_code_acces_salle_privee(
         ));
     }
 
-    // Auteur : court-circuit (FR-014) — pas de vérification, pas d'audit.
+    // Auteur : court-circuit (FR-014) : pas de vérification, pas d'audit.
     if salle.cree_par == utilisateur_id {
         let (jeton, expires_at) = jwt::creer_acces_jeton_salle_privee(
             salle_privee_id,
@@ -4166,7 +4166,7 @@ pub async fn verifier_code_acces_salle_privee(
     .await?;
 
     if !succes {
-        // Audit échec uniquement — jamais le code en clair.
+        // Audit échec uniquement : jamais le code en clair.
         audit::log_action(
             pool.get_ref(),
             Some(utilisateur_id),
@@ -4317,7 +4317,7 @@ pub async fn demarrer_ou_rejoindre_session_salle_privee(
         }
     };
 
-    // INSERT du participant (idempotent — reconnexion possible).
+    // INSERT du participant (idempotent : reconnexion possible).
     let role = if utilisateur_id == moderateur_id {
         "moderateur"
     } else {
@@ -4418,12 +4418,12 @@ pub async fn demarrer_ou_rejoindre_session_salle_privee(
 
 /// POST /api/afrolang/salles/{salle_id}/sessions/demarrer-ou-rejoindre
 ///
-/// US1 — Refonte 2026-04. Démarre une nouvelle session live si aucune
+/// US1 : Refonte 2026-04. Démarre une nouvelle session live si aucune
 /// n'est en cours dans la salle publique, sinon rejoint la session
 /// existante. Ouvert à n'importe quel utilisateur connecté (FR-005b) :
 /// le premier arrivé devient modérateur de session ; si un modérateur
 /// attitré arrive ensuite, `rejoindre_session` (endpoint compat)
-/// gère la reprise automatique côté legacy — ici on se limite au
+/// gère la reprise automatique côté legacy, ici on se limite au
 /// démarrage/jointure pour tenir SC-001 (≤ 3 s).
 pub async fn demarrer_ou_rejoindre_session_salle_publique(
     pool: web::Data<PgPool>,
@@ -4694,7 +4694,7 @@ pub async fn demarrer_ou_rejoindre_session_salle_publique(
 /// PATCH /api/afrolang/salles-privees/{id}/code-acces
 ///
 /// Met à jour le code d'accès (auteur uniquement). Hash before/after
-/// tracé dans l'audit — jamais les plaintexts.
+/// tracé dans l'audit : jamais les plaintexts.
 pub async fn modifier_code_acces_salle_privee(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -4877,7 +4877,7 @@ pub async fn archiver_salle_privee_par_auteur(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Feature 001-admin-salles-publiques — Propositions communautaires (US1)
+// Feature 001-admin-salles-publiques : Propositions communautaires (US1)
 // ══════════════════════════════════════════════════════════════════════════
 
 /// Construit les jointures + json_agg communs aux endpoints proposition.
@@ -4905,7 +4905,7 @@ fn proposition_select_query(where_clause: &str, order_limit: &str) -> String {
     )
 }
 
-/// GET /api/afrolang/pays-disponibles — Liste légère des pays actifs (US1)
+/// GET /api/afrolang/pays-disponibles : Liste légère des pays actifs (US1)
 /// pour alimenter le formulaire de proposition.
 pub async fn lister_pays_disponibles(
     pool: web::Data<PgPool>,
@@ -4942,7 +4942,7 @@ pub async fn lister_pays_disponibles(
 
 /// GET /api/afrolang/territoires
 /// Tous les territoires actifs pour le formulaire de proposition (Afrique d'abord,
-/// puis autres continents — diaspora où des langues africaines ont essaimé).
+/// puis autres continents : diaspora où des langues africaines ont essaimé).
 pub async fn lister_territoires(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -5033,7 +5033,7 @@ pub async fn soumettre_proposition(
     }
 
     // Groupe ethnique : SOIT un groupe référencé (groupe_ethnique_id),
-    // SOIT un nom libre « Autre » (groupe_ethnique_libre) — jamais les deux,
+    // SOIT un nom libre « Autre » (groupe_ethnique_libre), jamais les deux,
     // jamais aucun.
     let groupe_libre = body
         .groupe_ethnique_libre
@@ -5072,7 +5072,7 @@ pub async fn soumettre_proposition(
     .await?;
     if !auteur_actif {
         return Err(ApiErreur::AccesInterdit(
-            "Compte non actif — vérifiez votre e-mail".into(),
+            "Compte non actif : vérifiez votre e-mail".into(),
         ));
     }
 
@@ -5264,7 +5264,7 @@ pub async fn lister_mes_propositions(
 }
 
 /// PATCH /api/afrolang/propositions/{id}/retirer
-/// Retire une proposition `en_attente` (auteur uniquement) — US1.
+/// Retire une proposition `en_attente` (auteur uniquement), US1.
 pub async fn retirer_ma_proposition(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -5335,7 +5335,7 @@ pub async fn retirer_ma_proposition(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Feature 001-session-moderation — permissions tableau blanc + spotlight
+// Feature 001-session-moderation : permissions tableau blanc + spotlight
 // ══════════════════════════════════════════════════════════════════════════
 
 use crate::models::afrolang::{
@@ -5363,7 +5363,7 @@ async fn charger_contexte_salle(
 }
 
 /// Liste les modérateurs d'office d'une session (admin plateforme connecté
-/// inclus uniquement s'ils participent — l'admin global est calculé côté
+/// inclus uniquement s'ils participent, l'admin global est calculé côté
 /// `est_moderateur_session` à l'arrivée). Retourne au moins :
 /// - administrateurs actifs de la salle publique (`AdminSalle`)
 /// - modérateurs attitrés actifs (`ModerateurAttitre`)
@@ -5373,7 +5373,7 @@ async fn lister_moderateurs_office(
     session_id: Uuid,
 ) -> Result<Vec<ModerateurOfficeResponse>, ApiErreur> {
     // Refonte multi-modérateurs : on liste les modérateurs RÉELLEMENT actifs et
-    // présents (role_session='moderateur'), pas tous les attitrés de la salle —
+    // présents (role_session='moderateur'), pas tous les attitrés de la salle, 
     // un attitré entré mais en attente de passation (role 'participant') ne doit
     // PAS apparaître ici (cohérence avec le gating de est_moderateur_actif).
     let rows = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>)>(
@@ -5860,7 +5860,7 @@ pub async fn retirer_mise_en_evidence(
 
 // ══════════════════════════════════════════════════════════════════════════
 // Fermeture pour abus par un admin de session (admin plateforme OU admin de salle)
-// Feature 001-ressources-fermeture-session, FR-019 — depuis la salle live.
+// Feature 001-ressources-fermeture-session, FR-019, depuis la salle live.
 // ══════════════════════════════════════════════════════════════════════════
 
 /// POST /api/afrolang/sessions/{session_id}/fermer-pour-abus
@@ -5918,7 +5918,7 @@ pub async fn fermer_session_pour_abus(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Modération en séance — coupure des micros & co-modérateurs
+// Modération en séance : coupure des micros & co-modérateurs
 // ══════════════════════════════════════════════════════════════════════════
 
 /// Vérifie que l'appelant modère bien la session et renvoie son niveau.
@@ -5932,12 +5932,12 @@ async fn exiger_moderateur(
         .ok_or_else(|| ApiErreur::AccesInterdit("Modérateur de session requis.".into()))
 }
 
-/// POST /api/afrolang/sessions/{id}/moderation/couper-micro — Coupe le micro
+/// POST /api/afrolang/sessions/{id}/moderation/couper-micro, Coupe le micro
 /// d'un participant [JWT modérateur de session].
 ///
 /// Le mute est appliqué par le SFU (`MutePublishedTrack`) : le client visé le
 /// subit, il ne l'applique pas de bonne grâce. Comme dans Meet, il pourra se
-/// réactiver — cette action rend la parole au groupe, elle ne bâillonne pas.
+/// réactiver : cette action rend la parole au groupe, elle ne bâillonne pas.
 pub async fn couper_micro_participant(
     pool: web::Data<PgPool>,
     livekit_config: web::Data<LivekitConfig>,
@@ -6008,7 +6008,7 @@ pub async fn couper_micro_participant(
     }))
 }
 
-/// POST /api/afrolang/sessions/{id}/moderation/couper-micros — Coupe le micro de
+/// POST /api/afrolang/sessions/{id}/moderation/couper-micros, Coupe le micro de
 /// tous les participants, modérateurs exceptés [JWT modérateur de session].
 pub async fn couper_tous_les_micros(
     pool: web::Data<PgPool>,
@@ -6076,12 +6076,12 @@ pub async fn couper_tous_les_micros(
     }))
 }
 
-/// DELETE /api/afrolang/sessions/{id}/moderation/moderateurs/{utilisateur_id} —
+/// DELETE /api/afrolang/sessions/{id}/moderation/moderateurs/{utilisateur_id}, 
 /// Rétrograde un co-modérateur promu en séance [JWT modérateur de session].
 ///
 /// Seul le niveau `PromuSession` est révocable : les autres découlent d'un rôle
 /// (admin plateforme, admin de salle, attitré, créateur de salle privée, ou
-/// démarreur de la session) qui ne se défait pas depuis la salle — le retirer
+/// démarreur de la session) qui ne se défait pas depuis la salle, le retirer
 /// ici laisserait la session sans modérateur ou court-circuiterait la passation.
 pub async fn retirer_moderateur_session(
     pool: web::Data<PgPool>,

@@ -1,4 +1,4 @@
-// Handlers — Événements en streaming direct (feature 001-evenements-streaming).
+// Handlers : Événements en streaming direct (feature 001-evenements-streaming).
 //
 // Modèle webinaire : l'organisateur (= evenement.cree_par) ouvre une session de
 // direct, diffuse caméra/micro/écran ; les inscrits regardent (token scopé
@@ -102,7 +102,7 @@ async fn charger_session_active(
         .await?)
 }
 
-/// Session la plus récente (active ou terminée) — pour dériver `statut_direct`.
+/// Session la plus récente (active ou terminée), pour dériver `statut_direct`.
 async fn charger_derniere_session(
     pool: &PgPool,
     evenement_id: Uuid,
@@ -283,10 +283,10 @@ async fn notifier_ouverture(pool: &PgPool, sse: &RegistreSse, evenement_id: Uuid
 }
 
 // ════════════════════════════════════════════════════════════════
-// US1 (foundational) — État du direct (T009)
+// US1 (foundational) : État du direct (T009)
 // ════════════════════════════════════════════════════════════════
 
-/// GET /api/evenements/{id}/direct — état dérivé pour l'appelant (JWT optionnel).
+/// GET /api/evenements/{id}/direct : état dérivé pour l'appelant (JWT optionnel).
 pub async fn etat_direct(
     pool: web::Data<PgPool>,
     cfg: web::Data<LivekitConfig>,
@@ -401,10 +401,10 @@ async fn charger_demandes_parole(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US1/US2 (foundational) — Rejoindre (open-or-join) (T010)
+// US1/US2 (foundational) : Rejoindre (open-or-join) (T010)
 // ════════════════════════════════════════════════════════════════
 
-/// POST /api/evenements/{id}/direct/rejoindre — ouvre la session (organisateur) ou
+/// POST /api/evenements/{id}/direct/rejoindre, ouvre la session (organisateur) ou
 /// rejoint l'active. Renvoie le token LiveKit scopé par rôle.
 pub async fn rejoindre(
     pool: web::Data<PgPool>,
@@ -582,10 +582,10 @@ pub async fn rejoindre(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US1 (foundational) — Quitter (T011)
+// US1 (foundational) : Quitter (T011)
 // ════════════════════════════════════════════════════════════════
 
-/// POST /api/evenements/{id}/direct/quitter — marque l'appelant sorti (idempotent).
+/// POST /api/evenements/{id}/direct/quitter, marque l'appelant sorti (idempotent).
 pub async fn quitter(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -616,10 +616,10 @@ pub async fn quitter(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US2 — Clôturer (T018)
+// US2 : Clôturer (T018)
 // ════════════════════════════════════════════════════════════════
 
-/// POST /api/evenements/{id}/direct/cloturer — organisateur uniquement (403 sinon).
+/// POST /api/evenements/{id}/direct/cloturer, organisateur uniquement (403 sinon).
 pub async fn cloturer(
     pool: web::Data<PgPool>,
     cfg: web::Data<LivekitConfig>,
@@ -672,7 +672,7 @@ pub async fn cloturer(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US4 — Lever la main & modération (T026)
+// US4 : Lever la main & modération (T026)
 // ════════════════════════════════════════════════════════════════
 
 #[derive(Debug, Deserialize)]
@@ -680,7 +680,7 @@ pub struct LeverMainBody {
     pub levee: Option<bool>,
 }
 
-/// POST /api/evenements/{id}/direct/lever-main — toggle `main_levee` (spectateur).
+/// POST /api/evenements/{id}/direct/lever-main, toggle `main_levee` (spectateur).
 pub async fn lever_main(
     pool: web::Data<PgPool>,
     cfg: web::Data<LivekitConfig>,
@@ -751,7 +751,7 @@ enum ActionModeration {
     Retirer,
 }
 
-/// POST …/participants/{utilisateur_id}/promouvoir — organisateur uniquement.
+/// POST …/participants/{utilisateur_id}/promouvoir, organisateur uniquement.
 pub async fn promouvoir(
     pool: web::Data<PgPool>,
     cfg: web::Data<LivekitConfig>,
@@ -761,7 +761,7 @@ pub async fn promouvoir(
     moderer(pool, cfg, req, chemin, ActionModeration::Promouvoir).await
 }
 
-/// POST …/participants/{utilisateur_id}/retrograder — organisateur uniquement.
+/// POST …/participants/{utilisateur_id}/retrograder, organisateur uniquement.
 pub async fn retrograder(
     pool: web::Data<PgPool>,
     cfg: web::Data<LivekitConfig>,
@@ -771,7 +771,7 @@ pub async fn retrograder(
     moderer(pool, cfg, req, chemin, ActionModeration::Retrograder).await
 }
 
-/// POST …/participants/{utilisateur_id}/retirer — organisateur uniquement.
+/// POST …/participants/{utilisateur_id}/retirer, organisateur uniquement.
 pub async fn retirer(
     pool: web::Data<PgPool>,
     cfg: web::Data<LivekitConfig>,

@@ -31,6 +31,6 @@
 
 ## Notes
 
-- Périmètre volontairement borné : les **capacités effectives** du rôle « administrateur de salle publique » sont explicitement reportées (FR-019). Cette spécification livre la mécanique de nomination/révocation et le réceptacle d'autorisation, mais pas les pouvoirs concrets — ils feront l'objet d'une spécification ultérieure.
+- Périmètre volontairement borné : les **capacités effectives** du rôle « administrateur de salle publique » sont explicitement reportées (FR-019). Cette spécification livre la mécanique de nomination/révocation et le réceptacle d'autorisation, mais pas les pouvoirs concrets : ils feront l'objet d'une spécification ultérieure.
 - Aucun marqueur `[NEEDS CLARIFICATION]` : les choix scope/sécurité/UX ont été tranchés par défauts raisonnables documentés en `Assumptions`.
 - Items marked incomplete require spec updates before `/speckit.clarify` or `/speckit.plan`.

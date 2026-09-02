@@ -76,7 +76,7 @@ pub struct BiblioHumaineResponse {
     pub ville: Option<String>,
     #[serde(rename = "dateInscription")]
     pub date_inscription: DateTime<Utc>,
-    // Interactions (renseignées sur le détail uniquement — cf. obtenir_biblio)
+    // Interactions (renseignées sur le détail uniquement, cf. obtenir_biblio)
     #[serde(rename = "nombreLikes")]
     pub nombre_likes: i64,
     #[serde(rename = "nombreDislikes")]

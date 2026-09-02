@@ -1,351 +1,4 @@
-<template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div class="group relative bg-cover bg-center">
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat to-black/90"></div>
-
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Échanges Sabbafrica
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Offrir des canaux aux entreprises et organisations en Afrique de bénéficier de l'expérience pointue de la diaspora dans des domaines clés de développement.
-          </p>
-        </div>
-
-        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <!-- Bouton d'aide : ouvre la présentation de Sabbafrica -->
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
-            aria-label="En savoir plus sur Sabbafrica"
-            @click="presentationOuverte = true"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
-            C'est quoi Sabbafrica&nbsp;?
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modale de présentation « C'est quoi Sabbafrica ? » -->
-    <SabbatiquePresentationModal
-      :open="presentationOuverte"
-      @close="presentationOuverte = false"
-    />
-
-    <!-- Contenu principal -->
-    <div class="max-w-7xl mx-auto px-4 relative mt-6">
-      <!-- Header avec breadcrumb + boutons de proposition + toggle vue -->
-      <div class="bg-white shadow-xs rounded-t-lg">
-        <div class="px-4 py-6">
-          <CommonBreadcrumbNav class="mb-4" :custom-breadcrumbs="[{ label: 'Échanges Sabbafrica' }]" />
-
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <!-- Boutons de proposition (en haut à gauche) -->
-            <div class="flex flex-wrap items-center gap-3">
-              <NuxtLink to="/echanges-sabbatiques/proposer?type=interafricain">
-                <button
-                  class="text-white whitespace-nowrap shadow-md hover:shadow-none h-10 rounded-full bg-custom-green px-4 hover:scale-105 transition-all flex items-center gap-2"
-                >
-                  <font-awesome-icon :icon="['fas', 'plus']" />
-                  Proposer un échange interafricain
-                </button>
-              </NuxtLink>
-              <NuxtLink to="/echanges-sabbatiques/proposer?type=hors_afrique">
-                <button
-                  class="text-custom-chocolat whitespace-nowrap shadow-md hover:shadow-none h-10 rounded-full border border-custom-chocolat px-4 hover:scale-105 transition-all flex items-center gap-2"
-                >
-                  <font-awesome-icon :icon="['fas', 'plus']" />
-                  Proposer un échange hors Afrique
-                </button>
-              </NuxtLink>
-            </div>
-
-            <!-- Toggle grille / carte -->
-            <div class="flex items-center bg-gray-100 rounded-lg p-1 self-start lg:self-auto">
-              <button
-                @click="viewMode = 'grille'"
-                class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="viewMode === 'grille' ? 'bg-custom-green text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-                title="Vue grille"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                <span>Grille</span>
-              </button>
-              <button
-                @click="viewMode = 'carte'"
-                class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="viewMode === 'carte' ? 'bg-custom-green text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-                title="Vue carte"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Carte</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <!-- Filtres -->
-          <div class="lg:col-span-1">
-            <div class="bg-white rounded-lg shadow-md p-6 sticky top-4">
-              <h3 class="text-lg font-bold mb-4">Filtrer les programmes</h3>
-
-              <!-- Recherche -->
-              <div class="mb-4">
-                <input
-                  v-model="filtres.recherche"
-                  @input="onSearchInput"
-                  type="text"
-                  placeholder="Rechercher un programme..."
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-3 focus:ring-custom-green focus:border-custom-green"
-                />
-              </div>
-
-              <!-- Type de programme -->
-              <h4 class="text-sm font-medium text-gray-700 mb-2">Type de programme</h4>
-              <div class="space-y-2 mb-6">
-                <label v-for="type in TYPES_PROGRAMME" :key="type.value" class="flex items-center">
-                  <input
-                    type="radio"
-                    v-model="filtres.type"
-                    :value="type.value"
-                    class="mr-2 text-custom-green focus:ring-3 focus:ring-custom-green"
-                  />
-                  <span class="text-sm">{{ type.label }}</span>
-                </label>
-              </div>
-
-              <!-- Territoire -->
-              <h4 class="text-sm font-medium text-gray-700 mb-2">Territoire</h4>
-
-              <!-- Choix de la zone (radio) qui pilote le contenu du menu déroulant -->
-              <div class="grid grid-cols-3 gap-2 mb-3">
-                <label
-                  v-for="option in ZONES_TERRITOIRE"
-                  :key="option.value"
-                  :class="[
-                    'flex items-center justify-center px-2 py-2 rounded-md text-xs font-medium whitespace-nowrap cursor-pointer transition-all',
-                    zoneTerritoire === option.value
-                      ? 'bg-custom-green text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
-                  ]"
-                >
-                  <input
-                    v-model="zoneTerritoire"
-                    type="radio"
-                    :value="option.value"
-                    class="sr-only"
-                  />
-                  {{ option.label }}
-                </label>
-              </div>
-
-              <!-- Menu déroulant des territoires selon la zone -->
-              <select
-                v-model="filtres.pays"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-3 focus:ring-custom-green focus:border-custom-green mb-6"
-              >
-                <option v-for="pays in territoiresDisponibles" :key="pays.value" :value="pays.value">
-                  {{ pays.label }}
-                </option>
-              </select>
-
-              <!-- Domaine -->
-              <h4 class="text-sm font-medium text-gray-700 mb-2">Domaine</h4>
-              <select
-                v-model="filtres.domaine"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-3 focus:ring-custom-green focus:border-custom-green"
-              >
-                <option v-for="domaine in DOMAINES" :key="domaine.value" :value="domaine.value">
-                  {{ domaine.label }}
-                </option>
-              </select>
-
-              <!-- Légende carte -->
-              <div v-if="viewMode === 'carte'" class="mt-6 pt-6 border-t border-gray-200">
-                <h4 class="text-sm font-medium text-gray-700 mb-3">Légende</h4>
-                <div class="space-y-2">
-                  <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 rounded-full shrink-0 bg-custom-green"></span>
-                    <span class="text-xs text-gray-600">Programmes disponibles</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 rounded-full shrink-0 bg-amber-400"></span>
-                    <span class="text-xs text-gray-600">Sélectionné</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 rounded-full shrink-0 bg-gray-200"></span>
-                    <span class="text-xs text-gray-600">Aucun programme</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Réinitialiser -->
-              <button
-                v-if="filtresActifs"
-                @click="reinitialiserFiltres"
-                class="mt-4 w-full text-sm text-custom-green hover:underline"
-              >
-                Réinitialiser les filtres
-              </button>
-
-              <!-- Stats -->
-              <div class="mt-6 pt-6 border-t border-gray-200">
-                <div class="text-center">
-                  <span class="text-2xl font-bold text-custom-green">{{ total }}</span>
-                  <span class="text-gray-600 ml-1">programme{{ total > 1 ? 's' : '' }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Liste / Carte -->
-          <div class="lg:col-span-3">
-            <!-- Chargement -->
-            <div v-if="chargement" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              <div v-for="i in 6" :key="i" class="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
-                <div class="h-40 bg-gray-200"></div>
-                <div class="p-4">
-                  <div class="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div class="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-                  <div class="h-3 bg-gray-200 rounded w-1/3"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- État vide (grille uniquement) -->
-            <div v-else-if="viewMode === 'grille' && programmes.length === 0" class="text-center py-16 text-gray-500">
-              <font-awesome-icon :icon="['fas', 'search']" class="h-12 mb-4 text-gray-300" />
-              <p class="text-lg">Aucun programme ne correspond à vos critères de recherche.</p>
-              <button
-                v-if="filtresActifs"
-                class="mt-4 text-custom-green underline hover:no-underline"
-                @click="reinitialiserFiltres"
-              >
-                Réinitialiser les filtres
-              </button>
-            </div>
-
-            <!-- Grille des programmes -->
-            <div v-else-if="viewMode === 'grille'" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center">
-              <SabbatiqueCard
-                v-for="programme in programmes"
-                :key="programme.id"
-                :programme="programme"
-                @click="voirDetail"
-              />
-            </div>
-
-            <!-- Mode carte -->
-            <div v-else class="flex flex-col lg:flex-row gap-6">
-              <!-- Carte SVG d'Afrique -->
-              <div class="flex-1 bg-white rounded-lg shadow-md">
-                <div class="map-container relative p-0 sm:p-1" @mousemove="handleMapMouseMove">
-                  <svg
-                    ref="svgRef"
-                    :viewBox="AFRICA_VIEWBOX"
-                    class="africa-map w-full h-auto"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      v-for="location in africaLocations"
-                      :key="location.id"
-                      :data-id="location.id"
-                      :d="location.path"
-                      :fill="getMapColor(location.id)"
-                      stroke="#fff"
-                      :stroke-width="strokeWidth(location.id)"
-                      class="map-path"
-                      :class="{ 'cursor-pointer': programmesParPays[location.id]?.length }"
-                      :transform="mapTransforms[location.id]"
-                      @mouseenter="hoveredCountry = location"
-                      @mouseleave="hoveredCountry = null"
-                      @click="handleMapClick(location)"
-                    />
-                  </svg>
-
-                  <!-- Tooltip -->
-                  <Transition name="map-fade">
-                    <div
-                      v-if="hoveredCountry"
-                      class="map-tooltip"
-                      :class="{ 'map-tooltip-clickable': programmesParPays[hoveredCountry.id]?.length }"
-                      :style="{ left: mousePos.x + 15 + 'px', top: mousePos.y - 10 + 'px' }"
-                    >
-                      <template v-if="programmesParPays[hoveredCountry.id]?.length">
-                        <span class="font-semibold">{{ nomsPaysFr[hoveredCountry.id] || hoveredCountry.name }}</span>
-                        <span class="text-xs opacity-70">
-                          {{ programmesParPays[hoveredCountry.id]!.length }} programme{{ programmesParPays[hoveredCountry.id]!.length > 1 ? 's' : '' }}
-                        </span>
-                      </template>
-                      <template v-else>
-                        {{ nomsPaysFr[hoveredCountry.id] || hoveredCountry.name }}
-                      </template>
-                    </div>
-                  </Transition>
-                </div>
-              </div>
-
-              <!-- Panneau des programmes du pays sélectionné -->
-              <Transition name="slide-in" mode="out-in">
-                <div v-if="selectedPays" :key="selectedPays" class="lg:w-80 shrink-0">
-                  <div class="bg-white rounded-lg shadow-md p-4">
-                    <div class="flex items-center justify-between mb-4">
-                      <h3 class="text-lg font-bold text-gray-900">{{ nomsPaysFr[selectedPays] || selectedPays }}</h3>
-                      <button @click="selectedPays = null" class="text-gray-400 hover:text-gray-600" title="Fermer">
-                        <font-awesome-icon :icon="['fas', 'xmark']" />
-                      </button>
-                    </div>
-
-                    <p class="text-sm text-gray-500 mb-4">
-                      {{ programmesPaysSelectionne.length }} programme{{ programmesPaysSelectionne.length > 1 ? 's' : '' }} disponible{{ programmesPaysSelectionne.length > 1 ? 's' : '' }}
-                    </p>
-
-                    <div class="space-y-4">
-                      <SabbatiqueCard
-                        v-for="programme in programmesPaysSelectionne"
-                        :key="programme.id"
-                        :programme="programme"
-                        @click="voirDetail"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Invite par défaut -->
-                <div v-else class="lg:w-80 shrink-0">
-                  <div class="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
-                    <span class="block lg:hidden">
-                      <font-awesome-icon :icon="['fas', 'hand-point-up']" class="h-8 mb-3 text-gray-300" />
-                    </span>
-                    <span class="hidden lg:block">
-                      <font-awesome-icon :icon="['fas', 'hand-point-left']" class="h-8 mb-3 text-gray-300" />
-                    </span>
-                    <p class="text-sm">Cliquez sur un territoire mis en évidence pour voir ses programmes d'échange.</p>
-                  </div>
-                </div>
-              </Transition>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
-import AOS from 'aos'
 import World from '@svg-maps/world'
 import { PAYS_AFRICAINS_ISO2 } from '~/constants/afripulsePaysAutorises'
 import {
@@ -358,44 +11,52 @@ import {
   type SabbatiqueFiltres,
 } from '~/composables/useSabbatiques'
 
-const { listerProgrammes, chargement } = useSabbatiques()
+/**
+ * Sabbafrica : porté sur le gabarit de la refonte.
+ *
+ * Les deux modes (carte d'Afrique par défaut, grille) et tous les filtres
+ * serveur sont conservés, y compris la règle qui vide le territoire choisi à
+ * chaque changement de zone (listes disjointes).
+ *
+ * Comme pour Africalive, les tables de la carte, `NOMS_PAYS_FR`,
+ * `PETITES_ILES`, `AFRICA_VIEWBOX`, viennent désormais de
+ * `utils/carteAfrique.ts` au lieu d'être recopiées ici.
+ */
+definePageMeta({ layout: false })
 
 useHead({
-  title: 'Échanges Sabbafrica - AfricanS',
+  title: 'Sabbafrica : Échanges sabbatiques | AfricanS',
   meta: [
     {
       name: 'description',
-      content: 'Découvrez les programmes d\'échanges sabbatiques pour partager votre expertise en Afrique'
-    }
-  ]
+      content: "Partagez votre expertise auprès d'organisations africaines, le temps d'une mission.",
+    }],
 })
 
-// Modale de présentation « C'est quoi Sabbafrica ? »
-const presentationOuverte = ref(false)
+const { listerProgrammes, chargement } = useSabbatiques()
 
+// ─── État ─────────────────────────────────────────────────────────────────
+
+const decouverteOuverte = ref(false)
 const viewMode = ref<'grille' | 'carte'>('carte')
+const programmes = ref<SabbatiqueAPI[]>([])
+const total = ref(0)
 
 const filtres = ref<SabbatiqueFiltres>({
   type: 'tous',
   pays: '',
   domaine: '',
-  recherche: ''
+  recherche: '',
 })
 
-const programmes = ref<SabbatiqueAPI[]>([])
-const total = ref(0)
-
-// Zone géographique qui pilote le contenu du menu déroulant des territoires
-const ZONES_TERRITOIRE = [
-  { value: 'tout' as const, label: 'Mondial' },
-  { value: 'afrique' as const, label: 'Afrique' },
-  { value: 'hors_afrique' as const, label: 'Hors Afrique' },
-]
-type ZoneTerritoire = (typeof ZONES_TERRITOIRE)[number]['value']
+const ZONES = [
+  { valeur: 'tout' as const, libelle: 'Mondial' },
+  { valeur: 'afrique' as const, libelle: 'Afrique' },
+  { valeur: 'hors_afrique' as const, libelle: 'Hors Afrique' }]
+type ZoneTerritoire = (typeof ZONES)[number]['valeur']
 const zoneTerritoire = ref<ZoneTerritoire>('tout')
 
-// En zone « Tout » le menu déroulant n'est pas filtré : les deux listes sont
-// fusionnées (une seule entrée « Tous les territoires », en tête).
+/** En zone « Tout », les deux listes fusionnent sous une seule entrée vide. */
 const territoiresDisponibles = computed(() => {
   if (zoneTerritoire.value === 'afrique') return PAYS_AFRICAINS
   if (zoneTerritoire.value === 'hors_afrique') return PAYS_HORS_AFRIQUE
@@ -404,20 +65,14 @@ const territoiresDisponibles = computed(() => {
   return [{ value: '', label: 'Tous les territoires' }, ...tous]
 })
 
-// Changer de zone réinitialise le territoire choisi (contenus disjoints)
-// et recharge la liste des programmes (filtre serveur, pagination remise à 1)
-watch(zoneTerritoire, () => {
-  filtres.value.pays = ''
-  chargerProgrammes()
-})
-
 const filtresActifs = computed(() =>
   zoneTerritoire.value !== 'tout'
   || filtres.value.type !== 'tous'
-  || !!filtres.value.pays
-  || !!filtres.value.domaine
-  || !!filtres.value.recherche
-)
+  || Boolean(filtres.value.pays)
+  || Boolean(filtres.value.domaine)
+  || Boolean(filtres.value.recherche))
+
+// ─── Chargement ───────────────────────────────────────────────────────────
 
 const chargerProgrammes = async () => {
   const result = await listerProgrammes({
@@ -431,93 +86,57 @@ const chargerProgrammes = async () => {
   }
 }
 
-// Debounce de la recherche textuelle
+// Changer de zone vide le territoire choisi (listes disjointes) et recharge.
+watch(zoneTerritoire, () => {
+  filtres.value.pays = ''
+  chargerProgrammes()
+})
+
+watch(() => [filtres.value.type, filtres.value.pays, filtres.value.domaine], chargerProgrammes)
+
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 const onSearchInput = () => {
   if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    chargerProgrammes()
-  }, 500)
-}
-
-// Rechargement immédiat sur les filtres select / radio
-watch(
-  () => [filtres.value.type, filtres.value.pays, filtres.value.domaine],
-  () => {
-    chargerProgrammes()
-  }
-)
-
-const voirDetail = (programme: SabbatiqueAPI) => {
-  navigateTo(`/echanges-sabbatiques/${programme.id}`)
+  searchTimeout = setTimeout(chargerProgrammes, 500)
 }
 
 const reinitialiserFiltres = () => {
+  selectedPays.value = null
   zoneTerritoire.value = 'tout'
-  filtres.value = {
-    type: 'tous',
-    pays: '',
-    domaine: '',
-    recherche: ''
-  }
+  filtres.value = { type: 'tous', pays: '', domaine: '', recherche: '' }
   chargerProgrammes()
 }
 
-// === MODE CARTE ===
+onMounted(async () => {
+  await chargerProgrammes()
+  if (viewMode.value === 'carte') {
+    await nextTick()
+    calculerTransformsIles()
+  }
+})
+
+// ─── Mode carte ───────────────────────────────────────────────────────────
 
 const PAYS_AFRICAINS_SET = new Set<string>(PAYS_AFRICAINS_ISO2)
 
-// Noms français des pays africains (code ISO2 → nom)
-const nomsPaysFr: Record<string, string> = {
-  dz: 'Algérie', ao: 'Angola', bj: 'Bénin', bw: 'Botswana', bf: 'Burkina Faso',
-  bi: 'Burundi', cv: 'Cap-Vert', cm: 'Cameroun', cf: 'Centrafrique',
-  td: 'Tchad', km: 'Comores', cg: 'Congo', cd: 'RD Congo', ci: "Côte d'Ivoire",
-  dj: 'Djibouti', eg: 'Égypte', gq: 'Guinée équatoriale', er: 'Érythrée',
-  sz: 'Eswatini', et: 'Éthiopie', ga: 'Gabon', gm: 'Gambie', gh: 'Ghana',
-  gn: 'Guinée', gw: 'Guinée-Bissau', ke: 'Kenya', ls: 'Lesotho', lr: 'Liberia',
-  ly: 'Libye', mg: 'Madagascar', mw: 'Malawi', ml: 'Mali', mr: 'Mauritanie',
-  mu: 'Maurice', ma: 'Maroc', mz: 'Mozambique', na: 'Namibie', ne: 'Niger',
-  ng: 'Nigeria', rw: 'Rwanda', st: 'Sao Tomé-et-Principe', sn: 'Sénégal',
-  sc: 'Seychelles', sl: 'Sierra Leone', so: 'Somalie', za: 'Afrique du Sud',
-  ss: 'Soudan du Sud', sd: 'Soudan', tz: 'Tanzanie', tg: 'Togo', tn: 'Tunisie',
-  ug: 'Ouganda', zm: 'Zambie', zw: 'Zimbabwe', eh: 'Sahara occidental',
-}
-
-// ViewBox calé au plus près du continent
-const AFRICA_VIEWBOX = '401 347 239 267'
-
-// Normalise un nom de pays (minuscule, sans accents) pour la correspondance
-const normaliserNom = (nom: string): string =>
-  nom.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
-
-// Index nom-français-normalisé → code ISO2
+/** Index nom-français-normalisé → code ISO2. */
 const isoParNom: Record<string, string> = Object.fromEntries(
-  Object.entries(nomsPaysFr).map(([iso, nom]) => [normaliserNom(nom), iso])
-)
+  Object.entries(NOMS_PAYS_FR).map(([iso, nom]) => [normaliserNomPays(nom), iso]))
 
-// Locations africaines filtrées depuis la carte du monde
 const africaLocations = computed(() =>
-  World.locations.filter(loc => PAYS_AFRICAINS_SET.has(loc.id.toLowerCase()))
-)
+  World.locations.filter(loc => PAYS_AFRICAINS_SET.has(loc.id.toLowerCase())))
 
-// Regroupe les programmes par code ISO2 du pays
 const programmesParPays = computed<Record<string, SabbatiqueAPI[]>>(() => {
   const groupes: Record<string, SabbatiqueAPI[]> = {}
   for (const p of programmes.value) {
     if (!p.pays) continue
-    const iso = isoParNom[normaliserNom(p.pays)]
+    const iso = isoParNom[normaliserNomPays(p.pays)]
     if (!iso) continue
     ;(groupes[iso] ||= []).push(p)
   }
   return groupes
 })
 
-// Petites îles trop petites pour être visibles : facteur d'agrandissement par code ISO
-const PETITES_ILES: Record<string, number> = {
-  cv: 5, st: 6, km: 5, mu: 6, sc: 7,
-}
-
-// Épaisseur de trait : réduite pour les petites îles agrandies
 const strokeWidth = (id: string): number => {
   const facteur = PETITES_ILES[id]
   return facteur ? 0.5 / facteur : 0.5
@@ -526,7 +145,6 @@ const strokeWidth = (id: string): number => {
 const svgRef = ref<SVGSVGElement | null>(null)
 const mapTransforms = ref<Record<string, string>>({})
 
-// Calcule un scale centré sur le centroïde de chaque petite île
 const calculerTransformsIles = () => {
   const svg = svgRef.value
   if (!svg) return
@@ -549,147 +167,319 @@ watch([viewMode, africaLocations], async () => {
   }
 })
 
-const hoveredCountry = ref<{ id: string; name: string } | null>(null)
+const hoveredCountry = ref<{ id: string, name: string } | null>(null)
 const mousePos = ref({ x: 0, y: 0 })
 const selectedPays = ref<string | null>(null)
 
 const programmesPaysSelectionne = computed(() =>
-  selectedPays.value ? (programmesParPays.value[selectedPays.value] || []) : []
-)
+  selectedPays.value ? (programmesParPays.value[selectedPays.value] || []) : [])
 
-const adjustBrightness = (hex: string, percent: number): string => {
-  const num = parseInt(hex.replace('#', ''), 16)
-  const amt = Math.round(2.55 * percent)
-  const R = Math.min(255, Math.max(0, (num >> 16) + amt))
-  const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + amt))
-  const B = Math.min(255, Math.max(0, (num & 0x0000ff) + amt))
-  return `#${((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1)}`
-}
+/**
+ * Un filtre peut vider le territoire retenu de tous ses programmes. Le
+ * panneau restait alors ouvert sur « 0 programme » et une grille vide, alors
+ * que la carte, elle, avait déjà repeint le pays en gris.
+ */
+watch(programmesParPays, (groupes) => {
+  if (selectedPays.value && !groupes[selectedPays.value]?.length) selectedPays.value = null
+})
 
 const getMapColor = (id: string): string => {
-  const isHovered = hoveredCountry.value?.id === id
-  const isSelected = selectedPays.value === id
-  const aProgrammes = !!programmesParPays.value[id]?.length
+  const survole = hoveredCountry.value?.id === id
+  const aProgrammes = Boolean(programmesParPays.value[id]?.length)
 
   if (aProgrammes) {
-    if (isSelected) return '#FFD700'
-    if (isHovered) return adjustBrightness('#228B22', -15)
-    return '#228B22'
+    if (selectedPays.value === id) return '#FFD700'
+    return survole ? '#1d761d' : '#228B22'
   }
-
-  if (isHovered) return '#bdbdbd'
-  return '#e5e7eb'
+  return survole ? '#bdbdbd' : '#e5e7eb'
 }
 
 const handleMapMouseMove = (event: MouseEvent) => {
-  const container = event.currentTarget as HTMLElement
-  const rect = container.getBoundingClientRect()
-  mousePos.value = {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
-  }
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  mousePos.value = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+}
+
+const panneauPaysRef = ref<HTMLElement | null>(null)
+
+/**
+ * Le panneau du territoire naît SOUS la carte, qui occupe jusqu'à 70svh : il
+ * apparaissait donc hors de l'écran, et le clic restait sans effet visible
+ * ailleurs que dans la couleur du pays.
+ */
+const amenerPanneauALEcran = async () => {
+  await nextTick()
+  amenerSousLaBarre(panneauPaysRef.value)
 }
 
 const handleMapClick = (location: { id: string }) => {
-  if (programmesParPays.value[location.id]?.length) {
-    selectedPays.value = location.id
+  if (!programmesParPays.value[location.id]?.length) return
+  // Re-cliquer le territoire déjà retenu le désélectionne : sans cela, le
+  // seul moyen de revenir à la carte nue était la croix du panneau.
+  if (selectedPays.value === location.id) {
+    selectedPays.value = null
+    return
   }
+  selectedPays.value = location.id
+  amenerPanneauALEcran()
 }
-
-onMounted(async () => {
-  AOS.init({
-    duration: 800,
-    easing: 'ease-out-cubic',
-    once: true
-  })
-  await chargerProgrammes()
-
-  if (viewMode.value === 'carte') {
-    await nextTick()
-    calculerTransformsIles()
-  }
-})
 </script>
 
-<style scoped>
-/* Carte SVG */
-.map-container {
-  position: relative;
-  width: 100%;
-}
+<template>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Sabbafrica"
+        sous-titre="Offrir un peu de son temps au développement de l'Afrique"
+        image="/images/alliance-afrique.jpg"
+        aide="C'est quoi Sabbafrica ?"
+        @aide="decouverteOuverte = true"
+      />
+    </template>
 
-.africa-map {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 92vh;
-  margin: 0 auto;
-}
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="[{ libelle: 'Sabbafrica' }]">
+        <template #action>
+          <AfricansBouton icone="fa-solid fa-plus" vers="/echanges-sabbatiques/proposer?type=interafricain">
+            Proposer un échange
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
 
-.map-path {
-  transition: fill 0.2s ease, opacity 0.2s ease;
-}
+    <div class="flex flex-col gap-6">
+      <div class="flex gap-2">
+        <button
+          v-for="mode in [
+            { valeur: 'carte' as const, libelle: 'Carte', icone: 'fa-solid fa-earth-africa' },
+            { valeur: 'grille' as const, libelle: 'Grille', icone: 'fa-solid fa-table-cells-large' }]"
+          :key="mode.valeur"
+          type="button"
+          class="flex items-center gap-2 rounded-full px-4 py-2 text-[14px]/[1.4] font-bold transition"
+          :class="viewMode === mode.valeur ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
+          :aria-pressed="viewMode === mode.valeur"
+          @click="viewMode = mode.valeur"
+        >
+          <font-awesome-icon :icon="mode.icone" />
+          {{ mode.libelle }}
+        </button>
+      </div>
 
-.map-path:hover {
-  opacity: 0.85;
-}
+      <div v-if="chargement" class="grid gap-5 sm:grid-cols-2">
+        <div v-for="i in 4" :key="i" class="h-64 animate-pulse rounded-[10px] bg-af-bordure" />
+      </div>
 
-/* Tooltip carte */
-.map-tooltip {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  pointer-events: none;
-  z-index: 50;
-  white-space: nowrap;
-  transform: translateY(-50%);
-}
+      <!-- Grille -->
+      <template v-else-if="viewMode === 'grille'">
+        <div v-if="programmes.length" class="grid gap-5 sm:grid-cols-2">
+          <SabbatiqueCard
+            v-for="programme in programmes"
+            :key="programme.id"
+            :programme="programme"
+          />
+        </div>
 
-.map-tooltip-clickable {
-  pointer-events: auto;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 16px;
-  transition: all 0.2s ease;
-}
+        <div v-else class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+          <font-awesome-icon icon="fa-solid fa-plane" class="text-4xl text-af-atone-2" />
+          <p class="mt-4 text-[16px]/[1.4] font-bold">Aucun programme trouvé</p>
+          <p class="mt-2 text-[14px]/[1.4] text-af-corps">
+            {{ filtresActifs ? 'Essayez de modifier vos filtres.' : 'Les programmes proposés apparaîtront ici.' }}
+          </p>
+          <AfricansBouton
+            v-if="filtresActifs"
+            class="mt-6"
+            variante="secondaire"
+            icone="fa-solid fa-rotate-left"
+            @click="reinitialiserFiltres"
+          >
+            Réinitialiser les filtres
+          </AfricansBouton>
+        </div>
+      </template>
 
-.map-tooltip-clickable:hover {
-  background: rgba(34, 139, 34, 0.95);
-  transform: translateY(-50%) scale(1.05);
-}
+      <!-- Carte -->
+      <template v-else>
+        <div class="rounded-[10px] border border-af-bordure bg-white p-2">
+          <div class="relative" @mousemove="handleMapMouseMove">
+            <svg
+              ref="svgRef"
+              :viewBox="AFRICA_VIEWBOX"
+              class="mx-auto block h-auto max-h-[70svh] w-full"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                v-for="location in africaLocations"
+                :key="location.id"
+                :data-id="location.id"
+                :d="location.path"
+                :fill="getMapColor(location.id)"
+                stroke="#fff"
+                :stroke-width="strokeWidth(location.id)"
+                class="transition-[fill,opacity] duration-200 hover:opacity-85"
+                :class="programmesParPays[location.id]?.length && 'cursor-pointer'"
+                :transform="mapTransforms[location.id]"
+                @mouseenter="hoveredCountry = location"
+                @mouseleave="hoveredCountry = null"
+                @click="handleMapClick(location)"
+              />
+            </svg>
 
-/* Transitions */
-.map-fade-enter-active,
-.map-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
+            <div
+              v-if="hoveredCountry"
+              class="pointer-events-none absolute z-50 -translate-y-1/2 rounded-lg bg-black/85 px-3 py-2 text-[12px]/[1.4] whitespace-nowrap text-white"
+              :style="{ left: `${mousePos.x + 15}px`, top: `${mousePos.y - 10}px` }"
+            >
+              <span class="font-bold">{{ NOMS_PAYS_FR[hoveredCountry.id] || hoveredCountry.name }}</span>
+              <span v-if="programmesParPays[hoveredCountry.id]?.length" class="block opacity-70">
+                {{ programmesParPays[hoveredCountry.id]!.length }}
+                programme{{ programmesParPays[hoveredCountry.id]!.length > 1 ? 's' : '' }}
+              </span>
+            </div>
+          </div>
 
-.map-fade-enter-from,
-.map-fade-leave-to {
-  opacity: 0;
-}
+          <ul class="flex flex-wrap gap-4 px-3 pt-2 pb-3">
+            <li
+              v-for="etat in [
+                { couleur: '#228B22', libelle: 'Programmes disponibles' },
+                { couleur: '#FFD700', libelle: 'Sélectionné' },
+                { couleur: '#e5e7eb', libelle: 'Aucun programme' }]"
+              :key="etat.libelle"
+              class="flex items-center gap-2 text-[12px]/[1.4] text-af-corps"
+            >
+              <span class="size-3 shrink-0 rounded-full" :style="{ backgroundColor: etat.couleur }" />
+              {{ etat.libelle }}
+            </li>
+          </ul>
+        </div>
 
-.slide-in-enter-active {
-  transition: all 0.3s ease-out;
-}
+        <div v-if="selectedPays" ref="panneauPaysRef" class="flex flex-col gap-4 scroll-mt-af-barre">
+          <div class="flex items-center justify-between gap-4">
+            <h2 class="text-[20px]/[1.4] font-bold text-af-chocolat">
+              {{ NOMS_PAYS_FR[selectedPays] || selectedPays }}
+              <span class="text-[14px]/[1.4] font-normal text-af-atone">
+                {{ programmesPaysSelectionne.length }}
+                programme{{ programmesPaysSelectionne.length > 1 ? 's' : '' }}
+              </span>
+            </h2>
+            <button
+              type="button"
+              class="grid size-8 place-items-center rounded-full text-af-corps transition hover:bg-af-fond"
+              aria-label="Fermer"
+              @click="selectedPays = null"
+            >
+              <font-awesome-icon icon="fa-solid fa-xmark" />
+            </button>
+          </div>
 
-.slide-in-leave-active {
-  transition: all 0.2s ease-in;
-}
+          <div class="grid gap-5 sm:grid-cols-2">
+            <SabbatiqueCard
+              v-for="programme in programmesPaysSelectionne"
+              :key="programme.id"
+              :programme="programme"
+            />
+          </div>
+        </div>
 
-.slide-in-enter-from {
-  opacity: 0;
-  transform: translateX(30px);
-}
+        <p v-else class="rounded-[10px] border border-af-bordure bg-white p-6 text-center text-[14px]/[1.4] text-af-corps">
+          <font-awesome-icon icon="fa-solid fa-hand-pointer" class="mr-2 text-af-atone-2" />
+          Cliquez sur un territoire mis en évidence pour voir ses programmes.
+        </p>
+      </template>
+    </div>
 
-.slide-in-leave-to {
-  opacity: 0;
-  transform: translateX(30px);
-}
-</style>
+    <template #rail>
+      <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="reinitialiserFiltres">
+        <div class="flex flex-col gap-5">
+          <label class="relative block">
+            <span class="sr-only">Rechercher un programme</span>
+            <font-awesome-icon
+              icon="fa-solid fa-magnifying-glass"
+              class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-af-atone-2"
+            />
+            <input
+              v-model="filtres.recherche"
+              type="search"
+              placeholder="Rechercher…"
+              class="h-10 w-full rounded-[10px] border border-af-bordure bg-white pr-3 pl-9 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
+              @input="onSearchInput"
+            />
+          </label>
+
+          <div class="flex flex-col gap-2">
+            <p class="text-[12px]/[1.4] font-bold text-af-atone uppercase">Type de programme</p>
+            <label
+              v-for="type in TYPES_PROGRAMME"
+              :key="type.value"
+              class="flex cursor-pointer items-center gap-3 text-[14px]/[1.4] text-af-corps"
+            >
+              <input
+                v-model="filtres.type"
+                type="radio"
+                :value="type.value"
+                class="size-4 accent-af-chocolat"
+              />
+              {{ type.label }}
+            </label>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <p class="text-[12px]/[1.4] font-bold text-af-atone uppercase">Zone</p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="zone in ZONES"
+                :key="zone.valeur"
+                type="button"
+                class="rounded-full px-3 py-1.5 text-[12px]/[1.4] font-bold transition"
+                :class="zoneTerritoire === zone.valeur ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
+                :aria-pressed="zoneTerritoire === zone.valeur"
+                @click="zoneTerritoire = zone.valeur"
+              >
+                {{ zone.libelle }}
+              </button>
+            </div>
+          </div>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-[12px]/[1.4] font-bold text-af-atone uppercase">Territoire</span>
+            <select
+              v-model="filtres.pays"
+              class="h-10 w-full rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
+            >
+              <option v-for="pays in territoiresDisponibles" :key="pays.value" :value="pays.value">
+                {{ pays.label }}
+              </option>
+            </select>
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-[12px]/[1.4] font-bold text-af-atone uppercase">Domaine</span>
+            <select
+              v-model="filtres.domaine"
+              class="h-10 w-full rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
+            >
+              <option v-for="domaine in DOMAINES" :key="domaine.value" :value="domaine.value">
+                {{ domaine.label }}
+              </option>
+            </select>
+          </label>
+        </div>
+      </AfricansPanneau>
+
+      <AfricansPanneau titre="Proposer" icone="fa-solid fa-plane">
+        <div class="flex flex-col gap-3">
+          <p class="text-[14px]/[1.4] text-af-atone">
+            <span class="text-[20px]/[1.4] font-bold text-af-chocolat">{{ total }}</span>
+            programme{{ total > 1 ? 's' : '' }} publié{{ total > 1 ? 's' : '' }}
+          </p>
+          <AfricansBouton icone="fa-solid fa-plus" vers="/echanges-sabbatiques/proposer?type=interafricain">
+            Échange interafricain
+          </AfricansBouton>
+          <AfricansBouton variante="secondaire" icone="fa-solid fa-plus" vers="/echanges-sabbatiques/proposer?type=hors_afrique">
+            Échange hors Afrique
+          </AfricansBouton>
+        </div>
+      </AfricansPanneau>
+    </template>
+
+    <SabbatiqueDecouverteModale v-model="decouverteOuverte" />
+  </NuxtLayout>
+</template>

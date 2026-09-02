@@ -5,7 +5,7 @@
 //!   • format JPEG ou PNG exclusivement (magic bytes via `image::guess_format`)
 //!   • dimensions ≤ 2048 × 2048 px
 //!
-//! La validation se fait EN MÉMOIRE, AVANT écriture disque — un fichier
+//! La validation se fait EN MÉMOIRE, AVANT écriture disque, un fichier
 //! invalide ne touche jamais `./uploads/`.
 
 use image::GenericImageView;

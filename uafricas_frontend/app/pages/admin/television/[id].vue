@@ -4,7 +4,7 @@
  *
  * Les programmes ne s'éditent plus ici : depuis 09q ce sont des `emission_*`,
  * gérées sur `/admin/medias/emissions`. Le tableau du bas ne fait plus que les
- * lister, et la vedette générale a suivi les épisodes — c'est un épisode, pas
+ * lister, et la vedette générale a suivi les épisodes : c'est un épisode, pas
  * un programme, qui occupe la tête de `/medias/tele`.
  *
  * Thématiques et couverture : exigées seulement à l'état `publie` (FR-029,
@@ -268,7 +268,7 @@ onMounted(async () => {
               <div class="form-control">
                 <label class="label"><span class="label-text">Territoire (siège)</span></label>
                 <select v-model="chaineForm.pays_id" class="select select-bordered">
-                  <option value="">— Aucun —</option>
+                  <option value="">Aucun</option>
                   <option v-for="p in paysDisponibles" :key="p.id" :value="p.id">{{ p.nom }}</option>
                 </select>
               </div>
@@ -322,7 +322,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Équipe éditoriale (010). Le composant est le MÊME que côté membre —
+      <!-- Équipe éditoriale (010). Le composant est le MÊME que côté membre, 
            les règles ne diffèrent pas, seule l'autorité change : d'où
            `base="admin"`. Il est en Tailwind pur, ce qui est assumé sur une page
            daisyUI : c'est le prix d'un composant unique, et le prix inverse

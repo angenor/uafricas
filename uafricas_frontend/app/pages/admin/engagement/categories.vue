@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * Back-office — catégories de ventilation des points (daisyUI autorisé ici).
+ * Back-office : catégories de ventilation des points (daisyUI autorisé ici).
  *
  * La catégorie d'une règle est **recopiée sur chaque mouvement à l'écriture** :
- * re-catégoriser une règle ne déplace donc aucun point déjà gagné. C'est voulu —
+ * re-catégoriser une règle ne déplace donc aucun point déjà gagné. C'est voulu 
  * la ventilation reflète la catégorie au moment du mouvement.
  */
 import { ref, onMounted } from 'vue'
@@ -85,7 +85,7 @@ const enregistrer = async (c: AdminCategorie) => {
 
 /**
  * Avertissement chiffré avant suppression : les règles bloquent (409 serveur),
- * les mouvements non — ils basculeraient simplement sous « Autres » chez leurs
+ * les mouvements non : ils basculeraient simplement sous « Autres » chez leurs
  * détenteurs, ce que l'administrateur doit savoir avant de confirmer.
  */
 const supprimer = async (c: AdminCategorie) => {
@@ -108,7 +108,7 @@ const supprimer = async (c: AdminCategorie) => {
 <template>
   <div class="p-6 space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-2xl font-bold">Engagement — Catégories de points</h1>
+      <h1 class="text-2xl font-bold">Engagement, Catégories de points</h1>
       <div class="flex flex-wrap gap-2">
         <NuxtLink to="/admin/engagement/regles" class="btn btn-sm btn-outline">
           <font-awesome-icon icon="fa-solid fa-sliders" /> Barème
@@ -154,7 +154,7 @@ const supprimer = async (c: AdminCategorie) => {
             <label class="form-control">
               <span class="label-text text-xs">Couleur</span>
               <select v-model="nouvelle.couleur" class="select select-sm select-bordered">
-                <option value="">— par défaut —</option>
+                <option value="">par défaut</option>
                 <option v-for="c in COULEURS" :key="c" :value="c">{{ c }}</option>
               </select>
             </label>
@@ -188,7 +188,7 @@ const supprimer = async (c: AdminCategorie) => {
               <td><input v-model.number="c.ordre" type="number" class="input input-sm input-bordered w-16"></td>
               <td>
                 <select v-model="c.couleur" class="select select-sm select-bordered w-28">
-                  <option :value="null">—</option>
+                  <option :value="null">-</option>
                   <option v-for="col in COULEURS" :key="col" :value="col">{{ col }}</option>
                 </select>
               </td>

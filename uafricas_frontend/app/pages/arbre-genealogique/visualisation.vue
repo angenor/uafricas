@@ -256,7 +256,7 @@ const surPersonneAjoutee = async (form: CreerPersonneForm, typeLien: TypeLien) =
     const nouveauRattachementId = reponseCreation.data.rattachement_id
     const sourceId = personneCourante.value.id
 
-    // 2. Créer le lien — orientation selon le type d'action
+    // 2. Créer le lien : orientation selon le type d'action
     let lienSource: string
     let lienCible: string
 

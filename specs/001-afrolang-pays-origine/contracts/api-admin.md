@@ -1,4 +1,4 @@
-# Contract — API admin
+# Contract : API admin
 
 Deux nouveaux endpoints, calqués 1-pour-1 sur `marketplace.annonce_pays`.
 
@@ -32,7 +32,7 @@ Associe un pays au tableau « pays d'origine » d'une salle publique.
 
 | Code | Cas                                                                     |
 |------|-------------------------------------------------------------------------|
-| 201  | Créé (ou déjà existant — `ON CONFLICT DO NOTHING`)                      |
+| 201  | Créé (ou déjà existant : `ON CONFLICT DO NOTHING`)                      |
 | 401  | Non authentifié                                                         |
 | 403  | Permission `afrolang:modifier` absente                                  |
 | 404  | Salle ou pays inconnu / pays archivé                                    |
@@ -59,7 +59,7 @@ Une ligne dans `audit_log` :
 
 ### Idempotence
 
-Garantie par `INSERT ... ON CONFLICT DO NOTHING` sur la PK composite. Un second appel avec le même couple renvoie également 201 sans dupliquer (et **ne** ré-écrit pas une ligne d'audit en double — cf. note d'implémentation : si `rows_affected = 0`, log audit identique pour préserver la simplicité, comme `annonce_pays`).
+Garantie par `INSERT ... ON CONFLICT DO NOTHING` sur la PK composite. Un second appel avec le même couple renvoie également 201 sans dupliquer (et **ne** ré-écrit pas une ligne d'audit en double, cf. note d'implémentation : si `rows_affected = 0`, log audit identique pour préserver la simplicité, comme `annonce_pays`).
 
 ---
 
@@ -71,8 +71,8 @@ Retire un pays du tableau « pays d'origine » d'une salle publique.
 
 | Param      | Type |
 |------------|------|
-| `id`       | UUID — salle publique |
-| `pays_id`  | UUID — pays à retirer |
+| `id`       | UUID : salle publique |
+| `pays_id`  | UUID : pays à retirer |
 
 ### Codes de retour
 
@@ -97,6 +97,6 @@ Identique à POST mais `action = "DELETE"`.
 
 ## Lecture admin de la liste actuelle
 
-Aucun nouvel endpoint dédié. La liste des pays d'origine d'une salle est exposée via le champ `pays_origine` ajouté à `SalleDetailResponse` côté `GET /api/admin/afrolang/salles/{id}` (handler existant `admin::salles::obtenir_salle`). Côté admin, **les pays archivés sont également renvoyés** mais marqués `code_iso2`/`nom` standard avec un flag dérivable côté front (cf. `pays.actif` ⇒ chip grisée) — le filtre `actif = TRUE` n'est appliqué qu'à l'API publique.
+Aucun nouvel endpoint dédié. La liste des pays d'origine d'une salle est exposée via le champ `pays_origine` ajouté à `SalleDetailResponse` côté `GET /api/admin/afrolang/salles/{id}` (handler existant `admin::salles::obtenir_salle`). Côté admin, **les pays archivés sont également renvoyés** mais marqués `code_iso2`/`nom` standard avec un flag dérivable côté front (cf. `pays.actif` ⇒ chip grisée) : le filtre `actif = TRUE` n'est appliqué qu'à l'API publique.
 
-> Conséquence d'implémentation : le `json_agg` dans `obtenir_salle` (admin) **n'inclut pas** la condition `WHERE p.actif = TRUE` — différence intentionnelle avec la version publique pour permettre à l'admin de nettoyer les associations vers pays archivés (Q3).
+> Conséquence d'implémentation : le `json_agg` dans `obtenir_salle` (admin) **n'inclut pas** la condition `WHERE p.actif = TRUE`, différence intentionnelle avec la version publique pour permettre à l'admin de nettoyer les associations vers pays archivés (Q3).

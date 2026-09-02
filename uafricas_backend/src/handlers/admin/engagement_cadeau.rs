@@ -21,10 +21,10 @@ use crate::verifier_permission;
 use crate::ApiResponse;
 
 // ════════════════════════════════════════════════════════════════════════════
-// CATALOGUE — CRUD
+// CATALOGUE : CRUD
 // ════════════════════════════════════════════════════════════════════════════
 
-/// GET /api/admin/engagement/cadeaux — catalogue complet (actifs et inactifs).
+/// GET /api/admin/engagement/cadeaux : catalogue complet (actifs et inactifs).
 ///
 /// `nombre_envois` conditionne l'affichage du bouton de suppression côté
 /// interface : au-delà de zéro, seule la désactivation reste possible.
@@ -69,7 +69,7 @@ fn valider_cadeau(payload: &CadeauPayload) -> Result<(), ApiErreur> {
     Ok(())
 }
 
-/// POST /api/admin/engagement/cadeaux — créer.
+/// POST /api/admin/engagement/cadeaux : créer.
 /// Immédiatement visible par les membres si `actif` : aucun redémarrage.
 pub async fn creer_cadeau(
     req: HttpRequest,
@@ -119,10 +119,10 @@ pub async fn creer_cadeau(
     Ok(HttpResponse::Created().json(ApiResponse { success: true, data: Some(cadeau), error: None }))
 }
 
-/// PUT /api/admin/engagement/cadeaux/{id} — modifier.
+/// PUT /api/admin/engagement/cadeaux/{id}, modifier.
 ///
 /// `code` n'est jamais modifié : c'est une clé stable. Une modification de
-/// `prix` ou de `points` **n'affecte aucune transaction passée** — celles-ci
+/// `prix` ou de `points` **n'affecte aucune transaction passée**, celles-ci
 /// portent leurs propres valeurs figées.
 pub async fn modifier_cadeau(
     req: HttpRequest,
@@ -252,7 +252,7 @@ async fn auditer(
 // JOURNAL COMPTABLE
 // ════════════════════════════════════════════════════════════════════════════
 
-/// GET /api/admin/engagement/transactions — journal filtrable et paginé.
+/// GET /api/admin/engagement/transactions, journal filtrable et paginé.
 ///
 /// Les `totaux` sont calculés **sur le filtre courant**, pas sur la page, et ne
 /// comptent que `etat = 'abouti'`. Invariant vérifiable en recette :
@@ -267,7 +267,7 @@ pub async fn lister_transactions(
     let page = params.page.unwrap_or(1).max(1);
     let taille = params.taille.unwrap_or(25).clamp(1, 100);
 
-    // Filtres neutralisés par cast paramétré (`$n IS NULL OR …`) — jamais de
+    // Filtres neutralisés par cast paramétré (`$n IS NULL OR …`), jamais de
     // concaténation de fragments SQL.
     let filtre = "($1::uuid IS NULL
                    OR ($2::text = 'offreur'      AND t.offreur_id = $1)
@@ -416,7 +416,7 @@ pub async fn obtenir_parametres(
 /// PUT /api/admin/engagement/parametres-monetisation
 ///
 /// La modification du taux est **prospective** : les transactions passées
-/// conservent leur taux figé. Rien à faire pour cela — c'est la conséquence du
+/// conservent leur taux figé. Rien à faire pour cela : c'est la conséquence du
 /// gel à l'écriture, pas d'un traitement particulier ici.
 pub async fn modifier_parametres(
     req: HttpRequest,
@@ -524,7 +524,7 @@ pub async fn purger_phase_test(
     }
 
     // Précondition : purger tant que le paiement reste simulé rouvrirait
-    // aussitôt la porte au minage — les membres pourraient regagner
+    // aussitôt la porte au minage : les membres pourraient regagner
     // gratuitement ce qui vient d'être retiré.
     let paiement_reel: bool = sqlx::query_scalar(
         "SELECT paiement_reel_actif FROM engagement.parametre_monetisation WHERE id = TRUE",

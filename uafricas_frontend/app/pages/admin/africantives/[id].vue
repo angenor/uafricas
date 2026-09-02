@@ -94,7 +94,7 @@ onMounted(() => charger())
 
         <!-- Moderation etat -->
         <div class="flex items-center gap-2 mb-4 p-3 bg-base-200 rounded-lg">
-          <span class="font-semibold text-sm">Etat actuel :</span>
+          <span class="font-semibold text-sm">État actuel :</span>
           <span
             class="badge"
             :class="{

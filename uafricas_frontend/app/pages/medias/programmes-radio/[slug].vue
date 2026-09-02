@@ -1,4 +1,6 @@
 <script setup lang="ts">
+
+definePageMeta({ layout: false })
 /**
  * Page de détail d'une émission de radio (US3).
  *
@@ -20,7 +22,7 @@ const { data: detail, pending: chargement } = await useAsyncData(
 )
 
 /**
- * Cette page est désormais la page d'un **ÉPISODE** — son emplacement et son
+ * Cette page est désormais la page d'un **ÉPISODE**, son emplacement et son
  * slug sont conservés, ce qui préserve les adresses publiques déjà indexées
  * (FR-056). Ce qui change, c'est qu'elle nomme la série à laquelle il appartient
  * et propose les autres épisodes (US1 §4). La variable garde son nom `emission`
@@ -45,10 +47,10 @@ const lienStation = computed(() =>
   emission.value?.stationSlug ? `/medias/stations/${emission.value.stationSlug}` : null,
 )
 
-const breadcrumbs = computed(() => [
-  { label: 'Médias', to: '/medias' },
-  { label: 'Radio', to: '/medias/radios' },
-  { label: emission.value?.title || 'Émission', to: undefined },
+const filAriane = computed(() => [
+  { libelle: 'Médias', vers: '/medias' },
+  { libelle: 'Radio', vers: '/medias/radios' },
+  { libelle: emission.value?.title || 'Émission' },
 ])
 
 // ── SEO / Open Graph ──
@@ -61,7 +63,7 @@ const descriptionOg = computed(() =>
 
 useHead(() => {
   if (!emission.value) return {}
-  const titre = `${emission.value.title} — Radio — UAfricas`
+  const titre = `${emission.value.title}, Radio | UAfricas`
   return {
     title: titre,
     meta: [
@@ -104,36 +106,33 @@ const enCours = computed(
 </script>
 
 <template>
-  <div class="min-h-screen bg-neutral-950">
-    <div v-if="chargement" class="flex items-center justify-center h-screen">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400"></div>
+  <NuxtLayout name="africans">
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="filAriane" />
+    </template>
+
+    <div v-if="chargement" class="flex items-center justify-center py-24">
+      <div class="animate-spin rounded-full h-12 w-12 text-3xl text-af-chocolat"></div>
     </div>
 
     <!-- Un contenu retiré est indiscernable d'un contenu inexistant (FR-028). -->
-    <div v-else-if="!emission" class="flex flex-col items-center justify-center h-screen px-4 text-center">
-      <font-awesome-icon :icon="['fas', 'microphone']" class="w-14 h-14 text-neutral-700 mb-4" />
-      <h1 class="text-2xl font-bold text-white mb-2">Émission introuvable</h1>
-      <p class="text-gray-400 mb-4">
+    <div v-else-if="!emission" class="flex flex-col items-center justify-center py-24 px-4 text-center">
+      <font-awesome-icon :icon="['fas', 'microphone']" class="w-14 h-14 text-af-atone-2 mb-4" />
+      <h1 class="text-2xl font-bold text-af-encre mb-2">Émission introuvable</h1>
+      <p class="text-af-corps mb-4">
         Cette émission n’existe pas, ou elle a été retirée de l’antenne.
       </p>
-      <NuxtLink to="/medias/radios" class="text-yellow-400 hover:underline">
+      <NuxtLink to="/medias/radios" class="font-bold text-af-chocolat hover:underline">
         &#8592; Retour à la radio
       </NuxtLink>
     </div>
 
     <template v-else>
-      <div class="max-w-5xl mx-auto px-4 pt-24 pb-16">
-        <nav aria-label="Fil d'Ariane" class="mb-6 text-sm text-gray-400">
-          <template v-for="(fil, i) in breadcrumbs" :key="i">
-            <NuxtLink v-if="fil.to" :to="fil.to" class="hover:text-yellow-400">{{ fil.label }}</NuxtLink>
-            <span v-else class="text-white">{{ fil.label }}</span>
-            <span v-if="i < breadcrumbs.length - 1" class="mx-2">/</span>
-          </template>
-        </nav>
+      <div class="flex flex-col gap-6">
 
         <!-- Identité et écoute -->
         <header class="flex flex-col sm:flex-row gap-6 mb-8">
-          <div class="w-full sm:w-64 aspect-square rounded-2xl overflow-hidden bg-neutral-900 shrink-0">
+          <div class="w-full sm:w-64 aspect-square rounded-2xl overflow-hidden bg-af-fond shrink-0">
             <img
               v-if="emission.cover"
               :src="emission.cover"
@@ -141,7 +140,7 @@ const enCours = computed(
               class="w-full h-full object-cover"
             >
             <span v-else class="w-full h-full flex items-center justify-center">
-              <font-awesome-icon :icon="['fas', 'microphone']" class="text-4xl text-neutral-700" />
+              <font-awesome-icon :icon="['fas', 'microphone']" class="text-4xl text-af-atone-2" />
             </span>
           </div>
 
@@ -151,19 +150,19 @@ const enCours = computed(
             <NuxtLink
               v-if="lienProgramme"
               :to="lienProgramme"
-              class="inline-flex items-center gap-2 text-yellow-400 text-sm font-semibold hover:underline mb-2 self-start"
+              class="inline-flex items-center gap-2 text-af-chocolat text-sm font-semibold hover:underline mb-2 self-start"
             >
               <font-awesome-icon :icon="['fas', 'layer-group']" class="w-3.5 h-3.5" />
               {{ emission.emissionTitre }}
             </NuxtLink>
-            <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-white mb-2">
-              <span v-if="emission.numeroEpisode" class="text-gray-400 font-normal">
-                Épisode {{ emission.numeroEpisode }} —
+            <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-af-encre mb-2">
+              <span v-if="emission.numeroEpisode" class="text-af-corps font-normal">
+                Épisode {{ emission.numeroEpisode }}, 
               </span>
               {{ emission.title }}
             </h1>
-            <p class="text-gray-400 text-sm flex flex-wrap items-center gap-x-3 gap-y-1 mb-5">
-              <NuxtLink v-if="lienStation" :to="lienStation" class="hover:text-yellow-400">
+            <p class="text-af-corps text-sm flex flex-wrap items-center gap-x-3 gap-y-1 mb-5">
+              <NuxtLink v-if="lienStation" :to="lienStation" class="hover:text-af-chocolat">
                 {{ emission.stationNom }}
               </NuxtLink>
               <span v-else-if="emission.stationNom">{{ emission.stationNom }}</span>
@@ -172,8 +171,8 @@ const enCours = computed(
 
             <button
               type="button"
-              class="self-start inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400"
-              :class="enCours ? 'bg-yellow-400 text-black' : 'bg-white text-black hover:bg-gray-200'"
+              class="self-start inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat"
+              :class="enCours ? 'bg-af-chocolat text-black' : 'bg-white text-black hover:bg-af-bordure'"
               @click="ecouter"
             >
               <font-awesome-icon :icon="['fas', enCours ? 'volume-high' : 'play']" />
@@ -198,7 +197,7 @@ const enCours = computed(
           <!-- Proposer un contenu rattaché à ce support (US4) -->
           <button
             type="button"
-            class="mt-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 text-white px-5 py-2 text-sm font-semibold hover:bg-white/20 transition-colors cursor-pointer"
+            class="mt-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-af-fond text-af-encre px-5 py-2 text-sm font-semibold hover:bg-white/20 transition-colors cursor-pointer"
             @click="propositionOuverte = true"
           >
             <font-awesome-icon :icon="['fas', 'plus']" class="w-4 h-4" />
@@ -224,17 +223,17 @@ const enCours = computed(
           </span>
         </div>
 
-        <p v-if="emission.description" class="text-gray-300 leading-relaxed whitespace-pre-line mb-4">
+        <p v-if="emission.description" class="text-af-corps leading-relaxed whitespace-pre-line mb-4">
           {{ emission.description }}
         </p>
 
-        <dl v-if="emission.animator || emission.producer" class="text-sm text-gray-400 space-y-1 mb-10">
+        <dl v-if="emission.animator || emission.producer" class="text-sm text-af-corps space-y-1 mb-10">
           <div v-if="emission.animator" class="flex gap-2">
-            <dt class="font-semibold text-gray-300">Animation :</dt>
+            <dt class="font-semibold text-af-corps">Animation :</dt>
             <dd>{{ emission.animator }}</dd>
           </div>
           <div v-if="emission.producer" class="flex gap-2">
-            <dt class="font-semibold text-gray-300">Production :</dt>
+            <dt class="font-semibold text-af-corps">Production :</dt>
             <dd>{{ emission.producer }}</dd>
           </div>
         </dl>
@@ -261,13 +260,13 @@ const enCours = computed(
              la série navigable depuis n'importe lequel de ses épisodes. -->
         <section v-if="voisins.length" class="mt-10">
           <div class="flex items-baseline justify-between gap-4 mb-4">
-            <h2 class="font-oswald text-xl font-bold text-white">
+            <h2 class="font-oswald text-xl font-bold text-af-encre">
               Autres épisodes
             </h2>
             <NuxtLink
               v-if="lienProgramme"
               :to="lienProgramme"
-              class="text-yellow-400 text-sm hover:underline"
+              class="text-af-chocolat text-sm hover:underline"
             >
               Voir le programme
             </NuxtLink>
@@ -277,9 +276,9 @@ const enCours = computed(
               v-for="voisin in voisins"
               :key="voisin.id"
               :to="`/medias/programmes-radio/${voisin.slug}`"
-              class="group block rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-yellow-400/60 transition-colors"
+              class="group block rounded-xl overflow-hidden bg-af-fond border border-af-bordure hover:border-af-chocolat/60 transition-colors"
             >
-              <div class="aspect-video bg-neutral-800 overflow-hidden">
+              <div class="aspect-video bg-af-fond overflow-hidden">
                 <img
                   v-if="voisin.cover"
                   :src="voisin.cover"
@@ -288,7 +287,7 @@ const enCours = computed(
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 >
               </div>
-              <p class="p-3 text-sm text-white line-clamp-2">{{ voisin.title }}</p>
+              <p class="p-3 text-sm text-af-encre line-clamp-2">{{ voisin.title }}</p>
             </NuxtLink>
           </div>
         </section>
@@ -310,5 +309,5 @@ const enCours = computed(
         @close="showPartage = false"
       />
     </template>
-  </div>
+  </NuxtLayout>
 </template>

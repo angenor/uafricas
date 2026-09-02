@@ -43,7 +43,7 @@ const CATEGORIES_CHAINE_VALIDES: &[&str] = &[
 const ETATS_MEDIA_VALIDES: &[&str] = &["brouillon", "publie", "suspendu", "supprime"];
 
 // ══════════════════════════════════════════════════════════════
-// ENGAGEMENT — mise à la une d'un contenu média (règle `media_a_la_une`, US4)
+// ENGAGEMENT : mise à la une d'un contenu média (règle `media_a_la_une`, US4)
 // ══════════════════════════════════════════════════════════════
 
 /// Crédite le créateur d'un contenu que l'équipe vient de mettre à la une.
@@ -53,7 +53,7 @@ const ETATS_MEDIA_VALIDES: &[&str] = &["brouillon", "publie", "suspendu", "suppr
 /// éditoriale déjà prise.
 ///
 /// La clé d'idempotence est portée par le **contenu**, pas par l'événement :
-/// retirer puis reposer la mise à la une ne recrédite donc pas — comportement
+/// retirer puis reposer la mise à la une ne recrédite donc pas, comportement
 /// demandé, et cohérent avec l'absence de reprise de points (pas de clawback).
 ///
 /// Anti-auto-attribution : un administrateur qui met en avant un contenu qu'il a
@@ -261,7 +261,7 @@ pub async fn creer_station_radio(
     if nom.is_empty() {
         return Err(ApiErreur::Validation("Le nom de la station est requis".into()));
     }
-    // Flux live et audio (fichier/lien) sont tous deux optionnels — au moins un est attendu.
+    // Flux live et audio (fichier/lien) sont tous deux optionnels, au moins un est attendu.
     let stream_url = body.stream_url.as_deref().map(str::trim).filter(|s| !s.is_empty());
     let audio_url = body.audio_url.as_deref().map(str::trim).filter(|s| !s.is_empty());
     if stream_url.is_none() && audio_url.is_none() {
@@ -727,7 +727,7 @@ pub async fn creer_chaine_tv(
     if nom.is_empty() {
         return Err(ApiErreur::Validation("Le nom de la chaine est requis".into()));
     }
-    // Flux live optionnel — le cœur de la télé = les programmes (cf. migration 09d).
+    // Flux live optionnel : le cœur de la télé = les programmes (cf. migration 09d).
     let stream_url = body.stream_url.as_deref().map(str::trim).filter(|s| !s.is_empty());
 
     if let Some(ref cat) = body.categorie {
@@ -997,7 +997,7 @@ pub async fn supprimer_chaine_tv(
 //
 // **Asymétrie assumée** : un épisode créé par un administrateur naît `publie`,
 // un épisode créé par un co-détenteur naît `en_attente`. C'est la conséquence
-// directe de FR-040 — l'administrateur *est* le validateur, le faire passer par
+// directe de FR-040 : l'administrateur *est* le validateur, le faire passer par
 // sa propre file n'aurait pas de sens.
 
 /// GET /api/admin/medias/emissions
@@ -1339,7 +1339,7 @@ pub async fn changer_etat_emission_admin(
     }))
 }
 
-/// DELETE /api/admin/medias/emissions/{id} — `409` si épisodes publiés (FR-010).
+/// DELETE /api/admin/medias/emissions/{id}, `409` si épisodes publiés (FR-010).
 pub async fn supprimer_emission_admin(
     req: HttpRequest,
     admin: AdminUtilisateur,
@@ -1362,7 +1362,7 @@ pub async fn supprimer_emission_admin(
     .execute(pool.get_ref())
     .await?;
 
-    // L'équipe du programme suit son porteur (FR-019) — voir la note du chemin
+    // L'équipe du programme suit son porteur (FR-019) : voir la note du chemin
     // membre, `media_emission::supprimer_emission`.
     crate::handlers::media_equipe::supprimer_equipe_du_porteur_pool(
         pool.get_ref(),
@@ -1561,7 +1561,7 @@ pub async fn modifier_episode_admin(
     }))
 }
 
-/// DELETE /api/admin/medias/episodes/{id} — suppression douce.
+/// DELETE /api/admin/medias/episodes/{id}, suppression douce.
 pub async fn supprimer_episode_admin(
     req: HttpRequest,
     admin: AdminUtilisateur,
@@ -1603,7 +1603,7 @@ pub async fn supprimer_episode_admin(
 
 /// PUT /api/admin/medias/emissions/{id}/episodes/reordonner
 ///
-/// Réécriture atomique — même invariant que la route membre : la liste doit
+/// Réécriture atomique : même invariant que la route membre : la liste doit
 /// couvrir exactement les épisodes du programme.
 pub async fn reordonner_episodes_admin(
     req: HttpRequest,
@@ -1673,7 +1673,7 @@ pub async fn reordonner_episodes_admin(
 /// PATCH /api/admin/medias/episodes/{id}/a-la-une
 ///
 /// Mise en avant au sein de son SUPPORT. Bascule et désignation dans une seule
-/// transaction — l'index unique partiel est violé en concurrence sinon.
+/// transaction : l'index unique partiel est violé en concurrence sinon.
 pub async fn definir_a_la_une_admin(
     req: HttpRequest,
     admin: AdminUtilisateur,

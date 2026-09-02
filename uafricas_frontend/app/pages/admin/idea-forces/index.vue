@@ -59,9 +59,9 @@ const tronquer = (texte: string, max: number = 60): string => {
 
 const colonnes: TableColumn[] = [
   { key: 'titre', label: 'Titre' },
-  { key: 'categorie_proposition', label: 'Categorie', width: 'w-32' },
+  { key: 'categorie_proposition', label: 'Catégorie', width: 'w-32' },
   { key: 'urgence', label: 'Urgence', width: 'w-24' },
-  { key: 'etat', label: 'Etat', width: 'w-24' },
+  { key: 'etat', label: 'État', width: 'w-24' },
   { key: 'nombre_soutiens', label: 'Soutiens', width: 'w-20', align: 'center' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
@@ -69,7 +69,7 @@ const colonnes: TableColumn[] = [
 
 const filterDefs: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Titre, description...' },
-  { key: 'categorie_proposition', label: 'Categorie', type: 'select', placeholder: 'Toutes', options: [
+  { key: 'categorie_proposition', label: 'Catégorie', type: 'select', placeholder: 'Toutes', options: [
     { label: 'Gouvernance', value: 'amelioration_gouvernance' },
     { label: 'Education', value: 'education_formation' },
     { label: 'Sante', value: 'sante_publique' },
@@ -83,7 +83,7 @@ const filterDefs: FilterDefinition[] = [
     { label: 'Elevee', value: 'elevee' },
     { label: 'Critique', value: 'critique' },
   ]},
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'En attente', value: 'en_attente' },
     { label: 'Publie', value: 'publie' },
     { label: 'Suspendu', value: 'suspendu' },

@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Mock — Matching inter-arbres et découvertes
+// Mock : Matching inter-arbres et découvertes
 // Interfaces TypeScript + données de test + helpers async
 // ════════════════════════════════════════════════════════════════════════════
 

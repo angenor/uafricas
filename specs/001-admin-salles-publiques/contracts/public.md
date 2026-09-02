@@ -1,4 +1,4 @@
-# Contrats REST — Endpoints publics (utilisateur authentifié)
+# Contrats REST : Endpoints publics (utilisateur authentifié)
 
 **Auth** : JWT access (middleware existant `auth_middleware`). Refus 401 si non authentifié, 403 si compte non actif.
 
@@ -75,7 +75,7 @@ Retrait par l'auteur d'une proposition encore en attente.
 
 ---
 
-## P4. `GET /api/afrolang/salles` (existant — étendu)
+## P4. `GET /api/afrolang/salles` (existant, étendu)
 
 DTO étendu : chaque `SalleResponse` contient maintenant `administrateurs: AdministrateurLight[]` (peuplé via `json_agg` filtré sur `salle_administrateur.actif=TRUE`).
 

@@ -2,10 +2,10 @@
 //!
 //! Isolent l'usage de `livekit_api::services::room::RoomClient` aux deux primitives
 //! utilisées par la modération :
-//! - [`update_participant_can_publish_data`] — bascule `ParticipantPermission.can_publish_data`
+//! - [`update_participant_can_publish_data`], bascule `ParticipantPermission.can_publish_data`
 //!   via `UpdateParticipant` ; le SFU LiveKit refuse alors lui-même tout DataPacket
 //!   émis par un participant non autorisé (FR-015).
-//! - [`publier_evenement_moderation`] — diffuse un DataPacket JSON sur le canal
+//! - [`publier_evenement_moderation`] : diffuse un DataPacket JSON sur le canal
 //!   `RELIABLE` à tous les participants de la room (FR-014/FR-023).
 //!
 //! Le `host` d'API LiveKit est dérivé de la `LivekitConfig.api_url` (URL de
@@ -43,7 +43,7 @@ fn room_client(cfg: &LivekitConfig) -> RoomClient {
 /// LiveKit. Conserve les autres permissions par défaut (`can_subscribe=true`,
 /// `can_publish=true`) afin de ne pas couper l'audio/vidéo.
 ///
-/// Retourne `Ok(())` même si l'opération échoue côté LiveKit — l'enforcement
+/// Retourne `Ok(())` même si l'opération échoue côté LiveKit, l'enforcement
 /// reste appliqué via le statut Postgres au prochain `set_permissions` /
 /// rejointe ; l'erreur est journalisée mais ne propage pas une 500 au client.
 pub async fn update_participant_can_publish_data(
@@ -69,7 +69,7 @@ pub async fn update_participant_can_publish_data(
         .await
     {
         // Cas typique : participant pas encore connecté à la room.
-        // On ne fait pas remonter 500 — le statut Postgres reste la source de
+        // On ne fait pas remonter 500 : le statut Postgres reste la source de
         // vérité et sera réappliqué à la jointure (cf. hook participant_joined).
         eprintln!(
             "[livekit_moderation] update_participant({}, {}, can_publish_data={}) a échoué : {}",
@@ -79,7 +79,7 @@ pub async fn update_participant_can_publish_data(
     Ok(())
 }
 
-/// Bascule la permission `can_publish` d'un participant (modèle webinaire — feature
+/// Bascule la permission `can_publish` d'un participant (modèle webinaire, feature
 /// 001-evenements-streaming, D3). Sert à promouvoir un spectateur en intervenant
 /// (`autorise = true`) ou à le rétrograder (`autorise = false`). `can_subscribe` et
 /// `can_publish_data` restent `true` (le rétrogradé continue de regarder et d'envoyer
@@ -121,7 +121,7 @@ pub async fn update_participant_can_publish(
 
 /// Retire (kick) un participant d'une room LiveKit via `RoomClient.remove_participant`
 /// (feature 001-evenements-streaming, D3). Déconnecte effectivement le participant du
-/// SFU. Erreur journalisée mais non bloquante — le `quitte_at` Postgres reste la source
+/// SFU. Erreur journalisée mais non bloquante, le `quitte_at` Postgres reste la source
 /// de vérité ; un participant déjà absent provoque une erreur ignorée.
 pub async fn retirer_participant(
     cfg: &LivekitConfig,
@@ -144,11 +144,11 @@ pub async fn retirer_participant(
 /// `{type:'admin', subtype:'session_fermee', motif_public}` à tous les
 /// participants, puis détruit la room LiveKit (kick effectif < 5 s, SC-005).
 ///
-/// `motif_public` est volontairement court et générique — le motif détaillé
+/// `motif_public` est volontairement court et générique, le motif détaillé
 /// saisi par l'admin n'est PAS diffusé aux participants (FR : seuls les
 /// admins de salle / créateur reçoivent le motif détaillé via notification).
 ///
-/// Les erreurs LiveKit sont journalisées mais ne propagent pas une 500 — la
+/// Les erreurs LiveKit sont journalisées mais ne propagent pas une 500, la
 /// mutation Postgres (etat='terminee' + salle.desactivee_admin) reste la source
 /// de vérité et déclenche l'éjection effective au prochain heartbeat client.
 pub async fn fermer_session_admin(
@@ -177,7 +177,7 @@ pub async fn fermer_session_admin(
 /// Coupe le micro d'un participant depuis le serveur (`MutePublishedTrack`).
 ///
 /// Le mute est AUTORITAIRE : il s'applique au SFU, pas au bon vouloir du client
-/// visé. Comme dans Meet, le participant reste libre de se réactiver ensuite —
+/// visé. Comme dans Meet, le participant reste libre de se réactiver ensuite, 
 /// couper définitivement la parole relèverait de `can_publish`, pas d'un mute.
 ///
 /// Retourne `true` si une piste micro active a bien été coupée. `false` couvre
@@ -269,7 +269,7 @@ pub async fn couper_micros_room(
 }
 
 /// SID de la piste micro publiée et NON déjà coupée d'un participant.
-/// `None` si le participant ne publie pas de micro ou l'a déjà coupé — inutile
+/// `None` si le participant ne publie pas de micro ou l'a déjà coupé, inutile
 /// alors d'appeler LiveKit.
 fn sid_micro_actif(infos: &proto::ParticipantInfo) -> Option<String> {
     infos
@@ -293,7 +293,7 @@ pub async fn publier_evenement_moderation(
 /// Publie un DataPacket JSON `RELIABLE` sur un `topic` donné.
 ///
 /// Passer par le serveur plutôt que par le client émetteur est nécessaire dès
-/// que l'émetteur n'a pas `can_publish_data` — c'est le cas de tout participant
+/// que l'émetteur n'a pas `can_publish_data` : c'est le cas de tout participant
 /// ordinaire, à qui le token de session refuse le canal data (réservé au
 /// tableau blanc). La clé API serveur, elle, n'est pas soumise à ce grant.
 pub async fn publier_evenement(

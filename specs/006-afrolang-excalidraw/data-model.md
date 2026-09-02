@@ -1,4 +1,4 @@
-# Phase 1 — Data Model: Snapshot Excalidraw persisté
+# Phase 1 : Data Model: Snapshot Excalidraw persisté
 
 **Feature** : `006-afrolang-excalidraw`
 **Date** : 2026-04-24
@@ -9,11 +9,11 @@ Ce document décrit la forme du contenu sérialisé dans la colonne JSONB exista
 
 ## Entités
 
-### 1. `TableauBlancData` (enveloppe déjà existante — inchangée)
+### 1. `TableauBlancData` (enveloppe déjà existante, inchangée)
 
 ```ts
 interface TableauBlancData {
-  donnees: Record<string, unknown>  // conteneur JSONB opaque — voir SnapshotExcalidraw ci-dessous
+  donnees: Record<string, unknown>  // conteneur JSONB opaque : voir SnapshotExcalidraw ci-dessous
   version: number                   // entier incrémental géré côté serveur
 }
 ```
@@ -30,7 +30,7 @@ interface SnapshotExcalidraw {
   version: 1                      // version du format interne, incrémentée en cas d'évolution
   elements: ReadonlyArray<ExcalidrawElement>
   appState: Partial<AppState>     // restreint aux champs non volatils (voir ci-dessous)
-  files?: BinaryFiles             // dictionnaire d'images encodées — voir ci-dessous
+  files?: BinaryFiles             // dictionnaire d'images encodées : voir ci-dessous
 }
 ```
 
@@ -46,7 +46,7 @@ interface SnapshotExcalidraw {
 
 **Filtre des champs volatils d'`appState`** (supprimés avant persistance pour limiter la taille JSONB et éviter les faux conflits multi-navigateurs) :
 
-- `collaborators` (carte des pairs — reconstruite à chaque connexion)
+- `collaborators` (carte des pairs : reconstruite à chaque connexion)
 - `selectedElementIds`, `selectedGroupIds` (sélection locale)
 - `editingElement`, `draggingElement`, `resizingElement` (états d'édition en cours)
 - `cursorButton`, `scrolledOutside` (curseur viewport)
@@ -90,7 +90,7 @@ Retour `false` si donnees est :
   - un objet sans tableau "elements"
 Retour `true` si donnees est :
   - un objet avec elements: Array
-  (les champs type/version peuvent être absents dans d'anciens snapshots Excalidraw — tolérés)
+  (les champs type/version peuvent être absents dans d'anciens snapshots Excalidraw, tolérés)
 ```
 
 Si `false`, initialiser Excalidraw avec `{ elements: [], appState: {}, files: {} }` sans lever d'erreur utilisateur (FR-009).
@@ -117,7 +117,7 @@ Aucune de ces transitions ne requiert de changement de handler Rust ; elles sont
 ## Volumétrie et scale
 
 - Taille typique d'une scène pédagogique modérée (sans images) : 5 à 50 Ko JSON non minifié.
-- Taille maximale attendue avec images (FR-001a = max 2 Mo × quelques images dans la même scène) : ~10 Mo. PostgreSQL JSONB supporte sans difficulté, mais au-delà de quelques Mo la performance de diffusion sur DataChannel LiveKit dégrade — en pratique, l'usage pédagogique reste en deçà.
+- Taille maximale attendue avec images (FR-001a = max 2 Mo × quelques images dans la même scène) : ~10 Mo. PostgreSQL JSONB supporte sans difficulté, mais au-delà de quelques Mo la performance de diffusion sur DataChannel LiveKit dégrade, en pratique, l'usage pédagogique reste en deçà.
 - Un seul `TableauBlancData` par session Afrolang (relation 1-à-1 avec `afrolang.session`).
 
 ---

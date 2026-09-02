@@ -38,11 +38,11 @@ pub struct ChaineTvRow {
     pub langue: String,
     pub est_en_direct: bool,
     pub etat: String,
-    /// « africans » (Africans Télé International) ou « territoire » — cf. 09o.
+    /// « africans » (Africans Télé International) ou « territoire », cf. 09o.
     pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
-    /// Coordonnées publiques de l'équipe (09p) — toutes facultatives.
+    /// Coordonnées publiques de l'équipe (09p), toutes facultatives.
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
     pub contact_whatsapp: Option<String>,
@@ -77,11 +77,11 @@ pub struct ChaineTvResponse {
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     /// Coordonnées publiques de l'équipe (09p). Absent du JSON quand la chaîne
-    /// n'en publie aucune — le bloc « Contacts » disparaît alors de sa page.
+    /// n'en publie aucune : le bloc « Contacts » disparaît alors de sa page.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub contacts: Option<ContactsSupport>,
     /// Thématiques déclarées (US3, table `support_thematique`). Vide tant que
-    /// l'appelant ne les a pas greffées — servir une carte n'oblige pas à les
+    /// l'appelant ne les a pas greffées : servir une carte n'oblige pas à les
     /// charger.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub thematiques: Vec<ThematiquePublique>,
@@ -219,11 +219,11 @@ impl ChaineTvRow {
 // `programme_tele` a disparu avec 09q : le conteneur est l'émission
 // (`models::media_emission`), l'unité diffusable l'épisode
 // (`models::media_episode`). Ce module ne garde que ce qui relève de la PAGE
-// Télé — sections, vedette, référentiels de filtre.
+// Télé : sections, vedette, référentiels de filtre.
 
 
 // ── Sections de la page Télé (US1) ────────────────────────────────────
-// Une section = une chaîne et ses PROGRAMMES publiés — et non plus une vignette
+// Une section = une chaîne et ses PROGRAMMES publiés, et non plus une vignette
 // par vidéo. Chaque programme annonce son nombre d'épisodes et un aperçu borné ;
 // au-delà, la page du programme prend le relais (SC-009).
 
@@ -258,7 +258,7 @@ pub struct TeleSectionsQueryParams {
     pub recherche: Option<String>,
     pub pays: Option<String>,
     pub categorie: Option<String>,
-    /// « africans » ou « territoire » (09o) — filtre « Africans Télé International ».
+    /// « africans » ou « territoire » (09o), filtre « Africans Télé International ».
     pub origine: Option<String>,
     /// Identifiant d'un thème phare (`shared.categorie`, contexte « media ») :
     /// remonte les chaînes qui diffusent au moins un programme sur ce thème.
@@ -268,7 +268,7 @@ pub struct TeleSectionsQueryParams {
     ///
     /// **Liste séparée par des virgules, et non clé répétée** : `web::Query`
     /// s'appuie sur `serde_urlencoded`, qui ne sait pas agréger plusieurs
-    /// occurrences d'une même clé dans un `Vec` — il échoue en 400 dès la
+    /// occurrences d'une même clé dans un `Vec` : il échoue en 400 dès la
     /// PREMIÈRE valeur (« invalid type: string, expected a sequence »), même
     /// seule. Un `Vec<Uuid>` ici rendrait donc le filtre inutilisable ; le
     /// parser en une passe est ce qui évite d'ajouter `serde_qs` pour un champ.
@@ -276,7 +276,7 @@ pub struct TeleSectionsQueryParams {
     /// À ne pas confondre avec `theme`, qui porte sur le thème phare des
     /// programmes diffusés.
     pub thematique: Option<String>,
-    /// Territoire couvert (US4) — remonte aussi les supports continentaux
+    /// Territoire couvert (US4) : remonte aussi les supports continentaux
     /// (FR-036).
     pub territoire: Option<Uuid>,
     /// `true` restreint aux chaînes actuellement en direct.
@@ -301,7 +301,7 @@ pub struct VedetteTeleResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub chaine: Option<ChaineTvResponse>,
     /// `true` quand aucune vedette n'est désignée et que l'épisode servi est le
-    /// plus récent publié — l'interface le signale plutôt que de faire croire à
+    /// plus récent publié : l'interface le signale plutôt que de faire croire à
     /// un choix éditorial.
     pub est_repli: bool,
 }

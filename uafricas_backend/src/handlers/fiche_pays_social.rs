@@ -98,7 +98,7 @@ pub async fn charger_etat_perso(
 }
 
 // ────────────────────────────────────────────────────────────────
-// POST /api/fiches-pays/{id}/reaction — like / dislike (toggle)
+// POST /api/fiches-pays/{id}/reaction, like / dislike (toggle)
 // ────────────────────────────────────────────────────────────────
 
 pub async fn reagir_fiche(
@@ -224,7 +224,7 @@ pub async fn reagir_fiche(
 }
 
 // ────────────────────────────────────────────────────────────────
-// POST /api/fiches-pays/{id}/signalement — bloque au seuil
+// POST /api/fiches-pays/{id}/signalement, bloque au seuil
 // ────────────────────────────────────────────────────────────────
 
 pub async fn signaler_fiche(
@@ -304,7 +304,7 @@ pub async fn signaler_fiche(
 }
 
 // ────────────────────────────────────────────────────────────────
-// POST /api/fiches-pays/{id}/partages — partage vers le mur
+// POST /api/fiches-pays/{id}/partages, partage vers le mur
 // ────────────────────────────────────────────────────────────────
 
 pub async fn partager_fiche(
@@ -370,7 +370,7 @@ pub async fn partager_fiche(
 }
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/fiches-pays/partages — mur communautaire (public, paginé)
+// GET /api/fiches-pays/partages : mur communautaire (public, paginé)
 // ────────────────────────────────────────────────────────────────
 
 pub async fn lister_partages(

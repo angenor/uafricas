@@ -1,4 +1,4 @@
-# Quickstart — Vérification manuelle : Marché Africain fonctionnel
+# Quickstart : Vérification manuelle : Marché Africain fonctionnel
 
 Aucun framework de test n'étant configuré (Contrainte constitution), la validation se fait manuellement selon les scénarios d'acceptation de la spec.
 
@@ -24,7 +24,7 @@ cd uafricas_frontend && pnpm dev   # http://localhost:3000
 
 Comptes de test : `test-user@test.com` / `Test1234` (membre), `test-admin@test.com` / `Test1234`.
 
-## Scénario 1 — Publier (US1)
+## Scénario 1 : Publier (US1)
 
 1. Se connecter en `test-user`, aller sur `/marche-africain`, cliquer **Publier**.
 2. Remplir : type **Vente**, titre, description, catégorie, prix + devise, **négociable** coché, 1 territoire, 2 photos (JPEG/PNG/WebP < 3 Mo).
@@ -33,7 +33,7 @@ Comptes de test : `test-user@test.com` / `Test1234` (membre), `test-admin@test.c
 5. Tenter sans photo ou sans titre → ✅ refus avec message clair (FR-006).
 6. Se déconnecter, cliquer **Publier** → ✅ invite à se connecter (FR-007).
 
-## Scénario 2 — Contacter (US2)
+## Scénario 2 : Contacter (US2)
 
 1. Avec un **2ᵉ compte** membre (non ami de l'auteur), ouvrir l'annonce publiée au scénario 1.
 2. Cliquer **Contacter** / **Je suis intéressé(e)**, écrire un message, envoyer.
@@ -42,7 +42,7 @@ Comptes de test : `test-user@test.com` / `Test1234` (membre), `test-admin@test.c
 5. Sur sa **propre** annonce : ✅ pas de bouton « Contacter » (FR-013).
 6. Non connecté : ✅ invite à se connecter (FR-014).
 
-## Scénario 3 — Gérer ses annonces (US3)
+## Scénario 3 : Gérer ses annonces (US3)
 
 1. `test-user` → page **Mes annonces** : ✅ liste avec états (publiée…).
 2. **Modifier** titre + une photo → ✅ reflété sur le détail public (FR-017).
@@ -50,13 +50,13 @@ Comptes de test : `test-user@test.com` / `Test1234` (membre), `test-admin@test.c
 4. **Supprimer** une annonce → ✅ n'apparaît plus publiquement (FR-019).
 5. Tenter de modifier l'annonce d'un autre (via API/ID) → ✅ `403` (FR-020).
 
-## Scénario 4 — Favoris (US4)
+## Scénario 4 : Favoris (US4)
 
 1. Ajouter 2 annonces aux favoris depuis carte/détail → ✅ visibles dans **Favoris**.
 2. Retirer une → ✅ disparaît (FR-021/FR-022).
 3. Non connecté : ✅ invite à se connecter.
 
-## Scénario 5 — Modération admin (FR-023)
+## Scénario 5 : Modération admin (FR-023)
 
 1. En `test-admin`, suspendre/supprimer une annonce publiée → ✅ retirée du public ; ✅ l'auteur voit l'état mis à jour (FR-024).
 

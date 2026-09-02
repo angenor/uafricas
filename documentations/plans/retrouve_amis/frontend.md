@@ -1,4 +1,4 @@
-# Retrouve Amis — Plan Frontend
+# Retrouve Amis : Plan Frontend
 
 ## Structure des fichiers
 
@@ -41,7 +41,7 @@ uafricas_frontend/app/
 
 ## Pages
 
-### 1. Page d'accueil — `retrouve-amis/index.vue`
+### 1. Page d'accueil : `retrouve-amis/index.vue`
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -100,7 +100,7 @@ uafricas_frontend/app/
 - Avec compte : bouton "Voir détails" mène à la correspondance.
 - Sans compte : CTA vers inscription.
 
-### 2. Formulaire multi-étapes — `retrouve-amis/nouveau.vue`
+### 2. Formulaire multi-étapes : `retrouve-amis/nouveau.vue`
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -183,7 +183,7 @@ uafricas_frontend/app/
 - L'étape 5 génère un titre par défaut si non renseigné.
 - Soumission via `useRetrouvAmis().creerAvis()`.
 
-### 3. Mes recherches — `retrouve-amis/mes-recherches.vue`
+### 3. Mes recherches : `retrouve-amis/mes-recherches.vue`
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -210,7 +210,7 @@ uafricas_frontend/app/
 └──────────────────────────────────────────────────┘
 ```
 
-### 4. Correspondances — `retrouve-amis/correspondances.vue`
+### 4. Correspondances : `retrouve-amis/correspondances.vue`
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -219,7 +219,7 @@ uafricas_frontend/app/
 │  Filtres: [Toutes] [En attente] [Validées]         │
 │                                                    │
 │  ┌────────────────────────────────────────────┐   │
-│  │ ✅ Correspondance validée — Score: 92%      │   │
+│  │ ✅ Correspondance validée : Score: 92%      │   │
 │  │ Avis: "Je cherche mon ami de Douala"        │   │
 │  │ Critères communs: Nom, Ville, École         │   │
 │  │ 💬 3 messages non lus                       │   │
@@ -227,14 +227,14 @@ uafricas_frontend/app/
 │  └────────────────────────────────────────────┘   │
 │                                                    │
 │  ┌────────────────────────────────────────────┐   │
-│  │ ⏳ En attente de confirmation — Score: 71%   │   │
+│  │ ⏳ En attente de confirmation : Score: 71%   │   │
 │  │ Avis: "Recherche ami d'enfance"             │   │
 │  │ Critères communs: Ville, Période            │   │
-│  │ Vous avez confirmé ✓ — En attente de l'autre│   │
+│  │ Vous avez confirmé ✓ : En attente de l'autre│   │
 │  └────────────────────────────────────────────┘   │
 │                                                    │
 │  ┌────────────────────────────────────────────┐   │
-│  │ 🔔 Nouvelle correspondance — Score: 65%     │   │
+│  │ 🔔 Nouvelle correspondance : Score: 65%     │   │
 │  │ Critères communs: Nom (similaire), Ville    │   │
 │  │ [✅ Confirmer]  [❌ Rejeter]                 │   │
 │  └────────────────────────────────────────────┘   │
@@ -242,7 +242,7 @@ uafricas_frontend/app/
 └──────────────────────────────────────────────────┘
 ```
 
-### 5. Messagerie — `retrouve-amis/correspondances/[id].vue`
+### 5. Messagerie : `retrouve-amis/correspondances/[id].vue`
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -309,7 +309,7 @@ uafricas_frontend/app/
 └────────────────────────────────────┘
 ```
 
-### 6. Préférences — `retrouve-amis/parametres.vue`
+### 6. Préférences : `retrouve-amis/parametres.vue`
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -348,7 +348,7 @@ uafricas_frontend/app/
 
 ---
 
-## Composable — `useRetrouvAmis.ts`
+## Composable : `useRetrouvAmis.ts`
 
 ```typescript
 export interface AvisRecherche {

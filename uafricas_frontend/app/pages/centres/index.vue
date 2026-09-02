@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import type { CentreCulturelAPI } from '~/composables/useCentresCulturels'
 
-useAOS()
+/**
+ * Afroculture : premier écran porté sur le gabarit de la refonte.
+ *
+ * La logique de données est celle d'avant, inchangée : même endpoint, même
+ * mapping d'URL d'image, même répartition international / local. Seule la
+ * présentation change. La répartition n'apparaît PAS dans la maquette, mais
+ * elle porte une vraie distinction produit (migration 08d) : la supprimer
+ * pour coller au dessin ferait perdre une fonctionnalité au profit d'une
+ * ressemblance.
+ */
+definePageMeta({ layout: false })
 
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBaseUrl as string
@@ -12,14 +22,8 @@ interface ApiResponse<T> {
   error: string | null
 }
 
-// Images fixes du carrousel.
-const carouselImages: string[] = [
-  'https://africangreens.org/wp-content/uploads/2024/07/joyinafrica.jpg',
-  'https://static.vecteezy.com/ti/vecteur-libre/p1/3500664-banniere-culture-africaine-tradition-vectoriel.jpg',
-]
-
 useHead({
-  title: 'Centres culturels africains et afro-descendants – AfricanS',
+  title: 'Afroculture : centres culturels africains et afro-descendants · AfricanS',
   meta: [
     {
       name: 'description',
@@ -50,94 +54,171 @@ const centres = computed(() => centresData.value ?? [])
 const chargement = computed(() => status.value === 'pending')
 const erreur = computed(() => fetchError.value?.message ?? null)
 
-// Répartition par type : internationaux d'abord, puis locaux.
+const recherche = ref('')
+
+// Modale « C'est quoi Afroculture ? ». Le lien du bandeau existait depuis le
+// lot 3 sans rien derrière : il s'affichait, et cliquer ne faisait rien.
+const decouverteOuverte = ref(false)
+
+/**
+ * Le filtre est appliqué côté client sur le jeu déjà chargé. `listerCentres`
+ * du composable accepte bien un paramètre `recherche`, mais l'employer ici
+ * relancerait un aller-retour réseau à chaque frappe pour une liste qui tient
+ * entièrement en mémoire.
+ */
+const centresFiltres = computed(() => {
+  const q = recherche.value.trim().toLowerCase()
+  if (!q) return centres.value
+  return centres.value.filter(c =>
+    c.nom.toLowerCase().includes(q)
+    || c.ville?.toLowerCase().includes(q)
+    || c.description?.toLowerCase().includes(q),
+  )
+})
+
 const centresInternationaux = computed(() =>
-  centres.value.filter(c => c.type_centre === 'international'),
+  centresFiltres.value.filter(c => c.type_centre === 'international'),
 )
 const centresLocaux = computed(() =>
-  centres.value.filter(c => c.type_centre !== 'international'),
+  centresFiltres.value.filter(c => c.type_centre !== 'international'),
+)
+
+const totalProgrammations = computed(() =>
+  centres.value.reduce((n, c) => n + (c.nombre_programmations ?? 0), 0),
 )
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <div class="pt-28 mx-4 md:mx-16 lg:mx-56 pb-10">
-      <!-- Carrousel -->
-      <CentresCulturelsCentreCulturelCarousel :images="carouselImages" />
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Afroculture"
+        image="/images/africans/heros/hero-afroculture.jpg"
+        aide="C'est quoi Afroculture ?"
+        @aide="decouverteOuverte = true"
+      />
+    </template>
 
-      <!-- Hero section -->
-      <CentresCulturelsCentreCulturelHero :total="centres.length" />
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[{ libelle: 'Africarise', vers: '/codi-moi' }, { libelle: 'Afroculture' }]"
+      />
+    </template>
 
+    <div class="flex flex-col gap-8">
+      <p class="max-w-3xl text-[14px]/[1.4] text-af-corps">
+        Les centres culturels africains et afro-descendants (CCAD) mettent en avant les valeurs et
+        les bonnes pratiques communes aux peuples issus ou descendant d'Afrique. Ils accueillent
+        expositions, spectacles et rencontres interculturelles, en Afrique comme en dehors.
+      </p>
 
-      <!-- Chargement -->
-      <div v-if="chargement" class="flex justify-center items-center py-16">
-        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-green"></div>
-      </div>
-
-      <!-- Erreur -->
-      <div v-else-if="erreur" class="bg-red-50 border border-red-200 rounded-xl p-6 mt-4 text-center">
-        <p class="text-red-600">{{ erreur }}</p>
-        <button
-          class="mt-3 px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
-          @click="refresh()"
-        >
-          Réessayer
-        </button>
-      </div>
-
-      <!-- Liste des centres -->
-      <div v-else>
-        <!-- Section : Centres culturels internationaux -->
-        <section v-if="centresInternationaux.length" class="mt-8">
-          <div class="flex items-center gap-3 mb-4">
-            <font-awesome-icon :icon="['fas', 'earth-africa']" class="text-custom-chocolat text-xl" />
-            <h2 class="text-xl md:text-2xl font-bold text-custom-chocolat">
-              Africans International
-            </h2>
-            <span class="text-sm font-medium text-custom-green border border-custom-chocolat rounded-md px-2.5 py-0.5">
-              {{ centresInternationaux.length }}
-            </span>
+      <!-- Chargement : squelettes aux dimensions réelles des cartes, pour que la
+           mise en page ne saute pas à l'arrivée des données. -->
+      <div v-if="chargement" class="grid gap-5 sm:grid-cols-2">
+        <div v-for="n in 4" :key="n" class="overflow-hidden rounded-[10px] border border-af-bordure bg-white">
+          <div class="aspect-[5/3] w-full animate-pulse bg-af-bordure" />
+          <div class="flex flex-col gap-3 p-4">
+            <div class="h-4 w-2/3 animate-pulse rounded bg-af-bordure" />
+            <div class="h-3 w-full animate-pulse rounded bg-af-bordure" />
+            <div class="h-3 w-1/2 animate-pulse rounded bg-af-bordure" />
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <NuxtLink
-              v-for="centre in centresInternationaux"
-              :key="centre.id"
-              :to="`/centres/${centre.id}`"
-              class="block"
-            >
-              <CentresCulturelsCentreCulturelCard :centre="centre" />
-            </NuxtLink>
-          </div>
-        </section>
-
-        <!-- Section : Centres culturels locaux -->
-        <section v-if="centresLocaux.length" class="mt-10">
-          <div class="flex items-center gap-3 mb-4">
-            <font-awesome-icon :icon="['fas', 'location-dot']" class="text-custom-chocolat text-xl" />
-            <h2 class="text-xl md:text-2xl font-bold text-custom-chocolat">
-              Centres culturels locaux
-            </h2>
-            <span class="text-sm font-medium text-custom-green border border-custom-chocolat rounded-md px-2.5 py-0.5">
-              {{ centresLocaux.length }}
-            </span>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <NuxtLink
-              v-for="centre in centresLocaux"
-              :key="centre.id"
-              :to="`/centres/${centre.id}`"
-              class="block"
-            >
-              <CentresCulturelsCentreCulturelCard :centre="centre" />
-            </NuxtLink>
-          </div>
-        </section>
-
-        <!-- Aucun centre -->
-        <div v-if="centres.length === 0" class="text-center py-16">
-          <p class="text-gray-500 text-lg">Aucun centre culturel pour le moment</p>
         </div>
       </div>
+
+      <!-- Erreur : le message technique est montré, pas masqué derrière un
+           « une erreur est survenue » qui n'aide personne à diagnostiquer. -->
+      <div v-else-if="erreur" class="rounded-[10px] border border-af-live/30 bg-af-live/[0.05] p-6">
+        <p class="flex items-center gap-3 text-[16px]/[1.4] font-bold text-af-encre">
+          <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="text-af-live" />
+          Les centres culturels n'ont pas pu être chargés
+        </p>
+        <p class="mt-2 text-[14px]/[1.4] text-af-corps">{{ erreur }}</p>
+        <AfricansBouton class="mt-5" icone="fa-solid fa-rotate-right" @click="refresh()">
+          Réessayer
+        </AfricansBouton>
+      </div>
+
+      <template v-else>
+        <section v-if="centresInternationaux.length" class="flex flex-col gap-5">
+          <h2 class="flex items-center gap-3 text-[20px]/[1.4] font-bold text-af-chocolat">
+            <font-awesome-icon icon="fa-solid fa-earth-africa" class="size-6" />
+            Africans International
+            <AfricansEtiquette class="ml-1">{{ centresInternationaux.length }}</AfricansEtiquette>
+          </h2>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <AfricansCarteCentre
+              v-for="centre in centresInternationaux"
+              :key="centre.id"
+              :nom="centre.nom"
+              :description="centre.description"
+              :lieu="centre.ville"
+              :image="centre.image_couverture_url"
+              :programmations="centre.nombre_programmations"
+              :vers="`/centres/${centre.id}`"
+            />
+          </div>
+        </section>
+
+        <section v-if="centresLocaux.length" class="flex flex-col gap-5">
+          <h2 class="flex items-center gap-3 text-[20px]/[1.4] font-bold text-af-chocolat">
+            <font-awesome-icon icon="fa-solid fa-location-dot" class="size-6" />
+            Centres culturels locaux
+            <AfricansEtiquette class="ml-1">{{ centresLocaux.length }}</AfricansEtiquette>
+          </h2>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <AfricansCarteCentre
+              v-for="centre in centresLocaux"
+              :key="centre.id"
+              :nom="centre.nom"
+              :description="centre.description"
+              :lieu="centre.ville"
+              :image="centre.image_couverture_url"
+              :programmations="centre.nombre_programmations"
+              :vers="`/centres/${centre.id}`"
+            />
+          </div>
+        </section>
+
+        <!-- Deux vides distincts : « rien ne correspond » n'est pas « rien
+             n'existe », et la sortie proposée n'est pas la même. -->
+        <div v-if="!centresFiltres.length" class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+          <font-awesome-icon icon="fa-solid fa-masks-theater" class="text-4xl text-af-atone-2" />
+          <p class="mt-4 text-[16px]/[1.4] font-bold">
+            {{ recherche ? 'Aucun centre ne correspond à votre recherche' : 'Aucun centre culturel pour le moment' }}
+          </p>
+          <AfricansBouton
+            v-if="recherche"
+            variante="secondaire"
+            class="mt-5"
+            @click="recherche = ''"
+          >
+            Effacer la recherche
+          </AfricansBouton>
+        </div>
+      </template>
     </div>
-  </div>
+
+    <template #rail>
+      <AfricansRecherche v-model="recherche" placeholder="Centre, ville…" />
+
+      <AfricansPanneau titre="Statistiques" icone="fa-solid fa-chart-line">
+        <dl class="flex flex-col">
+          <div class="flex items-baseline justify-between gap-4 py-3">
+            <dt class="text-[14px]/[1.4] font-bold">Centres</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ centres.length }}</dd>
+          </div>
+          <div class="flex items-baseline justify-between gap-4 border-t border-af-bordure py-3">
+            <dt class="text-[14px]/[1.4] font-bold">Internationaux</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ centresInternationaux.length }}</dd>
+          </div>
+          <div class="flex items-baseline justify-between gap-4 border-t border-af-bordure py-3">
+            <dt class="text-[14px]/[1.4] font-bold">Programmations</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ totalProgrammations }}</dd>
+          </div>
+        </dl>
+      </AfricansPanneau>
+    </template>
+
+    <CentresCulturelsDecouverteModale v-model="decouverteOuverte" />
+  </NuxtLayout>
 </template>

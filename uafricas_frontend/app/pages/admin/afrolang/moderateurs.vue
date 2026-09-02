@@ -17,7 +17,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Afrolang — Modérateurs attitrés | Admin',
+  title: 'Afrolang : Modérateurs attitrés | Admin',
 })
 
 const { adminFetch } = useAdmin()
@@ -55,7 +55,7 @@ onMounted(() => chargerSalles())
 <template>
   <div>
     <AdminPageHeader
-      titre="Afrolang — Modérateurs attitrés"
+      titre="Afrolang : Modérateurs attitrés"
       description="Désignez les modérateurs Afrolang pour chaque salle publique (affectation many-to-many, stable)."
       icone="user-shield"
     />
@@ -85,7 +85,7 @@ onMounted(() => chargerSalles())
               >
                 <span class="font-semibold">{{ s.titre }}</span>
                 <span class="text-xs opacity-70">
-                  {{ s.groupe_ethnique_nom || '—' }} ·
+                  {{ s.groupe_ethnique_nom || '-' }} ·
                   {{ s.nombre_moderateurs_attitres }} mod.
                 </span>
               </button>

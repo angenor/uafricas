@@ -3,7 +3,7 @@
 **Feature Branch**: `001-visualisation-arbre`
 **Date**: 2026-03-15
 
-## Entités existantes (Feature 1 — aucune modification SQL)
+## Entités existantes (Feature 1 : aucune modification SQL)
 
 Cette feature est en lecture seule sur le modèle de données existant. Aucune migration SQL requise.
 
@@ -66,7 +66,7 @@ ArbreCompletResponse
 **Notes** :
 - `PersonneNoeud` inclut le `rattachement_id` car les liens référencent les rattachements, pas les personnes directement.
 - `DatePartielle` (existant) : `{ annee?: i16, mois?: i16, jour?: i16 }`
-- Pas de pagination — l'arbre complet est retourné en un seul appel.
+- Pas de pagination : l'arbre complet est retourné en un seul appel.
 
 ## Structures de données frontend (côté client)
 
@@ -74,7 +74,7 @@ ArbreCompletResponse
 
 ```
 NoeudArbre (construit côté client à partir de PersonneNoeud)
-├── id: string (rattachement_id — identifiant unique dans l'arbre)
+├── id: string (rattachement_id : identifiant unique dans l'arbre)
 ├── personne_id: string
 ├── nom: string
 ├── prenoms: string | null

@@ -1,326 +1,215 @@
 <template>
-  <div class="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
-    <!-- Loading -->
-    <div
-      v-if="loading"
-      class="min-h-screen flex items-center justify-center"
-    >
-      <div class="text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mx-auto mb-4"></div>
-        <p class="text-gray-500">Chargement...</p>
-      </div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        :titre="annonce?.titre ?? 'Annonce'"
+        :sous-titre="annonce ? `${annonce.categorie}${annonce.ville ? ' · ' + annonce.ville : ''}` : undefined"
+        :image="annonce?.photo_url ?? null"
+      >
+        <template v-if="annonce" #action>
+          <span
+            class="rounded-lg px-4 py-2 text-[14px]/[1.4] font-bold"
+            :class="classeTypeEchange(annonce.type_echange)"
+          >
+            {{ annonce.type_echange }}
+          </span>
+        </template>
+      </AfricansBandeauModule>
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[{ libelle: 'Afromarket', vers: '/marche-africain' }, { libelle: annonce?.titre ?? 'Annonce' }]"
+      />
+    </template>
+
+    <div v-if="loading" class="flex flex-col gap-5">
+      <div v-for="n in 3" :key="n" class="h-40 animate-pulse rounded-[10px] bg-af-bordure" />
     </div>
 
-    <!-- Not found -->
-    <div
-      v-else-if="!annonce"
-      class="min-h-screen flex items-center justify-center px-4"
-    >
-      <div class="text-center">
-        <font-awesome-icon
-          :icon="['fas', 'circle-exclamation']"
-          class="w-20 h-20 text-gray-300 mx-auto mb-4"
-        />
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">Annonce introuvable</h1>
-        <p class="text-gray-500 mb-6">Cette annonce n'existe pas ou a été supprimée.</p>
-        <NuxtLink
-          to="/marche-africain"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 transition-colors"
-        >
-          <font-awesome-icon :icon="['fas', 'arrow-left']" class="w-4 h-4" />
-          Retour aux annonces
-        </NuxtLink>
-      </div>
+    <div v-else-if="!annonce" class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+      <font-awesome-icon icon="fa-solid fa-store" class="text-4xl text-af-atone-2" />
+      <p class="mt-4 text-[16px]/[1.4] font-bold">Annonce introuvable</p>
+      <p class="mt-2 text-[14px]/[1.4] text-af-corps">Elle a peut-être été retirée par son auteur.</p>
+      <AfricansBouton class="mt-6" variante="secondaire" icone="fa-solid fa-arrow-left" vers="/marche-africain">
+        Retour aux annonces
+      </AfricansBouton>
     </div>
 
-    <!-- Contenu -->
-    <template v-else>
-      <!-- Hero image -->
-      <div class="relative h-64 md:h-80 lg:h-96 bg-gray-900">
-        <img
-          :src="annonce.photo_url || '/images/placeholder.jpg'"
-          :alt="annonce.titre"
-          class="w-full h-full object-cover opacity-90"
-        />
-        <div class="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-black/20"></div>
+    <div v-else class="flex flex-col gap-5">
+      <!-- Prix et métadonnées -->
+      <div class="flex flex-col gap-4 rounded-[10px] border border-af-bordure bg-white p-6">
+        <p class="text-[32px]/[1.2] font-bold text-af-chocolat">{{ prixFormate }}</p>
 
-        <!-- Badge type -->
-        <span
-          class="absolute top-4 left-4 px-4 py-2 rounded-full text-sm font-semibold shadow-lg"
-          :class="getTypeColor(annonce.type_echange)"
-        >
-          {{ annonce.type_echange }}
-        </span>
+        <p class="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px]/[1.4] text-af-atone">
+          <span class="flex items-center gap-1.5">
+            <font-awesome-icon icon="fa-solid fa-location-dot" />
+            {{ paysAffiche }}<template v-if="annonce.ville"> · {{ annonce.ville }}</template>
+          </span>
+          <span class="flex items-center gap-1.5">
+            <font-awesome-icon icon="fa-solid fa-calendar-days" />
+            Publié le {{ dateFormatee }}
+          </span>
+          <span class="flex items-center gap-1.5">
+            <font-awesome-icon icon="fa-solid fa-tag" />
+            {{ annonce.categorie }}
+          </span>
+          <span v-if="annonce.secteur" class="flex items-center gap-1.5">
+            <font-awesome-icon icon="fa-solid fa-briefcase" />
+            {{ annonce.secteur }}
+          </span>
+        </p>
+
+        <AfricansEtiquette v-if="annonce.quantite && annonce.quantite > 1" class="self-start">
+          <font-awesome-icon icon="fa-solid fa-boxes-stacked" class="mr-1.5" />
+          Quantité minimum : {{ annonce.quantite }} unités
+        </AfricansEtiquette>
       </div>
 
-      <!-- Contenu principal -->
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 relative z-10 pb-16">
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <!-- Header -->
-          <div class="p-6 md:p-8 border-b border-gray-100">
-            <!-- Breadcrumb -->
-            <CommonBreadcrumbNav class="mb-6" :custom-breadcrumbs="breadcrumbs" />
+      <img
+        v-if="annonce.photo_url"
+        :src="annonce.photo_url"
+        :alt="annonce.titre"
+        class="w-full rounded-[10px] border border-af-bordure object-cover"
+      />
 
-            <!-- Info bar -->
-            <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
-              <div class="flex items-center gap-1.5">
-                <font-awesome-icon :icon="['fas', 'location-dot']" class="w-4 h-4 text-custom-green" />
-                <span>{{ paysAffiche }}</span>
-                <span v-if="annonce.ville"> - {{ annonce.ville }}</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <font-awesome-icon :icon="['fas', 'calendar-days']" class="w-4 h-4 text-gray-400" />
-                <span>Publié le {{ dateFormatee }}</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <font-awesome-icon :icon="['fas', 'tag']" class="w-4 h-4 text-gray-400" />
-                <span>{{ annonce.categorie }}</span>
-              </div>
-              <div v-if="annonce.secteur" class="flex items-center gap-1.5">
-                <font-awesome-icon :icon="['fas', 'briefcase']" class="w-4 h-4 text-gray-400" />
-                <span>{{ annonce.secteur }}</span>
-              </div>
-            </div>
+      <AfricansAccordeon titre="Description" icone="fa-solid fa-align-left" fond="blanc" par-defaut-ouvert>
+        <p class="text-[14px]/[1.4] whitespace-pre-line text-af-corps">{{ annonce.description }}</p>
+      </AfricansAccordeon>
 
-            <!-- Prix -->
-            <div
-              class="text-3xl md:text-4xl font-bold mb-3"
-              :class="annonce.type_echange === 'Don' ? 'text-blue-600' : 'text-custom-chocolat'"
-            >
-              {{ prixFormate }}
-            </div>
-
-            <!-- Titre -->
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
-              {{ annonce.titre }}
-            </h1>
-
-            <!-- Quantité minimum -->
-            <div
-              v-if="annonce.quantite && annonce.quantite > 1"
-              class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm"
-            >
-              <font-awesome-icon :icon="['fas', 'boxes-stacked']" class="w-4 h-4" />
-              Quantité minimum : {{ annonce.quantite }} unités
-            </div>
-          </div>
-
-          <!-- Image produit -->
-          <div class="p-6 md:p-8 border-b border-gray-100">
-            <div class="rounded-2xl overflow-hidden border border-gray-200">
-              <img
-                :src="annonce.photo_url || '/images/placeholder.jpg'"
-                :alt="annonce.titre"
-                class="w-full max-h-125 object-cover bg-gray-50"
-              />
-            </div>
-          </div>
-
-          <!-- Description -->
-          <div class="p-6 md:p-8 border-b border-gray-100">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <font-awesome-icon :icon="['fas', 'align-left']" class="w-4 h-4 text-custom-green" />
-              Description
-            </h2>
-            <p class="text-gray-600 leading-relaxed whitespace-pre-line">
-              {{ annonce.description }}
-            </p>
-          </div>
-
-          <!-- Contact -->
-          <div class="p-6 md:p-8 border-b border-gray-100">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <font-awesome-icon :icon="['fas', 'user']" class="w-4 h-4 text-custom-green" />
-              Annonceur
-            </h2>
-
-            <div class="flex items-center gap-4">
-              <div class="w-12 h-12 bg-linear-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                {{ annonce.user.prenom.charAt(0) }}{{ annonce.user.nom.charAt(0) }}
-              </div>
-              <div>
-                <p class="font-medium text-gray-800">
-                  {{ annonce.user.prenom }} {{ annonce.user.nom }}
-                </p>
-              </div>
-            </div>
-
-            <!-- Badges de credibilite de l'annonceur -->
-            <div class="mt-4 flex flex-wrap gap-2">
-              <span
-                v-for="badge in badgesCredibilite"
-                :key="badge.cle"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border"
-                :class="badge.valide
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : 'bg-red-50 text-red-600 border-red-200'"
-                :title="badge.valide ? badge.libelleValide : badge.libelleInvalide"
-              >
-                <font-awesome-icon :icon="['fas', badge.icone]" class="w-3.5 h-3.5" />
-                {{ badge.libelle }}
-                <font-awesome-icon
-                  :icon="['fas', badge.valide ? 'circle-check' : 'circle-xmark']"
-                  class="w-3.5 h-3.5"
-                />
-              </span>
-            </div>
-
-            <!-- Coordonnées publiques (annonceur entreprise) -->
-            <div
-              v-if="annonce.type_annonceur === 'entreprise'"
-              class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-2"
-            >
-              <p v-if="annonce.nom_entreprise" class="flex items-center gap-2 text-sm font-semibold text-gray-800">
-                <font-awesome-icon :icon="['fas', 'building']" class="w-4 h-4 text-custom-green" />
-                {{ annonce.nom_entreprise }}
-              </p>
-              <p v-if="annonce.contact_telephone" class="flex items-center gap-2 text-sm text-gray-600">
-                <font-awesome-icon :icon="['fas', 'phone']" class="w-4 h-4 text-gray-400" />
-                <a :href="`tel:${annonce.contact_telephone}`" class="hover:text-custom-green">{{ annonce.contact_telephone }}</a>
-              </p>
-              <p v-if="annonce.contact_email" class="flex items-center gap-2 text-sm text-gray-600">
-                <font-awesome-icon :icon="['fas', 'envelope']" class="w-4 h-4 text-gray-400" />
-                <a :href="`mailto:${annonce.contact_email}`" class="hover:text-custom-green">{{ annonce.contact_email }}</a>
-              </p>
-              <p v-if="annonce.contact_adresse" class="flex items-center gap-2 text-sm text-gray-600">
-                <font-awesome-icon :icon="['fas', 'location-dot']" class="w-4 h-4 text-gray-400" />
-                {{ annonce.contact_adresse }}
-              </p>
-            </div>
-
-            <!-- Site web ou page réseau social -->
+      <AfricansAccordeon
+        v-if="annonce.type_annonceur === 'entreprise' && (annonce.nom_entreprise || annonce.contact_telephone || annonce.contact_email || annonce.contact_adresse)"
+        titre="Coordonnées de l'annonceur"
+        icone="fa-solid fa-building"
+      >
+        <ul class="flex flex-col gap-3">
+          <li v-if="annonce.nom_entreprise" class="flex items-center gap-3 text-[14px]/[1.4] font-bold text-af-encre">
+            <font-awesome-icon icon="fa-solid fa-building" class="w-4 text-af-atone" />
+            {{ annonce.nom_entreprise }}
+          </li>
+          <li v-if="annonce.contact_telephone" class="flex items-center gap-3 text-[14px]/[1.4] text-af-corps">
+            <font-awesome-icon icon="fa-solid fa-phone" class="w-4 text-af-atone" />
+            <a :href="`tel:${annonce.contact_telephone}`" class="transition hover:text-af-chocolat">{{ annonce.contact_telephone }}</a>
+          </li>
+          <li v-if="annonce.contact_email" class="flex items-center gap-3 text-[14px]/[1.4] text-af-corps">
+            <font-awesome-icon icon="fa-solid fa-envelope" class="w-4 text-af-atone" />
+            <a :href="`mailto:${annonce.contact_email}`" class="transition hover:text-af-chocolat">{{ annonce.contact_email }}</a>
+          </li>
+          <li v-if="annonce.contact_adresse" class="flex items-center gap-3 text-[14px]/[1.4] text-af-corps">
+            <font-awesome-icon icon="fa-solid fa-location-dot" class="w-4 text-af-atone" />
+            {{ annonce.contact_adresse }}
+          </li>
+          <li v-if="annonce.site_web_url">
             <a
-              v-if="annonce.site_web_url"
               :href="annonce.site_web_url"
               target="_blank"
               rel="noopener noreferrer"
-              class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-custom-green hover:underline"
+              class="flex items-center gap-3 text-[14px]/[1.4] font-bold text-af-chocolat transition hover:opacity-70"
             >
-              <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="w-4 h-4" />
+              <font-awesome-icon icon="fa-solid fa-arrow-up-right-from-square" class="w-4" />
               Site web / réseau social
             </a>
-          </div>
+          </li>
+        </ul>
+      </AfricansAccordeon>
+    </div>
 
-          <!-- Actions -->
-          <div class="p-6 md:p-8">
-            <!-- Propriétaire de l'annonce (FR-013) -->
-            <div
-              v-if="estProprietaire"
-              class="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center"
-            >
-              <font-awesome-icon :icon="['fas', 'circle-info']" class="w-8 h-8 text-emerald-500 mx-auto mb-3" />
-              <p class="text-emerald-800 font-medium mb-4">Ceci est votre annonce.</p>
-              <NuxtLink
-                to="/marche-africain/mes-annonces"
-                class="inline-flex items-center gap-2 px-6 py-3 bg-custom-green text-white font-medium rounded-xl hover:bg-custom-green/90 transition-colors"
-              >
-                <font-awesome-icon :icon="['fas', 'sliders']" class="w-4 h-4" />
-                Gérer mes annonces
-              </NuxtLink>
-            </div>
-
-            <!-- Si authentifié (et pas propriétaire) -->
-            <div v-else-if="isAuthenticated" class="space-y-4">
-              <button
-                @click="ouvrirContact"
-                class="w-full py-4 font-semibold rounded-xl transition-all flex items-center justify-center gap-3 bg-linear-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-lg hover:shadow-xl"
-              >
-                <font-awesome-icon :icon="['fas', 'hand-point-up']" class="w-5 h-5" />
-                Contacter l'auteur
-              </button>
-
-              <MarcheFavoriBouton
-                :annonce-id="annonce.id"
-                avec-libelle
-                variante="detail"
-                class="w-full"
-              />
-            </div>
-
-            <!-- Si non authentifié -->
-            <div
-              v-else
-              class="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center"
-            >
-              <font-awesome-icon
-                :icon="['fas', 'lock']"
-                class="w-8 h-8 text-amber-500 mx-auto mb-3"
-              />
-              <p class="text-amber-800 font-medium mb-4">
-                Connectez-vous pour contacter l'auteur
+    <template #rail>
+      <template v-if="annonce">
+        <AfricansPanneau titre="Annonceur" icone="fa-solid fa-user">
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+              <span class="grid size-12 shrink-0 place-items-center rounded-full bg-af-chocolat/15 text-[17px]/[1.4] font-bold text-af-chocolat">
+                {{ annonce.user.prenom.charAt(0) }}{{ annonce.user.nom.charAt(0) }}
+              </span>
+              <p class="text-[14px]/[1.4] font-bold text-af-encre">
+                {{ annonce.user.prenom }} {{ annonce.user.nom }}
               </p>
-              <NuxtLink
-                to="/login"
-                class="inline-flex items-center gap-2 px-6 py-3 bg-custom-chocolat text-white font-medium rounded-xl hover:bg-custom-chocolat/90 transition-colors"
-              >
-                <font-awesome-icon :icon="['fas', 'right-to-bracket']" class="w-4 h-4" />
-                Se connecter
-              </NuxtLink>
             </div>
-          </div>
-        </div>
 
-        <!-- Retour -->
-        <div class="mt-8 text-center">
-          <NuxtLink
-            to="/marche-africain"
-            class="inline-flex items-center gap-2 text-gray-600 hover:text-emerald-600 transition-colors"
-          >
-            <font-awesome-icon :icon="['fas', 'arrow-left']" class="w-4 h-4" />
-            Retour à la liste des annonces
-          </NuxtLink>
-        </div>
+            <!-- Chaque badge dit ce qui est vérifié ET ce qui ne l'est pas :
+                 masquer les non-vérifiés laisserait croire à un profil complet. -->
+            <ul class="flex flex-col gap-2">
+              <li
+                v-for="badge in badgesCredibilite"
+                :key="badge.cle"
+                class="flex items-center gap-2 text-[12px]/[1.4]"
+                :class="badge.valide ? 'text-af-vert' : 'text-af-atone'"
+                :title="badge.valide ? badge.libelleValide : badge.libelleInvalide"
+              >
+                <font-awesome-icon :icon="badge.valide ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark'" />
+                {{ badge.libelle }}
+              </li>
+            </ul>
+          </div>
+        </AfricansPanneau>
+
+        <AfricansPanneau titre="Actions" icone="fa-solid fa-hand-point-up">
+          <div v-if="estProprietaire" class="flex flex-col gap-3">
+            <p class="text-[14px]/[1.4] text-af-corps">Ceci est votre annonce.</p>
+            <AfricansBouton pleine-largeur icone="fa-solid fa-sliders" vers="/marche-africain/mes-annonces">
+              Gérer mes annonces
+            </AfricansBouton>
+          </div>
+
+          <div v-else-if="isAuthenticated" class="flex flex-col gap-3">
+            <AfricansBouton pleine-largeur icone="fa-solid fa-envelope" @click="ouvrirContact">
+              Contacter l'auteur
+            </AfricansBouton>
+            <MarcheFavoriBouton :annonce-id="annonce.id" avec-libelle variante="detail" class="w-full" />
+          </div>
+
+          <div v-else class="flex flex-col gap-3">
+            <p class="text-[14px]/[1.4] text-af-corps">
+              Connectez-vous pour contacter l'auteur de cette annonce.
+            </p>
+            <AfricansBouton pleine-largeur icone="fa-solid fa-right-to-bracket" :vers="`/login?redirect=/marche-africain/${annonce.id}`">
+              Se connecter
+            </AfricansBouton>
+          </div>
+        </AfricansPanneau>
+      </template>
+    </template>
+
+    <!-- Contact : la conversation s'ouvre ensuite dans la messagerie ancrée. -->
+    <AfricansModale
+      v-model="showContactModal"
+      titre="Contacter l'annonceur"
+      :sous-titre="annonce?.titre"
+    >
+      <div class="flex flex-col gap-4">
+        <AfricansChamp
+          v-model="messageContact"
+          libelle="Votre message"
+          type="textarea"
+          placeholder="Bonjour, je suis intéressé(e) par votre annonce…"
+          obligatoire
+        />
+        <p v-if="erreurContact" role="alert" class="flex items-start gap-2 text-[12px]/[1.4] text-af-live">
+          <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="mt-0.5" />
+          {{ erreurContact }}
+        </p>
       </div>
 
-      <!-- Modal de contact -->
-      <Teleport to="body">
-        <Transition
-          enter-active-class="transition ease-out duration-300"
-          enter-from-class="opacity-0"
-          enter-to-class="opacity-100"
-          leave-active-class="transition ease-in duration-200"
-          leave-from-class="opacity-100"
-          leave-to-class="opacity-0"
+      <template #actions>
+        <button
+          type="button"
+          class="text-base font-bold text-af-corps transition hover:opacity-70"
+          @click="showContactModal = false"
         >
-          <div v-if="showContactModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div class="absolute inset-0 bg-black/50" @click="showContactModal = false"></div>
-            <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-              <h2 class="text-xl font-bold text-gray-800 mb-1">Contacter l'auteur</h2>
-              <p class="text-sm text-gray-500 mb-4">
-                À propos de : <span class="font-medium text-gray-700">{{ annonce.titre }}</span>
-              </p>
-              <textarea
-                v-model="messageContact"
-                rows="4"
-                maxlength="2000"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-                placeholder="Bonjour, je suis intéressé(e) par votre annonce…"
-              ></textarea>
-              <p v-if="erreurContact" class="text-sm text-red-600 mt-2">{{ erreurContact }}</p>
-              <div class="flex items-center justify-end gap-3 mt-4">
-                <button
-                  type="button"
-                  class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50"
-                  @click="showContactModal = false"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  :disabled="contactEnCours"
-                  class="px-6 py-2.5 rounded-xl bg-linear-to-r from-emerald-500 to-teal-500 text-white font-semibold hover:from-emerald-600 hover:to-teal-600 disabled:opacity-60 flex items-center gap-2"
-                  @click="envoyerContact"
-                >
-                  <span v-if="contactEnCours" class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
-                  Envoyer
-                </button>
-              </div>
-            </div>
-          </div>
-        </Transition>
-      </Teleport>
-    </template>
-  </div>
+          Annuler
+        </button>
+        <AfricansBouton
+          :desactive="contactEnCours"
+          :tourne="contactEnCours"
+          :icone="contactEnCours ? 'fa-solid fa-spinner' : 'fa-solid fa-paper-plane'"
+          @click="envoyerContact"
+        >
+          {{ contactEnCours ? 'Envoi…' : 'Envoyer' }}
+        </AfricansBouton>
+      </template>
+    </AfricansModale>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
@@ -330,12 +219,14 @@ import {
   useMarcheAfricain,
   formatPrix,
   formatDate,
+  classeTypeEchange,
   type AnnonceDetailAPI,
-  type TypeEchange,
 } from '~/composables/useMarcheAfricain'
 import { useMessagerie } from '~/composables/useMessagerie'
 import { useUserStore } from '~/stores/user'
 import { navigateTo } from '#app'
+
+definePageMeta({ layout: false })
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -410,22 +301,6 @@ const paysAffiche = computed(() => {
   }
   return 'Non spécifié'
 })
-
-// Methods
-const getTypeColor = (type: string): string => {
-  switch (type as TypeEchange) {
-    case 'Vente':
-      return 'bg-white text-gray-700'
-    case 'Troc':
-      return 'bg-purple-100 text-purple-700'
-    case 'Don':
-      return 'bg-blue-100 text-blue-700'
-    case "Opportunité d'investissement":
-      return 'bg-amber-100 text-amber-700'
-    default:
-      return 'bg-gray-100 text-gray-700'
-  }
-}
 
 const ouvrirContact = () => {
   if (!isAuthenticated.value) {

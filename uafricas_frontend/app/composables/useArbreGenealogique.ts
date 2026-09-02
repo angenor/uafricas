@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Composable — Arbre généalogique
+// Composable : Arbre généalogique
 // CRUD personnes + liens familiaux via l'API backend
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -57,32 +57,32 @@ export const useArbreGenealogique = () => {
 
   // ── Personnes ─────────────────────────────────────────────────────────
 
-  /** GET /api/arbre/personnes — liste paginée avec recherche optionnelle */
+  /** GET /api/arbre/personnes : liste paginée avec recherche optionnelle */
   const listerPersonnes = async (params?: PersonneQueryParams) => {
     return fetchAvecRetry<ApiResponse<PersonneListe>>(`${apiBase}/api/arbre/personnes`, { query: params })
   }
 
-  /** GET /api/arbre/personnes/:id — fiche complète avec liens */
+  /** GET /api/arbre/personnes/:id : fiche complète avec liens */
   const obtenirPersonne = async (id: string) => {
     return fetchAvecRetry<ApiResponse<PersonneDetail>>(`${apiBase}/api/arbre/personnes/${id}`, {})
   }
 
-  /** POST /api/arbre/personnes — créer une personne (crée l'arbre si nécessaire) */
+  /** POST /api/arbre/personnes : créer une personne (crée l'arbre si nécessaire) */
   const creerPersonne = async (form: CreerPersonneForm) => {
     return fetchAvecRetry<ApiResponse<PersonneDetail>>(`${apiBase}/api/arbre/personnes`, { method: 'POST', body: form })
   }
 
-  /** PUT /api/arbre/personnes/:id — modifier les informations */
+  /** PUT /api/arbre/personnes/:id : modifier les informations */
   const modifierPersonne = async (id: string, form: ModifierPersonneForm) => {
     return fetchAvecRetry<ApiResponse<PersonneDetail>>(`${apiBase}/api/arbre/personnes/${id}`, { method: 'PUT', body: form })
   }
 
-  /** DELETE /api/arbre/personnes/:id — supprimer (soft delete + cascade) */
+  /** DELETE /api/arbre/personnes/:id : supprimer (soft delete + cascade) */
   const supprimerPersonne = async (id: string) => {
     return fetchAvecRetry<ApiResponse<{ message: string }>>(`${apiBase}/api/arbre/personnes/${id}`, { method: 'DELETE' })
   }
 
-  /** POST /api/arbre/personnes/:id/photo — upload photo multipart */
+  /** POST /api/arbre/personnes/:id/photo, upload photo multipart */
   const uploaderPhoto = async (id: string, fichier: File) => {
     const formData = new FormData()
     formData.append('photo', fichier)
@@ -95,19 +95,19 @@ export const useArbreGenealogique = () => {
 
   // ── Arbre complet (visualisation) ────────────────────────────────────
 
-  /** GET /api/arbre/arbre-complet — toutes personnes + tous liens */
+  /** GET /api/arbre/arbre-complet : toutes personnes + tous liens */
   const obtenirArbreComplet = async () => {
     return fetchAvecRetry<ApiResponse<ArbreComplet>>(`${apiBase}/api/arbre/arbre-complet`, {})
   }
 
   // ── Liens familiaux ───────────────────────────────────────────────────
 
-  /** POST /api/arbre/liens — créer un lien familial */
+  /** POST /api/arbre/liens : créer un lien familial */
   const creerLien = async (form: CreerLienForm) => {
     return fetchAvecRetry<ApiResponse<LienFamilialResponse>>(`${apiBase}/api/arbre/liens`, { method: 'POST', body: form })
   }
 
-  /** DELETE /api/arbre/liens/:id — supprimer un lien */
+  /** DELETE /api/arbre/liens/:id : supprimer un lien */
   const supprimerLien = async (id: string) => {
     return fetchAvecRetry<ApiResponse<{ message: string }>>(`${apiBase}/api/arbre/liens/${id}`, { method: 'DELETE' })
   }

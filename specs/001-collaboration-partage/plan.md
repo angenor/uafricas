@@ -10,7 +10,7 @@ Système d'invitations par email avec 2 niveaux de permission (lecture_seule / e
 
 **Language/Version**: Rust Edition 2024 (backend) + TypeScript / Nuxt 4 / Vue 3 (frontend)
 **Primary Dependencies**: Actix-Web 4, sqlx, lettre (SMTP existant)
-**Storage**: PostgreSQL 16 — 2 nouvelles tables + 3 colonnes
+**Storage**: PostgreSQL 16 - 2 nouvelles tables + 3 colonnes
 **Testing**: Vérification manuelle
 **Target Platform**: Web (SSR Nuxt 4)
 **Project Type**: Web application (monorepo)

@@ -9,7 +9,7 @@ Auth : `Authorization: Bearer <access_token>`. Endpoints admin : extracteur `Adm
 
 ## Endpoints publics / membre (`/api/experts`, `/api/auth`)
 
-### POST /api/experts/candidature  *(existant — modifié)*
+### POST /api/experts/candidature  *(existant, modifié)*
 
 Soumettre (ou re-soumettre après refus) une candidature d'expertise. JWT requis.
 
@@ -60,7 +60,7 @@ Récupérer la candidature **active** du membre connecté (pour le suivi US3). J
 
 ---
 
-### PUT /api/auth/profil  *(existant — étendu)*
+### PUT /api/auth/profil  *(existant : étendu)*
 
 Étendu pour accepter `pays_residence_id` (en plus de `fonction`, `ville`, etc.).
 
@@ -71,7 +71,7 @@ Récupérer la candidature **active** du membre connecté (pour le suivi US3). J
 - Validation : `pays_residence_id` doit référencer un `shared.pays` existant.
 - `200 OK` → profil mis à jour ; `422` si pays invalide.
 
-### POST /api/auth/profil/photo  *(existant — inchangé)*
+### POST /api/auth/profil/photo  *(existant, inchangé)*
 
 Upload de la photo de profil (multipart). Utilisé par le formulaire.
 
@@ -145,7 +145,7 @@ Refuser une demande `en_attente` avec commentaire obligatoire.
 
 ---
 
-## Emails (canal de notification — `email.rs`)
+## Emails (canal de notification : `email.rs`)
 
 | Déclencheur | Fonction | Contenu |
 |-------------|----------|---------|

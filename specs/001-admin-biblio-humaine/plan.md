@@ -10,7 +10,7 @@ Ajouter un workflow de validation admin pour les demandes de Bibliothèque Humai
 
 **Language/Version**: Rust 2024 Edition (backend), TypeScript / Nuxt 4 (frontend)
 **Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL), Pinia, $fetch
-**Storage**: PostgreSQL 16 — schema `iam` (2 nouvelles tables + 1 enum)
+**Storage**: PostgreSQL 16 : schema `iam` (2 nouvelles tables + 1 enum)
 **Testing**: N/A (pas de CI configuré)
 **Target Platform**: Linux server (prod) / macOS (dev)
 **Project Type**: Web application (frontend SSR + backend API REST)
@@ -77,7 +77,7 @@ uafricas_frontend/
                 └── [id].vue                 CRÉER
 ```
 
-## Phase 0 — Recherche ✅
+## Phase 0 : Recherche ✅
 
 Voir [research.md](research.md).
 
@@ -87,39 +87,39 @@ Voir [research.md](research.md).
 - La validation admin applique les changements de profil en transaction atomique
 - Pattern admin existant (`useAdminCandidatures`) réutilisé comme modèle
 
-## Phase 1 — Design & Contrats ✅
+## Phase 1 : Design & Contrats ✅
 
-- [data-model.md](data-model.md) — DDL SQL, types Rust, types TypeScript
-- [contracts/api.md](contracts/api.md) — 6 endpoints (2 modifiés, 1 nouveau public, 3 nouveaux admin)
-- [quickstart.md](quickstart.md) — ordre d'implémentation + vérification rapide
+- [data-model.md](data-model.md) : DDL SQL, types Rust, types TypeScript
+- [contracts/api.md](contracts/api.md), 6 endpoints (2 modifiés, 1 nouveau public, 3 nouveaux admin)
+- [quickstart.md](quickstart.md) : ordre d'implémentation + vérification rapide
 
-## Phase 2 — Tâches (à générer via `/speckit.tasks`)
+## Phase 2 : Tâches (à générer via `/speckit.tasks`)
 
-### Groupe A — SQL & Modèles (base)
+### Groupe A : SQL & Modèles (base)
 - A1 : DDL `04b_iam_biblio_demande.sql` (enum + 2 tables + 3 index)
 - A2 : Types Rust dans `bibliotheque_humaine.rs` (DemandeCreeeResponse, MaDemandeResponse)
 - A3 : Modèle admin `src/models/admin/biblio_humaine.rs`
 - A4 : Déclarations dans `mod.rs` (models + handlers)
 
-### Groupe B — Backend handlers (dépend A)
-- B1 : Modifier `inscrire_biblio` — créer demande + vérifier unicité active
+### Groupe B : Backend handlers (dépend A)
+- B1 : Modifier `inscrire_biblio` : créer demande + vérifier unicité active
 - B2 : Ajouter `GET /moi/demande`
-- B3 : Modifier `lister_biblios` — filtrer sur demande valide
+- B3 : Modifier `lister_biblios` : filtrer sur demande valide
 - B4 : Handler admin lister + détail
 - B5 : Handler admin `valider_demande` (transaction atomique + audit)
 - B6 : Handler admin `rejeter_demande` (+ audit)
 - B7 : Routes dans `routes.rs`
 
-### Groupe C — Frontend composables (dépend B)
+### Groupe C : Frontend composables (dépend B)
 - C1 : `obtenirMaDemande()` dans `useBibliothequeHumaine.ts`
 - C2 : Créer `useAdminBibliosHumaines.ts`
 
-### Groupe D — Frontend pages admin (dépend C)
+### Groupe D : Frontend pages admin (dépend C)
 - D1 : `admin/bibliotheques-humaines/index.vue`
 - D2 : `admin/bibliotheques-humaines/[id].vue`
 
-### Groupe E — Frontend candidat (dépend C)
-- E1 : Modifier `profil.vue` — encart statut demande
+### Groupe E : Frontend candidat (dépend C)
+- E1 : Modifier `profil.vue` : encart statut demande
 
 ## Risques & Mitigations
 

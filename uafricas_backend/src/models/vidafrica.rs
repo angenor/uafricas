@@ -3,8 +3,17 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-// ── Vidéo publique — Liste ───────────────────────────────────
+// ── Vidéo publique : Liste ───────────────────────────────────
 
+/// Vidéo du fil `/vidafrica`.
+///
+/// La carte du fil (`vidafrica/CarteVideoFil.vue`) affiche les mêmes
+/// interactions que la page de détail : compteurs, auteur déclaré ET état de
+/// la réaction du membre connecté. Ces champs ne sont donc PAS décoratifs —
+/// voir le commentaire de `lister_videos_publiques` : sans `ma_reaction`, un
+/// membre ayant déjà aimé une vidéo voit le pouce éteint et son clic
+/// SUPPRIME son like au lieu d'en poser un (la route de réaction est une
+/// bascule).
 #[derive(Debug, Serialize)]
 pub struct VideoPubliqueListeResponse {
     pub id: Uuid,
@@ -13,7 +22,14 @@ pub struct VideoPubliqueListeResponse {
     pub description: Option<String>,
     pub vignette_url: Option<String>,
     pub duree_secondes: Option<i32>,
+    /// Auteur réel déclaré à la proposition (texte libre, pas un compte).
+    pub auteur_reel: Option<String>,
     pub langues_disponibles: Vec<String>,
+    pub nombre_likes: i64,
+    pub nombre_dislikes: i64,
+    pub nombre_partages: i64,
+    /// Réaction du membre connecté : "like" | "dislike" | null (anonyme).
+    pub ma_reaction: Option<String>,
     pub created_at: DateTime<Utc>,
 }
 
@@ -25,10 +41,18 @@ pub struct VideoPubliqueListeRow {
     pub description: Option<String>,
     pub vignette_url: Option<String>,
     pub duree_secondes: Option<i32>,
+    pub auteur_reel: Option<String>,
+    /// Agrégée par latérale dans la requête de liste (TEXT[]), jamais par
+    /// une requête par ligne.
+    pub langues_disponibles: Vec<String>,
+    pub nombre_likes: i64,
+    pub nombre_dislikes: i64,
+    pub nombre_partages: i64,
+    pub ma_reaction: Option<String>,
     pub created_at: DateTime<Utc>,
 }
 
-// ── Vidéo publique — Détail ──────────────────────────────────
+// ── Vidéo publique : Détail ──────────────────────────────────
 
 #[derive(Debug, Serialize)]
 pub struct VideoPubliqueDetailResponse {

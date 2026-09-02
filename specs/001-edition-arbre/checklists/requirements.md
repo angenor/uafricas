@@ -33,4 +33,4 @@
 
 - All items passed validation on first iteration.
 - La feature s'appuie sur Feature 1 (CRUD API) et Feature 2 (visualisation). Les assumptions documentent comment le menu contextuel s'intègre avec le panneau contextuel existant.
-- Aucun [NEEDS CLARIFICATION] — les choix de design (menu contextuel dans la mini-fiche, indicateurs d'incomplétude) ont été déterminés par le contexte existant.
+- Aucun [NEEDS CLARIFICATION] : les choix de design (menu contextuel dans la mini-fiche, indicateurs d'incomplétude) ont été déterminés par le contexte existant.

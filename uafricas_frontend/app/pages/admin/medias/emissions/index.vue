@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Programmes (émissions) télé et radio — back-office (feature 009, US1, FR-046).
+ * Programmes (émissions) télé et radio, back-office (feature 009, US1, FR-046).
  *
  * Une seule liste pour les deux familles : les tables diffèrent, les routes
  * non. Le filtre « Famille » n'est qu'un paramètre de la même requête.
@@ -8,7 +8,7 @@
 import type { AdminEmission, TypeSupportAdmin } from '~/types/admin'
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
-useHead({ title: 'Programmes médias — Administration' })
+useHead({ title: 'Programmes médias, Administration' })
 
 const route = useRoute()
 
@@ -34,7 +34,7 @@ const suppressionCible = ref<AdminEmission | null>(null)
 const messageSuppression = ref<string | null>(null)
 
 // ── Création ──────────────────────────────────────────────
-// Le strict nécessaire ici — support, titre, cadence —, le reste sur l'écran
+// Le strict nécessaire ici : support, titre, cadence, le reste sur l'écran
 // de détail. Un programme naît sans épisode et sans fichier : c'est la
 // différence de fond avec l'ancien « programme », qui était le média lui-même.
 const showCreation = ref(false)
@@ -93,7 +93,7 @@ const executerSuppression = async () => {
   }
   catch (e: any) {
     // 409 attendu : un programme portant des épisodes publiés n'est pas
-    // supprimable — le message serveur dit combien.
+    // supprimable : le message serveur dit combien.
     messageSuppression.value = e?.data?.error || e?.message || 'Suppression impossible'
   }
 }
@@ -142,7 +142,7 @@ onMounted(async () => {
 })
 
 const dateFormatee = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
+  iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'
 </script>
 
 <template>
@@ -226,7 +226,7 @@ const dateFormatee = (iso: string | null) =>
               </span>
             </td>
             <td>
-              <span>{{ emission.support?.nom || '—' }}</span>
+              <span>{{ emission.support?.nom || '-' }}</span>
               <span class="badge badge-sm ml-1" :class="emission.type_support === 'chaine_tv' ? 'badge-info' : 'badge-accent'">
                 {{ emission.type_support === 'chaine_tv' ? 'Télé' : 'Radio' }}
               </span>
@@ -296,7 +296,7 @@ const dateFormatee = (iso: string | null) =>
         <div class="form-control mb-3">
           <label class="label"><span class="label-text">Support de rattachement *</span></label>
           <select v-model="creation.support_id" class="select select-bordered">
-            <option value="">— Choisir —</option>
+            <option value="">Choisir</option>
             <option v-for="s in supportsCreation" :key="s.id" :value="s.id">{{ s.nom }}</option>
           </select>
         </div>

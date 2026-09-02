@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Historique chronologique des fermetures/réactivations administratives.
-// Feature 001-ressources-fermeture-session — US3, T065. daisyUI v5.
+// Feature 001-ressources-fermeture-session, US3, T065. daisyUI v5.
 
 interface Props {
   salleId: string
@@ -87,7 +87,7 @@ watch(() => props.salleId, charger)
                 {{ formaterDate(evt.created_at) }}
               </td>
               <td>
-                {{ evt.admin_prenom ?? '' }} {{ evt.admin_nom ?? '—' }}
+                {{ evt.admin_prenom ?? '' }} {{ evt.admin_nom ?? '-' }}
               </td>
               <td>
                 <span
@@ -106,7 +106,7 @@ watch(() => props.salleId, charger)
                   class="line-clamp-2 cursor-help"
                   :title="evt.motif"
                 >{{ evt.motif }}</span>
-                <span v-else class="text-base-content/40">—</span>
+                <span v-else class="text-base-content/40">-</span>
               </td>
             </tr>
           </tbody>

@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Modèles — Collaboration et partage d'arbres
+// Modèles : Collaboration et partage d'arbres
 // ════════════════════════════════════════════════════════════════════════════
 
 use chrono::{DateTime, Utc};

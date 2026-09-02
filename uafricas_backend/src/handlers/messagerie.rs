@@ -1,5 +1,5 @@
 // Handlers du domaine messagerie : flux SSE temps réel, conversations, messages.
-// User Story 3 — chat texte 1-1 entre amis.
+// User Story 3 : chat texte 1-1 entre amis.
 
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
@@ -118,7 +118,7 @@ pub struct FluxQuery {
     pub token: Option<String>,
 }
 
-/// GET /api/messagerie/flux?token=<jwt> — Flux temps réel serveur→client.
+/// GET /api/messagerie/flux?token=<jwt>, Flux temps réel serveur→client.
 /// Auth par token en query (EventSource ne supporte pas les en-têtes, Décision 3).
 pub async fn flux(
     sse: web::Data<RegistreSse>,
@@ -147,7 +147,7 @@ pub async fn flux(
 // Conversations & messages
 // ════════════════════════════════════════════════════════════════
 
-/// GET /api/messagerie/conversations — Liste des conversations (FR-020).
+/// GET /api/messagerie/conversations : Liste des conversations (FR-020).
 pub async fn lister_conversations(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -205,7 +205,7 @@ pub struct MessagesQuery {
     pub limite: Option<i64>,
 }
 
-/// GET /api/messagerie/conversations/{ami_id}/messages — Historique paginé (FR-023).
+/// GET /api/messagerie/conversations/{ami_id}/messages, Historique paginé (FR-023).
 pub async fn lister_messages(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -268,7 +268,7 @@ pub struct EnvoyerMessageBody {
     pub contenu: String,
 }
 
-/// POST /api/messagerie/conversations/{ami_id}/messages — Envoyer un message (FR-021).
+/// POST /api/messagerie/conversations/{ami_id}/messages, Envoyer un message (FR-021).
 pub async fn envoyer_message(
     pool: web::Data<PgPool>,
     sse: web::Data<RegistreSse>,
@@ -365,7 +365,7 @@ pub async fn envoyer_message(
     }))
 }
 
-/// POST /api/messagerie/conversations/{ami_id}/lu — Marquer les messages reçus lus (FR-024).
+/// POST /api/messagerie/conversations/{ami_id}/lu, Marquer les messages reçus lus (FR-024).
 pub async fn marquer_conversation_lue(
     pool: web::Data<PgPool>,
     sse: web::Data<RegistreSse>,
@@ -405,7 +405,7 @@ struct MessageProprietaireRow {
     utilisateur_b_id: Uuid,
 }
 
-/// DELETE /api/messagerie/messages/{id} — Supprimer un de ses messages (FR-028).
+/// DELETE /api/messagerie/messages/{id}, Supprimer un de ses messages (FR-028).
 pub async fn supprimer_message(
     pool: web::Data<PgPool>,
     sse: web::Data<RegistreSse>,
@@ -471,7 +471,7 @@ pub async fn supprimer_message(
     }))
 }
 
-/// GET /api/messagerie/non-lus — Compteur global de messages non lus (FR-024).
+/// GET /api/messagerie/non-lus : Compteur global de messages non lus (FR-024).
 pub async fn compteur_non_lus(
     pool: web::Data<PgPool>,
     req: HttpRequest,

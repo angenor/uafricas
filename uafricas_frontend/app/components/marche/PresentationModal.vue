@@ -10,7 +10,7 @@
         @click.stop
       >
         <!-- En-tête -->
-        <div class="relative shrink-0 bg-linear-to-r from-custom-chocolat to-custom-chocolat/80 px-6 py-6 text-white">
+        <div class="relative shrink-0 bg-linear-to-r from-af-chocolat to-af-chocolat/80 px-6 py-6 text-white">
           <button
             type="button"
             class="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
@@ -34,10 +34,10 @@
         <!-- Corps défilant -->
         <div class="overflow-y-auto px-6 py-6 space-y-8">
           <!-- Le pourquoi -->
-          <p class="text-gray-700 leading-relaxed">
-            Le <strong class="text-gray-900">Marché africain</strong> est une place de marché en
+          <p class="text-af-corps leading-relaxed">
+            Le <strong class="text-af-encre">Marché africain</strong> est une place de marché en
             ligne où l'Afrique, sa diaspora et les communautés afrodescendantes
-            <strong class="text-gray-900">achètent, vendent, échangent et s'entraident</strong>.
+            <strong class="text-af-encre">achètent, vendent, échangent et s'entraident</strong>.
             En reliant directement les producteurs, les PME et les acheteurs, il fait tourner le
             commerce à l'intérieur du continent comme avec le reste du monde, et met en lumière
             les produits, les savoir-faire et les marques de chez nous.
@@ -45,21 +45,21 @@
 
           <!-- Ce que vous pouvez faire -->
           <div>
-            <h3 class="text-sm font-bold uppercase tracking-wide text-custom-chocolat mb-4">
+            <h3 class="text-sm font-bold uppercase tracking-wide text-af-chocolat mb-4">
               Ce que vous pouvez y faire
             </h3>
             <div class="grid sm:grid-cols-2 gap-3">
               <div
                 v-for="item in fonctionnalites"
                 :key="item.titre"
-                class="flex gap-3 rounded-2xl border border-gray-100 bg-gray-50/60 p-4"
+                class="flex gap-3 rounded-2xl border border-af-bordure bg-af-fond/60 p-4"
               >
-                <div class="w-10 h-10 rounded-xl bg-custom-green/10 text-custom-green flex items-center justify-center shrink-0">
+                <div class="w-10 h-10 rounded-lg bg-af-vert/10 text-af-vert flex items-center justify-center shrink-0">
                   <font-awesome-icon :icon="['fas', item.icone]" class="w-5 h-5" />
                 </div>
                 <div class="min-w-0">
-                  <p class="font-semibold text-gray-900 text-sm">{{ item.titre }}</p>
-                  <p class="text-gray-500 text-xs mt-0.5 leading-relaxed">{{ item.texte }}</p>
+                  <p class="font-semibold text-af-encre text-sm">{{ item.titre }}</p>
+                  <p class="text-af-atone text-xs mt-0.5 leading-relaxed">{{ item.texte }}</p>
                 </div>
               </div>
             </div>
@@ -67,28 +67,28 @@
 
           <!-- Les outils -->
           <div>
-            <h3 class="text-sm font-bold uppercase tracking-wide text-custom-chocolat mb-4">
+            <h3 class="text-sm font-bold uppercase tracking-wide text-af-chocolat mb-4">
               Les outils à votre disposition
             </h3>
             <div class="flex flex-wrap gap-2">
               <span
                 v-for="outil in outils"
                 :key="outil"
-                class="inline-flex items-center gap-1.5 rounded-full bg-custom-chocolat/5 text-custom-chocolat text-xs font-medium px-3 py-1.5"
+                class="inline-flex items-center gap-1.5 rounded-full bg-af-chocolat/5 text-af-chocolat text-xs font-medium px-3 py-1.5"
               >
-                <font-awesome-icon :icon="['fas', 'circle-check']" class="w-3 h-3 text-custom-green" />
+                <font-awesome-icon :icon="['fas', 'circle-check']" class="w-3 h-3 text-af-vert" />
                 {{ outil }}
               </span>
             </div>
           </div>
 
           <!-- Notre objectif -->
-          <div class="rounded-2xl bg-custom-green/5 border border-custom-green/15 p-5">
-            <h3 class="flex items-center gap-2 text-sm font-bold text-custom-green mb-2">
+          <div class="rounded-2xl bg-af-vert/5 border border-af-vert/15 p-5">
+            <h3 class="flex items-center gap-2 text-sm font-bold text-af-vert mb-2">
               <font-awesome-icon :icon="['fas', 'seedling']" class="w-4 h-4" />
               Notre objectif
             </h3>
-            <p class="text-gray-700 text-sm leading-relaxed">
+            <p class="text-af-corps text-sm leading-relaxed">
               Faire grandir le commerce entre l'Afrique et sa diaspora, valoriser les savoir-faire
               du continent, et soutenir les PME et les entrepreneurs locaux.
             </p>
@@ -96,10 +96,10 @@
         </div>
 
         <!-- Pied -->
-        <div class="shrink-0 border-t border-gray-100 px-6 py-4 bg-gray-50/50">
+        <div class="shrink-0 border-t border-af-bordure px-6 py-4 bg-af-fond/50">
           <button
             type="button"
-            class="w-full sm:w-auto sm:ml-auto sm:block px-6 py-2.5 rounded-full bg-custom-chocolat text-white font-semibold text-sm hover:bg-custom-chocolat/90 transition-colors"
+            class="w-full sm:w-auto sm:ml-auto sm:block px-6 py-2.5 rounded-full bg-af-chocolat text-white font-semibold text-sm hover:bg-af-chocolat/90 transition-colors"
             @click="$emit('close')"
           >
             J'ai compris

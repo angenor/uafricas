@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Résumé d'engagement — soldes, statut, réputation et progression vers le
+ * Résumé d'engagement : soldes, statut, réputation et progression vers le
  * niveau suivant. Tailwind v4 pur (Principe VI : pas de daisyUI côté membre).
  *
  * Le compte est passé en propriété : la page parente le charge une seule fois

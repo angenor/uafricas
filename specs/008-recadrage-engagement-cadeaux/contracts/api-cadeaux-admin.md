@@ -1,16 +1,16 @@
-# Contrat d'API — Cadeaux virtuels (back-office)
+# Contrat d'API : Cadeaux virtuels (back-office)
 
 **Base** : `/api/admin/engagement` · **Permission requise** : `engagement.gerer` (existante, migration `35`) · **Audit** : `audit::log_action` sur toute mutation (Principe VII).
 
 ---
 
-## 1. `GET /cadeaux` — catalogue complet
+## 1. `GET /cadeaux` : catalogue complet
 
 Renvoie **tous** les cadeaux, actifs et inactifs, avec pour chacun le nombre de transactions abouties (`nombre_envois`) et le montant total collecté. Ce décompte conditionne l'affichage du bouton de suppression côté interface.
 
 ---
 
-## 2. `POST /cadeaux` — créer
+## 2. `POST /cadeaux` : créer
 
 ```json
 { "code": "tam_tam", "libelle": "Tam-tam", "description": null,
@@ -23,20 +23,20 @@ Renvoie **tous** les cadeaux, actifs et inactifs, avec pour chacun le nombre de 
 
 ---
 
-## 3. `PUT /cadeaux/{id}` — modifier
+## 3. `PUT /cadeaux/{id}` : modifier
 
 Tous les champs de la création sont modifiables, sauf `code` (clé stable). Une modification de `prix` ou de `points` **n'affecte aucune transaction passée** : elles portent leurs propres valeurs figées (FR-024, scénario 3 de l'US5).
 
 ---
 
-## 4. `DELETE /cadeaux/{id}` — désactiver ou supprimer
+## 4. `DELETE /cadeaux/{id}` : désactiver ou supprimer
 
 - Aucun envoi abouti → suppression réelle, `204`.
 - Au moins un envoi → **`409`** avec un message explicite ; seule la désactivation (`PUT … actif = false`) est possible (FR-028). La contrainte `ON DELETE RESTRICT` de `transaction_cadeau.cadeau_id` rend l'erreur structurelle : même une requête mal écrite ne peut pas casser l'historique.
 
 ---
 
-## 5. `GET /transactions` — journal comptable
+## 5. `GET /transactions` : journal comptable
 
 **Filtres** : `?membre_id=&sens=offreur|beneficiaire&etat=&mode=&simule=&debut=&fin=&page=&taille=`
 
@@ -81,9 +81,9 @@ Les `totaux` sont calculés **sur le filtre courant**, pas sur la page, et ne co
 
 ---
 
-## 7. `POST /purger-phase-test` — purge de fin de phase de test
+## 7. `POST /purger-phase-test` : purge de fin de phase de test
 
-**Corps** : `{ "confirmation": "PURGER" }` — garde-fou explicite contre le déclenchement accidentel.
+**Corps** : `{ "confirmation": "PURGER" }`, garde-fou explicite contre le déclenchement accidentel.
 
 **Préconditions** : `paiement_reel_actif = true`. Sinon `409` : purger avant le basculement rouvrirait immédiatement la porte au minage.
 

@@ -1,9 +1,9 @@
-# Phase 2 — Frontend UI
+# Phase 2 : Frontend UI
 
 > **Statut** : `TERMINE`
 > **Progression** : 14/14 taches
-> **Bloque par** : [Phase 1 — Backend REST](./01_BACKEND_REST.md) (tous les endpoints doivent etre operationnels)
-> **Debloque** : [Phase 3 — WebRTC Signaling](./03_WEBRTC_SIGNALING.md)
+> **Bloque par** : [Phase 1 : Backend REST](./01_BACKEND_REST.md) (tous les endpoints doivent etre operationnels)
+> **Debloque** : [Phase 3 : WebRTC Signaling](./03_WEBRTC_SIGNALING.md)
 
 ---
 
@@ -12,10 +12,10 @@
 ```
 ✅ = termine    🔄 = en cours    ⬜ = a faire    🔒 = bloque
 
-[✅] Phase 1 — Backend REST         (terminee)
-[✅] Phase 2 — Frontend UI          ◄── TERMINE
-[⬜] Phase 3 — WebRTC Signaling     (debloquee)
-[🔒] Phase 4 — Tableau blanc        (attend Phase 3 complete)
+[✅] Phase 1 : Backend REST         (terminee)
+[✅] Phase 2 : Frontend UI          ◄── TERMINE
+[⬜] Phase 3 : WebRTC Signaling     (debloquee)
+[🔒] Phase 4 : Tableau blanc        (attend Phase 3 complete)
 ```
 
 **Ce que la Phase 1 fournit a cette phase :**
@@ -32,8 +32,8 @@
 
 ## Progression
 
-- [x] **2.1** Creer `app/composables/useAfrolang.ts` — Interfaces TypeScript
-- [x] **2.2** Creer `app/composables/useAfrolang.ts` — Fonctions API + constantes
+- [x] **2.1** Creer `app/composables/useAfrolang.ts`, Interfaces TypeScript
+- [x] **2.2** Creer `app/composables/useAfrolang.ts`, Fonctions API + constantes
 - [x] **2.3** Creer `app/components/afrolang/AfrolangHero.vue`
 - [x] **2.4** Creer `app/components/afrolang/AfrolangStats.vue`
 - [x] **2.5** Creer `app/components/afrolang/SalleCard.vue`
@@ -42,16 +42,16 @@
 - [x] **2.8** Creer `app/components/afrolang/SallePriveeCreateModal.vue`
 - [x] **2.9** Creer `app/components/afrolang/SallePriveeJoinModal.vue`
 - [x] **2.10** Creer `app/components/afrolang/SessionCard.vue` + `SessionTimeline.vue` + `ParticipantBadge.vue`
-- [x] **2.11** Creer `app/pages/afrolang/index.vue` — Liste salles publiques
-- [x] **2.12** Creer `app/pages/afrolang/[id].vue` — Detail salle publique
-- [x] **2.13** Creer `app/pages/afrolang/salle-privee/[id].vue` — Detail salle privee
-- [x] **2.14** Creer `app/pages/afrolang/session/[id].vue` — Page session (placeholder pour Phase 3)
+- [x] **2.11** Creer `app/pages/afrolang/index.vue`, Liste salles publiques
+- [x] **2.12** Creer `app/pages/afrolang/[id].vue`, Detail salle publique
+- [x] **2.13** Creer `app/pages/afrolang/salle-privee/[id].vue`, Detail salle privee
+- [x] **2.14** Creer `app/pages/afrolang/session/[id].vue`, Page session (placeholder pour Phase 3)
 
 ---
 
-## 2.1–2.2 — Composable `app/composables/useAfrolang.ts`
+## 2.1–2.2 : Composable `app/composables/useAfrolang.ts`
 
-### 2.1 — Interfaces TypeScript
+### 2.1 : Interfaces TypeScript
 
 > **Basees sur les DTOs de la Phase 1** (SalleResponse, SallePriveeResponse, SessionResponse, etc.)
 
@@ -192,7 +192,7 @@ export interface CreerSallePriveeForm {
 }
 ```
 
-### 2.2 — Fonctions API + constantes
+### 2.2 : Fonctions API + constantes
 
 ```typescript
 // ── Fonctions API (appellent les endpoints Phase 1) ────────────────────
@@ -246,23 +246,23 @@ export function formatDuree(secondes: number): string {
 
 ---
 
-## 2.3–2.10 — Composants `app/components/afrolang/`
+## 2.3–2.10 : Composants `app/components/afrolang/`
 
 ### Structure des composants
 
 ```
 app/components/afrolang/
-├── AfrolangHero.vue              # 2.3 — Banniere hero
-├── AfrolangStats.vue             # 2.4 — Compteurs animes
-├── SalleCard.vue                 # 2.5 — Card salle publique
-├── SalleFilters.vue              # 2.6 — Filtres desktop
-├── SalleFiltersMobile.vue        # 2.6 — Filtres mobile
-├── SallePriveeCard.vue           # 2.7 — Card salle privee
-├── SallePriveeCreateModal.vue    # 2.8 — Modal creation salle privee
-├── SallePriveeJoinModal.vue      # 2.9 — Modal saisie code d'acces
-├── SessionCard.vue               # 2.10 — Card session
-├── SessionTimeline.vue           # 2.10 — Timeline sessions
-└── ParticipantBadge.vue          # 2.10 — Avatar + role d'un participant
+├── AfrolangHero.vue              # 2.3, Banniere hero
+├── AfrolangStats.vue             # 2.4, Compteurs animes
+├── SalleCard.vue                 # 2.5, Card salle publique
+├── SalleFilters.vue              # 2.6, Filtres desktop
+├── SalleFiltersMobile.vue        # 2.6, Filtres mobile
+├── SallePriveeCard.vue           # 2.7, Card salle privee
+├── SallePriveeCreateModal.vue    # 2.8, Modal creation salle privee
+├── SallePriveeJoinModal.vue      # 2.9, Modal saisie code d'acces
+├── SessionCard.vue               # 2.10, Card session
+├── SessionTimeline.vue           # 2.10, Timeline sessions
+└── ParticipantBadge.vue          # 2.10, Avatar + role d'un participant
 ```
 
 > **Composants Phase 3** (seront ajoutes plus tard dans ce meme dossier) :
@@ -271,41 +271,41 @@ app/components/afrolang/
 > **Composants Phase 4** (seront ajoutes encore apres) :
 > `AfrolangWhiteboard.vue`
 
-### 2.3 — `AfrolangHero.vue`
+### 2.3 : `AfrolangHero.vue`
 - Banniere hero de la page principale
 - Titre "Salles Afrolang", sous-titre, bouton CTA
 - Pattern identique aux autres Hero du projet
 
-### 2.4 — `AfrolangStats.vue`
-- Props: `stats: AfrolangStats` (depuis `GET /api/afrolang/stats` — Phase 1, tache 1.8)
+### 2.4 : `AfrolangStats.vue`
+- Props: `stats: AfrolangStats` (depuis `GET /api/afrolang/stats`, Phase 1, tache 1.8)
 - Affiche 4-5 compteurs avec icones
 - Animation compteur au scroll (via AOS)
 
-### 2.5 — `SalleCard.vue`
-- Props: `salle: SalleAPI` (depuis `GET /api/afrolang/salles` — Phase 1, tache 1.5)
+### 2.5 : `SalleCard.vue`
+- Props: `salle: SalleAPI` (depuis `GET /api/afrolang/salles`, Phase 1, tache 1.5)
 - Affiche: image couverture, titre, langue_cible (badge), nombre de salles privees, sessions en cours (indicateur "En direct" clignotant), moderateur (avatar + nom)
 - Action: `NuxtLink` vers `/afrolang/{id}`
 
-### 2.6 — `SalleFilters.vue` + `SalleFiltersMobile.vue`
-- Filtres: recherche (texte) + langue (select, depuis `GET /api/afrolang/langues` — Phase 1, tache 1.8)
+### 2.6 : `SalleFilters.vue` + `SalleFiltersMobile.vue`
+- Filtres: recherche (texte) + langue (select, depuis `GET /api/afrolang/langues`, Phase 1, tache 1.8)
 - Emit: `@filtre-change` avec les filtres actualises
 
-### 2.7 — `SallePriveeCard.vue`
-- Props: `sallePrivee: SallePriveeAPI` (depuis `GET /api/afrolang/salles/{id}/privees` — Phase 1, tache 1.6)
+### 2.7 : `SallePriveeCard.vue`
+- Props: `sallePrivee: SallePriveeAPI` (depuis `GET /api/afrolang/salles/{id}/privees`, Phase 1, tache 1.6)
 - Affiche: titre, createur, cadenas si `est_protegee`, badge "En direct" si `session_en_cours`, max participants
 - Actions: bouton "Rejoindre" ou "Voir les sessions"
 
-### 2.8 — `SallePriveeCreateModal.vue`
+### 2.8 : `SallePriveeCreateModal.vue`
 - Props: `salleId: string`, `visible: boolean`
-- Appelle `creerSallePrivee()` (→ `POST /api/afrolang/salles/{id}/privees` — Phase 1, tache 1.6)
+- Appelle `creerSallePrivee()` (→ `POST /api/afrolang/salles/{id}/privees`, Phase 1, tache 1.6)
 - Formulaire: titre, description, code_acces (optionnel), max_participants
 
-### 2.9 — `SallePriveeJoinModal.vue`
+### 2.9 : `SallePriveeJoinModal.vue`
 - Props: `sessionId: string`, `visible: boolean`
-- Appelle `rejoindreSession()` (→ `POST /api/afrolang/sessions/{id}/rejoindre` — Phase 1, tache 1.7)
+- Appelle `rejoindreSession()` (→ `POST /api/afrolang/sessions/{id}/rejoindre`, Phase 1, tache 1.7)
 - En Phase 3 : cette modal appellera plutot `genererTokenSession()` pour obtenir le token LiveKit
 
-### 2.10 — `SessionCard.vue` + `SessionTimeline.vue` + `ParticipantBadge.vue`
+### 2.10 : `SessionCard.vue` + `SessionTimeline.vue` + `ParticipantBadge.vue`
 - Utilisent les donnees de `GET /api/afrolang/sessions/{id}` (Phase 1, tache 1.7)
 - `SessionCard` : titre, etat badge, date, duree, participants
 - `SessionTimeline` : vue chronologique des sessions d'une salle privee
@@ -313,21 +313,21 @@ app/components/afrolang/
 
 ---
 
-## 2.11–2.14 — Pages `app/pages/afrolang/`
+## 2.11–2.14 : Pages `app/pages/afrolang/`
 
 ### Arborescence
 
 ```
 app/pages/afrolang/
-├── index.vue                         # 2.11 — Liste des salles publiques
-├── [id].vue                          # 2.12 — Detail salle publique
+├── index.vue                         # 2.11, Liste des salles publiques
+├── [id].vue                          # 2.12, Detail salle publique
 ├── salle-privee/
-│   └── [id].vue                      # 2.13 — Detail salle privee
+│   └── [id].vue                      # 2.13, Detail salle privee
 └── session/
-    └── [id].vue                      # 2.14 — Placeholder session (transforme en Phase 3)
+    └── [id].vue                      # 2.14, Placeholder session (transforme en Phase 3)
 ```
 
-### 2.11 — `afrolang/index.vue`
+### 2.11 : `afrolang/index.vue`
 
 ```
 ┌────────────────────────────────────────────────┐
@@ -345,7 +345,7 @@ app/pages/afrolang/
 └────────────────────────────────────────────────┘
 ```
 
-### 2.12 — `afrolang/[id].vue`
+### 2.12 : `afrolang/[id].vue`
 
 ```
 ┌────────────────────────────────────────────────┐
@@ -363,7 +363,7 @@ app/pages/afrolang/
 └────────────────────────────────────────────────┘
 ```
 
-### 2.13 — `afrolang/salle-privee/[id].vue`
+### 2.13 : `afrolang/salle-privee/[id].vue`
 
 ```
 ┌────────────────────────────────────────────────┐
@@ -379,7 +379,7 @@ app/pages/afrolang/
 └────────────────────────────────────────────────┘
 ```
 
-### 2.14 — `afrolang/session/[id].vue` (PLACEHOLDER — sera transforme en Phase 3)
+### 2.14 : `afrolang/session/[id].vue` (PLACEHOLDER, sera transforme en Phase 3)
 
 ```
 ┌────────────────────────────────────────────────┐

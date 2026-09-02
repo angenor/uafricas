@@ -98,7 +98,7 @@ onMounted(async () => {
 
   const jeton = recupererAccesJeton(sallePriveeId.value)
   if (!jeton) {
-    erreur.value = 'Accès non autorisé — veuillez saisir le code secret depuis la liste des salles privées.'
+    erreur.value = 'Accès non autorisé : veuillez saisir le code secret depuis la liste des salles privées.'
     loading.value = false
     return
   }

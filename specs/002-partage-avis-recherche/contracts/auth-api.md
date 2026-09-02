@@ -242,7 +242,7 @@ Ces endpoints nécessitent un JWT valide dans l'en-tête `Authorization: Bearer 
 |-------|------|--------|-------------|
 | `page` | u32 | 1 | Numéro de page |
 | `par_page` | u32 | 20 | Résultats par page |
-| `etat` | String | — | Filtrer par état (en_attente, approuvee, rejetee) |
+| `etat` | String | : | Filtrer par état (en_attente, approuvee, rejetee) |
 | `tri_par` | String | "created_at" | Champ de tri |
 | `tri_dir` | String | "desc" | Direction (asc, desc) |
 

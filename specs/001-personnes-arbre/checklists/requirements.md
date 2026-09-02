@@ -33,4 +33,4 @@
 
 - Tous les items passent. La spec est prête pour `/speckit.plan`.
 - Session clarifications 2026-03-15 : 5 questions posées, 5 réponses intégrées.
-- Points clés clarifiés : (1) isolation complète dans cette feature — pas de référencement cross-users exposé ; (2) droits de modification déférés à la feature matching ; (3) dates à granularité partielle (année, mois+année, ou complète) ; (4) suppression en cascade de la Personne réelle orpheline ; (5) arbre illimité en taille.
+- Points clés clarifiés : (1) isolation complète dans cette feature, pas de référencement cross-users exposé ; (2) droits de modification déférés à la feature matching ; (3) dates à granularité partielle (année, mois+année, ou complète) ; (4) suppression en cascade de la Personne réelle orpheline ; (5) arbre illimité en taille.

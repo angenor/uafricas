@@ -1,4 +1,4 @@
-# Data Model — Refonte salles Afrolang
+# Data Model : Refonte salles Afrolang
 
 **Branch** : `001-afrolang-salles-refonte`
 **Date** : 2026-04-15
@@ -30,7 +30,7 @@ Ce document décrit l'état **cible** du schéma `afrolang` après la migration.
 
 ---
 
-## Entité 1 — `afrolang.salle` (publique) — INCHANGÉE
+## Entité 1 : `afrolang.salle` (publique), INCHANGÉE
 
 Salle publique thématique (groupe ethnique × langue), créée exclusivement par un administrateur.
 
@@ -49,7 +49,7 @@ Salle publique thématique (groupe ethnique × langue), créée exclusivement pa
 
 ---
 
-## Entité 2 — `afrolang.salle_privee` (durable, code secret) — MODIFIÉE
+## Entité 2 : `afrolang.salle_privee` (durable, code secret), MODIFIÉE
 
 Cercle privé créé par n'importe quel utilisateur connecté, rattaché à exactement une salle publique. Objet **durable** (Q1) : alterne dormant ↔ session live en cours.
 
@@ -57,30 +57,30 @@ Cercle privé créé par n'importe quel utilisateur connecté, rattaché à exac
 
 | Colonne | Type | Contraintes | Diff |
 |---|---|---|---|
-| `id` | UUID | PK, default `uuid_generate_v4()` | — |
-| `salle_id` | UUID | NOT NULL FK `afrolang.salle(id) ON DELETE RESTRICT` | — |
-| `titre` | VARCHAR(350) | NOT NULL, len ≥ 5 | — |
-| `description` | TEXT | NULL OK, len ≤ 1000 | — |
+| `id` | UUID | PK, default `uuid_generate_v4()` |, |
+| `salle_id` | UUID | NOT NULL FK `afrolang.salle(id) ON DELETE RESTRICT` |, |
+| `titre` | VARCHAR(350) | NOT NULL, len ≥ 5 |, |
+| `description` | TEXT | NULL OK, len ≤ 1000 |, |
 | `code_acces_hash` | CHAR(60) | NOT NULL | **NOUVEAU** (bcrypt cost 10, R3) |
-| `image_couverture_url` | VARCHAR(500) | | — (conservée, optionnelle) |
-| `max_participants` | INT | DEFAULT 50 | — |
+| `image_couverture_url` | VARCHAR(500) | |, (conservée, optionnelle) |
+| `max_participants` | INT | DEFAULT 50 |, |
 | `archivee_at` | TIMESTAMPTZ | | Cascade cf. FR-017 |
-| `actif` | BOOLEAN | NOT NULL DEFAULT TRUE | — |
+| `actif` | BOOLEAN | NOT NULL DEFAULT TRUE |, |
 | `cree_par` | UUID | NOT NULL `[xref] iam.utilisateur` | Auteur |
 | `created_at` / `updated_at` / `deleted_at` | TIMESTAMPTZ | | Soft delete |
 
 ### Colonnes supprimées (DROP COLUMN)
 
-- `motif` (`afrolang.motif_salle_privee` ENUM) — concept abandonné
-- `declaration_adulte_at` (TIMESTAMPTZ) — obligation 18+ retirée
-- `visibilite` (`afrolang.visibilite_salle_privee` ENUM) — toutes les salles privées sont listées dans le widget, l'accès est contrôlé par code secret
-- `code_acces` (VARCHAR(100)) — remplacé par `code_acces_hash`
+- `motif` (`afrolang.motif_salle_privee` ENUM), concept abandonné
+- `declaration_adulte_at` (TIMESTAMPTZ), obligation 18+ retirée
+- `visibilite` (`afrolang.visibilite_salle_privee` ENUM), toutes les salles privées sont listées dans le widget, l'accès est contrôlé par code secret
+- `code_acces` (VARCHAR(100)) : remplacé par `code_acces_hash`
 
 ### Index conservés / mis à jour
 
-- `idx_afrolang_privee_salle` sur `(salle_id)` — conservé.
-- `idx_afrolang_privee_unique_par_salle` UNIQUE sur `(salle_id, cree_par) WHERE archivee_at IS NULL AND deleted_at IS NULL` — **conservé** (FR-010, SC-005).
-- `idx_afrolang_privee_visibilite` — **supprimé** (colonne `visibilite` retirée).
+- `idx_afrolang_privee_salle` sur `(salle_id)`, conservé.
+- `idx_afrolang_privee_unique_par_salle` UNIQUE sur `(salle_id, cree_par) WHERE archivee_at IS NULL AND deleted_at IS NULL`, **conservé** (FR-010, SC-005).
+- `idx_afrolang_privee_visibilite` : **supprimé** (colonne `visibilite` retirée).
 
 ### Règles métier (validées en handler)
 
@@ -110,7 +110,7 @@ Fin de session = UPDATE `afrolang.session` SET `etat='terminee'`, `termine_at=no
 
 ---
 
-## Entité 3 — `afrolang.session` — INCHANGÉE
+## Entité 3 : `afrolang.session` : INCHANGÉE
 
 Conservée telle quelle. Pour rappel, contrainte XOR :
 
@@ -129,7 +129,7 @@ CONSTRAINT ck_session_contexte CHECK (
 
 ---
 
-## Entité 4 — `afrolang.tentative_code_acces` — NOUVELLE
+## Entité 4 : `afrolang.tentative_code_acces`, NOUVELLE
 
 Trace les tentatives de saisie du code secret pour appliquer le rate limit (R4).
 
@@ -171,7 +171,7 @@ Mécanisme adhésion / invitation / demande remplacé par code secret unique.
 
 `DROP TABLE afrolang.proposition_salle CASCADE;`
 
-Création de salles publiques par utilisateurs abandonnée — admin uniquement (FR-005).
+Création de salles publiques par utilisateurs abandonnée, admin uniquement (FR-005).
 
 ### Types ENUM associés
 
@@ -187,7 +187,7 @@ DROP TYPE IF EXISTS afrolang.etat_proposition CASCADE;
 
 ## Migration SQL (extrait)
 
-À appliquer in-place dans `uafricas_backend/doc/bd/schemas/08b_afrolang.sql` (le fichier sera reconstruit au prochain `docker-init.sh` car le produit n'est pas en production — Q2).
+À appliquer in-place dans `uafricas_backend/doc/bd/schemas/08b_afrolang.sql` (le fichier sera reconstruit au prochain `docker-init.sh` car le produit n'est pas en production, Q2).
 
 ```sql
 -- Suppressions tables/types legacy
@@ -227,7 +227,7 @@ CREATE INDEX idx_afrolang_tentative_purge  ON … ;
 |---|---|
 | **SQL** | `uafricas_backend/doc/bd/schemas/08b_afrolang.sql` (réécriture in-place) |
 | **Rust models** | `uafricas_backend/src/models/admin/salle_privee.rs` (struct `SallePrivee`, retrait des champs `motif`, `declaration_adulte_at`, `visibilite` ; ajout `code_acces_hash`) |
-| **Rust DTOs** | `uafricas_backend/src/models/afrolang.rs` — DTO `SallePriveeAPI` ne contient JAMAIS `code_acces_hash` (juste `id`, `titre`, `auteur_id`, `auteur_nom`, `salle_id`, `created_at`, `archivee_at`, `session_en_cours: bool`) |
-| **TS types** | `uafricas_frontend/app/composables/useAfrolang.ts` — `SallePriveeAPI` aligné, `SallePriveeCreatePayload { titre, description?, code_acces }`, `SallePriveeJoinPayload { code_acces }` |
+| **Rust DTOs** | `uafricas_backend/src/models/afrolang.rs`, DTO `SallePriveeAPI` ne contient JAMAIS `code_acces_hash` (juste `id`, `titre`, `auteur_id`, `auteur_nom`, `salle_id`, `created_at`, `archivee_at`, `session_en_cours: bool`) |
+| **TS types** | `uafricas_frontend/app/composables/useAfrolang.ts`, `SallePriveeAPI` aligné, `SallePriveeCreatePayload { titre, description?, code_acces }`, `SallePriveeJoinPayload { code_acces }` |
 
 Aucun mock concerné (la feature s'appuie sur la BDD réelle).

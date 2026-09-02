@@ -193,7 +193,7 @@ const soumettre = async () => {
         <div class="divider">Fichiers</div>
 
         <div class="form-control mb-4">
-          <label class="label"><span class="label-text font-medium">Fichier vidéo * (MP4, WebM — max 500 Mo)</span></label>
+          <label class="label"><span class="label-text font-medium">Fichier vidéo * (MP4, WebM, max 500 Mo)</span></label>
           <input
             type="file"
             class="file-input file-input-bordered"
@@ -206,7 +206,7 @@ const soumettre = async () => {
         </div>
 
         <div class="form-control mb-4">
-          <label class="label"><span class="label-text font-medium">Vignette (JPG, PNG, WebP — max 5 Mo)</span></label>
+          <label class="label"><span class="label-text font-medium">Vignette (JPG, PNG, WebP, max 5 Mo)</span></label>
           <input
             type="file"
             class="file-input file-input-bordered"

@@ -31,7 +31,7 @@ export interface BiblioHumaineAPI {
   aRecommande?: boolean
 }
 
-/** Réaction (like / dislike) — état après bascule */
+/** Réaction (like / dislike) : état après bascule */
 export interface ReactionEtatAPI {
   nombreLikes: number
   nombreDislikes: number
@@ -61,7 +61,7 @@ export interface RecommandationBiblioAPI {
   createdAt: string
 }
 
-/** Recommandation — état après bascule */
+/** Recommandation : état après bascule */
 export interface RecommandationEtatAPI {
   nombreRecommandations: number
   aRecommande: boolean
@@ -304,7 +304,7 @@ export const useBibliothequeHumaine = () => {
   }
 
   /**
-   * Recuperer la demande de l'utilisateur courant via l'API (suivi de statut — US4)
+   * Recuperer la demande de l'utilisateur courant via l'API (suivi de statut, US4)
    */
   const obtenirMaDemande = async (): Promise<MaDemandeAPI | null> => {
     chargement.value = true
@@ -354,7 +354,7 @@ export const useBibliothequeHumaine = () => {
   // Interactions : réactions, commentaires, recommandations
   // ──────────────────────────────────────────────────────────────
 
-  /** Aimer / ne pas aimer (toggle) — JWT requis */
+  /** Aimer / ne pas aimer (toggle) : JWT requis */
   const reagirBiblio = async (
     id: string,
     typeReaction: 'like' | 'dislike',
@@ -392,7 +392,7 @@ export const useBibliothequeHumaine = () => {
     }
   }
 
-  /** Ajouter un commentaire — JWT requis */
+  /** Ajouter un commentaire : JWT requis */
   const ajouterCommentaireBiblio = async (
     id: string,
     contenu: string,
@@ -416,7 +416,7 @@ export const useBibliothequeHumaine = () => {
     }
   }
 
-  /** Supprimer son propre commentaire — JWT requis */
+  /** Supprimer son propre commentaire : JWT requis */
   const supprimerCommentaireBiblio = async (
     id: string,
     commentaireId: string,
@@ -435,7 +435,7 @@ export const useBibliothequeHumaine = () => {
     }
   }
 
-  /** Recommander (upsert avec témoignage facultatif) — JWT requis */
+  /** Recommander (upsert avec témoignage facultatif), JWT requis */
   const recommanderBiblio = async (
     id: string,
     message?: string,
@@ -459,7 +459,7 @@ export const useBibliothequeHumaine = () => {
     }
   }
 
-  /** Retirer sa recommandation — JWT requis */
+  /** Retirer sa recommandation : JWT requis */
   const retirerRecommandationBiblio = async (id: string): Promise<RecommandationEtatAPI | null> => {
     try {
       const reponse = await $fetch<ApiResponse<RecommandationEtatAPI>>(

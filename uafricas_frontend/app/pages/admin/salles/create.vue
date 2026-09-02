@@ -111,7 +111,7 @@ onMounted(() => chargerGroupes())
                 :value="g.id"
                 :disabled="g.salle_active"
               >
-                {{ g.nom }}{{ g.pays_nom ? ` — ${g.pays_nom}` : '' }}{{ g.salle_active ? ' (déjà une salle active)' : '' }}
+                {{ g.nom }}{{ g.pays_nom ? `, ${g.pays_nom}` : '' }}{{ g.salle_active ? ' (déjà une salle active)' : '' }}
               </option>
             </select>
             <label v-if="groupeDejaAssocie" class="label">

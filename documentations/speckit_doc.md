@@ -1,4 +1,4 @@
-# Spec Kit — mémo d'utilisation
+# Spec Kit : mémo d'utilisation
 
 > Version installée : **spec-kit v0.14.4** (CLI `specify`).
 > Depuis la v0.14, l'intégration Claude passe par des **skills** (`.claude/skills/speckit-*`) :
@@ -12,7 +12,7 @@ constitution → specify → [clarify] → plan → [checklist] → tasks → [a
                             ↑                                                    mon code fait-il vraiment
                     ma spec est-elle bien écrite ?                               ce que la spec demande ?
 
-                                    [taskstoissues] — à tout moment après tasks,
+                                    [taskstoissues] : à tout moment après tasks,
                                           pour suivre le travail sur GitHub
 ```
 
@@ -23,20 +23,20 @@ Les étapes entre `[crochets]` sont optionnelles. Les autres forment le chemin n
 | Commande | Rôle |
 |---|---|
 | `/speckit-constitution` | Définir les principes du projet (qualité, UX, conventions). Une fois, puis on n'y revient qu'en cas de changement de cap. |
-| `/speckit-specify` | Décrire **quoi** construire et **pourquoi** — sans choix technique. Crée la branche + `specs/<nnn>-<nom>/spec.md`. |
+| `/speckit-specify` | Décrire **quoi** construire et **pourquoi**, sans choix technique. Crée la branche + `specs/<nnn>-<nom>/spec.md`. |
 | `/speckit-plan` | Le **comment** : stack, architecture, modèle de données → `plan.md`. |
 | `/speckit-tasks` | Découper le plan en tâches ordonnées → `tasks.md`. |
 | `/speckit-implement` | Exécuter les tâches et écrire le code. |
 
 ## Les étapes optionnelles
 
-### `/speckit-clarify` — avant le plan
+### `/speckit-clarify` : avant le plan
 
 Pose jusqu'à 5 questions ciblées sur les zones floues de la spec, puis **réécrit les réponses dans `spec.md`**. À lancer quand la spec a été écrite vite.
 
-### `/speckit-checklist` — le correcteur de votre spec
+### `/speckit-checklist` : le correcteur de votre spec
 
-Relit `spec.md` et signale **ce que vous avez oublié d'écrire ou écrit de façon trop vague**. Il ne regarde jamais le code — il évalue la qualité de vos exigences.
+Relit `spec.md` et signale **ce que vous avez oublié d'écrire ou écrit de façon trop vague**. Il ne regarde jamais le code : il évalue la qualité de vos exigences.
 
 > Votre spec est une commande passée à un artisan. Checklist est le collègue qui la relit avant envoi et demande : « tu as dit "livraison rapide"… rapide, c'est combien de jours ? »
 
@@ -51,13 +51,13 @@ Si la spec dit *« les membres gagnent des points quand ils publient, les plus a
 
 Ce sont des **questions à vous**, pas des tests. Jamais « vérifier que le compteur affiche 10 points ».
 
-### `/speckit-analyze` — après les tâches
+### `/speckit-analyze` : après les tâches
 
 Rapport de cohérence croisée **spec ↔ plan ↔ tasks** : contradictions, exigences sans tâche correspondante. Lecture seule, ne modifie rien.
 
 > Différence avec `converge` : `analyze` compare les **documents entre eux**, `converge` compare les documents **au code**.
 
-### `/speckit-converge` — l'inspecteur des travaux finis
+### `/speckit-converge` : l'inspecteur des travaux finis
 
 À lancer **après** `implement`. Compare la spec au code réellement écrit et **ajoute les oublis en bas de `tasks.md`** :
 
@@ -81,7 +81,7 @@ Puis on relance `/speckit-implement` pour traiter ces nouvelles tâches.
 
 **Garanties :** il n'écrit **jamais** de code, ne supprime **jamais** rien, n'ajoute que des lignes à la fin de `tasks.md`. Si tout est conforme, il ne touche pas au fichier et répond « ✅ Converged ».
 
-### `/speckit-taskstoissues` — vers GitHub
+### `/speckit-taskstoissues` : vers GitHub
 
 Transforme chaque tâche de `tasks.md` en **issue GitHub** sur `github.com/angenor/uafricas` :
 
@@ -91,7 +91,7 @@ Transforme chaque tâche de `tasks.md` en **issue GitHub** sur `github.com/angen
 
 Utile à plusieurs, ou pour suivre l'avancement dans l'onglet Issues. Il saute les issues déjà créées (relançable sans doublons) et refuse d'écrire ailleurs que sur le dépôt du remote.
 
-**Prérequis :** le connecteur GitHub (MCP) doit être activé — ce n'est pas le cas par défaut.
+**Prérequis :** le connecteur GitHub (MCP) doit être activé : ce n'est pas le cas par défaut.
 
 ## Commandes terminal
 

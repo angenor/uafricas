@@ -1,9 +1,11 @@
 <script setup lang="ts">
+
+definePageMeta({ layout: false })
 /**
  * Page d'un **programme** de radio (feature 009, US1 §3 et US5).
  *
- * Elle existe pour deux raisons : donner une adresse propre à une série — un
- * aperçu social sur un épisode ne dit rien du programme — et porter la vie
+ * Elle existe pour deux raisons : donner une adresse propre à une série, un
+ * aperçu social sur un épisode ne dit rien du programme, et porter la vie
  * communautaire du programme lui-même. Ses compteurs sont ceux du **programme
  * seul**, jamais la somme de ceux de ses épisodes (FR-048) : additionner les
  * deux ferait passer 40 commentaires d'épisodes pour un débat sur la série.
@@ -11,7 +13,7 @@
  * `useAsyncData` au niveau racine ⇒ rendu côté serveur, donc lisible par les
  * robots des réseaux sociaux.
  *
- * Tailwind v4 pur — page publique, aucune classe daisyUI (principe VI).
+ * Tailwind v4 pur : page publique, aucune classe daisyUI (principe VI).
  */
 import { LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
 
@@ -33,10 +35,10 @@ const lienChaine = computed(() =>
   emission.value?.support?.slug ? `/medias/stations/${emission.value.support.slug}` : null,
 )
 
-const breadcrumbs = computed(() => [
-  { label: 'Médias', to: '/medias' },
-  { label: 'Radio', to: '/medias/radios' },
-  { label: emission.value?.titre || 'Programme', to: undefined },
+const filAriane = computed(() => [
+  { libelle: 'Médias', vers: '/medias' },
+  { libelle: 'Radio', vers: '/medias/radios' },
+  { libelle: emission.value?.titre || 'Programme' },
 ])
 
 // ── SEO / Open Graph ──────────────────────────────────────────────
@@ -49,7 +51,7 @@ const descriptionOg = computed(() =>
 
 useHead(() => {
   if (!emission.value) return {}
-  const titre = `${emission.value.titre} — Radio — UAfricas`
+  const titre = `${emission.value.titre}, Radio | UAfricas`
   return {
     title: titre,
     meta: [
@@ -70,41 +72,38 @@ useHead(() => {
 </script>
 
 <template>
-  <main class="min-h-screen bg-neutral-950">
-    <div v-if="chargement" class="flex items-center justify-center h-screen">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400" />
+  <NuxtLayout name="africans">
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="filAriane" />
+    </template>
+
+    <div v-if="chargement" class="flex items-center justify-center py-24">
+      <div class="animate-spin rounded-full h-12 w-12 text-3xl text-af-chocolat" />
     </div>
 
     <!-- Un programme retiré est indiscernable d'un programme inexistant. -->
     <div
       v-else-if="!emission"
-      class="flex flex-col items-center justify-center h-screen px-4 text-center"
+      class="flex flex-col items-center justify-center py-24 px-4 text-center"
     >
-      <font-awesome-icon :icon="['fas', 'microphone']" class="w-14 h-14 text-neutral-700 mb-4" />
-      <h1 class="text-2xl font-bold text-white mb-2">Programme introuvable</h1>
-      <p class="text-gray-400 mb-4">
+      <font-awesome-icon :icon="['fas', 'microphone']" class="w-14 h-14 text-af-atone-2 mb-4" />
+      <h1 class="text-2xl font-bold text-af-encre mb-2">Programme introuvable</h1>
+      <p class="text-af-corps mb-4">
         Ce programme n'existe pas, ou n'est pas publié.
       </p>
-      <NuxtLink to="/medias/radios" class="text-yellow-400 hover:underline">
+      <NuxtLink to="/medias/radios" class="font-bold text-af-chocolat hover:underline">
         &#8592; Retour à la radio
       </NuxtLink>
     </div>
 
-    <div v-else class="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+    <div v-else class="flex flex-col gap-6">
       <!-- Fil d'Ariane. `CommonFilAriane` était monté ici alors que ce composant
            N'EXISTE PAS : le fil était donc mort sur cette page. Remplacé par le
            <nav> écrit à la main qu'emploient les autres pages médias (D8). -->
-      <nav aria-label="Fil d'Ariane" class="mb-6 text-sm text-gray-400">
-        <template v-for="(fil, i) in breadcrumbs" :key="i">
-          <NuxtLink v-if="fil.to" :to="fil.to" class="hover:text-custom-chocolat">{{ fil.label }}</NuxtLink>
-          <span v-else class="text-white">{{ fil.label }}</span>
-          <span v-if="i < breadcrumbs.length - 1" class="mx-2">/</span>
-        </template>
-      </nav>
 
       <!-- Identité du programme -->
       <header class="flex flex-col sm:flex-row gap-6 mb-10">
-        <div class="w-full sm:w-72 shrink-0 aspect-video rounded-xl overflow-hidden bg-neutral-900">
+        <div class="w-full sm:w-72 shrink-0 aspect-video rounded-xl overflow-hidden bg-af-fond">
           <img
             v-if="emission.image_couverture_url"
             :src="emission.image_couverture_url"
@@ -112,16 +111,16 @@ useHead(() => {
             class="w-full h-full object-cover"
           >
           <span v-else class="w-full h-full flex items-center justify-center">
-            <font-awesome-icon :icon="['fas', 'layer-group']" class="text-4xl text-neutral-700" />
+            <font-awesome-icon :icon="['fas', 'layer-group']" class="text-4xl text-af-atone-2" />
           </span>
         </div>
 
         <div class="min-w-0 flex flex-col justify-center">
-          <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-white mb-2">
+          <h1 class="font-oswald text-3xl sm:text-4xl font-bold text-af-encre mb-2">
             {{ emission.titre }}
           </h1>
-          <p class="text-gray-400 text-sm flex flex-wrap items-center gap-x-3 gap-y-1 mb-4">
-            <NuxtLink v-if="lienChaine" :to="lienChaine" class="hover:text-yellow-400">
+          <p class="text-af-corps text-sm flex flex-wrap items-center gap-x-3 gap-y-1 mb-4">
+            <NuxtLink v-if="lienChaine" :to="lienChaine" class="hover:text-af-chocolat">
               {{ emission.support?.nom }}
             </NuxtLink>
             <span v-else-if="emission.support">{{ emission.support.nom }}</span>
@@ -137,7 +136,7 @@ useHead(() => {
             :texte="emission.description"
             :lignes="4"
             sombre
-            class="text-gray-300 text-sm"
+            class="text-af-corps text-sm"
           />
           <!-- La ligne héritée « Animation : … · Production : … » est RETIRÉE
                (FR-034) : conservée à côté du bloc d'équipe, elle offrirait deux
@@ -163,7 +162,7 @@ useHead(() => {
         qu'ils ne le sont jamais (FR-048).
       -->
       <div class="mb-4">
-        <p class="text-xs uppercase tracking-wide text-gray-500 mb-2">
+        <p class="text-xs uppercase tracking-wide text-af-atone mb-2">
           Réactions au programme
         </p>
         <MediaReactionsBar
@@ -194,8 +193,8 @@ useHead(() => {
 
       <!-- Les épisodes, paginés (SC-009) : leurs compteurs sont les leurs.
            Un programme sans aucun épisode publié RESTE consultable (FR-033) et
-           le dit explicitement — il renvoyait un 404 avant la feature 010. -->
-      <p v-if="!emission.nombre_episodes" class="mb-12 text-sm text-gray-500">
+           le dit explicitement : il renvoyait un 404 avant la feature 010. -->
+      <p v-if="!emission.nombre_episodes" class="mb-12 text-sm text-af-atone">
         Aucun enregistrement n'est encore publié pour ce programme.
       </p>
       <div v-else class="mb-12">
@@ -224,5 +223,5 @@ useHead(() => {
         @close="showPartage = false"
       />
     </div>
-  </main>
+  </NuxtLayout>
 </template>

@@ -9,14 +9,14 @@
 
 ### Session 2026-04-06
 
-- Q: Mode de présentation du parcours (modal compact, overlay plein écran, ou page dédiée) ? → A: Overlay plein écran — le parcours occupe tout l'écran avec un fond opaque ou semi-transparent, offrant un canvas optimal pour les animations.
-- Q: Quelles pages sont concernées (index seule, index + visualisation, ou toutes) ? → A: Les deux pages — index.vue (ajout libre) et visualisation.vue (ajout contextuel parent/enfant/conjoint depuis un noeud). Le parcours ludique s'adapte au contexte d'origine.
+- Q: Mode de présentation du parcours (modal compact, overlay plein écran, ou page dédiée) ? → A: Overlay plein écran : le parcours occupe tout l'écran avec un fond opaque ou semi-transparent, offrant un canvas optimal pour les animations.
+- Q: Quelles pages sont concernées (index seule, index + visualisation, ou toutes) ? → A: Les deux pages : index.vue (ajout libre) et visualisation.vue (ajout contextuel parent/enfant/conjoint depuis un noeud). Le parcours ludique s'adapte au contexte d'origine.
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Parcours guidé pas-à-pas pour ajouter une personne (Priority: P1)
 
-L'utilisateur clique sur "Ajouter une personne" et au lieu d'un formulaire classique, un overlay plein écran s'ouvre avec un assistant ludique qui lui pose des questions une par une, avec des transitions animées entre chaque étape. Chaque question est formulée de manière chaleureuse et engageante (ex: "Comment s'appelle ce membre de votre famille ?" plutôt que "Nom"). L'utilisateur répond à chaque question, voit une animation de transition vers la question suivante, et peut revenir en arrière à tout moment. À la fin, un récapitulatif animé apparaît avant la validation finale. Ce parcours est disponible depuis la page liste (ajout libre) et depuis la page visualisation (ajout contextuel lié à un noeud existant — parent, enfant ou conjoint).
+L'utilisateur clique sur "Ajouter une personne" et au lieu d'un formulaire classique, un overlay plein écran s'ouvre avec un assistant ludique qui lui pose des questions une par une, avec des transitions animées entre chaque étape. Chaque question est formulée de manière chaleureuse et engageante (ex: "Comment s'appelle ce membre de votre famille ?" plutôt que "Nom"). L'utilisateur répond à chaque question, voit une animation de transition vers la question suivante, et peut revenir en arrière à tout moment. À la fin, un récapitulatif animé apparaît avant la validation finale. Ce parcours est disponible depuis la page liste (ajout libre) et depuis la page visualisation (ajout contextuel lié à un noeud existant, parent, enfant ou conjoint).
 
 **Why this priority**: C'est le coeur de la demande : transformer l'expérience d'ajout en parcours ludique. Sans ce parcours étape par étape, la feature n'existe pas.
 
@@ -122,7 +122,7 @@ Le parcours ludique collecte exactement les mêmes informations que le formulair
 - **FR-011**: Le système DOIT interrompre proprement les animations en cours si l'utilisateur navigue rapidement entre les étapes
 - **FR-012**: Le système DOIT conserver la même structure de données en sortie que le formulaire actuel pour compatibilité avec l'API existante
 - **FR-013**: Le système DOIT être responsive et fonctionnel sur mobile avec des animations adaptées (réduites si nécessaire pour la performance)
-- **FR-014**: Le parcours ludique DOIT être accessible depuis la page liste (index.vue — ajout libre) ET depuis la page visualisation (visualisation.vue — ajout contextuel parent/enfant/conjoint)
+- **FR-014**: Le parcours ludique DOIT être accessible depuis la page liste (index.vue, ajout libre) ET depuis la page visualisation (visualisation.vue, ajout contextuel parent/enfant/conjoint)
 - **FR-015**: Lorsque le parcours est lancé depuis la visualisation, le système DOIT adapter les textes d'accroche au contexte (type de lien familial et nom de la personne liée)
 
 ### Key Entities

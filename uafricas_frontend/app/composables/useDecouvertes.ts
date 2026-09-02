@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Composable — Découvertes (matching inter-arbres)
+// Composable : Découvertes (matching inter-arbres)
 // API wrapper pour les endpoints de matching
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -21,7 +21,7 @@ export const useDecouvertes = () => {
     Authorization: `Bearer ${userStore.accessToken}`,
   })
 
-  /** GET /api/arbre/decouvertes — liste toutes les suggestions par section */
+  /** GET /api/arbre/decouvertes : liste toutes les suggestions par section */
   const listerDecouvertes = async () => {
     return $fetch<ApiResponse<DecouvertesResponse>>(`${apiBase}/api/arbre/decouvertes`, {
       headers: enTete(),
@@ -44,7 +44,7 @@ export const useDecouvertes = () => {
     })
   }
 
-  /** GET /api/arbre/decouvertes/:id/branches — arbre complet de l'autre utilisateur */
+  /** GET /api/arbre/decouvertes/:id/branches, arbre complet de l'autre utilisateur */
   const obtenirBranches = async (suggestionId: string) => {
     return $fetch<ApiResponse<any>>(`${apiBase}/api/arbre/decouvertes/${suggestionId}/branches`, {
       headers: enTete(),

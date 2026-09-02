@@ -167,7 +167,7 @@ async fn construire_response(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/sabbatiques — Lister les programmes avec filtres et pagination
+// GET /api/sabbatiques : Lister les programmes avec filtres et pagination
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_programmes(
     pool: web::Data<PgPool>,
@@ -305,7 +305,7 @@ pub async fn lister_programmes(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/sabbatiques/{id} — Obtenir le detail d'un programme
+// GET /api/sabbatiques/{id} : Obtenir le detail d'un programme
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_programme(
     pool: web::Data<PgPool>,
@@ -405,7 +405,7 @@ pub async fn obtenir_programme(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/sabbatiques — Creer un programme (multipart/form-data)
+// POST /api/sabbatiques : Creer un programme (multipart/form-data)
 // ──────────────────────────────────────────────────────────────
 pub async fn creer_programme(
     pool: web::Data<PgPool>,
@@ -757,7 +757,7 @@ pub async fn creer_programme(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/sabbatiques/mes-programmes — Programmes créés par l'utilisateur
+// GET /api/sabbatiques/mes-programmes, Programmes créés par l'utilisateur
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_mes_programmes(
     pool: web::Data<PgPool>,
@@ -792,7 +792,7 @@ pub async fn lister_mes_programmes(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/sabbatiques/{id}/candidatures — Candidater a un programme
+// POST /api/sabbatiques/{id}/candidatures, Candidater a un programme
 // ──────────────────────────────────────────────────────────────
 pub async fn candidater(
     pool: web::Data<PgPool>,
@@ -992,7 +992,7 @@ pub async fn candidater(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/sabbatiques/{id}/candidatures — Lister (organisateur uniquement)
+// GET /api/sabbatiques/{id}/candidatures, Lister (organisateur uniquement)
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_candidatures(
     pool: web::Data<PgPool>,

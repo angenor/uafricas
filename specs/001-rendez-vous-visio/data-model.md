@@ -1,4 +1,4 @@
-# Phase 1 — Data Model : Rendez-vous en visioconférence
+# Phase 1 : Data Model : Rendez-vous en visioconférence
 
 Source de vérité = schéma SQL (Principe III). Fichier : `uafricas_backend/doc/bd/schemas/31_social_rendez_vous.sql` (idempotent), intégré à l'orchestrateur `schema.sql`.
 
@@ -11,7 +11,7 @@ Source de vérité = schéma SQL (Principe III). Fichier : `uafricas_backend/doc
 | `refuse` | Proposition refusée (terminal). |
 | `annule` | Annulé par l'une des parties (terminal). |
 
-> « expiré » et « terminé/passé » ne sont **pas** des valeurs persistées — dérivées par calcul (cf. research §2).
+> « expiré » et « terminé/passé » ne sont **pas** des valeurs persistées, dérivées par calcul (cf. research §2).
 
 ## Table `social.rendez_vous`
 
@@ -32,13 +32,13 @@ Source de vérité = schéma SQL (Principe III). Fichier : `uafricas_backend/doc
 
 **Contraintes table** :
 - `CONSTRAINT ck_rdv_pas_soi CHECK (initiateur_id <> destinataire_id)` (FR-009).
-- `tour_id` doit être l'un des deux participants — garanti applicativement (le SQL ne le contraint pas pour rester simple).
+- `tour_id` doit être l'un des deux participants, garanti applicativement (le SQL ne le contraint pas pour rester simple).
 
 **Index** :
 - `idx_rdv_initiateur (initiateur_id) WHERE deleted_at IS NULL`
 - `idx_rdv_destinataire (destinataire_id) WHERE deleted_at IS NULL`
-- `idx_rdv_tour (tour_id) WHERE statut = 'propose' AND deleted_at IS NULL` — filtre « en attente de ma réponse ».
-- `idx_rdv_date (date_heure)` — tri/fenêtres « à venir » / « passés ».
+- `idx_rdv_tour (tour_id) WHERE statut = 'propose' AND deleted_at IS NULL`, filtre « en attente de ma réponse ».
+- `idx_rdv_date (date_heure)` : tri/fenêtres « à venir » / « passés ».
 
 ## Transitions d'état (machine)
 
@@ -100,14 +100,14 @@ Pour l'utilisateur courant `moi` (participant si `initiateur_id=moi OR destinata
 | `duree_minutes` | `duree_minutes: i16` | `dureeMinutes: number` |
 | `statut` | `statut: String` (enum sérialisé) | `statut: 'propose'\|'accepte'\|'refuse'\|'annule'` |
 | `tour_id` | `tour_id: Uuid` | `tourId: string` |
-| (dérivé) | — | `etatDerive: 'expire'\|'termine'\|null` (calculé) |
+| (dérivé) | : | `etatDerive: 'expire'\|'termine'\|null` (calculé) |
 | `MembreLight` (autre) | `autre: MembreLight` | `autre: MembreLightAPI` |
 
 Le DTO de réponse (`RendezVousResponse`) inclut l'`autre` membre (MembreLight), `suis_initiateur`, `mon_tour` (bool), et `peut_rejoindre` (bool, fenêtre) calculés côté backend pour simplifier le frontend.
 
 ## Notification cloche (réutilisation, research §5)
 
-`arbre_genealogique.notifications` (existant) — pas de modification de schéma. Insertion via `creer_notification(pool, destinataire_id, type, message, lien_action)` :
+`arbre_genealogique.notifications` (existant), pas de modification de schéma. Insertion via `creer_notification(pool, destinataire_id, type, message, lien_action)` :
 
 | Événement | `type` | `message` (exemple, sans contenu sensible) |
 |-----------|--------|---------------------------------------------|

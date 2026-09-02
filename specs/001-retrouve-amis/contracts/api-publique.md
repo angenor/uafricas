@@ -1,4 +1,4 @@
-# Contrats API — Routes Publiques Retrouve Amis
+# Contrats API : Routes Publiques Retrouve Amis
 
 **Base path**: `/api/retrouve-amis`
 **Authentification**: JWT Bearer token requis sur tous les endpoints
@@ -45,9 +45,9 @@ Créer un nouvel avis de recherche. Déclenche le matching synchrone.
 ```
 
 **Erreurs** :
-- `400` — Champs obligatoires manquants
-- `401` — Non authentifié
-- `422` — Limite de 10 avis actifs atteinte
+- `400` : Champs obligatoires manquants
+- `401` : Non authentifié
+- `422` : Limite de 10 avis actifs atteinte
 
 ---
 
@@ -136,8 +136,8 @@ Détail d'un avis de recherche (uniquement si auteur).
 ```
 
 **Erreurs** :
-- `403` — Pas l'auteur de cet avis
-- `404` — Avis introuvable
+- `403` : Pas l'auteur de cet avis
+- `404` : Avis introuvable
 
 ---
 
@@ -159,9 +159,9 @@ Modifier un avis de recherche actif. Relance le matching.
 ```
 
 **Erreurs** :
-- `403` — Pas l'auteur
-- `404` — Avis introuvable
-- `422` — Avis clôturé ou suspendu (non modifiable)
+- `403` : Pas l'auteur
+- `404` : Avis introuvable
+- `422` : Avis clôturé ou suspendu (non modifiable)
 
 ---
 
@@ -347,7 +347,7 @@ Signaler un avis de recherche comme abusif.
 }
 ```
 
-**Note** : L'utilisateur ne signale pas directement l'avis d'un autre (les avis sont privés). Le signalement porte sur une correspondance reçue — le `avis_id` correspond à l'avis de l'autre partie dans la correspondance.
+**Note** : L'utilisateur ne signale pas directement l'avis d'un autre (les avis sont privés). Le signalement porte sur une correspondance reçue, le `avis_id` correspond à l'avis de l'autre partie dans la correspondance.
 
 ---
 

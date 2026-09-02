@@ -55,7 +55,7 @@ export const useAppels = () => {
   // État global partagé (SSR-safe).
   /** Sonnerie entrante en attente de réponse (ou null). */
   const appelEntrant = useState<AppelEntrant | null>('appel:entrant', () => null)
-  /** Salle d'appel en cours (config P2P) — pilote l'affichage de la visio. */
+  /** Salle d'appel en cours (config P2P), pilote l'affichage de la visio. */
   const appelActif = useState<SalleAppelAPI | null>('appel:actif', () => null)
   /** Signal de fin (refus/annulation) pour l'appel actif non connecté. */
   const finAppel = useState<FinAppel | null>('appel:fin', () => null)

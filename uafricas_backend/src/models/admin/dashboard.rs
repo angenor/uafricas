@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-// ── B12.1 — Stats globales ─────────────────────────────────────────────
+// ── B12.1 : Stats globales ─────────────────────────────────────────────
 
 /// Reponse structuree pour GET /api/admin/dashboard/stats
 #[derive(Debug, Serialize)]
@@ -299,7 +299,7 @@ impl StatsRow {
     }
 }
 
-// ── B12.2 — Activite recente ────────────────────────────────────────────
+// ── B12.2 : Activite recente ────────────────────────────────────────────
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct ActiviteRecenteItem {
@@ -313,7 +313,7 @@ pub struct ActiviteRecenteItem {
     pub utilisateur_id: Option<Uuid>,
 }
 
-// ── B12.3 — Tendances ──────────────────────────────────────────────────
+// ── B12.3 : Tendances ──────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
 pub struct TendancesQueryParams {

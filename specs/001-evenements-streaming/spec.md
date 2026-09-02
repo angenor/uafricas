@@ -9,14 +9,14 @@
 
 ### Session 2026-05-26
 
-- Q: Quel modèle d'interaction pour le streaming d'un événement ? → A: **Webinaire (diffusion)** — l'organisateur et les intervenants désignés diffusent caméra/micro ; les participants regardent et interagissent par chat texte + réactions ; un participant peut être promu intervenant le temps de prendre la parole.
-- Q: Qui peut rejoindre la salle de streaming en direct ? → A: **Inscrits + organisateur** — seuls les membres inscrits à l'événement et l'organisateur accèdent au direct ; un non-inscrit est invité à s'inscrire d'abord.
-- Q: Faut-il enregistrer le direct pour un replay ? → A: **Hors périmètre (MVP)** — direct uniquement, pas d'enregistrement ni de replay dans cette version.
-- Q: Quand la limite de participants simultanés est atteinte, que se passe-t-il pour un nouvel arrivant éligible ? → A: **Refuser avec message** — pas de file d'attente ; message clair « Capacité atteinte, réessayez plus tard ». Une place se libère au départ d'un participant.
-- Q: Comment un participant devient-il intervenant (diffusion caméra/micro) ? → A: **Promotion à la volée uniquement** — au démarrage seul l'organisateur diffuse ; il promeut/rétrograde les participants pendant le direct. Aucune désignation préalable de co-animateurs.
-- Q: Si un direct est encore en cours à la fermeture de la fenêtre de diffusion, que se passe-t-il ? → A: **Continue jusqu'à clôture** — le direct reste ouvert tant que l'organisateur ne le clôture pas, même au-delà de la fenêtre, avec un arrêt de sécurité automatique absolu lointain (par défaut 2 h après l'heure de fin prévue).
-- Q: Un spectateur peut-il signaler qu'il souhaite prendre la parole (« lever la main ») ? → A: **Oui, lever la main** — signal éphémère ; l'organisateur voit la liste des demandes et peut promouvoir (ou ignorer).
-- Q: Que se passe-t-il si l'infrastructure de streaming est temporairement injoignable ? → A: **Erreur + repli lien externe** — message d'erreur clair avec possibilité de réessayer ; si un lien en ligne externe est configuré sur l'événement, le proposer en repli.
+- Q: Quel modèle d'interaction pour le streaming d'un événement ? → A: **Webinaire (diffusion)** : l'organisateur et les intervenants désignés diffusent caméra/micro ; les participants regardent et interagissent par chat texte + réactions ; un participant peut être promu intervenant le temps de prendre la parole.
+- Q: Qui peut rejoindre la salle de streaming en direct ? → A: **Inscrits + organisateur** : seuls les membres inscrits à l'événement et l'organisateur accèdent au direct ; un non-inscrit est invité à s'inscrire d'abord.
+- Q: Faut-il enregistrer le direct pour un replay ? → A: **Hors périmètre (MVP)** : direct uniquement, pas d'enregistrement ni de replay dans cette version.
+- Q: Quand la limite de participants simultanés est atteinte, que se passe-t-il pour un nouvel arrivant éligible ? → A: **Refuser avec message** : pas de file d'attente ; message clair « Capacité atteinte, réessayez plus tard ». Une place se libère au départ d'un participant.
+- Q: Comment un participant devient-il intervenant (diffusion caméra/micro) ? → A: **Promotion à la volée uniquement**, au démarrage seul l'organisateur diffuse ; il promeut/rétrograde les participants pendant le direct. Aucune désignation préalable de co-animateurs.
+- Q: Si un direct est encore en cours à la fermeture de la fenêtre de diffusion, que se passe-t-il ? → A: **Continue jusqu'à clôture** : le direct reste ouvert tant que l'organisateur ne le clôture pas, même au-delà de la fenêtre, avec un arrêt de sécurité automatique absolu lointain (par défaut 2 h après l'heure de fin prévue).
+- Q: Un spectateur peut-il signaler qu'il souhaite prendre la parole (« lever la main ») ? → A: **Oui, lever la main**, signal éphémère ; l'organisateur voit la liste des demandes et peut promouvoir (ou ignorer).
+- Q: Que se passe-t-il si l'infrastructure de streaming est temporairement injoignable ? → A: **Erreur + repli lien externe**, message d'erreur clair avec possibilité de réessayer ; si un lien en ligne externe est configuré sur l'événement, le proposer en repli.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -24,7 +24,7 @@
 
 Un membre inscrit à un événement en ligne (ou hybride) rejoint le direct depuis la page de l'événement à l'heure prévue, regarde la diffusion vidéo de l'organisateur et des intervenants, et suit l'événement sans quitter la plateforme.
 
-**Why this priority**: C'est le cœur de la demande — permettre qu'un événement « ait lieu » réellement sur la plateforme. Sans cette capacité de visionnage en direct, la fonctionnalité n'apporte aucune valeur. C'est le MVP minimal démontrable.
+**Why this priority**: C'est le cœur de la demande, permettre qu'un événement « ait lieu » réellement sur la plateforme. Sans cette capacité de visionnage en direct, la fonctionnalité n'apporte aucune valeur. C'est le MVP minimal démontrable.
 
 **Independent Test**: Avec un événement dont le direct est ouvert et un compte inscrit, cliquer sur « Rejoindre le direct » depuis la page de l'événement et vérifier que la diffusion vidéo/audio des intervenants est visible et audible.
 
@@ -157,7 +157,7 @@ Un spectateur signale qu'il souhaite parler (« lever la main ») ; l'organisate
 - **Fenêtre de diffusion** : par défaut, le direct peut être ouvert à partir de 15 minutes avant l'heure de début. Une fois ouvert, il reste accessible (et joignable) tant que l'organisateur ne le clôture pas, même au-delà de l'heure de fin prévue. Un arrêt de sécurité automatique absolu clôture le direct au plus tard 2 heures après l'heure de fin prévue (ou, à défaut d'heure de fin, après une durée maximale par défaut), avec préavis aux participants. Ces marges reprennent l'esprit des fenêtres déjà utilisées ailleurs sur la plateforme.
 - **Réutilisation de l'infrastructure** : le streaming s'appuie sur la même technologie temps réel que les salles afrolang (déjà en place), avec la même configuration serveur. Aucun nouveau service d'infrastructure n'est introduit.
 - **Modèle webinaire** : par défaut seuls l'organisateur et les intervenants diffusent ; les spectateurs sont en réception. La promotion d'un spectateur en intervenant est ponctuelle et réversible.
-- **Capacité** : une limite de participants simultanés peut s'appliquer par événement (réutilisant les mécanismes existants), avec pour objectif minimal ≥ 100 spectateurs (SC-004). À la limite, le nouvel arrivant est refusé avec un message explicite — pas de file d'attente.
+- **Capacité** : une limite de participants simultanés peut s'appliquer par événement (réutilisant les mécanismes existants), avec pour objectif minimal ≥ 100 spectateurs (SC-004). À la limite, le nouvel arrivant est refusé avec un message explicite, pas de file d'attente.
 - **Chat & réactions** : éphémères, non archivés après la fin du direct (cohérent avec l'absence d'enregistrement). La modération du chat se limite, pour le MVP, au retrait d'un participant du direct par l'organisateur.
 - **Notifications** : la notification de démarrage du direct réutilise le système de cloche unifié et le canal temps réel existants.
 - **Hors périmètre (MVP)** : enregistrement et replay, accès public anonyme au direct, sous-titrage/traduction en direct, sondages, billetterie payante, planification de plusieurs sessions par événement.

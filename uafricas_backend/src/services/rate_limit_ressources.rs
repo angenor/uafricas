@@ -2,7 +2,7 @@
 //! (feature 001-ressources-fermeture-session, research.md §4).
 //!
 //! Règle : ≤ 10 ressources contribuées par utilisateur, par salle, sur une
-//! fenêtre glissante de 24 h. Comptage en base (pas de table dédiée — index
+//! fenêtre glissante de 24 h. Comptage en base (pas de table dédiée, index
 //! partiel `idx_afrolang_ressource_contribuee_rate_limit` couvre la requête).
 
 use sqlx::PgPool;

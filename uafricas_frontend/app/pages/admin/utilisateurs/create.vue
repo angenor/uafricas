@@ -73,8 +73,8 @@ const soumettre = async () => {
         <form @submit.prevent="soumettre" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="form-control">
-              <label class="label"><span class="label-text">Prenom *</span></label>
-              <input v-model="form.prenom" type="text" class="input input-bordered" placeholder="Prenom" required>
+              <label class="label"><span class="label-text">Prénom *</span></label>
+              <input v-model="form.prenom" type="text" class="input input-bordered" placeholder="Prénom" required>
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Nom *</span></label>
@@ -94,7 +94,7 @@ const soumettre = async () => {
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="form-control">
-              <label class="label"><span class="label-text">Telephone</span></label>
+              <label class="label"><span class="label-text">Téléphone</span></label>
               <input v-model="form.telephone" type="tel" class="input input-bordered" placeholder="+243...">
             </div>
             <div class="form-control">

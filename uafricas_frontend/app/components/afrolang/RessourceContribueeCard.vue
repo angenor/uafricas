@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Carte d'une ressource contribuée (feature 001-ressources-fermeture-session, US1).
 // Rendu adapté au `type` (document / video_youtube / lien_web / accompagnateur).
-// Tailwind v4 pur — Principe VI.
+// Tailwind v4 pur : Principe VI.
 import { computed } from 'vue'
 import type { RessourceContribueeAPI } from '~/composables/useAfrolangRessources'
 import { useAfrolangRessources } from '~/composables/useAfrolangRessources'

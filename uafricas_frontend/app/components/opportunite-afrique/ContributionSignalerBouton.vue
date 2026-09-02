@@ -61,7 +61,7 @@ const soumettre = async (payload: { motif: string, description: string }) => {
       class="inline-flex items-center gap-1 font-medium transition-colors"
       :class="aSignaleLocal
         ? 'text-gray-400 cursor-default'
-        : 'text-orange-600 hover:underline cursor-pointer'"
+        : 'text-af-corps transition hover:text-af-live cursor-pointer'"
       :title="aSignaleLocal ? 'Vous avez déjà signalé cette contribution' : 'Signaler cette contribution'"
       @click="ouvrir"
     >

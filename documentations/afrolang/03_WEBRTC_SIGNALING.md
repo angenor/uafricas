@@ -1,9 +1,9 @@
-# Phase 3 — WebRTC Signaling & Visioconference
+# Phase 3 : WebRTC Signaling & Visioconference
 
 > **Statut** : `TERMINE`
 > **Progression** : 11/11 taches
-> **Bloque par** : [Phase 2 — Frontend UI](./02_FRONTEND_UI.md) ✅
-> **Debloque** : [Phase 4 — Tableau blanc](./04_TABLEAU_BLANC.md)
+> **Bloque par** : [Phase 2 : Frontend UI](./02_FRONTEND_UI.md) ✅
+> **Debloque** : [Phase 4 : Tableau blanc](./04_TABLEAU_BLANC.md)
 
 ---
 
@@ -12,10 +12,10 @@
 ```
 ✅ = termine    🔄 = en cours    ⬜ = a faire    🔒 = bloque
 
-[✅] Phase 1 — Backend REST         (terminee)
-[✅] Phase 2 — Frontend UI          (terminee)
-[✅] Phase 3 — WebRTC Signaling     ◄── TERMINE
-[⬜] Phase 4 — Tableau blanc        (debloquee)
+[✅] Phase 1 : Backend REST         (terminee)
+[✅] Phase 2 : Frontend UI          (terminee)
+[✅] Phase 3 : WebRTC Signaling     ◄── TERMINE
+[⬜] Phase 4 : Tableau blanc        (debloquee)
 ```
 
 **Ce que les Phases precedentes fournissent :**
@@ -45,7 +45,7 @@
 - [x] **3.3** Ajouter variables env LiveKit a `config.rs`
 - [x] **3.4** Creer handler `generer_token_session` dans `handlers/afrolang.rs` (enrichit Phase 1)
 - [x] **3.5** Ajouter route `/sessions/{id}/token` dans `routes.rs` (enrichit Phase 1)
-- [x] **3.6** Installer `livekit-client` (pnpm) — Note: `@livekit/components-vue` n'existe pas officiellement, composants Vue custom crees
+- [x] **3.6** Installer `livekit-client` (pnpm), Note: `@livekit/components-vue` n'existe pas officiellement, composants Vue custom crees
 - [x] **3.7** Creer `app/components/afrolang/AfrolangRoom.vue`
 - [x] **3.8** Creer `app/components/afrolang/AfrolangVideoGrid.vue` + `AfrolangParticipantTile.vue`
 - [x] **3.9** Creer `app/components/afrolang/AfrolangControls.vue`
@@ -54,7 +54,7 @@
 
 ---
 
-## 3.1 — Deployer LiveKit en dev
+## 3.1 : Deployer LiveKit en dev
 
 ### Docker Compose
 
@@ -98,16 +98,16 @@ En production, LiveKit devrait etre deploye sur un VPS separe avec :
 
 ---
 
-## 3.2–3.3 — Backend : dependance + config
+## 3.2–3.3 : Backend : dependance + config
 
-### 3.2 — `Cargo.toml`
+### 3.2 : `Cargo.toml`
 
 ```toml
 [dependencies]
 livekit-api = "0.4"   # SDK Rust officiel LiveKit (generation tokens)
 ```
 
-### 3.3 — `config.rs` — Variables d'environnement additionnelles
+### 3.3 : `config.rs` : Variables d'environnement additionnelles
 
 ```rust
 // Ajouter a la struct Config
@@ -117,7 +117,7 @@ pub livekit_api_secret: String, // LIVEKIT_API_SECRET (defaut: secret)
 ```
 
 ```env
-# .env — Ajouter
+# .env : Ajouter
 LIVEKIT_URL=ws://localhost:7880
 LIVEKIT_API_KEY=devkey
 LIVEKIT_API_SECRET=secret
@@ -125,9 +125,9 @@ LIVEKIT_API_SECRET=secret
 
 ---
 
-## 3.4–3.5 — Backend : endpoint token
+## 3.4–3.5 : Backend : endpoint token
 
-### 3.4 — Handler `generer_token_session`
+### 3.4 : Handler `generer_token_session`
 
 > **Enrichit** `src/handlers/afrolang.rs` cree en Phase 1 (tache 1.5–1.8)
 
@@ -202,7 +202,7 @@ pub async fn generer_token_session(
 }
 ```
 
-### 3.5 — Route
+### 3.5 : Route
 
 Ajouter dans le scope `/afrolang` de `routes.rs` (sous les routes sessions Phase 1) :
 
@@ -213,7 +213,7 @@ Ajouter dans le scope `/afrolang` de `routes.rs` (sous les routes sessions Phase
 
 ---
 
-## 3.6 — Frontend : dependances
+## 3.6 : Frontend : dependances
 
 ```bash
 cd uafricas_frontend && pnpm add livekit-client @livekit/components-vue
@@ -221,9 +221,9 @@ cd uafricas_frontend && pnpm add livekit-client @livekit/components-vue
 
 ---
 
-## 3.7–3.10 — Frontend : composants WebRTC
+## 3.7–3.10 : Frontend : composants WebRTC
 
-### 3.7 — `AfrolangRoom.vue`
+### 3.7 : `AfrolangRoom.vue`
 
 > **Ce composant sera enrichi en Phase 4** pour integrer `AfrolangWhiteboard.vue`
 
@@ -258,7 +258,7 @@ cd uafricas_frontend && pnpm add livekit-client @livekit/components-vue
       <!-- NOTE: @toggle-tableau-blanc sera fonctionnel en Phase 4 -->
     </div>
 
-    <!-- Sidebar (3.10) — Phase 4 ajoutera l'onglet whiteboard ici -->
+    <!-- Sidebar (3.10) : Phase 4 ajoutera l'onglet whiteboard ici -->
     <AfrolangSidebar
       v-if="sidebarOuverte"
       :participants="participants"
@@ -268,7 +268,7 @@ cd uafricas_frontend && pnpm add livekit-client @livekit/components-vue
 </template>
 ```
 
-### 3.8 — `AfrolangVideoGrid.vue` + `AfrolangParticipantTile.vue`
+### 3.8 : `AfrolangVideoGrid.vue` + `AfrolangParticipantTile.vue`
 
 Layout adaptatif :
 ```
@@ -281,7 +281,7 @@ Layout adaptatif :
                                     └─────┴─────┘
 ```
 
-### 3.9 — `AfrolangControls.vue`
+### 3.9 : `AfrolangControls.vue`
 
 ```
 ┌──────────────────────────────────────────────────────┐
@@ -289,10 +289,10 @@ Layout adaptatif :
 └──────────────────────────────────────────────────────┘
 ```
 
-- **[WB]** : bouton "Tableau blanc" — present mais **desactive** en Phase 3 (sera active en Phase 4)
+- **[WB]** : bouton "Tableau blanc" : present mais **desactive** en Phase 3 (sera active en Phase 4)
 - **Terminer** : visible seulement pour le moderateur
 
-### 3.10 — `AfrolangSidebar.vue`
+### 3.10 : `AfrolangSidebar.vue`
 
 Panneau lateral avec liste des participants.
 
@@ -300,7 +300,7 @@ Panneau lateral avec liste des participants.
 
 ---
 
-## 3.11 — Transformer la page session
+## 3.11 : Transformer la page session
 
 > **Modifie** `app/pages/afrolang/session/[id].vue` cree en Phase 2 (tache 2.14)
 
@@ -333,7 +333,7 @@ async function rejoindre(codeAcces?: string) {
 </script>
 
 <template>
-  <!-- Mode conference (token obtenu) — NOUVEAU Phase 3 -->
+  <!-- Mode conference (token obtenu) : NOUVEAU Phase 3 -->
   <AfrolangRoom
     v-if="token"
     :token="token"
@@ -438,9 +438,9 @@ Si LiveKit est trop lourd initialement :
 ### Fichiers a modifier (7)
 | Fichier | Modification | Phase d'origine |
 |---------|-------------|-----------------|
-| `docker-compose.yml` | Ajouter service LiveKit | — |
-| `uafricas_backend/Cargo.toml` | Ajouter `livekit-api` | — |
-| `uafricas_backend/src/config.rs` | Variables LiveKit | — |
+| `docker-compose.yml` | Ajouter service LiveKit |, |
+| `uafricas_backend/Cargo.toml` | Ajouter `livekit-api` |, |
+| `uafricas_backend/src/config.rs` | Variables LiveKit |, |
 | `uafricas_backend/src/handlers/afrolang.rs` | Ajouter `generer_token_session` | Phase 1 |
 | `uafricas_backend/src/routes.rs` | Ajouter route `/sessions/{id}/token` | Phase 1 |
 | `app/composables/useAfrolang.ts` | Ajouter `genererTokenSession()` | Phase 2 |

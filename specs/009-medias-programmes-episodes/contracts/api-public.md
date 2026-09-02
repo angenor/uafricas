@@ -1,4 +1,4 @@
-# Contrat — API publique (lecture, sans authentification)
+# Contrat : API publique (lecture, sans authentification)
 
 Toutes les réponses sont enveloppées dans `ApiResponse<T>` (`{ succes, message, data }`), convention du
 projet. Toute lecture publique filtre `etat = 'publie' AND deleted_at IS NULL`, sur l'émission **comme**
@@ -16,7 +16,7 @@ Inchangé dans sa forme, **enrichi dans son contenu** : chaque chaîne porte dé
 chaque émission un extrait de ses épisodes.
 
 Paramètres existants conservés : `origine`, `theme`, `en_direct`.
-Paramètres ajoutés : `territoire` (UUID de pays — remonte aussi les chaînes continentales, FR-036),
+Paramètres ajoutés : `territoire` (UUID de pays, remonte aussi les chaînes continentales, FR-036),
 `thematique` (UUID de catégorie, répétable).
 
 ```jsonc
@@ -73,7 +73,7 @@ Détail d'une émission. `404` si l'émission n'est pas publiée ou n'a aucun é
 }
 ```
 
-`compteurs` sont ceux de **l'émission seule** — jamais la somme de ceux de ses épisodes (FR-048).
+`compteurs` sont ceux de **l'émission seule**, jamais la somme de ceux de ses épisodes (FR-048).
 
 ### `GET /api/television/emissions/{id}/episodes`
 
@@ -102,9 +102,9 @@ publiques existantes continuent de résoudre (FR-056).
 
 ### Référentiels de filtre
 
-- `GET /api/television/thematiques` — thèmes `media` **réellement déclarés** par au moins une chaîne
+- `GET /api/television/thematiques` : thèmes `media` **réellement déclarés** par au moins une chaîne
   publiée, avec leur décompte. Même principe que `GET /api/experts/specialites`.
-- `GET /api/television/territoires` — territoires réellement couverts, plus un marqueur
+- `GET /api/television/territoires` : territoires réellement couverts, plus un marqueur
   `{ "continentales": 4 }` indiquant le nombre de chaînes panafricaines.
 
 > `GET /api/television/categories` et `GET /api/television/pays` sont **conservés** le temps du portage
@@ -153,7 +153,7 @@ visible du détenteur via l'API membre, assorti d'une alerte.
 
 ### `GET /api/medias/{type_support}/{support_id}/diffusion`
 
-Deux requêtes, comme aujourd'hui — la rotation s'ajoute en `JOIN LATERAL` sans requête supplémentaire
+Deux requêtes, comme aujourd'hui, la rotation s'ajoute en `JOIN LATERAL` sans requête supplémentaire
 (research.md R3).
 
 ```jsonc
@@ -183,14 +183,14 @@ Deux requêtes, comme aujourd'hui — la rotation s'ajoute en `JOIN LATERAL` san
 ## 4. Interactions
 
 `GET|POST /api/medias/{type_media}/{media_id}/reactions`, `…/commentaires`, `…/partages`,
-`…/signalements` — routes existantes, `type_media` passant de 4 à 6 valeurs :
+`…/signalements` : routes existantes, `type_media` passant de 4 à 6 valeurs :
 
 ```
 chaine_tv | station_radio | emission_tele | emission_radio | episode_tele | episode_radio
 ```
 
 Une valeur hors de cette liste renvoie `400`. Les anciennes valeurs `programme_tele` /
-`programme_radio` sont **rejetées** après migration — c'est volontaire : un client non porté échoue
+`programme_radio` sont **rejetées** après migration : c'est volontaire : un client non porté échoue
 visiblement plutôt que d'écrire sur une cible fantôme.
 
 Les compteurs restent servis par cible ; `compteurs_pour` conserve sa forme (deux requêtes pour toute

@@ -1,4 +1,4 @@
-# Synthèse — Système d'engagement / gamification AFRICANS
+# Synthèse : Système d'engagement / gamification AFRICANS
 
 > Phase 1 (fondation + barème vérifiable) livrée et validée end-to-end.
 > Spec complète : `specs/001-engagement-gamification/`.
@@ -37,7 +37,7 @@ Backend (Rust/Actix)                          Frontend (Nuxt)
 
 ### Le moteur (`services/engagement.rs`)
 
-Calqué sur `services/audit.rs` — **non-bloquant** : une validation / like / jugement ne peut pas échouer à cause des points.
+Calqué sur `services/audit.rs` : **non-bloquant** : une validation / like / jugement ne peut pas échouer à cause des points.
 
 | Propriété | Mécanisme |
 |---|---|
@@ -55,7 +55,7 @@ Fonctions : `attribuer` · `retirer` · `evaluer_popularite` · `ajuster` · rec
 | Règle | Points | Déclenché depuis |
 |---|---|---|
 | `contribution_validee` | +2 | Codimoi, VidAfrica (piste), BadHabit, IdeaForce → passage `publie` |
-| `contribution_mise_en_avant` | +5 | **(non câblé — pas de colonne « vedette »)** |
+| `contribution_mise_en_avant` | +5 | **(non câblé, pas de colonne « vedette »)** |
 | `factcheck_valide` | +3 / +1 rép. | FactCheck → `publie` |
 | `factcheck_faux` | −2 / −3 rép. | FactCheck → `suspendu` |
 | `popularite_palier` | 100/500/1000 likes → +10/+30/+50 | likes Codimoi, FactCheck, Biblio, Vidéo |

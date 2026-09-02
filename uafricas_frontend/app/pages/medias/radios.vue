@@ -1,172 +1,172 @@
 <script setup lang="ts">
-import { radioCategories, radioStats } from '~/mocks/radios'
+import { radioCategories } from '~/mocks/radios'
+import { useStationsRadio } from '~/composables/useStationsRadio'
+
+/**
+ * Africans Radio : porté sur le gabarit de la refonte.
+ *
+ * Le bandeau « 150+ stations · 54 territoires · 24/7 · HD » est SUPPRIMÉ.
+ * Ces quatre valeurs étaient écrites en dur dans `mocks/radios.ts` ; aucune
+ * requête ne les a jamais vérifiées, et l'endpoint qui fait foi
+ * (`/api/stations-radio/sections`) renvoie un tout autre chiffre.
+ *
+ * Chaque carte porte désormais le décompte RÉEL de sa famille, lu à l'ouverture
+ * de la page. `par_page: 1` : seul le total nous intéresse, pas les stations, 
+ * inutile de rapatrier la liste entière pour afficher un nombre.
+ *
+ * Partent aussi les trois encarts « Streaming en direct / Diversité musicale /
+ * 24h-24 7j-7 » : deux redisaient les chiffres qu'on retire, le troisième
+ * annonçait un catalogue (« Afrobeats, Mbalax, Rumba, Highlife ») que rien dans
+ * les données ne garantit.
+ */
+definePageMeta({ layout: false })
 
 useHead({
-  title: 'Radios Africaines | AfricanS',
+  title: 'Africans Radio : Radios africaines | AfricanS',
   meta: [
-    { name: 'description', content: 'Découvrez les meilleures stations de radio africaines. Écoutez en direct les radios africaines internationales et nationales.' }
-  ]
+    {
+      name: 'description',
+      content: 'Découvrez les meilleures stations de radio africaines. Écoutez en direct les radios africaines internationales et nationales.',
+    }],
 })
 
-useAOS()
+/** Les deux autres applications de l'univers Africamood. */
+const AUTRES_MEDIAS = [
+  { libelle: 'Télévision africaine', to: '/medias/tele', icone: 'fa-solid fa-tv' },
+  { libelle: 'Vidafrica', to: '/vidafrica', icone: 'fa-solid fa-video' }]
 
-// Modale de présentation « C'est quoi Africans Radio ? »
 const presentationOuverte = ref(false)
+
+const { listerSections } = useStationsRadio()
+
+/** Décompte réel par famille, indexé sur la cible de la carte. */
+const comptes = ref<Record<string, number | null>>({
+  '/medias/radio/africans': null,
+  '/medias/radio/nationales': null,
+})
+
+const totalStations = computed(() => {
+  const valeurs = Object.values(comptes.value)
+  if (valeurs.some(v => v === null)) return null
+  return valeurs.reduce<number>((n, v) => n + (v ?? 0), 0)
+})
+
+const libelleCompte = (n: number | null) => {
+  if (n === null) return '…'
+  return `${n} station${n > 1 ? 's' : ''}`
+}
+
+onMounted(async () => {
+  const [africans, territoire] = await Promise.all([
+    listerSections({ origine: 'africans', par_page: 1 }).catch(() => null),
+    listerSections({ origine: 'territoire', par_page: 1 }).catch(() => null)])
+  comptes.value = {
+    '/medias/radio/africans': africans?.total ?? 0,
+    '/medias/radio/nationales': territoire?.total ?? 0,
+  }
+})
 </script>
 
 <template>
-  <div class="min-h-screen pb-10 bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center z-0"
-      style="background-image: url('/images/banners/radio-home.jpg')"
-    >
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Africans Radio"
+        sous-titre="Écoutez l'Afrique en direct"
+        image="/images/banners/radio-home.jpg"
+        aide="C'est quoi Africans Radio ?"
+        @aide="presentationOuverte = true"
+      />
+    </template>
 
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Radios Africaines
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Écoutez l'Afrique en direct
-          </p>
-        </div>
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="[{ libelle: 'Africamood', vers: '/medias' }, { libelle: 'Radios' }]">
+        <template #centre>
+          <p class="text-base font-bold text-af-encre">Deux familles de stations</p>
+        </template>
+      </AfricansFilAriane>
+    </template>
 
-        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <!-- Bouton d'aide : ouvre la présentation d'Africans Radio -->
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
-            aria-label="En savoir plus sur Africans Radio"
-            @click="presentationOuverte = true"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
-            C'est quoi Africans Radio&nbsp;?
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modale de présentation « C'est quoi Africans Radio ? » -->
-    <MediaRadioPresentationModal
-      :open="presentationOuverte"
-      @close="presentationOuverte = false"
-    />
-
-    <!-- Navigation breadcrumb -->
-    <div class="max-w-6xl mx-auto px-4 pt-4">
-      <CommonBreadcrumbNav />
-    </div>
-
-    <!-- Cartes des catégories -->
-    <div class="max-w-6xl mx-auto px-4 relative pt-6">
-      <div class="grid md:grid-cols-2 gap-8">
+    <div class="flex flex-col gap-6">
+      <div class="grid gap-5 sm:grid-cols-2">
         <NuxtLink
           v-for="category in radioCategories"
           :key="category.id"
           :to="category.link"
-          data-aos="fade-up"
-          :data-aos-delay="category.id * 100"
+          class="group relative block h-64 overflow-hidden rounded-[10px] border border-af-bordure transition hover:border-af-chocolat"
         >
-          <div class="group cursor-pointer transform transition-all duration-500 hover:scale-105">
-            <div class="relative overflow-hidden rounded-2xl shadow-xl h-64">
-              <img
-                :src="category.image"
-                :alt="category.title"
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent"></div>
+          <img
+            :src="category.image"
+            alt=""
+            class="absolute inset-0 size-full object-cover transition-transform duration-700 group-hover:scale-105"
+            loading="lazy"
+          />
+          <div class="absolute inset-0 bg-linear-to-t from-black/85 via-black/35 to-transparent" />
 
-              <!-- Badge -->
-              <div class="absolute top-4 right-4">
-                <span
-                  :class="[
-                    'px-3 py-1 rounded-full text-sm font-semibold text-white',
-                    category.badgeColor === 'green' ? 'bg-custom-green' : 'bg-custom-chocolat'
-                  ]"
-                >
-                  {{ category.badge }}
-                </span>
-              </div>
+          <span
+            class="absolute top-4 right-4 rounded px-3 py-1 text-[12px]/[1.4] font-bold text-white"
+            :class="category.badgeColor === 'green' ? 'bg-af-vert' : 'bg-af-chocolat'"
+          >
+            {{ category.badge }}
+          </span>
 
-              <!-- Contenu -->
-              <div class="absolute bottom-0 left-0 right-0 p-6">
-                <h3 class="text-2xl font-bold text-white mb-2">
-                  {{ category.title }}
-                </h3>
-                <p class="text-gray-200 text-sm line-clamp-2">
-                  {{ category.description }}
-                </p>
-                <div class="mt-4 flex items-center text-custom-green group-hover:translate-x-2 transition-transform">
-                  <span class="text-sm font-semibold">Explorer</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-            </div>
+          <div class="relative flex h-full flex-col justify-end gap-2 p-6 text-white">
+            <h2 class="text-[24px]/[1.3] font-bold">{{ category.title }}</h2>
+            <p class="line-clamp-2 text-[14px]/[1.5] text-white/90">{{ category.description }}</p>
+            <span class="mt-1 flex items-center gap-2 text-[14px]/[1.4] font-bold">
+              Explorer, {{ libelleCompte(comptes[category.link] ?? null) }}
+              <font-awesome-icon icon="fa-solid fa-arrow-right" class="transition-transform group-hover:translate-x-1" />
+            </span>
           </div>
         </NuxtLink>
       </div>
 
-      <!-- Section Statistiques -->
-      <div
-        class="mt-16 bg-linear-to-r from-custom-green to-custom-chocolat rounded-2xl p-8 text-white"
-        data-aos="fade-up"
-      >
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div v-for="stat in radioStats" :key="stat.label" class="p-4">
-            <div class="text-4xl font-bold mb-2">{{ stat.value }}</div>
-            <div class="text-sm opacity-80">{{ stat.label }}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section Description -->
-      <div class="mt-16 text-center" data-aos="fade-up">
-        <h2 class="text-3xl font-bold text-gray-800 mb-6">
-          Votre passerelle vers les sons africains
-        </h2>
-        <p class="text-gray-600 max-w-3xl mx-auto leading-relaxed">
-          Plongez dans la diversité musicale et culturelle de l'Afrique à travers nos stations de radio soigneusement sélectionnées.
-          Des rythmes traditionnels aux hits afrobeats les plus récents, découvrez la richesse sonore du continent africain.
+      <!-- Texte d'accueil : il présente le module, il n'avance aucun chiffre. -->
+      <section class="rounded-[10px] border border-af-bordure bg-white p-8 text-center">
+        <h2 class="text-[24px]/[1.3] font-bold text-af-encre">Votre passerelle vers les sons africains</h2>
+        <p class="mx-auto mt-3 max-w-2xl text-[14px]/[1.6] text-af-corps">
+          Plongez dans la diversité musicale et culturelle de l'Afrique à travers nos stations de radio.
+          Des rythmes traditionnels aux hits afrobeats les plus récents, découvrez la richesse sonore du continent.
         </p>
-      </div>
-
-      <!-- Features -->
-      <div class="mt-12 grid md:grid-cols-3 gap-8" data-aos="fade-up">
-        <div class="text-center p-6 bg-white rounded-xl shadow-lg">
-          <div class="w-16 h-16 mx-auto mb-4 bg-custom-green/10 rounded-full flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-custom-green" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-800 mb-2">Streaming en direct</h3>
-          <p class="text-gray-600 text-sm">Écoutez vos stations préférées en temps réel, où que vous soyez.</p>
-        </div>
-
-        <div class="text-center p-6 bg-white rounded-xl shadow-lg">
-          <div class="w-16 h-16 mx-auto mb-4 bg-custom-chocolat/10 rounded-full flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-custom-chocolat" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-800 mb-2">Diversité musicale</h3>
-          <p class="text-gray-600 text-sm">Afrobeats, Mbalax, Rumba, Highlife et bien plus encore.</p>
-        </div>
-
-        <div class="text-center p-6 bg-white rounded-xl shadow-lg">
-          <div class="w-16 h-16 mx-auto mb-4 bg-custom-green/10 rounded-full flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-custom-green" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-800 mb-2">24h/24, 7j/7</h3>
-          <p class="text-gray-600 text-sm">Accédez à vos stations favorites à tout moment.</p>
-        </div>
-      </div>
+      </section>
     </div>
-  </div>
+
+    <template #rail>
+      <AfricansPanneau titre="Statistiques" icone="fa-solid fa-chart-line">
+        <dl class="flex flex-col">
+          <div
+            v-for="(category, i) in radioCategories"
+            :key="category.id"
+            class="flex items-baseline justify-between gap-4 py-3"
+            :class="i > 0 && 'border-t border-af-bordure'"
+          >
+            <dt class="text-[14px]/[1.4] font-bold">{{ category.title }}</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">
+              {{ comptes[category.link] ?? '…' }}
+            </dd>
+          </div>
+          <div class="flex items-baseline justify-between gap-4 border-t border-af-bordure pt-3">
+            <dt class="text-[14px]/[1.4] font-bold">Total</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ totalStations ?? '…' }}</dd>
+          </div>
+        </dl>
+      </AfricansPanneau>
+
+      <AfricansPanneau titre="Aussi dans Africamood" icone="fa-solid fa-photo-film">
+        <ul class="flex flex-col gap-1">
+          <li v-for="lien in AUTRES_MEDIAS" :key="lien.to">
+            <NuxtLink
+              :to="lien.to"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px]/[1.4] font-bold text-af-corps transition hover:bg-af-chocolat/[0.07] hover:text-af-chocolat"
+            >
+              <font-awesome-icon :icon="lien.icone" class="size-5 shrink-0" />
+              {{ lien.libelle }}
+            </NuxtLink>
+          </li>
+        </ul>
+      </AfricansPanneau>
+    </template>
+
+    <MediaRadioDecouverteModale v-model="presentationOuverte" />
+  </NuxtLayout>
 </template>

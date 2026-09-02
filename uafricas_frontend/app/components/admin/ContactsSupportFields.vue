@@ -27,7 +27,7 @@ const props = withDefaults(defineProps<{
       <font-awesome-icon icon="circle-info" />
       <span class="text-sm">
         Affichés sur la page publique de {{ props.libelleSupport }} une fois publié{{ props.libelleSupport === 'la station' ? 'e' : '' }}.
-        Tous facultatifs — laisser vide n’affiche rien.
+        Tous facultatifs : laisser vide n’affiche rien.
       </span>
     </div>
 

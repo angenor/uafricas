@@ -1,4 +1,4 @@
-# Data Model — Demande d'amitié & messagerie
+# Data Model : Demande d'amitié & messagerie
 
 **Feature**: `001-demande-amitie` | **Schéma**: `social` (nouveau, `schemas/29_social.sql`)
 
@@ -32,7 +32,7 @@ Sollicitation orientée d'un membre vers un autre.
 | deleted_at | TIMESTAMPTZ | NULL |
 
 - **CHECK** `ck_demande_pas_soi`: `demandeur_id <> destinataire_id` (FR-002).
-- **Index unique partiel** `uq_demande_active`: `(demandeur_id, destinataire_id) WHERE statut = 'en_attente' AND deleted_at IS NULL` — empêche les doublons en attente (FR-003).
+- **Index unique partiel** `uq_demande_active`: `(demandeur_id, destinataire_id) WHERE statut = 'en_attente' AND deleted_at IS NULL`, empêche les doublons en attente (FR-003).
 - **Index** sur `destinataire_id WHERE statut='en_attente'` (liste reçues), `demandeur_id WHERE statut='en_attente'` (liste envoyées).
 - **Index** sur `(demandeur_id, created_at)` pour le rate-limit (FR-014, Décision 6).
 - **Transitions**: `en_attente` → `acceptee` (FR-007) | `refusee` (FR-008) | `annulee` (FR-010). État terminal sinon.
@@ -49,7 +49,7 @@ Relation mutuelle symétrique. Ordre canonique `utilisateur_a_id < utilisateur_b
 
 - **CHECK** `ck_amitie_ordre`: `utilisateur_a_id < utilisateur_b_id`.
 - **Unique** `(utilisateur_a_id, utilisateur_b_id)` (FR-003).
-- Suppression physique au retrait d'ami (FR-012) ou au blocage (FR-013) — pas de soft delete (l'historique relationnel n'est pas requis ; la conversation, elle, est conservée mais verrouillée).
+- Suppression physique au retrait d'ami (FR-012) ou au blocage (FR-013), pas de soft delete (l'historique relationnel n'est pas requis ; la conversation, elle, est conservée mais verrouillée).
 
 ### `social.blocage`
 Relation orientée empêchant sollicitation et communication.
@@ -78,7 +78,7 @@ Fil privé entre deux amis. Ordre canonique (Décision 4). Conservée même apr�
 | dernier_message_at | TIMESTAMPTZ | NULL (tri des conversations) |
 
 - **CHECK** `ck_conversation_ordre`: `utilisateur_a_id < utilisateur_b_id`.
-- **Unique** `(utilisateur_a_id, utilisateur_b_id)` — une conversation par paire.
+- **Unique** `(utilisateur_a_id, utilisateur_b_id)`, une conversation par paire.
 - **Index** sur `dernier_message_at DESC`.
 
 ### `social.message`
@@ -94,8 +94,8 @@ Message texte dans une conversation.
 | lu_at | TIMESTAMPTZ | NULL (FR-024 ; non-NULL = lu par le destinataire) |
 | deleted_at | TIMESTAMPTZ | NULL (FR-028 ; soft delete = « message supprimé ») |
 
-- **Index** sur `(conversation_id, created_at DESC)` — pagination de l'historique.
-- **Index** sur `(conversation_id, lu_at) WHERE lu_at IS NULL` — comptage des non-lus.
+- **Index** sur `(conversation_id, created_at DESC)`, pagination de l'historique.
+- **Index** sur `(conversation_id, lu_at) WHERE lu_at IS NULL`, comptage des non-lus.
 
 ### `social.notification`
 Notification relationnelle (Décision 5).
@@ -131,7 +131,7 @@ iam.utilisateur 1──* social.notification
 - **R3** (FR-009): si une demande inverse `en_attente` existe au moment de l'envoi → la passer `acceptee` et créer l'amitié (auto-acceptation croisée), dans une **transaction**.
 - **R4** (FR-013): blocage entre A et B → suppression de l'amitié et de toute demande active entre eux + verrouillage de la conversation (transaction). Toute insertion de message refusée si un blocage existe dans un sens.
 - **R5** (FR-022/025): insertion de message autorisée uniquement si une **amitié active** existe entre l'expéditeur et le destinataire de la conversation.
-- **R6** (FR-026): toute lecture d'amis/conversations/messages est filtrée sur l'utilisateur authentifié — aucun accès aux relations d'autrui.
+- **R6** (FR-026): toute lecture d'amis/conversations/messages est filtrée sur l'utilisateur authentifié, aucun accès aux relations d'autrui.
 
 ## Orchestration & migration
 

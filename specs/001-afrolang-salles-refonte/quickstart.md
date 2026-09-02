@@ -1,4 +1,4 @@
-# Quickstart — Validation manuelle de la refonte
+# Quickstart : Validation manuelle de la refonte
 
 **Branch** : `001-afrolang-salles-refonte`
 **Date** : 2026-04-15
@@ -26,22 +26,22 @@ Le projet n'a pas de framework de test configuré (cf. CLAUDE.md). Cette procéd
 
 ---
 
-## Scénario 1 — Page `/afrolang` épurée (FR-001, FR-002, US1)
+## Scénario 1 : Page `/afrolang` épurée (FR-001, FR-002, US1)
 
-1. Se connecter en tant qu'`admin`. Aller dans l'admin Afrolang et créer une salle publique « Wolof — Soirée découverte » sur le groupe ethnique Wolof.
+1. Se connecter en tant qu'`admin`. Aller dans l'admin Afrolang et créer une salle publique « Wolof, Soirée découverte » sur le groupe ethnique Wolof.
 2. Se déconnecter, se reconnecter en tant qu'`user2`.
 3. Aller sur `/afrolang`.
 4. **Vérifier** : aucune section « Annuaire des groupes ethniques » n'est visible (audit DOM).
-5. **Vérifier** : la salle publique « Wolof — Soirée découverte » apparaît dans « Toutes les salles publiques » avec un bouton « Démarrer ».
+5. **Vérifier** : la salle publique « Wolof, Soirée découverte » apparaît dans « Toutes les salles publiques » avec un bouton « Démarrer ».
 6. Cliquer sur « Démarrer ».
 7. **Vérifier** : navigation directe vers `/afrolang/session/{salle_id}` (ou route équivalente) sans page intermédiaire ; LiveKit charge ; user2 entre comme participant.
 
 ---
 
-## Scénario 2 — Création salle privée depuis le widget Canal privé (FR-008, FR-009, US4)
+## Scénario 2 : Création salle privée depuis le widget Canal privé (FR-008, FR-009, US4)
 
 1. Toujours connecté en `user2`, retour à `/afrolang`.
-2. Sur la carte « Wolof — Soirée découverte », ouvrir le dropdown « Canal privé ».
+2. Sur la carte « Wolof : Soirée découverte », ouvrir le dropdown « Canal privé ».
 3. **Vérifier** : un bouton « Créer ma salle privée » est présent (l'utilisateur n'en a pas encore).
 4. Cliquer ; le modale `SallePriveeCreateModal` s'ouvre.
 5. Saisir : titre = « Cercle Wolof débutant », code secret = `wolof2026`, description = « Pratique douce ».
@@ -51,7 +51,7 @@ Le projet n'a pas de framework de test configuré (cf. CLAUDE.md). Cette procéd
 
 ---
 
-## Scénario 3 — Conflit d'unicité (FR-010, SC-005)
+## Scénario 3 : Conflit d'unicité (FR-010, SC-005)
 
 1. Toujours en `user2`, tenter de créer une seconde salle privée pour la même salle publique (via le bouton ou un appel API direct).
 2. **Vérifier** : `POST /api/afrolang/salles-privees` → 409, message « Vous avez déjà une salle privée pour cette salle publique », `data.salle_privee_existante_id` renseigné.
@@ -59,10 +59,10 @@ Le projet n'a pas de framework de test configuré (cf. CLAUDE.md). Cette procéd
 
 ---
 
-## Scénario 4 — Accès par code secret (FR-013, US3)
+## Scénario 4 : Accès par code secret (FR-013, US3)
 
 1. Se déconnecter, se reconnecter en tant qu'`admin` (autre utilisateur que l'auteur).
-2. Aller sur `/afrolang`, ouvrir le dropdown « Canal privé » de « Wolof — Soirée découverte ».
+2. Aller sur `/afrolang`, ouvrir le dropdown « Canal privé » de « Wolof, Soirée découverte ».
 3. **Vérifier** : la salle privée « Cercle Wolof débutant » est listée avec auteur « user2 ».
 4. Cliquer dessus → `SallePriveeJoinModal` s'ouvre, demandant le code.
 5. Saisir un code incorrect, soumettre.
@@ -72,7 +72,7 @@ Le projet n'a pas de framework de test configuré (cf. CLAUDE.md). Cette procéd
 
 ---
 
-## Scénario 5 — Auteur entre sans code (FR-014)
+## Scénario 5 : Auteur entre sans code (FR-014)
 
 1. Se reconnecter en tant que `user2`.
 2. Ouvrir le dropdown Canal privé sur la salle publique parente.
@@ -81,7 +81,7 @@ Le projet n'a pas de framework de test configuré (cf. CLAUDE.md). Cette procéd
 
 ---
 
-## Scénario 6 — Rate limit (R4)
+## Scénario 6 : Rate limit (R4)
 
 1. Se reconnecter en `admin`.
 2. Tenter 6 fois de suite la saisie d'un code incorrect sur la salle privée de `user2`.
@@ -93,15 +93,15 @@ Le projet n'a pas de framework de test configuré (cf. CLAUDE.md). Cette procéd
 
 ---
 
-## Scénario 7 — Indépendance salle privée ↔ salle publique (FR-018)
+## Scénario 7 : Indépendance salle privée ↔ salle publique (FR-018)
 
-1. Mettre fin à toute session live de la salle publique « Wolof — Soirée découverte ».
+1. Mettre fin à toute session live de la salle publique « Wolof, Soirée découverte ».
 2. En tant que `user2`, ouvrir « Ma salle privée » via le dropdown.
 3. **Vérifier** : la session privée démarre normalement, indépendamment de l'absence de session publique.
 
 ---
 
-## Scénario 8 — Suppression page `/afrolang/salle-privee/[id].vue` (FR-006, SC-007)
+## Scénario 8 : Suppression page `/afrolang/salle-privee/[id].vue` (FR-006, SC-007)
 
 1. Tenter d'accéder directement via URL : `http://localhost:3000/afrolang/salle-privee/{uuid-de-cercle-wolof}`.
 2. **Vérifier** : redirection (vers `/afrolang/{salle_id}` ou `/afrolang`), pas d'erreur 500. Idéalement : 404 ou middleware Nuxt qui catch la route inexistante.
@@ -109,7 +109,7 @@ Le projet n'a pas de framework de test configuré (cf. CLAUDE.md). Cette procéd
 
 ---
 
-## Scénario 9 — Endpoints legacy supprimés
+## Scénario 9 : Endpoints legacy supprimés
 
 `curl` chacun de ces endpoints (avec JWT valide) et vérifier 404 / 405 :
 
@@ -124,7 +124,7 @@ Tous DOIVENT renvoyer 404 (route inexistante) ou 405.
 
 ---
 
-## Scénario 10 — Audit (Principe VII)
+## Scénario 10 : Audit (Principe VII)
 
 1. Après les scénarios 2, 4, 6, 7, ouvrir Adminer → table `shared.audit_log` (ou équivalent).
 2. **Vérifier** : présence d'événements `creer_salle_privee`, `verifier_code_salle_privee_echec`, `rejoindre_session_salle_privee`, avec IP, user_agent, before/after JSONB.
@@ -147,4 +147,4 @@ cd uafricas_frontend && pnpm typecheck   # si script existe ; sinon pnpm build
 - [ ] Tous les scénarios 1 → 10 passent.
 - [ ] `cargo check` et `pnpm build` sans erreur.
 - [ ] Diff git : aucun fichier legacy oublié dans `app/components/afrolang/` ou `src/handlers/admin/`.
-- [ ] Constitution Check post-implémentation re-validée (notamment Principe IV — code secret jamais en clair en BDD ni dans l'audit).
+- [ ] Constitution Check post-implémentation re-validée (notamment Principe IV, code secret jamais en clair en BDD ni dans l'audit).

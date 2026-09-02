@@ -101,7 +101,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
     >
       <template #cell-utilisateur_nom="{ value }">
         <span v-if="value">{{ value }}</span>
-        <span v-else class="text-base-content/40 italic">Systeme</span>
+        <span v-else class="text-base-content/40 italic">Système</span>
       </template>
 
       <template #cell-action="{ value }">

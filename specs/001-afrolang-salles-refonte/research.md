@@ -1,4 +1,4 @@
-# Research — Refonte salles Afrolang
+# Research : Refonte salles Afrolang
 
 **Branch** : `001-afrolang-salles-refonte`
 **Date** : 2026-04-15
@@ -7,14 +7,14 @@ Ce document résout les inconnues techniques restantes (issues des Assumptions A
 
 ---
 
-## R1 — Stratégie de migration SQL : table rase legacy
+## R1 : Stratégie de migration SQL : table rase legacy
 
 **Decision** : modification in-place du fichier `uafricas_backend/doc/bd/schemas/08b_afrolang.sql` avec `DROP TABLE` / `DROP COLUMN` pour les artefacts legacy. Pas de fichier de migration séparé : le projet n'a pas encore d'outil de migration versionné (cf. CLAUDE.md, init via `docker-init.sh`) et le produit n'est pas en production (décision Q2).
 
 **Tables / colonnes supprimées** :
 
 - `DROP TABLE afrolang.salle_privee_adhesion CASCADE` (mécanisme adhésion/invitation abandonné)
-- `DROP TABLE afrolang.proposition_salle CASCADE` (création de salles publiques par utilisateurs abandonnée — admin-only désormais)
+- `DROP TABLE afrolang.proposition_salle CASCADE` (création de salles publiques par utilisateurs abandonnée, admin-only désormais)
 - `DROP TYPE afrolang.type_adhesion`, `DROP TYPE afrolang.etat_adhesion`, `DROP TYPE afrolang.etat_proposition`
 - Sur `afrolang.salle_privee` : `DROP COLUMN motif`, `DROP COLUMN declaration_adulte_at`, `DROP COLUMN visibilite`, `DROP COLUMN code_acces` (remplacé par `code_acces_hash`)
 - `DROP TYPE afrolang.motif_salle_privee`, `DROP TYPE afrolang.visibilite_salle_privee`
@@ -23,17 +23,17 @@ Ce document résout les inconnues techniques restantes (issues des Assumptions A
 
 **Sort de `afrolang.salle_moderateur`** : conservée si elle servait aux salles publiques (transfert de modération en cours de session) ; supprimée uniquement si dédiée aux salles privées. Vérification : la table `salle_moderateur` référence `salle_id` (publique) → **conservée**.
 
-**Rationale** : produit non encore en production (Q2 — A4 spec). Suppression dure plutôt que soft-deprecation pour réduire la dette immédiatement. Cohérent avec Principe V (Simplicité).
+**Rationale** : produit non encore en production (Q2, A4 spec). Suppression dure plutôt que soft-deprecation pour réduire la dette immédiatement. Cohérent avec Principe V (Simplicité).
 
 **Alternatives écartées** :
 
-- Migration douce (génération de code auto + email aux auteurs legacy) — surcoût pour zéro utilisateur réel.
-- Soft delete via flag `deprecated_at` — laisse du code mort, contraire au Principe V.
-- Fichier de migration versionné (Flyway-like) — outil non en place, hors scope.
+- Migration douce (génération de code auto + email aux auteurs legacy), surcoût pour zéro utilisateur réel.
+- Soft delete via flag `deprecated_at`, laisse du code mort, contraire au Principe V.
+- Fichier de migration versionné (Flyway-like), outil non en place, hors scope.
 
 ---
 
-## R2 — Format du code secret
+## R2 : Format du code secret
 
 **Decision** :
 
@@ -52,9 +52,9 @@ Ce document résout les inconnues techniques restantes (issues des Assumptions A
 
 ---
 
-## R3 — Stockage du code secret : bcrypt cost 10
+## R3 : Stockage du code secret : bcrypt cost 10
 
-**Decision** : `code_acces_hash CHAR(60) NOT NULL` (format bcrypt standard 60 caractères). Hash bcrypt cost **10** (et non 12 comme les mots de passe — voir rationale).
+**Decision** : `code_acces_hash CHAR(60) NOT NULL` (format bcrypt standard 60 caractères). Hash bcrypt cost **10** (et non 12 comme les mots de passe : voir rationale).
 
 **Implémentation** :
 
@@ -78,7 +78,7 @@ Ce document résout les inconnues techniques restantes (issues des Assumptions A
 
 ---
 
-## R4 — Rate limit sur vérification du code secret
+## R4 : Rate limit sur vérification du code secret
 
 **Decision** : 5 tentatives échouées par minute par couple (utilisateur connecté, salle privée). Au-delà : verrouillage 5 minutes, message « Trop de tentatives, réessayez dans quelques minutes ».
 
@@ -115,7 +115,7 @@ CREATE INDEX idx_afrolang_tentative_lookup
 
 ---
 
-## R5 — Cycle de vie d'une session live
+## R5 : Cycle de vie d'une session live
 
 **Decision** : la table `afrolang.session` reste structurellement inchangée. Une salle privée durable PEUT avoir 0..N sessions historiques + 0..1 session active (état `en_cours`). Démarrer une nouvelle session dans une salle privée existante = créer une nouvelle ligne `afrolang.session` avec `salle_privee_id` renseigné et `etat='en_cours'`.
 
@@ -123,7 +123,7 @@ CREATE INDEX idx_afrolang_tentative_lookup
 
 **Indépendance salle privée ↔ salle publique** (cf. Q5 spec) : aucune contrainte FK conditionnée à l'état de la salle publique. Démarrage autorisé même si `afrolang.salle.actif=true` mais aucune session publique en cours.
 
-**Modérateur effectif d'une session privée** : `moderateur_id = salle_privee.cree_par` (auteur), simplification — pas de transfert de modération sur salles privées (cohérent avec absence du concept dans la refonte).
+**Modérateur effectif d'une session privée** : `moderateur_id = salle_privee.cree_par` (auteur), simplification, pas de transfert de modération sur salles privées (cohérent avec absence du concept dans la refonte).
 
 **Alternatives écartées** :
 
@@ -132,7 +132,7 @@ CREATE INDEX idx_afrolang_tentative_lookup
 
 ---
 
-## R6 — Flux frontend pour la création / accès salle privée
+## R6 : Flux frontend pour la création / accès salle privée
 
 **Decision** : réutilisation maximale des composants existants `SallePriveeCreateModal.vue` et `SallePriveeJoinModal.vue`, refactorisés pour n'exposer que :
 
@@ -145,7 +145,7 @@ CREATE INDEX idx_afrolang_tentative_lookup
 
 **Widget « Canal privé » (dropdown existant)** : aucun changement structurel, branchement de l'action « Rejoindre » sur l'ouverture de `SallePriveeJoinModal` (au lieu de l'ancien parcours adhésion). Branchement de l'action « Créer ma salle privée » (visible si l'utilisateur n'en a pas pour cette salle publique) sur `SallePriveeCreateModal`.
 
-**Rationale** : minimise le diff frontend (Principe V), respecte Tailwind v4 pur (Principe VI — composants publics).
+**Rationale** : minimise le diff frontend (Principe V), respecte Tailwind v4 pur (Principe VI, composants publics).
 
 **Alternatives écartées** :
 

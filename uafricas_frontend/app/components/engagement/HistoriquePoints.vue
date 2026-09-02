@@ -1,6 +1,13 @@
 <script setup lang="ts">
 /**
- * Historique des points — liste paginée, filtres catégorie + période.
+ * `<component :is="'NuxtLink'">` ne résout PAS le composant : la chaîne est
+ * rendue telle quelle, et le navigateur reçoit une balise `<NuxtLink>` inerte
+ * un lien qui n'en est pas un. `resolveComponent` le résout pour de bon.
+ */
+const LienNuxt = resolveComponent('NuxtLink')
+
+/**
+ * Historique des points : liste paginée, filtres catégorie + période.
  * Tailwind v4 pur (Principe VI).
  *
  * Aucun libellé du barème n'est écrit ici : `libelle` vient de la règle, la
@@ -82,7 +89,7 @@ const signe = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
 /**
  * Mention d'écrêtage (R14). `plafond_atteint` couvre deux situations très
- * différentes pour le membre — les confondre ferait croire à une perte de points
+ * différentes pour le membre : les confondre ferait croire à une perte de points
  * là où il n'y en a pas, ou l'inverse.
  */
 /**
@@ -150,13 +157,6 @@ const mentionPlafond = (m: MouvementPoints): string | null => {
     : 'plafond atteint, aucun point crédité'
 }
 
-/**
- * `<component :is>` attend un COMPOSANT, pas son nom : la chaîne `'NuxtLink'`
- * n'était résolue nulle part et Vue rendait un élément `<nuxtlink>` inerte —
- * une pastille d'apparence cliquable qui ne menait à rien, sans le moindre
- * avertissement. Voir la note jumelle dans `media/CarteProgramme.vue`.
- */
-const Lien = resolveComponent('NuxtLink')
 </script>
 
 <template>
@@ -240,7 +240,7 @@ const Lien = resolveComponent('NuxtLink')
                 lisible, avec un lien quand la page de détail existe.
               -->
               <component
-                :is="lienContenu(m) ? Lien : 'span'"
+                :is="lienContenu(m) ? LienNuxt : 'span'"
                 v-if="m.type_objet"
                 :to="lienContenu(m)"
                 class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-gray-600"
@@ -285,7 +285,7 @@ const Lien = resolveComponent('NuxtLink')
         >
           <font-awesome-icon icon="fa-solid fa-chevron-left" /> Précédent
         </button>
-        <span class="text-xs text-gray-400">Page {{ page }} / {{ totalPages }} — {{ total }} mouvement{{ total > 1 ? 's' : '' }}</span>
+        <span class="text-xs text-gray-400">Page {{ page }} / {{ totalPages }} - {{ total }} mouvement{{ total > 1 ? 's' : '' }}</span>
         <button
           type="button"
           class="text-sm text-gray-500 transition hover:text-gray-900 disabled:opacity-40"

@@ -8,7 +8,7 @@ const etape = ref(1)
 const erreurLocale = ref<string | null>(null)
 
 const form = reactive({
-  // Etape 1 — Infos de base
+  // Etape 1 : Infos de base
   titre: '',
   description: '',
   type_operation: 'vente',
@@ -17,10 +17,10 @@ const form = reactive({
   devise: 'XOF',
   prix_negociable: false,
   quantite: 1,
-  // Etape 2 — Categorie
+  // Etape 2 : Categorie
   categorie_id: '',
   etat: 'brouillon',
-  // Etape 3 — Contact
+  // Etape 3 : Contact
   ville: '',
   adresse: '',
   type_contact: 'messagerie_plateforme',
@@ -86,7 +86,7 @@ const soumettre = async () => {
     <!-- Indicateur d'etapes -->
     <ul class="steps steps-horizontal w-full mb-6">
       <li class="step" :class="{ 'step-primary': etape >= 1 }">Infos de base</li>
-      <li class="step" :class="{ 'step-primary': etape >= 2 }">Categorie & Etat</li>
+      <li class="step" :class="{ 'step-primary': etape >= 2 }">Catégorie & État</li>
       <li class="step" :class="{ 'step-primary': etape >= 3 }">Contact & Localisation</li>
     </ul>
 
@@ -163,16 +163,16 @@ const soumettre = async () => {
         <!-- Etape 2 : Categorie & Etat -->
         <div v-show="etape === 2" class="space-y-4">
           <div class="form-control">
-            <label class="label"><span class="label-text">ID Categorie (UUID)</span></label>
-            <input v-model="form.categorie_id" type="text" class="input input-bordered" placeholder="Laisser vide si aucune categorie" />
+            <label class="label"><span class="label-text">ID Catégorie (UUID)</span></label>
+            <input v-model="form.categorie_id" type="text" class="input input-bordered" placeholder="Laisser vide si aucune catégorie" />
           </div>
 
           <div class="form-control">
-            <label class="label"><span class="label-text">Etat initial</span></label>
+            <label class="label"><span class="label-text">État initial</span></label>
             <select v-model="form.etat" class="select select-bordered">
               <option value="brouillon">Brouillon</option>
               <option value="en_attente">En attente de validation</option>
-              <option value="publiee">Publiee</option>
+              <option value="publiee">Publiée</option>
             </select>
           </div>
 
@@ -201,7 +201,7 @@ const soumettre = async () => {
               <select v-model="form.type_contact" class="select select-bordered">
                 <option value="messagerie_plateforme">Messagerie plateforme</option>
                 <option value="email">Email</option>
-                <option value="telephone">Telephone</option>
+                <option value="telephone">Téléphone</option>
               </select>
             </div>
             <div class="form-control">
@@ -214,7 +214,7 @@ const soumettre = async () => {
         <!-- Navigation etapes -->
         <div class="flex items-center justify-between pt-6 border-t mt-6">
           <button v-if="etape > 1" class="btn btn-ghost" @click="precedente">
-            <font-awesome-icon icon="arrow-left" class="mr-1" /> Precedent
+            <font-awesome-icon icon="arrow-left" class="mr-1" /> Précédent
           </button>
           <div v-else />
 

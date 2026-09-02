@@ -19,7 +19,7 @@ use crate::models::engagement::{
 use crate::ApiResponse;
 
 /// Charge les badges obtenus d'un membre (requête partagée par l'espace membre et
-/// le profil public — un seul SQL, donc une seule définition de « badge obtenu »).
+/// le profil public : un seul SQL, donc une seule définition de « badge obtenu »).
 async fn charger_badges_obtenus(
     pool: &PgPool,
     utilisateur_id: Uuid,
@@ -164,7 +164,7 @@ pub async fn mon_compte(
 }
 
 /// Paramètres du journal. Les filtres nuls sont neutralisés par cast paramétré
-/// (`$n::text IS NULL OR …`) — jamais de concaténation de fragments SQL.
+/// (`$n::text IS NULL OR …`) : jamais de concaténation de fragments SQL.
 #[derive(serde::Deserialize)]
 pub struct JournalParams {
     pub page: Option<i64>,
@@ -251,7 +251,7 @@ pub async fn mon_journal(
     }))
 }
 
-/// GET /api/engagement/mes-categories — ventilation des points par catégorie (FR-011).
+/// GET /api/engagement/mes-categories : ventilation des points par catégorie (FR-011).
 ///
 /// Une seule requête d'agrégation sur le journal du membre (R2 : aucun solde
 /// persisté par catégorie). `solde_points` (courant) et `total_gagne` (cumul du
@@ -272,7 +272,7 @@ pub async fn mes_categories(
             .unwrap_or(0);
 
     // Les mouvements sans catégorie (antérieurs au rattrapage, règle supprimée)
-    // sont regroupés sous « Autres » et placés en fin de liste — aucune ligne
+    // sont regroupés sous « Autres » et placés en fin de liste, aucune ligne
     // n'est masquée, sinon la somme ne se réconcilierait pas avec le journal.
     let categories = sqlx::query_as::<_, CategorieVentilation>(
         "SELECT c.code,
@@ -304,7 +304,7 @@ pub async fn mes_categories(
     }))
 }
 
-/// GET /api/engagement/actions-recompensees — barème public (FR-015, FR-016).
+/// GET /api/engagement/actions-recompensees, barème public (FR-015, FR-016).
 ///
 /// Source **unique** des libellés, montants, plafonds et seuils du barème côté
 /// front : aucune de ces valeurs n'est écrite en dur dans le frontend. Public,
@@ -333,8 +333,8 @@ pub async fn actions_recompensees(pool: web::Data<PgPool>) -> Result<HttpRespons
 /// GET /api/engagement/mes-badges (FR-013, FR-018)
 ///
 /// Effet de bord assumé : `evaluer_badges` est appelée **avant** de répondre.
-/// C'est ce qui rattrape les conditions devenues vraies sans mouvement — badge
-/// créé par l'administration, seuil abaissé — sans aucune tâche de fond.
+/// C'est ce qui rattrape les conditions devenues vraies sans mouvement, badge
+/// créé par l'administration, seuil abaissé, sans aucune tâche de fond.
 /// L'insertion étant `ON CONFLICT DO NOTHING`, l'appel est inoffensif.
 pub async fn mes_badges(
     req: HttpRequest,
@@ -386,10 +386,10 @@ pub async fn mes_badges(
     }))
 }
 
-/// GET /api/engagement/badges/{utilisateur_id} — badges **publics** (FR-014).
+/// GET /api/engagement/badges/{utilisateur_id}, badges **publics** (FR-014).
 ///
 /// Public comme `GET /niveau/{utilisateur_id}` : renvoie uniquement les badges
-/// obtenus. **Jamais** de solde, de réputation ni de mouvement — le détail
+/// obtenus. **Jamais** de solde, de réputation ni de mouvement, le détail
 /// chiffré de l'engagement reste privé.
 pub async fn badges_utilisateur(
     path: web::Path<Uuid>,
@@ -405,36 +405,36 @@ pub async fn badges_utilisateur(
 const RESEAUX_TRACABLES: &[&str] =
     &["whatsapp", "facebook", "x", "linkedin", "telegram", "email"];
 
-/// Familles de contenus partageables — littéraux fixes, alignés sur les **valeurs
+/// Familles de contenus partageables : littéraux fixes, alignés sur les **valeurs
 /// réellement émises** par les 6 composants de partage du frontend (et non sur une
 /// nomenclature théorique : une famille mal orthographiée ferait échouer le
 /// traçage en silence).
 const FAMILLES_PARTAGEABLES: &[&str] = &[
-    // Médias radio & télé — `media/MediaPartagerModal`
+    // Médias radio & télé : `media/MediaPartagerModal`
     "chaine_tv",
     "station_radio",
     "emission_tele",
     "emission_radio",
     "episode_tele",
     "episode_radio",
-    // Opportunité Afrique — `PartagerFicheModal` et `PartagerElementModal`
+    // Opportunité Afrique : `PartagerFicheModal` et `PartagerElementModal`
     // (valeurs de `TypeObjetElement`, composables/useOpportuniteAfrique.ts)
     "fiche_pays",
     "secteur_developpement",
     "recette_culinaire",
     "site_touristique",
     "personnalite_connue",
-    // Événements — `evenements/EvenementPartage`
+    // Événements : `evenements/EvenementPartage`
     "evenement",
-    // Gouvernance — `universite/gouvernance/PartagePublication`
+    // Gouvernance : `universite/gouvernance/PartagePublication`
     "idea_force",
     "factcheck",
     "bad_habit",
-    // Retrouve-amis — `retrouve-amis/BoutonsPartage`
+    // Retrouve-amis : `retrouve-amis/BoutonsPartage`
     "avis_recherche",
     // Familles ajoutées par la feature 008 : depuis que le partage crédite
     // l'auteur, toute famille dotée d'un auteur résolvable doit pouvoir être
-    // tracée — sinon le partage externe d'une vidéo ne rapporterait rien alors
+    // tracée : sinon le partage externe d'une vidéo ne rapporterait rien alors
     // que son repost interne, lui, crédite.
     "codimoi",
     "video",
@@ -497,7 +497,7 @@ pub async fn tracer_partage_externe(
     }))
 }
 
-/// GET /api/engagement/niveau/{utilisateur_id} — badge public léger.
+/// GET /api/engagement/niveau/{utilisateur_id}, badge public léger.
 pub async fn niveau_utilisateur(
     path: web::Path<Uuid>,
     pool: web::Data<PgPool>,

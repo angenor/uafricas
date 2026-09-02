@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Mock — Notifications et suggestions intelligentes
+// Mock : Notifications et suggestions intelligentes
 // ════════════════════════════════════════════════════════════════════════════
 
 /**

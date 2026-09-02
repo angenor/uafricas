@@ -1,6 +1,6 @@
 /**
  * Back-office des **programmes** (`emission_*`) et de leurs **épisodes**
- * (feature 009, US1 — FR-044 à FR-047).
+ * (feature 009, US1, FR-044 à FR-047).
  *
  * Un seul composable pour la télé et la radio : les routes admin
  * `/api/admin/medias/emissions` sont communes aux deux familles, le
@@ -20,7 +20,7 @@ import type {
 import { AIDES_CADENCE, CADENCES_ORDONNEES, LIBELLES_CADENCE } from '~/composables/useMediaEmissions'
 
 /**
- * Périodicités proposées en back-office — **dérivées** de la table publique
+ * Périodicités proposées en back-office, **dérivées** de la table publique
  * (010, FR-041).
  *
  * Ce fichier entretenait auparavant ses propres libellés (« Quotidienne »,
@@ -166,7 +166,7 @@ export const useAdminMediaEmissions = () => {
     )
   }
 
-  /** Un seul « à la une » par programme — la bascule est transactionnelle. */
+  /** Un seul « à la une » par programme : la bascule est transactionnelle. */
   const definirALaUne = async (episodeId: string) => {
     const response = await adminFetch<ApiResponse<{ id: string; a_la_une: boolean }>>(
       `/api/admin/medias/episodes/${episodeId}/a-la-une`,

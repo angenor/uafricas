@@ -38,7 +38,7 @@
             L'histoire, les traditions et les savoirs de l'Afrique et des peuples afro-descendants
             risquent parfois de se perdre au fil du temps. <strong class="text-gray-900">Codimoi</strong>
             est une mémoire collective en ligne où chacun peut <strong class="text-gray-900">documenter,
-            conserver et partager</strong> récits, proverbes, traditions et savoirs — pour que rien
+            conserver et partager</strong> récits, proverbes, traditions et savoirs, pour que rien
             de précieux ne disparaisse.
           </p>
 

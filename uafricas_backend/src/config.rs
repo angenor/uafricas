@@ -36,7 +36,7 @@ pub struct JwtConfig {
 /// Configuration LiveKit partagee via web::Data
 #[derive(Clone)]
 pub struct LivekitConfig {
-    /// URL client (WebSocket, publique) — renvoyee au frontend pour la connexion SFU.
+    /// URL client (WebSocket, publique), renvoyee au frontend pour la connexion SFU.
     pub url: String,
     /// URL de l'API serveur LiveKit (HTTP, souvent interne). En prod derriere un
     /// reverse-proxy, elle DOIT pointer directement sur le conteneur LiveKit

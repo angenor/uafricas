@@ -54,7 +54,7 @@ Pour chaque NoeudArbre dans le graphe :
     si nbParents >= 2 → null (complet)
 ```
 
-### Flux de données — Ajout contextuel
+### Flux de données : Ajout contextuel
 
 ```
 1. Utilisateur clique nœud P → PanneauPersonne s'ouvre (mode: 'fiche')
@@ -68,7 +68,7 @@ Pour chaque NoeudArbre dans le graphe :
 8. PanneauPersonne revient en mode: 'fiche' sur la nouvelle personne
 ```
 
-### Flux de données — Suppression
+### Flux de données : Suppression
 
 ```
 1. Utilisateur clique "Supprimer" dans PanneauPersonne

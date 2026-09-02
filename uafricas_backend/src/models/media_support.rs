@@ -1,5 +1,5 @@
-//! Fiche d'un support média — thématiques multiples et couverture territoriale
-//! (feature 009-medias-programmes-episodes, US3 et US4 — migration 09r).
+//! Fiche d'un support média : thématiques multiples et couverture territoriale
+//! (feature 009-medias-programmes-episodes, US3 et US4, migration 09r).
 //!
 //! Deux tables de liaison polymorphes par `(type_support, support_id)`, patron
 //! maison employé identiquement par `support_detenteur` (09m),
@@ -22,7 +22,7 @@ use crate::errors::ApiErreur;
 ///
 /// La liste est séparée par des **virgules** et non répétée en plusieurs clés :
 /// `web::Query` s'appuie sur `serde_urlencoded`, qui ne sait pas agréger des
-/// occurrences répétées dans un `Vec` — il échoue en 400 dès la première
+/// occurrences répétées dans un `Vec` : il échoue en 400 dès la première
 /// valeur, même seule. Parser ici évite d'ajouter `serde_qs` pour un champ.
 ///
 /// Un identifiant mal formé est rejeté explicitement : l'ignorer élargirait
@@ -57,7 +57,7 @@ pub struct ThematiquePublique {
 }
 
 /// Thème du référentiel `media` réellement déclaré par au moins un support
-/// publié, avec son décompte — même principe que `GET /api/experts/specialites`
+/// publié, avec son décompte, même principe que `GET /api/experts/specialites`
 /// (on ne propose pas un filtre qui ne remonterait rien).
 #[derive(Debug, Serialize, FromRow)]
 pub struct ThematiqueDecompte {
@@ -84,7 +84,7 @@ impl ThematiquesRequest {
         Ok(())
     }
 
-    /// Dédoublonne en conservant l'ordre de saisie — l'unicité SQL refuserait
+    /// Dédoublonne en conservant l'ordre de saisie, l'unicité SQL refuserait
     /// sinon l'insertion en bloc.
     pub fn ids_uniques(&self) -> Vec<Uuid> {
         let mut vus = std::collections::HashSet::new();
@@ -100,7 +100,7 @@ impl ThematiquesRequest {
 // Couverture territoriale (US4)
 // ────────────────────────────────────────────────────────────────
 
-/// Terminologie : l'interface dit « territoire » là où la base dit `pays` —
+/// Terminologie : l'interface dit « territoire » là où la base dit `pays`, 
 /// convention établie du projet.
 #[derive(Debug, Clone, Serialize, FromRow)]
 pub struct TerritoirePublic {
@@ -111,7 +111,7 @@ pub struct TerritoirePublic {
 #[derive(Debug, Clone, Serialize)]
 pub struct CouverturePublique {
     /// `true` : le support couvre tout le continent ; `territoires` est alors
-    /// vide, et le restera — le trigger SQL refuse l'ajout.
+    /// vide, et le restera, le trigger SQL refuse l'ajout.
     pub couverture_continentale: bool,
     pub territoires: Vec<TerritoirePublic>,
 }
@@ -124,7 +124,7 @@ pub struct TerritoireDecompte {
 }
 
 /// Référentiel de filtre par territoire, avec le marqueur des supports
-/// panafricains — ils remontent sur **chaque** territoire (FR-036) et ne
+/// panafricains : ils remontent sur **chaque** territoire (FR-036) et ne
 /// pouvaient donc pas être comptés dans les lignes ci-dessus.
 #[derive(Debug, Serialize)]
 pub struct TerritoiresDisponibles {

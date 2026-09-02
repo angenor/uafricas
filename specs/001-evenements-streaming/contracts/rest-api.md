@@ -1,4 +1,4 @@
-# Contrat REST — Direct d'événement
+# Contrat REST : Direct d'événement
 
 Toutes les routes sont sous le scope public existant `/api/evenements`, préfixe `/{id}/direct` (où `{id}` = `evenement_id`). Authentification : JWT `Authorization: Bearer <access>` (in-handler, pattern `extraire_utilisateur_id`). Enveloppe standard : `ApiResponse<T> = { success: bool, data: T | null, error: string | null }`.
 
@@ -24,7 +24,7 @@ Codes : `200/201` succès, `401` non connecté, `403` non éligible (non inscrit
     "nombre_participants": 0,
     "max_participants": 100,
     "fenetre_ouverture_at": "2026-06-01T13:45:00Z",
-    "demandes_parole": []                     // [{utilisateur_id, nom, main_levee_at}] — uniquement si est_organisateur
+    "demandes_parole": []                     // [{utilisateur_id, nom, main_levee_at}], uniquement si est_organisateur
   },
   "error": null
 }

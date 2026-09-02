@@ -5,13 +5,13 @@
 
 ## Modifications du schema existant
 
-### Table `arbre_genealogique.arbres` — colonne ajoutée
+### Table `arbre_genealogique.arbres` : colonne ajoutée
 
 | Colonne | Type | Description |
 |---------|------|-------------|
 | `arbre_prive` | BOOLEAN DEFAULT FALSE | Si true, toutes les personnes de l'arbre sont exclues du matching public |
 
-### Table `arbre_genealogique.personnes` — colonne ajoutée
+### Table `arbre_genealogique.personnes`, colonne ajoutée
 
 | Colonne | Type | Description |
 |---------|------|-------------|
@@ -46,7 +46,7 @@
 | `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
 
 **Contraintes** :
-- UNIQUE(arbre_id, utilisateur_id) — un seul accès par utilisateur par arbre
+- UNIQUE(arbre_id, utilisateur_id), un seul accès par utilisateur par arbre
 - CHECK: le collaborateur n'est pas le propriétaire de l'arbre (vérifié côté applicatif)
 - Limite 20 collaborateurs par arbre (vérifiée par COUNT avant INSERT)
 

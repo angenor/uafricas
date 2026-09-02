@@ -1,5 +1,5 @@
 <template>
-  <div class="group relative bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 pt-16 pb-6">
+  <div class="group relative bg-gradient-to-r from-af-vert via-af-vert to-af-vert pt-16 pb-6">
     <!-- Pattern overlay -->
     <div class="absolute inset-0 opacity-10">
       <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%222%22 fill=%22white%22/></svg>'); background-size: 40px 40px;"></div>
@@ -9,9 +9,9 @@
       <!-- Titre ↔ sous-titre en crossfade au survol -->
       <div class="relative flex items-center justify-center min-h-10 md:min-h-12 mb-8 select-none">
         <h1 class="absolute inset-0 flex items-center justify-center text-2xl md:text-4xl font-bold text-white transition-opacity duration-300 group-hover:opacity-0">
-          Marché <span class="text-yellow-300">&nbsp;Africain</span>
+          Marché <span class="text-white">&nbsp;Africain</span>
         </h1>
-        <p class="absolute inset-0 flex items-center justify-center text-sm md:text-base text-emerald-100 max-w-2xl mx-auto px-2 text-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <p class="absolute inset-0 flex items-center justify-center text-sm md:text-base text-white/90 max-w-2xl mx-auto px-2 text-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           Découvrez des trésors à travers toute l'Afrique. Achetez, vendez, échangez.
         </p>
       </div>
@@ -23,12 +23,12 @@
           <div class="relative">
             <button
               @click="showCategories = !showCategories"
-              class="flex items-center justify-between w-full md:w-48 px-4 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+              class="flex items-center justify-between w-full md:w-48 px-4 py-3 bg-af-fond rounded-lg hover:bg-af-fond transition-colors"
             >
-              <span class="text-gray-700 font-medium truncate">{{ selectedCategoryLabel }}</span>
+              <span class="text-af-corps font-medium truncate">{{ selectedCategoryLabel }}</span>
               <font-awesome-icon
                 :icon="['fas', 'chevron-down']"
-                class="w-3 h-3 text-gray-400 ml-2 transition-transform"
+                class="w-3 h-3 text-af-atone-2 ml-2 transition-transform"
                 :class="{ 'rotate-180': showCategories }"
               />
             </button>
@@ -44,20 +44,20 @@
             >
               <div
                 v-if="showCategories"
-                class="absolute z-20 left-0 mt-2 w-56 bg-white rounded-xl shadow-lg py-2 border border-gray-100"
+                class="absolute z-20 left-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 border border-af-bordure"
               >
                 <button
                   v-for="cat in categories"
                   :key="cat.key"
                   @click="selectCategory(cat.key)"
-                  class="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center justify-between"
-                  :class="{ 'bg-emerald-50 text-emerald-700': modelCategorie === cat.key }"
+                  class="w-full px-4 py-2.5 text-left text-af-corps hover:bg-af-vert/5 hover:text-af-vert transition-colors flex items-center justify-between"
+                  :class="{ 'bg-af-vert/5 text-af-vert': modelCategorie === cat.key }"
                 >
                   <span>{{ cat.label }}</span>
                   <font-awesome-icon
                     v-if="modelCategorie === cat.key"
                     :icon="['fas', 'check']"
-                    class="w-4 h-4 text-emerald-600"
+                    class="w-4 h-4 text-af-vert"
                   />
                 </button>
               </div>
@@ -68,7 +68,7 @@
           <div class="flex-1 relative">
             <font-awesome-icon
               :icon="['fas', 'magnifying-glass']"
-              class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+              class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-af-atone-2"
             />
             <input
               type="text"
@@ -76,14 +76,14 @@
               @input="$emit('update:modelRecherche', ($event.target as HTMLInputElement).value)"
               @keyup.enter="$emit('search')"
               placeholder="Rechercher une annonce..."
-              class="w-full pl-11 pr-4 py-3 rounded-xl border-0 focus:ring-2 focus:ring-emerald-500 bg-gray-50 placeholder-gray-400"
+              class="w-full pl-11 pr-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-af-vert bg-af-fond placeholder-af-atone-2"
             />
           </div>
 
           <!-- Bouton publier -->
           <button
             @click="$emit('publish')"
-            class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg hover:shadow-xl"
+            class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-af-chocolat to-af-chocolat/50 text-white font-semibold rounded-lg hover:from-af-chocolat hover:to-af-chocolat transition-all shadow-lg hover:shadow-xl"
           >
             <font-awesome-icon :icon="['fas', 'plus']" class="w-4 h-4" />
             <span class="whitespace-nowrap">Publier une annonce</span>
@@ -95,7 +95,7 @@
       <div class="mt-10 flex flex-wrap justify-center gap-8 text-center">
         <div class="text-white">
           <div class="text-3xl font-bold">{{ totalAnnonces }}</div>
-          <div class="text-emerald-200 text-sm">Annonces</div>
+          <div class="text-white/80 text-sm">Annonces</div>
         </div>
       </div>
     </div>

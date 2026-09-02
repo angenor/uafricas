@@ -9,7 +9,7 @@ const colonnes: TableColumn[] = [
   { key: 'nom_original', label: 'Nom du fichier', sortable: true },
   { key: 'type_mime', label: 'Type', sortable: true, width: 'w-32' },
   { key: 'taille_octets', label: 'Taille', sortable: true, width: 'w-28', align: 'right',
-    format: (v: number | null) => { if (!v) return '—'; if (v < 1024) return `${v} o`; if (v < 1024 * 1024) return `${(v / 1024).toFixed(1)} Ko`; return `${(v / 1024 / 1024).toFixed(1)} Mo` } },
+    format: (v: number | null) => { if (!v) return '-'; if (v < 1024) return `${v} o`; if (v < 1024 * 1024) return `${(v / 1024).toFixed(1)} Ko`; return `${(v / 1024 / 1024).toFixed(1)} Mo` } },
   { key: 'created_at', label: 'Upload', sortable: true, width: 'w-28', format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]
 const filterDefs: FilterDefinition[] = [
@@ -39,7 +39,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
       </template>
       <template #cell-type_mime="{ value }">
         <span v-if="value" class="badge badge-sm" :class="{ 'badge-info': value.startsWith('image/'), 'badge-accent': value.startsWith('video/'), 'badge-warning': value.startsWith('audio/'), 'badge-neutral': value.startsWith('application/') }">{{ value.split('/')[1] || value }}</span>
-        <span v-else class="text-base-content/30">—</span>
+        <span v-else class="text-base-content/30">-</span>
       </template>
       <template #actions="{ item }">
         <div class="flex gap-1">

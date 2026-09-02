@@ -1,4 +1,4 @@
-# Ordre d'exécution recommandé — Sidebar Admin UAfricas
+# Ordre d'exécution recommandé : Sidebar Admin UAfricas
 
 ## Phases d'exécution
 
@@ -33,11 +33,11 @@ Phase 5 ─ Finalisation                                       [ ] NON DÉMARRÉ
 
 ## Règles d'exécution
 
-1. **Backend d'abord, frontend ensuite** — Pour chaque plan, implémenter les endpoints API avant les pages Vue
-2. **Respecter les dépendances** — Ne pas démarrer un plan tant que ses prérequis ne sont pas terminés
-3. **Paralléliser quand possible** — Les plans d'une même phase (sauf contraintes) peuvent être faits en parallèle
-4. **Tester après chaque frontend** — Lancer `agent-browser --headed` pour les tests manuels de chaque plan
-5. **Cocher la progression** — Mettre à jour les `[ ]` → `[x]` dans chaque fichier de plan au fur et à mesure
+1. **Backend d'abord, frontend ensuite**, Pour chaque plan, implémenter les endpoints API avant les pages Vue
+2. **Respecter les dépendances** : Ne pas démarrer un plan tant que ses prérequis ne sont pas terminés
+3. **Paralléliser quand possible** : Les plans d'une même phase (sauf contraintes) peuvent être faits en parallèle
+4. **Tester après chaque frontend** : Lancer `agent-browser --headed` pour les tests manuels de chaque plan
+5. **Cocher la progression** : Mettre à jour les `[ ]` → `[x]` dans chaque fichier de plan au fur et à mesure
 
 ---
 
@@ -63,19 +63,19 @@ Le chemin le plus long qui ne peut pas être parallélisé :
 
 | Plan | Backend | Frontend | Total | Complexité |
 |------|:-------:|:--------:|:-----:|:----------:|
-| 08 — Médias & Contenus | 30 | 22 | 52 | Haute (4 sous-modules) |
-| 02 — Référentiels | 24 | 18 | 42 | Moyenne (données partagées) |
-| 10 — Profils pays | 31 | 5 | 36 | Haute (8 sous-entités, 9 onglets) |
-| 06 — Culture | 20 | 14 | 34 | Moyenne |
-| 09 — Gouvernance | 19 | 13 | 32 | Moyenne |
-| 05 — Innovation | 18 | 13 | 31 | Moyenne |
-| 01 — Utilisateurs & Accès | 15 | 13 | 28 | Moyenne (RBAC) |
-| 03 — Marché Africain | 11 | 8 | 19 | Faible |
-| 04 — Programmes d'échange | 10 | 8 | 18 | Faible |
-| 00 — Fondation | 6 | 12 | 18 | Faible |
-| 07 — AfroLang | 7 | 9 | 16 | Faible |
-| 11 — Audit & Logs | 8 | 5 | 13 | Faible (diff JSON) |
-| 12 — Dashboard | 3 | 6 | 9 | Faible (agrégation) |
+| 08 : Médias & Contenus | 30 | 22 | 52 | Haute (4 sous-modules) |
+| 02 : Référentiels | 24 | 18 | 42 | Moyenne (données partagées) |
+| 10 : Profils pays | 31 | 5 | 36 | Haute (8 sous-entités, 9 onglets) |
+| 06 : Culture | 20 | 14 | 34 | Moyenne |
+| 09 : Gouvernance | 19 | 13 | 32 | Moyenne |
+| 05 : Innovation | 18 | 13 | 31 | Moyenne |
+| 01 : Utilisateurs & Accès | 15 | 13 | 28 | Moyenne (RBAC) |
+| 03 : Marché Africain | 11 | 8 | 19 | Faible |
+| 04 : Programmes d'échange | 10 | 8 | 18 | Faible |
+| 00 : Fondation | 6 | 12 | 18 | Faible |
+| 07 : AfroLang | 7 | 9 | 16 | Faible |
+| 11 : Audit & Logs | 8 | 5 | 13 | Faible (diff JSON) |
+| 12 : Dashboard | 3 | 6 | 9 | Faible (agrégation) |
 
 ---
 
@@ -126,4 +126,4 @@ Le chemin le plus long qui ne peut pas être parallélisé :
 
 ## Prochaine action
 
-> **Commencer par le plan `01-utilisateurs-acces.md`** — Backend : endpoints CRUD utilisateurs, rôles, permissions, organisations. Frontend : pages admin correspondantes.
+> **Commencer par le plan `01-utilisateurs-acces.md`**, Backend : endpoints CRUD utilisateurs, rôles, permissions, organisations. Frontend : pages admin correspondantes.

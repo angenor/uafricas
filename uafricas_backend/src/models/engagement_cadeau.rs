@@ -53,7 +53,7 @@ pub struct Cadeau {
 /// Une transaction du journal comptable.
 ///
 /// `mode` et `etat` sont lus en `text` : les enums PostgreSQL n'ont que deux et
-/// cinq valeurs, consommées par de simples comparaisons — un type Rust dédié
+/// cinq valeurs, consommées par de simples comparaisons, un type Rust dédié
 /// n'apporterait rien qu'un `CHECK` ne garantisse déjà.
 #[derive(Serialize, FromRow)]
 pub struct TransactionCadeau {
@@ -81,7 +81,7 @@ pub struct TransactionCadeau {
 ///
 /// Les deux lectures actuelles ne sélectionnent que deux colonnes et se
 /// contentent d'un tuple ; la struct complète existe pour le jour où le
-/// versement arrivera — c'est-à-dire dès que `montant_verse` cessera d'être
+/// versement arrivera : c'est-à-dire dès que `montant_verse` cessera d'être
 /// constant.
 #[allow(dead_code)]
 #[derive(Serialize, FromRow)]
@@ -102,7 +102,7 @@ pub struct ParametreMonetisation {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// DTO DE RÉPONSE — CÔTÉ MEMBRE
+// DTO DE RÉPONSE : CÔTÉ MEMBRE
 // ════════════════════════════════════════════════════════════════════════════
 
 /// Un cadeau tel que présenté au membre (sans les dates de gestion).
@@ -119,7 +119,7 @@ pub struct CadeauPublic {
     pub ordre: i16,
 }
 
-/// `GET /cadeaux` — catalogue + contexte de monétisation.
+/// `GET /cadeaux` : catalogue + contexte de monétisation.
 ///
 /// `paiement_simule` vaut `NOT paiement_reel_actif` : c'est lui qui pilote le
 /// bandeau d'avertissement de phase de test (FR-020a).
@@ -138,7 +138,7 @@ pub struct MembreBref {
     pub nom_affiche: String,
 }
 
-/// `POST /cadeaux/envoyer` — intention de paiement créée.
+/// `POST /cadeaux/envoyer` : intention de paiement créée.
 #[derive(Serialize)]
 pub struct IntentionResponse {
     pub transaction_id: Uuid,
@@ -153,7 +153,7 @@ pub struct IntentionResponse {
     pub expire_at: DateTime<Utc>,
 }
 
-/// `POST /paiements/{reference}/confirmer` — issue du paiement.
+/// `POST /paiements/{reference}/confirmer`, issue du paiement.
 ///
 /// `points_credites` vaut 0 quand la règle `cadeau_recu` est désactivée : la
 /// transaction et la répartition sont journalisées, mais aucun point n'est
@@ -194,7 +194,7 @@ pub struct CadeauBref {
     pub couleur: Option<String>,
 }
 
-/// `GET /cadeaux/{type_objet}/{objet_id}` — cadeaux reçus par un contenu.
+/// `GET /cadeaux/{type_objet}/{objet_id}`, cadeaux reçus par un contenu.
 #[derive(Serialize)]
 pub struct CadeauxContenuResponse {
     pub total: i64,
@@ -206,7 +206,7 @@ pub struct CadeauxContenuResponse {
 ///
 /// `montant` n'est renseigné que sur le sens `offerts` : l'offreur a le droit de
 /// savoir ce qu'il a dépensé, le bénéficiaire n'a pas à voir le prix ligne à
-/// ligne — il ne connaît que le cumul de sa cagnotte (FR-027).
+/// ligne : il ne connaît que le cumul de sa cagnotte (FR-027).
 #[derive(Serialize)]
 pub struct MonCadeauResponse {
     pub id: Uuid,
@@ -247,7 +247,7 @@ pub struct CagnotteResponse {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// DTO DE RÉPONSE — CÔTÉ ADMINISTRATION
+// DTO DE RÉPONSE : CÔTÉ ADMINISTRATION
 // ════════════════════════════════════════════════════════════════════════════
 
 /// Un cadeau du catalogue enrichi de son usage réel.
@@ -330,7 +330,7 @@ pub struct PaginationInfo {
     pub total: i64,
 }
 
-/// `POST /admin/engagement/purger-phase-test` — décomptes de la purge.
+/// `POST /admin/engagement/purger-phase-test`, décomptes de la purge.
 #[derive(Serialize)]
 pub struct ResultatPurge {
     pub transactions_purgees: i64,
@@ -405,7 +405,7 @@ pub struct ParametreMonetisationPayload {
 #[derive(Deserialize)]
 pub struct JournalAdminQuery {
     pub membre_id: Option<Uuid>,
-    /// `offreur` ou `beneficiaire` — sens de lecture de `membre_id`.
+    /// `offreur` ou `beneficiaire` : sens de lecture de `membre_id`.
     pub sens: Option<String>,
     pub etat: Option<String>,
     pub mode: Option<String>,
@@ -416,7 +416,7 @@ pub struct JournalAdminQuery {
     pub taille: Option<i64>,
 }
 
-/// `POST /admin/engagement/purger-phase-test` — garde-fou explicite contre le
+/// `POST /admin/engagement/purger-phase-test`, garde-fou explicite contre le
 /// déclenchement accidentel d'une opération irréversible.
 #[derive(Deserialize)]
 pub struct PurgeRequest {
@@ -431,7 +431,7 @@ pub struct PurgeRequest {
 ///
 /// Elles ne sont pas « inconnues » : la requête est parfaitement formée, c'est
 /// la cible qui n'a personne à créditer. D'où un `409` (conflit d'état) et non
-/// un `400` (requête invalide) — la nuance compte pour le client, qui doit
+/// un `400` (requête invalide) : la nuance compte pour le client, qui doit
 /// afficher « ce contenu n'a pas d'auteur » et non « votre requête est erronée ».
 pub const FAMILLES_SANS_AUTEUR: [&str; 2] = ["site_touristique", "secteur_developpement"];
 

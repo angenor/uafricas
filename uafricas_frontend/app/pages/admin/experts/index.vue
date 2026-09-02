@@ -3,7 +3,7 @@ import type { FiltresExpertise, StatutExpertise } from '~/composables/useAdminEx
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
-useHead({ title: 'Demandes d\'expertise — Admin' })
+useHead({ title: 'Demandes d\'expertise, Admin' })
 
 const {
   demandes,
@@ -62,7 +62,7 @@ async function confirmerApprobation(id: string) {
   actionLoading.value = true
   try {
     await validerDemande(id)
-    afficherSucces('Demande validée — l\'expert est maintenant visible sur /experts.')
+    afficherSucces('Demande validée : l\'expert est maintenant visible sur /experts.')
     await charger(page.value)
   }
   catch { /* erreur déjà dans le composable */ }
@@ -84,7 +84,7 @@ async function confirmerRejet() {
   actionLoading.value = true
   try {
     await rejeterDemande(cibleId.value, commentaireRejet.value.trim())
-    afficherSucces('Demande refusée — le candidat a été notifié par email.')
+    afficherSucces('Demande refusée : le candidat a été notifié par email.')
     showRejetModal.value = false
     await charger(page.value)
   }

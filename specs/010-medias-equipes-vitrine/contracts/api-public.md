@@ -1,4 +1,4 @@
-# Contrat — API publique (lecture)
+# Contrat : API publique (lecture)
 
 **Feature**: 010-medias-equipes-vitrine
 
@@ -6,11 +6,11 @@
 
 ---
 
-## 1. `GET /api/television/sections` — et son pendant `GET /api/stations-radio/sections`
+## 1. `GET /api/television/sections` : et son pendant `GET /api/stations-radio/sections`
 
 ### Ce qui s'ajoute
 
-`sections[].chaine.equipe` (resp. `sections[].station.equipe`) — tableau ordonné, **omis quand vide** :
+`sections[].chaine.equipe` (resp. `sections[].station.equipe`) : tableau ordonné, **omis quand vide** :
 
 ```json
 {
@@ -41,10 +41,10 @@
 
 ### Ce qui disparaît
 
-- **`emissions[].episodes_apercu`** — les sections ne rendent plus d'épisode (FR-002). Le champ était déjà `skip_serializing_if = "Vec::is_empty"` ; il devient systématiquement absent parce que `greffer_apercus_et_compteurs` n'est plus appelé.
-- **`emissions[].interactions`** — même raison : plus de barre de réaction sur un contenu qui n'est plus affiché. Les `interactions` de la **chaîne** sont conservées.
+- **`emissions[].episodes_apercu`** : les sections ne rendent plus d'épisode (FR-002). Le champ était déjà `skip_serializing_if = "Vec::is_empty"` ; il devient systématiquement absent parce que `greffer_apercus_et_compteurs` n'est plus appelé.
+- **`emissions[].interactions`** : même raison : plus de barre de réaction sur un contenu qui n'est plus affiché. Les `interactions` de la **chaîne** sont conservées.
 
-### Ce qui change de comportement — attention au recettage
+### Ce qui change de comportement : attention au recettage
 
 | Avant | Après | Exigence |
 |---|---|---|
@@ -53,7 +53,7 @@
 | Un programme sans épisode publié est écarté (`JOIN LATERAL … ON agg.nombre_episodes > 0`) | Il est listé, avec `nombre_episodes: 0` | FR-005 |
 | `contenus_par_section` vaut **12** par défaut et plafonne à **30** | Il vaut **30** par défaut et plafonne à **60** | FR-008 |
 
-**Détection de troncature, sans champ neuf** : `total_emissions` est déjà servi par section. Le client compare `emissions.length` à `total_emissions` ; s'ils diffèrent, il annonce le total et renvoie vers la page de la chaîne (FR-008). Le plafond était jusqu'ici sans conséquence — il bornait un aperçu ; il borne désormais le **contenu principal** de la section.
+**Détection de troncature, sans champ neuf** : `total_emissions` est déjà servi par section. Le client compare `emissions.length` à `total_emissions` ; s'ils diffèrent, il annonce le total et renvoie vers la page de la chaîne (FR-008). Le plafond était jusqu'ici sans conséquence : il bornait un aperçu ; il borne désormais le **contenu principal** de la section.
 
 > **Effet visible attendu** : des chaînes et stations jusqu'ici invisibles vont apparaître sur les vitrines, et les compteurs affichés vont augmenter. C'est le comportement demandé, mais c'est un changement de **contenu servi**, pas seulement de présentation.
 
@@ -63,22 +63,22 @@
 
 ---
 
-## 2. `GET /api/television/chaines/slug/{slug}` — et `GET /api/stations-radio/slug/{slug}`
+## 2. `GET /api/television/chaines/slug/{slug}`, et `GET /api/stations-radio/slug/{slug}`
 
 Réponse `{ chaine, emissions, total_emissions }` (resp. `station`).
 
 **Ajouts** :
-- `chaine.equipe` — l'équipe du support, complète et ordonnée.
-- `emissions[].equipe` — **l'équipe propre à chaque programme** (FR-025), indépendante de celle du support.
+- `chaine.equipe` : l'équipe du support, complète et ordonnée.
+- `emissions[].equipe` : **l'équipe propre à chaque programme** (FR-025), indépendante de celle du support.
 - `emissions[].episodes_apercu` reste servi : c'est la page qui liste les vidéos (FR-027).
 
 Aucune troncature serveur : le repli au-delà d'un seuil (FR-021, FR-024) est une décision d'affichage, prise côté client.
 
 ---
 
-## 3. `GET /api/television/emissions/slug/{slug}` — et `GET /api/stations-radio/emissions/slug/{slug}`
+## 3. `GET /api/television/emissions/slug/{slug}`, et `GET /api/stations-radio/emissions/slug/{slug}`
 
-**Ajout** : `equipe` — l'équipe du programme (FR-030, FR-032). Jamais celle du support en repli : un programme sans équipe déclarée renvoie un champ absent, et la page n'affiche pas de bloc.
+**Ajout** : `equipe` : l'équipe du programme (FR-030, FR-032). Jamais celle du support en repli : un programme sans équipe déclarée renvoie un champ absent, et la page n'affiche pas de bloc.
 
 **Champs conservés mais dépubliés** : `info_animateur` et `info_producteur` restent servis par l'API (les formulaires d'édition les lisent encore, libellés « hérité »), mais **cessent d'être affichés au visiteur** (FR-034). Ne pas les retirer du DTO : ce sont les seules traces des saisies antérieures, tant que les gestionnaires ne les ont pas reportées dans l'équipe.
 
@@ -88,7 +88,7 @@ Aucune troncature serveur : le repli au-delà d'un seuil (FR-021, FR-024) est un
 |---|---|
 | `404` si l'émission est publiée mais n'a **aucun épisode publié** (`media_emission.rs:278`) | `200`, avec `nombre_episodes: 0` et `episodes_apercu` absent |
 
-Le `404` ne subsiste que si l'émission elle-même n'est pas publiée. Exigence : FR-033 — « un programme sans vidéo publiée DOIT rester consultable ».
+Le `404` ne subsiste que si l'émission elle-même n'est pas publiée. Exigence : FR-033 : « un programme sans vidéo publiée DOIT rester consultable ».
 
 ---
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Stations de radio — back-office.
+ * Stations de radio : back-office.
  *
  * L'onglet « Émissions » a disparu d'ici : depuis 09q une émission est une
  * `emission_*` commune aux deux familles, gérée sur `/admin/medias/emissions`.
@@ -20,7 +20,7 @@ const colonnesStations: TableColumn[] = [
   { key: 'nom', label: 'Nom', sortable: true },
   { key: 'type_station', label: 'Type', sortable: true },
   { key: 'genre', label: 'Genre' },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-24', align: 'center' },
+  { key: 'etat', label: 'État', sortable: true, width: 'w-24', align: 'center' },
   { key: 'pays_nom', label: 'Territoire' },
   { key: 'ville', label: 'Ville' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
@@ -34,7 +34,7 @@ const filtresDefStations: FilterDefinition[] = [
     { value: 'locale', label: 'Locale' },
     { value: 'internationale', label: 'Internationale' },
   ]},
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous les etats', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous les états', options: [
     { value: 'brouillon', label: 'Brouillon' },
     { value: 'publie', label: 'Publie' },
     { value: 'suspendu', label: 'Suspendu' },

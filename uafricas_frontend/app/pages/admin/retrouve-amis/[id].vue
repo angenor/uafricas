@@ -108,7 +108,7 @@ onMounted(() => chargerDetailAvis(id))
   <div>
     <AdminPageHeader
       :titre="avisDetail ? `Avis : ${avisDetail.nom_recherche}` : 'Chargement...'"
-      sous-titre="Detail de l'avis de recherche"
+      sous-titre="Détail de l'avis de recherche"
     >
       <template #actions>
         <NuxtLink to="/admin/retrouve-amis" class="btn btn-ghost btn-sm">
@@ -195,7 +195,7 @@ onMounted(() => chargerDetailAvis(id))
               <p class="text-sm">{{ avisDetail.ville || '--' }} {{ avisDetail.pays ? `, ${avisDetail.pays.nom}` : '' }}</p>
             </div>
             <div>
-              <p class="text-xs text-base-content/50 uppercase font-semibold">Periode</p>
+              <p class="text-xs text-base-content/50 uppercase font-semibold">Période</p>
               <p class="text-sm">
                 <template v-if="avisDetail.periode_debut || avisDetail.periode_fin">
                   {{ avisDetail.periode_debut || '?' }} - {{ avisDetail.periode_fin || '?' }}
@@ -251,7 +251,7 @@ onMounted(() => chargerDetailAvis(id))
                   <th>Score</th>
                   <th>Type de cible</th>
                   <th>Utilisateur cible</th>
-                  <th>Etat</th>
+                  <th>État</th>
                   <th>Date</th>
                 </tr>
               </thead>

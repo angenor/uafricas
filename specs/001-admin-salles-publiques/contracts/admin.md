@@ -1,4 +1,4 @@
-# Contrats REST — Endpoints administrateur de la plateforme
+# Contrats REST : Endpoints administrateur de la plateforme
 
 **Auth** : `admin_middleware` existant (rôle administrateur de la plateforme requis). Toute mutation est tracée par `audit::log_action`.
 

@@ -12,8 +12,8 @@ const deleteLoading = ref(false)
 const colonnes: TableColumn[] = [
   { key: 'organisation_denomination', label: 'Organisation' },
   { key: 'type_partenariat', label: 'Type', width: 'w-32' },
-  { key: 'date_debut', label: 'Debut', width: 'w-28', format: (v: string) => v ? new Date(v).toLocaleDateString('fr-FR') : '—' },
-  { key: 'date_fin', label: 'Fin', width: 'w-28', format: (v: string) => v ? new Date(v).toLocaleDateString('fr-FR') : '—' },
+  { key: 'date_debut', label: 'Debut', width: 'w-28', format: (v: string) => v ? new Date(v).toLocaleDateString('fr-FR') : '-' },
+  { key: 'date_fin', label: 'Fin', width: 'w-28', format: (v: string) => v ? new Date(v).toLocaleDateString('fr-FR') : '-' },
   { key: 'actif', label: 'Actif', width: 'w-20', align: 'center' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28', format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]

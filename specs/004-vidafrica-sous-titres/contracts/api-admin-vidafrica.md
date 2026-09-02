@@ -1,11 +1,11 @@
-# Contrats API — Admin Vidafrica
+# Contrats API : Admin Vidafrica
 
 **Base**: `/api/admin/vidafrica`  
 **Auth**: JWT Bearer (rôle admin requis)
 
 ## Vidéos
 
-### `GET /videos` — Lister les vidéos (paginé)
+### `GET /videos` : Lister les vidéos (paginé)
 
 **Query params** :
 
@@ -42,7 +42,7 @@
 }
 ```
 
-### `GET /videos/{id}` — Détail d'une vidéo
+### `GET /videos/{id}` : Détail d'une vidéo
 
 **Response** : `200 OK`
 ```json
@@ -75,7 +75,7 @@
 }
 ```
 
-### `POST /videos` — Créer une vidéo (multipart)
+### `POST /videos` : Créer une vidéo (multipart)
 
 **Content-Type**: `multipart/form-data`
 
@@ -86,9 +86,9 @@
 | `fichier_video` | file | oui | Fichier vidéo (MP4, WebM, max 500Mo) |
 | `vignette` | file | non | Vignette (JPG, PNG, WebP, max 5Mo) |
 
-**Response** : `201 Created` — même format que GET détail
+**Response** : `201 Created` : même format que GET détail
 
-### `PUT /videos/{id}` — Modifier une vidéo (multipart)
+### `PUT /videos/{id}` : Modifier une vidéo (multipart)
 
 **Content-Type**: `multipart/form-data`
 
@@ -98,11 +98,11 @@
 | `description` | string | non | Nouvelle description |
 | `vignette` | file | non | Nouvelle vignette |
 
-Note : le fichier vidéo ne peut pas être remplacé — supprimer et recréer la vidéo.
+Note : le fichier vidéo ne peut pas être remplacé, supprimer et recréer la vidéo.
 
 **Response** : `200 OK`
 
-### `PATCH /videos/{id}/etat` — Changer l'état
+### `PATCH /videos/{id}/etat` : Changer l'état
 
 **Body** :
 ```json
@@ -111,7 +111,7 @@ Note : le fichier vidéo ne peut pas être remplacé — supprimer et recréer l
 
 **Response** : `200 OK`
 
-### `DELETE /videos/{id}` — Supprimer une vidéo (soft delete)
+### `DELETE /videos/{id}` : Supprimer une vidéo (soft delete)
 
 **Response** : `200 OK`
 
@@ -119,7 +119,7 @@ Note : le fichier vidéo ne peut pas être remplacé — supprimer et recréer l
 
 ## Pistes de sous-titres
 
-### `GET /videos/{video_id}/pistes` — Lister les pistes d'une vidéo
+### `GET /videos/{video_id}/pistes` : Lister les pistes d'une vidéo
 
 **Response** : `200 OK`
 ```json
@@ -137,7 +137,7 @@ Note : le fichier vidéo ne peut pas être remplacé — supprimer et recréer l
 }
 ```
 
-### `POST /videos/{video_id}/pistes` — Créer une piste
+### `POST /videos/{video_id}/pistes` : Créer une piste
 
 **Body** :
 ```json
@@ -147,7 +147,7 @@ Note : le fichier vidéo ne peut pas être remplacé — supprimer et recréer l
 **Response** : `201 Created`
 **Erreur** : `409 Conflict` si une piste dans cette langue existe déjà
 
-### `DELETE /pistes/{id}` — Supprimer une piste (soft delete)
+### `DELETE /pistes/{id}` : Supprimer une piste (soft delete)
 
 **Response** : `200 OK`
 
@@ -155,7 +155,7 @@ Note : le fichier vidéo ne peut pas être remplacé — supprimer et recréer l
 
 ## Segments de sous-titres
 
-### `GET /pistes/{piste_id}/segments` — Lister les segments (ordonnés par position)
+### `GET /pistes/{piste_id}/segments` : Lister les segments (ordonnés par position)
 
 **Response** : `200 OK`
 ```json
@@ -179,7 +179,7 @@ Note : le fichier vidéo ne peut pas être remplacé — supprimer et recréer l
 }
 ```
 
-### `POST /pistes/{piste_id}/segments` — Créer un segment
+### `POST /pistes/{piste_id}/segments` : Créer un segment
 
 **Body** :
 ```json
@@ -192,7 +192,7 @@ Note : le fichier vidéo ne peut pas être remplacé — supprimer et recréer l
 
 **Response** : `201 Created` (position auto-incrémentée)
 
-### `PUT /segments/{id}` — Modifier un segment
+### `PUT /segments/{id}` : Modifier un segment
 
 **Body** :
 ```json
@@ -205,11 +205,11 @@ Note : le fichier vidéo ne peut pas être remplacé — supprimer et recréer l
 
 **Response** : `200 OK`
 
-### `DELETE /segments/{id}` — Supprimer un segment
+### `DELETE /segments/{id}` : Supprimer un segment
 
-**Response** : `200 OK` — suppression physique + CASCADE sur timings_mot
+**Response** : `200 OK` : suppression physique + CASCADE sur timings_mot
 
-### `PUT /pistes/{piste_id}/segments/reordonner` — Réordonner les segments
+### `PUT /pistes/{piste_id}/segments/reordonner`, Réordonner les segments
 
 **Body** :
 ```json
@@ -224,7 +224,7 @@ Note : le fichier vidéo ne peut pas être remplacé — supprimer et recréer l
 
 ## Timings mot (tap-to-mark)
 
-### `POST /segments/{segment_id}/timings-mot` — Enregistrer les timings mot (batch)
+### `POST /segments/{segment_id}/timings-mot`, Enregistrer les timings mot (batch)
 
 Enregistre tous les timings mot d'un segment en une seule requête (résultat du tap-to-mark).
 Remplace les timings existants s'il y en a.
@@ -243,6 +243,6 @@ Remplace les timings existants s'il y en a.
 
 **Response** : `201 Created`
 
-### `DELETE /segments/{segment_id}/timings-mot` — Supprimer tous les timings mot d'un segment
+### `DELETE /segments/{segment_id}/timings-mot`, Supprimer tous les timings mot d'un segment
 
 **Response** : `200 OK`

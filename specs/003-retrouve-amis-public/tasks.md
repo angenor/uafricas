@@ -3,7 +3,7 @@
 **Input**: Design documents from `/specs/003-retrouve-amis-public/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/api-publique.md
 
-**Tests**: Non demandés — pas de CI/CD configuré. Vérification manuelle uniquement.
+**Tests**: Non demandés : pas de CI/CD configuré. Vérification manuelle uniquement.
 
 **Organization**: Tasks groupées par user story pour permettre l'implémentation et le test indépendants de chaque story.
 
@@ -21,7 +21,7 @@
 
 ## Phase 1: Setup (Schéma SQL)
 
-**Purpose**: Modifications du schéma PostgreSQL — fondation pour tout le reste
+**Purpose**: Modifications du schéma PostgreSQL, fondation pour tout le reste
 
 - [x] T001 Ajouter les 2 nouveaux enums (`genre_personne`, `type_relation_recherche`) dans `uafricas_backend/doc/bd/schemas/16_retrouve_amis.sql`
 - [x] T002 Ajouter les 14 nouvelles colonnes à la table `avis_recherche` dans `uafricas_backend/doc/bd/schemas/16_retrouve_amis.sql`
@@ -31,13 +31,13 @@
 - [x] T006 Mettre à jour le calcul du `search_vector` (trigger/fonction) pour inclure les nouveaux champs dans `uafricas_backend/doc/bd/schemas/16_retrouve_amis.sql`
 - [x] T007 Recréer la BDD de dev (`docker compose down -v && docker compose up -d`) et vérifier que le schéma s'applique sans erreur
 
-**Checkpoint**: Schéma SQL validé — le backend peut commencer
+**Checkpoint**: Schéma SQL validé : le backend peut commencer
 
 ---
 
 ## Phase 2: Foundational (Backend Models + Interfaces TS)
 
-**Purpose**: Structs Rust et interfaces TypeScript mises à jour — BLOQUE toutes les user stories
+**Purpose**: Structs Rust et interfaces TypeScript mises à jour, BLOQUE toutes les user stories
 
 **⚠️ CRITICAL**: Aucun travail sur les user stories ne peut commencer avant la fin de cette phase
 
@@ -46,11 +46,11 @@
 - [x] T010 Supprimer la route `publier_avis` (PATCH `/avis/{id}/publier`) dans `uafricas_backend/src/routes.rs`
 - [x] T011 Compiler le backend (`cargo check`) et vérifier qu'il n'y a pas d'erreurs de typage
 
-**Checkpoint**: Fondation prête — l'implémentation des user stories peut commencer
+**Checkpoint**: Fondation prête : l'implémentation des user stories peut commencer
 
 ---
 
-## Phase 3: User Story 1 — Consulter les avis publics sans connexion (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 : Consulter les avis publics sans connexion (Priority: P1) 🎯 MVP
 
 **Goal**: Tous les avis de recherche actifs sont visibles sur `/retrouve-amis` par n'importe quel visiteur, sans connexion requise.
 
@@ -69,7 +69,7 @@
 
 ---
 
-## Phase 4: User Story 2 — Remplir le formulaire de recherche (Priority: P1)
+## Phase 4: User Story 2 : Remplir le formulaire de recherche (Priority: P1)
 
 **Goal**: Un utilisateur connecté peut créer un avis via un formulaire 6 étapes et l'avis est publié immédiatement.
 
@@ -89,7 +89,7 @@
 
 ---
 
-## Phase 5: User Story 3 — Filtrer et rechercher parmi les avis publics (Priority: P2)
+## Phase 5: User Story 3 : Filtrer et rechercher parmi les avis publics (Priority: P2)
 
 **Goal**: Les visiteurs peuvent filtrer par type de relation et rechercher par texte sur la page `/retrouve-amis`.
 
@@ -106,7 +106,7 @@
 
 ---
 
-## Phase 6: User Story 4 — Gérer ses avis publiés (Priority: P2)
+## Phase 6: User Story 4 : Gérer ses avis publiés (Priority: P2)
 
 **Goal**: L'auteur peut modifier et clôturer ses avis. Les coordonnées ne sont jamais exposées publiquement.
 
@@ -139,10 +139,10 @@
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: Pas de dépendances — commencer immédiatement
-- **Foundational (Phase 2)**: Dépend de la Phase 1 (schéma SQL appliqué) — BLOQUE toutes les user stories
-- **US1 (Phase 3)**: Dépend de Phase 2 — peut commencer dès que les models/interfaces sont prêts
-- **US2 (Phase 4)**: Dépend de Phase 2 — peut commencer en parallèle avec US1
+- **Setup (Phase 1)**: Pas de dépendances, commencer immédiatement
+- **Foundational (Phase 2)**: Dépend de la Phase 1 (schéma SQL appliqué), BLOQUE toutes les user stories
+- **US1 (Phase 3)**: Dépend de Phase 2 : peut commencer dès que les models/interfaces sont prêts
+- **US2 (Phase 4)**: Dépend de Phase 2 : peut commencer en parallèle avec US1
 - **US3 (Phase 5)**: Dépend de US1 (la page index.vue doit exister avec le listing)
 - **US4 (Phase 6)**: Dépend de US2 (le handler multipart doit exister pour modifier_avis)
 - **Polish (Phase 7)**: Dépend de US1 + US2
@@ -178,7 +178,7 @@ Phase 1 (SQL) → Phase 2 (Models/Interfaces)
 ```bash
 # Après Phase 2, lancer US1 et US2 en parallèle :
 
-# Agent 1 — US1 (Listing public) :
+# Agent 1 : US1 (Listing public) :
 Task: T012 "Mettre à jour lister_avis_publics dans retrouve_amis_public.rs"
 Task: T013 "Mettre à jour detail_avis_public dans retrouve_amis_public.rs"
 Task: T014 "Mettre à jour CarteAvisPublic.vue" (parallèle avec T012/T013)
@@ -186,7 +186,7 @@ Task: T015 "Transformer index.vue"
 Task: T016 "Mettre à jour composable listerAvisPublics"
 Task: T017 "État vide sur index.vue"
 
-# Agent 2 — US2 (Formulaire) :
+# Agent 2 : US2 (Formulaire) :
 Task: T018 "Handler creer_avis multipart"
 Task: T019 "Upload photo retrouve-amis/"
 Task: T020 "Validation backend"
@@ -204,8 +204,8 @@ Task: T024 "Validation frontend"
 
 1. Compléter Phase 1: Setup SQL
 2. Compléter Phase 2: Foundational (CRITICAL)
-3. Compléter Phase 3: US1 — Listing public
-4. Compléter Phase 4: US2 — Formulaire de création
+3. Compléter Phase 3: US1 : Listing public
+4. Compléter Phase 4: US2 : Formulaire de création
 5. **STOP et VALIDER**: Créer un avis → vérifier qu'il apparaît sur `/retrouve-amis` sans connexion
 6. Déployer/démo si prêt
 
@@ -224,7 +224,7 @@ Task: T024 "Validation frontend"
 
 - [P] tasks = fichiers différents, pas de dépendances
 - [Story] label associe chaque tâche à sa user story pour la traçabilité
-- Pas de tests automatisés — vérification manuelle via quickstart.md
+- Pas de tests automatisés : vérification manuelle via quickstart.md
 - Commiter après chaque tâche ou groupe logique
 - S'arrêter à chaque checkpoint pour valider la story indépendamment
 - Les coordonnées (email, téléphone, WhatsApp) ne doivent JAMAIS apparaître dans les réponses publiques

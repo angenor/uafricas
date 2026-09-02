@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Composable — Layout de l'arbre généalogique
+// Composable : Layout de l'arbre généalogique
 // Conversion données API → positions vue-flow via graphe de parenté
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -251,7 +251,7 @@ const STYLE_BRANCHE = { stroke: COULEUR_BRANCHE, strokeWidth: 2.5 }
 // La BDD ne stocke que des liens individuels (père→enfant, mère→enfant).
 // On dérive ici le « couple » : les enfants partageant le même ensemble de
 // parents descendent d'un nœud-jonction commun (point d'union), ce qui rend
-// visible qu'ils sont issus du couple — et non d'un seul parent.
+// visible qu'ils sont issus du couple, et non d'un seul parent.
 
 function construireUnionsEtLiens(
   graphe: Map<string, NoeudArbre>,
@@ -434,7 +434,7 @@ function calculerIncompletude(
     } else if (nbParents === 0) {
       resultat.set(id, { estIncomplet: true, messageManquant: 'Parents manquants' })
     } else {
-      // 1 parent — déterminer lequel manque
+      // 1 parent : déterminer lequel manque
       const types = typesParentsParCible.get(id) || []
       const aPere = types.includes('pere')
       const aMere = types.includes('mere')

@@ -1,9 +1,9 @@
-# Quickstart — Refonte des pages Télé et Radio Africans
+# Quickstart : Refonte des pages Télé et Radio Africans
 
 **Feature** : `001-refonte-tele-radio` | **Branche** : `001-refonte-tele-radio`
 
 Ce document sert à démarrer le développement et à **valider** chaque lot. Le projet n'ayant aucun harnais de
-test automatisé, la validation se fait par parcours manuels — chacun mappé à ses exigences.
+test automatisé, la validation se fait par parcours manuels, chacun mappé à ses exigences.
 
 ---
 
@@ -13,24 +13,24 @@ test automatisé, la validation se fait par parcours manuels — chacun mappé �
 # Infrastructure
 docker compose up -d                       # PostgreSQL 5432 · Adminer 8088 · LiveKit
 
-# Backend — toujours tuer l'ancien processus avant de relancer
+# Backend : toujours tuer l'ancien processus avant de relancer
 kill $(lsof -i :8082 -t) 2>/dev/null; RUST_LOG=info cargo run
 
 # Frontend
 pnpm dev                                   # http://localhost:3000
 ```
 
-**Comptes de test** : `test-admin@test.com` / `Test1234` — `test-user@test.com` / `Test1234`.
+**Comptes de test** : `test-admin@test.com` / `Test1234`, `test-user@test.com` / `Test1234`.
 
 ### Appliquer les migrations
 
 Aucun runner de migration n'existe : elles sont jouées **manuellement**, d'où l'exigence d'idempotence.
 
 ```bash
-# Base fraîche — schema.sql orchestre tout via \ir
+# Base fraîche : schema.sql orchestre tout via \ir
 docker compose down -v && docker compose up -d
 
-# Base existante — jouer les fichiers du lot, dans l'ordre
+# Base existante : jouer les fichiers du lot, dans l'ordre
 psql -h localhost -U uafricas -d africans_db \
      -f uafricas_backend/doc/bd/schemas/09j_media_content_editorial.sql
 ```
@@ -44,24 +44,24 @@ toute initialisation fraîche.
 Un script installe tout le nécessaire aux parcours ci-dessous, sur les trois lots :
 
 ```bash
-# Installation — idempotent, rejouable sans doublon
+# Installation : idempotent, rejouable sans doublon
 psql -h localhost -U uafricas -d africans_db \
      -f uafricas_backend/doc/bd/seed_test_medias.sql
 
-# Retrait — ne touche qu'aux lignes marquées, les données existantes survivent
+# Retrait : ne touche qu'aux lignes marquées, les données existantes survivent
 psql -h localhost -U uafricas -d africans_db \
      -f uafricas_backend/doc/bd/seed_test_medias_purge.sql
 ```
 
 Il crée, sous des identifiants tous préfixés `dddd0000-` (marqueur exploité par la purge) :
 
-- **4 stations radio** — 2 en `origine_publication = 'africans'`, 2 en `'territoire'`, avec leurs émissions,
+- **4 stations radio** : 2 en `origine_publication = 'africans'`, 2 en `'territoire'`, avec leurs émissions,
   de quoi vérifier qu'aucune station n'apparaît sur les deux pages (FR-012, FR-014)
 - **2 chaînes TV** et 4 émissions, dont une portant `a_la_une_globale = TRUE` (la vedette plein écran)
 - **2 créneaux de programmation contigus** sur `Africans Doc` : l'un en cours, l'autre démarrant **3 minutes
   plus tard**. La résolution étant paresseuse, il suffit de recharger la page à l'échéance pour voir la
   bascule « En ce moment » → « À suivre » (FR-038, FR-042)
-- **de la co-détention** : `test-admin` propriétaire, `test-user` co-détenteur puis programmateur — ce dernier
+- **de la co-détention** : `test-admin` propriétaire, `test-user` co-détenteur puis programmateur : ce dernier
   accède donc à la grille depuis `/mon-compte/mes-supports`
 - **4 propositions en attente** couvrant les quatre cas : chaîne, émission radio, **idée de contenu** (ne crée
   aucun objet) et **demande d'animation** (l'acceptation ajoute un co-détenteur, FR-045)
@@ -72,9 +72,9 @@ l'index unique partiel qui n'en autorise qu'une.
 
 **Deux cas restent à créer à la main** depuis `/admin/television`, le seed ne pouvant les couvrir :
 
-- une émission dont `video_url` pointe vers un **fichier téléversé** — le seed n'utilise que des liens
+- une émission dont `video_url` pointe vers un **fichier téléversé**, le seed n'utilise que des liens
   YouTube, or les deux chemins de lecture doivent être exercés (FR-056) ;
-- vérifier qu'une chaîne **sans aucun programme publié** ne génère aucune section (FR-008) — la chaîne
+- vérifier qu'une chaîne **sans aucun programme publié** ne génère aucune section (FR-008), la chaîne
   « Chaine Vide » du jeu initial joue ce rôle si elle est présente.
 
 **Franchissement du seuil de signalement (US7)** : la suspension exige 11 comptes distincts, or seuls les deux
@@ -87,12 +87,12 @@ SELECT 'chaine_tv', '<id-de-la-chaine>', u.id, 'violence'
 ON CONFLICT DO NOTHING;
 ```
 
-Un nouveau signalement depuis l'interface déclenche alors le recompte et la bascule — le compteur
+Un nouveau signalement depuis l'interface déclenche alors le recompte et la bascule, le compteur
 dénormalisé n'étant mis à jour que par le handler, l'insertion SQL seule ne suspend rien.
 
 ---
 
-## Lot 1 — Consultation (US1, US2) · MVP
+## Lot 1 : Consultation (US1, US2) · MVP
 
 ### Ordre d'implémentation conseillé
 
@@ -131,7 +131,7 @@ dénormalisé n'étant mis à jour que par le handler, l'insertion SQL seule ne 
   `youtubeEmbedUrl()` (`useEvenements.ts:285`) doit être en place **avant** ce retrait.
 - Supprimer le `v-if="!isMobile"` (`tele.vue:216`) qui prive aujourd'hui les mobiles de tout hero.
 - Remplacer `loading loading-spinner` (daisyUI) par `animate-spin rounded-full border-b-2`, déjà utilisé en
-  `tele.vue:392` — Principe VI.
+  `tele.vue:392` : Principe VI.
 - La barre en `fixed bottom-0` recouvrira le FAB messagerie (`bottom-6 right-6`, z-50) et l'invite d'appel
   (`bottom-24 right-6`, z-[75]) : les décaler quand la barre est active, et rester sous z-[75].
 - Utiliser `h-[100svh]`, non `100vh`, qui déborde sous la barre d'URL mobile.
@@ -139,12 +139,12 @@ dénormalisé n'étant mis à jour que par le handler, l'insertion SQL seule ne 
 
 ---
 
-## Lot 2 — Participation (US3, US4)
+## Lot 2 : Participation (US3, US4)
 
 ### Ordre d'implémentation
 
 1. Migration `09k` (interactions) puis `09l` (propositions)
-2. **Pages de détail SSR d'abord** — prérequis du partage : sans URL propre, pas d'aperçu social
+2. **Pages de détail SSR d'abord** : prérequis du partage : sans URL propre, pas d'aperçu social
 3. Handlers `media_social.rs`, puis `media_proposition.rs` et son pendant admin
 4. **Fermer la faille** : `stations_radio.rs:263`, `television.rs:207` et `:428` n'insèrent plus `'publie'`
 5. Brancher la 8ᵉ source du mur `/publications`
@@ -169,7 +169,7 @@ dénormalisé n'étant mis à jour que par le handler, l'insertion SQL seule ne 
 
 ---
 
-## Lot 3 — Programmation, engagement, modération (US5, US6, US7)
+## Lot 3 : Programmation, engagement, modération (US5, US6, US7)
 
 ### Ordre d'implémentation
 
@@ -215,7 +215,7 @@ grep -n '09[j-n]' uafricas_backend/doc/bd/schema.sql
 
 - Lancer `getDiagnostics` (rust-analyzer, Volar) après chaque modification de fichier.
 - Vérifier que `audit::log_action` est appelé sur **chaque** mutation nouvelle, avec `ancien_etat` et
-  `nouvel_etat` renseignés — l'existant les passe à `None`, ne pas reproduire ce défaut.
+  `nouvel_etat` renseignés : l'existant les passe à `None`, ne pas reproduire ce défaut.
 - Ajouter une ligne dans « Recent Changes » de `CLAUDE.md`, citant l'indice de migration.
 
 ## Déploiement

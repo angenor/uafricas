@@ -21,7 +21,7 @@ onMounted(() => charger())
 </script>
 <template>
   <div>
-    <AdminPageHeader :titre="categorieDetail?.nom || 'Chargement...'" sous-titre="Modifier la categorie">
+    <AdminPageHeader :titre="categorieDetail?.nom || 'Chargement...'" sous-titre="Modifier la catégorie">
       <template #actions><NuxtLink to="/admin/categories" class="btn btn-ghost btn-sm"><font-awesome-icon icon="arrow-left" class="mr-1" /> Retour</NuxtLink></template>
     </AdminPageHeader>
     <div v-if="loading && !categorieDetail" class="flex justify-center py-12"><span class="loading loading-spinner loading-lg" /></div>
@@ -34,14 +34,14 @@ onMounted(() => charger())
             <div class="form-control"><label class="label"><span class="label-text">Nom *</span></label><input v-model="form.nom" type="text" class="input input-bordered" required></div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="form-control"><label class="label"><span class="label-text">Contexte</span></label>
-                <select v-model="form.contexte" class="select select-bordered"><option value="">Non specifie</option><option value="annonce">Annonce</option><option value="livre">Livre</option><option value="radio">Radio</option><option value="television">Television</option><option value="evenement">Evenement</option><option value="formation">Formation</option><option value="projet">Projet</option></select>
+                <select v-model="form.contexte" class="select select-bordered"><option value="">Non specifie</option><option value="annonce">Annonce</option><option value="livre">Livre</option><option value="radio">Radio</option><option value="television">Television</option><option value="evenement">Événement</option><option value="formation">Formation</option><option value="projet">Projet</option></select>
               </div>
               <div class="form-control"><label class="label"><span class="label-text">Ordre</span></label><input v-model.number="form.ordre" type="number" class="input input-bordered" min="0"></div>
             </div>
-            <div class="form-control"><label class="label"><span class="label-text">ID categorie parente (UUID)</span></label><input v-model="form.parent_id" type="text" class="input input-bordered" placeholder="Vide = racine"></div>
+            <div class="form-control"><label class="label"><span class="label-text">ID catégorie parente (UUID)</span></label><input v-model="form.parent_id" type="text" class="input input-bordered" placeholder="Vide = racine"></div>
             <div class="form-control"><label class="label"><span class="label-text">Icone</span></label><input v-model="form.icone" type="text" class="input input-bordered"></div>
             <div class="form-control"><label class="label"><span class="label-text">Description</span></label><textarea v-model="form.description" class="textarea textarea-bordered" rows="3" /></div>
-            <div class="form-control"><label class="label cursor-pointer justify-start gap-3"><input v-model="form.actif" type="checkbox" class="toggle toggle-success" /><span class="label-text">Categorie active</span></label></div>
+            <div class="form-control"><label class="label cursor-pointer justify-start gap-3"><input v-model="form.actif" type="checkbox" class="toggle toggle-success" /><span class="label-text">Catégorie active</span></label></div>
             <div class="flex items-center justify-between pt-4">
               <div class="text-sm text-base-content/50">Slug: {{ categorieDetail.slug }}</div>
               <button type="submit" class="btn btn-primary" :class="{ loading: saving }" :disabled="saving"><font-awesome-icon v-if="!saving" icon="floppy-disk" class="mr-1" /> Enregistrer</button>

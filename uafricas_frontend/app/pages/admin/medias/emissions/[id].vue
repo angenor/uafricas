@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
  * Fiche d'un **programme** en back-office, et gestion de ses épisodes
- * (feature 009, US1 — FR-044 à FR-047).
+ * (feature 009, US1, FR-044 à FR-047).
  *
  * La vedette générale de `/medias/tele` se désigne ici, sur un **épisode** :
  * c'est un épisode qui occupe la tête de page, pas une série. Elle a suivi les
- * contenus lors du recadrage 09q — elle vivait auparavant sur `programme_tele`.
+ * contenus lors du recadrage 09q : elle vivait auparavant sur `programme_tele`.
  */
 import { porteurProgramme } from '~/composables/useMediaEquipe'
 
@@ -230,7 +230,7 @@ onMounted(async () => {
                 </label>
               </div>
               <p class="text-sm text-base-content/60">
-                La cadence n'agit pas sur la rotation en grille — celle-ci suit la récurrence du créneau.
+                La cadence n'agit pas sur la rotation en grille, celle-ci suit la récurrence du créneau.
                 Elle sert uniquement à alerter le détenteur d'une échéance sans épisode.
               </p>
             </div>
@@ -239,7 +239,7 @@ onMounted(async () => {
               <h3 class="text-lg font-semibold border-b pb-2">Thème phare</h3>
               <div class="form-control">
                 <select v-model="formulaire.theme_phare_id" class="select select-bordered">
-                  <option value="">— Aucun —</option>
+                  <option value="">Aucun</option>
                   <option v-for="t in themesPhares" :key="t.id" :value="t.id">{{ t.nom }}</option>
                   <option :value="THEME_AUTRE">Autre (à préciser)</option>
                 </select>
@@ -254,7 +254,7 @@ onMounted(async () => {
               <h3 class="text-lg font-semibold border-b pb-2">Catégorie radio</h3>
               <div class="form-control">
                 <select v-model="formulaire.categorie_radio" class="select select-bordered">
-                  <option value="">— Aucune —</option>
+                  <option value="">Aucune</option>
                   <option value="information">Information</option>
                   <option value="divertissement">Divertissement</option>
                   <option value="musique">Musique</option>
@@ -279,11 +279,11 @@ onMounted(async () => {
 
             <!-- Champs HÉRITÉS (010, FR-034). Ils ne s'affichent plus au public :
                  l'équipe éditoriale est désormais la seule source sur les
-                 personnes. Ils restent lisibles ICI — les masquer priverait le
+                 personnes. Ils restent lisibles ICI : les masquer priverait le
                  gestionnaire de la seule trace de ce qu'il doit reporter. -->
             <div v-if="formulaire.info_animateur || formulaire.info_producteur" class="space-y-2">
               <h3 class="text-lg font-semibold border-b pb-2">
-                Champs hérités — reporter dans l'équipe
+                Champs hérités : reporter dans l'équipe
               </h3>
               <p class="text-sm text-base-content/60">
                 Saisis avant la refonte des équipes éditoriales. Ils ne sont plus publiés :

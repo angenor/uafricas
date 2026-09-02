@@ -36,6 +36,16 @@ export interface FichePaysDetailAPI extends FichePaysAPI {
   embleme_url: string | null
   devise: string | null
   hymne_national: string | null
+  // Symboles nationaux enrichis (migration 11l). Tous facultatifs.
+  drapeau_description: string | null
+  embleme_description: string | null
+  hymne_description: string | null
+  fleur_nationale: string | null
+  fleur_description: string | null
+  animal_national: string | null
+  animal_description: string | null
+  oiseau_national: string | null
+  oiseau_description: string | null
   langue_officielle: string | null
   langues: string[]
   ethnies: string[]
@@ -236,7 +246,7 @@ export interface ContributionFiltres {
   par_page?: number
 }
 
-// ── Afripulse — Types partagés (alignés sur country_profile.* §III SQL SoT) ──
+// ── Afripulse : Types partagés (alignés sur country_profile.* §III SQL SoT) ──
 
 /** Type d'objet ciblé par une contribution Afripulse */
 export type TypeObjetContribution =
@@ -263,7 +273,7 @@ export type SectionAfripulse =
 /** Catégorie d'un site touristique */
 export type CategorieSiteTouristique = 'emblematique' | 'prive'
 
-/** Sous-type d'un site touristique (précise la famille `categorie`) — 20 valeurs */
+/** Sous-type d'un site touristique (précise la famille `categorie`), 20 valeurs */
 export type SousTypeSite =
   // Emblématiques
   | 'plage'
@@ -309,7 +319,7 @@ export type DomainePersonnalite =
   | 'militaire_historique'
   | 'autre'
 
-/** Utilisateur public (auteur d'un contenu) — anonymisable */
+/** Utilisateur public (auteur d'un contenu), anonymisable */
 export interface UtilisateurPublicAPI {
   id: string | null
   nom: string
@@ -375,7 +385,7 @@ export interface PhotoVisiteurAPI {
   created_at: string
 }
 
-/** Site touristique (emblématique ou privé) — enrichi (feature 001-sites-touristiques-enrichis) */
+/** Site touristique (emblématique ou privé), enrichi (feature 001-sites-touristiques-enrichis) */
 export interface SiteTouristiqueAPI {
   id: string
   fiche_pays_id: string
@@ -391,7 +401,7 @@ export interface SiteTouristiqueAPI {
   village: string | null
   latitude: number | null
   longitude: number | null
-  // Contacts (publics — CL résolue) ; renseignés surtout pour les sites privés
+  // Contacts (publics : CL résolue) ; renseignés surtout pour les sites privés
   contact_telephone: string | null
   contact_courriel: string | null
   contact_adresse: string | null
@@ -539,7 +549,7 @@ export const LIBELLES_SOUS_TYPE: Record<SousTypeSite, string> = {
   bar_maquis: 'Bar / Maquis',
 }
 
-/** Sous-types autorisés par famille (cohérence famille↔sous-type — FR-003) */
+/** Sous-types autorisés par famille (cohérence famille↔sous-type, FR-003) */
 export const SOUS_TYPES_PAR_CATEGORIE: Record<CategorieSiteTouristique, SousTypeSite[]> = {
   emblematique: [
     'plage',
@@ -839,7 +849,7 @@ export const useOpportuniteAfrique = () => {
   // La modération des contributions (valider/rejeter) est réservée à l'admin
   // et passe par useAdminContributions (PATCH /api/admin/profils-pays/contributions/{id}/etat).
 
-  // ── Afripulse — Méthodes de soumission et de lecture enrichies ──────
+  // ── Afripulse : Méthodes de soumission et de lecture enrichies ──────
 
   /**
    * Soumettre une contribution Afripulse (JSON structurée).
@@ -1050,7 +1060,7 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
-  // ── US3 — Création d'une nouvelle fiche pays ──────────────────────
+  // ── US3 : Création d'une nouvelle fiche pays ──────────────────────
   /**
    * Soumettre une proposition de nouvelle fiche pays. Erreurs typées :
    *   • HTTP 401 → non authentifié
@@ -1108,7 +1118,7 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
-  // ── US4 — Recommandations & galerie photos ────────────────────────
+  // ── US4 : Recommandations & galerie photos ────────────────────────
 
   /**
    * Lister les recommandations visiteurs d'une fiche (lecture publique paginée).
@@ -1269,7 +1279,7 @@ export const useOpportuniteAfrique = () => {
     }
   }
 
-  // ── US5 — Avis de visiteurs sur un site ──────────────────────────
+  // ── US5 : Avis de visiteurs sur un site ──────────────────────────
 
   /**
    * Lister les avis visibles d'un site (paginé) + agrégats (note moyenne, total).
@@ -1542,7 +1552,7 @@ export const useOpportuniteAfrique = () => {
     listerRecommandations,
     listerGaleriePhotos,
     soumettreContributionMultipart,
-    // US5 — avis de site
+    // US5 : avis de site
     listerAvisSite,
     soumettreAvisSite,
   }

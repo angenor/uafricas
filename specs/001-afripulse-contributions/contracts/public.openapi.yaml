@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
-  title: UAfricas — Afripulse Public API (contributions fiches pays)
+  title: UAfricas : Afripulse Public API (contributions fiches pays)
   version: "1.0.0-001-afripulse-contributions"
   description: |
-    Endpoints publics pour la feature "Afripulse — Enrichissement collaboratif des fiches pays".
+    Endpoints publics pour la feature "Afripulse, Enrichissement collaboratif des fiches pays".
     Tous les endpoints de MUTATION exigent un JWT valide (schéma `bearerAuth`).
     Les endpoints de LECTURE sont publics (anonymes acceptés).
 
@@ -28,7 +28,7 @@ tags:
 paths:
 
   # ============================================================
-  # CRÉATION DE FICHE PAYS (US3) — soumis à modération
+  # CRÉATION DE FICHE PAYS (US3) : soumis à modération
   # ============================================================
   /api/fiches-pays:
     post:
@@ -93,7 +93,7 @@ paths:
 
         Application des règles recommandation (FR-013) :
           - Note entière 1..5, commentaire 50..2000 caractères
-          - Une seule recommandation active par (utilisateur, pays) — la soumission sur un pays
+          - Une seule recommandation active par (utilisateur, pays), la soumission sur un pays
             déjà doté d'une recommandation active est une contribution de type `edition`
       security:
         - bearerAuth: []

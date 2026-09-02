@@ -40,8 +40,58 @@ fn extraire_utilisateur_id(req: &HttpRequest) -> Option<Uuid> {
 // VIDÉOS PUBLIQUES
 // ══════════════════════════════════════════════════════════════
 
+/// Colonnes du fil public de vidéos.
+///
+/// La liste porte les MÊMES champs d'interaction que le détail
+/// (`obtenir_video_publique`) : compteurs, auteur déclaré et `ma_reaction`.
+///
+/// ⚠️ Ne pas les retirer « parce que c'est juste une liste ». La vignette du
+/// fil (`vidafrica/CarteVideoFil.vue`) est interactive : elle dessine le pouce
+/// allumé d'après `ma_reaction` et poste sur `/videos/{id}/reaction`, qui est
+/// une BASCULE (même type ⇒ suppression, cf. `vidafrica_contribution::reagir_video`).
+/// Si la liste omet `ma_reaction`, le front rabat sur `null`, le membre qui a
+/// déjà aimé voit un pouce éteint, et son clic SUPPRIME son like au lieu d'en
+/// poser un. Les compteurs afficheraient de leur côté 0 en permanence.
+///
+/// `cible` est la page déjà découpée (LIMIT/OFFSET appliqués dans la
+/// sous-requête) : les latérales ne s'exécutent donc que sur les lignes
+/// réellement servies — un seul aller-retour, aucun N+1.
+const COLONNES_VIDEO_LISTE: &str = "cible.id, cible.titre, cible.slug, cible.description,
+            cible.vignette_url, cible.duree_secondes, cible.auteur_reel, cible.created_at,
+            COALESCE(l.langues, ARRAY[]::TEXT[]) AS langues_disponibles,
+            COALESCE(r.likes, 0)                 AS nombre_likes,
+            COALESCE(r.dislikes, 0)              AS nombre_dislikes,
+            COALESCE(pa.total, 0)                AS nombre_partages,
+            mienne.type_reaction                 AS ma_reaction";
+
+/// Latérales d'agrégation du fil : langues publiées, réactions, partages, puis
+/// la réaction du membre connecté (jointure simple : au plus une ligne).
+const JOINTURES_VIDEO_LISTE: &str = "LEFT JOIN LATERAL (
+             SELECT ARRAY_AGG(ps.langue::TEXT ORDER BY ps.langue) AS langues
+               FROM media_content.piste_sous_titre ps
+              WHERE ps.video_id = cible.id AND ps.etat = 'publie' AND ps.deleted_at IS NULL
+         ) l ON TRUE
+         LEFT JOIN LATERAL (
+             SELECT COUNT(*) FILTER (WHERE type_reaction = 'like')    AS likes,
+                    COUNT(*) FILTER (WHERE type_reaction = 'dislike') AS dislikes
+               FROM media_content.video_reaction
+              WHERE video_id = cible.id
+         ) r ON TRUE
+         LEFT JOIN LATERAL (
+             SELECT COUNT(*) AS total
+               FROM media_content.partage_video
+              WHERE video_id = cible.id AND deleted_at IS NULL
+         ) pa ON TRUE
+         LEFT JOIN media_content.video_reaction mienne
+                ON mienne.video_id = cible.id AND mienne.utilisateur_id = ";
+
 /// GET /api/vidafrica/videos
+///
+/// Route PUBLIQUE : le JWT est facultatif. Anonyme ⇒ le paramètre utilisateur
+/// est lié à NULL, `mienne.utilisateur_id = NULL` ne correspond à rien et
+/// `ma_reaction` vaut `null` sans erreur — exactement la sémantique du détail.
 pub async fn lister_videos_publiques(
+    req: HttpRequest,
     pool: web::Data<PgPool>,
     params: web::Query<VideoPubliqueQueryParams>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -78,7 +128,9 @@ pub async fn lister_videos_publiques(
             bind_index += 1;
         }
     }
-    let _ = bind_index;
+    // Dernier paramètre : le membre connecté (NULL si anonyme).
+    let placeholder_utilisateur = format!("${}", bind_index);
+    let utilisateur_id = extraire_utilisateur_id(&req);
 
     let where_clause = conditions.join(" AND ");
 
@@ -90,41 +142,51 @@ pub async fn lister_videos_publiques(
     }
     let total: i64 = count_q.fetch_one(pool.get_ref()).await?;
 
-    // SELECT
+    // SELECT : la page est découpée AVANT les latérales (sous-requête
+    // ordonnée + LIMIT/OFFSET) pour n'agréger que les lignes servies.
     let select_sql = format!(
-        "SELECT v.id, v.titre, v.slug, v.description, v.vignette_url, v.duree_secondes, v.created_at
-         FROM media_content.video v
-         WHERE {} ORDER BY v.created_at DESC LIMIT {} OFFSET {}",
-        where_clause, par_page, offset
+        "SELECT {}
+         FROM (
+             SELECT v.id, v.titre, v.slug, v.description, v.vignette_url,
+                    v.duree_secondes, v.auteur_reel, v.created_at
+               FROM media_content.video v
+              WHERE {}
+              ORDER BY v.created_at DESC
+              LIMIT {} OFFSET {}
+         ) cible
+         {}{}
+         ORDER BY cible.created_at DESC",
+        COLONNES_VIDEO_LISTE,
+        where_clause,
+        par_page,
+        offset,
+        JOINTURES_VIDEO_LISTE,
+        placeholder_utilisateur
     );
     let mut select_q = sqlx::query_as::<_, VideoPubliqueListeRow>(&select_sql);
     for v in &bind_values {
         select_q = select_q.bind(v);
     }
-    let rows = select_q.fetch_all(pool.get_ref()).await?;
+    let rows = select_q.bind(utilisateur_id).fetch_all(pool.get_ref()).await?;
 
-    // Charger les langues disponibles par vidéo
-    let mut videos: Vec<VideoPubliqueListeResponse> = Vec::new();
-    for row in &rows {
-        let langues = sqlx::query_scalar::<_, String>(
-            "SELECT langue::TEXT FROM media_content.piste_sous_titre
-             WHERE video_id = $1 AND etat = 'publie' AND deleted_at IS NULL ORDER BY langue"
-        )
-        .bind(row.id)
-        .fetch_all(pool.get_ref())
-        .await?;
-
-        videos.push(VideoPubliqueListeResponse {
+    let videos: Vec<VideoPubliqueListeResponse> = rows
+        .into_iter()
+        .map(|row| VideoPubliqueListeResponse {
             id: row.id,
-            titre: row.titre.clone(),
-            slug: row.slug.clone(),
-            description: row.description.clone(),
-            vignette_url: row.vignette_url.clone(),
+            titre: row.titre,
+            slug: row.slug,
+            description: row.description,
+            vignette_url: row.vignette_url,
             duree_secondes: row.duree_secondes,
-            langues_disponibles: langues,
+            auteur_reel: row.auteur_reel,
+            langues_disponibles: row.langues_disponibles,
+            nombre_likes: row.nombre_likes,
+            nombre_dislikes: row.nombre_dislikes,
+            nombre_partages: row.nombre_partages,
+            ma_reaction: row.ma_reaction,
             created_at: row.created_at,
-        });
-    }
+        })
+        .collect();
 
     let total_pages = ((total as f64) / (par_page as f64)).ceil() as i64;
 
@@ -342,7 +404,7 @@ pub async fn lister_langues_disponibles(
     }))
 }
 
-/// GET /api/vidafrica/videos/partages — mur communautaire des vidéos (public, paginé).
+/// GET /api/vidafrica/videos/partages : mur communautaire des vidéos (public, paginé).
 pub async fn lister_partages_videos(
     pool: web::Data<PgPool>,
     params: web::Query<PartageVideoQueryParams>,
