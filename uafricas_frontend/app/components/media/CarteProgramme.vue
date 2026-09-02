@@ -46,13 +46,24 @@ const couverture = computed(() => props.programme.banner || props.programme.cove
 const iconeRepli = computed<[string, string]>(() =>
   props.typeSupport === 'station_radio' ? ['fas', 'microphone'] : ['fas', 'layer-group'],
 )
+
+/**
+ * `<component :is>` attend un COMPOSANT, pas son nom.
+ *
+ * La chaîne `'NuxtLink'` n'est résolue que si le composant est enregistré sur
+ * l'instance d'application ; ce n'est pas le cas ici, où l'auto-import de Nuxt
+ * agit à la compilation du gabarit. Vue ne signale rien : il rend un élément
+ * personnalisé `<nuxtlink>`, inerte, qui a exactement l'apparence d'un lien et
+ * n'en est pas un. `resolveComponent` fait la résolution une fois, au `setup`.
+ */
+const Lien = resolveComponent('NuxtLink')
 </script>
 
 <template>
-  <!-- `NuxtLink` est enregistré globalement : la bascule vers `div` évite de
-       dupliquer tout le balisage pour le seul cas sans slug. -->
+  <!-- La bascule vers `div` évite de dupliquer tout le balisage pour le seul
+       cas sans slug. -->
   <component
-    :is="lien ? 'NuxtLink' : 'div'"
+    :is="lien ? Lien : 'div'"
     :to="lien || undefined"
     class="group block w-full text-left"
   >

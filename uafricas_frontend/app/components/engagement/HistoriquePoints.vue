@@ -149,6 +149,14 @@ const mentionPlafond = (m: MouvementPoints): string | null => {
     ? `écrêté à ${m.points} point${m.points > 1 ? 's' : ''} (plafond du jour)`
     : 'plafond atteint, aucun point crédité'
 }
+
+/**
+ * `<component :is>` attend un COMPOSANT, pas son nom : la chaîne `'NuxtLink'`
+ * n'était résolue nulle part et Vue rendait un élément `<nuxtlink>` inerte —
+ * une pastille d'apparence cliquable qui ne menait à rien, sans le moindre
+ * avertissement. Voir la note jumelle dans `media/CarteProgramme.vue`.
+ */
+const Lien = resolveComponent('NuxtLink')
 </script>
 
 <template>
@@ -232,7 +240,7 @@ const mentionPlafond = (m: MouvementPoints): string | null => {
                 lisible, avec un lien quand la page de détail existe.
               -->
               <component
-                :is="lienContenu(m) ? 'NuxtLink' : 'span'"
+                :is="lienContenu(m) ? Lien : 'span'"
                 v-if="m.type_objet"
                 :to="lienContenu(m)"
                 class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-gray-600"
