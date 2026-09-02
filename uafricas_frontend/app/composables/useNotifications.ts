@@ -80,7 +80,12 @@ export const useNotifications = () => {
 
     if (arbre.status === 'fulfilled' && arbre.value.data) {
       for (const n of arbre.value.data) {
-        items.push({ ...n, source: 'arbre' })
+        // Le serveur sérialise ce champ `type` (`#[serde(rename = "type")]`),
+        // `type` étant un mot réservé côté Rust comme ici. L'étaler tel quel
+        // laissait les items de ce magasin SANS `type_`, alors que ceux
+        // d'Africonnect n'ont que celui-là : chaque consommateur en lisait un
+        // et se retrouvait aveugle sur la moitié de la liste, sans erreur.
+        items.push({ ...n, type_: n.type, source: 'arbre' })
       }
     }
 
@@ -106,10 +111,18 @@ export const useNotifications = () => {
     return { success: true, data: items, error: null }
   }
 
-  /** Le verbe et la route diffèrent d'un magasin à l'autre : POST …/lire ici, PATCH …/lu là. */
+  /**
+   * Le verbe ET la route diffèrent d'un magasin à l'autre. Trois conventions
+   * cohabitent côté serveur, et il ne faut pas les confondre :
+   *   - arbre / générique : POST  `/api/notifications/{id}/lire`
+   *   - africonnect       : PATCH `/api/retrouve-amis/notifications/{id}/lire`
+   *   - amitié            : PATCH `/api/amities/notifications/{id}/lu`
+   * C'est la troisième qui dit `/lu` ; la deuxième dit `/lire` comme la
+   * première. Viser `/lu` sur `retrouve-amis` donnait un 404 silencieux.
+   */
   const marquerLue = async (id: string, source: 'arbre' | 'africonnect' = 'arbre') => {
     const r = source === 'africonnect'
-      ? await $fetch<ApiResponse<any>>(`${apiBase}/api/retrouve-amis/notifications/${id}/lu`, { method: 'PATCH', headers: enTete() })
+      ? await $fetch<ApiResponse<any>>(`${apiBase}/api/retrouve-amis/notifications/${id}/lire`, { method: 'PATCH', headers: enTete() })
       : await $fetch<ApiResponse<any>>(`${apiBase}/api/notifications/${id}/lire`, { method: 'POST', headers: enTete() })
     if (r.success) nbNonLues.value = Math.max(0, nbNonLues.value - 1)
     return r
@@ -118,7 +131,7 @@ export const useNotifications = () => {
   const toutMarquerLu = async () => {
     const [a, b] = await Promise.allSettled([
       $fetch<ApiResponse<any>>(`${apiBase}/api/notifications/tout-lire`, { method: 'POST', headers: enTete() }),
-      $fetch<ApiResponse<any>>(`${apiBase}/api/retrouve-amis/notifications/tout-lu`, { method: 'PATCH', headers: enTete() }),
+      $fetch<ApiResponse<any>>(`${apiBase}/api/retrouve-amis/notifications/tout-lire`, { method: 'PATCH', headers: enTete() }),
     ])
     nbNonLues.value = 0
     return { success: a.status === 'fulfilled' || b.status === 'fulfilled', data: null, error: null }

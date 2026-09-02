@@ -153,7 +153,7 @@ const dateRelative = (iso: string): string => {
           @click="ouvrir(n)"
         >
           <span class="grid size-10 shrink-0 place-items-center rounded-full bg-af-fond text-af-chocolat">
-            <font-awesome-icon :icon="['fas', iconeNotification(n.type as any)]" />
+            <font-awesome-icon :icon="['fas', iconeNotification(n.type_ as any)]" />
           </span>
 
           <span class="flex min-w-0 flex-1 flex-col gap-1">
@@ -161,7 +161,7 @@ const dateRelative = (iso: string): string => {
               {{ n.message }}
             </span>
             <span class="flex flex-wrap items-center gap-x-3 text-[12px]/[1.4] text-af-atone">
-              <span>{{ TYPES[n.type] ?? n.type }}</span>
+              <span>{{ TYPES[n.type_] ?? n.type_ }}</span>
               <span>·</span>
               <span>{{ dateRelative(n.created_at) }}</span>
             </span>

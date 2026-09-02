@@ -891,8 +891,8 @@ export const useRetrouvAmis = () => {
 
     try {
       const reponse = await fetchAvecAuth<ApiResponse<null>>(
-        `${apiBase}/api/retrouve-amis/notifications/${id}/lu`,
-        { method: 'POST' },
+        `${apiBase}/api/retrouve-amis/notifications/${id}/lire`,
+        { method: 'PATCH' },
       )
 
       if (!reponse.success) {
@@ -917,8 +917,8 @@ export const useRetrouvAmis = () => {
 
     try {
       const reponse = await fetchAvecAuth<ApiResponse<{ mises_a_jour: number }>>(
-        `${apiBase}/api/retrouve-amis/notifications/tout-lu`,
-        { method: 'POST' },
+        `${apiBase}/api/retrouve-amis/notifications/tout-lire`,
+        { method: 'PATCH' },
       )
 
       if (!reponse.success || !reponse.data) {

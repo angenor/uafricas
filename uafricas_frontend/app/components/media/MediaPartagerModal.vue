@@ -2,7 +2,7 @@
 import type { TypeMedia } from '~/composables/useMediaSocial'
 
 /** Partage d'un contenu média (chaîne, station, émission, épisode). */
-defineProps<{
+const props = defineProps<{
   isOpen: boolean
   /** Titre lisible du contenu (nom de chaîne, titre d'émission…). */
   titre: string
@@ -15,14 +15,36 @@ defineProps<{
   urlDetail?: string
 }>()
 
-defineEmits<{ (e: 'close'): void, (e: 'submit', legende: string): void }>()
+const emit = defineEmits<{ (e: 'close'): void, (e: 'partage'): void }>()
 
-const coquille = ref<{ setLoading: (v: boolean) => void, setError: (m: string) => void, setSuccess: () => void } | null>(null)
-defineExpose({
-  setLoading: (v: boolean) => coquille.value?.setLoading(v),
-  setError: (m: string) => coquille.value?.setError(m),
-  setSuccess: () => coquille.value?.setSuccess(),
-})
+const { partager, estConnecte } = useMediaSocial()
+
+const coquille = ref<{
+  setLoading: (v: boolean) => void
+  setError: (m: string) => void
+  setSuccess: () => void
+} | null>(null)
+
+/**
+ * L'appel est porté ICI, et non par les huit pages qui montent la modale.
+ *
+ * La coquille `AfricansModalePartage` se contente de ré-émettre `submit` ; un
+ * `@submit` non branché ne produit aucune erreur, ni au build ni à l'exécution.
+ * Le bouton « Partager » restait donc inerte en silence : pas de chargement,
+ * pas de message, rien d'enregistré. Ce composant a `typeMedia` et `mediaId`,
+ * les deux seuls arguments dont `partager` a besoin — le déléguer aux pages
+ * n'apporterait rien et multiplierait par huit les occasions de l'oublier.
+ */
+const soumettre = async (legende: string) => {
+  coquille.value?.setLoading(true)
+  const res = await partager(props.typeMedia, props.mediaId, legende || undefined)
+  if (res) {
+    coquille.value?.setSuccess()
+    emit('partage')
+  } else {
+    coquille.value?.setError('Erreur lors du partage. Veuillez réessayer.')
+  }
+}
 </script>
 
 <template>
@@ -34,8 +56,9 @@ defineExpose({
     :type-objet="typeMedia"
     :objet-id="mediaId"
     :url="urlDetail"
+    :est-connecte="estConnecte()"
     @close="$emit('close')"
-    @submit="$emit('submit', $event)"
+    @submit="soumettre"
   >
     Vous partagez <strong class="font-bold text-af-encre">{{ titre }}</strong>.
   </AfricansModalePartage>

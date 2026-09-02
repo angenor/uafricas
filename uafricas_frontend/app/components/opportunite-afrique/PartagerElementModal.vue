@@ -2,7 +2,7 @@
 import type { TypeObjetElement } from '~/composables/useOpportuniteAfrique'
 
 /** Partage d'un sous-objet d'une fiche territoire (site, recette, secteur…). */
-defineProps<{
+const props = defineProps<{
   isOpen: boolean
   /** Titre lisible du sous-objet (nom, titre, nom complet). */
   titre: string
@@ -13,14 +13,30 @@ defineProps<{
   estConnecte?: boolean
 }>()
 
-defineEmits<{ (e: 'close'): void, (e: 'submit', legende: string): void }>()
+defineEmits<{ (e: 'close'): void }>()
 
-const coquille = ref<{ setLoading: (v: boolean) => void, setError: (m: string) => void, setSuccess: () => void } | null>(null)
-defineExpose({
-  setLoading: (v: boolean) => coquille.value?.setLoading(v),
-  setError: (m: string) => coquille.value?.setError(m),
-  setSuccess: () => coquille.value?.setSuccess(),
-})
+const { partagerElement } = useOpportuniteAfrique()
+
+const coquille = ref<{
+  setLoading: (v: boolean) => void
+  setError: (m: string) => void
+  setSuccess: () => void
+} | null>(null)
+
+/**
+ * L'appel est porté ICI, et non par les quatre pages de détail.
+ *
+ * La coquille `AfricansModalePartage` se contente de ré-émettre `submit` ; un
+ * `@submit` non branché ne produit aucune erreur, ni au build ni à l'exécution
+ * — le bouton « Partager » reste inerte en silence. Ce composant a `typeObjet`
+ * et `objetId`, les deux seuls arguments dont `partagerElement` a besoin.
+ */
+const soumettre = async (legende: string) => {
+  coquille.value?.setLoading(true)
+  const res = await partagerElement(props.typeObjet, props.objetId, legende || undefined)
+  if (res) coquille.value?.setSuccess()
+  else coquille.value?.setError('Erreur lors du partage. Veuillez réessayer.')
+}
 </script>
 
 <template>
@@ -33,7 +49,7 @@ defineExpose({
     :type-objet="typeObjet"
     :objet-id="objetId"
     @close="$emit('close')"
-    @submit="$emit('submit', $event)"
+    @submit="soumettre"
   >
     Vous partagez <strong class="font-bold text-af-encre">{{ titre }}</strong>.
   </AfricansModalePartage>
