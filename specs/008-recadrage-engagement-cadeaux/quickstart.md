@@ -1,4 +1,4 @@
-# Quickstart — Validation du recadrage de l'engagement
+# Quickstart : Validation du recadrage de l'engagement
 
 **Feature**: `008-recadrage-engagement-cadeaux`
 
@@ -26,16 +26,16 @@ kill $(lsof -i :8082 -t) 2>/dev/null; RUST_LOG=info cargo run
 cd uafricas_frontend && pnpm dev
 ```
 
-**Comptes** : `test-admin@test.com` / `Test1234` (porteur de `engagement.gerer`) et `test-user@test.com` / `Test1234`. Un **troisième** compte membre est nécessaire pour les scénarios de cadeaux et de partage — le créer via `/inscription`.
+**Comptes** : `test-admin@test.com` / `Test1234` (porteur de `engagement.gerer`) et `test-user@test.com` / `Test1234`. Un **troisième** compte membre est nécessaire pour les scénarios de cadeaux et de partage, le créer via `/inscription`.
 
 **Console SQL** : Adminer sur `http://localhost:8088`, ou `docker compose exec postgres psql -U uafricas -d africans_db`.
 
 ---
 
-## S1 — Le barème est recadré (US1 · SC-001, SC-002)
+## S1 : Le barème est recadré (US1 · SC-001, SC-002)
 
 1. Se connecter en administrateur, ouvrir `/admin/engagement/regles`.
-2. **Attendu** : exactement 3 règles actives — `jaime_recu`, `partage_recu`, `cadeau_recu` — plus `ajustement_admin` ; les 8 règles écartées et `popularite_palier` sont présentes et **inactives**, montants d'origine conservés.
+2. **Attendu** : exactement 3 règles actives, `jaime_recu`, `partage_recu`, `cadeau_recu`, plus `ajustement_admin` ; les 8 règles écartées et `popularite_palier` sont présentes et **inactives**, montants d'origine conservés.
 3. Ouvrir `/admin/engagement/niveaux`. **Attendu** : Membre Africans (0), Premium (500), Gold (2 000), Platinum (10 000), dans cet ordre.
 4. Ouvrir `/admin/engagement/paliers`. **Attendu** : tous inactifs.
 
@@ -55,7 +55,7 @@ SELECT COUNT(*) FROM engagement.mouvement_points
 
 ---
 
-## S2 — Une action écartée ne crédite plus, sans casser le parcours (US1 · SC-007)
+## S2 : Une action écartée ne crédite plus, sans casser le parcours (US1 · SC-007)
 
 1. En administrateur, valider une proposition de média en attente (`/admin/medias/propositions`).
 2. **Attendu** : la validation aboutit normalement, le média est créé, son auteur devient propriétaire.
@@ -72,11 +72,11 @@ SELECT COUNT(*) FROM engagement.mouvement_points
 
 ---
 
-## S3 — Un j'aime rapporte exactement 1 point, une seule fois (US2 · SC-003)
+## S3 : Un j'aime rapporte exactement 1 point, une seule fois (US2 · SC-003)
 
 1. Avec le compte A, publier un contenu Codi-moi.
 2. Avec le compte B, aimer ce contenu. **Attendu** : A voit +1 point dans `/mon-compte/engagement`, catégorie « Popularité », libellé « J'aime reçu sur un contenu ».
-3. Avec B, retirer le j'aime, puis le remettre — **trois fois**.
+3. Avec B, retirer le j'aime, puis le remettre, **trois fois**.
 4. **Attendu** : A a toujours exactement **1 point**, et un seul mouvement.
 
 ```sql
@@ -97,7 +97,7 @@ SELECT m.utilisateur_id, sd.utilisateur_id AS proprietaire
 -- Attendu : les deux colonnes sont identiques
 ```
 
-7. **FR-008c** — aimer un **site touristique** puis un **secteur de développement** d'une fiche pays. **Attendu** : la réaction est enregistrée et le compteur s'incrémente normalement, mais **aucun mouvement de points** n'est créé et aucune erreur n'apparaît côté serveur. Aimer ensuite une **personnalité connue** ou une **recette culinaire** : là, le `cree_par` de l'élément est bien crédité.
+7. **FR-008c** : aimer un **site touristique** puis un **secteur de développement** d'une fiche pays. **Attendu** : la réaction est enregistrée et le compteur s'incrémente normalement, mais **aucun mouvement de points** n'est créé et aucune erreur n'apparaît côté serveur. Aimer ensuite une **personnalité connue** ou une **recette culinaire** : là, le `cree_par` de l'élément est bien crédité.
 
 ```sql
 SELECT type_objet, COUNT(*) FROM engagement.mouvement_points
@@ -107,7 +107,7 @@ SELECT type_objet, COUNT(*) FROM engagement.mouvement_points
 
 ---
 
-## S4 — Un partageur ne crédite qu'une fois, tous canaux confondus (US4 · SC-011)
+## S4 : Un partageur ne crédite qu'une fois, tous canaux confondus (US4 · SC-011)
 
 1. Avec le compte B, partager un contenu de A vers **WhatsApp** depuis la modale de partage.
 2. **Attendu** : A gagne 1 point, catégorie « Partages ».
@@ -128,10 +128,10 @@ SELECT reseau FROM engagement.partage_externe WHERE objet_id = '<objet_id>';
 
 ---
 
-## S5 — Cadeau en soutien financier, paiement simulé abouti (US3 · SC-004, SC-009)
+## S5 : Cadeau en soutien financier, paiement simulé abouti (US3 · SC-004, SC-009)
 
 1. Avec B, ouvrir une vidéo Vidafrica publiée par A, cliquer « Offrir un cadeau ».
-2. **Attendu** : le bandeau « paiement simulé — phase de test » est visible (FR-020a).
+2. **Attendu** : le bandeau « paiement simulé, phase de test » est visible (FR-020a).
 3. Choisir « Drapeau de l'Union Africaine », mode **Soutien financier**, confirmer, puis faire **aboutir** le paiement simulé.
 4. **Attendu, en moins de 5 secondes** : A est crédité de **+20 points** (catégorie « Cadeaux »), reçoit une notification, le cadeau s'affiche sur la vidéo avec le nom de B et **aucun montant**.
 
@@ -145,11 +145,11 @@ SELECT montant_cumule FROM engagement.cagnotte WHERE utilisateur_id = '<id de A>
 ```
 
 5. Ouvrir `/mon-compte/engagement` avec A : la cagnotte affiche 1 800 FCFA et la mention explicite que le versement n'est pas disponible (FR-026). Vérifier l'accès en **au plus 2 clics** depuis le profil (SC-010).
-6. **FR-031** — ouvrir `/profil/<id de A>` avec le compte B, non connecté puis connecté : le statut et les badges de A sont visibles, **ni son solde, ni sa cagnotte, ni son historique** ne le sont. Contrôler également la réponse réseau, pas seulement l'affichage.
+6. **FR-031** : ouvrir `/profil/<id de A>` avec le compte B, non connecté puis connecté : le statut et les badges de A sont visibles, **ni son solde, ni sa cagnotte, ni son historique** ne le sont. Contrôler également la réponse réseau, pas seulement l'affichage.
 
 ---
 
-## S6 — Cadeau en points et paiement en échec (US3 · SC-005)
+## S6 : Cadeau en points et paiement en échec (US3 · SC-005)
 
 1. Avec B, offrir une « Fleur » à A en mode **Cadeau en points**, paiement simulé **abouti**.
 2. **Attendu** : A gagne +3 points, `part_beneficiaire = 0`, `part_plateforme = 300`, cagnotte **inchangée**.
@@ -162,7 +162,7 @@ SELECT etat, COUNT(*) FROM engagement.transaction_cadeau GROUP BY etat;
 
 ---
 
-## S7 — Rejeu et auto-cadeau (US3 · SC-006, SC-011)
+## S7 : Rejeu et auto-cadeau (US3 · SC-006, SC-011)
 
 1. Rejouer la confirmation d'une transaction déjà aboutie (recharger la page de retour, ou rappeler la route).
 2. **Attendu** : réponse `200` identique, **0 point supplémentaire**, **0 cagnotte supplémentaire**.
@@ -171,18 +171,18 @@ SELECT etat, COUNT(*) FROM engagement.transaction_cadeau GROUP BY etat;
 
 ```sql
 SELECT COUNT(*) FROM engagement.transaction_cadeau WHERE offreur_id = beneficiaire_id;
--- Attendu : 0 — et la contrainte CHECK le rend structurellement impossible
+-- Attendu : 0 : et la contrainte CHECK le rend structurellement impossible
 ```
 
 ---
 
-## S8 — Statuts et administration du catalogue (US1, US5 · SC-002, SC-008)
+## S8 : Statuts et administration du catalogue (US1, US5 · SC-002, SC-008)
 
 1. En administrateur, appliquer un ajustement manuel de **+500 points** à un compte de test (`/admin/engagement/journal`).
 2. **Attendu** : le compte bascule immédiatement sur « Premium ». Passer à 2 000 → « Gold » ; à 10 000 → « Platinum ». À 499 → « Membre Africans ».
 3. Ouvrir `/admin/engagement/cadeaux`, créer un cadeau « Tam-tam » (50 points, 5 000 FCFA), l'activer.
 4. **Attendu** : il apparaît immédiatement dans la modale côté membre, sans redémarrage.
-5. Modifier le **taux de commission** à 20 %, offrir un nouveau cadeau, vérifier la répartition 80 / 20 — et vérifier que les transactions **antérieures** conservent leur taux de 10 % (FR-024).
+5. Modifier le **taux de commission** à 20 %, offrir un nouveau cadeau, vérifier la répartition 80 / 20, et vérifier que les transactions **antérieures** conservent leur taux de 10 % (FR-024).
 6. Tenter de supprimer un cadeau déjà offert. **Attendu** : refus explicite, désactivation proposée.
 7. Ouvrir `/admin/engagement/transactions`, vérifier l'invariant des totaux :
 
@@ -197,7 +197,7 @@ SELECT SUM(montant) AS total,
 
 ---
 
-## S9 — Purge de fin de phase de test (SC-013)
+## S9 : Purge de fin de phase de test (SC-013)
 
 > Scénario destructif : à exécuter **en dernier**, sur un environnement de recette.
 
@@ -209,7 +209,7 @@ SELECT type_action, COUNT(*) FROM engagement.mouvement_points GROUP BY type_acti
 ```
 
 2. Tenter la purge **avant** toute bascule → **attendu** : refus `409` (purger tant que le paiement reste simulé rouvrirait aussitôt la porte au minage).
-3. En administrateur, passer `paiement_reel_actif` à `true` dans `/admin/engagement/cadeaux` (section paramètres). **Ce basculement simule la mise en service de CinetPay** : le bandeau « phase de test » disparaît alors côté membre, ce qui est le comportement attendu — pendant la recette, l'état est volontairement transitoire. **Repasser le drapeau à `false` après le scénario** tant que l'encaissement réel n'est pas branché, sans quoi les membres verraient un parcours factice présenté comme réel.
+3. En administrateur, passer `paiement_reel_actif` à `true` dans `/admin/engagement/cadeaux` (section paramètres). **Ce basculement simule la mise en service de CinetPay** : le bandeau « phase de test » disparaît alors côté membre, ce qui est le comportement attendu, pendant la recette, l'état est volontairement transitoire. **Repasser le drapeau à `false` après le scénario** tant que l'encaissement réel n'est pas branché, sans quoi les membres verraient un parcours factice présenté comme réel.
 4. Déclencher `POST /purger-phase-test` avec la confirmation.
 5. **Attendu** :
    - tous les mouvements `cadeau_recu` issus de transactions simulées ont disparu ;
@@ -256,6 +256,6 @@ SELECT c.utilisateur_id,
 
 ### Écarts relevés et corrigés pendant la validation
 
-1. **`source_titre` visait des colonnes inexistantes** (`culture.codimoi.titre`, `programme_tele.titre`, `personnalite_connue.nom`…). Les noms réels diffèrent par famille (`contenu`, `nom_emission`, `nom_complet`) et `fiche_pays` n'a pas de nom propre — il vient de `shared.pays`. L'échec était **silencieux** (`.ok().flatten()`), le journal admin affichant simplement des titres vides.
+1. **`source_titre` visait des colonnes inexistantes** (`culture.codimoi.titre`, `programme_tele.titre`, `personnalite_connue.nom`…). Les noms réels diffèrent par famille (`contenu`, `nom_emission`, `nom_complet`) et `fiche_pays` n'a pas de nom propre : il vient de `shared.pays`. L'échec était **silencieux** (`.ok().flatten()`), le journal admin affichant simplement des titres vides.
 2. **`site_touristique` répondait `400` au lieu de `409`.** La famille était refusée comme « inconnue » alors qu'elle est connue mais sans auteur. Une constante `FAMILLES_SANS_AUTEUR` sépare désormais les deux cas : le client doit pouvoir dire « ce contenu n'a pas d'auteur » et non « votre requête est erronée ».
 3. **`titre_cible` restait `null` sur `/mes-cadeaux`**, contrairement au contrat §5. `resoudre_titre` a été rendue partagée entre le handler membre et le handler d'administration.

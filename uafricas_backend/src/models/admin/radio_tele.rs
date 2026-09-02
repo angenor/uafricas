@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-// ── Colonnes SQL — Stations Radio ────────────────────────────
+// ── Colonnes SQL : Stations Radio ────────────────────────────
 
 pub const ADMIN_STATION_RADIO_LISTE_COLONNES: &str =
     "s.id, s.nom, s.type_station::TEXT as type_station, s.genre, s.etat,
@@ -24,7 +24,7 @@ pub const STATION_RADIO_TRI_COLONNES: &[&str] = &[
     "created_at", "nom", "type_station", "etat",
 ];
 
-// ── Colonnes SQL — Chaînes TV ────────────────────────────────
+// ── Colonnes SQL : Chaînes TV ────────────────────────────────
 
 pub const ADMIN_CHAINE_TV_LISTE_COLONNES: &str =
     "c.id, c.nom, c.categorie::TEXT as categorie, c.etat, c.est_en_direct,
@@ -45,7 +45,7 @@ pub const CHAINE_TV_TRI_COLONNES: &[&str] = &[
     "created_at", "nom", "categorie", "etat",
 ];
 
-// ── Row & Response — Station Radio ───────────────────────────
+// ── Row & Response : Station Radio ───────────────────────────
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct AdminStationRadioListeResponse {
@@ -164,7 +164,7 @@ impl AdminStationRadioDetailRow {
     }
 }
 
-// ── Row & Response — Chaîne TV ───────────────────────────────
+// ── Row & Response : Chaîne TV ───────────────────────────────
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct AdminChaineTvListeResponse {
@@ -175,7 +175,7 @@ pub struct AdminChaineTvListeResponse {
     pub est_en_direct: bool,
     pub pays_nom: Option<String>,
     pub langue: String,
-    /// « africans » (Africans Télé International) ou « territoire » — cf. 09o.
+    /// « africans » (Africans Télé International) ou « territoire », cf. 09o.
     pub origine_publication: String,
     pub created_at: DateTime<Utc>,
 }
@@ -291,7 +291,7 @@ pub struct CreerStationRadioRequest {
     pub origine_publication: Option<String>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
-    /// Coordonnées publiques de l'équipe (09p) — affichées sur la page du
+    /// Coordonnées publiques de l'équipe (09p), affichées sur la page du
     /// support une fois celui-ci publié.
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
@@ -318,7 +318,7 @@ pub struct ModifierStationRadioRequest {
     pub origine_publication: Option<String>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
-    /// Coordonnées publiques de l'équipe (09p) — affichées sur la page du
+    /// Coordonnées publiques de l'équipe (09p), affichées sur la page du
     /// support une fois celui-ci publié.
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
@@ -343,7 +343,7 @@ pub struct CreerChaineTvRequest {
     pub origine_publication: Option<String>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
-    /// Coordonnées publiques de l'équipe (09p) — affichées sur la page du
+    /// Coordonnées publiques de l'équipe (09p), affichées sur la page du
     /// support une fois celui-ci publié.
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
@@ -363,11 +363,11 @@ pub struct ModifierChaineTvRequest {
     pub pays_id: Option<Uuid>,
     pub langue: Option<String>,
     pub est_en_direct: Option<bool>,
-    /// « africans » ou « territoire » — cf. `CreerChaineTvRequest`.
+    /// « africans » ou « territoire » : cf. `CreerChaineTvRequest`.
     pub origine_publication: Option<String>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
-    /// Coordonnées publiques de l'équipe (09p) — affichées sur la page du
+    /// Coordonnées publiques de l'équipe (09p), affichées sur la page du
     /// support une fois celui-ci publié.
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
@@ -376,15 +376,15 @@ pub struct ModifierChaineTvRequest {
     pub contact_adresse: Option<String>,
 }
 
-// ── Programmes conteneurs et épisodes — back-office (009) ────
+// ── Programmes conteneurs et épisodes, back-office (009) ────
 // Les DTO de lecture sont ceux du domaine (`models::media_emission`,
 // `models::media_episode`) : le back-office affiche les mêmes objets que le
-// public, avec des filtres différents. Seules les requêtes ÉCRITES diffèrent —
+// public, avec des filtres différents. Seules les requêtes ÉCRITES diffèrent, 
 // l'administration choisit le support et l'état, un co-détenteur non.
 
 #[derive(Debug, Deserialize)]
 pub struct AdminEmissionRequest {
-    /// « chaine_tv » ou « station_radio » — requis à la création.
+    /// « chaine_tv » ou « station_radio » : requis à la création.
     pub type_support: Option<String>,
     pub support_id: Option<Uuid>,
     pub titre: String,

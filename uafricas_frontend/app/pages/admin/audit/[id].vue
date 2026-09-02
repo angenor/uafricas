@@ -25,7 +25,7 @@ onMounted(() => chargerDetail(id))
 
 <template>
   <div>
-    <AdminPageHeader :titre="`Audit #${auditDetail?.id?.slice(0, 8) || '...'}`" sous-titre="Detail de l'evenement">
+    <AdminPageHeader :titre="`Audit #${auditDetail?.id?.slice(0, 8) || '...'}`" sous-titre="Détail de l'événement">
       <template #actions>
         <NuxtLink to="/admin/audit" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour

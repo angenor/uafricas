@@ -129,7 +129,7 @@ onMounted(() => charger())
               <select v-model="utilisateurChoisi" class="select select-bordered select-sm">
                 <option value="" disabled>Sélectionner…</option>
                 <option v-for="u in utilisateursDisponibles" :key="u.id" :value="u.id">
-                  {{ u.prenom }} {{ u.nom }} — {{ u.email }}
+                  {{ u.prenom }} {{ u.nom }} - {{ u.email }}
                 </option>
               </select>
             </div>
@@ -179,10 +179,10 @@ onMounted(() => charger())
               <td>
                 <div class="flex flex-col">
                   <span class="font-medium">{{ m.prenom }} {{ m.nom }}</span>
-                  <span class="text-xs opacity-70">{{ m.email || '—' }}</span>
+                  <span class="text-xs opacity-70">{{ m.email || '-' }}</span>
                 </div>
               </td>
-              <td>{{ m.disponibilite || '—' }}</td>
+              <td>{{ m.disponibilite || '-' }}</td>
               <td>{{ formatDate(m.designe_at) }}</td>
               <td>
                 <span class="badge" :class="m.actif ? 'badge-success' : 'badge-ghost'">

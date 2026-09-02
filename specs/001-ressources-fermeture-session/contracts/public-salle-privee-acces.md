@@ -1,4 +1,4 @@
-# Contrats HTTP — Accès persistant aux salles privées (extension)
+# Contrats HTTP : Accès persistant aux salles privées (extension)
 
 **Préfixe** : `/api/afrolang`
 
@@ -22,7 +22,7 @@ VALUES ($1, $2, NOW())
 ON CONFLICT (salle_privee_id, utilisateur_id) WHERE revoque_at IS NULL DO NOTHING;
 ```
 
-Audit : `audit::log_action("CREATE", "afrolang", "acces_salle_privee", entity_id=salle_privee_id)` une seule fois (à la première validation, pas sur les re-validations idempotentes — détecté via le `xmax` PostgreSQL ou simplement en ignorant le doublon).
+Audit : `audit::log_action("CREATE", "afrolang", "acces_salle_privee", entity_id=salle_privee_id)` une seule fois (à la première validation, pas sur les re-validations idempotentes, détecté via le `xmax` PostgreSQL ou simplement en ignorant le doublon).
 
 ---
 

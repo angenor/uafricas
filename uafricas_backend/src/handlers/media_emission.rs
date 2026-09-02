@@ -1,7 +1,7 @@
-//! Programmes conteneurs — gestion par les co-détenteurs et lecture publique
+//! Programmes conteneurs : gestion par les co-détenteurs et lecture publique
 //! (feature 009-medias-programmes-episodes, US1).
 //!
-//! Routes membres — la garde est `garde_detenteur`, **jamais**
+//! Routes membres : la garde est `garde_detenteur`, **jamais**
 //! `AdminUtilisateur` : ce sont des routes de gestion de son propre support.
 //!
 //!   POST   /api/medias/{type_support}/{support_id}/emissions
@@ -37,25 +37,25 @@ use crate::services::audit;
 use crate::ApiResponse;
 
 /// Aperçu d'épisodes servi par les sections. Au-delà, la page du programme
-/// prend le relais — c'est ce qui tient la promesse de navigabilité à
+/// prend le relais : c'est ce qui tient la promesse de navigabilité à
 /// 500 épisodes.
 pub const MAX_EPISODES_APERCU: i64 = 12;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Agrégations de lecture — sans requête N+1
+// Agrégations de lecture : sans requête N+1
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Programmes publiés de plusieurs supports, en **une seule requête**.
 ///
 /// La fenêtre `ROW_NUMBER() OVER (PARTITION BY support)` borne le nombre de
 /// programmes par support sans boucler côté Rust, et `COUNT(*) OVER (PARTITION
-/// BY support)` rapporte le total dans la même passe — un second aller-retour
+/// BY support)` rapporte le total dans la même passe, un second aller-retour
 /// de comptage serait précisément le N+1 que SC-010 proscrit.
 ///
 /// Un programme sans épisode publié **reste listé** (010, FR-005) : la latérale
 /// de comptage est jointe `ON TRUE` et non `ON agg.nombre_episodes > 0`. Sous le
 /// modèle de la feature 010, la vitrine annonce une offre éditoriale et non un
-/// catalogue de fichiers — un programme annoncé mais pas encore tourné a sa
+/// catalogue de fichiers : un programme annoncé mais pas encore tourné a sa
 /// place dans la grille.
 pub async fn emissions_publiees_par_supports(
     pool: &PgPool,
@@ -117,7 +117,7 @@ pub async fn emissions_publiees_par_supports(
 
 /// Aperçu d'épisodes de plusieurs programmes, en **une seule requête**.
 ///
-/// Les plus récents d'abord — un aperçu annonce l'actualité de la série, la
+/// Les plus récents d'abord : un aperçu annonce l'actualité de la série, la
 /// page du programme servant l'ordre de diffusion.
 pub async fn episodes_apercu_par_emissions(
     pool: &PgPool,
@@ -161,7 +161,7 @@ pub async fn episodes_apercu_par_emissions(
 }
 
 /// Greffe les aperçus d'épisodes sur une liste de programmes, puis les
-/// compteurs d'interaction des deux niveaux — **jamais agrégés** (FR-048).
+/// compteurs d'interaction des deux niveaux, **jamais agrégés** (FR-048).
 pub async fn greffer_apercus_et_compteurs(
     pool: &PgPool,
     type_support: &str,
@@ -202,7 +202,7 @@ pub async fn greffer_apercus_et_compteurs(
     Ok(())
 }
 
-/// `EpisodeResponse` ne dérive pas `Clone` — il porte des `Option` imbriquées
+/// `EpisodeResponse` ne dérive pas `Clone` : il porte des `Option` imbriquées
 /// que rien d'autre ne recopie. Ce constructeur explicite évite de l'imposer à
 /// tout le module pour un seul usage.
 fn cloner_episode(e: &EpisodeResponse) -> EpisodeResponse {
@@ -283,11 +283,11 @@ pub async fn obtenir_emission_par_slug(
     let mut reponse = row.to_response(type_support);
     let type_emission = type_media_emission(type_support).expect("type de support validé");
     let compteurs = media_social::compteurs_pour(pool, type_emission, &[reponse.id], moi).await?;
-    // Compteurs de L'ÉMISSION SEULE — jamais la somme de ceux de ses épisodes
+    // Compteurs de L'ÉMISSION SEULE : jamais la somme de ceux de ses épisodes
     // (FR-048). Les épisodes portent les leurs, servis par leur propre page.
     reponse.interactions = compteurs.get(&reponse.id).cloned();
 
-    // 010 — l'équipe DU PROGRAMME (FR-032) : jamais celle de son support en
+    // 010 : l'équipe DU PROGRAMME (FR-032) : jamais celle de son support en
     // repli, ce qui attribuerait à une émission des personnes qui n'y travaillent
     // pas.
     let type_porteur = crate::models::media_equipe::type_porteur_emission(type_support)?;
@@ -297,7 +297,7 @@ pub async fn obtenir_emission_par_slug(
     Ok(reponse)
 }
 
-/// Épisodes publiés d'un programme, paginés — c'est ce qui tient la promesse de
+/// Épisodes publiés d'un programme, paginés : c'est ce qui tient la promesse de
 /// navigabilité à 500 épisodes (SC-009).
 pub async fn lister_episodes_emission(
     pool: &PgPool,
@@ -373,7 +373,7 @@ pub async fn lister_episodes_emission(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Créer un programme, **sans exiger le moindre fichier** (FR-003) : c'est tout
-/// le sens du conteneur — on déclare une série avant d'avoir tourné le premier
+/// le sens du conteneur : on déclare une série avant d'avoir tourné le premier
 /// épisode.
 ///
 /// Le programme naît `brouillon` ; il passe `publie` dès qu'un de ses épisodes
@@ -479,11 +479,11 @@ pub async fn creer_emission(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GET /api/medias/{type_support}/{support_id}/emissions — vue détenteur
+// GET /api/medias/{type_support}/{support_id}/emissions, vue détenteur
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// **Toutes** les émissions du support, y compris `brouillon` et sans épisode,
-/// avec le décompte par état — c'est le tableau de bord de FR-042.
+/// avec le décompte par état : c'est le tableau de bord de FR-042.
 pub async fn lister_emissions_detenteur(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -609,7 +609,7 @@ pub async fn modifier_emission(
 ///
 /// **Refus `409`** tant qu'il compte des épisodes publiés (FR-010), avec leur
 /// décompte dans le message. La clé étrangère `ON DELETE RESTRICT` fait le même
-/// refus en dernier recours — celui-ci sert à le dire en français.
+/// refus en dernier recours : celui-ci sert à le dire en français.
 pub async fn supprimer_emission(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -660,7 +660,7 @@ pub async fn supprimer_emission(
     }))
 }
 
-/// FR-010 — une émission ne disparaît pas sous ses épisodes publiés.
+/// FR-010 : une émission ne disparaît pas sous ses épisodes publiés.
 pub async fn refuser_si_episodes_publies(
     pool: &PgPool,
     type_support: &str,
@@ -688,7 +688,7 @@ pub async fn refuser_si_episodes_publies(
 // Utilitaires partagés
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Support porteur d'une émission, plus un instantané de son état — la garde ne
+/// Support porteur d'une émission, plus un instantané de son état, la garde ne
 /// peut s'exercer qu'après avoir su de quel support elle relève.
 pub async fn contexte_emission(
     pool: &PgPool,
@@ -723,7 +723,7 @@ pub async fn contexte_emission(
 
 /// Slug unique : le suffixe numérique est ajouté tant que la contrainte
 /// `UNIQUE` refuserait la ligne. Deux programmes homonymes sur deux chaînes
-/// différentes sont légitimes — le slug, lui, est global.
+/// différentes sont légitimes : le slug, lui, est global.
 pub async fn slug_unique(pool: &PgPool, table: &str, base: &str) -> Result<String, ApiErreur> {
     let base = if base.trim().is_empty() { "programme" } else { base };
     let mut candidat = base.to_string();

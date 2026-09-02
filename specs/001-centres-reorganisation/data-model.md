@@ -1,4 +1,4 @@
-# Phase 1 — Data Model: Réorganisation des centres culturels
+# Phase 1 : Data Model: Réorganisation des centres culturels
 
 **Feature**: `001-centres-reorganisation` | **Date**: 2026-04-19
 
@@ -21,15 +21,15 @@ Entité éditoriale d'un centre culturel africain ou afro-descendant.
 | `slug` | `VARCHAR(400)` | nullable, UNIQUE | Non utilisé par la feature (URL canonique par UUID) |
 | `description` | `TEXT` | nullable | Corps de la fiche |
 | `image_couverture_url` | `VARCHAR(500)` | nullable | Image de carte, visuel du carrousel (FR-005a) |
-| `pays_id` | `UUID` | FK → `shared.pays`, nullable | Pays du centre (FR-001 « pays ») — FK vers le référentiel pays existant |
+| `pays_id` | `UUID` | FK → `shared.pays`, nullable | Pays du centre (FR-001 « pays »), FK vers le référentiel pays existant |
 | `ville` | `VARCHAR(200)` | nullable | Localisation affichée |
 | `adresse` | `TEXT` | nullable | Localisation affichée |
 | `latitude`, `longitude` | `DECIMAL(10,7)` | nullable | Coordonnées géographiques (lien Google Maps côté frontend) |
-| `actif` | `BOOLEAN` | NOT NULL, DEFAULT `TRUE` | **Flag de publication** — `TRUE` = centre publié (exposé sur `/centres`), `FALSE` = dépublié/archivé (exclu des endpoints publics) |
+| `actif` | `BOOLEAN` | NOT NULL, DEFAULT `TRUE` | **Flag de publication**, `TRUE` = centre publié (exposé sur `/centres`), `FALSE` = dépublié/archivé (exclu des endpoints publics) |
 | `cree_par` | `UUID` | NOT NULL, FK `iam.utilisateur` | Auditabilité administrative |
-| `created_at`, `updated_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()` | Audit — hors UI publique |
+| `created_at`, `updated_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()` | Audit, hors UI publique |
 
-**État de publication** : tout `centre_culturel` avec `actif = TRUE` est « publié » et exposé sur `/centres`. Au moment du déploiement (contexte non-prod, Q4), les enregistrements existants sont déjà `actif = TRUE` (aucune migration requise). Aucun champ `published_at` ni `deleted_at` n'existe dans cette table — la bascule est binaire via `actif`.
+**État de publication** : tout `centre_culturel` avec `actif = TRUE` est « publié » et exposé sur `/centres`. Au moment du déploiement (contexte non-prod, Q4), les enregistrements existants sont déjà `actif = TRUE` (aucune migration requise). Aucun champ `published_at` ni `deleted_at` n'existe dans cette table, la bascule est binaire via `actif`.
 
 **Cycle de vie** :
 ```
@@ -51,7 +51,7 @@ créé (admin, actif=TRUE)  →  affiché sur /centres  →  [modifié (admin)] 
 | `lieu` | `VARCHAR(350)` | nullable | Affichage informationnel |
 | `mode` | `culture.mode_evenement` (ENUM `presentiel` / `en_ligne` / `hybride`) | NOT NULL, DEFAULT `presentiel` | Affichage et pictogramme |
 | `lien_en_ligne` | `VARCHAR(500)` | nullable | CTA (lien ouvert) pour les modes `en_ligne` / `hybride` |
-| `date_heure_debut` | `TIMESTAMPTZ` | NOT NULL | **Clé de tri (FR-017a)** — à venir / passées |
+| `date_heure_debut` | `TIMESTAMPTZ` | NOT NULL | **Clé de tri (FR-017a)**, à venir / passées |
 | `date_heure_fin` | `TIMESTAMPTZ` | nullable | Affichage de plage horaire |
 | `nombre_places` | `INT` | nullable | Affichage d'inscriptions |
 | `cree_par` | `UUID` | NOT NULL, FK `iam.utilisateur` | Auditabilité administrative |
@@ -81,9 +81,9 @@ Membre rattaché à un centre (président, vice-président, responsable communic
 | `utilisateur_id` | `UUID` | NOT NULL, FK `iam.utilisateur` | Utilisateur titulaire du rôle (nom/prenom/email/telephone viennent de la jointure avec `iam.utilisateur`) |
 | `role` | `culture.role_membre_centre` (ENUM `president` / `vice_president` / `resp_communication` / `membre`) | NOT NULL, DEFAULT `membre` | Affiché dans le bloc « membres » |
 | `created_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()` | Audit |
-| — | — | `UNIQUE (centre_culturel_id, utilisateur_id)` | Un utilisateur ne peut tenir qu'un rôle par centre |
+| | : | `UNIQUE (centre_culturel_id, utilisateur_id)` | Un utilisateur ne peut tenir qu'un rôle par centre |
 
-> **Note DTO** : le DTO `MembreCentreAPI` côté frontend (`app/composables/useCentresCulturels.ts`) expose `nom`, `prenom`, `email`, `telephone`, `role`, `role_label` — ces champs sont issus de la **jointure** effectuée dans le handler `centres_culturels::obtenir_centre` avec `iam.utilisateur`, **pas** des colonnes de `culture.membre_centre` directement.
+> **Note DTO** : le DTO `MembreCentreAPI` côté frontend (`app/composables/useCentresCulturels.ts`) expose `nom`, `prenom`, `email`, `telephone`, `role`, `role_label`, ces champs sont issus de la **jointure** effectuée dans le handler `centres_culturels::obtenir_centre` avec `iam.utilisateur`, **pas** des colonnes de `culture.membre_centre` directement.
 
 ---
 
@@ -91,10 +91,10 @@ Membre rattaché à un centre (président, vice-président, responsable communic
 
 Les interfaces TypeScript ci-dessous existent déjà dans `app/composables/useCentresCulturels.ts` et reflètent fidèlement les structs Rust `FromRow` du backend (principe III) :
 
-- `CentreCulturelAPI` — carte de liste (`/api/centres-culturels`)
-- `CentreCulturelDetailAPI` — fiche + membres + programmations (`/api/centres-culturels/{id}`)
-- `ProgrammationAPI` — ligne de programmation (rattachée)
-- `ProgrammationDetailAPI` — fiche programmation + centre parent compact (`/api/centres-culturels/{centreId}/programmations/{id}`)
+- `CentreCulturelAPI` : carte de liste (`/api/centres-culturels`)
+- `CentreCulturelDetailAPI` : fiche + membres + programmations (`/api/centres-culturels/{id}`)
+- `ProgrammationAPI` : ligne de programmation (rattachée)
+- `ProgrammationDetailAPI` : fiche programmation + centre parent compact (`/api/centres-culturels/{centreId}/programmations/{id}`)
 
 Aucun de ces DTO n'est modifié par la feature.
 
@@ -117,6 +117,6 @@ Contraintes clés :
 ## Invariants à vérifier à la livraison
 
 1. Aucun nouveau champ, aucune nouvelle table, aucune ALTER TABLE dans `uafricas_backend/doc/bd/schemas/`.
-2. Les interfaces TS (`CentreCulturelAPI`, `ProgrammationAPI`, etc.) restent strictement alignées sur les DTO Rust — aucune divergence introduite par la feature.
-3. La logique de tri « à venir / passées » reste côté frontend (helper pur dans le composable) — le SQL n'est pas sollicité pour cette règle d'affichage.
-4. Le flag `centre_culturel.actif = FALSE` continue d'exclure les centres dépubliés des endpoints publics (et donc leurs programmations associées) — aucun changement de filtrage. Les programmations n'ont aucun flag propre ; leur visibilité suit celle du centre parent.
+2. Les interfaces TS (`CentreCulturelAPI`, `ProgrammationAPI`, etc.) restent strictement alignées sur les DTO Rust, aucune divergence introduite par la feature.
+3. La logique de tri « à venir / passées » reste côté frontend (helper pur dans le composable), le SQL n'est pas sollicité pour cette règle d'affichage.
+4. Le flag `centre_culturel.actif = FALSE` continue d'exclure les centres dépubliés des endpoints publics (et donc leurs programmations associées), aucun changement de filtrage. Les programmations n'ont aucun flag propre ; leur visibilité suit celle du centre parent.

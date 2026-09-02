@@ -1,5 +1,5 @@
-// Co-détention des supports médias — chaînes et stations
-// (US5 — migration 09m, handlers/media_detention.rs).
+// Co-détention des supports médias : chaînes et stations
+// (US5 : migration 09m, handlers/media_detention.rs).
 //
 // Les rôles sont ordonnés : `proprietaire` ⊃ `co_detenteur` ⊃ `programmateur`.
 // Cette hiérarchie est appliquée **côté serveur** par `garde_detenteur` ; elle
@@ -30,7 +30,7 @@ export const LIBELLES_STATUT_INVITATION: Record<StatutInvitation, string> = {
   expiree: 'Expirée',
 }
 
-/** Du plus étendu au moins étendu — miroir de `ROLES_DETENTEUR` (Rust). */
+/** Du plus étendu au moins étendu : miroir de `ROLES_DETENTEUR` (Rust). */
 const ORDRE_ROLES: RoleDetenteur[] = ['proprietaire', 'co_detenteur', 'programmateur']
 
 /** `true` si `role` est au moins aussi étendu que `minimal`. */
@@ -103,7 +103,7 @@ export const useMediaDetention = () => {
   const messageErreur = (e: any, defaut: string): string =>
     e?.data?.error || e?.message || defaut
 
-  /** Les détenteurs d'un support — visible dès le rôle `programmateur`. */
+  /** Les détenteurs d'un support : visible dès le rôle `programmateur`. */
   const listerDetenteurs = async (
     typeSupport: TypeSupportMedia,
     supportId: string,
@@ -126,7 +126,7 @@ export const useMediaDetention = () => {
     }
   }
 
-  /** Les supports que je détiens — page « Mes supports ». */
+  /** Les supports que je détiens : page « Mes supports ». */
   const mesSupports = async (): Promise<DetenteurAPI[]> => {
     chargement.value = true
     erreur.value = null
@@ -147,7 +147,7 @@ export const useMediaDetention = () => {
   }
 
   /**
-   * Invitation par courriel — réservée au propriétaire.
+   * Invitation par courriel : réservée au propriétaire.
    *
    * Le rôle `proprietaire` n'est pas invitable : un support n'en a qu'un, et
    * c'est l'auteur validé de la proposition (US4).
@@ -176,7 +176,7 @@ export const useMediaDetention = () => {
     }
   }
 
-  /** Retrait — soft delete : l'historique de détention est conservé. */
+  /** Retrait : soft delete : l'historique de détention est conservé. */
   const retirer = async (
     typeSupport: TypeSupportMedia,
     supportId: string,
@@ -264,7 +264,7 @@ export const useMediaDetention = () => {
 
   /**
    * Les idées et demandes d'animation visant un support, lisibles par ses
-   * co-détenteurs (FR-047) — et non par les seuls administrateurs.
+   * co-détenteurs (FR-047) : et non par les seuls administrateurs.
    */
   const listerPropositionsSupport = async (
     typeSupport: TypeSupportMedia,

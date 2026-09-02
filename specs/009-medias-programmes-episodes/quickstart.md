@@ -1,4 +1,4 @@
-# Quickstart — validation de bout en bout
+# Quickstart : validation de bout en bout
 
 **Feature**: 009-medias-programmes-episodes
 
@@ -25,7 +25,7 @@ Comptes de test : `test-admin@test.com` / `Test1234` · `test-user@test.com` / `
 
 ---
 
-## Étape 0 — Appliquer et vérifier la migration
+## Étape 0 : Appliquer et vérifier la migration
 
 ```bash
 psql "postgresql://uafricas@localhost:5432/africans_db" \
@@ -34,20 +34,20 @@ psql "postgresql://uafricas@localhost:5432/africans_db" \
 
 La migration est idempotente : la rejouer ne doit produire aucune erreur.
 
-**Rapport de reprise** — appeler `POST /api/admin/medias/rapport-reprise`
+**Rapport de reprise** : appeler `POST /api/admin/medias/rapport-reprise`
 ([contrat](./contracts/api-admin.md#5-purge-de-reprise)) et vérifier :
 
 | Compteur | Attendu |
 |----------|---------|
 | `episodes_tele` = `emissions_tele` | ✅ un épisode par émission après reprise |
-| `episodes_sans_emission` | **0** — sinon la reprise est incomplète |
+| `episodes_sans_emission` | **0** : sinon la reprise est incomplète |
 | `creneaux_orphelins` | **0** |
 | `slugs_en_collision` | **0** |
 | `interactions_reportees.*` | égal au décompte avant migration |
-| `chaines_sans_thematique` | non nul attendu — liste le travail éditorial restant |
+| `chaines_sans_thematique` | non nul attendu, liste le travail éditorial restant |
 
 Contre-vérification directe : les tables `media_content.programme_tele` et `programme_radio` **ne
-doivent plus exister**. Toute requête les visant doit échouer bruyamment — c'est la garantie qui rend le
+doivent plus exister**. Toute requête les visant doit échouer bruyamment : c'est la garantie qui rend le
 portage vérifiable (research.md R1).
 
 ```sql
@@ -57,13 +57,13 @@ SELECT to_regclass('media_content.episode_tele');     -- attendu : non NULL
 
 ---
 
-## Scénario 1 — Regrouper les vidéos sous un programme (US1)
+## Scénario 1 : Regrouper les vidéos sous un programme (US1)
 
 1. Se connecter en `test-user`, détenteur d'une chaîne (au besoin, se l'attribuer depuis
    `/admin/medias` → détenteurs).
 2. Aller sur `/mon-compte/mes-supports` → sa chaîne → **Créer un programme** « Débats africains »,
    cadence *hebdomadaire*, **sans joindre de fichier**.
-   - ✅ L'enregistrement passe (FR-003) — aucune vidéo n'est réclamée.
+   - ✅ L'enregistrement passe (FR-003) : aucune vidéo n'est réclamée.
 3. Ajouter trois épisodes avec leurs vidéos.
    - ✅ Chacun affiche l'état **En attente de validation** (FR-040).
    - ✅ Aucun n'apparaît sur `/medias/tele` ni sur la page publique de la chaîne.
@@ -72,7 +72,7 @@ SELECT to_regclass('media_content.episode_tele');     -- attendu : non NULL
 5. Valider les trois.
    - ✅ `test-user` reçoit trois notifications de validation (FR-041).
 6. Revenir sur `/medias/tele`, ouvrir la chaîne.
-   - ✅ **Un seul bloc** « Débats africains », annonçant 3 épisodes — pas trois vignettes séparées
+   - ✅ **Un seul bloc** « Débats africains », annonçant 3 épisodes, pas trois vignettes séparées
      (US1 §3).
    - ✅ Ouvrir un épisode : la page nomme son programme et sa chaîne, et propose les autres épisodes
      (US1 §4).
@@ -87,7 +87,7 @@ SELECT to_regclass('media_content.episode_tele');     -- attendu : non NULL
 
 ---
 
-## Scénario 2 — Rotation quotidienne et hebdomadaire (US2)
+## Scénario 2 : Rotation quotidienne et hebdomadaire (US2)
 
 1. Sur la chaîne, programmer « Débats africains » : **chaque samedi à 18h00**, durée 60 min, fuseau
    `Africa/Abidjan`, `date_effet` = le samedi de la semaine en cours.
@@ -121,12 +121,12 @@ SELECT to_regclass('media_content.episode_tele');     -- attendu : non NULL
 **Alerte de cadence (FR-024)** : appeler `GET /api/medias/mes-alertes-cadence` deux jours avant
 l'échéance hebdomadaire.
 - ✅ `niveau: "approche"`. Après l'échéance sans nouvel épisode : `niveau: "depassee"`.
-- ✅ Si un épisode est en file, `episodes_en_attente ≥ 1` — l'alerte reste informative, pas
+- ✅ Si un épisode est en file, `episodes_en_attente ≥ 1`, l'alerte reste informative, pas
   accusatrice.
 
 ---
 
-## Scénario 3 — Thématiques multiples (US3)
+## Scénario 3 : Thématiques multiples (US3)
 
 1. `/admin/medias` → une chaîne → sélectionner **trois** thématiques → enregistrer.
    - ✅ Les trois s'affichent sur `/medias/chaines/<slug>`.
@@ -143,7 +143,7 @@ l'échéance hebdomadaire.
 
 ---
 
-## Scénario 4 — Couverture territoriale (US4)
+## Scénario 4 : Couverture territoriale (US4)
 
 1. Chaîne A : sélectionner quatre territoires. Chaîne B : cocher **toute l'Afrique**.
    - ✅ Sur B, la sélection individuelle est neutralisée (FR-034).
@@ -165,7 +165,7 @@ l'échéance hebdomadaire.
 
 ---
 
-## Scénario 5 — Interactions aux deux niveaux (US5)
+## Scénario 5 : Interactions aux deux niveaux (US5)
 
 1. En `test-user`, commenter un **épisode**.
    - ✅ Le commentaire est sur l'épisode, **absent** du fil du programme (US5 §1).
@@ -195,7 +195,7 @@ SELECT type_media, count(*) FROM media_content.media_commentaire GROUP BY 1;
 
 ---
 
-## Scénario 6 — Rejet et resoumission
+## Scénario 6 : Rejet et resoumission
 
 1. En `test-user`, soumettre un épisode.
 2. En `test-admin`, le rejeter avec un motif de moins de 10 caractères.
@@ -215,28 +215,28 @@ UPDATE media_content.episode_tele SET etat = 'rejete', motif_rejet = NULL WHERE 
 
 ---
 
-## Scénario 7 — Volume et performance (SC-009, SC-010)
+## Scénario 7 : Volume et performance (SC-009, SC-010)
 
 1. Injecter un support de 50 programmes et 500 épisodes publiés.
 2. Ouvrir sa page publique.
    - ✅ Première vue en moins de 2 s ; la liste d'épisodes d'un programme est paginée (24 par page).
-   - ✅ Les sections ne déclenchent **aucune requête N+1** — vérifier avec `RUST_LOG=sqlx=debug` que
+   - ✅ Les sections ne déclenchent **aucune requête N+1**, vérifier avec `RUST_LOG=sqlx=debug` que
      le nombre de requêtes ne croît pas avec le nombre de programmes.
 3. Filtrer par thématique puis par territoire.
    - ✅ Résultats en moins d'1 s perçue.
 4. Appeler `…/diffusion` sur ce support.
-   - ✅ Toujours **2 requêtes** — la rotation est une jointure latérale, pas un aller-retour
+   - ✅ Toujours **2 requêtes** : la rotation est une jointure latérale, pas un aller-retour
      supplémentaire (research.md R3).
 
 ---
 
 ## Vérifications transverses
 
-**Audit (FR-045, SC-012)** — après avoir joué les scénarios 1 à 6, ouvrir `/admin/audit` :
+**Audit (FR-045, SC-012)**, après avoir joué les scénarios 1 à 6, ouvrir `/admin/audit` :
 - ✅ Chaque création/modification d'émission, d'épisode, d'ordre, de thématique, de couverture, de
   créneau et chaque décision de modération y figure, avec son auteur et l'état avant/après.
 
-**Diagnostics** — `cargo check` côté backend, `getDiagnostics` (Volar) sur chaque fichier Vue modifié.
+**Diagnostics** : `cargo check` côté backend, `getDiagnostics` (Volar) sur chaque fichier Vue modifié.
 
 **Constitution** :
 - ✅ Aucune classe daisyUI sur les pages `/medias/**` (principe VI) :

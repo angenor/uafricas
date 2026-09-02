@@ -1,9 +1,9 @@
-# Feature Specification: Système d'engagement / gamification AFRICANS — Phase 1 (fondation) + barème vérifiable
+# Feature Specification: Système d'engagement / gamification AFRICANS, Phase 1 (fondation) + barème vérifiable
 
 **Feature Branch**: `001-engagement-gamification`
 **Created**: 2026-07-06
 **Status**: Draft
-**Input**: User description: "Système d'engagement / gamification AFRICANS — Phase 1 (fondation) + barème vérifiable. Moteur de points paramétrable, compte d'engagement par utilisateur (solde global, solde mensuel, réputation séparée, niveau dérivé), journal des points, table de règles paramétrables, attribution non-bloquante déclenchée par actions mesurables. Barème vérifiable côté serveur uniquement : contributions validées par modération, factcheck correct/faux, paliers de likes. Statuts Membre / Premium / Influenceur Platinum + badges. Écrans « Mes points » et back-office. Anti-abus (idempotence, plafonds, dédup). Hors périmètre : partages externes, quiz/jeux, cadeaux, publicité, dons."
+**Input**: User description: "Système d'engagement / gamification AFRICANS, Phase 1 (fondation) + barème vérifiable. Moteur de points paramétrable, compte d'engagement par utilisateur (solde global, solde mensuel, réputation séparée, niveau dérivé), journal des points, table de règles paramétrables, attribution non-bloquante déclenchée par actions mesurables. Barème vérifiable côté serveur uniquement : contributions validées par modération, factcheck correct/faux, paliers de likes. Statuts Membre / Premium / Influenceur Platinum + badges. Écrans « Mes points » et back-office. Anti-abus (idempotence, plafonds, dédup). Hors périmètre : partages externes, quiz/jeux, cadeaux, publicité, dons."
 
 ## Contexte et cadrage
 
@@ -58,7 +58,7 @@ Un membre connecté ouvre son profil et voit son **solde de points** (global et 
 
 L'auteur d'une publication reçoit des points lorsque celle-ci franchit des **paliers de popularité** exprimés en nombre de « j'aime » (par ex. 100, 500, 1 000 likes). Chaque palier n'est récompensé **qu'une seule fois** par publication. Les paliers et les montants sont paramétrables.
 
-**Why this priority**: Récompense la qualité perçue par la communauté plutôt que le simple volume de publication. Elle dépend d'un mécanisme d'agrégation des « j'aime » réparti sur des contenus de natures différentes, ce qui la rend plus complexe que l'US1 — d'où P2.
+**Why this priority**: Récompense la qualité perçue par la communauté plutôt que le simple volume de publication. Elle dépend d'un mécanisme d'agrégation des « j'aime » réparti sur des contenus de natures différentes, ce qui la rend plus complexe que l'US1 : d'où P2.
 
 **Independent Test**: Faire monter le nombre de likes d'une publication au-delà d'un palier, vérifier que l'auteur reçoit les points de ce palier une seule fois, puis franchir le palier supérieur et vérifier l'attribution du palier suivant sans re-récompenser le précédent.
 
@@ -75,7 +75,7 @@ L'auteur d'une publication reçoit des points lorsque celle-ci franchit des **pa
 
 Un membre soumet une vérification (FactCheck). Si les modérateurs la jugent **correcte et la valident**, le membre gagne des points. Si la vérification est jugée **abusive / fausse après contrôle**, le membre **perd des points** et son **score de réputation** est dégradé.
 
-**Why this priority**: Introduit la dimension négative (perte de points) et la **réputation** comme signal distinct du solde. Essentiel pour l'intégrité éditoriale, mais s'appuie sur le moteur de l'US1 — d'où P2.
+**Why this priority**: Introduit la dimension négative (perte de points) et la **réputation** comme signal distinct du solde. Essentiel pour l'intégrité éditoriale, mais s'appuie sur le moteur de l'US1 : d'où P2.
 
 **Independent Test**: Faire valider un factcheck et vérifier le gain de points ; faire juger un factcheck comme faux et vérifier la perte de points **et** la baisse de réputation, sans que le solde ne devienne incohérent.
 
@@ -91,7 +91,7 @@ Un membre soumet une vérification (FactCheck). Si les modérateurs la jugent **
 
 Un administrateur configure, depuis le back-office, la **table des règles** (montant de chaque type d'action, seuils de niveaux, paliers de likes, plafonds anti-abus journaliers/mensuels) **sans intervention technique**, et consulte le **journal global** des points pour investiguer un litige ou un abus.
 
-**Why this priority**: Le barème doit être ajustable sans redéploiement (exigence explicite : « éviter le hardcoding »). Nécessaire pour exploiter le système dans la durée, mais le moteur peut d'abord fonctionner avec des valeurs par défaut — d'où P2.
+**Why this priority**: Le barème doit être ajustable sans redéploiement (exigence explicite : « éviter le hardcoding »). Nécessaire pour exploiter le système dans la durée, mais le moteur peut d'abord fonctionner avec des valeurs par défaut : d'où P2.
 
 **Independent Test**: Modifier le montant d'une règle dans le back-office, déclencher l'action correspondante et vérifier que le nouveau montant s'applique ; ouvrir le journal global filtré par membre et voir la liste des mouvements.
 
@@ -109,7 +109,7 @@ Un administrateur configure, depuis le back-office, la **table des règles** (mo
 - **Franchissement de plusieurs paliers de likes d'un coup** (import massif, correction de compteur) : chaque palier franchi est récompensé une fois, sans doublon.
 - **Solde qui repasse sous un seuil de niveau** après un malus : le statut est recalculé à la baisse, le badge reflète le niveau courant.
 - **Plafond journalier/mensuel atteint** : les points au-delà du plafond ne sont pas crédités ; le journal indique l'écrêtage plutôt que d'ignorer silencieusement l'action.
-- **Contenus / likes antérieurs au lancement** : **non récompensés** (FR-024) — tous les comptes démarrent à zéro à la mise en service.
+- **Contenus / likes antérieurs au lancement** : **non récompensés** (FR-024), tous les comptes démarrent à zéro à la mise en service.
 - **Auto-action** : aimer sa propre publication, valider/mettre en avant sa propre contribution → jamais de points.
 - **Réinitialisation mensuelle** : le solde mensuel repart à zéro au changement de mois ; le solde global n'est jamais remis à zéro.
 - **Panne du moteur d'attribution** : une action métier réussie (validation, like) ne doit jamais échouer parce que l'attribution de points a échoué (attribution non-bloquante) ; les points manqués sont rattrapables.
@@ -185,7 +185,7 @@ Un administrateur configure, depuis le back-office, la **table des règles** (mo
 ## Assumptions
 
 - La **réputation** est un score **distinct et non dépensable** ; en Phase 1 elle est affichée et alimentée (notamment par le factcheck faux) mais ne conditionne aucun avantage ni aucun calcul de niveau. (Décision produit à confirmer.)
-- Les **seuils de niveaux** retenus par défaut sont : Membre **0–199**, Premium **≥ 200**, Influenceur Platinum **≥ 1 000** — **paramétrables**. Valeurs indicatives issues de la description, à figer par le produit.
+- Les **seuils de niveaux** retenus par défaut sont : Membre **0–199**, Premium **≥ 200**, Influenceur Platinum **≥ 1 000**, **paramétrables**. Valeurs indicatives issues de la description, à figer par le produit.
 - Les **montants du barème** (contribution +2, mise en avant +5, factcheck +3 / −2, paliers 100/500/1000 → 10/30/50) sont **indicatifs et paramétrables** ; la calibration finale relève de la stratégie éditoriale.
 - Le **solde de points ne descend pas en dessous de zéro** par défaut (plancher à 0) ; la réputation peut, elle, être négative (à confirmer au design).
 - La **popularité** ne compte que les **réactions positives** (« j'aime »), pas les réactions négatives, et exclut l'auto-like.
@@ -194,8 +194,8 @@ Un administrateur configure, depuis le back-office, la **table des règles** (mo
 
 ## Décisions produit (tranchées)
 
-1. **Impact algorithmique de la visibilité** (Premium/Platinum) : **reporté** — Phase 1 = badges visuels uniquement (FR-021).
-2. **Rétroactivité au lancement** : **non rétroactif** — tous les comptes démarrent à zéro (FR-024).
+1. **Impact algorithmique de la visibilité** (Premium/Platinum) : **reporté**, Phase 1 = badges visuels uniquement (FR-021).
+2. **Rétroactivité au lancement** : **non rétroactif**, tous les comptes démarrent à zéro (FR-024).
 3. **Reprise de points (clawback)** : **pas de reprise automatique**, sauf le malus « FactCheck faux » (FR-025).
 4. **Séparation points dépensables ↔ réputation non dépensable** : oui, séparés (FR-003).
 5. **Seuils de niveaux et calibration du barème** : valeurs indicatives, **paramétrables** en base (FR-002, FR-022) ; calibration fine confiée au produit/éditorial et ajustable sans redéploiement.

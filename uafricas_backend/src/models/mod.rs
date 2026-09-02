@@ -1,3 +1,4 @@
+pub mod africanite;
 pub mod afripulse;
 pub mod amitie;
 pub mod appel;

@@ -218,7 +218,7 @@ onMounted(async () => {
 
 <template>
   <div>
-    <AdminPageHeader :titre="evenementDetail?.titre || 'Chargement...'" sous-titre="Modifier l'evenement">
+    <AdminPageHeader :titre="evenementDetail?.titre || 'Chargement...'" sous-titre="Modifier l'événement">
       <template #actions>
         <NuxtLink to="/admin/evenements" class="btn btn-ghost btn-sm">
           <font-awesome-icon icon="arrow-left" class="mr-1" /> Retour
@@ -237,7 +237,7 @@ onMounted(async () => {
           {{ etatLabel(evenementDetail.etat) }}
         </span>
         <button class="btn btn-outline btn-xs" @click="ouvrirEtatModal">
-          <font-awesome-icon icon="arrows-rotate" class="mr-1" /> Changer etat
+          <font-awesome-icon icon="arrows-rotate" class="mr-1" /> Changer état
         </button>
         <span v-if="evenementDetail.nombre_inscriptions > 0" class="text-sm text-base-content/70">
           {{ evenementDetail.nombre_inscriptions }} inscription(s)
@@ -286,7 +286,7 @@ onMounted(async () => {
               <h3 class="text-lg font-semibold border-b pb-2">Type & format</h3>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="form-control">
-                  <label class="label"><span class="label-text">Type d'evenement</span></label>
+                  <label class="label"><span class="label-text">Type d'événement</span></label>
                   <input v-model="form.type_evenement" type="text" class="input input-bordered" placeholder="Ex: Conference, Atelier">
                 </div>
                 <div class="form-control">
@@ -427,7 +427,7 @@ onMounted(async () => {
           <div class="card-body">
             <div v-if="!inscriptions.length" class="text-center py-8 text-base-content/50">
               <font-awesome-icon icon="inbox" class="text-4xl mb-2" />
-              <p>Aucune inscription pour cet evenement</p>
+              <p>Aucune inscription pour cet événement</p>
             </div>
             <div v-else class="overflow-x-auto">
               <table class="table table-zebra">
@@ -475,7 +475,7 @@ onMounted(async () => {
       <!-- Modal changement etat -->
       <div v-if="showEtatModal" class="modal modal-open">
         <div class="modal-box">
-          <h3 class="font-bold text-lg mb-4">Changer l'etat de l'evenement</h3>
+          <h3 class="font-bold text-lg mb-4">Changer l'état de l'événement</h3>
           <div class="form-control">
             <select v-model="nouvelEtat" class="select select-bordered">
               <option value="brouillon">Brouillon</option>

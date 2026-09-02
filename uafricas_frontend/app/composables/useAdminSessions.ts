@@ -99,7 +99,7 @@ export const useAdminSessions = () => {
 
   /**
    * Ferme administrativement une session pour abus
-   * (feature 001-ressources-fermeture-session — US2).
+   * (feature 001-ressources-fermeture-session, US2).
    */
   const fermerSessionAdmin = async (sessionId: string, motif: string) => {
     const response = await adminFetch<ApiResponse<{ salle_id: string; session_id: string }>>(

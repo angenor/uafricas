@@ -9,11 +9,11 @@
 
 ### Session 2026-02-27
 
-- Q: Les avis de recherche sont-ils visibles publiquement ou traités uniquement en arrière-plan ? → A: Privés (arrière-plan uniquement) — seul le moteur de recoupement traite les avis, aucun autre utilisateur ne peut les consulter.
-- Q: Comment protéger contre les tentatives répétées de contact non désiré après un refus ? → A: Blocage automatique — après un refus, aucune correspondance future n'est possible entre ces deux utilisateurs (blacklist mutuelle implicite).
+- Q: Les avis de recherche sont-ils visibles publiquement ou traités uniquement en arrière-plan ? → A: Privés (arrière-plan uniquement), seul le moteur de recoupement traite les avis, aucun autre utilisateur ne peut les consulter.
+- Q: Comment protéger contre les tentatives répétées de contact non désiré après un refus ? → A: Blocage automatique : après un refus, aucune correspondance future n'est possible entre ces deux utilisateurs (blacklist mutuelle implicite).
 - Q: Comment présenter les correspondances multiples pour un même avis ? → A: Toutes les correspondances qualifiées (score >= 60%) sont présentées en liste triée par score décroissant, sans limitation de nombre.
-- Q: Combien de temps conserver les avis clôturés et correspondances associées ? → A: Conservation indéfinie — l'utilisateur peut toujours consulter son historique complet.
-- Q: Quelles informations de profil sont utilisées pour le recoupement "trouvable" ? → A: Profil existant + champs supplémentaires optionnels — l'utilisateur peut ajouter un parcours (écoles fréquentées, villes de résidence passées, périodes) pour améliorer la qualité du recoupement.
+- Q: Combien de temps conserver les avis clôturés et correspondances associées ? → A: Conservation indéfinie : l'utilisateur peut toujours consulter son historique complet.
+- Q: Quelles informations de profil sont utilisées pour le recoupement "trouvable" ? → A: Profil existant + champs supplémentaires optionnels, l'utilisateur peut ajouter un parcours (écoles fréquentées, villes de résidence passées, périodes) pour améliorer la qualité du recoupement.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -103,7 +103,7 @@ L'utilisateur accède à un tableau de bord dédié listant ses avis de recherch
 - Que se passe-t-il si un utilisateur dépose un avis de recherche sur lui-même (se cherche lui-même) ? Le système doit détecter et empêcher l'auto-correspondance.
 - Que se passe-t-il si un utilisateur abuse du système en déposant de nombreux avis frauduleux ? Un mécanisme de limitation (maximum 10 avis actifs simultanés) et de signalement est nécessaire.
 - Que se passe-t-il si la personne recherchée n'est pas inscrite et qu'aucun autre avis ne correspond ? L'utilisateur est informé qu'aucune correspondance n'a été trouvée pour l'instant, et sera notifié dès qu'une correspondance apparaîtra.
-- Que se passe-t-il si un utilisateur supprime son compte alors qu'il a des correspondances en cours ? Les FK `ON DELETE CASCADE` suppriment automatiquement les avis, correspondances, parcours et notifications de l'utilisateur. **MVP** : pas de notification à l'autre partie — la correspondance disparaît simplement de sa liste. À améliorer en phase ultérieure si besoin.
+- Que se passe-t-il si un utilisateur supprime son compte alors qu'il a des correspondances en cours ? Les FK `ON DELETE CASCADE` suppriment automatiquement les avis, correspondances, parcours et notifications de l'utilisateur. **MVP** : pas de notification à l'autre partie, la correspondance disparaît simplement de sa liste. À améliorer en phase ultérieure si besoin.
 - Comment gérer les homonymes ? Le score de correspondance prend en compte plusieurs critères (nom + lieu + période) pour réduire les faux positifs. Un score minimum de 60% est requis pour notifier. En cas de correspondances multiples (homonymes), toutes sont présentées triées par score décroissant et l'utilisateur choisit la bonne personne.
 - Que se passe-t-il si un utilisateur signale un avis de recherche comme abusif ou malveillant ? L'avis est suspendu en attente de modération par un administrateur.
 - Que se passe-t-il si un utilisateur refuse un contact puis est retrouvé via un nouvel avis ? Impossible : après un refus, une blacklist automatique empêche toute future correspondance entre ces deux utilisateurs.

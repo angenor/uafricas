@@ -28,7 +28,6 @@ export interface CodiMoiPostAPI {
   image_arriere_plan_url: string | null
   nombre_likes: number
   nombre_dislikes: number
-  nombre_vues: number
   nombre_commentaires: number
   hashtags: string[]
   auteur: CodiMoiAuteur

@@ -1,4 +1,4 @@
-//! Modèles Afripulse — personnalités, savoirs pratiques, recommandations, photos
+//! Modèles Afripulse : personnalités, savoirs pratiques, recommandations, photos
 //! visiteurs. Alignés sur `11c_country_profile_afripulse.sql` (§III SQL SoT).
 
 use chrono::{DateTime, Utc};
@@ -20,7 +20,7 @@ pub enum CategorieSiteTouristique {
 /// Sous-type d'un site touristique (précise la famille `categorie`).
 /// 20 valeurs : 12 emblématiques + 8 privées. Alignée sur l'enum SQL
 /// `country_profile.sous_type_site` (11d_…). La cohérence famille↔sous-type est
-/// validée en code via [`sous_type_appartient_a`] (Principe V — un seul enum).
+/// validée en code via [`sous_type_appartient_a`] (Principe V, un seul enum).
 #[derive(sqlx::Type, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[sqlx(
     type_name = "country_profile.sous_type_site",
@@ -90,7 +90,7 @@ pub fn sous_type_appartient_a(categorie: &CategorieSiteTouristique, sous_type: &
 }
 
 /// Vérifie qu'une valeur de sous-type est l'une des 20 valeurs connues
-/// (toutes familles confondues) — utilisé pour ignorer un filtre invalide.
+/// (toutes familles confondues) : utilisé pour ignorer un filtre invalide.
 pub fn sous_type_site_valide(sous_type: &str) -> bool {
     SOUS_TYPES_EMBLEMATIQUES.contains(&sous_type) || SOUS_TYPES_PRIVES.contains(&sous_type)
 }
@@ -188,7 +188,7 @@ pub struct PhotoVisiteurRow {
 }
 
 /// Avis noté 1–5 d'un visiteur sur un site touristique. Aligné sur
-/// `country_profile.avis_site` (11d_…). Écriture directe (D2) — un avis actif
+/// `country_profile.avis_site` (11d_…). Écriture directe (D2) : un avis actif
 /// au plus par (utilisateur, site).
 #[derive(Debug, FromRow, Serialize, Deserialize, Clone)]
 pub struct AvisSiteRow {

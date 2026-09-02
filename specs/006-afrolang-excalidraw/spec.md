@@ -10,14 +10,14 @@
 ### Session 2026-04-24
 
 - Q: Qui est autorisé à dessiner sur le tableau blanc d'une session ? → A: Tous les participants peuvent dessiner par défaut ; seule la commande « Effacer tout » reste réservée au modérateur.
-- Q: Comment résoudre les éditions simultanées du même élément par plusieurs participants ? → A: Last-write-wins global — la dernière scène reçue écrase intégralement l'état local, sans fusion par élément ni verrouillage.
+- Q: Comment résoudre les éditions simultanées du même élément par plusieurs participants ? → A: Last-write-wins global : la dernière scène reçue écrase intégralement l'état local, sans fusion par élément ni verrouillage.
 - Q: Quelle est la taille maximale cible d'une session (participants actifs connectés simultanément) ? → A: Jusqu'à 100 participants actifs par session.
 - Q: Que se passe-t-il après une coupure transitoire du canal temps réel en cours de session ? → A: Resynchronisation automatique sur le dernier snapshot serveur dès la reconnexion, puis reprise normale de la diffusion temps réel.
 - Q: Les participants peuvent-ils insérer des images dans le tableau blanc, et si oui sous quelles limites ? → A: Autorisé pour tous les participants, avec limite côté client de 2 Mo par image et formats restreints à JPEG/PNG ; images refusées côté client avec message utilisateur.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 — Un animateur Afrolang dispose d'un tableau blanc qui reste utilisable pendant toute la session (Priority: P1)
+### User Story 1 : Un animateur Afrolang dispose d'un tableau blanc qui reste utilisable pendant toute la session (Priority: P1)
 
 Un enseignant/animateur de groupe ethnique ouvre sa salle Afrolang (publique ou privée) sur la plateforme en production (`www.africans-world.org`), démarre la session avec ses apprenants, ouvre le tableau blanc intégré et s'en sert pendant 30 à 90 minutes pour illustrer du vocabulaire, tracer des cartes, annoter des textes. Pendant toute la durée de la session, l'ensemble des outils de dessin reste visible et cliquable sans qu'aucun watermark ou désactivation d'interface ne vienne interrompre le cours.
 
@@ -33,13 +33,13 @@ Un enseignant/animateur de groupe ethnique ouvre sa salle Afrolang (publique ou 
 
 ---
 
-### User Story 2 — Les participants d'une session voient les tracés des autres en quasi-temps réel (Priority: P2)
+### User Story 2 : Les participants d'une session voient les tracés des autres en quasi-temps réel (Priority: P2)
 
 Dans une salle Afrolang active, le modérateur trace un mot, une carte ou une illustration ; tous les apprenants connectés voient l'ajout apparaître sur leur propre tableau blanc en moins d'une demi-seconde. Les opérations inverses (un apprenant qui annote librement, sans autorisation individuelle préalable) sont également diffusées à l'ensemble du groupe. La sensation générale est celle d'un tableau partagé, non d'une vue dédoublée.
 
 **Why this priority** : la collaboration temps réel est le cœur métier d'Afrolang. Toutefois, elle dépend fonctionnellement de la correction du bug P1 : si la barre d'outils disparaît, il n'y a rien à collaborer. Une fois le P1 corrigé, cette parité fonctionnelle avec l'ancienne implémentation devient le critère de non-régression le plus important.
 
-**Independent Test** : ouvrir deux navigateurs sur deux comptes différents dans la même session Afrolang, tracer une forme côté A, vérifier qu'elle apparaît côté B en moins de 500 ms ; puis déplacer un élément, le supprimer, ajouter du texte — chaque opération doit se répliquer dans les deux sens sans boucle d'écho ni duplication.
+**Independent Test** : ouvrir deux navigateurs sur deux comptes différents dans la même session Afrolang, tracer une forme côté A, vérifier qu'elle apparaît côté B en moins de 500 ms ; puis déplacer un élément, le supprimer, ajouter du texte, chaque opération doit se répliquer dans les deux sens sans boucle d'écho ni duplication.
 
 **Acceptance Scenarios** :
 
@@ -49,7 +49,7 @@ Dans une salle Afrolang active, le modérateur trace un mot, une carte ou une il
 
 ---
 
-### User Story 3 — Un modérateur retrouve son tableau à l'identique après fermeture et réouverture (Priority: P2)
+### User Story 3 : Un modérateur retrouve son tableau à l'identique après fermeture et réouverture (Priority: P2)
 
 Un modérateur trace du contenu pédagogique pendant la session, ferme le tableau blanc (ou quitte puis revient sur la page), et rouvre le tableau : le contenu précédent est automatiquement restauré à son dernier état sauvegardé. Lorsqu'il souhaite repartir de zéro, un bouton « Effacer tout » lui permet de vider le tableau pour l'ensemble des participants en une action.
 
@@ -65,7 +65,7 @@ Un modérateur trace du contenu pédagogique pendant la session, ferme le tablea
 
 ---
 
-### User Story 4 — Mode dégradé lorsque la connexion temps réel est indisponible (Priority: P3)
+### User Story 4 : Mode dégradé lorsque la connexion temps réel est indisponible (Priority: P3)
 
 Lorsqu'un utilisateur ouvre le tableau blanc avant que la connexion temps réel soit établie, ou si celle-ci est coupée, il peut toujours dessiner localement sans crash ni erreur visible. Ses tracés ne sont simplement pas diffusés aux autres ni sauvegardés tant que la connexion n'est pas rétablie.
 
@@ -125,7 +125,7 @@ Lorsqu'un utilisateur ouvre le tableau blanc avant que la connexion temps réel 
 
 ### Out of Scope
 
-- Ajout de curseurs collaboratifs en temps réel (position live des pointeurs des autres participants) — peut être étudié ultérieurement.
+- Ajout de curseurs collaboratifs en temps réel (position live des pointeurs des autres participants), peut être étudié ultérieurement.
 - Partage de bibliothèques de formes entre sessions.
 - Conversion ou reprise des anciens états persistés dans l'ancien format (traités par lecture défensive retournant un tableau vide).
 - Support tactile/mobile (desktop uniquement pour cette itération).

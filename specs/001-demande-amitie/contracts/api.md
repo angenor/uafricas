@@ -1,4 +1,4 @@
-# API Contracts — Demande d'amitié & messagerie
+# API Contracts : Demande d'amitié & messagerie
 
 **Feature**: `001-demande-amitie` | **Base**: `/api`
 
@@ -11,12 +11,12 @@ Codes d'erreur usuels : `401` non authentifié, `403` interdit (blocage), `404` 
 ## Amitié & relations
 
 ### `GET /api/amities/etat/{utilisateur_id}`
-État de la relation entre l'utilisateur courant et le membre ciblé (FR-016) — alimente le bouton sur `/profil` et `/profil/{id}`.
+État de la relation entre l'utilisateur courant et le membre ciblé (FR-016), alimente le bouton sur `/profil` et `/profil/{id}`.
 - **200** `{ etat: "aucune" | "demande_envoyee" | "demande_recue" | "amis" | "bloque_par_moi" | "indisponible", demande_id?: UUID }`
 - `indisponible` si membre non actif / supprimé (FR-015), `bloque_par_moi` si l'utilisateur courant a bloqué la cible.
 
 ### `POST /api/amities/etats`
-États relationnels **en lot** pour l'annuaire `/profil` — évite le N+1 (FR-016).
+États relationnels **en lot** pour l'annuaire `/profil`, évite le N+1 (FR-016).
 - **Body** `{ utilisateur_ids: UUID[] }` (≤ 50)
 - **200** `{ "<utilisateur_id>": "aucune" | "demande_envoyee" | "demande_recue" | "amis" | "bloque_par_moi" | "indisponible", ... }` (une seule requête).
 
@@ -48,7 +48,7 @@ Annuler une demande émise tant qu'en attente (FR-010, US4). Statut→`annulee`.
 - **200**. **403** si non émetteur. **409** si déjà traitée. Audit : `UPDATE`.
 
 ### `GET /api/amities`
-Liste des amis de l'utilisateur courant (FR-011, FR-026 — privée). Pagination, recherche optionnelle.
+Liste des amis de l'utilisateur courant (FR-011, FR-026, privée). Pagination, recherche optionnelle.
 - **200** liste `{ utilisateur: MembreLight, ami_depuis: timestamp }`.
 
 ### `DELETE /api/amities/{utilisateur_id}`
@@ -100,13 +100,13 @@ Supprimer un de ses propres messages (FR-028). Soft delete + push SSE de mise à
 Compteur global de messages non lus, pour le badge du bouton flottant (FR-024).
 - **200** `{ total: number }`.
 
-### `GET /api/messagerie/flux?token=<jwt>` — **SSE**
+### `GET /api/messagerie/flux?token=<jwt>`, **SSE**
 Flux temps réel serveur→client (Décision 2 & 3). **Pas** d'enveloppe `ApiResponse` ; `Content-Type: text/event-stream`.
 - Auth via query param `token` (EventSource ne supporte pas les en-têtes).
 - Évènements émis (chacun `data: <json>`):
-  - `{ type: "message", conversation_id, message: {...} }` — nouveau message reçu.
+  - `{ type: "message", conversation_id, message: {...} }`, nouveau message reçu.
   - `{ type: "message_supprime", conversation_id, message_id }`.
-  - `{ type: "non_lus", conversation_id, non_lus }` — mise à jour de compteur.
+  - `{ type: "non_lus", conversation_id, non_lus }`, mise à jour de compteur.
   - `{ type: "demande_recue", demande_id, demandeur: MembreLight }` (FR-005).
   - `{ type: "demande_acceptee", utilisateur: MembreLight }` (FR-007).
   - `: keep-alive` (commentaire) périodique pour maintenir la connexion.

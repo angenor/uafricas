@@ -1,5 +1,5 @@
 //! Co-détention des supports médias et mise en relation
-//! (feature 001-refonte-tele-radio, US5 et US6 — migration 09m).
+//! (feature 001-refonte-tele-radio, US5 et US6, migration 09m).
 //!
 //! Endpoints membre :
 //!   GET    /api/medias/{type_support}/{support_id}/detenteurs
@@ -40,7 +40,7 @@ pub fn exiger_utilisateur_id(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Garde d'autorisation — le cœur du domaine
+// Garde d'autorisation : le cœur du domaine
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Vérifie que `moi` détient le support à un rôle au moins aussi étendu que
@@ -50,8 +50,8 @@ pub fn exiger_utilisateur_id(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
 /// Exiger `programmateur` admet donc les trois, exiger `proprietaire` n'admet
 /// que lui.
 ///
-/// Renvoie 404 si le support n'existe pas — un membre qui n'y a pas accès n'a
-/// pas à distinguer « inexistant » de « interdit » —, 403 s'il n'est pas
+/// Renvoie 404 si le support n'existe pas, un membre qui n'y a pas accès n'a
+/// pas à distinguer « inexistant » de « interdit », 403 s'il n'est pas
 /// détenteur actif ou si son rôle est insuffisant.
 pub async fn garde_detenteur(
     pool: &PgPool,
@@ -142,7 +142,7 @@ pub async fn lister_detenteurs(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GET /api/medias/supports/moi — « quels supports est-ce que je détiens ? »
+// GET /api/medias/supports/moi : « quels supports est-ce que je détiens ? »
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub async fn lister_mes_supports(
@@ -329,7 +329,7 @@ async fn nom_support(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Les invitations reçues, qu'elles aient été adressées à l'identifiant du
-/// membre ou seulement à son courriel — ce second cas est celui d'un membre
+/// membre ou seulement à son courriel : ce second cas est celui d'un membre
 /// invité avant d'être reconnu dans l'annuaire.
 pub async fn lister_mes_invitations(
     req: HttpRequest,
@@ -372,7 +372,7 @@ pub async fn lister_mes_invitations(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Acceptation : la ligne de détention et la bascule de l'invitation sont
-/// écrites dans une même transaction — une invitation acceptée sans détention
+/// écrites dans une même transaction : une invitation acceptée sans détention
 /// créée laisserait le membre persuadé d'un accès qu'il n'a pas.
 pub async fn accepter_invitation(
     req: HttpRequest,
@@ -556,7 +556,7 @@ pub async fn refuser_invitation(
     }))
 }
 
-/// Une invitation ne se traite que par son destinataire — reconnu par son
+/// Une invitation ne se traite que par son destinataire, reconnu par son
 /// identifiant, ou à défaut par son courriel.
 async fn verifier_destinataire(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
@@ -665,7 +665,7 @@ pub async fn retirer_detenteur(
 /// La messagerie n'autorise l'envoi que si amitié active **ou** conversation
 /// préexistante (`handlers/messagerie.rs:291-302`) : seul un handler métier
 /// peut créer ce canal. Ce code duplique `contacter_auteur`
-/// (`handlers/annonces.rs:893`) — aucun endpoint générique d'ouverture de
+/// (`handlers/annonces.rs:893`) : aucun endpoint générique d'ouverture de
 /// conversation n'existe (R17).
 pub async fn contacter_support(
     req: HttpRequest,
@@ -700,8 +700,8 @@ pub async fn contacter_support(
         ));
     }
 
-    // On s'adresse au propriétaire ; à défaut — le retrait du dernier
-    // détenteur est un cas admis — au co-détenteur actif le plus ancien.
+    // On s'adresse au propriétaire ; à défaut, le retrait du dernier
+    // détenteur est un cas admis : au co-détenteur actif le plus ancien.
     let destinataire: Option<Uuid> = sqlx::query_scalar(
         "SELECT utilisateur_id FROM media_content.support_detenteur
           WHERE type_support = $1::media_content.type_support_media

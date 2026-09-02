@@ -1,4 +1,4 @@
-# Phase 1 — Modèle de données
+# Phase 1 : Modèle de données
 
 **Feature**: 009-medias-programmes-episodes · **Migration**: `uafricas_backend/doc/bd/schemas/09q_media_content_emissions_episodes.sql`
 
@@ -37,7 +37,7 @@ comme l'épisode.
 
 ## 2. Nouvelles tables
 
-### 2.1 `media_content.emission_tele` — conteneur télé
+### 2.1 `media_content.emission_tele` : conteneur télé
 
 | Colonne | Type | Contraintes |
 |---------|------|-------------|
@@ -52,7 +52,7 @@ comme l'épisode.
 | `langue` | VARCHAR(80) | NOT NULL DEFAULT `'Français'` |
 | `theme_phare_id` | UUID | `[xref]` `shared.categorie` (contexte `media`) |
 | `theme_phare_autre` | VARCHAR(200) | CHECK : NULL ou non vide après `btrim` |
-| `cadence` | VARCHAR(20) | NOT NULL DEFAULT `'ponctuelle'`, CHECK ∈ (`quotidienne`, `hebdomadaire`, `ponctuelle`) — FR-013 |
+| `cadence` | VARCHAR(20) | NOT NULL DEFAULT `'ponctuelle'`, CHECK ∈ (`quotidienne`, `hebdomadaire`, `ponctuelle`), FR-013 |
 | `etat` | VARCHAR(50) | NOT NULL DEFAULT `'brouillon'`, CHECK ∈ (`brouillon`, `en_attente`, `publie`, `suspendu`, `supprime`) |
 | `nombre_signalements` | INT | NOT NULL DEFAULT 0 |
 | `cree_par` | UUID | NOT NULL, FK → `iam.utilisateur(id)` ON DELETE RESTRICT |
@@ -65,25 +65,25 @@ Index : `(chaine_id) WHERE deleted_at IS NULL`, `(etat) WHERE deleted_at IS NULL
 `emission_radio` est identique, `chaine_id` devenant `station_id` → `station_radio(id)`, plus
 `categorie_radio media_content.categorie_radio` reprise de `programme_radio`.
 
-### 2.2 `media_content.episode_tele` — unité diffusable
+### 2.2 `media_content.episode_tele` : unité diffusable
 
 | Colonne | Type | Contraintes |
 |---------|------|-------------|
-| `id` | UUID | PK — **repris de `programme_tele.id`** pour les lignes migrées (R2) |
-| `emission_id` | UUID | NOT NULL, FK → `emission_tele(id)` ON DELETE RESTRICT — FR-010 |
+| `id` | UUID | PK : **repris de `programme_tele.id`** pour les lignes migrées (R2) |
+| `emission_id` | UUID | NOT NULL, FK → `emission_tele(id)` ON DELETE RESTRICT, FR-010 |
 | `titre` | VARCHAR(350) | NOT NULL |
-| `slug` | VARCHAR(400) | UNIQUE — **repris de `programme_tele.slug`** (R2, FR-056) |
+| `slug` | VARCHAR(400) | UNIQUE : **repris de `programme_tele.slug`** (R2, FR-056) |
 | `description` | TEXT | NOT NULL DEFAULT `''` |
 | `image_couverture_url` | VARCHAR(500) | |
 | `video_url` | VARCHAR(500) | fichier `/uploads/…` ou lien |
-| `numero_episode` | INT | facultatif — FR-005 |
-| `ordre` | INT | NOT NULL DEFAULT 0 — support de la rotation (R10) |
+| `numero_episode` | INT | facultatif, FR-005 |
+| `ordre` | INT | NOT NULL DEFAULT 0 : support de la rotation (R10) |
 | `duree_minutes` | INT | CHECK NULL ou > 0 |
-| `a_la_une` | BOOLEAN | NOT NULL DEFAULT FALSE — une par chaîne (R9) |
-| `a_la_une_globale` | BOOLEAN | NOT NULL DEFAULT FALSE — une pour tout l'espace Télé (R9) |
-| `etat` | VARCHAR(50) | NOT NULL DEFAULT `'en_attente'`, CHECK ∈ (`brouillon`, `en_attente`, `publie`, `rejete`, `suspendu`, `supprime`) — FR-040 |
-| `motif_rejet` | TEXT | CHECK : requis et non vide si `etat = 'rejete'` — FR-041 |
-| `valide_par` | UUID | `[xref]` `iam.utilisateur` — décideur |
+| `a_la_une` | BOOLEAN | NOT NULL DEFAULT FALSE, une par chaîne (R9) |
+| `a_la_une_globale` | BOOLEAN | NOT NULL DEFAULT FALSE, une pour tout l'espace Télé (R9) |
+| `etat` | VARCHAR(50) | NOT NULL DEFAULT `'en_attente'`, CHECK ∈ (`brouillon`, `en_attente`, `publie`, `rejete`, `suspendu`, `supprime`), FR-040 |
+| `motif_rejet` | TEXT | CHECK : requis et non vide si `etat = 'rejete'`, FR-041 |
+| `valide_par` | UUID | `[xref]` `iam.utilisateur`, décideur |
 | `valide_at` | TIMESTAMPTZ | |
 | `nombre_signalements` | INT | NOT NULL DEFAULT 0 |
 | `cree_par` | UUID | NOT NULL, FK → `iam.utilisateur(id)` ON DELETE RESTRICT |
@@ -97,7 +97,7 @@ Contraintes propres :
 CONSTRAINT ck_episode_tele_media_publie
     CHECK (etat <> 'publie' OR video_url IS NOT NULL)
 
--- Un rejet est toujours motivé (FR-041) — même exigence que ck_prop_media_rejet_commente (09l)
+-- Un rejet est toujours motivé (FR-041), même exigence que ck_prop_media_rejet_commente (09l)
 CONSTRAINT ck_episode_tele_rejet_motive
     CHECK (etat <> 'rejete' OR (motif_rejet IS NOT NULL AND btrim(motif_rejet) <> ''))
 
@@ -134,21 +134,21 @@ plein écran n'existe que sur l'espace Télé).
 > ⚠️ `ON DELETE RESTRICT` sur `emission_id` réalise FR-010 **en SQL** : une émission ne peut pas
 > disparaître sous ses épisodes. La suppression douce reste possible côté émission.
 
-### 2.3 `media_content.support_thematique` — thématiques multiples (R5)
+### 2.3 `media_content.support_thematique`, thématiques multiples (R5)
 
 | Colonne | Type | Contraintes |
 |---------|------|-------------|
 | `id` | UUID | PK |
 | `type_support` | `media_content.type_support_media` | NOT NULL (enum posé par 09m) |
-| `support_id` | UUID | NOT NULL — polymorphe, sans FK |
-| `categorie_id` | UUID | NOT NULL — `[xref]` `shared.categorie` (contexte `media`) |
+| `support_id` | UUID | NOT NULL : polymorphe, sans FK |
+| `categorie_id` | UUID | NOT NULL : `[xref]` `shared.categorie` (contexte `media`) |
 | `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT NOW() |
 
-`UNIQUE (type_support, support_id, categorie_id)` — un thème n'est déclaré qu'une fois par support,
+`UNIQUE (type_support, support_id, categorie_id)`, un thème n'est déclaré qu'une fois par support,
 ce qui rend le « sans doublon » de FR-030 structurel.
 Index : `(categorie_id)` pour le filtre inverse, `(type_support, support_id)` pour la fiche.
 
-### 2.4 `media_content.support_territoire` — couverture (R6)
+### 2.4 `media_content.support_territoire`, couverture (R6)
 
 Mêmes colonnes, `categorie_id` remplacé par `pays_id UUID NOT NULL` (`[xref]` `shared.pays`).
 `UNIQUE (type_support, support_id, pays_id)`.
@@ -191,7 +191,7 @@ ALTER TABLE media_content.station_radio
 
 `chaine_tv.categorie`, `chaine_tv.pays_id`, `station_radio.genre` / `genres_liste` / `pays_id` sont
 **conservées** : la migration les lit pour amorcer les tables de liaison (FR-057), puis le code cesse de
-les écrire. Elles ne sont pas supprimées dans cette migration — leur retrait relèvera d'un nettoyage
+les écrire. Elles ne sont pas supprimées dans cette migration, leur retrait relèvera d'un nettoyage
 ultérieur, une fois le portage frontend confirmé.
 
 ### 3.2 `creneau_programmation` (09n)
@@ -203,7 +203,7 @@ ALTER TABLE media_content.creneau_programmation
 ```
 
 `contenu_id` est repris vers `emission_id` (voir §4, étape 5) puis supprimé. `emission_id` reste sans FK
-— la cible est polymorphe selon `type_support`, comme l'était `contenu_id`.
+la cible est polymorphe selon `type_support`, comme l'était `contenu_id`.
 
 Index à recréer : `idx_creneau_emission` sur `(emission_id) WHERE actif AND deleted_at IS NULL`,
 en remplacement de `idx_creneau_contenu`.
@@ -231,19 +231,19 @@ Les anciennes valeurs `programme_tele` / `programme_radio` restent dans l'enum (
 retirer une valeur) mais ne sont plus produites ; les propositions historiques les conservent.
 
 > ⚠️ `ALTER TYPE … ADD VALUE` ne peut pas s'exécuter dans le même bloc transactionnel qu'une utilisation
-> de la nouvelle valeur. Ces quatre instructions doivent précéder tout `INSERT` les employant — en
+> de la nouvelle valeur. Ces quatre instructions doivent précéder tout `INSERT` les employant, en
 > pratique, elles sont en tête de migration et aucun seed ne les utilise.
 
 ---
 
-## 4. Reprise de données — ordre des opérations
+## 4. Reprise de données : ordre des opérations
 
 La migration est **une seule fenêtre**, sans cohabitation des deux modèles (hypothèse de la spec).
 
 1. **Créer** `emission_tele`, `emission_radio`, `episode_tele`, `episode_radio`,
    `support_thematique`, `support_territoire`, le trigger d'exclusivité, les colonnes ajoutées.
 
-2. **Une émission par contenu existant** — FR-055. Identifiant neuf, métadonnées éditoriales reprises,
+2. **Une émission par contenu existant**, FR-055. Identifiant neuf, métadonnées éditoriales reprises,
    cadence `'ponctuelle'` (aucune périodicité n'était déclarée), état repris tel quel :
 
    ```sql
@@ -261,12 +261,12 @@ La migration est **une seule fenêtre**, sans cohabitation des deux modèles (hy
 
    Le suffixe `-programme` sur le slug évite la collision avec le slug de l'épisode, qui est **conservé
    à l'identique** (R2). Les contenus dont `chaine_id IS NULL` reçoivent une émission rattachée à une
-   chaîne « Sans chaîne » créée pour l'occasion, ou sont écartés — décision de reprise à trancher au
+   chaîne « Sans chaîne » créée pour l'occasion, ou sont écartés, décision de reprise à trancher au
    moment de l'exécution selon les données réellement présentes.
 
-3. **Un épisode par contenu existant, identifiant et slug conservés** — FR-051, FR-056. `ordre = 0`
+3. **Un épisode par contenu existant, identifiant et slug conservés**, FR-051, FR-056. `ordre = 0`
    (un seul épisode par émission à ce stade), état repris, `valide_par`/`valide_at` renseignés pour les
-   contenus déjà publiés (ils sont réputés validés — hypothèse de la spec) :
+   contenus déjà publiés (ils sont réputés validés, hypothèse de la spec) :
 
    ```sql
    INSERT INTO media_content.episode_tele
@@ -282,7 +282,7 @@ La migration est **une seule fenêtre**, sans cohabitation des deux modèles (hy
      JOIN media_content.emission_tele e ON e.slug = p.slug || '-programme';
    ```
 
-4. **Discriminant des interactions** — FR-051, en un `UPDATE` par table, sans toucher `media_id` :
+4. **Discriminant des interactions** : FR-051, en un `UPDATE` par table, sans toucher `media_id` :
 
    ```sql
    UPDATE media_content.media_reaction    SET type_media = 'episode_tele'
@@ -290,7 +290,7 @@ La migration est **une seule fenêtre**, sans cohabitation des deux modèles (hy
    -- idem media_commentaire, partage_media, signalement_media ; idem 'programme_radio'
    ```
 
-5. **Créneaux** — FR-058. Chaque créneau désignait un contenu ; il désigne désormais l'émission née de
+5. **Créneaux** : FR-058. Chaque créneau désignait un contenu ; il désigne désormais l'émission née de
    ce contenu, `date_effet` valant la date de reprise :
 
    ```sql
@@ -301,7 +301,7 @@ La migration est **une seule fenêtre**, sans cohabitation des deux modèles (hy
    -- idem episode_radio pour type_support = 'station_radio'
    ```
 
-6. **Thématiques** — FR-057. La catégorie unique de la chaîne devient sa première thématique, par
+6. **Thématiques** : FR-057. La catégorie unique de la chaîne devient sa première thématique, par
    correspondance de libellé avec le référentiel `media` :
 
    ```sql
@@ -318,9 +318,9 @@ La migration est **une seule fenêtre**, sans cohabitation des deux modèles (hy
    L'enum `categorie_chaine_tv` et les 44 thèmes `media` ne se recouvrent que partiellement : les
    chaînes sans correspondance restent **sans thématique**, ce que la spec tolère en lecture (edge case
    « chaîne sans thématique héritée »), l'obligation ne valant qu'à la prochaine modification (FR-029).
-   Un rapport de couverture est produit à l'exécution — voir `quickstart.md`.
+   Un rapport de couverture est produit à l'exécution : voir `quickstart.md`.
 
-7. **Territoires** — FR-057 : `pays_id` non nul devient l'unique ligne de `support_territoire`.
+7. **Territoires** : FR-057 : `pays_id` non nul devient l'unique ligne de `support_territoire`.
 
 8. **Supprimer** `media_content.programme_tele` et `media_content.programme_radio` (`DROP TABLE …
    CASCADE`), puis `creneau_programmation.contenu_id`. C'est cette suppression qui fait échouer
@@ -347,7 +347,7 @@ La migration est **une seule fenêtre**, sans cohabitation des deux modèles (hy
 
 - Seul `publie` entre dans la rotation et dans les compteurs publics (FR-018).
 - `brouillon` reste réservé aux créations administratives non soumises.
-- La désuspension n'est **jamais** automatique — règle déjà en vigueur pour les médias.
+- La désuspension n'est **jamais** automatique, règle déjà en vigueur pour les médias.
 
 ---
 
@@ -365,6 +365,6 @@ La migration est **une seule fenêtre**, sans cohabitation des deux modèles (hy
 | FR-029 / FR-035 (thème et couverture requis) | Garde applicative à la publication (l'existant sans thème doit rester lisible) |
 | FR-034 (exclusivité de couverture) | Trigger `verifier_couverture_exclusive` |
 | FR-041 (rejet motivé) | `ck_episode_*_rejet_motive` |
-| FR-048 (compteurs non agrégés) | Compteurs par `(type_media, media_id)` — aucune vue d'agrégation |
+| FR-048 (compteurs non agrégés) | Compteurs par `(type_media, media_id)`, aucune vue d'agrégation |
 | FR-050 (suspension par niveau) | `nombre_signalements` porté par chaque table, recompte filtré sur la cible |
 | FR-052 (mise en avant unique) | Index uniques partiels sur `episode_tele` |

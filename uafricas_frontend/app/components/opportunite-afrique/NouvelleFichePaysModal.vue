@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * NouvelleFichePaysModal (T051-T053) — Tailwind v4 pur, aucune classe daisyUI.
+ * NouvelleFichePaysModal (T051-T053) : Tailwind v4 pur, aucune classe daisyUI.
  *
  * US3 : proposer la création d'une fiche pays africain non encore référencée.
  * Gère les erreurs typées 401 / 409 (fiche existante) / 422 (hors périmètre)
@@ -186,7 +186,7 @@ const soumettre = async () => {
                 required
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-green"
               >
-                <option value="">— Sélectionnez un territoire africain —</option>
+                <option value="">Sélectionnez un territoire africain</option>
                 <option
                   v-for="p in paysOrdonnes"
                   :key="p.code"

@@ -10,22 +10,22 @@
 ### Backend (~10 fichiers)
 | Fichier | Action |
 |---------|--------|
-| `doc/bd/schemas/26_notifications.sql` | Créer — tables notifications + doublons_ignores |
+| `doc/bd/schemas/26_notifications.sql` | Créer, tables notifications + doublons_ignores |
 | `src/models/notification.rs` | Créer |
-| `src/handlers/notification.rs` | Créer — 7 handlers |
-| `src/handlers/matching.rs` | Modifier — INSERT notification après matching |
-| `src/handlers/collaboration.rs` | Modifier — INSERT notification après invitation/modification |
-| `src/routes.rs` | Modifier — +7 routes |
+| `src/handlers/notification.rs` | Créer, 7 handlers |
+| `src/handlers/matching.rs` | Modifier, INSERT notification après matching |
+| `src/handlers/collaboration.rs` | Modifier, INSERT notification après invitation/modification |
+| `src/routes.rs` | Modifier : +7 routes |
 
 ### Frontend (~6 fichiers)
 | Fichier | Action |
 |---------|--------|
-| `app/composables/useNotifications.ts` | Créer — compteur + liste + actions |
-| `app/composables/useSuggestions.ts` | Créer — suggestions proactives côté client |
-| `app/components/layout/ClocheNotifications.vue` | Créer — cloche + panneau déroulant |
-| `app/components/arbre-genealogique/PanneauDoublons.vue` | Créer — détection + fusion |
-| `app/pages/notifications.vue` | Créer — page complète |
-| `app/layouts/default.vue` | Modifier — ajouter ClocheNotifications |
+| `app/composables/useNotifications.ts` | Créer, compteur + liste + actions |
+| `app/composables/useSuggestions.ts` | Créer, suggestions proactives côté client |
+| `app/components/layout/ClocheNotifications.vue` | Créer, cloche + panneau déroulant |
+| `app/components/arbre-genealogique/PanneauDoublons.vue` | Créer, détection + fusion |
+| `app/pages/notifications.vue` | Créer, page complète |
+| `app/layouts/default.vue` | Modifier, ajouter ClocheNotifications |
 
 ## Scénario de vérification
 1. Ajouter une personne similaire à un autre arbre → notification matching

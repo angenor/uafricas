@@ -1,5 +1,5 @@
 // Modèles du domaine social : appel direct en visioconférence entre amis.
-// Aucune persistance — un appel est éphémère (registre en mémoire
+// Aucune persistance : un appel est éphémère (registre en mémoire
 // `services::appels::RegistreAppels`). La visioconférence est pair-à-pair
 // (WebRTC/PeerJS) ; le backend ne fait que la mise en relation initiale et
 // réutilise les peer-id déterministes du module `rendez_vous`.
@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use crate::models::amitie::MembreLight;
 
-/// Corps de `POST /api/appels` — démarrer un appel direct.
+/// Corps de `POST /api/appels` : démarrer un appel direct.
 #[derive(Debug, Deserialize)]
 pub struct AppelerBody {
     pub destinataire_id: Uuid,

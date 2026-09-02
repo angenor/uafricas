@@ -13,7 +13,7 @@ const colonnes: TableColumn[] = [
   { key: 'nom', label: 'Nom', sortable: true },
   { key: 'slug', label: 'Slug', width: 'w-32' },
   { key: 'description', label: 'Description' },
-  { key: 'est_systeme', label: 'Systeme', width: 'w-20', align: 'center' },
+  { key: 'est_systeme', label: 'Système', width: 'w-20', align: 'center' },
   { key: 'nombre_utilisateurs', label: 'Utilisateurs', width: 'w-28', align: 'center' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28', format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]

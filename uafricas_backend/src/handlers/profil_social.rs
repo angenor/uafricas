@@ -83,7 +83,7 @@ const PARTAGE_PROFIL_SELECT: &str = "SELECT
      JOIN iam.utilisateur ua ON ua.id = pp.utilisateur_id
      WHERE pp.deleted_at IS NULL AND up.deleted_at IS NULL AND up.etat = 'actif'";
 
-/// POST /api/utilisateurs/{id}/partages — partager un profil sur le mur.
+/// POST /api/utilisateurs/{id}/partages, partager un profil sur le mur.
 pub async fn partager_profil(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -123,8 +123,8 @@ pub async fn partager_profil(
     .await?;
 
     // Engagement : 1 point au membre dont le profil est partagé (non-bloquant).
-    // Le profil se désigne lui-même — `type_objet = 'profil'`, `objet_id` =
-    // identifiant du membre —, exactement comme la table de partage ci-dessus.
+    // Le profil se désigne lui-même : `type_objet = 'profil'`, `objet_id` =
+    // identifiant du membre, exactement comme la table de partage ci-dessus.
     crate::services::engagement::crediter_partage(
         pool.get_ref(),
         "profil",
@@ -150,7 +150,7 @@ pub async fn partager_profil(
     }))
 }
 
-/// GET /api/utilisateurs/partages — mur communautaire des profils (public, paginé).
+/// GET /api/utilisateurs/partages : mur communautaire des profils (public, paginé).
 pub async fn lister_partages_profils(
     pool: web::Data<PgPool>,
     params: web::Query<PartageQueryParams>,
@@ -203,7 +203,7 @@ pub async fn lister_partages_profils(
 // Signalement de profil
 // ────────────────────────────────────────────────────────────────
 
-/// POST /api/utilisateurs/{id}/signalement — signaler un profil (faux/arnaque).
+/// POST /api/utilisateurs/{id}/signalement, signaler un profil (faux/arnaque).
 /// Suspension automatique du compte au-delà du seuil.
 pub async fn signaler_profil(
     req: HttpRequest,

@@ -56,7 +56,7 @@ const estJouable = computed(() => estMediaJouable(props.url, props.sourceMedia))
 
 /**
  * Paramètres d'intégration YouTube. `mute=1` est indispensable dès que la
- * lecture automatique est demandée — c'est la condition posée par les
+ * lecture automatique est demandée : c'est la condition posée par les
  * navigateurs pour l'autoriser.
  */
 const srcIframe = computed(() => {
@@ -87,7 +87,7 @@ const lire = async () => {
   try {
     await element.value.play()
   } catch {
-    // Lecture automatique refusée par le navigateur — cas normal, pas une
+    // Lecture automatique refusée par le navigateur, cas normal, pas une
     // erreur à remonter à l'utilisateur.
   }
 }
@@ -172,9 +172,9 @@ const surTempsEcoule = () => {
        cadre noir dont le visiteur ne saurait pas quoi penser. -->
   <div
     v-else
-    class="w-full h-full min-h-40 flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-300 px-6 text-center"
+    class="w-full h-full min-h-40 flex flex-col items-center justify-center gap-3 bg-neutral-900 text-white/80 px-6 text-center"
   >
-    <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="text-2xl text-yellow-400" />
+    <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="text-2xl text-af-orange" />
     <p class="text-sm">
       {{ url ? 'Ce contenu est hébergé sur un service que nous ne savons pas lire ici.' : 'Aucun média n’est associé à ce contenu.' }}
     </p>
@@ -183,7 +183,7 @@ const surTempsEcoule = () => {
       :href="url"
       target="_blank"
       rel="noopener noreferrer"
-      class="text-sm font-semibold text-yellow-400 hover:text-yellow-300 underline underline-offset-4"
+      class="text-sm font-semibold text-af-orange hover:text-af-orange underline underline-offset-4"
     >
       Ouvrir la source
     </a>

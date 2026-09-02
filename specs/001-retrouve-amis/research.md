@@ -4,7 +4,7 @@
 
 ---
 
-## R1 — Choix du schema PostgreSQL
+## R1 : Choix du schema PostgreSQL
 
 **Decision** : Créer un nouveau schema `retrouve_amis` (11ème bounded context).
 
@@ -15,13 +15,13 @@
 - Facilite une éventuelle extraction en microservice futur
 
 **Alternatives considérées** :
-- `iam` — Rejeté : schema déjà riche (utilisateurs, rôles, permissions, organisations, expertise, tokens). Mélange de responsabilités IAM vs social.
-- `culture` — Rejeté : les centres culturels et Codi-Moi sont de la culture, pas du social/connexion.
-- `exchange` — Rejeté : dédié aux programmes d'échange académiques, pas aux connexions personnelles.
+- `iam` : Rejeté : schema déjà riche (utilisateurs, rôles, permissions, organisations, expertise, tokens). Mélange de responsabilités IAM vs social.
+- `culture` : Rejeté : les centres culturels et Codi-Moi sont de la culture, pas du social/connexion.
+- `exchange` : Rejeté : dédié aux programmes d'échange académiques, pas aux connexions personnelles.
 
 ---
 
-## R2 — Algorithme de matching et scoring
+## R2 : Algorithme de matching et scoring
 
 **Decision** : Scoring multi-critères basé sur les extensions PostgreSQL existantes (`pg_trgm` + `unaccent`) avec une fonction SQL pure.
 
@@ -60,13 +60,13 @@ GREATEST(
 ```
 
 **Alternatives considérées** :
-- Elasticsearch/Meilisearch — Rejeté : infra supplémentaire, YAGNI pour le volume initial, PostgreSQL natif suffit
-- Soundex/Metaphone — Rejeté : optimisés pour l'anglais, mauvais sur les noms africains francophones
-- Levenshtein — Considéré mais trigrammes plus robustes pour les variations orthographiques courantes
+- Elasticsearch/Meilisearch : Rejeté : infra supplémentaire, YAGNI pour le volume initial, PostgreSQL natif suffit
+- Soundex/Metaphone : Rejeté : optimisés pour l'anglais, mauvais sur les noms africains francophones
+- Levenshtein : Considéré mais trigrammes plus robustes pour les variations orthographiques courantes
 
 ---
 
-## R3 — Stratégie de notification
+## R3 : Stratégie de notification
 
 **Decision** : Notifications stockées en base (`retrouve_amis.notification_retrouve`) avec polling côté frontend.
 
@@ -84,13 +84,13 @@ GREATEST(
 4. Le frontend poll les notifications non lues via un composable
 
 **Alternatives considérées** :
-- WebSocket/SSE — Rejeté : infrastructure absente, over-engineering pour le MVP
-- Job queue (background worker) — Rejeté : complexité supplémentaire, le matching synchrone est rapide pour le volume initial
-- Email — À ajouter en Phase 2 via le système SMTP existant (Lettre)
+- WebSocket/SSE : Rejeté : infrastructure absente, over-engineering pour le MVP
+- Job queue (background worker) : Rejeté : complexité supplémentaire, le matching synchrone est rapide pour le volume initial
+- Email : À ajouter en Phase 2 via le système SMTP existant (Lettre)
 
 ---
 
-## R4 — Déclenchement du matching
+## R4 : Déclenchement du matching
 
 **Decision** : Matching synchrone déclenché dans le handler HTTP lors de 3 événements.
 
@@ -110,25 +110,25 @@ GREATEST(
 
 ---
 
-## R5 — Gestion de la confidentialité et anti-abus
+## R5 : Gestion de la confidentialité et anti-abus
 
 **Decision** : Mécanisme en 4 couches.
 
-### Couche 1 — Anonymat des avis
+### Couche 1 : Anonymat des avis
 - Les avis de recherche sont strictement privés (FR-003)
 - Aucun endpoint public ne liste les avis d'autres utilisateurs
 - Seul l'auteur voit ses propres avis
 
-### Couche 2 — Résumé anonymisé
+### Couche 2 : Résumé anonymisé
 - Les correspondances affichent : initiales (pas le nom complet), ville, période, score %
 - Les coordonnées ne sont jamais visibles avant consentement mutuel
 
-### Couche 3 — Consentement mutuel (double opt-in)
+### Couche 3 : Consentement mutuel (double opt-in)
 - État `en_attente` → A accepte → `acceptee_a` → B accepte → `mutuelle`
 - Les coordonnées ne sont partagées qu'à l'état `mutuelle`
 - Chaque utilisateur choisit quelles coordonnées partager (email, téléphone, messagerie)
 
-### Couche 4 — Anti-harcèlement
+### Couche 4 : Anti-harcèlement
 - Refus → blacklist automatique (`retrouve_amis.blacklist`)
 - Table symétrique : `CHECK (utilisateur_a_id < utilisateur_b_id)` évite les doublons
 - La blacklist empêche toute future correspondance entre ces deux utilisateurs
@@ -137,7 +137,7 @@ GREATEST(
 
 ---
 
-## R6 — Modification de `iam.utilisateur`
+## R6 : Modification de `iam.utilisateur`
 
 **Decision** : Ajouter une seule colonne `est_trouvable BOOLEAN NOT NULL DEFAULT FALSE` sur `iam.utilisateur`.
 
@@ -155,7 +155,7 @@ GREATEST(
 
 ---
 
-## R7 — Structure des pages frontend
+## R7 : Structure des pages frontend
 
 **Decision** : Section dédiée `retrouve-amis/` dans les pages, avec composants feature-based.
 
@@ -183,7 +183,7 @@ GREATEST(
 
 ---
 
-## R8 — Stockage et rétention des données
+## R8 : Stockage et rétention des données
 
 **Decision** : Conservation indéfinie des avis clôturés et correspondances (FR-018).
 

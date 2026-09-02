@@ -1,9 +1,9 @@
-// Modèle — Événements en streaming direct (feature 001-evenements-streaming).
+// Modèle : Événements en streaming direct (feature 001-evenements-streaming).
 //
 // Session de diffusion temps réel rattachée à un événement « en ligne » / « hybride »
 // (modèle webinaire). Calque allégé d'afrolang.session. États persistés : `en_cours`,
 // `terminee`. L'état « en attente de l'organisateur » et le `statut_direct` exposé au
-// frontend sont DÉRIVÉS à la lecture (jamais stockés — Principe V, parité événements/rdv).
+// frontend sont DÉRIVÉS à la lecture (jamais stockés, Principe V, parité événements/rdv).
 //
 // Aucun média n'est persisté (flux via SFU LiveKit). Chat / réactions / lever-la-main
 // circulent en DataPackets LiveKit éphémères ; seul `main_levee` est reflété en base
@@ -108,7 +108,7 @@ pub struct TokenDirectResponse {
     pub role: String,
 }
 
-// ── Calculs purs (dérivation à la lecture — testables, sans I/O) ─────────────
+// ── Calculs purs (dérivation à la lecture, testables, sans I/O) ─────────────
 
 /// Le format de l'événement autorise-t-il une diffusion en direct ? (FR-001/019)
 pub fn est_diffusable(format: &str) -> bool {
@@ -135,7 +135,7 @@ pub fn can_publish_pour_role(role: &str) -> bool {
     role == ROLE_ORGANISATEUR || role == ROLE_INTERVENANT
 }
 
-/// `statut_direct` dérivé exposé au frontend (jamais stocké — data-model.md).
+/// `statut_direct` dérivé exposé au frontend (jamais stocké, data-model.md).
 ///
 /// `derniere_session` = la session la plus récente de l'événement (active ou
 /// terminée), `None` si aucune n'a jamais existé. La clôture paresseuse de

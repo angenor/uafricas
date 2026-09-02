@@ -1,78 +1,34 @@
-<template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div class="group relative bg-font-centre-culturel bg-cover bg-center">
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
-
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Promotion des Valeurs
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Valeurs africaines et afro-descendantes
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Breadcrumb Navigation -->
-    <div class="backdrop-blur-xs">
-      <div class="mx-auto px-4 py-3">
-        <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
-      </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="container mx-auto px-4 py-12">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-        <div
-          v-for="card in promotionValeurPageData.cards"
-          :key="card.id"
-          class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
-          data-aos="fade-up"
-          :data-aos-delay="card.id * 100"
-          :data-aos-duration="800"
-        >
-          <!-- Image avec gradient -->
-          <div
-            class="h-48 relative overflow-hidden flex items-center justify-center bg-linear-to-br"
-            :class="card.gradient"
-          >
-            <img
-              :class="card.imageStyle === 'icon'
-                ? 'h-24 w-24 object-contain filter brightness-0 invert opacity-80'
-                : 'w-full h-full object-cover mix-blend-overlay'"
-              :src="card.image"
-              :alt="card.altText"
-            />
-            <div class="absolute inset-0 bg-linear-to-t from-black/30 to-transparent"></div>
-          </div>
-
-          <!-- Contenu -->
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-gray-800 mb-3">{{ card.title }}</h3>
-            <p class="text-gray-600 mb-4">{{ card.description }}</p>
-            <NuxtLink
-              :to="card.link"
-              class="inline-flex items-center gap-2 bg-custom-green text-white px-6 py-3 rounded-full hover:bg-green-600 transition-colors duration-300"
-            >
-              {{ card.buttonText }}
-              <font-awesome-icon icon="fa-solid fa-arrow-right" />
-            </NuxtLink>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { promotionValeurPageData } from '~/mocks/promotion-valeur'
+import { promotionValeurCards } from '~/mocks/promotion-valeur'
+
+/**
+ * Promotion des Valeurs : porté sur le gabarit de la refonte.
+ *
+ * Les TROIS images des cartes étaient hébergées chez des tiers (wikimedia,
+ * istockphoto, static-rmg.be) ; la première ne chargeait pas et la carte ne
+ * montrait plus que son texte de remplacement. Elles sont rapatriées en local.
+ *
+ * Le dégradé coloré derrière chaque image disparaît avec elles : `from-green-500
+ * to-blue-500`, `from-purple-500 to-pink-500`… trois duos pris hors de la
+ * palette de marque, qui teintaient les photos en `mix-blend-overlay`.
+ *
+ * Le fil d'Ariane annonçait « AfricaCulture » : le module s'appelle
+ * **Afroculture** depuis la refonte, et son univers est Africarise.
+ *
+ * Cartes horizontales, et non une grille de trois : la colonne principale fait
+ * 739 px, trois colonnes y donneraient 220 px chacune, assez pour l'image,
+ * trop peu pour le texte.
+ */
+definePageMeta({ layout: false })
+
+/** Les trois autres portes d'entrée du carrefour Afroculture. */
+const AUTRES_ENTREES = [
+  { libelle: 'Expertise de la diaspora', to: '/experts', icone: 'fa-solid fa-user-tie' },
+  { libelle: 'Opportunités en Afrique', to: '/opportunite-afrique', icone: 'fa-solid fa-earth-africa' },
+  { libelle: 'Échanges sabbatiques', to: '/echanges-sabbatiques', icone: 'fa-solid fa-right-left' }]
 
 useHead({
-  title: 'Promotion des Valeurs Africaines - AfricanS',
+  title: 'Promotion des Valeurs Africaines | AfricanS',
   meta: [
     {
       name: 'description',
@@ -80,26 +36,72 @@ useHead({
     },
   ],
 })
-
-useAOS()
-
-const breadcrumbs = [
-  { label: 'AfricaCulture', to: '/africa-culture' },
-  { label: 'Promotion des Valeurs', to: undefined },
-]
 </script>
 
-<style scoped>
-@reference "~/assets/css/main.css";
+<template>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Promotion des Valeurs"
+        sous-titre="Valeurs africaines et afro-descendantes"
+        image="/images/centre-culturel.jpg"
+      />
+    </template>
 
-.container {
-  @apply max-w-7xl;
-}
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Africarise', vers: '/codi-moi' },
+          { libelle: 'Afroculture', vers: '/africa-culture' },
+          { libelle: 'Promotion des Valeurs' }]"
+      >
+        <template #centre>
+          <p class="text-base font-bold text-af-encre">Trois façons de faire vivre notre héritage</p>
+        </template>
+      </AfricansFilAriane>
+    </template>
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .grid {
-    @apply gap-6;
-  }
-}
-</style>
+    <div class="flex flex-col gap-5">
+      <article
+        v-for="card in promotionValeurCards"
+        :key="card.id"
+        class="group flex flex-col overflow-hidden rounded-[10px] border border-af-bordure bg-white transition hover:border-af-chocolat sm:flex-row"
+      >
+        <div class="relative aspect-[16/10] shrink-0 overflow-hidden sm:aspect-auto sm:w-64">
+          <img
+            :src="card.image"
+            alt=""
+            class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        </div>
+
+        <div class="flex min-w-0 flex-1 flex-col items-start gap-3 p-6">
+          <h2 class="text-[24px]/[1.3] font-bold text-af-encre transition group-hover:text-af-chocolat">
+            {{ card.title }}
+          </h2>
+          <p class="text-[14px]/[1.5] text-af-corps">{{ card.description }}</p>
+          <AfricansBouton class="mt-auto" icone="fa-solid fa-arrow-right" :vers="card.link">
+            {{ card.buttonText }}
+          </AfricansBouton>
+        </div>
+      </article>
+    </div>
+
+    <template #rail>
+      <AfricansPanneau titre="Aussi dans Afroculture" icone="fa-solid fa-masks-theater">
+        <ul class="flex flex-col gap-1">
+          <li v-for="lien in AUTRES_ENTREES" :key="lien.to">
+            <NuxtLink
+              :to="lien.to"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px]/[1.4] font-bold text-af-corps transition hover:bg-af-chocolat/[0.07] hover:text-af-chocolat"
+            >
+              <font-awesome-icon :icon="lien.icone" class="size-5 shrink-0" />
+              {{ lien.libelle }}
+            </NuxtLink>
+          </li>
+        </ul>
+      </AfricansPanneau>
+    </template>
+  </NuxtLayout>
+</template>

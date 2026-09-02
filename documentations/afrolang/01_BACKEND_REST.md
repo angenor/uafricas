@@ -1,9 +1,9 @@
-# Phase 1 — Backend REST API
+# Phase 1 : Backend REST API
 
 > **Statut** : `TERMINE`
 > **Progression** : 12/12 taches
 > **Bloque par** : Rien (premiere phase)
-> **Debloque** : [Phase 2 — Frontend UI](./02_FRONTEND_UI.md)
+> **Debloque** : [Phase 2 : Frontend UI](./02_FRONTEND_UI.md)
 
 ---
 
@@ -12,10 +12,10 @@
 ```
 ✅ = termine    🔄 = en cours    ⬜ = a faire    🔒 = bloque
 
-[🔄] Phase 1 — Backend REST        ◄── VOUS ETES ICI
-[🔒] Phase 2 — Frontend UI          (attend Phase 1 complete)
-[🔒] Phase 3 — WebRTC Signaling     (attend Phase 2 complete)
-[🔒] Phase 4 — Tableau blanc        (attend Phase 3 complete)
+[🔄] Phase 1 : Backend REST        ◄── VOUS ETES ICI
+[🔒] Phase 2 : Frontend UI          (attend Phase 1 complete)
+[🔒] Phase 3 : WebRTC Signaling     (attend Phase 2 complete)
+[🔒] Phase 4 : Tableau blanc        (attend Phase 3 complete)
 ```
 
 **Ce que cette phase produit pour la Phase 2 :**
@@ -27,24 +27,24 @@
 
 ## Progression
 
-- [x] **1.1** Creer `src/models/afrolang.rs` — Constantes SQL
-- [x] **1.2** Creer `src/models/afrolang.rs` — Structs FromRow
-- [x] **1.3** Creer `src/models/afrolang.rs` — DTOs Response (Serialize)
-- [x] **1.4** Creer `src/models/afrolang.rs` — Structs de requete (Deserialize)
-- [x] **1.5** Creer `src/handlers/afrolang.rs` — Handlers salles publiques (5 endpoints)
-- [x] **1.6** Creer `src/handlers/afrolang.rs` — Handlers salles privees (5 endpoints)
-- [x] **1.7** Creer `src/handlers/afrolang.rs` — Handlers sessions (7 endpoints)
-- [x] **1.8** Creer `src/handlers/afrolang.rs` — Handlers utilitaires (stats + langues)
-- [x] **1.9** Modifier `src/handlers/mod.rs` — Ajouter `pub mod afrolang;`
-- [x] **1.10** Modifier `src/models/mod.rs` — Ajouter `pub mod afrolang;`
-- [x] **1.11** Modifier `src/routes.rs` — Ajouter le scope `/afrolang`
-- [x] **1.12** Tests manuels curl — Valider tous les endpoints
+- [x] **1.1** Creer `src/models/afrolang.rs`, Constantes SQL
+- [x] **1.2** Creer `src/models/afrolang.rs`, Structs FromRow
+- [x] **1.3** Creer `src/models/afrolang.rs`, DTOs Response (Serialize)
+- [x] **1.4** Creer `src/models/afrolang.rs`, Structs de requete (Deserialize)
+- [x] **1.5** Creer `src/handlers/afrolang.rs`, Handlers salles publiques (5 endpoints)
+- [x] **1.6** Creer `src/handlers/afrolang.rs`, Handlers salles privees (5 endpoints)
+- [x] **1.7** Creer `src/handlers/afrolang.rs`, Handlers sessions (7 endpoints)
+- [x] **1.8** Creer `src/handlers/afrolang.rs`, Handlers utilitaires (stats + langues)
+- [x] **1.9** Modifier `src/handlers/mod.rs`, Ajouter `pub mod afrolang;`
+- [x] **1.10** Modifier `src/models/mod.rs`, Ajouter `pub mod afrolang;`
+- [x] **1.11** Modifier `src/routes.rs`, Ajouter le scope `/afrolang`
+- [x] **1.12** Tests manuels curl : Valider tous les endpoints
 
 ---
 
-## 1.1–1.4 — Fichier `src/models/afrolang.rs`
+## 1.1–1.4 : Fichier `src/models/afrolang.rs`
 
-### 1.1 — Constantes SQL
+### 1.1 : Constantes SQL
 
 ```rust
 // Colonnes pour la liste des salles publiques
@@ -57,7 +57,7 @@ pub const SALLE_PRIVEE_COLONNES: &str = "sp.id, sp.salle_id, sp.titre, sp.descri
 pub const SESSION_COLONNES: &str = "ses.id, ses.salle_privee_id, ses.titre, ses.etat::TEXT, ses.moderateur_id, ses.date_debut_prevue, ses.demarre_at, ses.termine_at, ses.duree_secondes, ses.max_participants, ses.nombre_participants_pic, ses.tableau_blanc_actif, ses.noeud_id, ses.cree_par, ses.created_at, ses.updated_at";
 ```
 
-### 1.2 — Structs FromRow
+### 1.2 : Structs FromRow
 
 ```rust
 #[derive(Debug, sqlx::FromRow)]
@@ -127,7 +127,7 @@ pub struct SessionParticipantRow {
 }
 ```
 
-### 1.3 — DTOs Response (Serialize)
+### 1.3 : DTOs Response (Serialize)
 
 ```rust
 #[derive(Debug, Serialize)]
@@ -158,7 +158,7 @@ pub struct AfrolangStatsResponse {        // Statistiques globales
 }
 ```
 
-### 1.4 — Structs de requete (Deserialize)
+### 1.4 : Structs de requete (Deserialize)
 
 ```rust
 #[derive(Debug, Deserialize)]
@@ -207,7 +207,7 @@ pub struct RejoindreRequest {
 
 ---
 
-## 1.5 — Handlers salles publiques (admin only pour creation)
+## 1.5 : Handlers salles publiques (admin only pour creation)
 
 | Methode | Route | Handler | Auth | Description |
 |---------|-------|---------|------|-------------|
@@ -221,7 +221,7 @@ pub struct RejoindreRequest {
 
 ---
 
-## 1.6 — Handlers salles privees (tout utilisateur authentifie)
+## 1.6 : Handlers salles privees (tout utilisateur authentifie)
 
 | Methode | Route | Handler | Auth | Description |
 |---------|-------|---------|------|-------------|
@@ -235,7 +235,7 @@ pub struct RejoindreRequest {
 
 ---
 
-## 1.7 — Handlers sessions WebRTC
+## 1.7 : Handlers sessions WebRTC
 
 | Methode | Route | Handler | Auth | Description |
 |---------|-------|---------|------|-------------|
@@ -277,7 +277,7 @@ Si salle_privee.code_acces IS NOT NULL:
 
 ---
 
-## 1.8 — Handlers utilitaires
+## 1.8 : Handlers utilitaires
 
 | Methode | Route | Handler | Auth | Description |
 |---------|-------|---------|------|-------------|
@@ -288,7 +288,7 @@ Si salle_privee.code_acces IS NOT NULL:
 
 ---
 
-## 1.9–1.10 — Enregistrement des modules
+## 1.9–1.10 : Enregistrement des modules
 
 ### `src/handlers/mod.rs`
 ```rust
@@ -302,7 +302,7 @@ pub mod afrolang;
 
 ---
 
-## 1.11 — Routes (`src/routes.rs`)
+## 1.11 : Routes (`src/routes.rs`)
 
 ```rust
 .service(
@@ -336,7 +336,7 @@ pub mod afrolang;
 
 ---
 
-## 1.12 — Tests manuels curl
+## 1.12 : Tests manuels curl
 
 Valider **chaque endpoint** avant de passer a la Phase 2 :
 
@@ -363,12 +363,12 @@ Valider **chaque endpoint** avant de passer a la Phase 2 :
 - `src/handlers/afrolang.rs` (~600-800 lignes)
 
 ### Fichiers a modifier
-- `src/models/mod.rs` — Ajouter `pub mod afrolang;`
-- `src/handlers/mod.rs` — Ajouter `pub mod afrolang;`
-- `src/routes.rs` — Ajouter le scope `/afrolang`
+- `src/models/mod.rs` : Ajouter `pub mod afrolang;`
+- `src/handlers/mod.rs` : Ajouter `pub mod afrolang;`
+- `src/routes.rs` : Ajouter le scope `/afrolang`
 
 ### Dependances cargo additionnelles
-- Aucune — tout est deja disponible (actix-web, sqlx, uuid, chrono, serde)
+- Aucune : tout est deja disponible (actix-web, sqlx, uuid, chrono, serde)
 
 ### Prerequis
 - Le schema SQL `08b_afrolang.sql` doit etre applique a la base (deja dans l'orchestrateur `schema.sql`)

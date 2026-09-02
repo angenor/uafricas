@@ -82,7 +82,7 @@ const soumettre = async () => {
               <input v-model="form.ville" type="text" class="input input-bordered">
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Etat</span></label>
+              <label class="label"><span class="label-text">État</span></label>
               <select v-model="form.etat" class="select select-bordered">
                 <option value="brouillon">Brouillon</option>
                 <option value="publie">Publie</option>

@@ -1,13 +1,13 @@
-# Phase 1 — Modèle de données
+# Phase 1 : Modèle de données
 
-Feature : Enrichissement des sites touristiques · Schéma `country_profile` (Principe III — SQL SoT)
+Feature : Enrichissement des sites touristiques · Schéma `country_profile` (Principe III, SQL SoT)
 
 Migration cible : `uafricas_backend/doc/bd/schemas/11d_country_profile_sites_enrichis.sql`
 (orchestrée via `\ir` dans `schema.sql`, après `11c_country_profile_afripulse.sql`).
 
 ---
 
-## 1. Nouvel enum — sous-type de site
+## 1. Nouvel enum : sous-type de site
 
 ```sql
 CREATE TYPE country_profile.sous_type_site AS ENUM (
@@ -71,9 +71,9 @@ CREATE INDEX IF NOT EXISTS idx_site_touristique_verifie
 
 ---
 
-## 3. Nouvelle table — `country_profile.avis_site`
+## 3. Nouvelle table : `country_profile.avis_site`
 
-Avis noté 1–5 par visiteur sur un site (D2 — écriture directe, publication immédiate).
+Avis noté 1–5 par visiteur sur un site (D2, écriture directe, publication immédiate).
 
 ```sql
 CREATE TABLE country_profile.avis_site (

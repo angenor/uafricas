@@ -17,6 +17,15 @@ const form = reactive({
   image_embleme_url: '',
   image_devise_url: '',
   hymne_national: '',
+  drapeau_description: '',
+  embleme_description: '',
+  hymne_description: '',
+  fleur_nationale: '',
+  fleur_description: '',
+  animal_national: '',
+  animal_description: '',
+  oiseau_national: '',
+  oiseau_description: '',
   langue_officielle: '',
   langues_populaires: '',
   monnaie: '',
@@ -46,6 +55,15 @@ const soumettre = async () => {
     if (form.image_embleme_url.trim()) body.image_embleme_url = form.image_embleme_url.trim()
     if (form.image_devise_url.trim()) body.image_devise_url = form.image_devise_url.trim()
     if (form.hymne_national.trim()) body.hymne_national = form.hymne_national.trim()
+    if (form.drapeau_description.trim()) body.drapeau_description = form.drapeau_description.trim()
+    if (form.embleme_description.trim()) body.embleme_description = form.embleme_description.trim()
+    if (form.hymne_description.trim()) body.hymne_description = form.hymne_description.trim()
+    if (form.fleur_nationale.trim()) body.fleur_nationale = form.fleur_nationale.trim()
+    if (form.fleur_description.trim()) body.fleur_description = form.fleur_description.trim()
+    if (form.animal_national.trim()) body.animal_national = form.animal_national.trim()
+    if (form.animal_description.trim()) body.animal_description = form.animal_description.trim()
+    if (form.oiseau_national.trim()) body.oiseau_national = form.oiseau_national.trim()
+    if (form.oiseau_description.trim()) body.oiseau_description = form.oiseau_description.trim()
     if (form.langue_officielle.trim()) body.langue_officielle = form.langue_officielle.trim()
     if (form.langues_populaires.trim()) body.langues_populaires = form.langues_populaires.trim()
     if (form.monnaie.trim()) body.monnaie = form.monnaie.trim()

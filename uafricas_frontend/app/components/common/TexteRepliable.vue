@@ -1,17 +1,17 @@
 <script setup lang="ts">
 /**
- * Texte long tronqué, avec ou sans commande de dépliage — feature 010.
+ * Texte long tronqué, avec ou sans commande de dépliage, feature 010.
  *
  * **Deux modes, et la distinction n'est pas cosmétique** :
  *
- *  • `repliable` (défaut) — pages de détail : le texte se déplie et se replie
+ *  • `repliable` (défaut) : pages de détail : le texte se déplie et se replie
  *    sur place, sans rechargement (FR-021).
- *  • `repliable="false"` — sections de vitrine : le texte est coupé par des
+ *  • `repliable="false"` : sections de vitrine : le texte est coupé par des
  *    points de suspension et s'arrête là (FR-003). La vitrine annonce, elle ne
  *    déroule pas ; c'est la page de détail qui déroule.
  *
  * Dans les deux modes, un texte qui tient entièrement s'affiche **sans bouton
- * et sans ellipse** (FR-022) — la détection se fait sur la hauteur réellement
+ * et sans ellipse** (FR-022) : la détection se fait sur la hauteur réellement
  * rendue, jamais sur un décompte de caractères, qui dépendrait de la largeur.
  *
  * Tailwind v4 pur (Principe VI) : ce composant est monté sur des pages
@@ -80,7 +80,7 @@ watch(() => props.texte, async () => {
 /**
  * Les deux propriétés préfixées sont écrites **en toutes lettres**, pas en
  * camelCase : Vue convertit `WebkitBoxOrient` en `webkit-box-orient`, sans le
- * tiret initial — une propriété que le navigateur ignore en silence. La
+ * tiret initial : une propriété que le navigateur ignore en silence. La
  * troncature n'avait alors aucun effet, et `scrollHeight === clientHeight`
  * faisait disparaître le bouton « voir plus » avec elle.
  */

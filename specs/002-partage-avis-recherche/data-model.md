@@ -25,9 +25,9 @@ Cette fonctionnalité étend le schema `retrouve_amis` existant (PostgreSQL 16) 
 
 ### Contraintes ajoutées
 
-- `UNIQUE(slug)` — un seul avis par slug
-- `CHECK(compteur_partages >= 0)` — pas de compteur négatif
-- Index partiel : `CREATE INDEX idx_avis_public_actif ON avis_recherche(est_public, etat) WHERE est_public = TRUE AND etat = 'actif' AND deleted_at IS NULL` — optimise les requêtes de listing public
+- `UNIQUE(slug)` : un seul avis par slug
+- `CHECK(compteur_partages >= 0)` : pas de compteur négatif
+- Index partiel : `CREATE INDEX idx_avis_public_actif ON avis_recherche(est_public, etat) WHERE est_public = TRUE AND etat = 'actif' AND deleted_at IS NULL`, optimise les requêtes de listing public
 
 ### Règles de validation
 
@@ -43,12 +43,12 @@ Représente la réponse d'un visiteur connecté à un avis public.
 | Colonne | Type | Défaut | Nullable | Contrainte | Description |
 |---------|------|--------|----------|------------|-------------|
 | `id` | UUID | gen_random_uuid() | NOT NULL | PK | Identifiant unique |
-| `avis_id` | UUID | — | NOT NULL | FK → avis_recherche(id) CASCADE | Avis concerné |
-| `repondeur_id` | UUID | — | NOT NULL | FK → iam.utilisateur(id) | Utilisateur qui répond |
-| `type_reponse` | type_reponse_publique | — | NOT NULL | — | Type de la réponse |
-| `message` | TEXT | — | NOT NULL | — | Message du répondeur |
+| `avis_id` | UUID | : | NOT NULL | FK → avis_recherche(id) CASCADE | Avis concerné |
+| `repondeur_id` | UUID | : | NOT NULL | FK → iam.utilisateur(id) | Utilisateur qui répond |
+| `type_reponse` | type_reponse_publique |, | NOT NULL |, | Type de la réponse |
+| `message` | TEXT | : | NOT NULL | : | Message du répondeur |
 | `correspondance_id` | UUID | NULL | YES | FK → correspondance(id) SET NULL | Correspondance créée automatiquement |
-| `created_at` | TIMESTAMPTZ | NOW() | NOT NULL | — | Date de création |
+| `created_at` | TIMESTAMPTZ | NOW() | NOT NULL |, | Date de création |
 
 ### Enum: `type_reponse_publique`
 
@@ -62,14 +62,14 @@ CREATE TYPE retrouve_amis.type_reponse_publique AS ENUM (
 
 ### Contraintes
 
-- `UNIQUE(avis_id, repondeur_id)` — un seul message par utilisateur par avis (FR-007)
+- `UNIQUE(avis_id, repondeur_id)`, un seul message par utilisateur par avis (FR-007)
 - L'auteur de l'avis ne peut pas répondre à son propre avis
 - Le répondeur ne doit pas être dans la blacklist de l'auteur
 
 ### Index
 
-- `CREATE INDEX idx_reponse_avis ON reponse_publique(avis_id)` — recherche par avis
-- `CREATE INDEX idx_reponse_repondeur ON reponse_publique(repondeur_id)` — recherche par utilisateur
+- `CREATE INDEX idx_reponse_avis ON reponse_publique(avis_id)`, recherche par avis
+- `CREATE INDEX idx_reponse_repondeur ON reponse_publique(repondeur_id)`, recherche par utilisateur
 
 ## Nouvelle table: `demande_retrait`
 
@@ -78,15 +78,15 @@ Représente une demande de retrait d'un avis par une personne qui s'y reconnaît
 | Colonne | Type | Défaut | Nullable | Contrainte | Description |
 |---------|------|--------|----------|------------|-------------|
 | `id` | UUID | gen_random_uuid() | NOT NULL | PK | Identifiant unique |
-| `avis_id` | UUID | — | NOT NULL | FK → avis_recherche(id) CASCADE | Avis concerné |
-| `demandeur_id` | UUID | — | NOT NULL | FK → iam.utilisateur(id) | Personne demandant le retrait |
-| `motif` | TEXT | — | NOT NULL | — | Raison de la demande |
-| `etat` | etat_demande_retrait | 'en_attente' | NOT NULL | — | État de traitement |
-| `date_suspension` | TIMESTAMPTZ | NOW() | NOT NULL | — | Date de suspension automatique de l'avis |
+| `avis_id` | UUID | : | NOT NULL | FK → avis_recherche(id) CASCADE | Avis concerné |
+| `demandeur_id` | UUID | : | NOT NULL | FK → iam.utilisateur(id) | Personne demandant le retrait |
+| `motif` | TEXT | : | NOT NULL | : | Raison de la demande |
+| `etat` | etat_demande_retrait | 'en_attente' | NOT NULL |, | État de traitement |
+| `date_suspension` | TIMESTAMPTZ | NOW() | NOT NULL |, | Date de suspension automatique de l'avis |
 | `decide_par` | UUID | NULL | YES | FK → iam.utilisateur(id) | Admin ayant tranché |
-| `decision_at` | TIMESTAMPTZ | NULL | YES | — | Date de la décision admin |
-| `commentaire_admin` | TEXT | NULL | YES | — | Justification de la décision |
-| `created_at` | TIMESTAMPTZ | NOW() | NOT NULL | — | Date de création |
+| `decision_at` | TIMESTAMPTZ | NULL | YES |, | Date de la décision admin |
+| `commentaire_admin` | TEXT | NULL | YES |, | Justification de la décision |
+| `created_at` | TIMESTAMPTZ | NOW() | NOT NULL |, | Date de création |
 
 ### Enum: `etat_demande_retrait`
 
@@ -100,7 +100,7 @@ CREATE TYPE retrouve_amis.etat_demande_retrait AS ENUM (
 
 ### Contraintes
 
-- `UNIQUE(avis_id, demandeur_id)` — une seule demande par utilisateur par avis
+- `UNIQUE(avis_id, demandeur_id)`, une seule demande par utilisateur par avis
 - Le demandeur ne peut pas être l'auteur de l'avis (l'auteur peut simplement dépublier)
 
 ### Transitions d'état
@@ -113,8 +113,8 @@ en_attente → rejetee (admin rejette : avis réactivé, est_public = TRUE)
 
 ### Index
 
-- `CREATE INDEX idx_demande_avis ON demande_retrait(avis_id)` — recherche par avis
-- `CREATE INDEX idx_demande_etat ON demande_retrait(etat) WHERE etat = 'en_attente'` — filtrer demandes en attente
+- `CREATE INDEX idx_demande_avis ON demande_retrait(avis_id)`, recherche par avis
+- `CREATE INDEX idx_demande_etat ON demande_retrait(etat) WHERE etat = 'en_attente'`, filtrer demandes en attente
 
 ## Modification de la table existante: `signalement`
 
@@ -155,8 +155,8 @@ Valeurs complètes après modification :
 - `coordonnees_partagees` (existant)
 - `correspondance_archivee` (existant)
 - `avis_suspendu` (existant)
-- `reponse_publique` (nouveau — notifie l'auteur d'une réponse)
-- `demande_retrait` (nouveau — notifie l'auteur + admins d'une demande)
+- `reponse_publique` (nouveau : notifie l'auteur d'une réponse)
+- `demande_retrait` (nouveau : notifie l'auteur + admins d'une demande)
 
 ## Diagramme des relations
 

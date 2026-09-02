@@ -18,7 +18,7 @@ use crate::services::audit;
 use crate::verifier_permission;
 use crate::ApiResponse;
 
-/// GET /api/admin/sessions — historique paginé + filtres
+/// GET /api/admin/sessions : historique paginé + filtres
 pub async fn lister_sessions(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
@@ -153,7 +153,7 @@ pub async fn lister_sessions(
     }))
 }
 
-/// GET /api/admin/sessions/{id} — détail avec participants
+/// GET /api/admin/sessions/{id} : détail avec participants
 pub async fn obtenir_session(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
@@ -276,7 +276,7 @@ pub async fn obtenir_tableau_blanc(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Feature 005 — US6 : Validation des liens externes
+// Feature 005 : US6 : Validation des liens externes
 // ══════════════════════════════════════════════════════════════════════════
 
 /// Vérifie qu'un admin a la permission OU est modérateur attitré de la salle ciblée
@@ -307,7 +307,7 @@ async fn admin_ou_moderateur(
     }
 }
 
-/// GET /api/admin/afrolang/ressources/en-attente — File des liens à modérer
+/// GET /api/admin/afrolang/ressources/en-attente, File des liens à modérer
 pub async fn lister_liens_en_attente(
     admin: AdminUtilisateur,
     pool: web::Data<PgPool>,
@@ -339,7 +339,7 @@ pub async fn lister_liens_en_attente(
     }))
 }
 
-/// POST /api/admin/afrolang/ressources/{id}/publier — Publier un lien en attente
+/// POST /api/admin/afrolang/ressources/{id}/publier, Publier un lien en attente
 pub async fn publier_lien(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -408,7 +408,7 @@ pub async fn publier_lien(
     }))
 }
 
-/// POST /api/admin/afrolang/ressources/{id}/refuser — Refuser un lien en attente
+/// POST /api/admin/afrolang/ressources/{id}/refuser, Refuser un lien en attente
 pub async fn refuser_lien(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -492,7 +492,7 @@ pub async fn refuser_lien(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Feature 005 — Phase 9 : Archivage & désactivation cascade
+// Feature 005 : Phase 9 : Archivage & désactivation cascade
 // ══════════════════════════════════════════════════════════════════════════
 
 /// Helper interne : archive toutes les salles privées actives d'un utilisateur.
@@ -540,7 +540,7 @@ pub async fn archiver_salles_privees_utilisateur_impl(
     Ok(total)
 }
 
-/// POST /api/admin/afrolang/salles-privees/archiver-batch-utilisateur — Archivage en lot
+/// POST /api/admin/afrolang/salles-privees/archiver-batch-utilisateur, Archivage en lot
 pub async fn archiver_batch_utilisateur(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -574,7 +574,7 @@ pub async fn archiver_batch_utilisateur(
     }))
 }
 
-/// POST /api/admin/afrolang/salles-privees/{id}/archiver — Archivage manuel d'une salle
+/// POST /api/admin/afrolang/salles-privees/{id}/archiver, Archivage manuel d'une salle
 pub async fn archiver_salle_privee(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -649,7 +649,7 @@ pub async fn archiver_salle_privee(
     }))
 }
 
-/// POST /api/admin/afrolang/salles/{id}/desactiver — Désactivation cascade (T108a)
+/// POST /api/admin/afrolang/salles/{id}/desactiver, Désactivation cascade (T108a)
 pub async fn desactiver_salle_publique_avec_cascade(
     admin: AdminUtilisateur,
     req: HttpRequest,
@@ -675,7 +675,7 @@ pub async fn desactiver_salle_publique_avec_cascade(
     }
 
     // Refonte 2026-04 : archivage en cascade des salles privées d'une salle
-    // publique désactivée. Plus de table d'adhésion — on remonte juste les
+    // publique désactivée. Plus de table d'adhésion : on remonte juste les
     // paires (salle_privée_id, auteur) pour notifier les auteurs.
     let salles_privees: Vec<(Uuid, Uuid)> = sqlx::query_as(
         "UPDATE afrolang.salle_privee
@@ -710,7 +710,7 @@ pub async fn desactiver_salle_publique_avec_cascade(
             pool.get_ref(),
             *auteur_id,
             notification::afrolang::SALLE_PRIVEE_ARCHIVEE,
-            "La salle publique associée a été désactivée — votre salle privée a été archivée.",
+            "La salle publique associée a été désactivée, votre salle privée a été archivée.",
             Some(&lien),
         )
         .await;

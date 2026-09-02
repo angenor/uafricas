@@ -1,7 +1,7 @@
-# Phase 1 — Modèle de données
+# Phase 1 : Modèle de données
 
 **Feature** : `007-engagement-points-badges` | **Date** : 2026-07-29
-**Schéma** : `engagement` (existant — étendu, jamais recréé)
+**Schéma** : `engagement` (existant : étendu, jamais recréé)
 
 Trois migrations idempotentes, à ajouter à `uafricas_backend/doc/bd/schema.sql` **après** `35b_engagement_mise_en_avant.sql` :
 
@@ -63,7 +63,7 @@ Trois migrations idempotentes, à ajouter à `uafricas_backend/doc/bd/schema.sql
 | `partages` | Partages | 5 | `share-nodes` |
 | `ajustements` | Ajustements | 6 | `sliders` |
 
-### 2. `engagement.regle_points` — +2 colonnes
+### 2. `engagement.regle_points` : +2 colonnes
 
 | Colonne | Type | Sens |
 |---|---|---|
@@ -84,13 +84,13 @@ Trois migrations idempotentes, à ajouter à `uafricas_backend/doc/bd/schema.sql
 
 > ⚠️ **Le plafond est exprimé en points, pas en occurrences** : `appliquer` compare `SUM(points)` du jour au `plafond_journalier`. « 3 bonus de partage par jour » se paramètre donc à **30**, pas à 3. À rappeler dans l'aide de l'écran back-office, sinon le paramétrage sera faux au premier ajustement.
 
-### 3. `engagement.mouvement_points` — +1 colonne
+### 3. `engagement.mouvement_points` : +1 colonne
 
 | Colonne | Type | Sens |
 |---|---|---|
 | `categorie_id` | UUID NULL REFERENCES `categorie_points(id)` ON DELETE SET NULL | Catégorie **figée au moment du mouvement** (R1) |
 
-- Index : `idx_mouvement_categorie (utilisateur_id, categorie_id)` — sert la ventilation et le filtre de l'historique.
+- Index : `idx_mouvement_categorie (utilisateur_id, categorie_id)`, sert la ventilation et le filtre de l'historique.
 - **Rattrapage unique** de l'existant :
   ```sql
   UPDATE engagement.mouvement_points m
@@ -100,7 +100,7 @@ Trois migrations idempotentes, à ajouter à `uafricas_backend/doc/bd/schema.sql
   ```
 - Les lignes restées sans catégorie s'affichent sous « Autres » côté membre (aucune erreur, aucune ligne masquée).
 
-### 4. `engagement.palier_popularite` — +1 colonne, unicité remplacée
+### 4. `engagement.palier_popularite` : +1 colonne, unicité remplacée
 
 | Colonne | Type | Sens |
 |---|---|---|
@@ -116,7 +116,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_uq_palier_seuil_famille
 
 **Sémantique de résolution** (R4) : s'il existe au moins un palier actif pour la famille, ces paliers **remplacent** les globaux ; sinon les globaux s'appliquent.
 
-### 5. `engagement.niveau` — +1 contrainte
+### 5. `engagement.niveau` : +1 contrainte
 
 ```sql
 CREATE UNIQUE INDEX IF NOT EXISTS idx_uq_niveau_seuil ON engagement.niveau (seuil_min);
@@ -183,7 +183,7 @@ CONSTRAINT ck_badge_condition CHECK (
 | `origine` | `origine_badge` | NOT NULL DEFAULT `'automatique'` |
 | `attribue_par` | UUID | NULL REFERENCES `iam.utilisateur(id)` ON DELETE SET NULL |
 | `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT NOW() |
-| — | — | **UNIQUE (utilisateur_id, badge_id)** ← support de l'idempotence (FR-018, FR-034) |
+| | : | **UNIQUE (utilisateur_id, badge_id)** ← support de l'idempotence (FR-018, FR-034) |
 
 Index : `idx_badge_obtenu_utilisateur (utilisateur_id, created_at DESC)`.
 `ON DELETE CASCADE` sur l'utilisateur : un membre supprimé ne laisse pas de badge orphelin (edge case).
@@ -201,7 +201,7 @@ Index : `idx_badge_obtenu_utilisateur (utilisateur_id, created_at DESC)`.
 | `ambassadeur` | `actions_comptees` | `partage_externe_5reseaux`, seuil 3 |
 | `statut_premium` | `niveau_atteint` | `premium` |
 | `statut_platinum` | `niveau_atteint` | `platinum` |
-| `distinction_editoriale` | *(manuel)* | — |
+| `distinction_editoriale` | *(manuel)* |, |
 
 ### 5. Rétro-évaluation unique (R9)
 
@@ -226,9 +226,9 @@ CREATE TYPE engagement.reseau_social AS ENUM
 | `objet_id` | UUID | NOT NULL | Identifiant du contenu |
 | `reseau` | `engagement.reseau_social` | NOT NULL | Réseau visé |
 | `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | |
-| — | — | **UNIQUE (utilisateur_id, type_objet, objet_id, reseau)** | Rend « réseaux **distincts** » structurel |
+| | : | **UNIQUE (utilisateur_id, type_objet, objet_id, reseau)** | Rend « réseaux **distincts** » structurel |
 
-Index : `idx_partage_externe_contenu (utilisateur_id, type_objet, objet_id)` — sert le `COUNT(DISTINCT reseau)`.
+Index : `idx_partage_externe_contenu (utilisateur_id, type_objet, objet_id)`, sert le `COUNT(DISTINCT reseau)`.
 
 **Séquence de traçage** (endpoint membre, best-effort) :
 
@@ -259,7 +259,7 @@ Le plafond journalier de la règle (30 points) écrête au-delà de 3 bonus par 
 
 ## Transitions d'état
 
-**Règle de points** : `créée (actif=TRUE)` ⇄ `désactivée (actif=FALSE)` — jamais supprimée si des mouvements la référencent (409).
+**Règle de points** : `créée (actif=TRUE)` ⇄ `désactivée (actif=FALSE)`, jamais supprimée si des mouvements la référencent (409).
 **Badge** : `défini (actif=TRUE)` ⇄ `retiré du catalogue (actif=FALSE)`. Les `badge_obtenu` associés **survivent** dans les deux sens (FR-020).
 **Badge obtenu** : `absent` → `obtenu` (automatique / rétroactif / manuel). Retour à `absent` **uniquement** par retrait manuel administrateur, tracé dans l'audit.
 **Niveau d'un membre** : dérivé, recalculé à chaque mouvement (`niveau_pour_solde`) et à chaque mutation du référentiel des niveaux (`recalculer_niveaux`, R5). Monte et descend ; le badge de niveau suit, les badges de succès non.
@@ -268,8 +268,8 @@ Le plafond journalier de la règle (30 points) écrête au-delà de 3 bonus par 
 ## Invariants à ne pas casser
 
 1. `cle_idempotence` reste `UNIQUE` et **porte tout ce qui distingue une attribution** (type d'action, objet, palier, membre pour le partage). Toute nouvelle règle doit définir sa clé avant d'être branchée.
-2. `solde_points >= 0` (CHECK existant) — le plancher est appliqué dans `appliquer`, pas par l'appelant.
+2. `solde_points >= 0` (CHECK existant), le plancher est appliqué dans `appliquer`, pas par l'appelant.
 3. Aucune attribution dans une transaction métier : `attribuer` s'appelle **après** le `COMMIT`.
 4. `mouvement_points` n'est jamais modifié ; la ventilation et les badges se recalculent toujours à partir de lui.
-5. **Un seul champ du barème est figé sur le mouvement : `categorie_id`.** Le libellé de l'action, lui, est toujours relu dans `regle_points` à l'affichage — renommer une règle renomme l'action dans tout l'historique, re-catégoriser une règle ne déplace aucun point déjà gagné. Ne pas dénormaliser le libellé : la ventilation exige la stabilité, l'affichage exige la correction rétroactive.
+5. **Un seul champ du barème est figé sur le mouvement : `categorie_id`.** Le libellé de l'action, lui, est toujours relu dans `regle_points` à l'affichage, renommer une règle renomme l'action dans tout l'historique, re-catégoriser une règle ne déplace aucun point déjà gagné. Ne pas dénormaliser le libellé : la ventilation exige la stabilité, l'affichage exige la correction rétroactive.
 6. Un membre ne peut jamais gagner de points sur une action qu'il a lui-même **décidée** (auto-validation, auto-mise à la une) ni sur sa propre réaction (auto-like). Le **partage externe est l'exception voulue** : son bénéficiaire est le partageur, même s'il partage son propre contenu (FR-030).

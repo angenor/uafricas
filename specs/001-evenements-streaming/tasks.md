@@ -1,5 +1,5 @@
 ---
-description: "Liste de tâches — Événements en streaming direct (LiveKit)"
+description: "Liste de tâches : Événements en streaming direct (LiveKit)"
 ---
 
 # Tasks: Événements en streaming direct sur la plateforme
@@ -7,7 +7,7 @@ description: "Liste de tâches — Événements en streaming direct (LiveKit)"
 **Input**: Documents de conception dans `/specs/001-evenements-streaming/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/
 
-**Tests**: Aucun framework de test n'est configuré (constitution — Principe « pas de testing »). Aucune tâche de test automatisé n'est générée ; la validation se fait manuellement via `quickstart.md`.
+**Tests**: Aucun framework de test n'est configuré (constitution, Principe « pas de testing »). Aucune tâche de test automatisé n'est générée ; la validation se fait manuellement via `quickstart.md`.
 
 **Organization**: Tâches groupées par user story pour une implémentation et une validation indépendantes.
 
@@ -42,14 +42,14 @@ Monorepo (Principe II) : backend `uafricas_backend/`, frontend `uafricas_fronten
 - [X] T004 Inclure `\ir schemas/09b_media_content_evenements_streaming.sql` dans `uafricas_backend/doc/bd/schema.sql` après les tables `media_content` et avant `12_audit.sql`
 - [X] T005 Appliquer la migration à la BDD dev via psql et vérifier les tables/index dans Adminer (`http://localhost:8088`)
 - [X] T006 [P] Étendre `uafricas_backend/src/services/livekit_moderation.rs` : ajouter `update_participant_can_publish(cfg, room_name, identity, autorise)` (ParticipantPermission `can_publish=autorise`, `can_subscribe=true`, `can_publish_data=true`) et `retirer_participant(cfg, room_name, identity)` (`RoomClient.remove_participant`), erreurs journalisées non bloquantes
-- [X] T007 [P] Implémenter le model `uafricas_backend/src/models/evenement_streaming.rs` : structs `FromRow` (`SessionRow`, `ParticipantRow`), `EVENEMENT_SESSION_COLONNES`, DTO `Serialize` (`EtatDirectResponse`, `TokenDirectResponse`, `DemandeParole`), et calculs purs (`statut_direct`, `fenetre_ouverture_at`, `arret_securite_at`, `grants_pour_role`) — voir mapping cross-stack `data-model.md`
-- [X] T008 Implémenter les helpers partagés dans `uafricas_backend/src/handlers/evenement_streaming.rs` : `extraire_utilisateur_id` (réutilise le pattern JWT in-handler), `charger_evenement_diffusable` (format `en_ligne`/`hybride`, `etat='publie'`, sinon 404/422), `est_organisateur` (=`cree_par`), `est_inscrit`, `charger_session_active`, `appliquer_arret_securite` (clôture paresseuse si `NOW() > arret_securite_at` OU événement `annule`), `generer_token` (grants scopés par rôle — D2)
+- [X] T007 [P] Implémenter le model `uafricas_backend/src/models/evenement_streaming.rs` : structs `FromRow` (`SessionRow`, `ParticipantRow`), `EVENEMENT_SESSION_COLONNES`, DTO `Serialize` (`EtatDirectResponse`, `TokenDirectResponse`, `DemandeParole`), et calculs purs (`statut_direct`, `fenetre_ouverture_at`, `arret_securite_at`, `grants_pour_role`) : voir mapping cross-stack `data-model.md`
+- [X] T008 Implémenter les helpers partagés dans `uafricas_backend/src/handlers/evenement_streaming.rs` : `extraire_utilisateur_id` (réutilise le pattern JWT in-handler), `charger_evenement_diffusable` (format `en_ligne`/`hybride`, `etat='publie'`, sinon 404/422), `est_organisateur` (=`cree_par`), `est_inscrit`, `charger_session_active`, `appliquer_arret_securite` (clôture paresseuse si `NOW() > arret_securite_at` OU événement `annule`), `generer_token` (grants scopés par rôle, D2)
 - [X] T009 Implémenter `GET /api/evenements/{id}/direct` dans `uafricas_backend/src/handlers/evenement_streaming.rs` : état dérivé (`statut_direct`, `peut_ouvrir`, `peut_rejoindre`, `nombre_participants`, `fenetre_ouverture_at`), `demandes_parole` si organisateur (cf. `contracts/rest-api.md`)
 - [X] T010 Implémenter `POST /api/evenements/{id}/direct/rejoindre` dans `uafricas_backend/src/handlers/evenement_streaming.rs` : open-or-join (crée la session `en_cours` si organisateur + fenêtre OK, sinon rejoint l'active), refus 409 si capacité atteinte (D8), upsert participant (`quitte_at=NULL`, FR-014), réponse token+rôle ; à la **création** : `audit::log_action` action `OUVRIR` + `creer_notification("evenement_direct_demarre")` + `RegistreSse::publier({type:"event_stream_demarre"})` à chaque inscrit
 - [X] T011 Implémenter `POST /api/evenements/{id}/direct/quitter` dans `uafricas_backend/src/handlers/evenement_streaming.rs` : `quitte_at=NOW()` + cumul `duree_secondes` (idempotent)
 - [X] T012 Enregistrer le sous-scope `/evenements/{id}/direct` (routes `GET`, `rejoindre`, `quitter`) dans `uafricas_backend/src/routes.rs` (import du handler + scope sous `/evenements`)
 
-**Checkpoint**: Cœur de session opérationnel — token généré, jointure/état/sortie testables via curl.
+**Checkpoint**: Cœur de session opérationnel, token généré, jointure/état/sortie testables via curl.
 
 ---
 
@@ -65,7 +65,7 @@ Monorepo (Principe II) : backend `uafricas_backend/`, frontend `uafricas_fronten
 - [X] T016 [US1] Ajouter le bouton « Rejoindre le direct » sur `uafricas_frontend/app/pages/evenements/[id].vue` (visible si `statut_direct='en_direct'` + éligible), encart « Inscrivez-vous d'abord » / « Connectez-vous » sinon (dépend de T013)
 - [X] T017 [US1] Ajouter la branche `evt.type.startsWith('event_stream_')` dans `uafricas_frontend/app/plugins/messagerie.client.ts` (appelle `gererEvenementStream` + `compteurNonLues`) (dépend de T013)
 
-**Checkpoint**: US1 fonctionnelle — un inscrit peut regarder un direct ouvert (MVP démontrable).
+**Checkpoint**: US1 fonctionnelle : un inscrit peut regarder un direct ouvert (MVP démontrable).
 
 ---
 
@@ -81,7 +81,7 @@ Monorepo (Principe II) : backend `uafricas_backend/`, frontend `uafricas_fronten
 - [X] T021 [US2] Activer la diffusion dans `uafricas_frontend/app/components/evenements/EvenementDirectRoom.vue` : si rôle diffuseur → `setCameraEnabled`/`setMicrophoneEnabled`/`setScreenShareEnabled`, câbler `<EvenementDirectControls>` et l'action clôturer (dépend de T020, T021↔T014 même fichier)
 - [X] T022 [US2] Ajouter le bouton « Ouvrir le direct » sur `uafricas_frontend/app/pages/evenements/[id].vue` (organisateur, `statut_direct='en_attente'`, `peut_ouvrir`) → redirige vers la page direct (dépend de T019)
 
-**Checkpoint**: US1 + US2 fonctionnelles — l'organisateur ouvre/diffuse/clôture, les inscrits regardent.
+**Checkpoint**: US1 + US2 fonctionnelles, l'organisateur ouvre/diffuse/clôture, les inscrits regardent.
 
 ---
 
@@ -95,7 +95,7 @@ Monorepo (Principe II) : backend `uafricas_backend/`, frontend `uafricas_fronten
 - [X] T024 [P] [US3] Créer `uafricas_frontend/app/components/evenements/EvenementDirectReactions.vue` (Tailwind v4 pur) : picker emoji → `publishData {type:'reaction'}` + overlay éphémère (réutilise le pattern `AfrolangReactionsOverlay`)
 - [X] T025 [US3] Intégrer chat + réactions dans `uafricas_frontend/app/components/evenements/EvenementDirectRoom.vue` : dispatch `DataReceived` (chat/reaction), ignorer ses propres paquets, monter `<EvenementDirectChat>` et `<EvenementDirectReactions>` (dépend de T023, T024)
 
-**Checkpoint**: US1 + US2 + US3 fonctionnelles — interaction temps réel disponible.
+**Checkpoint**: US1 + US2 + US3 fonctionnelles, interaction temps réel disponible.
 
 ---
 
@@ -131,8 +131,8 @@ Monorepo (Principe II) : backend `uafricas_backend/`, frontend `uafricas_fronten
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)** : aucune dépendance — démarrage immédiat.
-- **Foundational (Phase 2)** : dépend du Setup — **BLOQUE** toutes les user stories.
+- **Setup (Phase 1)** : aucune dépendance, démarrage immédiat.
+- **Foundational (Phase 2)** : dépend du Setup, **BLOQUE** toutes les user stories.
 - **User Stories (Phases 3–6)** : dépendent de la fin de Foundational.
   - US1 (P1) est le MVP ; US2 (P1) s'appuie sur le cœur de session foundational.
   - US3 (P2) et US4 (P3) sont des enrichissements de la salle (T014/T021).

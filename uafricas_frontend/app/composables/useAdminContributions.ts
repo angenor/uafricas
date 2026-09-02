@@ -13,8 +13,8 @@ export const useAdminContributions = () => {
     etat: '',
     fiche_pays_id: '',
     cree_par: '',
-    type_objet: '', // T042 — filtre Afripulse
-    section: '',    // T042 — filtre Afripulse
+    type_objet: '', // T042, filtre Afripulse
+    section: '',    // T042, filtre Afripulse
   })
 
   const chargerListe = async () => {
@@ -44,7 +44,7 @@ export const useAdminContributions = () => {
   }
 
   /**
-   * T038 / T044 — Retirer une contribution déjà approuvée.
+   * T038 / T044 : Retirer une contribution déjà approuvée.
    * Exige un motif 10..1000 caractères.
    */
   const retirerContribution = async (id: string, motif: string) => {

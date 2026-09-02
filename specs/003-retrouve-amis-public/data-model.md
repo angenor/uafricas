@@ -27,20 +27,20 @@ CREATE TYPE retrouve_amis.type_relation_recherche AS ENUM (
 
 | Colonne | Type | Nullable | Default | Contrainte | Description |
 |---------|------|----------|---------|------------|-------------|
-| `est_anonyme` | BOOLEAN | NOT NULL | FALSE | — | L'auteur souhaite rester anonyme |
-| `genre_recherche` | `genre_personne` | YES | NULL | — | Genre de la personne recherchée |
-| `type_relation` | `type_relation_recherche` | YES | NULL | — | Type de relation avec la personne |
-| `comment_connu` | VARCHAR(500) | YES | NULL | — | Comment la personne connaît l'auteur |
-| `localite_rencontre` | VARCHAR(200) | YES | NULL | — | Localité du lieu de rencontre |
-| `ecole_rencontre` | VARCHAR(250) | YES | NULL | — | École du lieu de rencontre |
-| `ville_rencontre` | VARCHAR(200) | YES | NULL | — | Ville du lieu de rencontre |
-| `jamais_rencontre` | BOOLEAN | NOT NULL | FALSE | — | Jamais rencontré en personne |
-| `photo_url` | VARCHAR(500) | YES | NULL | — | Chemin vers la photo uploadée |
-| `description_physique` | TEXT | YES | NULL | — | Description physique libre |
-| `partage_coordonnees` | BOOLEAN | NOT NULL | FALSE | — | Souhaite partager ses coordonnées |
-| `coordonnees_email` | VARCHAR(250) | YES | NULL | — | Email de contact (non public) |
-| `coordonnees_telephone` | VARCHAR(50) | YES | NULL | — | Téléphone de contact (non public) |
-| `coordonnees_whatsapp` | VARCHAR(50) | YES | NULL | — | WhatsApp de contact (non public) |
+| `est_anonyme` | BOOLEAN | NOT NULL | FALSE |, | L'auteur souhaite rester anonyme |
+| `genre_recherche` | `genre_personne` | YES | NULL |, | Genre de la personne recherchée |
+| `type_relation` | `type_relation_recherche` | YES | NULL |, | Type de relation avec la personne |
+| `comment_connu` | VARCHAR(500) | YES | NULL |, | Comment la personne connaît l'auteur |
+| `localite_rencontre` | VARCHAR(200) | YES | NULL |, | Localité du lieu de rencontre |
+| `ecole_rencontre` | VARCHAR(250) | YES | NULL |, | École du lieu de rencontre |
+| `ville_rencontre` | VARCHAR(200) | YES | NULL |, | Ville du lieu de rencontre |
+| `jamais_rencontre` | BOOLEAN | NOT NULL | FALSE |, | Jamais rencontré en personne |
+| `photo_url` | VARCHAR(500) | YES | NULL |, | Chemin vers la photo uploadée |
+| `description_physique` | TEXT | YES | NULL |, | Description physique libre |
+| `partage_coordonnees` | BOOLEAN | NOT NULL | FALSE |, | Souhaite partager ses coordonnées |
+| `coordonnees_email` | VARCHAR(250) | YES | NULL |, | Email de contact (non public) |
+| `coordonnees_telephone` | VARCHAR(50) | YES | NULL |, | Téléphone de contact (non public) |
+| `coordonnees_whatsapp` | VARCHAR(50) | YES | NULL |, | WhatsApp de contact (non public) |
 
 ### Colonnes modifiées
 
@@ -115,14 +115,14 @@ search_vector = setweight(to_tsvector('french', COALESCE(nom_recherche, '')), 'A
 ## Entités inchangées
 
 Les tables suivantes ne sont **pas modifiées** :
-- `retrouve_amis.correspondance` — réutilisée telle quelle
-- `retrouve_amis.parcours_trouvable` — réutilisée telle quelle
-- `retrouve_amis.blacklist` — réutilisée telle quelle
-- `retrouve_amis.signalement` — réutilisée telle quelle
-- `retrouve_amis.notification_retrouve` — réutilisée telle quelle
-- `retrouve_amis.reponse_publique` — réutilisée telle quelle
-- `retrouve_amis.demande_retrait` — réutilisée telle quelle
-- `iam.utilisateur` (colonne `est_trouvable`) — inchangée
+- `retrouve_amis.correspondance` : réutilisée telle quelle
+- `retrouve_amis.parcours_trouvable` : réutilisée telle quelle
+- `retrouve_amis.blacklist` : réutilisée telle quelle
+- `retrouve_amis.signalement` : réutilisée telle quelle
+- `retrouve_amis.notification_retrouve`, réutilisée telle quelle
+- `retrouve_amis.reponse_publique` : réutilisée telle quelle
+- `retrouve_amis.demande_retrait` : réutilisée telle quelle
+- `iam.utilisateur` (colonne `est_trouvable`), inchangée
 
 ## Diagramme des relations (entités impactées)
 

@@ -1,13 +1,13 @@
 ---
 
-description: "Task list — Migration du tableau blanc Afrolang vers Excalidraw"
+description: "Task list : Migration du tableau blanc Afrolang vers Excalidraw"
 ---
 
 # Tasks: Migration du tableau blanc Afrolang vers Excalidraw
 
 **Input** : Design documents dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/specs/006-afrolang-excalidraw/`
 **Prerequisites** : `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/postmessage.md`, `quickstart.md`
-**Tests** : aucune tâche de test automatisé générée — la constitution (principe V) et la spec ne requièrent pas de framework de tests ; la validation se fait manuellement via `quickstart.md` étapes 5-6.
+**Tests** : aucune tâche de test automatisé générée, la constitution (principe V) et la spec ne requièrent pas de framework de tests ; la validation se fait manuellement via `quickstart.md` étapes 5-6.
 **Organisation** : tâches regroupées par user story pour permettre une livraison MVP incrémentale.
 
 ## Format : `[ID] [P?] [Story] Description`
@@ -18,9 +18,9 @@ description: "Task list — Migration du tableau blanc Afrolang vers Excalidraw"
 
 ## Path Conventions
 
-Monorepo UAfricas — deux emplacements modifiés :
+Monorepo UAfricas : deux emplacements modifiés :
 
-- `whiteboard/src/App.tsx` (iframe React — refonte totale)
+- `whiteboard/src/App.tsx` (iframe React, refonte totale)
 - `uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue` (composant Vue pont)
 - `uafricas_frontend/public/whiteboard/` (actif statique régénéré par build)
 
@@ -57,7 +57,7 @@ Monorepo UAfricas — deux emplacements modifiés :
 
 ---
 
-## Phase 3 : User Story 1 — Barre d'outils persistante en prod (Priority : P1) — MVP
+## Phase 3 : User Story 1 : Barre d'outils persistante en prod (Priority : P1), MVP
 
 **Goal** : déployer une iframe Excalidraw qui reste fonctionnelle indéfiniment en production, sans watermark ni désactivation automatique. Résout la contrainte bloquante déclenchante de la migration.
 
@@ -74,11 +74,11 @@ Monorepo UAfricas — deux emplacements modifiés :
 
 ---
 
-## Phase 4 : User Story 2 — Collaboration temps réel via LiveKit (Priority : P2)
+## Phase 4 : User Story 2 : Collaboration temps réel via LiveKit (Priority : P2)
 
 **Goal** : tout participant voit en quasi-temps réel les tracés des autres, sans boucle d'écho.
 
-**Independent Test** : deux profils navigateur connectés à la même session ; dessiner côté A, vérifier l'apparition côté B en < 500 ms ; déplacer un élément, le supprimer, ajouter du texte — chaque opération se répercute bidirectionnellement sans duplication.
+**Independent Test** : deux profils navigateur connectés à la même session ; dessiner côté A, vérifier l'apparition côté B en < 500 ms ; déplacer un élément, le supprimer, ajouter du texte, chaque opération se répercute bidirectionnellement sans duplication.
 
 - [X] T018 [US2] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/whiteboard/src/App.tsx`, implémenter le callback `onChange(elements, appState, files)` avec débouncing 80 ms ; n'émettre `{ type: 'excalidraw-operation', payload: { elements, appState: filterAppState(appState) } }` à `window.parent` que si `remote === false`.
 - [X] T019 [US2] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/whiteboard/src/App.tsx`, implémenter le handler `apply-operation` : `remote.current = true; excalidrawAPI.updateScene({ elements: payload.elements, appState: payload.appState })` ; `remote` repasse à `false` au prochain `onChange`.
@@ -92,7 +92,7 @@ Monorepo UAfricas — deux emplacements modifiés :
 
 ---
 
-## Phase 5 : User Story 3 — Persistance snapshot + Effacer tout (Priority : P2)
+## Phase 5 : User Story 3 : Persistance snapshot + Effacer tout (Priority : P2)
 
 **Goal** : un modérateur retrouve son tableau à la réouverture ; il peut vider le tableau pour tous en un clic.
 
@@ -101,12 +101,12 @@ Monorepo UAfricas — deux emplacements modifiés :
 - [X] T025 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/whiteboard/src/App.tsx`, implémenter le handler `get-snapshot` : construire `{ elements: excalidrawAPI.getSceneElements(), appState: filterAppState(excalidrawAPI.getAppState()), files: excalidrawAPI.getFiles() ?? {} }` et poster `{ type: 'excalidraw-snapshot', payload }` à `window.parent`.
 - [X] T026 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/whiteboard/src/App.tsx`, implémenter le handler `load-snapshot` : appliquer `estSnapshotExcalidrawValide(snapshot)` ; si invalide, substituer par `{ elements: [], appState: {}, files: {} }` ; sinon `remote.current = true; excalidrawAPI.updateScene({ elements, appState })` puis `if (snapshot.files) excalidrawAPI.addFiles(Object.values(snapshot.files))`.
 - [X] T027 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/whiteboard/src/App.tsx`, implémenter le handler `clear` : `remote.current = true; excalidrawAPI.resetScene()`.
-- [X] T028 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue`, à réception du message `excalidraw-ready` de l'iframe, appeler `obtenirTableauBlanc(props.sessionId)` puis envoyer à l'iframe `{ type: 'load-snapshot', snapshot: donnees }` (sans modifier `useAfrolang.ts` — FR-013).
+- [X] T028 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue`, à réception du message `excalidraw-ready` de l'iframe, appeler `obtenirTableauBlanc(props.sessionId)` puis envoyer à l'iframe `{ type: 'load-snapshot', snapshot: donnees }` (sans modifier `useAfrolang.ts`, FR-013).
 - [X] T029 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue`, si `props.estModerateur === true`, démarrer un `setInterval` de 30 000 ms qui envoie `{ type: 'get-snapshot' }` à l'iframe ; nettoyage dans `onBeforeUnmount`.
 - [X] T030 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue`, à la réception d'un `excalidraw-snapshot` de l'iframe, appeler `sauvegarderTableauBlanc(props.sessionId, { type: 'excalidraw', version: 1, elements: payload.elements, appState: payload.appState, files: payload.files })`.
 - [X] T031 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue`, ajouter dans `onBeforeUnmount` et sur `window.addEventListener('beforeunload', ...)` un snapshot final via `get-snapshot` synchrone si modérateur.
-- [X] T032 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue`, ajouter un bouton « Effacer tout » conditionné par `v-if="estModerateur"` (Tailwind CSS v4 pur, sans daisyUI — principe VI). Au clic : (1) envoyer `{ type: 'clear' }` à l'iframe locale, (2) broadcast LiveKit `{ __clear: true }`, (3) appeler `effacerTableauBlanc(props.sessionId)`.
-- [X] T033 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue`, dans le handler `DataReceived`, détecter `payload.__clear === true` et envoyer `{ type: 'clear' }` à l'iframe locale (pas d'appel `effacerTableauBlanc` côté récepteur — seul l'émetteur persiste).
+- [X] T032 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue`, ajouter un bouton « Effacer tout » conditionné par `v-if="estModerateur"` (Tailwind CSS v4 pur, sans daisyUI, principe VI). Au clic : (1) envoyer `{ type: 'clear' }` à l'iframe locale, (2) broadcast LiveKit `{ __clear: true }`, (3) appeler `effacerTableauBlanc(props.sessionId)`.
+- [X] T033 [US3] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue`, dans le handler `DataReceived`, détecter `payload.__clear === true` et envoyer `{ type: 'clear' }` à l'iframe locale (pas d'appel `effacerTableauBlanc` côté récepteur, seul l'émetteur persiste).
 - [X] T034 [US3] Rebuilder l'iframe et recopier dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/public/whiteboard/`.
 - [ ] T035 [US3] Valider manuellement (`quickstart.md` Étape 5 points 7-8) : restauration après fermeture/réouverture (AC-3), effacement global synchrone des participants (AC-4), absence du bouton pour les non-modérateurs (FR-007), résilience aux snapshots legacy tldraw (FR-009).
 
@@ -114,7 +114,7 @@ Monorepo UAfricas — deux emplacements modifiés :
 
 ---
 
-## Phase 6 : User Story 4 — Mode dégradé & resync reconnexion (Priority : P3)
+## Phase 6 : User Story 4 : Mode dégradé & resync reconnexion (Priority : P3)
 
 **Goal** : dessiner localement reste possible hors connexion temps réel ; à la reconnexion, le tableau se resynchronise automatiquement sur le dernier snapshot serveur.
 
@@ -124,13 +124,13 @@ Monorepo UAfricas — deux emplacements modifiés :
 - [X] T037 [US4] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue`, désactiver l'intervalle de snapshot 30 s tant que `props.room?.state !== 'connected'` (pas de persistance en mode dégradé).
 - [X] T038 [US4] Dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue`, ajouter un `watch(() => props.room?.state, (nouveau, ancien) => { ... })` qui, lors d'une transition `Disconnected` → `Connected` (ou équivalent LiveKit), appelle `obtenirTableauBlanc(props.sessionId)` puis envoie `{ type: 'load-snapshot', snapshot: donnees }` à l'iframe (FR-016).
 - [X] T039 [US4] Rebuilder l'iframe et recopier dans `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/public/whiteboard/` (rebuild pour cohérence, même si aucun changement iframe strictement nécessaire ici).
-- [ ] T040 [US4] Valider manuellement (`quickstart.md` Étape 5 point 11) : ouverture hors connexion, coupure/rétablissement réseau en session — pas d'erreur console, resync automatique observée.
+- [ ] T040 [US4] Valider manuellement (`quickstart.md` Étape 5 point 11) : ouverture hors connexion, coupure/rétablissement réseau en session, pas d'erreur console, resync automatique observée.
 
 **Checkpoint** : SC-004 tenu en mode dégradé et nominal ; FR-008, FR-016 couverts.
 
 ---
 
-## Phase 7 : Cross-Cutting — Validation images (FR-001a)
+## Phase 7 : Cross-Cutting : Validation images (FR-001a)
 
 **Goal** : bloquer côté client l'insertion d'images non conformes (taille > 2 Mo ou format non JPEG/PNG), avec feedback utilisateur.
 
@@ -150,7 +150,7 @@ Monorepo UAfricas — deux emplacements modifiés :
 
 - [X] T046 Exécuter `grep -rn "tldraw" /Users/mac/Documents/projets/uafricas_projets/uafricas/whiteboard/src /Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app /Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/public/whiteboard 2>/dev/null | grep -v ".lock\|node_modules"`. Aucune sortie attendue (AC-5).
 - [X] T047 [P] Exécuter `grep -l "tl-watermark\|No tldraw license key provided" /Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/public/whiteboard/assets/*.js`. Aucune sortie attendue (AC-6).
-- [X] T048 [P] Vérifier que `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangRoom.vue`, `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/pages/afrolang/session/[id].vue` et `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/pages/afrolang/session/privee/[id].vue` n'ont subi aucune modification (`git status` + `git diff` ciblés) — AC-7, FR-012.
+- [X] T048 [P] Vérifier que `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/components/afrolang/AfrolangRoom.vue`, `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/pages/afrolang/session/[id].vue` et `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/pages/afrolang/session/privee/[id].vue` n'ont subi aucune modification (`git status` + `git diff` ciblés), AC-7, FR-012.
 - [X] T049 [P] Vérifier que `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_frontend/app/composables/useAfrolang.ts` et l'ensemble de `/Users/mac/Documents/projets/uafricas_projets/uafricas/uafricas_backend/` n'ont subi aucune modification (FR-013).
 - [ ] T050 Commit conventionnel unique : `git add whiteboard/package.json whiteboard/pnpm-lock.yaml whiteboard/src/App.tsx uafricas_frontend/app/components/afrolang/AfrolangWhiteboard.vue uafricas_frontend/public/whiteboard && git commit -m "feat(afrolang-whiteboard): migration tldraw → Excalidraw pour résoudre la désactivation UI en prod"`.
 - [X] T051 Mettre à jour `/Users/mac/Documents/projets/uafricas_projets/uafricas/CLAUDE.md` § Recent Changes avec une ligne résumant la migration et la nouvelle dépendance `@excalidraw/excalidraw` dans `whiteboard/` (Décision 8 de `research.md`).
@@ -166,9 +166,9 @@ Monorepo UAfricas — deux emplacements modifiés :
 ```
 Phase 1 (Setup)
    ↓
-Phase 2 (Foundational) — T004..T011  [BLOQUANT]
+Phase 2 (Foundational) : T004..T011  [BLOQUANT]
    ↓
-Phase 3 (US1 — MVP) ────────────────┐
+Phase 3 (US1 : MVP) ────────────────┐
 Phase 4 (US2 collab) ──────┐        │
 Phase 5 (US3 persistance) ──┤       │   parallélisables entre elles
 Phase 6 (US4 mode dégradé) ──┤      │   après P2 terminée
@@ -210,15 +210,15 @@ Exemples de tâches exécutables en parallèle (fichiers ou vérifications indé
 
 **MVP (livraison minimale utilisable)** = Phase 1 + Phase 2 + Phase 3 (US1).
 
-Au terme de l'US1, la production peut déjà être déployée pour valider immédiatement la correction du bug bloquant (barre d'outils persistante) — même sans collaboration ni persistance, ce qui est meilleur que l'état actuel (fonctionnalité totalement inutilisable).
+Au terme de l'US1, la production peut déjà être déployée pour valider immédiatement la correction du bug bloquant (barre d'outils persistante), même sans collaboration ni persistance, ce qui est meilleur que l'état actuel (fonctionnalité totalement inutilisable).
 
 **Incréments suivants** :
 
-1. **Incrément 2** = + Phase 4 (US2) — restaure la collaboration multi-participants.
-2. **Incrément 3** = + Phase 5 (US3) — restaure la persistance et l'effacement global.
-3. **Incrément 4** = + Phase 6 (US4) — robustesse réseau.
-4. **Incrément 5** = + Phase 7 — validation images.
-5. **Finalisation** = Phase 8 — nettoyage, déploiement prod, audit.
+1. **Incrément 2** = + Phase 4 (US2) : restaure la collaboration multi-participants.
+2. **Incrément 3** = + Phase 5 (US3) : restaure la persistance et l'effacement global.
+3. **Incrément 4** = + Phase 6 (US4) : robustesse réseau.
+4. **Incrément 5** = + Phase 7 : validation images.
+5. **Finalisation** = Phase 8 : nettoyage, déploiement prod, audit.
 
 Chaque incrément est indépendamment testable dans un navigateur et peut être déployé sans dépendre des suivants (les phases 4-7 dégradent proprement si non livrées : FR-008 mode dégradé garantit qu'un tableau sans collab ne crashe pas).
 

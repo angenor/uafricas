@@ -42,7 +42,7 @@
 
 ---
 
-## Phase 3: User Story 1 — Navigation fluide et animee entre les etapes (Priority: P1) MVP
+## Phase 3: User Story 1 : Navigation fluide et animee entre les etapes (Priority: P1) MVP
 
 **Goal**: Chaque transition entre les 6 etapes du formulaire est accompagnee d'animations slide directionnelles + fade.
 
@@ -58,7 +58,7 @@
 
 ---
 
-## Phase 4: User Story 2 — Barre de progression animee (Priority: P1)
+## Phase 4: User Story 2 : Barre de progression animee (Priority: P1)
 
 **Goal**: La barre de progression (indicateurs d'etapes + connecteurs) s'anime fluidement a chaque changement d'etape.
 
@@ -74,7 +74,7 @@
 
 ---
 
-## Phase 5: User Story 3 — Animations d'apparition des champs (Priority: P2)
+## Phase 5: User Story 3 : Animations d'apparition des champs (Priority: P2)
 
 **Goal**: Les champs de chaque etape apparaissent de maniere echelonnee (stagger) avec fade-in + translateY.
 
@@ -89,7 +89,7 @@
 
 ---
 
-## Phase 6: User Story 4 — Ecran de succes celebratoire (Priority: P2)
+## Phase 6: User Story 4 : Ecran de succes celebratoire (Priority: P2)
 
 **Goal**: L'ecran de succes affiche des animations de celebration : bounce-in icone, fade-in titre, confettis chocolat/vert 3-4s, compteur de correspondances, stagger boutons.
 
@@ -105,7 +105,7 @@
 
 ---
 
-## Phase 7: User Story 5 — Micro-interactions (Priority: P3)
+## Phase 7: User Story 5 : Micro-interactions (Priority: P3)
 
 **Goal**: Les boutons, selections radio et upload photo ont des micro-animations au hover/clic.
 
@@ -136,21 +136,21 @@
 
 ### Phase Dependencies
 
-- **Phase 1 (Setup)**: Pas de dependances — demarrage immediat
-- **Phase 2 (Foundational)**: Depend de Phase 1 — BLOQUE toutes les user stories
+- **Phase 1 (Setup)**: Pas de dependances, demarrage immediat
+- **Phase 2 (Foundational)**: Depend de Phase 1, BLOQUE toutes les user stories
 - **Phase 3 (US1)**: Depend de Phase 2 (T002 obligatoire)
 - **Phase 4 (US2)**: Depend de Phase 3 (enrichit le meme watch, meme fichier)
 - **Phase 5 (US3)**: Depend de Phase 3 (enrichit le meme watch)
-- **Phase 6 (US4)**: Depend de Phase 2 (T005, T006, T007 requis) — peut tourner en **parallele** de Phase 3/4/5 car fichier different (`nouveau.vue`)
+- **Phase 6 (US4)**: Depend de Phase 2 (T005, T006, T007 requis), peut tourner en **parallele** de Phase 3/4/5 car fichier different (`nouveau.vue`)
 - **Phase 7 (US5)**: Depend de Phase 3 (meme fichier, ajout de micro-interactions)
 - **Phase 8 (Polish)**: Depend de toutes les phases precedentes
 
 ### User Story Dependencies
 
-- **US1 (P1)**: Depend de Foundational — aucune dependance inter-stories
+- **US1 (P1)**: Depend de Foundational : aucune dependance inter-stories
 - **US2 (P1)**: Depend de US1 (meme fichier, enrichit le watch existant)
 - **US3 (P2)**: Depend de US1 (enrichit le watch, meme fichier)
-- **US4 (P2)**: **INDEPENDANT** — fichier different (`nouveau.vue`), peut tourner en parallele de US1/US2/US3
+- **US4 (P2)**: **INDEPENDANT** : fichier different (`nouveau.vue`), peut tourner en parallele de US1/US2/US3
 - **US5 (P3)**: Depend de US1 (meme fichier)
 
 ### Within Each User Story
@@ -193,8 +193,8 @@ T007: animerErreur dans useAnimationsFormulaire.ts
 
 1. Completer Phase 1 : Setup composable
 2. Completer Phase 2 : Fonctions d'animation core
-3. Completer Phase 3 : US1 — transitions entre etapes
-4. Completer Phase 4 : US2 — barre de progression animee
+3. Completer Phase 3 : US1 : transitions entre etapes
+4. Completer Phase 4 : US2 : barre de progression animee
 5. **STOP et VALIDER** : le formulaire a des animations fluides et engageantes
 6. L'experience est deja significativement amelioree a ce stade
 
@@ -212,8 +212,8 @@ T007: animerErreur dans useAnimationsFormulaire.ts
 ## Notes
 
 - Tous les fichiers modifies sont dans `uafricas_frontend/app/`
-- GSAP 3.14.2 est deja installe — aucun `pnpm add` necessaire
+- GSAP 3.14.2 est deja installe : aucun `pnpm add` necessaire
 - Pattern de reference : `app/components/arbre-genealogique/AssistantAjoutPersonne.vue`
 - Couleurs confettis : chocolat #A54A1C + vert #228B22 (couleurs du site)
-- Pas de daisyUI (site public) — Tailwind CSS v4 pur
+- Pas de daisyUI (site public) : Tailwind CSS v4 pur
 - Commiter apres chaque phase ou user story completee

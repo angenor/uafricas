@@ -16,7 +16,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Section rétractable — repliée par défaut
+// Section rétractable : repliée par défaut
 const replie = ref(true)
 
 type OpenContributionPayload = {
@@ -163,36 +163,25 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
 </script>
 
 <template>
-  <section class="transition-all" :class="replie ? 'py-5' : 'py-12'">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <button
-        type="button"
-        class="flex items-center gap-3 text-left min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-        :class="replie ? '' : 'mb-8'"
-        :aria-expanded="!replie"
-        @click="replie = !replie"
-      >
-        <font-awesome-icon
-          :icon="['fas', 'chevron-down']"
-          class="w-5 h-5 shrink-0 text-custom-chocolat transition-transform duration-200"
-          :class="replie ? '-rotate-90' : ''"
-        />
-        <h2 class="font-oswald text-3xl md:text-4xl font-bold text-gray-900">
-          Sites touristiques
-        </h2>
-      </button>
-
+  <AfricansAccordeon
+    titre="Sites touristiques"
+    icone="fa-solid fa-map-pin"
+    :model-value="!replie"
+    @update:model-value="replie = !$event"
+  >
       <div v-show="!replie" class="space-y-12">
         <!-- Sites emblématiques -->
         <div>
-          <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <h3 class="font-oswald text-2xl font-semibold text-custom-chocolat">
+          <div class="mb-6 flex flex-col gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h3 class="text-[17px]/[1.4] font-bold text-af-encre">
               Sites emblématiques
             </h3>
+            </div>
             <div class="flex flex-wrap items-center gap-3">
               <select
                 v-model="filtreEmblematique"
-                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                class="h-10 rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
               >
                 <option value="">Tous les types</option>
                 <option v-for="o in optionsEmblematiques" :key="o.value" :value="o.value">{{ o.label }}</option>
@@ -200,7 +189,7 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
               <select
                 v-if="villesEmblematiques.length"
                 v-model="filtreVilleEmblematique"
-                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                class="h-10 rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
               >
                 <option value="">Toutes les villes</option>
                 <option v-for="v in villesEmblematiques" :key="v" :value="v">{{ v }}</option>
@@ -208,39 +197,32 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
               <select
                 v-if="villagesEmblematiques.length"
                 v-model="filtreVillageEmblematique"
-                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-chocolat focus:border-transparent"
+                class="h-10 rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
               >
                 <option value="">Tous les villages</option>
                 <option v-for="v in villagesEmblematiques" :key="v" :value="v">{{ v }}</option>
               </select>
-              <button
-                type="button"
-                class="px-4 py-2 bg-custom-chocolat text-white rounded-md hover:bg-custom-chocolat/90 transition-colors text-sm font-medium"
+
+              <AfricansBoutonIcone
+                class="ml-auto"
+                libelle="Proposer un site emblématique"
+                icone="fa-solid fa-plus"
                 @click="proposerSite('sites_emblematiques')"
-              >
-                Proposer un site
-              </button>
+              />
             </div>
           </div>
 
           <div v-if="chargementEmblematiques" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div v-for="n in 3" :key="n" class="bg-gray-100 rounded-lg h-64 animate-pulse" />
+            <div v-for="n in 3" :key="n" class="h-64 animate-pulse rounded-[10px] bg-af-bordure" />
           </div>
 
           <div
             v-else-if="emblematiquesFiltres.length === 0"
-            class="text-center py-10 bg-gray-50 rounded-lg"
+            class="rounded-[10px] border border-af-bordure bg-white py-10 text-center"
           >
-            <p class="text-gray-600 mb-4">
+            <p class="text-[14px]/[1.4] text-af-corps">
               {{ filtreEmblematique ? 'Aucun site pour ce type.' : 'Aucun site pour l\'instant.' }}
             </p>
-            <button
-              type="button"
-              class="px-4 py-2 bg-custom-chocolat text-white rounded-md hover:bg-custom-chocolat/90 transition-colors text-sm font-medium"
-              @click="proposerSite('sites_emblematiques')"
-            >
-              Proposer un site
-            </button>
           </div>
 
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -259,20 +241,22 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
           <OpportuniteAfriquePaginationLocale
             v-model:page="pageEmblematique"
             :total-pages="totalPagesEmblematique"
-            accent-class="bg-custom-chocolat border-custom-chocolat text-white"
+            accent-class="bg-af-chocolat border-af-chocolat text-white"
           />
         </div>
 
         <!-- Sites privés -->
         <div>
-          <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <h3 class="font-oswald text-2xl font-semibold text-custom-green">
+          <div class="mb-6 flex flex-col gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h3 class="text-[17px]/[1.4] font-bold text-af-encre">
               Sites privés
             </h3>
+            </div>
             <div class="flex flex-wrap items-center gap-3">
               <select
                 v-model="filtrePrive"
-                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                class="h-10 rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
               >
                 <option value="">Tous les types</option>
                 <option v-for="o in optionsPrives" :key="o.value" :value="o.value">{{ o.label }}</option>
@@ -280,7 +264,7 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
               <select
                 v-if="villesPrives.length"
                 v-model="filtreVillePrive"
-                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                class="h-10 rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
               >
                 <option value="">Toutes les villes</option>
                 <option v-for="v in villesPrives" :key="v" :value="v">{{ v }}</option>
@@ -288,39 +272,32 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
               <select
                 v-if="villagesPrives.length"
                 v-model="filtreVillagePrive"
-                class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-custom-green focus:border-transparent"
+                class="h-10 rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
               >
                 <option value="">Tous les villages</option>
                 <option v-for="v in villagesPrives" :key="v" :value="v">{{ v }}</option>
               </select>
-              <button
-                type="button"
-                class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors text-sm font-medium"
+
+              <AfricansBoutonIcone
+                class="ml-auto"
+                libelle="Proposer un site privé"
+                icone="fa-solid fa-plus"
                 @click="proposerSite('sites_prives')"
-              >
-                Proposer un site
-              </button>
+              />
             </div>
           </div>
 
           <div v-if="chargementPrives" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div v-for="n in 3" :key="n" class="bg-gray-100 rounded-lg h-64 animate-pulse" />
+            <div v-for="n in 3" :key="n" class="h-64 animate-pulse rounded-[10px] bg-af-bordure" />
           </div>
 
           <div
             v-else-if="privesFiltres.length === 0"
-            class="text-center py-10 bg-gray-50 rounded-lg"
+            class="rounded-[10px] border border-af-bordure bg-white py-10 text-center"
           >
-            <p class="text-gray-600 mb-4">
+            <p class="text-[14px]/[1.4] text-af-corps">
               {{ filtrePrive ? 'Aucun site pour ce type.' : 'Aucun site pour l\'instant.' }}
             </p>
-            <button
-              type="button"
-              class="px-4 py-2 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors text-sm font-medium"
-              @click="proposerSite('sites_prives')"
-            >
-              Proposer un site
-            </button>
           </div>
 
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -339,10 +316,9 @@ const onDelete = (site: SiteTouristiqueAPI) => ouvrirContribution('suppression',
           <OpportuniteAfriquePaginationLocale
             v-model:page="pagePrive"
             :total-pages="totalPagesPrive"
-            accent-class="bg-custom-green border-custom-green text-white"
+            accent-class="bg-af-chocolat border-af-chocolat text-white"
           />
         </div>
       </div>
-    </div>
-  </section>
+  </AfricansAccordeon>
 </template>

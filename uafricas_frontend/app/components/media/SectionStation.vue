@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Section d'une station sur les pages Radio — refondue par la feature 010
+ * Section d'une station sur les pages Radio, refondue par la feature 010
  * (FR-060 : parité stricte avec la section télé, « station » et « audio »
  * substitués).
  *
@@ -27,7 +27,7 @@ const lienStation = computed(() =>
 )
 
 /**
- * **Tous** les programmes servis sont affichés — y compris ceux sans épisode
+ * **Tous** les programmes servis sont affichés, y compris ceux sans épisode
  * publié (FR-005). Le filtre `episodes.length > 0` qui régnait ici n'avait de
  * sens que tant que la section montrait des enregistrements.
  */
@@ -43,7 +43,7 @@ const lireDirect = () => {
   lire({
     id: `direct-${props.section.station.id}`,
     type: 'station_radio',
-    titre: `${props.section.station.name} — en direct`,
+    titre: `${props.section.station.name}, en direct`,
     support: props.section.station.name,
     supportSlug: props.section.station.slug,
     url: props.section.station.streamUrl,
@@ -63,7 +63,7 @@ const showPartage = ref(false)
 const showIdee = ref(false)
 const showAnimation = ref(false)
 
-// Voir `SectionChaine.vue` : une fonction d'ouverture, et non le ref lui-même —
+// Voir `SectionChaine.vue` : une fonction d'ouverture, et non le ref lui-même, 
 // Vue déballe les refs dans un template.
 const ouvrirSiConnecte = (ouvrir: () => void) => {
   if (!userStore.accessToken) {
@@ -75,7 +75,7 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
 </script>
 
 <template>
-  <section class="border-t border-white/10 py-10">
+  <section class="border-t border-af-bordure py-10">
     <!-- Identité de la station -->
     <header class="mb-4 flex items-center gap-4 px-1">
       <img
@@ -87,22 +87,22 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
       >
       <span
         v-else
-        class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-neutral-800"
+        class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-af-fond"
       >
-        <font-awesome-icon :icon="['fas', 'radio']" class="text-neutral-600" />
+        <font-awesome-icon :icon="['fas', 'radio']" class="text-af-atone-2" />
       </span>
       <div class="min-w-0 flex-1">
         <NuxtLink
           v-if="lienStation"
           :to="lienStation"
-          class="block truncate text-xl font-bold text-white transition-colors hover:text-custom-chocolat sm:text-2xl"
+          class="block truncate text-xl font-bold text-af-encre transition-colors hover:text-af-chocolat sm:text-2xl"
         >
           {{ section.station.name }}
         </NuxtLink>
-        <h2 v-else class="block truncate text-xl font-bold text-white sm:text-2xl">
+        <h2 v-else class="block truncate text-xl font-bold text-af-encre sm:text-2xl">
           {{ section.station.name }}
         </h2>
-        <p class="truncate text-sm text-gray-400">
+        <p class="truncate text-sm text-af-corps">
           <span v-if="section.station.location">{{ section.station.location }}</span>
           <span v-if="section.station.location && section.station.genre"> · </span>
           <span v-if="section.station.genre">{{ section.station.genre }}</span>
@@ -110,7 +110,7 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
       </div>
 
       <div class="flex shrink-0 items-center gap-3">
-        <span class="hidden text-xs text-gray-500 sm:block">
+        <span class="hidden text-xs text-af-atone sm:block">
           {{ section.totalEmissions }} programme{{ section.totalEmissions > 1 ? 's' : '' }}
         </span>
 
@@ -118,10 +118,10 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
         <button
           v-if="section.directDisponible"
           type="button"
-          class="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-custom-chocolat"
+          class="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat"
           :class="directEnCours
-            ? 'bg-red-600 text-white'
-            : 'border border-red-500 text-red-400 hover:bg-red-500/15'"
+            ? 'bg-af-live text-white'
+            : 'border border-af-live text-af-live hover:bg-af-live/15'"
           @click="lireDirect"
         >
           <font-awesome-icon :icon="['fas', directEnCours ? 'volume-high' : 'play']" />
@@ -137,7 +137,7 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
       :lignes="3"
       :repliable="false"
       sombre
-      class="mb-4 max-w-4xl px-1 text-sm text-gray-300"
+      class="mb-4 max-w-4xl px-1 text-sm text-af-corps"
     />
 
     <!-- Équipe éditoriale : aucun cadre quand la station n'en déclare pas. -->
@@ -148,7 +148,7 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
       class="mb-6 px-1"
     />
 
-    <!-- Ce que la grille programme à cet instant (US5, FR-039) — texte seul. -->
+    <!-- Ce que la grille programme à cet instant (US5, FR-039), texte seul. -->
     <MediaBandeauDiffusion
       :en-cours="section.diffusionEnCours"
       :suivant="section.creneauSuivant"
@@ -167,7 +167,7 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
         type-support="station_radio"
       />
     </div>
-    <p v-else class="mt-6 px-1 text-sm text-gray-500">
+    <p v-else class="mt-6 px-1 text-sm text-af-atone">
       Cette station n'a pas encore annoncé de programme.
     </p>
 
@@ -175,7 +175,7 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
     <NuxtLink
       v-if="programmesMasques > 0 && lienStation"
       :to="lienStation"
-      class="mt-4 inline-flex items-center gap-2 px-1 text-sm font-medium text-custom-chocolat underline underline-offset-2 transition-colors hover:text-white"
+      class="mt-4 inline-flex items-center gap-2 px-1 text-sm font-medium text-af-chocolat underline underline-offset-2 transition-colors hover:opacity-70"
     >
       Voir les {{ section.totalEmissions }} programmes
       <font-awesome-icon :icon="['fas', 'arrow-right']" class="h-3 w-3" />
@@ -202,7 +202,7 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
     <div class="mt-4 flex flex-wrap gap-3 px-1">
       <button
         type="button"
-        class="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-custom-chocolat hover:text-custom-chocolat"
+        class="inline-flex items-center gap-2 rounded-full border border-af-bordure px-4 py-2 text-sm text-af-corps transition-colors hover:border-af-chocolat hover:text-af-chocolat"
         @click="ouvrirSiConnecte(() => showIdee = true)"
       >
         <font-awesome-icon :icon="['fas', 'lightbulb']" />
@@ -210,7 +210,7 @@ const ouvrirSiConnecte = (ouvrir: () => void) => {
       </button>
       <button
         type="button"
-        class="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-custom-chocolat hover:text-custom-chocolat"
+        class="inline-flex items-center gap-2 rounded-full border border-af-bordure px-4 py-2 text-sm text-af-corps transition-colors hover:border-af-chocolat hover:text-af-chocolat"
         @click="ouvrirSiConnecte(() => showAnimation = true)"
       >
         <font-awesome-icon :icon="['fas', 'microphone']" />

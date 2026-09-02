@@ -1,13 +1,13 @@
-# Contrat — API membre (détenteurs de support)
+# Contrat : API membre (détenteurs de support)
 
 **Feature**: 010-medias-equipes-vitrine
 **Scope**: `/api/medias` (`routes.rs:1109-1170`)
 
-Trois routes. Toutes gardées par `garde_detenteur(pool, moi, type_support, support_id, "co_detenteur")` — **jamais par `AdminUtilisateur`** : ce sont des routes membres. L'erreur inverse a été commise et corrigée en 009.
+Trois routes. Toutes gardées par `garde_detenteur(pool, moi, type_support, support_id, "co_detenteur")`, **jamais par `AdminUtilisateur`** : ce sont des routes membres. L'erreur inverse a été commise et corrigée en 009.
 
 ---
 
-## Ordre de déclaration — contrainte dure
+## Ordre de déclaration : contrainte dure
 
 ```rust
 web::scope("/medias")
@@ -20,7 +20,7 @@ web::scope("/medias")
 
     // … /emissions/{id}, /episodes/{id}, … (routes.rs:1141-1149)
 
-    // Motifs à deux paramètres — le segment final « equipe » les distingue
+    // Motifs à deux paramètres : le segment final « equipe » les distingue
     // sans ambiguïté de /detenteurs, /thematiques, /couverture, /grille…
     .route("/{type_porteur}/{porteur_id}/equipe", web::get().to(media_equipe::obtenir_equipe))
     .route("/{type_porteur}/{porteur_id}/equipe", web::put().to(media_equipe::definir_equipe))
@@ -43,8 +43,8 @@ Lecture de travail (le public lit l'équipe dans les payloads de support/program
   "utilisateur_id": "…", "ordre": 0 } ] }, "error": null }
 ```
 
-- **400** — `type_porteur` hors des 4 valeurs.
-- **404** — porteur inexistant ou supprimé.
+- **400** : `type_porteur` hors des 4 valeurs.
+- **404** : porteur inexistant ou supprimé.
 
 ---
 
@@ -74,21 +74,21 @@ Remplacement intégral et ordonné (décision D6).
 
 1. Résolution du support : si `type_porteur` est une émission, `contexte_emission(pool, porteur_id)` donne `(type_support, support_id)` ; sinon le porteur **est** le support.
 2. `garde_detenteur(…, "co_detenteur")`.
-3. Validation (`EquipeRequest::valider`) — voir [data-model.md §3](../data-model.md).
+3. Validation (`EquipeRequest::valider`) : voir [data-model.md §3](../data-model.md).
 4. Transaction : instantané avant → `DELETE` des membres du porteur → `INSERT` de la liste, `fonction` normalisée (`btrim` + espaces réduits) → `COMMIT`.
-5. `audit::log_action` après commit — action `equipe_modifiee`, table `media_content.membre_equipe`, avant/après en JSONB (Principe VII, FR-018).
+5. `audit::log_action` après commit : action `equipe_modifiee`, table `media_content.membre_equipe`, avant/après en JSONB (Principe VII, FR-018).
 
 ### Réponses
 
 | Code | Cas |
 |---|---|
-| `200` | `{ "success": true, "data": { "membres": [ … ] }, "error": null }` — la liste relue, avec ses `id` neufs et ses `ordre` |
+| `200` | `{ "success": true, "data": { "membres": [ … ] }, "error": null }`, la liste relue, avec ses `id` neufs et ses `ordre` |
 | `400` | `type_porteur` invalide · nom vide · fonction vide · plus de 60 membres |
 | `401` | Pas de jeton |
 | `403` | Le demandeur ne détient pas le support (`garde_detenteur`) |
 | `404` | Porteur inexistant ou supprimé |
 
-> **Rotation des identifiants** : chaque `PUT` réattribue les `id`. Aucune table ne référence un membre d'équipe — c'est ce qui autorise le remplacement intégral. Ne pas introduire de référence entrante sans revoir cette décision.
+> **Rotation des identifiants** : chaque `PUT` réattribue les `id`. Aucune table ne référence un membre d'équipe : c'est ce qui autorise le remplacement intégral. Ne pas introduire de référence entrante sans revoir cette décision.
 
 ---
 
@@ -96,8 +96,8 @@ Remplacement intégral et ordonné (décision D6).
 
 Suggestions pour le champ « fonction » (FR-015).
 
-- **Authentification** : aucune, aucun paramètre — patron `GET /api/experts/specialites` (`handlers/experts.rs:616`).
-- **200** : `{ "success": true, "data": ["Concepteur", "Directeur", "Producteur", "Réalisatrice"], "error": null }` — un `Vec<String>` nu, trié alphabétiquement.
+- **Authentification** : aucune, aucun paramètre, patron `GET /api/experts/specialites` (`handlers/experts.rs:616`).
+- **200** : `{ "success": true, "data": ["Concepteur", "Directeur", "Producteur", "Réalisatrice"], "error": null }`, un `Vec<String>` nu, trié alphabétiquement.
 - **Déduplication** : une seule entrée par clé insensible à la casse et aux espaces ; l'orthographe restituée est **la plus employée**. « Directeur », « directeur » et « directeur  » donnent une ligne, pas trois. Requête en [research.md D3](../research.md).
 - Portée volontairement **globale** (toutes chaînes, stations et programmes confondus) : une fonction déclarée sur une chaîne doit être proposée sur un programme, sinon le référentiel ne se constituerait jamais.
 
@@ -109,6 +109,6 @@ Suggestions pour le champ « fonction » (FR-015).
 |---|---|---|
 | `/mon-compte/mes-supports` → panneau du support → « Équipe éditoriale » | `chaine_tv` \| `station_radio` | `GET`/`PUT …/{type}/{id}/equipe` |
 | `/mon-compte/mes-supports` → panneau → Programmes → fiche d'un programme | `emission_tele` \| `emission_radio` | idem |
-| Champ « fonction » des deux écrans | — | `GET /api/medias/equipe/fonctions` |
+| Champ « fonction » des deux écrans |, | `GET /api/medias/equipe/fonctions` |
 
 Le composable `useMediaEquipe.ts` expose `obtenirEquipe`, `definirEquipe`, `listerFonctions`.

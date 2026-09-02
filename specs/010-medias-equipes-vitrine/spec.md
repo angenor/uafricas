@@ -1,4 +1,4 @@
-# Feature Specification: Médias — équipes éditoriales et recentrage des vitrines Télé & Radio
+# Feature Specification: Médias : équipes éditoriales et recentrage des vitrines Télé & Radio
 
 **Feature Branch**: `010-medias-equipes-vitrine`
 
@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "nouvelles corrections majeures de la page télé et radio. Tout ce qui est valable pour Télé est valable pour Radio. Section « Nos télés Africaines » : titre chaîne, une partie de description si c'est long, équipe de direction et de gestion (directeur, producteur, concepteur), rendre la fonction dynamique lors de la saisie ; programmes (image de couverture, description coupée avec des pointillés si c'est long). On ne veut pas que les vidéos soient affichées, juste chaîne (nom, description, équipe) puis les programmes (image de couverture, nom, petite description). Page de détail d'une chaîne : nom, description tronquée avec bouton « voir plus », équipe tronquée avec « voir plus » (nom, prénom, fonction, territoire, contact), programmes (périodicité — pas périodique, journalier, hebdomadaire, mensuel etc. —, nom, description, équipe propre au programme, liste des vidéos), pas d'image de couverture cette fois. Page de détail d'un programme : périodicité, nom, image de couverture affichée, description, équipe (nom, prénom, fonction, territoire, contact), liste des vidéos."
+**Input**: User description: "nouvelles corrections majeures de la page télé et radio. Tout ce qui est valable pour Télé est valable pour Radio. Section « Nos télés Africaines » : titre chaîne, une partie de description si c'est long, équipe de direction et de gestion (directeur, producteur, concepteur), rendre la fonction dynamique lors de la saisie ; programmes (image de couverture, description coupée avec des pointillés si c'est long). On ne veut pas que les vidéos soient affichées, juste chaîne (nom, description, équipe) puis les programmes (image de couverture, nom, petite description). Page de détail d'une chaîne : nom, description tronquée avec bouton « voir plus », équipe tronquée avec « voir plus » (nom, prénom, fonction, territoire, contact), programmes (périodicité, pas périodique, journalier, hebdomadaire, mensuel etc. , nom, description, équipe propre au programme, liste des vidéos), pas d'image de couverture cette fois. Page de détail d'un programme : périodicité, nom, image de couverture affichée, description, équipe (nom, prénom, fonction, territoire, contact), liste des vidéos."
 
 ## Contexte
 
@@ -48,7 +48,7 @@ Un visiteur arrive sur l'espace Télé et fait défiler les sections. Chaque sec
 
 ### User Story 2 - Déclarer l'équipe d'une chaîne et l'équipe d'un programme (Priority: P1)
 
-Le détenteur d'une chaîne (ou un administrateur) déclare l'équipe de direction et de gestion de sa chaîne : pour chaque personne, un nom, un prénom, une fonction, un territoire et un contact. La fonction n'est pas figée : au moment de la saisie, le formulaire propose les fonctions déjà employées sur la plateforme (directeur, producteur, concepteur, …) et accepte n'importe quelle fonction nouvelle, qui devient à son tour proposée. Il ajoute autant de personnes que nécessaire, les réordonne, en retire. Quand la personne est inscrite sur UAfricas, il peut rattacher sa fiche à son compte pour que son nom mène à son profil public — un simple confort d'affichage, jamais une condition de saisie ni un droit accordé. Il déclare de la même manière l'équipe propre à chacun de ses programmes, qui peut différer de celle de la chaîne.
+Le détenteur d'une chaîne (ou un administrateur) déclare l'équipe de direction et de gestion de sa chaîne : pour chaque personne, un nom, un prénom, une fonction, un territoire et un contact. La fonction n'est pas figée : au moment de la saisie, le formulaire propose les fonctions déjà employées sur la plateforme (directeur, producteur, concepteur, …) et accepte n'importe quelle fonction nouvelle, qui devient à son tour proposée. Il ajoute autant de personnes que nécessaire, les réordonne, en retire. Quand la personne est inscrite sur UAfricas, il peut rattacher sa fiche à son compte pour que son nom mène à son profil public, un simple confort d'affichage, jamais une condition de saisie ni un droit accordé. Il déclare de la même manière l'équipe propre à chacun de ses programmes, qui peut différer de celle de la chaîne.
 
 **Why this priority**: Sans cette saisie, les blocs « équipe » de la vitrine et des pages de détail resteront toujours vides. US1 et US2 sont donc les deux moitiés d'un même MVP, et elles restent testables séparément.
 
@@ -92,7 +92,7 @@ Le visiteur ouvre un programme. La page lui montre sa périodicité, son nom, so
 
 **Why this priority**: C'est la destination des cartes de programme de US1 ; elle donne au programme la page complète que la vitrine ne montre plus.
 
-**Independent Test**: Ouvrir `/medias/emissions-tele/<slug>` et vérifier la présence des six blocs, dont l'image de couverture — absente de la page chaîne mais présente ici et sur la vitrine.
+**Independent Test**: Ouvrir `/medias/emissions-tele/<slug>` et vérifier la présence des six blocs, dont l'image de couverture, absente de la page chaîne mais présente ici et sur la vitrine.
 
 **Acceptance Scenarios**:
 
@@ -121,12 +121,12 @@ Le détenteur choisit la périodicité d'un programme dans un référentiel qui 
 
 ### Edge Cases
 
-- **Description absente** : chaîne ou programme sans description — aucun bloc vide, aucune ellipse orpheline.
-- **Équipe vide** : chaîne ou programme sans aucun membre — le bloc « équipe » disparaît au lieu d'afficher un cadre vide (vitrine et pages de détail).
-- **Membre incomplet** : personne sans territoire ni contact — seuls les champs renseignés s'affichent.
-- **Homonymes** : deux personnes de même nom et prénom dans une même équipe — l'ajout reste possible, elles se distinguent par leur fonction.
+- **Description absente** : chaîne ou programme sans description, aucun bloc vide, aucune ellipse orpheline.
+- **Équipe vide** : chaîne ou programme sans aucun membre, le bloc « équipe » disparaît au lieu d'afficher un cadre vide (vitrine et pages de détail).
+- **Membre incomplet** : personne sans territoire ni contact, seuls les champs renseignés s'affichent.
+- **Homonymes** : deux personnes de même nom et prénom dans une même équipe, l'ajout reste possible, elles se distinguent par leur fonction.
 - **Même personne dans deux équipes** : quelqu'un peut figurer à la fois dans l'équipe de la chaîne et dans celle d'un programme, avec des fonctions différentes.
-- **Fonction saisie avec une casse ou des espaces différents** (« Directeur » / « directeur » / « directeur  ») — les suggestions ne doivent pas se démultiplier en variantes quasi identiques.
+- **Fonction saisie avec une casse ou des espaces différents** (« Directeur » / « directeur » / « directeur  »), les suggestions ne doivent pas se démultiplier en variantes quasi identiques.
 - **Programme sans épisode** : visible sur la vitrine et sur la page chaîne, avec une liste de vidéos explicitement vide.
 - **Chaîne sans programme** : la section reste affichée avec l'identité et l'équipe, et signale l'absence de programmes.
 - **Description tronquée exactement à la limite** : pas d'ellipse quand le texte tient entièrement.
@@ -134,7 +134,7 @@ Le détenteur choisit la périodicité d'un programme dans un référentiel qui 
 - **Suppression d'un programme portant une équipe** : l'équipe du programme disparaît avec lui, celle de la chaîne est intacte.
 - **Périodicité d'un programme importé/ancien** : conservée telle quelle après extension du référentiel.
 - **Membre rattaché à un compte devenu indisponible** (désactivé ou supprimé) : la fiche d'équipe survit et s'affiche en texte simple, sans lien mort.
-- **Rattachement d'un compte à deux fiches d'équipes différentes** : autorisé — la même personne peut diriger une chaîne et animer un programme.
+- **Rattachement d'un compte à deux fiches d'équipes différentes** : autorisé, la même personne peut diriger une chaîne et animer un programme.
 
 ## Requirements *(mandatory)*
 
@@ -143,18 +143,18 @@ Le détenteur choisit la périodicité d'un programme dans un référentiel qui 
 #### Section de vitrine (« Nos télés africaines » / « Nos radios africaines »)
 
 - **FR-001**: La section d'une chaîne DOIT afficher, dans cet ordre : le nom de la chaîne, un extrait de sa description, son équipe, puis la liste de ses programmes.
-- **FR-002**: La section NE DOIT afficher aucun média lisible — ni lecteur vidéo, ni lecteur audio, ni vignette d'épisode, ni liste d'épisodes. Le bandeau textuel de programmation (« en cours de diffusion » / « à suivre ») échappe à cette exigence : il n'expose aucun média lisible et reste affiché.
+- **FR-002**: La section NE DOIT afficher aucun média lisible, ni lecteur vidéo, ni lecteur audio, ni vignette d'épisode, ni liste d'épisodes. Le bandeau textuel de programmation (« en cours de diffusion » / « à suivre ») échappe à cette exigence : il n'expose aucun média lisible et reste affiché.
 - **FR-003**: L'extrait de description d'une chaîne DOIT être tronqué au-delà d'une longueur d'affichage définie et signalé par des points de suspension ; en deçà, la description s'affiche entière sans ellipse.
 - **FR-004**: Chaque programme DOIT être présenté par son image de couverture, son nom et une courte description tronquée par des points de suspension si elle dépasse.
 - **FR-005**: Un programme DOIT rester listé même s'il ne compte aucun épisode publié.
 - **FR-006**: Le nom de la chaîne DOIT mener à sa page de détail, et chaque carte de programme à la page de détail de ce programme.
 - **FR-007**: Les blocs sans contenu (description absente, équipe vide, aucun programme, champ non renseigné d'un membre d'équipe) NE DOIVENT PAS laisser de cadre ni de libellé vide, en vitrine comme sur les pages de détail.
-- **FR-008**: La section DOIT lister tous les programmes de la chaîne. Si un plafond d'affichage s'applique, la section DOIT **annoncer le nombre total** de programmes et offrir un accès au reste sur la page de la chaîne — une troncature silencieuse est proscrite.
+- **FR-008**: La section DOIT lister tous les programmes de la chaîne. Si un plafond d'affichage s'applique, la section DOIT **annoncer le nombre total** de programmes et offrir un accès au reste sur la page de la chaîne, une troncature silencieuse est proscrite.
 
 #### Équipes
 
 - **FR-010**: Une chaîne (ou station) DOIT pouvoir porter une équipe composée de zéro à plusieurs personnes.
-- **FR-011**: Un programme DOIT pouvoir porter sa propre équipe, indépendante de celle de sa chaîne — l'une peut exister sans l'autre, et leur contenu peut différer entièrement.
+- **FR-011**: Un programme DOIT pouvoir porter sa propre équipe, indépendante de celle de sa chaîne, l'une peut exister sans l'autre, et leur contenu peut différer entièrement.
 - **FR-012**: Chaque personne d'une équipe DOIT porter : un nom, un prénom, une fonction, un territoire et un contact. Le nom et la fonction sont obligatoires ; prénom, territoire et contact sont facultatifs.
 - **FR-013**: Un membre d'équipe DOIT pouvoir être rattaché, **de façon facultative**, à un compte UAfricas existant. Une équipe DOIT rester déclarable intégralement sans qu'aucun de ses membres soit inscrit sur la plateforme.
 - **FR-014**: Lorsqu'un membre est rattaché à un compte, son nom affiché publiquement DOIT mener à son profil public ; sans rattachement, il s'affiche en texte simple. Le rattachement NE DOIT conférer aucun droit sur le support ni sur le programme.
@@ -202,7 +202,7 @@ Le détenteur choisit la périodicité d'un programme dans un référentiel qui 
 - **Contenu** (épisode vidéo ou audio) : entité existante rattachée à un programme ; listée sur les pages de détail, retirée des sections de vitrine.
 - **Membre d'équipe** (nouveau) : personne rattachée soit à un support, soit à un programme, décrite par nom, prénom, fonction, territoire, contact et rang d'affichage, avec un lien **facultatif** vers un compte UAfricas. Un même individu peut apparaître dans plusieurs équipes avec des fonctions différentes.
 - **Fonction** (nouveau, dérivé) : libellé libre porté par un membre d'équipe ; l'ensemble des libellés déjà employés constitue le référentiel proposé à la saisie, sans liste figée.
-- **Périodicité** : référentiel fermé de quatre cadences déclarables sur un programme — non périodique, journalier, hebdomadaire, mensuel.
+- **Périodicité** : référentiel fermé de quatre cadences déclarables sur un programme, non périodique, journalier, hebdomadaire, mensuel.
 
 ## Success Criteria *(mandatory)*
 
@@ -214,7 +214,7 @@ Le détenteur choisit la périodicité d'un programme dans un référentiel qui 
 - **SC-004**: Une fonction saisie pour la première fois est proposée lors de la saisie suivante dans 100 % des cas.
 - **SC-005**: Sur la page de détail d'une chaîne, la description complète et l'équipe complète sont accessibles sans rechargement de page et sans navigation supplémentaire.
 - **SC-006**: 100 % des programmes affichent une périodicité intelligible, y compris ceux créés avant la feature.
-- **SC-007**: Aucune section, aucune page de détail n'affiche de bloc, cadre ou libellé vide lorsque la donnée correspondante est absente — vérifié sur un jeu couvrant chaîne sans description, chaîne sans équipe, chaîne sans programme, programme sans vidéo.
+- **SC-007**: Aucune section, aucune page de détail n'affiche de bloc, cadre ou libellé vide lorsque la donnée correspondante est absente, vérifié sur un jeu couvrant chaîne sans description, chaîne sans équipe, chaîne sans programme, programme sans vidéo.
 - **SC-008**: Une section de vitrine portant 30 programmes les affiche tous et reste consultable sans dégradation perceptible du défilement ; au-delà, le total est annoncé et le reste accessible en un clic.
 - **SC-009**: Les adresses publiques déjà indexées des chaînes, stations et programmes continuent de résoudre après la feature.
 - **SC-010**: Une équipe dont aucun membre n'est inscrit sur la plateforme s'enregistre et s'affiche intégralement ; un membre rattaché à un compte mène à son profil public en un clic.
@@ -226,7 +226,7 @@ Le détenteur choisit la périodicité d'un programme dans un référentiel qui 
 - **Le contact d'un membre d'équipe est public** : il est présenté à tout visiteur, connecté ou non, au même titre que les coordonnées déjà publiées d'une chaîne. Il s'agit d'un contact professionnel déclaré volontairement par le gestionnaire du support, non d'une donnée personnelle d'un compte de la plateforme.
 - **Le territoire d'un membre est saisi librement**, en cohérence avec la terminologie « territoire » retenue sur le reste de la plateforme.
 - **Un membre d'équipe est d'abord une fiche descriptive**, rattachable facultativement à un compte UAfricas (FR-013, FR-014). Le rattachement ne sert qu'à lier la fiche au profil public : il ne confère aucun droit, et les droits de gestion restent portés par le dispositif de détention de support existant. Une chaîne dont aucun dirigeant n'est inscrit déclare son équipe normalement.
-- **Les champs de texte libre existants « info animateur » et « info producteur »** portés par les programmes deviennent redondants avec l'équipe du programme. Ils sont **conservés en base** — aucune saisie antérieure n'est perdue — mais **cessent d'être affichés** (FR-034) et sont signalés comme hérités dans les formulaires d'édition, où ils restent visibles en lecture le temps que les gestionnaires reportent leur contenu dans l'équipe.
+- **Les champs de texte libre existants « info animateur » et « info producteur »** portés par les programmes deviennent redondants avec l'équipe du programme. Ils sont **conservés en base** : aucune saisie antérieure n'est perdue, mais **cessent d'être affichés** (FR-034) et sont signalés comme hérités dans les formulaires d'édition, où ils restent visibles en lecture le temps que les gestionnaires reportent leur contenu dans l'équipe.
 - **Seuils de troncature** : les longueurs d'extrait (description de chaîne, description de programme) et le seuil de repli de l'équipe sont des choix d'ergonomie fixés à la réalisation, pas des paramètres exposés à l'utilisateur.
 - **La périodicité n'est pas affichée dans les sections de vitrine** : le commanditaire n'en fait mention que sur les deux pages de détail.
 - **Les fonctions de gestion existantes sont préservées** : signalement, réactions, partage, propositions d'idée et demandes d'animation restent accessibles là où ils le sont aujourd'hui, la vitrine perdant seulement ses éléments lisibles. Les réactions et le partage, aujourd'hui attachés à l'épisode mis en avant dans la section, perdent leur cible : ils sont reportés sur les pages de détail, seules à porter désormais un contenu identifié.

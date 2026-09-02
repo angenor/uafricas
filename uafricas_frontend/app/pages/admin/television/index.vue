@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Chaînes de télévision — back-office.
+ * Chaînes de télévision : back-office.
  *
  * L'onglet « Programmes » a disparu d'ici : depuis 09q un programme est une
  * `emission_*` commune aux deux familles, gérée sur `/admin/medias/emissions`.
@@ -20,8 +20,8 @@ const {
 
 const colonnesChaines: TableColumn[] = [
   { key: 'nom', label: 'Nom', sortable: true },
-  { key: 'categorie', label: 'Categorie', sortable: true },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-24', align: 'center' },
+  { key: 'categorie', label: 'Catégorie', sortable: true },
+  { key: 'etat', label: 'État', sortable: true, width: 'w-24', align: 'center' },
   { key: 'est_en_direct', label: 'En direct', width: 'w-24', align: 'center' },
   { key: 'pays_nom', label: 'Territoire' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
@@ -30,7 +30,7 @@ const colonnesChaines: TableColumn[] = [
 
 const filtresDefChaines: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Nom, description...' },
-  { key: 'categorie', label: 'Categorie', type: 'select', placeholder: 'Toutes', options: [
+  { key: 'categorie', label: 'Catégorie', type: 'select', placeholder: 'Toutes', options: [
     { value: 'generaliste', label: 'Generaliste' },
     { value: 'info', label: 'Info' },
     { value: 'sport', label: 'Sport' },
@@ -39,7 +39,7 @@ const filtresDefChaines: FilterDefinition[] = [
     { value: 'education', label: 'Education' },
     { value: 'musique', label: 'Musique' },
   ]},
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous les etats', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous les états', options: [
     { value: 'brouillon', label: 'Brouillon' },
     { value: 'publie', label: 'Publie' },
     { value: 'suspendu', label: 'Suspendu' },

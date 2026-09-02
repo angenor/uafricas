@@ -1,96 +1,94 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1555217851-6141535bd771?ixlib=rb-1.2.1&auto=format&fit=crop&w=1900&q=80')"
-    >
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat/90 to-black/70"></div>
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Mes annonces
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Gérez vos annonces : modifier, marquer conclue ou supprimer.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <!-- En-tête -->
-      <CommonBreadcrumbNav
-        class="mb-6"
-        :custom-breadcrumbs="[
-          { label: 'Marché Africain', to: '/marche-africain' },
-          { label: 'Mes annonces', to: undefined },
-        ]"
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <!-- L'image était hotlinkée sur Unsplash ; celle du module existait
+           déjà dans le dépôt. -->
+      <AfricansBandeauModule
+        titre="Mes annonces"
+        sous-titre="Gérez vos annonces : modifier, marquer conclue ou supprimer."
+        image="/images/marche-afrique.png"
       />
+    </template>
 
-      <div class="flex flex-wrap items-center justify-end gap-4 mb-8">
-        <NuxtLink
-          to="/marche-africain"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-r from-custom-chocolat to-amber-700 text-white font-semibold hover:from-amber-700 hover:to-custom-chocolat transition-all"
-        >
-          <font-awesome-icon :icon="['fas', 'plus']" class="w-4 h-4" />
-          Publier une annonce
-        </NuxtLink>
-      </div>
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Opafrica', vers: '/marche-africain' },
+          { libelle: 'Afromarket', vers: '/marche-africain' },
+          { libelle: 'Mes annonces' },
+        ]"
+      >
+        <template #action>
+          <AfricansBouton vers="/marche-africain" icone="fa-solid fa-plus">
+            Publier une annonce
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
+
+    <div class="flex flex-col gap-6">
 
       <!-- Chargement -->
       <div v-if="chargement" class="text-center py-16">
-        <div class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mx-auto mb-4"></div>
-        <p class="text-gray-500">Chargement…</p>
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-af-vert border-t-transparent mx-auto mb-4"></div>
+        <p class="text-af-atone">Chargement…</p>
       </div>
 
       <!-- Vide -->
       <div v-else-if="annonces.length === 0" class="text-center py-16 bg-white rounded-2xl shadow-xs">
-        <font-awesome-icon :icon="['fas', 'box-open']" class="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">Aucune annonce</h3>
-        <p class="text-gray-500">Publiez votre première annonce sur le Marché Africain.</p>
+        <font-awesome-icon :icon="['fas', 'box-open']" class="w-16 h-16 text-af-atone-2 mx-auto mb-4" />
+        <h3 class="text-lg font-semibold text-af-corps mb-2">Aucune annonce</h3>
+        <p class="text-af-atone">Publiez votre première annonce sur le Marché Africain.</p>
       </div>
 
       <!-- Liste -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div v-else class="grid gap-5 sm:grid-cols-2">
         <div
           v-for="a in annonces"
           :key="a.id"
-          class="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col"
+          class="flex flex-col overflow-hidden rounded-[10px] border border-af-bordure bg-white"
         >
-          <div class="relative aspect-[16/10] bg-gray-100">
-            <img :src="a.photo_url || '/images/placeholder.jpg'" :alt="a.titre" class="w-full h-full object-cover" />
+          <div class="relative aspect-[16/10] bg-af-fond">
+            <img v-if="a.photo_url" :src="a.photo_url" :alt="a.titre" class="w-full h-full object-cover" />
+  <!-- Pas de `<img src="…placeholder.jpg">` : ce fichier n'a jamais existé, si
+       bien qu'une annonce sans photo affichait une image CASSÉE avec son texte
+       de remplacement en travers. Un repli qui doit exister sur le disque est un
+       repli qui peut manquer ; celui-ci est du balisage, il ne peut pas
+       échouer. -->
+            <div v-else class="grid h-full w-full place-items-center">
+              <font-awesome-icon icon="fa-solid fa-image" class="text-3xl text-af-atone-2" />
+            </div>
             <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold" :class="badgeEtat(a.etat)">
               {{ libelleEtat(a.etat) }}
             </span>
           </div>
           <div class="p-4 flex-1 flex flex-col">
-            <p class="text-xs text-gray-400 mb-1">{{ a.type_echange }} · {{ a.categorie }}</p>
-            <h3 class="font-semibold text-gray-800 line-clamp-2 mb-2">{{ a.titre }}</h3>
-            <p class="text-custom-chocolat font-bold mb-4">{{ formatPrix(a.prix, a.devise) }}</p>
+            <p class="text-xs text-af-atone-2 mb-1">{{ a.type_echange }} · {{ a.categorie }}</p>
+            <h3 class="font-semibold text-af-encre line-clamp-2 mb-2">{{ a.titre }}</h3>
+            <p class="text-af-chocolat font-bold mb-4">{{ formatPrix(a.prix, a.devise) }}</p>
 
-            <div class="mt-auto flex flex-wrap gap-2">
+            <div class="mt-auto grid grid-cols-2 gap-2">
               <NuxtLink
                 :to="`/marche-africain/${a.id}`"
-                class="px-3 py-1.5 rounded-lg text-sm border border-gray-200 text-gray-600 hover:bg-gray-50"
+                class="rounded-lg border border-af-bordure px-3 py-1.5 text-center text-sm text-af-corps transition hover:border-af-chocolat hover:text-af-chocolat"
               >
                 Voir
               </NuxtLink>
               <button
-                class="px-3 py-1.5 rounded-lg text-sm border border-gray-200 text-gray-600 hover:bg-gray-50"
+                class="rounded-lg border border-af-bordure px-3 py-1.5 text-sm text-af-corps transition hover:border-af-chocolat hover:text-af-chocolat"
                 @click="ouvrirEdition(a.id)"
               >
                 Modifier
               </button>
               <button
                 v-if="a.etat === 'publiee'"
-                class="px-3 py-1.5 rounded-lg text-sm border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                class="rounded-lg border border-af-vert/40 px-3 py-1.5 text-sm text-af-vert transition hover:bg-af-vert/5"
                 @click="marquerConclue(a.id)"
               >
                 Marquer conclue
               </button>
               <button
-                class="px-3 py-1.5 rounded-lg text-sm border border-red-200 text-red-600 hover:bg-red-50"
+                class="rounded-lg border border-af-live/40 px-3 py-1.5 text-sm text-af-live transition hover:bg-af-live/5"
                 @click="confirmerSuppression(a.id)"
               >
                 Supprimer
@@ -104,15 +102,15 @@
       <div v-if="totalPages > 1" class="mt-10 flex items-center justify-center gap-2">
         <button
           :disabled="page === 1"
-          class="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          class="p-2 rounded-lg border border-af-bordure text-af-corps hover:bg-af-fond disabled:opacity-50"
           @click="changerPage(page - 1)"
         >
           <font-awesome-icon :icon="['fas', 'chevron-left']" class="w-4 h-4" />
         </button>
-        <span class="px-4 py-2 text-sm text-gray-600">Page {{ page }} / {{ totalPages }}</span>
+        <span class="px-4 py-2 text-sm text-af-corps">Page {{ page }} / {{ totalPages }}</span>
         <button
           :disabled="page === totalPages"
-          class="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          class="p-2 rounded-lg border border-af-bordure text-af-corps hover:bg-af-fond disabled:opacity-50"
           @click="changerPage(page + 1)"
         >
           <font-awesome-icon :icon="['fas', 'chevron-right']" class="w-4 h-4" />
@@ -121,37 +119,26 @@
     </div>
 
     <!-- Modal édition -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition ease-out duration-300"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition ease-in duration-200"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div v-if="showEdition && annonceEnEdition" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div class="absolute inset-0 bg-black/50" @click="showEdition = false"></div>
-          <div class="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-white flex items-center justify-between px-6 py-4 border-b border-gray-100 z-10">
-              <h2 class="text-xl font-bold text-gray-800">Modifier l'annonce</h2>
-              <button class="p-2 text-gray-400 hover:text-gray-600" @click="showEdition = false">
-                <font-awesome-icon :icon="['fas', 'xmark']" class="w-5 h-5" />
-              </button>
-            </div>
-            <div class="p-6">
-              <MarcheAnnonceForm
-                mode="edition"
-                :annonce="annonceEnEdition"
-                @success="onEditionReussie"
-                @cancel="showEdition = false"
-              />
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-  </div>
+    <!-- Coque partagée : le Teleport maison redoublait ce qu'AfricansModale
+         porte déjà (fermeture au clavier, piège de focus, blocage du
+         défilement de fond), et n'en avait aucun. -->
+    <AfricansModale
+      :model-value="showEdition"
+      titre="Modifier l'annonce"
+      sous-titre="Vente, troc, don ou opportunité d'investissement"
+      icone="fa-solid fa-pen"
+      taille="large"
+      @update:model-value="showEdition = false"
+    >
+      <MarcheAnnonceForm
+        v-if="annonceEnEdition"
+        mode="edition"
+        :annonce="annonceEnEdition"
+        @success="onEditionReussie"
+        @cancel="showEdition = false"
+      />
+    </AfricansModale>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
@@ -163,7 +150,7 @@ import {
   type AnnonceDetailAPI,
 } from '~/composables/useMarcheAfricain'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth', layout: false })
 
 useHead({ title: 'Mes annonces - Marché Africain - AfricanS' })
 
@@ -214,10 +201,10 @@ const libelleEtat = (etat: string): string => {
 
 const badgeEtat = (etat: string): string => {
   switch (etat) {
-    case 'publiee': return 'bg-emerald-100 text-emerald-700'
-    case 'conclue': return 'bg-gray-200 text-gray-600'
-    case 'suspendue': return 'bg-red-100 text-red-700'
-    default: return 'bg-amber-100 text-amber-700'
+    case 'publiee': return 'bg-af-vert text-white'
+    case 'conclue': return 'border border-af-bordure bg-white text-af-corps'
+    case 'suspendue': return 'bg-af-live text-white'
+    default: return 'bg-af-chocolat text-white'
   }
 }
 

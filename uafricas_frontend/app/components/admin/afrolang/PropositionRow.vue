@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Ligne de tableau pour une proposition de salle (admin) — feature 001-admin-salles-publiques US2
+// Ligne de tableau pour une proposition de salle (admin), feature 001-admin-salles-publiques US2
 import type { PropositionSalle } from '~/composables/useAfrolang'
 
 defineProps<{

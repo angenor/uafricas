@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: UAfricas — Afripulse Admin API (modération des contributions)
+  title: UAfricas : Afripulse Admin API (modération des contributions)
   version: "1.0.0-001-afripulse-contributions"
   description: |
     Extensions des endpoints admin existants (`/api/admin/profils-pays/contributions*`)
@@ -198,7 +198,7 @@ paths:
           $ref: "#/components/responses/NonTrouve"
         "409":
           description: |
-            La contribution n'est pas dans un état `approuvee` — retrait impossible.
+            La contribution n'est pas dans un état `approuvee`, retrait impossible.
           content:
             application/json:
               schema:

@@ -1,4 +1,4 @@
-# Phase 1 — Contracts API : Modération de session Afrolang
+# Phase 1 : Contracts API : Modération de session Afrolang
 
 **Date** : 2026-05-10
 **Base path** : `/api/afrolang/sessions/{session_id}`
@@ -69,7 +69,7 @@ Accorde la permission d'écriture à un participant.
 }
 ```
 
-**Erreurs** : 401, 403 (non modérateur de session), 404 (session ou utilisateur introuvable), 409 (l'utilisateur cible est déjà un modérateur de session — pas besoin de permission explicite, retour ApiError "L'utilisateur est déjà modérateur de session"), 422 (utilisateur_id manquant ou malformé).
+**Erreurs** : 401, 403 (non modérateur de session), 404 (session ou utilisateur introuvable), 409 (l'utilisateur cible est déjà un modérateur de session, pas besoin de permission explicite, retour ApiError "L'utilisateur est déjà modérateur de session"), 422 (utilisateur_id manquant ou malformé).
 
 ---
 
@@ -98,7 +98,7 @@ Retire une permission précédemment accordée.
 
 Met en évidence un participant ; remplace automatiquement la mise en évidence en cours (FR-021).
 
-**Autorisation** : `AdminPlateforme` ou `AdminSalle` uniquement (FR-001b). Session DOIT avoir `salle_id IS NOT NULL` (publique) — sinon 422.
+**Autorisation** : `AdminPlateforme` ou `AdminSalle` uniquement (FR-001b). Session DOIT avoir `salle_id IS NOT NULL` (publique), sinon 422.
 
 **Body**
 ```json
@@ -200,7 +200,7 @@ ou
 
 ---
 
-## Endpoint complémentaire (état initial à la connexion — FR-024)
+## Endpoint complémentaire (état initial à la connexion, FR-024)
 
 L'endpoint `GET /api/afrolang/sessions/{session_id}` existant DOIT être étendu pour inclure dans sa réponse :
 
@@ -221,7 +221,7 @@ Cela permet à un client qui rejoint en cours de session de connaître immédiat
 
 | Méthode | Path | Rôles autorisés | Effet LiveKit |
 |---|---|---|---|
-| GET | `/api/afrolang/sessions/{id}/permissions-tableau-blanc` | tout participant | — |
+| GET | `/api/afrolang/sessions/{id}/permissions-tableau-blanc` | tout participant |, |
 | POST | `/api/afrolang/sessions/{id}/permissions-tableau-blanc` | tout modérateur de session | `update_participant(can_publish_data=true)` + `send_data` |
 | DELETE | `/api/afrolang/sessions/{id}/permissions-tableau-blanc/{user_id}` | tout modérateur de session | `update_participant(can_publish_data=false)` + `send_data` |
 | POST | `/api/afrolang/sessions/{id}/spotlight` | admin plateforme \| admin salle | `send_data` |

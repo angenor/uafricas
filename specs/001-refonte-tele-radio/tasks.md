@@ -15,7 +15,7 @@ Techniques »), et la spécification n'en demande pas. La validation se fait par
 
 ## Format: `[ID] [P?] [Story] Description`
 
-- **[P]** : parallélisable — fichiers différents, aucune dépendance sur une tâche inachevée
+- **[P]** : parallélisable : fichiers différents, aucune dépendance sur une tâche inachevée
 - **[Story]** : US1 à US7, en correspondance avec les user stories de `spec.md`
 - Chemins de fichiers exacts, relatifs à la racine du dépôt
 
@@ -37,22 +37,22 @@ Migrations SQL sous `uafricas_backend/doc/bd/schemas/`, orchestrées par `doc/bd
 
 ---
 
-## Phase 2: Foundational (bloquant — aucune story ne peut démarrer avant)
+## Phase 2: Foundational (bloquant : aucune story ne peut démarrer avant)
 
 **Purpose** : socle de données et briques de lecture partagées par US1 et US2.
 
-**⚠️ CRITIQUE** : les tâches T005 à T011 écrivent toutes dans `09j_media_content_editorial.sql` — elles
+**⚠️ CRITIQUE** : les tâches T005 à T011 écrivent toutes dans `09j_media_content_editorial.sql` : elles
 sont séquentielles, jamais parallèles.
 
-### Migration `09j` — éditorial et corrections de dette
+### Migration `09j` : éditorial et corrections de dette
 
 - [X] T005 Ajouter `origine_publication VARCHAR(20) NOT NULL DEFAULT 'territoire'` + `CHECK IN ('africans','territoire')` + index partiel sur `media_content.station_radio` dans `uafricas_backend/doc/bd/schemas/09j_media_content_editorial.sql` (FR-014)
-- [X] T006 Ajouter les FK manquantes `fk_station_radio_pays` et `fk_station_radio_cree_par` via bloc `DO $$ … pg_constraint` idempotent dans `09j_media_content_editorial.sql` — la table n'a aucune FK aujourd'hui
+- [X] T006 Ajouter les FK manquantes `fk_station_radio_pays` et `fk_station_radio_cree_par` via bloc `DO $$ … pg_constraint` idempotent dans `09j_media_content_editorial.sql`, la table n'a aucune FK aujourd'hui
 - [X] T007 Ajouter `a_la_une_globale BOOLEAN NOT NULL DEFAULT FALSE` sur `media_content.programme_tele` + index unique partiel `uq_programme_tele_a_la_une_globale ON …((TRUE)) WHERE a_la_une_globale AND deleted_at IS NULL` dans `09j_media_content_editorial.sql` (FR-001)
 - [X] T008 Ajouter `theme_phare_id` / `theme_phare_autre` sur `programme_tele` et `programme_radio`, `role_partie_prenante` / `_autre` + CHECK sur `chaine_tv` et `station_radio`, avec les CHECK « Autre exige une précision » dans `09j_media_content_editorial.sql` (FR-029, FR-030)
 - [X] T009 Élargir le `CHECK etat` des 4 tables médias à `'en_attente'` et ajouter `nombre_signalements INT NOT NULL DEFAULT 0` dans `09j_media_content_editorial.sql` (FR-032, FR-050)
-- [X] T010 Insérer les 43 thèmes phares dans `shared.categorie` avec `contexte = 'media'` via `INSERT … ON CONFLICT (slug) DO NOTHING` dans `09j_media_content_editorial.sql` — libellés repris de `spec.md` § Key Entities
-- [X] T011 Insérer les permissions `media.voir` / `media.modifier` / `media.supprimer` dans `iam.permission` + liaison au rôle `admin` dans `iam.role_permission`, et élargir `arbre_genealogique.notifications.type` en `VARCHAR(80)`, dans `09j_media_content_editorial.sql` — sans cela seul `super_admin` peut modérer (R15) et les types de notification débordent (R14)
+- [X] T010 Insérer les 43 thèmes phares dans `shared.categorie` avec `contexte = 'media'` via `INSERT … ON CONFLICT (slug) DO NOTHING` dans `09j_media_content_editorial.sql`, libellés repris de `spec.md` § Key Entities
+- [X] T011 Insérer les permissions `media.voir` / `media.modifier` / `media.supprimer` dans `iam.permission` + liaison au rôle `admin` dans `iam.role_permission`, et élargir `arbre_genealogique.notifications.type` en `VARCHAR(80)`, dans `09j_media_content_editorial.sql`, sans cela seul `super_admin` peut modérer (R15) et les types de notification débordent (R14)
 - [X] T012 Jouer `09j` sur la base locale et vérifier l'idempotence en le rejouant : `psql -h localhost -U uafricas -d africans_db -f uafricas_backend/doc/bd/schemas/09j_media_content_editorial.sql`
 
 ### Briques Rust partagées
@@ -64,16 +64,16 @@ sont séquentielles, jamais parallèles.
 ### Briques frontend partagées
 
 - [X] T016 [P] Extraire `youtubeEmbedUrl` de `uafricas_frontend/app/composables/useEvenements.ts:285-301` vers `uafricas_frontend/app/utils/media.ts`, y ajouter `estMediaExterne(url)` et un réexport depuis `useEvenements.ts` pour ne pas casser ses 3 consommateurs actuels
-- [X] T017 Créer `uafricas_frontend/app/components/media/LecteurMedia.vue` : route selon la source — `youtubeEmbedUrl()` non nul → `<iframe allow="autoplay; encrypted-media; picture-in-picture; fullscreen">` avec `mute=1` obligatoire, sinon `<video>` / `<audio>` natif ; repli explicite si aucun des deux (FR-056, edge case « média externe défaillant »)
-- [X] T018 Créer `uafricas_frontend/app/composables/useLecteurMedia.ts` : état global par `useState` (`'media:lecture'`, `'media:contenu'`, `'media:volume'`), API `lire / pause / basculerSon / definirVolume`, garantie d'un flux unique (FR-018). Supprimer `uafricas_frontend/app/composables/useAudioPlayer.ts` (code mort, `ref()` locaux et `onUnmounted` qui coupe le son — R8)
-- [X] T019 [P] Créer `uafricas_frontend/app/composables/useObservateurVisibilite.ts` (IntersectionObserver) — aucun mécanisme de chargement différé n'existe dans le projet (FR-054, SC-011)
+- [X] T017 Créer `uafricas_frontend/app/components/media/LecteurMedia.vue` : route selon la source, `youtubeEmbedUrl()` non nul → `<iframe allow="autoplay; encrypted-media; picture-in-picture; fullscreen">` avec `mute=1` obligatoire, sinon `<video>` / `<audio>` natif ; repli explicite si aucun des deux (FR-056, edge case « média externe défaillant »)
+- [X] T018 Créer `uafricas_frontend/app/composables/useLecteurMedia.ts` : état global par `useState` (`'media:lecture'`, `'media:contenu'`, `'media:volume'`), API `lire / pause / basculerSon / definirVolume`, garantie d'un flux unique (FR-018). Supprimer `uafricas_frontend/app/composables/useAudioPlayer.ts` (code mort, `ref()` locaux et `onUnmounted` qui coupe le son, R8)
+- [X] T019 [P] Créer `uafricas_frontend/app/composables/useObservateurVisibilite.ts` (IntersectionObserver), aucun mécanisme de chargement différé n'existe dans le projet (FR-054, SC-011)
 - [X] T020 [P] Créer `uafricas_frontend/app/components/media/RangeeContenus.vue` : rangée horizontale `flex flex-nowrap gap-4 overflow-x-auto scrollbar-none snap-x snap-mandatory -mx-1 px-1`, cartes en `shrink-0 snap-start`, flèches au clavier (FR-022, FR-053)
 
-**Checkpoint** : socle prêt — US1 et US2 peuvent démarrer, en parallèle si l'équipe le permet.
+**Checkpoint** : socle prêt : US1 et US2 peuvent démarrer, en parallèle si l'équipe le permet.
 
 ---
 
-## Phase 3: User Story 1 — Page Télé, vedette plein écran et chaînes en sections (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 : Page Télé, vedette plein écran et chaînes en sections (Priority: P1) 🎯 MVP
 
 **Goal** : remplacer la grille de vignettes par une vedette occupant tout l'écran à l'ouverture, puis une
 section par chaîne au défilement, chacune avec son contenu mis en évidence et ses autres programmes.
@@ -94,7 +94,7 @@ occupe toute la fenêtre et démarre, puis que le défilement révèle une secti
 
 - [X] T027 [US1] Étendre `uafricas_frontend/app/composables/useTelevision.ts` : `obtenirVedette()`, `listerSections(filtres)`, `obtenirChaineParSlug(slug)`, interfaces `TeleSection` / `ProgrammeVedette` avec `source_media` et `est_repli`
 - [X] T028 [US1] Créer `uafricas_frontend/app/components/media/VedettePleinEcran.vue` : `h-[100svh]` (jamais `100vh`, qui déborde sous la barre d'URL mobile), `top-24` pour dégager la NavBar (`absolute`, donc défilante), lecture auto son coupé via `LecteurMedia`, commandes son et pause visibles et atteignables au clavier, repère de défilement (FR-002, FR-003, FR-009)
-- [X] T029 [US1] Créer `uafricas_frontend/app/components/media/SectionChaine.vue` : bloc empilé de hauteur naturelle — identité de la chaîne, bandeau du contenu mis en évidence avec titre, description et action de lecture, puis `RangeeContenus` ; montage du lecteur différé par `useObservateurVisibilite` (FR-005, FR-006, FR-022, FR-054)
+- [X] T029 [US1] Créer `uafricas_frontend/app/components/media/SectionChaine.vue` : bloc empilé de hauteur naturelle, identité de la chaîne, bandeau du contenu mis en évidence avec titre, description et action de lecture, puis `RangeeContenus` ; montage du lecteur différé par `useObservateurVisibilite` (FR-005, FR-006, FR-022, FR-054)
 - [X] T030 [US1] Remanier `uafricas_frontend/app/pages/medias/tele.vue` : retirer `videoProvisoireEmbed` et son bloc iframe (FR-010), retirer le `v-if="!isMobile"` qui prive les mobiles de hero (FR-011), remplacer la grille et les filtres par `VedettePleinEcran` + liste de `SectionChaine` chargée au défilement, conserver `MediaTelePresentationModal`
 - [X] T031 [US1] Migrer les résidus Tailwind v3 de `uafricas_frontend/app/pages/medias/tele.vue` : `bg-gradient-to-*` → `bg-linear-to-*` (Principe VI)
 - [X] T032 [P] [US1] Ajouter le champ « Vedette générale de la page Télé » aux formulaires `uafricas_frontend/app/pages/admin/television/create.vue` et `[id].vue`, avec avertissement explicite que la vedette précédente sera remplacée
@@ -104,7 +104,7 @@ occupe toute la fenêtre et démarre, puis que le défilement révèle une secti
 
 ---
 
-## Phase 4: User Story 2 — Pages Radio en sections, réellement distinctes (Priority: P1)
+## Phase 4: User Story 2 : Pages Radio en sections, réellement distinctes (Priority: P1)
 
 **Goal** : donner aux deux pages Radio la même structure en sections, avec une écoute qui survit au
 défilement et à la navigation, et rendre leur différenciation effective par l'origine de publication.
@@ -114,22 +114,22 @@ chaque section porte son contenu mis en évidence, et que l'écoute survit au ch
 
 ### Backend
 
-- [X] T034 [P] [US2] Créer `uafricas_backend/src/models/programme_radio.rs` : `PROGRAMME_RADIO_COLONNES`, `ProgrammeRadioRow`, `ProgrammeRadioResponse`, `ProgrammeRadioQueryParams` — comble D-002, ces contenus n'ont aujourd'hui aucune exposition publique
+- [X] T034 [P] [US2] Créer `uafricas_backend/src/models/programme_radio.rs` : `PROGRAMME_RADIO_COLONNES`, `ProgrammeRadioRow`, `ProgrammeRadioResponse`, `ProgrammeRadioQueryParams`, comble D-002, ces contenus n'ont aujourd'hui aucune exposition publique
 - [X] T035 [US2] Implémenter `GET /api/programmes-radio` et `GET /api/programmes-radio/{slug}` dans `uafricas_backend/src/handlers/stations_radio.rs`, à parité avec les programmes de télévision (FR-020)
 - [X] T036 [US2] Implémenter `GET /api/stations-radio/sections` dans `uafricas_backend/src/handlers/stations_radio.rs` : paramètre `origine` (`africans` | `territoire`) porté par la page et non par l'utilisateur, cumulable avec les filtres `type_station` / `pays` / `genre` (FR-013, FR-014)
 - [X] T037 [US2] Implémenter `GET /api/stations-radio/{slug}` et ajouter `origine` à `StationRadioQueryParams` dans `uafricas_backend/src/handlers/stations_radio.rs` + `models/station_radio.rs`
 - [X] T038 [US2] Déclarer les nouvelles routes dans les scopes `/api/stations-radio` et `/api/programmes-radio` de `uafricas_backend/src/routes.rs`
-- [X] T039 [US2] Corriger la sentinelle désynchronisée `pays != "Tous les pays"` de `uafricas_backend/src/handlers/stations_radio.rs:54` — le frontend envoie « Tous les territoires »
+- [X] T039 [US2] Corriger la sentinelle désynchronisée `pays != "Tous les pays"` de `uafricas_backend/src/handlers/stations_radio.rs:54`, le frontend envoie « Tous les territoires »
 - [X] T040 [P] [US2] Ajouter `PATCH /api/admin/stations-radio/{id}/origine` et le champ `origine_publication` aux CRUD admin dans `uafricas_backend/src/handlers/admin/radio_tele.rs`, avec `audit::log_action` action `CHANGEMENT_ORIGINE`
 
 ### Frontend
 
 - [X] T041 [US2] Étendre `uafricas_frontend/app/composables/useStationsRadio.ts` : `listerSections({ origine, … })`, `listerContenusStation(stationId)`, interface `StationSection` ; corriger le cast non contrôlé de `type_station` en `programType` (`:106`)
 - [X] T042 [US2] Créer `uafricas_frontend/app/components/media/BarreLecturePersistante.vue` : `fixed bottom-0` pleine largeur, titre écouté, station, lecture/pause, volume ; z-index sous `z-[75]` et décalage du FAB messagerie (`bottom-6 right-6`) et de l'invite d'appel (`bottom-24 right-6`) quand elle est active (FR-017)
-- [X] T043 [US2] Monter `<MediaBarreLecturePersistante v-if="lectureEnCours" />` dans `uafricas_frontend/app/layouts/default.vue`, **hors du `<slot/>`**, sous `<ClientOnly>` — c'est ce placement qui fait survivre le son à la navigation (R8)
+- [X] T043 [US2] Monter `<MediaBarreLecturePersistante v-if="lectureEnCours" />` dans `uafricas_frontend/app/layouts/default.vue`, **hors du `<slot/>`**, sous `<ClientOnly>` : c'est ce placement qui fait survivre le son à la navigation (R8)
 - [X] T044 [US2] Créer `uafricas_frontend/app/components/media/SectionStation.vue` : identité de la station, contenu mis en évidence, direct proposé au même titre quand `stream_url` existe (FR-016), `RangeeContenus` des autres contenus
 - [X] T045 [US2] Remanier `uafricas_frontend/app/pages/medias/radio/africans.vue` : bandeau d'accroche sans lecteur en tête (FR-013), sections par station, `origine: 'africans'` en dur, message d'état vide explicite (FR-019)
-- [X] T046 [US2] Remanier `uafricas_frontend/app/pages/medias/radio/nationales.vue` à l'identique avec `origine: 'territoire'` — **les deux pages restent distinctes**, aucune factorisation en une page unique, aucune redirection (FR-012)
+- [X] T046 [US2] Remanier `uafricas_frontend/app/pages/medias/radio/nationales.vue` à l'identique avec `origine: 'territoire'`, **les deux pages restent distinctes**, aucune factorisation en une page unique, aucune redirection (FR-012)
 - [X] T047 [P] [US2] Remplacer `loading loading-spinner loading-lg` (daisyUI) par `animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400` dans `africans.vue:188` et `nationales.vue:189`, et migrer `bg-gradient-to-*` → `bg-linear-to-*` (Principe VI)
 - [X] T048 [P] [US2] Ajouter le sélecteur « Origine de publication » aux formulaires `uafricas_frontend/app/pages/admin/radio/create.vue` et `[id].vue`, et `definirOrigine()` dans `uafricas_frontend/app/composables/useAdminRadio.ts`
 - [X] T049 [US2] Supprimer `uafricas_frontend/app/components/media/AudioPlayer.vue` et `StationCard.vue`, devenus sans usage, ainsi que leurs imports depuis `~/mocks/radios`
@@ -138,7 +138,7 @@ chaque section porte son contenu mis en évidence, et que l'écoute survit au ch
 
 ---
 
-## Phase 5: User Story 3 — Réagir, commenter et partager (Priority: P2)
+## Phase 5: User Story 3 : Réagir, commenter et partager (Priority: P2)
 
 **Goal** : ouvrir la participation sur les contenus télé et radio, et les rendre partageables vers l'espace
 communautés et les réseaux sociaux.
@@ -153,12 +153,12 @@ persistance du commentaire, l'apparition du partage sur `/publications` et l'ape
 - [X] T052 [P] [US3] Créer `uafricas_backend/src/models/media_social.rs` : `TYPES_MEDIA_AUTORISES` (whitelist de littéraux, jamais d'interpolation de l'entrée brute), `table_pour_type()`, DTO réaction / commentaire / partage / signalement
 - [X] T053 [US3] Implémenter réactions et commentaires dans `uafricas_backend/src/handlers/media_social.rs` : `POST …/reaction` en `ON CONFLICT DO UPDATE` avec retrait sur `null`, `POST` / `GET` / `DELETE` commentaires (soft delete réservé à l'auteur) (FR-023, FR-024)
 - [X] T054 [US3] Implémenter partages dans `uafricas_backend/src/handlers/media_social.rs` : `POST …/partages` avec légende ≤ 500, `GET /api/medias/partages` paginé pour le mur (FR-025)
-- [X] T055 [US3] Enrichir les DTO de détail et de section de `television.rs` et `stations_radio.rs` avec `nombre_likes`, `nombre_dislikes`, `ma_reaction`, `nombre_commentaires`, `nombre_partages` — évite un aller-retour par carte (FR-027)
+- [X] T055 [US3] Enrichir les DTO de détail et de section de `television.rs` et `stations_radio.rs` avec `nombre_likes`, `nombre_dislikes`, `ma_reaction`, `nombre_commentaires`, `nombre_partages`, évite un aller-retour par carte (FR-027)
 - [X] T056 [US3] Déclarer le scope `/api/medias` et ses routes dans `uafricas_backend/src/routes.rs`
 
-### Pages de détail — prérequis du partage
+### Pages de détail : prérequis du partage
 
-- [X] T057 [P] [US3] Créer `uafricas_frontend/app/pages/medias/programmes-tele/[slug].vue` : `await useAsyncData` au niveau racine puis `useHead(() => …)` produisant `og:type/title/description/url/image`, `twitter:card` et `canonical`, sur le modèle de `opportunite-afrique/[id]/sites/[siteId].vue:297-370` — **ne pas reproduire l'absence d'Open Graph de `vidafrica/[slug].vue`**
+- [X] T057 [P] [US3] Créer `uafricas_frontend/app/pages/medias/programmes-tele/[slug].vue` : `await useAsyncData` au niveau racine puis `useHead(() => …)` produisant `og:type/title/description/url/image`, `twitter:card` et `canonical`, sur le modèle de `opportunite-afrique/[id]/sites/[siteId].vue:297-370`, **ne pas reproduire l'absence d'Open Graph de `vidafrica/[slug].vue`**
 - [X] T058 [P] [US3] Créer `uafricas_frontend/app/pages/medias/programmes-radio/[slug].vue` sur le même modèle
 - [X] T059 [P] [US3] Créer `uafricas_frontend/app/pages/medias/chaines/[slug].vue` : identité de la chaîne, ses contenus, ses interactions
 - [X] T060 [P] [US3] Créer `uafricas_frontend/app/pages/medias/stations/[slug].vue` sur le même modèle
@@ -166,7 +166,7 @@ persistance du commentaire, l'apparition du partage sur `/publications` et l'ape
 ### Composants et intégration
 
 - [X] T061 [P] [US3] Créer `uafricas_frontend/app/composables/useMediaSocial.ts` : `reagir`, `listerCommentaires`, `commenter`, `supprimerCommentaire`, `partager`, `listerPartages`
-- [X] T062 [P] [US3] Créer `uafricas_frontend/app/components/media/MediaReactionsBar.vue` — mise à jour optimiste resynchronisée par watch, émission de `require-login` hors session (modèle `opportunite-afrique/ReactionsBar.vue`)
+- [X] T062 [P] [US3] Créer `uafricas_frontend/app/components/media/MediaReactionsBar.vue`, mise à jour optimiste resynchronisée par watch, émission de `require-login` hors session (modèle `opportunite-afrique/ReactionsBar.vue`)
 - [X] T063 [P] [US3] Créer `uafricas_frontend/app/components/media/MediaCommentaires.vue` : liste plate paginée, formulaire 1–2000 caractères, suppression réservée à l'auteur
 - [X] T064 [P] [US3] Créer `uafricas_frontend/app/components/media/MediaPartagerModal.vue` : réseaux sociaux externes + mur communautaire avec légende (modèle `opportunite-afrique/PartagerElementModal.vue`)
 - [X] T065 [US3] Brancher `MediaReactionsBar`, `MediaCommentaires` et `MediaPartagerModal` dans les 4 pages de détail et sous le contenu mis en évidence de `SectionChaine.vue` / `SectionStation.vue`
@@ -178,10 +178,10 @@ persistance du commentaire, l'apparition du partage sur `/publications` et l'ape
 
 ---
 
-## Phase 6: User Story 4 — Soumission par les parties prenantes, validée par l'administrateur (Priority: P2)
+## Phase 6: User Story 4 : Soumission par les parties prenantes, validée par l'administrateur (Priority: P2)
 
 **Goal** : ouvrir la contribution à tout membre connecté tout en garantissant qu'aucun contenu n'atteint le
-public sans validation — ce qui ferme au passage une faille ouverte.
+public sans validation : ce qui ferme au passage une faille ouverte.
 
 **Independent Test** : soumettre une chaîne depuis un compte membre, constater son absence des pages
 publiques, la valider en back-office et la voir apparaître avec son auteur devenu propriétaire.
@@ -192,11 +192,11 @@ publiques, la valider en back-office et la voir apparaître avec son auteur deve
 - [X] T070 [US4] Jouer `uafricas_backend/doc/bd/schemas/09l_media_content_propositions.sql` et vérifier par `psql` qu'il est impossible d'insérer une ligne `validee` sans `objet_id_cree`, ni `rejetee` sans `commentaire_decision`
 - [X] T071 [P] [US4] Créer `uafricas_backend/src/models/media_proposition.rs` : DTO de soumission, de suivi et de modération, validation par `type_objet` du contenu de `donnees`
 - [X] T072 [US4] Implémenter `POST /api/medias/propositions` (multipart) dans `uafricas_backend/src/handlers/media_proposition.rs` : `statut` forcé à `'en_attente'`, `origine_publication` **forcée à `'territoire'`** côté serveur, refus si « Autre » sans précision (FR-029, FR-030, FR-031, FR-036)
-- [X] T073 [US4] Implémenter `GET /api/medias/propositions/moi` et `PATCH /api/medias/propositions/{id}/retirer` dans `uafricas_backend/src/handlers/media_proposition.rs` — comble le trou de suivi de vidafrica (FR-034)
+- [X] T073 [US4] Implémenter `GET /api/medias/propositions/moi` et `PATCH /api/medias/propositions/{id}/retirer` dans `uafricas_backend/src/handlers/media_proposition.rs`, comble le trou de suivi de vidafrica (FR-034)
 - [X] T074 [US4] Ajouter `pub mod media { … }` de constantes de notification dans `uafricas_backend/src/models/notification.rs` : `PROPOSITION_VALIDEE`, `PROPOSITION_REJETEE`, `CODETENTEUR_AJOUTE`, `CONTENU_SUSPENDU`
 - [X] T075 [US4] Implémenter la file de modération dans `uafricas_backend/src/handlers/admin/media_proposition.rs` : `GET` liste et détail, `PATCH …/valider`, `PATCH …/rejeter` (motif ≥ 10 caractères), sous `verifier_permission!(admin, "media", …)`
 - [X] T076 [US4] Implémenter la transaction de validation dans `uafricas_backend/src/handlers/admin/media_proposition.rs` : `SELECT … FOR UPDATE` → `INSERT` de l'objet métier → `INSERT` du premier co-détenteur `proprietaire` → `UPDATE` de la proposition → `INSERT` de la notification **dans la transaction** → `COMMIT` → audit
-- [X] T077 [US4] **Fermer la faille** : retirer les `etat = 'publie'` codés en dur de `uafricas_backend/src/handlers/stations_radio.rs:263`, `handlers/television.rs:207` et `:428` — router vers `proposition_media` ou insérer en `'en_attente'` (FR-032)
+- [X] T077 [US4] **Fermer la faille** : retirer les `etat = 'publie'` codés en dur de `uafricas_backend/src/handlers/stations_radio.rs:263`, `handlers/television.rs:207` et `:428`, router vers `proposition_media` ou insérer en `'en_attente'` (FR-032)
 - [X] T078 [US4] Implémenter `PATCH /api/medias/contenus/{type_media}/{id}/metadonnees` (publication immédiate) et `PUT …/media` (bascule en `'en_attente'` + proposition de modification) dans `uafricas_backend/src/handlers/media_proposition.rs` (FR-032)
 - [X] T079 [US4] Déclarer les routes membre et admin dans `uafricas_backend/src/routes.rs`
 
@@ -206,14 +206,14 @@ publiques, la valider en back-office et la voir apparaître avec son auteur deve
 - [X] T081 [US4] Créer `uafricas_frontend/app/components/media/ProposerMediaModal.vue` : formulaire par `type_objet`, sélecteur de rôle de partie prenante et de thème phare avec « Autre » + précision obligatoire, téléversement ou lien externe. Reprendre le modèle de champs de `MediaAddProgramModal` (D-006) puis **supprimer `uafricas_frontend/app/components/media/AddProgramModal.vue`**, maquette morte dont `handleSubmit` simule l'envoi
 - [X] T082 [P] [US4] Créer `uafricas_frontend/app/pages/mon-compte/propositions-medias.vue` : suivi des soumissions avec état et motif de refus (FR-034)
 - [X] T083 [P] [US4] Créer `uafricas_frontend/app/composables/useAdminMediaPropositions.ts` et la page `uafricas_frontend/app/pages/admin/medias/propositions/index.vue` (file filtrable par statut et type) plus `[id].vue` (détail, valider, rejeter)
-- [X] T084 [US4] Faire apparaître en évidence, dans `[id].vue`, la source du média et l'auteur déclaré — aucune décharge de droits n'étant recueillie, l'administrateur est seul à se prononcer sur la licéité (H-012, FR-033)
+- [X] T084 [US4] Faire apparaître en évidence, dans `[id].vue`, la source du média et l'auteur déclaré, aucune décharge de droits n'étant recueillie, l'administrateur est seul à se prononcer sur la licéité (H-012, FR-033)
 - [X] T085 [US4] Ajouter le bouton « Proposer un contenu » ouvrant `ProposerMediaModal` dans `uafricas_frontend/app/pages/medias/tele.vue`, `radio/africans.vue`, `radio/nationales.vue` et les 4 pages `medias/{chaines,stations,programmes-tele,programmes-radio}/[slug].vue`
 
 **Checkpoint** : parcours 6 à 12 de `quickstart.md` § Lot 2 passent. **Lot 2 complet et déployable.**
 
 ---
 
-## Phase 7: User Story 5 — Programmation automatique (Priority: P3)
+## Phase 7: User Story 5 : Programmation automatique (Priority: P3)
 
 **Goal** : permettre aux co-détenteurs d'établir une grille quotidienne ou hebdomadaire dont les contenus se
 diffusent d'eux-mêmes, sans tâche de fond.
@@ -226,8 +226,8 @@ diffuse et affiche le créneau suivant.
 - [X] T086 [US5] Écrire `uafricas_backend/doc/bd/schemas/09m_media_content_codetention.sql` : ENUM `type_support_media` et `role_detenteur`, tables `support_detenteur` (avec `uq_support_un_proprietaire`) et `invitation_detenteur` (`data-model.md` §4)
 - [X] T087 [US5] Écrire `uafricas_backend/doc/bd/schemas/09n_media_content_programmation.sql` : `creneau_programmation` avec `heure_debut TIME`, `jour_semaine SMALLINT`, `fuseau`, et les CHECK de cohérence jour/récurrence et de non-franchissement de minuit
 - [X] T088 [US5] Jouer `uafricas_backend/doc/bd/schemas/09m_media_content_codetention.sql` puis `09n_media_content_programmation.sql`, et vérifier leur idempotence par un second passage
-- [X] T089 [US5] Implémenter `garde_detenteur(pool, type_support, support_id, moi, roles_admis)` dans `uafricas_backend/src/handlers/media_detention.rs` — **ne pas** utiliser l'extracteur `AdminUtilisateur`, qui rejette tout non-admin (modèle `garde_proprietaire`, `handlers/annonces.rs:111`)
-- [X] T090 [US5] Implémenter la gestion des co-détenteurs dans `uafricas_backend/src/handlers/media_detention.rs` : listage, invitation par le propriétaire, acceptation et refus, retrait — avec la logique d'ajout à trois branches de `admin/moderateurs_afrolang.rs:59-190`
+- [X] T089 [US5] Implémenter `garde_detenteur(pool, type_support, support_id, moi, roles_admis)` dans `uafricas_backend/src/handlers/media_detention.rs`, **ne pas** utiliser l'extracteur `AdminUtilisateur`, qui rejette tout non-admin (modèle `garde_proprietaire`, `handlers/annonces.rs:111`)
+- [X] T090 [US5] Implémenter la gestion des co-détenteurs dans `uafricas_backend/src/handlers/media_detention.rs` : listage, invitation par le propriétaire, acceptation et refus, retrait, avec la logique d'ajout à trois branches de `admin/moderateurs_afrolang.rs:59-190`
 - [X] T091 [P] [US5] Créer `uafricas_backend/src/models/media_programmation.rs` : DTO de créneau, validation de `recurrence` / `jour_semaine` / `duree_minutes`
 - [X] T092 [US5] Implémenter le CRUD des créneaux dans `uafricas_backend/src/handlers/media_programmation.rs` : verrou `SELECT id FROM … FOR UPDATE` sur le **support parent** avant toute écriture, détection de chevauchement, `409` détaillé sans écriture en cas de conflit (FR-040)
 - [X] T093 [US5] Implémenter la résolution paresseuse du créneau courant dans `uafricas_backend/src/handlers/media_programmation.rs` : calcul SQL `(NOW() AT TIME ZONE fuseau)` à la lecture, aucune tâche de fond (R7, FR-038, FR-042)
@@ -248,7 +248,7 @@ diffuse et affiche le créneau suivant.
 
 ---
 
-## Phase 8: User Story 6 — Engagement : idées, animation, réalisateurs (Priority: P3)
+## Phase 8: User Story 6 : Engagement : idées, animation, réalisateurs (Priority: P3)
 
 **Goal** : permettre aux visiteurs de proposer des sujets, aux parties prenantes de demander l'animation
 d'un programme, et aux porteurs de projet de trouver des réalisateurs ou producteurs.
@@ -257,9 +257,9 @@ d'un programme, et aux porteurs de projet de trouver des réalisateurs ou produc
 qu'une acceptation ajoute le demandeur aux co-détenteurs, puis rechercher un réalisateur et le contacter.
 
 - [X] T103 [US6] Implémenter les types `idee_contenu` et `animation_programme` dans `uafricas_backend/src/handlers/media_proposition.rs` : `target_id` obligatoire, aucun objet créé pour une idée, création d'une ligne `support_detenteur` à l'acceptation d'une demande d'animation (FR-044, FR-045)
-- [X] T104 [US6] Exposer les propositions aux co-détenteurs concernés — et non aux seuls administrateurs — dans `uafricas_backend/src/handlers/media_proposition.rs` (FR-047)
+- [X] T104 [US6] Exposer les propositions aux co-détenteurs concernés, et non aux seuls administrateurs, dans `uafricas_backend/src/handlers/media_proposition.rs` (FR-047)
 - [X] T105 [P] [US6] Ajouter « Réalisateur », « Producteur », « Cadreur », « Monteur », « Animateur radio » à `iam.specialite_bibliotheque` par `INSERT … ON CONFLICT DO NOTHING` dans `uafricas_backend/doc/bd/schemas/09m_media_content_codetention.sql`
-- [X] T106 [US6] Ajouter un filtre `$n = ANY(e.specialites)` à `lister_experts` dans `uafricas_backend/src/handlers/experts.rs:76-86` — le tableau `specialites` n'est aujourd'hui pas filtrable (FR-046)
+- [X] T106 [US6] Ajouter un filtre `$n = ANY(e.specialites)` à `lister_experts` dans `uafricas_backend/src/handlers/experts.rs:76-86`, le tableau `specialites` n'est aujourd'hui pas filtrable (FR-046)
 - [X] T107 [US6] Implémenter `POST /api/medias/{type_support}/{support_id}/contacter` dans `uafricas_backend/src/handlers/media_detention.rs` : dupliquer `contacter_auteur` et `obtenir_ou_creer_conversation_annonce` (`handlers/annonces.rs:146,893`) en respectant `paire_canonique`, aucun endpoint générique d'ouverture de conversation n'existant (R17)
 - [X] T108 [P] [US6] Créer `uafricas_frontend/app/components/media/ProposerIdeeModal.vue` et `DemanderAnimationModal.vue`
 - [X] T109 [P] [US6] Ajouter le filtre par spécialité à la page `uafricas_frontend/app/pages/experts/index.vue` et à `uafricas_frontend/app/composables/useExperts.ts`
@@ -269,7 +269,7 @@ qu'une acceptation ajoute le demandeur aux co-détenteurs, puis rechercher un r�
 
 ---
 
-## Phase 9: User Story 7 — Signalement des contenus interdits (Priority: P3)
+## Phase 9: User Story 7 : Signalement des contenus interdits (Priority: P3)
 
 **Goal** : permettre à tout membre de signaler un contenu contraire aux règles et retirer automatiquement
 de l'antenne ceux qui franchissent le seuil.
@@ -280,12 +280,12 @@ rétablissement en back-office avec remise à zéro du compteur.
 **Prérequis** : la table `signalement_media` et la colonne `nombre_signalements` sont créées par `09k`
 (T050) et `09j` (T009). Si US3 n'a pas été livrée, jouer `09k` avant cette phase.
 
-- [X] T111 [US7] Déclarer `pub const SEUIL_SIGNALEMENTS_SUSPENSION_MEDIA: i64 = 10;` dans `uafricas_backend/src/models/media_social.rs` — comparateur `>` (suspension au 11ᵉ signalement distinct), aligné sur les deux mécanismes les plus récents du projet
+- [X] T111 [US7] Déclarer `pub const SEUIL_SIGNALEMENTS_SUSPENSION_MEDIA: i64 = 10;` dans `uafricas_backend/src/models/media_social.rs`, comparateur `>` (suspension au 11ᵉ signalement distinct), aligné sur les deux mécanismes les plus récents du projet
 - [X] T112 [US7] Implémenter `POST /api/medias/{type_media}/{media_id}/signalement` dans `uafricas_backend/src/handlers/media_social.rs` : `INSERT … ON CONFLICT DO NOTHING` → `COUNT(*)` distinct → bascule `etat = 'suspendu'` au-dessus du seuil (et non une colonne `suspendu`, absente de ces tables) → `audit::log_action` action `SIGNALEMENT` ou `SIGNALEMENT_SUSPENSION` (FR-049, FR-050)
 - [X] T113 [US7] Implémenter `GET /api/admin/medias/signalements` et `PATCH /api/admin/medias/{type_media}/{id}/etat` dans `uafricas_backend/src/handlers/admin/media_proposition.rs` : le rétablissement remet `nombre_signalements = 0`, faute de quoi le contenu serait resuspendu au signalement suivant (FR-051)
 - [X] T114 [US7] Vérifier le filtre `etat = 'publie'` dans `uafricas_backend/src/handlers/television.rs` (vedette et sections), `stations_radio.rs` (sections) et `media_programmation.rs` (créneau courant) : un contenu suspendu doit disparaître à la requête suivante et faire basculer la page sur son repli (edge case « contenu signalé pendant sa diffusion »)
 - [X] T115 [P] [US7] Créer `uafricas_frontend/app/components/media/MediaSignalerModal.vue` et `MediaSignalerBouton.vue` (modèle `opportunite-afrique/SignalerContributionModal.vue`)
-- [X] T116 [P] [US7] Créer `uafricas_frontend/app/components/media/ReglesContenuModal.vue` énonçant les contenus interdits — violence, racisme, discrimination, mauvaise gouvernance, corruption — et l'ouvrir depuis les trois pages médias (FR-048)
+- [X] T116 [P] [US7] Créer `uafricas_frontend/app/components/media/ReglesContenuModal.vue` énonçant les contenus interdits, violence, racisme, discrimination, mauvaise gouvernance, corruption, et l'ouvrir depuis les trois pages médias (FR-048)
 - [X] T117 [P] [US7] Créer `uafricas_frontend/app/pages/admin/medias/signalements.vue` : file triée par nombre de signalements, rétablissement et suppression
 - [X] T118 [US7] Brancher `MediaSignalerBouton` dans les 4 pages `uafricas_frontend/app/pages/medias/{chaines,stations,programmes-tele,programmes-radio}/[slug].vue` et dans `uafricas_frontend/app/components/media/SectionChaine.vue` et `SectionStation.vue`
 
@@ -295,13 +295,13 @@ rétablissement en back-office avec remise à zéro du compteur.
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [X] T119 [P] Ajouter une ligne par lot dans « Recent Changes » de `CLAUDE.md`, citant les indices de migration — format imposé par la section Auto-maintenance
+- [X] T119 [P] Ajouter une ligne par lot dans « Recent Changes » de `CLAUDE.md`, citant les indices de migration, format imposé par la section Auto-maintenance
 - [ ] T120 [P] Retirer la section « Active Technologies » ajoutée automatiquement en fin de `CLAUDE.md`, redondante avec « Tech Stack par feature », si le mainteneur le confirme
 - [X] T121 [P] Corriger la dette relevée en Phase 0 : références à `media_content.programme_radio_tele` (table supprimée) dans `uafricas_backend/doc/bd/schemas/13_contraintes_inter_schemas.sql:227-233` et dans les commentaires de `src/models/television.rs` et `src/handlers/television.rs:245`
 - [X] T122 [P] Remplacer les 2 statistiques codées en dur (`'24/7'`, `'HD+'`) de `uafricas_frontend/app/composables/useTelevision.ts:185-192` par `nombre_programmes` et `nombre_chaines_en_direct`, déjà renvoyés par l'API et jamais affichés
 - [X] T123 [P] Unifier les définitions concurrentes de `RadioStation` (`uafricas_frontend/app/mocks/radios.ts:2` vs `app/composables/useStationsRadio.ts:31`) et de `TvChannel` / `TvProgram` (`app/mocks/tele.ts:2,14` vs `app/composables/useTelevision.ts:64,77`), les composables faisant foi
 - [X] T124 Vérifier l'absence de classe daisyUI et de résidu `bg-gradient-to-*` dans `uafricas_frontend/app/pages/medias/` et `app/components/media/` par les greps de `quickstart.md` § Vérifications transverses
-- [X] T125 Vérifier que chaque mutation de `uafricas_backend/src/handlers/media_social.rs`, `media_proposition.rs`, `media_detention.rs`, `media_programmation.rs` et `admin/media_proposition.rs` appelle `audit::log_action` avec `ancien_etat` et `nouvel_etat` renseignés — l'existant les passe à `None` (`admin/radio_tele.rs:1473`), ne pas reproduire ce défaut (FR-055)
+- [X] T125 Vérifier que chaque mutation de `uafricas_backend/src/handlers/media_social.rs`, `media_proposition.rs`, `media_detention.rs`, `media_programmation.rs` et `admin/media_proposition.rs` appelle `audit::log_action` avec `ancien_etat` et `nouvel_etat` renseignés, l'existant les passe à `None` (`admin/radio_tele.rs:1473`), ne pas reproduire ce défaut (FR-055)
 - [ ] T126 Exécuter `getDiagnostics` (rust-analyzer, Volar) sur `uafricas_backend/src/handlers/media_*.rs`, `src/models/media_*.rs`, `uafricas_frontend/app/components/media/*.vue`, `app/composables/useMedia*.ts` et `app/pages/medias/**`, et corriger les avertissements
 - [ ] T127 Dérouler l'intégralité des parcours de `quickstart.md` sur les trois lots, sur mobile et sur bureau
 - [ ] T128 Déployer par `./deploy.sh update`, puis jouer les migrations par SSH et exécuter la reprise de données `origine_publication` documentée en fin de `quickstart.md`
@@ -313,10 +313,10 @@ rétablissement en back-office avec remise à zéro du compteur.
 ### Phase Dependencies
 
 - **Setup (Phase 1)** : aucune dépendance
-- **Foundational (Phase 2)** : dépend du Setup — **bloque toutes les user stories**
+- **Foundational (Phase 2)** : dépend du Setup, **bloque toutes les user stories**
 - **US1 et US2 (Phases 3-4)** : dépendent de Foundational ; **indépendantes entre elles**
 - **US3 (Phase 5)** : dépend de Foundational. Ses pages de détail s'ancrent dans les sections d'US1/US2, mais les endpoints et les tables sont autonomes
-- **US4 (Phase 6)** : dépend de Foundational. T076 (validation) crée un `support_detenteur` — si US5 n'est pas encore livrée, insérer la ligne sans la table de co-détention n'est pas possible : livrer `09m` (T086) en amont, ou différer cette portion de T076
+- **US4 (Phase 6)** : dépend de Foundational. T076 (validation) crée un `support_detenteur` : si US5 n'est pas encore livrée, insérer la ligne sans la table de co-détention n'est pas possible : livrer `09m` (T086) en amont, ou différer cette portion de T076
 - **US5 (Phase 7)** : dépend de Foundational ; le flux complet suppose US4 pour l'origine des co-détenteurs, mais la phase est testable avec un co-détenteur créé par un administrateur
 - **US6 (Phase 8)** : dépend d'US4 (`proposition_media`) et d'US5 (`support_detenteur`)
 - **US7 (Phase 9)** : dépend des migrations `09j` (T009) et `09k` (T050) ; indépendante du reste d'US3
@@ -358,9 +358,9 @@ Task: "Créer uafricas_frontend/app/components/media/MediaPartagerModal.vue"
 
 ### MVP (US1 seule)
 
-1. Phase 1 : Setup — T001 à T004
-2. Phase 2 : Foundational — T005 à T020 (**bloquant**)
-3. Phase 3 : US1 — T021 à T033
+1. Phase 1 : Setup : T001 à T004
+2. Phase 2 : Foundational : T005 à T020 (**bloquant**)
+3. Phase 3 : US1 : T021 à T033
 4. **ARRÊT ET VALIDATION** : parcours 1 à 8 de `quickstart.md` § Lot 1
 5. Démontrable : la page Télé est passée d'une grille à une vitrine éditorialisée
 
@@ -369,10 +369,10 @@ Task: "Créer uafricas_frontend/app/components/media/MediaPartagerModal.vue"
 | Étape | Contenu | Démontrable |
 |---|---|---|
 | 1 | Setup + Foundational | socle prêt |
-| 2 | + US1 | **MVP** — page Télé remaniée |
-| 3 | + US2 | **Lot 1 déployable** — les trois pages remaniées, distinction Radio effective |
-| 4 | + US3, US4 | **Lot 2 déployable** — participation ouverte, faille de publication fermée |
-| 5 | + US5, US6, US7 | **Lot 3** — programmation, engagement, modération |
+| 2 | + US1 | **MVP** : page Télé remaniée |
+| 3 | + US2 | **Lot 1 déployable** : les trois pages remaniées, distinction Radio effective |
+| 4 | + US3, US4 | **Lot 2 déployable**, participation ouverte, faille de publication fermée |
+| 5 | + US5, US6, US7 | **Lot 3**, programmation, engagement, modération |
 
 Chaque étape apporte de la valeur sans casser la précédente.
 

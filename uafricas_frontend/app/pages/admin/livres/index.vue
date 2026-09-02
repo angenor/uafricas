@@ -18,7 +18,7 @@ const colonnes: TableColumn[] = [
   { key: 'info_auteur', label: 'Auteur', width: 'w-32' },
   { key: 'type_document', label: 'Type', width: 'w-24' },
   { key: 'acces', label: 'Acces', width: 'w-24' },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-24' },
+  { key: 'etat', label: 'État', sortable: true, width: 'w-24' },
   { key: 'nombre_vues', label: 'Vues', width: 'w-16', align: 'center' },
   { key: 'nombre_telechargements', label: 'Telech.', width: 'w-16', align: 'center' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28', format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
@@ -39,7 +39,7 @@ const filterDefs: FilterDefinition[] = [
     { label: 'Premium', value: 'premium' },
     { label: 'Restreint', value: 'restreint' },
   ]},
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'Brouillon', value: 'brouillon' },
     { label: 'Publie', value: 'publie' },
     { label: 'Suspendu', value: 'suspendu' },
@@ -182,7 +182,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
       <template #actions="{ item }">
         <div class="flex gap-1">
-          <button class="btn btn-ghost btn-xs" title="Changer etat" @click="ouvrirChangerEtat(item)">
+          <button class="btn btn-ghost btn-xs" title="Changer état" @click="ouvrirChangerEtat(item)">
             <font-awesome-icon icon="arrows-rotate" />
           </button>
           <NuxtLink :to="`/admin/livres/${item.id}`" class="btn btn-ghost btn-xs">
@@ -206,10 +206,10 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
     <!-- Modal changement d'etat -->
     <div v-if="showEtat" class="modal modal-open">
       <div class="modal-box">
-        <h3 class="font-bold text-lg">Changer l'etat du document</h3>
+        <h3 class="font-bold text-lg">Changer l'état du document</h3>
         <p class="py-2 text-sm text-base-content/70">{{ etatTarget?.titre }}</p>
         <div class="form-control mt-2">
-          <label class="label"><span class="label-text">Nouvel etat</span></label>
+          <label class="label"><span class="label-text">Nouvel état</span></label>
           <select v-model="nouvelEtat" class="select select-bordered">
             <option value="brouillon">Brouillon</option>
             <option value="publie">Publie</option>

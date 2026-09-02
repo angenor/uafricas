@@ -1,5 +1,5 @@
 ---
-description: "Tâches d'implémentation — Pays d'origine des salles publiques Afrolang"
+description: "Tâches d'implémentation, Pays d'origine des salles publiques Afrolang"
 ---
 
 # Tasks: Pays d'origine des salles publiques Afrolang
@@ -14,15 +14,15 @@ description: "Tâches d'implémentation — Pays d'origine des salles publiques 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]** : tâches parallélisables (fichiers indépendants, pas de dépendance bloquante)
-- **[Story]** : US1 / US2 / US3 — absent pour Setup / Foundational / Polish
+- **[Story]** : US1 / US2 / US3 : absent pour Setup / Foundational / Polish
 
 ---
 
 ## Phase 1: Setup
 
-**Purpose**: Aucune initialisation projet — monorepo existant. Cette feature ne crée pas de nouveau module.
+**Purpose**: Aucune initialisation projet, monorepo existant. Cette feature ne crée pas de nouveau module.
 
-- [X] T001 Vérifier que la branche `001-afrolang-pays-origine` est active et à jour (`git status` propre, `git pull origin main` si nécessaire) — pas de fichier à créer.
+- [X] T001 Vérifier que la branche `001-afrolang-pays-origine` est active et à jour (`git status` propre, `git pull origin main` si nécessaire), pas de fichier à créer.
 
 ---
 
@@ -30,18 +30,18 @@ description: "Tâches d'implémentation — Pays d'origine des salles publiques 
 
 **Purpose**: Modifications transverses qui DOIVENT être appliquées avant toute story (DDL + types Rust/TS partagés).
 
-- [X] T002 Ajouter le DDL `CREATE TABLE afrolang.salle_pays_origine` (PK composite, 2 FK CASCADE, index `idx_afrolang_salle_pays_origine_pays`, COMMENT) à la fin de la section salles dans `uafricas_backend/doc/bd/schemas/08b_afrolang.sql` — DDL exact dans `data-model.md` § « DDL complet ».
+- [X] T002 Ajouter le DDL `CREATE TABLE afrolang.salle_pays_origine` (PK composite, 2 FK CASCADE, index `idx_afrolang_salle_pays_origine_pays`, COMMENT) à la fin de la section salles dans `uafricas_backend/doc/bd/schemas/08b_afrolang.sql`, DDL exact dans `data-model.md` § « DDL complet ».
 - [X] T003 Recréer la base locale pour appliquer la migration : `docker compose down -v && docker compose up -d` puis vérifier `\d afrolang.salle_pays_origine` dans psql (cf. quickstart § 1).
 - [X] T004 [P] Ajouter la struct `PaysOrigineLight { id, nom, code_iso2 }` (Serialize + Deserialize + Clone) dans `uafricas_backend/src/models/afrolang.rs`, et ajouter le champ `pub pays_origine: Vec<PaysOrigineLight>` aux structs `SalleResponse` et `SalleDetailResponse`.
 - [X] T005 [P] Ajouter dans `uafricas_backend/src/models/afrolang.rs` la déserialisation côté `SalleRow` : champ `pays_origine_json: sqlx::types::Json<Vec<PaysOrigineLight>>` (ou `serde_json::Value`) + mapping dans `From<SalleRow> for SalleResponse` qui aplatit en `Vec<PaysOrigineLight>`.
 - [X] T006 [P] Ajouter dans `uafricas_backend/src/handlers/afrolang.rs` (struct `SalleFiltres`) le champ `pub pays_id: Option<Uuid>`.
 - [X] T007 [P] Ajouter dans `uafricas_frontend/app/composables/useAfrolang.ts` l'interface `PaysOrigineLight { id: string; nom: string; code_iso2: string | null }`, puis ajouter `pays_origine: PaysOrigineLight[]` à `SalleAPI` et `SalleDetailAPI`, et `pays_id?: string` à `SalleFiltres`.
 
-**Checkpoint** : la BD a la table, les types Rust/TS reflètent le nouveau champ, mais aucune logique métier n'est encore branchée. Le backend doit toujours compiler (`cargo check`) — `pays_origine` retournera `[]` par défaut tant que T009 n'est pas fait.
+**Checkpoint** : la BD a la table, les types Rust/TS reflètent le nouveau champ, mais aucune logique métier n'est encore branchée. Le backend doit toujours compiler (`cargo check`), `pays_origine` retournera `[]` par défaut tant que T009 n'est pas fait.
 
 ---
 
-## Phase 3: User Story 1 — Voir les pays d'origine sur l'annuaire (P1)
+## Phase 3: User Story 1 : Voir les pays d'origine sur l'annuaire (P1)
 
 **Goal** : Sur `/afrolang`, chaque carte de salle publique affiche ses pays d'origine selon la règle 1-3 vs 4+.
 
@@ -53,11 +53,11 @@ description: "Tâches d'implémentation — Pays d'origine des salles publiques 
 - [X] T011 [P] [US1] Ajouter dans `SalleCard.vue` la fonction utilitaire locale `drapeauEmoji(codeIso2: string | null): string` qui calcule l'emoji régional via `String.fromCodePoint(0x1F1E6 + codeIso2.charCodeAt(0) - 65, 0x1F1E6 + codeIso2.charCodeAt(1) - 65)` ; renvoyer `''` si `codeIso2` invalide ou null (repli gracieux : nom seul).
 - [X] T012 [US1] Tester manuellement quickstart §§ 3, 4 et 5 (cas 0 / 1-3 / ≥4 pays) en insérant temporairement des lignes via psql.
 
-**Checkpoint** : US1 livrable — un visiteur voit les pays sur les cartes. Pas encore d'admin UI ni de filtre.
+**Checkpoint** : US1 livrable : un visiteur voit les pays sur les cartes. Pas encore d'admin UI ni de filtre.
 
 ---
 
-## Phase 4: User Story 3 — Gestion admin (ajout/retrait + audit) (P1)
+## Phase 4: User Story 3 : Gestion admin (ajout/retrait + audit) (P1)
 
 **Goal** : Une admin peut associer / retirer des pays d'origine via le back-office Afrolang ; chaque action est auditée.
 
@@ -71,11 +71,11 @@ description: "Tâches d'implémentation — Pays d'origine des salles publiques 
 - [X] T018 [P] [US3] Ajouter dans la page admin de détail salle (`uafricas_frontend/app/pages/admin/afrolang/salles/[id].vue`) un panneau « Pays d'origine » : liste des chips actuelles (avec bouton X pour retirer), select daisyUI alimenté par `useAdminPays.listerPays()` (composable existant) pour ajouter, indicateur visuel grisé si `pays.actif === false` (mention « archivé »). daisyUI v5 autorisé (back-office, Principe VI).
 - [X] T019 [US3] Tester quickstart §§ 2, 7 (mention archivée admin), 8, 9, 10 (permission refusée).
 
-**Checkpoint** : US3 livrable — l'admin enrichit les salles, audit OK, cleanup CASCADE OK. Combiné à US1, l'utilisateur final voit les pays renseignés par l'admin.
+**Checkpoint** : US3 livrable : l'admin enrichit les salles, audit OK, cleanup CASCADE OK. Combiné à US1, l'utilisateur final voit les pays renseignés par l'admin.
 
 ---
 
-## Phase 5: User Story 2 — Filtre public par pays (P2)
+## Phase 5: User Story 2 : Filtre public par pays (P2)
 
 **Goal** : Un visiteur filtre `/afrolang` par un pays d'origine choisi parmi ceux disponibles.
 
@@ -88,14 +88,14 @@ description: "Tâches d'implémentation — Pays d'origine des salles publiques 
 - [X] T024 [US2] Dans `uafricas_frontend/app/pages/afrolang/index.vue`, étendre `buildApiFiltres` pour propager `filtres.value.pays_id` ; étendre `resetFilters` pour remettre `pays_id: ''` ; ajouter un `watch(() => filtres.value.pays_id, ...)` qui repasse à `currentPage = 1` puis `chargerSalles()` (modèle identique à `langue`).
 - [X] T025 [US2] Tester quickstart § 6 : sélection, reset, combinaison avec recherche texte ; vérifier qu'un `pays_id` archivé ou inconnu renvoie 0 résultat (200, liste vide).
 
-**Checkpoint** : US2 livrable — toutes les user stories sont en production.
+**Checkpoint** : US2 livrable : toutes les user stories sont en production.
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting
 
 - [X] T026 [P] Mettre à jour `CLAUDE.md` (section « Recent Changes ») avec un résumé 1 ligne de la feature 001-afrolang-pays-origine (table N-N + endpoints admin + filtre public).
-- [X] T027 [P] Ajouter une entrée correspondante dans `CLAUDE.md` § « Active Technologies » uniquement si nécessaire (la mise à jour automatique a déjà ajouté l'entrée — vérifier qu'il n'y a pas de doublon, sinon nettoyer).
+- [X] T027 [P] Ajouter une entrée correspondante dans `CLAUDE.md` § « Active Technologies » uniquement si nécessaire (la mise à jour automatique a déjà ajouté l'entrée, vérifier qu'il n'y a pas de doublon, sinon nettoyer).
 - [X] T028 Mesurer le temps de réponse de `GET /api/afrolang/salles` avant/après (curl + `time`) pour valider SC-004 (≤ 110 % du baseline). Documenter le résultat dans `quickstart.md` § 10.
 - [X] T029 Vérifier qu'aucun pays archivé n'apparaît dans la réponse publique (cas Q3) en désactivant temporairement un pays utilisé puis en interrogeant l'API.
 - [X] T030 Commit final : `feat(afrolang): pays d'origine N-N pour les salles publiques + filtre public + admin (#001-afrolang-pays-origine)`.
@@ -111,7 +111,7 @@ T001 (Setup)
               ├─▶ Phase 3 (US1) : T008 → T009 → T010 [P] T011 [P] → T012
               ├─▶ Phase 4 (US3) : T013 → T014 → T015 → T016 → T017 [P] T018 [P] → T019
               └─▶ Phase 5 (US2) : T020 → T021 [P] T022 [P] T023 [P] → T024 → T025
-                    (US2 nécessite T008 — mêmes fichiers/handler que US1)
+                    (US2 nécessite T008 : mêmes fichiers/handler que US1)
                     └─▶ Phase 6 : T026 [P] T027 [P] → T028 → T029 → T030
 ```
 
@@ -127,11 +127,11 @@ T001 (Setup)
 
 **Foundational (T004 → T007)** : 4 fichiers indépendants (3 backend, 1 frontend) modifiables en parallèle.
 
-**US1 — frontend (T010 + T011)** : tout est dans `SalleCard.vue` mais sur deux blocs distincts (template/computed vs fonction utilitaire) — séquentiel recommandé.
+**US1 : frontend (T010 + T011)** : tout est dans `SalleCard.vue` mais sur deux blocs distincts (template/computed vs fonction utilitaire), séquentiel recommandé.
 
-**US3 — frontend (T017 + T018)** : composable et page admin dans deux fichiers distincts → parallélisables.
+**US3 : frontend (T017 + T018)** : composable et page admin dans deux fichiers distincts → parallélisables.
 
-**US2 — frontend (T021 + T022 + T023)** : composable + 2 composants distincts → parallélisables.
+**US2 : frontend (T021 + T022 + T023)** : composable + 2 composants distincts → parallélisables.
 
 **Polish (T026 + T027)** : retouches CLAUDE.md → parallélisables.
 

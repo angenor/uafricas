@@ -277,11 +277,27 @@ pub async fn connexion(
     .await?
     .ok_or_else(|| ApiErreur::NonAutorise("Email ou mot de passe incorrect".into()))?;
 
-    // Verifier le mot de passe
-    let valide = bcrypt::verify(&req.mot_de_passe, &utilisateur.mot_de_passe_hash)
-        .map_err(|e| {
-            ApiErreur::BaseDeDonnees(format!("Erreur verification mot de passe: {}", e))
-        })?;
+    // Verifier le mot de passe.
+    //
+    // Une erreur de `verify` ne signifie PAS une panne : elle signifie que le
+    // hash stocké n'est pas un bcrypt lisible (enregistrement corrompu, ou
+    // valeur factice insérée par un seed). Le compte est alors inauthentifiable
+    // c'est un échec de connexion, pas une erreur de base de données. La
+    // mapper en 500 exposait la différence entre « mauvais mot de passe » et
+    // « enregistrement abîmé », et faisait remonter des 500 sur une simple
+    // tentative de connexion. On journalise pour que l'exploitant voie le
+    // compte fautif, et on répond comme pour un mot de passe faux.
+    let valide = match bcrypt::verify(&req.mot_de_passe, &utilisateur.mot_de_passe_hash) {
+        Ok(v) => v,
+        Err(e) => {
+            log::warn!(
+                "Hash de mot de passe illisible pour l'utilisateur {} : {}",
+                utilisateur.id,
+                e
+            );
+            false
+        }
+    };
 
     if !valide {
         return Err(ApiErreur::NonAutorise(
@@ -619,7 +635,7 @@ pub async fn renvoyer_verification(
 }
 
 // ──────────────────────────────────────────────────────────────
-// PUT /api/auth/profil — Modifier son propre profil
+// PUT /api/auth/profil : Modifier son propre profil
 // ──────────────────────────────────────────────────────────────
 pub async fn modifier_profil(
     pool: web::Data<PgPool>,
@@ -811,7 +827,7 @@ pub async fn modifier_profil(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/auth/profil/photo — Uploader une photo de profil
+// POST /api/auth/profil/photo : Uploader une photo de profil
 // ──────────────────────────────────────────────────────────────
 pub async fn uploader_photo_profil(
     pool: web::Data<PgPool>,
@@ -937,7 +953,7 @@ pub async fn uploader_photo_profil(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/auth/changer-mot-de-passe — Changer son mot de passe
+// POST /api/auth/changer-mot-de-passe, Changer son mot de passe
 // ──────────────────────────────────────────────────────────────
 pub async fn changer_mot_de_passe(
     pool: web::Data<PgPool>,

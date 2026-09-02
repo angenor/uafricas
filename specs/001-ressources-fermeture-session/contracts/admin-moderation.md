@@ -1,4 +1,4 @@
-# Contrats HTTP — Modération administrative (admin)
+# Contrats HTTP : Modération administrative (admin)
 
 **Préfixe** : `/api/admin/afrolang`
 **Auth** : JWT bearer **+ rôle administrateur de la plateforme** sur tous les endpoints (helper `est_admin_plateforme` existant).

@@ -1,4 +1,4 @@
-# Contrat d'API — Cadeaux virtuels (membre & public)
+# Contrat d'API : Cadeaux virtuels (membre & public)
 
 **Base** : `/api/engagement` · **Enveloppe** : `ApiResponse<T>` (`{ succes, message, donnees }`) comme le reste de la plateforme.
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 1. `GET /api/engagement/cadeaux` — catalogue
+## 1. `GET /api/engagement/cadeaux` : catalogue
 
 **Auth** : publique.
 
@@ -32,7 +32,7 @@ Seuls les cadeaux `actif = TRUE` sont renvoyés, triés par `ordre` puis `points
 
 ---
 
-## 2. `POST /api/engagement/cadeaux/envoyer` — créer une intention
+## 2. `POST /api/engagement/cadeaux/envoyer`, créer une intention
 
 **Auth** : JWT membre requis.
 
@@ -86,15 +86,15 @@ Familles admises (identiques à celles éligibles au j'aime, FR-008) :
 |------|-----|
 | `400` | `cible` malformée, famille inconnue, mode invalide |
 | `401` | Non authentifié |
-| `403` | Auto-cadeau (bénéficiaire résolu = offreur) — message explicite (FR-023) |
+| `403` | Auto-cadeau (bénéficiaire résolu = offreur), message explicite (FR-023) |
 | `404` | Cadeau inactif ou inexistant, contenu inexistant |
-| `409` | Aucun bénéficiaire résolvable — support sans propriétaire déclaré, ou élément éditorial sans auteur (`site_touristique`, `secteur_developpement`) |
+| `409` | Aucun bénéficiaire résolvable, support sans propriétaire déclaré, ou élément éditorial sans auteur (`site_touristique`, `secteur_developpement`) |
 
 Aucun point n'est crédité, aucune cagnotte n'est touchée à cette étape.
 
 ---
 
-## 3. `POST /api/engagement/paiements/{reference}/confirmer` — issue du paiement
+## 3. `POST /api/engagement/paiements/{reference}/confirmer`, issue du paiement
 
 **Auth** : JWT membre requis ; la transaction doit appartenir à l'appelant.
 
@@ -129,7 +129,7 @@ Aucun point n'est crédité, aucune cagnotte n'est touchée à cette étape.
 
 ---
 
-## 4. `GET /api/engagement/cadeaux/{type_objet}/{objet_id}` — cadeaux reçus par un contenu
+## 4. `GET /api/engagement/cadeaux/{type_objet}/{objet_id}`, cadeaux reçus par un contenu
 
 **Auth** : publique.
 
@@ -152,7 +152,7 @@ Aucun point n'est crédité, aucune cagnotte n'est touchée à cette étape.
 
 ---
 
-## 5. `GET /api/engagement/mes-cadeaux` — mes cadeaux reçus et offerts
+## 5. `GET /api/engagement/mes-cadeaux` : mes cadeaux reçus et offerts
 
 **Auth** : JWT membre requis. **Pagination** : `?page=&taille=&sens=recus|offerts`.
 
@@ -160,7 +160,7 @@ Chaque ligne : cadeau, contrepartie (offreur ou bénéficiaire), contenu concern
 
 ---
 
-## 6. `GET /api/engagement/ma-cagnotte` — solde de soutien
+## 6. `GET /api/engagement/ma-cagnotte` : solde de soutien
 
 **Auth** : JWT membre requis.
 
@@ -177,11 +177,11 @@ Chaque ligne : cadeau, contrepartie (offreur ou bénéficiaire), contenu concern
 }
 ```
 
-`versement_disponible` est toujours `false` dans cette itération (FR-026). `part_simulee` indique la fraction issue de transactions `simule = TRUE`, c'est-à-dire ce que la purge retirera — l'information doit être visible du membre pour que la purge ne soit pas une surprise.
+`versement_disponible` est toujours `false` dans cette itération (FR-026). `part_simulee` indique la fraction issue de transactions `simule = TRUE`, c'est-à-dire ce que la purge retirera, l'information doit être visible du membre pour que la purge ne soit pas une surprise.
 
 ---
 
-## 7. `POST /api/engagement/partages-externes` — traçage (route existante, contrat modifié)
+## 7. `POST /api/engagement/partages-externes`, traçage (route existante, contrat modifié)
 
 Le corps est inchangé (`{ type_objet, objet_id, reseau }`). **La réponse change** :
 

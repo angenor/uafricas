@@ -142,7 +142,7 @@ export interface TableauDeBord {
   nb_parcours: number
 }
 
-// ── Interfaces de reponse — Partage public ─────────────────
+// ── Interfaces de reponse : Partage public ─────────────────
 
 /** Detail complet d'un avis public actif */
 export interface AvisPublicDetail {
@@ -232,8 +232,8 @@ export interface RecherchePubliqueParams {
   ordre?: 'asc' | 'desc'
 }
 
-/** @deprecated Supprime en 003 — publication automatique a la creation */
-// PublierAvisResponse supprime — plus d'endpoint publier_avis
+/** @deprecated Supprime en 003 : publication automatique a la creation */
+// PublierAvisResponse supprime : plus d'endpoint publier_avis
 
 /** Reponse apres reponse publique a un avis */
 export interface ReponsePubliqueResult {
@@ -375,10 +375,10 @@ export const TYPES_PARCOURS: { value: TypeParcours; label: string; icon: string 
 
 export const TYPES_RELATION: { value: TypeRelationRecherche; label: string }[] = [
   { value: 'amis_enfance', label: 'Amis d\'enfance' },
-  { value: 'amis_ecole', label: 'Amis d\'ecole / universite' },
-  { value: 'collegue', label: 'Collegue' },
+  { value: 'amis_ecole', label: 'Amis d\'école / université' },
+  { value: 'collegue', label: 'Collègue' },
   { value: 'connaissance', label: 'Connaissance' },
-  { value: 'frere_soeur', label: 'Frere / Soeur' },
+  { value: 'frere_soeur', label: 'Frère / Sœur' },
   { value: 'parent', label: 'Parent' },
   { value: 'autre', label: 'Autre' },
 ]
@@ -1128,7 +1128,7 @@ export const useRetrouvAmis = () => {
 
   // ── Partage public ──────────────────────────────────────────
 
-  // publierAvis supprime en 003 — publication automatique a la creation
+  // publierAvis supprime en 003 : publication automatique a la creation
 
   /**
    * Obtenir le detail d'un avis public par son slug (sans auth)

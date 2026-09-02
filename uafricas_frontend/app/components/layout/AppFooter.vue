@@ -37,19 +37,23 @@
               <font-awesome-icon icon="fa-solid fa-envelope" class="w-4 h-4 text-custom-chocolat/60" />
               uafricas@gmail.com
             </a>
-            <span class="flex items-center gap-2.5 text-sm text-gray-600">
-              <font-awesome-icon icon="fa-solid fa-phone" class="w-4 h-4 text-custom-chocolat/60" />
-              00 00 00 00 00
-            </span>
+            <!-- Le téléphone affichait « 00 00 00 00 00 ». Un numéro de
+                 remplissage n'informe pas, il induit en erreur : quelqu'un
+                 finit par le composer. Il reviendra le jour où il existera. -->
           </div>
 
-          <!-- Réseaux sociaux -->
-          <div class="flex gap-2.5">
+          <!-- Réseaux sociaux. `href="#"` remontait en haut de page : ce
+               n'était pas un lien, c'était un piège. La rangée entière
+               disparaît tant qu'aucune adresse n'est renseignée. -->
+          <div v-if="reseauxSociaux.length" class="flex gap-2.5">
             <a
               v-for="reseau in reseauxSociaux"
               :key="reseau.nom"
-              href="#"
+              :href="reseau.url"
+              target="_blank"
+              rel="noopener noreferrer"
               :title="reseau.nom"
+              :aria-label="`AfricanS sur ${reseau.nom}`"
               class="w-9 h-9 rounded-full flex items-center justify-center text-white transition-opacity hover:opacity-80"
               :class="reseau.bg"
             >
@@ -72,6 +76,9 @@
 const anneeCourante = new Date().getFullYear()
 
 const liensRapides = [
+  // La page de présentation n'est plus la racine : sans ce lien, elle ne serait
+  // atteignable qu'en tapant son adresse.
+  { label: 'Découvrir AfricanS', to: '/decouvrir', icone: 'fa-solid fa-earth-africa' },
   { label: 'Notre Mission', to: '/a-propos/mission', icone: 'fa-solid fa-rocket' },
   { label: 'Gouvernance', to: '/universite/gouvernance', icone: 'fa-solid fa-landmark' },
   { label: 'Nos Partenaires', to: '/a-propos/partenaires', icone: 'fa-solid fa-handshake' },
@@ -80,11 +87,19 @@ const liensRapides = [
   { label: 'Devenir Partenaire', to: '/devenir-partenaire', icone: 'fa-solid fa-user-plus' },
 ]
 
+/**
+ * Réseaux sociaux de la plateforme.
+ *
+ * Les cinq boutons n'avaient AUCUN `href` : cinq pastilles colorées qui ne
+ * menaient nulle part, et qu'un lecteur d'écran n'annonçait même pas comme
+ * des liens. Chacun porte désormais son adresse, et seuls ceux qui en ont
+ * une sont affichés — renseigner `url` suffit à rallumer un réseau.
+ */
 const reseauxSociaux = [
-  { nom: 'Facebook', icone: 'facebook', bg: 'bg-blue-600' },
-  { nom: 'Twitter', icone: 'twitter', bg: 'bg-sky-500' },
-  { nom: 'LinkedIn', icone: 'linkedin', bg: 'bg-blue-700' },
-  { nom: 'Instagram', icone: 'instagram', bg: 'bg-pink-600' },
-  { nom: 'YouTube', icone: 'youtube', bg: 'bg-red-600' },
-]
+  { nom: 'Facebook', icone: 'facebook', bg: 'bg-blue-600', url: '' },
+  { nom: 'Twitter', icone: 'twitter', bg: 'bg-sky-500', url: '' },
+  { nom: 'LinkedIn', icone: 'linkedin', bg: 'bg-blue-700', url: '' },
+  { nom: 'Instagram', icone: 'instagram', bg: 'bg-pink-600', url: '' },
+  { nom: 'YouTube', icone: 'youtube', bg: 'bg-red-600', url: '' },
+].filter(r => r.url)
 </script>

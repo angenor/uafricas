@@ -2,7 +2,7 @@
 import gsap from 'gsap'
 import { useAnimationsFormulaire } from '~/composables/useAnimationsFormulaire'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: false })
 
 const userStore = useUserStore()
 const { redirigerVersConnexion } = useAuth()
@@ -120,83 +120,96 @@ onMounted(() => {
 </script>
 
 <template>
-  <div ref="pageRef" class="min-h-screen bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
-    >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Nouvel avis de recherche
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Decrivez la personne que vous recherchez pour lancer la mise en relation.
-          </p>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <!-- L'image était HOTLINKÉE sur Unsplash : hors de notre contrôle, elle
+           pouvait disparaître ou changer sans préavis. Le hero local du module
+           existait déjà, il est simplement repris. -->
+      <AfricansBandeauModule
+        titre="Nouvel avis de recherche"
+        sous-titre="Décrivez la personne que vous recherchez pour lancer la mise en relation."
+        image="/images/africans/heros/hero-africonnect.jpg"
+      />
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Opafrica', vers: '/retrouve-amis' },
+          { libelle: 'Africonnect', vers: '/retrouve-amis' },
+          { libelle: 'Nouvel avis' },
+        ]"
+      />
+    </template>
+
+    <div ref="pageRef">
+      <!-- Confirmation -->
+      <div
+        v-if="succes"
+        class="relative overflow-hidden rounded-[10px] border border-af-vert/30 bg-white p-8 text-center"
+      >
+        <div ref="conteneurConfettisRef" class="pointer-events-none absolute inset-0 overflow-hidden" />
+
+        <div
+          ref="iconeSuccesRef"
+          class="mx-auto mb-4 grid size-16 place-items-center rounded-full bg-af-vert/10 text-af-vert"
+        >
+          <font-awesome-icon icon="fa-solid fa-check" class="text-3xl" />
         </div>
+        <h2 ref="titreSuccesRef" class="mb-2 text-[20px]/[1.4] font-bold text-af-encre">
+          Avis de recherche publié !
+        </h2>
+        <p class="text-[14px]/[1.6] text-af-corps">
+          Votre avis est maintenant visible par tous les visiteurs.
+        </p>
+        <p
+          v-if="correspondancesTrouvees > 0"
+          ref="messageCorrespondancesRef"
+          class="mt-2 text-[14px]/[1.4] font-bold text-af-vert"
+        >
+          <span class="compteur-correspondances">{{ correspondancesTrouvees }}</span>
+          correspondance(s) potentielle(s) trouvée(s) !
+        </p>
+        <p v-else class="mt-2 text-[14px]/[1.4] text-af-atone">
+          Nous vous notifierons dès qu'une correspondance sera trouvée.
+        </p>
+
+        <div ref="boutonsSuccesRef" class="mt-6 flex flex-wrap justify-center gap-3">
+          <AfricansBouton
+            v-if="slugCree"
+            :vers="`/retrouve-amis/public/${slugCree}`"
+            icone="fa-solid fa-eye"
+          >
+            Voir votre avis tel que publié
+          </AfricansBouton>
+          <AfricansBouton vers="/retrouve-amis/mes-recherches" variante="secondaire">
+            Mes recherches
+          </AfricansBouton>
+        </div>
+      </div>
+
+      <!-- Formulaire -->
+      <div v-else class="flex flex-col gap-6">
+        <p
+          v-if="erreur"
+          ref="erreurRef"
+          class="flex items-center gap-2 rounded-[10px] border border-af-live/30 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
+        >
+          <font-awesome-icon icon="fa-solid fa-circle-exclamation" class="shrink-0" />
+          {{ erreur }}
+        </p>
+
+        <RetrouveAmisAvisRechercheForm
+          mode="creation"
+          :chargement-soumission="chargement"
+          @submit="onSoumettre"
+          @annuler="onAnnuler"
+        />
       </div>
     </div>
 
-    <div class="max-w-6xl mx-auto lg:flex lg:gap-8 px-4 py-8">
+    <template #rail>
       <RetrouveAmisSideBar />
-      <div class="flex-1 max-w-3xl">
-
-        <!-- Message de succes -->
-        <div v-if="succes" class="relative bg-white rounded-xl shadow-sm border border-green-200 p-8 text-center overflow-hidden">
-          <!-- Zone confettis -->
-          <div ref="conteneurConfettisRef" class="pointer-events-none absolute inset-0 overflow-hidden" />
-
-          <div ref="iconeSuccesRef" class="w-16 h-16 mx-auto mb-4 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-            <font-awesome-icon :icon="['fas', 'check']" class="text-3xl" />
-          </div>
-          <h2 ref="titreSuccesRef" class="text-2xl font-bold text-gray-800 mb-2 font-[Oswald]">
-            Avis de recherche publie !
-          </h2>
-          <p class="text-gray-600 mb-2">
-            Votre avis est maintenant visible par tous les visiteurs.
-          </p>
-          <p v-if="correspondancesTrouvees > 0" ref="messageCorrespondancesRef" class="text-green-700 font-medium mb-4">
-            <span class="compteur-correspondances">{{ correspondancesTrouvees }}</span> correspondance(s) potentielle(s) trouvee(s) !
-          </p>
-          <p v-else class="text-gray-500 text-sm mb-6">
-            Nous vous notifierons des qu'une correspondance sera trouvee.
-          </p>
-          <div ref="boutonsSuccesRef" class="flex flex-wrap justify-center gap-3">
-            <NuxtLink
-              v-if="slugCree"
-              :to="`/retrouve-amis/public/${slugCree}`"
-              class="px-6 py-3 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 transition-colors"
-            >
-              <font-awesome-icon :icon="['fas', 'eye']" class="mr-2" />
-              Voir votre avis tel que publié
-            </NuxtLink>
-            <NuxtLink
-              to="/retrouve-amis/mes-recherches"
-              class="px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              Mes recherches
-            </NuxtLink>
-          </div>
-        </div>
-
-        <!-- Formulaire -->
-        <div v-else>
-          <!-- Erreur -->
-          <div v-if="erreur" ref="erreurRef" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            <font-awesome-icon :icon="['fas', 'circle-exclamation']" class="mr-2" />
-            {{ erreur }}
-          </div>
-
-          <RetrouveAmisAvisRechercheForm
-            mode="creation"
-            :chargement-soumission="chargement"
-            @submit="onSoumettre"
-            @annuler="onAnnuler"
-          />
-        </div>
-      </div>
-    </div>
-  </div>
+    </template>
+  </NuxtLayout>
 </template>

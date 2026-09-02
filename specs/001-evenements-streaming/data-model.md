@@ -1,6 +1,6 @@
-# Phase 1 — Modèle de données
+# Phase 1 : Modèle de données
 
-Schéma cible : `media_content` (source de vérité — Principe III). Migration idempotente : `uafricas_backend/doc/bd/schemas/09b_media_content_evenements_streaming.sql`, à inclure dans `doc/bd/schema.sql` (via `\ir schemas/09b_media_content_evenements_streaming.sql`) **après** les tables `media_content` et **avant** `12_audit.sql` / `13_contraintes_inter_schemas.sql` / `14_triggers.sql`.
+Schéma cible : `media_content` (source de vérité, Principe III). Migration idempotente : `uafricas_backend/doc/bd/schemas/09b_media_content_evenements_streaming.sql`, à inclure dans `doc/bd/schema.sql` (via `\ir schemas/09b_media_content_evenements_streaming.sql`) **après** les tables `media_content` et **avant** `12_audit.sql` / `13_contraintes_inter_schemas.sql` / `14_triggers.sql`.
 
 Aucune modification de la table `media_content.evenement` n'est nécessaire (`format`, `lien_en_ligne`, `cree_par`, `date_heure_debut/fin` existent déjà). Aucun média n'est persisté.
 
@@ -54,7 +54,7 @@ Présence d'un membre dans une session, avec son rôle (détermine le droit de d
 
 ## Règles de validation (issues des exigences)
 
-- **Ouverture** (FR-004) : `evenement.format ∈ {en_ligne, hybride}` (FR-001/019), `evenement.etat = 'publie'`, demandeur = `cree_par`, `NOW() >= date_heure_debut − 15min` (D6), aucune session `en_cours` existante (sinon rejoindre l'existante — FR-015).
+- **Ouverture** (FR-004) : `evenement.format ∈ {en_ligne, hybride}` (FR-001/019), `evenement.etat = 'publie'`, demandeur = `cree_par`, `NOW() >= date_heure_debut − 15min` (D6), aucune session `en_cours` existante (sinon rejoindre l'existante, FR-015).
 - **Jointure** (FR-002/003) : demandeur connecté (401 sinon) ET (`= organisateur` OU `est_inscrit`) ; sinon 403. Refus 409 si présents actifs `>= max_participants` (D8, organisateur exempté).
 - **Promotion/rétrogradation/retrait** (FR-009/010) : demandeur = organisateur de la session uniquement.
 - **Lever la main** (FR-022) : rôle `spectateur` uniquement ; toggle `main_levee`.
@@ -68,7 +68,7 @@ Présence d'un membre dans une session, avec son rôle (détermine le droit de d
 (absente) ──ouvrir (organisateur, fenêtre OK)──▶ en_cours ──clôturer / arrêt sécurité / annulation──▶ terminee
                                                     │
                                                     └─ « en attente de l'organisateur » = état DÉRIVÉ
-                                                       (aucune session en_cours + dans la fenêtre) — non persisté
+                                                       (aucune session en_cours + dans la fenêtre), non persisté
 ```
 - `statut_direct` exposé au frontend (dérivé à la lecture, jamais stocké) :
   - `indisponible` : `format` non diffusable, ou `NOW() < debut − 15min`, ou événement `annule`.
@@ -90,9 +90,9 @@ main_levee : spectateur lève/baisse ; remis à FALSE lors d'une promotion
 | SQL (`evenement_session`) | Rust `FromRow` | DTO Response (`Serialize`) | TS (`useEvenements`) |
 |---|---|---|---|
 | `id` | `id: Uuid` | `session_id` (json inline du token) | `session_id: string` |
-| `etat` | `etat: String` | — (dérivé `statut_direct`) | `statut_direct: 'indisponible'\|'en_attente'\|'en_direct'\|'termine'` |
+| `etat` | `etat: String` | : (dérivé `statut_direct`) | `statut_direct: 'indisponible'\|'en_attente'\|'en_direct'\|'termine'` |
 | `role` (participant) | `role: String` | `role` | `role: 'organisateur'\|'intervenant'\|'spectateur'` |
 | `main_levee` | `main_levee: bool` | `main_levee` | `main_levee: boolean` |
-| — (LiveKit) | — | `token`,`room_name`,`livekit_url` | `token`,`room_name`,`livekit_url` |
+| (LiveKit) | : | `token`,`room_name`,`livekit_url` | `token`,`room_name`,`livekit_url` |
 
 `room_name` = `format!("evenement-{}", session_id)` ; identité LiveKit = `utilisateur_id.to_string()` ; nom affiché = `"{prenom} {nom}"` (parité afrolang).

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Badge de statut d'engagement — Tailwind pur (réutilisable : profil + sous contenus)
+// Badge de statut d'engagement : Tailwind pur (réutilisable : profil + sous contenus)
 import { computed, ref, watch, onMounted } from 'vue'
 import { useEngagement, type NiveauInfo } from '~/composables/useEngagement'
 
@@ -38,8 +38,8 @@ onMounted(chargerSiBesoin)
 // de statut n'est écrit en dur ici, sans quoi renommer « Premium » en
 // back-office ne changerait rien à l'écran (FR-032).
 //
-// Les quatre statuts livrés — Membre Africans (gray), Premium (amber),
-// Gold (yellow), Platinum (slate) — ne sont qu'un paramétrage parmi d'autres :
+// Les quatre statuts livrés : Membre Africans (gray), Premium (amber),
+// Gold (yellow), Platinum (slate), ne sont qu'un paramétrage parmi d'autres :
 // en ajouter un cinquième ne demande aucune livraison, seulement un jeton connu
 // de cette table.
 const CLASSES: Record<string, string> = {

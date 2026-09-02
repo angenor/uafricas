@@ -1,4 +1,4 @@
-# Phase 0 — Research & Décisions techniques
+# Phase 0 : Research & Décisions techniques
 
 Feature : Enrichissement des sites touristiques · Branche `001-sites-touristiques-enrichis`
 
@@ -7,7 +7,7 @@ Les décisions ci-dessous tranchent les choix d'implémentation à partir du cod
 
 ---
 
-## D1 — Représentation des sous-types : un seul enum PostgreSQL
+## D1 : Représentation des sous-types : un seul enum PostgreSQL
 
 **Décision** : créer **un seul** enum `country_profile.sous_type_site` regroupant les 20 valeurs
 (12 emblématiques + 8 privées), et valider la cohérence famille↔sous-type côté code (Rust + TS).
@@ -30,7 +30,7 @@ famille ; `sous_type` la précise.
 
 ---
 
-## D2 — Avis par site : écriture directe (pas le workflow de contribution)
+## D2 : Avis par site : écriture directe (pas le workflow de contribution)
 
 **Décision** : nouvelle table `country_profile.avis_site` alimentée par un **endpoint direct
 authentifié** (publication immédiate), distincte du circuit de contribution. Un avis actif au plus
@@ -50,7 +50,7 @@ contredirait ce comportement. Le pattern d'unicité reprend `recommandation_visi
 
 ---
 
-## D3 — Champs enrichis du site : extension de `site_touristique` via contribution JSONB
+## D3 : Champs enrichis du site : extension de `site_touristique` via contribution JSONB
 
 **Décision** : ajouter les colonnes à `country_profile.site_touristique` (sous_type, gestionnaire,
 ville, village, info_pertinente, contact_telephone, contact_courriel, contact_adresse,
@@ -75,7 +75,7 @@ appliqués par `appliquer_contribution_afripulse` (branches `site_touristique` �
 
 ---
 
-## D4 — Badge « Vérifié » : toggle admin direct + audit
+## D4 : Badge « Vérifié » : toggle admin direct + audit
 
 **Décision** : endpoint admin `PATCH /api/admin/profils-pays/{id}/sites-touristiques/{site_id}/verification`
 (body `{ verifie: bool }`), protégé par `verifier_permission!(admin, "profil_pays", "modifier")`,
@@ -90,19 +90,19 @@ contribution. Cohérent avec le CRUD admin existant des sites (`modifier_site_to
 
 ---
 
-## D5 — Rate-limit et upload
+## D5 : Rate-limit et upload
 
 **Décision** : réutiliser `rate_limit_afripulse::verifier_quotas` pour les contributions de sites
 (déjà appliqué au `type_objet = site_touristique`). Les avis (D2) utilisent un garde simple
 (1 avis actif/site déjà garanti par l'index unique ; ajout d'un contrôle de fréquence léger si
-nécessaire — non bloquant). Le document de constitution légale réutilise
-`uploader_image_contribution` / le stockage `./uploads/opportunite-afrique/` (Principe — upload local).
+nécessaire : non bloquant). Le document de constitution légale réutilise
+`uploader_image_contribution` / le stockage `./uploads/opportunite-afrique/` (Principe, upload local).
 
 **Rationale** : éviter toute nouvelle infrastructure (Principe V) ; cohérence avec l'existant.
 
 ---
 
-## D6 — Frontend : Tailwind v4 pur côté public
+## D6 : Frontend : Tailwind v4 pur côté public
 
 **Décision** : la section publique (`SitesTouristiquesSection.vue`), le nouveau composant
 `SiteAvisListe.vue` et les ajouts au `ContributionModal.vue` utilisent exclusivement les utilitaires

@@ -53,7 +53,7 @@ pub fn label_langue(code: &str) -> &str {
     }
 }
 
-// ── Vidéos — Liste ───────────────────────────────────────────
+// ── Vidéos : Liste ───────────────────────────────────────────
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct AdminVideoListeResponse {
@@ -67,7 +67,7 @@ pub struct AdminVideoListeResponse {
     pub created_at: DateTime<Utc>,
 }
 
-// ── Vidéos — Détail ──────────────────────────────────────────
+// ── Vidéos : Détail ──────────────────────────────────────────
 
 #[derive(Debug, FromRow)]
 pub struct AdminVideoDetailRow {
@@ -198,7 +198,7 @@ pub struct EnregistrerTimingsMotRequest {
     pub timings: Vec<TimingMotItem>,
 }
 
-// ── Pistes — Response ────────────────────────────────────────
+// ── Pistes : Response ────────────────────────────────────────
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct AdminPisteSousTitreResponse {
@@ -212,7 +212,7 @@ pub struct AdminPisteSousTitreResponse {
     pub created_at: DateTime<Utc>,
 }
 
-// ── Segments — Response ──────────────────────────────────────
+// ── Segments : Response ──────────────────────────────────────
 
 #[derive(Debug, Serialize)]
 pub struct AdminSegmentSousTitreResponse {

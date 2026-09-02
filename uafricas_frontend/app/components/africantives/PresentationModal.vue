@@ -36,7 +36,7 @@
           <!-- L'accroche -->
           <p class="text-gray-700 leading-relaxed">
             Partout, des Africains, des afrodescendants et des membres de la diaspora lancent des
-            projets qui font avancer le continent — mais beaucoup manquent de visibilité.
+            projets qui font avancer le continent, mais beaucoup manquent de visibilité.
             <strong class="text-gray-900">Africantives</strong> met en lumière ces initiatives :
             chacun peut <strong class="text-gray-900">publier la sienne</strong>, la présenter en
             détail et la rendre visible auprès de toute la communauté.

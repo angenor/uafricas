@@ -121,7 +121,7 @@ async fn construire_response(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/evenements — Lister les evenements avec filtres et pagination
+// GET /api/evenements : Lister les evenements avec filtres et pagination
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_evenements(
     pool: web::Data<PgPool>,
@@ -158,7 +158,7 @@ pub async fn lister_evenements(
     // Filtre par zone geographique (Afrique / Hors Afrique).
     // Un evenement ne porte qu'UN territoire (`e.pays_id`) : les deux zones sont
     // disjointes par construction, aucun correctif de recouvrement n'est requis.
-    // Toute autre valeur (`tout`, absente) n'applique aucun filtre — voir la
+    // Toute autre valeur (`tout`, absente) n'applique aucun filtre : voir la
     // branche `_ => {}` ci-dessous.
     // La liste des codes ISO2 africains est une constante figee (aucun risque
     // d'injection) : on l'injecte directement dans le IN, sans bind parametre.
@@ -252,7 +252,7 @@ pub async fn lister_evenements(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/evenements/{id} — Obtenir le detail d'un evenement
+// GET /api/evenements/{id} : Obtenir le detail d'un evenement
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_evenement(
     pool: web::Data<PgPool>,
@@ -328,7 +328,7 @@ pub async fn obtenir_evenement(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/evenements — Creer un evenement (multipart/form-data)
+// POST /api/evenements : Creer un evenement (multipart/form-data)
 // ──────────────────────────────────────────────────────────────
 pub async fn creer_evenement(
     pool: web::Data<PgPool>,
@@ -466,7 +466,7 @@ pub async fn creer_evenement(
 
     let slug = generer_slug(&titre);
 
-    // Type d'organisateur (nom propre vs organisation) — important pour les stats.
+    // Type d'organisateur (nom propre vs organisation), important pour les stats.
     let type_organisateur = type_organisateur.unwrap_or_else(|| "personnel".to_string());
     if !TYPES_ORGANISATEUR_VALIDES.contains(&type_organisateur.as_str()) {
         return Err(ApiErreur::Validation(
@@ -570,7 +570,7 @@ pub async fn creer_evenement(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/evenements/{id}/inscription — S'inscrire a un evenement
+// POST /api/evenements/{id}/inscription, S'inscrire a un evenement
 // ──────────────────────────────────────────────────────────────
 pub async fn inscrire_evenement(
     pool: web::Data<PgPool>,
@@ -618,7 +618,7 @@ pub async fn inscrire_evenement(
 }
 
 // ══════════════════════════════════════════════════════════════
-// Gestion par l'organisateur (membre) — « Mes evenements »
+// Gestion par l'organisateur (membre), « Mes evenements »
 // ══════════════════════════════════════════════════════════════
 
 /// Construire un EvenementDetailResponse complet a partir d'une ligne.
@@ -691,7 +691,7 @@ async fn charger_mon_evenement(
     Ok(row)
 }
 
-// GET /api/evenements/mes-evenements — Lister les evenements de l'organisateur connecte
+// GET /api/evenements/mes-evenements : Lister les evenements de l'organisateur connecte
 pub async fn lister_mes_evenements(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -722,7 +722,7 @@ pub async fn lister_mes_evenements(
     }))
 }
 
-// PUT /api/evenements/{id} — Modifier son propre evenement (JSON)
+// PUT /api/evenements/{id} : Modifier son propre evenement (JSON)
 pub async fn modifier_mon_evenement(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -843,7 +843,7 @@ pub async fn modifier_mon_evenement(
         }
     }
 
-    // Type d'organisateur (nom propre vs organisation) — important pour les stats.
+    // Type d'organisateur (nom propre vs organisation), important pour les stats.
     if let Some(ref t) = body.type_organisateur {
         if t != "personnel" && t != "organisation" {
             return Err(ApiErreur::Validation(
@@ -906,7 +906,7 @@ pub async fn modifier_mon_evenement(
     }))
 }
 
-// DELETE /api/evenements/{id} — Supprimer (soft) son propre evenement
+// DELETE /api/evenements/{id} : Supprimer (soft) son propre evenement
 pub async fn supprimer_mon_evenement(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -936,7 +936,7 @@ pub async fn supprimer_mon_evenement(
     }))
 }
 
-// GET /api/evenements/{id}/inscrits — Lister les inscrits a son propre evenement
+// GET /api/evenements/{id}/inscrits : Lister les inscrits a son propre evenement
 pub async fn lister_inscrits_mon_evenement(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -967,7 +967,7 @@ pub async fn lister_inscrits_mon_evenement(
     }))
 }
 
-// POST /api/evenements/{id}/couverture — Remplacer l'image de couverture (multipart)
+// POST /api/evenements/{id}/couverture, Remplacer l'image de couverture (multipart)
 pub async fn changer_couverture_mon_evenement(
     pool: web::Data<PgPool>,
     upload_dir: web::Data<String>,

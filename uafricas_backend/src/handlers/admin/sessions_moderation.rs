@@ -27,7 +27,7 @@ const MOTIF_PUBLIC_PARTICIPANT: &str =
     "Cette session a été fermée par l'administration.";
 
 // ──────────────────────────────────────────────────────────────────────────
-// Logique partagée — utilisable depuis l'endpoint admin plateforme OU
+// Logique partagée : utilisable depuis l'endpoint admin plateforme OU
 // depuis un endpoint public ouvert aux admins de salle (FR-019).
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ pub struct ResultatFermeture {
     pub created_at: DateTime<Utc>,
 }
 
-/// Implémentation partagée — valide motif, exécute la transaction, broadcast LiveKit,
+/// Implémentation partagée : valide motif, exécute la transaction, broadcast LiveKit,
 /// notifie participants/admins, écrit l'audit.
 ///
 /// L'autorisation (admin plateforme OU admin de salle) DOIT être vérifiée par

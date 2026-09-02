@@ -8,7 +8,7 @@ Guide de démarrage pour l'implémentation de la fonctionnalité Retrouve Amis.
 
 ## Prérequis
 
-- Docker Compose actif (`docker compose up -d`) — PostgreSQL 16, Adminer, LiveKit
+- Docker Compose actif (`docker compose up -d`), PostgreSQL 16, Adminer, LiveKit
 - Frontend : `pnpm install` dans `uafricas_frontend/`
 - Backend : Rust toolchain (Edition 2024) + `.env` configuré
 
@@ -16,7 +16,7 @@ Guide de démarrage pour l'implémentation de la fonctionnalité Retrouve Amis.
 
 L'implémentation suit le principe **III. SQL Source de Vérité** : schema SQL → backend Rust → frontend Nuxt.
 
-### Étape 1 — Schema SQL
+### Étape 1 : Schema SQL
 
 1. Créer `uafricas_backend/doc/bd/schemas/16_retrouve_amis.sql`
    - Créer le schema `retrouve_amis`
@@ -34,22 +34,22 @@ L'implémentation suit le principe **III. SQL Source de Vérité** : schema SQL 
 
 **Validation** : Relancer `docker compose down -v && docker compose up -d` pour recréer la BDD, vérifier via Adminer (http://localhost:8088).
 
-### Étape 2 — Backend Rust (Models)
+### Étape 2 : Backend Rust (Models)
 
-1. Créer `src/models/retrouve_amis.rs` — Structs publiques
+1. Créer `src/models/retrouve_amis.rs`, Structs publiques
    - `AvisRecherche`, `AvisRechercheDetail` (avec correspondances)
    - `Correspondance`, `CorrespondanceDetail`
    - `NotificationRetrouve`
    - `ParcoursTrouvable`
    - `TableauDeBord` (struct résumé)
    - DTOs de création/modification
-2. Créer `src/models/admin/retrouve_amis.rs` — Structs admin
+2. Créer `src/models/admin/retrouve_amis.rs`, Structs admin
    - `AdminAvisRecherche`, `AdminAvisRechercheDetail`
    - `AdminSignalement`, `AdminSignalementDetail`
    - `AdminStatistiques`
 3. Déclarer les modules dans `src/models/mod.rs` et `src/models/admin/mod.rs`
 
-### Étape 3 — Backend Rust (Handlers publics)
+### Étape 3 : Backend Rust (Handlers publics)
 
 1. Créer `src/handlers/retrouve_amis.rs`
    - CRUD avis de recherche (créer, lister, détail, modifier, clôturer)
@@ -64,7 +64,7 @@ L'implémentation suit le principe **III. SQL Source de Vérité** : schema SQL 
    - Insérer les correspondances avec score >= 60
    - Créer les notifications associées
 
-### Étape 4 — Backend Rust (Handlers admin)
+### Étape 4 : Backend Rust (Handlers admin)
 
 1. Créer `src/handlers/admin/retrouve_amis.rs`
    - Lister/détail avis (avec filtres admin)
@@ -74,14 +74,14 @@ L'implémentation suit le principe **III. SQL Source de Vérité** : schema SQL 
    - Statistiques
 2. Instrumenter toutes les mutations avec `audit::log_action`
 
-### Étape 5 — Backend Rust (Routes)
+### Étape 5 : Backend Rust (Routes)
 
 1. Modifier `src/routes.rs`
    - Ajouter scope `/api/retrouve-amis` avec les handlers publics
    - Ajouter scope `/api/admin/retrouve-amis` avec les handlers admin
    - Ajouter routes profil trouvable dans le scope profil existant
 
-### Étape 6 — Frontend (Composables)
+### Étape 6 : Frontend (Composables)
 
 1. Créer `app/composables/useRetrouvAmis.ts`
    - Pattern : types + constantes + composable hook
@@ -90,34 +90,34 @@ L'implémentation suit le principe **III. SQL Source de Vérité** : schema SQL 
    - Étend `useAdmin()` comme base
    - Méthodes : lister/détail avis admin, signalements, modération, statistiques
 
-### Étape 7 — Frontend (Composants)
+### Étape 7 : Frontend (Composants)
 
 1. Créer `app/components/retrouve-amis/`
-   - `RetrouvAmisHero.vue` — Section hero de la page d'accueil
-   - `AvisRechercheCard.vue` — Carte résumée d'un avis
-   - `AvisRechercheForm.vue` — Formulaire multi-étapes (5 étapes)
-   - `CorrespondanceCard.vue` — Carte de correspondance anonymisée
-   - `CorrespondanceDetail.vue` — Détail + boutons accepter/refuser
-   - `ScoreBadge.vue` — Badge visuel du score (couleur selon %)
-   - `TableauDeBord.vue` — Dashboard résumé avec compteurs
-   - `ProfilTrouvableForm.vue` — Gestion du parcours trouvable
+   - `RetrouvAmisHero.vue` : Section hero de la page d'accueil
+   - `AvisRechercheCard.vue` : Carte résumée d'un avis
+   - `AvisRechercheForm.vue` : Formulaire multi-étapes (5 étapes)
+   - `CorrespondanceCard.vue` : Carte de correspondance anonymisée
+   - `CorrespondanceDetail.vue` : Détail + boutons accepter/refuser
+   - `ScoreBadge.vue` : Badge visuel du score (couleur selon %)
+   - `TableauDeBord.vue` : Dashboard résumé avec compteurs
+   - `ProfilTrouvableForm.vue` : Gestion du parcours trouvable
 
-### Étape 8 — Frontend (Pages publiques)
+### Étape 8 : Frontend (Pages publiques)
 
-1. `app/pages/retrouve-amis/index.vue` — Landing page (Tailwind pur)
-2. `app/pages/retrouve-amis/nouveau.vue` — Formulaire création
-3. `app/pages/retrouve-amis/mes-recherches.vue` — Liste des avis
-4. `app/pages/retrouve-amis/correspondances.vue` — Liste correspondances
-5. `app/pages/retrouve-amis/correspondances/[id].vue` — Détail correspondance
-6. Modifier `app/pages/profil.vue` — Ajouter section trouvable + parcours
+1. `app/pages/retrouve-amis/index.vue`, Landing page (Tailwind pur)
+2. `app/pages/retrouve-amis/nouveau.vue`, Formulaire création
+3. `app/pages/retrouve-amis/mes-recherches.vue`, Liste des avis
+4. `app/pages/retrouve-amis/correspondances.vue`, Liste correspondances
+5. `app/pages/retrouve-amis/correspondances/[id].vue`, Détail correspondance
+6. Modifier `app/pages/profil.vue` : Ajouter section trouvable + parcours
 
-### Étape 9 — Frontend (Pages admin)
+### Étape 9 : Frontend (Pages admin)
 
-1. `app/pages/admin/retrouve-amis/index.vue` — Liste avis (daisyUI)
-2. `app/pages/admin/retrouve-amis/[id].vue` — Détail avis
-3. `app/pages/admin/retrouve-amis/signalements.vue` — Modération
+1. `app/pages/admin/retrouve-amis/index.vue`, Liste avis (daisyUI)
+2. `app/pages/admin/retrouve-amis/[id].vue`, Détail avis
+3. `app/pages/admin/retrouve-amis/signalements.vue`, Modération
 
-### Étape 10 — Navigation et intégration
+### Étape 10 : Navigation et intégration
 
 1. Ajouter le lien "Retrouve Amis" dans la NavBar (`app/components/layout/NavBar.vue`)
 2. Ajouter la section dans le sidebar admin (`app/components/admin/AdminSidebar.vue`)

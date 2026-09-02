@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Widget public — Administrateurs d'une salle publique (Tailwind v4 pur).
+// Widget public : Administrateurs d'une salle publique (Tailwind v4 pur).
 // Distinct du badge « Admin plateforme ».
 // Feature 001-admin-salles-publiques, US3 (FR-018).
 import type { AdministrateurLight } from '~/composables/useAfrolang'
@@ -34,7 +34,7 @@ const isCompact = computed(() => props.taille === 'sm')
         v-for="a in visibles"
         :key="a.utilisateur_id"
         class="inline-flex items-center gap-2 rounded-full bg-white border border-custom-chocolat/20 px-2.5 py-1 shadow-sm"
-        :title="`${a.prenom} ${a.nom} — administrateur de salle`"
+        :title="`${a.prenom} ${a.nom} : administrateur de salle`"
       >
         <img
           v-if="a.photo_url"

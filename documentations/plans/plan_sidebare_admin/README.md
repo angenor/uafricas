@@ -1,6 +1,6 @@
-# Plan d'implémentation — Sidebar Admin UAfricas
+# Plan d'implémentation : Sidebar Admin UAfricas
 
-> Généré le 18/02/2026 — basé sur `uafricas_frontend/doc/plans/admin/sidebar.yaml`
+> Généré le 18/02/2026 : basé sur `uafricas_frontend/doc/plans/admin/sidebar.yaml`
 
 ---
 
@@ -167,8 +167,8 @@ Chaque plan contient une section **"Tests manuels"** avec des vérifications vis
 
 ## Comment utiliser ces plans
 
-1. **Commencer par `00-fondation-admin.md`** — c'est le prérequis absolu
-2. **Puis `01` et `02` en parallèle** — données fondamentales
+1. **Commencer par `00-fondation-admin.md`** : c'est le prérequis absolu
+2. **Puis `01` et `02` en parallèle** : données fondamentales
 3. **Pour chaque plan**, suivre l'ordre : Backend d'abord → Frontend ensuite
 4. **Cocher les tâches** au fur et à mesure dans chaque fichier
 5. **Après chaque frontend**, lancer les tests manuels : `agent-browser --headed`

@@ -32,9 +32,25 @@ DECLARE
 BEGIN
     -- L'administrateur de la plateforme porte la création : `cree_par` est NOT
     -- NULL et sert de repli au bénéficiaire des points d'engagement.
-    SELECT id INTO v_auteur FROM iam.utilisateur WHERE email = 'angenor99@gmail.com';
+    -- Le compte nommé d'abord, un administrateur ensuite : ce seed echouait
+    -- sur TOUTE base ne portant pas cette adresse precise, alors qu'il ne lui
+    -- faut qu'un porteur pour `cree_par`, NOT NULL.
+    SELECT id INTO v_auteur FROM iam.utilisateur
+    WHERE email = 'angenor99@gmail.com' AND deleted_at IS NULL;
+
     IF v_auteur IS NULL THEN
-        RAISE EXCEPTION 'Compte auteur introuvable — seed interrompu';
+        SELECT u.id INTO v_auteur
+        FROM iam.utilisateur u
+        JOIN iam.utilisateur_role ur ON ur.utilisateur_id = u.id
+        JOIN iam.role r ON r.id = ur.role_id
+        WHERE r.nom IN ('Administrateur', 'Super Administrateur')
+          AND u.deleted_at IS NULL
+        ORDER BY u.created_at
+        LIMIT 1;
+    END IF;
+
+    IF v_auteur IS NULL THEN
+        RAISE EXCEPTION 'Aucun compte administrateur : seed interrompu';
     END IF;
 
     IF EXISTS (SELECT 1 FROM media_content.chaine_tv

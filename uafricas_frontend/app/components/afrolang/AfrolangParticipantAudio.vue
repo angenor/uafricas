@@ -2,7 +2,7 @@
 // Élément <audio> d'un participant DISTANT, rendu dans un conteneur stable de
 // AfrolangRoom (et non dans la tuile vidéo). Découpler l'audio du layout évite
 // que le son ne se coupe lors des changements d'affichage (partage d'écran,
-// spotlight, ré-agencement de la grille, mute/unmute) — bug « le partageur
+// spotlight, ré-agencement de la grille, mute/unmute), bug « le partageur
 // n'entend plus son interlocuteur ».
 const props = defineProps<{
   track: MediaStreamTrack | null

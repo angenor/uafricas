@@ -86,7 +86,7 @@ const soumettre = async () => {
               <input v-model="form.titre" type="text" class="input input-bordered" required placeholder="Titre de la proposition">
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Categorie *</span></label>
+              <label class="label"><span class="label-text">Catégorie *</span></label>
               <select v-model="form.categorie_proposition" class="select select-bordered" required>
                 <option value="amelioration_gouvernance">Gouvernance</option>
                 <option value="education_formation">Education</option>
@@ -100,8 +100,8 @@ const soumettre = async () => {
           </div>
 
           <div v-if="form.categorie_proposition === 'autre'" class="form-control">
-            <label class="label"><span class="label-text">Precision de la categorie</span></label>
-            <input v-model="form.categorie_proposition_detail" type="text" class="input input-bordered" placeholder="Precisez la categorie...">
+            <label class="label"><span class="label-text">Precision de la catégorie</span></label>
+            <input v-model="form.categorie_proposition_detail" type="text" class="input input-bordered" placeholder="Precisez la catégorie...">
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -114,7 +114,7 @@ const soumettre = async () => {
               </select>
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Etat</span></label>
+              <label class="label"><span class="label-text">État</span></label>
               <select v-model="form.etat" class="select select-bordered">
                 <option value="en_attente">En attente</option>
                 <option value="publie">Publie</option>
@@ -143,8 +143,8 @@ const soumettre = async () => {
           </div>
 
           <div class="form-control">
-            <label class="label"><span class="label-text">Details de la proposition *</span></label>
-            <textarea v-model="form.details_proposition" class="textarea textarea-bordered" rows="4" required placeholder="Details techniques et pratiques de la proposition..." />
+            <label class="label"><span class="label-text">Détails de la proposition *</span></label>
+            <textarea v-model="form.details_proposition" class="textarea textarea-bordered" rows="4" required placeholder="Détails techniques et pratiques de la proposition..." />
           </div>
 
           <div class="form-control">

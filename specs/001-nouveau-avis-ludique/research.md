@@ -69,5 +69,5 @@
 - GSAP gere nativement le kill/override de tweens sur un meme element
 
 **Alternatives considerees**:
-- `gsap.killTweensOf(element)` : kill par element plutot que par timeline — moins precis pour les animations sequentielles
+- `gsap.killTweensOf(element)` : kill par element plutot que par timeline, moins precis pour les animations sequentielles
 - Debounce sur les boutons suivant/precedent : masque le probleme au lieu de le resoudre, degrade l'UX

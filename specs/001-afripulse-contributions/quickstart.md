@@ -1,6 +1,6 @@
-# Quickstart — Afripulse Enrichissement collaboratif
+# Quickstart : Afripulse Enrichissement collaboratif
 
-**Feature**: Afripulse — Enrichissement collaboratif des fiches pays
+**Feature**: Afripulse : Enrichissement collaboratif des fiches pays
 **Branch**: `001-afripulse-contributions`
 **Date**: 2026-04-18
 
@@ -52,7 +52,7 @@ echo "FICHE_ID=$FICHE_ID"
 
 ---
 
-## US1 — Proposer une modification sur une fiche pays existante (P1)
+## US1 : Proposer une modification sur une fiche pays existante (P1)
 
 ### 1a. Ajout d'un site touristique emblématique (texte seul)
 
@@ -100,7 +100,7 @@ curl -s "http://localhost:8080/api/fiches-pays/$FICHE_ID/sites-touristiques?cate
 
 ---
 
-## US2 — Modérer et valider les contributions (P1)
+## US2 : Modérer et valider les contributions (P1)
 
 ### 2a. Lister les contributions en attente
 
@@ -171,7 +171,7 @@ curl -i -X PATCH "http://localhost:8080/api/admin/profils-pays/contributions/<NE
 
 ---
 
-## US3 — Publier une nouvelle fiche pays (P2)
+## US3 : Publier une nouvelle fiche pays (P2)
 
 ### 3a. Création d'une fiche pour un pays non encore fiché (ex. Gambie `gm`)
 
@@ -218,7 +218,7 @@ curl -i -X POST "http://localhost:8080/api/fiches-pays" \
 
 ---
 
-## US4 — Partager photos légendées + recommandations (P2)
+## US4 : Partager photos légendées + recommandations (P2)
 
 ### 4a. Upload de photos légendées (multipart)
 
@@ -280,7 +280,7 @@ curl -i -X POST "http://localhost:8080/api/fiches-pays/$FICHE_ID/contributions" 
 
 **Attendu** : HTTP 400, message « commentaire doit faire 50..2000 caractères ».
 
-### 4e. Unicité recommandation — deuxième soumission = édition
+### 4e. Unicité recommandation : deuxième soumission = édition
 
 Après approbation admin de la recommandation précédente (étape 4c), l'utilisateur soumet une nouvelle note :
 
@@ -297,7 +297,7 @@ curl -i -X POST "http://localhost:8080/api/fiches-pays/$FICHE_ID/contributions" 
 
 ---
 
-## US5 — Reconnaissance publique des contributeurs validés (P3)
+## US5 : Reconnaissance publique des contributeurs validés (P3)
 
 Après avoir validé plusieurs contributions de `user2@test.com` sur `$FICHE_ID`, vérifier :
 
@@ -318,7 +318,7 @@ Puis recharger la fiche côté UI : le contributeur doit s'afficher comme « Con
 
 ## Tests de règles critiques (non couverts par les US)
 
-### R1 — Rate-limit « 20 textes / 24 h »
+### R1 : Rate-limit « 20 textes / 24 h »
 
 Boucle bash simulant 21 soumissions textuelles :
 
@@ -336,11 +336,11 @@ done
 
 **Attendu** : les 20 premières → 202 ; la 21ᵉ → 429 avec body `seuil_depasse: "20_contributions_textuelles_24h"`.
 
-### R2 — Rate-limit « 5 en attente par pays »
+### R2 : Rate-limit « 5 en attente par pays »
 
 Après 5 contributions `en_attente` sur `$FICHE_ID`, la 6ᵉ soumission retourne 429 avec `seuil_depasse: "5_contributions_en_attente_par_pays"`. Dès qu'une des 5 est approuvée/refusée, une nouvelle soumission redevient possible.
 
-### R3 — Cohérence des 54 codes ISO
+### R3 : Cohérence des 54 codes ISO
 
 ```bash
 # Nombre d'entrées dans les deux sources doit être strictement égal à 54
@@ -350,19 +350,19 @@ grep -oE '"[a-z]{2}"' uafricas_backend/src/constants/afripulse_pays_autorises.rs
 
 **Attendu** : `54` pour les deux sorties, et `diff` des deux listes (triées) doit être vide.
 
-### R4 — Retrait d'une contribution approuvée (FR-028)
+### R4 : Retrait d'une contribution approuvée (FR-028)
 
 ```bash
 # Après approbation d'une contribution
 curl -i -X POST "http://localhost:8080/api/admin/profils-pays/contributions/$APPROUVEE_ID/retirer" \
   -H "Authorization: Bearer $TOKEN_ADMIN" \
   -H "Content-Type: application/json" \
-  -d '{"motif":"Contenu ultérieurement jugé inapproprié — propos discriminatoires signalés."}'
+  -d '{"motif":"Contenu ultérieurement jugé inapproprié, propos discriminatoires signalés."}'
 ```
 
 **Attendu** : HTTP 200. La ligne correspondante dans la table cible est soft-deletée (`deleted_at IS NOT NULL`), mais les autres contributions validées du même auteur sur la même fiche restent créditées.
 
-### R5 — Audit trail
+### R5 : Audit trail
 
 ```sql
 -- Dans psql
@@ -377,7 +377,7 @@ LIMIT 20;
 
 ---
 
-## Parcours UI end-to-end (≤ 3 min — SC-004)
+## Parcours UI end-to-end (≤ 3 min : SC-004)
 
 1. Ouvrir `http://localhost:3000/opportunite-afrique` en utilisateur connecté.
 2. Cliquer sur la Côte d'Ivoire → `/opportunite-afrique/<id>`.
@@ -399,4 +399,4 @@ LIMIT 20;
 - [ ] Les 5 règles critiques R1..R5 passent.
 - [ ] `shared.journal_audit` contient les entrées attendues pour chaque mutation.
 - [ ] Aucune contribution non validée n'est visible via un endpoint public (SC-003).
-- [ ] Les composants publics Vue n'utilisent aucune classe daisyUI (recherche manuelle dans `app/components/opportunite-afrique/` — aucune occurrence de `btn`, `card`, `modal`, `alert` en classe daisyUI).
+- [ ] Les composants publics Vue n'utilisent aucune classe daisyUI (recherche manuelle dans `app/components/opportunite-afrique/`, aucune occurrence de `btn`, `card`, `modal`, `alert` en classe daisyUI).

@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 // ────────────────────────────────────────────────────────────────
 // Enums Afripulse (alignés sur country_profile.type_objet_contribution
-// et country_profile.section_afripulse — cf. 11c_country_profile_afripulse.sql)
+// et country_profile.section_afripulse, cf. 11c_country_profile_afripulse.sql)
 // ────────────────────────────────────────────────────────────────
 
 #[derive(sqlx::Type, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -77,6 +77,16 @@ pub const SECTIONS_VALIDES: &[&str] = &[
     "voyage_prises_electriques",
     "voyage_contacts_tourisme",
     "voyage_recommandations_securite",
+    // Symboles nationaux (schéma 11l)
+    "drapeau_description",
+    "embleme_description",
+    "hymne_description",
+    "fleur_nationale",
+    "fleur_description",
+    "animal_national",
+    "animal_description",
+    "oiseau_national",
+    "oiseau_description",
     "groupe_ethnique",
     "site_touristique",
     "secteur_developpement",

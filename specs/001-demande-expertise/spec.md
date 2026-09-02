@@ -21,7 +21,7 @@ Un membre de la plateforme souhaite mettre son expertise au service du continent
 
 **Why this priority**: C'est le cœur de la fonctionnalité demandée. Sans la capacité de soumettre une demande via un formulaire, aucune autre partie n'a de sens. Elle remplace le comportement actuel (le lien renvoie vers la liste publique `/experts`) qui ne permet à personne de candidater.
 
-**Independent Test**: Peut être testée intégralement en cliquant sur « Apporter mon expertise », en remplissant le formulaire et en le soumettant, puis en vérifiant que la demande est bien enregistrée en attente et qu'un message de confirmation s'affiche — sans dépendre de la partie admin.
+**Independent Test**: Peut être testée intégralement en cliquant sur « Apporter mon expertise », en remplissant le formulaire et en le soumettant, puis en vérifiant que la demande est bien enregistrée en attente et qu'un message de confirmation s'affiche, sans dépendre de la partie admin.
 
 **Acceptance Scenarios**:
 

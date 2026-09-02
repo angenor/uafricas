@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Mock — Collaboration et partage d'arbres
+// Mock : Collaboration et partage d'arbres
 // ════════════════════════════════════════════════════════════════════════════
 
 export type Permission = 'lecture_seule' | 'edition'

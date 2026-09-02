@@ -1,7 +1,7 @@
-//! Moteur d'engagement (gamification) — attribution de points non-bloquante.
+//! Moteur d'engagement (gamification) : attribution de points non-bloquante.
 //!
 //! Calqué sur `services::audit::log_action` : les fonctions publiques `.await`
-//! l'écriture mais **loguent les erreurs sans les propager** (FR-007) — une
+//! l'écriture mais **loguent les erreurs sans les propager** (FR-007), une
 //! action métier (validation, like, jugement) ne doit jamais échouer parce que
 //! l'attribution de points a échoué.
 //!
@@ -283,7 +283,7 @@ pub struct MesureBadge {
 ///
 /// Source unique de vérité partagée par `evaluer_badges` (attribution) et
 /// `GET /mes-badges` (progression affichée) : sans ce partage, les deux
-/// finiraient par diverger — un badge affiché « 49/50 » alors qu'il est déjà
+/// finiraient par diverger : un badge affiché « 49/50 » alors qu'il est déjà
 /// attribué, ou l'inverse.
 async fn mesurer_condition(
     pool: &PgPool,
@@ -430,7 +430,7 @@ async fn badges_a_evaluer(
 ///    `retirer`, les trois `crediter_*` et `ajuster` d'un coup) ;
 /// 2. à la lecture de `GET /mes-badges`, ce qui rattrape les conditions devenues
 ///    vraies autrement qu'à la suite d'un mouvement (badge créé par
-///    l'administration, condition assouplie) — sans aucune tâche de fond.
+///    l'administration, condition assouplie), sans aucune tâche de fond.
 ///
 /// L'insertion est `ON CONFLICT DO NOTHING` : l'idempotence est structurelle,
 /// donc réévaluer est inoffensif. La notification n'est émise que si l'insertion
@@ -571,7 +571,7 @@ pub async fn retirer(
 /// L'unicité du propriétaire est **structurelle** (`uq_support_un_proprietaire`,
 /// migration 09m) : la requête retourne 0 ou 1 ligne, aucune agrégation n'est
 /// nécessaire. Le repli sur `cree_par` couvre les supports créés par
-/// l'administration avant l'existence de `support_detenteur` — sans lui, ces
+/// l'administration avant l'existence de `support_detenteur`, sans lui, ces
 /// contenus cesseraient silencieusement de rapporter.
 async fn proprietaire_support(
     pool: &PgPool,
@@ -616,7 +616,7 @@ async fn auteur_simple(pool: &PgPool, table: &str, objet_id: Uuid) -> Option<Uui
 }
 
 /// Propriétaire du support portant une émission, avec repli sur l'auteur de
-/// l'émission — un support sans détenteur actif ne doit pas faire disparaître
+/// l'émission : un support sans détenteur actif ne doit pas faire disparaître
 /// le crédit.
 async fn beneficiaire_emission(
     pool: &PgPool,
@@ -659,7 +659,7 @@ async fn beneficiaire_emission(
 
 /// Résout le membre à créditer pour un contenu donné (research R4).
 ///
-/// Renvoie `None` — **sans erreur** — dans trois cas parfaitement légitimes :
+/// Renvoie `None` : **sans erreur** : dans trois cas parfaitement légitimes :
 /// - `site_touristique` et `secteur_developpement` : contenus éditoriaux
 ///   rattachés à une fiche pays, **sans aucune colonne d'auteur** en base
 ///   (FR-008c). La réaction et le partage continuent de fonctionner
@@ -788,7 +788,7 @@ pub async fn resoudre_beneficiaire(
 
 /// Crédite l'auteur d'un contenu pour un « j'aime » reçu (research R3).
 ///
-/// Clé `jaime:{type_objet}:{objet_id}:{membre_qui_aime_id}` — elle ne porte pas
+/// Clé `jaime:{type_objet}:{objet_id}:{membre_qui_aime_id}` : elle ne porte pas
 /// l'état de la réaction, seulement **qui a aimé quoi**. Trois exigences en
 /// découlent sans une ligne de code supplémentaire :
 /// - retirer puis remettre son j'aime ne crédite qu'une fois (le second INSERT
@@ -834,7 +834,7 @@ pub async fn crediter_jaime(
 /// par partageur est structurelle. Les canaux restent tracés dans leur table
 /// d'origine et dans `engagement.partage_externe` pour la statistique.
 ///
-/// N'écrit rien si le partageur est l'auteur (FR-014) — le bénéficiaire est
+/// N'écrit rien si le partageur est l'auteur (FR-014), le bénéficiaire est
 /// désormais l'auteur, plus le partageur, ce qui inverse la sémantique de
 /// l'ancien bonus « 5 réseaux ». Non-bloquante.
 pub async fn crediter_partage(
@@ -875,7 +875,7 @@ pub async fn crediter_partage(
 ///
 /// Clé `cadeau:{transaction_id}` : rejouer la confirmation d'un paiement ne
 /// crédite jamais deux fois (FR-022). C'est aussi ce motif de clé que cible la
-/// purge de fin de phase de test — d'où l'interdiction d'y mettre autre chose.
+/// purge de fin de phase de test : d'où l'interdiction d'y mettre autre chose.
 pub async fn crediter_cadeau(
     pool: &PgPool,
     beneficiaire_id: Uuid,
@@ -906,7 +906,7 @@ pub async fn crediter_cadeau(
 /// Résultat du traçage d'un partage vers un réseau social externe.
 pub struct ResultatPartageExterne {
     /// Le partage a-t-il été journalisé ? (`false` = ce réseau était déjà tracé
-    /// pour ce couple membre/contenu — la trace ne double jamais.)
+    /// pour ce couple membre/contenu : la trace ne double jamais.)
     pub enregistre: bool,
     /// L'auteur du contenu vient-il d'être crédité ?
     ///
@@ -921,7 +921,7 @@ pub struct ResultatPartageExterne {
 /// La sémantique est inversée par rapport au bonus « 5 réseaux distincts »
 /// qu'elle remplace : le bénéficiaire n'est plus le partageur mais l'auteur
 /// (FR-012). Le seuil, le décompte des réseaux et le drapeau `bonus_attribue`
-/// disparaissent avec lui — la clé commune de `crediter_partage` réalise
+/// disparaissent avec lui : la clé commune de `crediter_partage` réalise
 /// structurellement l'unicité par (contenu, partageur) que le comptage
 /// approchait (research R5).
 ///
@@ -973,7 +973,7 @@ pub async fn enregistrer_partage_externe(
 }
 
 /// Ajustement manuel administrateur (crédit/débit motivé). Chaque appel est
-/// unique (clé aléatoire) — non plafonné.
+/// unique (clé aléatoire) : non plafonné.
 pub async fn ajuster(pool: &PgPool, utilisateur_id: Uuid, points: i32, reputation_delta: i32) {
     let cle = format!("ajustement:{}", Uuid::new_v4());
     if let Err(e) = appliquer(

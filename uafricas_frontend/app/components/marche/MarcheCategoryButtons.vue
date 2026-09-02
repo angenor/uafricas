@@ -6,8 +6,8 @@
       @click="$emit('select', cat.key)"
       class="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
       :class="activeFilter === cat.key
-        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30'
-        : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-200'"
+        ? 'bg-gradient-to-r from-af-vert to-af-vert text-white shadow-lg shadow-af-vert/30'
+        : 'bg-white text-af-corps hover:bg-af-vert/5 hover:text-af-vert border border-af-bordure'"
     >
       {{ cat.label }}
     </button>

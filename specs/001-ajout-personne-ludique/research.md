@@ -6,7 +6,7 @@
 
 **Décision** : Timeline GSAP par transition (mini-timeline créée à chaque changement d'étape), avec `gsap.fromTo` pour des états déterministes.
 
-**Raisonnement** : Un wizard est piloté par l'utilisateur, pas auto-jouant. Une master timeline unique avec `.play()`/`.reverse()` gère mal la navigation libre (retour, saut d'étapes). `fromTo` est déterministe — il définit explicitement l'état initial et final, ce qui évite les incohérences si l'animation précédente n'est pas terminée.
+**Raisonnement** : Un wizard est piloté par l'utilisateur, pas auto-jouant. Une master timeline unique avec `.play()`/`.reverse()` gère mal la navigation libre (retour, saut d'étapes). `fromTo` est déterministe : il définit explicitement l'état initial et final, ce qui évite les incohérences si l'animation précédente n'est pas terminée.
 
 **Alternatives considérées** :
 - Master timeline unique : rejetée car combat la navigation non-linéaire

@@ -14,7 +14,7 @@ const {
   rejeterDemande,
 } = useAdminBibliosHumaines()
 
-useHead({ title: computed(() => demandeDetail.value ? `${demandeDetail.value.prenom} ${demandeDetail.value.nom} — Admin` : 'Chargement…') })
+useHead({ title: computed(() => demandeDetail.value ? `${demandeDetail.value.prenom} ${demandeDetail.value.nom}, Admin` : 'Chargement…') })
 
 const showRejetModal = ref(false)
 const commentaireRejet = ref('')
@@ -42,7 +42,7 @@ function statutLabel(statut: StatutDemande) {
 }
 
 function formatDate(iso: string | null) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
@@ -50,7 +50,7 @@ async function approuver() {
   actionLoading.value = true
   try {
     await validerDemande(id)
-    afficherSucces('Demande approuvée — le profil est maintenant visible publiquement.')
+    afficherSucces('Demande approuvée : le profil est maintenant visible publiquement.')
   }
   catch { /* erreur déjà dans le composable */ }
   finally {
@@ -246,7 +246,7 @@ onMounted(() => obtenirDemande(id))
             v-model="commentaireRejet"
             rows="4"
             class="textarea textarea-bordered w-full text-sm"
-            placeholder="Motif (facultatif — ex : biographie trop courte…)"
+            placeholder="Motif (facultatif : ex : biographie trop courte…)"
           />
           <div class="modal-action">
             <button class="btn btn-ghost" @click="showRejetModal = false">Annuler</button>

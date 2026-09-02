@@ -184,7 +184,7 @@ onMounted(() => {
           <h2 class="text-lg font-bold">{{ salleDetail.titre }}</h2>
           <p class="text-sm text-base-content/60">
             {{ salleDetail.langue_cible || 'Langue non définie' }}
-            {{ salleDetail.groupe_ethnique_nom ? ` — ${salleDetail.groupe_ethnique_nom}` : '' }}
+            {{ salleDetail.groupe_ethnique_nom ? `, ${salleDetail.groupe_ethnique_nom}` : '' }}
           </p>
           <div class="flex gap-2 mt-1">
             <span :class="salleDetail.actif ? 'badge badge-success badge-sm' : 'badge badge-neutral badge-sm'">
@@ -274,7 +274,7 @@ onMounted(() => {
                   :value="g.id"
                   :disabled="g.salle_active && g.id !== salleDetail.groupe_ethnique_id"
                 >
-                  {{ g.nom }}{{ g.pays_nom ? ` — ${g.pays_nom}` : '' }}{{ g.salle_active && g.id !== salleDetail.groupe_ethnique_id ? ' (déjà une salle active)' : '' }}
+                  {{ g.nom }}{{ g.pays_nom ? `, ${g.pays_nom}` : '' }}{{ g.salle_active && g.id !== salleDetail.groupe_ethnique_id ? ' (déjà une salle active)' : '' }}
                 </option>
               </select>
             </div>
@@ -358,7 +358,7 @@ onMounted(() => {
               :key="p.id"
               class="badge badge-lg gap-2"
               :class="paysListe.find(pl => pl.id === p.id && !pl.actif) ? 'badge-ghost opacity-60' : 'badge-primary'"
-              :title="paysListe.find(pl => pl.id === p.id && !pl.actif) ? 'Territoire archivé — masqué côté public' : ''"
+              :title="paysListe.find(pl => pl.id === p.id && !pl.actif) ? 'Territoire archivé : masqué côté public' : ''"
             >
               <span v-if="p.code_iso2">{{ p.code_iso2 }}</span>
               <span>{{ p.nom }}</span>
@@ -384,7 +384,7 @@ onMounted(() => {
               <select v-model="paysSelectionne" class="select select-bordered" :disabled="sauvegardePays">
                 <option value="" disabled>Sélectionner un territoire</option>
                 <option v-for="p in paysDisponibles" :key="p.id" :value="p.id">
-                  {{ p.code_iso2 ? `${p.code_iso2} — ` : '' }}{{ p.nom }}
+                  {{ p.code_iso2 ? `${p.code_iso2} : ` : '' }}{{ p.nom }}
                 </option>
               </select>
             </div>
@@ -453,11 +453,11 @@ onMounted(() => {
                     'badge-neutral': session.etat === 'terminee',
                     'badge-error': session.etat === 'annulee',
                   }">
-                    {{ session.etat || '—' }}
+                    {{ session.etat || '-' }}
                   </span>
                 </td>
-                <td>{{ session.demarre_at ? new Date(session.demarre_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' }}</td>
-                <td class="text-center">{{ session.nombre_participants_pic ?? '—' }}</td>
+                <td>{{ session.demarre_at ? new Date(session.demarre_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-' }}</td>
+                <td class="text-center">{{ session.nombre_participants_pic ?? '-' }}</td>
                 <td>
                   <NuxtLink :to="`/admin/sessions/${session.id}`" class="btn btn-ghost btn-xs">
                     <font-awesome-icon icon="eye" />

@@ -12,7 +12,7 @@ const deleteLoading = ref(false)
 
 const colonnes: TableColumn[] = [
   { key: 'titre', label: 'Titre', sortable: true },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-28', align: 'center' },
+  { key: 'etat', label: 'État', sortable: true, width: 'w-28', align: 'center' },
   { key: 'domaine_nom', label: 'Domaine', width: 'w-36' },
   { key: 'pays_nom', label: 'Territoire', width: 'w-32' },
   { key: 'auteur_nom', label: 'Auteur', width: 'w-36',
@@ -23,7 +23,7 @@ const colonnes: TableColumn[] = [
 
 const filterDefs: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Titre, description, ville...' },
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'Brouillon', value: 'brouillon' },
     { label: 'Publie', value: 'publie' },
     { label: 'Suspendu', value: 'suspendu' },

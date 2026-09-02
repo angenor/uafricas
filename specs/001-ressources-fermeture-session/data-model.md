@@ -1,9 +1,9 @@
-# Phase 1 — Data Model
+# Phase 1 : Data Model
 
 **Feature**: 001-ressources-fermeture-session
 **Date**: 2026-05-24
 **Schema cible** : `afrolang` (existant)
-**Fichier SQL** : `uafricas_backend/doc/bd/schemas/08b_afrolang.sql` (édité, pas de nouveau fichier — la feature reste cohérente avec le bounded-context Afrolang).
+**Fichier SQL** : `uafricas_backend/doc/bd/schemas/08b_afrolang.sql` (édité, pas de nouveau fichier, la feature reste cohérente avec le bounded-context Afrolang).
 
 ---
 
@@ -33,7 +33,7 @@ CREATE TYPE afrolang.type_evenement_moderation AS ENUM (
 );
 ```
 
-## 2. Extension `afrolang.salle` — état de désactivation administrative
+## 2. Extension `afrolang.salle` : état de désactivation administrative
 
 ```sql
 ALTER TABLE afrolang.salle

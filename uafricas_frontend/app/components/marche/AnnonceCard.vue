@@ -1,74 +1,82 @@
 <template>
+  <!-- `flex flex-col` et non `block` : en grille, les cartes s'étirent à la
+       hauteur de leur rangée, mais un contenu en flux normal reste collé en
+       haut. Dès qu'un titre passait à deux lignes et son voisin à une, la date
+       de la carte courte flottait au-dessus du bas de la carte. -->
   <NuxtLink
     :to="`/marche-africain/${annonce.id}`"
-    class="group block bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+    class="group flex flex-col overflow-hidden rounded-[10px] border border-af-bordure bg-white transition hover:-translate-y-1 hover:border-af-chocolat"
   >
-    <!-- Image container -->
-    <div class="relative aspect-[16/10] overflow-hidden">
+    <!-- Image -->
+    <div class="relative aspect-[16/10] shrink-0 overflow-hidden">
       <img
-        :src="annonce.photo_url || '/images/placeholder.jpg'"
+        v-if="annonce.photo_url"
+        :src="annonce.photo_url"
         :alt="annonce.titre"
-        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+        class="size-full object-cover transition-transform duration-500 group-hover:scale-110"
       />
+      <!-- Pas de `<img src="…placeholder.jpg">` : ce fichier n'a jamais existé,
+           si bien qu'une annonce sans photo affichait une image CASSÉE avec son
+           texte de remplacement en travers. Un repli qui doit exister sur le
+           disque est un repli qui peut manquer ; celui-ci est du balisage, il
+           ne peut pas échouer. -->
+      <div v-else class="grid size-full place-items-center bg-af-fond">
+        <font-awesome-icon icon="fa-solid fa-image" class="text-4xl text-af-atone-2" />
+      </div>
 
       <!-- Badge type d'échange -->
       <span
-        class="absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-semibold shadow-xs"
-        :class="getTypeColor(annonce.type_echange)"
+        class="absolute top-3 left-3 rounded-full px-3 py-1.5 text-xs font-bold"
+        :class="classeTypeEchange(annonce.type_echange)"
       >
         {{ annonce.type_echange }}
       </span>
 
-      <!-- Bouton favori -->
       <MarcheFavoriBouton
         :annonce-id="annonce.id"
         :favori-initial="estFavori"
         class="absolute top-3 right-3 z-10"
       />
 
-      <!-- Badge quantité minimum -->
+      <!-- Contour indispensable : cette pastille se pose aussi bien sur une
+           photo que sur le repli d'image, lui-même `af-fond` (#F5F5F5), où un
+           fond blanc seul serait invisible. -->
       <span
         v-if="annonce.quantite && annonce.quantite > 1"
-        class="absolute bottom-3 left-3 px-2 py-1 bg-amber-100/90 text-amber-700 rounded-full text-xs font-medium"
+        class="absolute bottom-3 left-3 rounded-full border border-af-bordure bg-white px-2 py-1 text-xs font-bold text-af-corps"
       >
         Min. {{ annonce.quantite }} unités
       </span>
 
-      <!-- Overlay gradient -->
-      <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
     </div>
 
     <!-- Contenu -->
-    <div class="p-4">
-      <!-- Localisation -->
-      <div class="flex items-center text-sm text-gray-500 mb-2">
-        <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3 h-3 mr-1.5 text-custom-green" />
+    <div class="flex flex-1 flex-col p-4">
+      <div class="flex items-center gap-1.5 text-[14px]/[1.4] text-af-atone">
+        <font-awesome-icon icon="fa-solid fa-location-dot" class="shrink-0 text-af-vert" />
         <span>{{ annonce.pays }}</span>
-        <span v-if="annonce.ville" class="text-gray-300 mx-1">•</span>
-        <span v-if="annonce.ville" class="text-gray-400">{{ annonce.ville }}</span>
+        <template v-if="annonce.ville">
+          <span class="text-af-bordure">•</span>
+          <span>{{ annonce.ville }}</span>
+        </template>
       </div>
 
-      <!-- Titre -->
-      <h3 class="font-semibold text-gray-800 line-clamp-2 mb-3 group-hover:text-custom-green transition-colors">
+      <h3 class="mt-2 line-clamp-2 text-[16px]/[1.4] font-bold text-af-encre transition-colors group-hover:text-af-chocolat">
         {{ annonce.titre }}
       </h3>
 
-      <!-- Prix et catégorie -->
-      <div class="flex items-center justify-between">
-        <span
-          class="text-lg font-bold"
-          :class="annonce.type_echange === 'Don' ? 'text-blue-600' : 'text-custom-chocolat'"
-        >
-          {{ prixFormate }}
-        </span>
-        <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+      <div class="mt-3 flex items-center justify-between gap-3">
+        <span class="text-[18px]/[1.4] font-bold text-af-chocolat">{{ prixFormate }}</span>
+        <span class="shrink-0 rounded bg-af-fond px-2 py-1 text-xs text-af-atone">
           {{ annonce.categorie }}
         </span>
       </div>
 
-      <!-- Date -->
-      <div class="mt-3 pt-3 border-t border-gray-100 flex items-center text-xs text-gray-400">
-        <font-awesome-icon :icon="['fas', 'calendar-days']" class="w-3 h-3 mr-1.5" />
+      <!-- `mt-auto` : la date reste au bas de la carte quelle que soit la
+           hauteur du titre, et donc alignée d'une carte à l'autre. -->
+      <div class="mt-auto flex items-center gap-1.5 border-t border-af-bordure pt-3 text-xs text-af-atone">
+        <font-awesome-icon icon="fa-solid fa-calendar-days" class="shrink-0" />
         {{ dateFormatee }}
       </div>
     </div>
@@ -77,7 +85,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatPrix, formatDateCourte, type AnnonceAPI, type TypeEchange } from '~/composables/useMarcheAfricain'
+import { formatPrix, formatDateCourte, classeTypeEchange, type AnnonceAPI } from '~/composables/useMarcheAfricain'
 
 const props = withDefaults(
   defineProps<{
@@ -87,35 +95,7 @@ const props = withDefaults(
   { estFavori: false },
 )
 
-const prixFormate = computed(() => {
-  return formatPrix(props.annonce.prix, props.annonce.devise)
-})
+const prixFormate = computed(() => formatPrix(props.annonce.prix, props.annonce.devise))
+const dateFormatee = computed(() => formatDateCourte(props.annonce.created_at))
 
-const dateFormatee = computed(() => {
-  return formatDateCourte(props.annonce.created_at)
-})
-
-const getTypeColor = (type: string): string => {
-  switch (type as TypeEchange) {
-    case 'Vente':
-      return 'bg-white/95 text-gray-700 border border-gray-200'
-    case 'Troc':
-      return 'bg-purple-100/95 text-purple-700'
-    case 'Don':
-      return 'bg-blue-100/95 text-blue-700'
-    case "Opportunité d'investissement":
-      return 'bg-amber-100/95 text-amber-700'
-    default:
-      return 'bg-gray-100 text-gray-700'
-  }
-}
 </script>
-
-<style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>

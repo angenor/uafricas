@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Réactions, commentaires et partages d'un contenu média (US3).
 // Modèle : opportunite-afrique/ReactionsBar.vue, enrichi des deux compteurs
-// annexes — un contenu a plus d'affordances qu'un sous-objet afripulse.
+// annexes : un contenu a plus d'affordances qu'un sous-objet afripulse.
 
 import { useMediaSocial, type TypeMedia, type TypeReaction } from '~/composables/useMediaSocial'
 
@@ -31,7 +31,7 @@ const dislikes = ref(props.nombreDislikes)
 const maReaction = ref<TypeReaction | null>(props.maReaction)
 const enCours = ref(false)
 
-// Resynchronise si le parent recharge la donnée — la mise à jour optimiste
+// Resynchronise si le parent recharge la donnée, la mise à jour optimiste
 // ci-dessous serait sinon écrasée par un état périmé.
 watch(
   () => [props.nombreLikes, props.nombreDislikes, props.maReaction] as const,
@@ -51,7 +51,7 @@ const basculer = async (type: TypeReaction) => {
   enCours.value = true
 
   // Mise à jour optimiste : le compteur réagit au clic, puis se resynchronise
-  // sur la réponse du serveur — qui fait foi.
+  // sur la réponse du serveur : qui fait foi.
   const ancienne = maReaction.value
   const retrait = ancienne === type
   maReaction.value = retrait ? null : type
@@ -90,8 +90,8 @@ const basculer = async (type: TypeReaction) => {
       :class="[
         compact ? 'py-1.5 text-sm' : 'py-2.5',
         maReaction === 'like'
-          ? 'bg-custom-green text-white border-custom-green'
-          : 'bg-white/10 text-white border-white/25 hover:bg-white/20',
+          ? 'bg-af-vert text-white border-af-vert'
+          : 'bg-af-fond text-af-encre border-af-bordure hover:bg-af-bordure',
       ]"
       @click="basculer('like')"
     >
@@ -108,8 +108,8 @@ const basculer = async (type: TypeReaction) => {
       :class="[
         compact ? 'py-1.5 text-sm' : 'py-2.5',
         maReaction === 'dislike'
-          ? 'bg-red-500 text-white border-red-500'
-          : 'bg-white/10 text-white border-white/25 hover:bg-white/20',
+          ? 'bg-af-live text-white border-af-live'
+          : 'bg-af-fond text-af-encre border-af-bordure hover:bg-af-bordure',
       ]"
       @click="basculer('dislike')"
     >
@@ -120,7 +120,7 @@ const basculer = async (type: TypeReaction) => {
     <button
       type="button"
       aria-label="Commenter"
-      class="flex items-center justify-center gap-2 rounded-lg border border-white/25 bg-white/10 px-4 font-medium text-white transition-colors cursor-pointer hover:bg-white/20"
+      class="flex items-center justify-center gap-2 rounded-lg border border-af-bordure bg-af-fond px-4 font-medium text-af-encre transition-colors cursor-pointer hover:bg-af-bordure"
       :class="compact ? 'py-1.5 text-sm' : 'py-2.5'"
       @click="emit('commenter')"
     >
@@ -131,7 +131,7 @@ const basculer = async (type: TypeReaction) => {
     <button
       type="button"
       aria-label="Partager"
-      class="flex items-center justify-center gap-2 rounded-lg border border-white/25 bg-white/10 px-4 font-medium text-white transition-colors cursor-pointer hover:bg-white/20"
+      class="flex items-center justify-center gap-2 rounded-lg border border-af-bordure bg-af-fond px-4 font-medium text-af-encre transition-colors cursor-pointer hover:bg-af-bordure"
       :class="compact ? 'py-1.5 text-sm' : 'py-2.5'"
       @click="emit('partager')"
     >

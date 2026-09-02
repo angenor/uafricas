@@ -194,7 +194,7 @@ fn clause_filtre(filtre: Option<&str>) -> (&'static str, &'static str) {
     }
 }
 
-/// GET /api/rendez-vous?filtre=&page=&taille= — Liste paginée (FR-019/020).
+/// GET /api/rendez-vous?filtre=&page=&taille=, Liste paginée (FR-019/020).
 pub async fn lister(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -242,7 +242,7 @@ pub async fn lister(
     }))
 }
 
-/// GET /api/rendez-vous/{id} — Détail pour un participant.
+/// GET /api/rendez-vous/{id} : Détail pour un participant.
 pub async fn detail(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -260,10 +260,10 @@ pub async fn detail(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US1 — Proposer
+// US1 : Proposer
 // ════════════════════════════════════════════════════════════════
 
-/// POST /api/rendez-vous — Proposer un rendez-vous (FR-006..FR-011).
+/// POST /api/rendez-vous : Proposer un rendez-vous (FR-006..FR-011).
 pub async fn proposer(
     pool: web::Data<PgPool>,
     sse: web::Data<RegistreSse>,
@@ -343,7 +343,7 @@ pub async fn proposer(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US2 — Répondre (accepter / refuser / contre-proposer)
+// US2 : Répondre (accepter / refuser / contre-proposer)
 // ════════════════════════════════════════════════════════════════
 
 /// POST /api/rendez-vous/{id}/accepter (FR-013, FR-035).
@@ -522,7 +522,7 @@ pub async fn contre_proposer(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US3 — Annuler
+// US3 : Annuler
 // ════════════════════════════════════════════════════════════════
 
 /// POST /api/rendez-vous/{id}/annuler (FR-022).
@@ -587,10 +587,10 @@ pub async fn annuler(
 }
 
 // ════════════════════════════════════════════════════════════════
-// US4 — Salle visioconférence P2P
+// US4 : Salle visioconférence P2P
 // ════════════════════════════════════════════════════════════════
 
-/// GET /api/rendez-vous/{id}/salle — Configuration P2P (FR-024).
+/// GET /api/rendez-vous/{id}/salle : Configuration P2P (FR-024).
 /// Seulement si `accepte`, participant, amis/non bloqués, et NOW() dans la fenêtre.
 pub async fn salle(
     pool: web::Data<PgPool>,

@@ -1,4 +1,4 @@
-# Contrats API REST — Arbre généalogique
+# Contrats API REST : Arbre généalogique
 
 **Branch**: `001-personnes-arbre` | **Date**: 2026-03-15
 **Base URL**: `http://localhost:8080/api/arbre`
@@ -19,7 +19,7 @@ Liste paginée des personnes de l'arbre de l'utilisateur connecté.
 |-----------|------|--------|-------------|
 | `page` | int | 1 | Numéro de page (≥ 1) |
 | `par_page` | int | 12 | Résultats par page (1–50) |
-| `recherche` | string | — | Filtre sur nom / prénoms (ILIKE) |
+| `recherche` | string | : | Filtre sur nom / prénoms (ILIKE) |
 
 **Réponse 200** :
 ```json
@@ -72,7 +72,7 @@ Crée une personne et la rattache automatiquement à l'arbre de l'utilisateur. C
 - `nom` : obligatoire, non vide
 - `genre` : si fourni, l'une de `masculin | feminin | autre | non_precise`
 - Cohérence des dates : si `naissance.annee` et `deces.annee` fournis → `deces.annee >= naissance.annee`
-- Photo : non incluse dans ce body — à uploader séparément via `POST /api/arbre/personnes/:id/photo`
+- Photo : non incluse dans ce body : à uploader séparément via `POST /api/arbre/personnes/:id/photo`
 
 **Réponse 201** :
 ```json
@@ -89,9 +89,9 @@ Crée une personne et la rattache automatiquement à l'arbre de l'utilisateur. C
 ```
 
 **Erreurs** :
-- `400` — `nom` manquant ou vide
-- `422` — incohérence de dates (décès avant naissance)
-- `401` — token manquant ou expiré
+- `400` : `nom` manquant ou vide
+- `422` : incohérence de dates (décès avant naissance)
+- `401` : token manquant ou expiré
 
 ---
 
@@ -120,8 +120,8 @@ Détail d'une personne avec ses liens familiaux directs (parents, enfants, conjo
 ```
 
 **Erreurs** :
-- `404` — personne introuvable ou n'appartient pas à l'arbre de l'utilisateur
-- `401` — non authentifié
+- `404` : personne introuvable ou n'appartient pas à l'arbre de l'utilisateur
+- `401` : non authentifié
 
 ---
 
@@ -129,7 +129,7 @@ Détail d'une personne avec ses liens familiaux directs (parents, enfants, conjo
 
 Modifie les informations biographiques d'une personne.
 
-**Corps** (tous les champs sont optionnels — seuls les champs présents sont mis à jour) :
+**Corps** (tous les champs sont optionnels, seuls les champs présents sont mis à jour) :
 ```json
 {
   "nom": "Diallo",
@@ -142,10 +142,10 @@ Modifie les informations biographiques d'une personne.
 **Réponse 200** : même structure que `GET /api/arbre/personnes/:id` (données mises à jour).
 
 **Erreurs** :
-- `400` — `nom` fourni mais vide
-- `422` — incohérence de dates
-- `403` — personne n'appartient pas à l'arbre de l'utilisateur
-- `404` — personne introuvable
+- `400` : `nom` fourni mais vide
+- `422` : incohérence de dates
+- `403` : personne n'appartient pas à l'arbre de l'utilisateur
+- `404` : personne introuvable
 
 ---
 
@@ -163,8 +163,8 @@ Supprime le rattachement de la personne dans l'arbre. Si c'est le dernier rattac
 ```
 
 **Erreurs** :
-- `403` — n'appartient pas à l'arbre de l'utilisateur
-- `404` — personne introuvable
+- `403` : n'appartient pas à l'arbre de l'utilisateur
+- `404` : personne introuvable
 
 ---
 
@@ -231,10 +231,10 @@ Crée un lien familial entre deux personnes de l'arbre de l'utilisateur.
 ```
 
 **Erreurs** :
-- `400` — type_lien invalide ou source = cible
-- `403` — rattachement n'appartient pas à l'arbre de l'utilisateur
-- `409` — lien identique déjà existant
-- `422` — lien circulaire détecté
+- `400` : type_lien invalide ou source = cible
+- `403` : rattachement n'appartient pas à l'arbre de l'utilisateur
+- `409` : lien identique déjà existant
+- `422` : lien circulaire détecté
 
 ---
 
@@ -252,8 +252,8 @@ Supprime un lien familial (soft delete).
 ```
 
 **Erreurs** :
-- `403` — lien n'appartient pas à l'arbre de l'utilisateur
-- `404` — lien introuvable
+- `403` : lien n'appartient pas à l'arbre de l'utilisateur
+- `404` : lien introuvable
 
 ---
 

@@ -12,26 +12,26 @@
 
 | Fichier | Action |
 |---------|--------|
-| `doc/bd/schemas/25_collaboration.sql` | Créer — tables invitations + collaborateurs + colonnes confidentialité |
-| `src/models/collaboration.rs` | Créer — structs + DTOs |
-| `src/handlers/collaboration.rs` | Créer — 12 handlers |
-| `src/handlers/mod.rs` | Modifier — +pub mod collaboration |
-| `src/models/mod.rs` | Modifier — +pub mod collaboration |
-| `src/routes.rs` | Modifier — +12 routes dans scope /arbre |
-| `src/handlers/arbre_genealogique.rs` | Modifier — vérification accès collaborateur sur arbre-complet |
-| `src/services/matching.rs` | Modifier — filtre visible_matching et arbre_prive |
+| `doc/bd/schemas/25_collaboration.sql` | Créer, tables invitations + collaborateurs + colonnes confidentialité |
+| `src/models/collaboration.rs` | Créer, structs + DTOs |
+| `src/handlers/collaboration.rs` | Créer, 12 handlers |
+| `src/handlers/mod.rs` | Modifier : +pub mod collaboration |
+| `src/models/mod.rs` | Modifier : +pub mod collaboration |
+| `src/routes.rs` | Modifier : +12 routes dans scope /arbre |
+| `src/handlers/arbre_genealogique.rs` | Modifier, vérification accès collaborateur sur arbre-complet |
+| `src/services/matching.rs` | Modifier, filtre visible_matching et arbre_prive |
 
 ### Frontend (~8 fichiers)
 
 | Fichier | Action |
 |---------|--------|
-| `app/pages/arbre-genealogique/index.vue` | Modifier — sections Mon arbre + Arbres partagés |
-| `app/pages/arbre-genealogique/gestion.vue` | Créer — page gestion collaborateurs + confidentialité + historique |
-| `app/composables/useCollaboration.ts` | Créer — API wrapper 12 endpoints |
-| `app/components/arbre-genealogique/CarteInvitation.vue` | Créer — carte invitation (accepter/refuser) |
-| `app/components/arbre-genealogique/BandeauLectureSeule.vue` | Créer — bandeau visuel lecture seule |
-| `app/pages/arbre-genealogique/visualisation.vue` | Modifier — bandeau + masquer actions si lecture seule |
-| `app/mocks/collaboration.ts` | Créer — types TS + mocks |
+| `app/pages/arbre-genealogique/index.vue` | Modifier, sections Mon arbre + Arbres partagés |
+| `app/pages/arbre-genealogique/gestion.vue` | Créer, page gestion collaborateurs + confidentialité + historique |
+| `app/composables/useCollaboration.ts` | Créer, API wrapper 12 endpoints |
+| `app/components/arbre-genealogique/CarteInvitation.vue` | Créer, carte invitation (accepter/refuser) |
+| `app/components/arbre-genealogique/BandeauLectureSeule.vue` | Créer, bandeau visuel lecture seule |
+| `app/pages/arbre-genealogique/visualisation.vue` | Modifier, bandeau + masquer actions si lecture seule |
+| `app/mocks/collaboration.ts` | Créer, types TS + mocks |
 
 ## Scénario de vérification
 

@@ -1,290 +1,248 @@
 <template>
-  <Transition name="modal-fade">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
-      @click.self="fermer"
-    >
-      <div
-        class="relative w-full max-w-3xl bg-white shadow-2xl rounded-2xl max-h-[92vh] overflow-hidden flex flex-col"
-        @click.stop
+  <AfricansModale
+    :model-value="open"
+    titre="Proposer une idée force"
+    sous-titre="Partager une orientation pour le développement"
+    icone="fa-solid fa-lightbulb"
+    taille="large"
+    @update:model-value="fermer()"
+  >
+    <AfricansEtapes :etapes="ETAPES" :courante="etapeCourante" class="mb-6" @aller="etapeCourante = $event" />
+
+    <form id="form-idea-force" class="flex flex-col gap-5" @submit.prevent="soumettre">
+      <p
+        v-if="erreurMessage"
+        class="flex items-center gap-2 rounded-lg border border-af-live/20 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
       >
-        <div class="bg-linear-to-r from-amber-600 via-orange-500 to-yellow-500 text-white p-6 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <font-awesome-icon :icon="['fas', 'lightbulb']" class="text-lg" />
-            </div>
-            <div>
-              <h2 class="text-xl font-bold">Proposer une idée force</h2>
-              <p class="text-xs text-white/80">Partager une orientation pour le développement</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            class="w-9 h-9 rounded-full hover:bg-white/20 flex items-center justify-center transition"
-            @click="fermer"
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" />
+        {{ erreurMessage }}
+      </p>
+
+      <!-- ─── Étape 1 : l'idée ─── -->
+      <template v-if="etapeCourante === 0">
+        <AfricansChamp
+          v-model="form.titre"
+          libelle="Titre de la proposition"
+          :maxlength="350"
+          placeholder="Formulez votre idée en une phrase claire…"
+          obligatoire
+        />
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <AfricansChamp
+            v-model="form.categorie_proposition"
+            libelle="Catégorie"
+            type="select"
+            obligatoire
           >
-            <font-awesome-icon :icon="['fas', 'xmark']" />
-          </button>
+            <option v-for="c in categories" :key="c.value" :value="c.value">{{ c.label }}</option>
+          </AfricansChamp>
+
+          <fieldset>
+            <legend class="mb-2 text-[14px]/[1.4] text-af-atone italic">Urgence</legend>
+            <div class="flex gap-2">
+              <button
+                v-for="u in urgences"
+                :key="u.value"
+                type="button"
+                class="flex-1 rounded-lg border-2 px-3 py-2.5 text-[12px] font-bold transition"
+                :class="form.urgence === u.value ? u.activeClass : 'border-af-bordure bg-white text-af-corps hover:border-af-chocolat'"
+                @click="form.urgence = u.value"
+              >
+                <font-awesome-icon :icon="u.icon" class="mr-1" />
+                {{ u.label }}
+              </button>
+            </div>
+          </fieldset>
         </div>
 
-        <form class="p-6 space-y-5 overflow-y-auto" @submit.prevent="soumettre">
-          <div
-            v-if="erreurMessage"
-            class="bg-red-50 border-l-4 border-red-500 p-3 rounded-lg text-sm text-red-700 flex items-center gap-2"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-exclamation']" />
-            <span>{{ erreurMessage }}</span>
-          </div>
+        <AfricansChamp
+          v-if="form.categorie_proposition === 'autre'"
+          v-model="form.categorie_proposition_detail"
+          libelle="Précisez la catégorie"
+          :maxlength="200"
+        />
 
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Titre de la proposition <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="form.titre"
-              type="text"
-              required
-              maxlength="350"
-              placeholder="Formulez votre idée en une phrase claire..."
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
-            />
-          </div>
+        <AfricansChamp
+          v-model="form.description_generale"
+          libelle="Description générale"
+          type="textarea"
+          :lignes="3"
+          placeholder="Présentez brièvement votre proposition…"
+          obligatoire
+        />
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
-                Catégorie <span class="text-red-500">*</span>
-              </label>
-              <select
-                v-model="form.categorie_proposition"
-                required
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm bg-white"
-              >
-                <option v-for="c in categories" :key="c.value" :value="c.value">{{ c.label }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Urgence</label>
-              <div class="flex gap-2">
-                <button
-                  v-for="u in urgences"
-                  :key="u.value"
-                  type="button"
-                  class="flex-1 px-3 py-2.5 rounded-lg border-2 text-xs font-medium transition"
-                  :class="form.urgence === u.value
-                    ? `${u.activeClass} border-current`
-                    : 'bg-white border-gray-200 text-gray-600'"
-                  @click="form.urgence = u.value"
-                >
-                  <font-awesome-icon :icon="u.icon" class="mr-1" />
-                  {{ u.label }}
-                </button>
-              </div>
-            </div>
-          </div>
+        <AfricansChamp
+          v-model="form.details_proposition"
+          libelle="Détails de la proposition"
+          type="textarea"
+          :lignes="5"
+          placeholder="Développez votre idée en détail : objectifs, modalités, bénéficiaires…"
+          obligatoire
+        />
+      </template>
 
-          <div v-if="form.categorie_proposition === 'autre'">
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Précisez la catégorie</label>
-            <input
-              v-model="form.categorie_proposition_detail"
-              type="text"
-              maxlength="200"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Description générale <span class="text-red-500">*</span>
-            </label>
-            <textarea
-              v-model="form.description_generale"
-              rows="3"
-              required
-              placeholder="Présentez brièvement votre proposition..."
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              Détails de la proposition <span class="text-red-500">*</span>
-            </label>
-            <textarea
-              v-model="form.details_proposition"
-              rows="5"
-              required
-              placeholder="Développez votre idée en détail : objectifs, modalités, bénéficiaires..."
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
-            />
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Plan d'implémentation</label>
-              <textarea
-                v-model="form.plan_implementation"
-                rows="3"
-                placeholder="Étapes concrètes pour mettre en œuvre l'idée..."
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Ressources nécessaires</label>
-              <textarea
-                v-model="form.ressources_necessaires"
-                rows="3"
-                placeholder="Moyens humains, financiers, matériels..."
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Impact attendu</label>
-            <textarea
-              v-model="form.impact_attendu"
-              rows="3"
-              placeholder="Effets positifs attendus à court et long terme..."
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
-            />
-          </div>
-
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <label class="block text-sm font-semibold text-gray-700">
-                Modalités opérationnelles concrètes proposées
-                <span class="text-gray-400 font-normal">(10 étapes maximum)</span>
-              </label>
-              <button
-                v-if="modalites.length < 10"
-                type="button"
-                class="text-xs text-orange-600 hover:text-orange-700 font-medium"
-                @click="ajouterModalite"
-              >
-                <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
-                Ajouter une étape
-              </button>
-            </div>
-            <div v-if="modalites.length === 0" class="text-xs text-gray-400 italic">
-              Aucune étape. Décrivez les étapes concrètes de mise en œuvre (facultatif).
-            </div>
-            <div v-for="(_, idx) in modalites" :key="idx" class="flex items-center gap-2 mb-2">
-              <span class="shrink-0 w-7 h-7 rounded-full bg-orange-100 text-orange-700 text-xs font-bold flex items-center justify-center">
-                {{ idx + 1 }}
-              </span>
-              <input
-                v-model="modalites[idx]"
-                type="text"
-                maxlength="500"
-                :placeholder="`Étape ${idx + 1}...`"
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
-              />
-              <button
-                type="button"
-                class="w-10 h-10 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition"
-                @click="retirerModalite(idx)"
-              >
-                <font-awesome-icon :icon="['fas', 'trash']" class="text-xs" />
-              </button>
-            </div>
-          </div>
-
-          <div class="bg-gray-50 rounded-lg p-4 space-y-3">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Localisation</p>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
-                Territoire <span class="text-red-500">*</span>
-              </label>
-              <select
-                v-model="form.pays_id"
-                required
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm bg-white"
-              >
-                <option value="" disabled>Sélectionnez un territoire</option>
-                <option v-for="p in paysListe" :key="p.id" :value="p.id">{{ p.nom }}</option>
-              </select>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input
-                v-model="form.region"
-                type="text"
-                maxlength="250"
-                placeholder="Région (facultatif)"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
-              />
-              <input
-                v-model="form.ville_quartier_zone"
-                type="text"
-                maxlength="350"
-                placeholder="Ville / Quartier / Zone (facultatif)"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <label class="block text-sm font-semibold text-gray-700">Médias (URLs facultatives)</label>
-              <button
-                v-if="mediasUrls.length < 5"
-                type="button"
-                class="text-xs text-orange-600 hover:text-orange-700 font-medium"
-                @click="ajouterMedia"
-              >
-                <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
-                Ajouter une URL
-              </button>
-            </div>
-            <div v-if="mediasUrls.length === 0" class="text-xs text-gray-400 italic">
-              Aucun média. Ajoutez des URLs d'images, vidéos ou documents si nécessaire.
-            </div>
-            <div v-for="(_, idx) in mediasUrls" :key="idx" class="flex gap-2 mb-2">
-              <input
-                v-model="mediasUrls[idx]"
-                type="url"
-                placeholder="https://..."
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition text-sm"
-              />
-              <button
-                type="button"
-                class="w-10 h-10 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition"
-                @click="retirerMedia(idx)"
-              >
-                <font-awesome-icon :icon="['fas', 'trash']" class="text-xs" />
-              </button>
-            </div>
-          </div>
-
-          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2 text-xs text-amber-800">
-            <font-awesome-icon :icon="['fas', 'circle-info']" class="mt-0.5" />
-            <p>Votre proposition sera publiée immédiatement et visible par toute la communauté.</p>
-          </div>
-        </form>
-
-        <div class="border-t border-gray-100 p-4 flex items-center justify-end gap-3 bg-gray-50">
-          <button
-            type="button"
-            class="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium hover:bg-white transition"
-            @click="fermer"
-          >
-            Annuler
-          </button>
-          <button
-            type="button"
-            :disabled="enCours"
-            class="px-5 py-2.5 rounded-lg bg-linear-to-r from-amber-500 to-orange-600 text-white text-sm font-semibold hover:from-amber-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2 shadow-md"
-            @click="soumettre"
-          >
-            <font-awesome-icon v-if="enCours" :icon="['fas', 'spinner']" class="animate-spin" />
-            <font-awesome-icon v-else :icon="['fas', 'paper-plane']" />
-            {{ enCours ? 'Publication...' : 'Publier' }}
-          </button>
+      <!-- ─── Étape 2 : mise en œuvre ─── -->
+      <template v-else-if="etapeCourante === 1">
+        <div class="grid gap-5 md:grid-cols-2">
+          <AfricansChamp
+            v-model="form.plan_implementation"
+            libelle="Plan d'implémentation"
+            type="textarea"
+            :lignes="3"
+            placeholder="Étapes concrètes pour mettre en œuvre l'idée…"
+          />
+          <AfricansChamp
+            v-model="form.ressources_necessaires"
+            libelle="Ressources nécessaires"
+            type="textarea"
+            :lignes="3"
+            placeholder="Moyens humains, financiers, matériels…"
+          />
         </div>
-      </div>
-    </div>
-  </Transition>
+
+        <AfricansChamp
+          v-model="form.impact_attendu"
+          libelle="Impact attendu"
+          type="textarea"
+          :lignes="3"
+          placeholder="Effets positifs attendus à court et long terme…"
+        />
+
+        <div>
+          <div class="mb-2 flex items-center justify-between gap-4">
+            <span class="text-[14px]/[1.4] text-af-atone italic">
+              Modalités opérationnelles concrètes proposées
+              <span class="text-af-atone-2">(10 étapes maximum)</span>
+            </span>
+            <button
+              v-if="modalites.length < 10"
+              type="button"
+              class="shrink-0 text-[12px] font-bold text-af-chocolat transition hover:opacity-70"
+              @click="ajouterModalite"
+            >
+              <font-awesome-icon icon="fa-solid fa-plus" class="mr-1" />
+              Ajouter une étape
+            </button>
+          </div>
+          <p v-if="modalites.length === 0" class="text-[12px] text-af-atone-2 italic">
+            Aucune étape. Décrivez les étapes concrètes de mise en œuvre (facultatif).
+          </p>
+          <div v-for="(_, idx) in modalites" :key="idx" class="mb-2 flex items-center gap-2">
+            <span class="grid size-7 shrink-0 place-items-center rounded-full bg-af-chocolat/10 text-[12px] font-bold text-af-chocolat">
+              {{ idx + 1 }}
+            </span>
+            <input
+              v-model="modalites[idx]"
+              type="text"
+              maxlength="500"
+              :placeholder="`Étape ${idx + 1}…`"
+              class="h-11 min-w-0 flex-1 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
+            />
+            <button
+              type="button"
+              class="grid size-10 shrink-0 place-items-center rounded-md border border-af-bordure text-af-atone transition hover:border-af-live hover:text-af-live"
+              :aria-label="`Retirer l'étape ${idx + 1}`"
+              @click="retirerModalite(idx)"
+            >
+              <font-awesome-icon icon="fa-solid fa-trash" class="text-[12px]" />
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- ─── Étape 3 : localisation & médias ─── -->
+      <template v-else>
+        <div class="flex flex-col gap-4 rounded-lg bg-af-fond p-4">
+          <p class="text-[14px]/[1.4] font-bold text-af-encre">Localisation</p>
+
+          <AfricansChamp v-model="form.pays_id" libelle="Territoire" type="select" obligatoire>
+            <option value="" disabled>Sélectionnez un territoire</option>
+            <option v-for="p in paysListe" :key="p.id" :value="p.id">{{ p.nom }}</option>
+          </AfricansChamp>
+
+          <div class="grid gap-4 md:grid-cols-2">
+            <AfricansChamp v-model="form.region" libelle="Région" :maxlength="250" aide="Facultatif" />
+            <AfricansChamp
+              v-model="form.ville_quartier_zone"
+              libelle="Ville / Quartier / Zone"
+              :maxlength="350"
+              aide="Facultatif"
+            />
+          </div>
+        </div>
+
+        <div>
+          <div class="mb-2 flex items-center justify-between gap-4">
+            <span class="text-[14px]/[1.4] text-af-atone italic">Médias (URLs facultatives)</span>
+            <button
+              v-if="mediasUrls.length < 5"
+              type="button"
+              class="shrink-0 text-[12px] font-bold text-af-chocolat transition hover:opacity-70"
+              @click="ajouterMedia"
+            >
+              <font-awesome-icon icon="fa-solid fa-plus" class="mr-1" />
+              Ajouter une URL
+            </button>
+          </div>
+          <p v-if="mediasUrls.length === 0" class="text-[12px] text-af-atone-2 italic">
+            Aucun média. Ajoutez des URLs d'images, vidéos ou documents si nécessaire.
+          </p>
+          <div v-for="(_, idx) in mediasUrls" :key="idx" class="mb-2 flex gap-2">
+            <input
+              v-model="mediasUrls[idx]"
+              type="url"
+              placeholder="https://…"
+              class="h-11 min-w-0 flex-1 rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
+            />
+            <button
+              type="button"
+              class="grid size-10 shrink-0 place-items-center rounded-md border border-af-bordure text-af-atone transition hover:border-af-live hover:text-af-live"
+              :aria-label="`Retirer l'URL ${idx + 1}`"
+              @click="retirerMedia(idx)"
+            >
+              <font-awesome-icon icon="fa-solid fa-trash" class="text-[12px]" />
+            </button>
+          </div>
+        </div>
+
+        <p class="flex items-start gap-2 rounded-lg border border-af-chocolat/20 bg-af-chocolat/5 px-4 py-3 text-[12px]/[1.6] text-af-corps">
+          <font-awesome-icon icon="fa-solid fa-circle-info" class="mt-0.5 shrink-0 text-af-chocolat" />
+          Votre proposition sera publiée immédiatement et visible par toute la communauté.
+        </p>
+      </template>
+    </form>
+
+    <template #actions>
+      <button
+        type="button"
+        class="mr-auto text-base font-bold text-af-corps transition hover:opacity-70"
+        @click="fermer"
+      >
+        Annuler
+      </button>
+      <AfricansBouton
+        v-if="etapeCourante > 0"
+        variante="secondaire"
+        icone="fa-solid fa-arrow-left"
+        @click="precedent"
+      >
+        Précédent
+      </AfricansBouton>
+      <AfricansBouton v-if="!derniereEtape" icone="fa-solid fa-arrow-right" @click="suivant">
+        Suivant
+      </AfricansBouton>
+      <AfricansBouton
+        v-else
+        :desactive="enCours"
+        :tourne="enCours"
+        :icone="enCours ? 'fa-solid fa-spinner' : 'fa-solid fa-paper-plane'"
+        @click="soumettre"
+      >
+        {{ enCours ? 'Publication…' : 'Publier' }}
+      </AfricansBouton>
+    </template>
+  </AfricansModale>
 </template>
 
 <script setup lang="ts">
@@ -341,10 +299,44 @@ const categories = [
 ]
 
 const urgences = [
-  { value: 'faible' as const, label: 'Faible', icon: ['fas', 'circle-info'], activeClass: 'bg-yellow-50 text-yellow-700' },
-  { value: 'elevee' as const, label: 'Élevée', icon: ['fas', 'triangle-exclamation'], activeClass: 'bg-orange-50 text-orange-700' },
-  { value: 'critique' as const, label: 'Critique', icon: ['fas', 'fire'], activeClass: 'bg-red-50 text-red-700' },
+  { value: 'faible' as const, label: 'Faible', icon: 'fa-solid fa-circle-info', activeClass: 'bg-af-vert/10 text-af-vert border-af-vert' },
+  { value: 'elevee' as const, label: 'Élevée', icon: 'fa-solid fa-triangle-exclamation', activeClass: 'bg-af-chocolat/10 text-af-chocolat border-af-chocolat' },
+  { value: 'critique' as const, label: 'Critique', icon: 'fa-solid fa-fire', activeClass: 'bg-af-live/10 text-af-live border-af-live' },
 ]
+
+const ETAPES = [
+  { titre: "L'idée" },
+  { titre: 'Mise en œuvre' },
+  { titre: 'Localisation & médias' },
+] as const
+
+const etapeCourante = ref(0)
+const derniereEtape = computed(() => etapeCourante.value === ETAPES.length - 1)
+
+/**
+ * À quelle étape se corrige un message d'erreur donné. Les champs
+ * obligatoires vivent tous à l'étape 1, sauf le territoire, à l'étape 3.
+ */
+function etapeDeLErreur(message: string): number {
+  return message.includes('territoire') ? 2 : 0
+}
+
+function suivant() {
+  const erreur = premiereErreurValidation()
+  // Seule l'étape 1 est bloquante en avant : c'est la seule qui porte des
+  // champs obligatoires en amont du territoire.
+  if (etapeCourante.value === 0 && erreur && etapeDeLErreur(erreur) === 0) {
+    erreurMessage.value = erreur
+    return
+  }
+  erreurMessage.value = null
+  etapeCourante.value = Math.min(etapeCourante.value + 1, ETAPES.length - 1)
+}
+
+function precedent() {
+  erreurMessage.value = null
+  etapeCourante.value = Math.max(etapeCourante.value - 1, 0)
+}
 
 /** Retourne un message d'erreur si le formulaire est invalide, sinon null. */
 function premiereErreurValidation(): string | null {
@@ -388,6 +380,7 @@ function reinitialiser() {
   mediasUrls.value = []
   modalites.value = []
   erreurMessage.value = null
+  etapeCourante.value = 0
 }
 
 function fermer() {
@@ -400,6 +393,7 @@ async function soumettre() {
   const erreur = premiereErreurValidation()
   if (erreur) {
     erreurMessage.value = erreur
+    etapeCourante.value = etapeDeLErreur(erreur)
     return
   }
   enCours.value = true
@@ -450,14 +444,3 @@ watch(() => props.open, async (v) => {
   }
 })
 </script>
-
-<style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-</style>

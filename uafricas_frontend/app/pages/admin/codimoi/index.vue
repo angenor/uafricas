@@ -36,7 +36,7 @@ const tronquer = (texte: string, max: number = 80): string => {
 const colonnes: TableColumn[] = [
   { key: 'type_codimoi', label: 'Type', width: 'w-40' },
   { key: 'contenu', label: 'Contenu' },
-  { key: 'etat', label: 'Etat', width: 'w-24' },
+  { key: 'etat', label: 'État', width: 'w-24' },
   { key: 'nombre_likes', label: 'Likes', width: 'w-20', align: 'center' },
   { key: 'auteur', label: 'Auteur', width: 'w-36',
     format: (_v: any, row: any) => `${row.auteur_prenom} ${row.auteur_nom}` },
@@ -52,7 +52,7 @@ const filterDefs: FilterDefinition[] = [
     { label: 'Ressource historique', value: 'ressource_historique' },
     { label: 'Bonne pratique', value: 'bonne_pratique' },
   ]},
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'Publie', value: 'publie' },
     { label: 'Brouillon', value: 'brouillon' },
     { label: 'Suspendu', value: 'suspendu' },

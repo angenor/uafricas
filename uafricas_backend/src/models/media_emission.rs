@@ -1,8 +1,8 @@
-//! Émissions — les **programmes conteneurs** des chaînes et des stations
+//! Émissions : les **programmes conteneurs** des chaînes et des stations
 //! (feature 009-medias-programmes-episodes, migration 09q).
 //!
 //! Vocabulaire : `emission_*` en base et dans le code = « **Programme** » à
-//! l'écran ; `episode_*` = « **Épisode** ». Le décalage est délibéré — le mot
+//! l'écran ; `episode_*` = « **Épisode** ». Le décalage est délibéré : le mot
 //! « programme » désignait déjà l'unité diffusable avant 09q, et réutiliser
 //! l'identifiant aurait fait lire silencieusement une table de sens opposé
 //! (research.md R1).
@@ -24,15 +24,15 @@ use crate::models::media_episode::EpisodeResponse;
 use crate::models::media_social::CompteursInteraction;
 
 // ────────────────────────────────────────────────────────────────
-// Cadence — FR-013
+// Cadence : FR-013
 // ────────────────────────────────────────────────────────────────
 
 /// Périodicité déclarée d'un programme. Alimente les alertes de FR-024 ; la
 /// **rotation**, elle, se déduit de la récurrence du créneau et non de cette
-/// valeur — un programme hebdomadaire peut être diffusé tous les jours.
+/// valeur : un programme hebdomadaire peut être diffusé tous les jours.
 ///
 /// Quatre valeurs depuis la feature 010 (FR-040). Les trois clés d'origine sont
-/// CONSERVÉES telles quelles — seuls les libellés affichés changent, côté
+/// CONSERVÉES telles quelles : seuls les libellés affichés changent, côté
 /// frontend : renommer les clés aurait imposé un `UPDATE` de données pour un
 /// gain nul, la clé n'étant jamais montrée à l'utilisateur.
 pub const CADENCES_AUTORISEES: [&str; 4] =
@@ -54,7 +54,7 @@ pub fn valider_cadence(valeur: &str) -> Result<(), ApiErreur> {
 ///
 /// Cette fonction **remplace** le calcul en dur « 24 h si quotidienne, sinon
 /// 24 × 7 » de `mes_alertes_cadence`. Tel quel, un programme mensuel aurait été
-/// signalé en retard dès le 8ᵉ jour — un symptôme qui n'apparaît qu'après coup,
+/// signalé en retard dès le 8ᵉ jour : un symptôme qui n'apparaît qu'après coup,
 /// jamais à la compilation.
 pub fn periode_heures_cadence(cadence: &str) -> Option<i64> {
     match cadence {
@@ -67,7 +67,7 @@ pub fn periode_heures_cadence(cadence: &str) -> Option<i64> {
 
 /// Marge d'anticipation de l'alerte de cadence (FR-024, contrat membre §5).
 /// Elle doit absorber le délai de validation administrative : prévenir le jour
-/// même laisserait le détenteur sans recours. Elle croît avec la période — sept
+/// même laisserait le détenteur sans recours. Elle croît avec la période : sept
 /// jours d'avance sur un mensuel, six heures sur un quotidien.
 pub fn heures_anticipation_alerte(cadence: &str) -> Option<i64> {
     match cadence {
@@ -110,7 +110,7 @@ pub fn type_media_emission(type_support: &str) -> Option<&'static str> {
     }
 }
 
-/// Type de support déduit du type de média d'une émission — opération inverse.
+/// Type de support déduit du type de média d'une émission, opération inverse.
 pub fn support_pour_type_media_emission(type_media: &str) -> Option<&'static str> {
     match type_media {
         "emission_tele" => Some("chaine_tv"),
@@ -185,7 +185,7 @@ pub struct EmissionRow {
     pub nombre_episodes: Option<i64>,
     #[sqlx(default)]
     pub dernier_episode_at: Option<DateTime<Utc>>,
-    /// Décomptes de la vue détenteur (FR-042) — jamais servis au public.
+    /// Décomptes de la vue détenteur (FR-042), jamais servis au public.
     #[sqlx(default)]
     pub episodes_en_attente: Option<i64>,
     #[sqlx(default)]
@@ -200,7 +200,7 @@ pub struct EmissionRow {
 // DTO
 // ────────────────────────────────────────────────────────────────
 
-/// Référence nommée légère — thème phare, chaîne, station.
+/// Référence nommée légère : thème phare, chaîne, station.
 #[derive(Debug, Clone, Serialize)]
 pub struct RefNommee {
     pub id: Uuid,
@@ -221,7 +221,7 @@ pub struct EmissionResponse {
     pub langue: String,
     pub cadence: String,
     pub etat: String,
-    /// `chaine_tv` ou `station_radio` — l'appelant sait déjà lequel, mais les
+    /// `chaine_tv` ou `station_radio` : l'appelant sait déjà lequel, mais les
     /// composants partagés du frontend, non.
     pub type_support: String,
     pub support_id: Uuid,
@@ -236,7 +236,7 @@ pub struct EmissionResponse {
     /// Épisodes **publiés** (FR-012). 0 quand l'agrégat n'a pas été demandé.
     pub nombre_episodes: i64,
     pub dernier_episode_at: Option<DateTime<Utc>>,
-    /// Borné à 12 par les endpoints de sections — au-delà, la page du programme.
+    /// Borné à 12 par les endpoints de sections, au-delà, la page du programme.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub episodes_apercu: Vec<EpisodeResponse>,
     /// Vue détenteur et back-office seulement (FR-042).
@@ -248,12 +248,12 @@ pub struct EmissionResponse {
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-    /// Équipe éditoriale **du programme** (010) — distincte de celle de son
+    /// Équipe éditoriale **du programme** (010), distincte de celle de son
     /// support, jamais un repli sur elle (FR-032). Greffée après coup par les
     /// appelants, comme `episodes_apercu` et `interactions`.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub equipe: Vec<crate::models::media_equipe::MembreEquipeResponse>,
-    /// Compteurs de **l'émission seule** — jamais la somme de ceux de ses
+    /// Compteurs de **l'émission seule** : jamais la somme de ceux de ses
     /// épisodes (FR-048).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub interactions: Option<CompteursInteraction>,
@@ -313,7 +313,7 @@ impl EmissionRow {
 pub struct EmissionRequest {
     pub titre: String,
     pub description: Option<String>,
-    /// Défaut `ponctuelle` — une émission naît sans engagement de périodicité.
+    /// Défaut `ponctuelle` : une émission naît sans engagement de périodicité.
     pub cadence: Option<String>,
     pub image_couverture_url: Option<String>,
     pub info_animateur: Option<String>,
@@ -351,7 +351,7 @@ pub struct EmissionQueryParams {
     pub etat: Option<String>,
     pub cadence: Option<String>,
     pub support_id: Option<Uuid>,
-    /// `tele` | `radio` — filtre de la liste back-office (FR-046).
+    /// `tele` | `radio` : filtre de la liste back-office (FR-046).
     pub r#type: Option<String>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,

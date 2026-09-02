@@ -1,4 +1,4 @@
-# Contrats HTTP — Workflow Accompagnateur (public)
+# Contrats HTTP : Workflow Accompagnateur (public)
 
 **Préfixe** : `/api/afrolang`
 **Auth** : JWT bearer requis sur toutes les routes ci-dessous.
@@ -13,7 +13,7 @@ Liste paginée des recommandations dont je suis la personne recommandée (boîte
 
 | Paramètre | Type | Défaut |
 |---|---|---|
-| `statut` | string | (tous) — filtre `en_attente` \| `acceptee` \| `refusee` \| `retiree` |
+| `statut` | string | (tous) : filtre `en_attente` \| `acceptee` \| `refusee` \| `retiree` |
 | `page` | int | 1 |
 | `limit` | int | 20 (max 50) |
 

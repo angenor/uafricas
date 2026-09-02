@@ -1,9 +1,9 @@
 /**
- * Fiche d'un support média — thématiques multiples et couverture territoriale
+ * Fiche d'un support média : thématiques multiples et couverture territoriale
  * (feature 009, US3 et US4).
  *
  * Terminologie : l'interface dit « **territoire** » là où l'API et la base
- * disent `pays` — convention établie du projet.
+ * disent `pays` : convention établie du projet.
  */
 
 export interface ThematiquePublique {
@@ -36,7 +36,7 @@ export interface TerritoireDecompte {
 
 export interface TerritoiresDisponibles {
   territoires: TerritoireDecompte[]
-  /** Supports panafricains — ils remontent sur **chaque** territoire (FR-036),
+  /** Supports panafricains : ils remontent sur **chaque** territoire (FR-036),
    * et ne peuvent donc pas être comptés dans les lignes ci-dessus. */
   continentales: number
 }
@@ -67,7 +67,7 @@ export const useMediaSupport = () => {
     type === 'station_radio' ? '/api/stations-radio' : '/api/television'
 
   /** Tous les thèmes actifs du référentiel `media`, avec le nombre de supports
-   * publiés qui les déclarent — `0` compris. */
+   * publiés qui les déclarent : `0` compris. */
   const listerThematiquesDisponibles = async (type: TypeSupport): Promise<ThematiqueDecompte[]> => {
     try {
       const reponse = await $fetch<ApiResponse<ThematiqueDecompte[]>>(
@@ -142,7 +142,7 @@ export const useMediaSupport = () => {
   }
 
   /** Remplacement intégral. Refus `400` si la liste est vide sur un support
-   * publié (FR-029) — le message vient du serveur. */
+   * publié (FR-029) : le message vient du serveur. */
   const definirThematiques = async (
     type: TypeSupport,
     supportId: string,

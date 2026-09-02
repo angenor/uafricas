@@ -9,7 +9,7 @@
   >
     <font-awesome-icon
       :icon="[actif ? 'fas' : 'far', 'heart']"
-      :class="actif ? 'text-red-500' : 'text-gray-400'"
+      :class="actif ? 'text-af-live' : 'text-af-atone-2'"
     />
     <span v-if="avecLibelle" class="ml-2 text-sm font-medium">
       {{ actif ? 'En favori' : 'Ajouter aux favoris' }}
@@ -45,7 +45,7 @@ const enCours = ref(false)
 
 const classeBouton = computed(() => {
   if (props.variante === 'detail') {
-    return 'px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50'
+    return 'px-4 py-2.5 rounded-lg border border-af-bordure bg-white hover:bg-af-fond'
   }
   return 'w-9 h-9 rounded-full bg-white/90 shadow-sm hover:bg-white'
 })

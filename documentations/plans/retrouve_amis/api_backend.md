@@ -1,4 +1,4 @@
-# Retrouve Amis — Plan API Backend
+# Retrouve Amis : Plan API Backend
 
 ## Structure des fichiers
 
@@ -116,7 +116,7 @@ pub const MESSAGE_COLONNES: &str = "m.id, m.correspondance_id, m.auteur_id, \
     m.nom_contact, m.lu, m.lu_le, m.created_at";
 
 // ============================================================
-// FromRow — Rows BD
+// FromRow : Rows BD
 // ============================================================
 
 #[derive(Debug, FromRow)]
@@ -180,7 +180,7 @@ pub struct MessageCorrespondanceRow {
 }
 
 // ============================================================
-// Response DTOs — Sérialisation frontend
+// Response DTOs : Sérialisation frontend
 // ============================================================
 
 #[derive(Debug, Serialize)]
@@ -274,7 +274,7 @@ pub struct StatsResponse {
 }
 
 // ============================================================
-// Query Params — Filtres de recherche
+// Query Params : Filtres de recherche
 // ============================================================
 
 #[derive(Debug, Deserialize)]
@@ -361,9 +361,9 @@ pub struct SignalementForm {
 
 ---
 
-## Handlers — Logique métier clé
+## Handlers : Logique métier clé
 
-### `creer_avis` — Création d'un avis
+### `creer_avis` : Création d'un avis
 
 ```
 1. Valider les données (titre non vide, au moins 2 critères)
@@ -375,7 +375,7 @@ pub struct SignalementForm {
 7. Audit: log_action("creer", "retrouve_amis.avis_recherche", ...)
 ```
 
-### `confirmer_correspondance` — Double opt-in
+### `confirmer_correspondance` : Double opt-in
 
 ```
 1. Charger la correspondance
@@ -387,7 +387,7 @@ pub struct SignalementForm {
 6. Audit
 ```
 
-### `partager_contact` — Partage sécurisé de coordonnées
+### `partager_contact` : Partage sécurisé de coordonnées
 
 ```
 1. Vérifier que la correspondance est 'validee'
@@ -397,7 +397,7 @@ pub struct SignalementForm {
 5. Audit (sans logger la valeur en clair)
 ```
 
-### `recherche_anonyme` — Recherche sans compte
+### `recherche_anonyme` : Recherche sans compte
 
 ```
 1. Rate limiting strict (3 recherches / IP / heure)

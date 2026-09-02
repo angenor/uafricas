@@ -69,7 +69,7 @@ const peutAgir = computed(() => {
         </p>
         <p v-if="suggestion.ma_personne.naissance_annee" class="text-xs text-stone-500">
           {{ suggestion.ma_personne.naissance_annee }}
-          <span v-if="suggestion.ma_personne.naissance_lieu"> — {{ suggestion.ma_personne.naissance_lieu }}</span>
+          <span v-if="suggestion.ma_personne.naissance_lieu">, {{ suggestion.ma_personne.naissance_lieu }}</span>
         </p>
       </div>
 
@@ -88,7 +88,7 @@ const peutAgir = computed(() => {
         </p>
         <p v-if="suggestion.personne_matchee.naissance_annee" class="text-xs text-stone-500">
           {{ suggestion.personne_matchee.naissance_annee }}
-          <span v-if="suggestion.personne_matchee.naissance_lieu"> — {{ suggestion.personne_matchee.naissance_lieu }}</span>
+          <span v-if="suggestion.personne_matchee.naissance_lieu">, {{ suggestion.personne_matchee.naissance_lieu }}</span>
         </p>
       </div>
     </div>

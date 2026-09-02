@@ -22,6 +22,10 @@ pub const ADMIN_FICHE_PAYS_DETAIL_COLONNES: &str =
      fp.image_drapeau_url, fp.image_embleme_url, fp.image_devise_url,
      fp.hymne_national, fp.langue_officielle, fp.langues_populaires,
      fp.monnaie, fp.fuseau_horaire,
+     fp.drapeau_description, fp.embleme_description, fp.hymne_description,
+     fp.fleur_nationale, fp.fleur_description,
+     fp.animal_national, fp.animal_description,
+     fp.oiseau_national, fp.oiseau_description,
      fp.bloquee, fp.nombre_signalements,
      fp.cree_par, u.nom || ' ' || u.prenom AS cree_par_nom,
      fp.created_at, fp.updated_at";
@@ -63,6 +67,16 @@ pub struct AdminFichePayDetailRow {
     pub langues_populaires: Option<String>,
     pub monnaie: Option<String>,
     pub fuseau_horaire: Option<String>,
+    // Symboles nationaux (schéma 11l)
+    pub drapeau_description: Option<String>,
+    pub embleme_description: Option<String>,
+    pub hymne_description: Option<String>,
+    pub fleur_nationale: Option<String>,
+    pub fleur_description: Option<String>,
+    pub animal_national: Option<String>,
+    pub animal_description: Option<String>,
+    pub oiseau_national: Option<String>,
+    pub oiseau_description: Option<String>,
     pub bloquee: bool,
     pub nombre_signalements: i32,
     pub cree_par: Uuid,
@@ -92,6 +106,16 @@ pub struct AdminFichePayDetailResponse {
     pub langues_populaires: Option<String>,
     pub monnaie: Option<String>,
     pub fuseau_horaire: Option<String>,
+    // Symboles nationaux (schéma 11l)
+    pub drapeau_description: Option<String>,
+    pub embleme_description: Option<String>,
+    pub hymne_description: Option<String>,
+    pub fleur_nationale: Option<String>,
+    pub fleur_description: Option<String>,
+    pub animal_national: Option<String>,
+    pub animal_description: Option<String>,
+    pub oiseau_national: Option<String>,
+    pub oiseau_description: Option<String>,
     pub bloquee: bool,
     pub nombre_signalements: i32,
     pub cree_par: Uuid,
@@ -142,6 +166,15 @@ impl AdminFichePayDetailRow {
             langues_populaires: self.langues_populaires.clone(),
             monnaie: self.monnaie.clone(),
             fuseau_horaire: self.fuseau_horaire.clone(),
+            drapeau_description: self.drapeau_description.clone(),
+            embleme_description: self.embleme_description.clone(),
+            hymne_description: self.hymne_description.clone(),
+            fleur_nationale: self.fleur_nationale.clone(),
+            fleur_description: self.fleur_description.clone(),
+            animal_national: self.animal_national.clone(),
+            animal_description: self.animal_description.clone(),
+            oiseau_national: self.oiseau_national.clone(),
+            oiseau_description: self.oiseau_description.clone(),
             bloquee: self.bloquee,
             nombre_signalements: self.nombre_signalements,
             cree_par: self.cree_par,
@@ -178,6 +211,16 @@ pub struct CreerFichePayRequest {
     pub langues_populaires: Option<String>,
     pub monnaie: Option<String>,
     pub fuseau_horaire: Option<String>,
+    // Symboles nationaux (schéma 11l)
+    pub drapeau_description: Option<String>,
+    pub embleme_description: Option<String>,
+    pub hymne_description: Option<String>,
+    pub fleur_nationale: Option<String>,
+    pub fleur_description: Option<String>,
+    pub animal_national: Option<String>,
+    pub animal_description: Option<String>,
+    pub oiseau_national: Option<String>,
+    pub oiseau_description: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -197,6 +240,16 @@ pub struct ModifierFichePayRequest {
     pub langues_populaires: Option<String>,
     pub monnaie: Option<String>,
     pub fuseau_horaire: Option<String>,
+    // Symboles nationaux (schéma 11l)
+    pub drapeau_description: Option<String>,
+    pub embleme_description: Option<String>,
+    pub hymne_description: Option<String>,
+    pub fleur_nationale: Option<String>,
+    pub fleur_description: Option<String>,
+    pub animal_national: Option<String>,
+    pub animal_description: Option<String>,
+    pub oiseau_national: Option<String>,
+    pub oiseau_description: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -443,7 +496,7 @@ pub struct VerificationSiteBody {
     pub verifie: bool,
 }
 
-/// Body de modération d'un avis de site (US5 — masquage admin).
+/// Body de modération d'un avis de site (US5, masquage admin).
 #[derive(Debug, Deserialize)]
 pub struct MasquerAvisBody {
     pub masque: bool,
@@ -545,6 +598,9 @@ pub struct AdminContributionListeResponse {
     pub fiche_pays_id: Uuid,
     pub pays_nom: String,
     pub section: String,
+    /// Type d'objet visé (site, recette, personnalité…). Sans lui, la liste
+    /// n'annonce que la section et le modérateur ne sait pas ce qu'il valide.
+    pub type_objet_contribution: Option<String>,
     pub type_contribution: String,
     pub etat: String,
     pub contributeur_nom: Option<String>,
@@ -602,7 +658,7 @@ pub struct RetirerContributionRequest {
 }
 
 /// Contribution concurrente (meme fiche_pays, meme type_objet, meme target_id,
-/// etat=en_attente) — avertit l'admin qu'elles seront marquees 'obsolete' a
+/// etat=en_attente) : avertit l'admin qu'elles seront marquees 'obsolete' a
 /// l'approbation.
 #[derive(Debug, Serialize, FromRow)]
 pub struct AdminContributionConcurrente {
@@ -624,7 +680,7 @@ pub struct AdminContributionPieceJointe {
     pub url_signee: String,
 }
 
-/// Reponse enrichie GET /api/admin/profils-pays/contributions/{id} — inclut
+/// Reponse enrichie GET /api/admin/profils-pays/contributions/{id}, inclut
 /// diff structure JSONB + pieces jointes + contributions concurrentes (T040).
 #[derive(Debug, Serialize)]
 pub struct AdminContributionDetailResponse {

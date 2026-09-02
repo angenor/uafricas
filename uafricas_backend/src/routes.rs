@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_emission, media_episode, media_equipe, media_programmation, media_proposition, media_social, media_support, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{africanite, admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_emission, media_episode, media_equipe, media_programmation, media_proposition, media_social, media_support, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -99,7 +99,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/medias/propositions/{id}", web::get().to(admin::media_proposition::obtenir_proposition))
                     .route("/medias/propositions/{id}/valider", web::patch().to(admin::media_proposition::valider_proposition))
                     .route("/medias/propositions/{id}/rejeter", web::patch().to(admin::media_proposition::rejeter_proposition))
-                    // Medias & Contenus — Programmes conteneurs et épisodes (009).
+                    // Medias & Contenus : Programmes conteneurs et épisodes (009).
                     // `/programmes-radio` et `/programmes-tele` ont disparu avec
                     // leurs tables : la création d'un épisode exige désormais un
                     // programme d'accueil.
@@ -109,7 +109,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // « /medias/emissions », et « /medias/{type_media}/{id}/etat »
                     // capterait « /medias/emissions/{id}/etat ». Dans les deux cas
                     // actix tente un parsing d'UUID sur un segment littéral et
-                    // renvoie 404 — l'ordre de déclaration est la seule garde.
+                    // renvoie 404 : l'ordre de déclaration est la seule garde.
                     .route("/medias/upload", web::post().to(admin::radio_tele::uploader_media))
                     // File de modération des épisodes (US1, FR-040 à FR-043).
                     .route("/medias/episodes", web::get().to(admin::media_moderation_episode::lister_episodes))
@@ -134,7 +134,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/medias/{type_support}/{support_id}/thematiques", web::put().to(media_support::admin_definir_thematiques))
                     .route("/medias/{type_support}/{support_id}/couverture", web::get().to(media_support::admin_obtenir_couverture))
                     .route("/medias/{type_support}/{support_id}/couverture", web::put().to(media_support::admin_definir_couverture))
-                    // Équipe éditoriale (010) — même forme que les deux blocs
+                    // Équipe éditoriale (010) : même forme que les deux blocs
                     // ci-dessus. Déclarée AVANT « /medias/{id} », qui capterait
                     // « /medias/equipe ». {type_porteur} accepte quatre valeurs :
                     // le back-office édite aussi l'équipe d'un programme.
@@ -145,7 +145,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/medias/signalements", web::get().to(admin::media_proposition::lister_signalements))
                     .route("/medias/signalements/{type_media}/{id}", web::get().to(admin::media_proposition::detail_signalements))
                     .route("/medias/{type_media}/{id}/etat", web::patch().to(admin::media_proposition::changer_etat_media))
-                    // Co-detenteurs — recours administratif (US5)
+                    // Co-detenteurs : recours administratif (US5)
                     .route("/medias/{type_support}/{support_id}/detenteurs", web::get().to(admin::media_proposition::lister_detenteurs_admin))
                     .route("/medias/{type_support}/{support_id}/detenteurs", web::post().to(admin::media_proposition::ajouter_detenteur_admin))
                     .route("/medias/{type_support}/{support_id}/detenteurs/{utilisateur_id}", web::delete().to(admin::media_proposition::retirer_detenteur_admin))
@@ -302,7 +302,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/sessions/{id}", web::get().to(admin::sessions_afrolang::obtenir_session))
                     .route("/sessions/{id}/participants", web::get().to(admin::sessions_afrolang::lister_participants))
                     .route("/sessions/{id}/tableau-blanc", web::get().to(admin::sessions_afrolang::obtenir_tableau_blanc))
-                    // AfroLang - Modérateurs attitrés (feature 005, US3) — salles publiques uniquement
+                    // AfroLang - Modérateurs attitrés (feature 005, US3), salles publiques uniquement
                     .route("/afrolang/salles/{salle_id}/moderateurs", web::get().to(admin::moderateurs_afrolang::lister_moderateurs_attitres))
                     .route("/afrolang/salles/{salle_id}/moderateurs", web::post().to(admin::moderateurs_afrolang::designer_moderateur))
                     .route("/afrolang/salles/{salle_id}/moderateurs/{utilisateur_id}", web::delete().to(admin::moderateurs_afrolang::retirer_moderateur))
@@ -382,7 +382,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // Medias & Contenus - MOOC
                     .route("/mooc", web::get().to(admin::mooc::lister_moocs))
                     .route("/mooc", web::post().to(admin::mooc::creer_mooc))
-                    // Programme (chapitres/leçons) — /mooc/upload AVANT /mooc/{id} pour ne pas être capturé par {id}
+                    // Programme (chapitres/leçons) : /mooc/upload AVANT /mooc/{id} pour ne pas être capturé par {id}
                     .route("/mooc/upload", web::post().to(admin::formation_contenu::uploader_fichier_formation))
                     .route("/mooc/{id}/chapitres", web::get().to(admin::formation_contenu::lister_contenu))
                     .route("/mooc/{id}/chapitres", web::post().to(admin::formation_contenu::creer_chapitre))
@@ -393,7 +393,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/mooc/{id}/etat", web::patch().to(admin::mooc::changer_etat_mooc))
                     .route("/mooc/{id}/inscriptions", web::get().to(admin::mooc::lister_inscriptions))
                     .route("/mooc/{id}/inscriptions/stats", web::get().to(admin::mooc::stats_inscriptions))
-                    // Programme (chapitres/leçons) — édition directe par id
+                    // Programme (chapitres/leçons) : édition directe par id
                     .route("/chapitres/{chapitre_id}", web::put().to(admin::formation_contenu::modifier_chapitre))
                     .route("/chapitres/{chapitre_id}", web::delete().to(admin::formation_contenu::supprimer_chapitre))
                     .route("/chapitres/{chapitre_id}/lecons", web::post().to(admin::formation_contenu::creer_lecon))
@@ -540,7 +540,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/avis/{id}", web::put().to(retrouve_amis::modifier_avis))
                     .route("/avis/{id}/cloturer", web::patch().to(retrouve_amis::cloturer_avis))
                     .route("/avis/{id}", web::delete().to(retrouve_amis::supprimer_avis))
-                    // Route publier_avis supprimee (003) — publication automatique a la creation
+                    // Route publier_avis supprimee (003) : publication automatique a la creation
                     .route("/avis/{id}/signaler", web::post().to(retrouve_amis::signaler_avis))
                     // Correspondances
                     .route("/correspondances", web::get().to(retrouve_amis::lister_correspondances))
@@ -660,7 +660,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("/evenements")
                     .route("", web::get().to(evenements::lister_evenements))
                     .route("", web::post().to(evenements::creer_evenement))
-                    // Gestion par l'organisateur (membre) — declare avant /{id}
+                    // Gestion par l'organisateur (membre), declare avant /{id}
                     .route("/mes-evenements", web::get().to(evenements::lister_mes_evenements))
                     .route("/{id}", web::get().to(evenements::obtenir_evenement))
                     .route("/{id}", web::put().to(evenements::modifier_mon_evenement))
@@ -696,6 +696,19 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/specialites", web::get().to(experts::lister_specialites_experts))
                     .route("/{id}", web::get().to(experts::obtenir_expert))
                     .route("/{id}/note", web::post().to(experts::noter_expert)),
+            )
+            // Africanité : publications éphémères du fil (spec 012, P1)
+            .service(
+                web::scope("/africanites")
+                    .route("", web::get().to(africanite::lister_africanites))
+                    // Deux routes de création et non une : le texte voyage en
+                    // JSON, l'image et la vidéo en multipart. Les mêler dans un
+                    // seul handler obligerait à deviner le type de corps.
+                    .route("/texte", web::post().to(africanite::creer_africanite_texte))
+                    .route("/media", web::post().to(africanite::creer_africanite_media))
+                    // Après les chemins littéraux : « /texte » serait sinon
+                    // capté par « /{id}/vue » et parserait « texte » en UUID.
+                    .route("/{id}/vue", web::post().to(africanite::marquer_vue)),
             )
             // Routes annuaire des membres (profils publics)
             .service(
@@ -837,12 +850,12 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/episodes/slug/{slug}", web::get().to(stations_radio::obtenir_episode_radio_slug))
                     .route("/{id}", web::get().to(stations_radio::obtenir_station)),
             )
-            // Émissions radio — exposition publique (US2, FR-020)
+            // Émissions radio : exposition publique (US2, FR-020)
             .service(
                 web::scope("/programmes-radio")
                     // L'ancienne liste `programme_radio` n'a plus de table : le
                     // catalogue se parcourt désormais par station puis par
-                    // programme. Seule l'adresse de DÉTAIL est conservée — les
+                    // programme. Seule l'adresse de DÉTAIL est conservée, les
                     // slugs ayant survécu à 09q, elle résout sur l'épisode.
                     .route("/slug/{slug}", web::get().to(stations_radio::obtenir_episode_radio_slug)),
             )
@@ -850,12 +863,12 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("/fiches-pays")
                     .route("", web::get().to(fiches_pays::lister_fiches))
-                    // US3 — creation d'une nouvelle fiche pays (soumission)
+                    // US3 : creation d'une nouvelle fiche pays (soumission)
                     .route("", web::post().to(afripulse_public::creer_fiche_pays))
                     .route("/regions", web::get().to(fiches_pays::lister_regions))
                     // Mur communautaire : fiches partagées (public, paginé)
                     .route("/partages", web::get().to(fiche_pays_social::lister_partages))
-                    // T071 — mes contributions (utilisateur connecte)
+                    // T071 : mes contributions (utilisateur connecte)
                     .route("/moi/contributions", web::get().to(afripulse_public::lister_mes_contributions))
                     // Upload d'image isolée pour une contribution (site, personnalité)
                     .route("/contributions/upload-image", web::post().to(contributions_fiche::uploader_image_contribution))
@@ -873,7 +886,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{id}/reaction", web::post().to(fiche_pays_social::reagir_fiche))
                     .route("/{id}/signalement", web::post().to(fiche_pays_social::signaler_fiche))
                     .route("/{id}/partages", web::post().to(fiche_pays_social::partager_fiche))
-                    // Sous-objets afripulse — réactions like/dislike & partage communautaire.
+                    // Sous-objets afripulse : réactions like/dislike & partage communautaire.
                     // Route littérale (mur) AVANT les routes paramétrées.
                     .route("/elements/partages", web::get().to(element_social::lister_partages_elements))
                     .route("/elements/{type_objet}/{objet_id}/reaction", web::post().to(element_social::reagir_element))
@@ -888,7 +901,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{id}/personnalites", web::get().to(afripulse_public::lister_personnalites))
                     .route("/{id}/personnalites/{personnalite_id}", web::get().to(afripulse_public::obtenir_personnalite))
                     .route("/{id}/savoirs-pratiques", web::get().to(afripulse_public::lister_savoirs_pratiques))
-                    // US4 — galerie photos + recommandations
+                    // US4 : galerie photos + recommandations
                     .route("/{id}/recommandations", web::get().to(afripulse_public::lister_recommandations))
                     .route("/{id}/galerie-photos", web::get().to(afripulse_public::lister_galerie_photos)),
             )
@@ -1068,7 +1081,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // Réaction & partage d'une vidéo (auth JWT dans le handler)
                     .route("/videos/{id}/reaction", web::post().to(vidafrica_contribution::reagir_video))
                     .route("/videos/{id}/partage", web::post().to(vidafrica_contribution::partager_video))
-                    // Contribution membre — sous-titres (routes spécifiques AVANT /videos/{slug})
+                    // Contribution membre : sous-titres (routes spécifiques AVANT /videos/{slug})
                     .route("/videos/{video_id}/mes-pistes", web::get().to(vidafrica_contribution::mes_pistes))
                     .route("/videos/{video_id}/pistes", web::post().to(vidafrica_contribution::creer_piste_membre))
                     .route("/videos/{video_id}/sous-titres/{langue}", web::get().to(vidafrica::obtenir_sous_titres))
@@ -1136,16 +1149,16 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/invitations/{id}/refuser", web::patch().to(media_detention::refuser_invitation))
                     .route("/creneaux/{id}", web::put().to(media_programmation::modifier_creneau))
                     .route("/creneaux/{id}", web::delete().to(media_programmation::supprimer_creneau))
-                    // Alertes de cadence (US2, FR-024) — calculées à la lecture.
+                    // Alertes de cadence (US2, FR-024), calculées à la lecture.
                     .route("/mes-alertes-cadence", web::get().to(media_programmation::mes_alertes_cadence))
                     // Catalogue complet des thèmes et territoires, pour les
-                    // sélecteurs d'édition (US3, US4) — à ne pas confondre avec
+                    // sélecteurs d'édition (US3, US4), à ne pas confondre avec
                     // les référentiels de FILTRE, qui n'exposent que le déclaré.
                     .route("/referentiels", web::get().to(media_support::referentiels_edition))
                     // Suggestions de fonction d'équipe (010, FR-015). Segment
                     // LITTÉRAL : il doit précéder « /{type_porteur}/… », qui
                     // tenterait sinon de parser « equipe » comme un UUID et
-                    // renverrait un 404 « UUID parsing failed » — deux cas
+                    // renverrait un 404 « UUID parsing failed », deux cas
                     // livrés en 009 pour cette raison exacte.
                     .route("/equipe/fonctions", web::get().to(media_equipe::lister_fonctions))
                     // Programmes et épisodes (US1). Ces segments fixes précèdent
@@ -1175,8 +1188,8 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{type_support}/{support_id}/couverture", web::get().to(media_support::obtenir_couverture))
                     .route("/{type_support}/{support_id}/couverture", web::put().to(media_support::definir_couverture))
                     // Équipe éditoriale (010). {type_porteur} accepte QUATRE
-                    // valeurs — les deux supports et les deux familles de
-                    // programme —, là où les motifs voisins n'en acceptent que
+                    // valeurs : les deux supports et les deux familles de
+                    // programme, là où les motifs voisins n'en acceptent que
                     // deux. Le segment final « equipe » les distingue.
                     .route("/{type_porteur}/{porteur_id}/equipe", web::get().to(media_equipe::obtenir_equipe))
                     .route("/{type_porteur}/{porteur_id}/equipe", web::put().to(media_equipe::definir_equipe))

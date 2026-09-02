@@ -3,7 +3,7 @@
 **Feature Branch**: `001-collaboration-partage`
 **Created**: 2026-03-16
 **Status**: Draft
-**Input**: User description: "Feature 6 — Collaboration et partage. Inviter des membres de la famille à co-éditer un arbre. Gestion des permissions (lecture seule vs édition). Paramètres de confidentialité : choisir quelles parties de l'arbre sont visibles pour le matching public. Historique des modifications."
+**Input**: User description: "Feature 6, Collaboration et partage. Inviter des membres de la famille à co-éditer un arbre. Gestion des permissions (lecture seule vs édition). Paramètres de confidentialité : choisir quelles parties de l'arbre sont visibles pour le matching public. Historique des modifications."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -11,7 +11,7 @@
 
 Le propriétaire de l'arbre peut inviter d'autres utilisateurs de la plateforme à accéder à son arbre. L'invitation se fait par email. Le destinataire reçoit une notification et peut accepter ou refuser. En acceptant, il obtient un accès à l'arbre selon le niveau de permission défini par le propriétaire (lecture seule ou édition).
 
-**Why this priority**: Sans invitation, l'arbre reste un outil individuel. La collaboration familiale est le fondement de la richesse des données — chaque membre peut apporter des informations que les autres ne connaissent pas.
+**Why this priority**: Sans invitation, l'arbre reste un outil individuel. La collaboration familiale est le fondement de la richesse des données, chaque membre peut apporter des informations que les autres ne connaissent pas.
 
 **Independent Test**: Inviter un utilisateur par email → il accepte → il voit l'arbre du propriétaire dans sa liste d'arbres accessibles.
 
@@ -80,7 +80,7 @@ Le propriétaire et les collaborateurs avec permission « Édition » peuvent co
 
 L'utilisateur qui a accès à plusieurs arbres (le sien + ceux partagés avec lui) peut naviguer facilement entre eux. La page index de l'arbre généalogique affiche deux sections : « Mon arbre » et « Arbres partagés avec moi ».
 
-**Why this priority**: Indispensable dès que la collaboration est active — l'utilisateur doit pouvoir accéder aux arbres partagés.
+**Why this priority**: Indispensable dès que la collaboration est active, l'utilisateur doit pouvoir accéder aux arbres partagés.
 
 **Independent Test**: Se connecter avec un compte qui a accès à 2 arbres partagés → vérifier que les 3 arbres (le sien + 2 partagés) sont listés.
 
@@ -88,7 +88,7 @@ L'utilisateur qui a accès à plusieurs arbres (le sien + ceux partagés avec lu
 
 1. **Given** un utilisateur avec son propre arbre et 2 arbres partagés, **When** il accède à la page de l'arbre généalogique, **Then** il voit son arbre en premier, suivi d'une section « Arbres partagés avec moi » listant les 2 arbres avec le nom du propriétaire et son niveau de permission.
 2. **Given** la liste des arbres, **When** l'utilisateur clique sur un arbre partagé, **Then** il visualise cet arbre dans la page de visualisation, avec les permissions appropriées.
-3. **Given** un arbre partagé en lecture seule ouvert, **When** l'utilisateur consulte l'interface, **Then** un bandeau indique « Arbre de [Propriétaire] — Lecture seule ».
+3. **Given** un arbre partagé en lecture seule ouvert, **When** l'utilisateur consulte l'interface, **Then** un bandeau indique « Arbre de [Propriétaire], Lecture seule ».
 
 ---
 
@@ -125,7 +125,7 @@ L'utilisateur qui a accès à plusieurs arbres (le sien + ceux partagés avec lu
 ### Key Entities
 
 - **Invitation** : Demande d'accès envoyée par le propriétaire à un utilisateur. Attributs : arbre cible, email invité, niveau de permission proposé, statut (en_attente, acceptee, refusee, expiree), date d'envoi. Cycle de vie : en_attente → acceptée (crée un collaborateur) ou refusée.
-- **Collaborateur** : Lien entre un utilisateur et un arbre qui ne lui appartient pas. Attributs : utilisateur, arbre, permission (lecture_seule, edition), date d'ajout, invité_par (propriétaire). Pas de soft delete — la révocation supprime le lien.
+- **Collaborateur** : Lien entre un utilisateur et un arbre qui ne lui appartient pas. Attributs : utilisateur, arbre, permission (lecture_seule, edition), date d'ajout, invité_par (propriétaire). Pas de soft delete : la révocation supprime le lien.
 - **Paramètre de confidentialité** : Configuration par personne ou par arbre. Attributs : personne ou arbre, visible_matching (boolean, défaut true). Quand false, la personne est exclue de l'algorithme de matching (Feature 4).
 - **Entrée d'historique** : Enregistrement d'une modification de l'arbre. Attributs : arbre, auteur, action (ajout/modification/suppression), entité (personne ou lien), données avant/après, date. Réutilise potentiellement le système d'audit existant (Feature 1).
 
@@ -144,8 +144,8 @@ L'utilisateur qui a accès à plusieurs arbres (le sien + ceux partagés avec lu
 
 - **SC-001**: Le propriétaire peut inviter un collaborateur et celui-ci peut accepter en moins de 2 minutes (de l'envoi à l'accès effectif).
 - **SC-002**: 100% des tentatives d'édition par un collaborateur « Lecture seule » sont bloquées (pas de bouton visible, pas de contournement par appel direct).
-- **SC-003**: Les personnes marquées « privées » n'apparaissent dans aucun résultat de matching ou de recherche publique — taux d'exclusion : 100%.
+- **SC-003**: Les personnes marquées « privées » n'apparaissent dans aucun résultat de matching ou de recherche publique, taux d'exclusion : 100%.
 - **SC-004**: L'historique des modifications est consultable en moins de 2 secondes pour un arbre avec 500 entrées d'historique.
 - **SC-005**: 80% des utilisateurs ayant reçu une invitation la traitent (acceptent ou refusent) dans les 7 jours.
 - **SC-006**: Un utilisateur peut naviguer entre son arbre et un arbre partagé en moins de 3 clics.
-- **SC-007**: Le bandeau « Lecture seule » est visible en permanence lors de la consultation d'un arbre partagé en lecture seule — aucune confusion possible sur le mode.
+- **SC-007**: Le bandeau « Lecture seule » est visible en permanence lors de la consultation d'un arbre partagé en lecture seule, aucune confusion possible sur le mode.

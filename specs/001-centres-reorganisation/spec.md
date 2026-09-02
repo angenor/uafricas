@@ -20,7 +20,7 @@
 
 Un administrateur doit pouvoir créer, modifier et publier un centre culturel depuis le back-office. Une fois publié, le centre apparaît dans la liste publique des centres culturels africains et afro-descendants avec son image de couverture, son nom, sa localisation et sa description. Les visiteurs peuvent parcourir cette liste et ouvrir la fiche détaillée de chaque centre.
 
-**Why this priority**: C'est la valeur métier principale — sans la chaîne « l'admin crée → le visiteur voit », la page publique des centres culturels reste non actualisable par les équipes éditoriales. Cette user story livre à elle seule un produit utilisable (plateforme éditoriale + vitrine publique).
+**Why this priority**: C'est la valeur métier principale, sans la chaîne « l'admin crée → le visiteur voit », la page publique des centres culturels reste non actualisable par les équipes éditoriales. Cette user story livre à elle seule un produit utilisable (plateforme éditoriale + vitrine publique).
 
 **Independent Test**: Se connecter en admin, créer un nouveau centre culturel (nom, description, pays, image), le publier, puis vérifier en navigation publique anonyme que le centre apparaît dans la liste et que sa fiche détaillée est accessible.
 

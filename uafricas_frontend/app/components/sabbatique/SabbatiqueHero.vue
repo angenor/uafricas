@@ -1,7 +1,7 @@
 <template>
-  <!-- Hero compact — le contenu s'adapte au type de programme -->
+  <!-- Hero compact : le contenu s'adapte au type de programme -->
   <div class="relative w-full bg-font-baniere-ethnie bg-cover bg-center">
-    <div class="absolute inset-0 bg-custom-chocolat/50"></div>
+    <div class="absolute inset-0 bg-af-chocolat/50"></div>
 
     <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-8 text-center select-none">
       <div class="flex items-center justify-center min-h-10 md:min-h-12">

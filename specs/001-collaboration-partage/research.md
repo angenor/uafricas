@@ -5,7 +5,7 @@
 
 ## Décision 1 : Modèle de permissions
 
-**Décision** : Deux niveaux simples — `lecture_seule` et `edition`. Pas de granularité par branche ou par personne.
+**Décision** : Deux niveaux simples : `lecture_seule` et `edition`. Pas de granularité par branche ou par personne.
 
 **Raisonnement** :
 - YAGNI : deux niveaux couvrent 95% des cas d'usage familiaux (les enfants en lecture, les adultes en édition).
@@ -35,7 +35,7 @@
 **Décision** : Colonne `visible_matching BOOLEAN DEFAULT TRUE` ajoutée directement sur `arbre_genealogique.personnes`, plus un flag global `arbre_prive BOOLEAN DEFAULT FALSE` sur `arbre_genealogique.arbres`.
 
 **Raisonnement** :
-- Pas de table séparée pour les paramètres — un simple boolean par personne est plus simple.
+- Pas de table séparée pour les paramètres, un simple boolean par personne est plus simple.
 - Le flag global sur `arbres` permet d'exclure tout l'arbre en une opération.
 - Le matching (Feature 4) filtre sur `WHERE p.visible_matching = TRUE AND a.arbre_prive = FALSE`.
 
@@ -45,7 +45,7 @@
 
 **Raisonnement** :
 - L'audit log capture déjà : action, utilisateur, table, record_id, before/after JSONB, IP, user-agent.
-- Pas besoin d'une nouvelle table — un endpoint avec filtre `WHERE schema_name = 'arbre_genealogique' AND ...` suffit.
+- Pas besoin d'une nouvelle table : un endpoint avec filtre `WHERE schema_name = 'arbre_genealogique' AND ...` suffit.
 - L'affichage frontend formate les entries en langage lisible.
 
 ## Décision 6 : Notification des invitations
@@ -57,7 +57,7 @@
 - Un badge dans l'interface indique les invitations en attente au prochain chargement de page.
 - Le temps réel (WebSocket) est surdimensionné pour des invitations qui arrivent rarement.
 
-## Décision 7 : Accès multi-arbres — sélection de l'arbre actif
+## Décision 7 : Accès multi-arbres : sélection de l'arbre actif
 
 **Décision** : La page index `/arbre-genealogique` affiche deux sections. L'utilisateur clique sur un arbre pour le charger dans la visualisation. L'endpoint `arbre-complet` accepte un paramètre `arbre_id` optionnel.
 

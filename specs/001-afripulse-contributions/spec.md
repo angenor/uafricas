@@ -1,4 +1,4 @@
-# Feature Specification: Afripulse — Enrichissement collaboratif des fiches pays
+# Feature Specification: Afripulse : Enrichissement collaboratif des fiches pays
 
 **Feature Branch**: `001-afripulse-contributions`
 **Created**: 2026-04-18
@@ -10,14 +10,14 @@
 ### Session 2026-04-18
 
 - Q: Une « proposition de modification » peut-elle porter sur la suppression ou l'édition d'un élément déjà validé, ou est-elle restreinte aux ajouts ? → A: Ajout + édition + suppression, chaque action soumise à modération avec affichage diff avant/après côté admin.
-- Q: Quels seuils anti-spam appliquer aux contributions pour éviter la saturation de la file de modération ? → A: Rate-limit différencié par utilisateur — 20 contributions textuelles/jour, 10 photos/jour, max 5 contributions « en attente » simultanées sur un même pays.
+- Q: Quels seuils anti-spam appliquer aux contributions pour éviter la saturation de la file de modération ? → A: Rate-limit différencié par utilisateur, 20 contributions textuelles/jour, 10 photos/jour, max 5 contributions « en attente » simultanées sur un même pays.
 - Q: Quelles bornes concrètes pour les photos contributives (taille, nombre, formats, résolution) ? → A: 2 MB max par photo, 5 photos max par soumission, formats JPEG et PNG uniquement, résolution maximale 2048×2048.
 - Q: Quel est le périmètre géographique exact accepté pour la création d'une nouvelle fiche pays ? → A: Liste figée des 54 codes ISO africains déjà référencés par `/opportunite-afrique/index.vue` (Sahara occidental `eh` inclus).
-- Q: Quelles règles précises pour la notation et le commentaire d'une recommandation visiteur ? → A: Note entière de 1 à 5, commentaire obligatoire de 50 à 2000 caractères, une seule recommandation active par couple (utilisateur, pays) — une nouvelle soumission remplace la précédente après validation administrateur.
+- Q: Quelles règles précises pour la notation et le commentaire d'une recommandation visiteur ? → A: Note entière de 1 à 5, commentaire obligatoire de 50 à 2000 caractères, une seule recommandation active par couple (utilisateur, pays), une nouvelle soumission remplace la précédente après validation administrateur.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 — Proposer une modification sur une fiche pays existante (Priority: P1)
+### User Story 1 : Proposer une modification sur une fiche pays existante (Priority: P1)
 
 Un membre authentifié de la plateforme consulte la fiche d'un pays africain (par exemple la Côte d'Ivoire) et souhaite enrichir l'une des sections dédiées : ajouter un site touristique, documenter un secteur d'opportunité (Cacao, Mines, etc.), présenter une personnalité connue, partager un conseil « à savoir avant de voyager » (par ex. l'argot « Nouchi ») ou laisser une recommandation. Il ouvre un formulaire de contribution rattaché à la section concernée, décrit sa proposition, la soumet, et reçoit une confirmation que sa contribution est en attente de validation.
 
@@ -34,7 +34,7 @@ Un membre authentifié de la plateforme consulte la fiche d'un pays africain (pa
 
 ---
 
-### User Story 2 — Modérer et valider les contributions (Priority: P1)
+### User Story 2 : Modérer et valider les contributions (Priority: P1)
 
 Un administrateur accède à une file d'attente centralisée listant toutes les contributions reçues (créations de fiche, modifications, photos, recommandations). Pour chaque contribution, il voit la valeur actuelle (si applicable), la valeur proposée, l'auteur, la date et les pièces jointes. Il peut approuver, refuser (avec motif) ou demander des précisions. Une contribution approuvée devient immédiatement visible sur la fiche publique et son auteur apparaît dans la liste des contributeurs.
 
@@ -51,7 +51,7 @@ Un administrateur accède à une file d'attente centralisée listant toutes les 
 
 ---
 
-### User Story 3 — Publier une nouvelle fiche pays (Priority: P2)
+### User Story 3 : Publier une nouvelle fiche pays (Priority: P2)
 
 Un utilisateur connecté constate qu'un pays africain encore non documenté sur la plateforme mérite d'y figurer (ou qu'un pays est listé sans contenu). Il ouvre depuis la page `/opportunite-afrique` un formulaire « Proposer une nouvelle fiche pays », saisit les informations de base (nom, région, capitale, population, superficie, monnaie, langues, ethnies, devise, slogan, images) et soumet. La fiche part en validation administrateur et n'apparaît pas publiquement tant qu'elle n'est pas approuvée.
 
@@ -67,7 +67,7 @@ Un utilisateur connecté constate qu'un pays africain encore non documenté sur 
 
 ---
 
-### User Story 4 — Partager photos légendées et laisser recommandations/commentaires (Priority: P2)
+### User Story 4 : Partager photos légendées et laisser recommandations/commentaires (Priority: P2)
 
 Un utilisateur qui a visité (ou qui souhaite partager son expérience d') un pays africain peut ajouter à la fiche de ce pays : (a) une ou plusieurs photos avec légende descriptive, (b) une recommandation avec note globale et commentaire textuel. Ces contenus passent par la modération administrateur avant d'apparaître dans la galerie ou la section « Recommandations et commentaires de visiteurs ».
 
@@ -84,7 +84,7 @@ Un utilisateur qui a visité (ou qui souhaite partager son expérience d') un pa
 
 ---
 
-### User Story 5 — Reconnaître publiquement les contributeurs validés (Priority: P3)
+### User Story 5 : Reconnaître publiquement les contributeurs validés (Priority: P3)
 
 Toute personne dont au moins une contribution a été validée sur une fiche pays doit apparaître dans la section « Contributeurs » de cette fiche. Chaque contributeur est identifié par son nom ou pseudonyme public, son avatar éventuel, le nombre de contributions validées et éventuellement la date de sa dernière contribution validée.
 

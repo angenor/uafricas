@@ -63,7 +63,7 @@ fn envoyer_decision_async(
 }
 
 // ────────────────────────────────────────────────────────────────
-// US2 — Liste des demandes
+// US2 : Liste des demandes
 // ────────────────────────────────────────────────────────────────
 
 /// GET /api/admin/experts
@@ -190,7 +190,7 @@ pub async fn obtenir_demande(
 }
 
 // ────────────────────────────────────────────────────────────────
-// US2 — Decision (validation / refus)
+// US2 : Decision (validation / refus)
 // ────────────────────────────────────────────────────────────────
 
 #[derive(sqlx::FromRow)]
@@ -201,7 +201,7 @@ struct DemandeDecisionRow {
     prenom: String,
 }
 
-/// Charger la demande pour decision (commun valider/rejeter) — garde 404 + 409
+/// Charger la demande pour decision (commun valider/rejeter), garde 404 + 409
 async fn charger_pour_decision(
     pool: &PgPool,
     demande_id: Uuid,

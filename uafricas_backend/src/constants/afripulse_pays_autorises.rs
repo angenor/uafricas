@@ -1,4 +1,4 @@
-//! Périmètre Afripulse — liste figée des codes ISO2 des pays africains autorisés
+//! Périmètre Afripulse : liste figée des codes ISO2 des pays africains autorisés
 //! à posséder une fiche pays sur `/opportunite-afrique`.
 //!
 //! Source unique partagée avec le frontend

@@ -1,8 +1,8 @@
-# Retrouve Amis — Sécurité & Confidentialité
+# Retrouve Amis : Sécurité & Confidentialité
 
 ## Principes de sécurité
 
-Cette fonctionnalité manipule des données personnelles sensibles (noms, lieux, contacts téléphoniques). La sécurité n'est pas optionnelle — elle est intégrée à chaque couche de l'architecture.
+Cette fonctionnalité manipule des données personnelles sensibles (noms, lieux, contacts téléphoniques). La sécurité n'est pas optionnelle : elle est intégrée à chaque couche de l'architecture.
 
 ---
 
@@ -72,9 +72,9 @@ pub fn dechiffrer_contact(chiffre: &str, key: &[u8; 32]) -> Result<String, ApiEr
 **Dépendance Cargo :** `aes-gcm = "0.10"`
 
 ### Ce qui n'est PAS chiffré
-- Les messages texte normaux (contenu) — pas de données sensibles.
-- Les critères de recherche — nécessaires pour le matching.
-- Les noms/prénoms dans les critères — données semi-publiques.
+- Les messages texte normaux (contenu), pas de données sensibles.
+- Les critères de recherche : nécessaires pour le matching.
+- Les noms/prénoms dans les critères : données semi-publiques.
 
 ### Ce qui EST chiffré
 - `valeur_contact_chiffree` dans `message_correspondance`.
@@ -88,7 +88,7 @@ pub fn dechiffrer_contact(chiffre: &str, key: &[u8; 32]) -> Result<String, ApiEr
 
 | Endpoint | Limite | Fenêtre | Raison |
 |----------|--------|---------|--------|
-| `POST /retrouve-amis` (créer avis) | 5 avis actifs max / utilisateur | — | Anti-spam |
+| `POST /retrouve-amis` (créer avis) | 5 avis actifs max / utilisateur |, | Anti-spam |
 | `POST /retrouve-amis/rechercher` | 20 recherches / heure | Par utilisateur | Anti-scraping |
 | `POST /retrouve-amis/recherche-anonyme` | 3 recherches / heure | Par IP | Anti-scraping |
 | `POST /correspondances/{id}/messages` | 50 messages / jour | Par correspondance | Anti-spam |
@@ -112,12 +112,12 @@ pub fn dechiffrer_contact(chiffre: &str, key: &[u8; 32]) -> Result<String, ApiEr
 
 | Abus | Contre-mesure |
 |------|---------------|
-| **Usurpation d'identité** — Se faire passer pour quelqu'un | Système de signalement + modération admin |
-| **Harcèlement** — Utiliser la fonctionnalité pour traquer quelqu'un | Anonymat par défaut + blocage + signalement |
-| **Faux avis** — Créer de faux avis pour manipuler | Limitation à 5 avis actifs + modération |
-| **Arnaque** — Obtenir des numéros pour escroquerie | Chiffrement des contacts + avertissements UI |
-| **Spam** — Envoyer des messages non sollicités | Rate limiting + signalement |
-| **Scraping** — Extraire des données en masse | Rate limiting strict + pas de pagination anonyme |
+| **Usurpation d'identité** : Se faire passer pour quelqu'un | Système de signalement + modération admin |
+| **Harcèlement** : Utiliser la fonctionnalité pour traquer quelqu'un | Anonymat par défaut + blocage + signalement |
+| **Faux avis** : Créer de faux avis pour manipuler | Limitation à 5 avis actifs + modération |
+| **Arnaque** : Obtenir des numéros pour escroquerie | Chiffrement des contacts + avertissements UI |
+| **Spam** : Envoyer des messages non sollicités | Rate limiting + signalement |
+| **Scraping** : Extraire des données en masse | Rate limiting strict + pas de pagination anonyme |
 
 ### Système de signalement
 
@@ -270,7 +270,7 @@ Toutes les actions sensibles sont tracées dans `audit.journal` via le service e
 ### Sanitisation
 - Tous les champs texte sont nettoyés (strip HTML/script) avant insertion.
 - Les critères sont normalisés (minuscule, sans accents) pour le matching.
-- Les requêtes SQL utilisent des paramètres préparés (sqlx — déjà le cas).
+- Les requêtes SQL utilisent des paramètres préparés (sqlx, déjà le cas).
 
 ### Protection CSRF
 - Toutes les mutations nécessitent un token JWT (déjà en place).

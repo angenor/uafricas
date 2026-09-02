@@ -1,4 +1,4 @@
-# Contrats d'API — Rendez-vous visioconférence
+# Contrats d'API : Rendez-vous visioconférence
 
 Toutes les routes sous `web::scope("/api")` → `web::scope("/rendez-vous")`. **JWT Bearer obligatoire** (extraction via le helper `utilisateur_courant(&req)` du domaine social). Enveloppe de réponse : `ApiResponse<T> { success, data, error }`. Sur chaque action mutante : revérification amitié active + absence de blocage (FR-034), audit `log_action` (sans sujet/description), push SSE + notification cloche le cas échéant.
 
@@ -6,7 +6,7 @@ Codes d'erreur : `400` Validation, `401` non authentifié, `403` AccesInterdit (
 
 ---
 
-## 1. Proposer un rendez-vous — `POST /api/rendez-vous`
+## 1. Proposer un rendez-vous : `POST /api/rendez-vous`
 
 Crée un rendez-vous `propose` (FR-006..FR-011). Notifie le destinataire (SSE `rdv_propose` + cloche).
 
@@ -27,7 +27,7 @@ Crée un rendez-vous `propose` (FR-006..FR-011). Notifie le destinataire (SSE `r
 
 ---
 
-## 2. Lister mes rendez-vous — `GET /api/rendez-vous?filtre=&page=`
+## 2. Lister mes rendez-vous : `GET /api/rendez-vous?filtre=&page=`
 
 Liste paginée des rendez-vous où l'utilisateur courant est participant (FR-019/020).
 
@@ -37,7 +37,7 @@ Liste paginée des rendez-vous où l'utilisateur courant est participant (FR-019
 
 ---
 
-## 3. Détail d'un rendez-vous — `GET /api/rendez-vous/{id}`
+## 3. Détail d'un rendez-vous : `GET /api/rendez-vous/{id}`
 
 Détail pour un participant (sinon `403`/`404`).
 
@@ -45,7 +45,7 @@ Détail pour un participant (sinon `403`/`404`).
 
 ---
 
-## 4. Accéder à la salle visio — `GET /api/rendez-vous/{id}/salle`
+## 4. Accéder à la salle visio : `GET /api/rendez-vous/{id}/salle`
 
 Renvoie la configuration P2P **seulement si** `statut='accepte'`, participant, amis + non bloqués, et `NOW() ∈ [date_heure − 5min, date_heure + duree + 15min]` (FR-024). Sinon `409`/`403`.
 
@@ -66,7 +66,7 @@ Renvoie la configuration P2P **seulement si** `statut='accepte'`, participant, a
 
 ---
 
-## 5. Accepter — `POST /api/rendez-vous/{id}/accepter`
+## 5. Accepter : `POST /api/rendez-vous/{id}/accepter`
 
 Autorisé si `statut='propose' AND tour_id=moi` (verrouillage optimiste FR-035). → `statut='accepte'`, créneau figé (FR-013). Notifie l'autre (SSE `rdv_accepte` + cloche).
 
@@ -74,7 +74,7 @@ Autorisé si `statut='propose' AND tour_id=moi` (verrouillage optimiste FR-035).
 
 ---
 
-## 6. Refuser — `POST /api/rendez-vous/{id}/refuser`
+## 6. Refuser : `POST /api/rendez-vous/{id}/refuser`
 
 Autorisé si `statut='propose' AND tour_id=moi`. → `statut='refuse'` (FR-014). Notifie l'autre (SSE `rdv_refuse` + cloche).
 
@@ -82,7 +82,7 @@ Autorisé si `statut='propose' AND tour_id=moi`. → `statut='refuse'` (FR-014).
 
 ---
 
-## 7. Contre-proposer — `POST /api/rendez-vous/{id}/contre-proposer`
+## 7. Contre-proposer : `POST /api/rendez-vous/{id}/contre-proposer`
 
 Autorisé si `statut='propose' AND tour_id=moi` (FR-015/016/017). Reste `propose`, met à jour date/heure/durée, **bascule** `tour_id` vers l'autre. Interdit si `accepte` (FR-018 → `409`).
 
@@ -96,7 +96,7 @@ Autorisé si `statut='propose' AND tour_id=moi` (FR-015/016/017). Reste `propose
 
 ---
 
-## 8. Annuler — `POST /api/rendez-vous/{id}/annuler`
+## 8. Annuler : `POST /api/rendez-vous/{id}/annuler`
 
 Autorisé à **l'un ou l'autre** participant si `statut ∈ {propose, accepte}` (FR-022). → `statut='annule'`. Notifie l'autre (SSE `rdv_annule` + cloche).
 

@@ -401,7 +401,7 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <!-- Flux local (vignette) — bascule à gauche quand la discussion est ouverte -->
+      <!-- Flux local (vignette) : bascule à gauche quand la discussion est ouverte -->
       <div
         class="absolute bottom-4 w-32 h-44 sm:w-40 sm:h-28 rounded-xl overflow-hidden border-2 border-white/30 shadow-lg bg-black transition-all"
         :class="chatOuvert ? 'left-4' : 'right-4'"
@@ -482,7 +482,7 @@ onBeforeUnmount(() => {
       </button>
     </footer>
 
-    <!-- Poignée de redimensionnement (coin bas-droit) — masquée en plein écran -->
+    <!-- Poignée de redimensionnement (coin bas-droit), masquée en plein écran -->
     <div
       v-show="!plein"
       class="absolute bottom-0 right-0 w-5 h-5 flex items-end justify-end p-0.5 cursor-nwse-resize touch-none z-10 text-white/40 hover:text-white"

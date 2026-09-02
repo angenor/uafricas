@@ -1,4 +1,4 @@
-# Feature Specification: Refonte salles Afrolang — streaming direct & salles privées par code secret
+# Feature Specification: Refonte salles Afrolang, streaming direct & salles privées par code secret
 
 **Feature Branch**: `001-afrolang-salles-refonte`
 **Created**: 2026-04-15
@@ -16,22 +16,22 @@
 ### Session 2026-04-15
 
 - Q: Une salle privée est-elle un objet durable (dormant hors live) ou une session jetable détruite en fin de live ? → A: Objet durable ; la salle privée est un enregistrement persistant (utilisateur auteur, salle publique) qui alterne entre dormant et session live en cours, avec code secret stable tant que l'auteur ne le change pas.
-- Q: Que faire des salles privées legacy (ancien modèle adhésions/invitations/modérateurs attitrés) ? → A: Table rase — suppression (hard delete) des salles privées existantes et des tables/colonnes legacy associées ; produit pas encore en production, aucun impact utilisateur.
-- Q: Qui peut démarrer / rejoindre une session live d'une salle publique ? → A: **Les salles publiques sont créées exclusivement par un administrateur**. Une fois créées, **n'importe quel utilisateur connecté** peut démarrer une session live ou rejoindre une session en cours — il n'y a pas de notion d'« hôte créateur » côté utilisateur final.
-- Q: Où se situe le widget « Canal privé » qui liste les salles privées ? → A: Sur la carte de chaque salle publique dans la liste `/afrolang` — composant dropdown **déjà existant**. La refonte n'ajoute pas un nouvel emplacement, elle cable l'accès aux salles privées via saisie du code secret depuis ce widget. Une salle publique peut contenir plusieurs salles privées (créées par des utilisateurs distincts) ; la règle d'unicité « une salle privée par user par salle publique » reste inchangée côté auteur.
+- Q: Que faire des salles privées legacy (ancien modèle adhésions/invitations/modérateurs attitrés) ? → A: Table rase : suppression (hard delete) des salles privées existantes et des tables/colonnes legacy associées ; produit pas encore en production, aucun impact utilisateur.
+- Q: Qui peut démarrer / rejoindre une session live d'une salle publique ? → A: **Les salles publiques sont créées exclusivement par un administrateur**. Une fois créées, **n'importe quel utilisateur connecté** peut démarrer une session live ou rejoindre une session en cours : il n'y a pas de notion d'« hôte créateur » côté utilisateur final.
+- Q: Où se situe le widget « Canal privé » qui liste les salles privées ? → A: Sur la carte de chaque salle publique dans la liste `/afrolang`, composant dropdown **déjà existant**. La refonte n'ajoute pas un nouvel emplacement, elle cable l'accès aux salles privées via saisie du code secret depuis ce widget. Une salle publique peut contenir plusieurs salles privées (créées par des utilisateurs distincts) ; la règle d'unicité « une salle privée par user par salle publique » reste inchangée côté auteur.
 - Q: Le démarrage d'une session privée dépend-il de l'état de la salle publique parente ? → A: Indépendance totale. Une salle privée peut être créée, démarrée et tourner à tout moment, que la salle publique ait ou non une session live en cours. La salle publique sert uniquement de contexte thématique (langue / groupe ethnique).
 
 ## Contexte
 
-La feature « Afrolang — salles » a déjà été livrée (branche `005-afrolang-salles`). Le livrable actuel s'écarte toutefois de l'intention produit sur plusieurs points : une section annuaire non désirée en page d'accueil, un bouton « Démarrer » qui ne lance pas réellement le livestream, une page dédiée pour chaque salle privée, un processus de création de salle privée via page plutôt que modale, un contrôle d'accès basé sur adhésion/invitation plutôt que sur un simple code secret, et une limitation de création de salle privée réservée à certains profils. La présente spécification décrit les ajustements attendus pour remettre la feature en conformité avec l'intention produit.
+La feature « Afrolang : salles » a déjà été livrée (branche `005-afrolang-salles`). Le livrable actuel s'écarte toutefois de l'intention produit sur plusieurs points : une section annuaire non désirée en page d'accueil, un bouton « Démarrer » qui ne lance pas réellement le livestream, une page dédiée pour chaque salle privée, un processus de création de salle privée via page plutôt que modale, un contrôle d'accès basé sur adhésion/invitation plutôt que sur un simple code secret, et une limitation de création de salle privée réservée à certains profils. La présente spécification décrit les ajustements attendus pour remettre la feature en conformité avec l'intention produit.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 — Lancer/rejoindre un livestream public en un clic (Priority: P1)
+### User Story 1 : Lancer/rejoindre un livestream public en un clic (Priority: P1)
 
 Un visiteur connecté arrive sur la page Afrolang et consulte la liste des salles publiques. D'un clic sur « Démarrer » (ou « Rejoindre » si le live est déjà en cours), il entre immédiatement dans la session de streaming audio/vidéo de la salle publique choisie, sans passer par une page intermédiaire de fiche salle.
 
-**Why this priority** : c'est le cœur de la promesse produit — une salle Afrolang se matérialise par une session de streaming. Sans ce raccourci, l'utilisateur ne comprend pas que « salle = session live » et la feature entière perd son sens.
+**Why this priority** : c'est le cœur de la promesse produit, une salle Afrolang se matérialise par une session de streaming. Sans ce raccourci, l'utilisateur ne comprend pas que « salle = session live » et la feature entière perd son sens.
 
 **Independent Test** : depuis `/afrolang`, cliquer sur le bouton « Démarrer » d'une salle publique et vérifier que l'on entre directement dans l'interface de livestream correspondante (diffusion si hôte, visionnage si spectateur).
 
@@ -45,11 +45,11 @@ Un visiteur connecté arrive sur la page Afrolang et consulte la liste des salle
 
 ---
 
-### User Story 2 — Créer sa salle privée depuis un live en un modale (Priority: P1)
+### User Story 2 : Créer sa salle privée depuis un live en un modale (Priority: P1)
 
 Un utilisateur connecté participe à une session live de salle publique. Il souhaite prolonger l'échange avec un cercle restreint : depuis l'interface du livestream, il ouvre un modale « Créer ma salle privée », saisit un titre et un code secret, valide, et sa salle privée est immédiatement créée et associée à la salle publique en cours. Il peut la partager en communiquant le code secret aux personnes de son choix.
 
-**Why this priority** : c'est la nouvelle mécanique d'ouverture de la feature — n'importe quel utilisateur peut créer son cercle privé à la volée sans friction.
+**Why this priority** : c'est la nouvelle mécanique d'ouverture de la feature, n'importe quel utilisateur peut créer son cercle privé à la volée sans friction.
 
 **Independent Test** : dans une session livestream publique, ouvrir le modale de création de salle privée, remplir titre + code secret, soumettre, et vérifier que la salle privée apparaît dans le widget « Canal privé » de la salle publique.
 
@@ -58,15 +58,15 @@ Un utilisateur connecté participe à une session live de salle publique. Il sou
 1. **Given** un utilisateur connecté dans la session livestream de la salle publique « X » et qui n'a pas encore de salle privée rattachée à « X », **When** il ouvre le modale « Créer ma salle privée », saisit un titre et un code secret valides, et valide, **Then** la salle privée est créée, l'utilisateur en est l'auteur et elle est listée dans le « Canal privé » de « X ».
 2. **Given** un utilisateur connecté qui a déjà créé une salle privée rattachée à la salle publique « X », **When** il tente d'en créer une seconde pour la même salle publique, **Then** la création est refusée avec un message explicite (« Vous avez déjà une salle privée pour cette salle publique ») et, à la place, un raccourci « Ouvrir ma salle privée » est proposé.
 3. **Given** le même utilisateur, **When** il se trouve dans la session livestream d'une autre salle publique « Y » pour laquelle il n'a pas encore de salle privée, **Then** il peut créer une salle privée distincte pour « Y ».
-4. **Given** l'ancienne page `/afrolang/salle-privee/[id].vue`, **When** un utilisateur tente d'y accéder, **Then** il est redirigé vers le parcours attendu (session live publique parente ou liste des salles publiques) — cette page n'existe plus comme destination.
+4. **Given** l'ancienne page `/afrolang/salle-privee/[id].vue`, **When** un utilisateur tente d'y accéder, **Then** il est redirigé vers le parcours attendu (session live publique parente ou liste des salles publiques), cette page n'existe plus comme destination.
 
 ---
 
-### User Story 3 — Accéder à une salle privée par code secret (Priority: P1)
+### User Story 3 : Accéder à une salle privée par code secret (Priority: P1)
 
 Un utilisateur connecté, dans le contexte d'une salle publique (que ce soit depuis la liste des salles publiques ou depuis une session live en cours), ouvre le widget « Canal privé » qui révèle les salles privées rattachées à cette salle publique. Il choisit une salle privée, saisit le code secret que l'auteur lui a communiqué, et entre directement dans la session de streaming privée.
 
-**Why this priority** : c'est le nouveau modèle d'accès — léger, sans workflow d'adhésion/invitation. Sans lui, les salles privées ne sont pas accessibles selon la règle produit.
+**Why this priority** : c'est le nouveau modèle d'accès, léger, sans workflow d'adhésion/invitation. Sans lui, les salles privées ne sont pas accessibles selon la règle produit.
 
 **Independent Test** : ouvrir le widget « Canal privé », sélectionner une salle privée listée, entrer un code secret correct, et vérifier que l'utilisateur entre dans la session privée ; entrer un code incorrect et vérifier que l'accès est refusé avec message clair.
 
@@ -79,7 +79,7 @@ Un utilisateur connecté, dans le contexte d'une salle publique (que ce soit dep
 
 ---
 
-### User Story 4 — Créer/ouvrir sa salle privée depuis le widget « Canal privé » (Priority: P2)
+### User Story 4 : Créer/ouvrir sa salle privée depuis le widget « Canal privé » (Priority: P2)
 
 Un utilisateur connecté consulte une salle publique (ou sa session live) et ouvre le widget « Canal privé ». Au-dessus (ou à côté) de la liste des salles privées existantes, il voit un bouton « Créer ma salle privée » qui ouvre le même modale de création que depuis le live. La règle « une salle privée par user par salle publique » s'applique : s'il en a déjà une, le bouton devient « Ouvrir ma salle privée ».
 
@@ -167,17 +167,17 @@ Un utilisateur connecté consulte une salle publique (ou sa session live) et ouv
 
 ## Assumptions
 
-- **A1 — Auteur salle publique et salle privée** : le créateur d'une salle publique peut lui-même créer au plus une salle privée rattachée à sa propre salle publique (il est un utilisateur comme un autre au regard de FR-010).
-- **A2 — Mémorisation de l'accès code** : une fois le code secret correctement saisi par un utilisateur pour une salle privée donnée, l'accès est maintenu pour la durée de sa session applicative courante, afin d'éviter la re-saisie. La mémorisation se termine avec la session.
-- **A3 — Protection contre essais répétés** : un rate limit s'applique à la vérification du code secret (ex. 5 tentatives par minute par utilisateur et par salle privée, valeur à caler lors du design technique) pour contrer le devinement par force brute.
-- **A4 — Reprise des données existantes : table rase.** Le produit n'étant pas encore en production, toutes les salles privées créées sous l'ancien modèle sont supprimées (hard delete) et les tables/colonnes legacy propres aux salles privées sont retirées : `afrolang.salle_privee_adhesion`, mécanismes d'invitation et de modérateurs attitrés spécifiques aux salles privées. Aucune migration de données n'est requise. La modération admin générale et les autres tables Afrolang (propositions, messagerie, ressources, modérateurs de salles publiques) restent inchangées.
-- **A5 — Format du code secret** : chaîne saisie libre par l'auteur, longueur minimale raisonnable (ex. 4 caractères) et maximale bornée ; pas d'exigence de complexité forte (code convivial à communiquer à l'oral/écrit), la protection principale reposant sur la non-divulgation et le rate limit (A3).
-- **A6 — Un seul live actif par utilisateur** : un utilisateur ne peut être présent que dans une seule session live (publique ou privée) à la fois ; changer de salle ferme la précédente.
-- **A7 — Périmètre inchangé ailleurs** : les autres fonctionnalités Afrolang déjà livrées (tableau blanc, chat, ressources dans les salles publiques, messagerie écrite, etc.) ne sont pas remises en cause par la présente refonte.
+- **A1 : Auteur salle publique et salle privée** : le créateur d'une salle publique peut lui-même créer au plus une salle privée rattachée à sa propre salle publique (il est un utilisateur comme un autre au regard de FR-010).
+- **A2 : Mémorisation de l'accès code** : une fois le code secret correctement saisi par un utilisateur pour une salle privée donnée, l'accès est maintenu pour la durée de sa session applicative courante, afin d'éviter la re-saisie. La mémorisation se termine avec la session.
+- **A3 : Protection contre essais répétés** : un rate limit s'applique à la vérification du code secret (ex. 5 tentatives par minute par utilisateur et par salle privée, valeur à caler lors du design technique) pour contrer le devinement par force brute.
+- **A4 : Reprise des données existantes : table rase.** Le produit n'étant pas encore en production, toutes les salles privées créées sous l'ancien modèle sont supprimées (hard delete) et les tables/colonnes legacy propres aux salles privées sont retirées : `afrolang.salle_privee_adhesion`, mécanismes d'invitation et de modérateurs attitrés spécifiques aux salles privées. Aucune migration de données n'est requise. La modération admin générale et les autres tables Afrolang (propositions, messagerie, ressources, modérateurs de salles publiques) restent inchangées.
+- **A5 : Format du code secret** : chaîne saisie libre par l'auteur, longueur minimale raisonnable (ex. 4 caractères) et maximale bornée ; pas d'exigence de complexité forte (code convivial à communiquer à l'oral/écrit), la protection principale reposant sur la non-divulgation et le rate limit (A3).
+- **A6 : Un seul live actif par utilisateur** : un utilisateur ne peut être présent que dans une seule session live (publique ou privée) à la fois ; changer de salle ferme la précédente.
+- **A7 : Périmètre inchangé ailleurs** : les autres fonctionnalités Afrolang déjà livrées (tableau blanc, chat, ressources dans les salles publiques, messagerie écrite, etc.) ne sont pas remises en cause par la présente refonte.
 
 ## Out of Scope
 
 - Refonte du design global de la page `/afrolang` au-delà du retrait de l'annuaire.
-- Évolution des fonctionnalités en séance (tableau blanc, chat, ressources) — hors périmètre.
+- Évolution des fonctionnalités en séance (tableau blanc, chat, ressources), hors périmètre.
 - Modération administrative des salles privées par des tiers (le modèle adhésion/invitation/modérateurs attitrés est supprimé côté salles privées ; la modération admin globale des contenus Afrolang reste inchangée).
 - Enregistrement vidéo / rejouabilité des sessions privées (non adressé ici).

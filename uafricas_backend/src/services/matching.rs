@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Service — Matching inter-arbres
+// Service : Matching inter-arbres
 // Normalisation phonétique, scoring, matching rapide et profond
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -64,7 +64,7 @@ pub fn normaliser_nom(nom: &str) -> String {
 /// Utilise une gaussienne (sigma=5 ans) : même année = 1.0, ±5 ans = 0.61
 pub fn calculer_score_date(annee_a: Option<i16>, annee_b: Option<i16>) -> f32 {
     match (annee_a, annee_b) {
-        (None, None) => 0.5,     // Neutre — pas de pénalité
+        (None, None) => 0.5,     // Neutre, pas de pénalité
         (None, _) | (_, None) => 0.4, // Légère pénalité pour donnée manquante
         (Some(a), Some(b)) => {
             let diff = (a as f32 - b as f32).powi(2);

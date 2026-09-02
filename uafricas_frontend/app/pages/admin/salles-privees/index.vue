@@ -26,7 +26,7 @@ const sallesAvecDisplay = computed(() =>
     ...sp,
     createur_display: sp.createur_prenom && sp.createur_nom
       ? `${sp.createur_prenom} ${sp.createur_nom}`
-      : '—',
+      : '-',
   }))
 )
 

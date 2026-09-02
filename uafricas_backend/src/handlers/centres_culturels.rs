@@ -55,7 +55,7 @@ async fn est_inscrit(pool: &PgPool, programmation_id: Uuid, utilisateur_id: Uuid
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/centres-culturels — Lister les centres culturels actifs
+// GET /api/centres-culturels : Lister les centres culturels actifs
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_centres(
     pool: web::Data<PgPool>,
@@ -125,7 +125,7 @@ pub async fn lister_centres(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/centres-culturels/{id} — Obtenir un centre avec ses programmations
+// GET /api/centres-culturels/{id} : Obtenir un centre avec ses programmations
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_centre(
     pool: web::Data<PgPool>,

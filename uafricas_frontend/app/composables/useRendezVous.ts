@@ -6,7 +6,7 @@ import type { MembreLightAPI } from '~/composables/useAmis'
 import { useUserStore } from '~/stores/user'
 
 // ──────────────────────────────────────────────────────────────
-// Types (alignés sur contracts/rendez-vous.md — JSON snake_case)
+// Types (alignés sur contracts/rendez-vous.md, JSON snake_case)
 // ──────────────────────────────────────────────────────────────
 
 export type StatutRendezVous = 'propose' | 'accepte' | 'refuse' | 'annule'

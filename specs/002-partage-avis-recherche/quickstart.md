@@ -14,7 +14,7 @@ git checkout 002-partage-avis-recherche
 
 ## Ordre d'implémentation recommandé
 
-### Étape 1 — Schema SQL (source de vérité)
+### Étape 1 : Schema SQL (source de vérité)
 
 Modifier `uafricas_backend/doc/bd/schemas/16_retrouve_amis.sql` :
 
@@ -32,46 +32,46 @@ docker compose down -v && docker compose up -d
 # Attendre ~5 secondes que PostgreSQL initialise
 ```
 
-### Étape 2 — Backend : Modèles Rust
+### Étape 2 : Backend : Modèles Rust
 
 Fichiers à modifier/créer :
-- `src/models/retrouve_amis.rs` — Ajouter structs + DTOs pour les nouvelles entités
-- `src/models/admin/retrouve_amis.rs` — Ajouter structs admin pour demandes de retrait
+- `src/models/retrouve_amis.rs` : Ajouter structs + DTOs pour les nouvelles entités
+- `src/models/admin/retrouve_amis.rs`, Ajouter structs admin pour demandes de retrait
 
-### Étape 3 — Backend : Handlers publics (sans auth)
+### Étape 3 : Backend : Handlers publics (sans auth)
 
 Créer `src/handlers/retrouve_amis_public.rs` :
-- `detail_avis_public` — GET `/api/retrouve-amis/public/{slug}`
-- `rechercher_avis_publics` — GET `/api/retrouve-amis/public/rechercher`
-- `incrementer_partage` — POST `/api/retrouve-amis/public/{slug}/partage`
+- `detail_avis_public` : GET `/api/retrouve-amis/public/{slug}`
+- `rechercher_avis_publics` : GET `/api/retrouve-amis/public/rechercher`
+- `incrementer_partage` : POST `/api/retrouve-amis/public/{slug}/partage`
 
-### Étape 4 — Backend : Handlers authentifiés
+### Étape 4 : Backend : Handlers authentifiés
 
 Modifier `src/handlers/retrouve_amis.rs` :
-- `publier_avis` — PATCH `/api/retrouve-amis/avis/{id}/publier`
-- `repondre_avis_public` — POST `/api/retrouve-amis/public/{slug}/repondre`
-- `signaler_avis_public` — POST `/api/retrouve-amis/public/{slug}/signaler`
-- `demander_retrait` — POST `/api/retrouve-amis/public/{slug}/demande-retrait`
+- `publier_avis` : PATCH `/api/retrouve-amis/avis/{id}/publier`
+- `repondre_avis_public` : POST `/api/retrouve-amis/public/{slug}/repondre`
+- `signaler_avis_public` : POST `/api/retrouve-amis/public/{slug}/signaler`
+- `demander_retrait` : POST `/api/retrouve-amis/public/{slug}/demande-retrait`
 
 Modifier `src/handlers/admin/retrouve_amis.rs` :
-- `lister_demandes_retrait` — GET `/api/admin/retrouve-amis/demandes-retrait`
-- `statuer_demande_retrait` — PATCH `/api/admin/retrouve-amis/demandes-retrait/{id}/statuer`
+- `lister_demandes_retrait` : GET `/api/admin/retrouve-amis/demandes-retrait`
+- `statuer_demande_retrait` : PATCH `/api/admin/retrouve-amis/demandes-retrait/{id}/statuer`
 
-### Étape 5 — Backend : Routes
+### Étape 5 : Backend : Routes
 
 Modifier `src/routes.rs` :
 - Ajouter les routes publiques (hors scope JWT)
 - Ajouter les routes authentifiées (dans le scope JWT)
 - Ajouter les routes admin (dans le scope admin)
 
-### Étape 6 — Frontend : Page publique SSR
+### Étape 6 : Frontend : Page publique SSR
 
 Créer `app/pages/retrouve-amis/public/[slug].vue` :
 - SSR avec `useHead()` / `useSeoMeta()` pour Open Graph + Twitter Card
 - Affichage conditionnel selon `etat` (actif, clôturé, suspendu, dépublié)
 - Composants : `PagePublique.vue`, `BoutonsPartage.vue`, `FormulaireReponse.vue`, `DemandeRetrait.vue`
 
-### Étape 7 — Frontend : Page de listing/recherche
+### Étape 7 : Frontend : Page de listing/recherche
 
 Créer `app/pages/retrouve-amis/rechercher.vue` :
 - Listing paginé des avis publics actifs
@@ -79,13 +79,13 @@ Créer `app/pages/retrouve-amis/rechercher.vue` :
 - Recherche full-text
 - Composant : `CarteAvisPublic.vue`
 
-### Étape 8 — Frontend : Toggle publication
+### Étape 8 : Frontend : Toggle publication
 
 Modifier `app/pages/retrouve-amis/mes-recherches.vue` :
 - Ajouter interrupteur "Rendre public" par avis
 - Afficher le lien public + compteur de partages
 
-### Étape 9 — Frontend : Composable
+### Étape 9 : Frontend : Composable
 
 Modifier `app/composables/useRetrouvAmis.ts` :
 - Ajouter les fonctions pour les nouveaux endpoints
@@ -120,7 +120,7 @@ pnpm dev
 
 ## Points d'attention
 
-- **Constitution VI** : Les pages publiques (`[slug].vue`, `rechercher.vue`) doivent utiliser Tailwind CSS v4 pur — PAS de classes daisyUI
+- **Constitution VI** : Les pages publiques (`[slug].vue`, `rechercher.vue`) doivent utiliser Tailwind CSS v4 pur, PAS de classes daisyUI
 - **Constitution VII** : Toute mutation (publier, répondre, signaler, retrait, modération) doit être auditée via `audit::log_action`
 - **SEO** : Les balises `useHead()` / `useSeoMeta()` doivent être dans le `setup()` du composant (pas dans un `onMounted`) pour le SSR
 - **Robots** : Ajouter `noindex, nofollow` pour les pages non-actives (suspendu, clôturé, dépublié)

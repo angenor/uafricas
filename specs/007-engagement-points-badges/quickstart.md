@@ -1,4 +1,4 @@
-# Quickstart — validation de bout en bout
+# Quickstart : validation de bout en bout
 
 **Feature** : `007-engagement-points-badges` | **Date** : 2026-07-29
 
@@ -29,7 +29,7 @@ cd uafricas_frontend && pnpm dev           # http://localhost:3000
 
 **Comptes de test** : `test-admin@test.com` / `Test1234` (administrateur) · `test-user@test.com` / `Test1234` (membre).
 
-**Contrôle d'installation** — les 3 migrations sont bien passées :
+**Contrôle d'installation** : les 3 migrations sont bien passées :
 
 ```sql
 -- attendu : 6 catégories, 10 règles (6 + 4 nouvelles), 10 badges, les 3 nouvelles tables
@@ -43,7 +43,7 @@ SELECT (SELECT COUNT(*) FROM engagement.categorie_points)                   AS c
 
 ---
 
-## S1 — Espace membre : soldes, catégories, progression, historique (US1 · SC-003, SC-005, SC-008)
+## S1 : Espace membre : soldes, catégories, progression, historique (US1 · SC-003, SC-005, SC-008)
 
 1. Se connecter en `test-user`, ouvrir `/mon-compte/profil` → onglet **« Mes points »** → cliquer **« Voir tout mon engagement »**. *(2 clics depuis le profil → SC-003)*
 2. Vérifier l'en-tête : solde total, solde du mois, réputation, badge de niveau, **« N points avant le niveau X »**.
@@ -65,7 +65,7 @@ SELECT c.solde_points,
 7. **État vide** : créer un membre neuf, ouvrir l'espace → liste pédagogique des actions récompensées, aucun compteur incohérent, aucune erreur console.
 8. **Écrêtage visible** (SC-008) : voir S5, étape 5.
 
-## S2 — Paramétrage intégral du barème (US2 · SC-001, SC-002, SC-009)
+## S2 : Paramétrage intégral du barème (US2 · SC-001, SC-002, SC-009)
 
 1. En `test-admin`, ouvrir `/admin/engagement/regles`. Chronométrer : **créer** une règle (action prise dans « actions disponibles », montant, plafond, catégorie), enregistrer, déclencher l'action correspondante, constater le crédit → **< 5 min, sans redéploiement** (SC-001).
 2. **Désactiver** cette règle → déclencher à nouveau l'action : aucun point crédité, **et l'action métier réussit quand même**. Les mouvements passés restent lisibles.
@@ -83,7 +83,7 @@ Puis retirer ce niveau → les mêmes comptes retombent au niveau inférieur, **
 8. **Permissions** (SC-009) : se connecter avec un compte sans `engagement.gerer` → toutes les routes du module renvoient **403**, y compris les `GET`. Vérifier ensuite dans `/admin/audit` que **chaque** modification du barème est tracée avec son auteur.
 9. **Aucun texte figé** (SC-002) : renommer une règle, une catégorie, un niveau et un badge, puis recharger l'espace membre → les 4 nouveaux libellés y apparaissent.
 
-## S3 — Badges et succès (US3 · SC-006, SC-010)
+## S3 : Badges et succès (US3 · SC-006, SC-010)
 
 1. Créer un badge `actions_comptees` sur `contribution_validee`, seuil **2**.
 2. Faire valider 2 contributions de `test-user` → le badge apparaît dans « Mes badges » avec sa date, **une seule fois**, et une notification `engagement.badge_debloque` arrive dans la cloche (SC-010).
@@ -100,7 +100,7 @@ SELECT badge_id, COUNT(*) FROM engagement.badge_obtenu
 7. **Baisse de niveau** : appliquer un malus faisant repasser le membre sous son seuil → le **badge de niveau** suit à la baisse, les **badges de succès restent acquis**.
 8. **Profil public** : ouvrir `/profil/{id}` en visiteur non connecté → badge de niveau et badges obtenus visibles, **aucun** solde, **aucune** ligne de journal (FR-014).
 
-## S4 — Actions médias récompensées (US4 · SC-006, SC-007, SC-011)
+## S4 : Actions médias récompensées (US4 · SC-006, SC-007, SC-011)
 
 Pour chacune des 4 actions, vérifier le **crédit unique**, la **catégorie « Médias »** et l'**absence d'auto-attribution** :
 
@@ -120,9 +120,9 @@ SELECT cle_idempotence, COUNT(*) FROM engagement.mouvement_points
 
 **Non-régression (SC-007, SC-011)** : arrêter PostgreSQL une fraction de seconde pendant une validation de proposition (ou désactiver toutes les règles) → l'action métier **réussit**, seule l'attribution est loguée en erreur (`RUST_LOG=info`). Puis re-vérifier qu'à barème inchangé, les actions déjà récompensées avant la feature (contribution Codimoi validée, factcheck, mise en avant) créditent exactement les mêmes montants qu'avant.
 
-## S5 — Partage externe (US5 · SC-008)
+## S5 : Partage externe (US5 · SC-008)
 
-1. Ouvrir une modale de partage : vérifier que **6 réseaux** sont proposés (WhatsApp, Facebook, X, LinkedIn, **Telegram**, **E-mail**) — sans Telegram ni E-mail, le seuil de 5 est inatteignable (R10).
+1. Ouvrir une modale de partage : vérifier que **6 réseaux** sont proposés (WhatsApp, Facebook, X, LinkedIn, **Telegram**, **E-mail**), sans Telegram ni E-mail, le seuil de 5 est inatteignable (R10).
 2. Partager un même contenu vers 5 réseaux distincts → bonus crédité **une fois** ; le 6ᵉ réseau ne crédite rien de plus.
 3. Répéter le même réseau 5 fois → **aucun** bonus :
 
@@ -134,7 +134,7 @@ SELECT reseau, COUNT(*) FROM engagement.partage_externe
 4. **Robustesse** : couper le backend, cliquer un partage → la fenêtre du réseau s'ouvre normalement, aucune erreur visible pour l'utilisateur.
 5. **Écrêtage** (SC-008) : enchaîner 4 contenus complets à 5 réseaux le même jour (plafond 30 points = 3 bonus) → le 4ᵉ n'est pas crédité et l'historique affiche « plafond atteint, aucun point crédité ».
 
-## S6 — Réactivité perçue (SC-004)
+## S6 : Réactivité perçue (SC-004)
 
 Garder l'espace « Mon engagement » ouvert dans un onglet, déclencher une action récompensée dans un autre, recharger : le mouvement est visible **en moins de 5 secondes** (l'attribution est synchrone post-commit, il n'y a aucune file d'attente).
 

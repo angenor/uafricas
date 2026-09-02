@@ -52,14 +52,14 @@ fn exiger_utilisateur_id(req: &HttpRequest) -> Result<Uuid, ApiErreur> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// POST /api/medias/propositions — soumission (multipart)
+// POST /api/medias/propositions : soumission (multipart)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Enregistre une proposition en `'en_attente'`, quelle que soit sa forme.
 ///
 /// **Trois garde-fous non négociables**, appliqués ici et non côté client :
 ///
-/// 1. `statut` naît toujours `'en_attente'` — il n'est pas lu du corps de la
+/// 1. `statut` naît toujours `'en_attente'` : il n'est pas lu du corps de la
 ///    requête (FR-031) ;
 /// 2. `origine_publication` sera forcée à `'territoire'` à la validation : la
 ///    bannière Radio Africans est une décision éditoriale de la plateforme
@@ -99,7 +99,7 @@ pub async fn soumettre_proposition(
     }
     // Un épisode n'existe pas hors d'un programme (FR-002) : sa proposition
     // désigne obligatoirement l'émission d'accueil, et cette émission doit
-    // exister — sinon la validation créerait un orphelin que la clé étrangère
+    // exister : sinon la validation créerait un orphelin que la clé étrangère
     // refuserait, un mois plus tard, sous les yeux d'un administrateur.
     if crate::models::media_proposition::TYPES_EPISODE_PROPOSE
         .contains(&soumission.type_objet.as_str())
@@ -186,7 +186,7 @@ pub async fn soumettre_proposition(
 /// Lit le multipart : champs texte d'un côté, fichiers téléversés de l'autre.
 ///
 /// Les fichiers sont rangés selon leur extension et leur chemin est reporté
-/// dans `donnees` — un contributeur choisit de téléverser OU de fournir un lien
+/// dans `donnees` : un contributeur choisit de téléverser OU de fournir un lien
 /// externe, jamais les deux pour le même média (FR-056).
 async fn lire_multipart(
     mut payload: actix_multipart::Multipart,
@@ -326,7 +326,7 @@ async fn ecrire_fichier(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GET /api/medias/propositions/moi — suivi de ses soumissions (FR-034)
+// GET /api/medias/propositions/moi : suivi de ses soumissions (FR-034)
 // ═══════════════════════════════════════════════════════════════════════════
 
 pub async fn lister_mes_propositions(
@@ -484,12 +484,12 @@ pub async fn retirer_proposition(
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // Deux routes, aux effets délibérément distincts :
-//   • PATCH …/metadonnees — titre, description, image, thème : PUBLIÉ TOUT DE
+//   • PATCH …/metadonnees : titre, description, image, thème : PUBLIÉ TOUT DE
 //     SUITE, `etat` inchangé. Corriger une faute de frappe n'a pas à passer par
 //     la modération.
-//   • PUT   …/media       — remplace le fichier ou le lien : bascule le contenu
+//   • PUT   …/media : remplace le fichier ou le lien : bascule le contenu
 //     en `'en_attente'` et ouvre une proposition de modification. Le contenu
-//     CESSE d'être diffusé jusqu'à revalidation — c'est le choix le plus sûr,
+//     CESSE d'être diffusé jusqu'à revalidation : c'est le choix le plus sûr,
 //     rien de non validé n'étant public (FR-031).
 
 /// Le membre doit être l'auteur du contenu, **ou** co-détenteur du support qui
@@ -593,7 +593,7 @@ pub async fn modifier_metadonnees(
     let table = table_pour_type(&type_media).expect("type de média supporté");
     // Le thème phare est porté par le PROGRAMME (émission), pas par l'épisode :
     // celui-ci l'hérite de sa série. Un épisode se modifie donc comme un support,
-    // à ceci près qu'il porte `titre` et non `nom` — d'où trois formes de requête
+    // à ceci près qu'il porte `titre` et non `nom` : d'où trois formes de requête
     // et non deux.
     let est_emission = type_media.starts_with("emission_");
     let est_episode = type_media.starts_with("episode_");
@@ -629,7 +629,7 @@ pub async fn modifier_metadonnees(
         )
     };
 
-    // Un champ absent ou vide laisse la valeur en place — d'où le COALESCE.
+    // Un champ absent ou vide laisse la valeur en place : d'où le COALESCE.
     fn non_vide(valeur: &Option<String>) -> Option<&str> {
         valeur.as_deref().map(str::trim).filter(|s| !s.is_empty())
     }
@@ -794,11 +794,11 @@ fn null_ou(valeur: &Option<String>) -> serde_json::Value {
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // Ces deux types de proposition ne créent pas de contenu :
-//   • `idee_contenu`        — un visiteur suggère un sujet. Retenue, l'idée
+//   • `idee_contenu` : un visiteur suggère un sujet. Retenue, l'idée
 //     n'engendre AUCUN objet : elle est simplement marquée comme telle. C'est
 //     le seul type que `ck_prop_media_validation_a_objet` exempte.
-//   • `animation_programme` — une partie prenante demande à animer un programme.
-//     Acceptée, elle ajoute son auteur aux co-détenteurs du support visé — c'est
+//   • `animation_programme` : une partie prenante demande à animer un programme.
+//     Acceptée, elle ajoute son auteur aux co-détenteurs du support visé : c'est
 //     l'objet créé, et `objet_id_cree` porte l'identifiant de cette ligne.
 //
 // Elles s'adressent d'abord aux **co-détenteurs du support visé**, et non aux
@@ -808,7 +808,7 @@ fn null_ou(valeur: &Option<String>) -> serde_json::Value {
 /// Détermine si `target_id` désigne une chaîne ou une station.
 ///
 /// Une demande d'animation ne dit pas de quel type de support elle relève : les
-/// deux tables sont sondées, dans un ordre arbitraire mais stable — les
+/// deux tables sont sondées, dans un ordre arbitraire mais stable, les
 /// identifiants étant des UUID v4, une collision entre les deux est hors de
 /// portée.
 pub async fn type_support_de(
@@ -933,7 +933,7 @@ pub async fn lister_propositions_support(
     }))
 }
 
-/// PATCH /api/medias/propositions/{id}/accepter — décision d'un co-détenteur
+/// PATCH /api/medias/propositions/{id}/accepter, décision d'un co-détenteur
 ///
 /// Le contributeur devient co-détenteur du support s'il s'agit d'une demande
 /// d'animation ; une idée est simplement retenue.
@@ -953,7 +953,7 @@ pub async fn accepter_engagement(
         .filter(|c| !c.is_empty())
         .map(str::to_string);
 
-    // La garde est déterminée par la cible de la proposition — il faut donc la
+    // La garde est déterminée par la cible de la proposition : il faut donc la
     // lire avant de pouvoir l'exercer.
     let contexte: Option<(Uuid, String, Option<Uuid>, String)> = sqlx::query_as(
         "SELECT auteur_id, type_objet::text, target_id, statut::text
@@ -1090,7 +1090,7 @@ pub async fn accepter_engagement(
     }))
 }
 
-/// PATCH /api/medias/propositions/{id}/refuser — décision d'un co-détenteur
+/// PATCH /api/medias/propositions/{id}/refuser, décision d'un co-détenteur
 pub async fn refuser_engagement(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -1235,7 +1235,7 @@ pub async fn charger_proposition(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GET /api/medias/themes — référentiel des thèmes phares (FR-030)
+// GET /api/medias/themes : référentiel des thèmes phares (FR-030)
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[derive(sqlx::FromRow, serde::Serialize)]

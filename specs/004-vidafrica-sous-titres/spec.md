@@ -1,4 +1,4 @@
-# Feature Specification: Vidafrica — Sous-titrage vidéo multilingue avec surlignage karaoke
+# Feature Specification: Vidafrica : Sous-titrage vidéo multilingue avec surlignage karaoke
 
 **Feature Branch**: `004-vidafrica-sous-titres`  
 **Created**: 2026-04-13  
@@ -7,7 +7,7 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 — L'admin saisit des sous-titres pour une vidéo (Priority: P1)
+### User Story 1 : L'admin saisit des sous-titres pour une vidéo (Priority: P1)
 
 Un administrateur accède au back-office Vidafrica, sélectionne ou crée une vidéo, puis ajoute une piste de sous-titres dans une langue donnée. Pour chaque segment (cue), il saisit le texte et les timestamps de début/fin. Pour définir le timing mot par mot (effet karaoké), il utilise le mode "tap-to-mark" : la vidéo se lance, les mots du segment s'affichent et l'admin tape un bouton à chaque mot au moment où il est prononcé, le système enregistrant automatiquement les timestamps. L'interface lui permet de prévisualiser la vidéo avec les sous-titres synchronisés avant de publier.
 
@@ -24,11 +24,11 @@ Un administrateur accède au back-office Vidafrica, sélectionne ou crée une vi
 
 ---
 
-### User Story 2 — Le visiteur regarde une vidéo avec sous-titres karaoké (Priority: P1)
+### User Story 2 : Le visiteur regarde une vidéo avec sous-titres karaoké (Priority: P1)
 
 Un visiteur (connecté ou non) accède à la page Vidafrica, choisit une vidéo et la regarde avec des sous-titres affichés en bas de l'écran. Les mots sont surlignés un par un au fur et à mesure de la lecture, créant un effet karaoké fluide. Le visiteur peut changer la langue des sous-titres à tout moment pendant la lecture.
 
-**Why this priority**: C'est l'expérience utilisateur principale — la raison d'être de la fonctionnalité. Sans affichage karaoké, la fonctionnalité n'a pas de valeur distincte.
+**Why this priority**: C'est l'expérience utilisateur principale, la raison d'être de la fonctionnalité. Sans affichage karaoké, la fonctionnalité n'a pas de valeur distincte.
 
 **Independent Test**: Peut être testé en chargeant une vidéo avec des sous-titres pré-saisis, en lançant la lecture et en vérifiant que chaque mot est surligné au bon moment.
 
@@ -41,7 +41,7 @@ Un visiteur (connecté ou non) accède à la page Vidafrica, choisit une vidéo 
 
 ---
 
-### User Story 3 — L'admin gère les vidéos Vidafrica (Priority: P2)
+### User Story 3 : L'admin gère les vidéos Vidafrica (Priority: P2)
 
 Un administrateur peut créer, modifier et supprimer des vidéos dans le back-office Vidafrica. Chaque vidéo possède un titre, une description, un fichier vidéo uploadé, une vignette, et un état de publication. L'admin peut voir la liste de toutes les vidéos avec leurs pistes de sous-titres associées.
 
@@ -57,7 +57,7 @@ Un administrateur peut créer, modifier et supprimer des vidéos dans le back-of
 
 ---
 
-### User Story 4 — L'admin prévisualise les sous-titres en temps réel (Priority: P2)
+### User Story 4 : L'admin prévisualise les sous-titres en temps réel (Priority: P2)
 
 Pendant la saisie des sous-titres, l'admin peut prévisualiser la vidéo avec l'effet karaoké appliqué en temps réel. Cela lui permet d'ajuster finement les timings mot par mot pour une synchronisation parfaite.
 
@@ -72,11 +72,11 @@ Pendant la saisie des sous-titres, l'admin peut prévisualiser la vidéo avec l'
 
 ---
 
-### User Story 5 — Le visiteur navigue dans le catalogue Vidafrica (Priority: P3)
+### User Story 5 : Le visiteur navigue dans le catalogue Vidafrica (Priority: P3)
 
 Un visiteur accède à la page Vidafrica et voit un catalogue de vidéos sous-titrées. Il peut filtrer par langue de sous-titres disponible et rechercher par titre ou description. Chaque carte vidéo affiche la vignette, le titre, la durée et les langues disponibles.
 
-**Why this priority**: L'expérience de navigation enrichit l'usage mais n'est pas essentielle pour le MVP — une simple liste suffit initialement.
+**Why this priority**: L'expérience de navigation enrichit l'usage mais n'est pas essentielle pour le MVP, une simple liste suffit initialement.
 
 **Independent Test**: Peut être testé en publiant plusieurs vidéos avec différentes langues et en vérifiant que les filtres et la recherche fonctionnent correctement.
 
@@ -122,14 +122,14 @@ Un visiteur accède à la page Vidafrica et voit un catalogue de vidéos sous-ti
 - **Vidéo** : Contenu vidéo avec titre, description, fichier vidéo uploadé (stockage local), vignette, durée, état de publication. Une vidéo peut avoir plusieurs pistes de sous-titres.
 - **Piste de sous-titres** : Ensemble de segments de sous-titres associé à une vidéo et une langue. Une seule piste par langue par vidéo.
 - **Segment (Cue)** : Unité de sous-titre avec texte, timestamp de début et timestamp de fin. Appartient à une piste. Ordonné séquentiellement.
-- **Timing mot** : Timing individuel d'un mot au sein d'un segment, avec position du mot, timestamp de début et timestamp de fin. Permet l'effet karaoké. Optionnel — si absent, le segment s'affiche en bloc.
+- **Timing mot** : Timing individuel d'un mot au sein d'un segment, avec position du mot, timestamp de début et timestamp de fin. Permet l'effet karaoké. Optionnel : si absent, le segment s'affiche en bloc.
 
 ## Clarifications
 
 ### Session 2026-04-13
 
-- Q: Source des vidéos — externe uniquement, upload local, ou les deux ? → A: Upload local uniquement, pas d'URLs externes.
-- Q: Méthode de saisie des timings mot par mot ? → A: Mode assisté "tap-to-mark" — l'admin tape un bouton à chaque mot pendant la lecture vidéo.
+- Q: Source des vidéos : externe uniquement, upload local, ou les deux ? → A: Upload local uniquement, pas d'URLs externes.
+- Q: Méthode de saisie des timings mot par mot ? → A: Mode assisté "tap-to-mark" : l'admin tape un bouton à chaque mot pendant la lecture vidéo.
 - Q: Source des langues pour les pistes de sous-titres ? → A: Liste prédéfinie en dur (enum ou table simple avec ~10-15 langues).
 
 ## Assumptions

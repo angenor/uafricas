@@ -65,7 +65,7 @@ const formaterDate = (iso: string) =>
 <template>
   <div class="p-6 space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">Engagement — Journal des points</h1>
+      <h1 class="text-2xl font-bold">Engagement, Journal des points</h1>
       <NuxtLink to="/admin/engagement/regles" class="btn btn-sm btn-outline">
         <font-awesome-icon icon="fa-solid fa-sliders" /> Barème
       </NuxtLink>
@@ -129,8 +129,8 @@ const formaterDate = (iso: string) =>
             <td class="whitespace-nowrap text-xs">{{ formaterDate(l.created_at) }}</td>
             <td>{{ l.utilisateur_nom || l.utilisateur_id }}</td>
             <td class="font-mono text-xs">{{ l.type_action }}<span v-if="l.plafond_atteint" class="badge badge-warning badge-xs ml-1">plafond</span></td>
-            <td class="text-xs">{{ l.categorie_libelle || '—' }}</td>
-            <td class="text-xs">{{ l.type_objet || '—' }}</td>
+            <td class="text-xs">{{ l.categorie_libelle || '-' }}</td>
+            <td class="text-xs">{{ l.type_objet || '-' }}</td>
             <td :class="l.points >= 0 ? 'text-success font-semibold' : 'text-error font-semibold'">{{ l.points > 0 ? '+' : '' }}{{ l.points }}</td>
             <td>{{ l.reputation_delta !== 0 ? (l.reputation_delta > 0 ? '+' : '') + l.reputation_delta : '' }}</td>
             <td>{{ l.solde_apres }}</td>

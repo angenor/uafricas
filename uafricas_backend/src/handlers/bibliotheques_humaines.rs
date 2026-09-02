@@ -64,7 +64,7 @@ async fn verifier_biblio_valide(pool: &PgPool, biblio_id: Uuid) -> Result<(), Ap
 // Endpoints
 // ────────────────────────────────────────────────────────────────
 
-/// GET /api/bibliotheques-humaines — Liste paginee avec filtres
+/// GET /api/bibliotheques-humaines : Liste paginee avec filtres
 /// Ne retourne que les profils avec une demande en statut 'valide' (US3)
 pub async fn lister_biblios(
     pool: web::Data<PgPool>,
@@ -183,7 +183,7 @@ pub async fn lister_biblios(
     }))
 }
 
-/// GET /api/bibliotheques-humaines/{id} — Detail d'une bibliotheque humaine
+/// GET /api/bibliotheques-humaines/{id}, Detail d'une bibliotheque humaine
 pub async fn obtenir_biblio(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -271,7 +271,7 @@ pub async fn obtenir_biblio(
     }))
 }
 
-/// POST /api/bibliotheques-humaines/inscription — Soumettre une demande (JWT requis)
+/// POST /api/bibliotheques-humaines/inscription, Soumettre une demande (JWT requis)
 /// Cree une demande en statut 'en_attente' ; retourne 409 si demande active existante
 pub async fn inscrire_biblio(
     pool: web::Data<PgPool>,
@@ -411,7 +411,7 @@ pub async fn inscrire_biblio(
     }))
 }
 
-/// GET /api/bibliotheques-humaines/moi/demande — Suivi de statut pour le candidat (US4)
+/// GET /api/bibliotheques-humaines/moi/demande, Suivi de statut pour le candidat (US4)
 pub async fn ma_demande(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -484,7 +484,7 @@ pub async fn ma_demande(
     }))
 }
 
-/// GET /api/bibliotheques-humaines/specialites — Liste des specialites disponibles
+/// GET /api/bibliotheques-humaines/specialites, Liste des specialites disponibles
 pub async fn lister_specialites(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ApiErreur> {
@@ -522,7 +522,7 @@ async fn compter_reactions(pool: &PgPool, biblio_id: Uuid) -> Result<(i64, i64),
     Ok(counts)
 }
 
-/// POST /api/bibliotheques-humaines/{id}/reaction — Aimer / ne pas aimer (toggle)
+/// POST /api/bibliotheques-humaines/{id}/reaction, Aimer / ne pas aimer (toggle)
 pub async fn reagir_biblio(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -623,7 +623,7 @@ pub async fn reagir_biblio(
     }))
 }
 
-/// GET /api/bibliotheques-humaines/{id}/commentaires — Liste plate
+/// GET /api/bibliotheques-humaines/{id}/commentaires, Liste plate
 pub async fn lister_commentaires_biblio(
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,
@@ -654,7 +654,7 @@ pub async fn lister_commentaires_biblio(
     }))
 }
 
-/// POST /api/bibliotheques-humaines/{id}/commentaires — Commenter
+/// POST /api/bibliotheques-humaines/{id}/commentaires, Commenter
 pub async fn creer_commentaire_biblio(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -711,7 +711,7 @@ pub async fn creer_commentaire_biblio(
     }))
 }
 
-/// DELETE /api/bibliotheques-humaines/{id}/commentaires/{commentaire_id} — Supprimer (son propre)
+/// DELETE /api/bibliotheques-humaines/{id}/commentaires/{commentaire_id}, Supprimer (son propre)
 pub async fn supprimer_commentaire_biblio(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -743,7 +743,7 @@ pub async fn supprimer_commentaire_biblio(
     }))
 }
 
-/// POST /api/bibliotheques-humaines/{id}/recommandation — Recommander (upsert)
+/// POST /api/bibliotheques-humaines/{id}/recommandation, Recommander (upsert)
 pub async fn recommander_biblio(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -802,7 +802,7 @@ pub async fn recommander_biblio(
     }))
 }
 
-/// DELETE /api/bibliotheques-humaines/{id}/recommandation — Retirer sa recommandation
+/// DELETE /api/bibliotheques-humaines/{id}/recommandation, Retirer sa recommandation
 pub async fn retirer_recommandation_biblio(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -836,7 +836,7 @@ pub async fn retirer_recommandation_biblio(
     }))
 }
 
-/// GET /api/bibliotheques-humaines/{id}/recommandations — Liste des témoignages
+/// GET /api/bibliotheques-humaines/{id}/recommandations, Liste des témoignages
 pub async fn lister_recommandations_biblio(
     pool: web::Data<PgPool>,
     chemin: web::Path<Uuid>,

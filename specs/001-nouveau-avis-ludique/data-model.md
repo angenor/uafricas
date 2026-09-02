@@ -26,7 +26,7 @@ Options passees au composable pour parametrer les animations :
 
 Etat reactif expose par le composable :
 
-- `enTransition` : booleen — true pendant une animation de transition d'etape
-- `prefereReducedMotion` : booleen — preference systeme detectee
+- `enTransition` : booleen : true pendant une animation de transition d'etape
+- `prefereReducedMotion` : booleen : preference systeme detectee
 - `timelineCourante` : reference GSAP Timeline ou null
 - `gsapCtx` : contexte GSAP pour cleanup

@@ -153,7 +153,7 @@ pub struct CreerNiveauRequest {
 }
 
 /// `code` absent : il est **immuable** (`compte.niveau_code` le référence par
-/// valeur, sans FK — le renommer orphelinerait tous les comptes concernés).
+/// valeur, sans FK, le renommer orphelinerait tous les comptes concernés).
 #[derive(Deserialize)]
 pub struct ModifierNiveauRequest {
     pub libelle: Option<String>,

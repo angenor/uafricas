@@ -16,7 +16,7 @@ const {
   rejeterDemande,
 } = useAdminExperts()
 
-useHead({ title: computed(() => demandeDetail.value ? `${demandeDetail.value.prenom} ${demandeDetail.value.nom} — Admin` : 'Chargement…') })
+useHead({ title: computed(() => demandeDetail.value ? `${demandeDetail.value.prenom} ${demandeDetail.value.nom}, Admin` : 'Chargement…') })
 
 const showRejetModal = ref(false)
 const commentaireRejet = ref('')
@@ -42,7 +42,7 @@ function statutLabel(statut: StatutExpertise) {
 }
 
 function formatDate(iso: string | null) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
@@ -52,7 +52,7 @@ async function valider() {
   actionLoading.value = true
   try {
     await validerDemande(id)
-    afficherSucces('Demande validée — l\'expert est maintenant visible sur /experts.')
+    afficherSucces('Demande validée : l\'expert est maintenant visible sur /experts.')
   }
   catch { /* erreur déjà dans le composable */ }
   finally {
@@ -65,7 +65,7 @@ async function confirmerRejet() {
   actionLoading.value = true
   try {
     await rejeterDemande(id, commentaireRejet.value.trim())
-    afficherSucces('Demande refusée — le candidat a été notifié par email.')
+    afficherSucces('Demande refusée : le candidat a été notifié par email.')
     showRejetModal.value = false
   }
   catch { /* erreur déjà dans le composable */ }

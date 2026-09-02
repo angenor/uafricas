@@ -3,7 +3,7 @@
 **Feature Branch**: `001-notifications-suggestions`
 **Created**: 2026-03-16
 **Status**: Draft
-**Input**: User description: "Feature 7 — Notifications et suggestions intelligentes. Notifications quand un nouveau match est détecté, quand quelqu'un confirme un lien, quand un collaborateur modifie l'arbre. Suggestions proactives : 'Vous n'avez pas renseigné les parents de [X], voulez-vous compléter ?'. Détection de doublons potentiels dans son propre arbre."
+**Input**: User description: "Feature 7, Notifications et suggestions intelligentes. Notifications quand un nouveau match est détecté, quand quelqu'un confirme un lien, quand un collaborateur modifie l'arbre. Suggestions proactives : 'Vous n'avez pas renseigné les parents de [X], voulez-vous compléter ?'. Détection de doublons potentiels dans son propre arbre."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -11,7 +11,7 @@
 
 L'utilisateur reçoit des notifications dans l'interface quand des événements significatifs se produisent : nouveau match détecté (Feature 4), confirmation mutuelle d'une correspondance, modification de son arbre par un collaborateur (Feature 6), invitation reçue. Les notifications sont accessibles via une icône cloche dans la navbar avec un compteur de notifications non lues. Un clic ouvre un panneau déroulant listant les notifications récentes.
 
-**Why this priority**: Les notifications sont le lien entre toutes les features — sans elles, l'utilisateur ne sait pas quand quelque chose de nouveau se passe et doit vérifier chaque page manuellement.
+**Why this priority**: Les notifications sont le lien entre toutes les features, sans elles, l'utilisateur ne sait pas quand quelque chose de nouveau se passe et doit vérifier chaque page manuellement.
 
 **Independent Test**: Déclencher un matching qui crée une suggestion → vérifier qu'une notification apparaît dans la cloche de l'utilisateur.
 
@@ -111,22 +111,22 @@ L'utilisateur peut accéder à une page dédiée listant toutes ses notification
 
 ## Assumptions
 
-- Les notifications sont stockées en base de données (nouvelle table `arbre_genealogique.notifications`). Pas de système de notification temps réel (WebSocket) — l'utilisateur voit les notifications au prochain chargement de page (polling ou vérification à l'ouverture).
-- Les suggestions proactives sont calculées côté client à partir des données de l'arbre déjà en mémoire. Pas de nouvel endpoint — c'est une extension du composable existant `useLayoutArbre`.
+- Les notifications sont stockées en base de données (nouvelle table `arbre_genealogique.notifications`). Pas de système de notification temps réel (WebSocket), l'utilisateur voit les notifications au prochain chargement de page (polling ou vérification à l'ouverture).
+- Les suggestions proactives sont calculées côté client à partir des données de l'arbre déjà en mémoire. Pas de nouvel endpoint : c'est une extension du composable existant `useLayoutArbre`.
 - La détection de doublons réutilise la normalisation phonétique et pg_trgm de Feature 4, mais comparée au sein d'un même arbre (pas entre arbres).
 - La fusion de doublons est une opération complexe qui nécessite un endpoint dédié côté backend : soft-delete d'une personne, transfert de ses liens à l'autre, mise à jour des données choisies.
 - Les notifications sont créées côté serveur dans les handlers existants (matching, collaboration) en ajoutant des appels INSERT dans la table notifications au moment des événements.
 - Le badge de la navbar est géré par un composable global qui vérifie le nombre de notifications non lues au chargement de chaque page.
-- Maximum 10 suggestions proactives affichées (triées par nombre de liens de la personne — les personnes les plus connectées en priorité).
+- Maximum 10 suggestions proactives affichées (triées par nombre de liens de la personne, les personnes les plus connectées en priorité).
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
 - **SC-001**: 90% des événements significatifs génèrent une notification visible par l'utilisateur dans les 30 secondes suivant leur occurrence (au prochain chargement de page).
-- **SC-002**: Le compteur de notifications non lues est correct à 100% — aucune notification manquée ni comptée en double.
+- **SC-002**: Le compteur de notifications non lues est correct à 100%, aucune notification manquée ni comptée en double.
 - **SC-003**: 60% des utilisateurs interagissent avec au moins une suggestion proactive (cliquent pour compléter) dans les 7 jours suivant l'activation.
 - **SC-004**: La détection de doublons identifie au moins 80% des paires similaires (score > 70%) au sein d'un arbre.
 - **SC-005**: Le taux de faux positifs pour les doublons (paires marquées "ignorer") reste inférieur à 30%.
 - **SC-006**: L'utilisateur peut consulter et agir sur une notification en moins de 10 secondes (du clic sur la cloche à l'action finale).
-- **SC-007**: La fusion de doublons préserve 100% des liens familiaux des deux personnes originales — aucun lien perdu.
+- **SC-007**: La fusion de doublons préserve 100% des liens familiaux des deux personnes originales, aucun lien perdu.

@@ -11,7 +11,7 @@ use crate::verifier_permission;
 use crate::ApiResponse;
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/admin/roles — Liste paginee
+// GET /api/admin/roles : Liste paginee
 // ────────────────────────────────────────────────────────────────
 
 pub async fn lister_roles(
@@ -96,7 +96,7 @@ pub async fn lister_roles(
 }
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/admin/roles/{id} — Detail avec permissions
+// GET /api/admin/roles/{id} : Detail avec permissions
 // ────────────────────────────────────────────────────────────────
 
 pub async fn obtenir_role(
@@ -155,7 +155,7 @@ pub async fn obtenir_role(
 }
 
 // ────────────────────────────────────────────────────────────────
-// POST /api/admin/roles — Creation
+// POST /api/admin/roles : Creation
 // ────────────────────────────────────────────────────────────────
 
 pub async fn creer_role(
@@ -222,7 +222,7 @@ pub async fn creer_role(
 }
 
 // ────────────────────────────────────────────────────────────────
-// PUT /api/admin/roles/{id} — Modification
+// PUT /api/admin/roles/{id} : Modification
 // ────────────────────────────────────────────────────────────────
 
 pub async fn modifier_role(
@@ -309,7 +309,7 @@ pub async fn modifier_role(
 }
 
 // ────────────────────────────────────────────────────────────────
-// DELETE /api/admin/roles/{id} — Suppression
+// DELETE /api/admin/roles/{id} : Suppression
 // ────────────────────────────────────────────────────────────────
 
 pub async fn supprimer_role(
@@ -379,7 +379,7 @@ pub async fn supprimer_role(
 }
 
 // ────────────────────────────────────────────────────────────────
-// POST /api/admin/roles/{id}/permissions — Assigner permissions
+// POST /api/admin/roles/{id}/permissions, Assigner permissions
 // ────────────────────────────────────────────────────────────────
 
 pub async fn assigner_permissions(
@@ -504,7 +504,7 @@ pub async fn retirer_permission(
 }
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/admin/permissions — Liste de toutes les permissions
+// GET /api/admin/permissions : Liste de toutes les permissions
 // ────────────────────────────────────────────────────────────────
 
 pub async fn lister_permissions(

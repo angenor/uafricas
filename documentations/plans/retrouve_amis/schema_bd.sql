@@ -1,5 +1,5 @@
 -- ============================================================
--- RETROUVE AMIS — Schema PostgreSQL
+-- RETROUVE AMIS : Schema PostgreSQL
 -- Fichier: 16_retrouve_amis.sql
 -- Schema: retrouve_amis (nouveau bounded-context)
 -- ============================================================

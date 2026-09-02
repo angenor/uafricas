@@ -16,6 +16,9 @@ const nomComplet = computed(() => {
 
 const initiales = computed(() => getInitiales(props.personne))
 
+// `urlMedia` : le backend renvoie un chemin relatif servi sur SON port.
+const photo = computed(() => urlMedia(props.personne.photo_url))
+
 const anneesVie = computed(() => {
   const n = props.personne.naissance?.annee
   const d = props.personne.deces?.annee
@@ -29,41 +32,37 @@ const anneesVie = computed(() => {
 <template>
   <button
     type="button"
-    class="w-full text-left bg-white border border-stone-200 rounded-xl p-4 hover:border-custom-chocolat/40 hover:shadow-md transition-all group"
+    class="group w-full rounded-[10px] border border-af-bordure bg-white p-4 text-left transition hover:border-af-chocolat"
     @click="emit('click', personne.id)"
   >
     <div class="flex items-center gap-3">
       <!-- Photo ou initiales -->
-      <div class="shrink-0">
-        <img
-          v-if="personne.photo_url"
-          :src="personne.photo_url"
-          :alt="nomComplet"
-          class="w-12 h-12 rounded-full object-cover border-2 border-stone-200 group-hover:border-custom-chocolat/40 transition-colors"
-        />
-        <div
-          v-else
-          class="w-12 h-12 rounded-full bg-custom-chocolat/10 border-2 border-custom-chocolat/20 flex items-center justify-center group-hover:bg-custom-chocolat/20 transition-colors"
-        >
-          <span class="text-sm font-bold text-custom-chocolat">{{ initiales }}</span>
-        </div>
-      </div>
+      <img
+        v-if="photo"
+        :src="photo"
+        :alt="nomComplet"
+        class="size-12 shrink-0 rounded-full object-cover"
+      />
+      <span
+        v-else
+        class="grid size-12 shrink-0 place-items-center rounded-full bg-af-chocolat/15 text-[14px]/[1.4] font-bold text-af-chocolat"
+      >{{ initiales }}</span>
 
       <!-- Infos -->
       <div class="min-w-0 flex-1">
-        <p class="font-semibold text-stone-800 truncate group-hover:text-custom-chocolat transition-colors">
+        <p class="truncate text-[14px]/[1.4] font-bold text-af-encre transition group-hover:text-af-chocolat">
           {{ nomComplet }}
         </p>
-        <p v-if="anneesVie" class="text-xs text-stone-500 mt-0.5">{{ anneesVie }}</p>
-        <p v-if="personne.naissance_lieu" class="text-xs text-stone-400 truncate mt-0.5">
+        <p v-if="anneesVie" class="mt-0.5 text-[12px]/[1.4] text-af-corps">{{ anneesVie }}</p>
+        <p v-if="personne.naissance_lieu" class="mt-0.5 truncate text-[12px]/[1.4] text-af-atone">
           {{ personne.naissance_lieu }}
         </p>
       </div>
 
-      <!-- Flèche -->
-      <svg class="shrink-0 w-4 h-4 text-stone-400 group-hover:text-custom-chocolat transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-      </svg>
+      <font-awesome-icon
+        icon="fa-solid fa-chevron-right"
+        class="shrink-0 text-af-atone-2 transition group-hover:translate-x-1 group-hover:text-af-chocolat"
+      />
     </div>
   </button>
 </template>

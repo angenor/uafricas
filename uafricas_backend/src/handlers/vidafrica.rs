@@ -342,7 +342,7 @@ pub async fn lister_langues_disponibles(
     }))
 }
 
-/// GET /api/vidafrica/videos/partages — mur communautaire des vidéos (public, paginé).
+/// GET /api/vidafrica/videos/partages : mur communautaire des vidéos (public, paginé).
 pub async fn lister_partages_videos(
     pool: web::Data<PgPool>,
     params: web::Query<PartageVideoQueryParams>,

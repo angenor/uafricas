@@ -13,11 +13,11 @@ Approche technique : extension du schéma `media_content` avec une table `evenem
 
 **Language/Version**: Rust Edition 2024 (backend) ; TypeScript / Nuxt 4 (Vue 3 SSR) (frontend)
 **Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL), `livekit-api` 0.4, `livekit-protocol` 0.7, `jsonwebtoken`, `uuid`, `chrono`, `serde` (backend) ; `livekit-client` ^2.17.1 (déjà installé), Pinia, Tailwind CSS v4 (pur), FontAwesome (frontend)
-**Storage**: PostgreSQL 16, schéma `media_content` (source de vérité — Principe III). **Aucun stockage de média** (flux via SFU LiveKit). Cloche persistante via `arbre_genealogique.notifications` (système unifié existant).
-**Testing**: Aucun framework configuré (constitution) — validation manuelle via `quickstart.md` (2 comptes : organisateur + inscrit). Tests automatisés hors périmètre actuel.
+**Storage**: PostgreSQL 16, schéma `media_content` (source de vérité, Principe III). **Aucun stockage de média** (flux via SFU LiveKit). Cloche persistante via `arbre_genealogique.notifications` (système unifié existant).
+**Testing**: Aucun framework configuré (constitution), validation manuelle via `quickstart.md` (2 comptes : organisateur + inscrit). Tests automatisés hors périmètre actuel.
 **Target Platform**: Serveur Linux (backend port 8080/8082) + rendu SSR web (frontend port 3000) ; SFU LiveKit (Docker dev : ports 7880/7881/7882 + 50000-50100/udp)
-**Project Type**: Application web (monorepo frontend Nuxt + backend Rust — Principe II)
-**Performance Goals**: latence diffusion < 5 s (SC-002) ; ≥ 100 spectateurs simultanés sans dégradation (SC-004) ; chat/réaction < 2 s (SC-006) — assurés par le SFU LiveKit et le canal DataPacket
+**Project Type**: Application web (monorepo frontend Nuxt + backend Rust, Principe II)
+**Performance Goals**: latence diffusion < 5 s (SC-002) ; ≥ 100 spectateurs simultanés sans dégradation (SC-004) ; chat/réaction < 2 s (SC-006), assurés par le SFU LiveKit et le canal DataPacket
 **Constraints**: modèle webinaire (diffusion 1→N, promotion à la volée) ; accès réservé aux inscrits + organisateur ; pas d'enregistrement ; média jamais sur le serveur applicatif ; pas de cron (états dérivés à la lecture, arrêt de sécurité appliqué paresseusement)
 **Scale/Scope**: 2 nouvelles tables, 1 enum logique, 1 migration idempotente ; ~8 endpoints REST ; 1 nouvelle page + ~4 composants frontend ; extension `useEvenements` ; 1 branche SSE supplémentaire
 
@@ -53,7 +53,7 @@ specs/001-evenements-streaming/
 │   └── temps-reel.md
 ├── checklists/
 │   └── requirements.md  # Checklist qualité (déjà validée)
-└── tasks.md             # Phase 2 (/speckit.tasks — NON créé ici)
+└── tasks.md             # Phase 2 (/speckit.tasks, NON créé ici)
 ```
 
 ### Source Code (repository root)
@@ -99,4 +99,4 @@ uafricas_frontend/
 
 ## Complexity Tracking
 
-> Aucune violation de la Constitution — section vide.
+> Aucune violation de la Constitution, section vide.

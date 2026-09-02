@@ -1,4 +1,4 @@
-//! Épisodes — les **unités diffusables** d'un programme
+//! Épisodes : les **unités diffusables** d'un programme
 //! (feature 009-medias-programmes-episodes, migration 09q).
 //!
 //! Un épisode porte le média (`video_url` en télé, `audio_url` en radio), son
@@ -21,7 +21,7 @@ use crate::models::media_emission::RefNommee;
 use crate::models::media_social::CompteursInteraction;
 
 // ────────────────────────────────────────────────────────────────
-// États — FR-040, FR-041
+// États : FR-040, FR-041
 // ────────────────────────────────────────────────────────────────
 
 /// Cycle de vie d'un épisode. `rejete` est la valeur ajoutée par 09q : elle rend
@@ -36,7 +36,7 @@ pub const ETATS_EPISODE: [&str; 6] = [
     "supprime",
 ];
 
-/// Longueur minimale d'un motif de rejet — même garde applicative que le rejet
+/// Longueur minimale d'un motif de rejet, même garde applicative que le rejet
 /// d'une proposition média (09l). Un « non » sans explication laisse l'auteur
 /// sans rien à corriger.
 pub const MOTIF_REJET_MIN: usize = 10;
@@ -110,7 +110,7 @@ pub fn famille_pour_support(type_support: &str) -> &'static str {
 // Colonnes SQL
 // ────────────────────────────────────────────────────────────────
 
-/// Alias `ep`. `a_la_une_globale` est neutralisé côté radio — la colonne
+/// Alias `ep`. `a_la_une_globale` est neutralisé côté radio, la colonne
 /// n'existe pas, l'espace Radio n'ayant pas de vedette plein écran.
 pub const EPISODE_TELE_COLONNES: &str =
     "ep.id, ep.emission_id, ep.titre, ep.slug, ep.description,
@@ -136,11 +136,11 @@ pub fn colonnes_episode(type_support: &str) -> Option<&'static str> {
 
 /// Ordre de rotation, unique référence de tri des épisodes (research.md R10).
 /// Le tri secondaire par `created_at, id` rend l'ordre **total et stable** même
-/// en cas d'ex æquo sur `ordre` — c'est ce qui autorise à ne poser aucune
+/// en cas d'ex æquo sur `ordre` : c'est ce qui autorise à ne poser aucune
 /// contrainte d'unicité sur `(emission_id, ordre)`.
 pub const ORDRE_EPISODES: &str = "ep.ordre, ep.created_at, ep.id";
 
-/// Source du média, déduite de l'URL — elle décide du lecteur employé côté
+/// Source du média, déduite de l'URL : elle décide du lecteur employé côté
 /// frontend. Une URL YouTube injectée dans un `<video>` ne joue pas.
 pub fn source_media(url: Option<&str>) -> String {
     match url {
@@ -213,7 +213,7 @@ pub struct EpisodeResponse {
     pub slug: Option<String>,
     pub description: String,
     pub image_couverture_url: Option<String>,
-    /// Champ **uniforme** des deux familles — c'est lui que consomment les
+    /// Champ **uniforme** des deux familles : c'est lui que consomment les
     /// composants partagés du frontend.
     pub media_url: Option<String>,
     /// Doublons typés, servis pour la seule famille concernée : ils rendent la
@@ -222,7 +222,7 @@ pub struct EpisodeResponse {
     pub video_url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub audio_url: Option<String>,
-    /// "hebergee" | "externe" | "aucune" — pilote le choix du lecteur.
+    /// "hebergee" | "externe" | "aucune" : pilote le choix du lecteur.
     pub source_media: String,
     pub numero_episode: Option<i32>,
     pub ordre: i32,
@@ -362,7 +362,7 @@ impl EpisodeRequest {
     }
 }
 
-/// Réordonnancement **atomique** — tout réordonner ou rien (patron de
+/// Réordonnancement **atomique** : tout réordonner ou rien (patron de
 /// `admin/formation_contenu.rs`).
 #[derive(Debug, Deserialize)]
 pub struct ReordonnancementRequest {
@@ -405,7 +405,7 @@ pub struct EpisodeQueryParams {
     pub r#type: Option<String>,
     pub support_id: Option<Uuid>,
     pub emission_id: Option<Uuid>,
-    /// `echeance` (défaut) | `anciennete` — file de modération, FR-043.
+    /// `echeance` (défaut) | `anciennete` : file de modération, FR-043.
     pub tri: Option<String>,
     pub page: Option<i64>,
     pub taille: Option<i64>,
@@ -426,7 +426,7 @@ impl EpisodeQueryParams {
 }
 
 /// Ligne de la file de modération (contrat admin §1). L'échéance et l'ancienneté
-/// sont calculées **à la lecture** — aucune tâche de fond.
+/// sont calculées **à la lecture** : aucune tâche de fond.
 #[derive(Debug, Serialize)]
 pub struct EpisodeModerationResponse {
     #[serde(flatten)]

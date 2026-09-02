@@ -22,12 +22,12 @@ const emit = defineEmits<{
 
 // ── Etapes du formulaire ───────────────────────────────────────
 const etapes = [
-  { numero: 1, titre: 'Preferences' },
-  { numero: 2, titre: 'Identite' },
+  { numero: 1, titre: 'Préférences' },
+  { numero: 2, titre: 'Identité' },
   { numero: 3, titre: 'Relation' },
   { numero: 4, titre: 'Lieu de rencontre' },
   { numero: 5, titre: 'Photo & apparence' },
-  { numero: 6, titre: 'Recapitulatif' },
+  { numero: 6, titre: 'Récapitulatif' },
 ]
 const etapeCourante = ref(1)
 
@@ -142,13 +142,13 @@ const validerEtape = (etape: number): boolean => {
 
   if (etape === 1) {
     if (!formulaire.partage_coordonnees) {
-      erreurs.partage_coordonnees = 'Vous devez accepter le partage de coordonnees pour pouvoir continuer.'
+      erreurs.partage_coordonnees = 'Vous devez accepter le partage de coordonnées pour pouvoir continuer.'
     } else {
       const aCoordonnee = formulaire.coordonnees_email.trim()
         || formulaire.coordonnees_telephone.trim()
         || formulaire.coordonnees_whatsapp.trim()
       if (!aCoordonnee) {
-        erreurs.coordonnees = 'Au moins une coordonnee est requise.'
+        erreurs.coordonnees = 'Au moins une coordonnée est requise.'
       }
     }
   }
@@ -184,7 +184,7 @@ const validerGlobal = (): boolean => {
   }
 
   if (!formulaire.partage_coordonnees) {
-    erreurs.partage_coordonnees = 'Vous devez accepter le partage de coordonnees pour pouvoir continuer.'
+    erreurs.partage_coordonnees = 'Vous devez accepter le partage de coordonnées pour pouvoir continuer.'
     etapeCourante.value = 1
     return false
   }
@@ -193,7 +193,7 @@ const validerGlobal = (): boolean => {
     || formulaire.coordonnees_telephone.trim()
     || formulaire.coordonnees_whatsapp.trim()
   if (!aCoordonnee) {
-    erreurs.coordonnees = 'Au moins une coordonnee est requise.'
+    erreurs.coordonnees = 'Au moins une coordonnée est requise.'
     etapeCourante.value = 1
     return false
   }
@@ -321,7 +321,7 @@ const labelRelation = computed(() => {
 const lignesRecap = computed(() => {
   const lignes: { label: string; valeur: string }[] = []
   lignes.push({ label: 'Nom recherche', valeur: formulaire.nom_recherche })
-  if (formulaire.prenom_recherche.trim()) lignes.push({ label: 'Prenom', valeur: formulaire.prenom_recherche })
+  if (formulaire.prenom_recherche.trim()) lignes.push({ label: 'Prénom', valeur: formulaire.prenom_recherche })
   if (formulaire.surnom.trim()) lignes.push({ label: 'Surnom', valeur: formulaire.surnom })
   if (formulaire.genre_recherche) {
     const label = GENRES_PERSONNE.find(g => g.value === formulaire.genre_recherche)?.label ?? formulaire.genre_recherche
@@ -330,7 +330,7 @@ const lignesRecap = computed(() => {
   if (formulaire.comment_connu.trim()) lignes.push({ label: 'Comment connu', valeur: formulaire.comment_connu })
   if (labelRelation.value) lignes.push({ label: 'Type de relation', valeur: labelRelation.value })
   if (formulaire.localite_rencontre.trim()) lignes.push({ label: 'Localite de rencontre', valeur: formulaire.localite_rencontre })
-  if (formulaire.ecole_rencontre.trim()) lignes.push({ label: 'Ecole de rencontre', valeur: formulaire.ecole_rencontre })
+  if (formulaire.ecole_rencontre.trim()) lignes.push({ label: 'École de rencontre', valeur: formulaire.ecole_rencontre })
   if (formulaire.ville_rencontre.trim()) lignes.push({ label: 'Ville de rencontre', valeur: formulaire.ville_rencontre })
   if (formulaire.pays_id) {
     const nomPays = listePays.value.find(p => p.id === formulaire.pays_id)?.nom
@@ -349,18 +349,18 @@ const lignesRecap = computed(() => {
   if (formulaire.description.trim()) lignes.push({ label: 'Description', valeur: formulaire.description })
   // Anonymat masqué pour le moment
   // lignes.push({ label: 'Anonymat', valeur: formulaire.est_anonyme ? 'Oui' : 'Non' })
-  if (formulaire.partage_coordonnees) lignes.push({ label: 'Partage coordonnees', valeur: 'Oui' })
+  if (formulaire.partage_coordonnees) lignes.push({ label: 'Partage coordonnées', valeur: 'Oui' })
   return lignes
 })
 
 // Classes communes pour les inputs
-const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-custom-chocolat'
-const inputErrorClass = 'w-full rounded-lg border border-red-400 px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-custom-chocolat'
-const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
+const inputClass = 'w-full rounded-md border border-af-bordure bg-white px-4 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 outline-none transition focus:border-af-chocolat'
+const inputErrorClass = 'w-full rounded-md border border-af-live bg-white px-4 py-2.5 text-[14px]/[1.4] placeholder:text-af-atone-2 outline-none transition focus:border-af-chocolat'
+const labelClass = 'mb-2 block text-[14px]/[1.4] text-af-atone italic'
 </script>
 
 <template>
-  <div ref="conteneurFormRef" class="mx-auto w-full max-w-2xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+  <div ref="conteneurFormRef" class="w-full rounded-[10px] border border-af-bordure bg-white p-6 md:p-8">
     <!-- Indicateur d'etapes -->
     <div ref="dotsRef" class="mb-8 flex items-center justify-center gap-1.5">
       <template v-for="etape in etapes" :key="etape.numero">
@@ -368,9 +368,9 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
           type="button"
           class="dot-indicateur flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors cursor-pointer"
           :class="{
-            'bg-custom-chocolat text-white': etape.numero === etapeCourante,
-            'bg-custom-green text-white': etape.numero < etapeCourante,
-            'bg-gray-200 text-gray-500': etape.numero > etapeCourante,
+            'bg-af-chocolat text-white': etape.numero === etapeCourante,
+            'bg-af-vert text-white': etape.numero < etapeCourante,
+            'bg-af-fond text-af-atone-2': etape.numero > etapeCourante,
           }"
           :disabled="enTransition"
           @click="!enTransition && etape.numero < etapeCourante && (etapeCourante = etape.numero)"
@@ -381,21 +381,21 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
         <div
           v-if="etape.numero < etapes.length"
           class="segment-indicateur h-0.5 w-4 md:w-8"
-          :class="etape.numero < etapeCourante ? 'bg-custom-green' : 'bg-gray-200'"
+          :class="etape.numero < etapeCourante ? 'bg-af-vert' : 'bg-af-bordure'"
           :style="{ transform: etape.numero < etapeCourante ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left' }"
         />
       </template>
     </div>
 
-    <h2 class="mb-1 text-center font-display text-xl font-bold text-gray-800">
+    <h2 class="mb-1 text-center text-[20px]/[1.4] font-bold text-af-encre">
       {{ etapes[etapeCourante - 1]?.titre }}
     </h2>
-    <p class="mb-6 text-center text-sm text-gray-500">
-      Etape {{ etapeCourante }} sur {{ etapes.length }}
+    <p class="mb-6 text-center text-[14px]/[1.4] text-af-atone">
+      Étape {{ etapeCourante }} sur {{ etapes.length }}
     </p>
 
     <!-- Erreur globale -->
-    <p v-if="erreurs.global" class="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+    <p v-if="erreurs.global" class="mb-4 rounded-lg border border-af-live/20 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live">
       {{ erreurs.global }}
     </p>
 
@@ -403,42 +403,42 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
     <div ref="etapeRef">
     <!-- ── Etape 1 : Preferences ──────────────────────── -->
     <div v-if="etapeCourante === 1" class="space-y-5">
-      <p class="text-sm text-gray-500">Definissez vos preferences de confidentialite avant de commencer.</p>
+      <p class="text-sm text-af-atone">Définissez vos préférences de confidentialité avant de commencer.</p>
 
-      <!-- Anonymat — masqué pour le moment, seuls les avis publics sont permis -->
-      <!-- <div class="rounded-lg border border-gray-200 p-4">
+      <!-- Anonymat : masqué pour le moment, seuls les avis publics sont permis -->
+      <!-- <div class="rounded-lg border border-af-bordure p-4">
         <label class="flex items-start gap-3 cursor-pointer">
           <input
             v-model="formulaire.est_anonyme"
             type="checkbox"
-            class="mt-0.5 h-5 w-5 rounded border-gray-300 text-custom-chocolat accent-custom-chocolat"
+            class="mt-0.5 h-5 w-5 rounded border-af-bordure text-af-chocolat accent-af-chocolat"
           >
           <div>
-            <span class="text-sm font-medium text-gray-700">Publier en anonyme</span>
-            <p class="text-xs text-gray-500 mt-0.5">
-              Votre nom et prenom ne seront pas affiches sur l'avis public. Seul « Anonyme » apparaitra.
+            <span class="text-sm font-medium text-af-corps">Publier en anonyme</span>
+            <p class="text-xs text-af-atone mt-0.5">
+              Votre nom et prénom ne seront pas affichés sur l'avis public. Seul « Anonyme » apparaîtra.
             </p>
           </div>
         </label>
       </div> -->
 
       <!-- Partage coordonnees -->
-      <div class="rounded-lg border border-gray-200 p-4 space-y-3">
+      <div class="rounded-lg border border-af-bordure p-4 space-y-3">
         <label class="flex items-start gap-3 cursor-pointer">
           <input
             v-model="formulaire.partage_coordonnees"
             type="checkbox"
-            class="mt-0.5 h-5 w-5 rounded border-gray-300 text-custom-chocolat accent-custom-chocolat"
+            class="mt-0.5 h-5 w-5 rounded border-af-bordure text-af-chocolat accent-af-chocolat"
           >
           <div>
-            <span class="text-sm font-medium text-gray-700">Partager mes coordonnees</span>
-            <p class="text-xs text-gray-500 mt-0.5">
-              Vos coordonnees seront partagees uniquement avec les correspondances mutuelles (jamais affichees publiquement).
+            <span class="text-sm font-medium text-af-corps">Partager mes coordonnées</span>
+            <p class="text-xs text-af-atone mt-0.5">
+              Vos coordonnées seront partagées uniquement avec les correspondances mutuelles (jamais affichées publiquement).
             </p>
           </div>
         </label>
 
-        <p v-if="erreurs.partage_coordonnees" class="text-xs text-red-500 mt-1">{{ erreurs.partage_coordonnees }}</p>
+        <p v-if="erreurs.partage_coordonnees" class="text-xs text-af-live mt-1">{{ erreurs.partage_coordonnees }}</p>
 
         <template v-if="formulaire.partage_coordonnees">
           <div>
@@ -451,7 +451,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
             >
           </div>
           <div>
-            <label :class="labelClass">Telephone</label>
+            <label :class="labelClass">Téléphone</label>
             <input
               v-model="formulaire.coordonnees_telephone"
               type="tel"
@@ -468,7 +468,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
               :class="inputClass"
             >
           </div>
-          <p v-if="erreurs.coordonnees" class="text-xs text-red-500">{{ erreurs.coordonnees }}</p>
+          <p v-if="erreurs.coordonnees" class="text-xs text-af-live">{{ erreurs.coordonnees }}</p>
         </template>
       </div>
     </div>
@@ -477,7 +477,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
     <div v-if="etapeCourante === 2" class="space-y-4">
       <div>
         <label :class="labelClass">
-          Nom de la personne recherchee <span class="text-red-500">*</span>
+          Nom de la personne recherchée <span class="text-af-live">*</span>
         </label>
         <input
           v-model="formulaire.nom_recherche"
@@ -486,11 +486,11 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
           placeholder="Ex : Diallo"
           :class="erreurs.nom_recherche ? inputErrorClass : inputClass"
         >
-        <p v-if="erreurs.nom_recherche" class="mt-1 text-xs text-red-500">{{ erreurs.nom_recherche }}</p>
+        <p v-if="erreurs.nom_recherche" class="mt-1 text-xs text-af-live">{{ erreurs.nom_recherche }}</p>
       </div>
 
       <div>
-        <label :class="labelClass">Prenom</label>
+        <label :class="labelClass">Prénom</label>
         <input
           v-model="formulaire.prenom_recherche"
           type="text"
@@ -512,25 +512,25 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       </div>
 
       <div>
-        <label :class="labelClass">Genre de la personne recherchee</label>
+        <label :class="labelClass">Genre de la personne recherchée</label>
         <div class="flex gap-4">
           <label v-for="genre in GENRES_PERSONNE" :key="genre.value" class="flex items-center gap-2 cursor-pointer" @click="animerSelection">
             <input
               v-model="formulaire.genre_recherche"
               type="radio"
               :value="genre.value"
-              class="h-4 w-4 accent-custom-chocolat"
+              class="h-4 w-4 accent-af-chocolat"
             >
-            <span class="text-sm text-gray-700">{{ genre.label }}</span>
+            <span class="text-sm text-af-corps">{{ genre.label }}</span>
           </label>
           <label class="flex items-center gap-2 cursor-pointer">
             <input
               v-model="formulaire.genre_recherche"
               type="radio"
               value=""
-              class="h-4 w-4 accent-custom-chocolat"
+              class="h-4 w-4 accent-af-chocolat"
             >
-            <span class="text-sm text-gray-500">Non precise</span>
+            <span class="text-sm text-af-atone">Non precise</span>
           </label>
         </div>
       </div>
@@ -549,7 +549,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
 
     <!-- ── Etape 3 : Relation ─────────────────────────── -->
     <div v-if="etapeCourante === 3" class="space-y-4">
-      <p class="text-sm text-gray-500">Quel est votre lien avec la personne ?</p>
+      <p class="text-sm text-af-atone">Quel est votre lien avec la personne ?</p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label
@@ -557,23 +557,23 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
           :key="relation.value"
           class="flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors"
           :class="formulaire.type_relation === relation.value
-            ? 'border-custom-chocolat bg-amber-50'
-            : 'border-gray-200 hover:border-gray-300'"
+            ? 'border-af-chocolat bg-af-chocolat/5'
+            : 'border-af-bordure hover:border-af-bordure'"
           @click="animerSelection"
         >
           <input
             v-model="formulaire.type_relation"
             type="radio"
             :value="relation.value"
-            class="h-4 w-4 accent-custom-chocolat"
+            class="h-4 w-4 accent-af-chocolat"
           >
-          <span class="text-sm font-medium text-gray-700">{{ relation.label }}</span>
+          <span class="text-sm font-medium text-af-corps">{{ relation.label }}</span>
         </label>
       </div>
 
       <!-- Precision pour "Autre" -->
       <div v-if="formulaire.type_relation === 'autre'" class="mt-3">
-        <label :class="labelClass">Precisez le type de relation</label>
+        <label :class="labelClass">Précisez le type de relation</label>
         <input
           v-model="formulaire.type_relation_autre"
           type="text"
@@ -586,17 +586,17 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
 
     <!-- ── Etape 4 : Lieu de rencontre ────────────────── -->
     <div v-if="etapeCourante === 4" class="space-y-4">
-      <p class="text-sm text-gray-500">Ou avez-vous rencontre cette personne pour la derniere fois ?</p>
+      <p class="text-sm text-af-atone">Où avez-vous rencontré cette personne pour la dernière fois ?</p>
 
       <!-- Rencontre sur les reseaux sociaux -->
-      <div class="rounded-lg border border-gray-200 p-4 space-y-3">
+      <div class="rounded-lg border border-af-bordure p-4 space-y-3">
         <label class="flex items-center gap-3 cursor-pointer">
           <input
             v-model="formulaire.rencontre_reseaux_sociaux"
             type="checkbox"
-            class="h-5 w-5 rounded border-gray-300 accent-custom-chocolat"
+            class="h-5 w-5 rounded border-af-bordure accent-af-chocolat"
           >
-          <span class="text-sm font-medium text-gray-700">J'ai rencontré cette personne sur les reseaux sociaux</span>
+          <span class="text-sm font-medium text-af-corps">J'ai rencontré cette personne sur les reseaux sociaux</span>
         </label>
 
         <!-- Choix des reseaux sociaux -->
@@ -610,9 +610,9 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
               v-model="formulaire.reseaux_sociaux"
               type="checkbox"
               :value="reseau.value"
-              class="h-4 w-4 rounded border-gray-300 accent-custom-chocolat"
+              class="h-4 w-4 rounded border-af-bordure accent-af-chocolat"
             >
-            <span class="text-sm text-gray-700">{{ reseau.label }}</span>
+            <span class="text-sm text-af-corps">{{ reseau.label }}</span>
           </label>
         </div>
       </div>
@@ -630,7 +630,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
         </div>
 
         <div>
-          <label :class="labelClass">Ecole / Lieu de travail</label>
+          <label :class="labelClass">École / Lieu de travail</label>
           <input
             v-model="formulaire.ecole_rencontre"
             type="text"
@@ -657,7 +657,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
             v-model="formulaire.pays_id"
             :class="inputClass"
           >
-            <option value="">Selectionnez un territoire</option>
+            <option value="">Sélectionnez un territoire</option>
             <option v-for="pays in listePays" :key="pays.id" :value="pays.id">
               {{ pays.nom }}
             </option>
@@ -668,30 +668,30 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
 
     <!-- ── Etape 5 : Photo & apparence ────────────────── -->
     <div v-if="etapeCourante === 5" class="space-y-4">
-      <p class="text-sm text-gray-500">Ajoutez une photo et une description pour aider a identifier la personne.</p>
+      <p class="text-sm text-af-atone">Ajoutez une photo et une description pour aider a identifier la personne.</p>
 
       <!-- Upload photo -->
       <div>
         <label :class="labelClass">Photo (optionnelle)</label>
-        <div v-if="!photoPreview" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-          <font-awesome-icon :icon="['fas', 'camera']" class="text-3xl text-gray-400 mb-2" />
-          <p class="text-sm text-gray-500 mb-2">JPEG, PNG ou WebP — max 5 Mo</p>
-          <label class="inline-block px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
+        <div v-if="!photoPreview" class="border-2 border-dashed border-af-bordure rounded-lg p-6 text-center">
+          <font-awesome-icon :icon="['fas', 'camera']" class="text-3xl text-af-atone-2 mb-2" />
+          <p class="text-sm text-af-atone mb-2">JPEG, PNG ou WebP, max 5 Mo</p>
+          <label class="inline-block px-4 py-2 bg-af-fond text-af-corps text-sm rounded-lg cursor-pointer hover:bg-af-bordure transition-colors">
             Choisir une photo
             <input type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="onPhotoChange">
           </label>
         </div>
         <div v-else class="relative inline-block">
-          <img ref="photoPreviewImgRef" :src="photoPreview" alt="Apercu" class="h-48 w-auto rounded-lg object-cover border border-gray-200">
+          <img ref="photoPreviewImgRef" :src="photoPreview" alt="Aperçu" class="h-48 w-auto rounded-lg object-cover border border-af-bordure">
           <button
             type="button"
-            class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center hover:bg-red-600 cursor-pointer"
+            class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-af-live text-white text-xs flex items-center justify-center hover:bg-af-live cursor-pointer"
             @click="supprimerPhoto"
           >
             <font-awesome-icon :icon="['fas', 'times']" />
           </button>
         </div>
-        <p v-if="erreurs.photo" class="mt-1 text-xs text-red-500">{{ erreurs.photo }}</p>
+        <p v-if="erreurs.photo" class="mt-1 text-xs text-af-live">{{ erreurs.photo }}</p>
       </div>
 
       <!-- Description physique -->
@@ -719,27 +719,27 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
 
     <!-- ── Etape 6 : Recapitulatif ────────────────────── -->
     <div v-if="etapeCourante === 6" class="space-y-5">
-      <p class="text-sm text-gray-500">Verifiez les informations avant de publier votre avis de recherche.</p>
+      <p class="text-sm text-af-atone">Verifiez les informations avant de publier votre avis de recherche.</p>
 
-      <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+      <div class="rounded-lg border border-af-bordure bg-af-fond p-4">
         <dl class="space-y-2">
           <div v-for="ligne in lignesRecap" :key="ligne.label" class="flex gap-2 text-sm">
-            <dt class="shrink-0 font-medium text-gray-500 min-w-36">{{ ligne.label }} :</dt>
-            <dd class="text-gray-800">{{ ligne.valeur }}</dd>
+            <dt class="shrink-0 font-medium text-af-atone min-w-36">{{ ligne.label }} :</dt>
+            <dd class="text-af-encre">{{ ligne.valeur }}</dd>
           </div>
         </dl>
       </div>
 
       <!-- Apercu photo -->
       <div v-if="photoPreview" class="text-center">
-        <img :src="photoPreview" alt="Photo" class="h-32 w-auto rounded-lg object-cover border border-gray-200 mx-auto">
+        <img :src="photoPreview" alt="Photo" class="h-32 w-auto rounded-lg object-cover border border-af-bordure mx-auto">
       </div>
 
-      <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+      <div class="rounded-lg bg-af-chocolat/5 border border-af-chocolat/20 px-4 py-3 text-sm text-af-corps">
         <font-awesome-icon :icon="['fas', 'info-circle']" class="mr-2" />
         Votre avis sera publie immediatement et visible par tous les visiteurs.
         <span v-if="formulaire.partage_coordonnees">
-          Vos coordonnees ne seront partagees qu'avec les correspondances mutuelles.
+          Vos coordonnées ne seront partagées qu'avec les correspondances mutuelles.
         </span>
       </div>
     </div>
@@ -751,16 +751,16 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       <button
         v-if="etapeCourante > 1"
         type="button"
-        class="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:scale-105 active:scale-95 duration-200 cursor-pointer"
+        class="rounded-lg border border-af-bordure px-6 py-2 text-base font-bold text-af-corps transition hover:border-af-chocolat hover:text-af-chocolat disabled:opacity-50"
         :disabled="enTransition"
         @click="precedent"
       >
-        Precedent
+        Précédent
       </button>
       <button
         v-else
         type="button"
-        class="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:scale-105 active:scale-95 duration-200 cursor-pointer"
+        class="rounded-lg border border-af-bordure px-6 py-2 text-base font-bold text-af-corps transition hover:border-af-chocolat hover:text-af-chocolat"
         @click="emit('annuler')"
       >
         Annuler
@@ -769,7 +769,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       <button
         v-if="etapeCourante < etapes.length"
         type="button"
-        class="rounded-lg bg-custom-chocolat px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-custom-chocolat/90 hover:scale-105 active:scale-95 duration-200 cursor-pointer"
+        class="rounded-lg bg-af-degrade px-6 py-2 text-base font-bold text-white transition hover:opacity-90 disabled:opacity-50"
         :disabled="enTransition"
         @click="suivant"
       >
@@ -778,7 +778,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700'
       <button
         v-else
         type="button"
-        class="rounded-lg bg-custom-green px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-custom-green/90 hover:scale-105 active:scale-95 duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        class="rounded-lg bg-af-vert px-6 py-2 text-base font-bold text-white transition hover:opacity-90 disabled:opacity-50"
         :disabled="chargementSoumission"
         @click="soumettre"
       >

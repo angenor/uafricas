@@ -13,8 +13,8 @@ Remplacer le lien « Apporter mon expertise » (qui pointe aujourd'hui vers la l
 
 **Language/Version**: Rust Edition 2024 (backend) ; TypeScript / Nuxt 4 / Vue 3 SSR (frontend)
 **Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL), lettre (SMTP, déjà présent), uuid, chrono, serde (backend) ; Pinia, $fetch, FontAwesome, daisyUI v5 (back-office uniquement) (frontend)
-**Storage**: PostgreSQL 16 — schema `iam` existant (table `iam.expertise` étendue, aucun nouveau schema)
-**Testing**: Aucun framework configuré (Principe « pas de CI/CD ») — validation manuelle via quickstart
+**Storage**: PostgreSQL 16 : schema `iam` existant (table `iam.expertise` étendue, aucun nouveau schema)
+**Testing**: Aucun framework configuré (Principe « pas de CI/CD »), validation manuelle via quickstart
 **Target Platform**: Serveur Linux (backend port 8080) + SSR Nuxt (port 3000)
 **Project Type**: web (monorepo frontend + backend)
 **Performance Goals**: Standard web ; liste admin paginée (≤ 100/page), formulaire soumis en < 3 min (SC-002)
@@ -35,7 +35,7 @@ Remplacer le lien « Apporter mon expertise » (qui pointe aujourd'hui vers la l
 | VI. Tailwind v4 (daisyUI back-office) | ✅ | `pages/devenir-expert.vue` (public) = Tailwind v4 pur ; pages `admin/experts/*` = daisyUI |
 | VII. Audit & Traçabilité | ✅ | `audit::log_action` sur validation et refus |
 
-**Résultat** : PASS — aucune violation. Section Complexity Tracking non requise.
+**Résultat** : PASS : aucune violation. Section Complexity Tracking non requise.
 
 ## Project Structure
 
@@ -45,14 +45,14 @@ Remplacer le lien « Apporter mon expertise » (qui pointe aujourd'hui vers la l
 specs/001-demande-expertise/
 ├── plan.md              # Ce fichier
 ├── spec.md              # Spécification (entrée)
-├── research.md          # Phase 0 — décisions techniques
-├── data-model.md        # Phase 1 — modèle de données
-├── quickstart.md        # Phase 1 — scénarios de validation manuelle
+├── research.md          # Phase 0 : décisions techniques
+├── data-model.md        # Phase 1 : modèle de données
+├── quickstart.md        # Phase 1 : scénarios de validation manuelle
 ├── contracts/
-│   └── api.md           # Phase 1 — contrats d'API
+│   └── api.md           # Phase 1 : contrats d'API
 ├── checklists/
 │   └── requirements.md  # Checklist qualité (déjà créé par /speckit.specify)
-└── tasks.md             # Phase 2 (généré par /speckit.tasks — PAS ici)
+└── tasks.md             # Phase 2 (généré par /speckit.tasks, PAS ici)
 ```
 
 ### Source Code (repository root)
@@ -99,4 +99,4 @@ uafricas_frontend/
 
 ## Complexity Tracking
 
-> Aucune violation de la Constitution — section non applicable.
+> Aucune violation de la Constitution, section non applicable.

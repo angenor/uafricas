@@ -3,7 +3,7 @@
  * Coordonnées publiques d'un support média (09p), affichées sur la page de la
  * chaîne ou de la station une fois celle-ci validée.
  *
- * Complète — sans remplacer — le bouton « Contacter » de la messagerie interne
+ * Complète : sans remplacer : le bouton « Contacter » de la messagerie interne
  * (US6, FR-046) : celui-ci exige un compte et ne joint que les co-détenteurs
  * inscrits, là où ces coordonnées s'adressent à un visiteur de passage, un
  * annonceur ou un partenaire.
@@ -79,7 +79,7 @@ const entrees = computed(() => {
 
 <template>
   <section v-if="visible" class="mb-12">
-    <h2 class="font-oswald text-xl font-bold text-white mb-4">
+    <h2 class="font-oswald text-xl font-bold text-af-encre mb-4">
       Contacter {{ nomSupport || 'ce média' }}
     </h2>
 
@@ -90,15 +90,15 @@ const entrees = computed(() => {
           :href="entree.lien || undefined"
           :target="entree.lien && entree.externe ? '_blank' : undefined"
           :rel="entree.lien && entree.externe ? 'noopener noreferrer' : undefined"
-          class="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition-colors"
-          :class="entree.lien ? 'hover:border-yellow-400/60 hover:bg-white/10' : ''"
+          class="flex items-start gap-3 rounded-xl border border-af-bordure bg-af-fond px-4 py-3 transition-colors"
+          :class="entree.lien ? 'hover:border-af-chocolat/60 hover:bg-af-fond' : ''"
         >
-          <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-yellow-400">
+          <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-af-fond text-af-chocolat">
             <font-awesome-icon :icon="entree.icone" class="w-4 h-4" />
           </span>
           <span class="min-w-0">
-            <span class="block text-xs uppercase tracking-wide text-gray-500">{{ entree.intitule }}</span>
-            <span class="block text-sm text-gray-200 break-words">{{ entree.libelle }}</span>
+            <span class="block text-xs uppercase tracking-wide text-af-atone">{{ entree.intitule }}</span>
+            <span class="block text-sm text-af-corps break-words">{{ entree.libelle }}</span>
           </span>
         </component>
       </li>

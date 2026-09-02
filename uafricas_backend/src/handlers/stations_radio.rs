@@ -65,7 +65,7 @@ pub async fn lister_stations(
         }
     }
 
-    // Filtre par pays — la sentinelle « aucun filtre » doit correspondre à ce
+    // Filtre par pays : la sentinelle « aucun filtre » doit correspondre à ce
     // que le frontend envoie réellement. L'interface dit « territoire » là où le
     // code et la base disent « pays » : la valeur « Tous les pays » attendue ici
     // n'arrivait jamais, et le filtre s'appliquait donc à une valeur littérale
@@ -204,7 +204,7 @@ pub async fn obtenir_station(
 
 // ── GET /api/stations-radio/slug/{slug} ───────────────────────────────
 
-/// Détail d'une station par son slug — les pages SSR et les aperçus sociaux
+/// Détail d'une station par son slug : les pages SSR et les aperçus sociaux
 /// exigent une URL lisible, que la résolution par identifiant ne donne pas.
 pub async fn obtenir_station_par_slug(
     req: HttpRequest,
@@ -249,7 +249,7 @@ pub async fn obtenir_station_par_slug(
     let mut refs: Vec<&mut EmissionResponse> = emissions.iter_mut().collect();
     greffer_apercus_et_compteurs(pool.get_ref(), TYPE_SUPPORT, &mut refs, moi).await?;
 
-    // 010 — l'équipe de la station ET celle de chacun de ses programmes
+    // 010 : l'équipe de la station ET celle de chacun de ses programmes
     // (FR-025). Deux appels, un par discriminant, jamais un par programme.
     reponse.equipe =
         crate::handlers::media_equipe::equipe_du_porteur(pool.get_ref(), TYPE_SUPPORT, reponse.id)
@@ -277,7 +277,7 @@ pub async fn obtenir_station_par_slug(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PAGES RADIO — SECTIONS PAR STATION
+// PAGES RADIO : SECTIONS PAR STATION
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ── GET /api/stations-radio/sections ──────────────────────────────────
@@ -299,7 +299,7 @@ pub async fn lister_sections_stations(
     let page = params.page.unwrap_or(1).max(1);
     let par_page = params.par_page.unwrap_or(6).clamp(1, 20);
     let offset = (page - 1) * par_page;
-    // 010 — jumeau télé : ce plafond bornait un aperçu d'épisodes, il borne
+    // 010 : jumeau télé : ce plafond bornait un aperçu d'épisodes, il borne
     // désormais la liste de programmes, contenu principal de la section (FR-008).
     let emissions_par_section = params.contenus_par_section.unwrap_or(30).clamp(1, 60);
 
@@ -373,7 +373,7 @@ pub async fn lister_sections_stations(
     }
 
     // Territoire couvert (US4) : les stations continentales remontent sur
-    // **chaque** territoire — c'est FR-036 en une clause.
+    // **chaque** territoire : c'est FR-036 en une clause.
     if let Some(territoire) = params.territoire {
         conditions.push(format!(
             "(sr.couverture_continentale = TRUE
@@ -479,9 +479,9 @@ pub async fn lister_sections_stations(
         });
     }
 
-    // 010 — le filtre a posteriori `sections.retain(…)` a disparu (FR-005) :
+    // 010 : le filtre a posteriori `sections.retain(…)` a disparu (FR-005) :
     // une station publiée sans programme reste une section, avec son identité et
-    // son équipe. Sa disparition corrige au passage une incohérence — le `total`
+    // son équipe. Sa disparition corrige au passage une incohérence, le `total`
     // était compté en SQL, la liste filtrée en Rust, et la pagination annonçait
     // donc plus de sections qu'elle n'en servait.
     //
@@ -710,7 +710,7 @@ pub async fn creer_station(
     let station_id = Uuid::new_v4();
 
     // FAILLE FERMÉE (FR-031, FR-032) : cette route publique insérait
-    // `etat = 'publie'` en dur, sans contrôle de rôle — tout membre connecté
+    // `etat = 'publie'` en dur, sans contrôle de rôle, tout membre connecté
     // publiait donc directement. Le contenu naît désormais en `'en_attente'`,
     // invisible tant qu'un administrateur ne l'a pas validé. La voie de
     // contribution nominale reste `POST /api/medias/propositions` (US4).

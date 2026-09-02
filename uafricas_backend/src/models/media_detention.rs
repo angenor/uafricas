@@ -1,5 +1,5 @@
-//! Co-détention des supports médias — chaînes et stations
-//! (feature 001-refonte-tele-radio, US5 — migration 09m).
+//! Co-détention des supports médias : chaînes et stations
+//! (feature 001-refonte-tele-radio, US5, migration 09m).
 //!
 //! Plusieurs membres détiennent un même support, à des rôles distincts. Ces
 //! modèles servent des routes **membre** : la garde n'est pas
@@ -17,7 +17,7 @@ use crate::errors::ApiErreur;
 /// il appartient à son support.
 pub const TYPES_SUPPORT_AUTORISES: [&str; 2] = ["chaine_tv", "station_radio"];
 
-/// Rôles, du plus au moins étendu — l'ordre est signifiant, `role_au_moins`
+/// Rôles, du plus au moins étendu, l'ordre est signifiant, `role_au_moins`
 /// s'en sert pour comparer.
 pub const ROLES_DETENTEUR: [&str; 3] = ["proprietaire", "co_detenteur", "programmateur"];
 
@@ -44,7 +44,7 @@ pub fn table_contenu_pour_support(type_support: &str) -> Option<&'static str> {
     }
 }
 
-/// Table des épisodes — les unités diffusables versées dans une émission.
+/// Table des épisodes : les unités diffusables versées dans une émission.
 pub fn table_episode_pour_support(type_support: &str) -> Option<&'static str> {
     match type_support {
         "chaine_tv" => Some("media_content.episode_tele"),
@@ -158,7 +158,7 @@ impl SupportDetenteurRow {
 #[derive(Debug, Deserialize)]
 pub struct InviterDetenteurRequest {
     pub email: String,
-    /// Défaut `co_detenteur` — un propriétaire ne s'invite pas, il naît de la
+    /// Défaut `co_detenteur` : un propriétaire ne s'invite pas, il naît de la
     /// validation de la proposition (US4).
     pub role: Option<String>,
 }
@@ -183,7 +183,7 @@ impl InviterDetenteurRequest {
     }
 }
 
-/// Désignation directe par un administrateur — recours quand plus personne ne
+/// Désignation directe par un administrateur, recours quand plus personne ne
 /// peut inviter (support sans détenteur actif, propriétaire injoignable).
 #[derive(Debug, Deserialize)]
 pub struct AjouterDetenteurAdminRequest {
@@ -235,7 +235,7 @@ pub struct InvitationDetenteurResponse {
     pub created_at: DateTime<Utc>,
     pub expire_at: DateTime<Utc>,
     pub traitee_le: Option<DateTime<Utc>>,
-    /// Calculé à la lecture — une invitation périmée reste `en_attente` en base
+    /// Calculé à la lecture : une invitation périmée reste `en_attente` en base
     /// (aucune tâche de fond ne la bascule), c'est la lecture qui tranche.
     pub expiree: bool,
 }

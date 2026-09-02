@@ -1,10 +1,10 @@
-# Phase 1 — Modèle de données : Marché Africain
+# Phase 1 : Modèle de données : Marché Africain
 
 Source de vérité : schéma PostgreSQL (Principe III). Les tables `marketplace.*` existent déjà ; cette feature introduit **deux ajustements** et **réutilise** le reste. Les DTOs Rust et interfaces TS doivent refléter fidèlement ce schéma.
 
 ## Changements de schéma
 
-### C1 — Nouvelle valeur d'enum `etat_annonce` (`05_marketplace.sql`)
+### C1 : Nouvelle valeur d'enum `etat_annonce` (`05_marketplace.sql`)
 
 ```sql
 -- Ajout de l'état de conclusion (FR-018, clarification Q5)
@@ -14,7 +14,7 @@ ALTER TYPE marketplace.etat_annonce ADD VALUE IF NOT EXISTS 'conclue';
 > Note : pour une base déjà initialisée, exécuter cet `ALTER TYPE` en migration manuelle (SSH+psql) avant déploiement. En dev (init auto via `docker-init.sh`), éditer directement la définition de l'enum dans `05_marketplace.sql` :
 > `'brouillon', 'publiee', 'en_attente', 'expiree', 'suspendue', 'supprimee', 'conclue'`.
 
-### C2 — Colonne `annonce_id` sur `social.conversation` (nouveau `30_social_conversation_annonce.sql`)
+### C2 : Colonne `annonce_id` sur `social.conversation` (nouveau `30_social_conversation_annonce.sql`)
 
 ```sql
 -- Contexte marketplace d'une conversation initiée depuis une annonce (D2).
@@ -26,12 +26,12 @@ CREATE INDEX idx_conversation_annonce ON social.conversation(annonce_id)
     WHERE annonce_id IS NOT NULL;
 ```
 
-## Entités (existantes — rappel des champs utilisés)
+## Entités (existantes : rappel des champs utilisés)
 
 ### `marketplace.annonce`
 | Champ | Type | Règle pour le parcours membre |
 |-------|------|-------------------------------|
-| `id` | UUID PK | — |
+| `id` | UUID PK | : |
 | `titre` | VARCHAR(350) NOT NULL | obligatoire, 3..350 car. |
 | `slug` | VARCHAR(400) UNIQUE | généré depuis le titre (réutiliser la logique admin) |
 | `description` | TEXT NOT NULL | obligatoire, ≥ 10 car. |
@@ -49,7 +49,7 @@ CREATE INDEX idx_conversation_annonce ON social.conversation(annonce_id)
 | `etat` | enum | **forcé `publiee`** à la création membre (D4) ; transitions ci-dessous |
 | `nombre_vues` | INT | incrémenté au détail (existant) |
 | `cree_par` | UUID → `iam.utilisateur` | **= utilisateur courant** (jamais fourni par le client) |
-| `expire_at` | TIMESTAMPTZ | **NULL** (pas d'expiration auto — D4) |
+| `expire_at` | TIMESTAMPTZ | **NULL** (pas d'expiration auto, D4) |
 | `created_at` / `updated_at` / `deleted_at` | TIMESTAMPTZ | soft delete |
 
 **Transitions d'état (membre)** :
@@ -76,7 +76,7 @@ Le membre ne peut agir que sur **ses** annonces (`cree_par = courant`, FR-020). 
 ### `social.message` (réutilisée)
 - `contenu` 1..2000 car. (contrainte existante). Le message initial de contact est inséré par l'endpoint `contacter`.
 
-## DTOs backend (`src/models/annonce.rs` — à ajouter)
+## DTOs backend (`src/models/annonce.rs`, à ajouter)
 
 ```rust
 // Création par un membre (multipart : champs + fichiers photos séparés)
@@ -107,7 +107,7 @@ pub struct ContacterAuteurRequest { pub message: String } // 1..2000
 // Mes annonces : variante incluant `etat` et compteur photos.
 ```
 
-## Interfaces frontend (`useMarcheAfricain.ts` — à ajouter)
+## Interfaces frontend (`useMarcheAfricain.ts`, à ajouter)
 
 ```ts
 // Aligner sur AnnonceAPI / AnnonceDetailAPI existants.

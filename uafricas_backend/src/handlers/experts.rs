@@ -33,7 +33,7 @@ fn extraire_utilisateur_id(req: &HttpRequest) -> Option<Uuid> {
 // Endpoints
 // ────────────────────────────────────────────────────────────────
 
-/// GET /api/experts — Liste paginee des experts valides avec filtres
+/// GET /api/experts : Liste paginee des experts valides avec filtres
 pub async fn lister_experts(
     pool: web::Data<PgPool>,
     params: web::Query<ExpertQueryParams>,
@@ -85,7 +85,7 @@ pub async fn lister_experts(
         }
     }
 
-    // Filtre par specialite (FR-046) — le tableau `e.specialites` est un
+    // Filtre par specialite (FR-046) : le tableau `e.specialites` est un
     // text[] de libelles libres saisis par le candidat, sans reference au
     // referentiel : la comparaison est donc insensible a la casse, faute de
     // quoi « realisateur » et « Realisateur » seraient deux metiers distincts.
@@ -109,7 +109,7 @@ pub async fn lister_experts(
     // Un expert n'a QU'UN seul territoire (`u.pays_residence_id`) : les deux zones sont
     // donc déjà disjointes, contrairement aux salles Afrolang (table de liaison
     // multi-territoires) qui exigent une règle d'exclusion. Toute autre valeur
-    // (`tout`, absente) n'applique aucun filtre — les experts sans territoire renseigné
+    // (`tout`, absente) n'applique aucun filtre, les experts sans territoire renseigné
     // ne remontent alors que dans « Tout » (comparaison NULL sur `p.code_iso2`).
     if let Some(ref zone) = params.zone {
         let zone = zone.trim();
@@ -203,7 +203,7 @@ pub async fn lister_experts(
     }))
 }
 
-/// GET /api/experts/{id} — Detail d'un expert par son utilisateur_id.
+/// GET /api/experts/{id} : Detail d'un expert par son utilisateur_id.
 /// Le JWT est optionnel : s'il est présent, `maNote` reflète la note de l'appelant.
 pub async fn obtenir_expert(
     pool: web::Data<PgPool>,
@@ -249,7 +249,7 @@ pub async fn obtenir_expert(
     }))
 }
 
-/// POST /api/experts/{id}/note — Noter un expert (1–5, JWT requis).
+/// POST /api/experts/{id}/note : Noter un expert (1–5, JWT requis).
 /// Upsert d'une note par membre, recalcule la moyenne `iam.expertise.rating`.
 pub async fn noter_expert(
     pool: web::Data<PgPool>,
@@ -333,7 +333,7 @@ pub async fn noter_expert(
     }))
 }
 
-/// POST /api/experts/candidature — Soumettre une candidature expert (JWT requis)
+/// POST /api/experts/candidature : Soumettre une candidature expert (JWT requis)
 pub async fn creer_candidature(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -492,7 +492,7 @@ pub async fn creer_candidature(
     }))
 }
 
-/// GET /api/experts/moi — Candidature active du membre connecte (suivi US3)
+/// GET /api/experts/moi : Candidature active du membre connecte (suivi US3)
 pub async fn ma_candidature(
     pool: web::Data<PgPool>,
     req: HttpRequest,
@@ -520,7 +520,7 @@ pub async fn ma_candidature(
     }))
 }
 
-/// POST /api/experts/cv — Uploader un CV (PDF) pour une candidature d'expertise.
+/// POST /api/experts/cv : Uploader un CV (PDF) pour une candidature d'expertise.
 /// Retourne l'URL à inclure dans le corps de `creer_candidature`.
 pub async fn uploader_cv(
     req: HttpRequest,
@@ -604,7 +604,7 @@ pub async fn uploader_cv(
 }
 
 // ────────────────────────────────────────────────────────────────
-// GET /api/experts/specialites — options du filtre par metier (FR-046)
+// GET /api/experts/specialites : options du filtre par metier (FR-046)
 // ────────────────────────────────────────────────────────────────
 
 /// Les specialites REELLEMENT declarees par les experts valides.

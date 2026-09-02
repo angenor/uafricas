@@ -34,4 +34,4 @@
 - All items passed validation on first iteration.
 - Feature clé de la plateforme avec impact majeur sur l'architecture (schema BDD, algorithme de matching, relations inter-arbres).
 - La phase de planification devra déterminer : algorithme de matching (phonétique, pondération), exécution (synchrone vs async/job), et structure du pont inter-arbres.
-- Les questions de confidentialité (FR-004, SC-007) sont critiques — à valider en planification.
+- Les questions de confidentialité (FR-004, SC-007) sont critiques, à valider en planification.

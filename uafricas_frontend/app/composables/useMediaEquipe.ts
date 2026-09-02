@@ -1,9 +1,9 @@
 /**
- * Équipes éditoriales des supports et des programmes médias — feature 010.
+ * Équipes éditoriales des supports et des programmes médias, feature 010.
  *
  * Le **public** ne passe pas par ces routes : l'équipe voyage dans les payloads
  * de chaîne, de station et de programme, où elle est greffée côté serveur. Ce
- * composable sert l'ÉDITION — repeupler un formulaire, l'enregistrer, et
+ * composable sert l'ÉDITION : repeupler un formulaire, l'enregistrer, et
  * alimenter les suggestions du champ « fonction ».
  *
  * Une prop `base` choisit le préfixe d'URL, à l'image du couple
@@ -43,7 +43,7 @@ export interface MembreEquipeForm {
   territoire: string
   contact: string
   utilisateur_id: string | null
-  /** Nom affiché du compte rattaché — confort d'écran, jamais envoyé. */
+  /** Nom affiché du compte rattaché : confort d'écran, jamais envoyé. */
   compte_libelle?: string
 }
 
@@ -78,7 +78,7 @@ export const versFormulaireEquipe = (membre: MembreEquipeAPI): MembreEquipeForm 
   utilisateur_id: membre.utilisateur_id ?? null,
 })
 
-/** Nom affichable d'un membre — le prénom est facultatif (FR-012). */
+/** Nom affichable d'un membre : le prénom est facultatif (FR-012). */
 export const nomCompletMembre = (
   membre: Pick<MembreEquipeAPI, 'nom' | 'prenom'>,
 ): string => [membre.prenom, membre.nom].filter(Boolean).join(' ').trim()
@@ -92,7 +92,7 @@ export const useMediaEquipe = () => {
   const erreur = ref<string | null>(null)
 
   /**
-   * Le jeton d'accès vit **en mémoire, dans le store** — seul le jeton de
+   * Le jeton d'accès vit **en mémoire, dans le store**, seul le jeton de
    * rafraîchissement est en `localStorage`. Le lire depuis `localStorage`
    * renvoyait donc toujours `null`, et tout `PUT` repartait en 401 : c'est le
    * patron de `useMediaDetention`, pas celui de `useMediaEmissions`, qu'il faut
@@ -132,7 +132,7 @@ export const useMediaEquipe = () => {
 
   /**
    * Remplacement intégral et ordonné : l'ordre du tableau fait foi, une liste
-   * vide supprime toute l'équipe. Les champs laissés blancs partent en `null` —
+   * vide supprime toute l'équipe. Les champs laissés blancs partent en `null`, 
    * une chaîne vide produirait un libellé creux à l'affichage.
    */
   const definirEquipe = async (
@@ -180,7 +180,7 @@ export const useMediaEquipe = () => {
    * Suggestions du champ « fonction » (FR-015). Route **unique et globale** :
    * une fonction déclarée sur une chaîne doit être proposée sur un programme,
    * sinon le référentiel ne se constituerait jamais. Le back-office consomme la
-   * même — dupliquer la liste sous `/api/admin` la ferait diverger.
+   * même : dupliquer la liste sous `/api/admin` la ferait diverger.
    */
   const listerFonctions = async (): Promise<string[]> => {
     try {

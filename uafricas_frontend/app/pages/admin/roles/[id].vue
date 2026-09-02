@@ -80,7 +80,7 @@ onMounted(() => charger())
           </p>
           <div class="flex gap-2 mt-1">
             <span v-if="roleDetail.est_systeme" class="badge badge-warning badge-sm">
-              <font-awesome-icon icon="lock" class="mr-1" /> Systeme
+              <font-awesome-icon icon="lock" class="mr-1" /> Système
             </span>
           </div>
         </div>

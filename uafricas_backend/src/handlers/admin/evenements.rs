@@ -192,7 +192,7 @@ pub async fn creer_evenement(
         }
     }
 
-    // Type d'organisateur (nom propre vs organisation) — important pour les stats.
+    // Type d'organisateur (nom propre vs organisation), important pour les stats.
     let type_organisateur = body.type_organisateur.as_deref().unwrap_or("personnel");
     if !TYPES_ORGANISATEUR_VALIDES.contains(&type_organisateur) {
         return Err(ApiErreur::Validation(

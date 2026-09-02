@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ParcoursTrouvable } from '~/composables/useRetrouvAmis'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: false })
 
 const userStore = useUserStore()
 const { redirigerVersConnexion } = useAuth()
@@ -97,64 +97,61 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div
-      class="group relative bg-cover bg-center"
-      style="background-image: url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=1900&q=80')"
-    >
-      <div class="absolute inset-0 bg-gradient-to-r from-custom-chocolat/90 to-black/70" />
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Mon profil
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Gerez votre visibilite et renseignez votre parcours pour etre retrouve par vos proches.
-          </p>
-        </div>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Mon profil Africonnect"
+        sous-titre="Gérez votre visibilité et renseignez votre parcours pour être retrouvé par vos proches."
+        image="/images/africans/heros/hero-africonnect.jpg"
+      />
+    </template>
+
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Opafrica', vers: '/retrouve-amis' },
+          { libelle: 'Africonnect', vers: '/retrouve-amis' },
+          { libelle: 'Mon profil' },
+        ]"
+      />
+    </template>
+
+    <div class="flex flex-col gap-6">
+      <p
+        v-if="messageSucces"
+        class="flex items-center gap-2 rounded-[10px] border border-af-vert/30 bg-af-vert/5 px-4 py-3 text-[14px]/[1.4] text-af-vert"
+      >
+        <font-awesome-icon icon="fa-solid fa-circle-check" class="shrink-0" />
+        {{ messageSucces }}
+      </p>
+
+      <p
+        v-if="erreur"
+        class="flex items-center gap-2 rounded-[10px] border border-af-live/30 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
+      >
+        <font-awesome-icon icon="fa-solid fa-triangle-exclamation" class="shrink-0" />
+        {{ erreur }}
+      </p>
+
+      <div v-if="chargementPage" class="flex flex-col items-center gap-4 py-24">
+        <font-awesome-icon icon="fa-solid fa-spinner" class="animate-spin text-3xl text-af-chocolat" />
+        <p class="text-[14px]/[1.4] text-af-atone">Chargement du profil…</p>
       </div>
+
+      <RetrouveAmisProfilTrouvableForm
+        v-else
+        :est-trouvable="estTrouvable"
+        :parcours="parcours"
+        :chargement="chargement"
+        @basculer-trouvable="onBasculerTrouvable"
+        @ajouter-parcours="onAjouterParcours"
+        @modifier-parcours="onModifierParcours"
+        @supprimer-parcours="onSupprimerParcours"
+      />
     </div>
 
-    <div class="max-w-6xl mx-auto lg:flex lg:gap-8 px-4 py-8">
+    <template #rail>
       <RetrouveAmisSideBar />
-      <div class="flex-1 max-w-3xl">
-        <!-- Message succes -->
-        <div
-          v-if="messageSucces"
-          class="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg"
-        >
-          <font-awesome-icon :icon="['fas', 'check-circle']" class="mr-2" />
-          {{ messageSucces }}
-        </div>
-
-        <!-- Message erreur -->
-        <div
-          v-if="erreur"
-          class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg"
-        >
-          <font-awesome-icon :icon="['fas', 'exclamation-triangle']" class="mr-2" />
-          {{ erreur }}
-        </div>
-
-        <!-- Chargement -->
-        <div v-if="chargementPage" class="flex flex-col items-center justify-center py-24">
-          <div class="w-12 h-12 border-4 border-amber-200 border-t-amber-700 rounded-full animate-spin mb-4" />
-          <p class="text-gray-500 text-sm">Chargement du profil...</p>
-        </div>
-
-        <!-- Contenu -->
-        <RetrouveAmisProfilTrouvableForm
-          v-else
-          :est-trouvable="estTrouvable"
-          :parcours="parcours"
-          :chargement="chargement"
-          @basculer-trouvable="onBasculerTrouvable"
-          @ajouter-parcours="onAjouterParcours"
-          @modifier-parcours="onModifierParcours"
-          @supprimer-parcours="onSupprimerParcours"
-        />
-      </div>
-    </div>
-  </div>
+    </template>
+  </NuxtLayout>
 </template>

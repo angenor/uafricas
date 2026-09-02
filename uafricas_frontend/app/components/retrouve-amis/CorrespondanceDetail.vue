@@ -96,23 +96,23 @@ const labelValeur = (val: string | number): string => {
 
 // Couleur du score individuel
 const couleurBarre = (valeur: number): string => {
-  if (valeur >= 80) return 'bg-green-500'
-  if (valeur >= 60) return 'bg-amber-500'
-  if (valeur >= 40) return 'bg-orange-500'
-  return 'bg-red-400'
+  if (valeur >= 80) return 'bg-af-vert/50'
+  if (valeur >= 60) return 'bg-af-chocolat/50'
+  if (valeur >= 40) return 'bg-af-chocolat/50'
+  return 'bg-af-live'
 }
 
 // Classes CSS pour les etats
 const etatClasses = computed(() => {
   const classes: Record<string, string> = {
-    en_attente: 'bg-amber-100 text-amber-700 border-amber-200',
-    acceptee_a: 'bg-blue-100 text-blue-700 border-blue-200',
-    acceptee_b: 'bg-blue-100 text-blue-700 border-blue-200',
-    mutuelle: 'bg-green-100 text-green-700 border-green-200',
-    declinee: 'bg-red-100 text-red-700 border-red-200',
-    archivee: 'bg-gray-100 text-gray-500 border-gray-200',
+    en_attente: 'bg-af-chocolat/10 text-af-chocolat border-af-chocolat/20',
+    acceptee_a: 'bg-af-chocolat/10 text-af-chocolat border-af-chocolat/20',
+    acceptee_b: 'bg-af-chocolat/10 text-af-chocolat border-af-chocolat/20',
+    mutuelle: 'bg-af-vert/10 text-af-vert border-af-vert/30',
+    declinee: 'bg-af-live/10 text-af-live border-af-live/30',
+    archivee: 'bg-af-fond text-af-atone border-af-bordure',
   }
-  return classes[props.correspondance.etat] || 'bg-gray-100 text-gray-500 border-gray-200'
+  return classes[props.correspondance.etat] || 'bg-af-fond text-af-atone border-af-bordure'
 })
 
 const etatLabel = computed(() => {
@@ -190,12 +190,12 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+  <div class="bg-white rounded-2xl shadow-md border border-af-bordure overflow-hidden">
     <!-- En-tete -->
-    <div class="bg-linear-to-r from-amber-50 to-orange-50 p-6 border-b border-gray-100">
+    <div class="bg-linear-to-r from-af-chocolat/5 to-af-chocolat/5 p-6 border-b border-af-bordure">
       <div class="flex flex-wrap items-center gap-4">
         <!-- Initiales -->
-        <div class="w-16 h-16 rounded-full bg-amber-700 text-white font-bold flex items-center justify-center text-xl shadow-sm shrink-0">
+        <div class="w-16 h-16 rounded-full bg-af-chocolat text-white font-bold flex items-center justify-center text-xl shadow-sm shrink-0">
           {{ correspondance.resume_anonymise.initiales }}
         </div>
         <div class="flex-1 min-w-0">
@@ -210,21 +210,21 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
             <span
               class="text-xs px-2 py-0.5 rounded-full font-medium"
               :class="correspondance.type_cible === 'avis'
-                ? 'bg-indigo-50 text-indigo-700'
-                : 'bg-violet-50 text-violet-700'"
+                ? 'bg-af-chocolat/5 text-af-chocolat'
+                : 'bg-af-vert/10 text-af-vert'"
             >
               {{ correspondance.type_cible === 'avis' ? 'Via avis' : 'Via profil' }}
             </span>
             <span
               class="text-xs px-2 py-0.5 rounded-full font-medium"
               :class="correspondance.mon_role === 'auteur'
-                ? 'bg-amber-100 text-amber-700'
-                : 'bg-sky-50 text-sky-700'"
+                ? 'bg-af-chocolat/10 text-af-chocolat'
+                : 'bg-af-fond text-af-corps'"
             >
               {{ correspondance.mon_role === 'auteur' ? 'Vous êtes l\'auteur' : 'Vous êtes la cible' }}
             </span>
           </div>
-          <p class="text-sm text-gray-500">
+          <p class="text-sm text-af-atone">
             Correspondance créée le {{ formaterDate(correspondance.created_at) }}
           </p>
         </div>
@@ -234,8 +234,8 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
     <div class="p-6 space-y-8">
       <!-- Detail du score -->
       <section>
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-          <font-awesome-icon :icon="['fas', 'chart-bar']" class="mr-2 text-amber-600" />
+        <h3 class="text-lg font-semibold text-af-encre mb-4">
+          <font-awesome-icon :icon="['fas', 'chart-bar']" class="mr-2 text-af-chocolat" />
           Détail du score
         </h3>
         <div class="space-y-3">
@@ -244,23 +244,23 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
             :key="critere"
             class="flex items-center gap-4"
           >
-            <span class="text-sm text-gray-600 w-28 shrink-0">
+            <span class="text-sm text-af-corps w-28 shrink-0">
               {{ labelCritere(critere as string) }}
             </span>
             <!-- Valeur numerique : barre de progression -->
             <template v-if="typeof valeur === 'number'">
-              <div class="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div class="flex-1 h-3 bg-af-fond rounded-full overflow-hidden">
                 <div
                   class="h-full rounded-full transition-all duration-500"
                   :class="couleurBarre(valeur)"
                   :style="{ width: `${valeur}%` }"
                 />
               </div>
-              <span class="text-sm font-medium text-gray-700 w-12 text-right">{{ valeur }}%</span>
+              <span class="text-sm font-medium text-af-corps w-12 text-right">{{ valeur }}%</span>
             </template>
             <!-- Valeur textuelle : badge lisible -->
             <template v-else>
-              <span class="text-sm font-medium text-gray-700 px-3 py-1 bg-gray-100 rounded-full">
+              <span class="text-sm font-medium text-af-corps px-3 py-1 bg-af-fond rounded-full">
                 {{ labelValeur(valeur) }}
               </span>
             </template>
@@ -270,39 +270,39 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
 
       <!-- Message de reponse publique (recu par l'auteur, envoye par la cible) -->
       <section v-if="correspondance.message_reponse">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-          <font-awesome-icon :icon="['fas', estMessageRecu ? 'comment-dots' : 'paper-plane']" class="mr-2 text-amber-600" />
+        <h3 class="text-lg font-semibold text-af-encre mb-4">
+          <font-awesome-icon :icon="['fas', estMessageRecu ? 'comment-dots' : 'paper-plane']" class="mr-2 text-af-chocolat" />
           {{ estMessageRecu ? 'Message reçu' : 'Votre message envoyé' }}
         </h3>
         <div
           class="border rounded-lg p-5"
-          :class="estMessageRecu ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'"
+          :class="estMessageRecu ? 'bg-af-chocolat/5 border-af-chocolat/20' : 'bg-af-vert/5 border-af-vert/30'"
         >
           <div v-if="correspondance.type_reponse_publique" class="mb-3">
             <span
               class="text-xs px-3 py-1 rounded-full font-medium"
-              :class="estMessageRecu ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'"
+              :class="estMessageRecu ? 'bg-af-chocolat/10 text-af-chocolat' : 'bg-af-vert/10 text-af-vert'"
             >
               {{ labelValeur(correspondance.type_reponse_publique) }}
             </span>
           </div>
-          <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ correspondance.message_reponse }}</p>
+          <p class="text-af-corps leading-relaxed whitespace-pre-line">{{ correspondance.message_reponse }}</p>
         </div>
       </section>
 
       <!-- Timeline -->
       <section>
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-          <font-awesome-icon :icon="['fas', 'timeline']" class="mr-2 text-amber-600" />
+        <h3 class="text-lg font-semibold text-af-encre mb-4">
+          <font-awesome-icon :icon="['fas', 'timeline']" class="mr-2 text-af-chocolat" />
           Progression
         </h3>
-        <div v-if="correspondance.etat === 'declinee' || correspondance.etat === 'archivee'" class="flex items-center gap-3 p-4 rounded-lg bg-gray-50 border border-gray-200">
+        <div v-if="correspondance.etat === 'declinee' || correspondance.etat === 'archivee'" class="flex items-center gap-3 p-4 rounded-lg bg-af-fond border border-af-bordure">
           <font-awesome-icon
             :icon="['fas', correspondance.etat === 'declinee' ? 'xmark-circle' : 'archive']"
             class="text-lg"
-            :class="correspondance.etat === 'declinee' ? 'text-red-500' : 'text-gray-400'"
+            :class="correspondance.etat === 'declinee' ? 'text-af-live' : 'text-af-atone-2'"
           />
-          <span class="text-sm text-gray-600">
+          <span class="text-sm text-af-corps">
             Cette correspondance a été {{ correspondance.etat === 'declinee' ? 'déclinée' : 'archivée' }}.
           </span>
         </div>
@@ -313,8 +313,8 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
               <div
                 class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors"
                 :class="idx <= indexEtatActuel
-                  ? 'bg-amber-700 border-amber-700 text-white'
-                  : 'bg-white border-gray-300 text-gray-400'"
+                  ? 'bg-af-chocolat border-af-chocolat text-white'
+                  : 'bg-white border-af-bordure text-af-atone-2'"
               >
                 <font-awesome-icon
                   v-if="idx <= indexEtatActuel"
@@ -325,7 +325,7 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
               </div>
               <span
                 class="text-xs mt-2 text-center max-w-20"
-                :class="idx <= indexEtatActuel ? 'text-amber-700 font-medium' : 'text-gray-400'"
+                :class="idx <= indexEtatActuel ? 'text-af-chocolat font-medium' : 'text-af-atone-2'"
               >
                 {{ etape.label }}
               </span>
@@ -334,7 +334,7 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
             <div
               v-if="idx < etatsTimeline.length - 1"
               class="flex-1 h-0.5 mb-6 mx-1"
-              :class="idx < indexEtatActuel ? 'bg-amber-700' : 'bg-gray-200'"
+              :class="idx < indexEtatActuel ? 'bg-af-chocolat' : 'bg-af-bordure'"
             />
           </template>
         </div>
@@ -342,24 +342,24 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
 
       <!-- Resume anonymise -->
       <section v-if="correspondance.resume_anonymise.ville || correspondance.resume_anonymise.periode || correspondance.resume_anonymise.criteres_communs?.length">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-          <font-awesome-icon :icon="['fas', 'user-secret']" class="mr-2 text-amber-600" />
+        <h3 class="text-lg font-semibold text-af-encre mb-4">
+          <font-awesome-icon :icon="['fas', 'user-secret']" class="mr-2 text-af-chocolat" />
           Résumé anonymisé
         </h3>
-        <div class="bg-gray-50 rounded-lg p-4 space-y-2">
-          <p v-if="correspondance.resume_anonymise.ville" class="text-sm text-gray-600">
-            <font-awesome-icon :icon="['fas', 'location-dot']" class="w-4 mr-2 text-green-600" />
+        <div class="bg-af-fond rounded-lg p-4 space-y-2">
+          <p v-if="correspondance.resume_anonymise.ville" class="text-sm text-af-corps">
+            <font-awesome-icon :icon="['fas', 'location-dot']" class="w-4 mr-2 text-af-vert" />
             {{ correspondance.resume_anonymise.ville }}
           </p>
-          <p v-if="correspondance.resume_anonymise.periode" class="text-sm text-gray-600">
-            <font-awesome-icon :icon="['fas', 'calendar']" class="w-4 mr-2 text-amber-600" />
+          <p v-if="correspondance.resume_anonymise.periode" class="text-sm text-af-corps">
+            <font-awesome-icon :icon="['fas', 'calendar']" class="w-4 mr-2 text-af-chocolat" />
             {{ correspondance.resume_anonymise.periode }}
           </p>
           <div v-if="correspondance.resume_anonymise.criteres_communs?.length" class="flex flex-wrap gap-2 mt-2">
             <span
               v-for="c in correspondance.resume_anonymise.criteres_communs"
               :key="c"
-              class="text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-700 font-medium"
+              class="text-xs px-2.5 py-1 rounded-full bg-af-vert/10 text-af-vert font-medium"
             >
               {{ c }}
             </span>
@@ -369,50 +369,50 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
 
       <!-- Coordonnees partagees (etat mutuelle) -->
       <section v-if="correspondance.etat === 'mutuelle' && correspondance.coordonnees_partagees">
-        <h3 class="text-lg font-semibold text-green-700 mb-4">
+        <h3 class="text-lg font-semibold text-af-vert mb-4">
           <font-awesome-icon :icon="['fas', 'address-book']" class="mr-2" />
           Coordonnées partagées
         </h3>
-        <div class="bg-green-50 border border-green-200 rounded-lg p-5 space-y-3">
+        <div class="bg-af-vert/5 border border-af-vert/30 rounded-lg p-5 space-y-3">
           <a
             v-if="correspondance.coordonnees_partagees.email"
             :href="`mailto:${correspondance.coordonnees_partagees.email}`"
             class="flex items-center gap-3 group"
           >
-            <font-awesome-icon :icon="['fas', 'envelope']" class="text-green-600 w-5" />
-            <span class="text-sm text-gray-800 group-hover:text-green-700 group-hover:underline">{{ correspondance.coordonnees_partagees.email }}</span>
+            <font-awesome-icon :icon="['fas', 'envelope']" class="text-af-vert w-5" />
+            <span class="text-sm text-af-encre group-hover:text-af-vert group-hover:underline">{{ correspondance.coordonnees_partagees.email }}</span>
           </a>
           <a
             v-if="correspondance.coordonnees_partagees.telephone"
             :href="`tel:${correspondance.coordonnees_partagees.telephone}`"
             class="flex items-center gap-3 group"
           >
-            <font-awesome-icon :icon="['fas', 'phone']" class="text-green-600 w-5" />
-            <span class="text-sm text-gray-800 group-hover:text-green-700 group-hover:underline">{{ correspondance.coordonnees_partagees.telephone }}</span>
+            <font-awesome-icon :icon="['fas', 'phone']" class="text-af-vert w-5" />
+            <span class="text-sm text-af-encre group-hover:text-af-vert group-hover:underline">{{ correspondance.coordonnees_partagees.telephone }}</span>
           </a>
           <NuxtLink
             v-if="correspondance.coordonnees_partagees.messagerie && correspondance.coordonnees_partagees.messagerie_utilisateur_id"
             :to="`/profil/${correspondance.coordonnees_partagees.messagerie_utilisateur_id}`"
             class="flex items-center gap-3 group"
           >
-            <font-awesome-icon :icon="['fas', 'comment-dots']" class="text-green-600 w-5" />
-            <span class="text-sm text-gray-800 group-hover:text-green-700 group-hover:underline">Contacter via la messagerie interne</span>
+            <font-awesome-icon :icon="['fas', 'comment-dots']" class="text-af-vert w-5" />
+            <span class="text-sm text-af-encre group-hover:text-af-vert group-hover:underline">Contacter via la messagerie interne</span>
           </NuxtLink>
         </div>
       </section>
 
       <!-- Actions : Accepter / Refuser -->
-      <section v-if="peutAgir" class="border-t border-gray-100 pt-6">
+      <section v-if="peutAgir" class="border-t border-af-bordure pt-6">
         <div v-if="!afficherAcceptation" class="flex items-center gap-4">
           <button
-            class="px-6 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
+            class="px-6 py-2.5 bg-af-vert text-white font-medium rounded-lg hover:bg-af-vert transition-colors cursor-pointer"
             @click="afficherAcceptation = true"
           >
             <font-awesome-icon :icon="['fas', 'handshake']" class="mr-2" />
             Accepter
           </button>
           <button
-            class="px-6 py-2.5 bg-white text-red-600 font-medium rounded-lg border border-red-200 hover:bg-red-50 transition-colors cursor-pointer"
+            class="px-6 py-2.5 bg-white text-af-live font-medium rounded-lg border border-af-live/30 hover:bg-af-live/5 transition-colors cursor-pointer"
             @click="onRefuser"
           >
             <font-awesome-icon :icon="['fas', 'xmark']" class="mr-2" />
@@ -421,8 +421,8 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
         </div>
 
         <!-- Formulaire d'acceptation inline -->
-        <div v-else class="bg-green-50 border border-green-200 rounded-lg p-5">
-          <h4 class="text-sm font-semibold text-green-800 mb-3">
+        <div v-else class="bg-af-vert/5 border border-af-vert/30 rounded-lg p-5">
+          <h4 class="text-sm font-semibold text-af-vert mb-3">
             Choisissez les coordonnées à partager :
           </h4>
           <div class="space-y-2 mb-4">
@@ -430,43 +430,43 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
               <input
                 v-model="coordonnees.email"
                 type="checkbox"
-                class="w-4 h-4 accent-green-600"
+                class="w-4 h-4 accent-af-vert"
               />
-              <font-awesome-icon :icon="['fas', 'envelope']" class="text-green-600 w-4" />
-              <span class="text-sm text-gray-700">Adresse e-mail</span>
+              <font-awesome-icon :icon="['fas', 'envelope']" class="text-af-vert w-4" />
+              <span class="text-sm text-af-corps">Adresse e-mail</span>
             </label>
             <label class="flex items-center gap-3 cursor-pointer">
               <input
                 v-model="coordonnees.telephone"
                 type="checkbox"
-                class="w-4 h-4 accent-green-600"
+                class="w-4 h-4 accent-af-vert"
               />
-              <font-awesome-icon :icon="['fas', 'phone']" class="text-green-600 w-4" />
-              <span class="text-sm text-gray-700">Téléphone</span>
+              <font-awesome-icon :icon="['fas', 'phone']" class="text-af-vert w-4" />
+              <span class="text-sm text-af-corps">Téléphone</span>
             </label>
             <label class="flex items-center gap-3 cursor-pointer">
               <input
                 v-model="coordonnees.messagerie"
                 type="checkbox"
-                class="w-4 h-4 accent-green-600"
+                class="w-4 h-4 accent-af-vert"
               />
-              <font-awesome-icon :icon="['fas', 'comment-dots']" class="text-green-600 w-4" />
-              <span class="text-sm text-gray-700">Messagerie interne</span>
+              <font-awesome-icon :icon="['fas', 'comment-dots']" class="text-af-vert w-4" />
+              <span class="text-sm text-af-corps">Messagerie interne</span>
             </label>
           </div>
-          <p v-if="!coordonneesValides" class="text-xs text-red-500 mb-3">
+          <p v-if="!coordonneesValides" class="text-xs text-af-live mb-3">
             Veuillez sélectionner au moins une coordonnée.
           </p>
           <div class="flex items-center gap-3">
             <button
-              class="px-5 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              class="px-5 py-2 bg-af-vert text-white text-sm font-medium rounded-lg hover:bg-af-vert transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               :disabled="!coordonneesValides"
               @click="onAccepter"
             >
               Confirmer l'acceptation
             </button>
             <button
-              class="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
+              class="px-5 py-2 text-sm text-af-corps hover:text-af-encre transition-colors cursor-pointer"
               @click="afficherAcceptation = false"
             >
               Annuler
@@ -479,33 +479,33 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
       <div
         v-if="correspondance.expire_at"
         class="flex items-center text-sm"
-        :class="estExpiree ? 'text-red-500' : 'text-gray-400'"
+        :class="estExpiree ? 'text-af-live' : 'text-af-atone-2'"
       >
         <font-awesome-icon :icon="['fas', 'clock']" class="w-4 mr-2" />
         <span v-if="estExpiree">Expirée le {{ formaterDate(correspondance.expire_at) }}</span>
         <span v-else>
           Expire le {{ formaterDate(correspondance.expire_at) }}
-          <span class="text-gray-400">(dans {{ joursAvantExpiration }} jour{{ joursAvantExpiration && joursAvantExpiration > 1 ? 's' : '' }})</span>
+          <span class="text-af-atone-2">(dans {{ joursAvantExpiration }} jour{{ joursAvantExpiration && joursAvantExpiration > 1 ? 's' : '' }})</span>
         </span>
       </div>
 
       <!-- Signalement -->
-      <section class="border-t border-gray-100 pt-4">
+      <section class="border-t border-af-bordure pt-4">
         <button
           v-if="!afficherSignalement"
-          class="text-xs text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+          class="text-xs text-af-atone-2 hover:text-af-live transition-colors cursor-pointer"
           @click="afficherSignalement = true"
         >
           <font-awesome-icon :icon="['fas', 'flag']" class="mr-1" />
           Signaler cet avis
         </button>
 
-        <div v-else class="bg-red-50 border border-red-200 rounded-lg p-5 mt-2">
-          <h4 class="text-sm font-semibold text-red-800 mb-3">Signaler cet avis</h4>
+        <div v-else class="bg-af-live/5 border border-af-live/30 rounded-lg p-5 mt-2">
+          <h4 class="text-sm font-semibold text-af-live mb-3">Signaler cet avis</h4>
           <div class="space-y-3">
             <select
               v-model="motifSignalement"
-              class="w-full px-3 py-2 bg-white border border-red-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400"
+              class="w-full px-3 py-2 bg-white border border-af-live/30 rounded-lg text-sm text-af-corps focus:outline-none focus:ring-2 focus:ring-af-live focus:border-af-live"
             >
               <option v-for="m in MOTIFS_SIGNALEMENT" :key="m.value" :value="m.value">
                 {{ m.label }}
@@ -515,17 +515,17 @@ const estExpiree = computed(() => joursAvantExpiration.value !== null && joursAv
               v-model="descriptionSignalement"
               rows="3"
               placeholder="Description optionnelle..."
-              class="w-full px-3 py-2 bg-white border border-red-200 rounded-lg text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400"
+              class="w-full px-3 py-2 bg-white border border-af-live/30 rounded-lg text-sm text-af-corps resize-none focus:outline-none focus:ring-2 focus:ring-af-live focus:border-af-live"
             />
             <div class="flex items-center gap-3">
               <button
-                class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+                class="px-4 py-2 bg-af-live text-white text-sm font-medium rounded-lg hover:opacity-90 transition-colors cursor-pointer"
                 @click="onSignaler"
               >
                 Envoyer le signalement
               </button>
               <button
-                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
+                class="px-4 py-2 text-sm text-af-corps hover:text-af-encre transition-colors cursor-pointer"
                 @click="afficherSignalement = false"
               >
                 Annuler

@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Modèles — Notifications et doublons
+// Modèles : Notifications et doublons
 // ════════════════════════════════════════════════════════════════════════════
 
 use chrono::{DateTime, Utc};
@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 // ── Types de notifications Afrolang (feature 005, research Décision 10) ──
 // Utilisés comme clés de `type` dans la table notifications (quelle qu'elle soit)
-// — centralisées ici pour éviter les typos et garantir la cohérence entre
+// centralisées ici pour éviter les typos et garantir la cohérence entre
 // handlers producteurs et UI consommatrice.
 
 pub mod afrolang {

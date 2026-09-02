@@ -53,7 +53,9 @@ const localisation = computed(() =>
         :alt="site.nom"
         class="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
       />
-      <span v-else class="block h-full w-full bg-gradient-to-br from-custom-chocolat to-custom-green" />
+      <span v-else class="grid h-full w-full place-items-center bg-af-fond">
+        <font-awesome-icon icon="fa-solid fa-location-dot" class="text-3xl text-af-atone-2" />
+      </span>
       <span
         v-if="galerie.length > 1"
         class="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded bg-black/55 px-2 py-1 text-xs font-medium text-white"
@@ -63,7 +65,7 @@ const localisation = computed(() =>
       </span>
       <span
         v-if="site.verifie"
-        class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-custom-green shadow-sm"
+        class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[12px]/[1.4] font-bold text-af-vert shadow-sm"
       >
         <font-awesome-icon :icon="['fas', 'circle-check']" class="h-3.5 w-3.5" />
         Vérifié
@@ -78,21 +80,21 @@ const localisation = computed(() =>
 
     <div class="flex flex-1 flex-col p-4">
       <div class="mb-1 flex items-start justify-between gap-2">
-        <h4 class="font-oswald text-lg font-semibold leading-tight text-gray-900">{{ site.nom }}</h4>
+        <h4 class="text-[17px]/[1.4] font-bold text-af-encre">{{ site.nom }}</h4>
         <span
           v-if="site.nombre_avis > 0 && site.note_moyenne !== null"
           class="inline-flex shrink-0 items-center gap-1 text-sm"
           :title="`${site.nombre_avis} avis`"
         >
           <font-awesome-icon :icon="['fas', 'star']" class="h-3.5 w-3.5 text-amber-400" />
-          <span class="font-semibold text-gray-900">{{ site.note_moyenne.toFixed(1) }}</span>
+          <span class="font-bold text-af-encre">{{ site.note_moyenne.toFixed(1) }}</span>
           <span class="text-xs text-gray-400">({{ site.nombre_avis }})</span>
         </span>
       </div>
 
       <div class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
         <span v-if="localisation" class="inline-flex items-center gap-1">
-          <font-awesome-icon :icon="['fas', 'location-dot']" class="h-3 w-3 text-custom-chocolat" />
+          <font-awesome-icon :icon="['fas', 'location-dot']" class="h-3 w-3 text-af-atone" />
           {{ localisation }}
         </span>
         <span v-if="site.gestionnaire" class="inline-flex items-center gap-1">
@@ -101,35 +103,35 @@ const localisation = computed(() =>
         </span>
       </div>
 
-      <p v-if="site.info_pertinente" class="mb-3 line-clamp-2 text-sm text-gray-700">{{ site.info_pertinente }}</p>
+      <p v-if="site.info_pertinente" class="mb-3 line-clamp-2 text-[14px]/[1.4] text-af-corps">{{ site.info_pertinente }}</p>
       <p v-else-if="site.description" class="mb-3 line-clamp-2 text-sm text-gray-600">{{ site.description }}</p>
 
       <!-- Bandeau de suspension (>10 signalements) -->
       <div
         v-if="site.suspendu"
-        class="mb-3 flex items-start gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-800"
+        class="mb-3 flex items-start gap-2 rounded-[10px] border border-af-live/30 bg-af-live/5 px-3 py-2 text-[12px]/[1.4] text-af-live"
       >
         <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="h-3.5 w-3.5 mt-0.5 shrink-0" />
-        <span>Contribution suspendue — en cours de vérification.</span>
+        <span>Contribution suspendue : en cours de vérification.</span>
       </div>
 
       <!-- Barre d'actions compacte -->
-      <div class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-gray-100 pt-3 text-xs font-medium">
+      <div class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-af-bordure pt-3 text-xs font-medium">
         <button
           type="button"
-          class="inline-flex items-center gap-1 text-gray-700 hover:text-custom-chocolat"
+          class="inline-flex items-center gap-1 text-af-corps transition hover:text-af-chocolat"
           @click="ouvrirDetail"
         >
-          <font-awesome-icon :icon="['fas', 'circle-info']" class="h-3.5 w-3.5 text-custom-chocolat" />
+          <font-awesome-icon :icon="['fas', 'circle-info']" class="h-3.5 w-3.5" />
           Détails<span v-if="site.nombre_avis > 0"> &amp; avis ({{ site.nombre_avis }})</span>
         </button>
         <span class="ml-auto flex items-center gap-3">
           <template v-if="!site.suspendu">
-            <button type="button" class="inline-flex items-center gap-1 text-custom-chocolat hover:underline" @click="emit('edit', site)">
+            <button type="button" class="inline-flex items-center gap-1 text-af-corps transition hover:text-af-chocolat" @click="emit('edit', site)">
               <font-awesome-icon :icon="['fas', 'pen-to-square']" class="h-3.5 w-3.5" />
               Modifier
             </button>
-            <button type="button" class="inline-flex items-center gap-1 text-red-600 hover:underline" @click="emit('delete', site)">
+            <button type="button" class="inline-flex items-center gap-1 text-af-corps transition hover:text-af-live" @click="emit('delete', site)">
               <font-awesome-icon :icon="['fas', 'trash']" class="h-3.5 w-3.5" />
               Supprimer
             </button>

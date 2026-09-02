@@ -1,4 +1,4 @@
-# Phase 1 — Data Model
+# Phase 1 : Data Model
 
 **Feature** : 001-admin-salles-publiques
 **Schéma cible** : `afrolang` (existant, étendu)
@@ -24,9 +24,9 @@ Transitions autorisées (appliquées côté backend) :
 | `en_attente` | `validee` | admin plateforme + transaction crée la salle |
 | `en_attente` | `rejetee` | admin plateforme + commentaire obligatoire |
 | `en_attente` | `retiree` | auteur lui-même |
-| `validee` | — | terminal |
-| `rejetee` | — | terminal |
-| `retiree` | — | terminal |
+| `validee` | : | terminal |
+| `rejetee` | : | terminal |
+| `retiree` | : | terminal |
 
 ---
 
@@ -84,7 +84,7 @@ CREATE INDEX idx_proposition_salle_auteur
 
 **Règles de gestion** (appliquées dans `handlers/afrolang.rs`) :
 - Soumission : refuser 409 si une `afrolang.salle` active existe déjà pour ce `groupe_ethnique_id` (cohérence avec `idx_afrolang_salle_groupe_unique`).
-- Soumission : rate-limit anti-spam (Décision 6 research.md) — refuser 429 si ≥ 5 rejets dans les 7 derniers jours pour cet auteur.
+- Soumission : rate-limit anti-spam (Décision 6 research.md), refuser 429 si ≥ 5 rejets dans les 7 derniers jours pour cet auteur.
 - Validation : transaction atomique (Décision 3 research.md).
 - Retrait : autorisé seulement si `statut='en_attente'` et appelé par l'auteur.
 
@@ -95,7 +95,7 @@ CREATE INDEX idx_proposition_salle_auteur
 ```sql
 -- Rôle « administrateur de cette salle publique » : DISTINCT de salle_moderateur.
 -- Les capacités effectives sont reportées (FR-019). Cette table est le réceptacle
--- d'autorisation — toute future capacité doit s'appuyer sur la fonction helper
+-- d'autorisation : toute future capacité doit s'appuyer sur la fonction helper
 -- est_administrateur_salle(salle_id, user_id) côté Rust.
 
 CREATE TABLE afrolang.salle_administrateur (

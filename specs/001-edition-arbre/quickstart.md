@@ -28,7 +28,7 @@ Pas de nouvelle dépendance npm ni Cargo. Cette feature réutilise les composant
 ## Architecture des modifications
 
 ```
-visualisation.vue (page — orchestrateur des mutations)
+visualisation.vue (page : orchestrateur des mutations)
 ├── BarreOutils.vue (+ compteur incomplétude)
 ├── ArbreGraphe.vue (inchangé)
 │   └── NoeudPersonne.vue (+ badge incomplétude)

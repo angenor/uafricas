@@ -549,7 +549,7 @@ onMounted(() => charger())
         <div class="card-body">
           <div class="flex items-center justify-between">
             <h3 class="card-title text-base">
-              Segments — {{ LANGUES_LABELS[pisteSelectionnee.langue] || pisteSelectionnee.langue }}
+              Segments, {{ LANGUES_LABELS[pisteSelectionnee.langue] || pisteSelectionnee.langue }}
             </h3>
             <div class="flex gap-2">
               <button
@@ -638,7 +638,7 @@ onMounted(() => charger())
                   </button>
                 </div>
                 <div v-else class="text-xs text-warning mt-1">
-                  <font-awesome-icon icon="exclamation-triangle" /> Pas de timings mot — cliquez sur <font-awesome-icon icon="stopwatch" /> pour marquer
+                  <font-awesome-icon icon="exclamation-triangle" /> Pas de timings mot, cliquez sur <font-awesome-icon icon="stopwatch" /> pour marquer
                 </div>
               </div>
 

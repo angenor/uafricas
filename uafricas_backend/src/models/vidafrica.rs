@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-// ── Vidéo publique — Liste ───────────────────────────────────
+// ── Vidéo publique : Liste ───────────────────────────────────
 
 #[derive(Debug, Serialize)]
 pub struct VideoPubliqueListeResponse {
@@ -28,7 +28,7 @@ pub struct VideoPubliqueListeRow {
     pub created_at: DateTime<Utc>,
 }
 
-// ── Vidéo publique — Détail ──────────────────────────────────
+// ── Vidéo publique : Détail ──────────────────────────────────
 
 #[derive(Debug, Serialize)]
 pub struct VideoPubliqueDetailResponse {

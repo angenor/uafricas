@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Récompenses par points — barème paramétrable & espace « Mon engagement »
+# Specification Quality Checklist: Récompenses par points, barème paramétrable & espace « Mon engagement »
 
 **Purpose**: Valider la complétude et la qualité de la spécification avant de passer à la planification
 **Created**: 2026-07-29

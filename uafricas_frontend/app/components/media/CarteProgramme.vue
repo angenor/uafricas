@@ -1,10 +1,17 @@
 <script setup lang="ts">
 /**
- * Carte d'un **programme** dans une section de vitrine — feature 010.
+ * `<component :is="'NuxtLink'">` ne résout PAS le composant : la chaîne est
+ * rendue telle quelle, et le navigateur reçoit une balise `<NuxtLink>` inerte
+ * un lien qui n'en est pas un. `resolveComponent` le résout pour de bon.
+ */
+const LienNuxt = resolveComponent('NuxtLink')
+
+/**
+ * Carte d'un **programme** dans une section de vitrine, feature 010.
  *
  * Trois informations, pas une de plus : couverture, nom, description tronquée
  * par des points de suspension (FR-004). La vitrine annonce une offre
- * éditoriale ; le détail — périodicité, équipe, vidéos — appartient à la page du
+ * éditoriale ; le détail : périodicité, équipe, vidéos, appartient à la page du
  * programme, vers laquelle la carte mène (FR-006).
  *
  * Remplace `CarteEmission.vue`, qui annonçait un décompte d'épisodes et une
@@ -16,7 +23,7 @@
 import type { TvEmission } from '~/composables/useTelevision'
 import type { EmissionRadio } from '~/composables/useStationsRadio'
 
-/** Forme minimale commune aux deux familles — la carte n'a besoin de rien d'autre. */
+/** Forme minimale commune aux deux familles, la carte n'a besoin de rien d'autre. */
 type ProgrammeCarte = Pick<TvEmission | EmissionRadio, 'id' | 'slug' | 'titre' | 'description'> & {
   banner?: string
   cover?: string
@@ -24,7 +31,7 @@ type ProgrammeCarte = Pick<TvEmission | EmissionRadio, 'id' | 'slug' | 'titre' |
 
 const props = withDefaults(defineProps<{
   programme: ProgrammeCarte
-  /** `chaine_tv` ou `station_radio` — décide de l'adresse et de l'icône de repli. */
+  /** `chaine_tv` ou `station_radio` : décide de l'adresse et de l'icône de repli. */
   typeSupport?: 'chaine_tv' | 'station_radio'
 }>(), {
   typeSupport: 'chaine_tv',
@@ -47,27 +54,17 @@ const iconeRepli = computed<[string, string]>(() =>
   props.typeSupport === 'station_radio' ? ['fas', 'microphone'] : ['fas', 'layer-group'],
 )
 
-/**
- * `<component :is>` attend un COMPOSANT, pas son nom.
- *
- * La chaîne `'NuxtLink'` n'est résolue que si le composant est enregistré sur
- * l'instance d'application ; ce n'est pas le cas ici, où l'auto-import de Nuxt
- * agit à la compilation du gabarit. Vue ne signale rien : il rend un élément
- * personnalisé `<nuxtlink>`, inerte, qui a exactement l'apparence d'un lien et
- * n'en est pas un. `resolveComponent` fait la résolution une fois, au `setup`.
- */
-const Lien = resolveComponent('NuxtLink')
 </script>
 
 <template>
   <!-- La bascule vers `div` évite de dupliquer tout le balisage pour le seul
        cas sans slug. -->
   <component
-    :is="lien ? Lien : 'div'"
+    :is="lien ? LienNuxt : 'div'"
     :to="lien || undefined"
     class="group block w-full text-left"
   >
-    <div class="relative aspect-video overflow-hidden rounded-lg bg-neutral-800">
+    <div class="relative aspect-video overflow-hidden rounded-lg bg-af-fond">
       <img
         v-if="couverture"
         :src="couverture"
@@ -76,18 +73,18 @@ const Lien = resolveComponent('NuxtLink')
         class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
       >
       <span v-else class="flex h-full w-full items-center justify-center">
-        <font-awesome-icon :icon="iconeRepli" class="text-3xl text-neutral-600" />
+        <font-awesome-icon :icon="iconeRepli" class="text-3xl text-af-atone-2" />
       </span>
     </div>
 
-    <h4 class="mt-2 font-semibold text-white transition-colors group-hover:text-custom-chocolat">
+    <h4 class="mt-2 font-semibold text-af-encre transition-colors group-hover:text-af-chocolat">
       {{ programme.titre }}
     </h4>
 
     <!-- Ellipse figée, sans commande de dépliage : en vitrine, FR-003 demande
-         des points de suspension et non un « voir plus » — celui-là est réservé
+         des points de suspension et non un « voir plus », celui-là est réservé
          aux pages de détail. -->
-    <p v-if="programme.description" class="mt-1 text-sm leading-snug text-gray-400 line-clamp-3">
+    <p v-if="programme.description" class="mt-1 text-sm leading-snug text-af-corps line-clamp-3">
       {{ programme.description }}
     </p>
   </component>

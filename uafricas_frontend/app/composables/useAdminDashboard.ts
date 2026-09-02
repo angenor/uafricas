@@ -33,7 +33,7 @@ export const useAdminDashboard = () => {
       if (response.success && response.data) activiteRecente.value = response.data
     }
     catch {
-      // silently fail — non-critical
+      // silently fail : non-critical
     }
   }
 
@@ -46,7 +46,7 @@ export const useAdminDashboard = () => {
       if (response.success && response.data) tendances.value = response.data
     }
     catch {
-      // silently fail — non-critical
+      // silently fail : non-critical
     }
   }
 

@@ -1,4 +1,4 @@
-# Contrat — Vérification d'un site (badge « Vérifié »)
+# Contrat : Vérification d'un site (badge « Vérifié »)
 
 Réservé à l'administration (FR-010/FR-012). Enveloppe `{ success, data, error }`.
 

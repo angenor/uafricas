@@ -3,7 +3,7 @@
 **Input**: Design documents from `/specs/001-demande-expertise/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/api.md, quickstart.md
 
-**Tests**: Aucun framework de test configuré dans le projet (Constitution — « pas de linting, testing ni CI/CD »). Aucune tâche de test automatisé générée ; la validation se fait manuellement via `quickstart.md`.
+**Tests**: Aucun framework de test configuré dans le projet (Constitution, « pas de linting, testing ni CI/CD »). Aucune tâche de test automatisé générée ; la validation se fait manuellement via `quickstart.md`.
 
 **Organization**: Tâches regroupées par user story pour une livraison incrémentale indépendante.
 
@@ -22,7 +22,7 @@
 
 ## Phase 1: Setup (Infrastructure partagée)
 
-**Purpose**: Préparation minimale — le projet existe déjà, aucune initialisation lourde.
+**Purpose**: Préparation minimale : le projet existe déjà, aucune initialisation lourde.
 
 - [X] T001 [P] Ajouter les icônes FontAwesome requises (`faUserTie`, `faHandHoldingHeart`, `faCheck`, `faXmark`, `faClock`) dans `uafricas_frontend/app/plugins/fontawesome.ts` via `library.add()`
 
@@ -30,7 +30,7 @@
 
 ## Phase 2: Foundational (Prérequis bloquants)
 
-**Purpose**: Migration SQL et permissions — base partagée par US1, US2 et US3 (SQL source de vérité, Principe III).
+**Purpose**: Migration SQL et permissions, base partagée par US1, US2 et US3 (SQL source de vérité, Principe III).
 
 **⚠️ CRITICAL**: Aucune user story ne peut être finalisée avant la fin de cette phase.
 
@@ -38,7 +38,7 @@
 - [X] T003 Ajouter les permissions `expertise.voir` et `expertise.valider` dans `uafricas_backend/doc/bd/schemas/15_seed.sql` (catalogue `iam.permission`)
 - [X] T004 Appliquer la migration en dev (`docker compose down -v && docker compose up -d`) ou exécuter le SQL manuel décrit dans `quickstart.md`, puis vérifier la structure via Adminer
 
-**Checkpoint**: Schéma `iam.expertise` migré + permissions seedées — les user stories peuvent démarrer.
+**Checkpoint**: Schéma `iam.expertise` migré + permissions seedées, les user stories peuvent démarrer.
 
 ---
 
@@ -57,9 +57,9 @@
 
 - [X] T007 [US1] Remplacer la cible du lien « Apporter mon expertise » de `/experts` vers `/devenir-expert` dans `uafricas_frontend/app/components/layout/BoutonLateralGauche.vue`
 - [X] T008 [US1] Étendre `useExperts.ts` : ajouter la mise à jour du profil de base (appel `PUT /api/auth/profil` + `POST /api/auth/profil/photo`) et conserver `creerCandidature` dans `uafricas_frontend/app/composables/useExperts.ts`
-- [X] T009 [US1] Créer la page formulaire publique `uafricas_frontend/app/pages/devenir-expert.vue` (Tailwind v4 pur — Principe VI) : champs profil (photo, fonction, pays) + expertise (domaine, biographie, années, situations, portfolio), garde d'authentification avec redirection `?redirect=/devenir-expert`, validation client, message de confirmation, et état « demande déjà en attente »
+- [X] T009 [US1] Créer la page formulaire publique `uafricas_frontend/app/pages/devenir-expert.vue` (Tailwind v4 pur, Principe VI) : champs profil (photo, fonction, pays) + expertise (domaine, biographie, années, situations, portfolio), garde d'authentification avec redirection `?redirect=/devenir-expert`, validation client, message de confirmation, et état « demande déjà en attente »
 
-**Checkpoint**: US1 livrable — un membre peut soumettre une demande complète ; rien n'apparaît encore sur `/experts`.
+**Checkpoint**: US1 livrable : un membre peut soumettre une demande complète ; rien n'apparaît encore sur `/experts`.
 
 ---
 
@@ -86,7 +86,7 @@
 - [X] T019 [US2] Créer la page admin `uafricas_frontend/app/pages/admin/experts/index.vue` (daisyUI) : liste filtrable par statut + recherche + pagination, lignes cliquables vers le détail
 - [X] T020 [US2] Créer la page admin `uafricas_frontend/app/pages/admin/experts/[id].vue` (daisyUI) : détail candidat + expertise, boutons Valider / Refuser (modal avec commentaire obligatoire pour le refus), affichage de la décision si déjà traitée
 
-**Checkpoint**: US2 livrable — workflow de modération complet ; un expert validé apparaît sur `/experts`.
+**Checkpoint**: US2 livrable : workflow de modération complet ; un expert validé apparaît sur `/experts`.
 
 ---
 
@@ -100,7 +100,7 @@
 
 - [X] T021 [US3] Ajouter le DTO « ma candidature » (statut, `commentaire_admin`, `date_validation` + champs expertise) dans `uafricas_backend/src/models/expert.rs`
 - [X] T022 [US3] Ajouter le handler `ma_candidature` (`GET /api/experts/moi`, JWT, renvoie la candidature active ou `data: null`) dans `uafricas_backend/src/handlers/experts.rs`
-- [X] T023 [US3] Modifier `creer_candidature` dans `uafricas_backend/src/handlers/experts.rs` : bloquer `409` uniquement si demande active `en_attente` **ou** `valide` ; si demande active `refuse`, la soft-deleter puis insérer la nouvelle ligne `en_attente` (même transaction) — implémente FR-006 + FR-015
+- [X] T023 [US3] Modifier `creer_candidature` dans `uafricas_backend/src/handlers/experts.rs` : bloquer `409` uniquement si demande active `en_attente` **ou** `valide` ; si demande active `refuse`, la soft-deleter puis insérer la nouvelle ligne `en_attente` (même transaction), implémente FR-006 + FR-015
 - [X] T024 [US3] Enregistrer la route `GET /api/experts/moi` dans `uafricas_backend/src/routes.rs`
 
 ### Frontend (US3)
@@ -108,7 +108,7 @@
 - [X] T025 [US3] Étendre `useExperts.ts` avec `obtenirMaCandidature` (`GET /api/experts/moi`) dans `uafricas_frontend/app/composables/useExperts.ts`
 - [X] T026 [US3] Ajouter un onglet « Expertise » dans `uafricas_frontend/app/pages/mon-compte/profil.vue` : badge de statut coloré, commentaire admin si refusé, lien « Soumettre une nouvelle demande » (→ `/devenir-expert`), lien vers la fiche publique si validé
 
-**Checkpoint**: US3 livrable — transparence et re-soumission opérationnelles.
+**Checkpoint**: US3 livrable : transparence et re-soumission opérationnelles.
 
 ---
 
@@ -142,8 +142,8 @@
 ### Ordre de livraison recommandé
 
 1. Phase 1 + Phase 2 (fondation)
-2. **US1** (MVP — soumission)
-3. **US2** (modération — complète la boucle de valeur exigée)
+2. **US1** (MVP : soumission)
+3. **US2** (modération : complète la boucle de valeur exigée)
 4. **US3** (suivi & re-soumission)
 5. Phase 6 (polish)
 
@@ -154,7 +154,7 @@
 ### Phase 2 (foundational)
 - T002 et T003 modifient des fichiers SQL différents → exécutables en parallèle, puis T004.
 
-### US2 — démarrage parallèle
+### US2 : démarrage parallèle
 ```
 # En parallèle (fichiers différents) :
 T010 (models/admin/expertise.rs)
@@ -182,7 +182,7 @@ T018 (composables/useAdminExperts.ts)
 ## Récapitulatif
 
 - **Total** : 29 tâches
-- **Setup** : 1 (T001) — **Foundational** : 3 (T002–T004)
-- **US1 (P1, MVP)** : 5 (T005–T009) — **US2 (P1)** : 11 (T010–T020) — **US3 (P2)** : 6 (T021–T026)
+- **Setup** : 1 (T001) : **Foundational** : 3 (T002–T004)
+- **US1 (P1, MVP)** : 5 (T005–T009), **US2 (P1)** : 11 (T010–T020), **US3 (P2)** : 6 (T021–T026)
 - **Polish** : 3 (T027–T029)
 - **Opportunités parallèles** : T002/T003 ; T010/T012/T018 ; user stories largement indépendantes

@@ -1,4 +1,4 @@
-// Composable pour l'administration — client API admin de base
+// Composable pour l'administration : client API admin de base
 import type {
   ApiResponse,
   PaginatedResponse,

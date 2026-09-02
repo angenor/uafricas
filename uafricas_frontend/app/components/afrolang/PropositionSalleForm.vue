@@ -1,209 +1,148 @@
 <template>
-  <form
-    class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-5"
-    @submit.prevent="soumettre"
-  >
-    <header class="flex items-center gap-3">
-      <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-orange-50 text-orange-600">
-        <font-awesome-icon :icon="['fas', 'lightbulb']" class="w-5 h-5" />
-      </span>
-      <div>
-        <h2 class="text-lg font-semibold text-gray-900">Proposer une salle publique</h2>
-        <p class="text-sm text-gray-500">Décrivez la langue africaine et le groupe ethnique concernés.</p>
-      </div>
-    </header>
+  <!-- Ni carte ni en-tête : la coque AfricansModale porte déjà le cadre, le
+       titre et le sous-titre. Les redoubler donnait deux fois « Proposer une
+       salle » à l'écran, l'un dans l'autre. -->
+  <form id="form-proposition-salle" class="flex flex-col gap-5" @submit.prevent="soumettre">
+    <p
+      v-if="messageSucces"
+      class="flex items-start gap-2 rounded-lg border border-af-vert/20 bg-af-vert/5 px-4 py-3 text-[14px]/[1.4] text-af-vert"
+    >
+      <font-awesome-icon icon="fa-solid fa-circle-check" class="mt-0.5 shrink-0" />
+      {{ messageSucces }}
+    </p>
 
-    <div v-if="messageSucces" class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 flex items-start gap-2">
-      <font-awesome-icon :icon="['fas', 'circle-check']" class="w-4 h-4 mt-0.5" />
-      <span>{{ messageSucces }}</span>
+    <p
+      v-if="messageErreur"
+      class="flex items-start gap-2 rounded-lg border border-af-live/20 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
+    >
+      <font-awesome-icon icon="fa-solid fa-triangle-exclamation" class="mt-0.5 shrink-0" />
+      {{ messageErreur }}
+    </p>
+
+    <AfricansChamp
+      v-model="form.titre"
+      libelle="Titre"
+      :maxlength="350"
+      placeholder="Ex. Apprenons le wolof ensemble"
+      obligatoire
+    />
+
+    <div class="grid gap-5 md:grid-cols-2">
+      <AfricansChamp
+        v-model="form.langue_cible"
+        libelle="Langue cible"
+        :maxlength="100"
+        placeholder="Ex. Wolof"
+        obligatoire
+      />
+      <AfricansChamp
+        v-model="form.langue_code"
+        libelle="Code de langue"
+        :maxlength="40"
+        placeholder="Ex. wo"
+        aide="Facultatif"
+      />
     </div>
 
-    <div v-if="messageErreur" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 flex items-start gap-2">
-      <font-awesome-icon :icon="['fas', 'triangle-exclamation']" class="w-4 h-4 mt-0.5" />
-      <span>{{ messageErreur }}</span>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="md:col-span-2">
-        <label for="prop-titre" class="block text-sm font-medium text-gray-700 mb-1">
-          Titre <span class="text-red-500">*</span>
-        </label>
-        <input
-          id="prop-titre"
-          v-model="form.titre"
-          type="text"
-          maxlength="350"
-          required
-          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-          placeholder="Ex. Apprenons le wolof ensemble"
-        >
-      </div>
-
-      <div>
-        <label for="prop-langue" class="block text-sm font-medium text-gray-700 mb-1">
-          Langue cible <span class="text-red-500">*</span>
-        </label>
-        <input
-          id="prop-langue"
-          v-model="form.langue_cible"
-          type="text"
-          maxlength="100"
-          required
-          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-          placeholder="Ex. Wolof"
-        >
-      </div>
-
-      <div>
-        <label for="prop-langue-code" class="block text-sm font-medium text-gray-700 mb-1">
-          Code de langue (facultatif)
-        </label>
-        <input
-          id="prop-langue-code"
-          v-model="form.langue_code"
-          type="text"
-          maxlength="40"
-          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-          placeholder="Ex. wo"
-        >
-      </div>
-
-      <div class="md:col-span-2">
-        <label for="prop-groupe" class="block text-sm font-medium text-gray-700 mb-1">
-          Groupe ethnique <span class="text-red-500">*</span>
-        </label>
-        <select
-          id="prop-groupe"
-          v-model="groupeSelection"
-          required
-          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-        >
-          <option value="" disabled>— Sélectionner un groupe ethnique —</option>
-          <option
-            v-for="g in groupesDisponibles"
-            :key="g.id"
-            :value="g.id"
-          >
-            {{ g.nom }}<span v-if="g.pays_nom"> · {{ g.pays_nom }}</span>
-          </option>
-          <option :value="AUTRE">Autre (préciser)…</option>
-        </select>
-        <p class="text-xs text-gray-500 mt-1">
-          Liste non exhaustive : si votre groupe n'y figure pas, choisissez
-          « Autre » et indiquez son nom.
-        </p>
-
-        <!-- Champ texte libre quand « Autre » est sélectionné -->
-        <div v-if="groupeSelection === AUTRE" class="mt-3">
-          <label for="prop-groupe-libre" class="block text-sm font-medium text-gray-700 mb-1">
-            Nom du groupe ethnique <span class="text-red-500">*</span>
-          </label>
-          <input
-            id="prop-groupe-libre"
-            v-model="form.groupe_ethnique_libre"
-            type="text"
-            maxlength="250"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-            placeholder="Ex. Bassa, Sérère, Créole haïtien…"
-          >
-        </div>
-      </div>
-
-      <div class="md:col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-1">
-          Territoire d'origine <span class="text-red-500">*</span>
-        </label>
-        <input
-          v-model="rechercheTerritoire"
-          type="text"
-          class="w-full mb-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-          placeholder="Rechercher un territoire…"
-        >
-        <div class="rounded-lg border border-gray-300 p-3 max-h-64 overflow-y-auto bg-gray-50 space-y-4">
-          <div v-if="!territoires.length" class="text-sm text-gray-500">
-            Chargement des territoires…
-          </div>
-          <div v-else-if="!territoiresParContinent.length" class="text-sm text-gray-500">
-            Aucun territoire ne correspond à votre recherche.
-          </div>
-          <fieldset
-            v-for="bloc in territoiresParContinent"
-            v-else
-            :key="bloc.continent"
-          >
-            <legend class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
-              {{ bloc.continent }}
-            </legend>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <label
-                v-for="p in bloc.territoires"
-                :key="p.id"
-                class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900"
-              >
-                <input
-                  v-model="form.pays_origine_ids"
-                  type="checkbox"
-                  :value="p.id"
-                  class="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                >
-                <span>{{ p.nom }}</span>
-              </label>
-            </div>
-          </fieldset>
-        </div>
-        <p class="text-xs text-gray-500 mt-1">
-          Sélectionnez au moins un territoire où la langue cible est parlée — y
-          compris hors d'Afrique (diaspora, créoles, langues afro-descendantes).
-          {{ form.pays_origine_ids.length }} sélectionné(s).
-        </p>
-      </div>
-
-      <div class="md:col-span-2">
-        <label for="prop-description" class="block text-sm font-medium text-gray-700 mb-1">
-          Description <span class="text-red-500">*</span>
-        </label>
-        <textarea
-          id="prop-description"
-          v-model="form.description"
-          rows="3"
-          required
-          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-          placeholder="Présentez brièvement la salle envisagée…"
-        />
-      </div>
-
-      <div class="md:col-span-2">
-        <label for="prop-justification" class="block text-sm font-medium text-gray-700 mb-1">
-          Justification <span class="text-red-500">*</span>
-        </label>
-        <textarea
-          id="prop-justification"
-          v-model="form.justification"
-          rows="3"
-          required
-          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-          placeholder="Pourquoi cette salle serait utile ? Quel public ?"
-        />
-      </div>
-    </div>
-
-    <div class="flex items-center justify-between gap-3 pt-2">
-      <p class="text-xs text-gray-500">
-        Votre proposition sera examinée par un administrateur de la plateforme.
-      </p>
-      <button
-        type="submit"
-        :disabled="enCours || !formulaireValide"
-        class="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+    <div class="flex flex-col gap-3">
+      <AfricansChamp
+        v-model="groupeSelection"
+        libelle="Groupe ethnique"
+        type="select"
+        aide="Liste non exhaustive : si votre groupe n'y figure pas, choisissez « Autre » et indiquez son nom."
+        obligatoire
       >
-        <font-awesome-icon
-          :icon="['fas', enCours ? 'spinner' : 'paper-plane']"
-          :class="enCours ? 'animate-spin' : ''"
-          class="w-4 h-4"
-        />
-        {{ enCours ? 'Envoi…' : 'Soumettre la proposition' }}
-      </button>
+        <option value="" disabled>Sélectionner un groupe ethnique</option>
+        <option v-for="g in groupesDisponibles" :key="g.id" :value="g.id">
+          {{ g.nom }}<span v-if="g.pays_nom"> · {{ g.pays_nom }}</span>
+        </option>
+        <option :value="AUTRE">Autre (préciser)…</option>
+      </AfricansChamp>
+
+      <!-- Champ libre quand « Autre » est retenu -->
+      <AfricansChamp
+        v-if="groupeSelection === AUTRE"
+        v-model="form.groupe_ethnique_libre"
+        libelle="Nom du groupe ethnique"
+        :maxlength="250"
+        placeholder="Ex. Bassa, Sérère, Créole haïtien…"
+        obligatoire
+      />
     </div>
+
+    <!-- Sélecteur de territoires : liste à cocher groupée par continent. Ce
+         n'est pas un AfricansChamp — aucun de ses types ne rend une sélection
+         multiple, et le champ de recherche filtre la liste, il ne la saisit
+         pas. -->
+    <div class="flex flex-col gap-2">
+      <p class="text-[14px]/[1.4] text-af-atone italic">
+        Territoire d'origine <span class="not-italic text-af-live">*</span>
+      </p>
+
+      <input
+        v-model="rechercheTerritoire"
+        type="text"
+        class="h-11 w-full rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
+        placeholder="Rechercher un territoire…"
+      >
+
+      <div class="flex max-h-64 flex-col gap-4 overflow-y-auto rounded-md border border-af-bordure bg-af-fond p-3">
+        <p v-if="!territoires.length" class="text-[14px]/[1.4] text-af-atone">
+          Chargement des territoires…
+        </p>
+        <p v-else-if="!territoiresParContinent.length" class="text-[14px]/[1.4] text-af-atone">
+          Aucun territoire ne correspond à votre recherche.
+        </p>
+        <fieldset v-for="bloc in territoiresParContinent" v-else :key="bloc.continent">
+          <legend class="mb-2 text-[12px] font-bold text-af-atone uppercase">
+            {{ bloc.continent }}
+          </legend>
+          <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <label
+              v-for="p in bloc.territoires"
+              :key="p.id"
+              class="flex cursor-pointer items-center gap-2 text-[14px]/[1.4] text-af-corps transition hover:text-af-encre"
+            >
+              <input
+                v-model="form.pays_origine_ids"
+                type="checkbox"
+                :value="p.id"
+                class="size-4 rounded border-af-bordure accent-af-chocolat"
+              >
+              <span>{{ p.nom }}</span>
+            </label>
+          </div>
+        </fieldset>
+      </div>
+
+      <p class="text-[12px]/[1.4] text-af-atone">
+        Sélectionnez au moins un territoire où la langue cible est parlée, y compris
+        hors d'Afrique (diaspora, créoles, langues afro-descendantes).
+        {{ form.pays_origine_ids.length }} sélectionné(s).
+      </p>
+    </div>
+
+    <AfricansChamp
+      v-model="form.description"
+      libelle="Description"
+      type="textarea"
+      :lignes="3"
+      placeholder="Présentez brièvement la salle envisagée…"
+      obligatoire
+    />
+
+    <AfricansChamp
+      v-model="form.justification"
+      libelle="Justification"
+      type="textarea"
+      :lignes="3"
+      placeholder="Pourquoi cette salle serait utile ? Quel public ?"
+      obligatoire
+    />
+
+    <p class="text-[12px]/[1.4] text-af-atone">
+      Votre proposition sera examinée par un administrateur de la plateforme.
+    </p>
   </form>
 </template>
 
@@ -294,6 +233,8 @@ const reinitialiser = () => {
   groupeSelection.value = ''
   rechercheTerritoire.value = ''
 }
+
+defineExpose({ enCours, formulaireValide })
 
 const soumettre = async () => {
   messageErreur.value = null

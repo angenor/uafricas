@@ -1,4 +1,4 @@
-# Contrat — Sites touristiques (public + contribution)
+# Contrat : Sites touristiques (public + contribution)
 
 Toutes les réponses suivent l'enveloppe `{ success, data, error }`.
 
@@ -8,7 +8,7 @@ Liste les sites validés d'une fiche. Filtres optionnels.
 
 **Query** : `categorie` (`emblematique` | `prive`), `sous_type` (une des 20 valeurs).
 
-**200** — `data: SiteTouristique[]`
+**200** : `data: SiteTouristique[]`
 ```jsonc
 {
   "id": "uuid",
@@ -24,7 +24,7 @@ Liste les sites validés d'une fiche. Filtres optionnels.
   "village": null,
   "latitude": 5.1962,
   "longitude": -3.7388,
-  // Contacts (publics — CL résolue) ; renseignés surtout pour les sites privés
+  // Contacts (publics : CL résolue) ; renseignés surtout pour les sites privés
   "contact_telephone": null,
   "contact_courriel": null,
   "contact_adresse": null,
@@ -46,7 +46,7 @@ Liste les sites validés d'une fiche. Filtres optionnels.
 
 ---
 
-## POST /api/fiches-pays/{id}/contributions  (mode Afripulse — site touristique)
+## POST /api/fiches-pays/{id}/contributions  (mode Afripulse, site touristique)
 
 Propose un ajout/édition/suppression de site (workflow existant, validation admin requise).
 **Auth requise** (JWT Bearer). Réponse **202** (en attente).

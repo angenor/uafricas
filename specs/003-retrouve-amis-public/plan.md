@@ -12,7 +12,7 @@ Refondre le formulaire de création d'avis de recherche (10 questions structuré
 **Language/Version**: Rust Edition 2024 (backend), TypeScript / Nuxt 4 / Vue 3 (frontend)
 **Primary Dependencies**: Actix-Web 4, actix-multipart, sqlx, Pinia, Tailwind CSS v4
 **Storage**: PostgreSQL 16, schema `retrouve_amis` (8 tables existantes)
-**Testing**: Pas de CI/CD configuré — vérification manuelle
+**Testing**: Pas de CI/CD configuré : vérification manuelle
 **Target Platform**: Web (SSR Nuxt 4), serveur Linux (VPS)
 **Project Type**: Application web full-stack (monorepo)
 **Performance Goals**: Pages publiques chargées en < 2s, formulaire soumis en < 3s
@@ -81,8 +81,8 @@ uafricas_frontend/
 │       └── rechercher.vue            # Ajout filtre type_relation
 ```
 
-**Structure Decision**: Application web monorepo existante. Pas de nouvelle structure — modifications ciblées des fichiers existants dans `uafricas_backend/` et `uafricas_frontend/`.
+**Structure Decision**: Application web monorepo existante. Pas de nouvelle structure : modifications ciblées des fichiers existants dans `uafricas_backend/` et `uafricas_frontend/`.
 
 ## Complexity Tracking
 
-Aucune violation de la constitution — section non applicable.
+Aucune violation de la constitution, section non applicable.

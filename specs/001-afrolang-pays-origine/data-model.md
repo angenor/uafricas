@@ -1,6 +1,6 @@
-# Data Model — Pays d'origine des salles publiques Afrolang
+# Data Model : Pays d'origine des salles publiques Afrolang
 
-**Phase 1** — Modèle de données dérivé de la spec et des décisions de `research.md`.
+**Phase 1** : Modèle de données dérivé de la spec et des décisions de `research.md`.
 
 ## Entités
 
@@ -11,9 +11,9 @@ Table de jointure pure modélisant la relation **plusieurs-à-plusieurs** entre 
 | Colonne     | Type           | Contraintes                                                              | Notes                                            |
 |-------------|----------------|--------------------------------------------------------------------------|--------------------------------------------------|
 | `salle_id`  | `UUID`         | `NOT NULL`, FK → `afrolang.salle(id)` `ON DELETE CASCADE`                | Clé composite                                    |
-| `pays_id`   | `UUID`         | `NOT NULL`, FK → `shared.pays(id)` `ON DELETE CASCADE`                   | Clé composite — FR-010 (cleanup auto)            |
+| `pays_id`   | `UUID`         | `NOT NULL`, FK → `shared.pays(id)` `ON DELETE CASCADE`                   | Clé composite, FR-010 (cleanup auto)            |
 | `created_at`| `TIMESTAMPTZ`  | `NOT NULL DEFAULT NOW()`                                                 | Audit léger                                      |
-| **PK**      | composite      | `PRIMARY KEY (salle_id, pays_id)`                                        | Unicité gratuite — FR-002                        |
+| **PK**      | composite      | `PRIMARY KEY (salle_id, pays_id)`                                        | Unicité gratuite, FR-002                        |
 
 **Index complémentaire** :
 
@@ -34,7 +34,7 @@ Aucune modification de colonne. La nouvelle relation est purement externe (table
 
 #### `shared.pays` *(inchangée)*
 
-Référencée uniquement. Colonnes utilisées en lecture publique : `id`, `nom`, `code_iso2`. Le filtre `actif = TRUE` est appliqué côté requête (Q3) — aucun changement de structure nécessaire.
+Référencée uniquement. Colonnes utilisées en lecture publique : `id`, `nom`, `code_iso2`. Le filtre `actif = TRUE` est appliqué côté requête (Q3), aucun changement de structure nécessaire.
 
 ## DDL complet à insérer dans `08b_afrolang.sql`
 
@@ -45,7 +45,7 @@ Référencée uniquement. Colonnes utilisées en lecture publique : `id`, `nom`,
 --
 -- Relation N-N entre une salle publique et les pays où la langue cible est
 -- parlée à l'origine. Indépendante du pays implicite via groupe_ethnique →
--- fiche_pays. Enrichie manuellement par les admins (Q1 — aucun pré-remplissage).
+-- fiche_pays. Enrichie manuellement par les admins (Q1, aucun pré-remplissage).
 
 CREATE TABLE afrolang.salle_pays_origine (
     salle_id    UUID         NOT NULL REFERENCES afrolang.salle(id)   ON DELETE CASCADE,
@@ -73,13 +73,13 @@ pub struct PaysOrigineLight {
     pub code_iso2: Option<String>,
 }
 
-// SalleResponse — ajout du champ :
+// SalleResponse : ajout du champ :
 pub struct SalleResponse {
     // ... champs existants ...
     pub pays_origine: Vec<PaysOrigineLight>,
 }
 
-// SalleDetailResponse — idem (hérite via aplatissement existant) :
+// SalleDetailResponse : idem (hérite via aplatissement existant) :
 pub struct SalleDetailResponse {
     // ... champs existants ...
     pub pays_origine: Vec<PaysOrigineLight>,
@@ -97,13 +97,13 @@ export interface PaysOrigineLight {
   code_iso2: string | null
 }
 
-// SalleAPI — ajout du champ :
+// SalleAPI : ajout du champ :
 export interface SalleAPI {
   // ... champs existants ...
   pays_origine: PaysOrigineLight[]   // jamais null, [] par défaut
 }
 
-// SalleFiltres — ajout :
+// SalleFiltres : ajout :
 export interface SalleFiltres {
   // ... champs existants ...
   pays_id?: string
@@ -126,7 +126,7 @@ export interface SalleFiltres {
 
 ## États et transitions
 
-Aucun état métier — la table est purement relationnelle. Cycle de vie :
+Aucun état métier : la table est purement relationnelle. Cycle de vie :
 
 ```text
 (rien) ──INSERT──▶ (couple existe) ──DELETE──▶ (rien)
@@ -138,4 +138,4 @@ Le `created_at` reste à titre informatif/audit, jamais modifié.
 
 - ~30 salles × moyenne 3 pays = ~90 lignes en année 1.
 - Croissance linéaire avec le nombre de salles publiques ajoutées par les admins.
-- Aucun risque de scaling — la table restera ≤ 1 000 lignes à l'horizon visible.
+- Aucun risque de scaling : la table restera ≤ 1 000 lignes à l'horizon visible.

@@ -138,7 +138,7 @@ async fn obtenir_valeur_actuelle(
             .fetch_one(pool)
             .await?
         }
-        // Bloc « À savoir avant de voyager » — colonnes TEXT (liste fermée de littéraux)
+        // Bloc « À savoir avant de voyager » : colonnes TEXT (liste fermée de littéraux)
         s @ ("voyage_langue_internationale"
         | "voyage_langue_locale"
         | "voyage_infos_visa"
@@ -148,6 +148,26 @@ async fn obtenir_valeur_actuelle(
         | "voyage_contacts_tourisme"
         | "voyage_recommandations_securite") => {
             // `s` provient d'un motif littéral fermé → interpolation sûre (pas d'injection).
+            let requete = format!(
+                "SELECT {} FROM country_profile.fiche_pays WHERE id = $1",
+                s
+            );
+            sqlx::query_scalar(&requete)
+                .bind(fiche_id)
+                .fetch_one(pool)
+                .await?
+        }
+        // Symboles nationaux (schéma 11l) : colonnes TEXT / VARCHAR
+        s @ ("drapeau_description"
+        | "embleme_description"
+        | "hymne_description"
+        | "fleur_nationale"
+        | "fleur_description"
+        | "animal_national"
+        | "animal_description"
+        | "oiseau_national"
+        | "oiseau_description") => {
+            // Même garantie : littéraux fermés, aucune valeur d'utilisateur interpolée.
             let requete = format!(
                 "SELECT {} FROM country_profile.fiche_pays WHERE id = $1",
                 s
@@ -167,7 +187,7 @@ async fn obtenir_valeur_actuelle(
 // Endpoints
 // ══════════════════════════════════════════════════════════════════════════
 
-/// POST /api/fiches-pays/{id}/contributions — Soumettre une contribution
+/// POST /api/fiches-pays/{id}/contributions, Soumettre une contribution
 ///
 /// Deux modes :
 ///   • Legacy (rétrocompatibilité) : body JSON scalaire (section texte +
@@ -388,7 +408,7 @@ async fn soumettre_contribution_afripulse(
         ));
     }
 
-    // Validation enrichie des sites touristiques (US1/US2) — ajout & édition.
+    // Validation enrichie des sites touristiques (US1/US2), ajout & édition.
     if matches!(type_objet, TypeObjetContribution::SiteTouristique)
         && type_contribution_sql != "suppression"
     {
@@ -445,7 +465,7 @@ async fn soumettre_contribution_afripulse(
         None
     };
 
-    // Section Afripulse (optionnelle — utile pour filtres admin)
+    // Section Afripulse (optionnelle : utile pour filtres admin)
     let section_afripulse = body
         .section_afripulse
         .as_deref()
@@ -456,6 +476,30 @@ async fn soumettre_contribution_afripulse(
         .clone()
         .unwrap_or_else(|| type_objet_str.to_string());
 
+    // ── L'auteur peut-il modérer les fiches pays ? ───────────────────────
+    //
+    // Un administrateur qui corrige une fiche depuis la page publique passait
+    // par le MÊME circuit qu'un visiteur : sa modification partait en file
+    // d'attente, et il devait aller la valider lui-même au back-office. En
+    // pratique il ajoutait une photo, ne voyait rien changer, et recommençait.
+    //
+    // Le patron est déjà celui des épisodes médias : un seul chemin, l'autorité
+    // seule diffère : la contribution naît `en_attente` côté membre,
+    // `approuvee` et appliquée côté détenteur du droit.
+    let peut_moderer: bool = sqlx::query_scalar(
+        "SELECT EXISTS (
+             SELECT 1
+               FROM iam.permission p
+               JOIN iam.role_permission rp ON rp.permission_id = p.id
+               JOIN iam.utilisateur_role ur ON ur.role_id = rp.role_id
+              WHERE ur.utilisateur_id = $1
+                AND (p.type_ressource = '*' OR p.type_ressource = 'fiche_pays')
+                AND (p.action = '*' OR p.action = 'gerer')
+         )")
+    .bind(utilisateur_id)
+    .fetch_one(pool)
+    .await?;
+
     // INSERT + SELECT enrichi
     let row = sqlx::query_as::<_, ContributionFicheRow>(&format!(
         "WITH inserted AS (
@@ -463,13 +507,17 @@ async fn soumettre_contribution_afripulse(
                     fiche_pays_id, cree_par, section, type_contribution,
                     ancienne_valeur, nouvelle_valeur, justification,
                     type_objet_contribution, section_afripulse, target_id,
-                    nouvelle_valeur_jsonb, ancienne_valeur_jsonb
+                    nouvelle_valeur_jsonb, ancienne_valeur_jsonb,
+                    etat, traite_par, traite_at
                 ) VALUES (
                     $1, $2, $3, $4::country_profile.type_contribution,
                     NULL, COALESCE($5::text, ''), $6,
                     $7::country_profile.type_objet_contribution,
                     $8::country_profile.section_afripulse,
-                    $9, $10, $11
+                    $9, $10, $11,
+                    $12::country_profile.etat_contribution,
+                    CASE WHEN $13 THEN $2 END,
+                    CASE WHEN $13 THEN NOW() END
                 )
                 RETURNING *
             )
@@ -487,8 +535,27 @@ async fn soumettre_contribution_afripulse(
     .bind(target_id_effectif)
     .bind(&nouvelle_valeur_jsonb)
     .bind(&ancienne_valeur_jsonb)
+    .bind(if peut_moderer { "approuvee" } else { "en_attente" })
+    .bind(peut_moderer)
     .fetch_one(pool)
     .await?;
+
+    // Approuvée d'office : il faut encore l'APPLIQUER, sinon la contribution
+    // serait marquée validée sans que l'objet change, le pire des deux mondes.
+    if peut_moderer {
+        let mut tx = pool.begin().await?;
+        crate::handlers::admin::profils_pays::appliquer_contribution_afripulse(
+            &mut tx,
+            fiche_id,
+            utilisateur_id,
+            type_objet_str,
+            &type_contribution_effectif,
+            target_id_effectif,
+            Some(&nouvelle_valeur_jsonb),
+            &serde_json::Value::Array(vec![]))
+        .await?;
+        tx.commit().await?;
+    }
 
     audit::log_action(
         pool,
@@ -717,7 +784,7 @@ fn valider_lien_web(payload: &serde_json::Value) -> Result<(), ApiErreur> {
     Ok(())
 }
 
-/// GET /api/fiches-pays/{id}/contributions — Lister les contributions d'une fiche
+/// GET /api/fiches-pays/{id}/contributions, Lister les contributions d'une fiche
 pub async fn lister_contributions(
     pool: web::Data<PgPool>,
     chemin: web::Path<String>,
@@ -824,7 +891,7 @@ pub async fn lister_contributions(
     }))
 }
 
-/// GET /api/fiches-pays/{id}/contributeurs — T066/T068
+/// GET /api/fiches-pays/{id}/contributeurs, T066/T068
 ///
 /// Liste agregee des contributeurs ayant au moins 1 contribution approuvee
 /// sur la fiche pays. Anonymise les utilisateurs supprimes (`iam.utilisateur.deleted_at IS NOT NULL`) :
@@ -998,7 +1065,7 @@ pub async fn soumettre_contribution_multipart(
     }
     if legendes.len() != photos.len() {
         return Err(ApiErreur::Validation(format!(
-            "{} photo(s) mais {} legende(s) — chaque photo doit avoir sa legende.",
+            "{} photo(s) mais {} legende(s) : chaque photo doit avoir sa legende.",
             photos.len(),
             legendes.len()
         )));
@@ -1041,7 +1108,7 @@ pub async fn soumettre_contribution_multipart(
         });
     }
 
-    // Validation en memoire de toutes les photos — AVANT tout write disque (T056)
+    // Validation en memoire de toutes les photos, AVANT tout write disque (T056)
     let mut valides: Vec<(Vec<u8>, String, image_validation::DimensionsValides)> = Vec::new();
     for (bytes, filename) in photos.into_iter() {
         match image_validation::valider_photo_contribution(&bytes) {

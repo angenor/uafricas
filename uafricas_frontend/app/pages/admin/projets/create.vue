@@ -143,7 +143,7 @@ const soumettre = async () => {
           </div>
 
           <div class="form-control">
-            <label class="label"><span class="label-text">Telephone de contact</span></label>
+            <label class="label"><span class="label-text">Téléphone de contact</span></label>
             <input v-model="form.contact_telephone" type="tel" class="input input-bordered" class-name="w-1/2">
           </div>
 
@@ -164,7 +164,7 @@ const soumettre = async () => {
               </select>
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Duree (mois)</span></label>
+              <label class="label"><span class="label-text">Durée (mois)</span></label>
               <input v-model.number="form.duree_mois" type="number" min="1" class="input input-bordered">
             </div>
           </div>
@@ -175,10 +175,10 @@ const soumettre = async () => {
           </div>
 
           <!-- Section : Details du projet -->
-          <h3 class="font-semibold text-lg border-b pb-2">Details du projet</h3>
+          <h3 class="font-semibold text-lg border-b pb-2">Détails du projet</h3>
 
           <div class="form-control">
-            <label class="label"><span class="label-text">Resultats attendus</span></label>
+            <label class="label"><span class="label-text">Résultats attendus</span></label>
             <textarea v-model="form.resultats_attendus" class="textarea textarea-bordered" rows="3" />
           </div>
 

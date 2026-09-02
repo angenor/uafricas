@@ -1,140 +1,138 @@
 <template>
-  <div
-    class="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all p-5 cursor-pointer border border-gray-100"
-    @click="$emit('voir', correspondance.id)"
+  <!-- Une RANGÉE pleine largeur, et non une vignette. Une correspondance est
+       une décision à prendre, pas un contenu à parcourir : elles sont peu
+       nombreuses, portent peu de choses (le résumé est anonymisé jusqu'à
+       l'acceptation) et demandent chacune un geste. Dans une grille de trois
+       colonnes, la colonne principale du gabarit n'en laissait que ~215 px :
+       « En attente » s'y coupait en deux lignes et les trois quarts de la
+       rangée restaient vides.
+
+       Un LIEN, et non un `<div @click>` : la carte mène à la page où la
+       correspondance s'accepte ou se refuse. -->
+  <NuxtLink
+    :to="`/retrouve-amis/correspondances/${correspondance.id}`"
+    class="flex flex-col gap-4 rounded-[10px] border border-af-bordure bg-white p-5 transition hover:border-af-chocolat md:flex-row md:items-center"
   >
-    <!-- En-tete : initiales + score + etat -->
-    <div class="flex items-start justify-between mb-4">
-      <div class="w-12 h-12 rounded-full bg-custom-chocolat/10 text-custom-chocolat font-bold flex items-center justify-center text-lg">
-        {{ correspondance.resume_anonymise.initiales }}
+    <span
+      class="grid size-12 shrink-0 place-items-center rounded-full bg-af-chocolat/10 text-[16px] font-bold text-af-chocolat"
+      aria-hidden="true"
+    >
+      {{ correspondance.resume_anonymise.initiales }}
+    </span>
+
+    <div class="min-w-0 flex-1">
+      <!-- Les deux étiquettes disaient « Profil » et « Auteur », deux mots
+           qui ne se comprennent qu'en connaissant le modèle de données. La
+           phrase, elle, se lit. -->
+      <p class="text-[16px]/[1.4] font-bold text-af-encre">
+        {{ correspondance.type_cible === 'avis'
+          ? 'Rapprochement avec un avis de recherche'
+          : 'Rapprochement avec un profil de membre' }}
+      </p>
+      <p class="mt-0.5 text-[14px]/[1.4] text-af-atone">
+        {{ correspondance.mon_role === 'auteur'
+          ? "Vous êtes l'auteur de la recherche"
+          : 'Quelqu\'un pense vous avoir reconnu' }}
+      </p>
+
+      <!-- Ce que le serveur accepte de révéler avant acceptation. Le nom et la
+           photo n'en font PAS partie : c'est la garantie du module, pas une
+           donnée manquante. -->
+      <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px]/[1.4] text-af-corps">
+        <span v-if="correspondance.resume_anonymise.ville" class="flex items-center gap-1.5">
+          <font-awesome-icon icon="fa-solid fa-location-dot" class="text-af-vert" />
+          {{ correspondance.resume_anonymise.ville }}
+        </span>
+        <span v-if="correspondance.resume_anonymise.periode" class="flex items-center gap-1.5">
+          <font-awesome-icon icon="fa-solid fa-calendar" class="text-af-chocolat" />
+          {{ correspondance.resume_anonymise.periode }}
+        </span>
+        <span v-if="correspondance.expire_at" class="flex items-center gap-1.5 text-af-atone">
+          <font-awesome-icon icon="fa-solid fa-clock" />
+          Expire le {{ formaterDate(correspondance.expire_at) }}
+        </span>
       </div>
-      <div class="flex items-center gap-2">
+
+      <div
+        v-if="correspondance.resume_anonymise.criteres_communs?.length"
+        class="mt-2 flex flex-wrap gap-1.5"
+      >
         <span
-          class="text-xs px-2 py-0.5 rounded-full font-medium"
+          v-for="critere in correspondance.resume_anonymise.criteres_communs"
+          :key="critere"
+          class="rounded-full bg-af-vert/10 px-2 py-0.5 text-xs text-af-vert"
+        >
+          {{ critere }}
+        </span>
+      </div>
+    </div>
+
+    <div class="flex shrink-0 flex-col items-start gap-2 md:items-end">
+      <div class="flex items-center gap-2">
+        <!-- `whitespace-nowrap` : « En attente » se coupait en deux lignes
+             dès que la colonne se resserrait. -->
+        <span
+          class="rounded-full px-3 py-1 text-xs font-bold whitespace-nowrap"
           :class="etatClasses"
         >
           {{ etatLabel }}
         </span>
-        <RetrouveAmisScoreBadge :score="correspondance.score" taille="md" />
-      </div>
-    </div>
-
-    <!-- Informations -->
-    <div class="space-y-2 mb-4">
-      <!-- Ville -->
-      <div v-if="correspondance.resume_anonymise.ville" class="flex items-center text-sm text-gray-600">
-        <font-awesome-icon :icon="['fas', 'location-dot']" class="w-3.5 h-3.5 mr-2 text-custom-green" />
-        <span>{{ correspondance.resume_anonymise.ville }}</span>
+        <!-- Un pourcentage nu ne dit pas de quoi : le titre le nomme pour qui
+             survole, l'`aria-label` pour qui écoute. -->
+        <RetrouveAmisScoreBadge
+          :score="correspondance.score"
+          taille="md"
+          :title="`Score de correspondance : ${correspondance.score} %`"
+          :aria-label="`Score de correspondance : ${correspondance.score} %`"
+        />
       </div>
 
-      <!-- Periode -->
-      <div v-if="correspondance.resume_anonymise.periode" class="flex items-center text-sm text-gray-600">
-        <font-awesome-icon :icon="['fas', 'calendar']" class="w-3.5 h-3.5 mr-2 text-custom-chocolat" />
-        <span>{{ correspondance.resume_anonymise.periode }}</span>
-      </div>
-
-      <!-- Badges type_cible et mon_role -->
-      <div class="flex items-center gap-2 mt-1">
-        <span
-          class="text-xs px-2 py-0.5 rounded-full font-medium"
-          :class="correspondance.type_cible === 'avis'
-            ? 'bg-indigo-50 text-indigo-700'
-            : 'bg-violet-50 text-violet-700'"
-        >
-          {{ correspondance.type_cible === 'avis' ? 'Avis' : 'Profil' }}
-        </span>
-        <span
-          class="text-xs px-2 py-0.5 rounded-full font-medium"
-          :class="correspondance.mon_role === 'auteur'
-            ? 'bg-custom-chocolat/10 text-custom-chocolat'
-            : 'bg-sky-50 text-sky-700'"
-        >
-          {{ correspondance.mon_role === 'auteur' ? 'Auteur' : 'Cible' }}
-        </span>
-      </div>
-    </div>
-
-    <!-- Criteres communs -->
-    <div
-      v-if="correspondance.resume_anonymise.criteres_communs?.length"
-      class="flex flex-wrap gap-1.5 mb-4"
-    >
-      <span
-        v-for="critere in correspondance.resume_anonymise.criteres_communs"
-        :key="critere"
-        class="bg-custom-green/10 text-custom-green text-xs px-2 py-0.5 rounded-full"
+      <p
+        class="flex items-center gap-2 text-[14px]/[1.4] font-bold whitespace-nowrap"
+        :class="correspondance.etat === 'en_attente' ? 'text-af-chocolat' : 'text-af-corps'"
       >
-        {{ critere }}
-      </span>
+        <font-awesome-icon
+          :icon="correspondance.etat === 'en_attente' ? 'fa-solid fa-handshake' : 'fa-solid fa-circle-info'"
+        />
+        {{ correspondance.etat === 'en_attente' ? 'Accepter ou refuser' : 'Voir le détail' }}
+        <font-awesome-icon icon="fa-solid fa-arrow-right" />
+      </p>
     </div>
-
-    <!-- Pied : expiration -->
-    <div
-      v-if="correspondance.expire_at"
-      class="pt-3 border-t border-gray-100 flex items-center text-xs text-gray-400"
-    >
-      <font-awesome-icon :icon="['fas', 'clock']" class="w-3 h-3 mr-1.5" />
-      Expire le {{ formaterDate(correspondance.expire_at) }}
-    </div>
-  </div>
+  </NuxtLink>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-
-interface ResumeAnonymise {
-  initiales: string
-  ville: string | null
-  periode: string | null
-  criteres_communs: string[]
-}
-
-interface Correspondance {
-  id: string
-  avis_id: string
-  score: number
-  etat: string
-  type_cible: string
-  resume_anonymise: ResumeAnonymise
-  mon_role: string
-  created_at: string
-  expire_at: string | null
-}
+import type { Correspondance } from '~/composables/useRetrouvAmis'
 
 const props = defineProps<{
   correspondance: Correspondance
 }>()
 
-defineEmits<{
-  voir: [id: string]
-}>()
-
 const etatClasses = computed(() => {
   const classes: Record<string, string> = {
-    en_attente: 'bg-amber-100 text-amber-700',
-    acceptee_a: 'bg-blue-100 text-blue-700',
-    acceptee_b: 'bg-blue-100 text-blue-700',
-    mutuelle: 'bg-custom-green/10 text-custom-green',
-    declinee: 'bg-red-100 text-red-700',
-    archivee: 'bg-gray-100 text-gray-500',
+    en_attente: 'bg-af-chocolat/10 text-af-chocolat',
+    acceptee_a: 'bg-af-chocolat/10 text-af-chocolat',
+    acceptee_b: 'bg-af-chocolat/10 text-af-chocolat',
+    mutuelle: 'bg-af-vert/10 text-af-vert',
+    declinee: 'bg-af-live/10 text-af-live',
+    archivee: 'bg-af-fond text-af-atone',
   }
-  return classes[props.correspondance.etat] || 'bg-gray-100 text-gray-500'
+  return classes[props.correspondance.etat] || 'bg-af-fond text-af-atone'
 })
 
 const etatLabel = computed(() => {
   const labels: Record<string, string> = {
     en_attente: 'En attente',
-    acceptee_a: 'Acceptee',
-    acceptee_b: 'Acceptee',
+    acceptee_a: 'Acceptée',
+    acceptee_b: 'Acceptée',
     mutuelle: 'Mutuelle',
-    declinee: 'Declinee',
-    archivee: 'Archivee',
+    declinee: 'Déclinée',
+    archivee: 'Archivée',
   }
   return labels[props.correspondance.etat] || props.correspondance.etat
 })
 
-const formaterDate = (iso: string): string => {
-  const date = new Date(iso)
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-}
+const formaterDate = (iso: string) =>
+  new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    .format(new Date(iso))
 </script>

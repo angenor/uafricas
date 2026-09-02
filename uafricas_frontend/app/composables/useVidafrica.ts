@@ -209,7 +209,7 @@ export const useVidafrica = () => {
     }
   }
 
-  // Aimer / ne pas aimer une vidéo (toggle) — JWT requis.
+  // Aimer / ne pas aimer une vidéo (toggle), JWT requis.
   const reagirVideo = async (
     videoId: string,
     typeReaction: 'like' | 'dislike',
@@ -234,7 +234,7 @@ export const useVidafrica = () => {
     }
   }
 
-  // Partager une vidéo sur le mur communautaire — JWT requis.
+  // Partager une vidéo sur le mur communautaire, JWT requis.
   const partagerVideo = async (
     videoId: string,
     legende?: string,
@@ -250,7 +250,7 @@ export const useVidafrica = () => {
     return reponse.success ? reponse.data : null
   }
 
-  // Lister les partages de vidéos (public, paginé) — pour le mur /publications.
+  // Lister les partages de vidéos (public, paginé), pour le mur /publications.
   const listerPartagesVideos = async (
     page = 1,
     parPage = 20,

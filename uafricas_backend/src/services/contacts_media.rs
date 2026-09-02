@@ -1,7 +1,7 @@
 //! Coordonnées publiques des supports médias (chaînes TV, stations radio).
 //!
-//! Trois chemins d'écriture les alimentent — création admin, modification
-//! admin, validation d'une proposition de membre — et tous doivent normaliser
+//! Trois chemins d'écriture les alimentent, création admin, modification
+//! admin, validation d'une proposition de membre, et tous doivent normaliser
 //! de la même façon, sans quoi la même chaîne s'afficherait différemment selon
 //! qui l'a saisie.
 
@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 /// Bloc de coordonnées tel qu'il voyage vers le client.
 ///
 /// Regroupé plutôt qu'aplati sur chaque DTO de support : le front n'a qu'un
-/// objet à tester pour décider d'afficher — ou non — le bloc « Contacts », et
+/// objet à tester pour décider d'afficher, ou non, le bloc « Contacts », et
 /// les deux supports parlent le même langage. Défini ici, aux côtés des
 /// helpers de normalisation, plutôt qu'en double dans `models::television` et
 /// `models::station_radio`.
@@ -64,7 +64,7 @@ impl ContactsSupport {
 /// Trim, puis `None` si le résultat est vide.
 ///
 /// Sans ce filtrage, un champ laissé vide par le formulaire arriverait en base
-/// sous la forme d'une chaîne vide — indiscernable d'un contact renseigné pour
+/// sous la forme d'une chaîne vide : indiscernable d'un contact renseigné pour
 /// `Option::is_some`, et donc affiché comme un lien vide côté public.
 pub fn texte_non_vide(valeur: Option<&str>) -> Option<String> {
     valeur

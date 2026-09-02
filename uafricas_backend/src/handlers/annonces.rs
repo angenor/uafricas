@@ -28,7 +28,7 @@ struct ApiResponse<T: serde::Serialize> {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Helpers membre (auth, validation, messagerie) — feature marché membre
+// Helpers membre (auth, validation, messagerie), feature marché membre
 // ──────────────────────────────────────────────────────────────
 
 const CONTENU_MESSAGE_MAX: usize = 2000;
@@ -176,7 +176,7 @@ async fn lire_champ_texte(field: &mut actix_multipart::Field) -> Result<String, 
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/annonces — Lister les annonces avec filtres et pagination
+// GET /api/annonces : Lister les annonces avec filtres et pagination
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_annonces(
     pool: web::Data<PgPool>,
@@ -298,7 +298,7 @@ pub async fn lister_annonces(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/annonces/{id} — Obtenir le detail d'une annonce
+// GET /api/annonces/{id} : Obtenir le detail d'une annonce
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_annonce(
     pool: web::Data<PgPool>,
@@ -377,7 +377,7 @@ pub async fn obtenir_annonce(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/annonces/categories — Catégories du marché (contexte 'annonce')
+// GET /api/annonces/categories : Catégories du marché (contexte 'annonce')
 // ──────────────────────────────────────────────────────────────
 #[derive(Debug, sqlx::FromRow, serde::Serialize)]
 pub struct CategorieAnnonceResponse {
@@ -407,7 +407,7 @@ pub async fn lister_categories_annonce(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/annonces/secteurs — Secteurs d'activité (référentiel partagé)
+// GET /api/annonces/secteurs : Secteurs d'activité (référentiel partagé)
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_secteurs_annonce(
     pool: web::Data<PgPool>,
@@ -429,7 +429,7 @@ pub async fn lister_secteurs_annonce(
 }
 
 // ════════════════════════════════════════════════════════════════
-// Endpoints MEMBRE — feature 001-marche-achat-vente-troc-don
+// Endpoints MEMBRE : feature 001-marche-achat-vente-troc-don
 // ════════════════════════════════════════════════════════════════
 
 /// Champs texte d'une annonce parsés depuis un multipart.
@@ -699,7 +699,7 @@ async fn lier_pays(pool: &PgPool, annonce_id: Uuid, pays_ids: &[Uuid]) -> Result
 }
 
 // ──────────────────────────────────────────────────────────────
-// US1 — POST /api/annonces : Publier une annonce
+// US1 : POST /api/annonces : Publier une annonce
 // ──────────────────────────────────────────────────────────────
 pub async fn creer_annonce_membre(
     pool: web::Data<PgPool>,
@@ -888,7 +888,7 @@ pub async fn creer_annonce_membre(
 }
 
 // ──────────────────────────────────────────────────────────────
-// US2 — POST /api/annonces/{id}/contacter : Contacter l'auteur
+// US2 : POST /api/annonces/{id}/contacter : Contacter l'auteur
 // ──────────────────────────────────────────────────────────────
 pub async fn contacter_auteur(
     pool: web::Data<PgPool>,
@@ -998,7 +998,7 @@ pub async fn contacter_auteur(
 }
 
 // ──────────────────────────────────────────────────────────────
-// US3 — GET /api/annonces/mes-annonces : Lister mes annonces
+// US3 : GET /api/annonces/mes-annonces : Lister mes annonces
 // ──────────────────────────────────────────────────────────────
 pub async fn mes_annonces(
     pool: web::Data<PgPool>,
@@ -1068,7 +1068,7 @@ pub async fn mes_annonces(
 }
 
 // ──────────────────────────────────────────────────────────────
-// US3 — PUT /api/annonces/{id} : Modifier une annonce (propriétaire)
+// US3 : PUT /api/annonces/{id} : Modifier une annonce (propriétaire)
 // ──────────────────────────────────────────────────────────────
 pub async fn modifier_annonce_membre(
     pool: web::Data<PgPool>,
@@ -1197,7 +1197,7 @@ pub async fn modifier_annonce_membre(
         binds_uuid.push(cat_id);
         idx += 1;
     }
-    // Numériques (inline — valeurs maîtrisées)
+    // Numériques (inline : valeurs maîtrisées)
     if let Some(prix) = champs.prix {
         sets.push(format!("prix = {}", prix));
     }
@@ -1232,7 +1232,7 @@ pub async fn modifier_annonce_membre(
         q.execute(pool.get_ref()).await?;
     }
 
-    // Secteur (référentiel ou libellé libre) — UPDATE typé séparé (UUID + texte
+    // Secteur (référentiel ou libellé libre), UPDATE typé séparé (UUID + texte
     // ne passent pas par le builder dynamique). Appliqué seulement si le champ
     // figure dans le formulaire, ce qui autorise aussi le vidage (les deux NULL).
     if champs.secteur_modifie {
@@ -1311,7 +1311,7 @@ pub async fn modifier_annonce_membre(
 }
 
 // ──────────────────────────────────────────────────────────────
-// US3 — PATCH /api/annonces/{id}/conclure : Marquer conclue
+// US3 : PATCH /api/annonces/{id}/conclure : Marquer conclue
 // ──────────────────────────────────────────────────────────────
 pub async fn conclure_annonce(
     pool: web::Data<PgPool>,
@@ -1360,7 +1360,7 @@ pub async fn conclure_annonce(
 }
 
 // ──────────────────────────────────────────────────────────────
-// US3 — DELETE /api/annonces/{id} : Supprimer (soft delete)
+// US3 : DELETE /api/annonces/{id} : Supprimer (soft delete)
 // ──────────────────────────────────────────────────────────────
 pub async fn supprimer_annonce_membre(
     pool: web::Data<PgPool>,
@@ -1404,7 +1404,7 @@ pub async fn supprimer_annonce_membre(
 }
 
 // ──────────────────────────────────────────────────────────────
-// US3 — POST /api/annonces/{id}/medias : Ajouter des photos (propriétaire)
+// US3 : POST /api/annonces/{id}/medias : Ajouter des photos (propriétaire)
 // ──────────────────────────────────────────────────────────────
 pub async fn ajouter_medias_membre(
     pool: web::Data<PgPool>,
@@ -1469,7 +1469,7 @@ pub async fn ajouter_medias_membre(
 }
 
 // ──────────────────────────────────────────────────────────────
-// US3 — DELETE /api/annonces/{id}/medias/{media_id} : Retirer une photo
+// US3 : DELETE /api/annonces/{id}/medias/{media_id} : Retirer une photo
 // ──────────────────────────────────────────────────────────────
 pub async fn supprimer_media_membre(
     pool: web::Data<PgPool>,
@@ -1547,7 +1547,7 @@ pub async fn supprimer_media_membre(
 }
 
 // ──────────────────────────────────────────────────────────────
-// US4 — POST /api/annonces/{id}/favori : Ajouter aux favoris
+// US4 : POST /api/annonces/{id}/favori : Ajouter aux favoris
 // ──────────────────────────────────────────────────────────────
 pub async fn ajouter_favori(
     pool: web::Data<PgPool>,
@@ -1603,7 +1603,7 @@ pub async fn ajouter_favori(
 }
 
 // ──────────────────────────────────────────────────────────────
-// US4 — DELETE /api/annonces/{id}/favori : Retirer des favoris
+// US4 : DELETE /api/annonces/{id}/favori : Retirer des favoris
 // ──────────────────────────────────────────────────────────────
 pub async fn retirer_favori(
     pool: web::Data<PgPool>,
@@ -1645,7 +1645,7 @@ pub async fn retirer_favori(
 }
 
 // ──────────────────────────────────────────────────────────────
-// US4 — GET /api/annonces/favoris : Mes favoris (annonces publiées)
+// US4 : GET /api/annonces/favoris : Mes favoris (annonces publiées)
 // ──────────────────────────────────────────────────────────────
 pub async fn mes_favoris(
     pool: web::Data<PgPool>,

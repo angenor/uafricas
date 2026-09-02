@@ -1,4 +1,4 @@
-# Phase 1 — Contract: postMessage iframe ↔ Vue
+# Phase 1 : Contract: postMessage iframe ↔ Vue
 
 **Feature** : `006-afrolang-excalidraw`
 **Date** : 2026-04-24
@@ -100,7 +100,7 @@ Comportement iframe : `remote = true; excalidrawAPI.updateScene(payload); /* rem
 
 ### `load-snapshot`
 
-Émis par la Vue pour injecter un état persisté — à l'ouverture initiale, ou après reconnexion LiveKit (FR-016).
+Émis par la Vue pour injecter un état persisté, à l'ouverture initiale, ou après reconnexion LiveKit (FR-016).
 
 ```json
 {
@@ -148,7 +148,7 @@ Comportement Vue additionnel côté modérateur émetteur : après l'envoi local
 
 1. Vue monte l'iframe → iframe émet `excalidraw-ready`.
 2. Vue appelle `obtenirTableauBlanc(sessionId)` → reçoit `{ donnees, version }`.
-3. Vue envoie `load-snapshot` avec `donnees` (même si invalide — l'iframe gère la lecture défensive).
+3. Vue envoie `load-snapshot` avec `donnees` (même si invalide, l'iframe gère la lecture défensive).
 4. Utilisateurs commencent à dessiner.
 
 ### Collaboration live (2 participants, A et B)

@@ -1,417 +1,328 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Hero -->
-    <SabbatiqueHero :type="form.type as TypeProgramme | ''" />
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Proposer un échange"
+        :sous-titre="form.type === 'hors_afrique'
+          ? 'Apportez votre expertise depuis l\'extérieur vers un pays d\'Afrique.'
+          : 'Partagez votre expertise d\'un pays d\'Afrique à un autre et renforcez les compétences du continent.'"
+        image="/images/alliance-afrique.jpg"
+      />
+    </template>
 
-    <!-- Breadcrumb -->
-    <CommonBreadcrumbNav
-      class="mx-4 md:mx-16 lg:mx-64 pt-6"
-      :custom-breadcrumbs="[
-        { label: 'Échanges Sabbatiques', to: '/echanges-sabbatiques' },
-        { label: 'Proposer un échange' },
-      ]"
-    />
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[
+          { libelle: 'Sabbafrica', vers: '/echanges-sabbatiques' },
+          { libelle: 'Proposer un échange' },
+        ]"
+      />
+    </template>
 
-    <!-- Formulaire -->
-    <section class="px-4 md:px-16 lg:px-64 py-12">
-      <div class="bg-white rounded-md shadow-lg border-t-8 border-custom-green max-w-3xl mx-auto">
-        <div class="px-6 md:px-10 py-8">
-          <h1 class="text-2xl font-bold text-custom-chocolat mb-2">
-            Proposer un projet d'échange sabbatique
-          </h1>
-          <p class="text-gray-500 text-sm mb-8">
-            Les champs marqués d'un <span class="text-red-500">*</span> sont obligatoires.
-          </p>
+    <div class="rounded-[10px] border border-af-bordure bg-white p-6 md:p-8">
+      <h1 class="text-[20px]/[1.4] font-bold text-af-encre">
+        Proposer un projet d'échange sabbatique
+      </h1>
+      <p class="mt-1 text-[14px]/[1.4] text-af-atone">
+        Les champs marqués d'un <span class="text-af-live">*</span> sont obligatoires.
+      </p>
 
-          <!-- Message d'erreur -->
-          <div
-            v-if="erreur"
-            class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm mb-6 flex items-center gap-2"
-          >
-            <font-awesome-icon :icon="['fas', 'circle-exclamation']" />
-            {{ erreur }}
-          </div>
+      <AfricansEtapes :etapes="ETAPES" :courante="etapeCourante" class="my-6" @aller="etapeCourante = $event" />
 
-          <form @submit.prevent="handleSubmit" class="space-y-5">
-            <!-- Type de programme -->
-            <div>
-              <label for="type-programme" class="block text-sm font-medium text-gray-700 mb-1">
-                Type de programme <span class="text-red-500">*</span>
-              </label>
-              <div class="flex gap-4">
-                <label
-                  v-for="type in TYPES_SELECTION"
-                  :key="type.value"
-                  class="flex-1 cursor-pointer"
-                >
-                  <input
-                    type="radio"
-                    name="type-programme"
-                    :value="type.value"
-                    :checked="form.type === type.value"
-                    class="hidden"
-                    @change="changerType(type.value as TypeProgramme)"
-                  />
-                  <div
-                    class="text-center py-3 px-4 rounded-md border-2 transition-all text-sm font-medium"
-                    :class="form.type === type.value
-                      ? 'border-custom-green bg-custom-green/10 text-custom-green'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300'"
-                  >
-                    <font-awesome-icon
-                      :icon="['fas', type.icon]"
-                      class="mr-2"
-                    />
-                    {{ type.label }}
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Titre -->
-            <div>
-              <label for="titre" class="block text-sm font-medium text-gray-700 mb-1">
-                Titre du projet <span class="text-red-500">*</span>
-              </label>
-              <input
-                id="titre"
-                v-model="form.titre"
-                type="text"
-                class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                placeholder="Ex: Programme d'échange en ingénierie agricole"
-              />
-            </div>
-
-            <!-- Description (EditorJs) -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Description du projet <span class="text-red-500">*</span>
-              </label>
-              <CommonEditorJs
-                ref="editorRef"
-                id="sabbatique-description-editor"
-                v-model="form.descriptionData"
-                placeholder="Décrivez votre projet d'échange : objectifs, activités prévues, profil recherché..."
-                :tools="['header', 'list', 'paragraph', 'quote', 'delimiter', 'marker', 'underline']"
-                min-height="200px"
-              />
-            </div>
-
-            <!-- Domaine -->
-            <div>
-              <label for="domaine" class="block text-sm font-medium text-gray-700 mb-1">
-                Domaine d'intervention <span class="text-red-500">*</span>
-              </label>
-              <select
-                id="domaine"
-                v-model="form.domaine"
-                class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden"
-              >
-                <option value="" disabled>Choisir un domaine</option>
-                <option
-                  v-for="domaine in DOMAINES_FORM"
-                  :key="domaine.value"
-                  :value="domaine.value"
-                >
-                  {{ domaine.label }}
-                </option>
-              </select>
-
-              <!-- Précision du domaine si "Autre" -->
-              <input
-                v-if="form.domaine === 'autre'"
-                v-model="form.domainePrecision"
-                type="text"
-                class="w-full border-2 rounded-md p-2 mt-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                placeholder="Précisez le domaine d'intervention"
-              />
-            </div>
-
-            <!-- Pays & Ville -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="pays" class="block text-sm font-medium text-gray-700 mb-1">
-                  Territoire <span class="text-red-500">*</span>
-                </label>
-                <select
-                  id="pays"
-                  v-model="form.pays"
-                  class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden"
-                >
-                  <option value="" disabled>Choisir un territoire</option>
-                  <option
-                    v-for="pays in PAYS_FORM"
-                    :key="pays.value"
-                    :value="pays.value"
-                  >
-                    {{ pays.label }}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label for="ville" class="block text-sm font-medium text-gray-700 mb-1">
-                  Ville
-                </label>
-                <input
-                  id="ville"
-                  v-model="form.ville"
-                  type="text"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                  placeholder="Ex: Dakar"
-                />
-              </div>
-            </div>
-
-            <!-- Durée du programme -->
-            <div>
-              <label for="duree" class="block text-sm font-medium text-gray-700 mb-1">
-                Durée du programme <span class="text-red-500">*</span>
-              </label>
-              <select
-                id="duree"
-                v-model="form.duree"
-                class="w-full rounded-md border-2 px-2 py-2 border-custom-chocolat text-custom-chocolat focus:outline-hidden"
-              >
-                <option value="" disabled>Choisir une durée</option>
-                <option
-                  v-for="duree in DUREES"
-                  :key="duree.value"
-                  :value="duree.value"
-                >
-                  {{ duree.label }}
-                </option>
-              </select>
-              <p class="text-xs text-gray-400 mt-1">
-                Durée comprise entre 2 semaines et 12 mois.
-              </p>
-            </div>
-
-            <!-- Dates début & fin -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="date-debut" class="block text-sm font-medium text-gray-700 mb-1">
-                  Date de début <span class="text-red-500">*</span>
-                </label>
-                <input
-                  id="date-debut"
-                  v-model="form.dateDebut"
-                  type="date"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden"
-                />
-              </div>
-              <div>
-                <label for="date-fin" class="block text-sm font-medium text-gray-700 mb-1">
-                  Date de fin <span class="text-red-500">*</span>
-                </label>
-                <input
-                  id="date-fin"
-                  v-model="form.dateFin"
-                  type="date"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden"
-                />
-              </div>
-            </div>
-
-            <!-- Prise en charge -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Prise en charge proposée
-              </label>
-              <div class="flex flex-wrap gap-3">
-                <label
-                  v-for="prise in PRISES_EN_CHARGE"
-                  :key="prise.value"
-                  class="flex items-center gap-2 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    :value="prise.value"
-                    v-model="form.prisesEnCharge"
-                    class="w-4 h-4 text-custom-green border-gray-300 rounded focus:ring-3 focus:ring-custom-green"
-                  />
-                  <span class="text-sm text-gray-600">{{ prise.label }}</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Image de couverture -->
-            <div class="p-3 bg-custom-green/20 border border-custom-green rounded-md">
-              <label for="couverture" class="block text-sm font-medium text-custom-green mb-1">
-                Image de couverture
-              </label>
-              <input
-                id="couverture"
-                type="file"
-                accept="image/*"
-                @change="handleCouvertureChange"
-                class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-custom-green file:text-white hover:file:bg-custom-green/90"
-              />
-            </div>
-
-            <!-- Document PDF -->
-            <div class="p-3 bg-custom-chocolat/10 border border-custom-chocolat/50 rounded-md">
-              <label for="document" class="block text-sm font-medium text-custom-chocolat mb-1">
-                Document du projet (PDF)
-              </label>
-              <input
-                id="document"
-                type="file"
-                accept=".pdf"
-                @change="handleDocumentChange"
-                class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-custom-chocolat file:text-white hover:file:bg-custom-chocolat/90"
-              />
-            </div>
-
-            <!-- Informations organisateur -->
-            <div class="border-t pt-5 mt-5">
-              <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
-                Organisation soumettante
-              </h3>
-
-              <!-- Type d'organisation -->
-              <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Type d'organisation <span class="text-red-500">*</span>
-                </label>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <label
-                    v-for="org in TYPES_ORGANISATION"
-                    :key="org.value"
-                    class="cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name="type-organisation"
-                      :value="org.value"
-                      v-model="form.typeOrganisation"
-                      class="hidden"
-                    />
-                    <div
-                      class="text-center py-3 px-2 rounded-md border-2 transition-all text-sm font-medium"
-                      :class="form.typeOrganisation === org.value
-                        ? 'border-custom-green bg-custom-green/10 text-custom-green'
-                        : 'border-gray-200 text-gray-500 hover:border-gray-300'"
-                    >
-                      <font-awesome-icon :icon="['fas', org.icon]" class="mr-2" />
-                      {{ org.label }}
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Statut légal de l'organisation -->
-              <div class="mb-4">
-                <label for="statut-legal" class="block text-sm font-medium text-gray-700 mb-1">
-                  Statut légal de l'organisation
-                </label>
-                <input
-                  id="statut-legal"
-                  v-model="form.statutLegal"
-                  type="text"
-                  class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                  placeholder="Ex: SARL, Association loi 1901, ONG, Établissement public…"
-                />
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label for="org-nom" class="block text-sm font-medium text-gray-700 mb-1">
-                    Nom / Organisation
-                  </label>
-                  <input
-                    id="org-nom"
-                    v-model="form.organisateurNom"
-                    type="text"
-                    class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                    placeholder="Ex: ONG Santé Pour Tous"
-                  />
-                </div>
-                <div>
-                  <label for="org-email" class="block text-sm font-medium text-gray-700 mb-1">
-                    Email de contact
-                  </label>
-                  <input
-                    id="org-email"
-                    v-model="form.organisateurEmail"
-                    type="email"
-                    class="w-full border-2 rounded-md p-2 border-custom-green/70 focus:outline-hidden focus:border-custom-green"
-                    placeholder="contact@organisation.org"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Boutons -->
-            <div class="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-              <NuxtLink
-                to="/echanges-sabbatiques"
-                class="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors text-center"
-              >
-                Annuler
-              </NuxtLink>
-              <button
-                type="submit"
-                :disabled="!isFormValid || loading"
-                class="px-6 py-2.5 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <font-awesome-icon
-                  v-if="loading"
-                  :icon="['fas', 'spinner']"
-                  class="animate-spin"
-                />
-                {{ loading ? 'Soumission en cours...' : 'Soumettre le projet' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </section>
-
-    <!-- Modale de succès -->
-    <Teleport to="body">
-      <div
-        v-if="succes"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-        @click.self="fermerSucces"
+      <p
+        v-if="erreur"
+        class="mb-5 flex items-center gap-2 rounded-lg border border-af-live/20 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live"
       >
-        <div class="bg-white rounded-lg shadow-2xl max-w-md w-full p-8 text-center">
-          <div class="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-            <font-awesome-icon :icon="['fas', 'circle-check']" class="text-3xl text-custom-green" />
+        <font-awesome-icon icon="fa-solid fa-circle-exclamation" />
+        {{ erreur }}
+      </p>
+
+      <!-- `v-show` et non `v-if` : l'éditeur de description est une instance
+           EditorJS, et les deux champs de fichier gardent l'aperçu du fichier
+           choisi. Les démonter à chaque changement d'étape détruirait l'un et
+           viderait l'affichage des autres. -->
+      <form class="flex flex-col gap-5" @submit.prevent="handleSubmit">
+        <!-- ─── Étape 1 : le projet ─── -->
+        <div v-show="etapeCourante === 0" class="flex flex-col gap-5">
+          <fieldset>
+            <legend class="mb-2 text-[14px]/[1.4] text-af-atone italic">
+              Type de programme <span class="not-italic text-af-live">*</span>
+            </legend>
+            <div class="flex flex-col gap-3 sm:flex-row">
+              <label v-for="type in TYPES_SELECTION" :key="type.value" class="flex-1 cursor-pointer">
+                <input
+                  type="radio"
+                  name="type-programme"
+                  :value="type.value"
+                  :checked="form.type === type.value"
+                  class="sr-only peer"
+                  @change="changerType(type.value as TypeProgramme)"
+                />
+                <span
+                  class="block rounded-lg border-2 px-4 py-3 text-center text-[14px]/[1.4] font-bold transition peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-af-chocolat"
+                  :class="form.type === type.value
+                    ? 'border-af-vert bg-af-vert/10 text-af-vert'
+                    : 'border-af-bordure text-af-atone hover:border-af-chocolat'"
+                >
+                  <font-awesome-icon :icon="`fa-solid fa-${type.icon}`" class="mr-2" />
+                  {{ type.label }}
+                </span>
+              </label>
+            </div>
+          </fieldset>
+
+          <AfricansChamp
+            v-model="form.titre"
+            libelle="Titre du projet"
+            placeholder="Ex: Programme d'échange en ingénierie agricole"
+            obligatoire
+          />
+
+          <div class="flex flex-col gap-2">
+            <p class="text-[14px]/[1.4] text-af-atone italic">
+              Description du projet <span class="not-italic text-af-live">*</span>
+            </p>
+            <CommonEditorJs
+              id="sabbatique-description-editor"
+              ref="editorRef"
+              v-model="form.descriptionData"
+              placeholder="Décrivez votre projet d'échange : objectifs, activités prévues, profil recherché…"
+              :tools="['header', 'list', 'paragraph', 'quote', 'delimiter', 'marker', 'underline']"
+              min-height="200px"
+            />
           </div>
-          <h2 class="text-xl font-bold text-custom-chocolat mb-2">
-            Projet soumis avec succès !
-          </h2>
-          <p class="text-gray-600 text-sm mb-6">
-            Votre projet d'échange sabbatique a bien été enregistré. Les candidats
-            pourront désormais postuler.
-          </p>
-          <div class="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              type="button"
-              class="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-              @click="fermerSucces"
-            >
-              Proposer un autre projet
-            </button>
-            <NuxtLink
-              v-if="dernierProgrammeId"
-              :to="`/echanges-sabbatiques/${dernierProgrammeId}`"
-              class="px-5 py-2.5 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
-            >
-              Voir le projet
-            </NuxtLink>
-            <NuxtLink
-              v-else
-              to="/echanges-sabbatiques"
-              class="px-5 py-2.5 bg-custom-green text-white rounded-md hover:bg-custom-green/90 transition-colors"
-            >
-              Voir les programmes
-            </NuxtLink>
+
+          <AfricansChamp v-model="form.domaine" libelle="Domaine d'intervention" type="select" obligatoire>
+            <option value="" disabled>Choisir un domaine</option>
+            <option v-for="domaine in DOMAINES_FORM" :key="domaine.value" :value="domaine.value">
+              {{ domaine.label }}
+            </option>
+          </AfricansChamp>
+
+          <AfricansChamp
+            v-if="form.domaine === 'autre'"
+            v-model="form.domainePrecision"
+            libelle="Précisez le domaine d'intervention"
+            obligatoire
+          />
+        </div>
+
+        <!-- ─── Étape 2 : lieu et calendrier ─── -->
+        <div v-show="etapeCourante === 1" class="flex flex-col gap-5">
+          <div class="grid gap-5 md:grid-cols-2">
+            <AfricansChamp v-model="form.pays" libelle="Territoire" type="select" obligatoire>
+              <option value="" disabled>Choisir un territoire</option>
+              <option v-for="pays in PAYS_FORM" :key="pays.value" :value="pays.value">
+                {{ pays.label }}
+              </option>
+            </AfricansChamp>
+            <AfricansChamp v-model="form.ville" libelle="Ville" placeholder="Ex: Dakar" />
+          </div>
+
+          <AfricansChamp
+            v-model="form.duree"
+            libelle="Durée du programme"
+            type="select"
+            aide="Durée comprise entre 2 semaines et 12 mois."
+            obligatoire
+          >
+            <option value="" disabled>Choisir une durée</option>
+            <option v-for="duree in DUREES" :key="duree.value" :value="duree.value">
+              {{ duree.label }}
+            </option>
+          </AfricansChamp>
+
+          <!-- Champs natifs : `date` n'est pas un type d'AfricansChamp, qui ne
+               rend que de la saisie libre. -->
+          <div class="grid gap-5 md:grid-cols-2">
+            <div class="flex flex-col gap-2">
+              <label for="date-debut" class="text-[14px]/[1.4] text-af-atone italic">
+                Date de début <span class="not-italic text-af-live">*</span>
+              </label>
+              <input
+                id="date-debut"
+                v-model="form.dateDebut"
+                type="date"
+                class="h-11 w-full rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] text-af-encre focus:border-af-chocolat focus:outline-none"
+              />
+            </div>
+            <div class="flex flex-col gap-2">
+              <label for="date-fin" class="text-[14px]/[1.4] text-af-atone italic">
+                Date de fin <span class="not-italic text-af-live">*</span>
+              </label>
+              <input
+                id="date-fin"
+                v-model="form.dateFin"
+                type="date"
+                class="h-11 w-full rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] text-af-encre focus:border-af-chocolat focus:outline-none"
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </Teleport>
-  </div>
+
+        <!-- ─── Étape 3 : conditions et pièces jointes ─── -->
+        <div v-show="etapeCourante === 2" class="flex flex-col gap-5">
+          <fieldset>
+            <legend class="mb-2 text-[14px]/[1.4] text-af-atone italic">Prise en charge proposée</legend>
+            <div class="flex flex-wrap gap-4">
+              <label
+                v-for="prise in PRISES_EN_CHARGE"
+                :key="prise.value"
+                class="flex cursor-pointer items-center gap-2 text-[14px]/[1.4] text-af-corps"
+              >
+                <input
+                  v-model="form.prisesEnCharge"
+                  type="checkbox"
+                  :value="prise.value"
+                  class="size-4 rounded border-af-bordure accent-af-vert"
+                />
+                {{ prise.label }}
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="flex flex-col gap-2 rounded-lg border border-af-vert/30 bg-af-vert/5 p-4">
+            <label for="couverture" class="text-[14px]/[1.4] font-bold text-af-vert">
+              Image de couverture
+            </label>
+            <input
+              id="couverture"
+              type="file"
+              accept="image/*"
+              class="w-full text-[14px]/[1.4] text-af-corps file:mr-4 file:rounded-md file:border-0 file:bg-af-vert file:px-4 file:py-2 file:text-[14px] file:font-bold file:text-white hover:file:opacity-90"
+              @change="handleCouvertureChange"
+            />
+          </div>
+
+          <div class="flex flex-col gap-2 rounded-lg border border-af-chocolat/30 bg-af-chocolat/5 p-4">
+            <label for="document" class="text-[14px]/[1.4] font-bold text-af-chocolat">
+              Document du projet (PDF)
+            </label>
+            <input
+              id="document"
+              type="file"
+              accept=".pdf"
+              class="w-full text-[14px]/[1.4] text-af-corps file:mr-4 file:rounded-md file:border-0 file:bg-af-chocolat file:px-4 file:py-2 file:text-[14px] file:font-bold file:text-white hover:file:opacity-90"
+              @change="handleDocumentChange"
+            />
+          </div>
+        </div>
+
+        <!-- ─── Étape 4 : l'organisation ─── -->
+        <div v-show="etapeCourante === 3" class="flex flex-col gap-5">
+          <fieldset>
+            <legend class="mb-2 text-[14px]/[1.4] text-af-atone italic">
+              Type d'organisation <span class="not-italic text-af-live">*</span>
+            </legend>
+            <div class="grid gap-3 sm:grid-cols-3">
+              <label v-for="org in TYPES_ORGANISATION" :key="org.value" class="cursor-pointer">
+                <input
+                  v-model="form.typeOrganisation"
+                  type="radio"
+                  name="type-organisation"
+                  :value="org.value"
+                  class="sr-only peer"
+                />
+                <span
+                  class="block rounded-lg border-2 px-2 py-3 text-center text-[14px]/[1.4] font-bold transition peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-af-chocolat"
+                  :class="form.typeOrganisation === org.value
+                    ? 'border-af-vert bg-af-vert/10 text-af-vert'
+                    : 'border-af-bordure text-af-atone hover:border-af-chocolat'"
+                >
+                  <font-awesome-icon :icon="`fa-solid fa-${org.icon}`" class="mr-2" />
+                  {{ org.label }}
+                </span>
+              </label>
+            </div>
+          </fieldset>
+
+          <AfricansChamp
+            v-model="form.statutLegal"
+            libelle="Statut légal de l'organisation"
+            placeholder="Ex: SARL, Association loi 1901, ONG, Établissement public…"
+          />
+
+          <div class="grid gap-5 md:grid-cols-2">
+            <AfricansChamp
+              v-model="form.organisateurNom"
+              libelle="Nom / Organisation"
+              placeholder="Ex: ONG Santé Pour Tous"
+            />
+            <AfricansChamp
+              v-model="form.organisateurEmail"
+              libelle="Email de contact"
+              type="email"
+              placeholder="contact@organisation.org"
+            />
+          </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="mt-3 flex flex-wrap items-center gap-4 border-t border-af-bordure pt-6">
+          <AfricansBouton vers="/echanges-sabbatiques" variante="secondaire">
+            Annuler
+          </AfricansBouton>
+
+          <AfricansBouton
+            v-if="etapeCourante > 0"
+            variante="secondaire"
+            icone="fa-solid fa-arrow-left"
+            class="ml-auto"
+            @click="etapeCourante -= 1"
+          >
+            Précédent
+          </AfricansBouton>
+
+          <AfricansBouton
+            v-if="etapeCourante < ETAPES.length - 1"
+            icone="fa-solid fa-arrow-right"
+            :class="etapeCourante === 0 && 'ml-auto'"
+            @click="suivant"
+          >
+            Suivant
+          </AfricansBouton>
+          <AfricansBouton
+            v-else
+            type="submit"
+            variante="vert"
+            :desactive="loading"
+            :tourne="loading"
+            :icone="loading ? 'fa-solid fa-spinner' : 'fa-solid fa-paper-plane'"
+          >
+            {{ loading ? 'Soumission en cours…' : 'Soumettre le projet' }}
+          </AfricansBouton>
+        </div>
+      </form>
+    </div>
+
+    <AfricansModale
+      :model-value="succes"
+      titre="Projet soumis avec succès !"
+      icone="fa-solid fa-circle-check"
+      @update:model-value="fermerSucces"
+    >
+      <p class="text-[14px]/[1.6] text-af-corps">
+        Votre projet d'échange sabbatique a bien été enregistré. Les candidats pourront
+        désormais postuler.
+      </p>
+
+      <template #actions>
+        <button
+          type="button"
+          class="text-base font-bold text-af-corps transition hover:opacity-70"
+          @click="fermerSucces"
+        >
+          Proposer un autre projet
+        </button>
+        <AfricansBouton
+          :vers="dernierProgrammeId ? `/echanges-sabbatiques/${dernierProgrammeId}` : '/echanges-sabbatiques'"
+          icone="fa-solid fa-arrow-right"
+        >
+          {{ dernierProgrammeId ? 'Voir le projet' : 'Voir les programmes' }}
+        </AfricansBouton>
+      </template>
+    </AfricansModale>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
@@ -428,6 +339,8 @@ import {
   type TypeProgramme,
 } from '~/composables/useSabbatiques'
 import { editorJsToHtml, type EditorJsData } from '~/composables/useEditorJs'
+
+definePageMeta({ layout: false })
 
 const route = useRoute()
 const { creerProgramme, erreur: sabbatiqueErreur } = useSabbatiques()
@@ -505,18 +418,56 @@ const hasDescription = computed(() => {
   return form.descriptionData && form.descriptionData.blocks && form.descriptionData.blocks.length > 0
 })
 
-const isFormValid = computed(() => {
-  return form.type &&
-    form.typeOrganisation &&
-    form.titre.trim() &&
-    hasDescription.value &&
-    form.domaine &&
-    (form.domaine !== 'autre' || form.domainePrecision.trim()) &&
-    form.pays &&
-    form.duree &&
-    form.dateDebut &&
-    form.dateFin
-})
+const ETAPES = [
+  { titre: 'Le projet' },
+  { titre: 'Lieu & calendrier' },
+  { titre: 'Conditions & pièces' },
+  { titre: "L'organisation" },
+] as const
+const etapeCourante = ref(0)
+
+/**
+ * Ce qui manque à une étape, ou null. C'est la SOURCE de la validation :
+ * `isFormValid` en est la conjonction, et l'envoi ramène à l'étape fautive.
+ * Un second jeu de règles pour le bouton divergerait au premier champ ajouté.
+ */
+function manqueEtape(i: number): string | null {
+  switch (i) {
+    case 0:
+      if (!form.type) return 'Choisissez le type de programme.'
+      if (!form.titre.trim()) return 'Le titre du projet est requis.'
+      if (!hasDescription.value) return 'La description du projet est requise.'
+      if (!form.domaine) return "Choisissez un domaine d'intervention."
+      if (form.domaine === 'autre' && !form.domainePrecision.trim()) {
+        return "Précisez le domaine d'intervention choisi au titre de « Autre »."
+      }
+      return null
+    case 1:
+      if (!form.pays) return 'Choisissez un territoire.'
+      if (!form.duree) return 'Choisissez une durée de programme.'
+      if (!form.dateDebut || !form.dateFin) return 'Indiquez les dates de début et de fin.'
+      return null
+    case 2:
+      // Pièces jointes et prises en charge : toutes facultatives.
+      return null
+    case 3:
+      return form.typeOrganisation ? null : "Choisissez le type d'organisation."
+    default:
+      return null
+  }
+}
+
+const isFormValid = computed(() => ETAPES.every((_, i) => manqueEtape(i) === null))
+
+function suivant() {
+  const manque = manqueEtape(etapeCourante.value)
+  if (manque) {
+    erreur.value = manque
+    return
+  }
+  erreur.value = null
+  etapeCourante.value = Math.min(etapeCourante.value + 1, ETAPES.length - 1)
+}
 
 const handleCouvertureChange = (event: Event) => {
   const target = event.target as HTMLInputElement
@@ -533,6 +484,7 @@ const handleDocumentChange = (event: Event) => {
 }
 
 const resetForm = async () => {
+  etapeCourante.value = 0
   form.type = ''
   form.typeOrganisation = ''
   form.statutLegal = ''
@@ -556,7 +508,16 @@ const resetForm = async () => {
 }
 
 const handleSubmit = async () => {
-  if (!isFormValid.value) return
+  // L'envoi ramène à l'étape fautive : un message rendu sur une étape
+  // invisible est un message perdu.
+  for (let i = 0; i < ETAPES.length; i++) {
+    const manque = manqueEtape(i)
+    if (manque) {
+      erreur.value = manque
+      etapeCourante.value = i
+      return
+    }
+  }
 
   loading.value = true
   erreur.value = null

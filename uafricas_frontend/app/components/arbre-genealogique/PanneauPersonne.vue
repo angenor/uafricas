@@ -169,14 +169,14 @@ const surConfirmerSuppression = () => {
             <span class="mt-0.5 text-stone-400">★</span>
             <div>
               <span class="text-stone-700">{{ formaterDate(personne.naissance) }}</span>
-              <span v-if="personne.naissance_lieu" class="text-stone-500"> — {{ personne.naissance_lieu }}</span>
+              <span v-if="personne.naissance_lieu" class="text-stone-500">, {{ personne.naissance_lieu }}</span>
             </div>
           </div>
           <div v-if="personne.deces" class="flex items-start gap-2 text-sm">
             <span class="mt-0.5 text-stone-400">✝</span>
             <div>
               <span class="text-stone-700">{{ formaterDate(personne.deces) }}</span>
-              <span v-if="personne.deces_lieu" class="text-stone-500"> — {{ personne.deces_lieu }}</span>
+              <span v-if="personne.deces_lieu" class="text-stone-500">, {{ personne.deces_lieu }}</span>
             </div>
           </div>
         </div>

@@ -1,179 +1,202 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Mobile Sidebar (Filtres) -->
-    <ProjetsProjetFiltersMobile
-      v-model="filtres"
-      :is-open="sidebarOpen"
-      :total-projets="statistics.total"
-      :filtered-count="total"
-      @close="sidebarOpen = false"
-      @reset="resetFilters"
-    />
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Financer un projet"
+        sous-titre="Découvrez des projets innovants et contribuez au développement durable du continent africain"
+        image="/images/finance_projet_banire.png"
+      />
+    </template>
 
-    <!-- Mobile Toggle Button -->
-    <div class="lg:hidden fixed bottom-6 right-6 z-30">
-      <button
-        class="p-4 rounded-full bg-custom-green text-white shadow-lg hover:shadow-xl transition-all"
-        @click="sidebarOpen = true"
-      >
-        <font-awesome-icon :icon="['fas', 'filter']" class="w-5 h-5" />
-      </button>
-    </div>
+    <template #fil-ariane>
+      <AfricansFilAriane :segments="[{ libelle: 'Financer un projet' }]">
+        <template #centre>
+          <p class="text-base font-bold text-af-encre">
+            {{ total }} projet{{ total > 1 ? 's' : '' }}
+          </p>
+        </template>
+        <template #action>
+          <AfricansBouton icone="fa-solid fa-paper-plane" vers="/soumettre-projet">
+            Soumettre mon projet
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
 
-    <!-- Hero Section -->
-    <ProjetsProjetHero :statistics="statistics" />
-
-    <!-- Breadcrumb -->
-    <div class="bg-gray-50">
-      <div class="max-w-7xl mx-auto px-4 py-4">
-        <CommonBreadcrumbNav />
-      </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 py-8">
-      <!-- Search Bar -->
-      <div class="max-w-2xl mx-auto mb-8">
-        <ProjetsProjetSearchBar v-model="filtres.recherche" @search="handleSearch" />
-      </div>
-
-      <!-- Content with Sidebar -->
-      <div class="flex gap-8">
-        <!-- Desktop Sidebar -->
-        <div class="hidden lg:block w-80 flex-shrink-0">
-          <ProjetsProjetFilters
-            v-model="filtres"
-            :total-projets="statistics.total"
-            :filtered-count="total"
-            @reset="resetFilters"
+    <div class="flex flex-col gap-6">
+      <form class="flex flex-wrap gap-3" @submit.prevent="handleSearch">
+        <label class="relative min-w-0 flex-1">
+          <span class="sr-only">Rechercher un projet</span>
+          <font-awesome-icon
+            icon="fa-solid fa-magnifying-glass"
+            class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-af-atone-2"
           />
-        </div>
+          <input
+            v-model="filtres.recherche"
+            type="search"
+            placeholder="Titre, porteur, mot-clé…"
+            class="h-11 w-full rounded-[10px] border border-af-bordure bg-white pr-4 pl-11 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
+          />
+        </label>
+        <AfricansBouton type="submit" icone="fa-solid fa-magnifying-glass">Rechercher</AfricansBouton>
+      </form>
 
-        <!-- Main Content Area -->
-        <div class="flex-1 min-w-0">
-          <!-- Results count -->
-          <div class="flex items-center justify-between mb-6">
-            <p class="text-gray-600">
-              <span class="font-semibold text-gray-900">{{ total }}</span> projet(s) trouvé(s)
-            </p>
-          </div>
-
-          <!-- Loading State -->
-          <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div
-              v-for="n in 6"
-              :key="n"
-              class="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse"
-            >
-              <div class="h-48 bg-gray-200" />
-              <div class="p-5 space-y-4">
-                <div class="h-4 bg-gray-200 rounded w-3/4" />
-                <div class="h-3 bg-gray-200 rounded w-1/2" />
-                <div class="h-3 bg-gray-200 rounded" />
-                <div class="h-3 bg-gray-200 rounded w-2/3" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Projects Grid -->
-          <div
-            v-else-if="projets.length > 0"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
-          >
-            <ProjetsProjetCard
-              v-for="projet in projets"
-              :key="projet.id"
-              :projet="projet"
-              class="transform hover:scale-[1.02] transition-all"
-              data-aos="fade-up"
-            />
-          </div>
-
-          <!-- Empty State -->
-          <div v-else class="bg-white rounded-2xl shadow-xl p-12 text-center">
-            <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <font-awesome-icon :icon="['fas', 'folder-open']" class="w-12 h-12 text-gray-400" />
-            </div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun projet trouvé</h3>
-            <p class="text-gray-500 max-w-md mx-auto mb-6">
-              Essayez de modifier vos critères de recherche ou explorez d'autres filtres.
-            </p>
-            <button
-              class="px-6 py-3 bg-gradient-to-r from-custom-green to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg transition-all"
-              @click="resetFilters"
-            >
-              Réinitialiser les filtres
-            </button>
-          </div>
-
-          <!-- Pagination -->
-          <div v-if="totalPages > 1" class="flex justify-center mt-8">
-            <nav class="flex items-center gap-2">
-              <button
-                :disabled="currentPage === 1"
-                class="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                @click="currentPage--"
-              >
-                <font-awesome-icon :icon="['fas', 'chevron-left']" class="w-4 h-4" />
-              </button>
-
-              <div class="flex gap-1">
-                <button
-                  v-for="page in visiblePages"
-                  :key="page"
-                  :class="{
-                    'bg-gradient-to-r from-custom-green to-emerald-600 text-white': page === currentPage,
-                    'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200': page !== currentPage,
-                  }"
-                  class="w-10 h-10 rounded-xl font-medium transition-all"
-                  @click="currentPage = page"
-                >
-                  {{ page }}
-                </button>
-              </div>
-
-              <button
-                :disabled="currentPage === totalPages"
-                class="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                @click="currentPage++"
-              >
-                <font-awesome-icon :icon="['fas', 'chevron-right']" class="w-4 h-4" />
-              </button>
-            </nav>
-          </div>
-        </div>
+      <div v-if="loading" class="grid gap-5 sm:grid-cols-2">
+        <div v-for="n in 4" :key="n" class="h-80 animate-pulse rounded-[10px] bg-af-bordure" />
       </div>
 
-      <!-- CTA Section -->
-      <div class="mt-16 bg-gradient-to-r from-custom-chocolat to-orange-600 rounded-3xl p-8 md:p-12 text-white text-center" data-aos="fade-up">
-        <h2 class="text-2xl md:text-3xl font-bold mb-4">Vous avez un projet ?</h2>
-        <p class="text-white/90 max-w-2xl mx-auto mb-8">
-          Soumettez votre projet et bénéficiez du soutien de notre communauté d'investisseurs et de partenaires africains.
+      <template v-else-if="projets.length > 0">
+        <div class="grid gap-5 sm:grid-cols-2">
+          <ProjetsProjetCard v-for="projet in projets" :key="projet.id" :projet="projet" />
+        </div>
+
+        <nav v-if="totalPages > 1" class="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            :disabled="currentPage === 1"
+            class="grid size-10 place-items-center rounded-[10px] border border-af-bordure bg-white transition hover:border-af-chocolat disabled:opacity-40"
+            aria-label="Page précédente"
+            @click="currentPage--"
+          >
+            <font-awesome-icon icon="fa-solid fa-chevron-left" />
+          </button>
+          <button
+            v-for="page in visiblePages"
+            :key="page"
+            type="button"
+            class="size-10 rounded-[10px] text-[14px]/[1.4] font-bold transition"
+            :class="page === currentPage ? 'bg-af-chocolat text-white' : 'border border-af-bordure bg-white hover:border-af-chocolat'"
+            :aria-current="page === currentPage ? 'page' : undefined"
+            @click="currentPage = page"
+          >
+            {{ page }}
+          </button>
+          <button
+            type="button"
+            :disabled="currentPage === totalPages"
+            class="grid size-10 place-items-center rounded-[10px] border border-af-bordure bg-white transition hover:border-af-chocolat disabled:opacity-40"
+            aria-label="Page suivante"
+            @click="currentPage++"
+          >
+            <font-awesome-icon icon="fa-solid fa-chevron-right" />
+          </button>
+        </nav>
+      </template>
+
+      <!-- Deux vides distincts : « rien ne correspond » n'est pas « aucun
+           projet n'est publié », et la sortie proposée n'est pas la même. -->
+      <div v-else class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+        <font-awesome-icon icon="fa-solid fa-folder-open" class="text-4xl text-af-atone-2" />
+        <p class="mt-4 text-[16px]/[1.4] font-bold">
+          {{ statistics.total > 0 ? 'Aucun projet ne correspond à vos critères' : 'Aucun projet publié pour le moment' }}
         </p>
-        <NuxtLink
-          to="/soumettre-projet"
-          class="inline-flex items-center gap-2 px-8 py-4 bg-white text-custom-chocolat rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all"
+        <p class="mx-auto mt-2 max-w-md text-[14px]/[1.4] text-af-corps">
+          {{ statistics.total > 0
+            ? 'Essayez de modifier vos critères de recherche ou explorez d’autres filtres.'
+            : 'Soyez le premier à soumettre le vôtre.' }}
+        </p>
+        <AfricansBouton
+          v-if="statistics.total > 0"
+          class="mt-6"
+          variante="secondaire"
+          icone="fa-solid fa-rotate-left"
+          @click="resetFilters"
         >
-          <font-awesome-icon :icon="['fas', 'paper-plane']" class="w-5 h-5" />
+          Réinitialiser les filtres
+        </AfricansBouton>
+        <AfricansBouton v-else class="mt-6" icone="fa-solid fa-paper-plane" vers="/soumettre-projet">
           Soumettre mon projet
-        </NuxtLink>
+        </AfricansBouton>
       </div>
     </div>
-  </div>
+
+    <template #rail>
+      <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="resetFilters">
+        <div class="flex flex-col gap-4">
+          <AfricansChamp v-model="filtres.pays" libelle="Territoire" type="select">
+            <option v-for="pays in PAYS_PROJETS" :key="pays.value" :value="pays.value">{{ pays.label }}</option>
+          </AfricansChamp>
+
+          <AfricansChamp v-model="filtres.budgetMax" libelle="Budget maximum" type="select">
+            <option v-for="budget in BUDGETS" :key="budget.value" :value="budget.value">{{ budget.label }}</option>
+          </AfricansChamp>
+
+          <AfricansChamp v-model="filtres.duree" libelle="Durée du projet" type="select">
+            <option v-for="duree in DUREES" :key="duree.value" :value="duree.value">{{ duree.label }}</option>
+          </AfricansChamp>
+
+          <AfricansChamp v-model="filtres.sortBy" libelle="Trier par" type="select">
+            <option v-for="option in OPTIONS_TRI" :key="option.value" :value="option.value">{{ option.label }}</option>
+          </AfricansChamp>
+        </div>
+      </AfricansPanneau>
+
+      <!-- Les quatre compteurs du bandeau d'origine. Ils viennent de l'API,
+           pas d'une constante : à zéro, ils disent qu'il n'y a rien en base. -->
+      <AfricansPanneau titre="Statistiques" icone="fa-solid fa-chart-line">
+        <dl class="flex flex-col">
+          <div
+            v-for="(stat, i) in statistiquesAffichees"
+            :key="stat.libelle"
+            class="flex items-baseline justify-between gap-4 py-3"
+            :class="i > 0 && 'border-t border-af-bordure'"
+          >
+            <dt class="text-[14px]/[1.4] font-bold">{{ stat.libelle }}</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-chocolat">{{ stat.valeur }}</dd>
+          </div>
+          <div class="flex items-baseline justify-between gap-4 border-t border-af-bordure pt-3">
+            <dt class="text-[14px]/[1.4] font-bold">Résultats filtrés</dt>
+            <dd class="text-[14px]/[1.4] font-bold text-af-vert">{{ total }}</dd>
+          </div>
+        </dl>
+      </AfricansPanneau>
+
+      <AfricansPanneau titre="Vous avez un projet ?" icone="fa-solid fa-lightbulb">
+        <p class="mb-4 text-[14px]/[1.4] text-af-corps">
+          Soumettez-le et bénéficiez du soutien de notre communauté d'investisseurs et de partenaires africains.
+        </p>
+        <AfricansBouton pleine-largeur icone="fa-solid fa-paper-plane" vers="/soumettre-projet">
+          Soumettre mon projet
+        </AfricansBouton>
+      </AfricansPanneau>
+    </template>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
-import AOS from 'aos'
 import {
   useProjets,
   convertirFiltresPageVersAPI,
+  PAYS_PROJETS,
+  BUDGETS,
+  DUREES,
+  OPTIONS_TRI,
   type ProjetAPI,
   type ProjetStatistiquesAPI,
   type FiltresProjetPage,
 } from '~/composables/useProjets'
 
+/**
+ * Financer un projet, porté sur le gabarit de la refonte.
+ *
+ * Les données et les filtres ne bougent pas : mêmes endpoints, mêmes
+ * critères (territoire, budget, durée, tri), même pagination serveur. Trois
+ * déplacements :
+ *   - filtres et statistiques passent dans le rail, qui remplace À LA FOIS
+ *     la colonne de gauche et son tiroir mobile. Le gabarit empile déjà le
+ *     rail sous le contenu en dessous de 64rem ;
+ *   - l'appel à soumettre un projet quitte le pied de page pour la barre de
+ *     contexte, où il est visible sans défiler ;
+ *   - AOS disparaît : il n'animait que l'apparition des cartes.
+ *
+ * Les quatre compteurs du bandeau (total, validés, en cours, terminés)
+ * viennent de `GET /api/projets/statistiques` : ils affichent 0 parce qu'il
+ * n'y a aucun projet en base, pas parce qu'ils sont décoratifs.
+ */
+definePageMeta({ layout: false })
+
 useHead({
-  title: 'Financer un Projet - AfricanS',
+  title: 'Financer un projet | AfricanS',
   meta: [
     {
       name: 'description',
@@ -189,7 +212,6 @@ const projets = ref<ProjetAPI[]>([])
 const loading = computed(() => chargement.value)
 const total = ref(0)
 const totalPages = ref(1)
-const sidebarOpen = ref(false)
 const currentPage = ref(1)
 const itemsPerPage = 12
 
@@ -208,6 +230,14 @@ const statistics = ref<ProjetStatistiquesAPI>({
   en_cours: 0,
   termines: 0,
 })
+
+/** Les quatre compteurs du bandeau d'origine, tels que l'API les renvoie. */
+const statistiquesAffichees = computed(() => [
+  { libelle: 'Projets', valeur: statistics.value.total },
+  { libelle: 'Validés', valeur: statistics.value.valides },
+  { libelle: 'En cours', valeur: statistics.value.en_cours },
+  { libelle: 'Terminés', valeur: statistics.value.termines },
+])
 
 // Visible pages pour la pagination
 const visiblePages = computed(() => {
@@ -277,20 +307,12 @@ watch(currentPage, () => {
 // Lifecycle
 onMounted(async () => {
   // Load data in parallel
-  const [_, stats] = await Promise.all([
+  const [, stats] = await Promise.all([
     chargerProjets(),
     obtenirStatistiques(),
   ])
   if (stats) {
     statistics.value = stats
   }
-
-  // Initialize AOS
-  AOS.init({
-    duration: 800,
-    easing: 'ease-out-cubic',
-    once: true,
-    offset: 50,
-  })
 })
 </script>

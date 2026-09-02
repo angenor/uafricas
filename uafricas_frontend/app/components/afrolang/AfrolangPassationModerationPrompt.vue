@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Passation de modération (refonte multi-modérateurs, 2026-06) — Tailwind pur.
+// Passation de modération (refonte multi-modérateurs, 2026-06), Tailwind pur.
 //
 // Deux UI selon le rôle de l'utilisateur courant vis-à-vis de la demande :
 //  - CIBLE (placeholder = démarreur) : prompt « voulez-vous transmettre la

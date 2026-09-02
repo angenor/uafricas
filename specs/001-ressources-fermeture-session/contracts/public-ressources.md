@@ -1,7 +1,7 @@
-# Contrats HTTP — Ressources contribuées (public)
+# Contrats HTTP : Ressources contribuées (public)
 
 **Préfixe** : `/api/afrolang`
-**Auth** : JWT bearer requis sur tous les `POST` et `DELETE`. Lecture ouverte selon FR-001 (publique pour salle publique ; restreinte pour salle privée — voir 401/403).
+**Auth** : JWT bearer requis sur tous les `POST` et `DELETE`. Lecture ouverte selon FR-001 (publique pour salle publique ; restreinte pour salle privée : voir 401/403).
 
 Toutes les réponses suivent l'enveloppe standard `ApiResponse<T> = { success: boolean, data: T | null, error: string | null, meta?: PaginationMeta }`.
 
@@ -36,7 +36,7 @@ Filtrage par visibilité accompagnateur :
     {
       "id": "...",
       "type": "document",
-      "titre": "Grammaire bambara — bases",
+      "titre": "Grammaire bambara : bases",
       "description": "Polycopié 12 pages introduction conjugaison.",
       "auteur": { "id": "...", "nom": "Diop", "prenom": "Awa", "avatar_url": null },
       "session_origine_id": "...",
@@ -71,7 +71,7 @@ Ajoute une ressource. Variant `document` → multipart ; autres variants → JSO
 - Rate limit : `COUNT(*) WHERE auteur_id = me AND salle_id = $1 AND created_at > NOW() - INTERVAL '24h' AND deleted_at IS NULL`. Si ≥ 10 → **429** `code='rate_limit_ressources'`.
 - Si salle privée → ligne active dans `acces_salle_privee` requise. Sinon **403** `code='salle_privee_acces_requis'`.
 
-### Body — variant `document` (multipart/form-data)
+### Body : variant `document` (multipart/form-data)
 
 | Champ | Type | Contraintes |
 |---|---|---|
@@ -81,12 +81,12 @@ Ajoute une ressource. Variant `document` → multipart ; autres variants → JSO
 | `session_origine_id` | text | UUID optionnel (session courante) |
 | `fichier` | file | MIME ∈ {`application/pdf`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `application/vnd.oasis.opendocument.text`} ; extension ∈ {`.pdf`, `.doc`, `.docx`, `.odt`} ; taille ≤ 20 Mo |
 
-### Body — variant `video_youtube` (JSON)
+### Body : variant `video_youtube` (JSON)
 
 ```json
 {
   "type": "video_youtube",
-  "titre": "Conjugaison bambara — leçon 1",
+  "titre": "Conjugaison bambara : leçon 1",
   "description": null,
   "session_origine_id": "...",
   "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
@@ -95,7 +95,7 @@ Ajoute une ressource. Variant `document` → multipart ; autres variants → JSO
 
 Le backend extrait l'ID 11 chars via regex et le stocke dans `video_id_youtube`. URL non-YouTube ou ID introuvable → **400** `code='url_youtube_invalide'`.
 
-### Body — variant `lien_web` (JSON)
+### Body : variant `lien_web` (JSON)
 
 ```json
 {
@@ -107,7 +107,7 @@ Le backend extrait l'ID 11 chars via regex et le stocke dans `video_id_youtube`.
 }
 ```
 
-### Body — variant `accompagnateur` (JSON)
+### Body : variant `accompagnateur` (JSON)
 
 ```json
 {

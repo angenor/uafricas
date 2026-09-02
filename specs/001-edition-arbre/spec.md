@@ -3,7 +3,7 @@
 **Feature Branch**: `001-edition-arbre`
 **Created**: 2026-03-16
 **Status**: Draft
-**Input**: User description: "Feature 3 — Édition interactive de l'arbre. Ajouter/modifier/supprimer des membres depuis la vue arbre (clic pour ajouter un parent, un enfant, un conjoint). Formulaire guidé pour ne pas créer de liens incohérents (ex : quelqu'un ne peut pas être son propre ancêtre). Indicateur de complétude (branches incomplètes où il manque des parents)."
+**Input**: User description: "Feature 3, Édition interactive de l'arbre. Ajouter/modifier/supprimer des membres depuis la vue arbre (clic pour ajouter un parent, un enfant, un conjoint). Formulaire guidé pour ne pas créer de liens incohérents (ex : quelqu'un ne peut pas être son propre ancêtre). Indicateur de complétude (branches incomplètes où il manque des parents)."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -11,7 +11,7 @@
 
 L'utilisateur connecté, depuis la page de visualisation de son arbre, clique sur un nœud (personne existante) puis choisit une action contextuelle : « Ajouter un parent », « Ajouter un enfant » ou « Ajouter un conjoint ». Un formulaire guidé s'ouvre pour saisir les informations de la nouvelle personne. À la validation, la nouvelle personne et son lien familial sont créés simultanément, et l'arbre se met à jour en temps réel sans rechargement de page.
 
-**Why this priority**: C'est la fonctionnalité centrale de cette feature — sans elle, l'utilisateur doit quitter la visualisation pour ajouter des membres, ce qui casse le flux d'exploration. L'ajout contextuel depuis l'arbre est le principal gain d'ergonomie.
+**Why this priority**: C'est la fonctionnalité centrale de cette feature, sans elle, l'utilisateur doit quitter la visualisation pour ajouter des membres, ce qui casse le flux d'exploration. L'ajout contextuel depuis l'arbre est le principal gain d'ergonomie.
 
 **Independent Test**: Depuis la vue arbre avec au moins 1 personne, cliquer sur un nœud, choisir « Ajouter un enfant », remplir le formulaire, valider → la nouvelle personne apparaît dans l'arbre avec le lien correct.
 
@@ -130,7 +130,7 @@ L'arbre affiche des indicateurs visuels sur les personnes dont l'ascendance est 
 
 ## Assumptions
 
-- Cette feature s'appuie sur la page de visualisation existante (Feature 2 — `/arbre-genealogique/visualisation`). Le menu contextuel et les formulaires s'intègrent dans cette page.
+- Cette feature s'appuie sur la page de visualisation existante (Feature 2, `/arbre-genealogique/visualisation`). Le menu contextuel et les formulaires s'intègrent dans cette page.
 - Les API CRUD existantes (Feature 1) sont utilisées pour créer, modifier et supprimer les personnes et liens. Aucun nouvel endpoint n'est nécessaire a priori.
 - La détection de cycles est déjà implémentée côté backend (Feature 1). Le frontend affiche le message d'erreur retourné par l'API.
 - Le formulaire de création dans l'arbre utilise les mêmes champs que le formulaire existant (Feature 1) : nom, prénoms, genre, dates et lieux de naissance/décès.
@@ -153,4 +153,4 @@ L'arbre affiche des indicateurs visuels sur les personnes dont l'ascendance est 
 - **SC-003**: La mise à jour visuelle de l'arbre après ajout/modification/suppression se fait en moins de 1 seconde.
 - **SC-004**: 90% des utilisateurs identifient et complètent au moins une branche incomplète lors de leur première session d'édition, guidés par les indicateurs visuels.
 - **SC-005**: Le nombre moyen de personnes ajoutées par session augmente de 50% par rapport à l'ajout via la page liste (Feature 1), grâce au flux contextuel.
-- **SC-006**: Aucune perte de données saisies en cas d'erreur réseau — le formulaire conserve les informations et permet de réessayer.
+- **SC-006**: Aucune perte de données saisies en cas d'erreur réseau, le formulaire conserve les informations et permet de réessayer.

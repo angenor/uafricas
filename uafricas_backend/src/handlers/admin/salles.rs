@@ -525,7 +525,7 @@ pub async fn retirer_pays_origine_salle(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// Feature 001-admin-salles-publiques — US3
+// Feature 001-admin-salles-publiques : US3
 // Administrateurs de salle publique : nomination, révocation, historique.
 // ════════════════════════════════════════════════════════════════════════════
 

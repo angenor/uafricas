@@ -1,61 +1,73 @@
 <script setup lang="ts">
 import type { MembreLightAPI } from '~/composables/useAmis'
+import { useUserStore } from '~/stores/user'
 
+/**
+ * Messagerie ancrée, sur le modèle de LinkedIn.
+ *
+ * Trois traits la définissent, et c'est ce qui la sépare de la fenêtre
+ * flottante qu'elle remplace :
+ *   1. elle est ANCRÉE en bas à droite, pas déplaçable ;
+ *   2. repliée, elle reste une BARRE visible et non un bouton rond, la
+ *      messagerie annonce sa présence sans occuper l'écran ;
+ *   3. la liste se cherche.
+ *
+ * Ce que LinkedIn n'a pas et que la plateforme garde : les rendez-vous vidéo et
+ * l'annuaire des membres. Ils passent en icônes d'en-tête plutôt qu'en onglets,
+ * à la place qu'occupent chez LinkedIn le stylo « nouveau message » et le menu.
+ */
 const { conversations, nonLusTotal, listerConversations, fermerConversation, demandeOuverture } = useMessagerie()
 const { nbAttenteMoi, compterAttenteMoi } = useRendezVous()
 // Appels directs : sonnerie entrante + salle visio (montés globalement, ci-dessous).
 const { appelEntrant, appelActif, accepterAppel, refuserAppel } = useAppels()
+const userStore = useUserStore()
 
 // La barre de lecture persistante occupe le bas de l'écran : sans ce décalage,
-// le bouton flottant passerait dessous et deviendrait inatteignable.
+// le dock passerait dessous et deviendrait inatteignable.
 const { aUnContenu: lectureMediaActive } = useLecteurMedia()
-
-// Fenêtre déplaçable + redimensionnable (position/taille persistées).
-const {
-  style: styleFenetre,
-  deplace,
-  demarrerDeplacement,
-  surDeplacement,
-  finDeplacement,
-  demarrerRedimensionnement,
-  surRedimensionnement,
-  finRedimensionnement,
-} = useFenetreFlottante({ cle: 'messagerie:fenetre', largeurDefaut: 352, hauteurDefaut: 480 })
 
 const ouvert = ref(false)
 const amiSelectionne = ref<MembreLightAPI | null>(null)
 const verrouilleeSelection = ref(false)
 const chargee = ref(false)
+const recherche = ref('')
 
-// Onglets : conversations, annuaire des inscrits, rendez-vous visio.
-const ongletActif = ref<'discussions' | 'membres' | 'rendezvous'>('discussions')
+/** Vue du corps quand aucune conversation n'est ouverte. */
+const vue = ref<'discussions' | 'membres' | 'rendezvous'>('discussions')
+
+const badge = computed(() => (nonLusTotal.value > 9 ? '9+' : String(nonLusTotal.value)))
+const photoMoi = computed(() => urlMedia(userStore.user?.photo_url))
+const nomMoi = computed(() => userStore.fullName || userStore.displayName || 'Mon compte')
+
+const titreEnTete = computed(() => {
+  if (amiSelectionne.value) return `${amiSelectionne.value.prenom} ${amiSelectionne.value.nom}`
+  if (vue.value === 'membres') return 'Nouveau message'
+  if (vue.value === 'rendezvous') return 'Rendez-vous'
+  return 'Messagerie'
+})
+
+const charger = async () => {
+  compterAttenteMoi()
+  if (chargee.value) return
+  await listerConversations()
+  chargee.value = true
+}
 
 // Ouverture programmatique depuis l'extérieur (ex. /codi-moi → « Envoyer un message »).
 watch(demandeOuverture, async (ami) => {
   if (!ami) return
   ouvert.value = true
-  ongletActif.value = 'discussions'
-  if (!chargee.value) {
-    await listerConversations()
-    chargee.value = true
-  }
+  vue.value = 'discussions'
+  await charger()
   const conv = conversations.value.find(c => c.ami.id === ami.id)
   amiSelectionne.value = conv ? conv.ami : ami
   verrouilleeSelection.value = conv ? conv.verrouillee : false
   demandeOuverture.value = null
 })
 
-const badge = computed(() => (nonLusTotal.value > 9 ? '9+' : String(nonLusTotal.value)))
-
 const basculer = async () => {
   ouvert.value = !ouvert.value
-  if (ouvert.value) {
-    compterAttenteMoi()
-    if (!chargee.value) {
-      await listerConversations()
-      chargee.value = true
-    }
-  }
+  if (ouvert.value) await charger()
 }
 
 const selectionner = (amiId: string) => {
@@ -65,20 +77,18 @@ const selectionner = (amiId: string) => {
   verrouilleeSelection.value = conv.verrouillee
 }
 
+/** Retour à la liste. Remet aussi la vue sur les discussions : revenir d'une
+ *  conversation vers l'annuaire n'aurait aucun sens. */
 const retourListe = () => {
   amiSelectionne.value = null
+  vue.value = 'discussions'
   fermerConversation()
-}
-
-const fermerFenetre = () => {
-  ouvert.value = false
-  retourListe()
 }
 </script>
 
 <template>
   <div>
-    <!-- Sonnerie d'appel entrant (au-dessus du panneau, priorité visuelle) -->
+    <!-- Sonnerie d'appel entrant (au-dessus du dock, priorité visuelle) -->
     <SocialAppelEntrantPrompt
       v-if="appelEntrant"
       :appel="appelEntrant"
@@ -89,50 +99,108 @@ const fermerFenetre = () => {
     <!-- Salle visio d'un appel direct en cours (plein écran) -->
     <SocialAppelDirectSalle v-if="appelActif" :salle="appelActif" />
 
-    <!-- Bouton flottant -->
-    <button
-      type="button"
-      class="fixed right-6 z-50 w-14 h-14 rounded-full bg-linear-to-r from-custom-chocolat to-custom-green text-white shadow-lg hover:shadow-xl flex items-center justify-center transition hover:scale-105"
-      :class="lectureMediaActive ? 'bottom-28' : 'bottom-6'"
-      :aria-label="ouvert ? 'Fermer la messagerie' : 'Ouvrir la messagerie'"
-      @click="basculer"
+    <!-- Dock ancré. Une seule boîte : repliée elle n'est que son en-tête,
+         dépliée elle grandit vers le haut. C'est ce qui donne l'impression de
+         dépliement plutôt que d'ouverture d'une fenêtre. -->
+    <section
+      class="fixed right-6 z-50 flex w-[22rem] flex-col overflow-hidden rounded-t-[10px] border border-b-0 border-af-bordure bg-white font-af shadow-2xl transition-[height] duration-200"
+      :class="[lectureMediaActive ? 'bottom-24' : 'bottom-0', ouvert ? 'h-[32rem] max-h-[calc(100svh-6rem)]' : 'h-14']"
+      aria-label="Messagerie"
     >
-      <font-awesome-icon :icon="ouvert ? 'fa-solid fa-xmark' : 'fa-solid fa-comments'" class="text-xl" />
-      <span
-        v-if="!ouvert && nonLusTotal > 0"
-        class="absolute -top-1 -right-1 min-w-6 h-6 px-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-white"
-      >{{ badge }}</span>
-    </button>
-
-    <!-- Fenêtre -->
-    <Transition name="fade-slide">
-      <div
-        v-if="ouvert"
-        :style="styleFenetre"
-        class="fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden"
-        :class="deplace ? 'select-none' : ''"
-      >
-        <!-- En-tête (zone de déplacement) -->
-        <header
-          class="flex items-center justify-between px-4 py-3 bg-linear-to-r from-custom-chocolat to-custom-green text-white shrink-0 touch-none select-none"
-          :class="deplace ? 'cursor-grabbing' : 'cursor-grab'"
-          title="Glissez pour déplacer la fenêtre"
-          @pointerdown="demarrerDeplacement"
-          @pointermove="surDeplacement"
-          @pointerup="finDeplacement"
-          @pointercancel="finDeplacement"
+      <!-- En-tête : replie et déplie, comme la barre de LinkedIn. -->
+      <header class="flex h-14 shrink-0 items-center gap-3 border-b border-af-bordure px-4">
+        <button
+          v-if="amiSelectionne"
+          type="button"
+          class="grid size-8 shrink-0 place-items-center rounded-full text-af-corps transition hover:bg-af-fond"
+          aria-label="Revenir à la liste"
+          @click="retourListe"
         >
-          <h2 class="font-semibold text-sm flex items-center gap-2">
-            <font-awesome-icon icon="fa-solid fa-comments" />
-            Messagerie
-          </h2>
-          <button type="button" class="p-1 hover:bg-white/20 rounded-lg transition" aria-label="Fermer" @click="fermerFenetre">
-            <font-awesome-icon icon="fa-solid fa-xmark" />
-          </button>
-        </header>
+          <font-awesome-icon icon="fa-solid fa-chevron-left" />
+        </button>
 
-        <!-- Conversation ouverte -->
-        <div v-if="amiSelectionne" class="flex-1 min-h-0">
+        <button
+          v-else
+          type="button"
+          class="shrink-0"
+          :aria-label="ouvert ? 'Replier la messagerie' : 'Déplier la messagerie'"
+          @click="basculer"
+        >
+          <img
+            v-if="photoMoi"
+            :src="photoMoi"
+            :alt="nomMoi"
+            class="size-8 rounded-full object-cover"
+          />
+          <span v-else class="grid size-8 place-items-center rounded-full bg-af-chocolat/15 text-af-chocolat">
+            <font-awesome-icon icon="fa-solid fa-user" />
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="min-w-0 flex-1 text-left"
+          :aria-expanded="ouvert"
+          @click="amiSelectionne ? undefined : basculer()"
+        >
+          <span class="block truncate text-[16px]/[1.4] font-bold text-af-encre">{{ titreEnTete }}</span>
+        </button>
+
+        <!-- Pastille de non-lus : visible surtout replié, c'est là qu'elle sert. -->
+        <span
+          v-if="nonLusTotal > 0 && !ouvert"
+          class="grid size-5 shrink-0 place-items-center rounded-full bg-af-live text-[10px] font-bold text-white"
+        >{{ badge }}</span>
+
+        <template v-if="ouvert && !amiSelectionne">
+          <button
+            type="button"
+            class="relative grid size-8 shrink-0 place-items-center rounded-full text-af-corps transition hover:bg-af-fond"
+            :class="vue === 'rendezvous' && 'text-af-chocolat'"
+            aria-label="Rendez-vous vidéo"
+            title="Rendez-vous vidéo"
+            @click="vue = vue === 'rendezvous' ? 'discussions' : 'rendezvous'"
+          >
+            <font-awesome-icon icon="fa-solid fa-video" />
+            <span
+              v-if="nbAttenteMoi > 0"
+              class="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-af-live text-[9px] font-bold text-white"
+            >{{ nbAttenteMoi > 9 ? '9+' : nbAttenteMoi }}</span>
+          </button>
+
+          <!-- Équivalent du stylo « nouveau message » de LinkedIn : chez nous,
+               écrire à quelqu'un commence par le trouver dans l'annuaire. -->
+          <button
+            type="button"
+            class="grid size-8 shrink-0 place-items-center rounded-full text-af-corps transition hover:bg-af-fond"
+            :class="vue === 'membres' && 'text-af-chocolat'"
+            aria-label="Nouveau message"
+            title="Nouveau message"
+            @click="vue = vue === 'membres' ? 'discussions' : 'membres'"
+          >
+            <font-awesome-icon icon="fa-solid fa-pen-to-square" />
+          </button>
+        </template>
+
+        <button
+          v-if="!amiSelectionne"
+          type="button"
+          class="grid size-8 shrink-0 place-items-center rounded-full text-af-corps transition hover:bg-af-fond"
+          :aria-label="ouvert ? 'Replier' : 'Déplier'"
+          @click="basculer"
+        >
+          <font-awesome-icon
+            icon="fa-solid fa-chevron-up"
+            class="transition-transform"
+            :class="ouvert && 'rotate-180'"
+          />
+        </button>
+      </header>
+
+      <!-- Corps : rendu uniquement déplié, pour que le repli ne garde pas en vie
+           une conversation et son flux d'événements. -->
+      <template v-if="ouvert">
+        <div v-if="amiSelectionne" class="min-h-0 flex-1">
           <SocialFenetreConversation
             :ami="amiSelectionne"
             :verrouillee="verrouilleeSelection"
@@ -140,97 +208,41 @@ const fermerFenetre = () => {
           />
         </div>
 
-        <!-- Liste / annuaire -->
-        <div v-else class="flex-1 min-h-0 flex flex-col">
-          <!-- Sélecteur d'onglets -->
-          <div class="flex shrink-0 border-b border-gray-100">
-            <button
-              type="button"
-              class="flex-1 py-2.5 text-xs font-semibold transition flex items-center justify-center gap-1.5"
-              :class="ongletActif === 'discussions' ? 'text-custom-chocolat border-b-2 border-custom-chocolat' : 'text-gray-400 hover:text-gray-600'"
-              @click="ongletActif = 'discussions'"
-            >
-              <font-awesome-icon icon="fa-solid fa-comments" />
-              Discussions
-            </button>
-            <button
-              type="button"
-              class="flex-1 py-2.5 text-xs font-semibold transition flex items-center justify-center gap-1.5"
-              :class="ongletActif === 'membres' ? 'text-custom-chocolat border-b-2 border-custom-chocolat' : 'text-gray-400 hover:text-gray-600'"
-              @click="ongletActif = 'membres'"
-            >
-              <font-awesome-icon icon="fa-solid fa-users" />
-              Membres
-            </button>
-            <button
-              type="button"
-              class="relative flex-1 py-2.5 text-xs font-semibold transition flex items-center justify-center gap-1.5"
-              :class="ongletActif === 'rendezvous' ? 'text-custom-chocolat border-b-2 border-custom-chocolat' : 'text-gray-400 hover:text-gray-600'"
-              @click="ongletActif = 'rendezvous'"
-            >
-              <font-awesome-icon icon="fa-solid fa-video" />
-              Rendez-vous
-              <span
-                v-if="nbAttenteMoi > 0"
-                class="absolute top-1.5 right-2 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
-              >{{ nbAttenteMoi > 9 ? '9+' : nbAttenteMoi }}</span>
-            </button>
+        <SocialAnnuaireMembres v-else-if="vue === 'membres'" class="min-h-0 flex-1" />
+
+        <SocialRendezVousListe v-else-if="vue === 'rendezvous'" class="min-h-0 flex-1" />
+
+        <div v-else class="flex min-h-0 flex-1 flex-col">
+          <div class="shrink-0 border-b border-af-bordure p-3">
+            <label class="relative block">
+              <span class="sr-only">Rechercher dans les messages</span>
+              <font-awesome-icon
+                icon="fa-solid fa-magnifying-glass"
+                class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-af-atone-2"
+              />
+              <input
+                v-model="recherche"
+                type="search"
+                placeholder="Rechercher dans les messages"
+                class="h-9 w-full rounded-lg bg-af-fond pr-3 pl-9 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:outline-2 focus:outline-af-chocolat"
+              />
+            </label>
           </div>
 
-          <!-- Onglet Discussions -->
-          <div v-if="ongletActif === 'discussions'" class="flex-1 min-h-0 flex flex-col">
-            <div v-if="conversations.length === 0" class="flex-1 flex flex-col items-center justify-center text-center px-6">
-              <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <font-awesome-icon icon="fa-solid fa-users" class="text-2xl text-gray-400" />
-              </div>
-              <p class="text-sm font-semibold text-gray-700 mb-1">Aucune conversation</p>
-              <p class="text-xs text-gray-400 mb-4">Faites-vous des amis pour commencer à discuter.</p>
-              <button
-                type="button"
-                class="text-xs font-semibold text-white bg-custom-chocolat px-4 py-2 rounded-xl hover:shadow-md transition"
-                @click="ongletActif = 'membres'"
-              >
-                Parcourir les membres
-              </button>
-            </div>
-            <SocialListeAmis v-else class="flex-1" @selectionner="selectionner" />
+          <div v-if="!conversations.length" class="flex flex-1 flex-col items-center justify-center px-6 text-center">
+            <font-awesome-icon icon="fa-solid fa-comments" class="text-3xl text-af-atone-2" />
+            <p class="mt-3 text-[14px]/[1.4] font-bold">Aucune conversation</p>
+            <p class="mt-1 text-[12px]/[1.4] text-af-corps">
+              Faites-vous des ami(e)s pour commencer à discuter.
+            </p>
+            <AfricansBouton class="mt-4" variante="secondaire" icone="fa-solid fa-users" @click="vue = 'membres'">
+              Parcourir les membres
+            </AfricansBouton>
           </div>
 
-          <!-- Onglet Membres : annuaire des inscrits + demande d'amitié -->
-          <SocialAnnuaireMembres v-else-if="ongletActif === 'membres'" class="flex-1" />
-
-          <!-- Onglet Rendez-vous : prise & gestion des entretiens vidéo -->
-          <SocialRendezVousListe v-else class="flex-1" />
+          <SocialListeAmis v-else class="flex-1" :filtre="recherche" @selectionner="selectionner" />
         </div>
-
-        <!-- Poignée de redimensionnement (coin bas-droit) -->
-        <div
-          class="absolute bottom-0 right-0 w-5 h-5 flex items-end justify-end p-0.5 cursor-nwse-resize touch-none z-10 text-gray-400 hover:text-custom-chocolat"
-          title="Glissez pour redimensionner"
-          @pointerdown="demarrerRedimensionnement"
-          @pointermove="surRedimensionnement"
-          @pointerup="finRedimensionnement"
-          @pointercancel="finRedimensionnement"
-        >
-          <svg viewBox="0 0 10 10" class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
-            <path d="M9 2 L2 9 M9 5 L5 9 M9 8 L8 9" />
-          </svg>
-        </div>
-      </div>
-    </Transition>
+      </template>
+    </section>
   </div>
 </template>
-
-<style scoped>
-@reference "~/assets/css/main.css";
-
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.fade-slide-enter-from,
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-</style>

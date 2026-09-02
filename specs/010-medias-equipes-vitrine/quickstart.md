@@ -1,4 +1,4 @@
-# Quickstart — validation de la feature 010
+# Quickstart : validation de la feature 010
 
 **Feature**: 010-medias-equipes-vitrine · **Date**: 2026-08-10
 
@@ -16,7 +16,7 @@ docker compose up -d                 # PostgreSQL 5432, Adminer 8088, LiveKit
 psql "postgresql://uafricas@localhost:5432/africans_db" \
      -f uafricas_backend/doc/bd/schemas/09t_media_content_equipes_periodicite.sql
 
-# Backend — toujours tuer l'ancien processus d'abord
+# Backend : toujours tuer l'ancien processus d'abord
 kill $(lsof -i :8082 -t) 2>/dev/null; cd uafricas_backend && RUST_LOG=info cargo run
 
 # Frontend
@@ -44,7 +44,7 @@ SELECT cadence, COUNT(*) FROM media_content.emission_radio GROUP BY 1;
 
 ---
 
-## §1 — Fabriquer les cas creux (indispensable)
+## §1 : Fabriquer les cas creux (indispensable)
 
 La feature se juge autant sur ce qu'elle affiche que sur ce qu'elle **n'affiche pas**. Avant tout scénario, créer en back-office :
 
@@ -54,14 +54,14 @@ La feature se juge autant sur ce qu'elle affiche que sur ce qu'elle **n'affiche 
 | Un programme **sans aucun épisode publié** | `/admin/medias/emissions`, état `publié`, aucun épisode |
 | Une chaîne **à description longue** (> 900 caractères) | coller un pavé |
 | Un programme **à description longue** (> 400 caractères) | idem |
-| Un programme **mensuel** | `UPDATE media_content.emission_tele SET cadence = 'mensuelle' WHERE id = '…'` — le CHECK l'accepte dès la migration, mais le sélecteur ne propose « Mensuel » qu'après la Phase 7 |
+| Un programme **mensuel** | `UPDATE media_content.emission_tele SET cadence = 'mensuelle' WHERE id = '…'`, le CHECK l'accepte dès la migration, mais le sélecteur ne propose « Mensuel » qu'après la Phase 7 |
 | Une chaîne portant **plus de 30 programmes** | duplication SQL d'un programme existant, pour éprouver le plafond de section et le lien « Voir les N programmes » (FR-008) |
 
 Ces cinq objets couvrent à eux seuls SC-006, SC-007, FR-005 et les cas limites de la spec.
 
 ---
 
-## §2 — Vitrine recentrée (US1)
+## §2 : Vitrine recentrée (US1)
 
 Ouvrir `/medias/tele` **déconnecté**, puis répéter sur `/medias/radio/africans` et `/medias/radio/nationales` (FR-060).
 
@@ -77,10 +77,10 @@ Ouvrir `/medias/tele` **déconnecté**, puis répéter sur `/medias/radio/africa
 | 2.8 | Un clic sur le nom de la chaîne mène à sa page ; un clic sur une carte mène au programme | FR-006, SC-002 |
 | 2.9 | Le bandeau « en cours de diffusion / à suivre » est présent, en texte, sans lecteur | FR-002, SC-011 |
 | 2.10 | Une chaîne de 30 programmes les affiche **tous** | FR-008, SC-008 |
-| 2.11 | Au-delà du plafond, la section annonce le total et propose « Voir les N programmes » vers la page de la chaîne — jamais de disparition silencieuse | FR-008 |
+| 2.11 | Au-delà du plafond, la section annonce le total et propose « Voir les N programmes » vers la page de la chaîne, jamais de disparition silencieuse | FR-008 |
 | 2.12 | La description tronquée de la section **n'offre pas** de commande « voir plus » : en vitrine, FR-003 demande une ellipse, le dépliage est réservé aux pages de détail | FR-003 vs FR-021 |
 
-> **Attendu contre-intuitif** : le nombre de chaînes affichées **augmente** par rapport à avant la feature — celles dépourvues d'épisode publié étaient filtrées. Noter le décompte avant/après. Voir [research.md D5](./research.md).
+> **Attendu contre-intuitif** : le nombre de chaînes affichées **augmente** par rapport à avant la feature, celles dépourvues d'épisode publié étaient filtrées. Noter le décompte avant/après. Voir [research.md D5](./research.md).
 
 **Contrôle de charge (SC-008)** : sur une chaîne portant 30 programmes, le défilement de la page reste fluide et le payload de `/api/television/sections` ne contient plus aucun `episodes_apercu` :
 
@@ -90,7 +90,7 @@ curl -s 'http://localhost:8082/api/television/sections?par_page=6' | grep -c epi
 
 ---
 
-## §3 — Déclarer une équipe (US2)
+## §3 : Déclarer une équipe (US2)
 
 Connecté comme **détenteur** : `/mon-compte/mes-supports` → déplier un support → section **« Équipe éditoriale »** (à ne pas confondre avec « Gestion des accès », l'ancien panneau des co-détenteurs).
 
@@ -121,7 +121,7 @@ curl -X PUT … -H "Authorization: Bearer <jeton d'un non-détenteur>"    # ⇒ 
 
 ---
 
-## §4 — Page de détail d'une chaîne / station (US3)
+## §4 : Page de détail d'une chaîne / station (US3)
 
 `/medias/chaines/<slug>` puis `/medias/stations/<slug>`.
 
@@ -138,20 +138,20 @@ curl -X PUT … -H "Authorization: Bearer <jeton d'un non-détenteur>"    # ⇒ 
 
 ---
 
-## §5 — Page de détail d'un programme (US4)
+## §5 : Page de détail d'un programme (US4)
 
 `/medias/emissions-tele/<slug>` puis `/medias/emissions-radio/<slug>`.
 
 | # | Vérification | Exigence |
 |---|---|---|
 | 5.1 | La page affiche périodicité, nom, **image de couverture**, description, équipe, vidéos | FR-030 |
-| 5.2 | La couverture est bien présente ici — alors qu'elle est absente de la page chaîne | FR-031 |
+| 5.2 | La couverture est bien présente ici, alors qu'elle est absente de la page chaîne | FR-031 |
 | 5.3 | Programme sans couverture : mise en page cohérente, pas d'emplacement vide signalé | Cas limite |
 | 5.4 | L'équipe affichée est **celle du programme**, jamais celle de la chaîne en repli | FR-032 |
 | 5.5 | Programme **sans épisode publié** : page consultable, message explicite d'absence de vidéo (et non un 404) | FR-033 |
 | 5.6 | Le fil d'Ariane s'affiche (il était mort : `CommonFilAriane` n'existe pas) | Réparation D8 |
 | 5.7 | La ligne héritée « Animation : … · Production : … » **a disparu** de la page : l'équipe est la seule source sur les personnes | FR-034 |
-| 5.8 | Les deux champs hérités restent lisibles en back-office, sous un libellé « Champs hérités — reporter dans l'équipe » | [research.md D5 ter](./research.md) |
+| 5.8 | Les deux champs hérités restent lisibles en back-office, sous un libellé « Champs hérités, reporter dans l'équipe » | [research.md D5 ter](./research.md) |
 
 ```bash
 # Contrôle du 404 levé
@@ -161,7 +161,7 @@ curl -s 'http://localhost:8082/api/television/emissions/slug/<slug-sans-episode>
 
 ---
 
-## §6 — Périodicité (US5)
+## §6 : Périodicité (US5)
 
 | # | Vérification | Exigence |
 |---|---|---|
@@ -171,7 +171,7 @@ curl -s 'http://localhost:8082/api/television/emissions/slug/<slug-sans-episode>
 | 6.4 | Un nouveau programme naît « Non périodique » | FR-042 |
 | 6.5 | 100 % des programmes affichent une périodicité intelligible | SC-006 |
 
-**Contrôle de l'alerte de cadence** — le piège de cette feature. Sur `GET /api/medias/mes-alertes-cadence`, un programme **mensuel** dont le dernier épisode date de 10 jours **ne doit pas** être signalé en retard ; à 31 jours, il doit l'être :
+**Contrôle de l'alerte de cadence** : le piège de cette feature. Sur `GET /api/medias/mes-alertes-cadence`, un programme **mensuel** dont le dernier épisode date de 10 jours **ne doit pas** être signalé en retard ; à 31 jours, il doit l'être :
 
 ```sql
 -- Vieillir artificiellement le dernier épisode d'un programme mensuel
@@ -189,16 +189,16 @@ Sans la reprise de `periode_heures_cadence`, l'alerte se déclencherait dès le 
 
 ---
 
-## §7 — Parité Radio (FR-060) et non-régression
+## §7 : Parité Radio (FR-060) et non-régression
 
 | # | Vérification |
 |---|---|
 | 7.1 | Les §2 à §6 rejoués sur l'espace Radio donnent les mêmes résultats, « station » et « audio » substitués |
 | 7.2 | `/medias/tele` : la vedette plein écran conserve **sa** vidéo (elle n'est pas une section) |
 | 7.3 | Signalement, partage, proposition d'idée et demande d'animation restent accessibles là où ils l'étaient |
-| 7.4 | Les adresses déjà indexées résolvent : `/medias/chaines/<slug>`, `/medias/stations/<slug>`, `/medias/emissions-{tele,radio}/<slug>`, `/medias/programmes-{tele,radio}/<slug>` (page d'épisode) — SC-009 |
+| 7.4 | Les adresses déjà indexées résolvent : `/medias/chaines/<slug>`, `/medias/stations/<slug>`, `/medias/emissions-{tele,radio}/<slug>`, `/medias/programmes-{tele,radio}/<slug>` (page d'épisode), SC-009 |
 | 7.5 | La grille de programmation, les thématiques et la couverture d'un support sont inchangées |
-| 7.6 | Supprimer un programme portant une équipe : son équipe disparaît, celle de la chaîne est intacte — FR-019 |
+| 7.6 | Supprimer un programme portant une équipe : son équipe disparaît, celle de la chaîne est intacte, FR-019 |
 
 ```sql
 -- Aucune équipe orpheline après suppression d'un porteur (FR-019)
@@ -223,4 +223,4 @@ La feature est recevable quand :
 - aucun programme ne disparaît en silence d'une section (§2.10 et §2.11) ;
 - la ligne héritée « Animation / Production » n'apparaît plus sur aucune page publique ;
 - le décompte de chaînes avant/après est noté et assumé (D5) ;
-- `RUST_LOG=info cargo run` ne journalise aucune erreur SQL au parcours complet — **sqlx est vérifié au runtime**, une colonne oubliée compile sans broncher.
+- `RUST_LOG=info cargo run` ne journalise aucune erreur SQL au parcours complet, **sqlx est vérifié au runtime**, une colonne oubliée compile sans broncher.

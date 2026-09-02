@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Composable — Collaboration et partage d'arbres
+// Composable : Collaboration et partage d'arbres
 // ════════════════════════════════════════════════════════════════════════════
 
 import { useUserStore } from '~/stores/user'

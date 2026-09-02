@@ -5,14 +5,14 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Afrolang — Liens externes | Admin',
+  title: 'Afrolang : Liens externes | Admin',
 })
 </script>
 
 <template>
   <div>
     <AdminPageHeader
-      titre="Afrolang — Liens externes"
+      titre="Afrolang : Liens externes"
       description="Validation des liens externes soumis par les membres pour enrichir les ressources des salles publiques."
       icone="link"
     />

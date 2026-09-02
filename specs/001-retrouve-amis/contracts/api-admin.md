@@ -1,4 +1,4 @@
-# Contrats API — Routes Admin Retrouve Amis
+# Contrats API : Routes Admin Retrouve Amis
 
 **Base path**: `/api/admin/retrouve-amis`
 **Authentification**: JWT Bearer token + rôle `admin` ou `super_admin` requis

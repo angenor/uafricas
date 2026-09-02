@@ -25,7 +25,7 @@ const toggle = async () => {
 }
 
 const surClicNotif = async (notif: any) => {
-  if (!notif.lu) await marquerLue(notif.id)
+  if (!notif.lu) await marquerLue(notif.id, notif.source)
   ouvert.value = false
   if (notif.lien_action) navigateTo(notif.lien_action)
 }

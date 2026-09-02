@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Panneau de la communauté — affiche les ressources contribuées d'une salle
+// Panneau de la communauté : affiche les ressources contribuées d'une salle
 // (feature 001-ressources-fermeture-session, US1). Tailwind v4 pur.
 import { computed, onMounted, ref, watch } from 'vue'
 import { useUserStore } from '~/stores/user'
@@ -19,7 +19,7 @@ const props = withDefaults(defineProps<{
   /** Salle (incl. desactivee_admin) pour décider l'autorisation d'écriture. */
   salle?: SalleAPI | null
   /** Si la salle est privée, indique que l'utilisateur en a déjà l'accès.
-   *  Par défaut `true` — le backend re-valide les invariants côté serveur. */
+   *  Par défaut `true` : le backend re-valide les invariants côté serveur. */
   aAccesSalleSiPrivee?: boolean
 }>(), {
   sessionId: null,
@@ -41,7 +41,7 @@ const formOuvert = ref(false)
  * Affichage du bouton « Contribuer » :
  *   - utilisateur authentifié (token présent)
  *   - salle (si chargée) non désactivée par l'administration
- *   - accès à la salle privée explicite (FALSE) — sinon on autorise par défaut
+ *   - accès à la salle privée explicite (FALSE), sinon on autorise par défaut
  * Le backend re-valide tous les invariants (rate-limit, état utilisateur,
  * salle existante, désactivation). La logique FE n'est qu'un hint UX.
  */
@@ -54,7 +54,7 @@ const peutContribuer = computed(() => {
 
 const motifBlocage = computed(() => {
   if (!userStore.accessToken) return 'Connectez-vous pour contribuer.'
-  if (props.salle?.desactivee_admin) return 'Salle gelée par administration — contribution suspendue.'
+  if (props.salle?.desactivee_admin) return 'Salle gelée par administration, contribution suspendue.'
   if (props.aAccesSalleSiPrivee === false) return 'Accès à la salle privée requis.'
   return null
 })

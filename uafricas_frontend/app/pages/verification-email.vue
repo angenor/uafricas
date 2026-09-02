@@ -31,7 +31,7 @@
               />
             </NuxtLink>
             <h1 class="text-white text-xl font-bold mt-3 tracking-wide">
-              Verification de votre email
+              Vérification de votre email
             </h1>
           </div>
         </div>
@@ -45,7 +45,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </div>
-            <p class="text-gray-700 text-base mb-2">Verification en cours...</p>
+            <p class="text-gray-700 text-base mb-2">Vérification en cours...</p>
             <p class="text-gray-500 text-sm">Veuillez patienter quelques instants.</p>
           </div>
 
@@ -56,9 +56,9 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 class="text-xl font-bold text-gray-800 mb-2">Email verifie !</h2>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Email vérifié !</h2>
             <p class="text-gray-600 text-sm mb-6">
-              Votre compte a ete active avec succes. Vous allez etre redirige vers la page d'accueil...
+              Votre compte a été activé avec succès. Vous allez être redirigé vers la page d'accueil...
             </p>
             <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
               <div class="flex items-center justify-center">
@@ -77,7 +77,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h2 class="text-xl font-bold text-gray-800 mb-2">Echec de la verification</h2>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Échec de la vérification</h2>
             <p class="text-red-600 text-sm mb-6">{{ messageErreur }}</p>
 
             <!-- Renvoyer un nouveau lien -->
@@ -101,7 +101,7 @@
                   <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  Nouvel email envoye ! Verifiez votre boite de reception.
+                  Nouvel email envoyé ! Verifiez votre boite de reception.
                 </div>
               </div>
 
@@ -158,7 +158,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Verification email - AfricanS',
+  title: 'Vérification de l’email | AfricanS',
 })
 
 useAOS()

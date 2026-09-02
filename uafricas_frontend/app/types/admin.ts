@@ -378,7 +378,7 @@ export interface PermissionListeItem {
   created_at: string
 }
 
-// ── Referentiels — Pays ──────────────────────────────────────
+// ── Referentiels : Pays ──────────────────────────────────────
 
 export interface AdminPays {
   id: string
@@ -417,7 +417,7 @@ export interface CreerPaysForm {
   latitude: number | null
 }
 
-// ── Referentiels — Domaines & Secteurs ───────────────────────
+// ── Referentiels : Domaines & Secteurs ───────────────────────
 
 export interface AdminDomaine {
   id: string
@@ -445,7 +445,7 @@ export interface CreerDomaineForm {
   icone: string
 }
 
-// ── Referentiels — Categories ────────────────────────────────
+// ── Referentiels : Categories ────────────────────────────────
 
 export interface AdminCategorie {
   id: string
@@ -492,7 +492,7 @@ export interface CreerCategorieForm {
   ordre: number
 }
 
-// ── Referentiels — Tags ──────────────────────────────────────
+// ── Referentiels : Tags ──────────────────────────────────────
 
 export interface AdminTag {
   id: string
@@ -513,7 +513,7 @@ export interface CreerTagForm {
   nom: string
 }
 
-// ── Referentiels — Medias ────────────────────────────────────
+// ── Referentiels : Medias ────────────────────────────────────
 
 export interface AdminMedia {
   id: string
@@ -539,7 +539,7 @@ export interface AdminMediaDetail {
   created_at: string
 }
 
-// ── Referentiels — Specialites Biblio ────────────────────────
+// ── Referentiels : Specialites Biblio ────────────────────────
 
 export interface AdminSpecialite {
   id: string
@@ -657,7 +657,7 @@ export interface AdminCandidatureDetail {
   updated_at: string | null
 }
 
-// ── Marche Africain — Annonces ────────────────────────────
+// ── Marche Africain : Annonces ────────────────────────────
 
 export interface AdminAnnonce {
   id: string
@@ -746,7 +746,7 @@ export interface CreerAnnonceForm {
   expire_at: string
 }
 
-// ── Marche Africain — Favoris ─────────────────────────────
+// ── Marche Africain : Favoris ─────────────────────────────
 
 export interface AdminFavori {
   utilisateur_id: string
@@ -765,7 +765,7 @@ export interface AdminFavoriStats {
   nombre_favoris: number
 }
 
-// ── Innovation — Innovations ─────────────────────────────────
+// ── Innovation : Innovations ─────────────────────────────────
 
 export interface AdminInnovation {
   id: string
@@ -827,7 +827,7 @@ export interface CreerInnovationForm {
   etat: string
 }
 
-// ── Innovation — Projets ────────────────────────────────────
+// ── Innovation : Projets ────────────────────────────────────
 
 export interface AdminProjet {
   id: string
@@ -911,7 +911,7 @@ export interface CreerProjetForm {
   difficultes_risques: string
 }
 
-// ── Innovation — Africantives ───────────────────────────────
+// ── Innovation : Africantives ───────────────────────────────
 
 export interface AdminAfricantive {
   id: string
@@ -958,7 +958,7 @@ export interface CreerAfricantiveForm {
   etat: string
 }
 
-// ── Culture — Centres culturels ─────────────────────────────
+// ── Culture : Centres culturels ─────────────────────────────
 
 export interface AdminCentreCulturel {
   id: string
@@ -1014,7 +1014,7 @@ export interface CreerCentreCulturelForm {
   latitude: number | null
 }
 
-// ── Culture — Programmations ────────────────────────────────
+// ── Culture : Programmations ────────────────────────────────
 
 export interface AdminProgrammation {
   id: string
@@ -1075,7 +1075,7 @@ export interface CreerProgrammationForm {
   nombre_places: number | null
 }
 
-// ── Culture — Codi-Moi ──────────────────────────────────────
+// ── Culture : Codi-Moi ──────────────────────────────────────
 
 export interface AdminCodimoi {
   id: string
@@ -1144,7 +1144,7 @@ export interface CreerCodimoiForm {
   etat: string
 }
 
-// ── Gouvernance — Factcheck ──────────────────────────────────
+// ── Gouvernance : Factcheck ──────────────────────────────────
 
 export interface AdminFactcheck {
   id: string
@@ -1206,7 +1206,7 @@ export interface AdminFactcheckReactions {
   nombre_dislikes: number
 }
 
-// ── Gouvernance — Bad Habits (Mauvaises pratiques) ───────────
+// ── Gouvernance : Bad Habits (Mauvaises pratiques) ───────────
 
 export interface AdminBadHabit {
   id: string
@@ -1278,7 +1278,7 @@ export interface CreerBadHabitForm {
   etat: string
 }
 
-// ── Gouvernance — Idea Forces ─────────────────────────────────
+// ── Gouvernance : Idea Forces ─────────────────────────────────
 
 export interface AdminIdeaForce {
   id: string
@@ -1343,7 +1343,7 @@ export interface CreerIdeaForceForm {
   etat: string
 }
 
-// ── Médias & Contenus — Radio & TV ───────────────────────────
+// ── Médias & Contenus : Radio & TV ───────────────────────────
 
 export interface AdminStationRadio {
   id: string
@@ -1395,7 +1395,7 @@ export interface CreerStationRadioForm {
   ville: string
   type_station: string
   a_la_une: boolean
-  /** Coordonnées publiques affichées sur /medias/stations/{slug} — cf. 09p. */
+  /** Coordonnées publiques affichées sur /medias/stations/{slug}, cf. 09p. */
   contact_email: string
   contact_telephone: string
   contact_whatsapp: string
@@ -1411,7 +1411,7 @@ export interface AdminChaineTv {
   est_en_direct: boolean
   pays_nom: string | null
   langue: string
-  /** « africans » (Africans Télé International) ou « territoire » — cf. 09o. */
+  /** « africans » (Africans Télé International) ou « territoire », cf. 09o. */
   origine_publication: string
   created_at: string
 }
@@ -1451,7 +1451,7 @@ export interface CreerChaineTvForm {
   langue: string
   est_en_direct: boolean
   origine_publication: string
-  /** Coordonnées publiques affichées sur /medias/chaines/{slug} — cf. 09p. */
+  /** Coordonnées publiques affichées sur /medias/chaines/{slug}, cf. 09p. */
   contact_email: string
   contact_telephone: string
   contact_whatsapp: string
@@ -1465,7 +1465,7 @@ export interface CreerChaineTvForm {
 // `programme_*` (migration 09q) : les conserver aurait laissé compiler des
 // écrans visant des routes supprimées.
 
-/** « chaine_tv » ou « station_radio » — le support qui porte le programme. */
+/** « chaine_tv » ou « station_radio » : le support qui porte le programme. */
 export type TypeSupportAdmin = 'chaine_tv' | 'station_radio'
 
 /** Cadence déclarée : elle alimente les alertes, jamais la rotation. */
@@ -1565,7 +1565,7 @@ export interface CreerEpisodeForm {
   duree_minutes: number | null
 }
 
-// ── Médias & Contenus — Événements ───────────────────────────
+// ── Médias & Contenus : Événements ───────────────────────────
 
 export interface AdminEvenement {
   id: string
@@ -1653,7 +1653,7 @@ export interface AdminEvenementInscriptionStats {
   absents: number
 }
 
-// ── Médias & Contenus — MOOC ─────────────────────────────────
+// ── Médias & Contenus : MOOC ─────────────────────────────────
 
 export interface AdminMooc {
   id: string
@@ -1738,7 +1738,7 @@ export interface AdminMoocInscriptionStats {
   progression_moyenne: number
 }
 
-// ── Médias & Contenus — Formation : chapitres & leçons ───────
+// ── Médias & Contenus : Formation : chapitres & leçons ───────
 
 export interface AdminLecon {
   id: string
@@ -1772,7 +1772,7 @@ export interface CreerLeconForm {
   duree_minutes: number | null
 }
 
-// ── Médias & Contenus — Bibliothèque (Livres) ───────────────
+// ── Médias & Contenus : Bibliothèque (Livres) ───────────────
 
 export interface AdminLivre {
   id: string
@@ -1910,7 +1910,7 @@ export interface CreerFichePayForm {
   fuseau_horaire: string
 }
 
-// ── Profils Pays — Sous-entites ─────────────────────────────
+// ── Profils Pays : Sous-entites ─────────────────────────────
 
 export interface AdminRegion {
   id: string
@@ -2017,7 +2017,7 @@ export interface AdminLienInterethnique {
   updated_at: string
 }
 
-// ── Profils Pays — Contributions ────────────────────────────
+// ── Profils Pays : Contributions ────────────────────────────
 
 /** Contribution individuelle suspendue par signalement communautaire (>10 signalements). */
 export interface AdminContributionSuspendue {
@@ -2263,7 +2263,7 @@ export interface DashboardTendances {
   contributions_pays: DashboardTendancePoint[]
 }
 
-// ── INUDA — Écoles partenaires ──────────────────────────────
+// ── INUDA : Écoles partenaires ──────────────────────────────
 
 export interface AdminEcolePartenaire {
   id: string
@@ -2305,7 +2305,7 @@ export interface CreerEcolePartenaireForm {
   actif?: boolean
 }
 
-// ── INUDA — Facultés ────────────────────────────────────────
+// ── INUDA : Facultés ────────────────────────────────────────
 
 export interface AdminFaculte {
   id: string

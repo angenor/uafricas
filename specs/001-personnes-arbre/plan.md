@@ -5,14 +5,14 @@
 
 ## Summary
 
-Implémenter le modèle de données fondateur de l'arbre généalogique : CRUD des personnes (données biographiques à granularité partielle), liens familiaux (parent-enfant avec rôle, conjoint), et l'architecture Personne réelle / Rattachement qui permettra le futur matching inter-arbres. Chaque utilisateur travaille exclusivement sur ses propres fiches dans cette feature — pas de partage cross-users exposé.
+Implémenter le modèle de données fondateur de l'arbre généalogique : CRUD des personnes (données biographiques à granularité partielle), liens familiaux (parent-enfant avec rôle, conjoint), et l'architecture Personne réelle / Rattachement qui permettra le futur matching inter-arbres. Chaque utilisateur travaille exclusivement sur ses propres fiches dans cette feature, pas de partage cross-users exposé.
 
 ## Technical Context
 
 **Language/Version**: Rust Edition 2024 (backend), TypeScript / Nuxt 4 (frontend)
-**Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL async), uuid, chrono, serde — frontend : Nuxt 4, Pinia, $fetch
-**Storage**: PostgreSQL 16 — nouveau schema `arbre_genealogique` (11e schema bounded-context)
-**Testing**: Pas de CI/CD configuré — validation manuelle via Adminer + appels API directs
+**Primary Dependencies**: Actix-Web 4, sqlx (PostgreSQL async), uuid, chrono, serde, frontend : Nuxt 4, Pinia, $fetch
+**Storage**: PostgreSQL 16 : nouveau schema `arbre_genealogique` (11e schema bounded-context)
+**Testing**: Pas de CI/CD configuré : validation manuelle via Adminer + appels API directs
 **Target Platform**: Linux server (Docker), navigateur web (SSR + CSR Nuxt 4)
 **Project Type**: Web service (Actix-Web REST API) + Web application (Nuxt 4 SSR)
 **Performance Goals**: Liste 500 personnes < 1 seconde (SC-003) ; création fiche < 2 min UX (SC-001)
@@ -26,7 +26,7 @@ Implémenter le modèle de données fondateur de l'arbre généalogique : CRUD d
 | Principe | Statut | Vérification |
 |----------|--------|--------------|
 | I. Français d'abord | ✅ PASS | Toutes les variables, colonnes SQL, routes, messages UI en français |
-| II. Monorepo cohérent | ✅ PASS | Ajout dans `uafricas_backend/` + `uafricas_frontend/` — même commit cross-stack |
+| II. Monorepo cohérent | ✅ PASS | Ajout dans `uafricas_backend/` + `uafricas_frontend/`, même commit cross-stack |
 | III. SQL source de vérité | ✅ PASS | Schema SQL défini en premier ; structs Rust + interfaces TS dérivent du SQL |
 | IV. Sécurité par défaut | ✅ PASS | JWT obligatoire sur toutes les routes ; validation backend de toutes les entrées |
 | V. Simplicité (YAGNI) | ✅ PASS | Handlers directs sans Repository pattern ; composable unique `useArbreGenealogique` |
@@ -84,9 +84,9 @@ uafricas_frontend/
             └── LienFamilialForm.vue ← Formulaire ajout lien
 ```
 
-**Structure Decision** : Option 2 (Web application) — backend Rust dans `uafricas_backend/` et frontend Nuxt dans `uafricas_frontend/`, reflétant l'architecture monorepo existante.
+**Structure Decision** : Option 2 (Web application), backend Rust dans `uafricas_backend/` et frontend Nuxt dans `uafricas_frontend/`, reflétant l'architecture monorepo existante.
 
-## Phase 0 — Research
+## Phase 0 : Research
 
 → Voir [research.md](./research.md) pour les décisions et rationales détaillées.
 
@@ -98,7 +98,7 @@ uafricas_frontend/
 4. **Soft delete en cascade** : Trigger PostgreSQL ou logique applicative en Rust lors de la suppression du dernier rattachement d'une Personne.
 5. **Arbre auto-créé** : L'arbre de l'utilisateur est créé automatiquement lors du premier ajout de personne (pas d'endpoint séparé de création d'arbre).
 
-## Phase 1 — Design & Contracts
+## Phase 1 : Design & Contracts
 
 → Voir [data-model.md](./data-model.md) pour le schéma SQL complet, structs Rust et interfaces TypeScript.
 → Voir [contracts/api.md](./contracts/api.md) pour les contrats d'API REST.

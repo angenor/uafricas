@@ -9,8 +9,8 @@
 
 ### Session 2026-03-15
 
-- Q: Quelles sont les questions/champs exacts du formulaire de recherche ? → A: Le formulaire comprend 10 champs : (1) Souhaitez-vous être anonyme, (2) Qui recherchez-vous (homme/femme), (3) Type de relation (amis enfance, amis école/université, collègue, connaissance, frère/sœur, parent), (4) Noms de la personne, (5) Surnoms, (6) Comment la personne vous connaît (de nom), (7) Lieu de rencontre — 3 sous-options cumulables : localité (précisez), école (précisez), ville (précisez) ou jamais rencontré, (8) Photo de la personne (upload optionnel), (9) Description physique (optionnel), (10) Souhaitez-vous partager vos coordonnées ou celles de vos proches en cas de match.
-- Q: Les avis doivent-ils être modérés avant publication ? → A: Non — publication immédiate sans modération. La modération se fait uniquement a posteriori via le mécanisme de signalement (suspension auto après 3 signalements distincts).
+- Q: Quelles sont les questions/champs exacts du formulaire de recherche ? → A: Le formulaire comprend 10 champs : (1) Souhaitez-vous être anonyme, (2) Qui recherchez-vous (homme/femme), (3) Type de relation (amis enfance, amis école/université, collègue, connaissance, frère/sœur, parent), (4) Noms de la personne, (5) Surnoms, (6) Comment la personne vous connaît (de nom), (7) Lieu de rencontre, 3 sous-options cumulables : localité (précisez), école (précisez), ville (précisez) ou jamais rencontré, (8) Photo de la personne (upload optionnel), (9) Description physique (optionnel), (10) Souhaitez-vous partager vos coordonnées ou celles de vos proches en cas de match.
+- Q: Les avis doivent-ils être modérés avant publication ? → A: Non : publication immédiate sans modération. La modération se fait uniquement a posteriori via le mécanisme de signalement (suspension auto après 3 signalements distincts).
 - Q: Relation avec les specs 001 et 002 ? → A: La spec 003 remplace le formulaire et le modèle de visibilité (tout public par défaut), mais réutilise le moteur de recoupement automatique (001) et les fonctionnalités de partage social (002) comme fonctionnalités complémentaires.
 - Q: Options pour le genre de la personne recherchée ? → A: Homme / Femme uniquement (deux options).
 - Q: Format des coordonnées à partager en cas de match ? → A: Champs structurés séparés : email (optionnel), téléphone (optionnel), WhatsApp (optionnel). Au moins un champ requis si l'option de partage est activée.
@@ -21,7 +21,7 @@
 
 En tant que visiteur non connecté, je souhaite pouvoir consulter la page `/retrouve-amis` et voir tous les avis de recherche publiés, afin de reconnaître éventuellement une personne recherchée sans avoir besoin de créer un compte.
 
-**Why this priority**: C'est le changement fondamental par rapport aux specs précédentes — tous les avis sont désormais publics et visibles par défaut. Sans cette visibilité universelle, le reste de la fonctionnalité n'a pas de sens. Cela maximise les chances de retrouvailles en exposant les recherches au plus grand nombre.
+**Why this priority**: C'est le changement fondamental par rapport aux specs précédentes, tous les avis sont désormais publics et visibles par défaut. Sans cette visibilité universelle, le reste de la fonctionnalité n'a pas de sens. Cela maximise les chances de retrouvailles en exposant les recherches au plus grand nombre.
 
 **Independent Test**: Ouvrir `/retrouve-amis` dans un navigateur en mode privé (non connecté) et vérifier que la liste des avis de recherche actifs est visible avec les informations pertinentes.
 
@@ -39,19 +39,19 @@ En tant que visiteur non connecté, je souhaite pouvoir consulter la page `/retr
 
 En tant qu'utilisateur connecté, je souhaite remplir un formulaire structuré avec des questions précises pour décrire la personne que je recherche, afin que mon avis soit clair et maximise les chances d'identification.
 
-**Why this priority**: Co-priorité P1 — le formulaire de questions est le point d'entrée de la fonctionnalité. Les questions posées déterminent la qualité des avis publiés et donc la probabilité de retrouvailles.
+**Why this priority**: Co-priorité P1, le formulaire de questions est le point d'entrée de la fonctionnalité. Les questions posées déterminent la qualité des avis publiés et donc la probabilité de retrouvailles.
 
 **Independent Test**: Se connecter, accéder au formulaire de création d'avis, remplir toutes les questions, soumettre et vérifier que l'avis apparaît immédiatement sur la page `/retrouve-amis` publique.
 
 **Acceptance Scenarios**:
 
 1. **Given** un utilisateur connecté, **When** il accède au formulaire de création d'avis, **Then** il voit un formulaire structuré en étapes avec les questions suivantes :
-   - **Étape 1 — Préférences** : "Souhaitez-vous être anonyme ?" (oui/non) et "Souhaitez-vous partager vos coordonnées ou celles de vos proches en cas de match ?" (oui/non, si oui : champs email, téléphone, WhatsApp — au moins un requis)
-   - **Étape 2 — Identité de la personne** : "Qui recherchez-vous ?" (homme/femme), "Noms de la personne" (obligatoire), "Surnoms" (optionnel), "Comment la personne vous connaît ?" (texte libre)
-   - **Étape 3 — Relation** : "Quelle est votre relation ?" (choix : amis d'enfance, amis d'école/université, collègue, connaissance, frère/sœur, parent)
-   - **Étape 4 — Lieu de rencontre** : "Où vous êtes-vous rencontrés ?" — 3 sous-options cumulables : localité (avec champ de précision), école (avec champ de précision), ville (avec champ de précision), ou "Jamais rencontré"
-   - **Étape 5 — Photo et description** : "Avez-vous une photo de la personne ?" (upload optionnel), "Pouvez-vous décrire la personne ?" (texte libre, optionnel)
-   - **Étape 6 — Récapitulatif** : résumé de toutes les réponses avant soumission
+   - **Étape 1 : Préférences** : "Souhaitez-vous être anonyme ?" (oui/non) et "Souhaitez-vous partager vos coordonnées ou celles de vos proches en cas de match ?" (oui/non, si oui : champs email, téléphone, WhatsApp, au moins un requis)
+   - **Étape 2 : Identité de la personne** : "Qui recherchez-vous ?" (homme/femme), "Noms de la personne" (obligatoire), "Surnoms" (optionnel), "Comment la personne vous connaît ?" (texte libre)
+   - **Étape 3 : Relation** : "Quelle est votre relation ?" (choix : amis d'enfance, amis d'école/université, collègue, connaissance, frère/sœur, parent)
+   - **Étape 4 : Lieu de rencontre** : "Où vous êtes-vous rencontrés ?", 3 sous-options cumulables : localité (avec champ de précision), école (avec champ de précision), ville (avec champ de précision), ou "Jamais rencontré"
+   - **Étape 5 : Photo et description** : "Avez-vous une photo de la personne ?" (upload optionnel), "Pouvez-vous décrire la personne ?" (texte libre, optionnel)
+   - **Étape 6 : Récapitulatif** : résumé de toutes les réponses avant soumission
 2. **Given** un formulaire rempli avec les champs obligatoires (nom de la personne + au moins un lieu de rencontre OU type de relation), **When** l'utilisateur soumet l'avis, **Then** l'avis est immédiatement publié et visible sur `/retrouve-amis` pour tous les visiteurs.
 3. **Given** un formulaire incomplet (nom manquant), **When** l'utilisateur tente de soumettre, **Then** des messages d'erreur clairs indiquent les champs à compléter.
 4. **Given** un avis soumis avec succès, **When** le système confirme la création, **Then** l'utilisateur voit un message de succès avec un lien vers son avis sur la page publique.
@@ -108,13 +108,13 @@ En tant qu'auteur d'un avis, je souhaite pouvoir modifier ou clôturer mes avis 
 
 - **FR-001**: Le système DOIT afficher tous les avis de recherche actifs sur la page `/retrouve-amis` de manière publique, sans nécessiter d'authentification.
 - **FR-002**: Le système DOIT proposer un formulaire de création d'avis structuré en 6 étapes avec les questions suivantes :
-  - Étape 1 — Préférences : anonymat (oui/non), partage de coordonnées en cas de match (oui/non, si oui : email, téléphone, WhatsApp — au moins un requis)
-  - Étape 2 — Identité : genre recherché (homme/femme), noms de la personne (obligatoire), surnoms (optionnel), "comment la personne vous connaît" (texte libre)
-  - Étape 3 — Relation : type de relation (choix parmi : amis d'enfance, amis d'école/université, collègue, connaissance, frère/sœur, parent)
-  - Étape 4 — Lieu de rencontre : 3 sous-options cumulables (localité + précision, école + précision, ville + précision) ou "jamais rencontré"
-  - Étape 5 — Photo et description : upload photo optionnel, description physique (texte libre, optionnel)
-  - Étape 6 — Récapitulatif : résumé complet avant soumission
-- **FR-003**: Le système DOIT publier chaque nouvel avis automatiquement sur la page `/retrouve-amis` dès sa soumission (pas d'option privé/public — tout est public par défaut).
+  - Étape 1 : Préférences : anonymat (oui/non), partage de coordonnées en cas de match (oui/non, si oui : email, téléphone, WhatsApp, au moins un requis)
+  - Étape 2 : Identité : genre recherché (homme/femme), noms de la personne (obligatoire), surnoms (optionnel), "comment la personne vous connaît" (texte libre)
+  - Étape 3 : Relation : type de relation (choix parmi : amis d'enfance, amis d'école/université, collègue, connaissance, frère/sœur, parent)
+  - Étape 4 : Lieu de rencontre : 3 sous-options cumulables (localité + précision, école + précision, ville + précision) ou "jamais rencontré"
+  - Étape 5 : Photo et description : upload photo optionnel, description physique (texte libre, optionnel)
+  - Étape 6 : Récapitulatif : résumé complet avant soumission
+- **FR-003**: Le système DOIT publier chaque nouvel avis automatiquement sur la page `/retrouve-amis` dès sa soumission (pas d'option privé/public, tout est public par défaut).
 - **FR-004**: Le système DOIT protéger l'identité de l'auteur selon son choix : si anonymat activé, aucune information auteur affichée ; sinon, pseudonyme uniquement (prénom + initiale du nom, ex: "Amadou D.").
 - **FR-005**: Le système DOIT permettre la pagination des avis sur `/retrouve-amis` avec un tri par date de publication décroissante.
 - **FR-006**: Le système DOIT permettre le filtrage des avis par type de relation, lieu (localité, école, ville) sur la page `/retrouve-amis`.
@@ -127,11 +127,11 @@ En tant qu'auteur d'un avis, je souhaite pouvoir modifier ou clôturer mes avis 
 - **FR-013**: Le système DOIT limiter le nombre d'avis actifs à 10 par utilisateur.
 - **FR-014**: Le système DOIT inviter les visiteurs non connectés qui reconnaissent une personne recherchée à se connecter/s'inscrire pour contacter l'auteur via la plateforme.
 - **FR-015**: Le système DOIT permettre l'upload d'une photo optionnelle de la personne recherchée (formats acceptés : JPEG, PNG, WebP) avec une limite de taille raisonnable.
-- **FR-016**: Le système DOIT permettre à l'auteur de choisir de partager ses coordonnées (ou celles de ses proches) uniquement en cas de match via 3 champs structurés : email (optionnel), téléphone (optionnel), WhatsApp (optionnel) — au moins un requis si l'option est activée. Ces coordonnées DOIVENT être stockées de manière sécurisée et ne DOIVENT jamais être affichées publiquement.
+- **FR-016**: Le système DOIT permettre à l'auteur de choisir de partager ses coordonnées (ou celles de ses proches) uniquement en cas de match via 3 champs structurés : email (optionnel), téléphone (optionnel), WhatsApp (optionnel), au moins un requis si l'option est activée. Ces coordonnées DOIVENT être stockées de manière sécurisée et ne DOIVENT jamais être affichées publiquement.
 
 ### Key Entities
 
-- **Avis de recherche public** : Publication décrivant une personne recherchée. Attributs : auteur (pseudonyme ou anonyme), anonymat (oui/non), genre recherché (homme/femme), noms, surnoms, comment la personne connaît l'auteur, type de relation (amis d'enfance, amis d'école/université, collègue, connaissance, frère/sœur, parent), lieux de rencontre (localité, école, ville — cumulables, ou "jamais rencontré"), photo (optionnel), description physique (optionnel), coordonnées de contact en cas de match : email, téléphone, WhatsApp (optionnels, non publics — au moins un requis si partage activé), statut (actif, clôturé, suspendu), date de publication.
+- **Avis de recherche public** : Publication décrivant une personne recherchée. Attributs : auteur (pseudonyme ou anonyme), anonymat (oui/non), genre recherché (homme/femme), noms, surnoms, comment la personne connaît l'auteur, type de relation (amis d'enfance, amis d'école/université, collègue, connaissance, frère/sœur, parent), lieux de rencontre (localité, école, ville, cumulables, ou "jamais rencontré"), photo (optionnel), description physique (optionnel), coordonnées de contact en cas de match : email, téléphone, WhatsApp (optionnels, non publics, au moins un requis si partage activé), statut (actif, clôturé, suspendu), date de publication.
 - **Signalement** : Signalement d'un avis par un utilisateur connecté. Attributs : avis signalé, auteur du signalement, motif, statut de traitement.
 - **Demande de retrait** : Requête d'une personne se reconnaissant dans un avis. Attributs : avis concerné, demandeur, motif, statut (en attente, approuvée, rejetée), date de suspension automatique.
 
@@ -150,7 +150,7 @@ En tant qu'auteur d'un avis, je souhaite pouvoir modifier ou clôturer mes avis 
 
 - Ce feature remplace le formulaire de création d'avis et le modèle de visibilité des specs 001 et 002 par un nouveau formulaire (10 questions) et un modèle "tout public par défaut".
 - Le moteur de recoupement automatique (spec 001) et les fonctionnalités de partage social (spec 002) sont réutilisés comme fonctionnalités complémentaires.
-- La publication est immédiate sans modération préalable — la modération se fait a posteriori via signalements.
+- La publication est immédiate sans modération préalable, la modération se fait a posteriori via signalements.
 - Le système d'authentification, de signalement et de blacklist existant est réutilisé.
 - La page `/retrouve-amis` existante est adaptée pour afficher les avis publiquement au lieu de ne montrer que le dashboard.
-- Les coordonnées partagées en cas de match ne sont jamais affichées publiquement — elles ne sont révélées qu'après consentement mutuel.
+- Les coordonnées partagées en cas de match ne sont jamais affichées publiquement : elles ne sont révélées qu'après consentement mutuel.

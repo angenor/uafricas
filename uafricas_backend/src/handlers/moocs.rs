@@ -120,7 +120,7 @@ async fn construire_response(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/moocs — Lister les formations avec filtres et pagination
+// GET /api/moocs : Lister les formations avec filtres et pagination
 // ──────────────────────────────────────────────────────────────
 pub async fn lister_moocs(
     pool: web::Data<PgPool>,
@@ -211,7 +211,7 @@ pub async fn lister_moocs(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/moocs/{id} — Obtenir le detail d'un MOOC
+// GET /api/moocs/{id} : Obtenir le detail d'un MOOC
 // ──────────────────────────────────────────────────────────────
 pub async fn obtenir_mooc(
     pool: web::Data<PgPool>,
@@ -291,7 +291,7 @@ pub async fn obtenir_mooc(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/moocs/{id}/inscription — S'inscrire a un MOOC
+// POST /api/moocs/{id}/inscription : S'inscrire a un MOOC
 // ──────────────────────────────────────────────────────────────
 pub async fn inscrire_mooc(
     pool: web::Data<PgPool>,
@@ -437,7 +437,7 @@ async fn lecon_appartient_au_mooc(
 }
 
 // ──────────────────────────────────────────────────────────────
-// GET /api/moocs/{id}/contenu — Programme (chapitres + leçons)
+// GET /api/moocs/{id}/contenu : Programme (chapitres + leçons)
 // La structure est publique ; le contenu des leçons n'est servi qu'aux inscrits
 // (ou au créateur de la formation).
 // ──────────────────────────────────────────────────────────────
@@ -459,7 +459,7 @@ pub async fn obtenir_contenu_mooc(
     .ok_or_else(|| ApiErreur::NonTrouve("Formation non trouvee".to_string()))?;
 
     // La structure n'est publique que pour les formations publiées ; brouillon/annulée/
-    // suspendue restent réservées à leur créateur (renvoie NonTrouve aux tiers — ne
+    // suspendue restent réservées à leur créateur (renvoie NonTrouve aux tiers, ne
     // révèle pas l'existence).
     let etat_public = matches!(etat.as_str(), "publie" | "en_cours" | "termine");
     if !etat_public && current_user != Some(cree_par) {
@@ -579,7 +579,7 @@ pub async fn obtenir_contenu_mooc(
 }
 
 // ──────────────────────────────────────────────────────────────
-// POST /api/moocs/{id}/lecons/{lecon_id}/completion — Marquer terminée
+// POST /api/moocs/{id}/lecons/{lecon_id}/completion, Marquer terminée
 // ──────────────────────────────────────────────────────────────
 pub async fn marquer_lecon_terminee(
     pool: web::Data<PgPool>,
@@ -624,7 +624,7 @@ pub async fn marquer_lecon_terminee(
 }
 
 // ──────────────────────────────────────────────────────────────
-// DELETE /api/moocs/{id}/lecons/{lecon_id}/completion — Annuler
+// DELETE /api/moocs/{id}/lecons/{lecon_id}/completion, Annuler
 // ──────────────────────────────────────────────────────────────
 pub async fn annuler_lecon_terminee(
     pool: web::Data<PgPool>,

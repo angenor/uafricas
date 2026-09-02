@@ -3,7 +3,7 @@ import type { FiltresDemandes } from '~/composables/useAdminBibliosHumaines'
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
-useHead({ title: 'Bibliothèques Humaines — Admin' })
+useHead({ title: 'Bibliothèques Humaines, Admin' })
 
 const {
   demandes,
@@ -64,7 +64,7 @@ async function confirmerApprobation(id: string) {
   actionLoading.value = true
   try {
     await validerDemande(id)
-    afficherSucces('Demande approuvée — la Bibliothèque Humaine est maintenant visible publiquement.')
+    afficherSucces('Demande approuvée : la Bibliothèque Humaine est maintenant visible publiquement.')
     await charger(1)
   }
   catch { /* erreur déjà dans le composable */ }
@@ -318,7 +318,7 @@ onMounted(() => charger(1))
             v-model="commentaireRejet"
             rows="4"
             class="textarea textarea-bordered w-full text-sm"
-            placeholder="Motif du rejet (facultatif — ex : biographie trop courte…)"
+            placeholder="Motif du rejet (facultatif, ex : biographie trop courte…)"
           />
           <div class="modal-action">
             <button class="btn btn-ghost" @click="showRejetModal = false">Annuler</button>

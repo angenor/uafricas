@@ -84,7 +84,7 @@ const soumettre = async () => {
               <input v-model="form.email" type="email" class="input input-bordered">
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Telephone</span></label>
+              <label class="label"><span class="label-text">Téléphone</span></label>
               <input v-model="form.telephone" type="tel" class="input input-bordered">
             </div>
           </div>
@@ -93,7 +93,7 @@ const soumettre = async () => {
             <textarea v-model="form.description" class="textarea textarea-bordered" rows="3" />
           </div>
           <div class="form-control">
-            <label class="label"><span class="label-text">Numero de registre</span></label>
+            <label class="label"><span class="label-text">Numéro de registre</span></label>
             <input v-model="form.numero_registre" type="text" class="input input-bordered">
           </div>
           <div class="flex justify-end gap-2 pt-4">

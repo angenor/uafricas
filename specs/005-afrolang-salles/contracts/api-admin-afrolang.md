@@ -1,4 +1,4 @@
-# Contract — Afrolang Admin API
+# Contract : Afrolang Admin API
 
 **Feature**: 005-afrolang-salles
 **Scope**: Endpoints administratifs montés sous `/api/admin/afrolang/**`. Auth JWT + rôle administrateur obligatoire. Toutes les mutations sont instrumentées avec `audit::log_action` (Principe VII).
@@ -91,7 +91,7 @@ Ajout de filtres `motif?`, `visibilite?`, `archivee?` (true/false/tous).
 
 ### `POST /api/admin/afrolang/salles-privees/{id}/archiver`
 
-Archivage manuel par l'admin (complément au déclenchement automatique lié à la suppression du créateur — FR-034).
+Archivage manuel par l'admin (complément au déclenchement automatique lié à la suppression du créateur, FR-034).
 
 - **Serveur** : `UPDATE archivee_at=NOW()` (si non déjà archivée), notifie les abonnés, audit.
 - **Response** : `SallePriveeDetailResponse`.
@@ -112,7 +112,7 @@ Handler interne (callable par le back-office admin suite à une désactivation u
 - **Serveur** : `UPDATE salle_privee SET archivee_at=NOW() WHERE cree_par=$1 AND archivee_at IS NULL AND deleted_at IS NULL` ; notifications participants ; audit par salle.
 - **Response** : `{ archivees_count, items: SallePriveeDetailResponse[] }`.
 
-> Note d'implémentation : peut aussi être déclenché en arrière-plan par le handler admin IAM `desactiver_utilisateur` (append à la fin du handler existant, via `tokio::spawn` pour rester non-bloquant — cohérent avec le pattern `audit::log_action`).
+> Note d'implémentation : peut aussi être déclenché en arrière-plan par le handler admin IAM `desactiver_utilisateur` (append à la fin du handler existant, via `tokio::spawn` pour rester non-bloquant, cohérent avec le pattern `audit::log_action`).
 
 ---
 

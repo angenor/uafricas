@@ -6,7 +6,7 @@
  *
  * Thématiques et couverture sont enregistrées **après** la création : elles
  * portent sur un support qui n'existe pas encore au moment de la saisie.
- * Une chaîne naît en brouillon, où ni l'une ni l'autre n'est exigible — le
+ * Une chaîne naît en brouillon, où ni l'une ni l'autre n'est exigible, le
  * refus (FR-029, FR-035) intervient à la publication, sur l'écran d'édition.
  */
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
@@ -160,7 +160,7 @@ const soumettre = async () => {
             <div class="form-control">
               <label class="label"><span class="label-text">Territoire</span></label>
               <select v-model="chaineForm.pays_id" class="select select-bordered">
-                <option value="">— Aucun —</option>
+                <option value="">Aucun</option>
                 <option v-for="p in paysDisponibles" :key="p.id" :value="p.id">{{ p.nom }}</option>
               </select>
             </div>

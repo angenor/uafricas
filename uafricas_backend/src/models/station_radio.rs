@@ -41,7 +41,7 @@ pub struct StationRadioRow {
     pub origine_publication: String,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
-    /// Coordonnées publiques de l'équipe (09p) — toutes facultatives.
+    /// Coordonnées publiques de l'équipe (09p), toutes facultatives.
     pub contact_email: Option<String>,
     pub contact_telephone: Option<String>,
     pub contact_whatsapp: Option<String>,
@@ -77,7 +77,7 @@ pub struct StationRadioResponse {
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     /// Coordonnées publiques de l'équipe (09p). Absent du JSON quand la station
-    /// n'en publie aucune — le bloc « Contacts » disparaît alors de sa page.
+    /// n'en publie aucune : le bloc « Contacts » disparaît alors de sa page.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub contacts: Option<ContactsSupport>,
     /// Thématiques déclarées (US3, table `support_thematique`). Vide tant que
@@ -116,7 +116,7 @@ pub struct StationRadioQueryParams {
     pub type_station: Option<String>,
     pub pays: Option<String>,
     pub genre: Option<String>,
-    /// 'africans' | 'territoire' — porté par la page appelante (FR-014).
+    /// 'africans' | 'territoire' : porté par la page appelante (FR-014).
     /// Une valeur hors whitelist est rejetée en 400 par le handler.
     pub origine: Option<String>,
     /// Thématiques DÉCLARÉES par le support (US3), entendues comme un OU :
@@ -124,12 +124,12 @@ pub struct StationRadioQueryParams {
     ///
     /// **Liste séparée par des virgules, et non clé répétée** : `web::Query`
     /// s'appuie sur `serde_urlencoded`, qui ne sait pas agréger plusieurs
-    /// occurrences d'une même clé dans un `Vec` — il échoue en 400 dès la
+    /// occurrences d'une même clé dans un `Vec` : il échoue en 400 dès la
     /// PREMIÈRE valeur (« invalid type: string, expected a sequence »), même
     /// seule. Un `Vec<Uuid>` ici rendrait donc le filtre inutilisable ; le
     /// parser en une passe est ce qui évite d'ajouter `serde_qs` pour un champ.
     pub thematique: Option<String>,
-    /// Territoire couvert (US4) — remonte aussi les stations continentales
+    /// Territoire couvert (US4) : remonte aussi les stations continentales
     /// (FR-036).
     pub territoire: Option<Uuid>,
     pub page: Option<i64>,

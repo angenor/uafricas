@@ -188,7 +188,7 @@ onMounted(() => charger())
       <div class="card bg-base-100 shadow-sm">
         <div class="card-body flex-row items-center justify-between py-3">
           <div class="flex items-center gap-3">
-            <span class="text-sm font-medium">Etat :</span>
+            <span class="text-sm font-medium">État :</span>
             <span class="badge" :class="etatBadge(etatLivre)">{{ etatLivre }}</span>
             <span class="text-sm font-medium ml-4">Acces :</span>
             <span class="badge" :class="accesBadge(livreDetail.acces)">{{ livreDetail.acces }}</span>
@@ -308,8 +308,8 @@ onMounted(() => charger())
                 </select>
               </div>
               <div class="form-control">
-                <label class="label"><span class="label-text">Categorie (UUID)</span></label>
-                <input v-model="form.categorie_id" type="text" class="input input-bordered" placeholder="UUID de la categorie" />
+                <label class="label"><span class="label-text">Catégorie (UUID)</span></label>
+                <input v-model="form.categorie_id" type="text" class="input input-bordered" placeholder="UUID de la catégorie" />
                 <label v-if="livreDetail.categorie_nom" class="label">
                   <span class="label-text-alt">Actuelle : {{ livreDetail.categorie_nom }}</span>
                 </label>

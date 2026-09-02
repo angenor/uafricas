@@ -7,7 +7,7 @@
 
 ## Format
 
-`- [ ] [TaskID] [P?] [Story?] Description` — chemins absolus depuis la racine repo.
+`- [ ] [TaskID] [P?] [Story?] Description`, chemins absolus depuis la racine repo.
 
 ---
 
@@ -15,7 +15,7 @@
 
 Aucune initialisation nouvelle n'est requise : le monorepo, Docker, sqlx, Actix, Nuxt et toutes les dépendances sont déjà en place. Création des sous-dossiers nécessaires et préparation du schéma uniquement.
 
-- [X] T001 Créer le sous-dossier d'upload `uafricas_backend/uploads/afrolang/ressources_contribuees/` (et son `.gitkeep`) — `uafricas_backend/uploads/afrolang/ressources_contribuees/.gitkeep`
+- [X] T001 Créer le sous-dossier d'upload `uafricas_backend/uploads/afrolang/ressources_contribuees/` (et son `.gitkeep`), `uafricas_backend/uploads/afrolang/ressources_contribuees/.gitkeep`
 - [X] T002 Vérifier que `actix-files` sert déjà `/uploads/` (pas de changement attendu) et noter le chemin dans `uafricas_backend/src/main.rs` (ligne `Files::new("/uploads", ...)`)
 
 ---
@@ -43,7 +43,7 @@ Aucune initialisation nouvelle n'est requise : le monorepo, Docker, sqlx, Actix,
 ### Services partagés
 
 - [X] T013 [P] Créer `uafricas_backend/src/services/rate_limit_ressources.rs` exposant `pub async fn compter_ressources_recentes(db: &PgPool, auteur_id: Uuid, salle_id: Uuid) -> Result<i64, sqlx::Error>` (COUNT sur 24h glissantes, conforme research.md §4)
-- [X] T014 [P] Créer `uafricas_backend/src/services/youtube_url.rs` exposant `pub fn extraire_id_youtube(url: &str) -> Option<String>` (regex sur `youtube.com/watch?v=`, `youtu.be/`, `embed/`, `shorts/`, valide 11 chars) — research.md §2
+- [X] T014 [P] Créer `uafricas_backend/src/services/youtube_url.rs` exposant `pub fn extraire_id_youtube(url: &str) -> Option<String>` (regex sur `youtube.com/watch?v=`, `youtu.be/`, `embed/`, `shorts/`, valide 11 chars), research.md §2
 - [X] T015 [P] Étendre `uafricas_backend/src/services/livekit_moderation.rs` avec `pub async fn fermer_session_admin(room_name: &str, motif_public: &str) -> Result<(), AppError>` qui diffuse DataPacket RELIABLE `{type:'admin', subtype:'session_fermee', motif_public}` puis appelle `RoomServiceClient::delete_room(room_name)` (research.md §5)
 - [X] T016 Déclarer les nouveaux services dans `uafricas_backend/src/services/mod.rs`
 - [X] T017 Helper privé `a_acces_salle_privee_actif(db, salle_privee_id, utilisateur_id) -> bool` dans `uafricas_backend/src/handlers/afrolang.rs` (contracts/public-salle-privee-acces.md)
@@ -56,13 +56,13 @@ Aucune initialisation nouvelle n'est requise : le monorepo, Docker, sqlx, Actix,
 
 ---
 
-## Phase 3 : User Story 1 — Partage de ressources contribuées au niveau salle (P1) 🎯 MVP
+## Phase 3 : User Story 1 : Partage de ressources contribuées au niveau salle (P1) 🎯 MVP
 
 **Objectif** : tout utilisateur authentifié peut déposer un document, une vidéo YouTube, un lien ou recommander un accompagnateur ; les ressources sont cumulées au niveau salle ; consentement explicite pour les accompagnateurs.
 
 **Test indépendant** : exécuter les scénarios A, B, C, E de `quickstart.md` (ajout 4 variants, persistance multi-sessions, accès salle privée, rate-limit).
 
-### Backend — public ressources contribuées
+### Backend : public ressources contribuées
 
 - [X] T019 [US1] Étendre `uafricas_backend/src/handlers/afrolang.rs` (handler `verifier_code_acces` existant) : en cas de succès, exécuter `INSERT INTO afrolang.acces_salle_privee ... ON CONFLICT DO NOTHING` + `audit::log_action("CREATE", "afrolang", "acces_salle_privee", ...)` lors de la première validation (contracts/public-salle-privee-acces.md)
 - [X] T020 [US1] Étendre `uafricas_backend/src/handlers/afrolang.rs` (handler `modifier_code_acces` existant `PATCH /salles-privees/{id}/code-acces`) : ajouter dans la même transaction `UPDATE acces_salle_privee SET revoque_at = NOW() WHERE salle_privee_id = $1 AND revoque_at IS NULL` + audit `UPDATE`
@@ -78,20 +78,20 @@ Aucune initialisation nouvelle n'est requise : le monorepo, Docker, sqlx, Actix,
 - [X] T030 [US1] Câbler toutes les nouvelles routes (lecture + écriture + accompagnateur) dans `uafricas_backend/src/routes.rs` (sous le scope `/api/afrolang/...`)
 - [X] T031 [US1] Si nécessaire, étendre `uafricas_backend/src/errors.rs` avec les codes erreur métier : `salle_privee_acces_requis`, `salle_desactivee_admin`, `rate_limit_ressources`, `url_youtube_invalide`, `action_non_autorisee`, `statut_incompatible`, `retrait_non_autorise`
 
-### Frontend — composables US1
+### Frontend : composables US1
 
 - [X] T032 [P] [US1] Créer `uafricas_frontend/app/composables/useAfrolangRessources.ts` : types TS (`TypeRessourceContribuee`, `StatutAccompagnateur`, `AuteurLight`, `AccompagnateurPublicInfo`, `RessourceContribueeAPI`, filtres), méthodes `listerRessourcesContribuees(salleId, filtres)`, `ajouterDocument(salleId, formData)`, `ajouterVideoYoutube(salleId, payload)`, `ajouterLienWeb(salleId, payload)`, `recommanderAccompagnateur(salleId, payload)`, `supprimerRessource(id)` (data-model.md §7)
 - [X] T033 [P] [US1] Créer `uafricas_frontend/app/composables/useAfrolangAccompagnateur.ts` : méthodes `listerRecommandationsRecues(filtres)`, `accepter(id)`, `refuser(id, motifFacultatif)`, `retirerConsentement(id)` + état réactif `mesRecommandationsEnAttente: Ref<number>` (pour badge NavBar)
 - [X] T034 [US1] Étendre `uafricas_frontend/app/composables/useAfrolang.ts` : exposer un computed `salleDesactiveeAdmin: Ref<DesactivationAdminInfoAPI | null>` issu du payload salle, et `peutContribuerRessource: Ref<boolean>` (combinaison `userActif && !salleDesactivee && (sallePublique || aAccesSallePrivee)`)
 
-### Frontend — composants US1 (Tailwind v4 pur — Principe VI)
+### Frontend : composants US1 (Tailwind v4 pur, Principe VI)
 
 - [X] T035 [P] [US1] Créer `uafricas_frontend/app/components/afrolang/RessourceContribueeCard.vue` (Tailwind v4) : rendu conditionnel par `type` (document → icon FontAwesome + bouton Télécharger ; video_youtube → iframe embed `https://www.youtube.com/embed/<id>` + vignette ; lien_web → carte avec preview URL ; accompagnateur → mini-profil membre + motif + statut). Bouton suppression visible si `peutSupprimer = (auteur === me || isAdmin)`
 - [X] T036 [P] [US1] Créer `uafricas_frontend/app/components/afrolang/RessourceContribueeForm.vue` (Tailwind v4) : modal avec 4 onglets (Document / Vidéo / Lien / Accompagnateur), validations client miroirs des contraintes backend (taille fichier, regex YouTube, motif ≥ 20, recherche autocomplete membre), soumissions via `useAfrolangRessources`
 - [X] T037 [US1] Créer `uafricas_frontend/app/components/afrolang/RessourcesContribueesPanel.vue` (Tailwind v4) : section avec header « Ressources contribuées par la communauté », liste paginée `RessourceContribueeCard`, bouton flottant « + Ajouter » (ouvre `RessourceContribueeForm`) désactivé si `!peutContribuerRessource` avec tooltip explicatif. Filtre par type (chips). Distinction visuelle nette d'avec la section « Ressources officielles » modérée (feature 005)
 - [X] T038 [P] [US1] Créer `uafricas_frontend/app/components/afrolang/AccompagnateurRecommandationBanner.vue` (Tailwind v4) : bannière compacte affichée dans `pages/mon-compte/recommandations-accompagnateur.vue` pour chaque recommandation en attente avec deux boutons « Accepter » / « Refuser » (modal motif facultatif). Inclus un état vide neutre
 
-### Frontend — pages US1
+### Frontend : pages US1
 
 - [X] T039 [US1] Modifier `uafricas_frontend/app/pages/afrolang/session/[id].vue` : intégrer `<RessourcesContribueesPanel :salle-id="salleId" :session-id="sessionId" />` sous (ou à côté de) la liste de ressources officielles existante, avec libellé clairement différencié
 - [ ] T040 [US1] Modifier `uafricas_frontend/app/pages/afrolang/session/privee/[id].vue` : mêmes intégration que T039, en passant la `salle_id` parente issue de la salle privée
@@ -102,13 +102,13 @@ Aucune initialisation nouvelle n'est requise : le monorepo, Docker, sqlx, Actix,
 
 ---
 
-## Phase 4 : User Story 2 — Fermeture administrative pour abus (P1)
+## Phase 4 : User Story 2 : Fermeture administrative pour abus (P1)
 
 **Objectif** : un admin plateforme peut fermer une session pour abus → désactivation immédiate de la salle hôte ; réactivation réservée aux admins plateforme uniquement ; notifications participants + admins de salle.
 
 **Test indépendant** : exécuter le scénario D de `quickstart.md` (fermeture, éjection, badge, blocage rejointe, blocage réactivation non-admin, réactivation admin).
 
-### Backend — modération admin
+### Backend : modération admin
 
 - [X] T043 [US2] Créer `uafricas_backend/src/handlers/admin/sessions_moderation.rs` (squelette + `use` + signatures)
 - [X] T044 [US2] Implémenter `POST /api/admin/afrolang/sessions/{session_id}/fermer-admin` dans `uafricas_backend/src/handlers/admin/sessions_moderation.rs` : transaction (a) `UPDATE session etat='terminee'`, (b) `UPDATE salle desactivee_admin_*`, (c) `INSERT evenement_moderation_salle`, (d) hors transaction `services::livekit_moderation::fermer_session_admin` puis envoi notifications participants (`session.fermee_admin` sans motif) + admins de salle/créateur (`salle.desactivee_admin` avec motif), (e) 2 lignes audit. 409 si déjà désactivée. Motif 10..1000 chars (contracts/admin-moderation.md)
@@ -119,20 +119,20 @@ Aucune initialisation nouvelle n'est requise : le monorepo, Docker, sqlx, Actix,
 - [X] T049 [US2] Câbler les 2 nouvelles routes admin dans `uafricas_backend/src/routes.rs` sous le scope `/api/admin/afrolang/...` avec le middleware `est_admin_plateforme`
 - [X] T050 [US2] Ajouter dans le handler public `DELETE /api/afrolang/ressources-contribuees/{id}` (T027) la vérification additionnelle « admin plateforme = OK » et propager `acteur_admin: bool` dans l'audit (déjà prévu, contracts/admin-moderation.md)
 
-### Frontend — composables US2
+### Frontend : composables US2
 
 - [X] T051 [P] [US2] Méthode `fermerSessionAdmin(sessionId, motif)` ajoutée à `useAdminSessions.ts` (composable existant, pas de nouveau fichier)
 - [X] T052 [US2] Étendre `uafricas_frontend/app/composables/useAdminAfrolangSalles.ts` : méthodes `reactiverSalle(salleId, commentaire)`, types `DesactivationAdminInfoAPI`
 - [ ] T053 [US2] Étendre `uafricas_frontend/app/composables/useAfrolang.ts` : attacher dans la session active un listener LiveKit DataPacket pour `{type:'admin', subtype:'session_fermee'}` qui (a) déclenche un toast persistant, (b) pousse une notification locale, (c) déclenche la sortie propre de la session
 
-### Frontend — composants US2
+### Frontend : composants US2
 
 - [X] T054 [P] [US2] Créer `uafricas_frontend/app/components/afrolang/SalleDesactiveeBadge.vue` (Tailwind v4 pur) : badge `border-2 border-red-700/40 bg-red-50 text-red-700` avec icône FontAwesome `faBan` et libellé « Désactivée par administration », tooltip motif si admin
 - [ ] T055 [P] [US2] Créer `uafricas_frontend/app/components/afrolang/SessionFermeeAdminToast.vue` (Tailwind v4 pur) : toast persistant pleine largeur, contenu « Session fermée par l'administration. Contactez le support si besoin. », bouton fermeture explicite
 - [X] T056 [P] [US2] Créer `uafricas_frontend/app/components/admin/afrolang/SessionFermetureModal.vue` (daisyUI v5) : modal avec textarea motif (compteur 10/1000), confirmation, appel `useAdminSessions.fermerSessionAdmin`, toast succès/erreur
 - [X] T057 [P] [US2] Créer `uafricas_frontend/app/components/admin/afrolang/SalleReactivationModal.vue` (daisyUI v5) : modal avec textarea commentaire facultatif (0/1000), confirmation, appel `useAdminAfrolangSalles.reactiverSalle`
 
-### Frontend — pages US2
+### Frontend : pages US2
 
 - [ ] T058 [US2] Créer `uafricas_frontend/app/pages/admin/afrolang/sessions/index.vue` (daisyUI) : tableau paginé des sessions en cours/planifiées avec filtres salle/état, colonnes (titre, salle, modérateur, participants, démarrée_at, actions), bouton « Fermer pour abus » par ligne ouvrant `SessionFermetureModal`
 - [X] T059 [US2] Modifier `uafricas_frontend/app/pages/admin/salles/[id].vue` : bouton « Réactiver la salle » conditionnel + bandeau « Salle désactivée par administration » avec motif intégrés
@@ -143,7 +143,7 @@ Aucune initialisation nouvelle n'est requise : le monorepo, Docker, sqlx, Actix,
 
 ---
 
-## Phase 5 : User Story 3 — Historique de modération (P2)
+## Phase 5 : User Story 3 : Historique de modération (P2)
 
 **Objectif** : les administrateurs (plateforme + nommés de salle) peuvent consulter l'historique chronologique des fermetures et réactivations d'une salle.
 
@@ -169,7 +169,7 @@ Aucune initialisation nouvelle n'est requise : le monorepo, Docker, sqlx, Actix,
 - [X] T067 [P] Audit vérifié : `admin/sessions_moderation.rs` émet 2 lignes d'audit par fermeture/réactivation (UPDATE salle + CREATE evenement_moderation_salle), avec before/after JSONB conformes
 - [X] T068 [P] FontAwesome : `faGavel` ajouté ; `faBan`, `faCircleCheck`, `faCircleXmark` déjà présents
 - [ ] T069 [P] Régression visuelle manuelle : exécuter le `quickstart.md` complet (scénarios A à F) sur l'environnement local, capturer un screenshot par scénario, lister tout écart
-- [ ] T070 [P] Vérifier qu'aucun composant public n'utilise `daisyUI` (classes `btn`, `modal`, `tabs`, `badge` daisyUI) — Principe VI ; grep ciblé sur `uafricas_frontend/app/components/afrolang/` et les 3 pages publiques modifiées
+- [ ] T070 [P] Vérifier qu'aucun composant public n'utilise `daisyUI` (classes `btn`, `modal`, `tabs`, `badge` daisyUI), Principe VI ; grep ciblé sur `uafricas_frontend/app/components/afrolang/` et les 3 pages publiques modifiées
 - [X] T071 Mettre à jour `CLAUDE.md` (section « Recent Changes ») avec un résumé de la feature livrée
 - [ ] T072 Pousser la branche `001-ressources-fermeture-session` et préparer la PR avec lien vers `quickstart.md` pour la grille de recette
 
@@ -191,7 +191,7 @@ Setup (P1+P2 SQL/modèles/services) → US1 (ressources) ─┐
 
 | Vague | Tâches parallélisables |
 |---|---|
-| Foundational SQL | T005, T006, T007 (tables indépendantes dans le même fichier — coordonner les patchs successifs ou un seul commit) |
+| Foundational SQL | T005, T006, T007 (tables indépendantes dans le même fichier, coordonner les patchs successifs ou un seul commit) |
 | Foundational Rust | T009, T010, T013, T014, T015 (fichiers distincts) |
 | US1 frontend | T032, T033, T035, T036, T038 (fichiers distincts) |
 | US2 frontend | T051, T054, T055, T056, T057 (fichiers distincts) |
@@ -202,9 +202,9 @@ Setup (P1+P2 SQL/modèles/services) → US1 (ressources) ─┐
 **MVP recommandé** : Phase 1 + Phase 2 + Phase 3 (US1 complète). À ce stade, la fonctionnalité « ressources contribuées » est livrable en production. La modération admin (US2) peut suivre dans un second incrément ; l'historique (US3) clôt la feature.
 
 **Découpage de commits suggéré** :
-1. **Commit 1** : T001-T018 (SQL + modèles + services partagés) — pas de fonctionnalité visible, vérifier que `cargo build` passe.
-2. **Commit 2** : T019-T031 (backend US1) — endpoints publics + extensions salle privée.
-3. **Commit 3** : T032-T042 (frontend US1) — UI ressources contribuées + workflow accompagnateur.
+1. **Commit 1** : T001-T018 (SQL + modèles + services partagés), pas de fonctionnalité visible, vérifier que `cargo build` passe.
+2. **Commit 2** : T019-T031 (backend US1), endpoints publics + extensions salle privée.
+3. **Commit 3** : T032-T042 (frontend US1), UI ressources contribuées + workflow accompagnateur.
 4. **Commit 4** : T043-T061 (US2 backend + frontend).
 5. **Commit 5** : T062-T066 (US3 historique).
 6. **Commit 6** : T067-T072 (polish, audit, CLAUDE.md, PR).

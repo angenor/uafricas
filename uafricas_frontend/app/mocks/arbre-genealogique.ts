@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// Mock — Arbre généalogique
+// Mock : Arbre généalogique
 // Interfaces TypeScript + données de test + helpers async
 // Source de vérité : specs/001-personnes-arbre/data-model.md
 // ════════════════════════════════════════════════════════════════════════════
@@ -60,7 +60,7 @@ export interface LienFamilial {
   created_at: string
 }
 
-// ─── Interfaces — Arbre complet (visualisation) ────────────────────────
+// ─── Interfaces : Arbre complet (visualisation) ────────────────────────
 
 export interface PersonneNoeud {
   id: string
@@ -241,7 +241,7 @@ export const detailsMock: PersonneDetail[] = [
   },
 ]
 
-// ─── Mock — Arbre complet (visualisation) ───────────────────────────
+// ─── Mock : Arbre complet (visualisation) ───────────────────────────
 
 const RATT_ID_4 = 'ratt-0000-0000-0000-000000000004'
 const RATT_ID_5 = 'ratt-0000-0000-0000-000000000005'

@@ -22,12 +22,12 @@ const etatProjetConfig: Record<string, { label: string; class: string }> = {
 
 const colonnes: TableColumn[] = [
   { key: 'titre', label: 'Titre', sortable: true },
-  { key: 'etat', label: 'Etat', sortable: true, width: 'w-28', align: 'center' },
+  { key: 'etat', label: 'État', sortable: true, width: 'w-28', align: 'center' },
   { key: 'nom_organisation', label: 'Organisation', width: 'w-36' },
   { key: 'pays_nom', label: 'Territoire', width: 'w-32' },
   { key: 'cout_total', label: 'Budget', sortable: true, width: 'w-28', align: 'right',
     format: (v: number | null) => v ? `${v.toLocaleString('fr-FR')} XOF` : '-' },
-  { key: 'duree_mois', label: 'Duree', width: 'w-24', align: 'center',
+  { key: 'duree_mois', label: 'Durée', width: 'w-24', align: 'center',
     format: (v: number | null) => v ? `${v} mois` : '-' },
   { key: 'created_at', label: 'Soumis le', sortable: true, width: 'w-28',
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
@@ -35,7 +35,7 @@ const colonnes: TableColumn[] = [
 
 const filterDefs: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Titre, description, organisation...' },
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'Soumis', value: 'soumis' },
     { label: 'En revue', value: 'en_revue' },
     { label: 'Approuve', value: 'approuve' },

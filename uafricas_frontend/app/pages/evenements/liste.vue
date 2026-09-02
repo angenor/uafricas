@@ -1,255 +1,48 @@
-<template>
-  <div class="min-h-screen flex flex-col bg-gray-50">
-    <!-- Hero Section (compact, titre ↔ description au survol) -->
-    <div class="group relative">
-      <div class="absolute inset-0 bg-linear-to-r from-custom-chocolat to-black/90"></div>
-
-      <div class="relative max-w-4xl mx-auto px-4 pt-16 pb-6 text-center select-none">
-        <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
-          <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Africalive
-          </h1>
-          <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            Découvrez nos événements
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Breadcrumb -->
-    <div class="backdrop-blur-xs">
-      <div class="mx-auto px-4 py-3">
-        <CommonBreadcrumbNav :custom-breadcrumbs="breadcrumbs" />
-      </div>
-    </div>
-
-    <!-- Contenu principal -->
-    <div class="container mx-auto px-4 py-8">
-      <!-- Filtres + toggle vue -->
-      <div class="flex flex-col gap-4 mb-8 lg:flex-row lg:items-center lg:justify-between">
-        <EvenementsEvenementFilters
-          v-model:annee-selected="anneeSelected"
-          v-model:filtre-type="filtreType"
-          v-model:filtre-pays="filtrePays"
-          v-model:filtre-zone="filtreZone"
-          @open-modal="showModal = true"
-          class="flex-1"
-        />
-
-        <!-- Toggle grille / carte (la carte Afrique n'a de sens que pour la zone Afrique) -->
-        <div v-if="filtreZone === 'afrique'" class="flex items-center bg-gray-100 rounded-lg p-1 self-start lg:self-auto shrink-0">
-          <button
-            @click="viewMode = 'grille'"
-            class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            :class="viewMode === 'grille' ? 'bg-custom-green text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-            title="Vue grille"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-            <span>Grille</span>
-          </button>
-          <button
-            @click="viewMode = 'carte'"
-            class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            :class="viewMode === 'carte' ? 'bg-custom-green text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-            title="Vue carte"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Carte</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Chargement -->
-      <div v-if="chargement" class="text-center py-16">
-        <div class="text-4xl text-gray-300 mb-4 animate-spin inline-block">
-          <font-awesome-icon icon="fa-solid fa-spinner" />
-        </div>
-        <p class="text-gray-500">Chargement des événements...</p>
-      </div>
-
-      <!-- Erreur -->
-      <div v-else-if="erreur" class="text-center py-16">
-        <div class="text-5xl text-red-300 mb-4">
-          <font-awesome-icon icon="fa-solid fa-triangle-exclamation" />
-        </div>
-        <h3 class="text-xl font-semibold text-gray-500">
-          Erreur de chargement
-        </h3>
-        <p class="text-gray-400 mt-2">{{ erreur }}</p>
-        <button
-          @click="chargerEvenements"
-          class="mt-4 text-white bg-custom-green rounded-md py-2 px-4 hover:bg-custom-green/90 transition-colors"
-        >
-          Réessayer
-        </button>
-      </div>
-
-      <!-- Grille d'événements -->
-      <div v-else-if="viewMode === 'grille' && evenements.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <EvenementsEvenementCard
-          v-for="evenement in evenements"
-          :key="evenement.id"
-          :evenement="evenement"
-        />
-      </div>
-
-      <!-- État vide (grille) -->
-      <div v-else-if="viewMode === 'grille'" class="text-center py-16">
-        <div class="text-5xl text-gray-300 mb-4">
-          <font-awesome-icon icon="fa-solid fa-calendar-xmark" />
-        </div>
-        <h3 class="text-xl font-semibold text-gray-500">
-          Aucun événement trouvé
-        </h3>
-        <p class="text-gray-400 mt-2">
-          Essayez de modifier vos filtres ou proposez un nouvel événement
-        </p>
-        <button
-          @click="showModal = true"
-          class="mt-6 text-white bg-custom-green rounded-md py-2 px-4 hover:bg-custom-green/90 transition-colors"
-        >
-          Proposer un événement
-        </button>
-      </div>
-
-      <!-- Mode carte -->
-      <div v-else class="flex flex-col lg:flex-row gap-6">
-        <!-- Carte SVG d'Afrique -->
-        <div class="flex-1 bg-white rounded-lg shadow-md">
-          <div class="map-container relative p-0 sm:p-1" @mousemove="handleMapMouseMove">
-            <svg
-              ref="svgRef"
-              :viewBox="AFRICA_VIEWBOX"
-              class="africa-map w-full h-auto"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                v-for="location in africaLocations"
-                :key="location.id"
-                :data-id="location.id"
-                :d="location.path"
-                :fill="getMapColor(location.id)"
-                stroke="#fff"
-                :stroke-width="strokeWidth(location.id)"
-                class="map-path"
-                :class="{ 'cursor-pointer': evenementsParPays[location.id]?.length }"
-                :transform="mapTransforms[location.id]"
-                @mouseenter="hoveredCountry = location"
-                @mouseleave="hoveredCountry = null"
-                @click="handleMapClick(location)"
-              />
-            </svg>
-
-            <!-- Tooltip -->
-            <Transition name="map-fade">
-              <div
-                v-if="hoveredCountry"
-                class="map-tooltip"
-                :class="{ 'map-tooltip-clickable': evenementsParPays[hoveredCountry.id]?.length }"
-                :style="{ left: mousePos.x + 15 + 'px', top: mousePos.y - 10 + 'px' }"
-              >
-                <template v-if="evenementsParPays[hoveredCountry.id]?.length">
-                  <span class="font-semibold">{{ nomsPaysFr[hoveredCountry.id] || hoveredCountry.name }}</span>
-                  <span class="text-xs opacity-70">
-                    {{ evenementsParPays[hoveredCountry.id]!.length }} événement{{ evenementsParPays[hoveredCountry.id]!.length > 1 ? 's' : '' }}
-                  </span>
-                </template>
-                <template v-else>
-                  {{ nomsPaysFr[hoveredCountry.id] || hoveredCountry.name }}
-                </template>
-              </div>
-            </Transition>
-          </div>
-
-          <!-- Légende -->
-          <div class="flex flex-wrap gap-4 px-4 pb-4 pt-2">
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full shrink-0 bg-custom-green"></span>
-              <span class="text-xs text-gray-600">Événements disponibles</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full shrink-0" style="background:#FFD700"></span>
-              <span class="text-xs text-gray-600">Sélectionné</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full shrink-0 bg-gray-200"></span>
-              <span class="text-xs text-gray-600">Aucun événement</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Panneau des événements du pays sélectionné -->
-        <Transition name="slide-in" mode="out-in">
-          <div v-if="selectedPays" :key="selectedPays" class="lg:w-96 shrink-0">
-            <div class="bg-white rounded-lg shadow-md p-4">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold text-gray-900">{{ nomsPaysFr[selectedPays] || selectedPays }}</h3>
-                <button @click="selectedPays = null" class="text-gray-400 hover:text-gray-600" title="Fermer">
-                  <font-awesome-icon :icon="['fas', 'xmark']" />
-                </button>
-              </div>
-
-              <p class="text-sm text-gray-500 mb-4">
-                {{ evenementsPaysSelectionne.length }} événement{{ evenementsPaysSelectionne.length > 1 ? 's' : '' }} disponible{{ evenementsPaysSelectionne.length > 1 ? 's' : '' }}
-              </p>
-
-              <div class="space-y-4">
-                <EvenementsEvenementCard
-                  v-for="evenement in evenementsPaysSelectionne"
-                  :key="evenement.id"
-                  :evenement="evenement"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Invite par défaut -->
-          <div v-else class="lg:w-96 shrink-0">
-            <div class="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
-              <span class="block lg:hidden">
-                <font-awesome-icon :icon="['fas', 'hand-point-up']" class="h-8 mb-3 text-gray-300" />
-              </span>
-              <span class="hidden lg:block">
-                <font-awesome-icon :icon="['fas', 'hand-point-left']" class="h-8 mb-3 text-gray-300" />
-              </span>
-              <p class="text-sm">Cliquez sur un territoire mis en évidence pour voir ses événements.</p>
-            </div>
-          </div>
-        </Transition>
-      </div>
-    </div>
-
-    <!-- Modal de création -->
-    <EvenementsEvenementModal
-      :show="showModal"
-      @close="showModal = false"
-      @submit="handleSubmit"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import World from '@svg-maps/world'
 import { PAYS_AFRICAINS_ISO2 } from '~/constants/afripulsePaysAutorises'
-import { useEvenements, type EvenementAPI, type EvenementFiltres } from '~/composables/useEvenements'
+import {
+  useEvenements,
+  ANNEES,
+  TYPES_EVENEMENT,
+  PAYS_AFRICAINS,
+  type EvenementAPI,
+  type EvenementFiltres,
+} from '~/composables/useEvenements'
+
+/**
+ * Africalive : porté sur le gabarit de la refonte.
+ *
+ * Les deux modes (grille et carte) et tous les filtres sont conservés, ainsi
+ * que la règle qui les lie : la carte d'Afrique n'a de sens qu'en zone
+ * « Afrique », et quitter cette zone rebascule en grille.
+ *
+ * Les filtres passent dans le rail, écrits sur les jetons communs : la barre
+ * `EvenementFilters` était horizontale, bordée de `custom-chocolat`, et portait
+ * un second bouton « Proposer un événement » que le fil d'Ariane porte déjà.
+ *
+ * Trois tables recopiées disparaissent au profit de `utils/carteAfrique.ts`,
+ * qui les portait déjà pour Retrouv'Amis et Afripulse : `NOMS_PAYS_FR`,
+ * `PETITES_ILES` et `AFRICA_VIEWBOX`. Trois copies d'une même liste de 54
+ * territoires divergent au premier ajout.
+ */
+definePageMeta({ layout: false })
 
 useHead({
-  title: 'Africalive - Événements & Ateliers | AfricanS'
+  title: 'Africalive : Événements & ateliers | AfricanS',
+  meta: [
+    {
+      name: 'description',
+      content: "Webinaires, conférences, forums et ateliers de l'Afrique et de ses diasporas.",
+    }],
 })
-
-const breadcrumbs = [
-  { label: 'Événements', to: '/evenements' },
-  { label: 'Liste', to: undefined }
-]
 
 const { listerEvenements, creerEvenement, chargement, erreur } = useEvenements()
 
+// ─── État ─────────────────────────────────────────────────────────────────
+
 const showModal = ref(false)
+const decouverteOuverte = ref(false)
 const viewMode = ref<'grille' | 'carte'>('grille')
 const anneeSelected = ref(new Date().getFullYear().toString())
 const filtreType = ref('')
@@ -257,6 +50,12 @@ const filtrePays = ref('')
 // 'tout' = aucun filtre de zone (valeur par défaut, non transmise à l'API).
 const filtreZone = ref<'afrique' | 'hors_afrique' | 'tout'>('tout')
 const evenements = ref<EvenementAPI[]>([])
+
+/** Zones proposées. « Tout » d'abord : c'est le choix le plus large. */
+const ZONES = [
+  { valeur: 'tout' as const, libelle: 'Mondial' },
+  { valeur: 'afrique' as const, libelle: 'Afrique' },
+  { valeur: 'hors_afrique' as const, libelle: 'Hors Afrique' }]
 
 const chargerEvenements = async () => {
   const filtres: EvenementFiltres = {
@@ -270,21 +69,18 @@ const chargerEvenements = async () => {
   evenements.value = data?.evenements ?? []
 }
 
-// Changer de zone : la carte Afrique n'a de sens que pour la zone « Afrique »,
-// on force donc la grille dès qu'on la quitte (sinon la carte resterait
-// affichée alors que son sélecteur a disparu). Le territoire n'est réinitialisé
-// qu'en « Hors Afrique », la liste proposée étant exclusivement africaine ;
-// en « Tout » le territoire choisi reste valide.
+// Changer de zone : la carte d'Afrique n'a de sens que pour la zone
+// « Afrique », on force donc la grille dès qu'on la quitte (sinon la carte
+// resterait affichée alors que son sélecteur a disparu). Le territoire n'est
+// réinitialisé qu'en « Hors Afrique », la liste proposée étant exclusivement
+// africaine ; en « Tout » le territoire choisi reste valide.
 watch(filtreZone, (zone) => {
-  if (zone !== 'afrique') {
-    viewMode.value = 'grille'
-  }
-  if (zone === 'hors_afrique') {
-    filtrePays.value = ''
-  }
+  if (zone !== 'afrique') viewMode.value = 'grille'
+  if (zone === 'hors_afrique') filtrePays.value = ''
 })
 
 watch([anneeSelected, filtreType, filtrePays, filtreZone], chargerEvenements)
+
 onMounted(async () => {
   await chargerEvenements()
   if (viewMode.value === 'carte') {
@@ -321,61 +117,30 @@ const handleSubmit = async (data: any) => {
   }
 }
 
-// === MODE CARTE ===
+// ─── Mode carte ───────────────────────────────────────────────────────────
 
 const PAYS_AFRICAINS_SET = new Set<string>(PAYS_AFRICAINS_ISO2)
 
-// Noms français des pays africains (code ISO2 → nom)
-const nomsPaysFr: Record<string, string> = {
-  dz: 'Algérie', ao: 'Angola', bj: 'Bénin', bw: 'Botswana', bf: 'Burkina Faso',
-  bi: 'Burundi', cv: 'Cap-Vert', cm: 'Cameroun', cf: 'Centrafrique',
-  td: 'Tchad', km: 'Comores', cg: 'Congo', cd: 'RD Congo', ci: "Côte d'Ivoire",
-  dj: 'Djibouti', eg: 'Égypte', gq: 'Guinée équatoriale', er: 'Érythrée',
-  sz: 'Eswatini', et: 'Éthiopie', ga: 'Gabon', gm: 'Gambie', gh: 'Ghana',
-  gn: 'Guinée', gw: 'Guinée-Bissau', ke: 'Kenya', ls: 'Lesotho', lr: 'Liberia',
-  ly: 'Libye', mg: 'Madagascar', mw: 'Malawi', ml: 'Mali', mr: 'Mauritanie',
-  mu: 'Maurice', ma: 'Maroc', mz: 'Mozambique', na: 'Namibie', ne: 'Niger',
-  ng: 'Nigeria', rw: 'Rwanda', st: 'Sao Tomé-et-Principe', sn: 'Sénégal',
-  sc: 'Seychelles', sl: 'Sierra Leone', so: 'Somalie', za: 'Afrique du Sud',
-  ss: 'Soudan du Sud', sd: 'Soudan', tz: 'Tanzanie', tg: 'Togo', tn: 'Tunisie',
-  ug: 'Ouganda', zm: 'Zambie', zw: 'Zimbabwe', eh: 'Sahara occidental',
-}
-
-// ViewBox calé au plus près du continent
-const AFRICA_VIEWBOX = '401 347 239 267'
-
-// Normalise un nom de pays (minuscule, sans accents) pour la correspondance
-const normaliserNom = (nom: string): string =>
-  nom.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
-
-// Index nom-français-normalisé → code ISO2
+/** Index nom-français-normalisé → code ISO2. */
 const isoParNom: Record<string, string> = Object.fromEntries(
-  Object.entries(nomsPaysFr).map(([iso, nom]) => [normaliserNom(nom), iso])
-)
+  Object.entries(NOMS_PAYS_FR).map(([iso, nom]) => [normaliserNomPays(nom), iso]))
 
-// Locations africaines filtrées depuis la carte du monde
 const africaLocations = computed(() =>
-  World.locations.filter(loc => PAYS_AFRICAINS_SET.has(loc.id.toLowerCase()))
-)
+  World.locations.filter(loc => PAYS_AFRICAINS_SET.has(loc.id.toLowerCase())))
 
-// Regroupe les événements par code ISO2 du pays
+/** Événements regroupés par code ISO2. */
 const evenementsParPays = computed<Record<string, EvenementAPI[]>>(() => {
   const groupes: Record<string, EvenementAPI[]> = {}
   for (const e of evenements.value) {
     if (!e.pays) continue
-    const iso = isoParNom[normaliserNom(e.pays)]
+    const iso = isoParNom[normaliserNomPays(e.pays)]
     if (!iso) continue
     ;(groupes[iso] ||= []).push(e)
   }
   return groupes
 })
 
-// Petites îles trop petites pour être visibles : facteur d'agrandissement par code ISO
-const PETITES_ILES: Record<string, number> = {
-  cv: 5, st: 6, km: 5, mu: 6, sc: 7,
-}
-
-// Épaisseur de trait : réduite pour les petites îles agrandies
+/** Épaisseur de trait : réduite pour les petites îles agrandies. */
 const strokeWidth = (id: string): number => {
   const facteur = PETITES_ILES[id]
   return facteur ? 0.5 / facteur : 0.5
@@ -384,7 +149,7 @@ const strokeWidth = (id: string): number => {
 const svgRef = ref<SVGSVGElement | null>(null)
 const mapTransforms = ref<Record<string, string>>({})
 
-// Calcule un scale centré sur le centroïde de chaque petite île
+/** Scale centré sur le centroïde de chaque petite île. */
 const calculerTransformsIles = () => {
   const svg = svgRef.value
   if (!svg) return
@@ -407,133 +172,271 @@ watch([viewMode, africaLocations], async () => {
   }
 })
 
-const hoveredCountry = ref<{ id: string; name: string } | null>(null)
+const hoveredCountry = ref<{ id: string, name: string } | null>(null)
 const mousePos = ref({ x: 0, y: 0 })
 const selectedPays = ref<string | null>(null)
 
 const evenementsPaysSelectionne = computed(() =>
-  selectedPays.value ? (evenementsParPays.value[selectedPays.value] || []) : []
-)
+  selectedPays.value ? (evenementsParPays.value[selectedPays.value] || []) : [])
 
-const adjustBrightness = (hex: string, percent: number): string => {
-  const num = parseInt(hex.replace('#', ''), 16)
-  const amt = Math.round(2.55 * percent)
-  const R = Math.min(255, Math.max(0, (num >> 16) + amt))
-  const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + amt))
-  const B = Math.min(255, Math.max(0, (num & 0x0000ff) + amt))
-  return `#${((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1)}`
-}
-
+/** Trois états seulement : sélectionné, porteur d'événements, vide. */
 const getMapColor = (id: string): string => {
-  const isHovered = hoveredCountry.value?.id === id
-  const isSelected = selectedPays.value === id
-  const aEvenements = !!evenementsParPays.value[id]?.length
+  const survole = hoveredCountry.value?.id === id
+  const aEvenements = Boolean(evenementsParPays.value[id]?.length)
 
   if (aEvenements) {
-    if (isSelected) return '#FFD700'
-    if (isHovered) return adjustBrightness('#228B22', -15)
-    return '#228B22'
+    if (selectedPays.value === id) return '#FFD700'
+    return survole ? '#1d761d' : '#228B22'
   }
-
-  if (isHovered) return '#bdbdbd'
-  return '#e5e7eb'
+  return survole ? '#bdbdbd' : '#e5e7eb'
 }
 
 const handleMapMouseMove = (event: MouseEvent) => {
-  const container = event.currentTarget as HTMLElement
-  const rect = container.getBoundingClientRect()
-  mousePos.value = {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
-  }
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  mousePos.value = { x: event.clientX - rect.left, y: event.clientY - rect.top }
 }
 
 const handleMapClick = (location: { id: string }) => {
-  if (evenementsParPays.value[location.id]?.length) {
-    selectedPays.value = location.id
-  }
+  if (evenementsParPays.value[location.id]?.length) selectedPays.value = location.id
 }
 </script>
 
-<style scoped>
-/* Carte SVG */
-.map-container {
-  position: relative;
-  width: 100%;
-}
+<template>
+  <NuxtLayout name="africans">
+    <template #bandeau>
+      <AfricansBandeauModule
+        titre="Africalive"
+        sous-titre="Webinaires, conférences, forums et ateliers"
+        image="/images/even1.png"
+        aide="C'est quoi Africalive ?"
+        @aide="decouverteOuverte = true"
+      />
+    </template>
 
-.africa-map {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 92vh;
-  margin: 0 auto;
-}
+    <template #fil-ariane>
+      <AfricansFilAriane
+        :segments="[{ libelle: 'Africalive', vers: '/evenements' }, { libelle: 'Événements' }]"
+      >
+        <template #action>
+          <AfricansBouton icone="fa-solid fa-calendar-plus" @click="showModal = true">
+            Proposer un événement
+          </AfricansBouton>
+        </template>
+      </AfricansFilAriane>
+    </template>
 
-.map-path {
-  transition: fill 0.2s ease, opacity 0.2s ease;
-}
+    <div class="flex flex-col gap-6">
+      <!-- Bascule grille / carte : la carte ne concerne que la zone Afrique. -->
+      <div v-if="filtreZone === 'afrique'" class="flex gap-2">
+        <button
+          v-for="mode in [
+            { valeur: 'grille' as const, libelle: 'Grille', icone: 'fa-solid fa-table-cells-large' },
+            { valeur: 'carte' as const, libelle: 'Carte', icone: 'fa-solid fa-earth-africa' }]"
+          :key="mode.valeur"
+          type="button"
+          class="flex items-center gap-2 rounded-full px-4 py-2 text-[14px]/[1.4] font-bold transition"
+          :class="viewMode === mode.valeur ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
+          :aria-pressed="viewMode === mode.valeur"
+          @click="viewMode = mode.valeur"
+        >
+          <font-awesome-icon :icon="mode.icone" />
+          {{ mode.libelle }}
+        </button>
+      </div>
 
-.map-path:hover {
-  opacity: 0.85;
-}
+      <div v-if="chargement" class="grid gap-5 sm:grid-cols-2">
+        <div v-for="n in 4" :key="n" class="h-64 animate-pulse rounded-[10px] bg-af-bordure" />
+      </div>
 
-/* Tooltip carte */
-.map-tooltip {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  pointer-events: none;
-  z-index: 50;
-  white-space: nowrap;
-  transform: translateY(-50%);
-}
+      <div v-else-if="erreur" class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+        <font-awesome-icon icon="fa-solid fa-triangle-exclamation" class="text-4xl text-af-live" />
+        <p class="mt-4 text-[16px]/[1.4] font-bold">Erreur de chargement</p>
+        <p class="mt-2 text-[14px]/[1.4] text-af-corps">{{ erreur }}</p>
+        <AfricansBouton class="mt-6" variante="secondaire" icone="fa-solid fa-rotate-left" @click="chargerEvenements">
+          Réessayer
+        </AfricansBouton>
+      </div>
 
-.map-tooltip-clickable {
-  pointer-events: auto;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 16px;
-  transition: all 0.2s ease;
-}
+      <!-- Grille -->
+      <div v-else-if="viewMode === 'grille' && evenements.length" class="grid gap-5 sm:grid-cols-2">
+        <EvenementsEvenementCard
+          v-for="evenement in evenements"
+          :key="evenement.id"
+          :evenement="evenement"
+        />
+      </div>
 
-.map-tooltip-clickable:hover {
-  background: rgba(34, 139, 34, 0.95);
-  transform: translateY(-50%) scale(1.05);
-}
+      <div v-else-if="viewMode === 'grille'" class="rounded-[10px] border border-af-bordure bg-white p-12 text-center">
+        <font-awesome-icon icon="fa-solid fa-calendar-xmark" class="text-4xl text-af-atone-2" />
+        <p class="mt-4 text-[16px]/[1.4] font-bold">Aucun événement trouvé</p>
+        <p class="mt-2 text-[14px]/[1.4] text-af-corps">
+          Essayez de modifier vos filtres, ou proposez un nouvel événement.
+        </p>
+        <AfricansBouton class="mt-6" icone="fa-solid fa-calendar-plus" @click="showModal = true">
+          Proposer un événement
+        </AfricansBouton>
+      </div>
 
-/* Transitions */
-.map-fade-enter-active,
-.map-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
+      <!-- Carte -->
+      <div v-else class="flex flex-col gap-5">
+        <div class="rounded-[10px] border border-af-bordure bg-white p-2">
+          <div class="relative" @mousemove="handleMapMouseMove">
+            <svg
+              ref="svgRef"
+              :viewBox="AFRICA_VIEWBOX"
+              class="mx-auto block h-auto max-h-[70svh] w-full"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                v-for="location in africaLocations"
+                :key="location.id"
+                :data-id="location.id"
+                :d="location.path"
+                :fill="getMapColor(location.id)"
+                stroke="#fff"
+                :stroke-width="strokeWidth(location.id)"
+                class="transition-[fill,opacity] duration-200 hover:opacity-85"
+                :class="evenementsParPays[location.id]?.length && 'cursor-pointer'"
+                :transform="mapTransforms[location.id]"
+                @mouseenter="hoveredCountry = location"
+                @mouseleave="hoveredCountry = null"
+                @click="handleMapClick(location)"
+              />
+            </svg>
 
-.map-fade-enter-from,
-.map-fade-leave-to {
-  opacity: 0;
-}
+            <div
+              v-if="hoveredCountry"
+              class="pointer-events-none absolute z-50 -translate-y-1/2 rounded-lg bg-black/85 px-3 py-2 text-[12px]/[1.4] whitespace-nowrap text-white"
+              :style="{ left: `${mousePos.x + 15}px`, top: `${mousePos.y - 10}px` }"
+            >
+              <span class="font-bold">{{ NOMS_PAYS_FR[hoveredCountry.id] || hoveredCountry.name }}</span>
+              <span v-if="evenementsParPays[hoveredCountry.id]?.length" class="block opacity-70">
+                {{ evenementsParPays[hoveredCountry.id]!.length }}
+                événement{{ evenementsParPays[hoveredCountry.id]!.length > 1 ? 's' : '' }}
+              </span>
+            </div>
+          </div>
 
-.slide-in-enter-active {
-  transition: all 0.3s ease-out;
-}
+          <!-- Légende : les trois états que la carte peut réellement peindre. -->
+          <ul class="flex flex-wrap gap-4 px-3 pt-2 pb-3">
+            <li
+              v-for="etat in [
+                { couleur: '#228B22', libelle: 'Événements disponibles' },
+                { couleur: '#FFD700', libelle: 'Sélectionné' },
+                { couleur: '#e5e7eb', libelle: 'Aucun événement' }]"
+              :key="etat.libelle"
+              class="flex items-center gap-2 text-[12px]/[1.4] text-af-corps"
+            >
+              <span class="size-3 shrink-0 rounded-full" :style="{ backgroundColor: etat.couleur }" />
+              {{ etat.libelle }}
+            </li>
+          </ul>
+        </div>
 
-.slide-in-leave-active {
-  transition: all 0.2s ease-in;
-}
+        <!-- Événements du territoire sélectionné -->
+        <div v-if="selectedPays" class="flex flex-col gap-4">
+          <div class="flex items-center justify-between gap-4">
+            <h2 class="text-[20px]/[1.4] font-bold text-af-chocolat">
+              {{ NOMS_PAYS_FR[selectedPays] || selectedPays }}
+              <span class="text-[14px]/[1.4] font-normal text-af-atone">
+                {{ evenementsPaysSelectionne.length }}
+                événement{{ evenementsPaysSelectionne.length > 1 ? 's' : '' }}
+              </span>
+            </h2>
+            <button
+              type="button"
+              class="grid size-8 place-items-center rounded-full text-af-corps transition hover:bg-af-fond"
+              aria-label="Fermer"
+              @click="selectedPays = null"
+            >
+              <font-awesome-icon icon="fa-solid fa-xmark" />
+            </button>
+          </div>
 
-.slide-in-enter-from {
-  opacity: 0;
-  transform: translateX(30px);
-}
+          <div class="grid gap-5 sm:grid-cols-2">
+            <EvenementsEvenementCard
+              v-for="evenement in evenementsPaysSelectionne"
+              :key="evenement.id"
+              :evenement="evenement"
+            />
+          </div>
+        </div>
 
-.slide-in-leave-to {
-  opacity: 0;
-  transform: translateX(30px);
-}
-</style>
+        <p v-else class="rounded-[10px] border border-af-bordure bg-white p-6 text-center text-[14px]/[1.4] text-af-corps">
+          <font-awesome-icon icon="fa-solid fa-hand-pointer" class="mr-2 text-af-atone-2" />
+          Cliquez sur un territoire mis en évidence pour voir ses événements.
+        </p>
+      </div>
+    </div>
+
+    <template #rail>
+      <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders">
+        <div class="flex flex-col gap-5">
+          <div class="flex flex-col gap-2">
+            <p class="text-[12px]/[1.4] font-bold text-af-atone uppercase">Année</p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="annee in ANNEES"
+                :key="annee"
+                type="button"
+                class="rounded-full px-3 py-1.5 text-[12px]/[1.4] font-bold transition"
+                :class="anneeSelected === annee ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
+                :aria-pressed="anneeSelected === annee"
+                @click="anneeSelected = annee"
+              >
+                {{ annee }}
+              </button>
+            </div>
+          </div>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-[12px]/[1.4] font-bold text-af-atone uppercase">Format</span>
+            <select
+              v-model="filtreType"
+              class="h-10 w-full rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
+            >
+              <option v-for="type in TYPES_EVENEMENT" :key="type.value" :value="type.value">
+                {{ type.label }}
+              </option>
+            </select>
+          </label>
+
+          <div class="flex flex-col gap-2">
+            <p class="text-[12px]/[1.4] font-bold text-af-atone uppercase">Zone</p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="zone in ZONES"
+                :key="zone.valeur"
+                type="button"
+                class="rounded-full px-3 py-1.5 text-[12px]/[1.4] font-bold transition"
+                :class="filtreZone === zone.valeur ? 'bg-af-chocolat text-white' : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
+                :aria-pressed="filtreZone === zone.valeur"
+                @click="filtreZone = zone.valeur"
+              >
+                {{ zone.libelle }}
+              </button>
+            </div>
+          </div>
+
+          <!-- La liste des territoires est exclusivement africaine : elle n'a
+               rien à proposer en « Hors Afrique ». En « Tout » elle reste
+               offerte, non filtrante par elle-même. -->
+          <label v-if="filtreZone !== 'hors_afrique'" class="flex flex-col gap-2">
+            <span class="text-[12px]/[1.4] font-bold text-af-atone uppercase">Territoire</span>
+            <select
+              v-model="filtrePays"
+              class="h-10 w-full rounded-[10px] border border-af-bordure bg-white px-3 text-[14px]/[1.4] focus:outline-2 focus:outline-af-chocolat"
+            >
+              <option value="">Tous les territoires</option>
+              <option v-for="pays in PAYS_AFRICAINS" :key="pays" :value="pays">{{ pays }}</option>
+            </select>
+          </label>
+        </div>
+      </AfricansPanneau>
+    </template>
+
+    <EvenementsEvenementModal :show="showModal" @close="showModal = false" @submit="handleSubmit" />
+
+    <EvenementsDecouverteModale v-model="decouverteOuverte" />
+  </NuxtLayout>
+</template>

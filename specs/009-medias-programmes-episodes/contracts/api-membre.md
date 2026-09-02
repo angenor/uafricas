@@ -1,7 +1,7 @@
-# Contrat — API membre (co-détenteurs de supports)
+# Contrat : API membre (co-détenteurs de supports)
 
 **Authentification** : JWT membre. **Autorisation** : `garde_detenteur(pool, utilisateur_id,
-type_support, support_id, role_minimum)` — jamais `AdminUtilisateur`, ce sont des routes membres
+type_support, support_id, role_minimum)`, jamais `AdminUtilisateur`, ce sont des routes membres
 (règle posée par la feature 001, lot 3).
 
 Rôles de détention (enum `media_content.role_detenteur`, 09m) :
@@ -42,7 +42,7 @@ décompte dans le message. La clé étrangère `ON DELETE RESTRICT` fait le mêm
 ### `GET /api/medias/{type_support}/{support_id}/emissions`
 
 Vue détenteur : **toutes** les émissions, y compris `brouillon` et sans épisode, avec pour chacune le
-décompte par état (`en_attente`, `publie`, `rejete`) — c'est le tableau de bord de FR-042.
+décompte par état (`en_attente`, `publie`, `rejete`) : c'est le tableau de bord de FR-042.
 
 ---
 
@@ -54,7 +54,7 @@ Rôle minimum : `co_detenteur`. Multipart (fichier) ou JSON (lien), comme
 
 ```jsonc
 {
-  "titre": "Épisode 12 — La dette africaine",
+  "titre": "Épisode 12 : La dette africaine",
   "description": "…",
   "video_url": "/uploads/medias/videos/…",   // ou audio_url côté radio
   "numero_episode": 12,                       // facultatif
@@ -67,7 +67,7 @@ Rôle minimum : `co_detenteur`. Multipart (fichier) ou JSON (lien), comme
 
 **Invariants** (FR-007, FR-040) :
 
-- `etat` vaut **toujours** `en_attente` — le client ne peut pas en décider ; toute valeur transmise est
+- `etat` vaut **toujours** `en_attente`, le client ne peut pas en décider ; toute valeur transmise est
   ignorée.
 - `ordre = COALESCE(MAX(ordre), -1) + 1` sur l'émission : l'épisode prend rang **à la fin**, sans
   déplacer les existants ni altérer l'occurrence en cours (FR-019).
@@ -80,7 +80,7 @@ Modifier un épisode `publie` **remet son état à `en_attente`** si le média c
 `audio_url`), comme le fait déjà `PUT …/media` sur les propositions. Une modification purement
 éditoriale (titre, description, image) reste publiée.
 
-Un épisode `rejete` que l'on modifie repasse `en_attente` et son `motif_rejet` est effacé — c'est le
+Un épisode `rejete` que l'on modifie repasse `en_attente` et son `motif_rejet` est effacé : c'est le
 parcours de correction-resoumission de FR-041.
 
 ### `DELETE /api/medias/episodes/{id}`
@@ -94,7 +94,7 @@ aucune action supplémentaire n'est requise.
 { "ordres": [ { "episode_id": "…", "ordre": 0 }, { "episode_id": "…", "ordre": 1 } ] }
 ```
 
-Réécriture **atomique** — tout réordonner ou rien (patron de
+Réécriture **atomique** : tout réordonner ou rien (patron de
 `admin/formation_contenu.rs:350`). `400` si la liste ne couvre pas exactement les épisodes de
 l'émission. Le nouvel ordre s'applique à partir de l'occurrence suivante (FR-006).
 
@@ -105,14 +105,14 @@ l'émission. Le nouvel ordre s'applique à partir de l'occurrence suivante (FR-0
 ```
 
 Déplace un épisode vers une autre émission **du même support** (`400` sinon). L'épisode conserve
-intégralement ses interactions — rien à faire, elles sont indexées par `(type_media, media_id)` et ni
+intégralement ses interactions : rien à faire, elles sont indexées par `(type_media, media_id)` et ni
 l'un ni l'autre ne change (FR-009). Il prend rang en fin de la nouvelle émission ; les deux cycles se
 recalculent.
 
 ### `PATCH /api/medias/episodes/{id}/a-la-une`
 
 Désigne l'épisode mis en avant pour son support. La bascule de l'ancien à `FALSE` et la désignation du
-nouveau tiennent dans **une même transaction** — sinon l'index unique partiel est violé en concurrence
+nouveau tiennent dans **une même transaction**, sinon l'index unique partiel est violé en concurrence
 (règle héritée de 09j §3, R9).
 
 ---
@@ -138,11 +138,11 @@ Gardes conservées de 09n / `media_programmation.rs` :
 
 - Verrou `FOR UPDATE` sur le **support parent** avant détection de chevauchement, puis `409` sans
   écriture si conflit, avec la plage en cause (FR-022).
-- `400` si le créneau franchit minuit (FR-023) — le CHECK SQL refuse aussi.
+- `400` si le créneau franchit minuit (FR-023), le CHECK SQL refuse aussi.
 - `400` si l'émission n'appartient pas au support visé.
 
 **Nouveau** : `date_effet` est l'origine du comptage des occurrences. La changer **redéfinit la
-rotation** — l'API renvoie dans la réponse `episode_actuel` pour que le détenteur voie immédiatement
+rotation** : l'API renvoie dans la réponse `episode_actuel` pour que le détenteur voie immédiatement
 l'effet de son choix.
 
 ### `PUT /api/medias/creneaux/{id}` · `DELETE /api/medias/creneaux/{id}`
@@ -151,8 +151,8 @@ Inchangés, `contenu_id` devenant `emission_id`.
 
 ### `GET /api/medias/{type_support}/{support_id}/grille?vue=detenteur`
 
-Comme la grille publique, plus les créneaux **en défaut** — ceux dont l'émission n'a aucun épisode
-publié — assortis de `alerte: "aucun_episode_publie"` (FR-021, FR-024).
+Comme la grille publique, plus les créneaux **en défaut**, ceux dont l'émission n'a aucun épisode
+publié : assortis de `alerte: "aucun_episode_publie"` (FR-021, FR-024).
 
 ---
 
@@ -203,5 +203,5 @@ périodique d'un support détenu, comparer la date du dernier épisode publié �
 
 - `approche` se déclenche **2 jours avant** l'échéance en cadence hebdomadaire, **6 heures avant** en
   quotidienne : la marge doit absorber le délai de validation administrative (FR-024).
-- `episodes_en_attente` évite l'alerte trompeuse — le détenteur a fait sa part, la file n'a pas suivi.
+- `episodes_en_attente` évite l'alerte trompeuse, le détenteur a fait sa part, la file n'a pas suivi.
 - `aucun_episode` correspond à l'émission programmée mais vide (FR-021).

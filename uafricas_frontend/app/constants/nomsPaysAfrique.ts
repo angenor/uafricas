@@ -1,6 +1,6 @@
 /**
  * Noms français des 54 pays africains (codes ISO 3166-1 alpha-2, minuscules).
- * Source partagée — consommé par `NouvelleFichePaysModal.vue` et
+ * Source partagée : consommé par `NouvelleFichePaysModal.vue` et
  * `pages/opportunite-afrique/index.vue`.
  */
 export const NOMS_PAYS_FR: Record<string, string> = {

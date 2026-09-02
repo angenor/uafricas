@@ -1,4 +1,4 @@
-# Feature Specification: Recadrage de l'engagement — 3 sources de points, 4 statuts, cadeaux virtuels
+# Feature Specification: Recadrage de l'engagement, 3 sources de points, 4 statuts, cadeaux virtuels
 
 **Feature Branch**: `008-recadrage-engagement-cadeaux` (répertoire de spec ; aucune branche créée automatiquement)
 
@@ -29,7 +29,7 @@ Cette fenêtre est mise à profit pour **recadrer le produit sur la doctrine d'e
 
 - **Encaissement réel** : aucune intégration de prestataire de paiement. L'agrégateur **CinetPay** est prévu ultérieurement ; d'ici là le paiement est **simulé** de bout en bout, sans mouvement d'argent réel.
 - **Retrait (payout) de la cagnotte** vers le bénéficiaire : la part de 90 % est **journalisée et consultable**, mais son versement effectif dépend de l'intégration de paiement et sera spécifié avec elle.
-- **Impact algorithmique des statuts** sur le classement des fils et les slots « à la une » : maintenu hors périmètre — les statuts restent des distinctions **symboliques et visuelles**, sans avantage de visibilité. C'est la contrepartie qui rend acceptable l'achat de points.
+- **Impact algorithmique des statuts** sur le classement des fils et les slots « à la une » : maintenu hors périmètre, les statuts restent des distinctions **symboliques et visuelles**, sans avantage de visibilité. C'est la contrepartie qui rend acceptable l'achat de points.
 - **Classements publics** (global, par territoire) : toujours hors périmètre.
 - **Cadeaux partenaires / catalogue de récompenses dépensables** : les points reçus ne se dépensent pas ; ils ne servent qu'à la progression de statut.
 - **Suppression du moteur existant** : le barème reste paramétrable et les règles écartées sont **désactivées, pas supprimées**.
@@ -38,10 +38,10 @@ Cette fenêtre est mise à profit pour **recadrer le produit sur la doctrine d'e
 
 ### Session 2026-08-08
 
-- Q: Sur quelles familles de contenus un « j'aime » reçu doit-il rapporter un point à l'auteur ? → A: Toutes les familles dotées d'un « j'aime » binaire (Codi-moi, contributions de gouvernance, bibliothèques humaines, médias télé/radio, Vidafrica, éléments et fiches Opportunité-Afrique) ; les notations 1–5 et les réactions emoji sont exclues. *(Précision apportée en phase de conception — voir `research.md` R2 : le fact-check n'ayant qu'un système de réaction emoji, sa réaction **cœur** y tient lieu de « j'aime » et crédite ; les trois autres emojis ne créditent pas.)*
+- Q: Sur quelles familles de contenus un « j'aime » reçu doit-il rapporter un point à l'auteur ? → A: Toutes les familles dotées d'un « j'aime » binaire (Codi-moi, contributions de gouvernance, bibliothèques humaines, médias télé/radio, Vidafrica, éléments et fiches Opportunité-Afrique) ; les notations 1–5 et les réactions emoji sont exclues. *(Précision apportée en phase de conception : voir `research.md` R2 : le fact-check n'ayant qu'un système de réaction emoji, sa réaction **cœur** y tient lieu de « j'aime » et crédite ; les trois autres emojis ne créditent pas.)*
 - Q: Depuis quels supports un membre doit-il pouvoir offrir un cadeau virtuel ? → A: Les mêmes familles de contenus que le j'aime, **plus** le profil public d'un membre (soutien direct, sans contenu support).
 - Q: Sur un support co-détenu (chaîne TV / station radio), qui reçoit les points et l'argent ? → A: Le **détenteur propriétaire** seul ; les co-détenteurs/animateurs ne reçoivent rien au titre du support.
-- Q: Comment neutraliser le minage de points permis par le paiement simulé ? → A: Cadeaux **ouverts en production** avec un bandeau « paiement simulé — phase de test » ; les points **et** les cagnottes issus des cadeaux simulés sont **purgés** à la mise en service de l'encaissement réel.
+- Q: Comment neutraliser le minage de points permis par le paiement simulé ? → A: Cadeaux **ouverts en production** avec un bandeau « paiement simulé, phase de test » ; les points **et** les cagnottes issus des cadeaux simulés sont **purgés** à la mise en service de l'encaissement réel.
 - Q: Quels gestes de partage créditent l'auteur, et à quelle granularité le crédit est-il unique ? → A: **Un seul point par contenu et par partageur**, tous canaux confondus (internes comme externes) : le canal est tracé pour la statistique, mais ne démultiplie pas le crédit.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -56,7 +56,7 @@ Un administrateur habilité ouvre le module d'engagement et met le nouveau barè
 
 **Acceptance Scenarios**:
 
-1. **Given** la plateforme fraîchement mise à jour, **When** un administrateur ouvre la grille des statuts, **Then** il voit quatre statuts — Membre Africans (0 à 499), Premium (500 à 1 999), Gold (2 000 à 9 999), Platinum (10 000 et plus) — dans cet ordre et sans seuil dupliqué.
+1. **Given** la plateforme fraîchement mise à jour, **When** un administrateur ouvre la grille des statuts, **Then** il voit quatre statuts, Membre Africans (0 à 499), Premium (500 à 1 999), Gold (2 000 à 9 999), Platinum (10 000 et plus), dans cet ordre et sans seuil dupliqué.
 2. **Given** le nouveau barème en service, **When** un administrateur consulte la liste des règles, **Then** les trois règles canoniques (j'aime reçu, partage reçu, cadeau reçu) sont actives et les huit règles écartées apparaissent explicitement **inactives**, avec leur montant d'origine conservé.
 3. **Given** une règle écartée et inactive, **When** l'action correspondante se produit dans son parcours métier réel, **Then** aucun point n'est attribué, aucune erreur n'est visible par l'utilisateur et l'action métier aboutit normalement.
 4. **Given** un administrateur, **When** il réactive une règle écartée et fixe un montant, **Then** l'action correspondante crédite à nouveau, immédiatement, sans redéploiement.
@@ -68,9 +68,9 @@ Un administrateur habilité ouvre le module d'engagement et met le nouveau barè
 
 ### User Story 2 - Gagner des points grâce aux j'aime reçus sur ses contenus (Priority: P1)
 
-Quand un membre reçoit un « j'aime » sur un contenu dont il est l'auteur ou le détenteur, il est crédité du montant paramétré — **1 point par j'aime** à la mise en service. Le crédit est **unitaire et définitif** : retirer puis remettre son j'aime ne crédite pas une seconde fois, et retirer son j'aime ne reprend pas le point déjà attribué. Le membre qui aime son propre contenu ne crédite personne.
+Quand un membre reçoit un « j'aime » sur un contenu dont il est l'auteur ou le détenteur, il est crédité du montant paramétré, **1 point par j'aime** à la mise en service. Le crédit est **unitaire et définitif** : retirer puis remettre son j'aime ne crédite pas une seconde fois, et retirer son j'aime ne reprend pas le point déjà attribué. Le membre qui aime son propre contenu ne crédite personne.
 
-**Why this priority**: C'est la source de points la plus volumineuse et la plus immédiate — elle rend le système vivant dès le premier jour, sur les réactions déjà existantes de la plateforme (contributions, vidéos Vidafrica, médias télé/radio, publications du mur, profils).
+**Why this priority**: C'est la source de points la plus volumineuse et la plus immédiate : elle rend le système vivant dès le premier jour, sur les réactions déjà existantes de la plateforme (contributions, vidéos Vidafrica, médias télé/radio, publications du mur, profils).
 
 **Independent Test**: Avec deux comptes de test, aimer un contenu du premier depuis le second et vérifier le crédit d'exactement 1 point à l'auteur, visible dans son espace « Mon engagement » avec l'action en langage clair ; retirer puis remettre le j'aime et vérifier qu'aucun point supplémentaire n'est attribué et qu'aucun point n'est repris.
 
@@ -79,7 +79,7 @@ Quand un membre reçoit un « j'aime » sur un contenu dont il est l'auteur ou l
 1. **Given** un membre auteur d'un contenu et un autre membre, **When** ce dernier aime le contenu, **Then** l'auteur est crédité de 1 point, dans la catégorie « Popularité », et le mouvement apparaît dans son historique.
 2. **Given** un membre ayant aimé un contenu, **When** il retire son j'aime puis le remet, **Then** aucun nouveau point n'est crédité et le point initial n'est pas repris.
 3. **Given** un membre, **When** il aime son propre contenu, **Then** aucun point n'est attribué.
-4. **Given** un contenu ayant reçu 350 j'aime de membres distincts, **When** son auteur consulte son engagement, **Then** il totalise 350 points de popularité pour ce contenu — sans aucun effet de palier.
+4. **Given** un contenu ayant reçu 350 j'aime de membres distincts, **When** son auteur consulte son engagement, **Then** il totalise 350 points de popularité pour ce contenu, sans aucun effet de palier.
 5. **Given** la règle « j'aime reçu » désactivée en back-office, **When** un membre aime un contenu, **Then** aucun point n'est attribué et la réaction fonctionne normalement.
 6. **Given** un membre ayant atteint le plafond journalier paramétré pour les j'aime reçus, **When** il reçoit un j'aime supplémentaire le même jour, **Then** le point n'est pas crédité et l'écrêtage est explicitement visible dans son historique.
 
@@ -87,7 +87,7 @@ Quand un membre reçoit un « j'aime » sur un contenu dont il est l'auteur ou l
 
 ### User Story 3 - Offrir et recevoir un cadeau virtuel (Priority: P1)
 
-Depuis un contenu qu'il apprécie (vidéo Vidafrica, programme télé ou radio, fiche de bibliothèque humaine, publication Codi-moi…) ou depuis le profil d'un membre, un membre choisit un **cadeau virtuel** dans un catalogue de cinq objets — Drapeau de l'Union Africaine (20 points), Badge (10), Chapeau (5), Fleur (3), Épingle de costume (1) — et choisit son **mode d'envoi** :
+Depuis un contenu qu'il apprécie (vidéo Vidafrica, programme télé ou radio, fiche de bibliothèque humaine, publication Codi-moi…) ou depuis le profil d'un membre, un membre choisit un **cadeau virtuel** dans un catalogue de cinq objets, Drapeau de l'Union Africaine (20 points), Badge (10), Chapeau (5), Fleur (3), Épingle de costume (1), et choisit son **mode d'envoi** :
 
 - **Soutien financier** : 90 % du montant revient au bénéficiaire, 10 % restent à Africans au titre des frais de plateforme. Le bénéficiaire reçoit **aussi** les points du cadeau.
 - **Cadeau en points** : le bénéficiaire reçoit **uniquement** les points ; Africans conserve 100 % du montant.
@@ -113,7 +113,7 @@ Le paiement est **simulé** tant que l'agrégateur n'est pas branché : le membr
 
 ### User Story 4 - Gagner des points quand les autres partagent mes contenus (Priority: P2)
 
-Quand un membre partage le contenu d'un autre — repartage sur le mur de la plateforme **ou** partage vers un réseau social externe (WhatsApp, Facebook, Telegram, e-mail…) — c'est **l'auteur du contenu** qui est crédité du montant paramétré. Un même partageur ne crédite l'auteur qu'**une seule fois par contenu**, quel que soit le nombre de canaux utilisés : le canal est enregistré pour la statistique, mais ne démultiplie pas le crédit. Partager son propre contenu ne rapporte rien : le recadrage inverse la règle précédente, où le partageur était le bénéficiaire.
+Quand un membre partage le contenu d'un autre, repartage sur le mur de la plateforme **ou** partage vers un réseau social externe (WhatsApp, Facebook, Telegram, e-mail…) : c'est **l'auteur du contenu** qui est crédité du montant paramétré. Un même partageur ne crédite l'auteur qu'**une seule fois par contenu**, quel que soit le nombre de canaux utilisés : le canal est enregistré pour la statistique, mais ne démultiplie pas le crédit. Partager son propre contenu ne rapporte rien : le recadrage inverse la règle précédente, où le partageur était le bénéficiaire.
 
 **Why this priority**: Levier de croissance explicitement retenu, mais le moins vérifiable (le système constate une intention de partage externe, pas sa publication effective) et le plus exposé à l'abus. Livré après les deux sources sûres, avec un anti-abus strict.
 
@@ -135,7 +135,7 @@ Quand un membre partage le contenu d'un autre — repartage sur le mur de la pla
 
 Un administrateur habilité gère le **catalogue des cadeaux** (nom, apparence, prix, points attribués, ordre d'affichage, actif/inactif) et consulte le **journal des transactions de cadeaux** : offreur, bénéficiaire, contenu concerné, objet offert, mode d'envoi, montant, part bénéficiaire, part plateforme, état du paiement simulé, date. Il dispose de totaux (recettes plateforme, cagnottes dues aux bénéficiaires) et peut filtrer par période, par membre et par état.
 
-**Why this priority**: Sans catalogue paramétrable, chaque ajustement de prix ou de barème exigerait une livraison technique — ce que le produit refuse. Sans journal, la répartition 90 / 10 n'est ni vérifiable ni exploitable au moment de brancher le paiement réel. La story dépend cependant d'un flux de cadeaux existant (US3).
+**Why this priority**: Sans catalogue paramétrable, chaque ajustement de prix ou de barème exigerait une livraison technique : ce que le produit refuse. Sans journal, la répartition 90 / 10 n'est ni vérifiable ni exploitable au moment de brancher le paiement réel. La story dépend cependant d'un flux de cadeaux existant (US3).
 
 **Independent Test**: Créer un sixième cadeau, le rendre actif, vérifier qu'il apparaît immédiatement côté membre ; le désactiver et vérifier qu'il disparaît du catalogue sans altérer les cadeaux déjà offerts ; réaliser deux envois et vérifier que le journal et les totaux les reflètent exactement.
 
@@ -152,7 +152,7 @@ Un administrateur habilité gère le **catalogue des cadeaux** (nom, apparence, 
 
 ### Edge Cases
 
-- **J'aime retiré puis remis** par le même membre sur le même contenu : un seul point, jamais repris (le compteur affiché sur le contenu, lui, suit les retraits — l'écart entre compteur de j'aime et points gagnés est normal et assumé).
+- **J'aime retiré puis remis** par le même membre sur le même contenu : un seul point, jamais repris (le compteur affiché sur le contenu, lui, suit les retraits, l'écart entre compteur de j'aime et points gagnés est normal et assumé).
 - **Auteur d'un contenu qui change** (transfert de propriété d'un support média) : les points déjà gagnés restent acquis à l'ancien propriétaire ; les j'aime, partages et cadeaux suivants créditent le nouveau.
 - **Support co-détenu** : seul le propriétaire est crédité (FR-008a) ; l'arrivée ou le départ d'un co-détenteur ne modifie ni les points passés, ni la cagnotte.
 - **Support sans propriétaire déclaré** (support créé par l'administration avant l'existence des détenteurs) : aucun point n'est attribué et le cadeau est refusé avec un message explicite, plutôt que crédité à un bénéficiaire arbitraire.
@@ -177,8 +177,8 @@ Un administrateur habilité gère le **catalogue des cadeaux** (nom, apparence, 
 
 - **FR-001**: Le système DOIT restreindre les sources d'attribution de points actives à trois règles canoniques : **j'aime reçu** sur un contenu dont on est l'auteur/détenteur, **partage reçu** d'un contenu dont on est l'auteur/détenteur, **cadeau virtuel reçu**.
 - **FR-002**: Le système DOIT **désactiver sans les supprimer** les règles écartées (contribution validée, contribution mise en avant, fact-check correct, fact-check abusif, proposition média validée, mise à la une, animation de support acceptée, bonus « 5 réseaux distincts »), en conservant leurs libellés et montants, et DOIT permettre leur **réactivation** depuis le back-office sans livraison technique.
-- **FR-003**: Le système DOIT créditer **1 point par j'aime reçu** — montant paramétrable — et NE DOIT PLUS appliquer de logique de paliers de popularité pour l'attribution des points.
-- **FR-004**: Le système DOIT définir quatre statuts de membre — **Membre Africans** (0 à 499), **Premium** (500 à 1 999), **Gold** (2 000 à 9 999), **Platinum** (10 000 et plus) — dérivés du solde total de points, et DOIT refuser toute grille ambiguë (seuil dupliqué ou contredisant l'ordre).
+- **FR-003**: Le système DOIT créditer **1 point par j'aime reçu**, montant paramétrable, et NE DOIT PLUS appliquer de logique de paliers de popularité pour l'attribution des points.
+- **FR-004**: Le système DOIT définir quatre statuts de membre, **Membre Africans** (0 à 499), **Premium** (500 à 1 999), **Gold** (2 000 à 9 999), **Platinum** (10 000 et plus), dérivés du solde total de points, et DOIT refuser toute grille ambiguë (seuil dupliqué ou contredisant l'ordre).
 - **FR-005**: Le système DOIT permettre de modifier libellés, seuils et apparence des statuts depuis le back-office, et DOIT rebasculer automatiquement tous les membres concernés sur le statut correspondant à leur solde après modification.
 - **FR-006**: Le système DOIT appliquer toute modification du barème ou de la grille de statuts **sans redéploiement**, effective pour les attributions suivantes, sans recalculer les mouvements déjà journalisés.
 - **FR-007**: Le système DOIT réserver le paramétrage aux administrateurs porteurs de la permission de gestion de l'engagement et DOIT tracer chaque modification dans la piste d'audit avec son auteur.
@@ -186,9 +186,9 @@ Un administrateur habilité gère le **catalogue des cadeaux** (nom, apparence, 
 ### J'aime reçus
 
 - **FR-008**: Le système DOIT créditer l'**auteur/détenteur** d'un contenu à chaque j'aime reçu d'un **autre** membre, sur **toutes les familles de contenus dotées d'un « j'aime » binaire** : Codi-moi, contributions de gouvernance, bibliothèques humaines, médias télé/radio (chaînes, stations, programmes télé, programmes radio), vidéos Vidafrica, fiches pays et éléments Opportunité-Afrique.
-- **FR-008c**: Le système NE DOIT PAS attribuer de points lorsqu'un contenu n'a **aucun auteur identifiable** — cas des éléments Opportunité-Afrique de nature éditoriale (sites touristiques, secteurs de développement), rattachés à une fiche pays sans contributeur enregistré. La réaction, le partage et l'affichage fonctionnent normalement ; seul le crédit est sans objet.
+- **FR-008c**: Le système NE DOIT PAS attribuer de points lorsqu'un contenu n'a **aucun auteur identifiable**, cas des éléments Opportunité-Afrique de nature éditoriale (sites touristiques, secteurs de développement), rattachés à une fiche pays sans contributeur enregistré. La réaction, le partage et l'affichage fonctionnent normalement ; seul le crédit est sans objet.
 - **FR-008a**: Le système DOIT désigner, sur un **support co-détenu** (chaîne TV, station radio), le **détenteur propriétaire** comme unique bénéficiaire des points, des partages reçus et des cadeaux ; les co-détenteurs et animateurs ne reçoivent rien au titre du support.
-- **FR-008b**: Le système NE DOIT PAS convertir en points les **notations sur échelle** (avis de sites touristiques, note d'expertise) ni les **réactions emoji autres que le cœur** (fact-check : pouce, rire, « j'aime pas ») : elles n'expriment pas une approbation binaire et resteraient arbitraires à convertir. Sur un fact-check, seule la réaction **cœur** — équivalent du « j'aime » dans cette interface — crédite l'auteur.
+- **FR-008b**: Le système NE DOIT PAS convertir en points les **notations sur échelle** (avis de sites touristiques, note d'expertise) ni les **réactions emoji autres que le cœur** (fact-check : pouce, rire, « j'aime pas ») : elles n'expriment pas une approbation binaire et resteraient arbitraires à convertir. Sur un fact-check, seule la réaction **cœur**, équivalent du « j'aime » dans cette interface, crédite l'auteur.
 - **FR-009**: Le système NE DOIT PAS créditer l'auto-réaction : le j'aime de l'auteur sur son propre contenu ne rapporte rien.
 - **FR-010**: Le système DOIT garantir l'unicité du crédit par **(contenu, membre qui aime)** : retirer puis remettre un j'aime ne crédite pas une seconde fois.
 - **FR-011**: Le système NE DOIT PAS reprendre un point déjà attribué lorsqu'un j'aime est retiré.
@@ -208,7 +208,7 @@ Un administrateur habilité gère le **catalogue des cadeaux** (nom, apparence, 
 - **FR-019**: Le système DOIT créditer au bénéficiaire les **points du cadeau dans les deux modes**, selon le barème du catalogue.
 - **FR-020**: Le système DOIT **simuler le paiement** de bout en bout, sans mouvement d'argent réel, et DOIT permettre d'observer un aboutissement comme un échec ; le remplacement ultérieur de la simulation par un prestataire réel NE DOIT PAS exiger de refonte du parcours d'envoi ni du journal des transactions.
 - **FR-020a**: Le système DOIT signaler **explicitement au membre**, à chaque étape du parcours d'envoi et sur sa cagnotte, que le paiement est **simulé** et que les points et montants correspondants relèvent d'une **phase de test**.
-- **FR-020b**: Le système DOIT distinguer durablement les transactions **simulées** des transactions **réelles**, de façon à permettre, à la mise en service de l'encaissement réel, la **purge** des points d'engagement et des cagnottes issus des cadeaux simulés — sans toucher aux points gagnés par les j'aime et les partages.
+- **FR-020b**: Le système DOIT distinguer durablement les transactions **simulées** des transactions **réelles**, de façon à permettre, à la mise en service de l'encaissement réel, la **purge** des points d'engagement et des cagnottes issus des cadeaux simulés, sans toucher aux points gagnés par les j'aime et les partages.
 - **FR-021**: Le système NE DOIT créditer les points, envoyer le cadeau et journaliser la répartition **que si le paiement (simulé) aboutit**.
 - **FR-022**: Le système DOIT garantir qu'un même parcours de paiement rejoué ne produit **qu'un seul** cadeau et **qu'un seul** crédit de points.
 - **FR-023**: Le système DOIT **interdire l'auto-cadeau** : s'offrir un cadeau à soi-même ou sur son propre contenu est refusé.
@@ -237,12 +237,12 @@ Un administrateur habilité gère le **catalogue des cadeaux** (nom, apparence, 
 ### Key Entities *(include if feature involves data)*
 
 - **Compte d'engagement** *(existant)* : solde total, solde mensuel, réputation, statut dérivé. Relation 1–1 avec un membre.
-- **Mouvement de points** *(existant)* : trace immuable d'un gain/perte — membre, action, objet concerné, points signés, catégorie, écrêtage, date.
-- **Règle de points** *(existante, à recadrer)* : paramètre d'une action récompensée — identifiant d'action, libellé public, points, plafonds, catégorie, **état actif** (les règles écartées passent inactives).
-- **Statut de membre** *(existant, à redéfinir)* : palier de solde — libellé, seuil d'entrée, ordre, apparence. Quatre entrées : Membre Africans, Premium, Gold, Platinum.
-- **Cadeau du catalogue** *(nouveau)* : objet offrable — nom, apparence, **prix**, **points attribués**, ordre d'affichage, état actif.
-- **Transaction de cadeau** *(nouvelle)* : envoi d'un cadeau — offreur, bénéficiaire, contenu concerné (famille + identifiant) ou membre visé, cadeau, **mode d'envoi**, montant, part bénéficiaire, part plateforme, points crédités, **état du paiement** (en attente / abouti / échoué / expiré), référence de paiement, date. Valeurs figées à l'envoi.
-- **Cagnotte de soutien** *(nouvelle)* : cumul des parts revenant à un bénéficiaire — membre, montant cumulé, montant déjà versé (nul tant que le versement n'est pas en service).
+- **Mouvement de points** *(existant)* : trace immuable d'un gain/perte, membre, action, objet concerné, points signés, catégorie, écrêtage, date.
+- **Règle de points** *(existante, à recadrer)* : paramètre d'une action récompensée, identifiant d'action, libellé public, points, plafonds, catégorie, **état actif** (les règles écartées passent inactives).
+- **Statut de membre** *(existant, à redéfinir)* : palier de solde, libellé, seuil d'entrée, ordre, apparence. Quatre entrées : Membre Africans, Premium, Gold, Platinum.
+- **Cadeau du catalogue** *(nouveau)* : objet offrable, nom, apparence, **prix**, **points attribués**, ordre d'affichage, état actif.
+- **Transaction de cadeau** *(nouvelle)* : envoi d'un cadeau, offreur, bénéficiaire, contenu concerné (famille + identifiant) ou membre visé, cadeau, **mode d'envoi**, montant, part bénéficiaire, part plateforme, points crédités, **état du paiement** (en attente / abouti / échoué / expiré), référence de paiement, date. Valeurs figées à l'envoi.
+- **Cagnotte de soutien** *(nouvelle)* : cumul des parts revenant à un bénéficiaire, membre, montant cumulé, montant déjà versé (nul tant que le versement n'est pas en service).
 - **Partage tracé** *(existant, à étendre)* : membre qui partage, contenu, **canal** (réseau externe ou mur interne), date. Enregistré pour chaque geste ; le **crédit** de points, lui, est unique par (partageur, contenu), tous canaux confondus.
 - **Badge / Badge obtenu** *(existants)* : distinctions nominatives conservées en l'état ; leurs conditions restent exprimées sur les données d'engagement.
 
@@ -278,7 +278,7 @@ Un administrateur habilité gère le **catalogue des cadeaux** (nom, apparence, 
 - Le **versement (payout) de la cagnotte** aux bénéficiaires est hors périmètre : la cagnotte est cumulée et affichée, jamais versée dans cette itération.
 - Les **points ne se dépensent pas** : offrir un cadeau se paie en argent, jamais en points. Il n'existe donc aucun transfert de points entre membres.
 - Le **solde de points ne descend pas sous zéro** ; la réputation reste un score distinct n'entrant pas dans le calcul du statut.
-- Les **catégories de points** conservées pour la ventilation sont : Popularité (j'aime), Partages, Cadeaux, Ajustements — les autres restent définies mais sans règle active.
+- Les **catégories de points** conservées pour la ventilation sont : Popularité (j'aime), Partages, Cadeaux, Ajustements, les autres restent définies mais sans règle active.
 - Les **badges de succès** livrés en 007 sont conservés en l'état ; leurs conditions portant sur des actions désormais inactives ne se déclencheront simplement plus, et l'administration peut les redéfinir sur les trois sources canoniques.
 - Les écrans membre suivent les conventions des pages publiques de la plateforme ; les écrans d'administration celles du back-office.
 - Le **barème n'est pas une donnée sensible** : ce qui rapporte des points et le catalogue de cadeaux sont publics ; les soldes, la cagnotte et l'historique d'un membre restent privés.
@@ -287,7 +287,7 @@ Un administrateur habilité gère le **catalogue des cadeaux** (nom, apparence, 
 
 1. **Trois sources canoniques** de points : j'aime reçus, partages reçus, cadeaux reçus. Les autres règles sont **désactivées, conservées et réactivables**.
 2. **Crédit unitaire du j'aime** (1 point, paramétrable) : les paliers de popularité ne pilotent plus l'attribution.
-3. **Bénéficiaire du partage = l'auteur du contenu**, sur les canaux internes **et** externes, **une seule fois par partageur et par contenu** — inversion assumée de la règle de la spécification 007.
+3. **Bénéficiaire du partage = l'auteur du contenu**, sur les canaux internes **et** externes, **une seule fois par partageur et par contenu**, inversion assumée de la règle de la spécification 007.
 3 bis. **Bénéficiaire unique sur un support co-détenu** : le détenteur propriétaire, jamais les co-détenteurs.
 4. **Quatre statuts** : Membre Africans (0), Premium (500), Gold (2 000), Platinum (10 000).
 5. **Argent → points assumé** : renversement de la décision « aucune conversion argent → points » de la spécification 007, rendu acceptable par le maintien du caractère purement symbolique des statuts (aucun avantage algorithmique).

@@ -136,20 +136,20 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
         <div class="flex flex-wrap items-end gap-3">
           <div class="form-control w-48">
             <label class="label pb-1">
-              <span class="label-text text-xs">Etat</span>
+              <span class="label-text text-xs">État</span>
             </label>
             <select v-model="filtreEtat" class="select select-bordered select-sm">
               <option value="">Tous</option>
               <option value="en_attente">En attente</option>
               <option value="approuvee">Approuvee</option>
-              <option value="rejetee">Rejetee</option>
+              <option value="rejetee">Rejetée</option>
             </select>
           </div>
           <button class="btn btn-primary btn-sm" @click="appliquerFiltre">
             Filtrer
           </button>
           <button class="btn btn-ghost btn-sm" @click="reinitialiserFiltres">
-            Reinitialiser
+            Réinitialiser
           </button>
         </div>
       </div>
@@ -177,7 +177,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
                 <th>Section</th>
                 <th>Type</th>
                 <th>Contributeur</th>
-                <th class="text-center">Etat</th>
+                <th class="text-center">État</th>
                 <th>Date</th>
                 <th class="text-center">Actions</th>
               </tr>
@@ -205,7 +205,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
                 </td>
                 <td class="text-sm">{{ formatDate(c.created_at) }}</td>
                 <td class="text-center">
-                  <button class="btn btn-ghost btn-xs" title="Voir le detail" @click="ouvrirDetail(c.id)">
+                  <button class="btn btn-ghost btn-xs" title="Voir le détail" @click="ouvrirDetail(c.id)">
                     <font-awesome-icon icon="eye" />
                   </button>
                 </td>
@@ -254,10 +254,10 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
         <template v-else-if="contributionDetail">
           <!-- En-tete modal -->
-          <h3 class="font-bold text-lg mb-1">Detail de la contribution</h3>
+          <h3 class="font-bold text-lg mb-1">Détail de la contribution</h3>
           <p class="text-sm text-base-content/70 mb-4">
             <font-awesome-icon icon="clipboard-list" class="mr-1" />
-            {{ contributionDetail.pays_nom }} — {{ contributionDetail.section }}
+            {{ contributionDetail.pays_nom }} - {{ contributionDetail.section }}
           </p>
 
           <!-- Infos principales -->
@@ -269,7 +269,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
               </span>
             </div>
             <div class="bg-base-200 rounded-lg p-3">
-              <div class="text-xs text-base-content/60">Etat</div>
+              <div class="text-xs text-base-content/60">État</div>
               <span :class="['badge badge-sm mt-1', etatBadge(contributionDetail.etat)]">
                 {{ etatLabel(contributionDetail.etat) }}
               </span>

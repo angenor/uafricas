@@ -4,7 +4,7 @@
  *
  * Triée côté serveur par nombre de signalements décroissant : le contenu le
  * plus contesté remonte en tête. Un contenu franchissant le seuil est déjà
- * retiré de l'antenne à son arrivée ici — la décision administrative consiste
+ * retiré de l'antenne à son arrivée ici, la décision administrative consiste
  * à le rétablir (compteur remis à zéro) ou à le supprimer définitivement.
  */
 import {
@@ -18,7 +18,7 @@ import { LIBELLES_TYPE_MEDIA, type TypeMedia } from '~/composables/useMediaSocia
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
-useHead({ title: 'Contenus signalés — Administration' })
+useHead({ title: 'Contenus signalés, Administration' })
 
 const { lister, detailSignalements, changerEtat, chargement, erreur } = useAdminMediaSignalements()
 
@@ -99,7 +99,7 @@ const dateFormatee = (iso: string | null) =>
     ? new Date(iso).toLocaleDateString('fr-FR', {
       day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
     })
-    : '—'
+    : '-'
 
 const auteurNom = (s: SignalementDetailAPI) =>
   `${s.auteur.prenom ?? ''} ${s.auteur.nom ?? ''}`.trim() || 'Membre'
@@ -203,8 +203,8 @@ const auteurNom = (s: SignalementDetailAPI) =>
       <div class="modal-box max-w-2xl">
         <h3 class="font-bold text-lg">{{ contenuExamine.titre }}</h3>
         <p class="text-sm opacity-70 mt-1">
-          {{ LIBELLES_TYPE_MEDIA[contenuExamine.type_media] }} —
-          {{ contenuExamine.nombre_signalements }} signalement(s) —
+          {{ LIBELLES_TYPE_MEDIA[contenuExamine.type_media] }} 
+          {{ contenuExamine.nombre_signalements }} signalement(s) 
           {{ LIBELLES_ETAT_MEDIA[contenuExamine.etat] ?? contenuExamine.etat }}
         </p>
 

@@ -1,16 +1,18 @@
 <script setup lang="ts">
-const props = defineProps<{
-  isOpen: boolean
-  profilNom: string
-  profilPrenom: string
-}>()
+/**
+ * Signalement d'un profil de membre.
+ *
+ * Quatre modales de signalement portaient la même mécanique ; seuls les
+ * motifs et la phrase d'accroche les distinguaient.
+ */
+defineProps<{ isOpen: boolean, profilNom: string, profilPrenom: string }>()
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'close'): void
   (e: 'submit', payload: { motif: string, description: string }): void
 }>()
 
-const MOTIFS: { value: string, label: string }[] = [
+const MOTIFS = [
   { value: 'faux_profil', label: 'Faux profil' },
   { value: 'arnaque', label: 'Arnaque / escroquerie' },
   { value: 'usurpation', label: "Usurpation d'identité" },
@@ -19,154 +21,25 @@ const MOTIFS: { value: string, label: string }[] = [
   { value: 'autre', label: 'Autre' },
 ]
 
-const motif = ref('')
-const description = ref('')
-const enCours = ref(false)
-const erreur = ref('')
-const succes = ref(false)
-const messageSucces = ref('')
-
-const MAX = 1000
-const restant = computed(() => MAX - description.value.length)
-
-watch(
-  () => props.isOpen,
-  (ouvert) => {
-    if (ouvert) {
-      motif.value = ''
-      description.value = ''
-      erreur.value = ''
-      succes.value = false
-      messageSucces.value = ''
-      enCours.value = false
-    }
-  },
-)
-
-const fermer = () => {
-  if (enCours.value) return
-  emit('close')
-}
-
-const soumettre = () => {
-  if (enCours.value) return
-  if (!motif.value) {
-    erreur.value = 'Veuillez sélectionner un motif.'
-    return
-  }
-  erreur.value = ''
-  emit('submit', { motif: motif.value, description: description.value.trim() })
-}
-
-const setLoading = (v: boolean) => { enCours.value = v }
-const setError = (msg: string) => { enCours.value = false; erreur.value = msg }
-const setSuccess = (message: string) => {
-  enCours.value = false
-  succes.value = true
-  messageSucces.value = message
-  setTimeout(() => emit('close'), 1800)
-}
-defineExpose({ setLoading, setError, setSuccess })
+const coquille = ref<{ setLoading: (v: boolean) => void, setError: (m: string) => void, setSuccess: (m: string) => void } | null>(null)
+defineExpose({
+  setLoading: (v: boolean) => coquille.value?.setLoading(v),
+  setError: (m: string) => coquille.value?.setError(m),
+  setSuccess: (m: string) => coquille.value?.setSuccess(m),
+})
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="modal-fade">
-      <div
-        v-if="isOpen"
-        class="fixed inset-0 z-[90] flex items-center justify-center p-4"
-        @click.self="fermer"
-      >
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h3 class="font-display text-xl font-bold text-gray-900 flex items-center gap-2">
-              <font-awesome-icon :icon="['fas', 'flag']" class="text-orange-500" />
-              Signaler ce profil
-            </h3>
-            <button
-              type="button"
-              :disabled="enCours"
-              class="w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition cursor-pointer"
-              @click="fermer"
-            >
-              <font-awesome-icon :icon="['fas', 'xmark']" class="w-5 h-5" />
-            </button>
-          </div>
-
-          <div class="px-6 py-5">
-            <div v-if="succes" class="flex flex-col items-center justify-center py-8 text-center">
-              <div class="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mb-4">
-                <font-awesome-icon :icon="['fas', 'check']" class="w-7 h-7 text-orange-500" />
-              </div>
-              <p class="font-medium text-gray-900">{{ messageSucces }}</p>
-            </div>
-
-            <template v-else>
-              <p class="text-sm text-gray-600 mb-4">
-                Aidez-nous à lutter contre les faux profils et les arnaques. Vous signalez le profil de
-                <span class="font-semibold text-gray-900">{{ profilPrenom }} {{ profilNom }}</span>.
-              </p>
-
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">Motif</label>
-              <div class="space-y-1.5 mb-4">
-                <label
-                  v-for="m in MOTIFS"
-                  :key="m.value"
-                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg border cursor-pointer transition"
-                  :class="motif === m.value ? 'border-orange-400 bg-orange-50' : 'border-gray-200 hover:bg-gray-50'"
-                >
-                  <input v-model="motif" type="radio" :value="m.value" class="accent-orange-500" :disabled="enCours" />
-                  <span class="text-sm text-gray-800">{{ m.label }}</span>
-                </label>
-              </div>
-
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                Précision <span class="text-gray-400 font-normal">(facultatif)</span>
-              </label>
-              <textarea
-                v-model="description"
-                rows="3"
-                :maxlength="MAX"
-                placeholder="Décrivez le problème (facultatif)…"
-                class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent resize-none"
-                :disabled="enCours"
-              ></textarea>
-              <div class="flex items-center justify-between mt-1.5">
-                <p v-if="erreur" class="text-sm text-red-600">{{ erreur }}</p>
-                <span v-else></span>
-                <span class="text-xs text-gray-400">{{ restant }}</span>
-              </div>
-            </template>
-          </div>
-
-          <div v-if="!succes" class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
-            <button
-              type="button"
-              :disabled="enCours"
-              class="px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-200 transition cursor-pointer disabled:opacity-50"
-              @click="fermer"
-            >
-              Annuler
-            </button>
-            <button
-              type="button"
-              :disabled="enCours"
-              class="px-5 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition cursor-pointer disabled:opacity-60 inline-flex items-center gap-2"
-              @click="soumettre"
-            >
-              <font-awesome-icon v-if="enCours" :icon="['fas', 'spinner']" class="w-4 h-4 animate-spin" />
-              <font-awesome-icon v-else :icon="['fas', 'flag']" class="w-4 h-4" />
-              Signaler
-            </button>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+  <AfricansModaleSignalement
+    ref="coquille"
+    :is-open="isOpen"
+    titre="Signaler ce profil"
+    :motifs="MOTIFS"
+    @close="$emit('close')"
+    @submit="$emit('submit', $event)"
+  >
+    Vous signalez le profil de
+    <strong class="font-bold text-af-encre">{{ profilPrenom }} {{ profilNom }}</strong>
+    à l'équipe de modération.
+  </AfricansModaleSignalement>
 </template>
-
-<style scoped>
-.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s ease; }
-.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
-</style>

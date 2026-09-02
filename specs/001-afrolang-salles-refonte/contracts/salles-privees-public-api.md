@@ -1,4 +1,4 @@
-# Contract — API publique salles privées Afrolang
+# Contract : API publique salles privées Afrolang
 
 **Branch** : `001-afrolang-salles-refonte`
 **Date** : 2026-04-15
@@ -14,7 +14,7 @@ Tous les payloads / réponses sont en JSON et s'inscrivent dans le wrapper `ApiR
 
 ---
 
-## Endpoint 1 — Créer une salle privée
+## Endpoint 1 : Créer une salle privée
 
 `POST /api/afrolang/salles-privees`
 
@@ -69,12 +69,12 @@ Tous les payloads / réponses sont en JSON et s'inscrivent dans le wrapper `ApiR
 |---|---|
 | 400 | Validation payload (titre court, code mal formé, salle inexistante) |
 | 401 | JWT manquant/invalide |
-| 409 | Une salle privée existe déjà pour (utilisateur, salle publique) — message « Vous avez déjà une salle privée pour cette salle publique », `data.salle_privee_existante_id` rendu pour bouton « Ouvrir ma salle privée » |
+| 409 | Une salle privée existe déjà pour (utilisateur, salle publique), message « Vous avez déjà une salle privée pour cette salle publique », `data.salle_privee_existante_id` rendu pour bouton « Ouvrir ma salle privée » |
 | 422 | Salle publique inactive |
 
 ---
 
-## Endpoint 2 — Lister les salles privées d'une salle publique
+## Endpoint 2 : Lister les salles privées d'une salle publique
 
 `GET /api/afrolang/salles/{salle_id}/salles-privees`
 
@@ -118,7 +118,7 @@ Tous les payloads / réponses sont en JSON et s'inscrivent dans le wrapper `ApiR
 
 ---
 
-## Endpoint 3 — Vérifier le code secret et obtenir l'accès
+## Endpoint 3 : Vérifier le code secret et obtenir l'accès
 
 `POST /api/afrolang/salles-privees/{id}/verifier-code`
 
@@ -170,7 +170,7 @@ Tous les payloads / réponses sont en JSON et s'inscrivent dans le wrapper `ApiR
 
 ---
 
-## Endpoint 4 — Démarrer / rejoindre la session live d'une salle privée
+## Endpoint 4 : Démarrer / rejoindre la session live d'une salle privée
 
 `POST /api/afrolang/salles-privees/{id}/sessions/demarrer-ou-rejoindre`
 
@@ -182,7 +182,7 @@ Tous les payloads / réponses sont en JSON et s'inscrivent dans le wrapper `ApiR
 2. Charger la salle privée ; si archivée → 410 Gone.
 3. Chercher `afrolang.session` avec `salle_privee_id={id} AND etat='en_cours'`.
    - Si trouvée → réutiliser, INSERT `afrolang.session_participant`.
-   - Si absente → INSERT nouvelle `afrolang.session` (`etat='en_cours'`, `moderateur_id=salle_privee.cree_par`, `cree_par=utilisateur courant` — qui peut différer de l'auteur si celui-ci n'est pas en ligne).
+   - Si absente → INSERT nouvelle `afrolang.session` (`etat='en_cours'`, `moderateur_id=salle_privee.cree_par`, `cree_par=utilisateur courant`, qui peut différer de l'auteur si celui-ci n'est pas en ligne).
 4. Émettre un token LiveKit (déjà géré par crate `livekit-api`).
 
 **Response 200 OK** :
@@ -211,7 +211,7 @@ Tous les payloads / réponses sont en JSON et s'inscrivent dans le wrapper `ApiR
 
 ---
 
-## Endpoint 5 — Modifier le code secret
+## Endpoint 5 : Modifier le code secret
 
 `PATCH /api/afrolang/salles-privees/{id}/code-acces`
 
@@ -240,7 +240,7 @@ Tous les payloads / réponses sont en JSON et s'inscrivent dans le wrapper `ApiR
 
 ---
 
-## Endpoint 6 — Archiver sa salle privée
+## Endpoint 6 : Archiver sa salle privée
 
 `POST /api/afrolang/salles-privees/{id}/archiver`
 

@@ -43,3 +43,6 @@ uploads/
 .deploy.env
 backups/
 nginx/ssl/
+
+# Override Docker local (spécifique à la machine)
+docker-compose.override.yml

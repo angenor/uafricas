@@ -17,9 +17,9 @@ const colonnes: TableColumn[] = [
   { key: 'photo_url', label: '', width: 'w-12' },
   { key: 'titre', label: 'Titre', sortable: true },
   { key: 'type_operation', label: 'Type', width: 'w-24' },
-  { key: 'etat', label: 'Etat', width: 'w-28' },
-  { key: 'prix', label: 'Prix', sortable: true, width: 'w-28', align: 'right', format: (v: number, row: any) => v ? `${v.toLocaleString('fr-FR')} ${row.devise || 'XOF'}` : '—' },
-  { key: 'categorie_nom', label: 'Categorie', width: 'w-28' },
+  { key: 'etat', label: 'État', width: 'w-28' },
+  { key: 'prix', label: 'Prix', sortable: true, width: 'w-28', align: 'right', format: (v: number, row: any) => v ? `${v.toLocaleString('fr-FR')} ${row.devise || 'XOF'}` : '-' },
+  { key: 'categorie_nom', label: 'Catégorie', width: 'w-28' },
   { key: 'pays_nom', label: 'Territoire', width: 'w-24' },
   { key: 'auteur_nom', label: 'Auteur', width: 'w-28', format: (_v: string, row: any) => `${row.auteur_prenom} ${row.auteur_nom}` },
   { key: 'nombre_vues', label: 'Vues', sortable: true, width: 'w-16', align: 'center' },
@@ -28,13 +28,13 @@ const colonnes: TableColumn[] = [
 
 const filterDefs: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Titre, description, ville...' },
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'Brouillon', value: 'brouillon' },
-    { label: 'Publiee', value: 'publiee' },
+    { label: 'Publiée', value: 'publiee' },
     { label: 'En attente', value: 'en_attente' },
-    { label: 'Expiree', value: 'expiree' },
+    { label: 'Expirée', value: 'expiree' },
     { label: 'Suspendue', value: 'suspendue' },
-    { label: 'Supprimee', value: 'supprimee' },
+    { label: 'Supprimée', value: 'supprimee' },
   ]},
   { key: 'type_operation', label: 'Type', type: 'select', placeholder: 'Tous', options: [
     { label: 'Vente', value: 'vente' },
@@ -176,17 +176,17 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
 
       <template #cell-categorie_nom="{ value }">
         <span v-if="value" class="text-sm">{{ value }}</span>
-        <span v-else class="text-base-content/30">—</span>
+        <span v-else class="text-base-content/30">-</span>
       </template>
 
       <template #cell-pays_nom="{ value }">
         <span v-if="value" class="text-sm">{{ value }}</span>
-        <span v-else class="text-base-content/30">—</span>
+        <span v-else class="text-base-content/30">-</span>
       </template>
 
       <template #actions="{ item }">
         <div class="flex gap-1">
-          <button class="btn btn-ghost btn-xs" title="Changer etat" @click="ouvrirChangerEtat(item)">
+          <button class="btn btn-ghost btn-xs" title="Changer état" @click="ouvrirChangerEtat(item)">
             <font-awesome-icon icon="arrows-rotate" />
           </button>
           <NuxtLink :to="`/admin/annonces/${item.id}`" class="btn btn-ghost btn-xs">
@@ -210,17 +210,17 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
     <!-- Modal changement d'etat -->
     <div v-if="showEtat" class="modal modal-open">
       <div class="modal-box">
-        <h3 class="font-bold text-lg">Changer l'etat de l'annonce</h3>
+        <h3 class="font-bold text-lg">Changer l'état de l'annonce</h3>
         <p class="py-2 text-sm text-base-content/70">{{ etatTarget?.titre }}</p>
         <div class="form-control mt-2">
-          <label class="label"><span class="label-text">Nouvel etat</span></label>
+          <label class="label"><span class="label-text">Nouvel état</span></label>
           <select v-model="nouvelEtat" class="select select-bordered">
             <option value="brouillon">Brouillon</option>
             <option value="en_attente">En attente</option>
-            <option value="publiee">Publiee</option>
+            <option value="publiee">Publiée</option>
             <option value="suspendue">Suspendue</option>
-            <option value="expiree">Expiree</option>
-            <option value="supprimee">Supprimee</option>
+            <option value="expiree">Expirée</option>
+            <option value="supprimee">Supprimée</option>
           </select>
         </div>
         <div class="modal-action">

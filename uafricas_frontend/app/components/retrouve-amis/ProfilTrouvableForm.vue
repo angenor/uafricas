@@ -62,7 +62,7 @@ const formulaire = reactive<DonneesParcours>({
 
 // ── Helpers ──────────────────────────────────────────────────
 const typesEntree: { valeur: TypeEntree; label: string }[] = [
-  { valeur: 'ecole', label: 'Ecole / Universite' },
+  { valeur: 'ecole', label: 'École / Université' },
   { valeur: 'ville_residence', label: 'Ville de residence' },
 ]
 
@@ -146,31 +146,31 @@ const soumettre = () => {
 <template>
   <div class="space-y-6">
     <!-- Section bascule trouvable -->
-    <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div class="rounded-lg border border-af-bordure bg-white p-6 shadow-sm">
       <div class="flex items-center justify-between gap-4">
         <div class="flex-1">
-          <h3 class="text-lg font-bold text-gray-900">Profil trouvable</h3>
-          <p class="mt-1 text-sm text-gray-500">
+          <h3 class="text-lg font-bold text-af-encre">Profil trouvable</h3>
+          <p class="mt-1 text-sm text-af-atone">
             Lorsque votre profil est trouvable, d'autres utilisateurs peuvent vous identifier
             comme correspondance potentielle dans leurs recherches.
           </p>
           <span
             class="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
             :class="estTrouvable
-              ? 'bg-custom-green/10 text-custom-green'
-              : 'bg-gray-100 text-gray-500'"
+              ? 'bg-af-vert/10 text-af-vert'
+              : 'bg-af-fond text-af-atone'"
           >
             <span
               class="h-2 w-2 rounded-full"
-              :class="estTrouvable ? 'bg-custom-green' : 'bg-gray-400'"
+              :class="estTrouvable ? 'bg-af-vert' : 'bg-af-atone-2'"
             />
             {{ estTrouvable ? 'Votre profil est visible' : 'Votre profil est masque' }}
           </span>
         </div>
         <button
           type="button"
-          class="relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-custom-green focus:ring-offset-2"
-          :class="estTrouvable ? 'bg-custom-green' : 'bg-gray-300'"
+          class="relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-af-vert focus:ring-offset-2"
+          :class="estTrouvable ? 'bg-af-vert' : 'bg-af-bordure'"
           :disabled="chargement"
           @click="emit('basculer-trouvable')"
         >
@@ -183,13 +183,13 @@ const soumettre = () => {
     </div>
 
     <!-- Liste des parcours -->
-    <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div class="rounded-lg border border-af-bordure bg-white p-6 shadow-sm">
       <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-lg font-bold text-gray-900">Mon parcours</h3>
+        <h3 class="text-lg font-bold text-af-encre">Mon parcours</h3>
         <button
           v-if="!formulaireOuvert"
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-custom-chocolat px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-custom-chocolat/90"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-af-chocolat px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-af-chocolat/90"
           :disabled="chargement"
           @click="ouvrirAjout"
         >
@@ -201,12 +201,12 @@ const soumettre = () => {
       <!-- Liste vide -->
       <div
         v-if="parcours.length === 0 && !formulaireOuvert"
-        class="rounded-lg border border-dashed border-gray-300 py-10 text-center"
+        class="rounded-lg border border-dashed border-af-bordure py-10 text-center"
       >
-        <font-awesome-icon icon="route" class="mx-auto mb-3 h-8 w-8 text-gray-300" />
-        <p class="text-sm text-gray-500">Aucun parcours renseigne.</p>
-        <p class="mt-1 text-xs text-gray-400">
-          Ajoutez vos ecoles et villes de residence pour etre retrouve plus facilement.
+        <font-awesome-icon icon="route" class="mx-auto mb-3 h-8 w-8 text-af-atone-2" />
+        <p class="text-sm text-af-atone">Aucun parcours renseigne.</p>
+        <p class="mt-1 text-xs text-af-atone-2">
+          Ajoutez vos écoles et villes de résidence pour être retrouvé plus facilement.
         </p>
       </div>
 
@@ -215,27 +215,27 @@ const soumettre = () => {
         <div
           v-for="item in parcours"
           :key="item.id"
-          class="flex items-start justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 transition-colors hover:bg-gray-100"
+          class="flex items-start justify-between gap-3 rounded-lg border border-af-bordure bg-af-fond p-4 transition-colors hover:bg-af-fond"
         >
           <div class="flex items-start gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-custom-chocolat/10 text-custom-chocolat">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-af-chocolat/10 text-af-chocolat">
               <font-awesome-icon :icon="iconeTypeEntree(item.type_entree as TypeEntree)" class="h-4 w-4" />
             </div>
             <div>
-              <p class="text-sm font-semibold text-gray-900">{{ item.nom }}</p>
-              <p class="text-xs text-gray-500">{{ labelTypeEntree(item.type_entree as TypeEntree) }}</p>
+              <p class="text-sm font-semibold text-af-encre">{{ item.nom }}</p>
+              <p class="text-xs text-af-atone">{{ labelTypeEntree(item.type_entree as TypeEntree) }}</p>
               <div class="mt-1 flex flex-wrap gap-2">
-                <span v-if="item.ville" class="inline-flex items-center gap-1 text-xs text-gray-500">
+                <span v-if="item.ville" class="inline-flex items-center gap-1 text-xs text-af-atone">
                   <font-awesome-icon icon="location-dot" class="h-3 w-3" />
                   {{ item.ville }}
                 </span>
-                <span v-if="item.pays" class="inline-flex items-center gap-1 text-xs text-gray-500">
+                <span v-if="item.pays" class="inline-flex items-center gap-1 text-xs text-af-atone">
                   <font-awesome-icon icon="earth-africa" class="h-3 w-3" />
                   {{ item.pays.nom }}
                 </span>
                 <span
                   v-if="item.periode_debut || item.periode_fin"
-                  class="inline-flex items-center gap-1 text-xs text-gray-500"
+                  class="inline-flex items-center gap-1 text-xs text-af-atone"
                 >
                   <font-awesome-icon icon="calendar" class="h-3 w-3" />
                   {{ formaterPeriode(item.periode_debut, item.periode_fin) }}
@@ -246,7 +246,7 @@ const soumettre = () => {
           <div class="flex shrink-0 items-center gap-1">
             <button
               type="button"
-              class="rounded-lg p-2 text-gray-400 transition-colors hover:bg-custom-chocolat/10 hover:text-custom-chocolat"
+              class="rounded-lg p-2 text-af-atone-2 transition-colors hover:bg-af-chocolat/10 hover:text-af-chocolat"
               title="Modifier"
               :disabled="chargement"
               @click="ouvrirEdition(item)"
@@ -255,7 +255,7 @@ const soumettre = () => {
             </button>
             <button
               type="button"
-              class="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+              class="rounded-lg p-2 text-af-atone-2 transition-colors hover:bg-af-live/5 hover:text-af-live"
               title="Supprimer"
               :disabled="chargement"
               @click="emit('supprimer-parcours', item.id)"
@@ -269,18 +269,18 @@ const soumettre = () => {
       <!-- Formulaire ajout / edition -->
       <div
         v-if="formulaireOuvert"
-        class="mt-4 rounded-lg border border-gray-200 bg-white p-5"
+        class="mt-4 rounded-lg border border-af-bordure bg-white p-5"
       >
-        <h4 class="mb-4 text-sm font-semibold text-gray-800">
+        <h4 class="mb-4 text-sm font-semibold text-af-encre">
           {{ modeEdition ? 'Modifier le parcours' : 'Ajouter un parcours' }}
         </h4>
 
         <div class="space-y-4">
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Type</label>
+            <label class="mb-1 block text-sm font-medium text-af-corps">Type</label>
             <select
               v-model="formulaire.type_entree"
-              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-custom-chocolat"
+              class="w-full rounded-lg border border-af-bordure bg-white px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-af-chocolat"
             >
               <option v-for="type in typesEntree" :key="type.valeur" :value="type.valeur">
                 {{ type.label }}
@@ -289,35 +289,35 @@ const soumettre = () => {
           </div>
 
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">
-              Nom <span class="text-red-500">*</span>
+            <label class="mb-1 block text-sm font-medium text-af-corps">
+              Nom <span class="text-af-live">*</span>
             </label>
             <input
               v-model="formulaire.nom"
               type="text"
               maxlength="150"
-              :placeholder="formulaire.type_entree === 'ecole' ? 'Ex : Universite Cheikh Anta Diop' : 'Ex : Dakar'"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-custom-chocolat"
+              :placeholder="formulaire.type_entree === 'ecole' ? 'Ex : Université Cheikh Anta Diop' : 'Ex : Dakar'"
+              class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-af-chocolat"
             >
           </div>
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="mb-1 block text-sm font-medium text-gray-700">Ville</label>
+              <label class="mb-1 block text-sm font-medium text-af-corps">Ville</label>
               <input
                 v-model="formulaire.ville"
                 type="text"
                 placeholder="Ex : Dakar"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-custom-chocolat"
+                class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-af-chocolat"
               >
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-gray-700">Territoire</label>
+              <label class="mb-1 block text-sm font-medium text-af-corps">Territoire</label>
               <select
                 v-model="formulaire.pays_id"
-                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-custom-chocolat"
+                class="w-full rounded-lg border border-af-bordure bg-white px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-af-chocolat"
               >
-                <option value="">-- Selectionner un territoire --</option>
+                <option value="">-- Sélectionner un territoire --</option>
                 <option v-for="pays in listePays" :key="pays.id" :value="pays.id">
                   {{ pays.nom }}
                 </option>
@@ -327,25 +327,25 @@ const soumettre = () => {
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="mb-1 block text-sm font-medium text-gray-700">Annee de debut</label>
+              <label class="mb-1 block text-sm font-medium text-af-corps">Annee de debut</label>
               <input
                 v-model.number="formulaire.periode_debut"
                 type="number"
                 min="1900"
                 :max="new Date().getFullYear()"
                 placeholder="Ex : 2005"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-custom-chocolat"
+                class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-af-chocolat"
               >
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-gray-700">Annee de fin</label>
+              <label class="mb-1 block text-sm font-medium text-af-corps">Annee de fin</label>
               <input
                 v-model.number="formulaire.periode_fin"
                 type="number"
                 min="1900"
                 :max="new Date().getFullYear()"
                 placeholder="Ex : 2010"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-custom-chocolat"
+                class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-af-chocolat"
               >
             </div>
           </div>
@@ -354,14 +354,14 @@ const soumettre = () => {
         <div class="mt-5 flex items-center justify-end gap-3">
           <button
             type="button"
-            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
+            class="rounded-lg border border-af-bordure px-4 py-2 text-sm font-medium text-af-corps transition-colors hover:bg-af-fond"
             @click="annuler"
           >
             Annuler
           </button>
           <button
             type="button"
-            class="rounded-lg bg-custom-green px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-custom-green/90 disabled:opacity-50"
+            class="rounded-lg bg-af-vert px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-af-vert/90 disabled:opacity-50"
             :disabled="!formulaire.nom.trim() || chargement"
             @click="soumettre"
           >

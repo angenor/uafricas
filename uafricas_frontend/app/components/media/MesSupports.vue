@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Liste des supports (chaînes et stations) que je détiens, et leur gestion —
+ * Liste des supports (chaînes et stations) que je détiens, et leur gestion, 
  * grille de programmation, demandes reçues, équipe (US5, US6).
  *
  * Extrait de la page `/mon-compte/mes-supports` pour être également monté en
@@ -43,7 +43,7 @@ const gestionOuverte = ref<string | null>(null)
  * de la grille.
  *
  * Chargés à l'ouverture du panneau et mémorisés : sans eux le sélecteur reste
- * vide et aucun créneau n'est créable — la grille n'a alors rien à programmer.
+ * vide et aucun créneau n'est créable, la grille n'a alors rien à programmer.
  * Ce sont **tous** les programmes du détenteur, brouillons compris : ne montrer
  * que les publiés lui cacherait ce qu'il vient de créer.
  * Clé : l'identifiant du support.
@@ -102,7 +102,7 @@ const charger = async () => {
  * C'est ce que visent les passerelles venues des vitrines publiques (« Gérer ma
  * chaîne » dans une section de `/medias/tele`) : sans cela le détenteur
  * atterrit sur une liste refermée et doit y retrouver le support qu'il vient de
- * quitter. Un identifiant inconnu — support retiré entre-temps, lien recopié —
+ * quitter. Un identifiant inconnu : support retiré entre-temps, lien recopié, 
  * est simplement ignoré.
  */
 const route = useRoute()
@@ -199,7 +199,7 @@ const alertesDuSupport = (supportId: string) =>
   alertes.value.filter(a => a.support.id === supportId)
 
 const dateCourte = (iso: string | null) =>
-  iso ? new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(new Date(iso)) : '—' 
+  iso ? new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(new Date(iso)) : '-' 
 
 const LIBELLES_TYPE_SUPPORT: Record<DetenteurAPI['type_support'], string> = {
   chaine_tv: 'Chaîne de télévision',
@@ -224,32 +224,32 @@ const dateFormatee = (iso: string) =>
 
 <template>
   <div>
-    <div v-if="erreur" class="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-900">
+    <div v-if="erreur" class="mb-6 rounded-lg bg-af-live/5 border border-af-live/30 px-4 py-3 text-sm text-af-live">
       {{ erreur }}
     </div>
 
     <div v-if="chargement" class="flex justify-center py-16">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-af-chocolat"></div>
     </div>
 
     <div v-else-if="supports.length === 0" class="text-center py-16">
-      <font-awesome-icon :icon="['fas', 'tv']" class="w-12 h-12 text-gray-300 mb-4" />
-      <p class="text-gray-600 mb-1">Vous ne détenez aucun support pour l’instant.</p>
-      <p class="text-sm text-gray-400 max-w-md mx-auto">
+      <font-awesome-icon :icon="['fas', 'tv']" class="w-12 h-12 text-af-corps mb-4" />
+      <p class="text-af-atone-2 mb-1">Vous ne détenez aucun support pour l’instant.</p>
+      <p class="text-sm text-af-corps max-w-md mx-auto">
         On devient détenteur en faisant valider une proposition de chaîne ou de
-        station — vous en êtes alors le propriétaire — ou en acceptant
+        station : vous en êtes alors le propriétaire, ou en acceptant
         l’invitation d’un propriétaire.
       </p>
       <div class="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm">
         <NuxtLink
           to="/mon-compte/propositions-medias"
-          class="rounded-full bg-custom-chocolat px-5 py-2 font-medium text-white transition-colors hover:bg-custom-chocolat/90"
+          class="rounded-full bg-af-chocolat px-5 py-2 font-medium text-af-encre transition-colors hover:bg-af-chocolat/90"
         >
           Mes propositions de médias
         </NuxtLink>
         <NuxtLink
           to="/mon-compte/invitations-medias"
-          class="rounded-full border border-gray-300 bg-white px-5 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          class="rounded-full border border-af-bordure bg-white px-5 py-2 font-medium text-af-corps transition-colors hover:bg-af-fond"
         >
           Mes invitations
         </NuxtLink>
@@ -259,7 +259,7 @@ const dateFormatee = (iso: string) =>
     <!-- Alertes de cadence, tous supports confondus : une échéance dépassée
          doit se voir avant d'ouvrir un panneau (FR-024). -->
     <div v-if="!chargement && alertes.length" class="mb-6 space-y-2">
-      <h2 class="font-oswald text-lg font-bold text-gray-900">
+      <h2 class="font-oswald text-lg font-bold text-af-encre">
         Échéances de vos programmes
       </h2>
       <ul class="space-y-2">
@@ -268,8 +268,8 @@ const dateFormatee = (iso: string) =>
           :key="alerte.emission.id"
           class="rounded-lg border px-4 py-3 text-sm"
           :class="alerte.niveau === 'depassee'
-            ? 'border-red-200 bg-red-50 text-red-900'
-            : 'border-amber-200 bg-amber-50 text-amber-900'"
+            ? 'border-af-live/30 bg-af-live/5 text-af-live'
+            : 'border-af-chocolat/20 bg-af-chocolat/5 text-af-chocolat'"
         >
           <div class="flex flex-wrap items-baseline justify-between gap-2">
             <span class="font-semibold">{{ alerte.emission.titre }}</span>
@@ -301,37 +301,37 @@ const dateFormatee = (iso: string) =>
       <li
         v-for="detenteur in supports"
         :key="detenteur.id"
-        class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+        class="bg-white rounded-xl shadow-sm border border-af-bordure overflow-hidden"
       >
         <div class="p-5">
           <div class="flex items-start gap-4">
             <!-- Visuel du support, ou repli iconographique selon le type. -->
-            <div class="shrink-0 h-16 w-16 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
+            <div class="shrink-0 h-16 w-16 rounded-lg bg-af-fond overflow-hidden flex items-center justify-center">
               <img
                 v-if="detenteur.support_image"
                 :src="detenteur.support_image"
                 :alt="detenteur.support_nom || 'Support'"
                 class="h-full w-full object-cover"
               >
-              <font-awesome-icon v-else :icon="iconeType(detenteur.type_support)" class="w-6 h-6 text-gray-400" />
+              <font-awesome-icon v-else :icon="iconeType(detenteur.type_support)" class="w-6 h-6 text-af-corps" />
             </div>
 
             <div class="min-w-0 flex-1">
-              <h2 class="font-semibold text-gray-900 truncate">
+              <h2 class="font-semibold text-af-encre truncate">
                 {{ detenteur.support_nom || 'Support sans nom' }}
               </h2>
               <div class="mt-1.5 flex flex-wrap items-center gap-2">
-                <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                <span class="rounded-full bg-af-fond px-3 py-1 text-xs font-medium text-af-corps">
                   {{ LIBELLES_TYPE_SUPPORT[detenteur.type_support] }}
                 </span>
                 <span
-                  class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800"
+                  class="rounded-full bg-af-chocolat/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-af-chocolat"
                   :title="DESCRIPTIONS_ROLE_DETENTEUR[detenteur.role]"
                 >
                   {{ LIBELLES_ROLE_DETENTEUR[detenteur.role] }}
                 </span>
               </div>
-              <p class="mt-2 text-xs text-gray-400">
+              <p class="mt-2 text-xs text-af-corps">
                 Détenteur depuis le {{ dateFormatee(detenteur.designe_at) }}
               </p>
             </div>
@@ -341,7 +341,7 @@ const dateFormatee = (iso: string) =>
             <NuxtLink
               v-if="lienPublic(detenteur)"
               :to="lienPublic(detenteur)!"
-              class="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              class="inline-flex items-center gap-2 rounded-full border border-af-bordure bg-white px-4 py-1.5 text-sm font-medium text-af-corps transition-colors hover:bg-af-fond"
             >
               <font-awesome-icon :icon="['fas', 'eye']" class="w-3.5 h-3.5" />
               Voir la page publique
@@ -351,8 +351,8 @@ const dateFormatee = (iso: string) =>
               type="button"
               class="inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
               :class="gestionOuverte === detenteur.id
-                ? 'bg-gray-800 text-white'
-                : 'bg-custom-chocolat text-white hover:bg-custom-chocolat/90'"
+                ? 'bg-gray-800 text-af-encre'
+                : 'bg-af-chocolat text-white hover:bg-af-chocolat/90'"
               :aria-expanded="gestionOuverte === detenteur.id"
               @click="basculerGestion(detenteur)"
             >
@@ -364,14 +364,14 @@ const dateFormatee = (iso: string) =>
 
         <!-- Panneau de gestion déplié en place : pas de navigation, on reste
              dans la liste de ses supports. -->
-        <div v-if="gestionOuverte === detenteur.id" class="border-t border-gray-100 bg-gray-50/60 p-5 space-y-8">
+        <div v-if="gestionOuverte === detenteur.id" class="border-t border-af-bordure bg-af-fond/60 p-5 space-y-8">
           <!-- Programmes et épisodes : le cœur de ce que gère un détenteur -->
           <section>
             <div class="flex flex-wrap items-baseline justify-between gap-3 mb-3">
-              <h3 class="font-oswald text-lg font-bold text-gray-900">Programmes</h3>
+              <h3 class="font-oswald text-lg font-bold text-af-encre">Programmes</h3>
               <button
                 type="button"
-                class="rounded-full bg-custom-chocolat px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-custom-chocolat/90"
+                class="rounded-full bg-af-chocolat px-4 py-1.5 text-sm font-medium text-af-encre transition-colors hover:bg-af-chocolat/90"
                 @click="ouvrirCreationProgramme(detenteur)"
               >
                 + Nouveau programme
@@ -380,7 +380,7 @@ const dateFormatee = (iso: string) =>
 
             <p
               v-if="(emissionsParSupport[detenteur.support_id] ?? []).length === 0"
-              class="text-sm text-gray-500"
+              class="text-sm text-af-atone"
             >
               Aucun programme pour l'instant. Un programme se déclare sans fichier :
               ses épisodes viendront ensuite.
@@ -390,32 +390,32 @@ const dateFormatee = (iso: string) =>
               <li
                 v-for="emission in emissionsParSupport[detenteur.support_id]"
                 :key="emission.id"
-                class="rounded-lg border border-gray-200 bg-white"
+                class="rounded-lg border border-af-bordure bg-white"
               >
                 <div class="flex flex-wrap items-center justify-between gap-3 p-4">
                   <div class="min-w-0">
-                    <p class="font-semibold text-gray-900 truncate">{{ emission.titre }}</p>
-                    <p class="text-xs text-gray-500 mt-0.5">
+                    <p class="font-semibold text-af-encre truncate">{{ emission.titre }}</p>
+                    <p class="text-xs text-af-atone mt-0.5">
                       {{ emission.nombre_episodes }} épisode(s) publié(s)
                       · {{ LIBELLES_CADENCE[emission.cadence] || emission.cadence }}
-                      <span v-if="emission.episodes_en_attente" class="text-amber-700">
+                      <span v-if="emission.episodes_en_attente" class="text-af-chocolat">
                         · {{ emission.episodes_en_attente }} en attente
                       </span>
-                      <span v-if="emission.episodes_rejetes" class="text-red-700">
+                      <span v-if="emission.episodes_rejetes" class="text-af-live">
                         · {{ emission.episodes_rejetes }} refusé(s)
                       </span>
                     </p>
                   </div>
                   <button
                     type="button"
-                    class="rounded-full border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                    class="rounded-full border border-af-bordure px-4 py-1.5 text-sm font-medium text-af-corps transition-colors hover:bg-af-fond"
                     @click="basculerEpisodes(emission.id)"
                   >
                     {{ episodesOuverts === emission.id ? 'Masquer les épisodes' : 'Gérer les épisodes' }}
                   </button>
                 </div>
 
-                <div v-if="episodesOuverts === emission.id" class="border-t border-gray-100 p-4 space-y-6">
+                <div v-if="episodesOuverts === emission.id" class="border-t border-af-bordure p-4 space-y-6">
                   <MediaGestionEpisodes
                     :emission-id="emission.id"
                     :emission-titre="emission.titre"
@@ -427,7 +427,7 @@ const dateFormatee = (iso: string) =>
                   <!-- L'équipe DU PROGRAMME (010, FR-011) : distincte de celle
                        de son support, elles coexistent sans recopie. Le
                        discriminant se déduit de la famille du support. -->
-                  <div class="border-t border-gray-100 pt-4">
+                  <div class="border-t border-af-bordure pt-4">
                     <MediaGestionEquipe
                       :type-porteur="porteurProgramme(detenteur.type_support)"
                       :porteur-id="emission.id"
@@ -441,7 +441,7 @@ const dateFormatee = (iso: string) =>
           </section>
 
           <section>
-            <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">Grille de programmation</h3>
+            <h3 class="font-oswald text-lg font-bold text-af-encre mb-3">Grille de programmation</h3>
             <!-- Les programmes du support, chargés à l'ouverture du panneau :
                  c'est la seule source du sélecteur, sans laquelle aucun créneau
                  n'est créable. Le créneau vise un PROGRAMME ; l'épisode diffusé
@@ -454,7 +454,7 @@ const dateFormatee = (iso: string) =>
             />
             <p
               v-if="emissionsProgrammables(detenteur.support_id).length === 0"
-              class="mt-2 text-sm text-gray-500"
+              class="mt-2 text-sm text-af-atone"
             >
               Ce support n'a encore aucun programme : créez-en un avant de bâtir sa grille.
             </p>
@@ -462,10 +462,10 @@ const dateFormatee = (iso: string) =>
 
           <!-- Thématiques et couverture : ce qui rend le support trouvable -->
           <section v-if="ficheParSupport[detenteur.support_id]">
-            <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">
+            <h3 class="font-oswald text-lg font-bold text-af-encre mb-3">
               Thématiques &amp; couverture
             </h3>
-            <div class="space-y-5 rounded-lg border border-gray-200 bg-white p-4">
+            <div class="space-y-5 rounded-lg border border-af-bordure bg-white p-4">
               <MediaSelecteurThematiques
                 :model-value="ficheParSupport[detenteur.support_id]!.thematiques"
                 :options="thematiquesRef"
@@ -481,8 +481,8 @@ const dateFormatee = (iso: string) =>
                 @update:territoires="ficheParSupport[detenteur.support_id]!.territoires = $event"
               />
 
-              <p v-if="erreurFiche" class="text-sm text-red-700">{{ erreurFiche }}</p>
-              <p v-if="ficheEnregistree === detenteur.support_id" class="text-sm text-green-700">
+              <p v-if="erreurFiche" class="text-sm text-af-live">{{ erreurFiche }}</p>
+              <p v-if="ficheEnregistree === detenteur.support_id" class="text-sm text-af-vert">
                 Fiche enregistrée.
               </p>
 
@@ -490,7 +490,7 @@ const dateFormatee = (iso: string) =>
                 <button
                   type="button"
                   :disabled="enregistrementFiche === detenteur.support_id"
-                  class="rounded-full bg-custom-chocolat px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-custom-chocolat/90 disabled:opacity-50"
+                  class="rounded-full bg-af-chocolat px-5 py-2 text-sm font-medium text-af-encre transition-colors hover:bg-af-chocolat/90 disabled:opacity-50"
                   @click="enregistrerFiche(detenteur)"
                 >
                   Enregistrer la fiche
@@ -500,10 +500,10 @@ const dateFormatee = (iso: string) =>
           </section>
 
           <section>
-            <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">
+            <h3 class="font-oswald text-lg font-bold text-af-encre mb-3">
               Demandes reçues
             </h3>
-            <p class="mb-3 text-sm text-gray-600">
+            <p class="mb-3 text-sm text-af-atone-2">
               Les idées de contenu déposées par les visiteurs et les demandes
               d'animation adressées à ce support.
             </p>
@@ -526,13 +526,13 @@ const dateFormatee = (iso: string) =>
             />
           </section>
 
-          <!-- Anciennement « Équipe du support » — renommé par la feature 010 :
+          <!-- Anciennement « Équipe du support » : renommé par la feature 010 :
                ce panneau ne décrit personne, il ouvre des accès. Deux blocs
                « équipe » sans rapport dans la même page étaient une invitation
                à se tromper de formulaire. -->
           <section>
-            <h3 class="font-oswald text-lg font-bold text-gray-900 mb-3">Gestion des accès</h3>
-            <p class="mb-3 text-sm text-gray-600">
+            <h3 class="font-oswald text-lg font-bold text-af-encre mb-3">Gestion des accès</h3>
+            <p class="mb-3 text-sm text-af-atone-2">
               Qui peut administrer ce support : co-détenteurs et programmateurs.
               Sans effet sur l'équipe éditoriale publiée ci-dessus.
             </p>
@@ -553,60 +553,60 @@ const dateFormatee = (iso: string) =>
       @click.self="creationPour = null"
     >
       <div class="w-full max-w-md rounded-xl bg-white p-6">
-        <h3 class="font-oswald text-xl font-bold text-gray-900 mb-1">Nouveau programme</h3>
-        <p class="text-sm text-gray-500 mb-4">
+        <h3 class="font-oswald text-xl font-bold text-af-encre mb-1">Nouveau programme</h3>
+        <p class="text-sm text-af-atone mb-4">
           Sur {{ creationPour.support_nom }}. Le programme est créé en brouillon ;
           il devient public dès qu'un de ses épisodes est validé.
         </p>
 
-        <p v-if="creationErreur" class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-900">
+        <p v-if="creationErreur" class="mb-4 rounded-lg bg-af-live/5 border border-af-live/30 px-4 py-2 text-sm text-af-live">
           {{ creationErreur }}
         </p>
 
         <div class="space-y-3">
           <div>
-            <label class="block text-sm text-gray-700 mb-1">Titre *</label>
+            <label class="block text-sm text-af-corps mb-1">Titre *</label>
             <input
               v-model="nouveauProgramme.titre"
               type="text"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
+              class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm outline-none focus:border-af-encre"
               placeholder="Ex : Le Grand Débat"
             >
           </div>
           <div>
-            <label class="block text-sm text-gray-700 mb-1">Périodicité</label>
+            <label class="block text-sm text-af-corps mb-1">Périodicité</label>
             <!-- Les quatre valeurs et leurs libellés viennent de la table
                  partagée : le public, l'espace membre et le back-office lisent
                  le même mot pour la même valeur (010, FR-041). -->
             <select
               v-model="nouveauProgramme.cadence"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
+              class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm outline-none focus:border-af-encre"
             >
               <option v-for="c in CADENCES_ORDONNEES" :key="c" :value="c">
                 {{ LIBELLES_CADENCE[c] }}
               </option>
             </select>
-            <p class="text-xs text-gray-500 mt-1">
+            <p class="text-xs text-af-atone mt-1">
               Elle sert à vous alerter d'une échéance sans épisode, pas à décider de la diffusion.
             </p>
           </div>
           <div>
-            <label class="block text-sm text-gray-700 mb-1">Description</label>
+            <label class="block text-sm text-af-corps mb-1">Description</label>
             <textarea
               v-model="nouveauProgramme.description"
               rows="3"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
+              class="w-full rounded-lg border border-af-bordure px-3 py-2 text-sm outline-none focus:border-af-encre"
             />
           </div>
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
-          <button type="button" class="text-sm text-gray-500 hover:text-gray-900" @click="creationPour = null">
+          <button type="button" class="text-sm text-af-atone hover:text-af-encre" @click="creationPour = null">
             Annuler
           </button>
           <button
             type="button"
-            class="rounded-full bg-custom-chocolat px-5 py-2 text-sm font-medium text-white hover:bg-custom-chocolat/90"
+            class="rounded-full bg-af-chocolat px-5 py-2 text-sm font-medium text-af-encre hover:bg-af-chocolat/90"
             @click="creerProgramme"
           >
             Créer le programme

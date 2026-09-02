@@ -603,7 +603,7 @@ export const useEvenements = () => {
     'event-stream:signal', () => null,
   )
 
-  /** GET /api/evenements/{id}/direct — état dérivé (lecture, JWT recommandé). */
+  /** GET /api/evenements/{id}/direct : état dérivé (lecture, JWT recommandé). */
   const obtenirEtatDirect = async (id: string): Promise<EtatDirect | null> => {
     try {
       const r = await $fetch<ApiResponse<EtatDirect>>(
@@ -618,7 +618,7 @@ export const useEvenements = () => {
     }
   }
 
-  /** POST …/rejoindre — ouvre (organisateur) ou rejoint l'active. Renvoie le token. */
+  /** POST …/rejoindre : ouvre (organisateur) ou rejoint l'active. Renvoie le token. */
   const rejoindreDirect = async (id: string): Promise<TokenDirect> => {
     try {
       const r = await $fetch<ApiResponse<TokenDirect>>(
@@ -633,10 +633,10 @@ export const useEvenements = () => {
     }
   }
 
-  /** Alias d'ouverture (côté organisateur) — la logique open-or-join est serveur. */
+  /** Alias d'ouverture (côté organisateur), la logique open-or-join est serveur. */
   const ouvrirDirect = (id: string): Promise<TokenDirect> => rejoindreDirect(id)
 
-  /** POST …/quitter — marque l'appelant sorti (idempotent). */
+  /** POST …/quitter : marque l'appelant sorti (idempotent). */
   const quitterDirect = async (id: string): Promise<boolean> => {
     try {
       const r = await $fetch<ApiResponse<unknown>>(
@@ -651,7 +651,7 @@ export const useEvenements = () => {
     }
   }
 
-  /** POST …/cloturer — organisateur uniquement. */
+  /** POST …/cloturer : organisateur uniquement. */
   const cloturerDirect = async (id: string): Promise<boolean> => {
     try {
       const r = await $fetch<ApiResponse<unknown>>(

@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Médias — programmes conteneurs, épisodes, thématiques multiples et couverture panafricaine
+# Specification Quality Checklist: Médias, programmes conteneurs, épisodes, thématiques multiples et couverture panafricaine
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-08-08
@@ -31,10 +31,10 @@
 
 ## Notes
 
-- **Itération 1** : tous les critères passés sauf « no [NEEDS CLARIFICATION] markers » — 3 décisions
+- **Itération 1** : tous les critères passés sauf « no [NEEDS CLARIFICATION] markers », 3 décisions
   ouvertes (sélection de l'épisode d'une occurrence, circuit de validation d'un épisode, niveau des
   interactions).
-- **Itération 2** (2026-08-08) : les 3 décisions ont été tranchées par le commanditaire — rotation,
+- **Itération 2** (2026-08-08) : les 3 décisions ont été tranchées par le commanditaire, rotation,
   modération systématique, interactions aux deux niveaux. Voir la section `## Clarifications` de
   `spec.md`. Tous les critères sont désormais satisfaits.
 - Propagation effectuée à l'itération 2 : ordre stable des épisodes et règle de rotation (FR-005 à

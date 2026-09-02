@@ -1,389 +1,421 @@
 <template>
-  <form class="space-y-6" @submit.prevent="soumettre">
-    <!-- Type d'opération -->
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">Type d'annonce *</label>
-      <div class="grid grid-cols-3 gap-3">
-        <button
-          v-for="t in typesEchange"
-          :key="t.value"
-          type="button"
-          class="py-2.5 px-3 rounded-xl border text-sm font-medium transition-all"
-          :class="form.typeEchange === t.value
-            ? 'border-custom-chocolat bg-custom-chocolat/10 text-custom-chocolat'
-            : 'border-gray-200 text-gray-600 hover:border-gray-300'"
-          @click="form.typeEchange = t.value"
-        >
-          {{ t.label }}
-        </button>
-      </div>
-    </div>
+  <form class="flex flex-col gap-6" @submit.prevent="soumettre">
+    <AfricansEtapes :etapes="ETAPES" :courante="etapeCourante" @aller="etapeCourante = $event" />
 
-    <!-- Titre -->
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2" for="titre">Titre *</label>
-      <input
-        id="titre"
-        v-model="form.titre"
-        type="text"
-        maxlength="350"
-        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-        placeholder="Ex. : Vélo tout-terrain en bon état"
-      />
-    </div>
-
-    <!-- Description -->
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2" for="description">Description *</label>
-      <textarea
-        id="description"
-        v-model="form.description"
-        rows="4"
-        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-        placeholder="Décrivez l'article, son état, les détails utiles…"
-      ></textarea>
-    </div>
-
-    <!-- Catégorie + Condition -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- `v-show` et non `v-if` : l'étape des photos porte un champ de fichier,
+         qui perdrait l'affichage du fichier choisi à chaque démontage. -->
+    <div v-show="etapeCourante === 0" class="flex flex-col gap-6">
+      <!-- Type d'opération -->
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="categorie">Catégorie *</label>
-        <select
-          id="categorie"
-          v-model="form.categorieId"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green bg-white"
-        >
-          <option value="" disabled>Choisir une catégorie</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.nom }}</option>
-        </select>
+        <label class="block text-sm font-semibold text-af-corps mb-2">Type d'annonce *</label>
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            v-for="t in typesEchange"
+            :key="t.value"
+            type="button"
+            class="py-2.5 px-3 rounded-lg border text-sm font-medium transition-all"
+            :class="form.typeEchange === t.value
+              ? 'border-af-chocolat bg-af-chocolat/10 text-af-chocolat'
+              : 'border-af-bordure text-af-corps hover:border-af-chocolat'"
+            @click="form.typeEchange = t.value"
+          >
+            {{ t.label }}
+          </button>
+        </div>
       </div>
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="condition">État de l'article</label>
-        <select
-          id="condition"
-          v-model="form.conditionArticle"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green bg-white"
-        >
-          <option value="non_applicable">Non applicable</option>
-          <option value="neuf">Neuf</option>
-          <option value="occasion">Occasion</option>
-          <option value="reconditionne">Reconditionné</option>
-        </select>
-      </div>
-    </div>
 
-    <!-- Secteur d'activité (facultatif) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Titre -->
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="secteur">
-          Secteur d'activité <span class="text-gray-400 font-normal">(facultatif)</span>
-        </label>
-        <select
-          id="secteur"
-          v-model="form.secteurId"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green bg-white"
-        >
-          <option value="">Aucun secteur</option>
-          <option v-for="s in secteurs" :key="s.id" :value="s.id">{{ s.nom }}</option>
-          <option value="autre">Autre (préciser)…</option>
-        </select>
-      </div>
-      <div v-if="form.secteurId === 'autre'">
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="secteur-autre">Préciser le secteur</label>
+        <label class="block text-sm font-semibold text-af-corps mb-2" for="titre">Titre *</label>
         <input
-          id="secteur-autre"
-          v-model="form.secteurAutre"
+          id="titre"
+          v-model="form.titre"
           type="text"
-          maxlength="200"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-          placeholder="Ex. : Mines, Tourisme…"
+          maxlength="350"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
+          placeholder="Ex. : Vélo tout-terrain en bon état"
         />
       </div>
+
+      <!-- Description -->
+      <div>
+        <label class="block text-sm font-semibold text-af-corps mb-2" for="description">Description *</label>
+        <textarea
+          id="description"
+          v-model="form.description"
+          rows="4"
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
+          placeholder="Décrivez l'article, son état, les détails utiles…"
+        ></textarea>
+      </div>
+
+      <!-- Catégorie + Condition -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-af-corps mb-2" for="categorie">Catégorie *</label>
+          <select
+            id="categorie"
+            v-model="form.categorieId"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert bg-white"
+          >
+            <option value="" disabled>Choisir une catégorie</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.nom }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-af-corps mb-2" for="condition">État de l'article</label>
+          <select
+            id="condition"
+            v-model="form.conditionArticle"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert bg-white"
+          >
+            <option value="non_applicable">Non applicable</option>
+            <option value="neuf">Neuf</option>
+            <option value="occasion">Occasion</option>
+            <option value="reconditionne">Reconditionné</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Secteur d'activité (facultatif) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-af-corps mb-2" for="secteur">
+            Secteur d'activité <span class="text-af-atone-2 font-normal">(facultatif)</span>
+          </label>
+          <select
+            id="secteur"
+            v-model="form.secteurId"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert bg-white"
+          >
+            <option value="">Aucun secteur</option>
+            <option v-for="s in secteurs" :key="s.id" :value="s.id">{{ s.nom }}</option>
+            <option value="autre">Autre (préciser)…</option>
+          </select>
+        </div>
+        <div v-if="form.secteurId === 'autre'">
+          <label class="block text-sm font-semibold text-af-corps mb-2" for="secteur-autre">Préciser le secteur</label>
+          <input
+            id="secteur-autre"
+            v-model="form.secteurAutre"
+            type="text"
+            maxlength="200"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
+            placeholder="Ex. : Mines, Tourisme…"
+          />
+        </div>
+      </div>
     </div>
 
-    <!-- Prix (vente uniquement) -->
-    <div v-if="form.typeEchange === 'Vente'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="md:col-span-1">
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="prix">Prix *</label>
+    <div v-show="etapeCourante === 1" class="flex flex-col gap-6">
+      <!-- Prix (vente uniquement) -->
+      <div v-if="form.typeEchange === 'Vente'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="md:col-span-1">
+          <label class="block text-sm font-semibold text-af-corps mb-2" for="prix">Prix *</label>
+          <input
+            id="prix"
+            v-model.number="form.prix"
+            type="number"
+            min="0"
+            step="any"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
+            placeholder="0"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-af-corps mb-2" for="devise">Devise</label>
+          <select
+            id="devise"
+            v-model="form.devise"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert bg-white"
+          >
+            <option v-for="d in devises" :key="d.value" :value="d.value">{{ d.label }} ({{ d.symbol }})</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <label class="inline-flex items-center gap-2 text-sm text-af-corps pb-2.5 cursor-pointer">
+            <input v-model="form.prixNegociable" type="checkbox" class="rounded border-af-bordure text-af-vert focus:ring-af-vert" />
+            Prix négociable
+          </label>
+        </div>
+      </div>
+
+      <!-- Localisation + quantité -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-af-corps mb-2" for="ville">Ville</label>
+          <input
+            id="ville"
+            v-model="form.ville"
+            type="text"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
+            placeholder="Ex. : Dakar"
+          />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-semibold text-af-corps mb-2" for="adresse">Adresse (facultative)</label>
+          <input
+            id="adresse"
+            v-model="form.adresse"
+            type="text"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
+            placeholder="Quartier, point de repère…"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-af-corps mb-2" for="quantite">Quantité disponible</label>
         <input
-          id="prix"
-          v-model.number="form.prix"
+          id="quantite"
+          v-model.number="form.quantite"
           type="number"
-          min="0"
-          step="any"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-          placeholder="0"
+          min="1"
+          class="w-full md:w-40 px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
         />
       </div>
+
+      <!-- Territoires ciblés -->
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="devise">Devise</label>
-        <select
-          id="devise"
-          v-model="form.devise"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green bg-white"
-        >
-          <option v-for="d in devises" :key="d.value" :value="d.value">{{ d.label }} ({{ d.symbol }})</option>
-        </select>
-      </div>
-      <div class="flex items-end">
-        <label class="inline-flex items-center gap-2 text-sm text-gray-700 pb-2.5 cursor-pointer">
-          <input v-model="form.prixNegociable" type="checkbox" class="rounded border-gray-300 text-custom-green focus:ring-custom-green" />
-          Prix négociable
-        </label>
-      </div>
-    </div>
-
-    <!-- Localisation + quantité -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="ville">Ville</label>
-        <input
-          id="ville"
-          v-model="form.ville"
-          type="text"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-          placeholder="Ex. : Dakar"
-        />
-      </div>
-      <div class="md:col-span-2">
-        <label class="block text-sm font-semibold text-gray-700 mb-2" for="adresse">Adresse (facultative)</label>
-        <input
-          id="adresse"
-          v-model="form.adresse"
-          type="text"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-          placeholder="Quartier, point de repère…"
-        />
-      </div>
-    </div>
-
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2" for="quantite">Quantité disponible</label>
-      <input
-        id="quantite"
-        v-model.number="form.quantite"
-        type="number"
-        min="1"
-        class="w-full md:w-40 px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-      />
-    </div>
-
-    <!-- Type d'annonceur -->
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">Vous publiez en tant que</label>
-      <div class="grid grid-cols-2 gap-3">
-        <label
-          class="flex items-start gap-2 p-3 rounded-xl border cursor-pointer transition-all"
-          :class="form.typeAnnonceur === 'particulier'
-            ? 'border-custom-green bg-custom-green/5'
-            : 'border-gray-200 hover:bg-gray-50'"
-        >
-          <input type="radio" value="particulier" v-model="form.typeAnnonceur" class="mt-0.5 accent-custom-green" />
-          <span>
-            <span class="block text-sm font-medium text-gray-800">En mon nom propre</span>
-            <span class="block text-xs text-gray-500">Contact révélé sur demande</span>
-          </span>
-        </label>
-        <label
-          class="flex items-start gap-2 p-3 rounded-xl border cursor-pointer transition-all"
-          :class="form.typeAnnonceur === 'entreprise'
-            ? 'border-custom-green bg-custom-green/5'
-            : 'border-gray-200 hover:bg-gray-50'"
-        >
-          <input type="radio" value="entreprise" v-model="form.typeAnnonceur" class="mt-0.5 accent-custom-green" />
-          <span>
-            <span class="block text-sm font-medium text-gray-800">Au nom d'une entreprise</span>
-            <span class="block text-xs text-gray-500">Coordonnées affichées publiquement</span>
-          </span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Coordonnées de l'entreprise (affichées publiquement) -->
-    <div v-if="form.typeAnnonceur === 'entreprise'" class="space-y-3 p-4 rounded-xl border border-gray-200 bg-gray-50">
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">Nom de l'entreprise <span class="text-red-500">*</span></label>
-        <input
-          v-model="form.nomEntreprise"
-          type="text"
-          maxlength="200"
-          placeholder="Ex : Sahel Distribution SARL"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-        />
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Téléphone</label>
-          <input
-            v-model="form.contactTelephone"
-            type="tel"
-            maxlength="30"
-            placeholder="+221 ..."
-            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">E-mail</label>
-          <input
-            v-model="form.contactEmail"
-            type="email"
-            maxlength="255"
-            placeholder="contact@entreprise.com"
-            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-          />
+        <label class="block text-sm font-semibold text-af-corps mb-2">Territoires ciblés</label>
+        <div class="space-y-3 max-h-72 overflow-y-auto p-3 border border-af-bordure rounded-lg">
+          <!-- Bloc Afrique -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-semibold uppercase tracking-wide text-af-vert">Afrique</p>
+              <button
+                type="button"
+                class="text-xs font-medium text-af-vert hover:underline"
+                @click="basculerTousAfrique"
+              >
+                {{ toutAfriqueSelectionne ? 'Tout désélectionner' : "Toute l'Afrique" }}
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <label
+                v-for="terr in territoiresAfrique"
+                :key="terr.id"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
+                :class="form.paysIds.includes(terr.id)
+                  ? 'bg-af-vert text-white'
+                  : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
+              >
+                <input type="checkbox" class="hidden" :value="terr.id" v-model="form.paysIds" />
+                {{ terr.nom }}
+              </label>
+            </div>
+          </div>
+          <!-- Bloc hors Afrique -->
+          <div class="pt-2 border-t border-af-bordure">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-semibold uppercase tracking-wide text-af-atone">Hors Afrique</p>
+              <button
+                type="button"
+                class="text-xs font-medium text-af-vert hover:underline"
+                @click="basculerTousHorsAfrique"
+              >
+                {{ toutHorsAfriqueSelectionne ? 'Tout désélectionner' : 'Tout Hors Afrique' }}
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <label
+                v-for="terr in territoiresHorsAfrique"
+                :key="terr.id"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
+                :class="form.paysIds.includes(terr.id)
+                  ? 'bg-af-vert text-white'
+                  : 'bg-af-fond text-af-corps hover:bg-af-bordure'"
+              >
+                <input type="checkbox" class="hidden" :value="terr.id" v-model="form.paysIds" />
+                {{ terr.nom }}
+              </label>
+            </div>
+          </div>
         </div>
       </div>
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">Adresse</label>
-        <input
-          v-model="form.contactAdresse"
-          type="text"
-          maxlength="300"
-          placeholder="Adresse de l'entreprise"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-        />
-      </div>
     </div>
 
-    <!-- Site web ou page réseau social (facultatif) -->
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">Site web ou page réseau social <span class="text-gray-400 font-normal">(facultatif)</span></label>
-      <input
-        v-model="form.siteWebUrl"
-        type="url"
-        maxlength="500"
-        placeholder="https://..."
-        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-custom-green"
-      />
-    </div>
-
-    <!-- Territoires ciblés -->
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">Territoires ciblés</label>
-      <div class="space-y-3 max-h-72 overflow-y-auto p-3 border border-gray-200 rounded-xl">
-        <!-- Bloc Afrique -->
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <p class="text-xs font-semibold uppercase tracking-wide text-custom-green">Afrique</p>
+    <div v-show="etapeCourante === 2" class="flex flex-col gap-6">
+      <!-- Photos existantes (mode édition) -->
+      <div v-if="mode === 'edition' && photosExistantes.length > 0">
+        <label class="block text-sm font-semibold text-af-corps mb-2">Photos actuelles</label>
+        <div class="flex flex-wrap gap-3">
+          <div v-for="media in photosExistantes" :key="media.id" class="relative w-24 h-24 rounded-lg overflow-hidden border border-af-bordure">
+            <img :src="media.media_url" :alt="form.titre" class="w-full h-full object-cover" />
+            <span v-if="media.est_principale" class="absolute bottom-0 inset-x-0 bg-af-vert/90 text-white text-[10px] text-center py-0.5">Principale</span>
             <button
               type="button"
-              class="text-xs font-medium text-custom-green hover:underline"
-              @click="basculerTousAfrique"
+              class="absolute top-1 right-1 w-6 h-6 bg-af-live/90 text-white rounded-full flex items-center justify-center text-xs hover:bg-af-live"
+              @click="retirerPhotoExistante(media.id)"
             >
-              {{ toutAfriqueSelectionne ? 'Tout désélectionner' : "Toute l'Afrique" }}
+              <font-awesome-icon :icon="['fas', 'xmark']" />
             </button>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <label
-              v-for="terr in territoiresAfrique"
-              :key="terr.id"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
-              :class="form.paysIds.includes(terr.id)
-                ? 'bg-custom-green text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-            >
-              <input type="checkbox" class="hidden" :value="terr.id" v-model="form.paysIds" />
-              {{ terr.nom }}
-            </label>
-          </div>
         </div>
-        <!-- Bloc hors Afrique -->
-        <div class="pt-2 border-t border-gray-100">
-          <div class="flex items-center justify-between mb-2">
-            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Hors Afrique</p>
+      </div>
+
+      <!-- Ajout de photos -->
+      <div>
+        <label class="block text-sm font-semibold text-af-corps mb-2">
+          {{ mode === 'edition' ? 'Ajouter des photos' : 'Photos *' }}
+          <span class="font-normal text-af-atone-2">(JPEG/PNG/WebP, max 3 Mo, {{ MAX_PHOTOS }} au total)</span>
+        </label>
+        <input
+          ref="inputFichier"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          class="block w-full text-sm text-af-corps file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-af-chocolat/10 file:text-af-chocolat hover:file:bg-af-chocolat/20"
+          @change="onFichiersSelectionnes"
+        />
+        <div v-if="apercus.length > 0" class="flex flex-wrap gap-3 mt-3">
+          <div v-for="(ap, i) in apercus" :key="i" class="relative w-24 h-24 rounded-lg overflow-hidden border border-af-bordure">
+            <img :src="ap" alt="aperçu" class="w-full h-full object-cover" />
             <button
               type="button"
-              class="text-xs font-medium text-custom-green hover:underline"
-              @click="basculerTousHorsAfrique"
+              class="absolute top-1 right-1 w-6 h-6 bg-af-live/90 text-white rounded-full flex items-center justify-center text-xs hover:bg-af-live"
+              @click="retirerNouvellePhoto(i)"
             >
-              {{ toutHorsAfriqueSelectionne ? 'Tout désélectionner' : 'Tout Hors Afrique' }}
+              <font-awesome-icon :icon="['fas', 'xmark']" />
             </button>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <label
-              v-for="terr in territoiresHorsAfrique"
-              :key="terr.id"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
-              :class="form.paysIds.includes(terr.id)
-                ? 'bg-custom-green text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-            >
-              <input type="checkbox" class="hidden" :value="terr.id" v-model="form.paysIds" />
-              {{ terr.nom }}
-            </label>
+        </div>
+      </div>
+    </div>
+
+    <div v-show="etapeCourante === 3" class="flex flex-col gap-6">
+      <!-- Type d'annonceur -->
+      <div>
+        <label class="block text-sm font-semibold text-af-corps mb-2">Vous publiez en tant que</label>
+        <div class="grid grid-cols-2 gap-3">
+          <label
+            class="flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition-all"
+            :class="form.typeAnnonceur === 'particulier'
+              ? 'border-af-vert bg-af-vert/5'
+              : 'border-af-bordure hover:bg-af-fond'"
+          >
+            <input type="radio" value="particulier" v-model="form.typeAnnonceur" class="mt-0.5 accent-af-vert" />
+            <span>
+              <span class="block text-sm font-medium text-af-encre">En mon nom propre</span>
+              <span class="block text-xs text-af-atone">Contact révélé sur demande</span>
+            </span>
+          </label>
+          <label
+            class="flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition-all"
+            :class="form.typeAnnonceur === 'entreprise'
+              ? 'border-af-vert bg-af-vert/5'
+              : 'border-af-bordure hover:bg-af-fond'"
+          >
+            <input type="radio" value="entreprise" v-model="form.typeAnnonceur" class="mt-0.5 accent-af-vert" />
+            <span>
+              <span class="block text-sm font-medium text-af-encre">Au nom d'une entreprise</span>
+              <span class="block text-xs text-af-atone">Coordonnées affichées publiquement</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Coordonnées de l'entreprise (affichées publiquement) -->
+      <div v-if="form.typeAnnonceur === 'entreprise'" class="space-y-3 p-4 rounded-lg border border-af-bordure bg-af-fond">
+        <div>
+          <label class="block text-sm font-semibold text-af-corps mb-1">Nom de l'entreprise <span class="text-af-live">*</span></label>
+          <input
+            v-model="form.nomEntreprise"
+            type="text"
+            maxlength="200"
+            placeholder="Ex : Sahel Distribution SARL"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
+          />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-semibold text-af-corps mb-1">Téléphone</label>
+            <input
+              v-model="form.contactTelephone"
+              type="tel"
+              maxlength="30"
+              placeholder="+221 ..."
+              class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-af-corps mb-1">E-mail</label>
+            <input
+              v-model="form.contactEmail"
+              type="email"
+              maxlength="255"
+              placeholder="contact@entreprise.com"
+              class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
+            />
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Photos existantes (mode édition) -->
-    <div v-if="mode === 'edition' && photosExistantes.length > 0">
-      <label class="block text-sm font-semibold text-gray-700 mb-2">Photos actuelles</label>
-      <div class="flex flex-wrap gap-3">
-        <div v-for="media in photosExistantes" :key="media.id" class="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200">
-          <img :src="media.media_url" :alt="form.titre" class="w-full h-full object-cover" />
-          <span v-if="media.est_principale" class="absolute bottom-0 inset-x-0 bg-custom-green/90 text-white text-[10px] text-center py-0.5">Principale</span>
-          <button
-            type="button"
-            class="absolute top-1 right-1 w-6 h-6 bg-red-500/90 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
-            @click="retirerPhotoExistante(media.id)"
-          >
-            <font-awesome-icon :icon="['fas', 'xmark']" />
-          </button>
+        <div>
+          <label class="block text-sm font-semibold text-af-corps mb-1">Adresse</label>
+          <input
+            v-model="form.contactAdresse"
+            type="text"
+            maxlength="300"
+            placeholder="Adresse de l'entreprise"
+            class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
+          />
         </div>
       </div>
-    </div>
 
-    <!-- Ajout de photos -->
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">
-        {{ mode === 'edition' ? 'Ajouter des photos' : 'Photos *' }}
-        <span class="font-normal text-gray-400">(JPEG/PNG/WebP, max 3 Mo, {{ MAX_PHOTOS }} au total)</span>
-      </label>
-      <input
-        ref="inputFichier"
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        multiple
-        class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-custom-chocolat/10 file:text-custom-chocolat hover:file:bg-custom-chocolat/20"
-        @change="onFichiersSelectionnes"
-      />
-      <div v-if="apercus.length > 0" class="flex flex-wrap gap-3 mt-3">
-        <div v-for="(ap, i) in apercus" :key="i" class="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200">
-          <img :src="ap" alt="aperçu" class="w-full h-full object-cover" />
-          <button
-            type="button"
-            class="absolute top-1 right-1 w-6 h-6 bg-red-500/90 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
-            @click="retirerNouvellePhoto(i)"
-          >
-            <font-awesome-icon :icon="['fas', 'xmark']" />
-          </button>
-        </div>
+      <!-- Site web ou page réseau social (facultatif) -->
+      <div>
+        <label class="block text-sm font-semibold text-af-corps mb-2">Site web ou page réseau social <span class="text-af-atone-2 font-normal">(facultatif)</span></label>
+        <input
+          v-model="form.siteWebUrl"
+          type="url"
+          maxlength="500"
+          placeholder="https://..."
+          class="w-full px-4 py-2.5 border border-af-bordure rounded-lg focus:outline-hidden focus:ring-2 focus:ring-af-vert"
+        />
       </div>
     </div>
 
     <!-- Erreur -->
-    <p v-if="erreurForm" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+    <p v-if="erreurForm" class="rounded-lg border border-af-live/30 bg-af-live/5 px-4 py-3 text-[14px]/[1.4] text-af-live">
       {{ erreurForm }}
     </p>
 
     <!-- Actions -->
-    <div class="flex items-center justify-end gap-3 pt-2">
+    <div class="flex flex-wrap items-center gap-4 border-t border-af-bordure pt-5">
       <button
         type="button"
-        class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+        class="text-base font-bold text-af-corps transition hover:opacity-70"
         @click="$emit('cancel')"
       >
         Annuler
       </button>
-      <button
-        type="submit"
-        :disabled="enCours"
-        class="px-6 py-2.5 rounded-xl bg-linear-to-r from-custom-chocolat to-amber-700 text-white font-semibold hover:from-amber-700 hover:to-custom-chocolat transition-all disabled:opacity-60 flex items-center gap-2"
+
+      <AfricansBouton
+        v-if="etapeCourante > 0"
+        variante="secondaire"
+        icone="fa-solid fa-arrow-left"
+        class="ml-auto"
+        @click="etapeCourante -= 1"
       >
-        <span v-if="enCours" class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+        Précédent
+      </AfricansBouton>
+
+      <AfricansBouton
+        v-if="etapeCourante < ETAPES.length - 1"
+        icone="fa-solid fa-arrow-right"
+        :class="etapeCourante === 0 && 'ml-auto'"
+        @click="suivant"
+      >
+        Suivant
+      </AfricansBouton>
+      <AfricansBouton
+        v-else
+        type="submit"
+        :desactive="enCours"
+        :tourne="enCours"
+        :icone="enCours ? 'fa-solid fa-spinner' : 'fa-solid fa-paper-plane'"
+      >
         {{ mode === 'edition' ? 'Enregistrer' : 'Publier' }}
-      </button>
+      </AfricansBouton>
     </div>
   </form>
 </template>
@@ -532,36 +564,70 @@ const retirerPhotoExistante = async (mediaId: string) => {
   }
 }
 
-const valider = (): boolean => {
+const ETAPES = [
+  { titre: "L'annonce" },
+  { titre: 'Prix & lieu' },
+  { titre: 'Photos' },
+  { titre: 'Vous' },
+] as const
+const etapeCourante = ref(0)
+
+/**
+ * Ce qui manque à une étape, ou null. SOURCE UNIQUE de la validation :
+ * `valider()` la parcourt, et l'envoi ramène à l'étape fautive — un message
+ * rendu sur une étape masquée est un message perdu.
+ */
+const manqueEtape = (i: number): string | null => {
+  switch (i) {
+    case 0:
+      if (form.titre.trim().length < 3) return 'Le titre doit contenir au moins 3 caractères.'
+      if (form.description.trim().length < 10) return 'La description doit contenir au moins 10 caractères.'
+      if (!form.categorieId) return 'Veuillez choisir une catégorie.'
+      return null
+    case 1:
+      if (form.typeEchange === 'Vente' && (!form.prix || form.prix <= 0)) {
+        return 'Un prix supérieur à 0 est requis pour une vente.'
+      }
+      return null
+    case 2:
+      // En édition, les photos déjà en ligne suffisent.
+      if (props.mode === 'creation' && nouvellesPhotos.value.length === 0) {
+        return 'Au moins une photo est requise.'
+      }
+      return null
+    case 3:
+      if (form.typeAnnonceur === 'entreprise' && !form.nomEntreprise?.trim()) {
+        return "Le nom de l'entreprise est requis."
+      }
+      if (form.siteWebUrl?.trim() && !/^https?:\/\//i.test(form.siteWebUrl.trim())) {
+        return 'Le lien doit commencer par http:// ou https://.'
+      }
+      return null
+    default:
+      return null
+  }
+}
+
+const suivant = () => {
+  const manque = manqueEtape(etapeCourante.value)
+  if (manque) {
+    erreurForm.value = manque
+    return
+  }
   erreurForm.value = null
-  if (form.titre.trim().length < 3) {
-    erreurForm.value = 'Le titre doit contenir au moins 3 caractères.'
-    return false
+  etapeCourante.value = Math.min(etapeCourante.value + 1, ETAPES.length - 1)
+}
+
+const valider = (): boolean => {
+  for (let i = 0; i < ETAPES.length; i++) {
+    const manque = manqueEtape(i)
+    if (manque) {
+      erreurForm.value = manque
+      etapeCourante.value = i
+      return false
+    }
   }
-  if (form.description.trim().length < 10) {
-    erreurForm.value = 'La description doit contenir au moins 10 caractères.'
-    return false
-  }
-  if (!form.categorieId) {
-    erreurForm.value = 'Veuillez choisir une catégorie.'
-    return false
-  }
-  if (form.typeEchange === 'Vente' && (!form.prix || form.prix <= 0)) {
-    erreurForm.value = 'Un prix supérieur à 0 est requis pour une vente.'
-    return false
-  }
-  if (props.mode === 'creation' && nouvellesPhotos.value.length === 0) {
-    erreurForm.value = 'Au moins une photo est requise.'
-    return false
-  }
-  if (form.typeAnnonceur === 'entreprise' && !form.nomEntreprise?.trim()) {
-    erreurForm.value = "Le nom de l'entreprise est requis."
-    return false
-  }
-  if (form.siteWebUrl?.trim() && !/^https?:\/\//i.test(form.siteWebUrl.trim())) {
-    erreurForm.value = 'Le lien doit commencer par http:// ou https://.'
-    return false
-  }
+  erreurForm.value = null
   return true
 }
 

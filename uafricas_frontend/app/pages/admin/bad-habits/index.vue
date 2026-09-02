@@ -59,9 +59,9 @@ const tronquer = (texte: string, max: number = 60): string => {
 
 const colonnes: TableColumn[] = [
   { key: 'titre', label: 'Titre' },
-  { key: 'categorie_probleme', label: 'Categorie', width: 'w-44' },
-  { key: 'gravite', label: 'Gravite', width: 'w-24' },
-  { key: 'etat', label: 'Etat', width: 'w-24' },
+  { key: 'categorie_probleme', label: 'Catégorie', width: 'w-44' },
+  { key: 'gravite', label: 'Gravité', width: 'w-24' },
+  { key: 'etat', label: 'État', width: 'w-24' },
   { key: 'nombre_soutiens', label: 'Soutiens', width: 'w-20', align: 'center' },
   { key: 'publication_anonyme', label: 'Anonyme', width: 'w-20', align: 'center' },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
@@ -70,21 +70,21 @@ const colonnes: TableColumn[] = [
 
 const filterDefs: FilterDefinition[] = [
   { key: 'recherche', label: 'Recherche', type: 'text', placeholder: 'Titre, description...' },
-  { key: 'categorie_probleme', label: 'Categorie', type: 'select', placeholder: 'Toutes', options: [
+  { key: 'categorie_probleme', label: 'Catégorie', type: 'select', placeholder: 'Toutes', options: [
     { label: 'Corruption', value: 'corruption' },
     { label: 'Service public defaillant', value: 'service_public_defaillant' },
     { label: 'Infrastructure degradee', value: 'infrastructure_degradee' },
     { label: 'Acces services limite', value: 'acces_services_limite' },
     { label: 'Insalubrite', value: 'insalubrite' },
-    { label: 'Probleme securite', value: 'probleme_securite' },
+    { label: 'Probleme sécurité', value: 'probleme_securite' },
     { label: 'Autre', value: 'autre' },
   ]},
-  { key: 'gravite', label: 'Gravite', type: 'select', placeholder: 'Toutes', options: [
+  { key: 'gravite', label: 'Gravité', type: 'select', placeholder: 'Toutes', options: [
     { label: 'Faible', value: 'faible' },
     { label: 'Elevee', value: 'elevee' },
     { label: 'Critique', value: 'critique' },
   ]},
-  { key: 'etat', label: 'Etat', type: 'select', placeholder: 'Tous', options: [
+  { key: 'etat', label: 'État', type: 'select', placeholder: 'Tous', options: [
     { label: 'En attente', value: 'en_attente' },
     { label: 'Publie', value: 'publie' },
     { label: 'Suspendu', value: 'suspendu' },

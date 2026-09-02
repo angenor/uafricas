@@ -35,7 +35,7 @@ watch([() => pagination.page, () => sort.column, () => sort.direction], () => ch
     <AdminFilters :filtres="filterDefs" v-model="filtres" @rechercher="() => { reinitialiserPagination(); chargerListe() }" @reinitialiser="reinitialiser" />
     <AdminDataTable :colonnes="colonnes" :donnees="domaines" :pagination="pagination" :tri-colonne="sort.column" :tri-direction="sort.direction" :loading="loading" @trier="changerTri" @aller-page="allerPage">
       <template #cell-actif="{ value }"><span :class="value ? 'badge badge-success badge-sm' : 'badge badge-neutral badge-sm'">{{ value ? 'Oui' : 'Non' }}</span></template>
-      <template #cell-icone="{ value }"><span v-if="value" class="text-lg">{{ value }}</span><span v-else class="text-base-content/30">—</span></template>
+      <template #cell-icone="{ value }"><span v-if="value" class="text-lg">{{ value }}</span><span v-else class="text-base-content/30">-</span></template>
       <template #actions="{ item }">
         <div class="flex gap-1">
           <NuxtLink :to="`/admin/domaines/${item.id}`" class="btn btn-ghost btn-xs"><font-awesome-icon icon="pen-to-square" /></NuxtLink>

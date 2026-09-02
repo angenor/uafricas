@@ -1,8 +1,8 @@
-# Contract — API publique
+# Contract : API publique
 
 ## `GET /api/afrolang/salles`
 
-**Modifié** — la réponse existante est enrichie d'un champ `pays_origine`. Un nouveau paramètre `pays_id` est accepté.
+**Modifié** : la réponse existante est enrichie d'un champ `pays_origine`. Un nouveau paramètre `pays_id` est accepté.
 
 ### Query parameters (ajouts uniquement)
 
@@ -12,7 +12,7 @@
 
 > Tous les paramètres existants (`page`, `par_page`, `langue`, `langue_code`, `groupe_ethnique_id`, `recherche`) sont conservés à l'identique.
 
-### Response — schéma de chaque élément `salles[]`
+### Response : schéma de chaque élément `salles[]`
 
 Champ ajouté :
 
@@ -29,7 +29,7 @@ Champ ajouté :
 
 - Toujours présent (jamais omis, jamais `null`). Tableau vide `[]` si aucun pays n'est associé ou si tous les pays associés sont archivés (Q3).
 - Trié par `nom` croissant (FR-003), insensible à la casse au niveau PostgreSQL (collation par défaut).
-- Les pays archivés (`shared.pays.actif = false`) sont **filtrés** (Q3) — invisibles côté public.
+- Les pays archivés (`shared.pays.actif = false`) sont **filtrés** (Q3), invisibles côté public.
 
 ### Codes de retour
 
@@ -38,7 +38,7 @@ Champ ajouté :
 | 200  | Succès (avec ou sans résultats)                                                      |
 | 400  | `pays_id` mal formé (UUID invalide)                                                  |
 
-> Un `pays_id` valide mais inconnu ou archivé renvoie 200 avec une liste vide — comportement intentionnel et cohérent avec les autres filtres.
+> Un `pays_id` valide mais inconnu ou archivé renvoie 200 avec une liste vide, comportement intentionnel et cohérent avec les autres filtres.
 
 ## Exemple de requête
 
