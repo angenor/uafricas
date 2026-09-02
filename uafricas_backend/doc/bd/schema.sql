@@ -143,7 +143,10 @@
 \ir schemas/11k_country_profile_reactions_partages_elements.sql
 \ir schemas/11l_country_profile_symboles_nationaux.sql
 \ir schemas/11m_country_profile_drapeaux_svg.sql
-\ir schemas/11n_country_profile_permission_admin.sql
+-- 11n n'est PAS ici : ce n'est pas une migration de structure mais un INSERT
+-- qui lit `iam.role` et `iam.permission`. En phase 2, les deux tables sont
+-- encore vides — son SELECT ne ramenait aucune ligne et le `ON CONFLICT DO
+-- NOTHING` rendait ce silence indétectable. Déplacée en phase 5, après 04h.
 \ir schemas/16_retrouve_amis.sql
 \ir schemas/23_arbre_genealogique.sql
 \ir schemas/24_matching.sql
@@ -190,6 +193,11 @@
 -- APRÈS 15_seed : il complète le catalogue que celui-ci amorce, et rattache
 -- au rôle Administrateur, que 15_seed crée sans lui donner aucun droit.
 \ir schemas/04h_iam_permissions_backoffice.sql
+
+-- Rattache `fiche_pays.gerer` au rôle Administrateur. APRÈS 15_seed (qui crée
+-- le rôle) et APRÈS 04h (qui crée la permission) : c'est un INSERT … SELECT,
+-- il lui faut les deux lignes en base pour produire le moindre effet.
+\ir schemas/11n_country_profile_permission_admin.sql
 \ir schemas/16_seed_centres_culturels.sql
 \ir schemas/17_seed_evenements.sql
 \ir schemas/18_seed_sabbatiques.sql

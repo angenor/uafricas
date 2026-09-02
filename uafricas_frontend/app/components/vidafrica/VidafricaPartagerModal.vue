@@ -45,6 +45,7 @@ const soumettre = async (legende: string) => {
     :texte-partage="`Découvrez ${video.titre} sur AfricanS`"
     type-objet="video"
     :objet-id="video.id"
+    :url="`/vidafrica/${video.slug}`"
     @close="emit('update:modelValue', false)"
     @submit="soumettre"
   >

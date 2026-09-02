@@ -70,5 +70,5 @@ const FONCTIONNALITES = [
   { icone: 'fa-solid fa-utensils', titre: 'Saveurs d\'Afrique', texte: 'Recettes culinaires et leurs procédés, pour voyager aussi par le goût.' },
   { icone: 'fa-solid fa-briefcase', titre: 'Opportunités économiques', texte: 'Secteurs porteurs, contacts utiles et références pour explorer les opportunités des territoires.' }]
 
-const OUTILS = ['Cartographie interactive', 'Galeries photos', 'Avis &amp; recommandations', 'Répertoire territorial']
+const OUTILS = ['Cartographie interactive', 'Galeries photos', 'Avis & recommandations', 'Répertoire territorial']
 </script>

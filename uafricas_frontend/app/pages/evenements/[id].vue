@@ -7,9 +7,12 @@
         :image="evenement?.couverture_url ? resoudreUrlImage(evenement.couverture_url) : null"
       >
         <template v-if="evenement" #action>
-          <span class="rounded-lg bg-af-vert px-4 py-2 text-[14px]/[1.4] font-bold text-white">
-            {{ labelStatut }}
-          </span>
+          <div class="flex items-center gap-2">
+            <AfricansEtiquette v-if="evenement.thematique">{{ evenement.thematique }}</AfricansEtiquette>
+            <span class="rounded-lg bg-af-vert px-4 py-2 text-[14px]/[1.4] font-bold text-white">
+              {{ labelStatut }}
+            </span>
+          </div>
         </template>
       </AfricansBandeauModule>
     </template>
@@ -58,8 +61,19 @@
         >
           {{ etatDirect.est_organisateur ? 'Rejoindre mon direct' : 'Rejoindre le direct' }}
         </AfricansBouton>
+        <AfricansBouton
+          v-else-if="!isAuthenticated"
+          class="ml-auto"
+          icone="fa-solid fa-right-to-bracket"
+          :vers="`/login?redirect=/evenements/${evenementId}`"
+        >
+          Connectez-vous pour rejoindre
+        </AfricansBouton>
         <span v-else-if="!etatDirect.est_inscrit" class="ml-auto text-[14px]/[1.4] font-bold text-af-live">
           Inscrivez-vous pour rejoindre le direct
+        </span>
+        <span v-else class="ml-auto text-[14px]/[1.4] font-bold text-af-live">
+          Capacité atteinte, réessayez plus tard
         </span>
       </div>
 
@@ -186,9 +200,12 @@
       <template v-if="evenement">
         <AfricansPanneau titre="Inscription" icone="fa-solid fa-user-plus">
           <div class="flex flex-col gap-3">
-            <p v-if="evenement.nombre_places" class="text-[14px]/[1.4] text-af-corps">
-              <span class="text-[20px]/[1.4] font-bold text-af-chocolat">{{ evenement.nombre_places }}</span>
-              place{{ evenement.nombre_places > 1 ? 's' : '' }} au total
+            <p class="text-[14px]/[1.4] text-af-corps">
+              <span class="text-[20px]/[1.4] font-bold text-af-chocolat">{{ evenement.nombre_inscrits }}</span>
+              inscrit{{ evenement.nombre_inscrits > 1 ? 's' : '' }}
+              <template v-if="evenement.nombre_places">
+                sur {{ evenement.nombre_places }} place{{ evenement.nombre_places > 1 ? 's' : '' }}
+              </template>
             </p>
 
             <template v-if="isAuthenticated">
@@ -222,9 +239,22 @@
               <span v-else class="grid size-12 shrink-0 place-items-center rounded-full bg-af-chocolat/15 text-[17px]/[1.4] font-bold text-af-chocolat">
                 {{ evenement.user.prenom?.charAt(0) }}{{ evenement.user.nom?.charAt(0) }}
               </span>
-              <p class="text-[14px]/[1.4] font-bold text-af-encre">
-                {{ evenement.user.prenom }} {{ evenement.user.nom }}
-              </p>
+              <div class="min-w-0">
+                <p class="text-[14px]/[1.4] font-bold text-af-encre">
+                  {{ evenement.user.prenom }} {{ evenement.user.nom }}
+                </p>
+                <p
+                  v-if="evenement.type_organisateur === 'organisation' && evenement.contact_nom"
+                  class="mt-1 flex items-center gap-1.5 text-[12px]/[1.4] font-bold text-af-chocolat"
+                >
+                  <font-awesome-icon icon="fa-solid fa-building" class="shrink-0" />
+                  <span class="min-w-0 truncate">Au nom de {{ evenement.contact_nom }}</span>
+                </p>
+                <p v-else class="mt-1 flex items-center gap-1.5 text-[12px]/[1.4] text-af-atone">
+                  <font-awesome-icon icon="fa-solid fa-user" class="shrink-0" />
+                  Publié en nom propre
+                </p>
+              </div>
             </div>
 
             <ul v-if="aContact" class="flex flex-col gap-2 border-t border-af-bordure pt-4">

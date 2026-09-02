@@ -1871,6 +1871,19 @@ export interface AdminFichePayDetail {
   image_embleme_url: string | null
   image_devise_url: string | null
   hymne_national: string | null
+  // Symboles nationaux, migration 11l. Le serveur les sérialise déjà
+  // (`FICHE_PAYS_COLONNES`, `FichePaysDetailResponse`) et le formulaire admin
+  // les lit ; sans ces neuf déclarations, `vue-tsc` et l'IDE signalaient
+  // autant de TS2339 sur des champs pourtant bien présents dans le JSON.
+  drapeau_description: string | null
+  embleme_description: string | null
+  hymne_description: string | null
+  fleur_nationale: string | null
+  fleur_description: string | null
+  animal_national: string | null
+  animal_description: string | null
+  oiseau_national: string | null
+  oiseau_description: string | null
   langue_officielle: string | null
   langues_populaires: string | null
   monnaie: string | null
@@ -1904,6 +1917,16 @@ export interface CreerFichePayForm {
   image_embleme_url: string
   image_devise_url: string
   hymne_national: string
+  // Symboles nationaux, migration 11l (cf. AdminFichePayDetail).
+  drapeau_description: string
+  embleme_description: string
+  hymne_description: string
+  fleur_nationale: string
+  fleur_description: string
+  animal_national: string
+  animal_description: string
+  oiseau_national: string
+  oiseau_description: string
   langue_officielle: string
   langues_populaires: string
   monnaie: string

@@ -70,5 +70,5 @@ const FONCTIONNALITES = [
   { icone: 'fa-solid fa-handshake', titre: 'Reconnectez en confiance', texte: 'La mise en relation ne se fait qu\'avec l\'accord des deux personnes concernées.' },
   { icone: 'fa-solid fa-user-check', titre: 'Validez les correspondances', texte: 'Vérifiez et confirmez les pistes proposées avant tout partage de coordonnées.' }]
 
-const OUTILS = ['Moteur de recherche', 'Profils membres', 'Notifications', 'Validation &amp; signalement']
+const OUTILS = ['Moteur de recherche', 'Profils membres', 'Notifications', 'Validation & signalement']
 </script>

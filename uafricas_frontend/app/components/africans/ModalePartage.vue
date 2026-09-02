@@ -58,15 +58,24 @@ const restant = computed(() => MAX - legende.value.length)
 
 // L'URL n'est résolue qu'à l'OUVERTURE, côté client : `window` n'existe pas au
 // rendu serveur, et la page peut avoir changé depuis le montage.
+//
+// `immediate` est INDISPENSABLE, et le garde client avec lui. Une page qui
+// ouvre la modale par `v-if="objetChoisi"` conjugué à `:is-open="ouvert"` pose
+// les deux `ref` dans le MÊME tick : le composant se monte déjà ouvert, et un
+// `watch` paresseux ne se déclenche jamais — `props.isOpen` n'a pas changé
+// depuis le montage, il valait déjà `true`. `urlPage` restait alors vide :
+// « Copier le lien » copiait une chaîne vide et les six liens réseaux se
+// construisaient sur du néant. Le cas se produit sur `/vidafrica` ; il se
+// reproduira à chaque nouveau point d'appel ouvrant la modale de cette façon.
 watch(() => props.isOpen, (ouvert) => {
-  if (!ouvert) return
+  if (!ouvert || !import.meta.client) return
   legende.value = ''
   erreur.value = ''
   succes.value = false
   enCours.value = false
   lienCopie.value = false
   urlPage.value = props.url ? new URL(props.url, window.location.origin).href : window.location.href
-})
+}, { immediate: true })
 
 const reseaux = computed(() =>
   props.textePartage ? construireReseaux(props.textePartage, urlPage.value) : [],

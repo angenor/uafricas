@@ -159,7 +159,7 @@ const voirDetail = (faculte: Faculte) => navigateTo(`/universite/facultes/${facu
 
             <p v-if="faculte.ecolePartenaire" class="flex items-center gap-1.5 text-[12px]/[1.4] text-af-atone">
               <font-awesome-icon icon="fa-solid fa-location-dot" />
-              {{ faculte.ecolePartenaire.nom }}, {{ faculte.ecolePartenaire.ville }}
+              {{ faculte.ecolePartenaire.nom }}, {{ faculte.ecolePartenaire.ville }}, {{ faculte.ecolePartenaire.pays }}
             </p>
 
             <div v-if="faculte.domainesEtudes?.length" class="flex flex-wrap gap-2">

@@ -63,6 +63,7 @@ const formatDate = (date: Date) =>
         </span>
         <span class="flex items-center gap-1.5">
           <font-awesome-icon icon="fa-solid fa-location-dot" />
+          <template v-if="contribution.localisation.ville">{{ contribution.localisation.ville }}, </template>
           {{ contribution.localisation.pays }}
         </span>
         <span class="flex items-center gap-1.5">

@@ -168,9 +168,32 @@
           </AfricansBouton>
         </div>
 
-        <div v-else-if="programme.a_deja_candidate" class="flex items-start gap-3 text-[14px]/[1.4] text-af-vert">
-          <font-awesome-icon icon="fa-solid fa-circle-check" class="mt-0.5" />
-          Vous avez déjà candidaté à ce programme.
+        <!--
+          La candidature est MODIFIABLE : le serveur enregistre par
+          `ON CONFLICT (programme_id, candidat_id) DO UPDATE` (`sabbatiques.rs`),
+          donc renvoyer le formulaire remplace la précédente au lieu d'en créer
+          une seconde. Sans cette commande, un candidat ne peut plus corriger sa
+          lettre de motivation, son CV ni son lien d'expertise : la branche
+          `v-else-if="isAuthenticated"` qui porte le formulaire devient
+          inaccessible dès que `a_deja_candidate` est vrai.
+        -->
+        <div v-else-if="programme.a_deja_candidate" class="flex flex-col gap-3">
+          <p class="flex items-start gap-3 text-[14px]/[1.4] text-af-vert">
+            <font-awesome-icon icon="fa-solid fa-circle-check" class="mt-0.5" />
+            Vous avez déjà candidaté à ce programme.
+          </p>
+          <AfricansBouton
+            variante="secondaire"
+            pleine-largeur
+            icone="fa-solid fa-pen"
+            :desactive="programme.statut !== 'ouvert'"
+            @click="modaleCandidature = true"
+          >
+            Modifier ma candidature
+          </AfricansBouton>
+          <p v-if="programme.statut !== 'ouvert'" class="text-[12px]/[1.4] text-af-atone">
+            Les candidatures ne sont plus ouvertes : votre dossier n'est plus modifiable.
+          </p>
         </div>
 
         <div v-else-if="isAuthenticated" class="flex flex-col gap-3">
