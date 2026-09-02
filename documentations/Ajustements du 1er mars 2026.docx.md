@@ -39,7 +39,7 @@ Opafrica
 * Africalive \-Organiser un évenement mettant en valeur l’Afrique et son développement  
 * Humantech- Parler à une bibliothèque humaine  
 * Numetech \-Permettre à des africains ou à des écoles de consulter vos publications ou ouvrages   
-* Muniversa (Mindshift University of Africa)- Éduquer sur les enjeux prioritaires de l’Afrique
+* Mindshiftlab (Mindshift University of Africa)- Éduquer sur les enjeux prioritaires de l’Afrique
 
   Africantives
 

@@ -10,7 +10,7 @@
         <!-- Conteneur fixe : le titre et la description se superposent (crossfade au survol) -->
         <div class="relative flex items-center justify-center min-h-10 md:min-h-12">
           <h1 class="absolute inset-0 flex items-center justify-center text-white text-2xl md:text-4xl font-bold transition-opacity duration-300 group-hover:opacity-0">
-            Muniversa
+            Mindshiftlab
           </h1>
           <p class="absolute inset-0 flex items-center justify-center text-white/95 text-sm md:text-base px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             Institut universitaire pour le développement de l'Afrique — vulgariser des formations de masse sur des enjeux d'intérêt pour le développement et le renforcement de gouvernance en Afrique.
@@ -18,21 +18,21 @@
         </div>
 
         <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <!-- Bouton d'aide : ouvre la présentation de Muniversa -->
+          <!-- Bouton d'aide : ouvre la présentation de Mindshiftlab -->
           <button
             type="button"
             class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-medium text-sm px-4 py-2.5 backdrop-blur-xs ring-1 ring-white/25 transition-colors"
-            aria-label="En savoir plus sur Muniversa"
+            aria-label="En savoir plus sur Mindshiftlab"
             @click="presentationOuverte = true"
           >
             <font-awesome-icon :icon="['fas', 'circle-question']" class="w-4 h-4" />
-            C'est quoi Muniversa&nbsp;?
+            C'est quoi Mindshiftlab&nbsp;?
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Modale de présentation « C'est quoi Muniversa ? » -->
+    <!-- Modale de présentation « C'est quoi Mindshiftlab ? » -->
     <UniversitePresentationModal
       :open="presentationOuverte"
       @close="presentationOuverte = false"
@@ -186,7 +186,7 @@
       <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-8">
           <div class="flex justify-between items-start mb-6">
-            <h2 class="text-3xl font-bold">À propos de Muniversa</h2>
+            <h2 class="text-3xl font-bold">À propos de Mindshiftlab</h2>
             <button @click="afficherAPropos = false" class="text-gray-500 hover:text-gray-700">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -245,7 +245,7 @@
 import { type FormationAPI, getTypeLabel, formatDateFormation } from '~/composables/useFormations'
 
 useHead({
-  title: 'Muniversa - Institut universitaire pour le développement de l\'Afrique'
+  title: 'Mindshiftlab - Institut universitaire pour le développement de l\'Afrique'
 })
 
 const { listerFormations, obtenirStatsUniversite } = useFormations()
@@ -253,7 +253,7 @@ const { listerFormations, obtenirStatsUniversite } = useFormations()
 const loading = ref(true)
 const afficherAPropos = ref(false)
 
-// Modale de présentation « C'est quoi Muniversa ? »
+// Modale de présentation « C'est quoi Mindshiftlab ? »
 const presentationOuverte = ref(false)
 
 const stats = ref({
