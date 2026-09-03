@@ -5,7 +5,7 @@
     class="grid size-10 shrink-0 place-items-center rounded-[10px] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat"
     :class="variante === 'primaire'
       ? 'bg-af-chocolat text-white hover:opacity-90'
-      : 'border border-af-bordure bg-white text-af-corps hover:border-af-chocolat hover:text-af-chocolat'"
+      : 'border border-af-bordure bg-af-surface text-af-corps hover:border-af-chocolat hover:text-af-chocolat'"
     :title="libelle"
     :aria-label="libelle"
   >

@@ -6,7 +6,7 @@
       @click.self="$emit('close')"
     >
       <div
-        class="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white shadow-2xl rounded-3xl overflow-hidden"
+        class="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-af-surface shadow-2xl rounded-3xl overflow-hidden"
         @click.stop
       >
         <!-- En-tête -->

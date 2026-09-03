@@ -188,7 +188,7 @@ defineExpose({
           :maxlength="MAX"
           :disabled="enCours"
           placeholder="Ajoutez un mot pour accompagner ce partage…"
-          class="rounded-md border border-af-bordure bg-white px-4 py-3 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none disabled:opacity-50"
+          class="rounded-md border border-af-bordure bg-af-surface px-4 py-3 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none disabled:opacity-50"
         />
         <div class="flex items-start justify-between gap-3">
           <p v-if="erreur" role="alert" class="text-[12px]/[1.4] text-af-live">{{ erreur }}</p>

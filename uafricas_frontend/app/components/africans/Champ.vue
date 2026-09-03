@@ -15,7 +15,7 @@
       :value="modelValue"
       :required="obligatoire"
       :disabled="desactive"
-      class="h-11 rounded-md border border-af-bordure bg-white px-3 disabled:opacity-50 text-[14px]/[1.4] focus:border-af-chocolat focus:outline-none"
+      class="h-11 rounded-md border border-af-bordure bg-af-surface px-3 disabled:opacity-50 text-[14px]/[1.4] focus:border-af-chocolat focus:outline-none"
       @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
     >
       <slot />
@@ -30,7 +30,7 @@
       :required="obligatoire"
       :disabled="desactive"
       :maxlength="maxlength"
-      class="rounded-md border border-af-bordure bg-white px-4 py-3 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none disabled:opacity-50"
+      class="rounded-md border border-af-bordure bg-af-surface px-4 py-3 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none disabled:opacity-50"
       @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     />
 
@@ -52,7 +52,7 @@
         :disabled="desactive"
         :autocomplete="autocomplete"
         :maxlength="maxlength"
-        class="h-11 w-full rounded-md border border-af-bordure bg-white pr-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none disabled:opacity-50"
+        class="h-11 w-full rounded-md border border-af-bordure bg-af-surface pr-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none disabled:opacity-50"
         :class="icone ? 'pl-11' : 'pl-4'"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />

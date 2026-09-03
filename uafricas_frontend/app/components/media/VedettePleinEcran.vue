@@ -50,11 +50,16 @@ const lienDetail = computed(() =>
 
 <template>
   <!-- `100svh` et non `100vh` : sur mobile, `vh` inclut la barre d'URL et fait
-       déborder la vedette sous le pli. -->
-  <section class="relative h-[100svh] w-full overflow-hidden bg-black">
-    <!-- Le lecteur occupe tout le cadre ; `top-24` dégage la NavBar, qui est
-         positionnée en absolu et défile avec la page. -->
-    <div class="absolute inset-x-0 top-24 bottom-0">
+       déborder la vedette sous le pli. La hauteur de la barre supérieure en est
+       retranchée : celle-ci est DANS le flux, au-dessus de la vedette. Sans ce
+       retrait, l'ensemble mesure un écran plus 89 px, et la vedette est coupée
+       en bas de tout ce qui la précède. -->
+  <section class="relative h-[calc(100svh-var(--spacing-af-barre))] w-full overflow-hidden bg-black">
+    <!-- Le lecteur occupe tout le cadre. Il portait un `top-24` hérité du temps
+         où la barre était posée EN SURIMPRESSION : depuis qu'elle occupe sa
+         propre hauteur au-dessus, ce décalage n'esquivait plus rien et ouvrait
+         une bande vide en haut de la vedette. -->
+    <div class="absolute inset-0">
       <MediaLecteurMedia
         v-if="programme"
         ref="lecteur"

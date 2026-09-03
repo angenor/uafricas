@@ -11,7 +11,7 @@
       type="search"
       :value="modelValue"
       :placeholder="placeholder"
-      class="h-12 w-full rounded-lg border border-af-bordure bg-white pr-4 pl-14 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
+      class="h-12 w-full rounded-lg border border-af-bordure bg-af-surface pr-4 pl-14 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none"
       @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     />
   </label>

@@ -7,7 +7,7 @@
        `sticky`, avec un filet qui la détache du contenu qui passe dessous.
        `z-50` et non davantage : les modales montent à `z-100` et doivent
        continuer de la recouvrir. -->
-  <header class="sticky top-0 z-50 h-af-barre border-b border-af-bordure bg-white">
+  <header class="sticky top-0 z-50 h-af-barre border-b border-af-bordure bg-af-surface">
     <div class="mx-auto flex h-full max-w-af-conteneur items-center gap-6 px-6">
       <!-- Trois zones, dont DEUX ÉLASTIQUES de part et d'autre. C'est ce qui
            centre réellement la recherche : un simple `mx-auto` la centrerait
@@ -45,7 +45,7 @@
       >
         <font-awesome-icon icon="fa-solid fa-magnifying-glass" class="shrink-0 text-af-atone-2" />
         <span class="min-w-0 flex-1 truncate text-[14px]/[1.4] text-af-atone-2">Rechercher sur AfricanS…</span>
-        <kbd class="hidden shrink-0 rounded border border-af-bordure bg-white px-1.5 py-0.5 text-[11px] text-af-atone lg:inline">
+        <kbd class="hidden shrink-0 rounded border border-af-bordure bg-af-surface px-1.5 py-0.5 text-[11px] text-af-atone lg:inline">
           {{ raccourci }}
         </kbd>
       </button>
@@ -109,7 +109,7 @@
 
             <div
               v-if="menuOuvert"
-              class="absolute right-0 z-50 mt-3 w-60 overflow-hidden rounded-[10px] border border-af-bordure bg-white py-2 shadow-lg"
+              class="absolute right-0 z-50 mt-3 w-60 overflow-hidden rounded-[10px] border border-af-bordure bg-af-surface py-2 shadow-lg"
             >
               <NuxtLink
                 v-for="lien in liensCompte"
