@@ -44,24 +44,26 @@ pub async fn thematiques_par_supports(
         return Ok(resultat);
     }
 
-    let lignes: Vec<(Uuid, Uuid, String)> = sqlx::query_as(
-        "SELECT st.support_id, cat.id, cat.nom
+    // Les genres d'abord, les lignes éditoriales ensuite : la fiche les
+    // affiche dans cet ordre, et le tri SQL évite de le refaire à l'écran.
+    let lignes: Vec<(Uuid, Uuid, String, bool)> = sqlx::query_as(
+        "SELECT st.support_id, cat.id, cat.nom, (cat.parent_id IS NOT NULL) AS est_ligne
            FROM media_content.support_thematique st
            JOIN shared.categorie cat ON cat.id = st.categorie_id
           WHERE st.type_support = $1::media_content.type_support_media
             AND st.support_id = ANY($2)
-          ORDER BY cat.nom ASC",
+          ORDER BY (cat.parent_id IS NOT NULL), cat.ordre ASC, cat.nom ASC",
     )
     .bind(type_support)
     .bind(support_ids)
     .fetch_all(pool)
     .await?;
 
-    for (support_id, id, nom) in lignes {
+    for (support_id, id, nom, est_ligne_editoriale) in lignes {
         resultat
             .entry(support_id)
             .or_default()
-            .push(ThematiquePublique { id, nom });
+            .push(ThematiquePublique { id, nom, est_ligne_editoriale });
     }
     Ok(resultat)
 }
@@ -132,6 +134,19 @@ pub async fn couverture_par_supports(
 /// thème n'a encore rien ». Le décompte à `(0)` le dit, et le référentiel
 /// affiché reste stable d'une visite à l'autre.
 ///
+/// `origine` borne le décompte à « africans » ou « territoire » (09j/09o) sans
+/// retirer aucun thème du catalogue. Passé `None`, le décompte reste global.
+/// Comme le filtre d'état, il vit dans la condition de jointure, pas dans le
+/// `WHERE` : l'y remonter transformerait la jointure externe en interne et
+/// ferait disparaître les thèmes à zéro pour cette origine.
+///
+/// `groupe` (09u) bascule le RÉFÉRENTIEL lui-même, pas seulement le décompte :
+/// `None` interroge les 22 genres de grille (09s, `parent_id IS NULL`, celui
+/// de la pastille « Africans Thématique ») ; le slug d'un parent de
+/// `shared.categorie` (ex. `media-groupe-africans-tele-international`)
+/// interroge ses enfants — les 44 lignes éditoriales propres à la pastille
+/// « Africans Télé International », disjointes des 22 premières.
+///
 /// Le `LEFT JOIN` sur la table du support porte l'état dans sa condition de
 /// jointure, non dans le `WHERE` : l'y remonter transformerait la jointure
 /// externe en jointure interne et ramènerait au comportement précédent. Le
@@ -141,12 +156,18 @@ pub async fn couverture_par_supports(
 pub async fn thematiques_disponibles(
     pool: &PgPool,
     type_support: &str,
+    origine: Option<&str>,
+    groupe: Option<&str>,
 ) -> Result<Vec<ThematiqueDecompte>, ApiErreur> {
     let table = table_pour_support(type_support)
         .ok_or_else(|| ApiErreur::Validation("Type de support inconnu".into()))?;
 
+    // Le groupe des 44 lignes éditoriales suit la séquence narrative du seed
+    // (09j/09u) plutôt que l'ordre alphabétique du référentiel générique.
+    let ordre_par = if groupe.is_some() { "cat.ordre ASC, cat.nom ASC" } else { "cat.nom ASC" };
+
     let lignes = sqlx::query_as::<_, ThematiqueDecompte>(&format!(
-        "SELECT cat.id, cat.nom, COUNT(s.id)::bigint AS nombre_supports
+        "SELECT cat.id, cat.nom, cat.description, COUNT(s.id)::bigint AS nombre_supports
            FROM shared.categorie cat
            LEFT JOIN media_content.support_thematique st
                   ON st.categorie_id = cat.id
@@ -155,11 +176,18 @@ pub async fn thematiques_disponibles(
                   ON s.id = st.support_id
                  AND s.etat = 'publie'
                  AND s.deleted_at IS NULL
+                 AND ($2::text IS NULL OR s.origine_publication = $2)
           WHERE cat.contexte = 'media' AND cat.actif = TRUE
-          GROUP BY cat.id, cat.nom
-          ORDER BY cat.nom ASC"
+            AND (
+                  ($3::text IS NULL AND cat.parent_id IS NULL)
+                  OR cat.parent_id = (SELECT id FROM shared.categorie WHERE slug = $3)
+                )
+          GROUP BY cat.id, cat.nom, cat.description
+          ORDER BY {ordre_par}"
     ))
     .bind(type_support)
+    .bind(origine)
+    .bind(groupe)
     .fetch_all(pool)
     .await?;
 
@@ -209,11 +237,21 @@ pub async fn territoires_disponibles(
 // Écritures : règles communes membre et back-office
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Remplacement intégral des thématiques d'un support.
+/// Remplacement intégral des thématiques d'un support, **borné aux genres de
+/// grille** (09s, `parent_id IS NULL`).
 ///
 /// Les identifiants sont confrontés au **contexte `media`** du référentiel : un
 /// thème d'un autre contexte passerait sinon inaperçu, la liaison ne portant
 /// aucune clé étrangère.
+///
+/// Le bornage n'est pas un raffinement : le formulaire d'édition ne propose que
+/// les genres (`referentiels_edition` filtre `parent_id IS NULL`), et il envoie
+/// la liste complète de ce qu'il connaît. Un `DELETE` non borné effacerait donc
+/// **silencieusement** les lignes éditoriales d'Africans Télé International
+/// (09u) dès qu'un co-détenteur toucherait à ses genres — une chaîne perdrait
+/// treize déclarations sans que personne ne l'ait demandé, et sans erreur.
+/// Une ligne éditoriale soumise ici est refusée pour la raison symétrique :
+/// cet endpoint ne gère pas ce référentiel, il ne doit pas pouvoir y ajouter.
 async fn appliquer_thematiques(
     pool: &PgPool,
     type_support: &str,
@@ -237,7 +275,7 @@ async fn appliquer_thematiques(
     if !ids.is_empty() {
         let valides: i64 = sqlx::query_scalar(
             "SELECT COUNT(*) FROM shared.categorie
-              WHERE id = ANY($1) AND contexte = 'media'",
+              WHERE id = ANY($1) AND contexte = 'media' AND parent_id IS NULL",
         )
         .bind(&ids)
         .fetch_one(pool)
@@ -252,8 +290,12 @@ async fn appliquer_thematiques(
     let mut tx = pool.begin().await?;
 
     sqlx::query(
-        "DELETE FROM media_content.support_thematique
-          WHERE type_support = $1::media_content.type_support_media AND support_id = $2",
+        "DELETE FROM media_content.support_thematique st
+          USING shared.categorie cat
+          WHERE cat.id = st.categorie_id
+            AND cat.parent_id IS NULL
+            AND st.type_support = $1::media_content.type_support_media
+            AND st.support_id = $2",
     )
     .bind(type_support)
     .bind(support_id)
@@ -373,6 +415,15 @@ async fn journaliser(
 // Routes membre
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// Thématiques d'un support **pour son formulaire d'édition** : les genres de
+/// grille seulement, comme `PUT` n'en accepte que.
+///
+/// La symétrie n'est pas cosmétique. Les formulaires préchargent leur
+/// sélection avec `themes.map(t => t.id)` et la renvoient telle quelle : y
+/// laisser les lignes éditoriales (09u) ferait échouer l'enregistrement en 400
+/// sur une valeur que l'écran n'a jamais proposée ni affichée. La fiche
+/// publique, elle, passe par `thematiques_par_supports` et reçoit bien les
+/// deux référentiels, distingués par `est_ligne_editoriale`.
 pub async fn obtenir_thematiques(
     pool: web::Data<PgPool>,
     chemin: web::Path<(String, Uuid)>,
@@ -380,10 +431,17 @@ pub async fn obtenir_thematiques(
     let (type_support, support_id) = chemin.into_inner();
     valider_type_support(&type_support)?;
     let map = thematiques_par_supports(pool.get_ref(), &type_support, &[support_id]).await?;
+    let genres: Vec<ThematiquePublique> = map
+        .get(&support_id)
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|t| !t.est_ligne_editoriale)
+        .collect();
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
-        data: Some(map.get(&support_id).cloned().unwrap_or_default()),
+        data: Some(genres),
         error: None,
     }))
 }
@@ -557,14 +615,20 @@ pub async fn admin_definir_couverture(
 ///
 /// Distinct des référentiels de filtre ci-dessus, qui portent un décompte par
 /// support et, pour les territoires, ne listent que ce qui est **déjà
-/// couvert** : les réutiliser ici rendrait un territoire inédit inatteignable, 
+/// couvert** : les réutiliser ici rendrait un territoire inédit inatteignable,
 /// le premier support à vouloir le choisir ne le verrait pas dans la liste.
+///
+/// `parent_id IS NULL` : les 22 genres de grille (09s) seulement. Les 44
+/// lignes éditoriales d'Africans Télé International (09u) sont un sous-groupe
+/// dédié à la pastille de filtre du même nom, pas une déclaration que
+/// n'importe quel support peut se voir proposer ici — les y inclure
+/// doublerait ce sélecteur pour toutes les chaînes et stations.
 pub async fn referentiels_edition(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ApiErreur> {
     let thematiques = sqlx::query_as::<_, (Uuid, String)>(
         "SELECT id, nom FROM shared.categorie
-          WHERE contexte = 'media' AND actif = TRUE
+          WHERE contexte = 'media' AND actif = TRUE AND parent_id IS NULL
           ORDER BY nom ASC",
     )
     .fetch_all(pool.get_ref())

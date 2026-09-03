@@ -100,7 +100,10 @@ onMounted(async () => {
   const [pays, genres, thematiques] = await Promise.all([
     listerPays(),
     listerGenres(),
-    listerThematiquesDisponibles('station_radio')])
+    // `origine` est fixée par la page appelante (jamais offerte au visiteur,
+    // cf. commentaire en tête de fichier) : sans elle, les compteurs
+    // additionnaient les stations des deux origines.
+    listerThematiquesDisponibles('station_radio', props.origine)])
   if (pays) paysDisponibles.value = pays
   if (genres) genresDisponibles.value = genres
   thematiquesDisponibles.value = thematiques

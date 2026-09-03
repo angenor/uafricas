@@ -9,6 +9,10 @@
 export interface ThematiquePublique {
   id: string
   nom: string
+  /** `true` : ligne éditoriale d'Africans Télé International (09u) ; `false` :
+   * genre de grille (09s). Les deux arrivent dans la même liste — c'est ce
+   * drapeau qui permet de les présenter séparément. */
+  est_ligne_editoriale?: boolean
 }
 
 export interface TerritoirePublic {
@@ -25,6 +29,8 @@ export interface CouverturePublique {
 export interface ThematiqueDecompte {
   id: string
   nom: string
+  /** Texte long, affiché en infobulle native au survol (`title`). */
+  description?: string | null
   nombre_supports: number
 }
 
@@ -67,11 +73,29 @@ export const useMediaSupport = () => {
     type === 'station_radio' ? '/api/stations-radio' : '/api/television'
 
   /** Tous les thèmes actifs du référentiel `media`, avec le nombre de supports
-   * publiés qui les déclarent : `0` compris. */
-  const listerThematiquesDisponibles = async (type: TypeSupport): Promise<ThematiqueDecompte[]> => {
+   * publiés qui les déclarent : `0` compris.
+   *
+   * `origine` ('africans' | 'territoire') borne ce décompte, sans retirer aucun
+   * thème du catalogue : sans lui, un thème compterait des supports des DEUX
+   * origines, faussant le panneau de la pastille « Africans Télé International »
+   * (et son pendant radio, l'origine étant fixée par la page appelante).
+   *
+   * `groupe` bascule le référentiel lui-même (09u) : omis, les 22 genres de
+   * grille génériques (parent_id NULL, panneau « Africans Thématique ») ;
+   * `'media-groupe-africans-tele-international'`, les 44 lignes éditoriales
+   * propres à la pastille du même nom. */
+  const listerThematiquesDisponibles = async (
+    type: TypeSupport,
+    origine?: string,
+    groupe?: string,
+  ): Promise<ThematiqueDecompte[]> => {
     try {
+      const params: Record<string, string> = {}
+      if (origine) params.origine = origine
+      if (groupe) params.groupe = groupe
       const reponse = await $fetch<ApiResponse<ThematiqueDecompte[]>>(
         `${apiBase}${prefixePublic(type)}/thematiques`,
+        { params: Object.keys(params).length ? params : undefined },
       )
       return reponse.success && reponse.data ? reponse.data : []
     }

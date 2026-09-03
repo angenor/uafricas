@@ -26,19 +26,43 @@ const aQuelqueChose = computed(() =>
   || props.couverture?.couverture_continentale
   || (props.couverture?.territoires.length ?? 0) > 0,
 )
+
+/**
+ * Deux référentiels distincts arrivent dans la même liste : les genres de
+ * grille, que tout support déclare, et les lignes éditoriales, propres aux
+ * chaînes de la plateforme. Les empiler sous un seul titre donnait dix-sept
+ * pastilles indifférenciées sur une fiche comme Africans Télé International,
+ * alors que la barre de filtres les sépare justement en deux entrées.
+ */
+const genres = computed(() => props.thematiques.filter(t => !t.est_ligne_editoriale))
+const lignesEditoriales = computed(() => props.thematiques.filter(t => t.est_ligne_editoriale))
 </script>
 
 <template>
   <div v-if="aQuelqueChose" class="mb-10 space-y-5">
-    <div v-if="thematiques.length">
+    <div v-if="genres.length">
       <p class="text-xs uppercase tracking-wide text-af-atone mb-2">Thématiques</p>
       <ul class="flex flex-wrap gap-2">
         <li
-          v-for="theme in thematiques"
+          v-for="theme in genres"
           :key="theme.id"
           class="rounded-full border border-af-bordure bg-af-fond text-af-corps px-3 py-1 text-sm"
         >
           {{ theme.nom }}
+        </li>
+      </ul>
+    </div>
+
+    <!-- Réservées aux chaînes de la plateforme : le bloc n'existe pas ailleurs. -->
+    <div v-if="lignesEditoriales.length">
+      <p class="text-xs uppercase tracking-wide text-af-atone mb-2">Lignes éditoriales</p>
+      <ul class="flex flex-wrap gap-2">
+        <li
+          v-for="ligne in lignesEditoriales"
+          :key="ligne.id"
+          class="rounded-full border border-af-chocolat/40 bg-af-chocolat/5 text-af-chocolat px-3 py-1 text-sm"
+        >
+          {{ ligne.nom }}
         </li>
       </ul>
     </div>

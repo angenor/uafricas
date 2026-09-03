@@ -9,8 +9,9 @@ use crate::handlers::media_emission::{
 };
 use crate::handlers::media_episode::obtenir_episode_par_slug;
 use crate::handlers::media_social;
-// Parsing du filtre `?thematique=` : utilitaire de MODÈLE, pas un handler.
-use crate::models::media_support::thematiques_demandees;
+// Parsing des filtres `?thematique=` et `?origine=` : utilitaires de MODÈLE,
+// pas des handlers.
+use crate::models::media_support::{origine_validee, thematiques_demandees, ThematiquesQueryParams};
 use crate::handlers::media_support::{
     couverture_par_supports, territoires_disponibles, thematiques_disponibles,
     thematiques_par_supports,
@@ -600,8 +601,18 @@ pub async fn obtenir_episode_radio_slug(
 
 // ── GET /api/stations-radio/thematiques ───────────────────────────────
 
-pub async fn lister_thematiques_radio(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
-    let data = thematiques_disponibles(pool.get_ref(), TYPE_SUPPORT).await?;
+pub async fn lister_thematiques_radio(
+    pool: web::Data<PgPool>,
+    params: web::Query<ThematiquesQueryParams>,
+) -> Result<HttpResponse, ApiErreur> {
+    let origine = origine_validee(params.origine.as_deref());
+    let data = thematiques_disponibles(
+        pool.get_ref(),
+        TYPE_SUPPORT,
+        origine.as_deref(),
+        params.groupe.as_deref(),
+    )
+    .await?;
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
         data: Some(data),

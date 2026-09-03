@@ -45,6 +45,28 @@ pub fn thematiques_demandees(brut: Option<&str>) -> Result<Vec<Uuid>, ApiErreur>
     Ok(ids)
 }
 
+/// Paramètres de `GET .../thematiques` : le référentiel de filtre peut être
+/// borné à une origine de publication (09j/09o) et/ou à un groupe (09u) —
+/// le `slug` d'un parent de `shared.categorie`, qui bascule du référentiel
+/// générique (22 genres de grille, `parent_id IS NULL`) vers un sous-groupe
+/// dédié (44 lignes éditoriales d'Africans Télé International).
+#[derive(Debug, Deserialize)]
+pub struct ThematiquesQueryParams {
+    pub origine: Option<String>,
+    pub groupe: Option<String>,
+}
+
+/// Valide le filtre `origine` : seules « africans » et « territoire » sont
+/// reconnues. Même logique que `lister_sections` (`television.rs`) : une
+/// valeur hors référentiel est ignorée plutôt que rejetée, un filtre inconnu
+/// ne doit pas casser la page.
+pub fn origine_validee(brut: Option<&str>) -> Option<String> {
+    brut
+        .map(str::trim)
+        .filter(|o| *o == "africans" || *o == "territoire")
+        .map(str::to_string)
+}
+
 // ────────────────────────────────────────────────────────────────
 // Thématiques (US3)
 // ────────────────────────────────────────────────────────────────
@@ -54,6 +76,12 @@ pub fn thematiques_demandees(brut: Option<&str>) -> Result<Vec<Uuid>, ApiErreur>
 pub struct ThematiquePublique {
     pub id: Uuid,
     pub nom: String,
+    /// `true` pour une ligne éditoriale d'Africans Télé International (09u),
+    /// `false` pour un genre de grille (09s). Les deux vivent dans la même
+    /// table de liaison et arrivaient donc mélangés : sans ce drapeau, une
+    /// fiche de chaîne de la plateforme affichait dix-sept pastilles sous un
+    /// libellé unique, là où ce sont deux déclarations de nature différente.
+    pub est_ligne_editoriale: bool,
 }
 
 /// Thème du référentiel `media` réellement déclaré par au moins un support
@@ -63,6 +91,9 @@ pub struct ThematiquePublique {
 pub struct ThematiqueDecompte {
     pub id: Uuid,
     pub nom: String,
+    /// Texte long, affiché en infobulle native (les 44 lignes éditoriales de
+    /// 09u en portent une ; les 22 genres de grille de 09s n'en ont pas).
+    pub description: Option<String>,
     pub nombre_supports: i64,
 }
 

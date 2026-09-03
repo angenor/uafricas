@@ -67,19 +67,26 @@ const territoires = ref<string[]>([])
 const origine = ref('')
 const paysSelectionne = ref(TOUS_TERRITOIRES)
 const enDirect = ref(false)
-/** Thématiques déclarées par la chaîne (US3), sélection multiple. */
+/** Genres de grille déclarés par la chaîne (US3, 09s), sélection multiple. */
 const thematiquesSelectionnees = ref<string[]>([])
+/** Lignes éditoriales d'Africans Télé International (09u), sélection multiple
+ * — fusionnée avec `origine` par la barre : en choisir une active
+ * `origine=africans`, et relâcher l'origine les vide. */
+const rubriquesInternational = ref<string[]>([])
 
-/** Référentiel de FILTRE : tout le catalogue de thèmes, chacun avec son nombre
- * de chaînes publiées : un thème encore vide s'affiche « (0) » plutôt que de
- * disparaître, ce qui laisserait croire qu'il n'existe pas. */
+/** Référentiel de FILTRE des 22 genres : un genre encore vide s'affiche
+ * « (0) » plutôt que de disparaître, ce qui laisserait croire qu'il n'existe
+ * pas. */
 const thematiquesDisponibles = ref<ThematiqueDecompte[]>([])
+/** Référentiel des 44 lignes éditoriales (09u), même principe de décompte. */
+const rubriquesInternationalDisponibles = ref<ThematiqueDecompte[]>([])
 
 const filtresActifs = computed(() =>
   origine.value !== ''
   || paysSelectionne.value !== TOUS_TERRITOIRES
   || enDirect.value
-  || thematiquesSelectionnees.value.length > 0,
+  || thematiquesSelectionnees.value.length > 0
+  || rubriquesInternational.value.length > 0,
 )
 
 const reinitialiserFiltres = () => {
@@ -87,6 +94,7 @@ const reinitialiserFiltres = () => {
   paysSelectionne.value = TOUS_TERRITOIRES
   enDirect.value = false
   thematiquesSelectionnees.value = []
+  rubriquesInternational.value = []
 }
 
 const presentationOuverte = ref(false)
@@ -111,7 +119,10 @@ const chargerPageSections = async (numero: number, forcer = false) => {
     origine: origine.value,
     pays: paysSelectionne.value,
     en_direct: enDirect.value,
-    thematiques: thematiquesSelectionnees.value,
+    // Deux référentiels distincts (genres de grille + lignes éditoriales),
+    // un seul paramètre côté API : `thematique` est un OU sur l'ensemble des
+    // identifiants, quel que soit le panneau d'où ils viennent.
+    thematiques: [...thematiquesSelectionnees.value, ...rubriquesInternational.value],
     page: numero,
     par_page: 6,
   })
@@ -139,7 +150,7 @@ const allerAuxSections = () => {
  * résultat : la barre siégeant en bas de la vedette, sans ce défilement il
  * agirait à l'aveugle sur des sections qu'il ne voit pas encore.
  */
-watch([origine, paysSelectionne, enDirect, thematiquesSelectionnees], async () => {
+watch([origine, paysSelectionne, enDirect, thematiquesSelectionnees, rubriquesInternational], async () => {
   page.value = 1
   await chargerPageSections(1, true)
   if (filtresActifs.value) allerAuxSections()
@@ -162,10 +173,16 @@ watch(sentinelleVisible, (visible) => {
 })
 
 onMounted(async () => {
-  const [resultatVedette, resultatPays, resultatThematiques] = await Promise.all([
+  const [resultatVedette, resultatPays, resultatThematiques, resultatRubriques] = await Promise.all([
     obtenirVedette(),
     listerPays(),
+    // « Africans Thématique » est indépendante de l'origine (pastille
+    // séparée de « Africans Télé International ») : le décompte porte donc
+    // sur toutes les chaînes publiées, africans et territoire confondues.
     listerThematiquesDisponibles('chaine_tv'),
+    // Les 44 lignes éditoriales (09u, groupe dédié) n'ont de sens que pour
+    // les chaînes de la plateforme : décompte borné à `origine=africans`.
+    listerThematiquesDisponibles('chaine_tv', 'africans', 'media-groupe-africans-tele-international'),
     // Sans incidence sur l'affichage de la vitrine : elle ne doit pas attendre
     // cette réponse, ni échouer avec elle.
     chargerMesChaines(),
@@ -173,6 +190,7 @@ onMounted(async () => {
   vedette.value = resultatVedette
   if (resultatPays) territoires.value = resultatPays
   thematiquesDisponibles.value = resultatThematiques
+  rubriquesInternationalDisponibles.value = resultatRubriques
   await chargerPageSections(1)
 })
 </script>
@@ -195,8 +213,10 @@ onMounted(async () => {
             v-model:pays="paysSelectionne"
             v-model:en-direct="enDirect"
             v-model:thematiques="thematiquesSelectionnees"
+            v-model:rubriques-international="rubriquesInternational"
             :territoires="territoires"
             :thematiques-disponibles="thematiquesDisponibles"
+            :rubriques-international-disponibles="rubriquesInternationalDisponibles"
             :nombre-chaines="totalChaines"
             @reinitialiser="reinitialiserFiltres"
           />
