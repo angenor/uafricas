@@ -235,11 +235,11 @@ onMounted(async () => {
       </AfricansFilAriane>
     </template>
 
-    <div ref="ancreSections" class="flex flex-col gap-8">
+    <div ref="ancreSections" class="flex flex-col gap-10">
       <div>
         <h2 class="text-[24px]/[1.3] font-bold text-af-encre">Nos télés africaines</h2>
         <p class="mt-1 text-[14px]/[1.5] text-af-corps">
-          Une section par chaîne, découverte au fil du défilement.
+          Une rangée par chaîne : ses programmes se parcourent à l'horizontale, comme un catalogue.
         </p>
       </div>
 
