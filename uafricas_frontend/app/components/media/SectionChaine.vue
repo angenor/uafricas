@@ -191,10 +191,10 @@ const meta = computed(() =>
         v-if="programmesMasques > 0 && lienChaine"
         :to="lienChaine"
         role="listitem"
-        class="group/tout flex w-[210px] shrink-0 snap-start flex-col items-center justify-center gap-2 self-start rounded-lg border border-dashed border-af-bordure bg-af-fond text-af-corps transition hover:border-af-chocolat hover:text-af-chocolat sm:w-[238px] lg:w-[262px]"
+        class="group/tout flex w-[42%] max-w-[340px] sm:w-[30.5%] lg:w-[23%] xl:w-[18.6%] shrink-0 snap-start flex-col items-center justify-center gap-2 self-start rounded-lg border border-dashed border-af-bordure bg-af-fond text-af-corps transition hover:border-af-chocolat hover:text-af-chocolat"
         style="aspect-ratio: 16 / 9"
       >
-        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-white ring-1 ring-af-bordure transition group-hover/tout:ring-af-chocolat">
+        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-af-surface ring-1 ring-af-bordure transition group-hover/tout:ring-af-chocolat">
           <font-awesome-icon :icon="['fas', 'arrow-right']" />
         </span>
         <span class="px-3 text-center text-sm font-semibold">
@@ -235,7 +235,7 @@ const meta = computed(() =>
       </button>
     </div>
 
-    <div v-if="detailsOuverts" class="mt-3 rounded-xl border border-af-bordure bg-white/60 px-4 py-4">
+    <div v-if="detailsOuverts" class="mt-3 rounded-xl border border-af-bordure bg-af-surface px-4 py-4">
       <!-- Extrait de description : ellipse figée, sans commande de dépliage :
            c'est la page de la chaîne qui déplie (FR-003). -->
       <CommonTexteRepliable

@@ -27,6 +27,7 @@
   --color-af-orange: #FF8746;    /* extrémité claire du dégradé, jamais en aplat */
   --color-af-vert: #1C8C1C;      /* badges de catégorie et de région, vérifié */
   --color-af-fond: #F5F5F5;      /* ground applicatif */
+  --color-af-surface: #FFFFFF;   /* cartes, barres, modales, champs : ce qui SE POSE sur le ground */
   --color-af-bordure: #D9D9D9;   /* contours, filets, fonds d'étiquette */
   --color-af-live: #FF0004;      /* pastille direct, usage unique */
   --color-af-encre: #16161D;     /* Grey/900 */
@@ -116,4 +117,49 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+
+/* ===== Thème nuit « cinéma » =====================================================
+   Porté par le gabarit `africans-cinema` (page Télé), où la vitrine se parcourt
+   comme un catalogue de streaming : fond noir de bout en bout, la couverture
+   des programmes seule source de couleur.
+
+   Il ne redéfinit AUCUNE classe : il redéclare les jetons `af-*` sur un
+   conteneur. Tailwind v4 compile `text-af-encre` en `color: var(--color-af-encre)`,
+   si bien que tout le sous-arbre bascule sans qu'un composant partagé ait à
+   connaître deux jeux de classes. C'est aussi ce qui rend la bascule sûre : hors
+   de `.af-cinema`, les valeurs claires restent seules en vigueur.
+
+   Contrepartie assumée : un composant qui écrit `bg-white` en dur ne bascule
+   pas. Ceux du parcours Télé ont donc été portés sur `bg-af-surface` ; les
+   blancs restants sont des blancs de MÉDIA (bouton de lecture sur une vignette,
+   jauge sur une photo), qui doivent rester blancs sur toute image. */
+.af-cinema {
+  --color-af-fond: #0B0B0F;      /* ground nuit, sous la vedette plein écran */
+  --color-af-surface: #17171C;   /* barres, panneaux, modales, champs */
+  --color-af-bordure: #2C2C35;
+  --color-af-encre: #F5F5F7;     /* titres */
+  --color-af-corps: #C6C6D0;     /* texte courant */
+  --color-af-atone: #8F8FA6;     /* métadonnées */
+  --color-af-atone-2: #6C6C82;   /* placeholders, inactif */
+  --color-af-icone: #E6E6EC;
+  /* Le chocolat de marque (#A74916) tombe à 2,6:1 sur ce fond : illisible en
+     texte. Il est remonté vers l'orange du dégradé, qui reste la même marque. */
+  --color-af-chocolat: #E86A2C;
+}
+
+/* Le correctif de base impose `color: gray-900` à tout champ de formulaire :
+   sur une surface nuit, la saisie serait noire sur noir. */
+.af-cinema :is(input, textarea, select) {
+  color: var(--color-af-encre);
+}
+.af-cinema :is(input, textarea)::placeholder {
+  color: var(--color-af-atone-2);
+}
+/* Les options d'une liste déroulante sont peintes par le système, jamais par la
+   classe du `select` : sans cette règle, elles s'ouvrent en noir sur blanc. */
+.af-cinema select option {
+  background-color: var(--color-af-surface);
+  color: var(--color-af-encre);
 }

@@ -413,7 +413,7 @@ const soumettreFormulaire = async () => {
               v-model="lienExterne"
               type="url"
               :disabled="!!fichierMedia"
-              class="h-11 w-full rounded-md border border-af-bordure bg-white px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none disabled:opacity-50"
+              class="h-11 w-full rounded-md border border-af-bordure bg-af-surface px-4 text-[14px]/[1.4] placeholder:text-af-atone-2 focus:border-af-chocolat focus:outline-none disabled:opacity-50"
               placeholder="…ou collez un lien (YouTube, flux en ligne…)"
             >
             <p v-if="fichierMedia" class="text-[12px] text-af-atone">

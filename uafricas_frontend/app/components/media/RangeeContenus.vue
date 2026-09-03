@@ -120,7 +120,7 @@ onBeforeUnmount(() => observateur?.disconnect())
       v-show="peutReculer"
       type="button"
       :style="styleFleche"
-      class="absolute left-1 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-af-encre shadow-lg ring-1 ring-af-bordure transition hover:scale-105 hover:text-af-chocolat focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat md:flex"
+      class="absolute left-1 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-af-surface text-af-encre shadow-lg ring-1 ring-af-bordure transition hover:scale-105 hover:text-af-chocolat focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat md:flex"
       aria-label="Contenus précédents"
       @click="defiler(-1)"
     >
@@ -148,7 +148,7 @@ onBeforeUnmount(() => observateur?.disconnect())
       v-show="peutAvancer"
       type="button"
       :style="styleFleche"
-      class="absolute right-1 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-af-encre shadow-lg ring-1 ring-af-bordure transition hover:scale-105 hover:text-af-chocolat focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat md:flex"
+      class="absolute right-1 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-af-surface text-af-encre shadow-lg ring-1 ring-af-bordure transition hover:scale-105 hover:text-af-chocolat focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat md:flex"
       aria-label="Contenus suivants"
       @click="defiler(1)"
     >
@@ -158,15 +158,3 @@ onBeforeUnmount(() => observateur?.disconnect())
     <p v-if="messageVide" class="text-af-atone text-sm px-1">{{ messageVide }}</p>
   </section>
 </template>
-
-<style scoped>
-/* Masque la barre de défilement sans désactiver le défilement lui-même.
-   Tailwind v4 n'expose pas d'utilitaire pour cela. */
-.scrollbar-none {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
-}
-</style>

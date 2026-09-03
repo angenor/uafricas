@@ -16,8 +16,14 @@ const LienNuxt = resolveComponent('NuxtLink')
  *
  * Deux formats, même carte :
  *  • `grille` : la carte s'étale dans la grille qui la contient (radio) ;
- *  • `rangee` : largeur fixe et point d'accroche pour la piste horizontale de
- *    la vitrine Télé, qui se parcourt comme un catalogue de streaming. La
+ *  • `rangee` : point d'accroche pour la piste horizontale de la vitrine Télé,
+ *    qui se parcourt comme un catalogue de streaming. La largeur y est un
+ *    POURCENTAGE de la piste, non un nombre de pixels : c'est ce qui donne un
+ *    nombre entier de tuiles par écran (2, 3, 4 puis 5 selon la largeur), le
+ *    reliquat laissant voir la suivante — l'invitation à faire défiler. À
+ *    largeur fixe, la dernière tuile visible était coupée n'importe où. Le
+ *    plafond de 340 px borne le pourcentage : au-delà, un très grand écran
+ *    étirerait cinq tuiles jusqu'à l'affiche de cinéma. La
  *    couverture porte alors tout le poids visuel : la description ne s'affiche
  *    plus qu'au survol, sous un voile, comme la vignette d'un service de VOD.
  *
@@ -91,7 +97,7 @@ const reperes = computed(() => {
     :role="format === 'rangee' ? 'listitem' : undefined"
     class="group block text-left"
     :class="format === 'rangee'
-      ? 'w-[210px] shrink-0 snap-start sm:w-[238px] lg:w-[262px]'
+      ? 'w-[42%] max-w-[340px] sm:w-[30.5%] lg:w-[23%] xl:w-[18.6%] shrink-0 snap-start'
       : 'w-full'"
   >
     <!-- L'agrandissement porte sur la seule couverture : la tuile grandit sous

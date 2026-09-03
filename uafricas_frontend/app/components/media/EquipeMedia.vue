@@ -94,7 +94,7 @@ const lienContact = (contact: string): string | null => {
         class="rounded-lg border px-3 py-2.5 transition-colors"
         :class="sombre
           ? 'border-af-bordure bg-af-fond hover:border-af-chocolat/50'
-          : 'border-af-bordure bg-white hover:border-af-chocolat/50'"
+          : 'border-af-bordure bg-af-surface hover:border-af-chocolat/50'"
       >
         <NuxtLink
           v-if="membre.utilisateur_id"

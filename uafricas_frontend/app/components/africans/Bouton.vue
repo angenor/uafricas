@@ -56,7 +56,7 @@ const composant = computed(() => (props.vers && !props.desactive ? LienNuxt : 'b
 
 const classesVariante = computed(() => ({
   primaire: 'bg-af-degrade text-white hover:opacity-90',
-  secondaire: 'border border-af-chocolat bg-white text-af-chocolat hover:bg-af-chocolat/[0.07]',
+  secondaire: 'border border-af-chocolat bg-af-surface text-af-chocolat hover:bg-af-chocolat/[0.07]',
   vert: 'bg-af-vert text-white hover:opacity-90',
 }[props.variante]))
 </script>

@@ -26,7 +26,7 @@
             role="dialog"
             aria-modal="true"
             :aria-labelledby="idTitre"
-            class="relative w-full overflow-hidden rounded-[10px] bg-white shadow-xl"
+            class="relative w-full overflow-hidden rounded-[10px] bg-af-surface shadow-xl"
             :class="taille === 'large' ? 'max-w-4xl' : 'max-w-[615px]'"
             tabindex="-1"
           >

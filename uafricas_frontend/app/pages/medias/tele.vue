@@ -196,7 +196,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <NuxtLayout name="africans">
+  <NuxtLayout name="africans-cinema">
     <!-- La vedette occupe le slot BANDEAU, qui est pleine largeur comme celui
          des autres modules : c'est la seule façon de garder l'écran d'accueil
          cinématographique de FR-002 sans sortir du gabarit. La barre de
