@@ -145,6 +145,11 @@ pub struct CouverturePublique {
     /// vide, et le restera, le trigger SQL refuse l'ajout.
     pub couverture_continentale: bool,
     pub territoires: Vec<TerritoirePublic>,
+    /// Support thématique (09v) : la couverture continentale n'y est pas un
+    /// choix mais une conséquence, et l'écran d'édition n'a alors aucun champ
+    /// de couverture à présenter. Sert les formulaires, qui ne lisent que cet
+    /// objet là où la fiche complète du support n'est pas chargée.
+    pub est_thematique: bool,
 }
 
 #[derive(Debug, Serialize, FromRow)]

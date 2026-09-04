@@ -463,12 +463,12 @@ async fn creer_objet(
             let slug = slug_libre(tx, "media_content.chaine_tv", &generer_slug(nom)).await?;
             sqlx::query_scalar(
                 "INSERT INTO media_content.chaine_tv
-                    (nom, slug, description, stream_url, image_couverture_url, pays_id, langue,
+                    (nom, slug, description, stream_url, image_couverture_url, langue,
                      etat, cree_par, role_partie_prenante, role_partie_prenante_autre,
                      contact_email, contact_telephone, contact_whatsapp,
                      contact_site_web, contact_adresse)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'publie', $8, $9, $10,
-                         $11, $12, $13, $14, $15)
+                 VALUES ($1, $2, $3, $4, $5, $6, 'publie', $7, $8, $9,
+                         $10, $11, $12, $13, $14)
                  RETURNING id",
             )
             .bind(nom)
@@ -476,7 +476,6 @@ async fn creer_objet(
             .bind(donnees.description.as_deref())
             .bind(donnees.stream_url.as_deref())
             .bind(donnees.image_couverture_url.as_deref())
-            .bind(pays_id)
             .bind(langue)
             .bind(auteur_id)
             .bind(donnees.role_partie_prenante.as_deref())
@@ -651,7 +650,107 @@ async fn creer_objet(
         }
     };
 
+    // La portée n'est écrite que pour les supports, et dans la MÊME transaction
+    // que leur création : une chaîne publiée sans thématique ni couverture ne
+    // remonterait sous aucun filtre de la vitrine, alors que le proposant les a
+    // renseignées à la soumission.
+    if matches!(type_objet, "chaine_tv" | "station_radio") {
+        appliquer_portee_support(tx, type_objet, id, donnees).await?;
+    }
+
     Ok(Some(id))
+}
+
+/// Écrit la portée d'un support fraîchement créé : nature thématique ou
+/// territoriale (09v), et la couverture qui en découle.
+///
+/// Les deux natures sont exclusives et l'exclusion est déjà tenue en base
+/// (CHECK `ck_*_thematique_continentale`, trigger d'exclusivité de 09r). Cette
+/// fonction n'a donc pas à s'en défendre : elle a à écrire une portée
+/// COHÉRENTE, en un seul UPDATE.
+async fn appliquer_portee_support(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    type_support: &str,
+    support_id: Uuid,
+    donnees: &DonneesProposition,
+) -> Result<(), ApiErreur> {
+    let table = match type_support {
+        "chaine_tv" => "chaine_tv",
+        _ => "station_radio",
+    };
+
+    let thematique = donnees.est_thematique.unwrap_or(false);
+    // Le drapeau et la couverture continentale s'écrivent ENSEMBLE : le CHECK
+    // porte sur la ligne, un UPDATE en deux temps échouerait au premier.
+    let continentale = thematique || donnees.couverture_continentale.unwrap_or(false);
+
+    sqlx::query(&format!(
+        "UPDATE media_content.{table}
+            SET est_thematique = $2, couverture_continentale = $3, updated_at = NOW()
+          WHERE id = $1"
+    ))
+    .bind(support_id)
+    .bind(thematique)
+    .bind(continentale)
+    .execute(&mut **tx)
+    .await?;
+
+    if thematique {
+        if let Some(categorie_id) = donnees.thematique_id {
+            sqlx::query(
+                "INSERT INTO media_content.support_thematique (type_support, support_id, categorie_id)
+                 VALUES ($1::media_content.type_support_media, $2, $3)
+                 ON CONFLICT DO NOTHING",
+            )
+            .bind(type_support)
+            .bind(support_id)
+            .bind(categorie_id)
+            .execute(&mut **tx)
+            .await?;
+        }
+        return Ok(());
+    }
+
+    if continentale {
+        return Ok(());
+    }
+
+    let mut vus = std::collections::HashSet::new();
+    let territoires: Vec<Uuid> = donnees
+        .territoires
+        .iter()
+        .copied()
+        .filter(|id| vus.insert(*id))
+        .collect();
+
+    for pays_id in &territoires {
+        sqlx::query(
+            "INSERT INTO media_content.support_territoire (type_support, support_id, pays_id)
+             VALUES ($1::media_content.type_support_media, $2, $3)
+             ON CONFLICT DO NOTHING",
+        )
+        .bind(type_support)
+        .bind(support_id)
+        .bind(pays_id)
+        .execute(&mut **tx)
+        .await?;
+    }
+
+    // La station radio garde son `pays_id` (une station émet depuis un lieu) :
+    // un territoire unique le renseigne. La chaîne TV n'a plus cette colonne
+    // depuis 09v — sa couverture EST la donnée.
+    if type_support == "station_radio" && territoires.len() == 1 {
+        sqlx::query(
+            "UPDATE media_content.station_radio SET pays_id = $2
+              WHERE id = $1 AND pays_id IS NULL",
+        )
+        .bind(support_id)
+        .bind(territoires[0])
+        .execute(&mut **tx)
+        .await?;
+    }
+
+    Ok(())
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

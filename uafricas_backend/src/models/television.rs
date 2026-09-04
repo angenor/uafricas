@@ -17,8 +17,9 @@ use crate::services::contacts_media::ContactsSupport;
 
 pub const CHAINE_TV_COLONNES: &str =
     "ct.id, ct.nom, ct.slug, ct.description, ct.stream_url, ct.image_couverture_url,
-     ct.categorie::text AS categorie, ct.pays_id, ct.langue, ct.est_en_direct,
-     ct.etat, ct.origine_publication, ct.role_partie_prenante, ct.role_partie_prenante_autre,
+     ct.categorie::text AS categorie, ct.langue, ct.est_en_direct,
+     ct.etat, ct.origine_publication, ct.est_thematique,
+     ct.role_partie_prenante, ct.role_partie_prenante_autre,
      ct.contact_email, ct.contact_telephone, ct.contact_whatsapp,
      ct.contact_site_web, ct.contact_adresse,
      ct.nombre_signalements, ct.cree_par, ct.created_at, ct.updated_at";
@@ -34,12 +35,14 @@ pub struct ChaineTvRow {
     pub stream_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub categorie: String,
-    pub pays_id: Option<Uuid>,
     pub langue: String,
     pub est_en_direct: bool,
     pub etat: String,
     /// « africans » (Africans Télé International) ou « territoire », cf. 09o.
     pub origine_publication: String,
+    /// Chaîne thématique (09v) : une seule thématique de grille, et tous les
+    /// territoires d'office. Exclut toute couverture territoriale.
+    pub est_thematique: bool,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     /// Coordonnées publiques de l'équipe (09p), toutes facultatives.
@@ -52,9 +55,6 @@ pub struct ChaineTvRow {
     pub cree_par: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-    // Champs jointures optionnels
-    #[sqlx(default)]
-    pub pays_nom: Option<String>,
 }
 
 // ── Response DTOs ─────────────────────────────────────────────────────
@@ -68,12 +68,14 @@ pub struct ChaineTvResponse {
     pub stream_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub categorie: String,
-    pub pays: Option<String>,
     pub langue: String,
     pub est_en_direct: bool,
     /// Distingue les chaînes de la plateforme (« africans ») de celles d'un
     /// territoire : c'est le filtre « Africans Télé International ».
     pub origine_publication: String,
+    /// Chaîne thématique (09v). Le client s'en sert pour n'afficher NI le champ
+    /// « territoires » ni une seconde thématique : les deux sont sans objet.
+    pub est_thematique: bool,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     /// Coordonnées publiques de l'équipe (09p). Absent du JSON quand la chaîne
@@ -116,7 +118,10 @@ pub struct ChaineTvListeResponse {
 pub struct ChaineTvQueryParams {
     pub recherche: Option<String>,
     pub categorie: Option<String>,
-    pub pays: Option<String>,
+    /// Territoire couvert (`support_territoire`), et non plus le pays unique de
+    /// la chaîne : celui-ci a disparu avec 09v, une chaîne pouvant en couvrir
+    /// plusieurs. Les chaînes continentales remontent sur chaque territoire.
+    pub territoire: Option<Uuid>,
     pub page: Option<i64>,
     pub par_page: Option<i64>,
 }
@@ -129,7 +134,6 @@ pub struct CreerChaineTvForm {
     pub description: Option<String>,
     pub stream_url: Option<String>,
     pub categorie: Option<String>,
-    pub pays: Option<String>,
     pub langue: Option<String>,
 }
 
@@ -189,10 +193,10 @@ impl ChaineTvRow {
             stream_url: self.stream_url.clone(),
             image_couverture_url: self.image_couverture_url.clone(),
             categorie: mapper_categorie_chaine_frontend(&self.categorie),
-            pays: self.pays_nom.clone(),
             langue: self.langue.clone(),
             est_en_direct: self.est_en_direct,
             origine_publication: self.origine_publication.clone(),
+            est_thematique: self.est_thematique,
             role_partie_prenante: self.role_partie_prenante.clone(),
             role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
             contacts: ContactsSupport::depuis(
@@ -256,7 +260,6 @@ pub struct TeleSectionsListeResponse {
 #[derive(Debug, Deserialize)]
 pub struct TeleSectionsQueryParams {
     pub recherche: Option<String>,
-    pub pays: Option<String>,
     pub categorie: Option<String>,
     /// « africans » ou « territoire » (09o), filtre « Africans Télé International ».
     pub origine: Option<String>,
@@ -311,6 +314,7 @@ pub struct VedetteTeleResponse {
 #[derive(Debug, Serialize)]
 pub struct TelevisionStats {
     pub nombre_chaines: i64,
+    /// Territoires distincts couverts par au moins une chaîne publiée.
     pub nombre_pays: i64,
     pub nombre_programmes: i64,
     pub nombre_chaines_en_direct: i64,

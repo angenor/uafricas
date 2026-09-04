@@ -1119,7 +1119,6 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     // `/pays` sert encore le filtre « Territoire (siège) » de la
                     // barre d'entrée : il dit où la chaîne est rattachée, là où
                     // `/territoires` (09r) dit où elle rayonne. Les deux coexistent.
-                    .route("/pays", web::get().to(television::lister_pays_television))
                     .route("/stats", web::get().to(television::obtenir_stats_television)),
             )
             // Interactions communautaires et contributions sur les médias (US3, US4).

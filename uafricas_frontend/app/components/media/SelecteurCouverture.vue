@@ -102,7 +102,7 @@ const enDefaut = computed(
         class="text-left rounded-lg border px-4 py-3 transition-colors disabled:opacity-50"
         :class="continentale
           ? (sombre ? 'bg-af-chocolat/10 border-af-chocolat' : 'bg-gray-900/5 border-af-encre')
-          : (sombre ? 'bg-white/5 border-white/15 hover:border-white/40' : 'bg-white border-af-bordure hover:border-af-bordure')"
+          : (sombre ? 'bg-white/5 border-white/15 hover:border-white/40' : 'bg-af-surface border-af-bordure hover:border-af-bordure')"
         @click="basculerContinentale(true)"
       >
         <span class="block font-semibold" :class="sombre ? 'text-white' : 'text-af-encre'">
@@ -119,7 +119,7 @@ const enDefaut = computed(
         class="text-left rounded-lg border px-4 py-3 transition-colors disabled:opacity-50"
         :class="!continentale
           ? (sombre ? 'bg-af-chocolat/10 border-af-chocolat' : 'bg-gray-900/5 border-af-encre')
-          : (sombre ? 'bg-white/5 border-white/15 hover:border-white/40' : 'bg-white border-af-bordure hover:border-af-bordure')"
+          : (sombre ? 'bg-white/5 border-white/15 hover:border-white/40' : 'bg-af-surface border-af-bordure hover:border-af-bordure')"
         @click="basculerContinentale(false)"
       >
         <span class="block font-semibold" :class="sombre ? 'text-white' : 'text-af-encre'">
@@ -140,7 +140,7 @@ const enDefaut = computed(
         class="w-full rounded-lg px-3 py-2 text-sm mb-3 border outline-none transition-colors disabled:opacity-50"
         :class="sombre
           ? 'bg-white/5 border-white/15 text-white placeholder-af-atone-2 focus:border-af-chocolat'
-          : 'bg-white border-af-bordure text-af-encre placeholder-af-atone-2 focus:border-af-encre'"
+          : 'bg-af-surface border-af-bordure text-af-encre placeholder-af-atone-2 focus:border-af-chocolat'"
       >
 
       <div
@@ -156,10 +156,10 @@ const enDefaut = computed(
           :class="estSelectionne(territoire.id)
             ? (sombre
               ? 'bg-af-chocolat border-af-chocolat text-af-encre font-semibold'
-              : 'bg-gray-900 border-af-encre text-white font-semibold')
+              : 'bg-af-chocolat border-af-chocolat text-white font-semibold')
             : (sombre
               ? 'bg-white/5 border-white/15 text-gray-300 hover:border-af-chocolat'
-              : 'bg-white border-af-bordure text-af-corps hover:border-af-encre')"
+              : 'bg-af-surface border-af-bordure text-af-corps hover:border-af-chocolat')"
           @click="basculerTerritoire(territoire.id)"
         >
           {{ territoire.nom }}
@@ -167,7 +167,7 @@ const enDefaut = computed(
 
         <p
           v-if="!filtres.length"
-          :class="sombre ? 'text-sm text-af-atone' : 'text-sm text-gray-400'"
+          :class="sombre ? 'text-sm text-af-atone' : 'text-sm text-af-atone'"
         >
           Aucun territoire ne correspond à cette recherche.
         </p>

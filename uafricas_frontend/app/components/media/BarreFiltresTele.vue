@@ -19,7 +19,10 @@
  *     Journal télévisé…), INDÉPENDANTE de l'origine ci-dessus — cocher un
  *     genre filtre toutes les chaînes qui le déclarent, « africans » et
  *     « territoire » confondues ;
- *   • Territoire : pays de rattachement de la chaîne ;
+ *   • Territoire : territoire COUVERT par la chaîne (`support_territoire`), et
+ *     non plus son pays de rattachement, qui n'existe plus (09v) : une chaîne
+ *     en couvre un, plusieurs, ou tous — une chaîne continentale remonte donc
+ *     sous chaque territoire ;
  *   • En direct : chaînes actuellement à l'antenne.
  *
  * Les deux référentiels ne se recouvrent jamais (09u rattache les 44 lignes à
@@ -42,10 +45,11 @@ import type { ThematiqueDecompte } from '~/composables/useMediaSupport'
 const props = withDefaults(defineProps<{
   /** '' = toutes origines ; 'africans' = Africans Télé International. */
   origine: string
-  /** Nom du territoire de rattachement, ou 'Tous les territoires'. */
-  pays: string
+  /** Identifiant du territoire filtré ; chaîne vide = tous. */
+  territoire: string
   enDirect: boolean
-  territoires: string[]
+  /** Territoires réellement couverts, avec leur décompte de chaînes. */
+  territoires: { id: string, nom: string, nombre_supports: number }[]
   /** Genres de grille déclarés (US3, 09s), sélection multiple. */
   thematiques?: string[]
   /** Référentiel des 22 genres, chacun avec son nombre de chaînes publiées :
@@ -68,20 +72,19 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:origine': [valeur: string]
-  'update:pays': [valeur: string]
+  'update:territoire': [valeur: string]
   'update:enDirect': [valeur: boolean]
   'update:thematiques': [valeur: string[]]
   'update:rubriquesInternational': [valeur: string[]]
   reinitialiser: []
 }>()
 
-const TOUS_TERRITOIRES = 'Tous les territoires'
 
 const estAfricans = computed(() => props.origine === 'africans')
 
 const filtresActifs = computed(() =>
   estAfricans.value
-  || props.pays !== TOUS_TERRITOIRES
+  || props.territoire !== ''
   || props.enDirect
   || props.thematiques.length > 0,
 )
@@ -217,16 +220,18 @@ const classeSelect = [
           <font-awesome-icon
             :icon="['fas', 'earth-africa']"
             class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-            :class="pays !== TOUS_TERRITOIRES ? 'text-af-orange' : 'text-white/80'"
+            :class="territoire !== '' ? 'text-af-orange' : 'text-white/80'"
           />
           <select
-            :value="pays"
-            :class="[...classeSelect, 'w-52', pays !== TOUS_TERRITOIRES ? 'ring-af-orange text-af-orange' : '']"
+            :value="territoire"
+            :class="[...classeSelect, 'w-52', territoire !== '' ? 'ring-af-orange text-af-orange' : '']"
             aria-label="Filtrer par territoire"
-            @change="emit('update:pays', ($event.target as HTMLSelectElement).value)"
+            @change="emit('update:territoire', ($event.target as HTMLSelectElement).value)"
           >
-            <option class="bg-black/80 text-white" :value="TOUS_TERRITOIRES">Tous les territoires</option>
-            <option v-for="t in territoires" :key="t" class="bg-black/80 text-white" :value="t">{{ t }}</option>
+            <option class="bg-black/80 text-white" value="">Tous les territoires</option>
+            <option v-for="t in territoires" :key="t.id" class="bg-black/80 text-white" :value="t.id">
+              {{ t.nom }} ({{ t.nombre_supports }})
+            </option>
           </select>
           <font-awesome-icon
             :icon="['fas', 'chevron-down']"

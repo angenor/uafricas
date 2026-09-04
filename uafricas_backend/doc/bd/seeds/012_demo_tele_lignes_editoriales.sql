@@ -346,13 +346,13 @@ BEGIN
     -- ========================================================================
     FOR c IN SELECT * FROM tmp_chaine012 ORDER BY ordre LOOP
         INSERT INTO media_content.chaine_tv
-            (nom, slug, description, image_couverture_url, categorie, pays_id, langue,
+            (nom, slug, description, image_couverture_url, categorie, langue,
              est_en_direct, etat, origine_publication, couverture_continentale,
              stream_url, contact_email, contact_site_web, cree_par)
         VALUES
             (c.nom, c.slug, c.description,
              'https://picsum.photos/seed/uafricas-' || c.slug || '/600/600',
-             c.categorie::media_content.categorie_chaine_tv, NULL, c.langue,
+             c.categorie::media_content.categorie_chaine_tv, c.langue,
              c.en_direct, 'publie', 'africans', TRUE,
              CASE WHEN c.en_direct THEN 'https://www.youtube.com/watch?v=' || v_videos[1 + (c.ordre % 15)] END,
              c.email, c.site_web, v_auteur)

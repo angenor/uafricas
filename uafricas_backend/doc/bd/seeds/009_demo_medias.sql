@@ -211,12 +211,11 @@ BEGIN
     INSERT INTO media_content.chaine_tv
         (id, nom, slug, description, image_couverture_url, categorie, langue,
          est_en_direct, etat, origine_publication, couverture_continentale,
-         pays_id, contact_email, contact_telephone, cree_par, created_at, updated_at)
+         contact_email, contact_telephone, cree_par, created_at, updated_at)
     VALUES (gen_random_uuid(), 'Terrain Afrique', 'terrain-afrique',
             'Le reportage au ras du sol : ce que vivent les villes et les campagnes, sans commentaire de plateau.',
             'https://i.ytimg.com/vi/Ofn31if1Fac/hqdefault.jpg',
             'info', 'Français', FALSE, 'publie', 'territoire', FALSE,
-            (SELECT id FROM shared.pays WHERE nom = 'Côte d''Ivoire'),
             'terrain@africans-world.org', '+225 07 00 00 00', v_auteur, NOW(), NOW())
     RETURNING id INTO v_chaine;
 
@@ -320,11 +319,11 @@ BEGIN
             VALUES ('chaine_tv', v_chaine, v_theme) ON CONFLICT DO NOTHING;
         END LOOP;
 
-        -- La chaîne porte déjà un pays de siège : sa couverture reprend ce
-        -- territoire, faute de quoi elle resterait absente du filtre.
+        -- Sans couverture déclarée, la chaîne resterait absente du filtre
+        -- Territoire. Le pays de siège ayant disparu avec 09v, le territoire
+        -- est nommé, comme partout ailleurs dans ce seed.
         INSERT INTO media_content.support_territoire (type_support, support_id, pays_id)
-        SELECT 'chaine_tv', v_chaine, pays_id
-          FROM media_content.chaine_tv WHERE id = v_chaine AND pays_id IS NOT NULL
+        SELECT 'chaine_tv', v_chaine, id FROM shared.pays WHERE nom = 'Côte d''Ivoire'
         ON CONFLICT DO NOTHING;
 
         RAISE NOTICE 'Test1 complétée : thématiques et couverture posées.';

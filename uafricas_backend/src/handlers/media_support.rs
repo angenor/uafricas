@@ -82,19 +82,20 @@ pub async fn couverture_par_supports(
     let table = table_pour_support(type_support)
         .ok_or_else(|| ApiErreur::Validation("Type de support inconnu".into()))?;
 
-    let drapeaux: Vec<(Uuid, bool)> = sqlx::query_as(&format!(
-        "SELECT id, couverture_continentale FROM {table} WHERE id = ANY($1)"
+    let drapeaux: Vec<(Uuid, bool, bool)> = sqlx::query_as(&format!(
+        "SELECT id, couverture_continentale, est_thematique FROM {table} WHERE id = ANY($1)"
     ))
     .bind(support_ids)
     .fetch_all(pool)
     .await?;
 
-    for (id, continentale) in drapeaux {
+    for (id, continentale, thematique) in drapeaux {
         resultat.insert(
             id,
             CouverturePublique {
                 couverture_continentale: continentale,
                 territoires: Vec::new(),
+                est_thematique: thematique,
             },
         );
     }
@@ -261,8 +262,8 @@ async fn appliquer_thematiques(
     let table = table_pour_support(type_support)
         .ok_or_else(|| ApiErreur::Validation("Type de support inconnu".into()))?;
 
-    let etat: String = sqlx::query_scalar(&format!(
-        "SELECT etat FROM {table} WHERE id = $1 AND deleted_at IS NULL"
+    let (etat, est_thematique): (String, bool) = sqlx::query_as(&format!(
+        "SELECT etat, est_thematique FROM {table} WHERE id = $1 AND deleted_at IS NULL"
     ))
     .bind(support_id)
     .fetch_optional(pool)
@@ -271,6 +272,16 @@ async fn appliquer_thematiques(
 
     body.valider(&etat)?;
     let ids = body.ids_uniques();
+
+    // Un support thématique en déclare UNE, ni zéro ni deux (09v). Le trigger
+    // SQL refuse la seconde ; il ne peut rien contre l'absence, une thématique
+    // n'ayant pas encore été écrite au moment où le support naît. C'est donc
+    // ici, et ici seulement, que « exactement une » est tenue.
+    if est_thematique && ids.len() != 1 {
+        return Err(ApiErreur::Validation(
+            "Un support thématique déclare exactement une thématique".into(),
+        ));
+    }
 
     if !ids.is_empty() {
         let valides: i64 = sqlx::query_scalar(
@@ -334,8 +345,8 @@ async fn appliquer_couverture(
     let table = table_pour_support(type_support)
         .ok_or_else(|| ApiErreur::Validation("Type de support inconnu".into()))?;
 
-    let etat: String = sqlx::query_scalar(&format!(
-        "SELECT etat FROM {table} WHERE id = $1 AND deleted_at IS NULL"
+    let (etat, est_thematique): (String, bool) = sqlx::query_as(&format!(
+        "SELECT etat, est_thematique FROM {table} WHERE id = $1 AND deleted_at IS NULL"
     ))
     .bind(support_id)
     .fetch_optional(pool)
@@ -344,6 +355,16 @@ async fn appliquer_couverture(
 
     body.valider(&etat)?;
     let ids = body.ids_uniques();
+
+    // Le CHECK `ck_*_thematique_continentale` rejetterait de toute façon la
+    // bascule, mais avec le message de PostgreSQL. Le refus est formulé ici,
+    // dans les termes de l'exigence : un support thématique n'a pas de
+    // territoire à déclarer, il les couvre tous.
+    if est_thematique && (!body.couverture_continentale || !ids.is_empty()) {
+        return Err(ApiErreur::Validation(
+            "Un support thématique couvre d'office tous les territoires : sa couverture ne se saisit pas".into(),
+        ));
+    }
 
     let mut tx = pool.begin().await?;
 
@@ -634,8 +655,14 @@ pub async fn referentiels_edition(
     .fetch_all(pool.get_ref())
     .await?;
 
+    // Les 198 lignes de `shared.pays` couvrent le monde entier : proposer
+    // l'Albanie ou l'Argentine comme territoire d'une chaîne panafricaine était
+    // du bruit, et noyait les 54 territoires qui ont un sens ici. Les pays
+    // inactifs sont écartés au passage, comme partout ailleurs.
     let territoires = sqlx::query_as::<_, (Uuid, String)>(
-        "SELECT id, nom FROM shared.pays ORDER BY nom ASC",
+        "SELECT id, nom FROM shared.pays
+          WHERE actif = TRUE AND continent = 'Afrique'
+          ORDER BY nom ASC",
     )
     .fetch_all(pool.get_ref())
     .await?;

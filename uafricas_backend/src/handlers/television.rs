@@ -78,14 +78,18 @@ pub async fn lister_chaines(
         bind_index += 1;
     }
 
-    if let Some(ref pays) = params.pays
-        && pays != "Tous les pays"
-    {
+    // Une chaîne continentale remonte sur CHAQUE territoire (FR-036) : le filtre
+    // ne peut pas se réduire à une appartenance, il porte sur la couverture.
+    if let Some(territoire) = params.territoire {
         conditions.push(format!(
-            "EXISTS (SELECT 1 FROM shared.pays p2 WHERE p2.id = ct.pays_id AND LOWER(p2.nom) = LOWER(${}))",
+            "(ct.couverture_continentale = TRUE
+              OR EXISTS (SELECT 1 FROM media_content.support_territoire ste
+                          WHERE ste.type_support = 'chaine_tv'::media_content.type_support_media
+                            AND ste.support_id = ct.id
+                            AND ste.pays_id = ${}::uuid))",
             bind_index
         ));
-        bind_values.push(pays.clone());
+        bind_values.push(territoire.to_string());
         bind_index += 1;
     }
 
@@ -116,9 +120,8 @@ pub async fn lister_chaines(
         .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur comptage chaînes TV: {}", e)))?;
 
     let query = format!(
-        "SELECT {}, p.nom AS pays_nom
+        "SELECT {}
          FROM media_content.chaine_tv ct
-         LEFT JOIN shared.pays p ON p.id = ct.pays_id
          WHERE {}
          ORDER BY ct.nom ASC
          LIMIT ${} OFFSET ${}",
@@ -168,9 +171,8 @@ pub async fn obtenir_chaine(
         .map_err(|_| ApiErreur::Validation("ID de chaîne invalide".into()))?;
 
     let query = format!(
-        "SELECT {}, p.nom AS pays_nom
+        "SELECT {}
          FROM media_content.chaine_tv ct
-         LEFT JOIN shared.pays p ON p.id = ct.pays_id
          WHERE ct.id = $1 AND ct.etat = 'publie' AND ct.deleted_at IS NULL",
         CHAINE_TV_COLONNES
     );
@@ -221,17 +223,6 @@ pub async fn creer_chaine(
         .unwrap_or_else(|| "generaliste".to_string());
     let langue = body.langue.as_deref().unwrap_or("Français");
 
-    let pays_id: Option<Uuid> = if let Some(ref pays_nom) = body.pays {
-        sqlx::query_scalar("SELECT id FROM shared.pays WHERE LOWER(nom) = LOWER($1)")
-            .bind(pays_nom)
-            .fetch_optional(pool.get_ref())
-            .await
-            .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur résolution pays: {}", e)))?
-    }
-    else {
-        None
-    };
-
     let chaine_id = Uuid::new_v4();
 
     // FAILLE FERMÉE (FR-031, FR-032) : cette route publique insérait
@@ -240,8 +231,8 @@ pub async fn creer_chaine(
     // administrateur ne l'a pas validé.
     sqlx::query(
         "INSERT INTO media_content.chaine_tv
-            (id, nom, slug, description, stream_url, categorie, pays_id, langue, etat, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6::media_content.categorie_chaine_tv, $7, $8, 'en_attente', $9)"
+            (id, nom, slug, description, stream_url, categorie, langue, etat, cree_par)
+         VALUES ($1, $2, $3, $4, $5, $6::media_content.categorie_chaine_tv, $7, 'en_attente', $8)"
     )
     .bind(chaine_id)
     .bind(body.nom.trim())
@@ -249,7 +240,6 @@ pub async fn creer_chaine(
     .bind(body.description.as_deref().map(str::trim))
     .bind(stream_url)
     .bind(&categorie)
-    .bind(pays_id)
     .bind(langue)
     .bind(utilisateur_id)
     .execute(pool.get_ref())
@@ -257,9 +247,8 @@ pub async fn creer_chaine(
     .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur création chaîne TV: {}", e)))?;
 
     let query = format!(
-        "SELECT {}, p.nom AS pays_nom
+        "SELECT {}
          FROM media_content.chaine_tv ct
-         LEFT JOIN shared.pays p ON p.id = ct.pays_id
          WHERE ct.id = $1",
         CHAINE_TV_COLONNES
     );
@@ -393,18 +382,6 @@ pub async fn lister_sections(
         bind_index += 1;
     }
 
-    if let Some(ref pays) = params.pays {
-        // Le frontend envoie « Tous les territoires » : la terminologie
-        // d'affichage dit « territoire » là où la base dit « pays ».
-        if pays != "Tous les territoires" && pays != "Tous les pays" {
-            conditions.push(format!(
-                "EXISTS (SELECT 1 FROM shared.pays p2 WHERE p2.id = ct.pays_id AND LOWER(p2.nom) = LOWER(${}))",
-                bind_index
-            ));
-            bind_values.push(pays.clone());
-            bind_index += 1;
-        }
-    }
 
     // « Africans Télé International » : les chaînes produites par la plateforme
     // (09o). Une valeur hors référentiel est ignorée plutôt que rejetée, un
@@ -510,9 +487,8 @@ pub async fn lister_sections(
     // Ordre stable entre deux visites : le nom seul ne départage pas deux
     // chaînes homonymes, d'où l'identifiant en second critère.
     let query_chaines = format!(
-        "SELECT {}, p.nom AS pays_nom
+        "SELECT {}
            FROM media_content.chaine_tv ct
-           LEFT JOIN shared.pays p ON p.id = ct.pays_id
           WHERE {}
           ORDER BY ct.nom ASC, ct.id ASC
           LIMIT ${} OFFSET ${}",
@@ -606,9 +582,8 @@ pub async fn obtenir_chaine_par_slug(
     let moi = media_social::extraire_utilisateur_id(&req);
 
     let query = format!(
-        "SELECT {}, p.nom AS pays_nom
+        "SELECT {}
            FROM media_content.chaine_tv ct
-           LEFT JOIN shared.pays p ON p.id = ct.pays_id
           WHERE ct.slug = $1 AND ct.etat = 'publie' AND ct.deleted_at IS NULL",
         CHAINE_TV_COLONNES
     );
@@ -781,30 +756,6 @@ pub async fn lister_territoires(pool: web::Data<PgPool>) -> Result<HttpResponse,
     }))
 }
 
-// ── GET /api/television/pays ──────────────────────────────────────────
-//
-// Conservé le temps du portage frontend, puis retiré au profit de
-// `/territoires` : il n'expose que le pays unique de la chaîne.
-
-pub async fn lister_pays_television(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
-    let pays: Vec<String> = sqlx::query_scalar(
-        "SELECT DISTINCT p.nom
-           FROM media_content.chaine_tv ct
-           JOIN shared.pays p ON p.id = ct.pays_id
-          WHERE ct.etat = 'publie' AND ct.deleted_at IS NULL AND ct.pays_id IS NOT NULL
-          ORDER BY p.nom ASC",
-    )
-    .fetch_all(pool.get_ref())
-    .await
-    .map_err(|e| ApiErreur::BaseDeDonnees(format!("Erreur listing pays TV: {}", e)))?;
-
-    Ok(HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        data: Some(pays),
-        error: None,
-    }))
-}
-
 // ── GET /api/television/stats ─────────────────────────────────────────
 
 pub async fn obtenir_stats_television(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiErreur> {
@@ -815,8 +766,11 @@ pub async fn obtenir_stats_television(pool: web::Data<PgPool>) -> Result<HttpRes
     .await?;
 
     let nombre_pays: i64 = sqlx::query_scalar(
-        "SELECT COUNT(DISTINCT pays_id) FROM media_content.chaine_tv
-          WHERE etat = 'publie' AND deleted_at IS NULL AND pays_id IS NOT NULL",
+        "SELECT COUNT(DISTINCT ste.pays_id)
+           FROM media_content.support_territoire ste
+           JOIN media_content.chaine_tv ct ON ct.id = ste.support_id
+          WHERE ste.type_support = 'chaine_tv'::media_content.type_support_media
+            AND ct.etat = 'publie' AND ct.deleted_at IS NULL",
     )
     .fetch_one(pool.get_ref())
     .await?;

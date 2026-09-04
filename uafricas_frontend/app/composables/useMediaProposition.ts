@@ -83,6 +83,18 @@ export interface DonneesProposition {
   source_declaree?: string
   auteur_declare?: string
   /**
+   * Portée du support proposé (09v), supports uniquement — deux natures
+   * exclusives, jamais présentées ensemble :
+   *   • thématique  : `est_thematique` + `thematique_id`, une seule, et tous
+   *     les territoires d'office (aucun champ de couverture à remplir) ;
+   *   • territoriale : `territoires` (un ou plusieurs) ou
+   *     `couverture_continentale`.
+   */
+  est_thematique?: boolean
+  thematique_id?: string
+  territoires?: string[]
+  couverture_continentale?: boolean
+  /**
    * Coordonnées publiques de l'équipe, pour les supports uniquement (09p).
    * Comme le reste de la proposition, elles n'atteignent le public qu'à la
    * validation : jusque-là seul l'administrateur les voit.

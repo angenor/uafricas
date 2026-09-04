@@ -123,6 +123,7 @@
 \ir schemas/09s_media_content_thematiques_grille.sql
 \ir schemas/09t_media_content_equipes_periodicite.sql
 \ir schemas/09u_media_content_lignes_editoriales_ati.sql
+\ir schemas/09v_media_content_chaine_thematique.sql
 \ir schemas/10_governance.sql
 \ir schemas/10f_governance_factcheck_volets_reactions.sql
 \ir schemas/10g_governance_factcheck_signalement.sql

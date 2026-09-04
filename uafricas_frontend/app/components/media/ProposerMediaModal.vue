@@ -17,8 +17,8 @@ import {
   type TypeObjetPropose,
   type DonneesProposition,
   type ThemePhareAPI,
-  type TerritoireAPI,
 } from '~/composables/useMediaProposition'
+import type { ThematiquePublique, TerritoirePublic } from '~/composables/useMediaSupport'
 
 const props = withDefaults(defineProps<{
   isOpen: boolean
@@ -36,7 +36,8 @@ const emit = defineEmits<{
   (e: 'soumise'): void
 }>()
 
-const { soumettre, chargement, erreur: erreurApi, listerThemes, listerTerritoires } = useMediaProposition()
+const { soumettre, chargement, erreur: erreurApi, listerThemes } = useMediaProposition()
+const { listerReferentielsEdition } = useMediaSupport()
 const { listerChaines } = useTelevision()
 const { listerStations } = useStationsRadio()
 const userStore = useUserStore()
@@ -52,7 +53,20 @@ const succes = ref(false)
 
 // Référentiels chargés une fois à la première ouverture.
 const themes = ref<ThemePhareAPI[]>([])
-const territoires = ref<TerritoireAPI[]>([])
+/**
+ * Territoires proposables. Ils viennent du RÉFÉRENTIEL D'ÉDITION, borné aux 55
+ * territoires africains, et non de `/api/pays`, qui en compte 198 : proposer
+ * l'Albanie comme couverture d'une chaîne panafricaine noyait les seuls choix
+ * qui aient un sens ici.
+ */
+const territoires = ref<TerritoirePublic[]>([])
+/**
+ * Thématiques de GRILLE, pour une chaîne thématique. Les lignes éditoriales
+ * d'Africans Télé International (09u) arrivent dans la même liste et sont
+ * écartées : elles relèvent d'un choix éditorial de la plateforme, jamais de
+ * la nature d'une chaîne proposée par un tiers.
+ */
+const thematiquesSupport = ref<ThematiquePublique[]>([])
 /**
  * Valeur du sélecteur de thème : l'identifiant d'un thème du référentiel, ou
  * la sentinelle `'autre'` qui révèle le champ de précision libre. Distincte de
@@ -71,6 +85,30 @@ const AUTRE = 'autre'
 const supportsParents = ref<{ id: string, nom: string }[]>([])
 
 const estSupport = computed(() => ['chaine_tv', 'station_radio'].includes(typeObjet.value))
+
+/**
+ * Nature du support proposé (09v). `false` = territoriale, le cas courant.
+ *
+ * Le drapeau vit ici plutôt que dans `donnees` parce qu'il pilote l'affichage
+ * autant que l'envoi : basculer d'une nature à l'autre efface les champs de
+ * l'autre, qui n'ont plus de sens.
+ */
+const estThematique = computed({
+  get: () => donnees.value.est_thematique === true,
+  set: (valeur: boolean) => {
+    donnees.value.est_thematique = valeur
+    if (valeur) {
+      // Une chaîne thématique couvre tous les territoires : ce n'est pas une
+      // case cochée par défaut, c'est une conséquence, et le serveur la
+      // réécrira de toute façon.
+      donnees.value.territoires = []
+      donnees.value.couverture_continentale = undefined
+    }
+    else {
+      donnees.value.thematique_id = undefined
+    }
+  },
+})
 // Depuis 009, « contenu » recouvre les PROGRAMMES conteneurs (`emission_*`) et
 // les épisodes (`episode_*`) : les deux se rattachent à un support et portent un
 // média, à ceci près qu'un programme peut naître sans fichier (FR-003).
@@ -135,7 +173,13 @@ watch(() => props.isOpen, async (ouvert) => {
   if (!ouvert) return
   reinitialiser()
   if (themes.value.length === 0) themes.value = await listerThemes()
-  if (territoires.value.length === 0) territoires.value = await listerTerritoires()
+  if (thematiquesSupport.value.length === 0 || territoires.value.length === 0) {
+    const referentiels = await listerReferentielsEdition()
+    // Les lignes éditoriales d'Africans Télé International n'ont rien à faire
+    // ici : elles relèvent d'un choix de la plateforme, pas d'un proposant.
+    thematiquesSupport.value = referentiels.thematiques.filter(t => !t.est_ligne_editoriale)
+    territoires.value = referentiels.territoires
+  }
   await chargerSupportsParents()
 })
 
@@ -168,11 +212,22 @@ const fermer = () => {
  */
 const valider = (): string | null => {
   if (!donnees.value.nom?.trim()) return 'Le nom est requis.'
-  if (!donnees.value.pays?.trim()) return 'Indiquez le territoire concerné.'
   if (!justification.value.trim()) {
     return 'Expliquez en quelques mots pourquoi vous proposez ce contenu.'
   }
   if (estSupport.value) {
+    // Portée (09v). Le territoire n'est plus demandé pour un contenu : il
+    // n'était écrit nulle part, une émission tenant son territoire de son
+    // support.
+    if (estThematique.value) {
+      if (!donnees.value.thematique_id) return 'Choisissez la thématique de la chaîne.'
+    }
+    else if (
+      !donnees.value.couverture_continentale
+      && !(donnees.value.territoires?.length)
+    ) {
+      return 'Choisissez un ou plusieurs territoires, ou « Tous les territoires ».'
+    }
     if (!donnees.value.role_partie_prenante) {
       return 'Indiquez à quel titre vous proposez ce média.'
     }
@@ -329,11 +384,76 @@ const soumettreFormulaire = async () => {
             placeholder="Présentez le contenu en quelques phrases…"
           />
 
-          <!-- Résolu en `pays_id` par nom côté serveur. -->
-          <AfricansChamp v-model="donnees.pays" libelle="Territoire" type="select" obligatoire>
-            <option value="">Choisir un territoire…</option>
-            <option v-for="t in territoires" :key="t.id" :value="t.nom">{{ t.nom }}</option>
-          </AfricansChamp>
+          <!-- Portée du support (09v). Deux natures exclusives, et le
+               formulaire ne montre jamais les champs de l'autre : une chaîne
+               thématique n'a pas de territoire à saisir, elle les couvre tous.
+
+               Le champ « Territoire » unique qui tenait cette place a disparu :
+               pour un support il ne disait qu'un territoire là où la chaîne
+               peut en couvrir plusieurs, et pour un contenu il n'était écrit
+               nulle part — une émission tient son territoire de son support. -->
+          <div v-if="estSupport" class="flex flex-col gap-3">
+            <p class="text-[14px]/[1.4] text-af-corps">
+              Portée de la {{ typeObjet === 'chaine_tv' ? 'chaîne' : 'station' }}
+              <span class="text-af-live">*</span>
+            </p>
+
+            <div class="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                class="rounded-lg border px-4 py-3 text-left transition-colors"
+                :class="!estThematique
+                  ? 'border-af-chocolat bg-af-chocolat/10'
+                  : 'border-af-bordure bg-af-surface hover:border-af-chocolat/50'"
+                @click="estThematique = false"
+              >
+                <span class="block text-[14px]/[1.4] font-bold text-af-encre">Territoriale</span>
+                <span class="mt-0.5 block text-[12px]/[1.4] text-af-atone">
+                  Un ou plusieurs territoires, ou toute l'Afrique.
+                </span>
+              </button>
+
+              <button
+                type="button"
+                class="rounded-lg border px-4 py-3 text-left transition-colors"
+                :class="estThematique
+                  ? 'border-af-chocolat bg-af-chocolat/10'
+                  : 'border-af-bordure bg-af-surface hover:border-af-chocolat/50'"
+                @click="estThematique = true"
+              >
+                <span class="block text-[14px]/[1.4] font-bold text-af-encre">Thématique</span>
+                <span class="mt-0.5 block text-[12px]/[1.4] text-af-atone">
+                  Une seule thématique, sur tous les territoires.
+                </span>
+              </button>
+            </div>
+
+            <MediaSelecteurCouverture
+              v-if="!estThematique"
+              :continentale="donnees.couverture_continentale === true"
+              :territoires="donnees.territoires ?? []"
+              :options="territoires"
+              requis
+              @update:continentale="donnees.couverture_continentale = $event"
+              @update:territoires="donnees.territoires = $event"
+            />
+
+            <template v-else>
+              <AfricansChamp
+                v-model="donnees.thematique_id"
+                libelle="Thématique de la chaîne"
+                type="select"
+                obligatoire
+              >
+                <option value="">Choisir une thématique…</option>
+                <option v-for="t in thematiquesSupport" :key="t.id" :value="t.id">{{ t.nom }}</option>
+              </AfricansChamp>
+              <p class="text-[12px]/[1.4] text-af-atone">
+                Aucun territoire à indiquer : une chaîne thématique concerne d'office
+                tous les territoires.
+              </p>
+            </template>
+          </div>
 
           <!-- Rôle de partie prenante (supports) : FR-029 -->
           <div v-if="estSupport" class="flex flex-col gap-2">

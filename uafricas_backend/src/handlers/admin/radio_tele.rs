@@ -636,9 +636,18 @@ pub async fn lister_chaines_tv(
         }
     }
 
-    if let Some(pays_id) = params.pays_id {
-        conditions.push(format!("c.pays_id = ${}", bind_index));
-        bind_uuids.push(pays_id);
+    // Une chaîne continentale couvre chaque territoire : le filtre porte sur la
+    // couverture (09r), la chaîne n'ayant plus de pays propre depuis 09v.
+    if let Some(territoire) = params.territoire {
+        conditions.push(format!(
+            "(c.couverture_continentale = TRUE
+              OR EXISTS (SELECT 1 FROM media_content.support_territoire ste
+                          WHERE ste.type_support = 'chaine_tv'::media_content.type_support_media
+                            AND ste.support_id = c.id
+                            AND ste.pays_id = ${}))",
+            bind_index
+        ));
+        bind_uuids.push(territoire);
         bind_types.push("uuid");
         bind_index += 1;
     }
@@ -651,7 +660,7 @@ pub async fn lister_chaines_tv(
     let par_page = pagination.par_page();
     let offset = pagination.offset();
 
-    let joins = "LEFT JOIN shared.pays ON c.pays_id = pays.id";
+    let joins = "";
 
     let count_sql = format!(
         "SELECT COUNT(*) FROM media_content.chaine_tv c {} WHERE {}",
@@ -694,8 +703,7 @@ pub async fn obtenir_chaine_tv(
     verifier_permission!(admin, "media", "voir");
     let id = path.into_inner();
 
-    let joins = "LEFT JOIN shared.pays ON c.pays_id = pays.id
-                 LEFT JOIN iam.utilisateur u ON c.cree_par = u.id";
+    let joins = "LEFT JOIN iam.utilisateur u ON c.cree_par = u.id";
 
     let sql = format!(
         "SELECT {} FROM media_content.chaine_tv c {} WHERE c.id = $1 AND c.deleted_at IS NULL",
@@ -751,15 +759,22 @@ pub async fn creer_chaine_tv(
     let categorie = body.categorie.as_deref().unwrap_or("generaliste");
     let langue = body.langue.as_deref().unwrap_or("Français");
 
+    // Une chaîne thématique naît continentale : le CHECK lie les deux colonnes,
+    // et les poser en deux temps échouerait au premier UPDATE. La couverture
+    // territoriale, elle, s'écrit ensuite par `PUT …/couverture`.
+    let est_thematique = body.est_thematique.unwrap_or(false);
+
     sqlx::query(
         "INSERT INTO media_content.chaine_tv
          (id, nom, slug, description, stream_url, image_couverture_url,
-          categorie, pays_id, langue, est_en_direct, origine_publication,
+          categorie, langue, est_en_direct, origine_publication,
+          est_thematique, couverture_continentale,
           contact_email, contact_telephone, contact_whatsapp, contact_site_web, contact_adresse,
           etat, cree_par)
          VALUES ($1, $2, $3, $4, $5, $6,
-                 $7::media_content.categorie_chaine_tv, $8, $9, $10, $11,
-                 $12, $13, $14, $15, $16, 'brouillon', $17)"
+                 $7::media_content.categorie_chaine_tv, $8, $9, $10,
+                 $17, $17,
+                 $11, $12, $13, $14, $15, 'brouillon', $16)"
     )
     .bind(id)
     .bind(nom)
@@ -768,7 +783,6 @@ pub async fn creer_chaine_tv(
     .bind(stream_url)
     .bind(body.image_couverture_url.as_deref().map(|s| s.trim()))
     .bind(categorie)
-    .bind(body.pays_id)
     .bind(langue)
     .bind(body.est_en_direct.unwrap_or(true))
     .bind(origine)
@@ -778,6 +792,7 @@ pub async fn creer_chaine_tv(
     .bind(normaliser_url(body.contact_site_web.as_deref()))
     .bind(texte_non_vide(body.contact_adresse.as_deref()))
     .bind(admin.id)
+    .bind(est_thematique)
     .execute(pool.get_ref())
     .await?;
 
@@ -873,11 +888,19 @@ pub async fn modifier_chaine_tv(
         bind_index += 1;
     }
 
-    if let Some(pays_id) = body.pays_id {
-        sets.push(format!("pays_id = '{}'", pays_id));
-    }
     if let Some(v) = body.est_en_direct {
         sets.push(format!("est_en_direct = {}", v));
+    }
+
+    // Passer une chaîne en thématique emporte sa couverture : le CHECK exige le
+    // drapeau ET la continentale sur la même ligne, donc dans le même UPDATE.
+    // Les territoires déjà déclarés sont supprimés juste après — les laisser
+    // afficherait une couverture que la chaîne ne peut plus avoir.
+    if let Some(v) = body.est_thematique {
+        sets.push(format!("est_thematique = {}", v));
+        if v {
+            sets.push("couverture_continentale = TRUE".to_string());
+        }
     }
 
     // Bascule la chaîne dans (ou hors de) « Africans Télé International » : la
@@ -916,6 +939,20 @@ pub async fn modifier_chaine_tv(
     for v in &bind_strings { q = q.bind(v); }
     q = q.bind(id);
     q.execute(pool.get_ref()).await?;
+
+    // Voir plus haut : une chaîne devenue thématique ne peut plus porter de
+    // territoire. Le trigger de 09r interdit d'en AJOUTER un ; il ne supprime
+    // pas ceux qui précédaient la bascule.
+    if body.est_thematique == Some(true) {
+        sqlx::query(
+            "DELETE FROM media_content.support_territoire
+              WHERE type_support = 'chaine_tv'::media_content.type_support_media
+                AND support_id = $1",
+        )
+        .bind(id)
+        .execute(pool.get_ref())
+        .await?;
+    }
 
     log::info!("Admin {} a modifie la chaine TV {}", admin.id, id);
 

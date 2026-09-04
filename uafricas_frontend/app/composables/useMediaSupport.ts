@@ -24,6 +24,9 @@ export interface CouverturePublique {
   /** `true` : le support couvre tout le continent ; la liste est alors vide. */
   couverture_continentale: boolean
   territoires: TerritoirePublic[]
+  /** Support thématique (09v) : la couverture continentale y est une
+   *  conséquence, pas un choix — aucun champ de couverture à présenter. */
+  est_thematique?: boolean
 }
 
 export interface ThematiqueDecompte {
@@ -61,12 +64,19 @@ export const useMediaSupport = () => {
 
   const erreur = ref<string | null>(null)
 
+  /**
+   * En-tête d'authentification, lu DANS LE STORE.
+   *
+   * Il lisait `localStorage.getItem('accessToken')` — une clé que rien n'écrit :
+   * le store garde l'access token en mémoire et ne persiste que
+   * `refresh_token` (voir `stores/user.ts`). L'en-tête était donc toujours vide,
+   * et tout appel authentifié passant par ici repartait en 401 sans que rien ne
+   * le dise : l'écran d'édition des thématiques et de la couverture s'affichait
+   * simplement vide.
+   */
   const authHeaders = (): Record<string, string> => {
-    if (import.meta.client) {
-      const token = localStorage.getItem('accessToken')
-      if (token) return { Authorization: `Bearer ${token}` }
-    }
-    return {}
+    const token = useUserStore().accessToken
+    return token ? { Authorization: `Bearer ${token}` } : {}
   }
 
   const prefixePublic = (type: TypeSupport): string =>

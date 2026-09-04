@@ -23,7 +23,8 @@ const colonnesChaines: TableColumn[] = [
   { key: 'categorie', label: 'Catégorie', sortable: true },
   { key: 'etat', label: 'État', sortable: true, width: 'w-24', align: 'center' },
   { key: 'est_en_direct', label: 'En direct', width: 'w-24', align: 'center' },
-  { key: 'pays_nom', label: 'Territoire' },
+  { key: 'est_thematique', label: 'Thématique', width: 'w-28', align: 'center',
+    format: (v: boolean) => (v ? 'Oui' : '—') },
   { key: 'created_at', label: 'Creation', sortable: true, width: 'w-28',
     format: (v: string) => new Date(v).toLocaleDateString('fr-FR') },
 ]

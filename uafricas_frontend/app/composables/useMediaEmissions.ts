@@ -162,12 +162,19 @@ export const useMediaEmissions = () => {
   const chargement = ref(false)
   const erreur = ref<string | null>(null)
 
+  /**
+   * En-tête d'authentification, lu DANS LE STORE.
+   *
+   * Il lisait `localStorage.getItem('accessToken')` — une clé que rien n'écrit :
+   * le store garde l'access token en mémoire et ne persiste que
+   * `refresh_token` (voir `stores/user.ts`). L'en-tête était donc toujours vide,
+   * et tout appel authentifié passant par ici repartait en 401 sans que rien ne
+   * le dise : l'écran d'édition des thématiques et de la couverture s'affichait
+   * simplement vide.
+   */
   const authHeaders = (): Record<string, string> => {
-    if (import.meta.client) {
-      const token = localStorage.getItem('accessToken')
-      if (token) return { Authorization: `Bearer ${token}` }
-    }
-    return {}
+    const token = useUserStore().accessToken
+    return token ? { Authorization: `Bearer ${token}` } : {}
   }
 
   /** Préfixe public d'une famille : les deux espaces exposent les mêmes routes. */
