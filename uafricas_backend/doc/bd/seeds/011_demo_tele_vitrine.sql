@@ -467,12 +467,12 @@ BEGIN
     -- 1. Chaînes
     -- ========================================================================
     FOR c IN SELECT * FROM tmp_chaine ORDER BY ordre LOOP
-        v_pays := NULL;
-        IF c.pays IS NOT NULL THEN
-            SELECT id INTO v_pays FROM shared.pays WHERE nom = c.pays;
-            IF v_pays IS NULL THEN
-                RAISE EXCEPTION 'Territoire introuvable : %', c.pays;
-            END IF;
+        -- `c.pays` ne sert plus qu'à vérifier que le territoire existe : depuis
+        -- 09v la chaîne n'a plus de pays propre, sa couverture (plus bas) est
+        -- l'unique déclaration territoriale.
+        IF c.pays IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM shared.pays WHERE nom = c.pays) THEN
+            RAISE EXCEPTION 'Territoire introuvable : %', c.pays;
         END IF;
 
         -- Graine stable : la même chaîne garde la même photo d'une exécution
@@ -480,13 +480,13 @@ BEGIN
         v_img := 'https://picsum.photos/seed/uafricas-' || c.slug || '/600/600';
 
         INSERT INTO media_content.chaine_tv
-            (nom, slug, description, image_couverture_url, categorie, pays_id, langue,
+            (nom, slug, description, image_couverture_url, categorie, langue,
              est_en_direct, etat, origine_publication, couverture_continentale,
              stream_url, contact_email, contact_telephone, contact_whatsapp,
              contact_site_web, contact_adresse, cree_par)
         VALUES
             (c.nom, c.slug, c.description, v_img, c.categorie::media_content.categorie_chaine_tv,
-             v_pays, c.langue, c.en_direct, 'publie', c.origine, c.continentale,
+             c.langue, c.en_direct, 'publie', c.origine, c.continentale,
              CASE WHEN c.en_direct THEN 'https://www.youtube.com/watch?v=' || v_videos[1 + (c.ordre % 15)] END,
              c.email, c.telephone, c.whatsapp, c.site_web, c.adresse, v_auteur)
         ON CONFLICT (slug) DO UPDATE SET
@@ -494,7 +494,6 @@ BEGIN
             description = EXCLUDED.description,
             image_couverture_url = EXCLUDED.image_couverture_url,
             categorie = EXCLUDED.categorie,
-            pays_id = EXCLUDED.pays_id,
             langue = EXCLUDED.langue,
             est_en_direct = EXCLUDED.est_en_direct,
             etat = 'publie',
@@ -790,10 +789,17 @@ BEGIN
     -- publiés : une chaîne annonce ainsi ce qu'elle diffuse réellement, plutôt
     -- qu'une liste saisie à côté.
     -- ========================================================================
-    FOR c IN SELECT ct.id, ct.nom, ct.slug, p.nom AS pays,
+    FOR c IN SELECT ct.id, ct.nom, ct.slug,
+                    -- Le pays unique n'existe plus (09v) : le territoire
+                    -- affiché est le premier de la couverture déclarée, s'il y
+                    -- en a une.
+                    (SELECT p.nom
+                       FROM media_content.support_territoire ste
+                       JOIN shared.pays p ON p.id = ste.pays_id
+                      WHERE ste.type_support = 'chaine_tv' AND ste.support_id = ct.id
+                      ORDER BY p.nom LIMIT 1) AS pays,
                     ROW_NUMBER() OVER (ORDER BY ct.nom) AS ordre
                FROM media_content.chaine_tv ct
-               LEFT JOIN shared.pays p ON p.id = ct.pays_id
               WHERE ct.etat = 'publie' AND ct.deleted_at IS NULL
                 AND ct.slug NOT IN (SELECT slug FROM tmp_chaine)
               ORDER BY ct.nom LOOP

@@ -1409,10 +1409,13 @@ export interface AdminChaineTv {
   categorie: string
   etat: string
   est_en_direct: boolean
-  pays_nom: string | null
   langue: string
   /** « africans » (Africans Télé International) ou « territoire », cf. 09o. */
   origine_publication: string
+  /** Chaîne thématique (09v) : une thématique, tous les territoires. La liste
+   *  l'affiche à la place du territoire, qui appartient désormais à la
+   *  couverture (`support_territoire`) et non plus à la chaîne. */
+  est_thematique: boolean
   created_at: string
 }
 
@@ -1424,11 +1427,11 @@ export interface AdminChaineTvDetail {
   stream_url: string | null
   image_couverture_url: string | null
   categorie: string
-  pays_id: string | null
-  pays_nom: string | null
   langue: string
   est_en_direct: boolean
   origine_publication: string
+  /** Chaîne thématique (09v). */
+  est_thematique: boolean
   contact_email: string | null
   contact_telephone: string | null
   contact_whatsapp: string | null
@@ -1447,10 +1450,11 @@ export interface CreerChaineTvForm {
   stream_url: string
   image_couverture_url: string
   categorie: string
-  pays_id: string
   langue: string
   est_en_direct: boolean
   origine_publication: string
+  /** Chaîne thématique (09v) : le serveur pose alors la couverture continentale. */
+  est_thematique: boolean
   /** Coordonnées publiques affichées sur /medias/chaines/{slug}, cf. 09p. */
   contact_email: string
   contact_telephone: string

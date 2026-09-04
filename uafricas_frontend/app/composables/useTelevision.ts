@@ -26,6 +26,8 @@ export interface ChaineTvAPI {
   est_en_direct: boolean
   /** « africans » (Africans Télé International) ou « territoire », cf. 09o. */
   origine_publication: string
+  /** Chaîne thématique (09v) : une seule thématique, tous les territoires. */
+  est_thematique?: boolean
   /** Coordonnées publiques de l'équipe (09p), absent quand aucune. */
   contacts?: ContactsSupport | null
   /** Thématiques déclarées (US3) : absent quand la chaîne n'en déclare aucune. */
@@ -90,11 +92,18 @@ export interface TvChannel {
   streamUrl: string
   cover: string
   category: string
+  /**
+   * Libellé de couverture, DÉRIVÉ de `couverture` : « Toute l'Afrique », le nom
+   * du territoire quand il n'y en a qu'un, « N territoires » au-delà. La chaîne
+   * n'a plus de pays propre depuis 09v — elle en couvre un, plusieurs, ou tous.
+   */
   country: string
   language: string
   isLive: boolean
   /** Chaîne de la plateforme (« africans ») ou d'un territoire. */
   origine: string
+  /** Chaîne thématique (09v) : une thématique, tous les territoires. */
+  estThematique: boolean
   /** Coordonnées publiques de l'équipe, `null` quand elle n'en publie aucune. */
   contacts: ContactsSupport | null
   /** Thématiques déclarées (US3) : vide tant que l'API ne les greffe pas. */
@@ -194,7 +203,8 @@ interface ApiResponse<T> {
 export interface ChaineTvFiltres {
   recherche?: string
   categorie?: string
-  pays?: string
+  /** Identifiant d'un territoire COUVERT ; remonte aussi les continentales. */
+  territoire?: string
   page?: number
   par_page?: number
 }
@@ -203,7 +213,6 @@ export interface ChaineTvFiltres {
 export interface TeleSectionsFiltres {
   recherche?: string
   categorie?: string
-  pays?: string
   /** « africans » : Africans Télé International. Vide = toutes les chaînes. */
   origine?: string
   /** Identifiant d'un thème phare (`shared.categorie`, contexte « media »).
@@ -226,7 +235,6 @@ export interface CreerChaineTvForm {
   description?: string
   stream_url?: string
   categorie?: string
-  pays?: string
   langue?: string
 }
 
@@ -244,6 +252,21 @@ function resoudreUrl(url: string | null, apiBase: string, fallback = ''): string
   return `${apiBase}${url}`
 }
 
+/**
+ * Libellé court de la couverture d'une chaîne, pour l'en-tête de rangée.
+ *
+ * `null` (couverture non greffée par l'endpoint) donne une chaîne vide plutôt
+ * qu'un « 0 territoire » trompeur : l'information est absente, pas nulle.
+ */
+function libelleCouverture(couverture: CouverturePublique | null | undefined): string {
+  if (!couverture) return ''
+  if (couverture.couverture_continentale) return 'Toute l\'Afrique'
+  const noms = couverture.territoires.map(t => t.nom)
+  if (noms.length === 0) return ''
+  if (noms.length === 1) return noms[0]!
+  return `${noms.length} territoires`
+}
+
 function mapperChaineApiVersTv(chaine: ChaineTvAPI, apiBase: string): TvChannel {
   return {
     id: chaine.id,
@@ -253,10 +276,11 @@ function mapperChaineApiVersTv(chaine: ChaineTvAPI, apiBase: string): TvChannel 
     streamUrl: chaine.stream_url || '',
     cover: resoudreUrl(chaine.image_couverture_url, apiBase),
     category: chaine.categorie,
-    country: chaine.pays || '',
+    country: libelleCouverture(chaine.couverture),
     language: chaine.langue,
     isLive: chaine.est_en_direct,
     origine: chaine.origine_publication || 'territoire',
+    estThematique: chaine.est_thematique === true,
     contacts: chaine.contacts ?? null,
     thematiques: chaine.thematiques ?? [],
     couverture: chaine.couverture ?? null,
@@ -329,13 +353,19 @@ export const useTelevision = () => {
   const chargement = ref(false)
   const erreur = ref<string | null>(null)
 
-  /** Headers d'authentification */
+  /**
+   * En-tête d'authentification, lu DANS LE STORE.
+   *
+   * Il lisait `localStorage.getItem('accessToken')` — une clé que rien n'écrit :
+   * le store garde l'access token en mémoire et ne persiste que
+   * `refresh_token` (voir `stores/user.ts`). L'en-tête était donc toujours vide,
+   * et tout appel authentifié passant par ici repartait en 401 sans que rien ne
+   * le dise : l'écran d'édition des thématiques et de la couverture s'affichait
+   * simplement vide.
+   */
   const authHeaders = (): Record<string, string> => {
-    if (import.meta.client) {
-      const token = localStorage.getItem('accessToken')
-      if (token) return { Authorization: `Bearer ${token}` }
-    }
-    return {}
+    const token = useUserStore().accessToken
+    return token ? { Authorization: `Bearer ${token}` } : {}
   }
 
   /**
@@ -349,7 +379,7 @@ export const useTelevision = () => {
       const params = new URLSearchParams()
       if (filtres.recherche) params.set('recherche', filtres.recherche)
       if (filtres.categorie && filtres.categorie !== 'Toutes les catégories') params.set('categorie', filtres.categorie)
-      if (filtres.pays && filtres.pays !== 'Tous les territoires') params.set('pays', filtres.pays)
+      if (filtres.territoire) params.set('territoire', filtres.territoire)
       if (filtres.page) params.set('page', String(filtres.page))
       if (filtres.par_page) params.set('par_page', String(filtres.par_page))
 
@@ -423,24 +453,6 @@ export const useTelevision = () => {
     catch (e: any) {
       console.error('Erreur listerContenusChaine:', e)
       return []
-    }
-  }
-
-  const listerPays = async (): Promise<string[] | null> => {
-    try {
-      const reponse = await $fetch<ApiResponse<{ nom: string }[]>>(
-        `${apiBase}/api/pays`,
-      )
-
-      if (!reponse.success || !reponse.data) {
-        throw new Error(reponse.error || 'Erreur lors du chargement des pays')
-      }
-
-      return reponse.data.map(p => p.nom)
-    }
-    catch (e: any) {
-      console.error('Erreur listerPays:', e)
-      return null
     }
   }
 
@@ -520,7 +532,7 @@ export const useTelevision = () => {
       const params = new URLSearchParams()
       if (filtres.recherche) params.set('recherche', filtres.recherche)
       if (filtres.categorie && filtres.categorie !== 'Toutes les catégories') params.set('categorie', filtres.categorie)
-      if (filtres.pays && filtres.pays !== 'Tous les territoires') params.set('pays', filtres.pays)
+      if (filtres.territoire) params.set('territoire', filtres.territoire)
       if (filtres.origine) params.set('origine', filtres.origine)
       if (filtres.theme) params.set('theme', filtres.theme)
       // Répétable : plusieurs thématiques s'entendent comme un OU côté serveur.
@@ -640,7 +652,6 @@ export const useTelevision = () => {
     listerChaines,
     obtenirChaine,
     listerContenusChaine,
-    listerPays,
     creerChaine,
   }
 }

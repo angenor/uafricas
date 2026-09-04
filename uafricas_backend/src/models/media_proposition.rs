@@ -130,6 +130,22 @@ pub struct DonneesProposition {
     /// l'administrateur, seul à se prononcer sur la licéité (H-012, FR-033).
     pub source_declaree: Option<String>,
     pub auteur_declare: Option<String>,
+    /// Portée du support proposé (09v), supports uniquement.
+    ///
+    /// Deux natures s'excluent, et le formulaire ne présente jamais les deux
+    /// jeux de champs à la fois :
+    ///   • thématique  : `est_thematique`, `thematique_id` : une seule, et
+    ///     tous les territoires d'office, d'où l'absence de champ de
+    ///     couverture ;
+    ///   • territoriale : `territoires` (1..N) ou `couverture_continentale`.
+    ///
+    /// Rien n'est écrit dans les tables métier avant la validation : ces champs
+    /// dorment dans `donnees` comme le reste de la proposition.
+    pub est_thematique: Option<bool>,
+    pub thematique_id: Option<Uuid>,
+    #[serde(default)]
+    pub territoires: Vec<Uuid>,
+    pub couverture_continentale: Option<bool>,
     /// Coordonnées publiques de l'équipe, pour les supports uniquement (09p).
     ///
     /// Elles ne deviennent publiques qu'à la validation, comme le reste de la
@@ -183,6 +199,24 @@ impl DonneesProposition {
                     ));
                 }
                 _ => {}
+            }
+
+            // Portée du support (09v). Elle est demandée dès la soumission :
+            // laisser l'administrateur la deviner reviendrait à lui faire
+            // arbitrer un choix éditorial qui appartient au proposant.
+            if self.est_thematique.unwrap_or(false) {
+                if self.thematique_id.is_none() {
+                    return Err(ApiErreur::Validation(
+                        "Un support thématique doit désigner sa thématique".into(),
+                    ));
+                }
+            } else if !self.couverture_continentale.unwrap_or(false)
+                && self.territoires.is_empty()
+            {
+                return Err(ApiErreur::Validation(
+                    "Indiquez le ou les territoires concernés, ou cochez « tous les territoires »"
+                        .into(),
+                ));
             }
         }
 

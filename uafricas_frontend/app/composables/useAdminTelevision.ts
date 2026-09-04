@@ -47,7 +47,7 @@ export const useAdminTelevision = () => {
 
   const chaines = ref<AdminChaineTv[]>([])
   const chaineDetail = ref<AdminChaineTvDetail | null>(null)
-  const filtresChaines = reactive({ recherche: '', categorie: '', pays_id: '', etat: '', origine: '' })
+  const filtresChaines = reactive({ recherche: '', categorie: '', territoire: '', etat: '', origine: '' })
 
   // ── Chaînes ───────────────────────────────────────────────
   const chargerChaines = async () => {

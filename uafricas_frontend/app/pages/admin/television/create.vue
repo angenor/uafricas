@@ -16,12 +16,10 @@ const router = useRouter()
 const {
   creerChaine, ORIGINES_PUBLICATION_TELE, loading, error,
 } = useAdminTelevision()
-const { listerPays } = useCentresCulturels()
 const { listerReferentielsEdition, definirThematiques, definirCouverture } = useMediaSupport()
 
 const erreurLocale = ref<string | null>(null)
 
-const paysDisponibles = ref<{ id: string; nom: string }[]>([])
 const thematiquesRef = ref<{ id: string; nom: string }[]>([])
 const territoiresRef = ref<{ id: string; nom: string }[]>([])
 
@@ -30,15 +28,30 @@ const couvertureContinentale = ref(false)
 const territoiresChoisis = ref<string[]>([])
 
 onMounted(async () => {
-  const [pays, referentiels] = await Promise.all([listerPays(), listerReferentielsEdition()])
-  paysDisponibles.value = pays
+  const referentiels = await listerReferentielsEdition()
   thematiquesRef.value = referentiels.thematiques
   territoiresRef.value = referentiels.territoires
 })
 
+/**
+ * Nature de la chaîne (09v). Passer en thématique vide la couverture et ramène
+ * la sélection à une seule thématique : ce ne sont pas des champs masqués, ils
+ * n'ont plus d'objet — le serveur refuserait la couverture d'une chaîne
+ * thématique, et le trigger la seconde thématique.
+ */
+const estThematique = ref(false)
+watch(estThematique, (valeur) => {
+  if (!valeur) return
+  couvertureContinentale.value = false
+  territoiresChoisis.value = []
+  if (thematiquesChoisies.value.length > 1) {
+    thematiquesChoisies.value = thematiquesChoisies.value.slice(0, 1)
+  }
+})
+
 const chaineForm = reactive({
   nom: '', description: '', stream_url: '', image_couverture_url: '',
-  categorie: 'generaliste', pays_id: '', langue: '', est_en_direct: false,
+  categorie: 'generaliste', langue: '', est_en_direct: false,
   origine_publication: 'territoire',
   contact_email: '', contact_telephone: '', contact_whatsapp: '',
   contact_site_web: '', contact_adresse: '',
@@ -55,11 +68,11 @@ const soumettre = async () => {
       categorie: chaineForm.categorie,
       est_en_direct: chaineForm.est_en_direct,
       origine_publication: chaineForm.origine_publication,
+      est_thematique: estThematique.value,
     }
     if (chaineForm.stream_url.trim()) body.stream_url = chaineForm.stream_url.trim()
     if (chaineForm.description.trim()) body.description = chaineForm.description.trim()
     if (chaineForm.image_couverture_url.trim()) body.image_couverture_url = chaineForm.image_couverture_url.trim()
-    if (chaineForm.pays_id) body.pays_id = chaineForm.pays_id
     if (chaineForm.langue.trim()) body.langue = chaineForm.langue.trim()
     // Les contacts partent tels quels : le serveur les nettoie et préfixe
     // le site web, un champ vide y devenant NULL.
@@ -78,7 +91,7 @@ const soumettre = async () => {
       if (thematiquesChoisies.value.length) {
         await definirThematiques('chaine_tv', cree.id, thematiquesChoisies.value, true)
       }
-      if (couvertureContinentale.value || territoiresChoisis.value.length) {
+      if (!estThematique.value && (couvertureContinentale.value || territoiresChoisis.value.length)) {
         await definirCouverture('chaine_tv', cree.id, couvertureContinentale.value, territoiresChoisis.value, true)
       }
     }
@@ -158,13 +171,6 @@ const soumettre = async () => {
               <label class="label"><span class="label-text-alt">{{ aideOrigine }}</span></label>
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text">Territoire</span></label>
-              <select v-model="chaineForm.pays_id" class="select select-bordered">
-                <option value="">Aucun</option>
-                <option v-for="p in paysDisponibles" :key="p.id" :value="p.id">{{ p.nom }}</option>
-              </select>
-            </div>
-            <div class="form-control">
               <label class="label cursor-pointer justify-start gap-3">
                 <input v-model="chaineForm.est_en_direct" type="checkbox" class="checkbox checkbox-primary" />
                 <span class="label-text">En direct actuellement</span>
@@ -182,18 +188,37 @@ const soumettre = async () => {
           />
 
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold border-b pb-2">Thématiques &amp; couverture</h3>
+            <h3 class="text-lg font-semibold border-b pb-2">Portée de la chaîne</h3>
+
+            <!-- La nature commande le reste du bloc : une chaîne thématique
+                 porte une thématique et couvre tous les territoires (09v). -->
+            <div class="form-control">
+              <label class="label cursor-pointer justify-start gap-3">
+                <input v-model="estThematique" type="checkbox" class="checkbox checkbox-primary" />
+                <span class="label-text">
+                  Chaîne thématique — une seule thématique, sur tous les territoires
+                </span>
+              </label>
+            </div>
+
             <MediaSelecteurThematiques
               v-model="thematiquesChoisies"
               :options="thematiquesRef"
+              :unique="estThematique"
             />
+
             <MediaSelecteurCouverture
+              v-if="!estThematique"
               :continentale="couvertureContinentale"
               :territoires="territoiresChoisis"
               :options="territoiresRef"
               @update:continentale="couvertureContinentale = $event"
               @update:territoires="territoiresChoisis = $event"
             />
+            <p v-else class="text-sm text-base-content/60">
+              Aucun territoire à saisir : une chaîne thématique les couvre tous.
+            </p>
+
             <p class="text-sm text-base-content/60">
               Facultatives sur un brouillon ; exigées pour publier la chaîne.
             </p>

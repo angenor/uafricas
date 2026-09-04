@@ -1,6 +1,10 @@
 <script setup lang="ts">
 /**
- * Sélection **multiple** des thématiques d'un support (feature 009, US3).
+ * Sélection des thématiques d'un support (feature 009, US3).
+ *
+ * **Multiple par défaut, unique pour un support thématique** (09v) : là, cliquer
+ * REMPLACE la sélection au lieu de s'y ajouter — proposer de cocher librement
+ * puis refuser l'enregistrement ferait découvrir la règle après coup.
  *
  * Tailwind v4 pur, sans daisyUI : le composant sert les deux mondes, l'espace
  * membre `/mon-compte/mes-supports` (page publique, principe VI) et le
@@ -20,12 +24,15 @@ const props = withDefaults(defineProps<{
   options?: ThematiquePublique[]
   /** Rend l'absence de sélection fautive à l'écran (support publié, FR-029). */
   requis?: boolean
+  /** Support thématique (09v) : une seule thématique, le clic remplace. */
+  unique?: boolean
   disabled?: boolean
   /** Palette sombre pour les pages publiques médias. */
   sombre?: boolean
 }>(), {
   options: undefined,
   requis: false,
+  unique: false,
   disabled: false,
   sombre: false,
 })
@@ -60,6 +67,12 @@ const estSelectionne = (id: string) => props.modelValue.includes(id)
 
 const basculer = (id: string) => {
   if (props.disabled) return
+  if (props.unique) {
+    // Recliquer la thématique retenue la retire : sans cela, une sélection
+    // faite par erreur ne pourrait plus être défaite.
+    emit('update:modelValue', estSelectionne(id) ? [] : [id])
+    return
+  }
   emit(
     'update:modelValue',
     estSelectionne(id)
@@ -78,10 +91,12 @@ const enDefaut = computed(() => props.requis && props.modelValue.length === 0)
   <div>
     <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
       <p :class="sombre ? 'text-sm text-gray-300' : 'text-sm text-af-corps'">
-        Thématiques
+        {{ unique ? 'Thématique de la chaîne' : 'Thématiques' }}
         <span v-if="requis" class="text-af-live">*</span>
-        <span :class="sombre ? 'text-af-atone' : 'text-gray-400'">
-          {{ modelValue.length }} sélectionnée{{ modelValue.length > 1 ? 's' : '' }}
+        <span class="text-af-atone">
+          {{ unique
+            ? (modelValue.length ? '1 sélectionnée' : 'aucune')
+            : `${modelValue.length} sélectionnée${modelValue.length > 1 ? 's' : ''}` }}
         </span>
       </p>
       <button
@@ -103,7 +118,7 @@ const enDefaut = computed(() => props.requis && props.modelValue.length === 0)
       class="w-full rounded-lg px-3 py-2 text-sm mb-3 border outline-none transition-colors disabled:opacity-50"
       :class="sombre
         ? 'bg-white/5 border-white/15 text-white placeholder-af-atone-2 focus:border-af-chocolat'
-        : 'bg-white border-af-bordure text-af-encre placeholder-af-atone-2 focus:border-af-encre'"
+        : 'bg-af-surface border-af-bordure text-af-encre placeholder-af-atone-2 focus:border-af-chocolat'"
     >
 
     <div
@@ -119,10 +134,10 @@ const enDefaut = computed(() => props.requis && props.modelValue.length === 0)
         :class="estSelectionne(theme.id)
           ? (sombre
             ? 'bg-af-chocolat border-af-chocolat text-af-encre font-semibold'
-            : 'bg-gray-900 border-af-encre text-white font-semibold')
+            : 'bg-af-chocolat border-af-chocolat text-white font-semibold')
           : (sombre
             ? 'bg-white/5 border-white/15 text-gray-300 hover:border-af-chocolat'
-            : 'bg-white border-af-bordure text-af-corps hover:border-af-encre')"
+            : 'bg-af-surface border-af-bordure text-af-corps hover:border-af-chocolat')"
         @click="basculer(theme.id)"
       >
         {{ theme.nom }}
@@ -130,14 +145,16 @@ const enDefaut = computed(() => props.requis && props.modelValue.length === 0)
 
       <p
         v-if="!filtrees.length"
-        :class="sombre ? 'text-sm text-af-atone' : 'text-sm text-gray-400'"
+        :class="sombre ? 'text-sm text-af-atone' : 'text-sm text-af-atone'"
       >
         Aucune thématique ne correspond à cette recherche.
       </p>
     </div>
 
     <p v-if="enDefaut" class="text-xs text-af-live mt-2">
-      Un support publié doit porter au moins une thématique.
+      {{ unique
+        ? 'Une chaîne thématique doit désigner sa thématique.'
+        : 'Un support publié doit porter au moins une thématique.' }}
     </p>
   </div>
 </template>

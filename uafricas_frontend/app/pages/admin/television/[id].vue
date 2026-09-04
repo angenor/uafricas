@@ -22,18 +22,30 @@ const {
   chaineDetail, chargerChaine, modifierChaine,
   ORIGINES_PUBLICATION_TELE, loading, error,
 } = useAdminTelevision()
-const { listerPays } = useCentresCulturels()
 const {
   listerReferentielsEdition, obtenirThematiques, definirThematiques,
   obtenirCouverture, definirCouverture,
 } = useMediaSupport()
 const { chargerEmissions, filtres: filtresEmissions, emissions, ETATS_EMISSION, libelleCadence } = useAdminMediaEmissions()
 
-const paysDisponibles = ref<{ id: string; nom: string }[]>([])
 const thematiquesRef = ref<{ id: string; nom: string }[]>([])
 const territoiresRef = ref<{ id: string; nom: string }[]>([])
 
 const thematiquesChoisies = ref<string[]>([])
+/**
+ * Nature de la chaîne (09v), chargée avec le détail. Le basculement vide la
+ * couverture et ramène la sélection à une seule thématique : le serveur
+ * refuserait l'une, le trigger l'autre.
+ */
+const estThematique = ref(false)
+watch(estThematique, (valeur) => {
+  if (!valeur) return
+  couvertureContinentale.value = false
+  territoiresChoisis.value = []
+  if (thematiquesChoisies.value.length > 1) {
+    thematiquesChoisies.value = thematiquesChoisies.value.slice(0, 1)
+  }
+})
 const couvertureContinentale = ref(false)
 const territoiresChoisis = ref<string[]>([])
 
@@ -43,7 +55,7 @@ const successMsg = ref<string | null>(null)
 
 const chaineForm = reactive({
   nom: '', description: '', stream_url: '', image_couverture_url: '',
-  categorie: 'generaliste', pays_id: '', langue: '', est_en_direct: false,
+  categorie: 'generaliste', langue: '', est_en_direct: false,
   origine_publication: 'territoire',
   contact_email: '', contact_telephone: '', contact_whatsapp: '',
   contact_site_web: '', contact_adresse: '',
@@ -91,7 +103,9 @@ const executerChangerEtat = async () => {
 
 const ficheComplete = computed(() =>
   thematiquesChoisies.value.length > 0
-  && (couvertureContinentale.value || territoiresChoisis.value.length > 0),
+  && (estThematique.value
+    || couvertureContinentale.value
+    || territoiresChoisis.value.length > 0),
 )
 
 const charger = async () => {
@@ -103,10 +117,10 @@ const charger = async () => {
     chaineForm.stream_url = c.stream_url || ''
     chaineForm.image_couverture_url = c.image_couverture_url || ''
     chaineForm.categorie = c.categorie || 'generaliste'
-    chaineForm.pays_id = c.pays_id || ''
     chaineForm.langue = c.langue || ''
     chaineForm.est_en_direct = c.est_en_direct || false
     chaineForm.origine_publication = c.origine_publication || 'territoire'
+    estThematique.value = c.est_thematique === true
     chaineForm.contact_email = c.contact_email || ''
     chaineForm.contact_telephone = c.contact_telephone || ''
     chaineForm.contact_whatsapp = c.contact_whatsapp || ''
@@ -146,10 +160,10 @@ const sauvegarder = async () => {
       contact_whatsapp: chaineForm.contact_whatsapp.trim(),
       contact_site_web: chaineForm.contact_site_web.trim(),
       contact_adresse: chaineForm.contact_adresse.trim(),
+      est_thematique: estThematique.value,
     }
     if (chaineForm.description.trim()) body.description = chaineForm.description.trim()
     if (chaineForm.image_couverture_url.trim()) body.image_couverture_url = chaineForm.image_couverture_url.trim()
-    if (chaineForm.pays_id) body.pays_id = chaineForm.pays_id
     if (chaineForm.langue.trim()) body.langue = chaineForm.langue.trim()
     await modifierChaine(id, body)
 
@@ -157,7 +171,9 @@ const sauvegarder = async () => {
     // intégral) : les greffer au PUT de la chaîne aurait mêlé deux invariants
     // que le serveur valide séparément.
     await definirThematiques('chaine_tv', id, thematiquesChoisies.value, true)
-    await definirCouverture('chaine_tv', id, couvertureContinentale.value, territoiresChoisis.value, true)
+    if (!estThematique.value) {
+      await definirCouverture('chaine_tv', id, couvertureContinentale.value, territoiresChoisis.value, true)
+    }
 
     successMsg.value = 'Mis à jour avec succès'
     setTimeout(() => { successMsg.value = null }, 3000)
@@ -171,8 +187,7 @@ const programmesChaine = computed<AdminEmission[]>(() => emissions.value)
 
 onMounted(async () => {
   await charger()
-  const [pays, referentiels] = await Promise.all([listerPays(), listerReferentielsEdition()])
-  paysDisponibles.value = pays
+  const referentiels = await listerReferentielsEdition()
   thematiquesRef.value = referentiels.thematiques
   territoiresRef.value = referentiels.territoires
   await chargerFiche()
@@ -266,13 +281,6 @@ onMounted(async () => {
                 <label class="label"><span class="label-text-alt">{{ aideOrigine }}</span></label>
               </div>
               <div class="form-control">
-                <label class="label"><span class="label-text">Territoire (siège)</span></label>
-                <select v-model="chaineForm.pays_id" class="select select-bordered">
-                  <option value="">Aucun</option>
-                  <option v-for="p in paysDisponibles" :key="p.id" :value="p.id">{{ p.nom }}</option>
-                </select>
-              </div>
-              <div class="form-control">
                 <label class="label cursor-pointer justify-start gap-3">
                   <input v-model="chaineForm.est_en_direct" type="checkbox" class="checkbox checkbox-primary">
                   <span class="label-text">En direct actuellement</span>
@@ -281,13 +289,25 @@ onMounted(async () => {
             </div>
 
             <div class="space-y-4">
-              <h3 class="text-lg font-semibold border-b pb-2">Thématiques &amp; couverture</h3>
+              <h3 class="text-lg font-semibold border-b pb-2">Portée de la chaîne</h3>
+
+              <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-3">
+                  <input v-model="estThematique" type="checkbox" class="checkbox checkbox-primary">
+                  <span class="label-text">
+                    Chaîne thématique — une seule thématique, sur tous les territoires
+                  </span>
+                </label>
+              </div>
+
               <MediaSelecteurThematiques
                 v-model="thematiquesChoisies"
                 :options="thematiquesRef"
                 :requis="exigeFiche"
+                :unique="estThematique"
               />
               <MediaSelecteurCouverture
+                v-if="!estThematique"
                 :continentale="couvertureContinentale"
                 :territoires="territoiresChoisis"
                 :options="territoiresRef"
@@ -295,6 +315,9 @@ onMounted(async () => {
                 @update:continentale="couvertureContinentale = $event"
                 @update:territoires="territoiresChoisis = $event"
               />
+              <p v-else class="text-sm text-base-content/60">
+                Aucun territoire à saisir : une chaîne thématique les couvre tous.
+              </p>
               <p v-if="!exigeFiche" class="text-sm text-base-content/60">
                 Facultatives sur un brouillon ; exigées pour publier la chaîne.
               </p>

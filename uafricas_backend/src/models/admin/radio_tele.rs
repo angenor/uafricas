@@ -28,12 +28,12 @@ pub const STATION_RADIO_TRI_COLONNES: &[&str] = &[
 
 pub const ADMIN_CHAINE_TV_LISTE_COLONNES: &str =
     "c.id, c.nom, c.categorie::TEXT as categorie, c.etat, c.est_en_direct,
-     pays.nom AS pays_nom, c.langue, c.origine_publication, c.created_at";
+     c.langue, c.origine_publication, c.est_thematique, c.created_at";
 
 pub const ADMIN_CHAINE_TV_DETAIL_COLONNES: &str =
     "c.id, c.nom, c.slug, c.description, c.stream_url, c.image_couverture_url,
-     c.categorie::TEXT as categorie, c.pays_id, pays.nom AS pays_nom,
-     c.langue, c.est_en_direct, c.origine_publication,
+     c.categorie::TEXT as categorie,
+     c.langue, c.est_en_direct, c.origine_publication, c.est_thematique,
      c.role_partie_prenante, c.role_partie_prenante_autre,
      c.contact_email, c.contact_telephone, c.contact_whatsapp,
      c.contact_site_web, c.contact_adresse,
@@ -173,10 +173,12 @@ pub struct AdminChaineTvListeResponse {
     pub categorie: String,
     pub etat: String,
     pub est_en_direct: bool,
-    pub pays_nom: Option<String>,
     pub langue: String,
     /// « africans » (Africans Télé International) ou « territoire », cf. 09o.
     pub origine_publication: String,
+    /// Chaîne thématique (09v). La liste l'affiche à la place du territoire,
+    /// qui n'est plus une donnée de la chaîne mais de sa couverture.
+    pub est_thematique: bool,
     pub created_at: DateTime<Utc>,
 }
 
@@ -189,11 +191,11 @@ pub struct AdminChaineTvDetailRow {
     pub stream_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub categorie: String,
-    pub pays_id: Option<Uuid>,
-    pub pays_nom: Option<String>,
     pub langue: String,
     pub est_en_direct: bool,
     pub origine_publication: String,
+    /// Chaîne thématique (09v) : une thématique, tous les territoires.
+    pub est_thematique: bool,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     /// Coordonnées publiques de l'équipe (09p).
@@ -219,11 +221,11 @@ pub struct AdminChaineTvDetailResponse {
     pub stream_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub categorie: String,
-    pub pays_id: Option<Uuid>,
-    pub pays_nom: Option<String>,
     pub langue: String,
     pub est_en_direct: bool,
     pub origine_publication: String,
+    /// Chaîne thématique (09v) : une thématique, tous les territoires.
+    pub est_thematique: bool,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     /// Coordonnées publiques de l'équipe (09p).
@@ -250,11 +252,10 @@ impl AdminChaineTvDetailRow {
             stream_url: self.stream_url.clone(),
             image_couverture_url: self.image_couverture_url.clone(),
             categorie: self.categorie.clone(),
-            pays_id: self.pays_id,
-            pays_nom: self.pays_nom.clone(),
             langue: self.langue.clone(),
             est_en_direct: self.est_en_direct,
             origine_publication: self.origine_publication.clone(),
+            est_thematique: self.est_thematique,
             role_partie_prenante: self.role_partie_prenante.clone(),
             role_partie_prenante_autre: self.role_partie_prenante_autre.clone(),
             contact_email: self.contact_email.clone(),
@@ -334,13 +335,16 @@ pub struct CreerChaineTvRequest {
     pub stream_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub categorie: Option<String>,
-    pub pays_id: Option<Uuid>,
     pub langue: Option<String>,
     pub est_en_direct: Option<bool>,
     /// « africans » ou « territoire » : alimente le filtre « Africans Télé
     /// International » de /medias/tele. Les deux familles cohabitent sur la
     /// même page, contrairement à la radio (cf. 09o).
     pub origine_publication: Option<String>,
+    /// Chaîne thématique (09v) : une seule thématique, tous les territoires.
+    /// La couverture continentale est alors posée par le serveur — le CHECK
+    /// `ck_chaine_tv_thematique_continentale` la rend indissociable du drapeau.
+    pub est_thematique: Option<bool>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     /// Coordonnées publiques de l'équipe (09p), affichées sur la page du
@@ -360,11 +364,14 @@ pub struct ModifierChaineTvRequest {
     pub stream_url: Option<String>,
     pub image_couverture_url: Option<String>,
     pub categorie: Option<String>,
-    pub pays_id: Option<Uuid>,
     pub langue: Option<String>,
     pub est_en_direct: Option<bool>,
     /// « africans » ou « territoire » : cf. `CreerChaineTvRequest`.
     pub origine_publication: Option<String>,
+    /// Chaîne thématique (09v) : une seule thématique, tous les territoires.
+    /// La couverture continentale est alors posée par le serveur — le CHECK
+    /// `ck_chaine_tv_thematique_continentale` la rend indissociable du drapeau.
+    pub est_thematique: Option<bool>,
     pub role_partie_prenante: Option<String>,
     pub role_partie_prenante_autre: Option<String>,
     /// Coordonnées publiques de l'équipe (09p), affichées sur la page du
@@ -428,7 +435,8 @@ pub struct AdminChaineTvQueryParams {
     pub tri_dir: Option<String>,
     pub recherche: Option<String>,
     pub categorie: Option<String>,
-    pub pays_id: Option<Uuid>,
+    /// Territoire COUVERT (`support_territoire`) : la chaîne n'a plus de pays.
+    pub territoire: Option<Uuid>,
     pub etat: Option<String>,
     /// Filtre la liste admin sur `origine_publication` (« africans » ou « territoire »).
     pub origine: Option<String>,

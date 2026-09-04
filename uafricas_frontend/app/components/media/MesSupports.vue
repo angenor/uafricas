@@ -54,6 +54,11 @@ const emissionsParSupport = ref<Record<string, EmissionAPI[]>>({})
 const ficheParSupport = ref<Record<string, {
   thematiques: string[]
   continentale: boolean
+  /** Support thématique (09v) : une thématique, aucun territoire à saisir.
+   *  Décidé à la création ou en back-office, jamais ici — d'où la lecture
+   *  seule : le détenteur constate la nature de son support, il ne la change
+   *  pas. */
+  estThematique: boolean
   territoires: string[]
 }>>({})
 
@@ -77,6 +82,7 @@ const chargerFiche = async (detenteur: DetenteurAPI) => {
   ficheParSupport.value[detenteur.support_id] = {
     thematiques: themes.map(t => t.id),
     continentale: couverture?.couverture_continentale ?? false,
+    estThematique: couverture?.est_thematique === true,
     territoires: couverture?.territoires.map(t => t.id) ?? [],
   }
 }
@@ -185,9 +191,13 @@ const enregistrerFiche = async (detenteur: DetenteurAPI) => {
   enregistrementFiche.value = detenteur.support_id
   ficheEnregistree.value = null
   const okThemes = await definirThematiques(detenteur.type_support, detenteur.support_id, fiche.thematiques)
-  const okCouverture = await definirCouverture(
-    detenteur.type_support, detenteur.support_id, fiche.continentale, fiche.territoires,
-  )
+  // Un support thématique n'a pas de couverture à écrire : le serveur refuse
+  // l'appel (400), et pour cause — elle est déjà « tous les territoires ».
+  const okCouverture = fiche.estThematique
+    ? true
+    : await definirCouverture(
+      detenteur.type_support, detenteur.support_id, fiche.continentale, fiche.territoires,
+    )
   enregistrementFiche.value = null
   if (okThemes && okCouverture) {
     ficheEnregistree.value = detenteur.support_id
@@ -463,16 +473,20 @@ const dateFormatee = (iso: string) =>
           <!-- Thématiques et couverture : ce qui rend le support trouvable -->
           <section v-if="ficheParSupport[detenteur.support_id]">
             <h3 class="font-oswald text-lg font-bold text-af-encre mb-3">
-              Thématiques &amp; couverture
+              {{ ficheParSupport[detenteur.support_id]!.estThematique
+                ? 'Thématique du support'
+                : 'Thématiques &amp; couverture' }}
             </h3>
             <div class="space-y-5 rounded-lg border border-af-bordure bg-white p-4">
               <MediaSelecteurThematiques
                 :model-value="ficheParSupport[detenteur.support_id]!.thematiques"
                 :options="thematiquesRef"
                 :sombre="false"
+                :unique="ficheParSupport[detenteur.support_id]!.estThematique"
                 @update:model-value="ficheParSupport[detenteur.support_id]!.thematiques = $event"
               />
               <MediaSelecteurCouverture
+                v-if="!ficheParSupport[detenteur.support_id]!.estThematique"
                 :continentale="ficheParSupport[detenteur.support_id]!.continentale"
                 :territoires="ficheParSupport[detenteur.support_id]!.territoires"
                 :options="territoiresRef"
@@ -480,6 +494,10 @@ const dateFormatee = (iso: string) =>
                 @update:continentale="ficheParSupport[detenteur.support_id]!.continentale = $event"
                 @update:territoires="ficheParSupport[detenteur.support_id]!.territoires = $event"
               />
+              <p v-else class="text-sm text-af-atone">
+                Support thématique : il couvre d'office tous les territoires,
+                il n'y a pas de couverture à saisir.
+              </p>
 
               <p v-if="erreurFiche" class="text-sm text-af-live">{{ erreurFiche }}</p>
               <p v-if="ficheEnregistree === detenteur.support_id" class="text-sm text-af-vert">
