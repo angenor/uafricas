@@ -104,6 +104,18 @@
   --background-image-font-c-culturel: url('https://mediaculture.info/wp-content/uploads/2020/03/Patrimoine-culturel-africain-1-1024x850.jpg');
 }
 
+/* Barre supérieure : 89 px vient de l'artboard Figma 1920, où elle occupe 8 %
+   de la hauteur. Sur un téléphone de 812 px elle en prendrait 11 %, pour un
+   contenu qui tient dans 64. Le jeton est donc redéclaré par palier plutôt que
+   la hauteur écrite en dur dans le composant : `top`, `max-height` et
+   `100svh - af-barre` du gabarit et de la vedette plein écran passent tous par
+   `var(--spacing-af-barre)` et suivent sans une ligne de plus. */
+@media (width < 48rem) {
+  :root {
+    --spacing-af-barre: 64px;
+  }
+}
+
 /* Dégradé primaire de la maquette. Déclaré une fois : il revient sur le bouton
    principal, le segment actif d'une bascule et le voile des bandeaux de module. */
 @utility bg-af-degrade {

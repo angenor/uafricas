@@ -8,15 +8,20 @@
        `z-50` et non davantage : les modales montent à `z-100` et doivent
        continuer de la recouvrir. -->
   <header class="sticky top-0 z-50 h-af-barre border-b border-af-bordure bg-af-surface">
-    <div class="mx-auto flex h-full max-w-af-conteneur items-center gap-6 px-6">
+    <div class="mx-auto flex h-full max-w-af-conteneur items-center gap-3 px-4 md:gap-6 md:px-6">
       <!-- Trois zones, dont DEUX ÉLASTIQUES de part et d'autre. C'est ce qui
            centre réellement la recherche : un simple `mx-auto` la centrerait
            dans l'espace RESTANT, et se décalerait donc dès que le logo et les
            contrôles de droite n'ont pas la même largeur, ce qui est le cas ici.
-           `min-w-0` les autorise à se comprimer plutôt qu'à déborder. -->
-      <div class="flex min-w-0 flex-1 items-center">
+           C'est la zone du LOGO qui cède quand la place manque (`min-w-0`) ;
+           celle de droite est bornée à son contenu, voir plus bas. -->
+      <!-- `overflow-hidden` est un FILET, pas une décoration : la zone de
+           droite est en `justify-end`, donc son débordement part vers la
+           GAUCHE et venait se poser sur le logo. Rogner vaut mieux que
+           superposer. Le logo est dimensionné pour ne jamais l'atteindre. -->
+      <div class="flex min-w-0 flex-1 items-center overflow-hidden">
         <NuxtLink to="/" class="shrink-0">
-          <img src="/logos/logo_uafracas.png" alt="AfricanS" class="h-[59px] w-auto" />
+          <img src="/logos/logo_uafracas.png" alt="AfricanS" class="h-10 w-auto md:h-[59px]" />
         </NuxtLink>
       </div>
 
@@ -30,16 +35,18 @@
            élément central qui se comprime n'est plus centré sur la même chose
            d'un écran à l'autre. 320 px suffisent à sa phrase.
 
-           Seuil à 48rem : à 640 px, logo + 320 px de champ + les deux
-           contrôles de droite débordent. En dessous, la loupe remplace le
-           champ.
+           Seuil à 64rem, et non 48 : à 768 px, marges (48) + logo (148) +
+           champ (320) + gouttières (48) laissaient 204 px aux contrôles de
+           droite, qui en demandent ~300 connecté comme visiteur — le champ
+           passait donc PAR-DESSUS eux, `shrink-0` l'empêchant de céder. En
+           dessous, la loupe remplace le champ.
 
            Elle est posée entre les deux zones élastiques, pas poussée par
            une marge : c'est la seule façon qu'elle reste au milieu quand le
            nom affiché à droite s'allonge. -->
       <button
         type="button"
-        class="hidden h-11 w-80 shrink-0 items-center gap-3 rounded-lg border border-af-bordure bg-af-fond px-4 text-left transition hover:border-af-chocolat focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat md:flex"
+        class="hidden h-11 w-80 shrink-0 items-center gap-3 rounded-lg border border-af-bordure bg-af-fond px-4 text-left transition hover:border-af-chocolat focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-chocolat lg:flex"
         aria-label="Rechercher sur AfricanS"
         @click="rechercheOuverte = true"
       >
@@ -50,13 +57,21 @@
         </kbd>
       </button>
 
-      <div class="flex min-w-0 flex-1 items-center justify-end gap-4">
-        <!-- Repli sous 48rem, où le champ disparaît. Hors de la branche
+      <!-- `min-w-fit` et non `min-w-0` : `flex-1` vaut `flex: 1 1 0%`, donc les
+           deux zones élastiques reçoivent la MÊME largeur quel que soit leur
+           contenu. Celle de droite en demande davantage que celle qui ne porte
+           qu'un logo ; à la moitié exacte de l'espace libre elle débordait, et
+           comme elle est en `justify-end` son débordement partait vers la
+           gauche, sur le champ de recherche. Bornée à son contenu, c'est la
+           zone du logo qui cède l'écart : la recherche reste centrée tant qu'il
+           y a de la place, et glisse au lieu d'être recouverte. -->
+      <div class="flex min-w-fit flex-1 items-center justify-end gap-2 sm:gap-3 md:gap-4">
+        <!-- Repli sous 64rem, où le champ disparaît. Hors de la branche
              « connecté » comme le champ lui-même : la racine sert le fil à
              tout le monde, un visiteur doit pouvoir chercher aussi. -->
         <button
           type="button"
-          class="grid size-6 shrink-0 place-items-center text-af-chocolat transition hover:opacity-70 md:hidden"
+          class="grid size-6 shrink-0 place-items-center text-af-chocolat transition hover:opacity-70 lg:hidden"
           aria-label="Rechercher sur AfricanS"
           @click="rechercheOuverte = true"
         >
@@ -94,9 +109,9 @@
                 v-if="photo"
                 :src="photo"
                 :alt="''"
-                class="size-11 shrink-0 rounded-full object-cover"
+                class="size-9 shrink-0 rounded-full object-cover md:size-11"
               />
-              <span v-else class="grid size-11 shrink-0 place-items-center rounded-full bg-af-chocolat/15 text-af-chocolat">
+              <span v-else class="grid size-9 shrink-0 place-items-center rounded-full bg-af-chocolat/15 text-af-chocolat md:size-11">
                 <font-awesome-icon icon="fa-solid fa-user" />
               </span>
               <span class="hidden max-w-40 truncate text-base font-bold lg:inline">{{ nomAffiche }}</span>
@@ -152,7 +167,7 @@
                sortie vers la page qui le lui dit. -->
           <NuxtLink
             to="/decouvrir"
-            class="flex items-center gap-2 text-base font-bold text-af-encre transition hover:text-af-chocolat"
+            class="flex shrink-0 items-center gap-2 text-base font-bold text-af-encre transition hover:text-af-chocolat"
           >
             <font-awesome-icon icon="fa-solid fa-earth-africa" />
             <span class="hidden sm:inline">Découvrir AfricanS</span>
@@ -160,7 +175,7 @@
 
           <NuxtLink
             to="/login"
-            class="rounded-lg bg-af-degrade px-6 py-2.5 text-base font-bold text-white transition hover:opacity-90"
+            class="shrink-0 whitespace-nowrap rounded-lg bg-af-degrade px-4 py-2 text-sm font-bold text-white transition hover:opacity-90 md:px-6 md:py-2.5 md:text-base"
           >
             Se Connecter
           </NuxtLink>

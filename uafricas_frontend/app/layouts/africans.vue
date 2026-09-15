@@ -45,15 +45,25 @@ const estConnecte = computed(() => userStore.isAuthenticated)
 </script>
 
 <style>
-/* Grille en zones nommées : le rail passe sous le contenu avant de disparaître,
-   et la navigation devient une bande horizontale en mobile sans changer d'ordre
-   dans le DOM : l'ordre de lecture reste celui de la maquette. */
+/* Grille en zones nommées : le rail passe sous le contenu, et la navigation
+   devient une bande horizontale en mobile sans changer d'ordre dans le DOM :
+   l'ordre de lecture reste celui de la maquette.
+
+   La zone `rail` est déclarée DÈS le premier palier, même quand elle n'est
+   qu'une troisième ligne. L'omettre ne la faisait pas disparaître : un
+   `grid-area: rail` qui ne correspond à aucune zone nommée fait fabriquer au
+   navigateur des lignes IMPLICITES `rail-start`/`rail-end`, donc des pistes de
+   colonne supplémentaires en `auto`. La piste automatique du rail prenait alors
+   sa largeur de contenu et le `minmax(0, 1fr)` de la colonne principale se
+   voyait attribuer ce qui restait, c'est-à-dire ZÉRO : sous 1024 px, le contenu
+   des 57 pages qui servent un rail était réduit à une colonne de 0 px de large. */
 .af-grille {
   display: grid;
   gap: 2.5rem;
   grid-template-areas:
     'nav'
-    'principale';
+    'principale'
+    'rail';
   grid-template-columns: minmax(0, 1fr);
 }
 .af-zone-nav { grid-area: nav; }
