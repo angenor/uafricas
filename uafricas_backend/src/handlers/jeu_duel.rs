@@ -31,7 +31,7 @@ use crate::models::jeu::{
     DUEL_COLONNES, PARTIE_COLONNES,
 };
 use crate::models::notification;
-use crate::services::jeu::{self as moteur, EffetDuel, SERVABLE_SQL};
+use crate::services::jeu::{self as moteur, EffetDuel};
 use crate::services::messagerie_sse::RegistreSse;
 use crate::services::engagement;
 use crate::ApiResponse;
@@ -496,14 +496,13 @@ async fn composer_serie_duel(
     b: Uuid,
     taille: i16,
 ) -> Result<Vec<Uuid>, sqlx::Error> {
-    sqlx::query_scalar(&format!(
-        "SELECT e.id {SERVABLE_SQL}
-            AND e.module_code = $1
-          ORDER BY (EXISTS (SELECT 1 FROM jeu.reponse r
-                             WHERE r.epreuve_id = e.id AND r.utilisateur_id IN ($2, $3))),
-                   random()
-          LIMIT $4"
-    ))
+    // Les épreuves qu'aucun des deux n'a encore vues passent en tête.
+    let tirage = moteur::serie_variee_sql(
+        "AND e.module_code = $1",
+        "EXISTS (SELECT 1 FROM jeu.reponse r
+                  WHERE r.epreuve_id = e.id AND r.utilisateur_id IN ($2, $3))",
+    );
+    sqlx::query_scalar(&format!("{tirage} LIMIT $4"))
     .bind(module)
     .bind(a)
     .bind(b)

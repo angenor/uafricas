@@ -98,6 +98,26 @@ Quatorze décisions de conception. Chacune est ancrée dans le code tel qu'il es
 | FactCheck | `vrai_ou_faux` | `factcheck` | {prejuge_titre} : vrai ou faux ? | `etat = 'publie' AND deleted_at IS NULL`, `verdict IN ('vrai','faux')`, `prejuge_titre` non vide |
 | Afrolang | aucune | — | saisie manuelle uniquement | — |
 
+**Second catalogue (2026-10-04)**, ajouté après la recette : les 5 formes de la fiche pays faisaient 270 des 288 épreuves Afripulse, et les parties se ressemblaient toutes. Distracteurs `Fournis` = calculés par la requête de la forme, source par source.
+
+| Module | Forme | Source | Question | Mauvaises réponses |
+|---|---|---|---|---|
+| Afripulse | `pays_de_devise` | `fiche_pays` | Quel pays a pour devise « … » ? | pays dont la devise est CONNUE et DIFFÉRENTE (« Un peuple, un but, une foi » : Mali et Sénégal) |
+| Afripulse | `indicatif_telephonique` | `fiche_pays` | {pays} : quel est son indicatif téléphonique ? | même colonne |
+| Afripulse | `plus_peuple` | `fiche_pays` | Lequel de ces pays est le plus peuplé ? | 3 pays à moins de 80 % de sa population (une donnée approchée ne renverse pas la réponse) |
+| Afripulse | `plus_vaste` | `fiche_pays` | Lequel de ces pays est le plus vaste ? | idem, superficie |
+| Afripulse | `pays_de_langue_officielle` | `fiche_pays` | Lequel de ces pays a pour langue officielle : {1ʳᵉ langue} ? | pays dont la liste de langues officielles NE la contient PAS |
+| Afripulse | `pays_du_peuple` | `groupe_ethnique` (nouvelle source) | Dans lequel de ces pays vivent notamment les {peuple} ? | pays qui ne déclarent pas ce peuple et ne le citent pas dans leurs langues |
+| Afripulse | `domaine_de_personnalite` | `personnalite_connue` | {nom} : dans quel domaine cette personnalité s'est-elle illustrée ? | les autres domaines (`autre` exclu) |
+| Codimoi | `sens_du_proverbe` | `codimoi` | Que veut dire ce proverbe ? | explications d'autres proverbes (bornées à 160 signes) |
+| Codimoi | `mot_manquant` | `codimoi` | Complétez ce proverbe / cette citation | le plus long mot (≥ 5 lettres) des autres contenus |
+| FactCheck | `affirmation_vraie` | `factcheck` (verdict vrai) | Laquelle de ces affirmations est vraie ? | idées reçues vérifiées fausses |
+| FactCheck | `idee_recue` | `factcheck` (verdict faux) | Laquelle est une idée reçue ? | affirmations vérifiées vraies |
+
+`langue_officielle`, écartée plus bas pour ambiguïté, devient utilisable en **inversant le sens** : on ne demande plus « la langue de {pays} » (le français est juste pour vingt pays), mais « lequel de ces pays », les autres étant choisis parmi ceux où elle n'est PAS officielle. Même principe pour la devise et le peuple. L'empreinte de `fiche_pays` couvre désormais indicatif, population, superficie et langue officielle, et celle de `codimoi` l'explication ; `37_jeu.sql` réaligne au passage les épreuves dont la source n'a pas bougé, sans quoi le changement de formule les aurait toutes rendues non servables.
+
+Afrolang reçoit un lot de 44 épreuves saisies (`seeds/013_jeu_afrolang_epreuves.sql`) qui naissent `candidate` : rien n'est jouable avant revue.
+
 **Rationale** :
 - **Afrolang ne se dérive pas.** Il n'existe aucun référentiel de langues (`GET /afrolang/langues` fait un `SELECT DISTINCT langue_cible` sur les salles), aucun lexique, aucune ressource de type audio. Les quiz linguistiques et jeux audio demandés par le client sont de la saisie, avec un extrait sonore déposé par l'administrateur. C'est cohérent avec l'histoire 2 de la spec.
 - **`updated_at` ne peut pas servir à détecter une modification** (FR-012). Les tables sources ont un trigger `updated_at` et des compteurs dénormalisés (`nombre_likes`, `nombre_signalements`) : un simple J'aime sur une fiche pays renverrait toutes ses épreuves en revue. L'empreinte est un `md5` des **seuls champs dont on tire des questions**.
@@ -106,6 +126,8 @@ Quatorze décisions de conception. Chacune est ancrée dans le code tel qu'il es
 - Un objet Afripulse `suspendu` reste **visible** sur les pages publiques (aucun handler de liste ne filtre dessus), mais il est exclu du jeu : on ne tire pas de question d'un contenu signalé.
 
 **Limite assumée** : l'empreinte est par source, pas par forme. Corriger la monnaie d'une fiche renvoie aussi en revue la question sur sa capitale. C'est le prix d'une vue simple ; le coût réel est une revue de plus pour l'administrateur.
+
+**Tirage varié.** Un `ORDER BY random()` nu sur un vivier déséquilibré reproduisait le déséquilibre (quatre drapeaux dans une partie), et pouvait poser « capitale du Sénégal ? » puis « Dakar est la capitale de quel pays ? », la seconde donnant la réponse de la première. `serie_variee_sql` (services/jeu.rs), employée par les trois tirages (partie, défi, duel), ordonne : une épreuve par source avant toute deuxième (sans exclusion, pour que « jouer sur ce pays » remplisse une partie avec sa fiche), puis rotation des formes dans chaque module, puis des modules.
 
 **Ajouter un module plus tard** (SC-014) : une branche dans la vue, une ou plusieurs fonctions dans `FORMES`, une ligne dans `jeu.module`. Aucune règle du jeu n'est touchée.
 

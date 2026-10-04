@@ -49,6 +49,34 @@ pub const SERVABLE_SQL: &str = "
           OR (COALESCE(s.visible, FALSE)
               AND (e.origine = 'saisie' OR s.empreinte = e.source_empreinte)))";
 
+/// Tirage VARIÉ parmi les servables restreintes par `filtre` (une suite de
+/// `AND …` sur `e`). Un `ORDER BY random()` nu enchaînait quatre drapeaux, ou
+/// posait « capitale du Sénégal ? » puis « Dakar est la capitale de quel
+/// pays ? », la seconde donnant la réponse de la première. L'ordre est donc :
+///
+/// 1. `priorite` d'abord (expression booléenne, FAUX en tête ; `FALSE` si sans
+///    objet) ;
+/// 2. une seule épreuve par SOURCE avant toute deuxième — pas d'exclusion :
+///    « jouer sur ce pays » doit pouvoir remplir une partie avec sa fiche ;
+/// 3. dans chaque module, rotation entre les formes (le thème, pour la saisie) ;
+/// 4. entre modules, rotation elle aussi.
+///
+/// L'appelant ajoute le `LIMIT`.
+pub fn serie_variee_sql(filtre: &str, priorite: &str) -> String {
+    format!(
+        "WITH c AS (
+             SELECT e.id, e.module_code, COALESCE(e.forme, e.theme, '') AS famille,
+                    COALESCE(e.source_id, e.id) AS src, ({priorite}) AS prio
+             {SERVABLE_SQL} {filtre}),
+         s AS (SELECT c.*, row_number() OVER (PARTITION BY src ORDER BY prio, random()) AS rs FROM c),
+         f AS (SELECT s.*, row_number() OVER (PARTITION BY module_code, famille
+                                              ORDER BY prio, rs, random()) AS rf FROM s),
+         m AS (SELECT f.*, row_number() OVER (PARTITION BY module_code
+                                              ORDER BY prio, rs, rf, random()) AS rm FROM f)
+         SELECT id FROM m ORDER BY prio, rs, rm, random()"
+    )
+}
+
 /// Tolérance réseau ajoutée au temps imparti avant de refuser une réponse.
 const TOLERANCE_RESEAU_MS: i64 = 2_000;
 /// Marge de chargement accordée à une épreuve qui porte un média.
@@ -93,17 +121,16 @@ pub async fn composer_serie(
     taille: i16,
     neuves_seulement: bool,
 ) -> Result<Vec<Uuid>, sqlx::Error> {
-    sqlx::query_scalar(&format!(
-        "SELECT e.id {SERVABLE_SQL}
-            AND ($1::text IS NULL OR e.module_code = $1)
-            AND ($2::uuid IS NULL OR e.pays_id = $2)
-            AND ($3::text IS NULL OR e.theme = $3)
-            AND (NOT $4 OR NOT EXISTS (
-                    SELECT 1 FROM jeu.reponse r
-                     WHERE r.utilisateur_id = $5 AND r.epreuve_id = e.id))
-          ORDER BY random()
-          LIMIT $6"
-    ))
+    let tirage = serie_variee_sql(
+        "AND ($1::text IS NULL OR e.module_code = $1)
+         AND ($2::uuid IS NULL OR e.pays_id = $2)
+         AND ($3::text IS NULL OR e.theme = $3)
+         AND (NOT $4 OR NOT EXISTS (
+                 SELECT 1 FROM jeu.reponse r
+                  WHERE r.utilisateur_id = $5 AND r.epreuve_id = e.id))",
+        "FALSE",
+    );
+    sqlx::query_scalar(&format!("{tirage} LIMIT $6"))
     .bind(module)
     .bind(pays_id)
     .bind(theme)
@@ -264,6 +291,16 @@ pub async fn lien_source(
         "site_touristique" => ("country_profile.site_touristique", "sites"),
         "recette_culinaire" => ("country_profile.recette_culinaire", "recettes"),
         "personnalite_connue" => ("country_profile.personnalite_connue", "personnalites"),
+        // Un peuple n'a pas de page à lui : on renvoie à sa fiche pays.
+        "groupe_ethnique" => {
+            let fiche_id: Option<Uuid> = sqlx::query_scalar(
+                "SELECT fiche_pays_id FROM country_profile.groupe_ethnique WHERE id = $1",
+            )
+            .bind(source_id)
+            .fetch_optional(conn)
+            .await?;
+            return Ok(fiche_id.map(|f| format!("/opportunite-afrique/{f}")));
+        }
         _ => return Ok(None),
     };
 
@@ -839,15 +876,14 @@ pub async fn defi_courant(
     // les redites plutôt que de laisser la période sans défi.
     let mut serie: Vec<Uuid> = Vec::new();
     for sans_redite in [true, false] {
-        serie = sqlx::query_scalar(&format!(
-            "SELECT e.id {SERVABLE_SQL}
-                AND (NOT $1 OR NOT EXISTS (
-                        SELECT 1 FROM jeu.defi d
-                         WHERE d.periode_debut > CURRENT_DATE - $2::int
-                           AND e.id = ANY(d.epreuve_ids)))
-              ORDER BY random()
-              LIMIT $3"
-        ))
+        let tirage = serie_variee_sql(
+            "AND (NOT $1 OR NOT EXISTS (
+                     SELECT 1 FROM jeu.defi d
+                      WHERE d.periode_debut > CURRENT_DATE - $2::int
+                        AND e.id = ANY(d.epreuve_ids)))",
+            "FALSE",
+        );
+        serie = sqlx::query_scalar(&format!("{tirage} LIMIT $3"))
         .bind(sans_redite)
         .bind(DEFI_SANS_REDITE_JOURS)
         .bind(taille)
