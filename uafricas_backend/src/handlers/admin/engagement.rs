@@ -107,6 +107,15 @@ pub const ACTIONS_INSTRUMENTEES: &[CatalogueAction] = &[
         &["cadeau"],
         "engagement_cadeau (confirmation de paiement)",
     ),
+    // ── Activités ludiques (feature 013) : règles À ZÉRO POINT ──────────────
+    // Elles ne portent que de la réputation et servent de compteur aux badges
+    // `jeu_*`. En désactiver une fige aussi le badge qui la compte.
+    ("jeu_premiere_partie", "Première partie terminée", &["partie"], "services/jeu (fin de partie)"),
+    ("jeu_defi_termine", "Défi terminé", &["defi"], "services/jeu (fin d'un défi)"),
+    ("jeu_serie_7_jours", "Sept jours de défi consécutifs", &["defi"], "services/jeu (série de jours)"),
+    ("jeu_duel_gagne", "Duel gagné", &["duel"], "services/jeu (résolution d'un duel)"),
+    ("jeu_podium_saison", "Place d'honneur au Championship", &["saison"], "services/jeu (clôture de saison)"),
+    ("jeu_signalement_confirme", "Signalement d'épreuve confirmé", &["signalement_epreuve"], "admin/jeu (signalements)"),
     (
         "ajustement_admin",
         "Correction manuelle (administration)",

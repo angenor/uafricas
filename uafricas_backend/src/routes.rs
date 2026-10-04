@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{africanite, admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, livres, matching, media_detention, media_emission, media_episode, media_equipe, media_programmation, media_proposition, media_social, media_support, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{africanite, admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, jeu, jeu_classement, jeu_defi, jeu_duel, livres, matching, media_detention, media_emission, media_episode, media_equipe, media_programmation, media_proposition, media_social, media_support, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -288,6 +288,33 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/engagement/mise-en-avant", web::post().to(admin::engagement::mettre_en_avant))
                     .route("/engagement/mise-en-avant/{type_objet}/{objet_id}", web::get().to(admin::engagement::statut_mise_en_avant))
                     .route("/engagement/mise-en-avant/{type_objet}/{objet_id}", web::delete().to(admin::engagement::retirer_mise_en_avant))
+                    // ── Activités ludiques (feature 013) ────────────────────
+                    .route("/jeu/modules", web::get().to(admin::jeu::lister_modules))
+                    .route("/jeu/modules/{code}", web::patch().to(admin::jeu::modifier_module))
+                    .route("/jeu/epreuves", web::get().to(admin::jeu::lister_epreuves))
+                    .route("/jeu/epreuves", web::post().to(admin::jeu::creer_epreuve))
+                    // Les trois littéraux AVANT `/jeu/epreuves/{id}` : actix prend la
+                    // première route qui correspond, et `formes` n'est pas un UUID.
+                    .route("/jeu/epreuves/formes", web::get().to(admin::jeu::lister_formes))
+                    .route("/jeu/epreuves/derivation", web::post().to(admin::jeu::deriver))
+                    .route("/jeu/epreuves/revue", web::post().to(admin::jeu::revue))
+                    .route("/jeu/epreuves/{id}", web::get().to(admin::jeu::obtenir_epreuve))
+                    .route("/jeu/epreuves/{id}", web::put().to(admin::jeu::modifier_epreuve))
+                    .route("/jeu/epreuves/{id}/publier", web::post().to(admin::jeu::publier_epreuve))
+                    .route("/jeu/epreuves/{id}/retirer", web::post().to(admin::jeu::retirer_epreuve))
+                    .route("/jeu/regles", web::get().to(admin::jeu::obtenir_regles))
+                    .route("/jeu/regles", web::put().to(admin::jeu::modifier_regles))
+                    .route("/jeu/saisons", web::get().to(admin::jeu::lister_saisons))
+                    .route("/jeu/saisons", web::post().to(admin::jeu::creer_saison))
+                    .route("/jeu/saisons/{id}", web::put().to(admin::jeu::modifier_saison))
+                    .route("/jeu/saisons/{id}/clore", web::post().to(admin::jeu::clore_saison))
+                    .route("/jeu/joueurs", web::get().to(admin::jeu::lister_joueurs))
+                    .route("/jeu/joueurs/{utilisateur_id}/annuler-gains", web::post().to(admin::jeu::annuler_gains))
+                    .route("/jeu/defis", web::get().to(admin::jeu::lister_defis))
+                    .route("/jeu/defis/{periodicite}/{date}", web::put().to(admin::jeu::programmer_defi))
+                    .route("/jeu/defis/{periodicite}/{date}", web::delete().to(admin::jeu::deprogrammer_defi))
+                    .route("/jeu/signalements", web::get().to(admin::jeu::lister_signalements))
+                    .route("/jeu/signalements/{id}/decision", web::post().to(admin::jeu::decider_signalement))
                     // AfroLang - Salles publiques
                     .route("/salles", web::get().to(admin::salles::lister_salles))
                     .route("/salles", web::post().to(admin::salles::creer_salle))
@@ -612,6 +639,40 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{id}/reaction", web::post().to(codimoi::reagir))
                     .route("/{id}/commentaires", web::get().to(codimoi::lister_commentaires))
                     .route("/{id}/commentaires", web::post().to(codimoi::creer_commentaire)),
+            )
+            // Routes des activités ludiques (feature 013).
+            // Règle d'ordre du scope : tout segment littéral se déclare AVANT le
+            // motif paramétré de même profondeur (`/defis/courants` avant
+            // `/defis/{id}/…`), sinon 404 « UUID parsing failed ».
+            .service(
+                web::scope("/jeu")
+                    .route("/modules", web::get().to(jeu::lister_modules))
+                    .route("/parties", web::post().to(jeu::creer_partie))
+                    .route("/parties/{id}", web::get().to(jeu::obtenir_partie))
+                    .route("/parties/{id}/suivante", web::post().to(jeu::partie_suivante))
+                    .route("/parties/{id}/repondre", web::post().to(jeu::partie_repondre))
+                    .route("/parties/{id}/injouable", web::post().to(jeu::partie_injouable))
+                    .route("/epreuves/{id}/signaler", web::post().to(jeu::signaler_epreuve))
+                    // `/defis/courants` AVANT `/defis/{id}/…`.
+                    .route("/defis/courants", web::get().to(jeu_defi::defis_courants))
+                    .route("/defis/{id}/jouer", web::post().to(jeu_defi::jouer_defi))
+                    .route("/defis/{id}/resultats", web::get().to(jeu_defi::resultats_defi))
+                    .route("/saisons", web::get().to(jeu_classement::lister_saisons))
+                    .route("/classements/membres", web::get().to(jeu_classement::classement_membres))
+                    .route("/classements/pays", web::get().to(jeu_classement::classement_pays))
+                    .route("/pays/{pays_id}", web::get().to(jeu_classement::fiche_pays_jeu))
+                    .route("/moi", web::get().to(jeu::mon_jeu))
+                    .route("/moi/parties", web::get().to(jeu::mes_parties))
+                    .route("/duels", web::get().to(jeu_duel::lister_duels))
+                    .route("/duels", web::post().to(jeu_duel::proposer_duel))
+                    .route("/duels/{id}", web::get().to(jeu_duel::obtenir_duel))
+                    .route("/duels/{id}/accepter", web::post().to(jeu_duel::accepter_duel))
+                    .route("/duels/{id}/refuser", web::post().to(jeu_duel::refuser_duel))
+                    .route("/duels/{id}/annuler", web::post().to(jeu_duel::annuler_duel))
+                    .route("/duels/{id}/jouer", web::post().to(jeu_duel::jouer_duel))
+                    .route("/duels/{id}/convertir", web::post().to(jeu_duel::convertir_duel))
+                    .route("/duels/{id}/direct", web::get().to(jeu_duel::etat_direct))
+                    .route("/duels/{id}/direct/repondre", web::post().to(jeu_duel::repondre_direct)),
             )
             // Routes Engagement / gamification (lecture publique)
             .service(

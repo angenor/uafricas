@@ -192,6 +192,7 @@ const pageTitle = computed(() => {
     'profils-pays': 'Profils territoires',
     'bibliotheques-humaines': 'Bibliothèques Humaines',
     'audit': 'Audit & Logs',
+    'activites': 'Activités',
   }
 
   const segment = path.split('/')[0]

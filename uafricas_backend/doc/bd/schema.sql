@@ -221,6 +221,11 @@
 \ir schemas/35f_engagement_recadrage.sql
 \ir schemas/35g_engagement_cadeaux.sql
 
+-- Activités ludiques (feature 013) : nouveau schéma `jeu`. APRÈS le bloc 35* :
+-- la migration ajoute une catégorie, six règles à 0 point et cinq badges au
+-- barème d'engagement, et rattache sa permission aux rôles créés par 15_seed.
+\ir schemas/37_jeu.sql
+
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- FIN DU SCHÉMA

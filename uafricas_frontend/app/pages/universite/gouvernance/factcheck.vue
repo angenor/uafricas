@@ -487,6 +487,9 @@ watch(() => userStore.accessToken, (token, ancien) => {
           </label>
         </div>
       </AfricansPanneau>
+
+      <!-- Point d'entrée des activités ludiques du module (feature 013). -->
+      <JeuPanneauActivites module="factcheck" />
     </template>
 
     <UniversiteGouvernanceFactCheckCreateModal

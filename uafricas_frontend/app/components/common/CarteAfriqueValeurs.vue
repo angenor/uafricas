@@ -1,4 +1,16 @@
 <script setup lang="ts">
+/**
+ * Carte de l'Afrique colorée par une valeur numérique par pays.
+ *
+ * Née dans Africonnect (nombre d'avis de recherche), généralisée pour le
+ * Championship (score des pays) plutôt que recopiée une troisième fois : le
+ * dépôt en comptait déjà deux copies quasi identiques. Les trois props
+ * facultatives ont pour défaut le comportement d'Africonnect, qui n'a rien eu
+ * à changer.
+ *
+ * La carte d'Afripulse (`opportunite-afrique/CarteAfrique.vue`), couplée aux
+ * fiches pays et colorée par région, reste distincte.
+ */
 import World from '@svg-maps/world'
 import { PAYS_AFRICAINS_ISO2 } from '~/constants/afripulsePaysAutorises'
 import { NOMS_PAYS_FR, AFRICA_VIEWBOX, PETITES_ILES, couleurChaleurAvis } from '~/utils/carteAfrique'
@@ -9,12 +21,22 @@ interface MapLocation {
   path: string
 }
 
-const props = defineProps<{
-  /** Nombre d'avis de recherche par code ISO2 (minuscule). */
+const props = withDefaults(defineProps<{
+  /** Valeur par code ISO2 (minuscule) : nombre d'avis, score… */
   comptes: Record<string, number>
   /** Code ISO2 du pays sélectionné (minuscule) ou null. */
   selectedIso: string | null
-}>()
+  /** Couleur d'un pays selon sa valeur. Défaut : l'échelle des avis. */
+  couleur?: (valeur: number, iso: string) => string
+  /** Seconde ligne de la bulle. Défaut : « N avis · cliquer pour voir ». */
+  libelleBulle?: (valeur: number, iso: string) => string
+  /** Un pays à 0 est-il cliquable ? Défaut : non (Africonnect n'a rien à y montrer). */
+  cliquableAZero?: boolean
+}>(), {
+  couleur: undefined,
+  libelleBulle: undefined,
+  cliquableAZero: false,
+})
 
 const emit = defineEmits<{ (e: 'select', iso: string): void }>()
 
@@ -87,6 +109,10 @@ const getMapColor = (id: string): string => {
   const isSelected = props.selectedIso === iso
 
   if (isSelected) return '#A54A1C' // af-chocolat
+  if (props.couleur) {
+    const base = props.couleur(compte, iso)
+    return isHovered ? adjustBrightness(base, -12) : base
+  }
   if (compte > 0) {
     const base = couleurChaleur(compte)
     return isHovered ? adjustBrightness(base, -12) : base
@@ -94,8 +120,16 @@ const getMapColor = (id: string): string => {
   return isHovered ? '#d1d5db' : '#e5e7eb'
 }
 
+const estCliquable = (id: string) => props.cliquableAZero || compteFor(id) > 0
+
 const handleMapClick = (location: MapLocation) => {
-  if (compteFor(location.id) > 0) emit('select', location.id.toLowerCase())
+  if (estCliquable(location.id)) emit('select', location.id.toLowerCase())
+}
+
+const bulle = (id: string): string | null => {
+  const compte = compteFor(id)
+  if (props.libelleBulle) return props.libelleBulle(compte, id.toLowerCase())
+  return compte > 0 ? `${compte} avis · cliquer pour voir` : null
 }
 </script>
 
@@ -114,9 +148,9 @@ const handleMapClick = (location: MapLocation) => {
         :d="location.path"
         :fill="getMapColor(location.id)"
         stroke="#fff"
-        :stroke-width="PETITES_ILES[location.id] ? 0.5 / PETITES_ILES[location.id] : 0.5"
+        :stroke-width="0.5 / (PETITES_ILES[location.id] ?? 1)"
         class="map-path"
-        :class="{ 'cursor-pointer': compteFor(location.id) > 0 }"
+        :class="{ 'cursor-pointer': estCliquable(location.id) }"
         :transform="mapTransforms[location.id]"
         @mouseenter="hoveredCountry = location"
         @mouseleave="hoveredCountry = null"
@@ -129,18 +163,15 @@ const handleMapClick = (location: MapLocation) => {
       <div
         v-if="hoveredCountry"
         class="map-tooltip"
-        :class="{ 'map-tooltip-clickable': compteFor(hoveredCountry.id) > 0 }"
+        :class="{ 'map-tooltip-clickable': estCliquable(hoveredCountry.id) }"
         :style="{ left: mousePos.x + 15 + 'px', top: mousePos.y - 10 + 'px' }"
       >
         <span class="font-semibold">
           {{ NOMS_PAYS_FR[hoveredCountry.id.toLowerCase()] || hoveredCountry.name }}
         </span>
-        <template v-if="compteFor(hoveredCountry.id) > 0">
-          <span class="text-xs opacity-80">
-            {{ compteFor(hoveredCountry.id) }}
-            avis · cliquer pour voir
-          </span>
-        </template>
+        <span v-if="bulle(hoveredCountry.id)" class="text-xs opacity-80">
+          {{ bulle(hoveredCountry.id) }}
+        </span>
         <span v-else class="text-xs opacity-70">Aucun avis</span>
       </div>
     </Transition>

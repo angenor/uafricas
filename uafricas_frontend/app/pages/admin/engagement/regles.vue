@@ -377,6 +377,17 @@ const retirerPalier = async (p: AdminPalier) => {
                   />
                   {{ r.type_action }}
                   <!--
+                    Les règles du jeu (feature 013) sont à 0 point PAR CONSTRUCTION :
+                    le jeu ne crédite aucun point d'engagement. Elles portent la
+                    réputation et servent de compteur aux badges `jeu_*`. Les
+                    désactiver comme « inutiles » figerait ces badges.
+                  -->
+                  <span
+                    v-if="r.type_action.startsWith('jeu_')"
+                    class="badge badge-ghost badge-xs ml-1 align-middle"
+                    title="Activités ludiques : 0 point par construction, la règle porte la réputation et compte pour les badges du jeu. La désactiver fige aussi le badge associé."
+                  >jeu · 0 point voulu</span>
+                  <!--
                     Sans cette mention, une règle créée pour une action que le code
                     n'émet pas resterait silencieusement stérile : c'est le bug le
                     plus coûteux à diagnostiquer du paramétrage.

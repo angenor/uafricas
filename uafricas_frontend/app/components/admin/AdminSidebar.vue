@@ -131,6 +131,20 @@ const sidebarSections: SidebarSection[] = [
       { label: 'Journal des points', faIcon: 'list', route: '/admin/engagement/journal' },
     ],
   },
+  // ─── Activités ludiques (feature 013) ───
+  {
+    label: 'Activités',
+    faIcon: 'gamepad',
+    children: [
+      { label: 'Épreuves', faIcon: 'circle-question', route: '/admin/activites/epreuves' },
+      { label: 'Revue', faIcon: 'list-check', route: '/admin/activites/revue' },
+      { label: 'Défis', faIcon: 'calendar-days', route: '/admin/activites/defis' },
+      { label: 'Saisons', faIcon: 'trophy', route: '/admin/activites/saisons' },
+      { label: 'Joueurs', faIcon: 'users', route: '/admin/activites/joueurs' },
+      { label: 'Règles du jeu', faIcon: 'sliders', route: '/admin/activites/regles' },
+      { label: 'Signalements', faIcon: 'flag', route: '/admin/activites/signalements' },
+    ],
+  },
   // ─── Administration & système ───
   {
     label: 'Utilisateurs & Accès',

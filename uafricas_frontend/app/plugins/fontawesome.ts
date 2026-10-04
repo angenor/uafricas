@@ -215,6 +215,8 @@ import {
   faMagnifyingGlassChart,
   faFeather,
   faTrophy,
+  faGamepad,
+  faRankingStar,
   faLockOpen,
   faCircleNodes,
   // Cadeaux virtuels (feature 008) : catalogue + catégorie de points
@@ -519,6 +521,8 @@ library.add(
   faMagnifyingGlassChart,
   faFeather,
   faTrophy,
+  faGamepad,
+  faRankingStar,
   faLockOpen,
   faCircleNodes,
   // Cadeaux virtuels (feature 008) : catalogue seedé + back-office

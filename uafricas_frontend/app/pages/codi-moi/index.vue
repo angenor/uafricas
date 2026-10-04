@@ -405,6 +405,9 @@ onMounted(async () => {
     <template #rail>
       <AfricansRecherche v-model="searchKeywords" placeholder="Proverbe, récit, mot-clé…" />
 
+      <!-- Point d'entrée des activités ludiques du module (feature 013). -->
+      <JeuPanneauActivites module="codimoi" />
+
       <AfricansPanneau titre="Statistiques Codimoi" icone="fa-solid fa-chart-line">
         <dl class="flex flex-col">
           <div class="flex items-baseline justify-between gap-4 pb-3">
